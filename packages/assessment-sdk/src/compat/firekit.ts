@@ -22,7 +22,7 @@ import type {
   WriteTrialCommandInput,
 } from '../types';
 import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL, RUN_EVENT_ENGAGEMENT } from '../types/run-event-status';
-import type { Json } from '@roar-platform/api-contract';
+import type { Json, ScoreEntry } from '@roar-platform/api-contract';
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
 import { StartRunCommand } from '../commands/start-run.command';
@@ -217,6 +217,47 @@ export class FirekitFacade {
    */
   _pushInteraction(interaction: AddInteractionInput): void {
     this.#interactionBuffer.push(interaction);
+  }
+
+  /**
+   * Internal getter for raw scores.
+   * Returns undefined by default; can be overridden by assessment-specific implementations.
+   * @internal
+   */
+  _getRawScores(): RawScores | undefined {
+    return undefined;
+  }
+
+  /**
+   * Internal getter for score adapter function.
+   * Returns undefined by default; can be overridden by assessment-specific implementations.
+   * @internal
+   */
+  _getScoreAdapter(): ((scores: ComputedScores) => ScoreEntry[]) | undefined {
+    return undefined;
+  }
+
+  /**
+   * Internal method to accumulate raw scores from a trial.
+   * Called by writeTrial() to build up raw scores for later score computation.
+   * Returns undefined by default; can be overridden by assessment-specific implementations.
+   * @internal
+   * @param _subtask - The subtask key (e.g., 'fsm', 'lsm', 'del')
+   * @param _stage - The assessment stage ('practice' or 'test')
+   * @param _correct - Whether the trial was correct (1 or 0)
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _accumulateRawScore(_subtask: string, _stage: string, _correct: number): void {
+    // Default implementation does nothing; can be overridden
+  }
+
+  /**
+   * Internal getter for logger.
+   * Returns the logger from the CommandContext if available.
+   * @internal
+   */
+  _getLogger() {
+    return this.#ctx?.logger;
   }
 }
 
@@ -555,8 +596,9 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
  * - Validates required fields (assessmentStage, correct) to prevent silent failures
  * - Coerces boolean correct values to numbers (true → 1, false → 0) for Firekit compatibility
  * - Normalizes assessment stages and interaction events to backend format
- * - Submits trial data via the WriteTrialCommand
- * - Supports optional computed score callback (not yet implemented)
+ * - Accumulates raw scores from trials (when subtask is provided)
+ * - Invokes optional computed score callback with accumulated raw scores
+ * - Converts computed scores to ScoreEntry[] and submits via the WriteTrialCommand
  *
  * **Required trial data fields:**
  * - `assessmentStage` or `assessment_stage`: ASSESSMENT_STAGE_PRACTICE, ASSESSMENT_STAGE_PRACTICE_RESPONSE, ASSESSMENT_STAGE_TEST, or ASSESSMENT_STAGE_TEST_RESPONSE (supports both camelCase and snake_case for backward compatibility)
@@ -569,7 +611,7 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
  * - Any other assessment-specific fields
  *
  * @param trialData - Trial data object containing assessment-specific trial information
- * @param computedScoreCallback - Optional callback function that receives raw scores and returns computed scores (not yet implemented)
+ * @param computedScoreCallback - Optional callback function that receives accumulated raw scores and returns computed scores. When provided, the callback is invoked with raw scores accumulated from all trials, and the returned computed scores are converted to ScoreEntry[] and submitted with the trial event.
  * @returns Promise<void> - Resolves when the trial event has been successfully submitted
  *
  * @throws {SDKError}
@@ -612,8 +654,6 @@ export async function writeTrial(
   trialData: TrialData,
   computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
 ): WriteTrialOutput {
-  void computedScoreCallback;
-
   const facade = getFirekitCompat();
   const runId = facade._getRunId();
 
@@ -664,16 +704,50 @@ export async function writeTrial(
   const correct =
     typeof trialDataRecord['correct'] === 'boolean' ? (trialDataRecord['correct'] ? 1 : 0) : trialDataRecord['correct'];
 
+  // Accumulate raw scores from this trial for later score computation
+  // Extract subtask from trial data for PA assessments
+  const subtask = trialDataRecord['subtask'] as string | undefined;
+  if (subtask) {
+    facade._accumulateRawScore(subtask, assessmentStage, correct);
+  }
+
   // Drain buffered interactions from addInteraction() calls
   const bufferedInteractions = facade._drainInteractionBuffer();
 
   const cmd = new WriteTrialCommand(api, ctx.participant.participantId);
+
+  // Invoke computed score callback if provided and map to ScoreEntry[] for persistence
+  let scores: ScoreEntry[] | undefined;
+  if (computedScoreCallback) {
+    try {
+      const rawScores = facade._getRawScores();
+      if (rawScores) {
+        const computedScores = await computedScoreCallback(rawScores);
+        if (computedScores) {
+          // Map computed scores to ScoreEntry[] using assessment-specific adapter
+          // For PA, this uses toPaScoreEntries; other assessments would have their own adapters
+          const scoreAdapter = facade._getScoreAdapter();
+          if (scoreAdapter) {
+            scores = scoreAdapter(computedScores);
+          }
+        }
+      }
+    } catch (error) {
+      // Log callback error but don't fail the trial write
+      // The trial data is still valuable even if score computation fails
+      const logger = facade._getLogger();
+      if (logger) {
+        logger.warn({ err: error }, 'Computed score callback failed; trial will be recorded without scores');
+      }
+    }
+  }
 
   try {
     await invoker.run(cmd, {
       runId,
       type: RUN_EVENT_TRIAL,
       interactions: bufferedInteractions.length > 0 ? bufferedInteractions : undefined,
+      scores: scores && scores.length > 0 ? scores : undefined,
       trial: {
         assessmentStage,
         ...trialData,

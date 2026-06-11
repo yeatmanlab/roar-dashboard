@@ -33,6 +33,7 @@ export type ScoreTypeValue = (typeof SCORE_TYPE)[keyof typeof SCORE_TYPE];
  */
 export const SCORE_DOMAIN = {
   COMPOSITE: 'composite',
+  COMPOSITE_FOUNDATIONAL: 'composite_foundational',
 } as const;
 
 export type ScoreDomainValue = (typeof SCORE_DOMAIN)[keyof typeof SCORE_DOMAIN];

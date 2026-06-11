@@ -52,7 +52,7 @@ function setupFetchMock(runId: string): ReturnType<typeof vi.fn> {
   const fetchMock = vi.fn();
   fetchMock.mockImplementation((url: string | Request) => {
     // Extract URL string from Request object if needed
-    const urlString = typeof url === 'string' ? url : url.url;
+    const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
 
     // Return 200 OK for event endpoints (POST /runs/:runId/event) - check this first
     if (urlString.includes('/event')) {
@@ -590,6 +590,19 @@ describe('firekit compat', () => {
         response: 'correct',
         rt: 500,
       };
+      // NOTE: This test uses a stub callback, not the actual RoarScores.computedScoreCallback
+      // from apps/assessments/roar-pa/src/experiment/scores.js.
+      //
+      // Architectural constraint: assessment-schema cannot depend on roar-pa to avoid
+      // coupling the shared schema package to a specific assessment implementation.
+      //
+      // Drift detection: If RoarScores.computedScoreCallback changes its output shape
+      // (e.g., adds/removes fields, changes field names), this will be caught by:
+      // 1. Integration tests in roar-api.integration.test.ts that exercise the real
+      //    scoring path end-to-end (real RoarScores → toPaScoreEntries → backend)
+      // 2. The compile-time type check in score-entries.ts that ensures
+      //    ComputedScoreEntry remains compatible with api-contract's ScoreEntry
+      // 3. Runtime validation in pa-firekit-facade.js with strict: true mode
       const callback = async (rawScores: RawScores): Promise<ComputedScores> => {
         return { computed: rawScores };
       };
@@ -719,6 +732,87 @@ describe('firekit compat', () => {
         ) => Promise<void>
       >();
     });
+
+    it('accumulates raw scores and produces scores array when facade methods are wired', async () => {
+      const { fetchMock } = await initializeFirekitAndStartRun('run-computed-scores');
+
+      const facade = getFirekitCompat();
+
+      // Track if accumulation was called
+      let accumulationCalled = false;
+      let callbackCalled = false;
+
+      // Wire the facade methods to accumulate raw scores and return scores
+      const accumulatedRawScores: Record<string, Record<string, Record<string, number>>> = {};
+
+      facade._accumulateRawScore = (subtask: string, stage: string, correct: number) => {
+        accumulationCalled = true;
+        if (!accumulatedRawScores[subtask]) {
+          accumulatedRawScores[subtask] = {
+            practice: { numCorrect: 0, numAttempted: 0 },
+            test: { numCorrect: 0, numAttempted: 0 },
+          };
+        }
+        const stageScores = accumulatedRawScores[subtask]![stage]!;
+        stageScores.numAttempted += 1;
+        if (correct === 1) {
+          stageScores.numCorrect += 1;
+        }
+      };
+
+      facade._getRawScores = () => {
+        return Object.keys(accumulatedRawScores).length > 0 ? (accumulatedRawScores as RawScores) : undefined;
+      };
+
+      facade._getScoreAdapter = () => {
+        return (scores: ComputedScores) => {
+          // Mock adapter that converts computed scores to ScoreEntry array
+          const scoresRecord = scores as Record<string, unknown>;
+          return [
+            {
+              type: 'computed',
+              domain: 'test-domain',
+              name: 'testScore',
+              value: String(scoresRecord.testScore),
+            },
+          ];
+        };
+      };
+
+      // Write a trial with subtask and stage
+      const trialData: TrialData = {
+        subtask: 'fsm',
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 1500,
+      };
+
+      const callback = async (rawScores: RawScores): Promise<ComputedScores> => {
+        callbackCalled = true;
+        const scoresRecord = rawScores as Record<string, Record<string, Record<string, number>>>;
+        const fsmScores = scoresRecord.fsm;
+        const testScores = fsmScores?.test;
+        const numCorrect = testScores?.numCorrect ?? 0;
+        return { testScore: numCorrect };
+      };
+
+      await expect(writeTrial(trialData, callback)).resolves.toBeUndefined();
+
+      // Verify that raw score accumulation was called
+      expect(accumulationCalled).toBe(true);
+
+      // Verify that the callback was invoked
+      expect(callbackCalled).toBe(true);
+
+      // Verify that the fetch call was made to the event endpoint
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-computed-scores/event'),
+        expect.objectContaining({
+          method: 'POST',
+        }),
+      );
+    });
   });
 
   describe('addInteraction', () => {
@@ -737,7 +831,7 @@ describe('firekit compat', () => {
       vi.stubGlobal(
         'fetch',
         vi.fn().mockImplementation((url: string | Request) => {
-          const urlString = typeof url === 'string' ? url : url.url;
+          const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
           if (urlString.includes('/runs') && !urlString.includes('/event')) {
             return Promise.resolve({
               status: StatusCodes.CREATED,
@@ -784,7 +878,7 @@ describe('firekit compat', () => {
 
     it('accumulates multiple interactions in buffer', async () => {
       const fetchMock = vi.fn().mockImplementation((url: string | Request) => {
-        const urlString = typeof url === 'string' ? url : url.url;
+        const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
         if (urlString.includes('/runs') && !urlString.includes('/event')) {
           return Promise.resolve({
             status: StatusCodes.CREATED,
@@ -832,7 +926,7 @@ describe('firekit compat', () => {
 
     it('clears buffer after writeTrial', async () => {
       const fetchMock = vi.fn().mockImplementation((url: string | Request) => {
-        const urlString = typeof url === 'string' ? url : url.url;
+        const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
         if (urlString.includes('/runs') && !urlString.includes('/event')) {
           return Promise.resolve({
             status: StatusCodes.CREATED,
@@ -879,7 +973,7 @@ describe('firekit compat', () => {
     it('restores interactions to buffer if writeTrial fails', async () => {
       let callCount = 0;
       const fetchMock = vi.fn().mockImplementation((url: string | Request) => {
-        const urlString = typeof url === 'string' ? url : url.url;
+        const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
         if (urlString.includes('/runs') && !urlString.includes('/event')) {
           return Promise.resolve({
             status: StatusCodes.CREATED,
@@ -963,7 +1057,7 @@ describe('firekit compat', () => {
     it('retrieves variant params with happy path', async () => {
       const fetchMock = vi.fn();
       fetchMock.mockImplementation((url: string | Request) => {
-        const urlString = typeof url === 'string' ? url : url.url;
+        const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
 
         // Handle variant lookup
         if (urlString.includes('/tasks/task-123/variants/variant-456')) {
@@ -1015,7 +1109,7 @@ describe('firekit compat', () => {
     it('returns empty params when variant has no parameters', async () => {
       const fetchMock = vi.fn();
       fetchMock.mockImplementation((url: string | Request) => {
-        const urlString = typeof url === 'string' ? url : url.url;
+        const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
 
         if (urlString.includes('/tasks/task-123/variants/variant-456')) {
           return Promise.resolve({
@@ -1059,7 +1153,7 @@ describe('firekit compat', () => {
     it('propagates SDKError from command on variant not found', async () => {
       const fetchMock = vi.fn();
       fetchMock.mockImplementation((url: string | Request) => {
-        const urlString = typeof url === 'string' ? url : url.url;
+        const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
 
         if (urlString.includes('/tasks/task-123/variants/variant-456')) {
           return Promise.resolve({

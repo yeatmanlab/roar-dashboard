@@ -30,6 +30,9 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "dependencies": {
+    "@roar-platform/api-contract": "*"
+  },
   "devDependencies": {
     "@roar-platform/typescript-config": "*",
     "typescript": "^5.0.0",
