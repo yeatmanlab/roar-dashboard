@@ -1,11 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { withSetup } from '@/test-support/withSetup.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
+import { withSetup } from '@/test-support/withSetup.js';
 import useAddTaskMutation from './useAddTaskMutation';
 
-vi.mock('@/store/auth', () => ({
-  useAuthStore: vi.fn(),
+const mockTasksCreate = vi.fn();
+
+vi.mock('@/clients/roar-api', () => ({
+  getRoarApiClient: () => ({
+    tasks: { create: mockTasksCreate },
+  }),
 }));
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
@@ -16,83 +19,78 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
+const mockTaskBody = {
+  slug: 'mock-task',
+  name: 'Mock Task',
+  nameSimple: 'ROAR - Mock',
+  nameTechnical: 'ROAR - MCK',
+  taskConfig: { maxAttempts: 3 },
+};
+
 describe('useAddTaskMutation', () => {
   let queryClient;
 
   beforeEach(() => {
-    queryClient = new VueQuery.QueryClient();
+    vi.restoreAllMocks();
+    queryClient = new VueQuery.QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
+    mockTasksCreate.mockReset();
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
-    vi.resetAllMocks();
-    queryClient?.clear();
-  });
-
-  const mockTask = { id: 'mock-test-task', name: 'Mock Test Task' };
-
-  it('should call registerTaskVariant when the mutation is triggered', async () => {
-    const mockAuthStore = { roarfirekit: { registerTaskVariant: vi.fn() } };
-
-    useAuthStore.mockReturnValue(mockAuthStore);
+  it('calls tasks.create with the payload as the request body and resolves to the created id', async () => {
+    const createdTask = { id: '00000000-0000-0000-0000-000000000001' };
+    mockTasksCreate.mockResolvedValue({ status: 201, body: { data: createdTask } });
 
     const [result] = withSetup(() => useAddTaskMutation(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    const { mutateAsync } = result;
-    await mutateAsync(mockTask);
+    const data = await result.mutateAsync(mockTaskBody);
 
-    expect(mockAuthStore.roarfirekit.registerTaskVariant).toHaveBeenCalledWith(mockTask);
+    expect(mockTasksCreate).toHaveBeenCalledWith({ body: mockTaskBody });
+    expect(data).toEqual(createdTask);
   });
 
-  it('should invalidate task queries upon mutation success', async () => {
+  it('invalidates the tasks query upon mutation success', async () => {
     const mockInvalidateQueries = vi.fn();
-    const mockAuthStore = { roarfirekit: { registerTaskVariant: vi.fn() } };
-
-    useAuthStore.mockReturnValue(mockAuthStore);
-
     vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));
+    mockTasksCreate.mockResolvedValue({ status: 201, body: { data: { id: 'task-1' } } });
 
     const [result] = withSetup(() => useAddTaskMutation(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    const { mutateAsync, isSuccess } = result;
-    await mutateAsync(mockTask);
+    await result.mutateAsync(mockTaskBody);
 
-    expect(isSuccess.value).toBe(true);
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['tasks'] });
   });
 
-  it('should not invalidate task queries upon mutation failure', async () => {
+  it('throws a structured error and does not invalidate queries on non-201 responses', async () => {
     const mockInvalidateQueries = vi.fn();
-    const mockError = new Error('Mock error');
-    const mockAuthStore = { roarfirekit: { registerTaskVariant: vi.fn(() => Promise.reject(mockError)) } };
-
-    useAuthStore.mockReturnValue(mockAuthStore);
-
     vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));
+    mockTasksCreate.mockResolvedValue({
+      status: 409,
+      body: { error: { message: 'Conflict' } },
+    });
 
     const [result] = withSetup(() => useAddTaskMutation(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    const { mutateAsync, isSuccess, isError } = result;
-
-    // Capture the rejection so the assertions run unconditionally — if the
-    // mutation unexpectedly succeeds, `thrownError` stays undefined and the
-    // `toBe(mockError)` assertion fails.
+    // Capture the rejection so the assertions run unconditionally.
     let thrownError;
     try {
-      await mutateAsync(mockTask);
+      await result.mutateAsync(mockTaskBody);
     } catch (error) {
       thrownError = error;
     }
 
-    expect(thrownError).toBe(mockError);
-    expect(isSuccess.value).toBe(false);
-    expect(isError.value).toBe(true);
+    expect(thrownError).toMatchObject({
+      status: 409,
+      body: { error: { message: 'Conflict' } },
+    });
+    expect(result.isError.value).toBe(true);
     expect(mockInvalidateQueries).not.toHaveBeenCalled();
   });
 });

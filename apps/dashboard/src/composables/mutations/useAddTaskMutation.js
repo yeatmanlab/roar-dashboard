@@ -1,27 +1,40 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
+import { StatusCodes } from 'http-status-codes';
+import { getRoarApiClient } from '@/clients/roar-api';
 import { TASKS_QUERY_KEY } from '@/constants/queryKeys';
 import { TASK_ADD_MUTATION_KEY } from '@/constants/mutationKeys';
 
 /**
  * Add Task mutation.
  *
- * TanStack mutation to add a task and automatically invalidate the corresponding queries.
- * @TODO: Evaluate if we can apply optimistic updates to prevent invalidating/refetching the data.
- * @TODO: Consider merging this with `useUpdateTaskMutation` into a single `useUpsertTaskMutation`. Currently difficult
- * to achieve due to the underlaying firekit functions being different.
+ * Calls `POST /tasks` to create a task and invalidates the tasks query on
+ * success so the catalog refetches without a manual reload.
  *
- * @returns {Object} The mutation object returned by `useMutation`.
+ * Expected mutate payload (mirrors `CreateTaskRequestBodySchema`):
+ *   `{ slug, name, nameSimple, nameTechnical, taskConfig, description?, image?, tutorialVideo? }`
+ *
+ * @returns {Object} The mutation object returned by `useMutation`, resolving to `{ id }`.
  */
-
 const useAddTaskMutation = () => {
-  const authStore = useAuthStore();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationKey: TASK_ADD_MUTATION_KEY,
-    mutationFn: async (task) => {
-      await authStore.roarfirekit.registerTaskVariant({ ...task });
+    mutationKey: [TASK_ADD_MUTATION_KEY],
+    mutationFn: async (body) => {
+      const client = getRoarApiClient();
+      const result = await client.tasks.create({ body });
+
+      if (result.status === StatusCodes.CREATED) {
+        return result.body.data;
+      }
+
+      // Non-201 ts-rest results are surfaced as thrown errors so TanStack
+      // routes them through `error`. The thrown shape carries the ts-rest
+      // response so callers (e.g. the form's onError toast) can introspect it.
+      const error = new Error(`Create task failed with status ${result.status}`);
+      error.status = result.status;
+      error.body = result.body;
+      throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [TASKS_QUERY_KEY] });

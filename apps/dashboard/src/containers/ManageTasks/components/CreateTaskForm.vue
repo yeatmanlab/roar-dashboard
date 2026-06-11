@@ -3,93 +3,83 @@
     <fieldset class="flex flex-column row-gap-4">
       <legend class="sr-only">Task Details</legend>
       <TextInput
+        id="taskSlug"
+        v-model="v$.slug.$model"
+        label="Slug"
+        :is-invalid="v$.slug.$invalid && v$.slug.$dirty"
+        :errors="v$.slug.$errors"
+        :required="true"
+      />
+
+      <TextInput
         id="taskName"
-        v-model="v$.taskName.$model"
-        label="Task Name"
-        :is-invalid="v$.taskName.$invalid && v$.taskName.$dirty"
-        :errors="v$.taskName.$errors"
+        v-model="v$.name.$model"
+        label="Name"
+        :is-invalid="v$.name.$invalid && v$.name.$dirty"
+        :errors="v$.name.$errors"
         :required="true"
       />
 
       <TextInput
-        id="taskId"
-        v-model="v$.taskId.$model"
-        label="Task ID"
-        :is-invalid="v$.taskId.$invalid && v$.taskId.$dirty"
-        :errors="v$.taskId.$errors"
+        id="taskNameSimple"
+        v-model="v$.nameSimple.$model"
+        label="Simple Name"
+        :is-invalid="v$.nameSimple.$invalid && v$.nameSimple.$dirty"
+        :errors="v$.nameSimple.$errors"
         :required="true"
       />
 
       <TextInput
-        id="coverImage"
-        v-model="v$.coverImage.$model"
-        label="Cover Image URL"
-        :is-invalid="v$.coverImage.$invalid && v$.coverImage.$dirty"
-        :errors="v$.coverImage.$errors"
+        id="taskNameTechnical"
+        v-model="v$.nameTechnical.$model"
+        label="Technical Name"
+        :is-invalid="v$.nameTechnical.$invalid && v$.nameTechnical.$dirty"
+        :errors="v$.nameTechnical.$errors"
+        :required="true"
       />
 
       <TextInput
         id="taskDescription"
-        v-model="v$.taskDescription.$model"
+        v-model="v$.description.$model"
         label="Description"
-        :is-invalid="v$.taskDescription.$invalid && v$.taskDescription.$dirty"
-        :errors="v$.taskDescription.$errors"
+        :is-invalid="v$.description.$invalid && v$.description.$dirty"
+        :errors="v$.description.$errors"
       />
 
       <TextInput
-        v-if="v$.external.$model"
-        id="taskURL"
-        v-model="v$.taskURL.$model"
-        label="Task URL"
+        id="taskImage"
+        v-model="v$.image.$model"
+        label="Cover Image URL"
         type="url"
-        :is-invalid="v$.taskURL.$invalid && v$.taskURL.$dirty"
-        :errors="v$.taskURL.$errors"
-        :required="true"
+        :is-invalid="v$.image.$invalid && v$.image.$dirty"
+        :errors="v$.image.$errors"
+      />
+
+      <TextInput
+        id="taskTutorialVideo"
+        v-model="v$.tutorialVideo.$model"
+        label="Tutorial Video URL"
+        type="url"
+        :is-invalid="v$.tutorialVideo.$invalid && v$.tutorialVideo.$dirty"
+        :errors="v$.tutorialVideo.$errors"
       />
     </fieldset>
 
-    <fieldset v-if="!v$.external.$model">
+    <!-- TODO(external-tasks): The legacy external-task flow (off-platform `taskURL` + URL parameters) is not
+         represented on the new contract. If external tasks return, decide whether they're encoded inside
+         `taskConfig` or get first-class contract fields. -->
+    <fieldset>
       <div>
-        <legend class="text-lg font-medium mb-0">Configure Game Parameters</legend>
-        <p class="text-md text-gray-500 mt-2">Create the configurable game parameters for variants of this task.</p>
-      </div>
-
-      <TaskParametersConfigurator v-model="gameParamsModel" />
-    </fieldset>
-
-    <fieldset v-else>
-      <div>
-        <legend class="text-lg font-medium mb-0">Configure URL Parameters</legend>
+        <legend class="text-lg font-medium mb-0">Task Configuration</legend>
         <p class="text-md text-gray-500 mt-2">
-          These parameters will be appended to the task URL to generate the variant URL for this task.
+          Create the task's configuration. These values seed the configurable parameters for variants of this task.
         </p>
       </div>
 
-      <TaskParametersConfigurator v-model="taskParamsModel" />
+      <TaskParametersConfigurator v-model="taskConfigModel" />
     </fieldset>
 
     <div class="flex flex-column gap-4 lg:align-items-center">
-      <fieldset
-        class="flex flex-column lg:flex-row lg:align-items-center lg:justify-content-center gap-1 lg:gap-4 flex-order-0 my-3"
-      >
-        <legend class="sr-only">Task Options</legend>
-        <CheckboxInput id="demoTask" v-model="v$.demoData.$model">
-          <span>Mark as <b>Demo Task</b></span>
-        </CheckboxInput>
-
-        <CheckboxInput id="testTask" v-model="v$.testData.$model">
-          <span>Mark as <b>Test Task</b></span>
-        </CheckboxInput>
-
-        <CheckboxInput id="externalTask" v-model="v$.external.$model">
-          <span>Mark as <b>External Task</b></span>
-        </CheckboxInput>
-
-        <CheckboxInput id="registeredTask" v-model="v$.registered.$model">
-          <span>Mark as <b>Registered Task</b></span>
-        </CheckboxInput>
-      </fieldset>
-
       <PvButton
         v-tooltip="
           userCan(Permissions.Tasks.CREATE)
@@ -110,77 +100,69 @@
 
 <script setup>
 import { reactive } from 'vue';
-import { required, requiredIf, url } from '@vuelidate/validators';
+import { helpers, maxLength, required, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvToast from 'primevue/toast';
 import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
 import TextInput from '@/components/Form/TextInput';
-import CheckboxInput from '@/components/Form/CheckboxInput';
 import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
 import { convertParamArrayToObject } from '@/helpers/convertParamArrayToObject';
+import { StatusCodes } from 'http-status-codes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
-import { TASK_PARAMETER_DEFAULT_SHAPE } from '@/constants/tasks';
+import {
+  TASK_NAME_MAX_LENGTH,
+  TASK_NAME_REGEX,
+  TASK_PARAMETER_DEFAULT_SHAPE,
+  TASK_SLUG_MAX_LENGTH,
+  TASK_SLUG_REGEX,
+} from '@/constants/tasks';
 import { usePermissions } from '@/composables/usePermissions';
 
 const toast = useToast();
 const { mutate: addTask } = useAddTaskMutation();
 const { userCan, Permissions } = usePermissions();
 
-// Initial form state for the task form.
+// Initial form state for the task form, mirroring CreateTaskRequestBodySchema.
 const initialFormState = {
-  taskName: '',
-  taskURL: '',
-  taskId: '',
-  coverImage: '',
-  taskDescription: '',
-  demoData: false,
-  testData: false,
-  registered: false,
-  external: false,
+  slug: '',
+  name: '',
+  nameSimple: '',
+  nameTechnical: '',
+  description: '',
+  image: '',
+  tutorialVideo: '',
 };
 
-// Form model for creating a new task document.
-let taskModel = reactive({ ...initialFormState });
+// Form model for creating a new task.
+const taskModel = reactive({ ...initialFormState });
 
-// Game parameters model for the task form.
-const gameParamsModel = reactive([Object.assign({}, TASK_PARAMETER_DEFAULT_SHAPE)]);
+// Task configuration model, edited as rows of { name, value, type }.
+const taskConfigModel = reactive([Object.assign({}, TASK_PARAMETER_DEFAULT_SHAPE)]);
 
-// Task parameters model for the task form.
-const taskParamsModel = reactive([Object.assign({}, TASK_PARAMETER_DEFAULT_SHAPE)]);
+// Validation rules mirroring the contract's CreateTaskRequestBodySchema so
+// admins get inline feedback instead of a backend 400.
+const taskNameValidator = helpers.withMessage(
+  'Must start with a letter and contain only letters, numbers, spaces, hyphens, and underscores',
+  helpers.regex(TASK_NAME_REGEX),
+);
 
-// Validation rules for the task form model.
 const taskRules = {
-  taskName: {
+  slug: {
     required,
+    maxLength: maxLength(TASK_SLUG_MAX_LENGTH),
+    slugFormat: helpers.withMessage(
+      'Must be lowercase alphanumeric with hyphens between segments (e.g., "my-task")',
+      helpers.regex(TASK_SLUG_REGEX),
+    ),
   },
-  taskURL: {
-    required: requiredIf(() => taskModel.external),
-    url,
-  },
-  taskId: {
-    required,
-  },
-  coverImage: {
-    required: false,
-    url,
-  },
-  taskDescription: {
-    required: false,
-  },
-  demoData: {
-    required: false,
-  },
-  testData: {
-    required: false,
-  },
-  registered: {
-    required: false,
-  },
-  external: {
-    required: false,
-  },
+  name: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
+  nameSimple: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
+  nameTechnical: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
+  description: { required: false },
+  image: { required: false, url },
+  tutorialVideo: { required: false, url },
 };
 
 const v$ = useVuelidate(taskRules, taskModel);
@@ -192,27 +174,16 @@ const v$ = useVuelidate(taskRules, taskModel);
  */
 function resetForm() {
   Object.assign(taskModel, initialFormState);
+  taskConfigModel.splice(0, taskConfigModel.length, Object.assign({}, TASK_PARAMETER_DEFAULT_SHAPE));
   v$.value.$reset();
-}
-
-/**
- * Build external Task URL
- *
- * @param {String} url – The base URL to which the task parameters will be appended.
- * @param {Array} paramsObject – The object of task parameters to be appended to the URL.
- */
-function buildTaskURL(url, paramsObject) {
-  const baseUrl = new URL(url);
-  const searchParams = new URLSearchParams(paramsObject);
-  baseUrl.search = searchParams.toString();
-  return baseUrl.toString();
 }
 
 /**
  * Handle form submission
  *
- * Executes a final form validation before compiling the task object and submitting it to the API via the addTask
- * mutation. Once submitted, the form is reset to its initial state to allow for further task creation.
+ * Executes a final form validation before compiling the request body and submitting it to the API via the addTask
+ * mutation. Optional fields are omitted when empty — the contract's strict schema rejects empty strings. Once
+ * submitted, the form is reset to its initial state to allow for further task creation.
  *
  * @returns {void}
  */
@@ -230,24 +201,18 @@ const handleSubmit = async () => {
     return;
   }
 
-  let taskObject = {
-    taskId: taskModel.taskId,
-    taskName: taskModel.taskName,
-    taskDescription: taskModel.description,
-    taskImage: taskModel.coverImage,
-    demoData: taskModel.demoData,
-    testData: taskModel.testData,
-    registered: taskModel.registered,
+  const body = {
+    slug: taskModel.slug,
+    name: taskModel.name,
+    nameSimple: taskModel.nameSimple,
+    nameTechnical: taskModel.nameTechnical,
+    taskConfig: convertParamArrayToObject(taskConfigModel) ?? {},
+    ...(taskModel.description ? { description: taskModel.description } : {}),
+    ...(taskModel.image ? { image: taskModel.image } : {}),
+    ...(taskModel.tutorialVideo ? { tutorialVideo: taskModel.tutorialVideo } : {}),
   };
 
-  if (taskModel.external) {
-    taskObject.taskParams = convertParamArrayToObject(taskParamsModel);
-    taskObject.taskURL = buildTaskURL(taskModel.taskURL, taskObject.taskParams);
-  } else {
-    taskObject.gameParams = convertParamArrayToObject(gameParamsModel) ?? {};
-  }
-
-  await addTask(taskObject, {
+  await addTask(body, {
     onSuccess: () => {
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,
@@ -259,10 +224,14 @@ const handleSubmit = async () => {
       resetForm();
     },
     onError: (error) => {
+      // 409 means the slug is already taken — the one failure mode admins can fix themselves.
+      const isConflict = error?.status === StatusCodes.CONFLICT;
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
         summary: 'Error',
-        detail: 'Failed to create task, please try again.',
+        detail: isConflict
+          ? `A task with the slug "${taskModel.slug}" already exists. Please choose a different slug.`
+          : 'Failed to create task, please try again.',
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
 
