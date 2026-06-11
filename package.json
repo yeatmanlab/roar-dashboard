@@ -28,7 +28,8 @@
   },
   "packageManager": "npm@10.8.2",
   "overrides": {
-    "axios": "1.16.0"
+    "axios": "1.16.0",
+    "canvas": "^3.2.3"
   },
   "workspaces": [
     "apps/*",
