@@ -33,16 +33,19 @@ describe('verifyEntitiesExist', () => {
 
     expect(() => verifyEntitiesExist(allEntities, entityIdsToCheck)).toThrow(ApiError);
 
+    let thrownError: unknown;
     try {
       verifyEntitiesExist(allEntities, entityIdsToCheck);
     } catch (error) {
-      expect(error).toBeInstanceOf(ApiError);
-      const apiError = error as ApiError;
-      expect(apiError.message).toBe(ApiErrorMessage.UNPROCESSABLE_ENTITY);
-      expect(apiError.statusCode).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
-      expect(apiError.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
-      expect(apiError.context).toEqual({ entityIds: ['id-3', 'id-4'] });
+      thrownError = error;
     }
+
+    expect(thrownError).toBeInstanceOf(ApiError);
+    const apiError = thrownError as ApiError;
+    expect(apiError.message).toBe(ApiErrorMessage.UNPROCESSABLE_ENTITY);
+    expect(apiError.statusCode).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
+    expect(apiError.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+    expect(apiError.context).toEqual({ entityIds: ['id-3', 'id-4'] });
   });
 
   it('should throw ApiError when all entity IDs are missing', () => {
@@ -51,12 +54,15 @@ describe('verifyEntitiesExist', () => {
 
     expect(() => verifyEntitiesExist(allEntities, entityIdsToCheck)).toThrow(ApiError);
 
+    let thrownError: unknown;
     try {
       verifyEntitiesExist(allEntities, entityIdsToCheck);
     } catch (error) {
-      const apiError = error as ApiError;
-      expect(apiError.context).toEqual({ entityIds: ['id-3', 'id-4'] });
+      thrownError = error;
     }
+
+    expect(thrownError).toBeInstanceOf(ApiError);
+    expect((thrownError as ApiError).context).toEqual({ entityIds: ['id-3', 'id-4'] });
   });
 
   it('should throw ApiError when allEntities is empty but entityIdsToCheck has values', () => {
@@ -65,12 +71,15 @@ describe('verifyEntitiesExist', () => {
 
     expect(() => verifyEntitiesExist(allEntities, entityIdsToCheck)).toThrow(ApiError);
 
+    let thrownError: unknown;
     try {
       verifyEntitiesExist(allEntities, entityIdsToCheck);
     } catch (error) {
-      const apiError = error as ApiError;
-      expect(apiError.context).toEqual({ entityIds: ['id-1', 'id-2'] });
+      thrownError = error;
     }
+
+    expect(thrownError).toBeInstanceOf(ApiError);
+    expect((thrownError as ApiError).context).toEqual({ entityIds: ['id-1', 'id-2'] });
   });
 
   it('should work with entities that have additional properties', () => {

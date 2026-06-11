@@ -347,9 +347,8 @@ describe('GET /v1/users/:id', () => {
       expect(res.body.data.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
 
       // updatedAt can be null or ISO string
-      if (res.body.data.updatedAt) {
-        expect(res.body.data.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-      }
+      const { updatedAt } = res.body.data;
+      expect(!updatedAt || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(updatedAt)).toBe(true);
     });
 
     it('handles nullable fields correctly', async () => {
@@ -1252,20 +1251,19 @@ describe('GET /v1/users/:userId/administrations', () => {
         .as(tiers.superAdmin)
         .toReturn(StatusCodes.OK);
 
-      if (res.body.data.items.length > 0) {
-        const admin = res.body.data.items[0];
-        expect(admin).toMatchObject({
-          id: expect.any(String),
-          name: expect.any(String),
-          publicName: expect.any(String),
-          dates: {
-            start: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
-            end: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
-            created: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
-          },
-          isOrdered: expect.any(Boolean),
-        });
-      }
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      const admin = res.body.data.items[0];
+      expect(admin).toMatchObject({
+        id: expect.any(String),
+        name: expect.any(String),
+        publicName: expect.any(String),
+        dates: {
+          start: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
+          end: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
+          created: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
+        },
+        isOrdered: expect.any(Boolean),
+      });
     });
 
     it('does not include stats or tasks by default', async () => {
@@ -1273,11 +1271,10 @@ describe('GET /v1/users/:userId/administrations', () => {
         .as(tiers.superAdmin)
         .toReturn(StatusCodes.OK);
 
-      if (res.body.data.items.length > 0) {
-        const admin = res.body.data.items[0];
-        expect(admin).not.toHaveProperty('stats');
-        expect(admin).not.toHaveProperty('tasks');
-      }
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      const admin = res.body.data.items[0];
+      expect(admin).not.toHaveProperty('stats');
+      expect(admin).not.toHaveProperty('tasks');
     });
   });
 
@@ -1346,16 +1343,14 @@ describe('GET /v1/users/:userId/administrations', () => {
         .as(tiers.superAdmin)
         .toReturn(StatusCodes.OK);
 
-      if (res.body.data.items.length > 0) {
-        const adminWithStats = res.body.data.items.find((item: Administration) => item.stats);
-        if (adminWithStats) {
-          expect(adminWithStats.stats).toMatchObject({
-            assigned: expect.any(Number),
-            started: expect.any(Number),
-            completed: expect.any(Number),
-          });
-        }
-      }
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      const adminWithStats = res.body.data.items.find((item: Administration) => item.stats);
+      expect(adminWithStats).toBeDefined();
+      expect(adminWithStats.stats).toMatchObject({
+        assigned: expect.any(Number),
+        started: expect.any(Number),
+        completed: expect.any(Number),
+      });
     });
 
     it('includes tasks when embed=tasks', async () => {
@@ -1363,12 +1358,10 @@ describe('GET /v1/users/:userId/administrations', () => {
         .as(tiers.superAdmin)
         .toReturn(StatusCodes.OK);
 
-      if (res.body.data.items.length > 0) {
-        const adminWithTasks = res.body.data.items.find((item: Administration) => item.tasks);
-        if (adminWithTasks) {
-          expect(Array.isArray(adminWithTasks.tasks)).toBe(true);
-        }
-      }
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      const adminWithTasks = res.body.data.items.find((item: Administration) => item.tasks);
+      expect(adminWithTasks).toBeDefined();
+      expect(Array.isArray(adminWithTasks.tasks)).toBe(true);
     });
 
     it('includes both stats and tasks when embed=stats,tasks', async () => {

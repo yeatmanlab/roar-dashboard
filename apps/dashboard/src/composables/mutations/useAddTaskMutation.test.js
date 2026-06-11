@@ -80,13 +80,19 @@ describe('useAddTaskMutation', () => {
 
     const { mutateAsync, isSuccess, isError } = result;
 
+    // Capture the rejection so the assertions run unconditionally — if the
+    // mutation unexpectedly succeeds, `thrownError` stays undefined and the
+    // `toBe(mockError)` assertion fails.
+    let thrownError;
     try {
       await mutateAsync(mockTask);
     } catch (error) {
-      expect(error).toBe(mockError);
-      expect(isSuccess.value).toBe(false);
-      expect(isError.value).toBe(true);
-      expect(mockInvalidateQueries).not.toHaveBeenCalled();
+      thrownError = error;
     }
+
+    expect(thrownError).toBe(mockError);
+    expect(isSuccess.value).toBe(false);
+    expect(isError.value).toBe(true);
+    expect(mockInvalidateQueries).not.toHaveBeenCalled();
   });
 });

@@ -82,20 +82,21 @@ describe('TasksController', () => {
       const result = await Controller.list(mockAuthContext, query);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.items).toHaveLength(2);
-        expect(result.body.data.pagination).toEqual({
-          page: 1,
-          perPage: 25,
-          totalItems: 2,
-          totalPages: 1,
-        });
-        // Verify date transformation
-        expect(result.body.data.items[0]!.createdAt).toBe('2024-01-01T00:00:00.000Z');
-        expect(result.body.data.items[0]!.updatedAt).toBe('2024-01-02T00:00:00.000Z');
-        // Verify null updatedAt returns null
-        expect(result.body.data.items[1]!.updatedAt).toBeNull();
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.items).toHaveLength(2);
+      expect(result.body.data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 2,
+        totalPages: 1,
+      });
+      // Verify date transformation
+      expect(result.body.data.items[0]!.createdAt).toBe('2024-01-01T00:00:00.000Z');
+      expect(result.body.data.items[0]!.updatedAt).toBe('2024-01-02T00:00:00.000Z');
+      // Verify null updatedAt returns null
+      expect(result.body.data.items[1]!.updatedAt).toBeNull();
 
       expect(mockList).toHaveBeenCalledWith(mockAuthContext, {
         page: 1,
@@ -116,11 +117,12 @@ describe('TasksController', () => {
       const result = await Controller.list(mockAuthContext, query);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.items).toHaveLength(0);
-        expect(result.body.data.pagination.totalItems).toBe(0);
-        expect(result.body.data.pagination.totalPages).toBe(0);
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.items).toHaveLength(0);
+      expect(result.body.data.pagination.totalItems).toBe(0);
+      expect(result.body.data.pagination.totalPages).toBe(0);
     });
 
     it('should pass slug filter to service', async () => {
@@ -173,9 +175,10 @@ describe('TasksController', () => {
       const result = await Controller.list(mockAuthContext, query);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.pagination.totalPages).toBe(6); // ceil(55/10) = 6
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.pagination.totalPages).toBe(6); // ceil(55/10) = 6
     });
 
     it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
@@ -192,9 +195,10 @@ describe('TasksController', () => {
       const result = await Controller.list(mockAuthContext, query);
 
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-      if (result.status === StatusCodes.INTERNAL_SERVER_ERROR) {
-        expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      if (result.status !== StatusCodes.INTERNAL_SERVER_ERROR) {
+        throw new Error('Expected a 500 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
     });
 
     it('should re-throw non-ApiError errors', async () => {
@@ -219,9 +223,10 @@ describe('TasksController', () => {
       const result = await Controller.list(mockAuthContext, query);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.items[0]!.taskConfig).toEqual({ difficulty: 'easy' });
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.items[0]!.taskConfig).toEqual({ difficulty: 'easy' });
     });
   });
 
@@ -247,13 +252,14 @@ describe('TasksController', () => {
       const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.id).toBe('123e4567-e89b-12d3-a456-426614174000');
-        expect(result.body.data.slug).toBe('swr');
-        expect(result.body.data.name).toBe('Single Word Reading');
-        expect(result.body.data.createdAt).toBe('2024-01-01T00:00:00.000Z');
-        expect(result.body.data.updatedAt).toBe('2024-01-02T00:00:00.000Z');
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.id).toBe('123e4567-e89b-12d3-a456-426614174000');
+      expect(result.body.data.slug).toBe('swr');
+      expect(result.body.data.name).toBe('Single Word Reading');
+      expect(result.body.data.createdAt).toBe('2024-01-01T00:00:00.000Z');
+      expect(result.body.data.updatedAt).toBe('2024-01-02T00:00:00.000Z');
 
       expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
     });
@@ -266,9 +272,10 @@ describe('TasksController', () => {
       const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.updatedAt).toBeNull();
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.updatedAt).toBeNull();
     });
 
     it('should return 404 when service throws NOT_FOUND error', async () => {
@@ -283,9 +290,10 @@ describe('TasksController', () => {
       const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
 
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
-      if (result.status === StatusCodes.NOT_FOUND) {
-        expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      if (result.status !== StatusCodes.NOT_FOUND) {
+        throw new Error('Expected a 404 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
     it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
@@ -300,9 +308,10 @@ describe('TasksController', () => {
       const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
 
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-      if (result.status === StatusCodes.INTERNAL_SERVER_ERROR) {
-        expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      if (result.status !== StatusCodes.INTERNAL_SERVER_ERROR) {
+        throw new Error('Expected a 500 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
     });
 
     it('should re-throw non-ApiError errors', async () => {
@@ -322,9 +331,10 @@ describe('TasksController', () => {
       const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.taskConfig).toEqual({ difficulty: 'easy' });
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.taskConfig).toEqual({ difficulty: 'easy' });
     });
 
     it('should call service with correct parameters for UUID task ID', async () => {
@@ -532,9 +542,10 @@ describe('TasksController', () => {
       const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.CREATED);
-      if (result.status === StatusCodes.CREATED) {
-        expect(result.body.data).toEqual(mockVariantId);
+      if (result.status !== StatusCodes.CREATED) {
+        throw new Error('Expected a 201 response');
       }
+      expect(result.body.data).toEqual(mockVariantId);
       expect(mockCreateTaskVariant).toHaveBeenCalledWith(mockAuthContext, taskId, body);
     });
   });
@@ -606,9 +617,10 @@ describe('TasksController', () => {
       const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
 
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
-      if (result.status === StatusCodes.FORBIDDEN) {
-        expect(result.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      if (result.status !== StatusCodes.FORBIDDEN) {
+        throw new Error('Expected a 403 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('should return 404 when service throws NOT_FOUND error for task', async () => {
@@ -628,9 +640,10 @@ describe('TasksController', () => {
       const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
 
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
-      if (result.status === StatusCodes.NOT_FOUND) {
-        expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      if (result.status !== StatusCodes.NOT_FOUND) {
+        throw new Error('Expected a 404 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
     it('should return 404 when service throws NOT_FOUND error for variant', async () => {
@@ -650,9 +663,10 @@ describe('TasksController', () => {
       const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
 
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
-      if (result.status === StatusCodes.NOT_FOUND) {
-        expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      if (result.status !== StatusCodes.NOT_FOUND) {
+        throw new Error('Expected a 404 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
     it('should return 409 when service throws CONFLICT error', async () => {
@@ -672,9 +686,10 @@ describe('TasksController', () => {
       const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
 
       expect(result.status).toBe(StatusCodes.CONFLICT);
-      if (result.status === StatusCodes.CONFLICT) {
-        expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+      if (result.status !== StatusCodes.CONFLICT) {
+        throw new Error('Expected a 409 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
     });
 
     it('should return 400 when service throws BAD_REQUEST error', async () => {
@@ -694,9 +709,10 @@ describe('TasksController', () => {
       const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
 
       expect(result.status).toBe(StatusCodes.BAD_REQUEST);
-      if (result.status === StatusCodes.BAD_REQUEST) {
-        expect(result.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+      if (result.status !== StatusCodes.BAD_REQUEST) {
+        throw new Error('Expected a 400 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
     });
 
     it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
@@ -716,9 +732,10 @@ describe('TasksController', () => {
       const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
 
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-      if (result.status === StatusCodes.INTERNAL_SERVER_ERROR) {
-        expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      if (result.status !== StatusCodes.INTERNAL_SERVER_ERROR) {
+        throw new Error('Expected a 500 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
     });
 
     it('should re-throw non-ApiError errors', async () => {
@@ -802,15 +819,16 @@ describe('TasksController', () => {
       const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.items).toHaveLength(2);
-        expect(result.body.data.pagination).toEqual({
-          page: 1,
-          perPage: 25,
-          totalItems: 2,
-          totalPages: 1,
-        });
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.items).toHaveLength(2);
+      expect(result.body.data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 2,
+        totalPages: 1,
+      });
 
       expect(mockListVariants).toHaveBeenCalledWith(mockAuthContext, 'task-123', {
         page: 1,
@@ -832,12 +850,13 @@ describe('TasksController', () => {
       const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        const variant = result.body.data.items[0]!;
-        expect(variant.taskName).toBe('Single Word Reading');
-        expect(variant.taskSlug).toBe('swr');
-        expect(variant.taskImage).toBe('https://example.com/swr.png');
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      const variant = result.body.data.items[0]!;
+      expect(variant.taskName).toBe('Single Word Reading');
+      expect(variant.taskSlug).toBe('swr');
+      expect(variant.taskImage).toBe('https://example.com/swr.png');
     });
 
     it('should include parameters array in each variant', async () => {
@@ -853,14 +872,15 @@ describe('TasksController', () => {
       const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        const variant = result.body.data.items[0]!;
-        expect(Array.isArray(variant.parameters)).toBe(true);
-        expect(variant.parameters).toEqual([
-          { name: 'difficulty', value: 'easy' },
-          { name: 'timeLimit', value: 60 },
-        ]);
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      const variant = result.body.data.items[0]!;
+      expect(Array.isArray(variant.parameters)).toBe(true);
+      expect(variant.parameters).toEqual([
+        { name: 'difficulty', value: 'easy' },
+        { name: 'timeLimit', value: 60 },
+      ]);
     });
 
     it('should transform date fields to ISO strings', async () => {
@@ -876,11 +896,12 @@ describe('TasksController', () => {
       const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.items[0]!.createdAt).toBe('2024-01-01T00:00:00.000Z');
-        expect(result.body.data.items[0]!.updatedAt).toBe('2024-01-02T00:00:00.000Z');
-        expect(result.body.data.items[1]!.updatedAt).toBeNull();
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.items[0]!.createdAt).toBe('2024-01-01T00:00:00.000Z');
+      expect(result.body.data.items[0]!.updatedAt).toBe('2024-01-02T00:00:00.000Z');
+      expect(result.body.data.items[1]!.updatedAt).toBeNull();
     });
 
     it('should return empty list when no variants exist', async () => {
@@ -896,11 +917,12 @@ describe('TasksController', () => {
       const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.items).toHaveLength(0);
-        expect(result.body.data.pagination.totalItems).toBe(0);
-        expect(result.body.data.pagination.totalPages).toBe(0);
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.items).toHaveLength(0);
+      expect(result.body.data.pagination.totalItems).toBe(0);
+      expect(result.body.data.pagination.totalPages).toBe(0);
     });
 
     it('should pass search filter to service', async () => {
@@ -956,9 +978,10 @@ describe('TasksController', () => {
       const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.pagination.totalPages).toBe(6); // ceil(55/10) = 6
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.pagination.totalPages).toBe(6); // ceil(55/10) = 6
     });
 
     it('should return 404 when task does not exist', async () => {
@@ -975,9 +998,10 @@ describe('TasksController', () => {
       const result = await Controller.listTaskVariants(mockAuthContext, 'nonexistent-task', query);
 
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
-      if (result.status === StatusCodes.NOT_FOUND) {
-        expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      if (result.status !== StatusCodes.NOT_FOUND) {
+        throw new Error('Expected a 404 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
     it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
@@ -994,9 +1018,10 @@ describe('TasksController', () => {
       const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
 
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-      if (result.status === StatusCodes.INTERNAL_SERVER_ERROR) {
-        expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      if (result.status !== StatusCodes.INTERNAL_SERVER_ERROR) {
+        throw new Error('Expected a 500 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
     });
 
     it('should re-throw non-ApiError errors', async () => {
@@ -1076,9 +1101,10 @@ describe('TasksController', () => {
       const result = await Controller.create(mockAuthContext, validBody);
 
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
-      if (result.status === StatusCodes.FORBIDDEN) {
-        expect(result.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      if (result.status !== StatusCodes.FORBIDDEN) {
+        throw new Error('Expected a 403 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('should return 409 when service throws CONFLICT error', async () => {
@@ -1093,9 +1119,10 @@ describe('TasksController', () => {
       const result = await Controller.create(mockAuthContext, validBody);
 
       expect(result.status).toBe(StatusCodes.CONFLICT);
-      if (result.status === StatusCodes.CONFLICT) {
-        expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+      if (result.status !== StatusCodes.CONFLICT) {
+        throw new Error('Expected a 409 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
     });
 
     it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
@@ -1110,9 +1137,10 @@ describe('TasksController', () => {
       const result = await Controller.create(mockAuthContext, validBody);
 
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-      if (result.status === StatusCodes.INTERNAL_SERVER_ERROR) {
-        expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      if (result.status !== StatusCodes.INTERNAL_SERVER_ERROR) {
+        throw new Error('Expected a 500 response');
       }
+      expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
     });
 
     it('should re-throw non-ApiError errors', async () => {
@@ -1154,21 +1182,22 @@ describe('TasksController', () => {
       const result = await Controller.getTaskVariant(mockAuthContext, 'task-123', 'variant-123');
 
       expect(result.status).toBe(200);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data).toEqual({
-          id: mockVariant.id,
-          taskId: mockVariant.taskId,
-          name: mockVariant.name,
-          description: mockVariant.description,
-          status: mockVariant.status,
-          createdAt: mockVariant.createdAt.toISOString(),
-          updatedAt: mockVariant.updatedAt.toISOString(),
-          taskName: mockTask.name,
-          taskSlug: mockTask.slug,
-          taskImage: mockTask.image,
-          parameters: mockVariant.parameters,
-        });
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data).toEqual({
+        id: mockVariant.id,
+        taskId: mockVariant.taskId,
+        name: mockVariant.name,
+        description: mockVariant.description,
+        status: mockVariant.status,
+        createdAt: mockVariant.createdAt.toISOString(),
+        updatedAt: mockVariant.updatedAt.toISOString(),
+        taskName: mockTask.name,
+        taskSlug: mockTask.slug,
+        taskImage: mockTask.image,
+        parameters: mockVariant.parameters,
+      });
     });
 
     it('should include parameters array with multiple types', async () => {
@@ -1187,11 +1216,12 @@ describe('TasksController', () => {
       const { TasksController: Controller } = await import('./tasks.controller');
       const result = await Controller.getTaskVariant(mockAuthContext, 'task-123', 'variant-123');
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.parameters).toHaveLength(5);
-        expect(result.body.data.parameters[3]!.value).toEqual({ nested: 'value' });
-        expect(result.body.data.parameters[4]!.value).toBeNull();
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.parameters).toHaveLength(5);
+      expect(result.body.data.parameters[3]!.value).toEqual({ nested: 'value' });
+      expect(result.body.data.parameters[4]!.value).toBeNull();
     });
 
     it('should handle null updatedAt', async () => {
@@ -1205,9 +1235,10 @@ describe('TasksController', () => {
       const result = await Controller.getTaskVariant(mockAuthContext, 'task-123', 'variant-123');
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.updatedAt).toBeNull();
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.updatedAt).toBeNull();
     });
 
     it('should return 404 when service throws NOT_FOUND error', async () => {
@@ -1275,9 +1306,10 @@ describe('TasksController', () => {
       const result = await Controller.getTaskVariant(mockAuthContext, 'task-123', 'variant-123');
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.taskImage).toBeNull();
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.taskImage).toBeNull();
     });
   });
 });

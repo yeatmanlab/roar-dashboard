@@ -1993,9 +1993,9 @@ describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
         .set('Authorization', 'Bearer token');
 
       expect(res.body.data.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
-      if (res.body.data.updatedAt) {
-        expect(res.body.data.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
-      }
+      // updatedAt may be null; when present it must be an ISO date string
+      const { updatedAt } = res.body.data;
+      expect(!updatedAt || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(updatedAt)).toBe(true);
     });
 
     it('returns variant parameters as array of name-value objects', async () => {

@@ -134,15 +134,17 @@ describe('AuthorizationService', () => {
       mockClient.writeTuples.mockRejectedValueOnce(sdkError);
       const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
+      let thrownError: unknown;
       try {
         await service.writeTuplesOrThrow(sampleTuples);
-        expect.fail('Expected writeTuplesOrThrow to throw');
       } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        const apiError = error as ApiError;
-        expect(apiError.context).toEqual({ tupleCount: 1 });
-        expect(apiError.cause).toBe(sdkError);
+        thrownError = error;
       }
+
+      expect(thrownError).toBeInstanceOf(ApiError);
+      const apiError = thrownError as ApiError;
+      expect(apiError.context).toEqual({ tupleCount: 1 });
+      expect(apiError.cause).toBe(sdkError);
     });
   });
 
@@ -296,18 +298,20 @@ describe('AuthorizationService', () => {
       mockClient.check.mockResolvedValueOnce({ allowed: false });
       const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
+      let thrownError: unknown;
       try {
         await service.requirePermission('user-123', 'can_delete', 'administration:admin-456');
-        expect.fail('Expected requirePermission to throw');
       } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        const apiError = error as ApiError;
-        expect(apiError.context).toEqual({
-          userId: 'user-123',
-          relation: 'can_delete',
-          object: 'administration:admin-456',
-        });
+        thrownError = error;
       }
+
+      expect(thrownError).toBeInstanceOf(ApiError);
+      const apiError = thrownError as ApiError;
+      expect(apiError.context).toEqual({
+        userId: 'user-123',
+        relation: 'can_delete',
+        object: 'administration:admin-456',
+      });
     });
   });
 
@@ -412,19 +416,21 @@ describe('AuthorizationService', () => {
       mockClient.batchCheck.mockRejectedValueOnce(sdkError);
       const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
+      let thrownError: unknown;
       try {
         await service.hasAnyPermission('user-123', 'can_read', ['administration:aaa', 'administration:bbb']);
-        expect.fail('Expected hasAnyPermission to throw');
       } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        const apiError = error as ApiError;
-        expect(apiError.context).toEqual({
-          userId: 'user-123',
-          relation: 'can_read',
-          objectCount: 2,
-        });
-        expect(apiError.cause).toBe(sdkError);
+        thrownError = error;
       }
+
+      expect(thrownError).toBeInstanceOf(ApiError);
+      const apiError = thrownError as ApiError;
+      expect(apiError.context).toEqual({
+        userId: 'user-123',
+        relation: 'can_read',
+        objectCount: 2,
+      });
+      expect(apiError.cause).toBe(sdkError);
     });
   });
 
