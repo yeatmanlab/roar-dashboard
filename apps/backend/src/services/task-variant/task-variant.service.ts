@@ -55,6 +55,14 @@ export interface TaskVariantListItem extends TaskVariantWithTaskDetails {
 }
 
 /**
+ * A task variant returned by getByIdWithTaskDetails — parameters are always present
+ * because this path always fetches them (unlike the embed-optional list path).
+ */
+export type TaskVariantWithParameters = TaskVariantListItem & {
+  parameters: { name: string; value: unknown }[];
+};
+
+/**
  * Paginated result of the published task variant list.
  */
 export interface ListTaskVariantsResult {
@@ -173,7 +181,11 @@ export function TaskVariantService({
    * Retrieve a task variant by ID, with its parameters and denormalized task fields.
    *
    * Authorization behavior:
-   * - Any authenticated user may retrieve a variant (draft, published, or deprecated).
+   * - Any authenticated user may retrieve a variant regardless of status (draft, published, or
+   *   deprecated). This is intentional: researchers and admins working in ephemeral environments
+   *   need to retrieve draft variants by UUID to verify them before publishing. UUIDs are not
+   *   guessable (122 bits of entropy), and the route requires authentication, so the enumeration
+   *   risk is negligible. The published-only path is `listAllPublished`.
    *
    * @param authContext - The caller's auth context
    * @param variantId - UUID of the variant to retrieve
@@ -181,7 +193,10 @@ export function TaskVariantService({
    * @throws {ApiError} NOT_FOUND if no variant exists with that ID
    * @throws {ApiError} DATABASE_QUERY_FAILED on unexpected repository errors
    */
-  async function getByIdWithTaskDetails(authContext: AuthContext, variantId: string): Promise<TaskVariantListItem> {
+  async function getByIdWithTaskDetails(
+    authContext: AuthContext,
+    variantId: string,
+  ): Promise<TaskVariantWithParameters> {
     const { userId } = authContext;
 
     try {

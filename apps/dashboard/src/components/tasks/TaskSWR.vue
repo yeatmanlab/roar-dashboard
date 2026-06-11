@@ -146,9 +146,16 @@ async function startTask(selectedAdmin) {
       throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
     }
 
-    // Use the Postgres UUID from /me for self-launch; launchId for proxy-launch (admin-initiated).
-    // TODO: resolve participant's Postgres UUID when launchId is set.
-    const participantId = props.launchId ?? meRes.body.data.id;
+    // Proxy-launch path (launchId set) requires resolving the participant's Postgres UUID from
+    // the launch record — props.launchId is an assignment/launch ID, not a user ID. Passing it
+    // as participantId would silently create runs under the wrong ID. Fail loudly until this
+    // is properly implemented (see TODO on line 129).
+    if (props.launchId) {
+      throw new Error(
+        'Proxy-launch path is not yet supported for SWR. Resolve the participant Postgres UUID before enabling this path.',
+      );
+    }
+    const participantId = meRes.body.data.id;
 
     // Fetch the participant's administrations from the ROAR POSTGRES backend.
     const adminsRes = await roarApiClient.users.listUserAdministrations({

@@ -5,7 +5,11 @@ import type {
 } from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../errors/api-error';
-import { TaskVariantService, type TaskVariantListItem } from '../services/task-variant/task-variant.service';
+import {
+  TaskVariantService,
+  type TaskVariantListItem,
+  type TaskVariantWithParameters,
+} from '../services/task-variant/task-variant.service';
 import type { AuthContext } from '../types/auth-context';
 import { toErrorResponse } from '../utils/to-error-response.util';
 
@@ -44,9 +48,7 @@ function transformTaskVariantListItem(item: TaskVariantListItem): ContractTaskVa
  * @param item - The service-layer task variant item
  * @returns The API-formatted task variant
  */
-function transformTaskVariantItem(
-  item: TaskVariantListItem & { parameters: { name: string; value: unknown }[] },
-): ContractTaskVariant {
+function transformTaskVariantItem(item: TaskVariantWithParameters): ContractTaskVariant {
   return {
     id: item.id,
     taskId: item.taskId,
@@ -137,9 +139,7 @@ export const TaskVariantsController = {
       return {
         status: StatusCodes.OK as const,
         body: {
-          data: transformTaskVariantItem(
-            item as TaskVariantListItem & { parameters: { name: string; value: unknown }[] },
-          ),
+          data: transformTaskVariantItem(item),
         },
       };
     } catch (error) {

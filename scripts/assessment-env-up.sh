@@ -33,7 +33,7 @@ if docker ps --filter "name=assessment-backend" --filter "status=running" -q 2>/
 else
   # Check that port 5432 is free before Docker tries to bind it (the error Docker
   # produces when the port is taken is cryptic).
-  if lsof -i :5432 -sTCP:LISTEN &>/dev/null 2>&1 || ss -tlnp 2>/dev/null | grep -q ':5432 '; then
+  if lsof -i :5432 -sTCP:LISTEN &>/dev/null || ss -tlnp 2>/dev/null | grep -q ':5432 '; then
     echo "Error: port 5432 is already in use." >&2
     echo "  Stop your local PostgreSQL instance before starting the assessment environment:" >&2
     echo "    macOS (Homebrew): brew services stop postgresql@<version>" >&2
