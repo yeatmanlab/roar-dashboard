@@ -78,7 +78,19 @@
           <p class="text-md text-gray-500 mt-2">Adjust the configuration for this task.</p>
         </div>
 
-        <TaskParametersConfigurator v-model="taskConfigModel" edit-mode />
+        <template v-if="canEditTaskConfig">
+          <TaskParametersConfigurator v-model="taskConfigModel" edit-mode />
+
+          <p v-if="taskConfigPassthroughKeys.length > 0" class="text-sm text-gray-500 mt-2">
+            The following entries hold values this editor can't represent (lists, nested objects, or unset values) and
+            will be preserved exactly as-is: <b>{{ taskConfigPassthroughKeys.join(', ') }}</b>
+          </p>
+        </template>
+
+        <p v-else class="text-sm text-gray-500 mt-2">
+          This task's configuration is not a set of named parameters and can't be edited here. It will be preserved
+          exactly as-is.
+        </p>
       </fieldset>
 
       <div class="flex flex-column gap-4 lg:align-items-center">
@@ -103,6 +115,7 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
+import _isEqual from 'lodash/isEqual';
 import { helpers, maxLength, required, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useToast } from 'primevue/usetoast';
@@ -113,10 +126,9 @@ import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation
 import Dropdown from '@/components/Form/Dropdown';
 import TextInput from '@/components/Form/TextInput';
 import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
-import { convertParamArrayToObject } from '@/helpers/convertParamArrayToObject';
-import { convertObjectToParamArray } from '@/helpers/convertObjectToParamArray';
+import { buildTaskConfigFromRows, splitTaskConfig } from '@/helpers/taskConfig';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
-import { TASK_NAME_MAX_LENGTH, TASK_NAME_REGEX } from '@/constants/tasks';
+import { TASK_DESCRIPTION_MAX_LENGTH, TASK_NAME_MAX_LENGTH, TASK_NAME_REGEX } from '@/constants/tasks';
 import { usePermissions } from '@/composables/usePermissions';
 
 const toast = useToast();
@@ -161,7 +173,13 @@ const formModel = reactive({
 
 // Task configuration model, edited as rows of { name, value, type }. The array
 // identity is stable (rows are spliced in/out) so template bindings stay reactive.
+// Non-scalar entries (null, arrays, nested objects) can't be represented as rows;
+// they're held in `taskConfigPassthrough` and merged back verbatim on submit.
 const taskConfigModel = reactive([]);
+const taskConfigPassthrough = ref({});
+const canEditTaskConfig = ref(true);
+
+const taskConfigPassthroughKeys = computed(() => Object.keys(taskConfigPassthrough.value));
 
 // Validation rules mirroring the contract's UpdateTaskRequestBodySchema.
 const taskNameValidator = helpers.withMessage(
@@ -173,15 +191,21 @@ const formRules = {
   name: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
   nameSimple: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
   nameTechnical: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
-  description: { required: false },
+  description: { required: false, maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
   image: { required: false, url },
   tutorialVideo: { required: false, url },
 };
 
 const v$ = useVuelidate(formRules, formModel);
 
-// Populate the form whenever a task is selected.
-watch(selectedTask, (task) => {
+// Populate the form whenever a DIFFERENT task is selected. The watch is keyed
+// on the selected id — not the computed task object — so background catalog
+// refetches (which replace the array and produce new object references) can't
+// re-seed the form and wipe in-progress edits.
+watch(selectedTaskId, (taskId) => {
+  if (!taskId) return;
+
+  const task = (tasks.value ?? []).find((candidate) => candidate.id === taskId);
   if (!task) return;
 
   Object.assign(formModel, {
@@ -193,8 +217,10 @@ watch(selectedTask, (task) => {
     tutorialVideo: task.tutorialVideo ?? '',
   });
 
-  const taskConfig = task.taskConfig && typeof task.taskConfig === 'object' ? task.taskConfig : {};
-  taskConfigModel.splice(0, taskConfigModel.length, ...convertObjectToParamArray(taskConfig));
+  const { editableRows, passthrough, canEdit } = splitTaskConfig(task.taskConfig);
+  taskConfigModel.splice(0, taskConfigModel.length, ...editableRows);
+  taskConfigPassthrough.value = passthrough;
+  canEditTaskConfig.value = canEdit;
   v$.value.$reset();
 });
 
@@ -206,6 +232,8 @@ watch(selectedTask, (task) => {
 function resetForm() {
   selectedTaskId.value = '';
   taskConfigModel.splice(0, taskConfigModel.length);
+  taskConfigPassthrough.value = {};
+  canEditTaskConfig.value = true;
   v$.value.$reset();
 }
 
@@ -230,15 +258,22 @@ function buildDiffedBody(task) {
   }
 
   for (const field of ['description', 'image', 'tutorialVideo']) {
-    if (formModel[field] !== (task[field] ?? '')) {
-      body[field] = formModel[field] === '' ? null : formModel[field];
+    const trimmed = formModel[field].trim();
+    if (trimmed !== (task[field] ?? '')) {
+      body[field] = trimmed === '' ? null : trimmed;
     }
   }
 
-  const editedTaskConfig = convertParamArrayToObject(taskConfigModel) ?? {};
-  const originalTaskConfig = task.taskConfig && typeof task.taskConfig === 'object' ? task.taskConfig : {};
-  if (JSON.stringify(editedTaskConfig) !== JSON.stringify(originalTaskConfig)) {
-    body.taskConfig = editedTaskConfig;
+  // taskConfig is only diffed when it's representable in the editor; keys are
+  // preserved verbatim and passthrough entries are merged back, so an unchanged
+  // form rebuilds the original object exactly. Deep equality (not JSON string
+  // comparison) keeps the diff key-order-insensitive.
+  if (canEditTaskConfig.value) {
+    const editedTaskConfig = buildTaskConfigFromRows(taskConfigModel, taskConfigPassthrough.value);
+    const originalTaskConfig = task.taskConfig ?? {};
+    if (!_isEqual(editedTaskConfig, originalTaskConfig)) {
+      body.taskConfig = editedTaskConfig;
+    }
   }
 
   return body;
@@ -281,7 +316,7 @@ const handleSubmit = async () => {
     return;
   }
 
-  await updateTask(
+  updateTask(
     { taskId: task.id, body },
     {
       onSuccess: () => {
@@ -294,10 +329,13 @@ const handleSubmit = async () => {
         resetForm();
       },
       onError: (error) => {
+        // Surface the backend's message when available (e.g. validation details
+        // from a 400) so admins get actionable feedback instead of a generic retry.
+        const backendMessage = error?.body?.error?.message;
         toast.add({
           severity: TOAST_SEVERITIES.ERROR,
           summary: 'Error',
-          detail: 'Failed to update task, please try again.',
+          detail: backendMessage ?? 'Failed to update task, please try again.',
           life: TOAST_DEFAULT_LIFE_DURATION,
         });
 

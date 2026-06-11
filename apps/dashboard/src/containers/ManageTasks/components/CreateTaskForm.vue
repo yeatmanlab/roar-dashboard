@@ -108,13 +108,13 @@ import PvToast from 'primevue/toast';
 import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
 import TextInput from '@/components/Form/TextInput';
 import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
-import { convertParamArrayToObject } from '@/helpers/convertParamArrayToObject';
+import { buildTaskConfigFromRows } from '@/helpers/taskConfig';
 import { StatusCodes } from 'http-status-codes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import {
+  TASK_DESCRIPTION_MAX_LENGTH,
   TASK_NAME_MAX_LENGTH,
   TASK_NAME_REGEX,
-  TASK_PARAMETER_DEFAULT_SHAPE,
   TASK_SLUG_MAX_LENGTH,
   TASK_SLUG_REGEX,
 } from '@/constants/tasks';
@@ -138,8 +138,10 @@ const initialFormState = {
 // Form model for creating a new task.
 const taskModel = reactive({ ...initialFormState });
 
-// Task configuration model, edited as rows of { name, value, type }.
-const taskConfigModel = reactive([Object.assign({}, TASK_PARAMETER_DEFAULT_SHAPE)]);
+// Task configuration model, edited as rows of { name, value, type }. Starts
+// empty so tasks with an intentionally empty taskConfig submit without having
+// to discover that a blank seed row must be deleted first.
+const taskConfigModel = reactive([]);
 
 // Validation rules mirroring the contract's CreateTaskRequestBodySchema so
 // admins get inline feedback instead of a backend 400.
@@ -160,7 +162,7 @@ const taskRules = {
   name: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
   nameSimple: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
   nameTechnical: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
-  description: { required: false },
+  description: { required: false, maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
   image: { required: false, url },
   tutorialVideo: { required: false, url },
 };
@@ -174,7 +176,7 @@ const v$ = useVuelidate(taskRules, taskModel);
  */
 function resetForm() {
   Object.assign(taskModel, initialFormState);
-  taskConfigModel.splice(0, taskConfigModel.length, Object.assign({}, TASK_PARAMETER_DEFAULT_SHAPE));
+  taskConfigModel.splice(0, taskConfigModel.length);
   v$.value.$reset();
 }
 
@@ -201,18 +203,25 @@ const handleSubmit = async () => {
     return;
   }
 
+  // Optional fields are omitted when blank — the contract's strict schema
+  // rejects empty strings. Values are trimmed so whitespace-only input is
+  // treated as blank rather than bouncing off the backend's trim().min(1).
+  const description = taskModel.description.trim();
+  const image = taskModel.image.trim();
+  const tutorialVideo = taskModel.tutorialVideo.trim();
+
   const body = {
     slug: taskModel.slug,
     name: taskModel.name,
     nameSimple: taskModel.nameSimple,
     nameTechnical: taskModel.nameTechnical,
-    taskConfig: convertParamArrayToObject(taskConfigModel) ?? {},
-    ...(taskModel.description ? { description: taskModel.description } : {}),
-    ...(taskModel.image ? { image: taskModel.image } : {}),
-    ...(taskModel.tutorialVideo ? { tutorialVideo: taskModel.tutorialVideo } : {}),
+    taskConfig: buildTaskConfigFromRows(taskConfigModel),
+    ...(description ? { description } : {}),
+    ...(image ? { image } : {}),
+    ...(tutorialVideo ? { tutorialVideo } : {}),
   };
 
-  await addTask(body, {
+  addTask(body, {
     onSuccess: () => {
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,

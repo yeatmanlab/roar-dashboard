@@ -19,3 +19,11 @@ export const TASK_SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 export const TASK_SLUG_MAX_LENGTH = 32;
 export const TASK_NAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_\- ]*$/;
 export const TASK_NAME_MAX_LENGTH = 255;
+export const TASK_DESCRIPTION_MAX_LENGTH = 1024;
+
+/**
+ * Format for newly created taskConfig parameter names, mirroring the contract's
+ * IDENTIFIER_WITH_UNDERSCORES. Only applied to NEW rows — existing backend keys
+ * are unconstrained server-side and must remain loadable/editable as-is.
+ */
+export const TASK_PARAMETER_NAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]*$/;

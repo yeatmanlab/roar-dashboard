@@ -81,14 +81,14 @@
 
 <script setup>
 import { computed } from 'vue';
-import { required } from '@vuelidate/validators';
+import { helpers, required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import PvButton from 'primevue/button';
 import { hasNoDuplicates, notInBlacklist } from '@/helpers/formValidators';
 import TextInput from '@/components/Form/TextInput';
 import NumberInput from '@/components/Form/NumberInput';
 import Dropdown from '@/components/Form/Dropdown';
-import { TASK_PARAMETER_TYPES } from '@/constants/tasks';
+import { TASK_PARAMETER_NAME_REGEX, TASK_PARAMETER_TYPES } from '@/constants/tasks';
 
 const typeOptions = Object.values(TASK_PARAMETER_TYPES);
 const booleanDropdownOptions = [
@@ -131,6 +131,14 @@ const rules = {
       required,
       noDuplicates: hasNoDuplicates(model.value, 'name', 'Parameter names should be unique'),
       notInBlacklist: notInBlacklist(props.validationKeyBlacklist, 'Parameter name is reserved'),
+      // Only NEW rows are format-checked: parameter names are stored verbatim as
+      // taskConfig keys (no camelCasing), so junk names must be rejected up front.
+      // Existing backend keys are unconstrained server-side and stay editable as-is
+      // (their name inputs are disabled anyway in edit mode).
+      nameFormat: helpers.withMessage(
+        'Must start with a letter and contain only letters, numbers, and underscores',
+        (value) => !row.value.isNew || !value || TASK_PARAMETER_NAME_REGEX.test(value),
+      ),
     },
     type: { required },
     value: { required },
