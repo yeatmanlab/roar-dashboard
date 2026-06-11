@@ -81,3 +81,80 @@ export function buildTaskConfigFromRows(rows, passthrough = {}) {
 
   return config;
 }
+
+/**
+ * Split a task variant's `parameters` array into configurator rows and
+ * passthrough entries.
+ *
+ * Mirrors `splitTaskConfig`, but for the contract's variant parameter shape —
+ * an array of `{ name, value }` entries where values may be any JSON value.
+ * Scalar values become editable rows; `null`, arrays, and nested objects are
+ * preserved verbatim as passthrough entries.
+ *
+ * @param {*} parameters – The variant's parameters array (may be anything).
+ * @returns {{ editableRows: Array<Object>, passthrough: Array<Object>, canEdit: Boolean }}
+ *   `canEdit` is false when parameters is not an array.
+ */
+export function splitVariantParameters(parameters) {
+  if (parameters === null || parameters === undefined) {
+    return { editableRows: [], passthrough: [], canEdit: true };
+  }
+
+  if (!Array.isArray(parameters)) {
+    return { editableRows: [], passthrough: [], canEdit: false };
+  }
+
+  const editableRows = [];
+  const passthrough = [];
+
+  for (const { name, value } of parameters) {
+    if (isEditableTaskConfigValue(value)) {
+      editableRows.push({ name, value, type: typeof value });
+    } else {
+      passthrough.push({ name, value });
+    }
+  }
+
+  return { editableRows, passthrough, canEdit: true };
+}
+
+/**
+ * Build a variant `parameters` array from configurator rows and passthrough entries.
+ *
+ * Row names are used verbatim (no camelCasing); rows with a blank name are
+ * skipped. Passthrough entries come first, followed by the edited rows.
+ *
+ * @param {Array<Object>} rows – The configurator rows ({ name, value, type }).
+ * @param {Array<Object>} [passthrough=[]] – Non-editable entries preserved from the original.
+ * @returns {Array<Object>} The combined parameters array of { name, value } entries.
+ */
+export function buildVariantParametersFromRows(rows, passthrough = []) {
+  const parameters = passthrough.map(({ name, value }) => ({ name, value }));
+
+  for (const row of rows) {
+    const name = typeof row.name === 'string' ? row.name.trim() : '';
+    if (!name) continue;
+    parameters.push({ name, value: row.value });
+  }
+
+  return parameters;
+}
+
+/**
+ * Convert a variant parameters array into a name → value map for
+ * order-insensitive change detection.
+ *
+ * The contract's PATCH semantics replace the entire parameters array, so the
+ * order of entries carries no meaning — comparing maps avoids false-positive
+ * diffs when the rebuilt array orders entries differently than the original.
+ *
+ * @param {Array<Object>} parameters – Parameters array of { name, value } entries.
+ * @returns {Object} A plain object keyed by parameter name.
+ */
+export function variantParametersToMap(parameters) {
+  const map = {};
+  for (const { name, value } of parameters ?? []) {
+    map[name] = value;
+  }
+  return map;
+}

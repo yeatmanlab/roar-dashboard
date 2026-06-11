@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { buildTaskConfigFromRows, isEditableTaskConfigValue, splitTaskConfig } from './taskConfig';
+import {
+  buildTaskConfigFromRows,
+  buildVariantParametersFromRows,
+  isEditableTaskConfigValue,
+  splitTaskConfig,
+  splitVariantParameters,
+  variantParametersToMap,
+} from './taskConfig';
 
 describe('isEditableTaskConfigValue', () => {
   it('accepts strings, numbers, and booleans', () => {
@@ -88,5 +95,87 @@ describe('buildTaskConfigFromRows', () => {
     ]);
 
     expect(config).toEqual({ kept: 1 });
+  });
+});
+
+describe('splitVariantParameters', () => {
+  it('splits scalar entries into rows and non-scalars into passthrough', () => {
+    const { editableRows, passthrough, canEdit } = splitVariantParameters([
+      { name: 'difficulty', value: 'hard' },
+      { name: 'maxAttempts', value: 3 },
+      { name: 'hints', value: null },
+      { name: 'wordList', value: ['cat', 'dog'] },
+    ]);
+
+    expect(canEdit).toBe(true);
+    expect(editableRows).toEqual([
+      { name: 'difficulty', value: 'hard', type: 'string' },
+      { name: 'maxAttempts', value: 3, type: 'number' },
+    ]);
+    expect(passthrough).toEqual([
+      { name: 'hints', value: null },
+      { name: 'wordList', value: ['cat', 'dog'] },
+    ]);
+  });
+
+  it('treats null/undefined parameters as an empty editable set', () => {
+    expect(splitVariantParameters(null)).toEqual({ editableRows: [], passthrough: [], canEdit: true });
+    expect(splitVariantParameters(undefined)).toEqual({ editableRows: [], passthrough: [], canEdit: true });
+  });
+
+  it('disables editing for non-array parameters', () => {
+    expect(splitVariantParameters({ not: 'an array' }).canEdit).toBe(false);
+  });
+});
+
+describe('buildVariantParametersFromRows', () => {
+  it('preserves names verbatim and merges passthrough entries', () => {
+    const parameters = buildVariantParametersFromRows(
+      [{ name: 'max_attempts', value: 5, type: 'number' }],
+      [{ name: 'wordList', value: ['cat'] }],
+    );
+
+    expect(parameters).toEqual([
+      { name: 'wordList', value: ['cat'] },
+      { name: 'max_attempts', value: 5 },
+    ]);
+  });
+
+  it('round-trips parameters through split + build without changes (order-insensitive)', () => {
+    const original = [
+      { name: 'snake_case_param', value: 'kept' },
+      { name: 'hints', value: null },
+      { name: 'count', value: 2 },
+    ];
+
+    const { editableRows, passthrough } = splitVariantParameters(original);
+    const rebuilt = buildVariantParametersFromRows(editableRows, passthrough);
+
+    expect(variantParametersToMap(rebuilt)).toEqual(variantParametersToMap(original));
+  });
+
+  it('skips rows with blank names', () => {
+    const parameters = buildVariantParametersFromRows([
+      { name: '  ', value: 'orphan', type: 'string' },
+      { name: 'kept', value: true, type: 'boolean' },
+    ]);
+
+    expect(parameters).toEqual([{ name: 'kept', value: true }]);
+  });
+});
+
+describe('variantParametersToMap', () => {
+  it('converts an entries array into a name-keyed object', () => {
+    expect(
+      variantParametersToMap([
+        { name: 'a', value: 1 },
+        { name: 'b', value: null },
+      ]),
+    ).toEqual({ a: 1, b: null });
+  });
+
+  it('tolerates nullish input', () => {
+    expect(variantParametersToMap(null)).toEqual({});
+    expect(variantParametersToMap(undefined)).toEqual({});
   });
 });

@@ -27,3 +27,12 @@ export const TASK_DESCRIPTION_MAX_LENGTH = 1024;
  * are unconstrained server-side and must remain loadable/editable as-is.
  */
 export const TASK_PARAMETER_NAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+
+/**
+ * Task variant publication statuses, mirroring the contract's TaskVariantStatusSchema.
+ */
+export const TASK_VARIANT_STATUSES = Object.freeze({
+  DRAFT: 'draft',
+  PUBLISHED: 'published',
+  DEPRECATED: 'deprecated',
+});
