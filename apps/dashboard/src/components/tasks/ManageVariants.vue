@@ -81,7 +81,7 @@
             <strong>Configure Parameter Values</strong>
           </h3>
           <h4 class="text-center">
-            Set the game parameters for a new variant of task <strong>{{ variantFields.selectedGame.id }}</strong>
+            Set the game parameters for a new variant of task <strong>{{ variantFields.selectedGame.slug }}</strong>
           </h4>
           <div class="flex flex-column">
             <!--
@@ -229,7 +229,16 @@
           </div>
         </div>
         <div class="form-submit">
+          <!-- TODO(1881, PR C): Re-enable once variant creation targets the backend API. The task dropdown now
+               serves the new backend task shape: the firekit mutation would receive a UUID-keyed `taskId` (it
+               expects the slug-shaped Firestore document ID) and the task-level `demoData` / `testData` flags no
+               longer exist on the task object, so submitting would register the variant under a phantom task
+               document with mislabeled flags. -->
           <PvButton
+            v-tooltip="
+              'Variant creation is temporarily disabled while variant management moves to the new backend API.'
+            "
+            disabled
             type="submit"
             label="Submit"
             class="submit-button w-2 my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
@@ -249,11 +258,15 @@
           <small class="text-gray-400 font-bold">Select an Existing Task </small>
           <span class="required">*</span></label
         >
+        <!-- NOTE(1881): `option-value` is the task `slug`, not the backend UUID `id`. The variant list below still
+             comes from the legacy Firestore fetcher, whose `variant.task.id` is the slug-shaped Firestore document
+             ID — and the surviving firekit update mutation expects that same slug-keyed `taskId`. Switches to
+             UUID-keyed selection when this component is rewritten against the backend API (PR C). -->
         <PvSelect
           v-model="selectedTask"
           :options="formattedTasks"
           option-label="name"
-          option-value="id"
+          option-value="slug"
           placeholder="Select a Game"
           @click="clearFieldParamArrays()"
         />
@@ -461,17 +474,13 @@ import { usePermissions } from '@/composables/usePermissions';
 const { userCan, Permissions } = usePermissions();
 
 const props = defineProps({
-  registeredTasksOnly: {
-    type: Boolean,
-    default: true,
-  },
   registeredVariantsOnly: {
     type: Boolean,
     default: true,
   },
 });
 
-const { registeredTasksOnly, registeredVariantsOnly } = toRefs(props);
+const { registeredVariantsOnly } = toRefs(props);
 
 const toast = useToast();
 const initialized = ref(false);
@@ -482,7 +491,6 @@ const { roarfirekit } = storeToRefs(authStore);
 const { mutate: addVariant } = useAddTaskVariantMutation();
 const { mutate: updateVariant } = useUpdateTaskVariantMutation();
 const { refetch: toggleRegisteredVariants } = useTaskVariantsQuery();
-const { refetch: toggleRegisteredTasks } = useTasksQuery();
 
 const selectedTask = ref(null);
 const selectedVariant = ref(null);
@@ -523,12 +531,8 @@ watch(selectedVariant, (newVal) => {
 });
 
 watch(
-  [registeredTasksOnly, registeredVariantsOnly],
-  ([newTasksOnly, newVariantsOnly], [oldTasksOnly, oldVariantsOnly]) => {
-    if (newTasksOnly !== oldTasksOnly) {
-      toggleRegisteredTasks(newTasksOnly, null);
-    }
-
+  registeredVariantsOnly,
+  (newVariantsOnly, oldVariantsOnly) => {
     if (newVariantsOnly !== oldVariantsOnly) {
       toggleRegisteredVariants(newVariantsOnly);
     }
@@ -550,7 +554,7 @@ onMounted(() => {
   if (roarfirekit.value.restConfig?.()) init();
 });
 
-const { isFetching: isFetchingTasks, data: tasks } = useTasksQuery(registeredTasksOnly, null, {
+const { isFetching: isFetchingTasks, data: tasks } = useTasksQuery({
   enabled: initialized,
 });
 
@@ -562,8 +566,8 @@ const formattedTasks = computed(() => {
   if (!tasks.value) return [];
   return tasks.value.map((task) => {
     return {
-      name: task.taskName ?? task.id,
       ...task,
+      name: task.name ?? task.id,
     };
   });
 });

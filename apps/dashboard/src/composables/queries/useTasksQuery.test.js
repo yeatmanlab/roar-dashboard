@@ -1,13 +1,23 @@
-import { ref } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { withSetup } from '@/test-support/withSetup.js';
 import * as VueQuery from '@tanstack/vue-query';
-import { taskFetcher, fetchByTaskId } from '@/helpers/query/tasks';
+import { withSetup } from '@/test-support/withSetup.js';
+import { TASKS_QUERY_KEY } from '@/constants/queryKeys';
 import useTasksQuery from './useTasksQuery';
 
-vi.mock('@/helpers/query/tasks', () => ({
-  taskFetcher: vi.fn().mockImplementation(() => []),
-  fetchByTaskId: vi.fn().mockImplementation(() => []),
+const mockTasksList = vi.fn();
+// Controllable per-test — defaults to a truthy token so most tests don't have
+// to set it up. Override via `mockUseAuthStore.mockReturnValue(...)` to
+// exercise the built-in `accessToken` enablement gate.
+const mockUseAuthStore = vi.fn(() => ({ accessToken: 'test-token' }));
+
+vi.mock('@/clients/roar-api', () => ({
+  getRoarApiClient: () => ({
+    tasks: { list: mockTasksList },
+  }),
+}));
+
+vi.mock('@/store/auth', () => ({
+  useAuthStore: () => mockUseAuthStore(),
 }));
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
@@ -22,65 +32,156 @@ describe('useTasksQuery', () => {
   let queryClient;
 
   beforeEach(() => {
-    queryClient = new VueQuery.QueryClient();
+    vi.restoreAllMocks();
+    queryClient = new VueQuery.QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+      },
+    });
+    mockTasksList.mockReset();
+    mockUseAuthStore.mockReset();
+    mockUseAuthStore.mockReturnValue({ accessToken: 'test-token' });
   });
 
   afterEach(() => {
     queryClient?.clear();
   });
 
-  it('should call query with correct parameters when fetching all tasks', () => {
+  it('calls useQuery with the TASKS_QUERY_KEY', () => {
     vi.spyOn(VueQuery, 'useQuery');
 
     withSetup(() => useTasksQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['tasks', 'all'],
-      queryFn: expect.any(Function),
-    });
-
-    expect(taskFetcher).toHaveBeenCalledWith(false, true);
+    expect(VueQuery.useQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: [TASKS_QUERY_KEY],
+        queryFn: expect.any(Function),
+      }),
+    );
   });
 
-  it('should call query with correct parameters when fetching registered tasks', () => {
-    const fetchRegisteredTasks = true;
-    const taskIds = null;
-    const queryOptions = { enabled: true };
+  it('requests the full catalog and returns the items array on a 200 response', async () => {
+    const tasks = [
+      { id: '00000000-0000-0000-0000-000000000001', slug: 'swr', name: 'SWR', nameSimple: 'ROAR - Word' },
+      { id: '00000000-0000-0000-0000-000000000002', slug: 'pa', name: 'PA', nameSimple: 'ROAR - Phoneme' },
+    ];
+    mockTasksList.mockResolvedValueOnce({
+      status: 200,
+      body: { data: { items: tasks, pagination: { page: 1, perPage: 100, totalItems: 2, totalPages: 1 } } },
+    });
 
-    vi.spyOn(VueQuery, 'useQuery');
+    let queryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      queryFn = options.queryFn;
+      return { data: { value: null }, error: { value: null } };
+    });
 
-    withSetup(() => useTasksQuery(fetchRegisteredTasks, taskIds, queryOptions), {
+    withSetup(() => useTasksQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['tasks', 'registered'],
-      queryFn: expect.any(Function),
-      enabled: true,
-    });
-
-    expect(taskFetcher).toHaveBeenCalledWith(true, true);
+    await expect(queryFn()).resolves.toEqual(tasks);
+    expect(mockTasksList).toHaveBeenCalledWith({ query: { page: 1, perPage: 100 } });
   });
 
-  it('should call query with correct parameters when fetching specific tasks', () => {
-    const fetchRegisteredTasks = false;
-    const taskIds = ref(['mock-task-1', 'mock-task-2']);
-    const queryOptions = { enabled: true };
+  it('follows pagination and aggregates all pages when the catalog exceeds one page', async () => {
+    const pageOne = [{ id: '00000000-0000-0000-0000-000000000001', slug: 'swr', name: 'SWR' }];
+    const pageTwo = [{ id: '00000000-0000-0000-0000-000000000002', slug: 'pa', name: 'PA' }];
+    mockTasksList
+      .mockResolvedValueOnce({
+        status: 200,
+        body: { data: { items: pageOne, pagination: { page: 1, perPage: 100, totalItems: 101, totalPages: 2 } } },
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        body: { data: { items: pageTwo, pagination: { page: 2, perPage: 100, totalItems: 101, totalPages: 2 } } },
+      });
 
-    vi.spyOn(VueQuery, 'useQuery');
+    let queryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      queryFn = options.queryFn;
+      return { data: { value: null }, error: { value: null } };
+    });
 
-    withSetup(() => useTasksQuery(fetchRegisteredTasks, taskIds, queryOptions), {
+    withSetup(() => useTasksQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['tasks', taskIds],
-      queryFn: expect.any(Function),
-      enabled: true,
+    await expect(queryFn()).resolves.toEqual([...pageOne, ...pageTwo]);
+    expect(mockTasksList).toHaveBeenCalledTimes(2);
+    expect(mockTasksList).toHaveBeenNthCalledWith(2, { query: { page: 2, perPage: 100 } });
+  });
+
+  it('throws a structured error on non-200 responses', async () => {
+    mockTasksList.mockResolvedValueOnce({
+      status: 500,
+      body: { error: { code: 'internal', message: 'Internal server error' } },
     });
 
-    expect(fetchByTaskId).toHaveBeenCalledWith(taskIds);
+    let queryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      queryFn = options.queryFn;
+      return { data: { value: null }, error: { value: null } };
+    });
+
+    withSetup(() => useTasksQuery(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    await expect(queryFn()).rejects.toMatchObject({
+      status: 500,
+      body: { error: { code: 'internal' } },
+    });
+  });
+
+  it('is disabled when the auth store has no access token', () => {
+    mockUseAuthStore.mockReturnValue({ accessToken: null });
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useTasksQuery(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
+    expect(enabledRef.value).toBe(false);
+  });
+
+  it('is enabled when the auth store has an access token and no overrides are passed', () => {
+    mockUseAuthStore.mockReturnValue({ accessToken: 'live-token' });
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useTasksQuery(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
+    expect(enabledRef.value).toBe(true);
+  });
+
+  it('stays disabled when caller passes `enabled: true` but no token is available', () => {
+    // The internal `accessToken` gate is AND'd with the caller's `enabled`,
+    // never replaced by it.
+    mockUseAuthStore.mockReturnValue({ accessToken: null });
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useTasksQuery({ enabled: true }), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
+    expect(enabledRef.value).toBe(false);
+  });
+
+  it('honors a caller-provided `enabled: false`', () => {
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useTasksQuery({ enabled: false }), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
+    expect(enabledRef.value).toBe(false);
   });
 });
