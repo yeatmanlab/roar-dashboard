@@ -51,7 +51,7 @@
             "value": "max-age=63072000; includeSubDomains; preload"
           },
           {
-            "key": "Cross-Origin-Embedder-Policy",
+            "key": "Cross-Origin-Embedder-Policy-Report-Only",
             "value": "require-corp"
           },
           {
