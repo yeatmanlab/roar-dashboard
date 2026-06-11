@@ -70,8 +70,6 @@
       />
     </div>
   </form>
-
-  <PvToast />
 </template>
 
 <script setup>
@@ -80,7 +78,6 @@ import { helpers, maxLength } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
-import PvToast from 'primevue/toast';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useAddTaskVariantMutation from '@/composables/mutations/useAddTaskVariantMutation';
 import Dropdown from '@/components/Form/Dropdown';

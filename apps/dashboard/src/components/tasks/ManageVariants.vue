@@ -8,14 +8,21 @@
     class="flex my-2 select-button p-2"
   />
 
-  <CreateVariantForm v-if="viewModel === MODEL_VIEWS.CREATE_VARIANT" v-model:selected-task-id="selectedTaskId" />
+  <!-- v-show (not v-if) keeps both forms mounted so in-progress work — drafts, the status
+       filter, and variant selection — survives view toggles. This is safe now because each
+       form is its own component: vuelidate registers configurator rows only within that
+       child's tree, so the old single-component cross-registration hazard no longer applies. -->
+  <CreateVariantForm v-show="viewModel === MODEL_VIEWS.CREATE_VARIANT" v-model:selected-task-id="selectedTaskId" />
 
-  <UpdateVariantForm v-if="viewModel === MODEL_VIEWS.UPDATE_VARIANT" v-model:selected-task-id="selectedTaskId" />
+  <UpdateVariantForm v-show="viewModel === MODEL_VIEWS.UPDATE_VARIANT" v-model:selected-task-id="selectedTaskId" />
+
+  <PvToast />
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import PvSelectButton from 'primevue/selectbutton';
+import PvToast from 'primevue/toast';
 import CreateVariantForm from './components/CreateVariantForm.vue';
 import UpdateVariantForm from './components/UpdateVariantForm.vue';
 
