@@ -52,7 +52,7 @@ const lexicalityTrialContent = [
     },
     data: {
       save_trial: true,
-      assessment_stage: 'practice_response' /* tag the test trials with this taskname so we can filter data later */,
+      assessment_stage: 'practice' /* tag the test trials with this taskname so we can filter data later */,
       word: () => {
         jsPsych.timelineVariable('stimulus');
       },
@@ -125,7 +125,7 @@ const lexicalityTrialContent = [
     },
     data: {
       save_trial: true,
-      assessment_stage: 'test_response' /* tag the test trials with this taskname so we can filter data later */,
+      assessment_stage: 'test' /* tag the test trials with this taskname so we can filter data later */,
     },
     on_finish: (data) => {
       const nextStimulus = store.session('nextStimulus');
