@@ -1,3 +1,4 @@
+import _isEqual from 'lodash/isEqual';
 import { TASK_PARAMETER_TYPES } from '@/constants/tasks';
 
 /**
@@ -157,4 +158,43 @@ export function variantParametersToMap(parameters) {
     map[name] = value;
   }
   return map;
+}
+
+/**
+ * Build the diffed PATCH body for a variant update.
+ *
+ * Only changed fields are included — the contract rejects empty bodies, so
+ * callers short-circuit no-op submissions when this returns `{}`. Cleared
+ * nullable fields (name, description) are sent as null; fields that were never
+ * set and remain blank are omitted entirely (no ''→null churn). The parameters
+ * array replaces the variant's entire parameter set, so it's only included
+ * when actually changed; the comparison is by name → value map since entry
+ * order carries no meaning.
+ *
+ * @param {Object} variant – The original variant from the catalog.
+ * @param {Object} formModel – The edited form fields ({ name, description, status }).
+ * @param {Array<Object>} rows – The edited configurator rows ({ name, value, type }).
+ * @param {Array<Object>} [passthrough=[]] – Non-editable entries preserved from the original.
+ * @returns {Object} The PATCH body containing only changed fields.
+ */
+export function buildVariantPatchBody(variant, formModel, rows, passthrough = []) {
+  const body = {};
+
+  for (const field of ['name', 'description']) {
+    const trimmed = formModel[field].trim();
+    if (trimmed !== (variant[field] ?? '')) {
+      body[field] = trimmed === '' ? null : trimmed;
+    }
+  }
+
+  if (formModel.status !== variant.status) {
+    body.status = formModel.status;
+  }
+
+  const editedParameters = buildVariantParametersFromRows(rows, passthrough);
+  if (!_isEqual(variantParametersToMap(editedParameters), variantParametersToMap(variant.parameters))) {
+    body.parameters = editedParameters;
+  }
+
+  return body;
 }

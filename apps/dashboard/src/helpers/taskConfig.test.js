@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildTaskConfigFromRows,
   buildVariantParametersFromRows,
+  buildVariantPatchBody,
   isEditableTaskConfigValue,
   splitTaskConfig,
   splitVariantParameters,
@@ -177,5 +178,116 @@ describe('variantParametersToMap', () => {
   it('tolerates nullish input', () => {
     expect(variantParametersToMap(null)).toEqual({});
     expect(variantParametersToMap(undefined)).toEqual({});
+  });
+});
+
+describe('buildVariantPatchBody', () => {
+  const baseVariant = {
+    id: '00000000-0000-0000-0000-000000000001',
+    taskId: '00000000-0000-0000-0000-000000000002',
+    name: 'Variant A',
+    description: 'Original description',
+    status: 'published',
+    parameters: [
+      { name: 'difficulty', value: 'hard' },
+      { name: 'wordList', value: ['cat', 'dog'] },
+    ],
+  };
+
+  // The edited state matching baseVariant exactly (split into rows + passthrough).
+  const unchangedFormModel = { name: 'Variant A', description: 'Original description', status: 'published' };
+  const unchangedRows = [{ name: 'difficulty', value: 'hard', type: 'string' }];
+  const unchangedPassthrough = [{ name: 'wordList', value: ['cat', 'dog'] }];
+
+  it('returns an empty body when nothing changed', () => {
+    const body = buildVariantPatchBody(baseVariant, unchangedFormModel, unchangedRows, unchangedPassthrough);
+
+    expect(body).toEqual({});
+  });
+
+  it('returns an empty body when only the parameter order differs', () => {
+    const variant = {
+      ...baseVariant,
+      parameters: [
+        { name: 'wordList', value: ['cat', 'dog'] },
+        { name: 'difficulty', value: 'hard' },
+      ],
+    };
+
+    const body = buildVariantPatchBody(variant, unchangedFormModel, unchangedRows, unchangedPassthrough);
+
+    expect(body).toEqual({});
+  });
+
+  it('sends null to clear a previously set name', () => {
+    const formModel = { ...unchangedFormModel, name: '   ' };
+
+    const body = buildVariantPatchBody(baseVariant, formModel, unchangedRows, unchangedPassthrough);
+
+    expect(body).toEqual({ name: null });
+  });
+
+  it('omits a never-set name that remains blank — no empty-string→null churn', () => {
+    const variant = { ...baseVariant, name: null };
+    const formModel = { ...unchangedFormModel, name: '' };
+
+    const body = buildVariantPatchBody(variant, formModel, unchangedRows, unchangedPassthrough);
+
+    expect(body).toEqual({});
+  });
+
+  it('includes only the status for a status-only change', () => {
+    const formModel = { ...unchangedFormModel, status: 'deprecated' };
+
+    const body = buildVariantPatchBody(baseVariant, formModel, unchangedRows, unchangedPassthrough);
+
+    expect(body).toEqual({ status: 'deprecated' });
+  });
+
+  it('trims edited names and descriptions before diffing and sending', () => {
+    const formModel = { ...unchangedFormModel, name: '  Variant B  ' };
+
+    const body = buildVariantPatchBody(baseVariant, formModel, unchangedRows, unchangedPassthrough);
+
+    expect(body).toEqual({ name: 'Variant B' });
+  });
+
+  it('includes the full parameters array (with passthrough) when a row value changed', () => {
+    const rows = [{ name: 'difficulty', value: 'easy', type: 'string' }];
+
+    const body = buildVariantPatchBody(baseVariant, unchangedFormModel, rows, unchangedPassthrough);
+
+    expect(body).toEqual({
+      parameters: [
+        { name: 'wordList', value: ['cat', 'dog'] },
+        { name: 'difficulty', value: 'easy' },
+      ],
+    });
+  });
+
+  it('detects added and removed parameters', () => {
+    const addedRows = [...unchangedRows, { name: 'max_attempts', value: 3, type: 'number' }];
+    const addedBody = buildVariantPatchBody(baseVariant, unchangedFormModel, addedRows, unchangedPassthrough);
+    expect(addedBody.parameters).toContainEqual({ name: 'max_attempts', value: 3 });
+
+    const removedBody = buildVariantPatchBody(baseVariant, unchangedFormModel, [], unchangedPassthrough);
+    expect(removedBody).toEqual({ parameters: [{ name: 'wordList', value: ['cat', 'dog'] }] });
+  });
+
+  it('combines field, status, and parameter changes into one body', () => {
+    const formModel = { name: 'Variant B', description: '', status: 'draft' };
+    const rows = [{ name: 'difficulty', value: 'easy', type: 'string' }];
+
+    const body = buildVariantPatchBody(baseVariant, formModel, rows, unchangedPassthrough);
+
+    expect(body).toEqual({
+      name: 'Variant B',
+      description: null,
+      status: 'draft',
+      parameters: [
+        { name: 'wordList', value: ['cat', 'dog'] },
+        { name: 'difficulty', value: 'easy' },
+      ],
+    });
   });
 });

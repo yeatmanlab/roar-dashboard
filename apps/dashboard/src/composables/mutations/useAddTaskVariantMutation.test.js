@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
+import { TASK_VARIANTS_QUERY_KEY } from '@/constants/queryKeys';
 import useAddTaskVariantMutation from './useAddTaskVariantMutation';
 
 const mockCreateTaskVariant = vi.fn();
@@ -10,14 +11,6 @@ vi.mock('@/clients/roar-api', () => ({
     tasks: { createTaskVariant: mockCreateTaskVariant },
   }),
 }));
-
-vi.mock('@tanstack/vue-query', async (getModule) => {
-  const original = await getModule();
-  return {
-    ...original,
-    useQuery: vi.fn().mockImplementation(original.useQuery),
-  };
-});
 
 const MOCK_TASK_ID = '00000000-0000-0000-0000-000000000001';
 const mockBody = {
@@ -52,8 +45,9 @@ describe('useAddTaskVariantMutation', () => {
   });
 
   it('invalidates the variant queries upon mutation success', async () => {
-    const mockInvalidateQueries = vi.fn();
-    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));
+    // useQueryClient() resolves to the plugin-provided client, so spying on the
+    // instance avoids mocking the @tanstack/vue-query module itself.
+    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue();
     mockCreateTaskVariant.mockResolvedValue({ status: 201, body: { data: { id: 'v1' } } });
 
     const [result] = withSetup(() => useAddTaskVariantMutation(), {
@@ -62,12 +56,11 @@ describe('useAddTaskVariantMutation', () => {
 
     await result.mutateAsync({ taskId: MOCK_TASK_ID, body: mockBody });
 
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['task-variants'] });
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: [TASK_VARIANTS_QUERY_KEY] });
   });
 
   it('throws a structured error and does not invalidate queries on non-201 responses', async () => {
-    const mockInvalidateQueries = vi.fn();
-    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));
+    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue();
     mockCreateTaskVariant.mockResolvedValue({
       status: 403,
       body: { error: { message: 'Forbidden' } },
@@ -90,6 +83,6 @@ describe('useAddTaskVariantMutation', () => {
       body: { error: { message: 'Forbidden' } },
     });
     expect(result.isError.value).toBe(true);
-    expect(mockInvalidateQueries).not.toHaveBeenCalled();
+    expect(invalidateQueriesSpy).not.toHaveBeenCalled();
   });
 });

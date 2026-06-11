@@ -1,14 +1,22 @@
 <template>
   <PvToast />
+  <!-- allow-empty disabled: clicking the active option would otherwise set the model
+       to null and hide both forms. -->
   <PvSelectButton
     v-model="viewModel"
     :options="Object.values(MODEL_VIEWS)"
+    :allow-empty="false"
     class="flex my-2 select-button p-2"
-    @change="handleViewChange($event.value)"
   />
 
+  <!-- The two forms are toggled with v-if (NOT v-show) deliberately: each form has its
+       own useVuelidate instance, but vuelidate registers nested validators (the
+       configurator rows) with EVERY instance in the component. Keeping the inactive
+       form mounted would let its invalid rows block the visible form's submit with no
+       visible error. Unmounting deregisters them; form state lives in this component,
+       so it survives the round trip. -->
   <form
-    v-show="viewModel === MODEL_VIEWS.CREATE_VARIANT"
+    v-if="viewModel === MODEL_VIEWS.CREATE_VARIANT"
     class="p-fluid card px-3"
     @submit.prevent="handleCreateSubmit()"
   >
@@ -83,7 +91,7 @@
     </div>
   </form>
 
-  <form v-show="viewModel === MODEL_VIEWS.UPDATE_VARIANT" class="p-fluid" @submit.prevent="handleUpdateSubmit()">
+  <form v-if="viewModel === MODEL_VIEWS.UPDATE_VARIANT" class="p-fluid" @submit.prevent="handleUpdateSubmit()">
     <h1 class="text-center font-bold">Update a Variant</h1>
 
     <fieldset class="flex flex-column row-gap-4 mb-4 p-4">
@@ -160,11 +168,17 @@
           </p>
         </div>
 
-        <TaskParametersConfigurator v-model="updateParamsModel" edit-mode />
+        <!-- Passthrough names are blacklisted: a new row reusing one would otherwise
+             produce a duplicate parameter name and a confusing backend 409. -->
+        <TaskParametersConfigurator
+          v-model="updateParamsModel"
+          edit-mode
+          :validation-key-blacklist="updateParamsPassthroughNames"
+        />
 
-        <p v-if="updateParamsPassthrough.length > 0" class="text-sm text-gray-500 mt-2">
+        <p v-if="updateParamsPassthroughNames.length > 0" class="text-sm text-gray-500 mt-2">
           The following parameters hold values this editor can't represent (lists, nested objects, or unset values) and
-          will be preserved exactly as-is: <b>{{ updateParamsPassthrough.map((entry) => entry.name).join(', ') }}</b>
+          will be preserved exactly as-is: <b>{{ updateParamsPassthroughNames.join(', ') }}</b>
         </p>
       </fieldset>
 
@@ -188,7 +202,6 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
-import _isEqual from 'lodash/isEqual';
 import { helpers, maxLength } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useToast } from 'primevue/usetoast';
@@ -202,7 +215,7 @@ import useUpdateTaskVariantMutation from '@/composables/mutations/useUpdateTaskV
 import Dropdown from '@/components/Form/Dropdown';
 import TextInput from '@/components/Form/TextInput';
 import TaskParametersConfigurator from '@/containers/ManageTasks/components/TaskParametersConfigurator.vue';
-import { buildVariantParametersFromRows, splitVariantParameters, variantParametersToMap } from '@/helpers/taskConfig';
+import { buildVariantParametersFromRows, buildVariantPatchBody, splitVariantParameters } from '@/helpers/taskConfig';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import {
   TASK_DESCRIPTION_MAX_LENGTH,
@@ -221,13 +234,6 @@ const MODEL_VIEWS = Object.freeze({
 });
 
 const viewModel = ref(MODEL_VIEWS.CREATE_VARIANT);
-
-const handleViewChange = (value) => {
-  const selectedView = Object.values(MODEL_VIEWS).find((view) => view === value);
-  if (selectedView) {
-    viewModel.value = selectedView;
-  }
-};
 
 // ─── Task selection (shared between both views) ──────────────────────────────
 
@@ -254,14 +260,21 @@ const formattedTasks = computed(() => {
 
 const statusOptions = Object.values(TASK_VARIANT_STATUSES);
 
-// `null` omits the status query param: super admins then see all statuses
-// (the backend restricts non-super-admins to published regardless).
-const ALL_STATUSES_FILTER = { label: 'All statuses', value: null };
-const statusFilterOptions = [ALL_STATUSES_FILTER, ...statusOptions.map((status) => ({ label: status, value: status }))];
+// "All statuses" uses a string sentinel rather than null: PvSelect treats a null
+// model as "no selection" and would show the placeholder instead of the active
+// filter. The sentinel maps to omitting the status query param, which lets super
+// admins see all statuses (the backend restricts non-super-admins to published
+// regardless).
+const ALL_STATUSES_FILTER = 'all';
+const statusFilterOptions = [
+  { label: 'All statuses', value: ALL_STATUSES_FILTER },
+  ...statusOptions.map((status) => ({ label: status, value: status })),
+];
 
 const statusFilter = ref(TASK_VARIANT_STATUSES.PUBLISHED);
+const statusQueryParam = computed(() => (statusFilter.value === ALL_STATUSES_FILTER ? null : statusFilter.value));
 
-const { isFetching: isFetchingVariants, data: variants } = useTaskVariantsByTaskQuery(selectedTaskId, statusFilter);
+const { isFetching: isFetchingVariants, data: variants } = useTaskVariantsByTaskQuery(selectedTaskId, statusQueryParam);
 
 const selectedVariantId = ref('');
 
@@ -289,6 +302,13 @@ watch([selectedTaskId, statusFilter], () => {
 const createInitialState = { name: '', description: '', status: TASK_VARIANT_STATUSES.DRAFT };
 const createModel = reactive({ ...createInitialState });
 const createParamsModel = reactive([]);
+
+// Parameters are task-specific: switching tasks clears the create form's rows
+// so parameters drafted for one task can't silently carry over to another.
+// (Deliberately NOT keyed on statusFilter — that only affects the update view.)
+watch(selectedTaskId, () => {
+  createParamsModel.splice(0, createParamsModel.length);
+});
 
 const variantNameValidator = helpers.withMessage(
   'Must start with a letter and contain only letters, numbers, spaces, hyphens, and underscores',
@@ -367,9 +387,20 @@ const updateModel = reactive({ name: '', description: '', status: TASK_VARIANT_S
 const updateParamsModel = reactive([]);
 const updateParamsPassthrough = ref([]);
 
+const updateParamsPassthroughNames = computed(() => updateParamsPassthrough.value.map((entry) => entry.name));
+
+// The format rule only applies to CHANGED names: legacy variants may hold names
+// that predate the contract's format constraint, and validating the seeded value
+// would block unrelated updates (e.g. a status-only change) until the user
+// renames the variant — which would then PATCH the name as a side effect.
+const updateNameValidator = helpers.withMessage(
+  'Must start with a letter and contain only letters, numbers, spaces, hyphens, and underscores',
+  (value) => !value || value === (selectedVariant.value?.name ?? '') || TASK_NAME_REGEX.test(value),
+);
+
 const updateRules = {
   // Optional fields simply omit `required` — vuelidate treats every key as a validator function.
-  name: { maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: variantNameValidator },
+  name: { maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: updateNameValidator },
   description: { maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
 };
 
@@ -403,40 +434,6 @@ function resetUpdateForm() {
   vUpdate$.value.$reset();
 }
 
-/**
- * Build the diffed PATCH body for the selected variant.
- *
- * Only changed fields are included — the contract rejects empty bodies, so
- * no-op submissions are short-circuited by the caller. Cleared nullable fields
- * (name, description) are sent as null. The parameters array replaces the
- * variant's entire parameter set, so it's only included when actually changed;
- * the comparison is by name → value map since entry order carries no meaning.
- *
- * @param {Object} variant – The original variant from the catalog.
- * @returns {Object} The PATCH body containing only changed fields.
- */
-function buildVariantPatchBody(variant) {
-  const body = {};
-
-  for (const field of ['name', 'description']) {
-    const trimmed = updateModel[field].trim();
-    if (trimmed !== (variant[field] ?? '')) {
-      body[field] = trimmed === '' ? null : trimmed;
-    }
-  }
-
-  if (updateModel.status !== variant.status) {
-    body.status = updateModel.status;
-  }
-
-  const editedParameters = buildVariantParametersFromRows(updateParamsModel, updateParamsPassthrough.value);
-  if (!_isEqual(variantParametersToMap(editedParameters), variantParametersToMap(variant.parameters))) {
-    body.parameters = editedParameters;
-  }
-
-  return body;
-}
-
 const { mutate: updateVariant } = useUpdateTaskVariantMutation();
 
 const handleUpdateSubmit = async () => {
@@ -454,7 +451,7 @@ const handleUpdateSubmit = async () => {
   }
 
   const variant = selectedVariant.value;
-  const body = buildVariantPatchBody(variant);
+  const body = buildVariantPatchBody(variant, updateModel, updateParamsModel, updateParamsPassthrough.value);
 
   if (Object.keys(body).length === 0) {
     toast.add({
