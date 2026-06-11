@@ -9,6 +9,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { baseFixture } from '../test-support/fixtures';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
+import { OrgFactory } from '../test-support/factories/org.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
 import { GroupFactory } from '../test-support/factories/group.factory';
 import { UserGroupFactory } from '../test-support/factories/user-group.factory';
@@ -204,6 +205,35 @@ describe('UserRepository', () => {
         role: UserRole.PLATFORM_ADMIN,
         enrollmentStart: new Date('2020-01-01T00:00:00Z'),
         enrollmentEnd: new Date('2021-01-01T00:00:00Z'),
+      });
+
+      const result = await repository.hasPlatformAdminRole(user.id);
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false when the platform_admin group enrollment has expired', async () => {
+      const user = await UserFactory.create();
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: baseFixture.group.id,
+        role: UserRole.PLATFORM_ADMIN,
+        enrollmentStart: new Date('2020-01-01T00:00:00Z'),
+        enrollmentEnd: new Date('2021-01-01T00:00:00Z'),
+      });
+
+      const result = await repository.hasPlatformAdminRole(user.id);
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false when the platform_admin org is rostered out', async () => {
+      const user = await UserFactory.create();
+      const rosteredOutOrg = await OrgFactory.create({ rosteringEnded: new Date('2021-01-01T00:00:00Z') });
+      await UserOrgFactory.create({
+        userId: user.id,
+        orgId: rosteredOutOrg.id,
+        role: UserRole.PLATFORM_ADMIN,
       });
 
       const result = await repository.hasPlatformAdminRole(user.id);
