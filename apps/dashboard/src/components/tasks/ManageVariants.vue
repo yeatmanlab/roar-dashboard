@@ -296,8 +296,9 @@ const variantNameValidator = helpers.withMessage(
 );
 
 const createRules = {
-  name: { required: false, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: variantNameValidator },
-  description: { required: false, maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
+  // Optional fields simply omit `required` — vuelidate treats every key as a validator function.
+  name: { maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: variantNameValidator },
+  description: { maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
 };
 
 const vCreate$ = useVuelidate(createRules, createModel);
@@ -367,8 +368,9 @@ const updateParamsModel = reactive([]);
 const updateParamsPassthrough = ref([]);
 
 const updateRules = {
-  name: { required: false, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: variantNameValidator },
-  description: { required: false, maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
+  // Optional fields simply omit `required` — vuelidate treats every key as a validator function.
+  name: { maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: variantNameValidator },
+  description: { maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
 };
 
 const vUpdate$ = useVuelidate(updateRules, updateModel);
