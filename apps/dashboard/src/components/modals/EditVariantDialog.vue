@@ -21,18 +21,18 @@
         <div>
           <div class="text-sm font-light uppercase text-gray-400">Task Name</div>
           <div class="text-3xl font-bold uppercase">
-            {{ assessment.task.id }}
+            {{ assessment.taskName }}
           </div>
         </div>
-        <div v-if="assessment.variant?.params?.taskName" class="gap-2">
+        <div v-if="assessment.name" class="gap-2">
           <div class="text-sm font-light uppercase text-gray-500">Variant Name</div>
           <div class="text-xl uppercase">
-            {{ assessment.variant?.params?.taskName }}
+            {{ assessment.name }}
           </div>
         </div>
       </div>
       <div class="flex w-6 justify-content-end">
-        <img :alt="assessment.task.id" :src="assessment.task.image" class="w-5" />
+        <img :alt="assessment.taskName" :src="assessment.taskImage" class="w-5" />
       </div>
     </div>
     <div class="flex flex-column w-full my-2 gap-2">
@@ -312,7 +312,7 @@ const props = defineProps({
 });
 
 onMounted(() => {
-  getAllConditions(props.assessment.task.id);
+  getAllConditions(props.assessment.taskId);
 });
 
 function getAllConditions(taskId) {
@@ -397,7 +397,7 @@ const handleReset = () => {
   optionalConditions.value = [];
   optionalEditingRows.value = [];
 
-  getAllConditions(props.assessment.task.id);
+  getAllConditions(props.assessment.taskId);
 };
 
 const handleSubmit = () => {

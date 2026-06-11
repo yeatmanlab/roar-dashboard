@@ -196,6 +196,7 @@ import { APP_ROUTES, ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { ORG_TYPES } from '@/constants/orgTypes';
 import { usePermissions } from '@/composables/usePermissions';
+import { variantParametersToMap } from '@/helpers/taskConfig';
 import AdministrationDatePicker from '@/components/AdministrationDatePicker';
 const { userCan, Permissions } = usePermissions();
 
@@ -256,13 +257,16 @@ const submitPermission = computed(() => {
 const findVariantWithParams = (variants, params) => {
   // TODO: implement tie breakers if found.length > 1
   return _find(variants, (variant) => {
-    const cleanVariantParams = removeNull(variant.variant.params);
+    // The contract returns parameters as an array of { name, value } entries;
+    // convert to a flat map so it can be compared against the legacy flat
+    // params object stored on existing administration assessments.
+    const cleanVariantParams = removeNull(variantParametersToMap(variant.parameters));
     const cleanInputParams = removeNull(params);
     return _isEqual(cleanInputParams, cleanVariantParams);
   });
 };
 
-const { data: allVariants } = useTaskVariantsQuery(false, {
+const { data: allVariants } = useTaskVariantsQuery({
   enabled: initialized,
 });
 
@@ -401,17 +405,17 @@ const preSelectedVariants = ref([]);
 const nonUniqueTasks = ref('');
 
 const variantsByTaskId = computed(() => {
-  return _groupBy(allVariants.value, 'task.id');
+  return _groupBy(allVariants.value, 'taskId');
 });
 
 const handleFoundVariant = (assessment, allVariants) => {
   const { conditions: assessmentConditions = undefined, params: assessmentParams, taskId } = assessment;
-  const allVariantsForThisTask = _filter(allVariants, (variant) => variant.task.id === taskId);
+  const allVariantsForThisTask = _filter(allVariants, (variant) => variant.taskId === taskId);
   const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
   if (found) {
     const clonedFound = _cloneDeep(found);
     // Set conditions from assessment, or undefined if no conditions exist
-    clonedFound.variant.conditions = !_isEmpty(assessmentConditions) ? assessmentConditions : undefined;
+    clonedFound.conditions = !_isEmpty(assessmentConditions) ? assessmentConditions : undefined;
     preSelectedVariants.value = _union(preSelectedVariants.value, [clonedFound]);
     variants.value = _union(variants.value, [clonedFound]);
   }
@@ -477,12 +481,14 @@ const submit = async () => {
 
   const submittedAssessments = variants.value.map((assessment) =>
     removeUndefined({
-      variantId: assessment.variant.id,
-      variantName: assessment.variant.name,
-      taskId: assessment.task.id,
-      params: toRaw(assessment.variant.params),
+      variantId: assessment.id,
+      variantName: assessment.name,
+      taskId: assessment.taskId,
+      // The upsert payload expects the legacy flat params object, so convert
+      // the contract's parameters array of { name, value } entries.
+      params: variantParametersToMap(toRaw(assessment.parameters)),
       // Exclude conditions key if there are no conditions to be set.
-      ...(!_isEmpty(assessment.variant.conditions) && { conditions: toRaw(assessment.variant.conditions) }),
+      ...(!_isEmpty(assessment.conditions) && { conditions: toRaw(assessment.conditions) }),
     }),
   );
 

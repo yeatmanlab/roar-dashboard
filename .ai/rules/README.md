@@ -6,90 +6,91 @@ This directory contains modular, enforceable engineering rules for the ROAR Plat
 
 ### Architecture
 
-| Rule | Impact | Description |
-|------|--------|-------------|
+| Rule                                                                    | Impact   | Description                                                                                    |
+| ----------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------- |
 | [architecture-authorization-model](architecture-authorization-model.md) | CRITICAL | ltree hierarchy, per-entity roles, supervisory/supervised distinction, two-layer authorization |
 
 ### Backend
 
-| Rule | Impact | Description |
-|------|--------|-------------|
-| [backend-layer-architecture](backend-layer-architecture.md) | CRITICAL | 5-layer pattern: Contract, Route, Controller, Service, Repository |
-| [backend-authorization-pattern](backend-authorization-pattern.md) | CRITICAL | Authorization in service/repository layers, verifyResourceAccess, 404-before-403 |
-| [backend-error-message-security](backend-error-message-security.md) | CRITICAL | ApiErrorMessage enum, no internal details in responses |
-| [backend-api-contract-conventions](backend-api-contract-conventions.md) | HIGH | ts-rest + Zod contracts, shared schemas, response envelopes, embed pattern |
-| [backend-controller-no-business-logic](backend-controller-no-business-logic.md) | HIGH | Controllers handle HTTP mapping only, no business logic |
-| [backend-error-handling](backend-error-handling.md) | HIGH | Service try/catch, controller error mapping, global handler |
-| [backend-repository-pattern](backend-repository-pattern.md) | HIGH | BaseRepository extension, listAll/listAuthorized, access control joins |
-| [backend-service-pattern](backend-service-pattern.md) | HIGH | Closure-based DI, default parameter injection |
-| [backend-utility-placement](backend-utility-placement.md) | MEDIUM | Utility files belong to the layer that consumes them, not in cross-layer grab bags |
-| [backend-testing-unit-vs-integration](backend-testing-unit-vs-integration.md) | MEDIUM | Separate Vitest projects, vi.mock for controllers, DI for services |
-| [backend-testing-factory-usage](backend-testing-factory-usage.md) | MEDIUM | build() vs create(), baseFixture, Fishery factories |
+| Rule                                                                            | Impact   | Description                                                                        |
+| ------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------- |
+| [backend-layer-architecture](backend-layer-architecture.md)                     | CRITICAL | 5-layer pattern: Contract, Route, Controller, Service, Repository                  |
+| [backend-authorization-pattern](backend-authorization-pattern.md)               | CRITICAL | Authorization in service/repository layers, verifyResourceAccess, 404-before-403   |
+| [backend-error-message-security](backend-error-message-security.md)             | CRITICAL | ApiErrorMessage enum, no internal details in responses                             |
+| [backend-api-contract-conventions](backend-api-contract-conventions.md)         | HIGH     | ts-rest + Zod contracts, shared schemas, response envelopes, embed pattern         |
+| [backend-controller-no-business-logic](backend-controller-no-business-logic.md) | HIGH     | Controllers handle HTTP mapping only, no business logic                            |
+| [backend-error-handling](backend-error-handling.md)                             | HIGH     | Service try/catch, controller error mapping, global handler                        |
+| [backend-repository-pattern](backend-repository-pattern.md)                     | HIGH     | BaseRepository extension, listAll/listAuthorized, access control joins             |
+| [backend-service-pattern](backend-service-pattern.md)                           | HIGH     | Closure-based DI, default parameter injection                                      |
+| [backend-utility-placement](backend-utility-placement.md)                       | MEDIUM   | Utility files belong to the layer that consumes them, not in cross-layer grab bags |
+| [backend-testing-unit-vs-integration](backend-testing-unit-vs-integration.md)   | MEDIUM   | Separate Vitest projects, vi.mock for controllers, DI for services                 |
+| [backend-testing-factory-usage](backend-testing-factory-usage.md)               | MEDIUM   | build() vs create(), baseFixture, Fishery factories                                |
 
 ### SDK
 
-| Rule | Impact | Description |
-|------|--------|-------------|
-| [sdk-layer-architecture](sdk-layer-architecture.md) | HIGH | Receiver/Command/Compat pattern, ts-rest client usage, auth-agnostic design |
+| Rule                                                | Impact | Description                                                                 |
+| --------------------------------------------------- | ------ | --------------------------------------------------------------------------- |
+| [sdk-layer-architecture](sdk-layer-architecture.md) | HIGH   | Receiver/Command/Compat pattern, ts-rest client usage, auth-agnostic design |
 
 ### Frontend
 
-| Rule | Impact | Description |
-|------|--------|-------------|
-| [frontend-layer-architecture](frontend-layer-architecture.md) | HIGH | Container/presentational pattern, directory structure, PrimeVue Pv prefix |
-| [frontend-state-management](frontend-state-management.md) | HIGH | Pinia for client state, TanStack Query for server state |
-| [frontend-composable-patterns](frontend-composable-patterns.md) | MEDIUM | Query, mutation, logic, and utility composables |
-| [frontend-e2e-testing-pattern](frontend-e2e-testing-pattern.md) | HIGH | Cypress e2e against seeded local backend (Postgres + OpenFGA + Auth emulator + server-test.ts); how to bring skipped specs back online |
+| Rule                                                            | Impact | Description                                                                                                                            |
+| --------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| [frontend-layer-architecture](frontend-layer-architecture.md)   | HIGH   | Container/presentational pattern, directory structure, PrimeVue Pv prefix                                                              |
+| [frontend-state-management](frontend-state-management.md)       | HIGH   | Pinia for client state, TanStack Query for server state                                                                                |
+| [frontend-backend-api-client](frontend-backend-api-client.md)   | HIGH   | getRoarApiClient ts-rest singleton — lazy init, envelope unwrapping, structured errors, 401 refresh retry, when not to use it          |
+| [frontend-composable-patterns](frontend-composable-patterns.md) | MEDIUM | Query, mutation, logic, and utility composables — token gating, envelope unwrap, pinned retry policy                                   |
+| [frontend-e2e-testing-pattern](frontend-e2e-testing-pattern.md) | HIGH   | Cypress e2e against seeded local backend (Postgres + OpenFGA + Auth emulator + server-test.ts); how to bring skipped specs back online |
 
 ### Quality
 
-| Rule | Impact | Description |
-|------|--------|-------------|
-| [quality-code-review](quality-code-review.md) | HIGH | Review standards for human and AI-generated code |
-| [quality-no-followup-prs](quality-no-followup-prs.md) | MEDIUM | Complete small refactors in the current PR |
-| [quality-code-style](quality-code-style.md) | MEDIUM | Constants, naming conventions, structured logging, JSDoc |
-| [quality-pr-creation](quality-pr-creation.md) | MEDIUM | Branch naming, commit messages, draft mode, PR description |
+| Rule                                                              | Impact | Description                                                      |
+| ----------------------------------------------------------------- | ------ | ---------------------------------------------------------------- |
+| [quality-code-review](quality-code-review.md)                     | HIGH   | Review standards for human and AI-generated code                 |
+| [quality-no-followup-prs](quality-no-followup-prs.md)             | MEDIUM | Complete small refactors in the current PR                       |
+| [quality-code-style](quality-code-style.md)                       | MEDIUM | Constants, naming conventions, structured logging, JSDoc         |
+| [quality-pr-creation](quality-pr-creation.md)                     | MEDIUM | Branch naming, commit messages, draft mode, PR description       |
 | [quality-typescript-strictness](quality-typescript-strictness.md) | MEDIUM | as const, @ts-expect-error, avoid as any, import type convention |
 
 ### Testing
 
-| Rule | Impact | Description |
-|------|--------|-------------|
-| [testing-coverage-expectations](testing-coverage-expectations.md) | HIGH | Risk-tiered coverage targets, behavior-focused testing |
+| Rule                                                              | Impact | Description                                            |
+| ----------------------------------------------------------------- | ------ | ------------------------------------------------------ |
+| [testing-coverage-expectations](testing-coverage-expectations.md) | HIGH   | Risk-tiered coverage targets, behavior-focused testing |
 
 ### Performance
 
-| Rule | Impact | Description |
-|------|--------|-------------|
-| [performance-avoid-quadratic](performance-avoid-quadratic.md) | HIGH | Avoid O(n^2) in access control, embed resolution, and pagination |
+| Rule                                                          | Impact | Description                                                      |
+| ------------------------------------------------------------- | ------ | ---------------------------------------------------------------- |
+| [performance-avoid-quadratic](performance-avoid-quadratic.md) | HIGH   | Avoid O(n^2) in access control, embed resolution, and pagination |
 
 ### CI/CD
 
-| Rule | Impact | Description |
-|------|--------|-------------|
-| [ci-check-failures](ci-check-failures.md) | HIGH | Focus on failures related to your changes, run checks locally first |
+| Rule                                      | Impact | Description                                                         |
+| ----------------------------------------- | ------ | ------------------------------------------------------------------- |
+| [ci-check-failures](ci-check-failures.md) | HIGH   | Focus on failures related to your changes, run checks locally first |
 
 ### Culture
 
-| Rule | Impact | Description |
-|------|--------|-------------|
-| [culture-leverage-ai](culture-leverage-ai.md) | HIGH | AI agents accelerate boilerplate but require human review for auth and scoring logic |
+| Rule                                          | Impact | Description                                                                          |
+| --------------------------------------------- | ------ | ------------------------------------------------------------------------------------ |
+| [culture-leverage-ai](culture-leverage-ai.md) | HIGH   | AI agents accelerate boilerplate but require human review for auth and scoring logic |
 
 ## Structure
 
 Rules use a flat structure with prefix-based categories:
 
-| Prefix | Scope |
-|--------|-------|
-| `architecture-` | System design and structural decisions |
-| `backend-` | Express/TypeScript backend (`apps/backend/`) |
-| `sdk-` | Assessment SDK (`packages/assessment-sdk/`) |
-| `frontend-` | Vue 3 dashboard (`apps/dashboard/`) |
-| `quality-` | TypeScript strictness and code quality |
-| `testing-` | Test conventions (unit and integration) |
-| `performance-` | Optimization and efficiency |
-| `ci-` | Continuous integration and deployment |
-| `culture-` | Team process and collaboration |
+| Prefix          | Scope                                        |
+| --------------- | -------------------------------------------- |
+| `architecture-` | System design and structural decisions       |
+| `backend-`      | Express/TypeScript backend (`apps/backend/`) |
+| `sdk-`          | Assessment SDK (`packages/assessment-sdk/`)  |
+| `frontend-`     | Vue 3 dashboard (`apps/dashboard/`)          |
+| `quality-`      | TypeScript strictness and code quality       |
+| `testing-`      | Test conventions (unit and integration)      |
+| `performance-`  | Optimization and efficiency                  |
+| `ci-`           | Continuous integration and deployment        |
+| `culture-`      | Team process and collaboration               |
 
 Each rule file follows the naming convention `{prefix}{rule-name}.md` (e.g., `backend-error-handling.md`).
 
@@ -121,7 +122,7 @@ Rules are designed to work with any AI coding tool and for direct human referenc
 
 ## Rule Template
 
-```markdown
+````markdown
 ---
 title: Rule Title
 description: A brief, natural-language summary of what this rule is about.
@@ -149,7 +150,7 @@ Brief explanation (2-3 sentences) of what this enforces and why.
 ### The principle
 
 One paragraph on the underlying rationale and what goes wrong when this rule is violated.
-```
+````
 
 ## Reference Implementations
 

@@ -371,9 +371,10 @@ const assessments = computed(() => {
           taskData: {
             ...matchedTask,
             // GameTabs consumes the legacy `external` / `taskURL` / `meta` fields, which aren't first-class on
-            // the new contract shape — Firestore-era extras live inside the task's `taskConfig` jsonb.
-            // TODO(1881): verify against production task data that the migration stored these keys in
-            // `taskConfig`; remove this mapping once GameTabs is migrated to read `taskConfig` directly.
+            // the new contract shape — Firestore-era extras live inside the task's `taskConfig` jsonb. Map them
+            // out defensively: `taskConfig` is free-form JSON, so tasks whose config lacks these keys (or isn't
+            // an object) fall back to a non-external rendering instead of breaking the assessment list. The
+            // mapping can go away once GameTabs reads `taskConfig` directly.
             external: matchedTask?.taskConfig?.external ?? false,
             taskURL: matchedTask?.taskConfig?.taskURL,
             meta: matchedTask?.taskConfig?.meta,

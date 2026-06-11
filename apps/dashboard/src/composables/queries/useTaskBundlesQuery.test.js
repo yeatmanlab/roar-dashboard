@@ -1,16 +1,15 @@
-import { ref } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
-import { TASK_VARIANTS_QUERY_KEY } from '@/constants/queryKeys';
-import useTaskVariantsByTaskQuery from './useTaskVariantsByTaskQuery';
+import { TASK_BUNDLES_QUERY_KEY } from '@/constants/queryKeys';
+import useTaskBundlesQuery from './useTaskBundlesQuery';
 
-const mockListTaskVariants = vi.fn();
+const mockTaskBundlesList = vi.fn();
 const mockUseAuthStore = vi.fn(() => ({ accessToken: 'test-token' }));
 
 vi.mock('@/clients/roar-api', () => ({
   getRoarApiClient: () => ({
-    tasks: { listTaskVariants: mockListTaskVariants },
+    taskBundles: { list: mockTaskBundlesList },
   }),
 }));
 
@@ -26,9 +25,7 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
-const MOCK_TASK_ID = '00000000-0000-0000-0000-000000000001';
-
-describe('useTaskVariantsByTaskQuery', () => {
+describe('useTaskBundlesQuery', () => {
   let queryClient;
 
   beforeEach(() => {
@@ -36,7 +33,7 @@ describe('useTaskVariantsByTaskQuery', () => {
     queryClient = new VueQuery.QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    mockListTaskVariants.mockReset();
+    mockTaskBundlesList.mockReset();
     mockUseAuthStore.mockReset();
     mockUseAuthStore.mockReturnValue({ accessToken: 'test-token' });
   });
@@ -45,28 +42,47 @@ describe('useTaskVariantsByTaskQuery', () => {
     queryClient?.clear();
   });
 
-  it('calls useQuery with a key composed of the variants key, taskId, and status', () => {
+  it('calls useQuery with the TASK_BUNDLES_QUERY_KEY', () => {
     vi.spyOn(VueQuery, 'useQuery');
-    const taskId = ref(MOCK_TASK_ID);
-    const status = ref('published');
 
-    withSetup(() => useTaskVariantsByTaskQuery(taskId, status), {
+    withSetup(() => useTaskBundlesQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: [TASK_VARIANTS_QUERY_KEY, taskId, status],
+        queryKey: [TASK_BUNDLES_QUERY_KEY],
         queryFn: expect.any(Function),
       }),
     );
   });
 
-  it('passes the status filter to the endpoint and unwraps the items', async () => {
-    const variantItems = [{ id: 'v1', taskId: MOCK_TASK_ID, name: 'Variant 1', status: 'published', parameters: [] }];
-    mockListTaskVariants.mockResolvedValue({
+  it('requests the taskVariantDetails embed and unwraps the items array on a 200 response', async () => {
+    const bundleItems = [
+      {
+        id: '00000000-0000-0000-0000-0000000000b1',
+        slug: 'early-reading',
+        name: 'Early Reading',
+        description: 'Bundle of early reading tasks',
+        image: null,
+        taskVariants: [
+          {
+            taskVariantId: '00000000-0000-0000-0000-00000000000a',
+            taskSlug: 'swr',
+            taskName: 'SWR',
+            taskVariantName: 'Variant 1',
+            sortOrder: 0,
+            // embed=taskVariantDetails fields
+            taskId: '00000000-0000-0000-0000-000000000001',
+            status: 'published',
+            parameters: [],
+          },
+        ],
+      },
+    ];
+    mockTaskBundlesList.mockResolvedValue({
       status: 200,
-      body: { data: { items: variantItems, pagination: { page: 1, perPage: 100, totalItems: 1, totalPages: 1 } } },
+      body: { data: { items: bundleItems, pagination: { page: 1, perPage: 100, totalItems: 1, totalPages: 1 } } },
     });
 
     let queryFn;
@@ -75,44 +91,20 @@ describe('useTaskVariantsByTaskQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useTaskVariantsByTaskQuery(MOCK_TASK_ID, 'draft'), {
+    withSetup(() => useTaskBundlesQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    await expect(queryFn()).resolves.toEqual(variantItems);
-    expect(mockListTaskVariants).toHaveBeenCalledWith({
-      params: { taskId: MOCK_TASK_ID },
-      query: { page: 1, perPage: 100, status: 'draft' },
-    });
-  });
-
-  it('omits the status param when no status filter is set', async () => {
-    mockListTaskVariants.mockResolvedValue({
-      status: 200,
-      body: { data: { items: [], pagination: { page: 1, perPage: 100, totalItems: 0, totalPages: 1 } } },
-    });
-
-    let queryFn;
-    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
-      queryFn = options.queryFn;
-      return { data: { value: null }, error: { value: null } };
-    });
-
-    withSetup(() => useTaskVariantsByTaskQuery(MOCK_TASK_ID, null), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    await queryFn();
-    expect(mockListTaskVariants).toHaveBeenCalledWith({
-      params: { taskId: MOCK_TASK_ID },
-      query: { page: 1, perPage: 100 },
+    await expect(queryFn()).resolves.toEqual(bundleItems);
+    expect(mockTaskBundlesList).toHaveBeenCalledWith({
+      query: { page: 1, perPage: 100, embed: 'taskVariantDetails' },
     });
   });
 
   it('follows pagination and aggregates all pages', async () => {
-    const pageOne = [{ id: 'v1', status: 'published', parameters: [] }];
-    const pageTwo = [{ id: 'v2', status: 'published', parameters: [] }];
-    mockListTaskVariants
+    const pageOne = [{ id: 'b1', taskVariants: [] }];
+    const pageTwo = [{ id: 'b2', taskVariants: [] }];
+    mockTaskBundlesList
       .mockResolvedValueOnce({
         status: 200,
         body: { data: { items: pageOne, pagination: { page: 1, perPage: 100, totalItems: 101, totalPages: 2 } } },
@@ -128,18 +120,23 @@ describe('useTaskVariantsByTaskQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useTaskVariantsByTaskQuery(MOCK_TASK_ID), {
+    withSetup(() => useTaskBundlesQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     await expect(queryFn()).resolves.toEqual([...pageOne, ...pageTwo]);
-    expect(mockListTaskVariants).toHaveBeenCalledTimes(2);
+    expect(mockTaskBundlesList).toHaveBeenCalledTimes(2);
+    expect(mockTaskBundlesList).toHaveBeenNthCalledWith(2, {
+      query: { page: 2, perPage: 100, embed: 'taskVariantDetails' },
+    });
   });
 
   it('throws a structured error on non-200 responses', async () => {
-    mockListTaskVariants.mockResolvedValue({
-      status: 404,
-      body: { error: { message: 'Not found' } },
+    // The endpoint is super-admin-or-platform-admin only, so 403 is the
+    // realistic failure mode for under-privileged callers.
+    mockTaskBundlesList.mockResolvedValue({
+      status: 403,
+      body: { error: { message: 'Forbidden' } },
     });
 
     let queryFn;
@@ -148,13 +145,13 @@ describe('useTaskVariantsByTaskQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useTaskVariantsByTaskQuery(MOCK_TASK_ID), {
+    withSetup(() => useTaskBundlesQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     await expect(queryFn()).rejects.toMatchObject({
-      status: 404,
-      body: { error: { message: 'Not found' } },
+      status: 403,
+      body: { error: { message: 'Forbidden' } },
     });
   });
 
@@ -165,7 +162,7 @@ describe('useTaskVariantsByTaskQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useTaskVariantsByTaskQuery(MOCK_TASK_ID), {
+    withSetup(() => useTaskBundlesQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -184,7 +181,7 @@ describe('useTaskVariantsByTaskQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useTaskVariantsByTaskQuery(MOCK_TASK_ID), {
+    withSetup(() => useTaskBundlesQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -194,22 +191,11 @@ describe('useTaskVariantsByTaskQuery', () => {
     expect(retryFn(3, networkError)).toBe(false);
   });
 
-  it('is disabled when no taskId is provided, even with a token', () => {
-    vi.spyOn(VueQuery, 'useQuery');
-
-    withSetup(() => useTaskVariantsByTaskQuery(ref('')), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
-    expect(enabledRef.value).toBe(false);
-  });
-
-  it('is disabled without an access token, even with a taskId', () => {
+  it('is disabled when the auth store has no access token', () => {
     mockUseAuthStore.mockReturnValue({ accessToken: null });
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useTaskVariantsByTaskQuery(MOCK_TASK_ID), {
+    withSetup(() => useTaskBundlesQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -217,10 +203,10 @@ describe('useTaskVariantsByTaskQuery', () => {
     expect(enabledRef.value).toBe(false);
   });
 
-  it('is enabled with both a token and a taskId', () => {
+  it('is enabled when the auth store has an access token', () => {
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useTaskVariantsByTaskQuery(MOCK_TASK_ID), {
+    withSetup(() => useTaskBundlesQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 

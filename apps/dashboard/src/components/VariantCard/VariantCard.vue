@@ -7,13 +7,13 @@
       <div>
         <img
           class="w-4rem shadow-2 border-round ml-2"
-          :src="variant.task.image || backupImage"
-          :alt="variant.task.name"
+          :src="variant.taskImage || backupImage"
+          :alt="variant.taskName"
         />
       </div>
       <div>
         <div class="flex flex-row">
-          <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
+          <span class="font-bold" style="margin-left: 0.625rem">{{ variant.taskName }}</span>
           <PvButton
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
             style="margin-top: -0.25rem"
@@ -26,7 +26,7 @@
         </div>
         <div class="flex align-items-center gap-2">
           <p class="m-0 mt-1 ml-2">
-            <span class="font-bold">Variant name:</span> {{ variant.variant.name }} <br />
+            <span class="font-bold">Variant name:</span> {{ variant.name }} <br />
             <span class="font-bold">Variant id: </span>{{ variant.id }}
           </p>
         </div>
@@ -45,7 +45,7 @@
             <PvDataTable
               class="p-datatable-small ml-3 border-1 surface-border text-sm"
               header-style="font-size: 20px;"
-              :value="displayParamList(variant.variant.params)"
+              :value="displayParamList(variant.parameters)"
               scrollable
               scroll-height="300px"
             >
@@ -97,11 +97,11 @@
     </div>
     <div class="w-11 mt-3 flex flex-row p-0">
       <div>
-        <img class="w-4rem shadow-2 border-round" :src="variant.task.image || backupImage" :alt="variant.task.name" />
+        <img class="w-4rem shadow-2 border-round" :src="variant.taskImage || backupImage" :alt="variant.taskName" />
       </div>
       <div>
         <div class="flex flex-row">
-          <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
+          <span class="font-bold" style="margin-left: 0.625rem">{{ variant.taskName }}</span>
           <PvButton
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
             style="margin-top: -0.25rem"
@@ -114,7 +114,7 @@
         </div>
         <div class="flex align-items-center gap-2">
           <p class="m-0 mt-1 ml-2">
-            <span class="font-bold">Variant name:</span> {{ variant.variant.name }} <br />
+            <span class="font-bold">Variant name:</span> {{ variant.name }} <br />
             <span class="font-bold">Variant id: </span>{{ variant.id }}
           </p>
         </div>
@@ -134,7 +134,7 @@
           <PvDataTable
             class="p-datatable-small ml-3 border-1 surface-border text-sm p-0"
             header-style="font-size: 20px;"
-            :value="displayParamList(variant.variant.params)"
+            :value="displayParamList(variant.parameters)"
             scrollable
             scroll-height="300px"
           >
@@ -161,7 +161,7 @@
         :pre-existing-assessment-info="preExistingAssessmentInfo"
       />
       <PvButton
-        v-if="variant.variant?.conditions?.assigned || variant.variant?.conditions?.optional"
+        v-if="variant.conditions?.assigned || variant.conditions?.optional"
         class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
         @click="toggleShowContent()"
         ><i :class="iconClass()" style="font-size: 1rem"></i
@@ -173,15 +173,12 @@
     class="flex-1 flex flex-column border-1 border-round surface-border surface-hover mb-2 hover:surface-ground mr-2 ml-2 pb-2"
     style="margin-top: -25px"
   >
-    <div
-      v-if="variant.variant?.conditions?.assigned?.conditions?.length > 0"
-      class="flex gap-2 mt-2 flex-column w-full pr-3"
-    >
+    <div v-if="variant.conditions?.assigned?.conditions?.length > 0" class="flex gap-2 mt-2 flex-column w-full pr-3">
       <p class="font-bold mt-3 mb-1 ml-3">Assigned Conditions:</p>
       <PvDataTable
         class="p-datatable-small ml-3 border-1 surface-border"
         table-style="min-width:50vh"
-        :value="parseConditions(variant.variant?.conditions?.assigned)"
+        :value="parseConditions(variant.conditions?.assigned)"
         scrollable
         scroll-height="300px"
       >
@@ -196,18 +193,15 @@
         </PvColumn>
       </PvDataTable>
     </div>
-    <div v-if="variant.variant?.conditions?.optional === true" class="flex mt-3 flex-column w-full ml-3 pr-5">
+    <div v-if="variant.conditions?.optional === true" class="flex mt-3 flex-column w-full ml-3 pr-5">
       <PvTag severity="success"> Assignment optional for all students </PvTag>
     </div>
-    <div
-      v-else-if="variant.variant?.conditions?.optional?.conditions?.length > 0"
-      class="flex mt-2 flex-column w-full pr-3"
-    >
+    <div v-else-if="variant.conditions?.optional?.conditions?.length > 0" class="flex mt-2 flex-column w-full pr-3">
       <p class="font-bold mt-3 mb-1 ml-3">Optional Conditions:</p>
       <PvDataTable
         class="p-datatable-small ml-3 border-1 surface-border"
         table-style="min-width:50vh"
-        :value="parseConditions(variant.variant?.conditions?.optional)"
+        :value="parseConditions(variant.conditions?.optional)"
         scrollable
         scroll-height="300px"
       >
@@ -223,7 +217,7 @@
       </PvDataTable>
     </div>
     <div
-      v-if="!variant.variant?.conditions?.assigned && !variant.variant?.conditions?.optional"
+      v-if="!variant.conditions?.assigned && !variant.conditions?.optional"
       class="flex mt-2 flex-column w-full px-3 ml-3"
     >
       <PvTag severity="danger"> Assignment required for all students </PvTag>
@@ -234,7 +228,7 @@
       <PvDataTable
         class="p-datatable-small ml-3 border-1 surface-border text-xl"
         header-style="font-size: 20px;"
-        :value="displayParamList(variant.variant.params)"
+        :value="displayParamList(variant.parameters)"
         scrollable
         scroll-height="300px"
       >
@@ -257,7 +251,6 @@
 
 <script setup>
 import { ref } from 'vue';
-import _toPairs from 'lodash/toPairs';
 import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
@@ -325,8 +318,9 @@ const isActive = () => {
     : 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative shadow-2';
 };
 
-const displayParamList = (inputObj) => {
-  return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
+const displayParamList = (parameters) => {
+  // The contract returns parameters as an array of { name, value } entries.
+  return (parameters ?? []).map(({ name, value }) => ({ key: name, value }));
 };
 
 const toggle = (event) => {

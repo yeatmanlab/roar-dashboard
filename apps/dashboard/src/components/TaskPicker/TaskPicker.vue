@@ -67,7 +67,7 @@
                   v-for="element in searchResults"
                   :id="element.id"
                   :key="element.id"
-                  :data-task-id="element?.task?.id ?? element.id"
+                  :data-task-id="element?.taskId ?? element.id"
                   :data-group-id="element.id"
                   style="cursor: grab"
                   :data-card-type="element.type"
@@ -117,7 +117,7 @@
                   v-for="element in currentVariants"
                   :id="element.id"
                   :key="element.id"
-                  :data-task-id="element?.task?.id"
+                  :data-task-id="element?.taskId"
                   :data-card-type="CARD_TYPES.VARIANT"
                   style="cursor: grab"
                 >
@@ -182,7 +182,7 @@
                 v-for="element in selectedVariants"
                 :id="element.id"
                 :key="element.id"
-                :data-task-id="element?.task?.id ?? element.id"
+                :data-task-id="element?.taskId ?? element.id"
                 style="cursor: grab"
               >
                 <VariantCard
@@ -223,7 +223,6 @@ import _union from 'lodash/union';
 import { VueDraggableNext } from 'vue-draggable-next';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import { taskDisplayNames } from '@/helpers/reports';
 import PvButton from 'primevue/button';
 import PvSelect from 'primevue/select';
 import PvInputSwitch from 'primevue/inputswitch';
@@ -276,7 +275,7 @@ const taskOptions = computed(() => {
     const key = entry[0];
     const value = entry[1];
     return {
-      label: value[0].task.name ?? key,
+      label: value[0].taskName ?? key,
       value: key,
     };
   });
@@ -300,7 +299,7 @@ watch(
       if (preExistingInfo) {
         return {
           ...variant,
-          variant: { ...variant?.variant, conditions: preExistingInfo.conditions },
+          conditions: preExistingInfo.conditions,
         };
       }
       return variant;
@@ -312,7 +311,7 @@ watch(
 const updateVariant = (variantId, conditions) => {
   const updatedVariants = selectedVariants.value.map((variant) => {
     if (variant.id === variantId) {
-      return { ...variant, variant: { ...variant.variant, conditions: conditions } };
+      return { ...variant, conditions };
     } else {
       return variant;
     }
@@ -327,7 +326,7 @@ const currentTask = ref(Object.keys(props.allVariants)[0]);
 
 const currentVariants = computed(() => {
   if (namedOnly.value) {
-    return _filter(props.allVariants[currentTask.value], (variant) => variant.variant.name);
+    return _filter(props.allVariants[currentTask.value], (variant) => variant.name);
   }
   return props.allVariants[currentTask.value];
 });
@@ -354,8 +353,8 @@ const searchCards = (term) => {
   if (currentCardType.value === CARD_TYPES.BUNDLE) {
     const matchingGroups = _filter(props.allTaskBundles, (bundle) => {
       if (
-        _toLower(bundle.data.name).includes(_toLower(term)) ||
-        _toLower(bundle.data.publicName).includes(_toLower(term)) ||
+        _toLower(bundle.name).includes(_toLower(term)) ||
+        _toLower(bundle.description).includes(_toLower(term)) ||
         _toLower(bundle.id).includes(_toLower(term))
       )
         return true;
@@ -374,16 +373,16 @@ const searchCards = (term) => {
     Object.values(props.allVariants).forEach((variants) => {
       let matchingVariants = _filter(variants, (variant) => {
         if (
-          _toLower(variant.variant.name).includes(_toLower(term)) ||
+          _toLower(variant.name).includes(_toLower(term)) ||
           _toLower(variant.id).includes(_toLower(term)) ||
-          _toLower(variant.task.id).includes(_toLower(term)) ||
-          _toLower(variant.task.studentFacingName).includes(_toLower(term))
+          _toLower(variant.taskId).includes(_toLower(term)) ||
+          _toLower(variant.taskName).includes(_toLower(term))
         )
           return true;
         else return false;
       });
       if (namedOnly.value) {
-        matchingVariants = _filter(matchingVariants, (variant) => variant.variant.name);
+        matchingVariants = _filter(matchingVariants, (variant) => variant.name);
       }
       searchResults.value.push(
         ...matchingVariants.map((variant) => {
@@ -429,7 +428,7 @@ const handleCardAdd = (card) => {
   // Add fires after the move is complete, so check if there is a duplicate task in the list.
   for (const variant of selectedVariants.value) {
     // If the duplicate task is also the current task, send a warn toast.
-    if (taskIds.includes(variant.task.id) && variant.task.id === card.item.dataset.taskId) {
+    if (taskIds.includes(variant.taskId) && variant.taskId === card.item.dataset.taskId) {
       toast.add({
         severity: 'warn',
         summary: 'Task Selected',
@@ -437,7 +436,7 @@ const handleCardAdd = (card) => {
         life: 3000,
       });
     } else {
-      taskIds.push(variant.task.id);
+      taskIds.push(variant.taskId);
     }
   }
 };
@@ -449,20 +448,18 @@ const handleCardAdd = (card) => {
  */
 const checkForBundleDuplicateTasks = (bundle) => {
   // Check that none of the variants in the bundle are already selected
-  const bundleTasks = bundle.data.variants;
-  const bundleTaskIds = bundleTasks.map((task) => task.taskId);
-  const bundleVariantIds = bundleTasks.map((task) => task.variantId);
-  const bundleTaskIdsInList = bundleTaskIds.filter((taskId) =>
-    selectedVariants.value.some((variant) => variant.task.id === taskId),
+  const bundleTasks = bundle.taskVariants;
+  const bundleTasksInList = bundleTasks.filter((bundleVariant) =>
+    selectedVariants.value.some((variant) => variant.taskId === bundleVariant.taskId),
   );
-  const bundleVariantIdsInList = bundleVariantIds.filter((variantId) =>
-    selectedVariants.value.some((variant) => variant.id === variantId),
-  );
-  if (bundleTaskIdsInList.length > 0 || bundleVariantIdsInList.length > 0) {
+  const bundleVariantIdsInList = bundleTasks
+    .map((bundleVariant) => bundleVariant.taskVariantId)
+    .filter((taskVariantId) => selectedVariants.value.some((variant) => variant.id === taskVariantId));
+  if (bundleTasksInList.length > 0 || bundleVariantIdsInList.length > 0) {
     let errorMessage = 'The bundle contains tasks or variants that are already selected:<br />';
-    if (bundleTaskIdsInList.length > 0) {
-      errorMessage += `<br /><b>Tasks:</b> ${bundleTaskIdsInList
-        .map((taskId) => taskDisplayNames[taskId]?.publicName ?? taskId)
+    if (bundleTasksInList.length > 0) {
+      errorMessage += `<br /><b>Tasks:</b> ${bundleTasksInList
+        .map((bundleVariant) => bundleVariant.taskName ?? bundleVariant.taskId)
         .join(', ')}`;
     }
     if (bundleVariantIdsInList.length > 0) {
@@ -490,9 +487,11 @@ const handleGroupAdd = (bundleId) => {
   const isValid = checkForBundleDuplicateTasks(bundle);
   if (!isValid) return;
   // For each variant in the group, find it in allVariants and add it to the selectedVariants.
-  for (const variant of bundle.data.variants) {
+  // The bundle's taskVariants carry `taskId` because the bundles query requests
+  // the `taskVariantDetails` embed.
+  for (const variant of bundle.taskVariants) {
     const taskId = variant.taskId;
-    const variantId = variant.variantId;
+    const variantId = variant.taskVariantId;
     const allVariantsForTask = props.allVariants[taskId];
     if (allVariantsForTask) {
       const foundVariant = allVariantsForTask.find((variant) => variant.id === variantId);
@@ -502,7 +501,7 @@ const handleGroupAdd = (bundleId) => {
         toast.add({
           severity: 'warn',
           summary: 'Error adding task from task bundle.',
-          detail: `Could not find variant of task ${variant.taskId} with id: ${variant.variantId}`,
+          detail: `Could not find variant of task ${variant.taskId} with id: ${variant.taskVariantId}`,
           life: 3000,
         });
       }
@@ -563,8 +562,8 @@ const selectVariantCard = (variant) => {
   if (index === -1) {
     // If this variant is not already selected, check if the taskId is already selected.
     // If so, warn but add regardless.
-    const selectedTasks = selectedVariants.value.map((selectedVariant) => selectedVariant.task.id);
-    if (selectedTasks.includes(variant.task.id)) {
+    const selectedTasks = selectedVariants.value.map((selectedVariant) => selectedVariant.taskId);
+    if (selectedTasks.includes(variant.taskId)) {
       toast.add({
         severity: 'warn',
         summary: 'Task Selected',

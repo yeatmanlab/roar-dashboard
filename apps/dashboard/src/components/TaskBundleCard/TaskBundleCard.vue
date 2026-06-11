@@ -4,11 +4,11 @@
   >
     <div class="w-11 mt-3 flex flex-row p-0 mb-2">
       <div>
-        <img class="w-4rem shadow-2 border-round ml-2" :src="group.data.image || backupImage" :alt="group.data.name" />
+        <img class="w-4rem shadow-2 border-round ml-2" :src="group.image || backupImage" :alt="group.name" />
       </div>
       <div>
         <div class="flex flex-row">
-          <span class="font-bold" style="margin-left: 0.625rem">{{ group.data.name }}</span>
+          <span class="font-bold" style="margin-left: 0.625rem">{{ group.name }}</span>
           <PvButton
             class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary ml-2"
             style="margin-top: -0.25rem"
@@ -21,7 +21,7 @@
         </div>
         <div class="flex align-items-center gap-2">
           <p class="m-0 mt-1 ml-2">
-            <span class="font-bold">Bundle name:</span> {{ group.data.name }} <br />
+            <span class="font-bold">Bundle name:</span> {{ group.name }} <br />
             <span class="font-bold">Included tasks: </span>{{ taskList.join(', ') }}
           </p>
         </div>
@@ -46,9 +46,9 @@
               scrollable
               scroll-height="300px"
             >
-              <PvColumn field="task.publicName" header="Task Name"></PvColumn>
-              <PvColumn field="variant.id" header="Variant ID"></PvColumn>
-              <PvColumn field="variant.name" header="Variant Name"></PvColumn>
+              <PvColumn field="taskName" header="Task Name"></PvColumn>
+              <PvColumn field="id" header="Variant ID"></PvColumn>
+              <PvColumn field="name" header="Variant Name"></PvColumn>
             </PvDataTable>
           </div>
         </PvPopover>
@@ -67,7 +67,7 @@
   <PvDialog
     v-model:visible="visible"
     modal
-    :header="`Included Variants for Task Bundle: ${group.data.name}`"
+    :header="`Included Variants for Task Bundle: ${group.name}`"
     :style="{ width: '50rem' }"
   >
     <div class="flex gap-2 flex-column w-full pr-3">
@@ -78,9 +78,9 @@
         scrollable
         scroll-height="300px"
       >
-        <PvColumn field="task.publicName" header="Task Name"></PvColumn>
-        <PvColumn field="variant.id" header="Variant ID"></PvColumn>
-        <PvColumn field="variant.name" header="Variant Name"></PvColumn>
+        <PvColumn field="taskName" header="Task Name"></PvColumn>
+        <PvColumn field="id" header="Variant ID"></PvColumn>
+        <PvColumn field="name" header="Variant Name"></PvColumn>
       </PvDataTable>
     </div>
   </PvDialog>
@@ -93,7 +93,6 @@ import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
 import PvDialog from 'primevue/dialog';
 import PvPopover from 'primevue/popover';
-import { taskDisplayNames } from '@/helpers/reports';
 
 const props = defineProps({
   group: {
@@ -120,14 +119,18 @@ const toggle = (event) => {
 };
 
 const taskList = computed(() => {
-  return props.group.data.variants.map((variant) => taskDisplayNames[variant.taskId]?.publicName ?? variant.taskId);
+  return props.group.taskVariants.map((bundleVariant) => bundleVariant.taskName);
 });
 
 const variantData = computed(() => {
-  return props.group.data.variants.map((variant) => {
-    const taskInfo = props.allVariants[variant.taskId];
-    const variantInfo = taskInfo.find((taskVariant) => taskVariant.id === variant.variantId);
-    return variantInfo;
-  });
+  // Resolve each bundle entry against the full variant catalog (grouped by
+  // taskId) so the table shows the flat cross-task variant shape. Entries the
+  // catalog doesn't contain are dropped rather than rendered as empty rows.
+  return props.group.taskVariants
+    .map((bundleVariant) => {
+      const taskVariants = props.allVariants[bundleVariant.taskId] ?? [];
+      return taskVariants.find((taskVariant) => taskVariant.id === bundleVariant.taskVariantId);
+    })
+    .filter(Boolean);
 });
 </script>
