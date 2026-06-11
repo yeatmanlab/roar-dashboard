@@ -211,7 +211,7 @@ export const TasksContract = c.router(
 
 /**
  * Contract for the /task-variants endpoints.
- * Super-admin-only access to published task variants across all tasks.
+ * Super admin or platform administrator access to published task variants across all tasks.
  */
 export const TaskVariantsContract = c.router(
   {
@@ -229,13 +229,13 @@ export const TaskVariantsContract = c.router(
       strictStatusCodes: true,
       summary: 'List all published task variants',
       description:
-        'Returns a paginated list of all published task variants across all tasks. Requires super admin privileges. ' +
+        'Returns a paginated list of all published task variants across all tasks. Requires super admin or platform administrator privileges. ' +
         'Supports pagination (page, perPage), free-text search across variant name, variant description, task name, task slug, and task description, ' +
         'sorting by variant.name (default, asc), variant.createdAt, variant.updatedAt, task.name, or task.slug, ' +
         'structured filter expressions (?filter=field:operator:value) for task.id (eq, neq, in) and task.slug (eq, neq, in, contains), ' +
         'and optional embed of variant parameters (?embed=parameters). ' +
         'Returns 400 if query parameters are invalid. ' +
-        'Returns 403 if the caller is not a super admin. ' +
+        'Returns 403 if the caller is neither a super admin nor a platform administrator. ' +
         'Returns 500 if a server error occurs.',
     },
   },

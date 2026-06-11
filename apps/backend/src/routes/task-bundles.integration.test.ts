@@ -5,12 +5,13 @@
  * Only Firebase token verification is mocked — everything else runs for real.
  *
  * Authorization:
- *   - superAdmin:  200 (isSuperAdmin=true bypasses all access control)
- *   - siteAdmin:   403
- *   - admin:       403
- *   - educator:    403
- *   - student:     403
- *   - caregiver:   403
+ *   - superAdmin:     200 (isSuperAdmin=true bypasses all access control)
+ *   - platformAdmin:  200 (active platform_admin org/group membership)
+ *   - siteAdmin:      403
+ *   - admin:          403
+ *   - educator:       403
+ *   - student:        403
+ *   - caregiver:      403
  *   - unauthenticated: 401
  *
  * Each section covers authorization, then functional behaviour.
@@ -55,6 +56,11 @@ describe('GET /v1/task-bundles', () => {
   describe('authorization', () => {
     it('returns 200 for super admin', async () => {
       const res = await expectRoute('GET', '/v1/task-bundles').as(tiers.superAdmin).toReturn(200);
+      expect(res.body.data.items).toBeInstanceOf(Array);
+    });
+
+    it('returns 200 for platform admin', async () => {
+      const res = await expectRoute('GET', '/v1/task-bundles').as(tiers.platformAdmin).toReturn(200);
       expect(res.body.data.items).toBeInstanceOf(Array);
     });
 

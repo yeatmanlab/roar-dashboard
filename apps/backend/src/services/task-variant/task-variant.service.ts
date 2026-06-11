@@ -10,6 +10,8 @@ import {
   type ListAllPublishedOptions,
   type TaskVariantWithTaskDetails,
 } from '../../repositories/task-variant.repository';
+import { UserRepository } from '../../repositories/user.repository';
+import { verifyPlatformAdminAccess } from '../authorization/verify-platform-admin-access';
 import type { AuthContext } from '../../types/auth-context';
 import type { ParsedFilter } from '../../types/filter';
 
@@ -65,15 +67,19 @@ export interface ListTaskVariantsResult {
 export function TaskVariantService({
   taskVariantRepository = new TaskVariantRepository(),
   taskVariantParameterRepository = new TaskVariantParameterRepository(),
+  userRepository = new UserRepository(),
 }: {
   taskVariantRepository?: TaskVariantRepository;
   taskVariantParameterRepository?: TaskVariantParameterRepository;
+  userRepository?: UserRepository;
 } = {}) {
   /**
    * List all published task variants across all tasks.
    *
    * Authorization behavior:
-   * - Super admin only — returns 403 for all other callers.
+   * - Super admin: full access (bypasses the role lookup)
+   * - Platform administrator (active `platform_admin` org/group membership): full access
+   * - All other callers: 403 Forbidden
    *
    * Supports free-text search across variant name, variant description, task name,
    * task slug, and task description. Supports structured filter expressions for
@@ -85,24 +91,14 @@ export function TaskVariantService({
    * @param authContext - The caller's auth context
    * @param options - Pagination, sort, search, embed, and filter options
    * @returns Paginated list of published task variants with optional embedded parameters
-   * @throws {ApiError} FORBIDDEN if the caller is not a super admin
+   * @throws {ApiError} FORBIDDEN if the caller is neither a super admin nor a platform administrator
    * @throws {ApiError} DATABASE_QUERY_FAILED if the query fails unexpectedly
    */
   async function listAllPublished(
     authContext: AuthContext,
     options: ListTaskVariantsOptions,
   ): Promise<ListTaskVariantsResult> {
-    const { userId, isSuperAdmin } = authContext;
-
-    // Super admin only — no DB call to protect, so auth check lives before try block
-    if (!isSuperAdmin) {
-      logger.warn({ userId }, 'Non-super admin attempted to list all published task variants');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId },
-      });
-    }
+    const { userId } = authContext;
 
     const { page, perPage, sortBy, sortOrder, search, embed = [], filters } = options;
 
@@ -116,6 +112,10 @@ export function TaskVariantService({
     };
 
     try {
+      // Authorization: super admin or active platform administrator. Lives inside the
+      // try block because the platform admin check performs a role lookup in the DB.
+      await verifyPlatformAdminAccess(authContext, userRepository, 'task-variants.list');
+
       const result = await taskVariantRepository.listAllPublished(repoOptions);
 
       if (result.totalItems === 0) {

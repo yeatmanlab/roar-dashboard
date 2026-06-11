@@ -2,10 +2,11 @@ import { eq, and, or, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup, NewUserFamily } from '../db/schema';
 import { EntityType } from '../types/entity-type';
-import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes } from '../db/schema';
+import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes, groups } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type { CoreTransaction } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
+import { UserRole } from '../enums/user-role.enum';
 import { BaseRepository } from './base.repository';
 import { isEnrollmentActive, isActiveInFamily } from './utils/enrollment.utils';
 import { logger } from '../logger';
@@ -100,6 +101,54 @@ export class UserRepository extends BaseRepository<User, typeof users> {
       ...groupRows.map((r) => ({ entityType: EntityType.GROUP, entityId: r.entityId })),
       ...familyRows.map((r) => ({ entityType: EntityType.FAMILY, entityId: r.entityId })),
     ];
+  }
+
+  /**
+   * Check whether the user holds an active `platform_admin` role on any org or group.
+   *
+   * Used by service-layer authorization for global catalog endpoints (task variants,
+   * task bundles) that are not scoped to an org entity, so there is no per-entity FGA
+   * object to check a permission against.
+   *
+   * Membership filters mirror `ReportRepository.getUserRolesAtOrAboveScope`:
+   * the enrollment window must be active and the org/group must not be rostered out.
+   * Classes are deliberately excluded — `platform_admin` is not a valid class-level
+   * role (see `FGA_CLASS_VALID_ROLES`); it cascades to classes via the org hierarchy.
+   *
+   * @param userId - The user to check
+   * @returns true if the user has at least one active `platform_admin` membership
+   */
+  async hasPlatformAdminRole(userId: string): Promise<boolean> {
+    const [orgRows, groupRows] = await Promise.all([
+      this.db
+        .select({ id: userOrgs.orgId })
+        .from(userOrgs)
+        .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+        .where(
+          and(
+            eq(userOrgs.userId, userId),
+            eq(userOrgs.role, UserRole.PLATFORM_ADMIN),
+            isEnrollmentActive(userOrgs),
+            isNull(orgs.rosteringEnded),
+          ),
+        )
+        .limit(1),
+      this.db
+        .select({ id: userGroups.groupId })
+        .from(userGroups)
+        .innerJoin(groups, eq(userGroups.groupId, groups.id))
+        .where(
+          and(
+            eq(userGroups.userId, userId),
+            eq(userGroups.role, UserRole.PLATFORM_ADMIN),
+            isEnrollmentActive(userGroups),
+            isNull(groups.rosteringEnded),
+          ),
+        )
+        .limit(1),
+    ]);
+
+    return orgRows.length > 0 || groupRows.length > 0;
   }
 
   /**
