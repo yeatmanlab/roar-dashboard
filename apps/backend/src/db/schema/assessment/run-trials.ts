@@ -54,7 +54,7 @@ export const runTrials = db.table(
     responseSource: p.text(),
     responseTimeMs: p.integer(),
     startTime: p.text(),
-    startTimeUnix: p.integer(),
+    startTimeUnix: p.bigint({ mode: 'number' }),
     stim: p.text(),
     stimulus: p.text(),
     stimulusRule: p.text(),
