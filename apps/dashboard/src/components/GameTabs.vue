@@ -1,6 +1,6 @@
 <template>
   <div id="games">
-    <PvTabs v-model:value="displayGameIndex" scrollable>
+    <PvTabs v-model:value="displayGameIndex" style="width: 120vh" scrollable>
       <PvTabList data-testid="game-tablist">
         <PvTab
           v-for="(game, index) in games"
