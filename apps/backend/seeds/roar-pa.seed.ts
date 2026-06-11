@@ -1,17 +1,24 @@
 /**
- * Seed script for the ROAR Phonological Awareness (PA) task and its default variants.
+ * Seed script for the ROAR Phonological Awareness (PA) task and its variants.
  *
- * Seeds the `tasks`, `task_variants`, and `task_variant_parameters` tables with the
- * PA task definition and two default variants (English fixed-form and English adaptive).
+ * Reads variant definitions from the file at TASK_VARIANT_PARAMETERS_FILE (required).
+ * The file is a JSON array where each entry has a variantName and a params object whose
+ * keys match the gameParams in roar-pa's serve.js. A single PA task is created; all
+ * variants are registered under it regardless of language.
  *
- * Idempotent — safe to run multiple times. Existing records are left unchanged.
+ * Idempotent — variants that already exist by name are skipped.
  *
  * Usage:
- *   npm run db:seed:pa -w apps/backend
+ *   TASK_VARIANT_PARAMETERS_FILE=./taskVariantParameters.json npm run db:seed:roar-pa -w apps/backend
  *
- * Requires CORE_DATABASE_URL to be set in the environment.
+ * To get started, copy taskVariantParameters.example.json in the assessment directory:
+ *   cp apps/assessments/roar-pa/taskVariantParameters.example.json \
+ *      apps/assessments/roar-pa/taskVariantParameters.json
+ *
+ * Requires CORE_DATABASE_URL and TASK_VARIANT_PARAMETERS_FILE to be set.
  */
 
+import { readFileSync } from 'fs';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { and, eq } from 'drizzle-orm';
 import { Pool } from 'pg';
@@ -19,31 +26,127 @@ import { pa } from '@roar-platform/assessment-schema';
 import * as CoreDbSchema from '../src/db/schema/core';
 import { tasks, taskVariants, taskVariantParameters } from '../src/db/schema/core';
 
-const { PA_TASK_ID, PA_VARIANT_KINDS, PA_LANGUAGES } = pa;
+const { PA_TASK_ID, PA_LANGUAGES, PA_SCORING_VERSION } = pa;
+
+// ─── Environment ─────────────────────────────────────────────────────────────
 
 const CORE_DATABASE_URL = process.env.CORE_DATABASE_URL;
 if (!CORE_DATABASE_URL) throw new Error('CORE_DATABASE_URL is required');
 
+const TASK_VARIANT_PARAMETERS_FILE = process.env.TASK_VARIANT_PARAMETERS_FILE;
+if (!TASK_VARIANT_PARAMETERS_FILE) {
+  throw new Error(
+    'TASK_VARIANT_PARAMETERS_FILE is required.\n' +
+      'Copy taskVariantParameters.example.json to taskVariantParameters.json in the assessment directory.',
+  );
+}
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type VariantDef = {
+  variantName: string;
+  params: Record<string, unknown>;
+};
+
+// ─── Validation ──────────────────────────────────────────────────────────────
+
+const VALID_LANGUAGES = new Set(Object.keys(PA_LANGUAGES));
+const VALID_SCORING_VERSIONS = new Set<unknown>(Object.values(PA_SCORING_VERSION));
+
+// All keys that roar-pa's config.js reads from gameParams / variantParams.
+const ALLOWED_PARAM_KEYS = new Set([
+  'abilityMethod',
+  'consent',
+  'earlyStopping',
+  'isAdaptive',
+  'itemSelect',
+  'language',
+  'logicalOperation',
+  'numTestItems',
+  'randomSeed',
+  'recruitment',
+  'scoreKind',
+  'scoringVersion',
+  'skipInstructions',
+  'storyOption',
+  'userMode',
+]);
+
+function validateVariants(raw: unknown): VariantDef[] {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw new Error('taskVariantParameters.json must be a non-empty array');
+  }
+
+  return raw.map((entry: unknown, i: number) => {
+    const label = `Entry [${i}]`;
+
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+      throw new Error(`${label}: must be an object`);
+    }
+
+    const { variantName, params } = entry as Record<string, unknown>;
+
+    if (typeof variantName !== 'string' || variantName.trim() === '') {
+      throw new Error(`${label}: "variantName" must be a non-empty string`);
+    }
+
+    const name = variantName.trim();
+    const loc = `${label} ("${name}")`;
+
+    if (typeof params !== 'object' || params === null || Array.isArray(params)) {
+      throw new Error(`${loc}: "params" must be an object`);
+    }
+
+    const p = params as Record<string, unknown>;
+
+    for (const key of Object.keys(p)) {
+      if (!ALLOWED_PARAM_KEYS.has(key)) {
+        throw new Error(`${loc}: unknown param "${key}"`);
+      }
+    }
+
+    if (!('language' in p)) {
+      throw new Error(`${loc}: "language" is required`);
+    }
+    if (!VALID_LANGUAGES.has(p.language as string)) {
+      throw new Error(`${loc}: "language" must be one of ${[...VALID_LANGUAGES].join(', ')}`);
+    }
+
+    if ('scoringVersion' in p && p.scoringVersion !== null) {
+      if (!VALID_SCORING_VERSIONS.has(p.scoringVersion)) {
+        throw new Error(`${loc}: "scoringVersion" must be one of ${[...VALID_SCORING_VERSIONS].join(', ')} or null`);
+      }
+    }
+
+    return { variantName: name, params: p };
+  });
+}
+
+// ─── Load and validate file ───────────────────────────────────────────────────
+
+let variantDefs: VariantDef[];
+
+try {
+  const raw = JSON.parse(readFileSync(TASK_VARIANT_PARAMETERS_FILE, 'utf-8'));
+  variantDefs = validateVariants(raw);
+} catch (err) {
+  if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+    throw new Error(
+      `taskVariantParameters.json not found at ${TASK_VARIANT_PARAMETERS_FILE}.\n` +
+        'Copy taskVariantParameters.example.json to get started.',
+    );
+  }
+  throw err;
+}
+
+// ─── Database ─────────────────────────────────────────────────────────────────
+
 const pool = new Pool({ connectionString: CORE_DATABASE_URL });
 const db = drizzle(pool, { schema: CoreDbSchema, casing: 'snake_case' });
 
-const DEFAULT_VARIANTS = Object.values(PA_LANGUAGES).flatMap((lang) =>
-  Object.values(PA_VARIANT_KINDS).map((kind) => ({
-    name: `${lang.label} ${kind.label}`,
-    description: `${kind.description} (${lang.label})`,
-    params: {
-      language: lang.code,
-      isAdaptive: kind.isAdaptive,
-      itemSelect: kind.itemSelect,
-      scoringVersion: kind.scoringVersion,
-      scoreKind: kind.scoreKind,
-    },
-  })),
-);
+// ─── Seeding ──────────────────────────────────────────────────────────────────
 
-async function seed() {
-  console.log('Seeding PA task...');
-
+async function seedTask(): Promise<{ id: string }> {
   const [inserted] = await db
     .insert(tasks)
     .values({
@@ -59,59 +162,71 @@ async function seed() {
     .returning();
 
   const task = inserted ?? (await db.query.tasks.findFirst({ where: eq(tasks.slug, PA_TASK_ID) }));
-
-  if (!task) throw new Error('Failed to insert or find PA task');
+  if (!task) throw new Error(`Failed to insert or find task "${PA_TASK_ID}"`);
 
   if (inserted) {
-    console.log(`Inserted PA task: ${task.id}`);
+    console.log(`  Inserted task "${PA_TASK_ID}": ${task.id}`);
   } else {
-    console.log(`PA task already exists (${task.id}), skipping insert.`);
+    console.log(`  Task "${PA_TASK_ID}" already exists (${task.id}), skipping.`);
   }
 
-  for (const { name, description, params } of DEFAULT_VARIANTS) {
-    // Query-first: the unique index on task_variants is a functional partial index
-    // (lower(name) WHERE name IS NOT NULL), which Drizzle cannot target in
-    // onConflictDoNothing — so we check existence explicitly rather than relying
-    // on a bare conflict clause that would silently swallow unexpected errors.
-    // Safe in this script because assessment-db-migrate runs as a one-shot via docker compose; concurrent invocation would race each other.
-    const existing = await db.query.taskVariants.findFirst({
-      where: and(eq(taskVariants.taskId, task.id), eq(taskVariants.name, name)),
-    });
+  return task;
+}
 
-    if (existing) {
-      console.log(`Variant "${name}" already exists (${existing.id}), skipping.`);
-      continue;
-    }
+async function seedVariant(taskId: string, def: VariantDef): Promise<void> {
+  // Query-first: the unique index on task_variants is a functional partial index
+  // (lower(name) WHERE name IS NOT NULL), which Drizzle cannot target in
+  // onConflictDoNothing — so we check existence explicitly.
+  const existing = await db.query.taskVariants.findFirst({
+    where: and(eq(taskVariants.taskId, taskId), eq(taskVariants.name, def.variantName)),
+  });
 
-    const [variant] = await db
-      .insert(taskVariants)
-      .values({
-        taskId: task.id,
-        name,
-        description,
-        status: 'published',
-      })
-      .returning();
+  if (existing) {
+    console.log(`  Variant "${def.variantName}" already exists (${existing.id}), skipping.`);
+    return;
+  }
 
-    if (!variant) throw new Error(`Failed to insert variant "${name}"`);
+  const [variant] = await db
+    .insert(taskVariants)
+    .values({ taskId, name: def.variantName, status: 'published' })
+    .returning();
 
-    console.log(`Inserted variant "${name}": ${variant.id}`);
+  if (!variant) throw new Error(`Failed to insert variant "${def.variantName}"`);
 
+  console.log(`  Inserted variant "${def.variantName}": ${variant.id}`);
+
+  // Omit null/undefined params — only store params with explicit values.
+  const paramEntries = Object.entries(def.params).filter(([, v]) => v !== null && v !== undefined);
+
+  if (paramEntries.length > 0) {
     await db
       .insert(taskVariantParameters)
       .values(
-        Object.entries(params).map(([paramName, value]) => ({
+        paramEntries.map(([name, value]) => ({
           taskVariantId: variant.id,
-          name: paramName,
+          name,
           value,
         })),
       )
       .onConflictDoNothing({ target: [taskVariantParameters.taskVariantId, taskVariantParameters.name] });
 
-    console.log(`Inserted ${Object.keys(params).length} parameters for "${name}"`);
+    console.log(`  Inserted ${paramEntries.length} parameters for "${def.variantName}"`);
+  }
+}
+
+async function seed(): Promise<void> {
+  console.log(`Reading variants from ${TASK_VARIANT_PARAMETERS_FILE}`);
+  console.log(`Found ${variantDefs.length} variant(s) to seed.\n`);
+
+  console.log('Seeding PA task...');
+  const task = await seedTask();
+
+  for (const def of variantDefs) {
+    console.log(`\nSeeding variant "${def.variantName}"...`);
+    await seedVariant(task.id, def);
   }
 
-  console.log('Seeding complete.');
+  console.log('\nSeeding complete.');
 }
 
 seed()
