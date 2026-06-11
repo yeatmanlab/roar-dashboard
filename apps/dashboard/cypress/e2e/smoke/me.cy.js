@@ -26,16 +26,10 @@
  *   4. `/v1/me` returns 200 but with the wrong user → seeder UID drift.
  */
 
-const FIXTURE_FILE = Cypress.env('FIXTURE_FILE') ?? '/tmp/roar-cypress-fixture.json';
-const EMULATOR_HOST = Cypress.env('FIREBASE_AUTH_EMULATOR_HOST') ?? '127.0.0.1:9099';
-const ROAR_API_BASE_URL = Cypress.env('ROAR_API_BASE_URL') ?? 'http://127.0.0.1:4000';
+import { signInAs } from '../../support/api-helpers';
 
-/**
- * The emulator accepts any non-empty value for `key` — its tokens aren't
- * cryptographically signed and `key` only exists for API surface parity
- * with production Identity Toolkit URLs.
- */
-const EMULATOR_API_KEY = 'fake-api-key';
+const FIXTURE_FILE = Cypress.env('FIXTURE_FILE') ?? '/tmp/roar-cypress-fixture.json';
+const ROAR_API_BASE_URL = Cypress.env('ROAR_API_BASE_URL') ?? 'http://127.0.0.1:4000';
 
 describe('Smoke: seeded local-backend pipeline', () => {
   let fixture;
@@ -50,24 +44,12 @@ describe('Smoke: seeded local-backend pipeline', () => {
   it('mints an emulator ID token and /me returns the seeded teacher', () => {
     const teacher = fixture.users.schoolATeacher;
 
-    cy.request({
-      method: 'POST',
-      url: `http://${EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${EMULATOR_API_KEY}`,
-      body: {
-        email: teacher.email,
-        password: teacher.password,
-        returnSecureToken: true,
-      },
-    })
-      .then((authRes) => {
-        expect(authRes.status, 'emulator sign-in status').to.eq(200);
-        expect(authRes.body.idToken, 'idToken returned by emulator').to.be.a('string').and.not.empty;
-        expect(authRes.body.localId, 'emulator UID matches backend authId').to.eq(teacher.authId);
-
+    signInAs(teacher, { expectedAuthId: teacher.authId })
+      .then((idToken) => {
         return cy.request({
           method: 'GET',
           url: `${ROAR_API_BASE_URL}/v1/me`,
-          headers: { Authorization: `Bearer ${authRes.body.idToken}` },
+          headers: { Authorization: `Bearer ${idToken}` },
         });
       })
       .then((meRes) => {
