@@ -24,25 +24,33 @@ if ! docker compose version &>/dev/null; then
   exit 1
 fi
 
-# Check that port 5432 is free before Docker tries to bind it (the error Docker
-# produces when the port is taken is cryptic).
-if lsof -i :5432 -sTCP:LISTEN &>/dev/null 2>&1 || ss -tlnp 2>/dev/null | grep -q ':5432 '; then
-  echo "Error: port 5432 is already in use." >&2
-  echo "  Stop your local PostgreSQL instance before starting the assessment environment:" >&2
-  echo "    macOS (Homebrew): brew services stop postgresql@<version>" >&2
-  echo "    Ubuntu/Debian:    sudo systemctl stop postgresql" >&2
-  echo "    Docker container: docker ps | grep 5432" >&2
-  exit 1
+# If the backend container is already running the full stack is up — the backend
+# only starts after migrations and the Firebase emulator are healthy. This covers
+# the common case where the user killed the webpack dev server with Ctrl+C but
+# left the Docker stack running. Skip straight to restarting the dev server.
+if docker ps --filter "name=assessment-backend" --filter "status=running" -q 2>/dev/null | grep -q .; then
+  echo "Assessment environment already running. Starting assessment dev server..."
+else
+  # Check that port 5432 is free before Docker tries to bind it (the error Docker
+  # produces when the port is taken is cryptic).
+  if lsof -i :5432 -sTCP:LISTEN &>/dev/null 2>&1 || ss -tlnp 2>/dev/null | grep -q ':5432 '; then
+    echo "Error: port 5432 is already in use." >&2
+    echo "  Stop your local PostgreSQL instance before starting the assessment environment:" >&2
+    echo "    macOS (Homebrew): brew services stop postgresql@<version>" >&2
+    echo "    Ubuntu/Debian:    sudo systemctl stop postgresql" >&2
+    echo "    Docker container: docker ps | grep 5432" >&2
+    exit 1
+  fi
+
+  echo "Starting assessment environment (DB, migrations, Firebase emulator, backend)..."
+
+  # Remove any orphaned containers from a previous run under a different compose project.
+  docker rm -f assessment-db assessment-db-migrate 2>/dev/null || true
+
+  docker compose -f "$COMPOSE_FILE" up -d --wait
+
+  echo "All services healthy. Starting assessment dev server..."
 fi
-
-echo "Starting assessment environment (DB, migrations, Firebase emulator, backend)..."
-
-# Remove any orphaned containers from a previous run under a different compose project.
-docker rm -f assessment-db assessment-db-migrate 2>/dev/null || true
-
-docker compose -f "$COMPOSE_FILE" up -d --wait
-
-echo "All services healthy. Starting assessment dev server..."
 cd "$ASSESSMENT_DIR"
 exec env \
   FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
