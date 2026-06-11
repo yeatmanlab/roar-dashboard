@@ -4,6 +4,7 @@ import { initFirekitCompat, getVariantById } from '@roar-platform/assessment-sdk
 import { pa } from '@roar-platform/assessment-schema';
 import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
+import { wireScoreAdapter } from '../src/sdk/pa-firekit-facade';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
@@ -88,6 +89,9 @@ onAuthStateChanged(auth, async (user) => {
         taskVersion,
         isAnonymous: true,
       });
+
+      // Wire PA score computation pipeline
+      wireScoreAdapter();
 
       const { variantParams } = await getVariantById(resolvedVariantId);
 

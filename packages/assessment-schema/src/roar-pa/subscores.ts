@@ -22,6 +22,10 @@ export interface PaSubscoreDef {
 /**
  * Per-subtask display metadata and run_scores.name mappings for PA.
  * Consumers iterate PA_SUBTASK_KEYS to preserve canonical order.
+ *
+ * Note: attemptedName fields ARE emitted as subtask score entries whenever the
+ * scores.js callback provides a non-null numAttempted for that subtask
+ * (see toPaScoreEntries). They are skipped only when numAttempted is null/undefined.
  */
 export const PA_SUBSCORE_DEFS = {
   FSM: {

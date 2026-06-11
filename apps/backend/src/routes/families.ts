@@ -23,19 +23,19 @@ export function registerFamiliesRoutes(routerInstance: Router) {
       handler: async ({ body }) => FamiliesController.create(body),
     },
     addChildren: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { familyId }, body }) =>
         FamiliesController.addChildren(user!, familyId, body),
     },
     listUsers: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { familyId }, query }) =>
         FamiliesController.listUsers(user!, familyId, query),
     },
   });
 
-  // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+  // @ts-expect-error - ts-rest middleware type incompatibility with Express
   createExpressEndpoints(FamiliesContract, FamiliesRoutes, routerInstance);
 }

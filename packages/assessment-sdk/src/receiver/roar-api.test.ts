@@ -16,13 +16,19 @@ describe('RoarApi', () => {
       },
     };
 
+    expect(() => {
+      new RoarApi(contextWithoutParticipant);
+    }).toThrow(SDKError);
+
+    let error: unknown;
     try {
       new RoarApi(contextWithoutParticipant);
-      expect.fail('Should have thrown SDKError');
-    } catch (error) {
-      expect(error).toBeInstanceOf(SDKError);
-      expect((error as SDKError).code).toBe(SdkErrorCode.INVALID_CONTEXT);
+    } catch (e) {
+      error = e;
     }
+
+    expect(error).toBeInstanceOf(SDKError);
+    expect((error as SDKError).code).toBe(SdkErrorCode.INVALID_CONTEXT);
   });
 
   it('creates client successfully when participantId is present', () => {

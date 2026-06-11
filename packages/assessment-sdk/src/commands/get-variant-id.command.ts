@@ -55,7 +55,9 @@ export class GetTaskVariantCommand implements Command<GetTaskVariantInput, GetTa
       return {
         variantId: variant.id,
         taskId: variant.taskId,
-        variantParams: Object.fromEntries(variant.parameters.map(({ name, value }) => [name, value])),
+        variantParams: Object.fromEntries(
+          variant.parameters.map(({ name, value }: { name: string; value: unknown }) => [name, value]),
+        ),
       };
     }
 

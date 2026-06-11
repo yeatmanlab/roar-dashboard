@@ -9,7 +9,7 @@ const s = initServer();
 export function registerTaskVariantsRoutes(routerInstance: Router) {
   const TaskVariantsRoutes = s.router(TaskVariantsContract, {
     list: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, query }) => TaskVariantsController.list(user!, query),
     },
@@ -20,6 +20,6 @@ export function registerTaskVariantsRoutes(routerInstance: Router) {
         TaskVariantsController.getByIdWithTaskDetails(user!, variantId),
     },
   });
-  // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+  // @ts-expect-error - ts-rest middleware type incompatibility with Express
   createExpressEndpoints(TaskVariantsContract, TaskVariantsRoutes, routerInstance);
 }
