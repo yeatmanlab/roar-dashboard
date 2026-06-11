@@ -51,76 +51,39 @@
               v-if="
                 !isLoadingAssignments && !isLoadingDistrictSupportCategories && sortedAndFilteredTaskIds?.length > 0
               "
-              class="py-3 mb-2 text-left bg-gray-100"
+              class="py-3 mb-2 text-left"
             >
-              <div class="overview-wrapper">
-                <div class="chart-wrapper">
-                  <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
-                    <div class="distribution-overview-wrapper">
-                      <DistributionChartOverview
-                        :runs="
-                          props.orgType === 'district'
-                            ? aggregatedDistrictSupportCategories[taskId]
-                            : computeAssignmentAndRunData.runsByTaskId[taskId]
-                        "
-                        :initialized="initialized"
-                        :task-id="taskId"
-                        :org-type="props.orgType"
-                        :org-id="props.orgId"
-                        :administration-id="props.administrationId"
-                      />
-                      <div className="task-description mt-3">
-                        <span class="font-bold">
-                          {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
-                        </span>
-                        <span class="font-light">
-                          {{
-                            descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : ''
-                          }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ScoreDistributionOverview
+                :task-ids="sortedAndFilteredTaskIds"
+                :runs-by-task-id="
+                  props.orgType === 'district'
+                    ? aggregatedDistrictSupportCategories
+                    : computeAssignmentAndRunData.runsByTaskId
+                "
+                :org-type="props.orgType"
+                :tasks-dictionary="tasksDictionary"
+              />
+              <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
               <div
-                v-if="!isLoadingAssignments && sortedAndFilteredTaskIds?.length > 0"
-                class="flex rounded legend-container flex-column align-items-center"
+                v-if="
+                  !isLoadingAssignments &&
+                  sortedAndFilteredTaskIds?.length > 0 &&
+                  !isEmptyDistrictSupportCategories &&
+                  props.orgType === 'district'
+                "
+                class="flex rounded flex-column align-items-center mt-3"
               >
-                <div class="flex align-items-center">
-                  <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
-                    <div>
-                      <div>Needs Extra Support</div>
-                    </div>
-                  </div>
-                  <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.SOME};`" />
-                    <div>
-                      <div>Developing Skill</div>
-                    </div>
-                  </div>
-                  <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ABOVE};`" />
-                    <div>
-                      <div>Achieved Skill</div>
-                    </div>
-                  </div>
-                </div>
-                <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
-                <div v-if="!isEmptyDistrictSupportCategories && props.orgType === 'district'">
-                  <p
-                    v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
-                    class="text-center text-sm font-bold px-4"
-                  >
-                    In this district-level report, visualizations are available for foundational ROAR assessments (Word,
-                    Sentence, and Phoneme) to give you clear, reliable insights on these foundational skills.
-                  </p>
-                  <p class="text-center align-items-center text-sm font-bold px-4">
-                    View school-level or classroom-level reports to see student-level data and information about other
-                    assessments.
-                  </p>
-                </div>
+                <p
+                  v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
+                  class="text-center text-sm font-bold px-4"
+                >
+                  In this district-level report, visualizations are available for foundational ROAR assessments (Word,
+                  Sentence, and Phoneme) to give you clear, reliable insights on these foundational skills.
+                </p>
+                <p class="text-center align-items-center text-sm font-bold px-4">
+                  View school-level or classroom-level reports to see student-level data and information about other
+                  assessments.
+                </p>
               </div>
             </div>
             <div
@@ -471,9 +434,10 @@ import _startCase from 'lodash/startCase';
 import AppDialog from '@/components/Dialog/Dialog.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { getStudentExternalId } from '@/helpers/getStudentExternalId';
+import ScoreDistributionOverview from '@/components/reports/ScoreDistributionOverview.vue';
 const { userCan, Permissions } = usePermissions();
 
-let TaskReport, DistributionChartOverview;
+let TaskReport;
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -2057,7 +2021,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(async () => {
   TaskReport = (await import('@/components/reports/tasks/TaskReport.vue')).default;
-  DistributionChartOverview = (await import('@/components/reports/DistributionChartOverview.vue')).default;
   if (roarfirekit.value.restConfig?.()) refresh();
 });
 </script>

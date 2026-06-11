@@ -1,4 +1,5 @@
 import { PROGRESS_COLORS } from '@/constants/completionStatus';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 export const chart = {};
 
@@ -174,6 +175,105 @@ export const setProgressChartOptions = (orgStats) => {
         border: {
           display: false,
         },
+        min,
+        max,
+      },
+    },
+  };
+};
+
+/**
+ * Generate Chart.js data configuration for a stacked horizontal score distribution bar.
+ *
+ * Creates a single-bar chart with three stacked segments representing support levels:
+ * - Needs Extra Support (pink): students below benchmark
+ * - Developing Skill (yellow): students approaching benchmark
+ * - Achieved Skill (green): students at or above benchmark
+ *
+ * @param {Object} supportLevelCounts - Counts per support level
+ * @param {number} [supportLevelCounts.below=0] - Count of students needing extra support
+ * @param {number} [supportLevelCounts.some=0] - Count of students developing skill
+ * @param {number} [supportLevelCounts.above=0] - Count of students who achieved skill
+ * @returns {Object} Chart.js data configuration with labels and datasets
+ */
+export const setDistributionChartData = (supportLevelCounts) => {
+  const { below = 0, some = 0, above = 0 } = supportLevelCounts || {};
+  const borderRadii = getBorderRadii(below, some, above);
+  const borderWidth = 0;
+
+  return {
+    labels: [''],
+    datasets: [
+      {
+        type: 'bar',
+        label: 'Needs Extra Support',
+        backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.BELOW,
+        data: [below],
+        borderWidth,
+        borderSkipped: false,
+        borderRadius: borderRadii.left,
+      },
+      {
+        type: 'bar',
+        label: 'Developing Skill',
+        backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.SOME,
+        data: [some],
+        borderWidth,
+        borderSkipped: false,
+        borderRadius: borderRadii.middle,
+      },
+      {
+        type: 'bar',
+        label: 'Achieved Skill',
+        backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.ABOVE,
+        data: [above],
+        borderWidth,
+        borderSkipped: false,
+        borderRadius: borderRadii.right,
+      },
+    ],
+  };
+};
+
+/**
+ * Generate Chart.js options configuration for a stacked horizontal score distribution bar.
+ *
+ * @param {Object} supportLevelCounts - Counts per support level
+ * @param {number} [supportLevelCounts.below=0] - Count of students needing extra support
+ * @param {number} [supportLevelCounts.some=0] - Count of students developing skill
+ * @param {number} [supportLevelCounts.above=0] - Count of students who achieved skill
+ * @returns {Object} Chart.js options configuration
+ */
+export const setDistributionChartOptions = (supportLevelCounts) => {
+  const { below = 0, some = 0, above = 0 } = supportLevelCounts || {};
+  const min = 0;
+  const max = below + some + above;
+
+  return {
+    indexAxis: 'y',
+    maintainAspectRatio: false,
+    aspectRatio: 9,
+    plugins: {
+      tooltips: {
+        mode: 'index',
+        intersect: false,
+      },
+      legend: false,
+    },
+    scales: {
+      x: {
+        stacked: true,
+        ticks: { display: false },
+        grid: { display: false },
+        border: { display: false },
+        min,
+        max,
+      },
+      y: {
+        stacked: true,
+        ticks: { display: false },
+        grid: { display: false },
+        border: { display: false },
         min,
         max,
       },
