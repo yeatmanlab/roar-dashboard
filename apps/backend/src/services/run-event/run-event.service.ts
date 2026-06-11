@@ -1,4 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
+import { getTableColumns } from 'drizzle-orm';
 import type { RunEventBody } from '@roar-platform/api-contract';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -14,7 +15,11 @@ import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaRelation } from '../authorization/fga-constants';
 import { verifyTargetUserAccess } from '../authorization/verify-target-user-access';
 import type { AuthContext } from '../../types/auth-context';
+import { runTrials } from '../../db/schema';
 import type { NewRunScore } from '../../db/schema';
+
+const TRIAL_COLUMN_KEYS = new Set(Object.keys(getTableColumns(runTrials)));
+const EXCLUDED_TRIAL_FIELDS = new Set<string>(['id', 'runId', 'createdAt', 'updatedAt']);
 
 type RunCompleteEventBody = Extract<RunEventBody, { type: 'complete' }>;
 type RunAbortEventBody = Extract<RunEventBody, { type: 'abort' }>;
@@ -182,15 +187,31 @@ export function RunEventService({
     await verifyUserAccess(authContext, targetUserId);
     const run = await assertRunOwnedByUser(runId, targetUserId);
 
+    const runTrialFields: Record<string, unknown> = {};
+    const metadata: Record<string, unknown> = {};
+
+    // jsPsych sends snake_case keys, but our DB columns are camelCase. Convert snake_case keys to camelCase to satsify the RunTrial type, but allow additional non-trial fields to be included in metadata. If a camelCase key is explicitly included, it takes precedence over the snake_case version.
+    for (const [key, value] of Object.entries(body.trial)) {
+      const camelKey = key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+      // If this is a snake_case alias (e.g. assessment_stage) and the camelCase
+      // equivalent (assessmentStage) is explicitly present, skip it — the explicit
+      // camelCase value is already authoritative and takes priority.
+      if (camelKey !== key && camelKey in body.trial) continue;
+      if (TRIAL_COLUMN_KEYS.has(camelKey) && !EXCLUDED_TRIAL_FIELDS.has(camelKey)) {
+        runTrialFields[camelKey] = value;
+      } else {
+        metadata[camelKey] = value;
+      }
+    }
+
     try {
       await runTrialsRepository.runTransaction({
         fn: async (tx) => {
           const createdTrial = await runTrialsRepository.create({
             data: {
+              ...runTrialFields,
               runId,
-              assessmentStage: body.trial.assessmentStage,
-              correct: body.trial.correct,
-              metadata: body.trial,
+              metadata,
             },
             transaction: tx,
           });

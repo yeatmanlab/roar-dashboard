@@ -73,7 +73,11 @@ onAuthStateChanged(auth, async (user) => {
         });
         const variantJson = await variantRes.json();
         if (!variantRes.ok) {
-          console.error(`Failed to fetch roar-swr task variants for ${fallbackTaskId}:`, variantRes.status, variantJson);
+          console.error(
+            `Failed to fetch roar-swr task variants for ${fallbackTaskId}:`,
+            variantRes.status,
+            variantJson,
+          );
           return;
         }
         resolvedVariantId = variantJson?.data?.items?.[0]?.id ?? null;
