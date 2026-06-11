@@ -100,7 +100,6 @@
   ],
   "connect-src": [
     "'self'",
-    "data:",
     "https://*.analytics.google.com",
     "https://*.google-analytics.com",
     "https://*.googleapis.com",
