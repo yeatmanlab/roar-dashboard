@@ -1,5 +1,5 @@
 import { getFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
-import { toPaScoreEntries } from '@roar-platform/assessment-schema/pa';
+import { toPaScoreEntries } from '@roar-platform/assessment-schema/roar-pa';
 
 /**
  * Wires the PA score computation pipeline into the Firekit facade.
@@ -41,7 +41,11 @@ export function wireScoreAdapter() {
       };
     }
 
-    const stageScores = accumulatedRawScores[subtask][stage];
+    // Normalize response variants to their base stage before lookup.
+    // The SDK passes all four valid stages here; the scores.js callback
+    // groups by practice/test only.
+    const baseStage = stage === 'practice_response' ? 'practice' : stage === 'test_response' ? 'test' : stage;
+    const stageScores = accumulatedRawScores[subtask][baseStage];
     stageScores.numAttempted += 1;
     if (correct === 1) {
       stageScores.numCorrect += 1;
