@@ -18,6 +18,7 @@ import type { AuthContext } from '../../types/auth-context';
 import { runTrials } from '../../db/schema';
 import type { NewRunScore } from '../../db/schema';
 import { camelizeKeys } from '../../utils/camelize-keys.util';
+import { sanitizeJsonbMaxValues } from '../../utils/sanitize-jsonb.util';
 
 const TRIAL_COLUMN_KEYS = new Set(Object.keys(getTableColumns(runTrials)));
 const EXCLUDED_TRIAL_FIELDS = new Set<string>(['id', 'runId', 'createdAt', 'updatedAt']);
@@ -199,7 +200,7 @@ export function RunEventService({
       if (TRIAL_COLUMN_KEYS.has(camelKey) && !EXCLUDED_TRIAL_FIELDS.has(camelKey)) {
         runTrialFields[camelKey] = value;
       } else {
-        metadata[camelKey] = value;
+        metadata[camelKey] = sanitizeJsonbMaxValues(value);
       }
     }
 
