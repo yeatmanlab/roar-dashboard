@@ -17,6 +17,7 @@ import { verifyTargetUserAccess } from '../authorization/verify-target-user-acce
 import type { AuthContext } from '../../types/auth-context';
 import { runTrials } from '../../db/schema';
 import type { NewRunScore } from '../../db/schema';
+import { camelizeKeys } from '../../utils/camelize-keys.util';
 
 const TRIAL_COLUMN_KEYS = new Set(Object.keys(getTableColumns(runTrials)));
 const EXCLUDED_TRIAL_FIELDS = new Set<string>(['id', 'runId', 'createdAt', 'updatedAt']);
@@ -190,13 +191,11 @@ export function RunEventService({
     const runTrialFields: Record<string, unknown> = {};
     const metadata: Record<string, unknown> = {};
 
-    // jsPsych sends snake_case keys, but our DB columns are camelCase. Convert snake_case keys to camelCase to satsify the RunTrial type, but allow additional non-trial fields to be included in metadata. If a camelCase key is explicitly included, it takes precedence over the snake_case version.
-    for (const [key, value] of Object.entries(body.trial)) {
-      const camelKey = key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-      // If this is a snake_case alias (e.g. assessment_stage) and the camelCase
-      // equivalent (assessmentStage) is explicitly present, skip it — the explicit
-      // camelCase value is already authoritative and takes priority.
-      if (camelKey !== key && camelKey in body.trial) continue;
+    // Normalize trial keys to camelCase. skipAliases drops snake_case keys when their
+    // camelCase equivalent is present — the SDK-normalized value takes priority.
+    // Schema-matching keys go to runTrialFields; everything else lands in metadata.
+    const normalizedTrial = camelizeKeys(body.trial, { skipAliases: true });
+    for (const [camelKey, value] of Object.entries(normalizedTrial)) {
       if (TRIAL_COLUMN_KEYS.has(camelKey) && !EXCLUDED_TRIAL_FIELDS.has(camelKey)) {
         runTrialFields[camelKey] = value;
       } else {
