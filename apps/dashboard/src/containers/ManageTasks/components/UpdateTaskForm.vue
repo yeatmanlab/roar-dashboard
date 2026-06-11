@@ -125,7 +125,7 @@ import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
 import Dropdown from '@/components/Form/Dropdown';
 import TextInput from '@/components/Form/TextInput';
-import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
+import TaskParametersConfigurator from '@/components/TaskParametersConfigurator/TaskParametersConfigurator.vue';
 import { buildTaskConfigFromRows, splitTaskConfig } from '@/helpers/taskConfig';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { TASK_DESCRIPTION_MAX_LENGTH, TASK_NAME_MAX_LENGTH, TASK_NAME_REGEX } from '@/constants/tasks';

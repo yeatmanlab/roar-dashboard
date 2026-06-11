@@ -107,7 +107,7 @@ import PvButton from 'primevue/button';
 import PvToast from 'primevue/toast';
 import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
 import TextInput from '@/components/Form/TextInput';
-import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
+import TaskParametersConfigurator from '@/components/TaskParametersConfigurator/TaskParametersConfigurator.vue';
 import { buildTaskConfigFromRows } from '@/helpers/taskConfig';
 import { StatusCodes } from 'http-status-codes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
