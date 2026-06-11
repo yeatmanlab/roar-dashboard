@@ -2312,7 +2312,7 @@ describe('GET /v1/administrations/:id/reports/scores/facets', () => {
       expect(schoolEntry).toBeDefined();
       expect(schoolEntry.schoolId).toBe(baseFixture.schoolA.id);
       // schoolName may be null in degenerate fixtures; if present, it's a string.
-      expect(schoolEntry.schoolName === null || typeof schoolEntry.schoolName === 'string').toBe(true);
+      expect(schoolEntry.schoolName).toSatisfy((value: unknown) => value === null || typeof value === 'string');
     });
 
     it('keeps percentile bin edges stable when a user.grade filter is applied (#1782)', async () => {

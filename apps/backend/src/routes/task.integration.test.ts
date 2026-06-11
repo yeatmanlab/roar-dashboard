@@ -1995,7 +1995,9 @@ describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
       expect(res.body.data.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
       // updatedAt may be null; when present it must be an ISO date string
       const { updatedAt } = res.body.data;
-      expect(!updatedAt || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(updatedAt)).toBe(true);
+      expect(updatedAt).toSatisfy(
+        (value: unknown) => value === null || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value as string),
+      );
     });
 
     it('returns variant parameters as array of name-value objects', async () => {

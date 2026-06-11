@@ -348,7 +348,9 @@ describe('GET /v1/users/:id', () => {
 
       // updatedAt can be null or ISO string
       const { updatedAt } = res.body.data;
-      expect(!updatedAt || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(updatedAt)).toBe(true);
+      expect(updatedAt).toSatisfy(
+        (value: unknown) => value === null || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value as string),
+      );
     });
 
     it('handles nullable fields correctly', async () => {
@@ -1345,7 +1347,9 @@ describe('GET /v1/users/:userId/administrations', () => {
 
       expect(res.body.data.items.length).toBeGreaterThan(0);
       const adminWithStats = res.body.data.items.find((item: Administration) => item.stats);
-      expect(adminWithStats).toBeDefined();
+      if (!adminWithStats) {
+        throw new Error('Expected at least one administration with embedded stats');
+      }
       expect(adminWithStats.stats).toMatchObject({
         assigned: expect.any(Number),
         started: expect.any(Number),
@@ -1360,7 +1364,9 @@ describe('GET /v1/users/:userId/administrations', () => {
 
       expect(res.body.data.items.length).toBeGreaterThan(0);
       const adminWithTasks = res.body.data.items.find((item: Administration) => item.tasks);
-      expect(adminWithTasks).toBeDefined();
+      if (!adminWithTasks) {
+        throw new Error('Expected at least one administration with embedded tasks');
+      }
       expect(Array.isArray(adminWithTasks.tasks)).toBe(true);
     });
 
