@@ -82,7 +82,7 @@ The error helpers in `src/utils/api-errors.js` (`getApiErrorCode`, `isTerminalAu
 
 ### When NOT to use the client
 
-- **Not-yet-migrated domains.** Domains still on `roarfirekit` / Firestore REST helpers (e.g. parts of administrations, orgs, users) keep their legacy data path until their migration PR lands. Don't mix the two transports for one resource — migrate the domain's reads and writes together.
+- **Not-yet-migrated domains.** Domains still on `roarfirekit` / Firestore REST helpers (e.g. parts of administrations, orgs, users, and the cross-task variant/bundle catalog behind TaskPicker — `useTaskVariantsQuery`, `useTaskBundlesQuery`) keep their legacy data path until their migration PR lands. Don't mix the two transports for one resource — migrate the domain's reads and writes together.
 - **Firebase Auth itself.** Sign-in, token refresh, and session management go through the auth store and Firebase SDK; the client only consumes the resulting access token.
 - **Static assets and third-party APIs.** The client is bound to the ROAR backend contract; anything else uses its own fetcher.
 
