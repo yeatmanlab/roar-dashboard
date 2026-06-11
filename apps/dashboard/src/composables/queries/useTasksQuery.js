@@ -3,7 +3,10 @@ import { StatusCodes } from 'http-status-codes';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getRoarApiClient } from '@/clients/roar-api';
 import { useAuthStore } from '@/store/auth';
+import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 import { TASKS_QUERY_KEY } from '@/constants/queryKeys';
+
+const MAX_RETRIES = 3;
 
 /**
  * Page size for the tasks list request.
@@ -70,6 +73,15 @@ const useTasksQuery = (queryOptions = undefined) => {
     },
     ...options,
     enabled: isQueryEnabled,
+    // Terminal auth errors and rostering-ended are not transient; retrying
+    // delays the user-facing error UX. Placed after `...options` so a
+    // caller-supplied `retry` can't silently override the policy.
+    retry: (failureCount, error) => {
+      if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
+        return false;
+      }
+      return failureCount < MAX_RETRIES;
+    },
   });
 };
 

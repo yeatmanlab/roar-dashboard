@@ -18,13 +18,6 @@
                 <small class="text-gray-400 font-bold">Select an Existing Task </small>
                 <span class="required">*</span></label
               >
-              <div class="flex flex-column gap-2 align-items-end">
-                <div class="flex flex-row align-items-center justify-content-end gap-2 flex-order-1">
-                  <!--                    This does not seemt to function properly, comming it out for now.-->
-                  <!--                    <label class="ml-7" for="chbx-registeredTask">Search registered tasks only?</label>-->
-                  <!--                    <PvCheckbox v-model="registeredTasksOnly" input-id="chbx-registeredTask" :binary="true" />-->
-                </div>
-              </div>
             </div>
             <PvSelect
               v-model="v$.selectedGame.$model"

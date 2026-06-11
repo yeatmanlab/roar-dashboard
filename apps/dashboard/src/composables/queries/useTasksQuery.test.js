@@ -136,6 +136,42 @@ describe('useTasksQuery', () => {
     });
   });
 
+  it('does not retry on terminal auth or rostering-ended errors', () => {
+    let retryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      retryFn = options.retry;
+      return { data: { value: null }, error: { value: null } };
+    });
+
+    withSetup(() => useTasksQuery(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const authRequiredError = { body: { error: { code: 'auth/required' } } };
+    const tokenExpiredError = { body: { error: { code: 'auth/token-expired' } } };
+    const rosteringEndedError = { body: { error: { code: 'auth/rostering-ended' } } };
+    expect(retryFn(0, authRequiredError)).toBe(false);
+    expect(retryFn(0, tokenExpiredError)).toBe(false);
+    expect(retryFn(0, rosteringEndedError)).toBe(false);
+  });
+
+  it('retries up to 3 times on transient errors', () => {
+    let retryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      retryFn = options.retry;
+      return { data: { value: null }, error: { value: null } };
+    });
+
+    withSetup(() => useTasksQuery(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const networkError = new Error('network down');
+    expect(retryFn(0, networkError)).toBe(true);
+    expect(retryFn(2, networkError)).toBe(true);
+    expect(retryFn(3, networkError)).toBe(false);
+  });
+
   it('is disabled when the auth store has no access token', () => {
     mockUseAuthStore.mockReturnValue({ accessToken: null });
     vi.spyOn(VueQuery, 'useQuery');
