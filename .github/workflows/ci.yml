@@ -481,6 +481,11 @@ jobs:
           done
         timeout-minutes: 5
 
+      - name: Prepare CI variant parameters
+        run: |
+          cp apps/assessments/${{ matrix.assessment }}/taskVariantParameters.example.json \
+             apps/assessments/${{ matrix.assessment }}/taskVariantParameters.json
+
       - name: Start assessment infrastructure
         run: docker compose -f docker-compose.assessment.yml up -d --wait
         timeout-minutes: 10
