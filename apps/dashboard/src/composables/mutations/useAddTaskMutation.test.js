@@ -11,14 +11,6 @@ vi.mock('@/clients/roar-api', () => ({
   }),
 }));
 
-vi.mock('@tanstack/vue-query', async (getModule) => {
-  const original = await getModule();
-  return {
-    ...original,
-    useQuery: vi.fn().mockImplementation(original.useQuery),
-  };
-});
-
 const mockTaskBody = {
   slug: 'mock-task',
   name: 'Mock Task',
@@ -53,8 +45,9 @@ describe('useAddTaskMutation', () => {
   });
 
   it('invalidates the tasks query upon mutation success', async () => {
-    const mockInvalidateQueries = vi.fn();
-    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));
+    // useQueryClient() resolves to the plugin-provided client, so spying on the
+    // instance avoids mocking the @tanstack/vue-query module itself.
+    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue();
     mockTasksCreate.mockResolvedValue({ status: 201, body: { data: { id: 'task-1' } } });
 
     const [result] = withSetup(() => useAddTaskMutation(), {
@@ -63,12 +56,11 @@ describe('useAddTaskMutation', () => {
 
     await result.mutateAsync(mockTaskBody);
 
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['tasks'] });
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: ['tasks'] });
   });
 
   it('throws a structured error and does not invalidate queries on non-201 responses', async () => {
-    const mockInvalidateQueries = vi.fn();
-    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));
+    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue();
     mockTasksCreate.mockResolvedValue({
       status: 409,
       body: { error: { message: 'Conflict' } },
@@ -91,6 +83,6 @@ describe('useAddTaskMutation', () => {
       body: { error: { message: 'Conflict' } },
     });
     expect(result.isError.value).toBe(true);
-    expect(mockInvalidateQueries).not.toHaveBeenCalled();
+    expect(invalidateQueriesSpy).not.toHaveBeenCalled();
   });
 });

@@ -162,9 +162,10 @@ const taskRules = {
   name: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
   nameSimple: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
   nameTechnical: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
-  description: { required: false, maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
-  image: { required: false, url },
-  tutorialVideo: { required: false, url },
+  // Optional fields simply omit `required` — vuelidate treats every key as a validator function.
+  description: { maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
+  image: { url },
+  tutorialVideo: { url },
 };
 
 const v$ = useVuelidate(taskRules, taskModel);

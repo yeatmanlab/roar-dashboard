@@ -191,9 +191,10 @@ const formRules = {
   name: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
   nameSimple: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
   nameTechnical: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
-  description: { required: false, maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
-  image: { required: false, url },
-  tutorialVideo: { required: false, url },
+  // Optional fields simply omit `required` — vuelidate treats every key as a validator function.
+  description: { maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
+  image: { url },
+  tutorialVideo: { url },
 };
 
 const v$ = useVuelidate(formRules, formModel);
@@ -302,7 +303,11 @@ const handleSubmit = async () => {
     return;
   }
 
+  // The submit button only renders with a task selected, but the handler sits on the
+  // <form> element — guard against programmatic submits and refetch races.
   const task = selectedTask.value;
+  if (!task) return;
+
   const body = buildDiffedBody(task);
 
   if (Object.keys(body).length === 0) {

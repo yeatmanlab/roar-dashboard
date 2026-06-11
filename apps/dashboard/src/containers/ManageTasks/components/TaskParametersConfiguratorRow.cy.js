@@ -221,6 +221,31 @@ describe('<TaskParametersConfiguratorRow />', () => {
         .and('contain.text', 'Parameter name is reserved');
     });
 
+    it('Enforces the name format on new rows only', () => {
+      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, isNew: true }]);
+
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+        },
+      });
+
+      // Dashes are rejected on new rows (names become taskConfig keys verbatim).
+      cy.findByTestId('task-configurator-row__name').type('invalid-name');
+      cy.findByTestId('task-configurator-row__name')
+        .siblings('[data-testid="textinput__errors"]')
+        .eq(0)
+        .should('be.visible')
+        .and('contain.text', 'Must start with a letter');
+
+      // Underscore-style names are accepted.
+      cy.findByTestId('task-configurator-row__name').type('{selectAll}');
+      cy.findByTestId('task-configurator-row__name').type('{backspace}');
+      cy.findByTestId('task-configurator-row__name').type('valid_name_2');
+      cy.findByTestId('task-configurator-row__name').siblings('[data-testid="textinput__errors"]').should('not.exist');
+    });
+
     it('Automatically clears error messages', () => {
       mockModel = ref([...mockData]);
 

@@ -11,14 +11,6 @@ vi.mock('@/clients/roar-api', () => ({
   }),
 }));
 
-vi.mock('@tanstack/vue-query', async (getModule) => {
-  const original = await getModule();
-  return {
-    ...original,
-    useQuery: vi.fn().mockImplementation(original.useQuery),
-  };
-});
-
 const mockTaskId = '00000000-0000-0000-0000-000000000001';
 const mockBody = { nameSimple: 'ROAR - Word v2', taskConfig: { maxAttempts: 5 } };
 
@@ -47,8 +39,9 @@ describe('useUpdateTaskMutation', () => {
   });
 
   it('invalidates the tasks query upon mutation success', async () => {
-    const mockInvalidateQueries = vi.fn();
-    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));
+    // useQueryClient() resolves to the plugin-provided client, so spying on the
+    // instance avoids mocking the @tanstack/vue-query module itself.
+    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue();
     mockTasksUpdate.mockResolvedValue({ status: 200, body: { data: { id: mockTaskId } } });
 
     const [result] = withSetup(() => useUpdateTaskMutation(), {
@@ -57,12 +50,11 @@ describe('useUpdateTaskMutation', () => {
 
     await result.mutateAsync({ taskId: mockTaskId, body: mockBody });
 
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['tasks'] });
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: ['tasks'] });
   });
 
   it('throws a structured error and does not invalidate queries on non-200 responses', async () => {
-    const mockInvalidateQueries = vi.fn();
-    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));
+    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue();
     mockTasksUpdate.mockResolvedValue({
       status: 404,
       body: { error: { message: 'Not found' } },
@@ -85,6 +77,6 @@ describe('useUpdateTaskMutation', () => {
       body: { error: { message: 'Not found' } },
     });
     expect(result.isError.value).toBe(true);
-    expect(mockInvalidateQueries).not.toHaveBeenCalled();
+    expect(invalidateQueriesSpy).not.toHaveBeenCalled();
   });
 });

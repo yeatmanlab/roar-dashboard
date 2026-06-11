@@ -56,7 +56,7 @@
       />
 
       <NumberInput
-        v-if="row.type === TASK_PARAMETER_TYPES.NUMBER"
+        v-else-if="row.type === TASK_PARAMETER_TYPES.NUMBER"
         v-model="v$.row.value.$model"
         label="Parameter Value"
         label-hidden

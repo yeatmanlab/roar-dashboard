@@ -113,10 +113,13 @@ describe('<TaskParametersConfigurator />', () => {
 
   describe('Form Validation', () => {
     it('Passes the key blacklist to the row component', () => {
+      // New rows are also format-validated (IDENTIFIER_WITH_UNDERSCORES), so the
+      // names used here must be format-valid for the blacklist error to be the
+      // only error in play.
       cy.mount(TaskParametersConfigurator, {
         props: {
           modelValue: mockModel.value,
-          validationKeyBlacklist: ['reserved-param'],
+          validationKeyBlacklist: ['reserved_param'],
         },
       });
 
@@ -126,7 +129,7 @@ describe('<TaskParametersConfigurator />', () => {
       cy.findByTestId('task-configurator__add-row-btn').click();
       cy.findAllByTestId('task-configurator-row').should('have.length', 4);
 
-      cy.findAllByTestId('task-configurator-row__name').eq(3).find('input').type('reserved-param');
+      cy.findAllByTestId('task-configurator-row__name').eq(3).find('input').type('reserved_param');
       cy.findAllByTestId('task-configurator-row__name')
         .eq(3)
         .siblings('[data-testid="textinput__errors"]')
@@ -134,7 +137,7 @@ describe('<TaskParametersConfigurator />', () => {
         .should('be.visible')
         .and('contain.text', 'Parameter name is reserved');
 
-      cy.findAllByTestId('task-configurator-row__name').eq(3).find('input').type('-2');
+      cy.findAllByTestId('task-configurator-row__name').eq(3).find('input').type('_2');
 
       cy.findAllByTestId('task-configurator-row__name')
         .eq(3)
