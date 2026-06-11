@@ -484,6 +484,8 @@ jobs:
       - name: Start assessment infrastructure
         run: docker compose -f docker-compose.assessment.yml up -d --wait
         timeout-minutes: 10
+        env:
+          ASSESSMENT_NAME: ${{ matrix.assessment }}
 
       - name: Run Cypress tests
         uses: cypress-io/github-action@v6
