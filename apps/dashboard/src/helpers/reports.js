@@ -1402,7 +1402,7 @@ export const taskInfoById = {
       'learning and predict overall math achievement. This assessment will help educators understand ' +
       'student performance in this foundational domain and see where students may benefit from ' +
       'additional practice and support. Check here for further information on the terms used for ' +
-      'Skills Assessed.',
+      'Problem Types Assessed.',
   },
   'fluency-calf': {
     header: 'ROAM Calculation Fluency',
@@ -1415,7 +1415,7 @@ export const taskInfoById = {
       'of the algorithms for these four fundamental arithmetic operations forms the building blocks ' +
       "for more advanced math skills. This assessment allows educators to evaluate students' command " +
       'over these key arithmetic procedures and tailor instruction to support any specific areas of ' +
-      'difficulty. Check here for further information on the terms used for Skills Assessed.',
+      'difficulty. Check here for further information on the terms used for Problem Types Assessed.',
   },
   'roam-alpaca': {
     header: 'ROAM Core Math',

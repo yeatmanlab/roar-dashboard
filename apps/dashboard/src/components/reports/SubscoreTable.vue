@@ -129,7 +129,7 @@ const columns = computed(() => {
 
       tableColumns.push({
         field: `scores.${props.taskId}.composite.totalIncorrectSkills`,
-        header: 'No. of Skills to Work On',
+        header: 'No. of Problem Types to Work On',
         dataType: 'text',
         sort: false,
       });
@@ -260,14 +260,14 @@ const exportSelected = (selectedRows) => {
               _get(scores, `${props.taskId}.${subskillId}.${property}`),
             );
           });
-          // fluency-calf returns scores for multiplication and division but does not report skills assessed for those operations
+          // fluency-calf returns scores for multiplication and division but does not report problem types assessed for those operations
           if (
             props.taskId === 'fluency-arf' ||
             (props.taskId === 'fluency-calf' && (subskillId === 'subtraction' || subskillId === 'addition'))
           ) {
             _set(
               tableRow,
-              `${subskill} - Skills Assessed`,
+              `${subskill} - Problem Types Assessed`,
               _get(scores, `${props.taskId}.${subskillId}.skillsAssessed`),
             );
           }
@@ -369,14 +369,14 @@ const exportAll = async () => {
               _get(scores, `${props.taskId}.${subskillId}.${property}`),
             );
           });
-          // fluency-calf returns scores for multiplication and division but does not report skills assessed for those operations
+          // fluency-calf returns scores for multiplication and division but does not report problem types assessed for those operations
           if (
             props.taskId === 'fluency-arf' ||
             (props.taskId === 'fluency-calf' && (subskillId === 'subtraction' || subskillId === 'addition'))
           ) {
             _set(
               tableRow,
-              `${subskill} - Skills Assessed`,
+              `${subskill} - Problem Types Assessed`,
               _get(scores, `${props.taskId}.${subskillId}.skillsAssessed`),
             );
           }
