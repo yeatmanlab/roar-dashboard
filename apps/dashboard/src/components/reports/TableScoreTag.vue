@@ -128,10 +128,9 @@ function handleToolTip(_taskId, _toolTip, _colData) {
         }
         _toolTip = fcStats + '\n' + frStats;
       } else {
-        for (const [property, propertyHeader] of Object.entries(roamFluencySubskillHeaders)) {
+        for (const [property, propertyHeader] of Object.entries(roamFluencySubskillHeadersNonResponse)) {
           if (_colData.scores?.[_taskId]?.[property] != undefined) {
-            console.log(_colData.scores?.[_taskId]);
-            _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
+            _toolTip += `${property === 'numCorrect' || property === 'numIncorrect' ? `\u00A0\u2022\u00A0` : ''}${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
           }
         }
       }

@@ -458,6 +458,7 @@ import {
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
+  roamFluencySubskillHeadersNonResponse,
 } from '@/helpers/reports';
 import { i18n } from '@/translations/i18n';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
@@ -1183,8 +1184,10 @@ const computeAssignmentAndRunData = computed(() => {
               // Multiplication & division subskills are considered the same when counting the total
               currRowScores[taskId].composite = {
                 totalIncorrectSkills: new Set(allIncorrectSkills).size,
+                percentCorrect: `${scores.composite?.subPercentCorrect * 100}%`,
                 ...scores.composite,
               };
+              currRowScores[taskId].percentCorrect = `${scores.composite?.subPercentCorrect * 100}%`;
             }
           }
 
@@ -1455,33 +1458,43 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        const setSubscore = (field, score) => {
-          // Response modality prod data only uses new field names (ver 1.2.23+)
-          let result = '';
-          let total = 0;
-          if (score.fr) {
-            const frScore = score.fr[field] ?? 0;
-            result += `Free Response: ${frScore}`;
-            total += frScore;
-          }
+        const hasSubskills = scores ? Object.keys(scores[taskId]).some((key) => roamFluencySubskills[key]) : false;
+        // Non-response modality (1.3.6+)
+        if (hasSubskills) {
+          tableRow[`${taskName} - Raw Score`] = score.rawScore;
 
-          if (score.fc) {
-            const fcScore = score.fc[field] ?? 0;
-            result += `${result ? '\n' : ''}Multiple Choice: ${fcScore}`;
-            total += fcScore;
-          }
+          Object.entries(roamFluencySubskillHeadersNonResponse).forEach(([property, propertyHeader]) => {
+            tableRow[`${taskName} - ${propertyHeader}`] = score[property];
+          });
+        } else {
+          const setSubscore = (field, score) => {
+            // Response modality prod data only uses new field names (ver 1.2.23+)
+            let result = '';
+            let total = 0;
+            if (score.fr) {
+              const frScore = score.fr[field] ?? 0;
+              result += `Free Response: ${frScore}`;
+              total += frScore;
+            }
 
-          if (score.fr || score.fc) result += `\nTotal: ${total}`;
+            if (score.fc) {
+              const fcScore = score.fc[field] ?? 0;
+              result += `${result ? '\n' : ''}Multiple Choice: ${fcScore}`;
+              total += fcScore;
+            }
 
-          // If result is an empty string, handle a non-response modality score
-          return result || score[field];
-        };
+            if (score.fr || score.fc) result += `\nTotal: ${total}`;
 
-        tableRow[`${taskName} - Raw Score`] = score.rawScore;
+            // If result is an empty string, handle a non-response modality score
+            return result || score[field];
+          };
 
-        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-          tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
-        });
+          tableRow[`${taskName} - Raw Score`] = score.rawScore;
+
+          Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+            tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
+          });
+        }
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {

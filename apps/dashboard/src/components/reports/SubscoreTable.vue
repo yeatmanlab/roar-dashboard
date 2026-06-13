@@ -247,7 +247,7 @@ const exportSelected = (selectedRows) => {
           _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
         });
       } else {
-        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+        Object.entries(roamFluencySubskillHeadersNonResponse).forEach(([property, propertyHeader]) => {
           _set(tableRow, `${propertyHeader}`, _get(scores, `${props.taskId}.${property}`));
         });
 
@@ -355,7 +355,7 @@ const exportAll = async () => {
           _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
         });
       } else {
-        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+        Object.entries(roamFluencySubskillHeadersNonResponse).forEach(([property, propertyHeader]) => {
           _set(tableRow, `${propertyHeader}`, _get(scores, `${props.taskId}.${property}`));
         });
 
