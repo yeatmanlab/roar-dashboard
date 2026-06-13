@@ -23,6 +23,7 @@ import {
   roamAlpacaSubskills,
   roamAlpacaSubskillHeaders,
   roamFluencySubskillHeaders,
+  roamFluencySubskillHeadersNonResponse,
   roamFluencyTasks,
   roamFluencySubskills,
 } from '@/helpers/reports';
@@ -120,7 +121,7 @@ const columns = computed(() => {
 
       Object.entries(roamFluencySubskills).forEach(([subskillId, subskill]) => {
         tableColumns.push({
-          field: `scores.${props.taskId}.${subskillId}.percentCorrect`,
+          field: `scores.${props.taskId}.${subskillId}.rawScore`,
           header: subskill,
           dataType: 'text',
           sort: false,
@@ -252,8 +253,7 @@ const exportSelected = (selectedRows) => {
 
         // Create a column for each property of a subskill
         Object.entries(roamFluencySubskills).forEach(([subskillId, subskill]) => {
-          _set(tableRow, `${subskill} - Percent Correct`, _get(scores, `${props.taskId}.${subskillId}.percentCorrect`));
-          Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          Object.entries(roamFluencySubskillHeadersNonResponse).forEach(([property, propertyHeader]) => {
             _set(
               tableRow,
               `${subskill} - ${propertyHeader}`,
@@ -361,8 +361,7 @@ const exportAll = async () => {
 
         // Create a column for each property of a subskill
         Object.entries(roamFluencySubskills).forEach(([subskillId, subskill]) => {
-          _set(tableRow, `${subskill} - Percent Correct`, _get(scores, `${props.taskId}.${subskillId}.percentCorrect`));
-          Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          Object.entries(roamFluencySubskillHeadersNonResponse).forEach(([property, propertyHeader]) => {
             _set(
               tableRow,
               `${subskill} - ${propertyHeader}`,

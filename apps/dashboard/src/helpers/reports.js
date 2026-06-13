@@ -533,12 +533,18 @@ export const roamFluencySubskills = {
   division: 'Division',
 };
 
-// Used for both non-response modality and response modality
+// Response modality
 export const roamFluencySubskillHeaders = {
   rawScore: 'Raw Score',
   numCorrect: 'Num Correct',
   numIncorrect: 'Num Incorrect',
   numAttempted: 'Num Attempted',
+};
+
+// Non-response modality
+export const roamFluencySubskillHeadersNonResponse = {
+  ...roamFluencySubskillHeaders,
+  percentCorrect: 'Percent Correct',
 };
 
 /**

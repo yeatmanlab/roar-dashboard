@@ -43,6 +43,7 @@ import {
   includedValidityFlags,
   subskillTasks,
   roamFluencySubskillHeaders,
+  roamFluencySubskillHeadersNonResponse,
   roamFluencyTasks,
   roamFluencySubskills,
 } from '@/helpers/reports.js';
@@ -129,6 +130,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       } else {
         for (const [property, propertyHeader] of Object.entries(roamFluencySubskillHeaders)) {
           if (_colData.scores?.[_taskId]?.[property] != undefined) {
+            console.log(_colData.scores?.[_taskId]);
             _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
           }
         }
@@ -174,16 +176,16 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData, _subski
   } else if (roamFluencyTasks.includes(_taskId)) {
     // Non-response modality (1.3.6+)
     if (_subskillProperty !== 'totalIncorrectSkills') {
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+      Object.entries(roamFluencySubskillHeadersNonResponse).forEach(([property, propertyHeader]) => {
         if (subskillInfo?.[property] != undefined) {
-          _toolTip += `${propertyHeader}: ${subskillInfo?.[property]}\n`;
+          _toolTip += `${property === 'numCorrect' || property === 'numIncorrect' ? `\u00A0\u2022\u00A0` : ''}${propertyHeader}: ${subskillInfo?.[property]}\n`;
         }
       });
 
       // Ignore skillsAssessed field for overall score (scores.computed.composite.rawScore)
       if (
         _colData.scores?.[_taskId]?.recruitment !== 'responseModality' &&
-        _subskillProperty !== 'rawScore' &&
+        _subskillId !== 'composite' &&
         subskillInfo?.skillsAssessed != undefined
       ) {
         _toolTip += `\nProblem Types Assessed: ${subskillInfo?.skillsAssessed}\n`;
