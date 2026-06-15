@@ -493,6 +493,36 @@ describe('RunEventService', () => {
       );
     });
 
+    it('sanitizes Number.MAX_VALUE sentinels in jsonb trial columns (thetas, thetaStdErrs, itemParameters)', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      const createdTrial = { id: 'trial-123' };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+        await fn({});
+      });
+      runTrialsRepository.create.mockResolvedValue(createdTrial);
+
+      const bodyWithSentinels = {
+        type: 'trial' as const,
+        trial: {
+          assessmentStage: ASSESSMENT_STAGE.TEST,
+          correct: 1,
+          thetas: { composite: Number.MAX_VALUE },
+          thetaStdErrs: { composite: Number.MAX_VALUE },
+          itemParameters: [{ a: Number.MAX_VALUE, b: 0.5 }],
+        },
+      };
+
+      await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithSentinels);
+
+      const call = runTrialsRepository.create.mock.calls[0]![0];
+      expect(call.data.thetas).toEqual({ composite: null });
+      expect(call.data.thetaStdErrs).toEqual({ composite: null });
+      expect(call.data.itemParameters).toEqual([{ a: null, b: 0.5 }]);
+    });
+
     it('should re-throw ApiError when thrown during transaction', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
       runRepository.getById.mockResolvedValue(mockRun);

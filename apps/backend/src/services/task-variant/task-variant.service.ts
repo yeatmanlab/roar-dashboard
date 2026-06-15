@@ -182,10 +182,10 @@ export function TaskVariantService({
    *
    * Authorization behavior:
    * - Any authenticated user may retrieve a variant regardless of status (draft, published, or
-   *   deprecated). This is intentional: researchers and admins working in ephemeral environments
-   *   need to retrieve draft variants by UUID to verify them before publishing. UUIDs are not
-   *   guessable (122 bits of entropy), and the route requires authentication, so the enumeration
-   *   risk is negligible. The published-only path is `listAllPublished`.
+   *   deprecated). Variant parameters are not confidential — they drive assessment behaviour but
+   *   contain no secret or personally identifiable data. Authentication is the only gate.
+   *   Anonymous users (ephemeral assessment environments) also reach this endpoint to fetch
+   *   draft variants under test before they are published.
    *
    * @param authContext - The caller's auth context
    * @param variantId - UUID of the variant to retrieve

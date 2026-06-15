@@ -198,7 +198,7 @@ export function RunEventService({
     const normalizedTrial = camelizeKeys(body.trial, { skipAliases: true });
     for (const [camelKey, value] of Object.entries(normalizedTrial)) {
       if (TRIAL_COLUMN_KEYS.has(camelKey) && !EXCLUDED_TRIAL_FIELDS.has(camelKey)) {
-        runTrialFields[camelKey] = value;
+        runTrialFields[camelKey] = sanitizeJsonbMaxValues(value);
       } else {
         metadata[camelKey] = sanitizeJsonbMaxValues(value);
       }

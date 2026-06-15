@@ -23,6 +23,13 @@ describe('camelizeKeys', () => {
       expect(camelizeKeys({ one_two_three: true })).toEqual({ oneTwoThree: true });
     });
 
+    it('converts _<digit> segments — theta_estimate_2 → thetaEstimate2', () => {
+      expect(camelizeKeys({ theta_estimate_2: 0.5, theta_std_err_2: 0.1 })).toEqual({
+        thetaEstimate2: 0.5,
+        thetaStdErr2: 0.1,
+      });
+    });
+
     it('returns an empty object unchanged', () => {
       expect(camelizeKeys({})).toEqual({});
     });

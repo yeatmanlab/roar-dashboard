@@ -15,7 +15,7 @@ export function camelizeKeys(
   const result: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(obj)) {
-    const camelKey = key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+    const camelKey = key.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
     if (skipAliases && camelKey !== key && camelKey in obj) continue;
     result[camelKey] = value;
   }

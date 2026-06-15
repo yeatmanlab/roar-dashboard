@@ -253,36 +253,6 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
   }
 
   /**
-   * Retrieves a single published task variant by its ID, with denormalized task fields.
-   *
-   * Returns null if no published variant with the given ID exists.
-   *
-   * @param variantId - The UUID of the task variant
-   * @returns The variant with task details, or null if not found or not published
-   */
-  async getPublishedById(variantId: string): Promise<TaskVariantWithTaskDetails | null> {
-    const results = await this.db
-      .select({
-        id: taskVariants.id,
-        taskId: taskVariants.taskId,
-        name: taskVariants.name,
-        description: taskVariants.description,
-        status: taskVariants.status,
-        createdAt: taskVariants.createdAt,
-        updatedAt: taskVariants.updatedAt,
-        taskName: tasks.name,
-        taskSlug: tasks.slug,
-        taskImage: tasks.image,
-      })
-      .from(taskVariants)
-      .innerJoin(tasks, eq(taskVariants.taskId, tasks.id))
-      .where(and(eq(taskVariants.id, variantId), eq(taskVariants.status, 'published')))
-      .limit(1);
-
-    return (results[0] ?? null) as TaskVariantWithTaskDetails | null;
-  }
-
-  /**
    * Retrieves a single task variant by its ID with denormalized task fields.
    *
    * Returns null if no variant with the given ID exists.
