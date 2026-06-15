@@ -275,7 +275,6 @@ but those accepted fastest will follow a workflow similar to the following:
    that they can be merged into the main code base.<br />
    Pull request titles should begin with a descriptive prefix
    (for example, `ENH: Add adaptive testing`):
-
    - `FIX`: bug fixes
    - `ENH`: enhancements or new features
    - `TST`: new or updated tests
@@ -292,6 +291,42 @@ but those accepted fastest will follow a workflow similar to the following:
    The reviewers will take special care in assisting you to address their
    comments, as well as dealing with conflicts and other tricky situations
    that could emerge from distributed development.
+
+## Running the full stack locally
+
+`npm run dev` runs the dashboard on its own. When you need it running against a
+real, seeded backend — for example to exercise the backend-backed admin flows
+such as task/variant management as a super admin — bring up the whole stack with
+one command, mirroring the CI end-to-end job:
+
+```Shell
+npm run dev:local
+```
+
+This starts Postgres and OpenFGA (via Docker), the Firebase Auth emulator, the
+backend (`server-test`, which seeds fixture data), and the dashboard in local
+emulator mode.
+
+**Prerequisites:** Docker, a Java runtime for the Auth emulator
+(`brew install openjdk` on macOS), and the usual local state — the `env-configs`
+submodule, `apps/dashboard/env-configs/.env.keys`, and TLS certs
+(`npm run dev:setup:certs`). If you already run Postgres on `5432`, pick a free
+port: `ROAR_LOCAL_PG_PORT=5433 npm run dev:local`.
+
+**Signing in:** the script prints the seeded logins on startup (also written to
+`/tmp/roar-cypress-fixture.json`). Sign in at https://localhost:5173 with the
+`superAdmin` entry — email `<uuid>@test.local`, password `test-password-emulator`.
+
+**Known limitations (local emulator mode):**
+
+- Only the **Auth** emulator runs, and sign-in still flows through firekit, so the
+  bridges that make local login work are intentionally super-admin-only and
+  transient — search `TODO(firekit-removal)` for details.
+- The home page may not fully load (it still reads not-yet-migrated Firestore
+  data); navigate straight to backend-backed pages such as `/manage-tasks-variants`.
+
+See the header comment in [`scripts/dev-local-stack.sh`](../scripts/dev-local-stack.sh)
+for the full design, all port overrides, and teardown behavior.
 
 ## ROAR coding style
 
@@ -357,7 +392,6 @@ welcoming community. Here are some guidelines to help you conduct effective and
 constructive pull request (PR) reviews:
 
 1. Timeliness
-
    - Respond promptly:
      Aim to review PRs within a reasonable timeframe, ideally within 48 hours
      during the workweek. This helps maintain project momentum and keeps
@@ -368,7 +402,6 @@ constructive pull request (PR) reviews:
      contributor, so they know their work hasn't been overlooked.
 
 1. Thoroughness
-
    - Review completely:
      Ensure you have a clear understanding of the PR's purpose and changes. Review
      all changes thoroughly, not just the parts that might be most relevant to
@@ -379,7 +412,6 @@ constructive pull request (PR) reviews:
      help catch issues that are not immediately visible through code review alone.
 
 1. Constructive Feedback
-
    - Be kind and respectful:
      Remember that behind every contribution is a person who has invested time and
      effort. Approach your review with kindness and respect. Offer constructive
@@ -390,7 +422,6 @@ constructive pull request (PR) reviews:
      Include code snippets, links to documentation, or examples when possible.
 
 1. Clarity and Precision
-
    - Be specific:
      When requesting changes, be specific about what needs to be addressed and
      why. This helps contributors understand your feedback and how to act on it.
@@ -400,7 +431,6 @@ constructive pull request (PR) reviews:
      can lead to better understanding and sometimes even simpler solutions.
 
 1. Encouragement and Acknowledgment
-
    - Praise good work:
      Acknowledge and praise good work. Recognition can be incredibly motivating
      and encourages further contributions.
@@ -411,7 +441,6 @@ constructive pull request (PR) reviews:
      solutions and stronger community bonds.
 
 1. Security and Compliance
-
    - Check for security flaws:
      Always be on the lookout for potential security vulnerabilities in
      contributions. If you suspect a security issue, flag it immediately following

@@ -1,0 +1,40 @@
+name: roar-local-dev
+
+# Minimal local stack for `npm run dev:local`. Brings up the two stateful
+# services the backend needs — Postgres and OpenFGA — mirroring the CI
+# `e2e-tests` job. The backend (server-test), the Firebase Auth emulator, and
+# the dashboard run as host processes started by scripts/dev-local-stack.sh.
+#
+# Data is ephemeral on purpose (no named volumes): server-test truncates and
+# re-seeds baseFixture on every boot, and OpenFGA runs with its in-memory
+# datastore, so each run starts from a known-clean state.
+#
+# Ports are overridable to avoid clashing with a host Postgres or the
+# TLS/Postgres OpenFGA in docker-compose.yml:
+#   ROAR_LOCAL_PG_PORT  (default 5432)
+#   ROAR_LOCAL_FGA_PORT (default 8080)
+
+services:
+  postgres:
+    container_name: roar-local-postgres
+    image: postgres:18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "${ROAR_LOCAL_PG_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # `openfga run` with no datastore configured uses the in-memory engine and
+  # serves the HTTP API on 8080 — matching CI's FGA_API_URL=http://127.0.0.1:8080.
+  # server-test creates a fresh store and deploys the model on every boot.
+  openfga:
+    container_name: roar-local-openfga
+    image: openfga/openfga:v1.12.1
+    command: run
+    ports:
+      - "${ROAR_LOCAL_FGA_PORT:-8080}:8080"
