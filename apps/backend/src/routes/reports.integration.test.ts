@@ -2313,9 +2313,7 @@ describe('GET /v1/administrations/:id/reports/scores/facets', () => {
       expect(schoolEntry).toBeDefined();
       expect(schoolEntry.schoolId).toBe(baseFixture.schoolA.id);
       // schoolName may be null in degenerate fixtures; if present, it's a string.
-      if (schoolEntry.schoolName !== null) {
-        expect(typeof schoolEntry.schoolName).toBe('string');
-      }
+      expect(schoolEntry.schoolName).toSatisfy((value: unknown) => value === null || typeof value === 'string');
     });
 
     it('keeps percentile bin edges stable when a user.grade filter is applied (#1782)', async () => {
@@ -2636,14 +2634,13 @@ describe('GET /v1/administrations/:id/reports/scores/students', () => {
         }),
       );
 
-      // If any students are in scope, verify the row shape
-      if (data.items.length > 0) {
-        const row = data.items[0];
-        expect(row).toHaveProperty('user');
-        expect(row).toHaveProperty('scores');
-        expect(row.user).toHaveProperty('userId');
-        expect(row.user).toHaveProperty('grade');
-      }
+      // Students are in scope at district level — verify the row shape
+      expect(data.items.length).toBeGreaterThan(0);
+      const row = data.items[0];
+      expect(row).toHaveProperty('user');
+      expect(row).toHaveProperty('scores');
+      expect(row.user).toHaveProperty('userId');
+      expect(row.user).toHaveProperty('grade');
 
       // Exclusions block — #1742
       expect(data).toHaveProperty('exclusions');
@@ -3044,24 +3041,23 @@ describe('GET /v1/administrations/:id/reports/scores/students/:userId', () => {
       expect(typeof data.totalTaskCount).toBe('number');
       expect(data.completedTaskCount).toBeLessThanOrEqual(data.totalTaskCount);
 
-      // Per-task entry shape
-      if (data.tasks.length > 0) {
-        const task = data.tasks[0];
-        expect(task).toHaveProperty('taskId');
-        expect(task).toHaveProperty('taskSlug');
-        expect(task).toHaveProperty('taskName');
-        expect(task).toHaveProperty('orderIndex');
-        expect(task).toHaveProperty('scores');
-        expect(task).toHaveProperty('supportLevel');
-        expect(task).toHaveProperty('reliable');
-        expect(task).toHaveProperty('optional');
-        expect(task).toHaveProperty('completed');
-        expect(task).toHaveProperty('engagementFlags');
-        expect(task).toHaveProperty('tags');
-        expect(task).toHaveProperty('historicalScores');
-        // Tags always include Type label
-        expect(task.tags.some((t: { label: string }) => t.label === 'Type')).toBe(true);
-      }
+      // Per-task entry shape — the administration has assigned task variants
+      expect(data.tasks.length).toBeGreaterThan(0);
+      const task = data.tasks[0];
+      expect(task).toHaveProperty('taskId');
+      expect(task).toHaveProperty('taskSlug');
+      expect(task).toHaveProperty('taskName');
+      expect(task).toHaveProperty('orderIndex');
+      expect(task).toHaveProperty('scores');
+      expect(task).toHaveProperty('supportLevel');
+      expect(task).toHaveProperty('reliable');
+      expect(task).toHaveProperty('optional');
+      expect(task).toHaveProperty('completed');
+      expect(task).toHaveProperty('engagementFlags');
+      expect(task).toHaveProperty('tags');
+      expect(task).toHaveProperty('historicalScores');
+      // Tags always include Type label
+      expect(task.tags.some((t: { label: string }) => t.label === 'Type')).toBe(true);
     });
   });
 

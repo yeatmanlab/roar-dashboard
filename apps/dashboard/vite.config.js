@@ -252,28 +252,35 @@ export default defineConfig(({ mode }) => {
       sourcemap: true,
       rollupOptions: {
         output: {
-          manualChunks: {
-            lodash: ['lodash'],
-            tanstack: ['@tanstack/vue-query'],
-            chartJs: ['chart.js'],
-            sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue', '@sentry/wasm'],
-            // jspsych must be its own chunk so it initializes (and exports ParameterType) before
-            // any assessment plugin chunk that accesses ParameterType at module evaluation time.
-            jspsych: ['jspsych'],
-            roam: ['@bdelab/roam-apps'],
-            firekit: ['@bdelab/roar-firekit'],
-            letter: ['@bdelab/roar-letter'],
-            multichoice: ['@bdelab/roar-multichoice'],
-            sre: ['@bdelab/roar-sre'],
-            swr: ['@roar-platform/roar-swr'],
-            utils: ['@bdelab/roar-utils'],
-            vocab: ['@bdelab/roar-vocab'],
-            ran: ['@bdelab/roav-ran'],
-            crowding: ['@bdelab/roav-crowding'],
-            'roav-mep': ['@bdelab/roav-mep'],
-            'roar-readaloud': ['@bdelab/roar-readaloud'],
-            phoneme: ['@roar-platform/roar-pa'],
-          },
+          // The Cypress spec preprocessor (cypress-vite) compiles each spec with
+          // `inlineDynamicImports`, which rollup rejects when combined with
+          // `manualChunks`. Cypress sets `process.env.CYPRESS` in the process that
+          // loads this config, so chunking is skipped for spec compilation only —
+          // the application build (`vite build`) is unaffected.
+          manualChunks: process.env.CYPRESS
+            ? undefined
+            : {
+                lodash: ['lodash'],
+                tanstack: ['@tanstack/vue-query'],
+                chartJs: ['chart.js'],
+                sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue', '@sentry/wasm'],
+                // jspsych must be its own chunk so it initializes (and exports ParameterType) before
+                // any assessment plugin chunk that accesses ParameterType at module evaluation time.
+                jspsych: ['jspsych'],
+                roam: ['@bdelab/roam-apps'],
+                firekit: ['@bdelab/roar-firekit'],
+                letter: ['@bdelab/roar-letter'],
+                multichoice: ['@bdelab/roar-multichoice'],
+                sre: ['@bdelab/roar-sre'],
+                swr: ['@roar-platform/roar-swr'],
+                utils: ['@bdelab/roar-utils'],
+                vocab: ['@bdelab/roar-vocab'],
+                ran: ['@bdelab/roav-ran'],
+                crowding: ['@bdelab/roav-crowding'],
+                'roav-mep': ['@bdelab/roav-mep'],
+                'roar-readaloud': ['@bdelab/roar-readaloud'],
+                phoneme: ['@roar-platform/roar-pa'],
+              },
         },
       },
     },

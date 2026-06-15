@@ -14,6 +14,5 @@ export function registerTaskBundlesRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, query }) => TaskBundlesController.list(user!, query),
     },
   });
-  // @ts-expect-error - ts-rest middleware type incompatibility with Express
   createExpressEndpoints(TaskBundlesContract, TaskBundlesRoutes, routerInstance);
 }
