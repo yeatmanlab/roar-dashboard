@@ -110,13 +110,16 @@ export class RoarScores {
   computedScoreCallback = async (rawScores) => {
     const { userMetadata, taskId } = store.session.get('config');
 
-    if (!['swr', 'swr-es'].includes(taskId)) return null;
+    if (!['swr', 'swr-es'].includes(taskId)) {
+      console.warn('[SWR scores] taskId not in [swr, swr-es] — returning null');
+      return null;
+    }
 
     const configAge = userMetadata?.ageMonths;
     const grade = getGrade(userMetadata?.grade);
     const isNormed = taskId === 'swr' || (taskId === 'swr-es' && this.scoringVersion === 1);
 
-    if (configAge != undefined || grade != undefined) {
+    if (configAge != null || grade != null) {
       if (!this.tableLoaded && isNormed) {
         if (!this.tableLoadingPromise) {
           this.tableLoadingPromise = this.initTable(taskId);

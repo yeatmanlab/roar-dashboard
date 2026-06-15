@@ -1,3 +1,4 @@
+import { ScoreType } from "../enums/score-type.enum.js";
 import {
   PA_SUBTASK_KEYS,
   PA_SUBSCORE_DEFS,
@@ -26,7 +27,7 @@ const SCORE_DOMAIN = {
  * @see packages/api-contract/src/v1/runs/schema.ts
  */
 export interface ComputedScoreEntry {
-  type: "computed";
+  type: ScoreType.COMPUTED;
   domain: string;
   name: PaScoreName;
   value: string;
@@ -147,7 +148,7 @@ export function toPaScoreEntries(
       const addToSubtask = (name: PaScoreName, value: unknown) => {
         if (value == null) return;
         entries.push({
-          type: "computed",
+          type: ScoreType.COMPUTED,
           domain: subtaskKeyLower,
           name,
           value: String(value),
@@ -176,7 +177,7 @@ export function toPaScoreEntries(
       const addWithDomain = (name: PaScoreName, value: unknown) => {
         if (value == null) return;
         entries.push({
-          type: "computed",
+          type: ScoreType.COMPUTED,
           domain,
           name,
           value: String(value),
