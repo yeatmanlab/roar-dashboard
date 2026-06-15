@@ -5,6 +5,7 @@ import { setUser } from '@sentry/vue';
 import { isMobileBrowser } from '@/helpers';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 import { fetchDocById } from '@/helpers/query/utils';
+import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import { APP_ROUTES } from '@/constants/routes';
 
 export function useAuth(context) {
@@ -35,7 +36,8 @@ export function useAuth(context) {
   // ---------- Claims ----------
   async function getUserClaims() {
     if (authStore.uid) {
-      const userClaims = await fetchDocById('userClaims', authStore.uid);
+      // Emulator mode derives super_admin from /me; production reads Firestore.
+      const userClaims = await resolveUserClaims(authStore.uid);
       authStore.userClaims = userClaims;
     }
     if (authStore.roarUid) {

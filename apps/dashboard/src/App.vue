@@ -51,6 +51,7 @@ const VueQueryDevtools = defineAsyncComponent(() =>
 
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
+import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import { i18n } from '@/translations/i18n';
 import useCurrentUser from '@/composables/useCurrentUser';
 import { useGlobalError } from '@/composables/useGlobalError';
@@ -158,7 +159,8 @@ onBeforeMount(async () => {
     // ID at this point, so deleting the fetches here would break sign-in
     // before the migration is complete.
     if (authStore.uid) {
-      const userClaims = await fetchDocById('userClaims', authStore.uid);
+      // Emulator mode derives super_admin from /me; production reads Firestore.
+      const userClaims = await resolveUserClaims(authStore.uid);
       authStore.userClaims = userClaims;
     }
     if (authStore.roarUid) {

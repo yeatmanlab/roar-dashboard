@@ -129,6 +129,21 @@ const buildFirebaseConfig = (mode = 'development') => {
     }
   }
 
+  // In Firebase Auth emulator mode, allow the local Auth emulator origin so the
+  // Firebase Web SDK can reach it (connectAuthEmulator talks to it over http).
+  // Only the Auth emulator is run locally, and this branch is a no-op unless
+  // VITE_FIREBASE_EMULATOR_ENABLED is set — so deployed builds are unaffected.
+  const useFirebaseEmulator =
+    process.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true' || process.env.VITE_FIREBASE_EMULATOR_ENABLED === true;
+  if (useFirebaseEmulator) {
+    const authEmulatorPort = Number(process.env.VITE_FIREBASE_EMULATOR_AUTH_PORT) || 9099;
+    cspObj['connect-src'] = [
+      ...(cspObj['connect-src'] ?? []),
+      `http://127.0.0.1:${authEmulatorPort}`,
+      `http://localhost:${authEmulatorPort}`,
+    ];
+  }
+
   // Join arrays into single-line policy
   const cspPolicy = Object.entries(cspObj)
     .map(([dir, vals]) => `${dir} ${vals.join(' ')}`)

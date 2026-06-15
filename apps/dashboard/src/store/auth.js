@@ -8,6 +8,11 @@ import { initializeFirekit } from '@/firekit';
 import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
 
+// Local Firebase Auth emulator mode (VITE_FIREBASE_EMULATOR_ENABLED). Inert in
+// deployed builds; see logInWithEmailAndPassword for why it changes sign-in.
+const isFirebaseEmulatorEnabled =
+  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === true || import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';
+
 export const useAuthStore = () => {
   return defineStore('authStore', {
     id: 'authStore',
@@ -123,15 +128,47 @@ export const useAuthStore = () => {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },
       async logInWithEmailAndPassword({ email, password }) {
-        if (this.isFirekitInit) {
-          return this.roarfirekit
-            .logInWithEmailAndPassword({ email, password })
-            .then(() => {})
-            .catch((error) => {
-              console.error('Error signing in:', error);
-              throw error;
-            });
+        if (!this.isFirekitInit) return;
+
+        // Local emulator mode: use firekit's own sign-in — its bundled Firebase SDK
+        // (a different major version from the dashboard's) is what's wired to the
+        // Auth emulator, so calling the dashboard's SDK on firekit's Auth instance
+        // fails with network-request-failed. firekit's logIn does the password
+        // sign-in (which succeeds and triggers onIdTokenChanged to set the session)
+        // and then calls a `setUidClaims` Cloud Function + reads Firestore — neither
+        // of which the auth-only local stack runs, so the promise rejects with
+        // `internal`. Swallow that post-authentication error so the app proceeds;
+        // super-admin comes from the backend /me response (see resolveUserClaims),
+        // and the backend derives super-admin from the DB record (matched by uid),
+        // so the token needs no custom claims. Inert in deployed builds.
+        //
+        // TODO(firekit-removal): once the dashboard signs in via its own Firebase
+        // SDK instead of firekit, replace this whole emulator branch with a direct
+        // `signInWithEmailAndPassword(<dashboard auth>, email, password)` against the
+        // emulator (wire `connectAuthEmulator` into the dashboard's own Firebase
+        // init rather than firekit.js). That removes both the Firebase v9/v11 split
+        // — the reason a direct sign-in fails today — and the `setUidClaims` dance,
+        // so no swallow is needed. This branch exists only because firekit currently
+        // owns the emulator-wired Auth instance.
+        if (isFirebaseEmulatorEnabled) {
+          try {
+            await this.roarfirekit.logInWithEmailAndPassword({ email, password });
+          } catch (error) {
+            console.warn(
+              '[auth] emulator: ignoring firekit post-sign-in error (setUidClaims/Firestore not available locally):',
+              error?.message ?? error,
+            );
+          }
+          return;
         }
+
+        return this.roarfirekit
+          .logInWithEmailAndPassword({ email, password })
+          .then(() => {})
+          .catch((error) => {
+            console.error('Error signing in:', error);
+            throw error;
+          });
       },
       async initiateLoginWithEmailLink({ email }) {
         if (this.isFirekitInit) {
