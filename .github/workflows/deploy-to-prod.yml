@@ -93,6 +93,7 @@ jobs:
       - name: Build for production
         env:
           NODE_OPTIONS: '--max_old_space_size=8192'
+          VITE_SURVEYJS_LICENSE_KEY: ${{ secrets.VITE_SURVEYJS_LICENSE_KEY }}
         run: npm run build:prod
 
       - name: Create Sentry release

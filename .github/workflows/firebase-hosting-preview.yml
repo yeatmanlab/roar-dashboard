@@ -69,6 +69,8 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' || github.event.action == 'opened' || github.event.action == 'reopened' || github.event.action == 'synchronize' || (github.event.action == 'labeled' && github.event.label.name == 'preview-assessment')
+    env:
+      VITE_SURVEYJS_LICENSE_KEY: ${{ secrets.VITE_SURVEYJS_LICENSE_KEY }}
 
     steps:
       # For workflows triggered by pull requests
