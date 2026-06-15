@@ -15,17 +15,20 @@ export function registerTasksRoutes(routerInstance: Router) {
         TasksController.list({ userId: user!.userId, isSuperAdmin: user!.isSuperAdmin }, query),
     },
     get: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { taskId } }) =>
         TasksController.get({ userId: user!.userId, isSuperAdmin: user!.isSuperAdmin }, taskId),
     },
     create: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, body }) =>
         // user is guaranteed to exist because AuthGuardMiddleware runs before this handler
         TasksController.create(user!, body),
     },
     update: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { taskId }, body }) => TasksController.update(user!, taskId, body),
     },
@@ -36,22 +39,26 @@ export function registerTasksRoutes(routerInstance: Router) {
         TasksController.listTaskVariants(user!, taskId, query),
     },
     getTaskVariant: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { taskId, variantId } }) =>
         TasksController.getTaskVariant(user!, taskId, variantId),
     },
     createTaskVariant: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { taskId }, body }) =>
         // user is guaranteed to exist because AuthGuardMiddleware runs before this handler
         TasksController.createTaskVariant(user!, taskId, body),
     },
     updateTaskVariant: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { taskId, variantId }, body }) =>
         // user is guaranteed to exist because AuthGuardMiddleware runs before this handler
         TasksController.updateTaskVariant(user!, { taskId, variantId }, body),
     },
   });
+  // @ts-expect-error - Express v4/v5 types mismatch in monorepo
   createExpressEndpoints(TasksContract, TasksRoutes, routerInstance);
 }

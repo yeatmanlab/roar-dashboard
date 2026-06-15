@@ -47,10 +47,9 @@ import { SdkErrorCode } from '../enums';
  * });
  * ```
  */
-export class UpdateRunEngagementFlagsCommand implements Command<
-  UpdateRunEngagementFlagsCommandInput,
-  UpdateRunEngagementFlagsCommandOutput
-> {
+export class UpdateRunEngagementFlagsCommand
+  implements Command<UpdateRunEngagementFlagsCommandInput, UpdateRunEngagementFlagsCommandOutput>
+{
   readonly name = 'UpdateRunEngagementFlags';
   readonly idempotent = false;
 

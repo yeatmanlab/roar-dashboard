@@ -24,5 +24,6 @@ export function registerSystemRoutes(routerInstance: Router) {
     },
   });
 
+  // @ts-expect-error - Express v4/v5 types mismatch in monorepo
   createExpressEndpoints(SystemContract, SystemRoutes, routerInstance);
 }

@@ -20,5 +20,6 @@ export function registerTaskVariantsRoutes(routerInstance: Router) {
         TaskVariantsController.getByIdWithTaskDetails(user!, variantId),
     },
   });
+  // @ts-expect-error - Express v4/v5 types mismatch in monorepo
   createExpressEndpoints(TaskVariantsContract, TaskVariantsRoutes, routerInstance);
 }

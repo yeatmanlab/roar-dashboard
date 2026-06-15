@@ -20,14 +20,17 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, query }) => AdministrationsController.list(user!, query),
     },
     create: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, body }) => AdministrationsController.create(user!, body),
     },
     get: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => AdministrationsController.get(user!, id),
     },
     getAssignees: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => AdministrationsController.getAssignees(user!, id),
     },
@@ -49,10 +52,12 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, params: { id }, query }) => AdministrationsController.getTree(user!, id, query),
     },
     delete: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => AdministrationsController.delete(user!, id),
     },
     update: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id }, body }) => AdministrationsController.update(user!, id, body),
     },
@@ -90,6 +95,7 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
           AdministrationsController.listStudentScores(user!, id, query),
       },
       getIndividualStudentReport: {
+        // @ts-expect-error - ts-rest middleware type incompatibility with Express
         middleware: [AuthGuardMiddleware],
         handler: async ({ req: { user }, params: { id, userId }, query }) =>
           AdministrationsController.getIndividualStudentReport(user!, id, userId, query),
@@ -97,5 +103,6 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
     },
   });
 
+  // @ts-expect-error - Express v4/v5 types mismatch in monorepo
   createExpressEndpoints(AdministrationsContract, AdministrationsRoutes, routerInstance);
 }

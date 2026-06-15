@@ -32,6 +32,9 @@ certs
 # Test coverage
 coverage
 
+# Cypress artifacts
+**/cypress/downloads
+
 # Other
 .DS_Store
 
