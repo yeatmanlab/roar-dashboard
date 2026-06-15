@@ -38,12 +38,10 @@ export function registerAgreementsRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, query }) => AgreementsController.list(user!, query),
     },
     getVersionContent: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware, setCacheControlHeaderMiddleware],
       handler: async ({ req: { user }, params }) => AgreementsController.getVersionContent(user!, params),
     },
   });
 
-  // @ts-expect-error - ts-rest middleware type incompatibility with Express
   createExpressEndpoints(AgreementsContract, AgreementsRoutes, routerInstance);
 }

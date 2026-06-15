@@ -24,6 +24,5 @@ export function registerSystemRoutes(routerInstance: Router) {
     },
   });
 
-  // @ts-expect-error - ts-rest middleware type incompatibility with Express
   createExpressEndpoints(SystemContract, SystemRoutes, routerInstance);
 }
