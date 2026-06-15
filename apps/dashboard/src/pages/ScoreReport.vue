@@ -1182,6 +1182,8 @@ const computeAssignmentAndRunData = computed(() => {
                 }
               });
               // Multiplication & division subskills are considered the same when counting the total
+              // subPercentCorrect field is returned starting 1.3.9
+              // Writes percentCorrect to top-level for main score report tooltip and composite for subscore tooltip
               currRowScores[taskId].composite = {
                 totalIncorrectSkills: new Set(allIncorrectSkills).size,
                 percentCorrect: `${scores.composite?.subPercentCorrect * 100}%`,
