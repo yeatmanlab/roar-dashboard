@@ -249,16 +249,18 @@ describe('RunEventService', () => {
     it('should include metadata in error context when run is not found', async () => {
       runRepository.getById.mockResolvedValue(null);
 
+      let thrownError: unknown;
       try {
         await runEventsService.completeRun(authContext, 'user-123', validRunId, validBody);
       } catch (error) {
-        if (error instanceof ApiError) {
-          expect(error.context).toEqual({
-            runId: validRunId,
-            targetUserId: 'user-123',
-          });
-        }
+        thrownError = error;
       }
+
+      expect(thrownError).toBeInstanceOf(ApiError);
+      expect((thrownError as ApiError).context).toEqual({
+        runId: validRunId,
+        targetUserId: 'user-123',
+      });
     });
 
     it('should handle optional metadata in event body', async () => {

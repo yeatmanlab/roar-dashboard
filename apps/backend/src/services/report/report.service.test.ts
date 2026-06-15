@@ -2689,12 +2689,11 @@ describe('ReportService', () => {
       // Either the student isn't classified (no entry at all) or they're
       // counted with all-zero support-level buckets. Both are acceptable
       // outcomes for an unclassifiable task; pin the property: the assertion
-      // sum <= totalAssessed must hold.
-      if (gradeEntry) {
-        const bucketed =
-          gradeEntry.achievedSkill.count + gradeEntry.developingSkill.count + gradeEntry.needsExtraSupport.count;
-        expect(bucketed).toBeLessThanOrEqual(gradeEntry.totalAssessed);
-      }
+      // sum <= totalAssessed must hold (vacuously 0 <= 0 when there is no entry).
+      const bucketed = gradeEntry
+        ? gradeEntry.achievedSkill.count + gradeEntry.developingSkill.count + gradeEntry.needsExtraSupport.count
+        : 0;
+      expect(bucketed).toBeLessThanOrEqual(gradeEntry?.totalAssessed ?? 0);
     });
   });
 

@@ -232,10 +232,9 @@ describe('DistrictRepository', () => {
         orderBy: { field: 'name', direction: 'asc' },
       });
 
-      if (result.items.length > 1) {
-        for (let i = 1; i < result.items.length; i++) {
-          expect(result.items[i - 1]!.name.toLowerCase() <= result.items[i]!.name.toLowerCase()).toBe(true);
-        }
+      expect(result.items.length).toBeGreaterThan(1);
+      for (let i = 1; i < result.items.length; i++) {
+        expect(result.items[i - 1]!.name.toLowerCase() <= result.items[i]!.name.toLowerCase()).toBe(true);
       }
     });
 
