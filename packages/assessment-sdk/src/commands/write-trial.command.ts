@@ -196,6 +196,7 @@ export class WriteTrialCommand implements Command<WriteTrialCommandInput, WriteT
               })),
             }
           : {}),
+        ...(input.scores ? { scores: input.scores } : {}),
       },
     });
 

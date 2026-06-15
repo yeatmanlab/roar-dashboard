@@ -807,13 +807,20 @@ describe('firekit compat', () => {
       // Verify that the callback was invoked
       expect(callbackCalled).toBe(true);
 
-      // Verify that the fetch call was made to the event endpoint
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('/runs/run-computed-scores/event'),
-        expect.objectContaining({
-          method: 'POST',
-        }),
+      // Verify that the fetch call was made and scores were forwarded in the request body
+      const eventCalls = fetchMock.mock.calls.filter((call: unknown[]) =>
+        (call[0] as string).includes('/runs/run-computed-scores/event'),
       );
+      expect(eventCalls).toHaveLength(1);
+      const body = JSON.parse(eventCalls[0]![1].body as string);
+      expect(body.scores).toBeDefined();
+      expect(body.scores).toHaveLength(1);
+      expect(body.scores[0]).toMatchObject({
+        type: 'computed',
+        domain: 'test-domain',
+        name: 'testScore',
+        value: '1',
+      });
     });
   });
 

@@ -218,6 +218,68 @@ describe('WriteTrialCommand', () => {
     });
   });
 
+  it('includes scores when provided', async () => {
+    const scores = [
+      { type: 'computed' as const, domain: 'reading', name: 'roarScore', value: '42' },
+      { type: 'raw' as const, domain: 'reading', name: 'numCorrect', value: '7', assessmentStage: 'test' as const },
+    ];
+    const input: WriteTrialCommandInput = {
+      runId: 'run-with-scores',
+      type: RUN_EVENT_TRIAL,
+      trial: {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 1500,
+      },
+      scores,
+    };
+
+    eventMock.mockResolvedValue({
+      status: StatusCodes.OK,
+      body: {},
+    });
+
+    await command.execute(input);
+
+    expect(eventMock).toHaveBeenCalledWith({
+      params: { runId: 'run-with-scores', userId: 'participant-123' },
+      body: {
+        type: RUN_EVENT_TRIAL,
+        trial: {
+          response: 'A',
+          rt: 1500,
+          assessmentStage: 'test',
+          correct: 1,
+        },
+        scores,
+      },
+    });
+  });
+
+  it('omits scores field when not provided', async () => {
+    const input: WriteTrialCommandInput = {
+      runId: 'run-no-scores',
+      type: RUN_EVENT_TRIAL,
+      trial: {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 1500,
+      },
+    };
+
+    eventMock.mockResolvedValue({
+      status: StatusCodes.OK,
+      body: {},
+    });
+
+    await command.execute(input);
+
+    const calledBody = eventMock.mock.calls[0]![0].body;
+    expect(calledBody).not.toHaveProperty('scores');
+  });
+
   it('includes optional payload when provided', async () => {
     const payload = { metadata: 'test', customField: 123 };
     const input: WriteTrialCommandInput = {
