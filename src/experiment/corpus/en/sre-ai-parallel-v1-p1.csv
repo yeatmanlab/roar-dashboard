@@ -1,0 +1,131 @@
+sentence,answer,direction,difficulty,itemId
+A flag hangs from a pole.,TRUE,right,,aiV1P1_1
+Snowflakes fall in the summer.,FALSE,left,,aiV1P1_2
+Airplanes fly in the air.,TRUE,right,,aiV1P1_3
+Walruses have tiny teeth and live in tropical environments.,FALSE,left,,aiV1P1_4
+Owls cannot turn their heads.,FALSE,left,,aiV1P1_5
+Roads have signs and lights.,TRUE,right,,aiV1P1_6
+We breathe in air all the time.,TRUE,right,,aiV1P1_7
+A gift is wrapped with love.,TRUE,right,,aiV1P1_8
+Rainbows show only one color.,FALSE,left,,aiV1P1_9
+A car has ten wheels.,FALSE,left,,aiV1P1_10
+Cameras drink pictures.,FALSE,left,,aiV1P1_11
+Oceans are full of salt water.,TRUE,right,,aiV1P1_12
+People sleep in beds.,TRUE,right,,aiV1P1_13
+Everyone dislikes all seasons.,FALSE,left,,aiV1P1_14
+Sharks have sharp teeth.,TRUE,right,,aiV1P1_15
+Flags have no colors.,FALSE,left,,aiV1P1_16
+Cars float on water.,FALSE,left,,aiV1P1_17
+Cakes are salty.,FALSE,left,,aiV1P1_18
+Horses can run fast.,TRUE,right,,aiV1P1_19
+A telephone helps us walk.,FALSE,left,,aiV1P1_20
+Everyone has a name.,TRUE,right,,aiV1P1_21
+A seashell comes from the forest.,FALSE,left,,aiV1P1_22
+A house is a place to live.,TRUE,right,,aiV1P1_23
+We wear jackets in the cold.,TRUE,right,,aiV1P1_24
+People need sleep every day.,TRUE,right,,aiV1P1_25
+Ants work together.,TRUE,right,,aiV1P1_26
+A lock eats things safe.,FALSE,left,,aiV1P1_27
+Toys are for playing with.,TRUE,right,,aiV1P1_28
+A pillow is soft and fluffy.,TRUE,right,,aiV1P1_29
+Dolphins can jump out of a volcano.,FALSE,left,,aiV1P1_30
+A whale is a small land creature.,FALSE,left,,aiV1P1_31
+People use sand to buy things.,FALSE,left,,aiV1P1_32
+Monkeys climb trees.,TRUE,right,,aiV1P1_33
+"People walk, run, and jump to move and get exercise.",TRUE,right,,aiV1P1_34
+Bees ignore honey and don't help flowers by carrying pollen.,FALSE,left,,aiV1P1_35
+Children go to school buy gifts.,FALSE,left,,aiV1P1_36
+Hamsters swim on wheels.,FALSE,left,,aiV1P1_37
+Teachers work in schools.,TRUE,right,,aiV1P1_38
+A watch dances the time.,FALSE,left,,aiV1P1_39
+A baby learns to crawl.,TRUE,right,,aiV1P1_40
+No one has feelings.,FALSE,left,,aiV1P1_41
+Hands can hold things.,TRUE,right,,aiV1P1_42
+Pumpkins grow in the ocean.,FALSE,left,,aiV1P1_43
+Friends play together.,TRUE,right,,aiV1P1_44
+Yawns show we are hungry.,FALSE,left,,aiV1P1_45
+A triangle has ten sides.,FALSE,left,,aiV1P1_46
+Pets are living things we care for.,TRUE,right,,aiV1P1_47
+Hammers are for playing piano.,FALSE,left,,aiV1P1_48
+The moon can be seen at night and changes in shape.,TRUE,right,,aiV1P1_49
+Wind can make things invisible.,FALSE,left,,aiV1P1_50
+Mountains are very short.,FALSE,left,,aiV1P1_51
+People speak different languages.,TRUE,right,,aiV1P1_52
+A fan keeps us cool.,TRUE,right,,aiV1P1_53
+Streets are for walking and driving.,TRUE,right,,aiV1P1_54
+Lions are big cats.,TRUE,right,,aiV1P1_55
+Puppies and kittens grow into adult dogs and cats.,TRUE,right,,aiV1P1_56
+People walk on their hands.,FALSE,left,,aiV1P1_57
+A ruler cooks things.,FALSE,left,,aiV1P1_58
+Kangaroos can jump far.,TRUE,right,,aiV1P1_59
+The ocean is microscopic.,FALSE,left,,aiV1P1_60
+The park is for playing.,TRUE,right,,aiV1P1_61
+We say goodbye when we leave.,TRUE,right,,aiV1P1_62
+Skies can be blue or gray.,TRUE,right,,aiV1P1_63
+Sunscreen attracts the sun.,FALSE,left,,aiV1P1_64
+Bananas are blue when ripe.,FALSE,left,,aiV1P1_65
+Zebras have black and white stripes.,TRUE,right,,aiV1P1_66
+"Babies need milk, love, and care as they grow into children.",TRUE,right,,aiV1P1_67
+"Animals like turtles, snakes, and lizards are called mammals.",FALSE,left,,aiV1P1_68
+A peach is fuzzy and sweet.,TRUE,right,,aiV1P1_69
+Leaves fall from trees.,TRUE,right,,aiV1P1_70
+Doors dissolve and reappear.,FALSE,left,,aiV1P1_71
+Pencils can help you swim.,FALSE,left,,aiV1P1_72
+People use maps to find places.,TRUE,right,,aiV1P1_73
+"A train goes ""meow meow.""",FALSE,left,,aiV1P1_74
+People talk with their elbows.,FALSE,left,,aiV1P1_75
+People learn from their mistakes.,TRUE,right,,aiV1P1_76
+You can hear a song.,TRUE,right,,aiV1P1_77
+Dogs like to bark and play.,TRUE,right,,aiV1P1_78
+The sun sets in the morning.,FALSE,left,,aiV1P1_79
+Raincoats keep us dry.,TRUE,right,,aiV1P1_80
+We eat our teeth every day.,FALSE,left,,aiV1P1_81
+Milk comes from rocks.,FALSE,left,,aiV1P1_82
+Planets repel the sun.,FALSE,left,,aiV1P1_83
+People write with hammers.,FALSE,left,,aiV1P1_84
+A shoe doesn't have a sole.,FALSE,left,,aiV1P1_85
+We drink out of hats.,FALSE,left,,aiV1P1_86
+Lambs are baby camels.,FALSE,left,,aiV1P1_87
+Children learn from adults.,TRUE,right,,aiV1P1_88
+A boat has a sail.,TRUE,right,,aiV1P1_89
+Some children have a favorite color.,TRUE,right,,aiV1P1_90
+All people eat rainbows.,FALSE,left,,aiV1P1_91
+A deer has wings.,FALSE,left,,aiV1P1_92
+A bus takes people places.,TRUE,right,,aiV1P1_93
+Eggs come from clouds.,FALSE,left,,aiV1P1_94
+Rabbits have soft fur.,TRUE,right,,aiV1P1_95
+We wear shoes to know time.,FALSE,left,,aiV1P1_96
+Paper can be folded.,TRUE,right,,aiV1P1_97
+Jellyfish are land creatures with short arms that can high-five.,FALSE,left,,aiV1P1_98
+Ice is boiling water.,FALSE,left,,aiV1P1_99
+An adult is a grown-up.,TRUE,right,,aiV1P1_100
+Squirrels live underwater.,FALSE,left,,aiV1P1_101
+Friends help each other.,TRUE,right,,aiV1P1_102
+Elephants are large animals with big ears and a long trunk.,TRUE,right,,aiV1P1_103
+Orange juice comes from oranges.,TRUE,right,,aiV1P1_104
+Children shrink as they get older.,FALSE,left,,aiV1P1_105
+A kitten is a baby elephant.,FALSE,left,,aiV1P1_106
+Sheep have thick wool.,TRUE,right,,aiV1P1_107
+People have different heights.,TRUE,right,,aiV1P1_108
+Straws help us listen to music.,FALSE,left,,aiV1P1_109
+A giraffe has a long neck.,TRUE,right,,aiV1P1_110
+We wake up in the evening.,FALSE,left,,aiV1P1_111
+Turtles can fly in their shells.,FALSE,left,,aiV1P1_112
+"Music cannot be played on instruments like drums, guitars, and pianos.",FALSE,left,,aiV1P1_113
+A bee can knit.,FALSE,left,,aiV1P1_114
+A pig is blue and thin.,FALSE,left,,aiV1P1_115
+A computer blocks our work.,FALSE,left,,aiV1P1_116
+People wear glasses to help them hear more clearly.,FALSE,left,,aiV1P1_117
+People of all ages can enjoy spending time with animals.,TRUE,right,,aiV1P1_118
+Shoes always have wheels.,FALSE,left,,aiV1P1_119
+Fire is hot and burns.,TRUE,right,,aiV1P1_120
+Kids put on backpacks for school.,TRUE,right,,aiV1P1_121
+We use keys to open doors.,TRUE,right,,aiV1P1_122
+The sky is yellow.,FALSE,left,,aiV1P1_123
+Chickens lay marbles for us to eat.,FALSE,left,,aiV1P1_124
+All people need love and care.,TRUE,right,,aiV1P1_125
+Books are for reading and learning.,TRUE,right,,aiV1P1_126
+A mountain is tall and rocky.,TRUE,right,,aiV1P1_127
+Buttons help close clothes.,TRUE,right,,aiV1P1_128
+Water is wet and we need it to stay healthy.,TRUE,right,,aiV1P1_129
+"Apples can be red, green, or yellow.",TRUE,right,,aiV1P1_130

@@ -1,0 +1,701 @@
+"","sentence","answer","direction","difficulty","itemId","testsetId"
+"1","A chef works at a restaurant.",TRUE,"right",NA,"AI-pset-1-1",1
+"2","Birds like to build nests.",TRUE,"right",NA,"AI-pset-1-2",1
+"3","Oceans are always dry.",FALSE,"left",NA,"AI-pset-1-3",1
+"4","Apples are a type of vegetable.",FALSE,"left",NA,"AI-pset-1-4",1
+"5","Ducks enjoy swimming in the pond.",TRUE,"right",NA,"AI-pset-1-5",1
+"6","Schools are built on clouds.",FALSE,"left",NA,"AI-pset-1-6",1
+"7","Artists paint beautiful paintings.",TRUE,"right",NA,"AI-pset-1-7",1
+"8","Dogs bark at strangers.",TRUE,"right",NA,"AI-pset-1-8",1
+"9","The color of a banana is yellow.",TRUE,"right",NA,"AI-pset-1-9",1
+"10","Sunglasses are useful for keeping people dry when it snows.",FALSE,"left",NA,"AI-pset-1-10",1
+"11","Horses enjoy galloping freely.",TRUE,"right",NA,"AI-pset-1-11",1
+"12","A tiger is a bird.",FALSE,"left",NA,"AI-pset-1-12",1
+"13","Tigers enjoy knitting sweaters.",FALSE,"left",NA,"AI-pset-1-13",1
+"14","Lamp-posts love to eat spaghetti.",FALSE,"left",NA,"AI-pset-1-14",1
+"15","Schools are floating in the air.",FALSE,"left",NA,"AI-pset-2-1",2
+"16","Sandwiches sprout on bushes.",FALSE,"left",NA,"AI-pset-2-2",2
+"17","Bikes have two wheels.",TRUE,"right",NA,"AI-pset-2-3",2
+"18","Butterflies have beautiful, colorful wings.",TRUE,"right",NA,"AI-pset-2-4",2
+"19","A watch goes on your foot.",FALSE,"left",NA,"AI-pset-2-5",2
+"20","A chair has four legs.",TRUE,"right",NA,"AI-pset-2-6",2
+"21","Cats can speak French.",FALSE,"left",NA,"AI-pset-2-7",2
+"22","Trees love drawing with green crayons.",FALSE,"left",NA,"AI-pset-2-8",2
+"23","A librarian works in a library.",TRUE,"right",NA,"AI-pset-2-9",2
+"24","Cakes are yummy desserts.",TRUE,"right",NA,"AI-pset-2-10",2
+"25","Cities can be very busy places with many people.",TRUE,"right",NA,"AI-pset-2-11",2
+"26","Rain is sand that falls from clouds in the sky.",FALSE,"left",NA,"AI-pset-2-12",2
+"27","Books are made of many pages.",TRUE,"right",NA,"AI-pset-2-13",2
+"28","A bell can jump higher than mountains.",FALSE,"left",NA,"AI-pset-2-14",2
+"29","Robots are machines that can do tasks automatically.",TRUE,"right",NA,"AI-pset-3-1",3
+"30","Corn grows tall in the field.",TRUE,"right",NA,"AI-pset-3-2",3
+"31","Heat comes from icebergs.",FALSE,"left",NA,"AI-pset-3-3",3
+"32","Flowers have petals.",TRUE,"right",NA,"AI-pset-3-4",3
+"33","Roads love to color with black crayons.",FALSE,"left",NA,"AI-pset-3-5",3
+"34","My shoes love to bake bread.",FALSE,"left",NA,"AI-pset-3-6",3
+"35","Lots of pilots work in bakeries.",FALSE,"left",NA,"AI-pset-3-7",3
+"36","A lamp can be very bright.",TRUE,"right",NA,"AI-pset-3-8",3
+"37","Gloves can keep your hands warm.",TRUE,"right",NA,"AI-pset-3-9",3
+"38","Humans have two fingers.",FALSE,"left",NA,"AI-pset-3-10",3
+"39","Beds love to swim.",FALSE,"left",NA,"AI-pset-3-11",3
+"40","Giraffes are tall animals.",TRUE,"right",NA,"AI-pset-3-12",3
+"41","Books are round.",FALSE,"left",NA,"AI-pset-3-13",3
+"42","If a sign says 'no entry', you shouldn't go that way.",TRUE,"right",NA,"AI-pset-3-14",3
+"43","Summer is a part of the annual cycle.",TRUE,"right",NA,"AI-pset-4-1",4
+"44","Butterflies are larger than buildings.",FALSE,"left",NA,"AI-pset-4-2",4
+"45","A compass points north.",TRUE,"right",NA,"AI-pset-4-3",4
+"46","Trees often grow in a forest.",TRUE,"right",NA,"AI-pset-4-4",4
+"47","Fish enjoy climbing trees.",FALSE,"left",NA,"AI-pset-4-5",4
+"48","Monkeys like to eat bananas.",TRUE,"right",NA,"AI-pset-4-6",4
+"49","Mountains walk during winter.",FALSE,"left",NA,"AI-pset-4-7",4
+"50","Cars enjoy drinking orange juice.",FALSE,"left",NA,"AI-pset-4-8",4
+"51","We can buy groceries at the supermarket.",TRUE,"right",NA,"AI-pset-4-9",4
+"52","Pizza has beans and jelly on it.",FALSE,"left",NA,"AI-pset-4-10",4
+"53","Fish can sing.",FALSE,"left",NA,"AI-pset-4-11",4
+"54","Clouds swim in the ocean.",FALSE,"left",NA,"AI-pset-4-12",4
+"55","Pet shops are where one can buy pets.",TRUE,"right",NA,"AI-pset-4-13",4
+"56","Letters are used to make words and sentences.",TRUE,"right",NA,"AI-pset-4-14",4
+"57","Dancing for hours can be tiring.",TRUE,"right",NA,"AI-pset-5-1",5
+"58","Paper can be made from trees.",TRUE,"right",NA,"AI-pset-5-2",5
+"59","Some rabbits eat carrots.",TRUE,"right",NA,"AI-pset-5-3",5
+"60","People can wear hats to protect their heads from the sun.",TRUE,"right",NA,"AI-pset-5-4",5
+"61","Raincoats make you freeze.",FALSE,"left",NA,"AI-pset-5-5",5
+"62","Certain penguins drive race cars to school.",FALSE,"left",NA,"AI-pset-5-6",5
+"63","A baby kangaroo is called a puppy.",FALSE,"left",NA,"AI-pset-5-7",5
+"64","A butterfly is a bird.",FALSE,"left",NA,"AI-pset-5-8",5
+"65","Many children play games with toys.",TRUE,"right",NA,"AI-pset-5-9",5
+"66","People trade vegetables for books in most libraries.",FALSE,"left",NA,"AI-pset-5-10",5
+"67","All doors are made of chocolate.",FALSE,"left",NA,"AI-pset-5-11",5
+"68","People usually brush their teeth with toothpaste.",TRUE,"right",NA,"AI-pset-5-12",5
+"69","Some flowers like to sing.",FALSE,"left",NA,"AI-pset-5-13",5
+"70","Elders can be wise.",TRUE,"right",NA,"AI-pset-5-14",5
+"71","Tigers are tiny domestic dogs that are known for their checks.",FALSE,"left",NA,"AI-pset-6-1",6
+"72","Lions regularly jump on trampolines.",FALSE,"left",NA,"AI-pset-6-2",6
+"73","Cookies usually sprout in a desert.",FALSE,"left",NA,"AI-pset-6-3",6
+"74","Summer is a kind of ice cream flavor.",FALSE,"left",NA,"AI-pset-6-4",6
+"75","Some bags have handles.",TRUE,"right",NA,"AI-pset-6-5",6
+"76","Cakes are often eaten at celebrations like birthdays.",TRUE,"right",NA,"AI-pset-6-6",6
+"77","Candy is often sweet to taste.",TRUE,"right",NA,"AI-pset-6-7",6
+"78","Babies can feel sleepy.",TRUE,"right",NA,"AI-pset-6-8",6
+"79","Every book is a butterfly.",FALSE,"left",NA,"AI-pset-6-9",6
+"80","Many people use brushes to style their hair.",TRUE,"right",NA,"AI-pset-6-10",6
+"81","Helicopters enjoy drinking tea.",FALSE,"left",NA,"AI-pset-6-11",6
+"82","Flowers can be found in a garden.",TRUE,"right",NA,"AI-pset-6-12",6
+"83","A lion is a big cat that roars.",TRUE,"right",NA,"AI-pset-6-13",6
+"84","Fish can play golf.",FALSE,"left",NA,"AI-pset-6-14",6
+"85","Apples are tasty fruits that come in many varieties.",TRUE,"right",NA,"AI-pset-7-1",7
+"86","Many individuals brush their teeth before sleeping.",FALSE,"left",NA,"AI-pset-7-2",7
+"87","Students get recognition when they excel in their studies.",TRUE,"right",NA,"AI-pset-7-3",7
+"88","Most people dig holes with spoons.",FALSE,"left",NA,"AI-pset-7-4",7
+"89","Stones love to move around.",FALSE,"left",NA,"AI-pset-7-5",7
+"90","People can fly by flapping their arms.",FALSE,"left",NA,"AI-pset-7-6",7
+"91","Houses have doors.",TRUE,"right",NA,"AI-pset-7-7",7
+"92","Houses can walk.",FALSE,"left",NA,"AI-pset-7-8",7
+"93","Hats grow on trees.",FALSE,"left",NA,"AI-pset-7-9",7
+"94","Some children go to art classes.",TRUE,"right",NA,"AI-pset-7-10",7
+"95","Babies can cry often.",TRUE,"right",NA,"AI-pset-7-11",7
+"96","Snow is warm.",FALSE,"left",NA,"AI-pset-7-12",7
+"97","Firefighters put out fires while on duty.",TRUE,"right",NA,"AI-pset-7-13",7
+"98","Dogs are fond of chewing bones.",TRUE,"right",NA,"AI-pset-7-14",7
+"99","Birds often nest in trees.",TRUE,"right",NA,"AI-pset-8-1",8
+"100","An earthquake can be very calming.",FALSE,"left",NA,"AI-pset-8-2",8
+"101","Some birds can fly.",TRUE,"right",NA,"AI-pset-8-3",8
+"102","A triangle is round.",FALSE,"left",NA,"AI-pset-8-4",8
+"103","Bicycles are often made of steel.",TRUE,"right",NA,"AI-pset-8-5",8
+"104","Fish typically use hammers to build things.",FALSE,"left",NA,"AI-pset-8-6",8
+"105","Cycling is an activity that you do with a pen.",FALSE,"left",NA,"AI-pset-8-7",8
+"106","Some trees have branches.",TRUE,"right",NA,"AI-pset-8-8",8
+"107","Wallets can be used to store money.",TRUE,"right",NA,"AI-pset-8-9",8
+"108","Running shoes help you run faster.",TRUE,"right",NA,"AI-pset-8-10",8
+"109","Windows can be made of cheese.",FALSE,"left",NA,"AI-pset-8-11",8
+"110","Bears listen with their paws.",FALSE,"left",NA,"AI-pset-8-12",8
+"111","Friends can bake cookies together after school.",TRUE,"right",NA,"AI-pset-8-13",8
+"112","Cats often have feathers.",FALSE,"left",NA,"AI-pset-8-14",8
+"113","Most kittens know how to knit.",FALSE,"left",NA,"AI-pset-9-1",9
+"114","Helicopters are flown by rabbits.",FALSE,"left",NA,"AI-pset-9-2",9
+"115","Some books have pictures.",TRUE,"right",NA,"AI-pset-9-3",9
+"116","Belts help to hold pants up.",TRUE,"right",NA,"AI-pset-9-4",9
+"117","Pilots fly planes while on duty.",TRUE,"right",NA,"AI-pset-9-5",9
+"118","Birds usually store books in nests.",FALSE,"left",NA,"AI-pset-9-6",9
+"119","Ice normally feels warm.",FALSE,"left",NA,"AI-pset-9-7",9
+"120","People wear sunglasses to protect their eyes from the sun.",TRUE,"right",NA,"AI-pset-9-8",9
+"121","A motorcycle has two wheels.",TRUE,"right",NA,"AI-pset-9-9",9
+"122","Summer is a type of soda.",FALSE,"left",NA,"AI-pset-9-10",9
+"123","Socks grow in gardens.",FALSE,"left",NA,"AI-pset-9-11",9
+"124","The moon is round.",TRUE,"right",NA,"AI-pset-9-12",9
+"125","Candy is always spicy to taste.",FALSE,"left",NA,"AI-pset-9-13",9
+"126","Turtles have hard shells to protect themselves.",TRUE,"right",NA,"AI-pset-9-14",9
+"127","Most chocolates are white and salty.",FALSE,"left",NA,"AI-pset-10-1",10
+"128","People occasionally eat cookies.",TRUE,"right",NA,"AI-pset-10-2",10
+"129","Shoes can talk.",FALSE,"left",NA,"AI-pset-10-3",10
+"130","Cows lay eggs.",FALSE,"left",NA,"AI-pset-10-4",10
+"131","A dog may wag its tail when happy.",TRUE,"right",NA,"AI-pset-10-5",10
+"132","Ovens are used to make things hot.",TRUE,"right",NA,"AI-pset-10-6",10
+"133","People can talk to rainbows.",FALSE,"left",NA,"AI-pset-10-7",10
+"134","Walnut trees give us oranges.",FALSE,"left",NA,"AI-pset-10-8",10
+"135","Many buildings have chimneys on the roof.",TRUE,"right",NA,"AI-pset-10-9",10
+"136","Dogs have tails.",TRUE,"right",NA,"AI-pset-10-10",10
+"137","Cats enjoy chasing mice.",TRUE,"right",NA,"AI-pset-10-11",10
+"138","Toys can be made of plastic.",TRUE,"right",NA,"AI-pset-10-12",10
+"139","Notebooks wear scarves to keep their papers warm.",FALSE,"left",NA,"AI-pset-10-13",10
+"140","Most people commute to work by broomstick.",FALSE,"left",NA,"AI-pset-10-14",10
+"141","Washing machines clean clothes.",TRUE,"right",NA,"AI-pset-11-1",11
+"142","Lions can be scary.",TRUE,"right",NA,"AI-pset-11-2",11
+"143","Snowflakes enjoy sunbathing.",FALSE,"left",NA,"AI-pset-11-3",11
+"144","Winter is colder than summer.",TRUE,"right",NA,"AI-pset-11-4",11
+"145","Monkeys grow from seeds.",FALSE,"left",NA,"AI-pset-11-5",11
+"146","Stars are commonly made of oranges.",FALSE,"left",NA,"AI-pset-11-6",11
+"147","Dogs are considered man's best friend.",TRUE,"right",NA,"AI-pset-11-7",11
+"148","Sofas love to fly.",FALSE,"left",NA,"AI-pset-11-8",11
+"149","Rivers are typically made of coffee.",FALSE,"left",NA,"AI-pset-11-9",11
+"150","Most folks play board games alone in the dark.",FALSE,"left",NA,"AI-pset-11-10",11
+"151","Many artists use brushes to create art.",TRUE,"right",NA,"AI-pset-11-11",11
+"152","Music can be played with instruments.",TRUE,"right",NA,"AI-pset-11-12",11
+"153","Gorillas can live on rainbows.",FALSE,"left",NA,"AI-pset-11-13",11
+"154","A dessert can be very sweet.",TRUE,"right",NA,"AI-pset-11-14",11
+"155","Mechanics fix cars in garages.",TRUE,"right",NA,"AI-pset-12-1",12
+"156","People always play chess while swimming in the pool.",FALSE,"left",NA,"AI-pset-12-2",12
+"157","Cacti are common residents of the ocean.",FALSE,"left",NA,"AI-pset-12-3",12
+"158","Cats can play piano.",FALSE,"left",NA,"AI-pset-12-4",12
+"159","Windows are used to make things cold.",FALSE,"left",NA,"AI-pset-12-5",12
+"160","People hear with their fingers.",FALSE,"left",NA,"AI-pset-12-6",12
+"161","All fish are scared of swimming.",FALSE,"left",NA,"AI-pset-12-7",12
+"162","Glasses help people to see.",TRUE,"right",NA,"AI-pset-12-8",12
+"163","A kitten can be very playful.",TRUE,"right",NA,"AI-pset-12-9",12
+"164","Babies can drive cars.",FALSE,"left",NA,"AI-pset-12-10",12
+"165","Cats have whiskers.",TRUE,"right",NA,"AI-pset-12-11",12
+"166","Teenagers can play video games on a computer.",TRUE,"right",NA,"AI-pset-12-12",12
+"167","A dog is a mammal that barks.",TRUE,"right",NA,"AI-pset-12-13",12
+"168","Chicks are young chickens.",TRUE,"right",NA,"AI-pset-12-14",12
+"169","Carrots are a kind of vegetable.",TRUE,"right",NA,"AI-pset-13-1",13
+"170","A whale is a bird.",FALSE,"left",NA,"AI-pset-13-2",13
+"171","Snow helps to make things hot.",FALSE,"left",NA,"AI-pset-13-3",13
+"172","People generally wash clothes with detergent.",TRUE,"right",NA,"AI-pset-13-4",13
+"173","A train has a conductor.",TRUE,"right",NA,"AI-pset-13-5",13
+"174","Houses shelter us from the weather.",TRUE,"right",NA,"AI-pset-13-6",13
+"175","Spoons help you to see better.",FALSE,"left",NA,"AI-pset-13-7",13
+"176","Children like to eat ice cream.",TRUE,"right",NA,"AI-pset-13-8",13
+"177","Squares are round.",FALSE,"left",NA,"AI-pset-13-9",13
+"178","Some children like to read books.",TRUE,"right",NA,"AI-pset-13-10",13
+"179","Bells ring to make sound.",TRUE,"right",NA,"AI-pset-13-11",13
+"180","Fishing is an activity that you perform with a car.",FALSE,"left",NA,"AI-pset-13-12",13
+"181","Coffee is always cold.",FALSE,"left",NA,"AI-pset-13-13",13
+"182","Snakes are legged reptiles.",FALSE,"left",NA,"AI-pset-13-14",13
+"183","Books are made of paper.",TRUE,"right",NA,"AI-pset-14-1",14
+"184","Computers love to eat cookies.",FALSE,"left",NA,"AI-pset-14-2",14
+"185","Many people keep their money in a bank.",TRUE,"right",NA,"AI-pset-14-3",14
+"186","Pans are made of metal.",TRUE,"right",NA,"AI-pset-14-4",14
+"187","People wear jackets to keep their bodies warm.",TRUE,"right",NA,"AI-pset-14-5",14
+"188","Swans can swim well and have white feathers.",TRUE,"right",NA,"AI-pset-14-6",14
+"189","Doors love using pink chalk.",FALSE,"left",NA,"AI-pset-14-7",14
+"190","Milk is solid.",FALSE,"left",NA,"AI-pset-14-8",14
+"191","Snakes have four legs.",FALSE,"left",NA,"AI-pset-14-9",14
+"192","Watches should be worn on your elbow.",FALSE,"left",NA,"AI-pset-14-10",14
+"193","Spices make food flavorful.",TRUE,"right",NA,"AI-pset-14-11",14
+"194","Submarines are operated by fish.",FALSE,"left",NA,"AI-pset-14-12",14
+"195","Canes help people to walk.",TRUE,"right",NA,"AI-pset-14-13",14
+"196","A dishwasher is something you can wear like a bracelet.",FALSE,"left",NA,"AI-pset-14-14",14
+"197","Airplanes fly under the ground.",FALSE,"left",NA,"AI-pset-15-1",15
+"198","Cups must have strings.",FALSE,"left",NA,"AI-pset-15-2",15
+"199","Spiders make webs out of silk.",TRUE,"right",NA,"AI-pset-15-3",15
+"200","A pair of glasses is something you can wear.",TRUE,"right",NA,"AI-pset-15-4",15
+"201","A bicycle needs wings to fly.",FALSE,"left",NA,"AI-pset-15-5",15
+"202","People wear scarves to keep their necks warm.",TRUE,"right",NA,"AI-pset-15-6",15
+"203","Plants have feathers.",FALSE,"left",NA,"AI-pset-15-7",15
+"204","Dolphins wear shoes when they swim.",FALSE,"left",NA,"AI-pset-15-8",15
+"205","Butterflies were once pandas.",FALSE,"left",NA,"AI-pset-15-9",15
+"206","Rain makes the ground wet.",TRUE,"right",NA,"AI-pset-15-10",15
+"207","Dogs can be playful.",TRUE,"right",NA,"AI-pset-15-11",15
+"208","Clouds carry umbrellas when it's sunny.",FALSE,"left",NA,"AI-pset-15-12",15
+"209","A mug can be used to drink coffee.",TRUE,"right",NA,"AI-pset-15-13",15
+"210","Babies cry when they are hungry.",TRUE,"right",NA,"AI-pset-15-14",15
+"211","Birds can knit sweaters.",FALSE,"left",NA,"AI-pset-16-1",16
+"212","Bananas grow on plants.",TRUE,"right",NA,"AI-pset-16-2",16
+"213","Mountains are home to sea creatures.",FALSE,"left",NA,"AI-pset-16-3",16
+"214","Elders can feel nostalgic.",TRUE,"right",NA,"AI-pset-16-4",16
+"215","Monkeys can drive cars on the road.",FALSE,"left",NA,"AI-pset-16-5",16
+"216","Frogs can sing opera.",FALSE,"left",NA,"AI-pset-16-6",16
+"217","All panda bears swim in large oceans.",FALSE,"left",NA,"AI-pset-16-7",16
+"218","A book may have a bookmark.",TRUE,"right",NA,"AI-pset-16-8",16
+"219","Spring mornings can be fresh and crisp.",TRUE,"right",NA,"AI-pset-16-9",16
+"220","Lamps enjoy eating shoes.",FALSE,"left",NA,"AI-pset-16-10",16
+"221","Ants are small but strong insects.",TRUE,"right",NA,"AI-pset-16-11",16
+"222","Trees are always purple.",FALSE,"left",NA,"AI-pset-16-12",16
+"223","Posters can hang on the wall.",TRUE,"right",NA,"AI-pset-16-13",16
+"224","The color of grass is green.",TRUE,"right",NA,"AI-pset-16-14",16
+"225","Some people get to work by unicorn.",FALSE,"left",NA,"AI-pset-17-1",17
+"226","A pillow can be extremely fluffy.",TRUE,"right",NA,"AI-pset-17-2",17
+"227","Eggs are laid by cows.",FALSE,"left",NA,"AI-pset-17-3",17
+"228","Trees have ears.",FALSE,"left",NA,"AI-pset-17-4",17
+"229","Cats are living things.",TRUE,"right",NA,"AI-pset-17-5",17
+"230","Jellyfish have feathers and can sing.",FALSE,"left",NA,"AI-pset-17-6",17
+"231","Most children know how to play a game.",TRUE,"right",NA,"AI-pset-17-7",17
+"232","Some pants have pockets.",TRUE,"right",NA,"AI-pset-17-8",17
+"233","Cupboards can sing.",FALSE,"left",NA,"AI-pset-17-9",17
+"234","Trains are a efficient forms of transportation for goods and people.",TRUE,"right",NA,"AI-pset-17-10",17
+"235","Rainbows make the dishes sparkle.",FALSE,"left",NA,"AI-pset-17-11",17
+"236","Friends can play games together after school.",TRUE,"right",NA,"AI-pset-17-12",17
+"237","Cooks always serve diners pizza and ice cream.",FALSE,"left",NA,"AI-pset-17-13",17
+"238","Trees can provide shade on a sunny day.",TRUE,"right",NA,"AI-pset-17-14",17
+"239","Astronauts work at the bottom of the ocean.",FALSE,"left",NA,"AI-pset-18-1",18
+"240","All dogs are brown.",FALSE,"left",NA,"AI-pset-18-2",18
+"241","Birds enjoy flying in the sky.",TRUE,"right",NA,"AI-pset-18-3",18
+"242","Houses can run races.",FALSE,"left",NA,"AI-pset-18-4",18
+"243","Most books are made of paper.",TRUE,"right",NA,"AI-pset-18-5",18
+"244","Several kids are fond of swimming.",TRUE,"right",NA,"AI-pset-18-6",18
+"245","Cats are sleepy animals.",TRUE,"right",NA,"AI-pset-18-7",18
+"246","A pair of socks is something you might wear.",TRUE,"right",NA,"AI-pset-18-8",18
+"247","Books are made of one page.",FALSE,"left",NA,"AI-pset-18-9",18
+"248","Tennis is a game you play with small mint candies.",FALSE,"left",NA,"AI-pset-18-10",18
+"249","A bicycle has two wheels.",TRUE,"right",NA,"AI-pset-18-11",18
+"250","Juices come from rocks.",FALSE,"left",NA,"AI-pset-18-12",18
+"251","Every night is sunny.",FALSE,"left",NA,"AI-pset-18-13",18
+"252","Kids often eat cereal using a spoon.",TRUE,"right",NA,"AI-pset-18-14",18
+"253","Chefs bake cakes in the classroom.",FALSE,"left",NA,"AI-pset-19-1",19
+"254","We feel hot when fire is near.",TRUE,"right",NA,"AI-pset-19-2",19
+"255","Cheese comes from milk and can be enjoyed in many ways.",TRUE,"right",NA,"AI-pset-19-3",19
+"256","Stars shine in the night sky.",TRUE,"right",NA,"AI-pset-19-4",19
+"257","There are red roses.",TRUE,"right",NA,"AI-pset-19-5",19
+"258","Cakes usually grow in the desert.",FALSE,"left",NA,"AI-pset-19-6",19
+"259","Before crossing the street, it's wise to look both ways.",TRUE,"right",NA,"AI-pset-19-7",19
+"260","Money is used to buy goods and services.",TRUE,"right",NA,"AI-pset-19-8",19
+"261","Nurses provide care in hospitals.",TRUE,"right",NA,"AI-pset-19-9",19
+"262","Pizzas grow in soil.",FALSE,"left",NA,"AI-pset-19-10",19
+"263","Stars can be eaten.",FALSE,"left",NA,"AI-pset-19-11",19
+"264","Lions have feathers.",FALSE,"left",NA,"AI-pset-19-12",19
+"265","Books are stored in microwaves.",FALSE,"left",NA,"AI-pset-19-13",19
+"266","Mice are enormous elephants known for their faint roar.",FALSE,"left",NA,"AI-pset-19-14",19
+"267","Pencils love to go swimming.",FALSE,"left",NA,"AI-pset-20-1",20
+"268","Clothes are dried in dishwashers.",FALSE,"left",NA,"AI-pset-20-2",20
+"269","All dogs have wings.",FALSE,"left",NA,"AI-pset-20-3",20
+"270","Most adults know how to use a washing machine.",TRUE,"right",NA,"AI-pset-20-4",20
+"271","Socks should be worn on your ears.",FALSE,"left",NA,"AI-pset-20-5",20
+"272","A zoo has more than one animal.",TRUE,"right",NA,"AI-pset-20-6",20
+"273","Dogs have ears.",TRUE,"right",NA,"AI-pset-20-7",20
+"274","An octopus has two legs.",FALSE,"left",NA,"AI-pset-20-8",20
+"275","Elephants live underwater in the ocean.",FALSE,"left",NA,"AI-pset-20-9",20
+"276","Vegetables come in one color and are grown in desert.",FALSE,"left",NA,"AI-pset-20-10",20
+"277","Cats can climb trees.",TRUE,"right",NA,"AI-pset-20-11",20
+"278","A triangle has three sides.",TRUE,"right",NA,"AI-pset-20-12",20
+"279","You can buy flowers at the florist.",TRUE,"right",NA,"AI-pset-20-13",20
+"280","A jacket can usually be warm.",TRUE,"right",NA,"AI-pset-20-14",20
+"281","Chefs usually work in restaurants where they cook food.",TRUE,"right",NA,"AI-pset-21-1",21
+"282","Many people like to cook food.",TRUE,"right",NA,"AI-pset-21-2",21
+"283","Kittens are aged elephants and can be very moody.",FALSE,"left",NA,"AI-pset-21-3",21
+"284","Books enjoy sipping water.",FALSE,"left",NA,"AI-pset-21-4",21
+"285","Stars are plucked from trees.",FALSE,"left",NA,"AI-pset-21-5",21
+"286","Most food is cooked in a kitchen before eating.",TRUE,"right",NA,"AI-pset-21-6",21
+"287","All pencils are red.",FALSE,"left",NA,"AI-pset-21-7",21
+"288","Buses are driven by drivers.",TRUE,"right",NA,"AI-pset-21-8",21
+"289","Cats like to chase mice.",TRUE,"right",NA,"AI-pset-21-9",21
+"290","Dolphins have three tails.",FALSE,"left",NA,"AI-pset-21-10",21
+"291","A dog is a deer that barks.",FALSE,"left",NA,"AI-pset-21-11",21
+"292","Trees love to sip cola.",FALSE,"left",NA,"AI-pset-21-12",21
+"293","Some turtles have shells.",TRUE,"right",NA,"AI-pset-21-13",21
+"294","Curtains can hang in a window.",TRUE,"right",NA,"AI-pset-21-14",21
+"295","Lions are large predators.",TRUE,"right",NA,"AI-pset-22-1",22
+"296","Bowling balls are sold underwater.",FALSE,"left",NA,"AI-pset-22-2",22
+"297","Walls sometimes drink lemonade.",FALSE,"left",NA,"AI-pset-22-3",22
+"298","Refrigerators help to keep food items cold.",TRUE,"right",NA,"AI-pset-22-4",22
+"299","Apples can be read.",FALSE,"left",NA,"AI-pset-22-5",22
+"300","Many different species of fish live in the ocean.",TRUE,"right",NA,"AI-pset-22-6",22
+"301","A refrigerator is something you might wear as a necklace.",FALSE,"left",NA,"AI-pset-22-7",22
+"302","Some lakes have laces.",FALSE,"left",NA,"AI-pset-22-8",22
+"303","Birds can fly in the sky.",TRUE,"right",NA,"AI-pset-22-9",22
+"304","Salt is often salty to taste.",TRUE,"right",NA,"AI-pset-22-10",22
+"305","Ice cubes can sprint really fast.",FALSE,"left",NA,"AI-pset-22-11",22
+"306","Chairs can climb mountains.",FALSE,"left",NA,"AI-pset-22-12",22
+"307","Some children like to draw pictures before they go to bed.",TRUE,"right",NA,"AI-pset-22-13",22
+"308","Rainbows appear after rain.",TRUE,"right",NA,"AI-pset-22-14",22
+"309","Balloons can be filled with air.",TRUE,"right",NA,"AI-pset-23-1",23
+"310","Lamps have buds.",FALSE,"left",NA,"AI-pset-23-2",23
+"311","Dogs can wag their tail.",TRUE,"right",NA,"AI-pset-23-3",23
+"312","Sunflowers are typically yellow.",TRUE,"right",NA,"AI-pset-23-4",23
+"313","Many librarians work inside a power plant.",FALSE,"left",NA,"AI-pset-23-5",23
+"314","Monkeys bloom from flowers.",FALSE,"left",NA,"AI-pset-23-6",23
+"315","People often cut vegetables with knives.",TRUE,"right",NA,"AI-pset-23-7",23
+"316","Clouds have ears.",FALSE,"left",NA,"AI-pset-23-8",23
+"317","Sleep is important for the body and mind to rest and restore.",TRUE,"right",NA,"AI-pset-23-9",23
+"318","Mountains can dance.",FALSE,"left",NA,"AI-pset-23-10",23
+"319","A mechanic works at a bakery.",FALSE,"left",NA,"AI-pset-23-11",23
+"320","Apple pie is always made from bananas.",FALSE,"left",NA,"AI-pset-23-12",23
+"321","Babies learn a lot in their first year of life.",TRUE,"right",NA,"AI-pset-23-13",23
+"322","Chess is a game that you play with pieces.",TRUE,"right",NA,"AI-pset-23-14",23
+"323","Many children like eating apples.",TRUE,"right",NA,"AI-pset-24-1",24
+"324","Doctors are trained professionals who help us when we are sick.",TRUE,"right",NA,"AI-pset-24-2",24
+"325","Daisies grow under the sea.",FALSE,"left",NA,"AI-pset-24-3",24
+"326","Leaves often fall in the autumn.",TRUE,"right",NA,"AI-pset-24-4",24
+"327","Sunflowers grow from apple seeds.",FALSE,"left",NA,"AI-pset-24-5",24
+"328","Mirrors enjoy eating toasts.",FALSE,"left",NA,"AI-pset-24-6",24
+"329","Birds can breathe underwater.",FALSE,"left",NA,"AI-pset-24-7",24
+"330","Spiders take math tests.",FALSE,"left",NA,"AI-pset-24-8",24
+"331","Rivers flow into seas.",TRUE,"right",NA,"AI-pset-24-9",24
+"332","The wind likes to fry eggs.",FALSE,"left",NA,"AI-pset-24-10",24
+"333","Lots of kids play on the playground with their friends.",TRUE,"right",NA,"AI-pset-24-11",24
+"334","A car has four wheels.",TRUE,"right",NA,"AI-pset-24-12",24
+"335","Lions compete in spelling bees.",FALSE,"left",NA,"AI-pset-24-13",24
+"336","An eagle is a bird.",TRUE,"right",NA,"AI-pset-24-14",24
+"337","Ice turns into water when it melts.",TRUE,"right",NA,"AI-pset-25-1",25
+"338","Clouds float in the sky.",TRUE,"right",NA,"AI-pset-25-2",25
+"339","Clocks are passionate about purple pencils.",FALSE,"left",NA,"AI-pset-25-3",25
+"340","Balloons have fruit.",FALSE,"left",NA,"AI-pset-25-4",25
+"341","Cups keep their books in the cupboard.",FALSE,"left",NA,"AI-pset-25-5",25
+"342","People commonly cook food with oil.",TRUE,"right",NA,"AI-pset-25-6",25
+"343","Students often get praise when they are helpful to others.",TRUE,"right",NA,"AI-pset-25-7",25
+"344","All giraffes have long necks.",TRUE,"right",NA,"AI-pset-25-8",25
+"345","Sharks live in the desert.",FALSE,"left",NA,"AI-pset-25-9",25
+"346","Sandwiches can perform ballet.",FALSE,"left",NA,"AI-pset-25-10",25
+"347","Cotton candy comes from sheep.",FALSE,"left",NA,"AI-pset-25-11",25
+"348","A rectangle is round.",FALSE,"left",NA,"AI-pset-25-12",25
+"349","Cats are often kept as pets and are known for their independence.",TRUE,"right",NA,"AI-pset-25-13",25
+"350","Children can be playful.",TRUE,"right",NA,"AI-pset-25-14",25
+"351","Lions live in grocery stores.",FALSE,"left",NA,"AI-pset-26-1",26
+"352","Doctors often give patients medicine and advice.",TRUE,"right",NA,"AI-pset-26-2",26
+"353","Flowers can be different colors.",TRUE,"right",NA,"AI-pset-26-3",26
+"354","Trees can move faster than cars.",FALSE,"left",NA,"AI-pset-26-4",26
+"355","A clock can hang on the wall.",TRUE,"right",NA,"AI-pset-26-5",26
+"356","Holidays usually bloom in the desert.",FALSE,"left",NA,"AI-pset-26-6",26
+"357","Bottles wear mittens to keep their water warm.",FALSE,"left",NA,"AI-pset-26-7",26
+"358","Lions can roar.",TRUE,"right",NA,"AI-pset-26-8",26
+"359","Lions drive trains to work.",FALSE,"left",NA,"AI-pset-26-9",26
+"360","Ice cream tastes good on a hot day.",TRUE,"right",NA,"AI-pset-26-10",26
+"361","A cat is a pet that meows.",TRUE,"right",NA,"AI-pset-26-11",26
+"362","Tea is brewed in toasters.",FALSE,"left",NA,"AI-pset-26-12",26
+"363","Summer days can be really hot.",TRUE,"right",NA,"AI-pset-26-13",26
+"364","Whales can fit in a fishbowl.",FALSE,"left",NA,"AI-pset-26-14",26
+"365","Apples can be red, green, or yellow.",TRUE,"right",NA,"AI-pset-27-1",27
+"366","A car has four tires.",TRUE,"right",NA,"AI-pset-27-2",27
+"367","People watch TV in the living room.",TRUE,"right",NA,"AI-pset-27-3",27
+"368","Elephants use their trunks to drink and grab things.",TRUE,"right",NA,"AI-pset-27-4",27
+"369","Rivers are always salty.",FALSE,"left",NA,"AI-pset-27-5",27
+"370","Hats enjoy brewing coffee.",FALSE,"left",NA,"AI-pset-27-6",27
+"371","Many people like to watch movies.",TRUE,"right",NA,"AI-pset-27-7",27
+"372","Mountains are bathed in the sink.",FALSE,"left",NA,"AI-pset-27-8",27
+"373","Every car is a bird.",FALSE,"left",NA,"AI-pset-27-9",27
+"374","Gorillas can live in volcanoes.",FALSE,"left",NA,"AI-pset-27-10",27
+"375","People serve dinners on clouds.",FALSE,"left",NA,"AI-pset-27-11",27
+"376","Beavers build dams in rivers.",FALSE,"left",NA,"AI-pset-27-12",27
+"377","Humans need food for survival.",TRUE,"right",NA,"AI-pset-27-13",27
+"378","Children can laugh a lot.",TRUE,"right",NA,"AI-pset-27-14",27
+"379","A dog's fur can be very soft.",TRUE,"right",NA,"AI-pset-28-1",28
+"380","Stars come out during the daytime.",FALSE,"left",NA,"AI-pset-28-2",28
+"381","Chairs like to munch on cushions.",FALSE,"left",NA,"AI-pset-28-3",28
+"382","Flowers often grow in a meadow.",TRUE,"right",NA,"AI-pset-28-4",28
+"383","Pigs adore skydiving.",FALSE,"left",NA,"AI-pset-28-5",28
+"384","A truck can be used to transport goods.",TRUE,"right",NA,"AI-pset-28-6",28
+"385","The sand on most beaches is made of cotton candy.",FALSE,"left",NA,"AI-pset-28-7",28
+"386","Bracelets can be made of water.",FALSE,"left",NA,"AI-pset-28-8",28
+"387","There is only one kind of tree.",FALSE,"left",NA,"AI-pset-28-9",28
+"388","People generally paint their houses with paint.",TRUE,"right",NA,"AI-pset-28-10",28
+"389","A dolphin has fins.",TRUE,"right",NA,"AI-pset-28-11",28
+"390","Humans often prepare meals with vegetables.",TRUE,"right",NA,"AI-pset-28-12",28
+"391","Dogs smell with their noses.",TRUE,"right",NA,"AI-pset-28-13",28
+"392","Elephants play basketball regularly.",FALSE,"left",NA,"AI-pset-28-14",28
+"393","People use pencils to write, draw, and doodle.",TRUE,"right",NA,"AI-pset-29-1",29
+"394","Bakeries are where you buy bread.",TRUE,"right",NA,"AI-pset-29-2",29
+"395","Pencils have leaves.",FALSE,"left",NA,"AI-pset-29-3",29
+"396","A chair eats dinner.",FALSE,"left",NA,"AI-pset-29-4",29
+"397","Horses have manes.",TRUE,"right",NA,"AI-pset-29-5",29
+"398","People fit bicycles on the river.",FALSE,"left",NA,"AI-pset-29-6",29
+"399","Many people like to plant flowers.",TRUE,"right",NA,"AI-pset-29-7",29
+"400","Rabbits have long ears.",TRUE,"right",NA,"AI-pset-29-8",29
+"401","Sports can be played with a ball.",TRUE,"right",NA,"AI-pset-29-9",29
+"402","Fish can breathe underwater.",TRUE,"right",NA,"AI-pset-29-10",29
+"403","The sky is always purple and covered in stars during the day.",FALSE,"left",NA,"AI-pset-29-11",29
+"404","Ice can always be very hot.",FALSE,"left",NA,"AI-pset-29-12",29
+"405","Cups must have feathers.",FALSE,"left",NA,"AI-pset-29-13",29
+"406","Most fish wear hats when they go swimming.",FALSE,"left",NA,"AI-pset-29-14",29
+"407","My bed enjoys making soup.",FALSE,"left",NA,"AI-pset-30-1",30
+"408","Whales are very large animals that live in the ocean.",TRUE,"right",NA,"AI-pset-30-2",30
+"409","A number of people walk to work.",TRUE,"right",NA,"AI-pset-30-3",30
+"410","Lions pilot planes.",FALSE,"left",NA,"AI-pset-30-4",30
+"411","Paintbrushes help you to fly.",FALSE,"left",NA,"AI-pset-30-5",30
+"412","Some drinks can be very cold.",TRUE,"right",NA,"AI-pset-30-6",30
+"413","All books are blue.",FALSE,"left",NA,"AI-pset-30-7",30
+"414","Some pizzas are round.",TRUE,"right",NA,"AI-pset-30-8",30
+"415","Quilts are padded blankets that can provide warmth in cold weather.",TRUE,"right",NA,"AI-pset-30-9",30
+"416","Every straw is an elephant.",FALSE,"left",NA,"AI-pset-30-10",30
+"417","A lion is a mammal.",TRUE,"right",NA,"AI-pset-30-11",30
+"418","Lemons have a sweet taste and can only be purple.",FALSE,"left",NA,"AI-pset-30-12",30
+"419","Windy days are always still.",FALSE,"left",NA,"AI-pset-30-13",30
+"420","Birds can be noisy.",TRUE,"right",NA,"AI-pset-30-14",30
+"421","Stormy nights are always sunny.",FALSE,"left",NA,"AI-pset-31-1",31
+"422","Airplanes are flown by pilots.",TRUE,"right",NA,"AI-pset-31-2",31
+"423","Fishing is an activity that requires patience and skill.",TRUE,"right",NA,"AI-pset-31-3",31
+"424","Fish can be found in a river.",TRUE,"right",NA,"AI-pset-31-4",31
+"425","Caves can be found in clouds.",FALSE,"left",NA,"AI-pset-31-5",31
+"426","Everyone has a unique fingerprint.",TRUE,"right",NA,"AI-pset-31-6",31
+"427","An oven cooks food.",TRUE,"right",NA,"AI-pset-31-7",31
+"428","Many dentists work in supermarkets.",FALSE,"left",NA,"AI-pset-31-8",31
+"429","The snow is cold.",TRUE,"right",NA,"AI-pset-31-9",31
+"430","Fish like to swim in water.",TRUE,"right",NA,"AI-pset-31-10",31
+"431","Lemonade is always made of apples.",FALSE,"left",NA,"AI-pset-31-11",31
+"432","Rivers are known to save books in caves.",FALSE,"left",NA,"AI-pset-31-12",31
+"433","Lollipops grow on trees.",FALSE,"left",NA,"AI-pset-31-13",31
+"434","Blueberry pie is always made of oranges.",FALSE,"left",NA,"AI-pset-31-14",31
+"435","People occasionally eat ice cream.",TRUE,"right",NA,"AI-pset-32-1",32
+"436","Every shoe is a fish.",FALSE,"left",NA,"AI-pset-32-2",32
+"437","Music comes out of instruments.",TRUE,"right",NA,"AI-pset-32-3",32
+"438","Planes are commonly made of fruits.",FALSE,"left",NA,"AI-pset-32-4",32
+"439","Frogs are known for their painting skills.",FALSE,"left",NA,"AI-pset-32-5",32
+"440","Dogs have four legs.",TRUE,"right",NA,"AI-pset-32-6",32
+"441","Coffee comes from fish.",FALSE,"left",NA,"AI-pset-32-7",32
+"442","Fish like to walk on land.",FALSE,"left",NA,"AI-pset-32-8",32
+"443","A baker works at a bakery.",TRUE,"right",NA,"AI-pset-32-9",32
+"444","Some trees love to run.",FALSE,"left",NA,"AI-pset-32-10",32
+"445","Lamps love to jump.",FALSE,"left",NA,"AI-pset-32-11",32
+"446","Nearly all bakeries have ovens.",TRUE,"right",NA,"AI-pset-32-12",32
+"447","Many kids like to listen to stories before they sleep.",TRUE,"right",NA,"AI-pset-32-13",32
+"448","Most houses have multiple rooms.",TRUE,"right",NA,"AI-pset-32-14",32
+"449","Trains are delicious meals.",FALSE,"left",NA,"AI-pset-33-1",33
+"450","A hat goes on your head.",TRUE,"right",NA,"AI-pset-33-2",33
+"451","People can become invisible when they close their eyes.",FALSE,"left",NA,"AI-pset-33-3",33
+"452","There are seven days in a week.",TRUE,"right",NA,"AI-pset-33-4",33
+"453","All rivers are orange.",FALSE,"left",NA,"AI-pset-33-5",33
+"454","Some students prefer writing with pens.",TRUE,"right",NA,"AI-pset-33-6",33
+"455","Fire helps to keep things warm.",TRUE,"right",NA,"AI-pset-33-7",33
+"456","Humans steer boats in the desert.",FALSE,"left",NA,"AI-pset-33-8",33
+"457","Cars are always moving.",FALSE,"left",NA,"AI-pset-33-9",33
+"458","Cars run on lemonade.",FALSE,"left",NA,"AI-pset-33-10",33
+"459","Apples grow on ocean floors.",FALSE,"left",NA,"AI-pset-33-11",33
+"460","A kitten has a tail.",TRUE,"right",NA,"AI-pset-33-12",33
+"461","You can buy shirts at a clothing store.",TRUE,"right",NA,"AI-pset-33-13",33
+"462","Friends can read books together after school.",TRUE,"right",NA,"AI-pset-33-14",33
+"463","Rain helps plants to grow and is part of the water cycle.",TRUE,"right",NA,"AI-pset-34-1",34
+"464","Folks ride horses on the train tracks.",FALSE,"left",NA,"AI-pset-34-2",34
+"465","Gorillas are a type of flower.",FALSE,"left",NA,"AI-pset-34-3",34
+"466","Turtles can swim in water.",TRUE,"right",NA,"AI-pset-34-4",34
+"467","Honey is sweet and sticky and comes from bees.",TRUE,"right",NA,"AI-pset-34-5",34
+"468","Some clouds have buckles.",FALSE,"left",NA,"AI-pset-34-6",34
+"469","People generally wash their hair with shampoo.",TRUE,"right",NA,"AI-pset-34-7",34
+"470","The sun typically rises in the morning.",TRUE,"right",NA,"AI-pset-34-8",34
+"471","A pigeon is a bird.",TRUE,"right",NA,"AI-pset-34-9",34
+"472","Light bulbs are made of candy.",FALSE,"left",NA,"AI-pset-34-10",34
+"473","Laundry is washed in machines.",TRUE,"right",NA,"AI-pset-34-11",34
+"474","Snowy days are always hot.",FALSE,"left",NA,"AI-pset-34-12",34
+"475","Carrots are a kind of fruit.",FALSE,"left",NA,"AI-pset-34-13",34
+"476","An apple has six legs.",FALSE,"left",NA,"AI-pset-34-14",34
+"477","Apples fall from trees.",TRUE,"right",NA,"AI-pset-35-1",35
+"478","Money usually grows in candy bars.",FALSE,"left",NA,"AI-pset-35-2",35
+"479","Doctors treat patients while on duty.",TRUE,"right",NA,"AI-pset-35-3",35
+"480","Trees have boxes.",FALSE,"left",NA,"AI-pset-35-4",35
+"481","Oceans are full with bamboos.",FALSE,"left",NA,"AI-pset-35-5",35
+"482","A farmer is someone who works in the field.",TRUE,"right",NA,"AI-pset-35-6",35
+"483","Pianos are usually made of paper.",FALSE,"left",NA,"AI-pset-35-7",35
+"484","A teddy bear can be very soft.",TRUE,"right",NA,"AI-pset-35-8",35
+"485","Blankets actually help keep you warm.",FALSE,"left",NA,"AI-pset-35-9",35
+"486","Jewelry is often worn for decoration.",TRUE,"right",NA,"AI-pset-35-10",35
+"487","Kangaroos carry their young in pouches.",TRUE,"right",NA,"AI-pset-35-11",35
+"488","Chairs are used to make things wet.",FALSE,"left",NA,"AI-pset-35-12",35
+"489","Some puppies ride a train to school.",FALSE,"left",NA,"AI-pset-35-13",35
+"490","Candies are usually made from sugar.",TRUE,"right",NA,"AI-pset-35-14",35
+"491","Sharks often play basketball.",FALSE,"left",NA,"AI-pset-36-1",36
+"492","Bicycles have pedals.",TRUE,"right",NA,"AI-pset-36-2",36
+"493","Grass is always pink.",FALSE,"left",NA,"AI-pset-36-3",36
+"494","People use rocks to buy things.",FALSE,"left",NA,"AI-pset-36-4",36
+"495","Trees grow from small seeds.",TRUE,"right",NA,"AI-pset-36-5",36
+"496","Children grow into adults over time.",TRUE,"right",NA,"AI-pset-36-6",36
+"497","Stars ride on the river.",FALSE,"left",NA,"AI-pset-36-7",36
+"498","A kitten can drive a car.",FALSE,"left",NA,"AI-pset-36-8",36
+"499","A shirt is something you can wear.",TRUE,"right",NA,"AI-pset-36-9",36
+"500","Drawers can be used to keep clothes.",TRUE,"right",NA,"AI-pset-36-10",36
+"501","Desks sometimes drink orange juice.",FALSE,"left",NA,"AI-pset-36-11",36
+"502","People sometimes eat fruits.",TRUE,"right",NA,"AI-pset-36-12",36
+"503","Shoes are made from clouds.",FALSE,"left",NA,"AI-pset-36-13",36
+"504","Firefighters often work in fire stations where they respond to emergencies.",TRUE,"right",NA,"AI-pset-36-14",36
+"505","Chairs can heat up a room.",FALSE,"left",NA,"AI-pset-37-1",37
+"506","Couches help you dance better.",FALSE,"left",NA,"AI-pset-37-2",37
+"507","Friends dig to the center of the Earth after school.",FALSE,"left",NA,"AI-pset-37-3",37
+"508","Chairs are made of water.",FALSE,"left",NA,"AI-pset-37-4",37
+"509","Honey comes from bees.",TRUE,"right",NA,"AI-pset-37-5",37
+"510","Whales are a type of bird.",FALSE,"left",NA,"AI-pset-37-6",37
+"511","Monkeys are very good at climbing trees.",TRUE,"right",NA,"AI-pset-37-7",37
+"512","Raincoats are used for protection against rain.",TRUE,"right",NA,"AI-pset-37-8",37
+"513","Bubbles have roots.",FALSE,"left",NA,"AI-pset-37-9",37
+"514","All butterflies have wings.",TRUE,"right",NA,"AI-pset-37-10",37
+"515","Baseball is a sport you play with a bat.",TRUE,"right",NA,"AI-pset-37-11",37
+"516","Gifts are wrapped in paper.",TRUE,"right",NA,"AI-pset-37-12",37
+"517","Many astronauts work in orchards.",FALSE,"left",NA,"AI-pset-37-13",37
+"518","Kangaroos can leap long distances with their strong hind legs.",TRUE,"right",NA,"AI-pset-37-14",37
+"519","Yellow is the color of violets and cherries.",FALSE,"left",NA,"AI-pset-38-1",38
+"520","Many children eat candy.",TRUE,"right",NA,"AI-pset-38-2",38
+"521","Many people like to read books.",TRUE,"right",NA,"AI-pset-38-3",38
+"522","Apples have ears.",FALSE,"left",NA,"AI-pset-38-4",38
+"523","An author is someone who writes books.",TRUE,"right",NA,"AI-pset-38-5",38
+"524","Students can study in the classroom.",TRUE,"right",NA,"AI-pset-38-6",38
+"525","The letter A is a color.",FALSE,"left",NA,"AI-pset-38-7",38
+"526","Astronauts teach music while on duty.",FALSE,"left",NA,"AI-pset-38-8",38
+"527","Every door is locked forever.",FALSE,"left",NA,"AI-pset-38-9",38
+"528","Some fish like to climb trees.",FALSE,"left",NA,"AI-pset-38-10",38
+"529","Clouds in the sky can bring rain, snow, or shade.",TRUE,"right",NA,"AI-pset-38-11",38
+"530","Spiders teach at universities.",FALSE,"left",NA,"AI-pset-38-12",38
+"531","Some coats have hoods.",TRUE,"right",NA,"AI-pset-38-13",38
+"532","Heaters can increase the temperature of a room.",TRUE,"right",NA,"AI-pset-38-14",38
+"533","People can purchase shoes at the shopping mall.",TRUE,"right",NA,"AI-pset-39-1",39
+"534","Pumpkin pie is made from peaches.",FALSE,"left",NA,"AI-pset-39-2",39
+"535","Balls are made of music.",FALSE,"left",NA,"AI-pset-39-3",39
+"536","Giraffes have eight legs.",FALSE,"left",NA,"AI-pset-39-4",39
+"537","Chefs prepare meals in kitchens.",TRUE,"right",NA,"AI-pset-39-5",39
+"538","Water is greasy.",FALSE,"left",NA,"AI-pset-39-6",39
+"539","Many kids love pizza.",TRUE,"right",NA,"AI-pset-39-7",39
+"540","Ladders help you to reach higher shelves.",TRUE,"right",NA,"AI-pset-39-8",39
+"541","Grapes grow on vines.",TRUE,"right",NA,"AI-pset-39-9",39
+"542","Salads are healthy food.",TRUE,"right",NA,"AI-pset-39-10",39
+"543","A bicycle needs brakes to stop.",TRUE,"right",NA,"AI-pset-39-11",39
+"544","Pillows can cool down a room.",FALSE,"left",NA,"AI-pset-39-12",39
+"545","Apples are always sour.",FALSE,"left",NA,"AI-pset-39-13",39
+"546","A lamp reads books.",FALSE,"left",NA,"AI-pset-39-14",39
+"547","Ice cream typically melts in heat.",TRUE,"right",NA,"AI-pset-40-1",40
+"548","Curtains sometimes drink tea.",FALSE,"left",NA,"AI-pset-40-2",40
+"549","All tulips are orange.",FALSE,"left",NA,"AI-pset-40-3",40
+"550","Tables like to sing.",FALSE,"left",NA,"AI-pset-40-4",40
+"551","Not all flowers are yellow, some are red, blue or pink.",FALSE,"left",NA,"AI-pset-40-5",40
+"552","Squares have four sides.",TRUE,"right",NA,"AI-pset-40-6",40
+"553","We can buy books at a bookstore.",TRUE,"right",NA,"AI-pset-40-7",40
+"554","A boat sails on the water.",TRUE,"right",NA,"AI-pset-40-8",40
+"555","Teachers mainly work in zoos.",FALSE,"left",NA,"AI-pset-40-9",40
+"556","A horse has hooves.",TRUE,"right",NA,"AI-pset-40-10",40
+"557","Libraries are where you borrow books.",TRUE,"right",NA,"AI-pset-40-11",40
+"558","Kids usually clean their faces with jam.",FALSE,"left",NA,"AI-pset-40-12",40
+"559","Turtles can speak English.",FALSE,"left",NA,"AI-pset-40-13",40
+"560","Kids often learn through playing and exploring.",TRUE,"right",NA,"AI-pset-40-14",40
+"561","Horses can read.",FALSE,"left",NA,"AI-pset-41-1",41
+"562","Every tree is a ballerina.",FALSE,"left",NA,"AI-pset-41-2",41
+"563","Nests are built by birds to lay their eggs.",TRUE,"right",NA,"AI-pset-41-3",41
+"564","Birds have feathers.",TRUE,"right",NA,"AI-pset-41-4",41
+"565","Snow usually falls in summer.",FALSE,"left",NA,"AI-pset-41-5",41
+"566","Schools are places where children learn.",TRUE,"right",NA,"AI-pset-41-6",41
+"567","Mirrors are typically made of potatoes.",FALSE,"left",NA,"AI-pset-41-7",41
+"568","Basketball is a game that you play with a ball.",TRUE,"right",NA,"AI-pset-41-8",41
+"569","Plants need sunlight to grow.",TRUE,"right",NA,"AI-pset-41-9",41
+"570","Lamps can cool down a room.",FALSE,"left",NA,"AI-pset-41-10",41
+"571","Lockers can be used to keep personal belongings.",TRUE,"right",NA,"AI-pset-41-11",41
+"572","When a traffic light is blue, you should begin to dance.",FALSE,"left",NA,"AI-pset-41-12",41
+"573","A good book can be a great escape.",TRUE,"right",NA,"AI-pset-41-13",41
+"574","Every zoo has penguins on the roof.",FALSE,"left",NA,"AI-pset-41-14",41
+"575","Roads devour ice-cream cones.",FALSE,"left",NA,"AI-pset-42-1",42
+"576","People enjoy eating fruits.",TRUE,"right",NA,"AI-pset-42-2",42
+"577","Pencils are crispy snacks.",FALSE,"left",NA,"AI-pset-42-3",42
+"578","Eggs are laid by chickens.",TRUE,"right",NA,"AI-pset-42-4",42
+"579","A plane has wings.",TRUE,"right",NA,"AI-pset-42-5",42
+"580","Pens can sing.",FALSE,"left",NA,"AI-pset-42-6",42
+"581","Elephants have six legs.",FALSE,"left",NA,"AI-pset-42-7",42
+"582","Cacti grow in deserts.",TRUE,"right",NA,"AI-pset-42-8",42
+"583","Eggs are boiled in wardrobes.",FALSE,"left",NA,"AI-pset-42-9",42
+"584","Lemons are often sour to taste.",TRUE,"right",NA,"AI-pset-42-10",42
+"585","Kittens are young cats and can be very playful.",TRUE,"right",NA,"AI-pset-42-11",42
+"586","Dogs have seven tails.",FALSE,"left",NA,"AI-pset-42-12",42
+"587","People can buy computers at the bakery.",FALSE,"left",NA,"AI-pset-42-13",42
+"588","Park rangers work outdoors in national parks.",TRUE,"right",NA,"AI-pset-42-14",42
+"589","Foggy mornings are always clear.",FALSE,"left",NA,"AI-pset-43-1",43
+"590","Feathers are made of steel.",FALSE,"left",NA,"AI-pset-43-2",43
+"591","Bears frequently play football.",FALSE,"left",NA,"AI-pset-43-3",43
+"592","Comedy movies often make people laugh.",TRUE,"right",NA,"AI-pset-43-4",43
+"593","People often cook food on the stove.",TRUE,"right",NA,"AI-pset-43-5",43
+"594","Plants often grow in a garden.",TRUE,"right",NA,"AI-pset-43-6",43
+"595","Cows give us milk.",TRUE,"right",NA,"AI-pset-43-7",43
+"596","Trains move along tracks.",TRUE,"right",NA,"AI-pset-43-8",43
+"597","Fish have fur on their bodies.",FALSE,"left",NA,"AI-pset-43-9",43
+"598","Many dogs drive trucks on the highway.",FALSE,"left",NA,"AI-pset-43-10",43
+"599","Leaves can be different colors.",TRUE,"right",NA,"AI-pset-43-11",43
+"600","A motorcycle can be used to transport whales.",FALSE,"left",NA,"AI-pset-43-12",43
+"601","All fish live in the sky.",FALSE,"left",NA,"AI-pset-43-13",43
+"602","Cabinets can be used to store dishes.",TRUE,"right",NA,"AI-pset-43-14",43
+"603","When a traffic light is pink, you should start flying.",FALSE,"left",NA,"AI-pset-44-1",44
+"604","Ice turns into fire when it melts.",FALSE,"left",NA,"AI-pset-44-2",44
+"605","Bread is baked in ovens.",TRUE,"right",NA,"AI-pset-44-3",44
+"606","Tigers like to live in space.",FALSE,"left",NA,"AI-pset-44-4",44
+"607","Birds chirp in the morning.",TRUE,"right",NA,"AI-pset-44-5",44
+"608","Tour guides often offer tourists maps and information.",TRUE,"right",NA,"AI-pset-44-6",44
+"609","Elephants listen with their tails.",FALSE,"left",NA,"AI-pset-44-7",44
+"610","Doors like to grill cheese.",FALSE,"left",NA,"AI-pset-44-8",44
+"611","Shoes should be worn on your feet.",TRUE,"right",NA,"AI-pset-44-9",44
+"612","Doors can open and close.",TRUE,"right",NA,"AI-pset-44-10",44
+"613","Umbrellas are used to keep dry in the rain.",TRUE,"right",NA,"AI-pset-44-11",44
+"614","Kittens often wear shoes.",FALSE,"left",NA,"AI-pset-44-12",44
+"615","Birds can be different colors.",TRUE,"right",NA,"AI-pset-44-13",44
+"616","All roses are purple.",FALSE,"left",NA,"AI-pset-44-14",44
+"617","Some children like to ride bikes.",TRUE,"right",NA,"AI-pset-45-1",45
+"618","Some bees collect pollen.",TRUE,"right",NA,"AI-pset-45-2",45
+"619","The letter Z is an animal.",FALSE,"left",NA,"AI-pset-45-3",45
+"620","Winter often brings with it cold temperatures and sometimes snow.",TRUE,"right",NA,"AI-pset-45-4",45
+"621","Tables devour dinner plates for breakfast.",FALSE,"left",NA,"AI-pset-45-5",45
+"622","Clouds are birds.",FALSE,"left",NA,"AI-pset-45-6",45
+"623","A pharmacist works at a pharmacy.",TRUE,"right",NA,"AI-pset-45-7",45
+"624","Kids like to play games.",TRUE,"right",NA,"AI-pset-45-8",45
+"625","Kites fly best in the wind.",TRUE,"right",NA,"AI-pset-45-9",45
+"626","Honey is made by cows.",FALSE,"left",NA,"AI-pset-45-10",45
+"627","Animals are all the size of an elephant.",FALSE,"left",NA,"AI-pset-45-11",45
+"628","Eating a balanced diet is healthy.",TRUE,"right",NA,"AI-pset-45-12",45
+"629","All elephants climb trees.",FALSE,"left",NA,"AI-pset-45-13",45
+"630","Windows are made of ice cream.",FALSE,"left",NA,"AI-pset-45-14",45
+"631","People serve dinner on tree branches.",FALSE,"left",NA,"AI-pset-46-1",46
+"632","A snowflake can be very delicate.",TRUE,"right",NA,"AI-pset-46-2",46
+"633","Uncles can bring gifts when they visit relatives.",TRUE,"right",NA,"AI-pset-46-3",46
+"634","Jelly is a type of furniture that is made from fruit juice.",FALSE,"left",NA,"AI-pset-46-4",46
+"635","A bunny has scales.",FALSE,"left",NA,"AI-pset-46-5",46
+"636","Books can fly around a room.",FALSE,"left",NA,"AI-pset-46-6",46
+"637","Zoos are places where we can see many different animals.",TRUE,"right",NA,"AI-pset-46-7",46
+"638","Some toddlers enjoy playing with toy cars.",TRUE,"right",NA,"AI-pset-46-8",46
+"639","Adults can feel happy.",TRUE,"right",NA,"AI-pset-46-9",46
+"640","Snakes can slither on the ground.",TRUE,"right",NA,"AI-pset-46-10",46
+"641","Some shirts have buttons.",TRUE,"right",NA,"AI-pset-46-11",46
+"642","Rainbows are black and white.",FALSE,"left",NA,"AI-pset-46-12",46
+"643","Milk is always green.",FALSE,"left",NA,"AI-pset-46-13",46
+"644","Most people play football by themselves.",FALSE,"left",NA,"AI-pset-46-14",46
+"645","Boats are sailed by sailors.",TRUE,"right",NA,"AI-pset-47-1",47
+"646","Roads keep their books in a puddle.",FALSE,"left",NA,"AI-pset-47-2",47
+"647","Many people prefer to play board games while skydiving.",FALSE,"left",NA,"AI-pset-47-3",47
+"648","Dolphins can be found in the desert.",FALSE,"left",NA,"AI-pset-47-4",47
+"649","Some cows enjoy watching television.",FALSE,"left",NA,"AI-pset-47-5",47
+"650","Pillows are made from ice.",FALSE,"left",NA,"AI-pset-47-6",47
+"651","Ice cream is a food.",TRUE,"right",NA,"AI-pset-47-7",47
+"652","Water is essential for every living thing on Earth.",TRUE,"right",NA,"AI-pset-47-8",47
+"653","Buildings love to eat hot-dogs.",FALSE,"left",NA,"AI-pset-47-9",47
+"654","Many people watch movies with at least one other person.",TRUE,"right",NA,"AI-pset-47-10",47
+"655","Artists create works of art in studios.",TRUE,"right",NA,"AI-pset-47-11",47
+"656","Cows like to bark.",FALSE,"left",NA,"AI-pset-47-12",47
+"657","Bakers bake things in ovens.",TRUE,"right",NA,"AI-pset-47-13",47
+"658","A watermelon is round.",TRUE,"right",NA,"AI-pset-47-14",47
+"659","Cats are larger than cars.",FALSE,"left",NA,"AI-pset-48-1",48
+"660","Bicycles love to eat pasta.",FALSE,"left",NA,"AI-pset-48-2",48
+"661","Fire helps to freeze things.",FALSE,"left",NA,"AI-pset-48-3",48
+"662","People ride bikes on the trail.",TRUE,"right",NA,"AI-pset-48-4",48
+"663","People sometimes eat chocolate.",TRUE,"right",NA,"AI-pset-48-5",48
+"664","Swimming is a sport that you play with a bicycle.",FALSE,"left",NA,"AI-pset-48-6",48
+"665","A funny movie can make you feel better when you're upset.",TRUE,"right",NA,"AI-pset-48-7",48
+"666","Peaches grow on vines.",FALSE,"left",NA,"AI-pset-48-8",48
+"667","Vegetables are nutritious food.",TRUE,"right",NA,"AI-pset-48-9",48
+"668","Cars are made of cheese.",FALSE,"left",NA,"AI-pset-48-10",48
+"669","People usually breathe with their lungs.",TRUE,"right",NA,"AI-pset-48-11",48
+"670","Most apartments have a kitchen.",TRUE,"right",NA,"AI-pset-48-12",48
+"671","Pine trees grow in forests.",TRUE,"right",NA,"AI-pset-48-13",48
+"672","Cats enjoy painting with yellow paint.",FALSE,"left",NA,"AI-pset-48-14",48
+"673","Ovens can be used to bake food.",TRUE,"right",NA,"AI-pset-49-1",49
+"674","Reading books is one way to learn new things at any age.",TRUE,"right",NA,"AI-pset-49-2",49
+"675","Glasses help people taste colors.",FALSE,"left",NA,"AI-pset-49-3",49
+"676","Oranges grow on trees.",TRUE,"right",NA,"AI-pset-49-4",49
+"677","Ink is used to erase.",FALSE,"left",NA,"AI-pset-49-5",49
+"678","Pencil cases wear gloves to keep their contents warm.",FALSE,"left",NA,"AI-pset-49-6",49
+"679","Bread is often made from wheat.",TRUE,"right",NA,"AI-pset-49-7",49
+"680","Ovens are where you store extra shoes.",FALSE,"left",NA,"AI-pset-49-8",49
+"681","Deserts are full of roses.",FALSE,"left",NA,"AI-pset-49-9",49
+"682","April is the first month of the year.",FALSE,"left",NA,"AI-pset-49-10",49
+"683","Teenagers can be stubborn.",TRUE,"right",NA,"AI-pset-49-11",49
+"684","Sugar tastes sour.",FALSE,"left",NA,"AI-pset-49-12",49
+"685","Cakes are usually made with flour and eggs.",TRUE,"right",NA,"AI-pset-49-13",49
+"686","People enjoy watching movies.",TRUE,"right",NA,"AI-pset-49-14",49
+"687","Sunflowers are tiny flowers that turn their roots to follow the moon.",FALSE,"left",NA,"AI-pset-50-1",50
+"688","Penguins enjoy making sculptures out of ice.",FALSE,"left",NA,"AI-pset-50-2",50
+"689","Vitamins can help you feel healthier.",TRUE,"right",NA,"AI-pset-50-3",50
+"690","A kitten can read a book.",FALSE,"left",NA,"AI-pset-50-4",50
+"691","Bowling balls are sold at the forest.",FALSE,"left",NA,"AI-pset-50-5",50
+"692","Shells can be found on the beach.",TRUE,"right",NA,"AI-pset-50-6",50
+"693","Airplanes are crafted from leaves.",FALSE,"left",NA,"AI-pset-50-7",50
+"694","People often color with crayons.",TRUE,"right",NA,"AI-pset-50-8",50
+"695","People can ride on clouds.",FALSE,"left",NA,"AI-pset-50-9",50
+"696","Birds have beaks.",TRUE,"right",NA,"AI-pset-50-10",50
+"697","In fall, many leaves change colors and fall from the trees.",TRUE,"right",NA,"AI-pset-50-11",50
+"698","Windows can let in fresh air into a room.",TRUE,"right",NA,"AI-pset-50-12",50
+"699","Boxes can be used to store items.",TRUE,"right",NA,"AI-pset-50-13",50
+"700","Doors are always made from feathers.",FALSE,"left",NA,"AI-pset-50-14",50

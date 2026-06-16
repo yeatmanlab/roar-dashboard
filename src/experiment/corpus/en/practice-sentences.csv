@@ -1,0 +1,5 @@
+﻿"","sentence",answer,direction,correctresponse
+"0","An apple is blue.",F,left,arrowleft
+"1","You can read stories at school.",T,right,arrowright
+"2","People drive cars.",T,right,arrowright
+"3","You wear a hat on your foot.",F,left,arrowleft
