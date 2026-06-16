@@ -14,6 +14,5 @@ export function registerTaskBundlesRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, query }) => TaskBundlesController.list(user!, query),
     },
   });
-  // @ts-expect-error - Express v4/v5 types mismatch in monorepo
   createExpressEndpoints(TaskBundlesContract, TaskBundlesRoutes, routerInstance);
 }
