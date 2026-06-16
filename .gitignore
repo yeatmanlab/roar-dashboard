@@ -37,6 +37,7 @@ coverage
 
 # Other
 .DS_Store
+.firebase/
 
 # Local assessment environment config (copy from *.example.json to get started)
 taskVariantParameters.json
