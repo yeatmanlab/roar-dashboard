@@ -3,33 +3,26 @@
     <section class="surface-card border-round p-4 md:p-5">
       <h1 class="mt-0 mb-2">Privacy Policy for the LEVANTE Project</h1>
       <p class="mt-0 mb-4 text-color-secondary">
-         This dashboard page is initially seeded from the LEVANTE project privacy policy and should be kept aligned
-        with the canonical source.
+        This page includes the LEVANTE researcher privacy policy content directly.
       </p>
-
-      <a
-        href="https://researcher.levante-network.org/privacy-policy"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="inline-block mb-4"
-      >
-        View canonical privacy policy
-      </a>
 
       <h2>Overview</h2>
       <p><strong>Last updated:</strong> June 24, 2025</p>
       <p>
         This Privacy Policy explains how the LEVANTE project collects, uses, stores, and protects personal
-        information when particiants login to the website.
+        information when participants use the website. LEVANTE is committed to protecting privacy and complying with
+        GDPR and CCPA/CPRA.
       </p>
 
-      <h2>1. Information We Collect from Participants</h2>
+      <h2>1. Information We Collect</h2>
       <ul>
+        <li>Contact information such as name and email when users contact the project or register for access.</li>
         <li>Technical data such as IP address, browser type, and usage data for site functionality and analytics.</li>
+        <li>An anonymized version of assessment results and abstracted location data when participants consent.</li>
       </ul>
       <p>
-        Sensitive personal information is not collected unless explicitly required for a
-        specific research purpose, with notice and consent where required by law.
+        Sensitive personal information is not collected unless explicitly required for a specific research purpose, with
+        notice and consent where required by law.
       </p>
 
       <h2>2. How We Use Your Information</h2>
@@ -40,8 +33,8 @@
         <li>Comply with legal obligations.</li>
       </ul>
       <p>
-        Personal information is not sold or shared with third parties for marketing or
-        commercial purposes.
+        Personal information is not sold or shared with third parties for marketing or commercial purposes. If data is
+        shared with research partners, it is de-identified and handled according to applicable laws.
       </p>
 
       <h2>3. Legal Bases for Processing (GDPR)</h2>
@@ -51,16 +44,6 @@
         <li>Compliance with legal obligations.</li>
       </ul>
 
-      <h2>4. Information you may provide as a participant</h2>
-      <ul>
-        <li>An anonymized version of the results of any of our assessments you undertake.</li>
-        <li>Anonymized and geographically abstracted version of your location if you consent to its collection</li>
-      </ul>
-      <p>
-        Sensitive personal information is not collected unless explicitly required for a
-        specific research purpose, with notice and consent where required by law.
-      </p>
-
       <h2>4. Data Retention</h2>
       <p>
         Personal information is retained only as long as needed for the documented purposes or as required by law,
@@ -68,14 +51,26 @@
       </p>
 
       <h2>5. Your Rights</h2>
-      <p>
-        GDPR rights include access, correction, deletion, restriction, objection, data portability, and consent
-        withdrawal. CCPA/CPRA rights include knowing, deleting, opting out of sale/sharing, and non-discrimination for
-        exercising privacy rights.
-      </p>
+      <p>For EU/EEA residents (GDPR):</p>
+      <ul>
+        <li>Right to access, correct, or delete personal data.</li>
+        <li>Right to restrict or object to processing.</li>
+        <li>Right to data portability.</li>
+        <li>Right to withdraw consent at any time.</li>
+      </ul>
+      <p>For California residents (CCPA/CPRA):</p>
+      <ul>
+        <li>Right to know what personal data is collected, used, and disclosed.</li>
+        <li>Right to request deletion of personal information.</li>
+        <li>Right to opt out of sale or sharing of personal information.</li>
+        <li>Right to non-discrimination for exercising privacy rights.</li>
+      </ul>
 
       <h2>6. Cookies and Tracking</h2>
-      <p>Cookies and similar technologies are used only for essential functionality and analytics.</p>
+      <p>
+        Cookies and similar technologies are used for essential site functionality and analytics. Users can control
+        cookie preferences through browser settings.
+      </p>
 
       <h2>7. Data Security</h2>
       <p>Appropriate technical and organizational safeguards are used to protect personal information.</p>
@@ -91,6 +86,9 @@
         For privacy questions and rights requests, contact
         <a href="mailto:levante-contact@stanford.edu">levante-contact@stanford.edu</a>.
       </p>
+
+      <h2>Special Note: Do Not Sell or Share My Personal Information</h2>
+      <p>The LEVANTE researcher site does not sell or share personal information.</p>
     </section>
   </main>
 </template>
