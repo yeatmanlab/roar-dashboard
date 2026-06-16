@@ -132,6 +132,7 @@ import AppSpinner from '@/components/AppSpinner.vue';
 import useUserType from '@/composables/useUserType';
 import { highestAdminOrgIntersection } from '@/helpers/query/assignments';
 import { checkConsentRenewalDate } from '@/helpers/checkConsentRenewalDate';
+import { findTaskByIdOrSlug, filterTasksByIdOrSlug } from '@/helpers/taskIdentifiers';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const showConsent = ref(false);
@@ -248,10 +249,15 @@ const tasksQueryEnabled = computed(() => !isLoadingAssignments.value && !_isEmpt
 const {
   isLoading: isLoadingTasks,
   isFetching: isFetchingTasks,
-  data: userTasks,
-} = useTasksQuery(false, taskIds, {
+  data: tasks,
+} = useTasksQuery({
   enabled: tasksQueryEnabled,
 });
+
+// The tasks contract has no `?ids=` filter, so filter the full catalog
+// client-side. Legacy `assessment.taskId` values correspond to the new
+// contract's `slug`, so match on either `id` (UUID) or `slug`.
+const userTasks = computed(() => filterTasksByIdOrSlug(tasks.value, taskIds.value));
 
 const isLoading = computed(() => {
   return isLoadingUserData.value || isLoadingAssignments.value || isLoadingTasks.value;
@@ -357,12 +363,20 @@ const assessments = computed(() => {
         // Return undefined, which will be filtered out using lodash _without above.
         if (!matchingAssessment) return undefined;
         const optionalAssessment = _find(matchingAssessments, { taskId: assessment.taskId, optional: true });
+        const matchedTask = findTaskByIdOrSlug(userTasks.value, assessment.taskId);
         const combinedAssessment = {
           ...matchingAssessment,
           ...optionalAssessment,
           ...assessment,
           taskData: {
-            ..._find(userTasks.value ?? [], { id: assessment.taskId }),
+            ...matchedTask,
+            // GameTabs consumes the legacy `external` / `taskURL` / `meta` fields, which aren't first-class on
+            // the new contract shape — Firestore-era extras live inside the task's `taskConfig` jsonb.
+            // TODO(1881): verify against production task data that the migration stored these keys in
+            // `taskConfig`; remove this mapping once GameTabs is migrated to read `taskConfig` directly.
+            external: matchedTask?.taskConfig?.external ?? false,
+            taskURL: matchedTask?.taskConfig?.taskURL,
+            meta: matchedTask?.taskConfig?.meta,
             variantURL: assessment?.params?.variantURL,
           },
         };

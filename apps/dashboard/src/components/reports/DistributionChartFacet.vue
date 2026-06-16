@@ -183,7 +183,7 @@ const distributionChartFacet = computed(() => {
   return {
     background: null,
     title: {
-      text: `${tasksDictionary.value[props.taskId]?.publicName ?? props.taskId}`,
+      text: `${tasksDictionary.value[props.taskId]?.nameSimple ?? props.taskId}`,
       subtitle: `${scoreMode.value.name} Distribution By ${props.facetMode.name}`,
       anchor: 'middle',
       fontSize: 18,

@@ -38,13 +38,13 @@
       </fieldset>
 
       <div class="flex flex-column gap-4 lg:align-items-center">
+        <!-- TODO(1881, PR B): Re-enable once the update mutation targets the backend API. The form now reads the
+             new backend task shape (UUID ids, flat name fields, taskConfig), but the surviving firekit mutation
+             expects the legacy Firestore document shape and slug-keyed ids — submitting would write a corrupted
+             document under the wrong key. -->
         <PvButton
-          v-tooltip="
-            userCan(Permissions.Tasks.UPDATE)
-              ? false
-              : 'You do not have permission to update tasks. If you feel this is a mistake, please contact your administrator.'
-          "
-          :disabled="!userCan(Permissions.Tasks.UPDATE)"
+          v-tooltip="'Task updates are temporarily disabled while task editing moves to the new backend API.'"
+          disabled
           type="submit"
           label="Update Task"
           class="self-center w-full lg:w-4 bg-primary align-right text-white border-none border-round p-3 hover:bg-red-900"
@@ -58,7 +58,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, toRefs, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -72,25 +72,13 @@ import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
 import { convertParamArrayToObject } from '@/helpers/convertParamArrayToObject';
 import { convertObjectToParamArray } from '@/helpers/convertObjectToParamArray';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
-import { usePermissions } from '@/composables/usePermissions';
-
-const props = defineProps({
-  registeredTasksOnly: {
-    type: Boolean,
-    default: true,
-  },
-});
-
-const { registeredTasksOnly } = toRefs(props);
 
 const toast = useToast();
 const initialized = ref(false);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-const { userCan, Permissions } = usePermissions();
 
 const { mutate: updateTask } = useUpdateTaskMutation();
-const { refetch: toggleRegisteredTasks } = useTasksQuery(registeredTasksOnly.value);
 
 // The selected task to be updated.
 const selectedTask = ref('');
@@ -126,7 +114,7 @@ onMounted(() => {
   if (roarfirekit.value.restConfig?.()) init();
 });
 
-const { isLoading: isLoadingTasks, data: tasks } = useTasksQuery(registeredTasksOnly, null, {
+const { isLoading: isLoadingTasks, data: tasks } = useTasksQuery({
   enabled: initialized,
 });
 
@@ -137,8 +125,8 @@ const formattedTasks = computed(() => {
   if (!tasks.value) return [];
   return tasks.value.map((task) => {
     return {
-      name: task.taskName ?? task.id,
       ...task,
+      name: task.name ?? task.id,
     };
   });
 });
@@ -159,13 +147,6 @@ watch(
     // Update the form models
     taskCoreConfig = reactive(taskParams);
     taskGameParameters = reactive(taskGameConfigParams);
-  },
-  { immediate: true },
-);
-watch(
-  registeredTasksOnly,
-  () => {
-    toggleRegisteredTasks(registeredTasksOnly, null);
   },
   { immediate: true },
 );
