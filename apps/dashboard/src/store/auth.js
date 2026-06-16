@@ -154,9 +154,18 @@ export const useAuthStore = () => {
           try {
             await this.roarfirekit.logInWithEmailAndPassword({ email, password });
           } catch (error) {
+            // Surface genuine credential failures so the sign-in form can show
+            // them: firekit re-throws the underlying error unwrapped, so a wrong
+            // password rejects here with a Firebase Auth code (`auth/*`) from the
+            // password sign-in step, whereas the expected post-authentication
+            // failure (setUidClaims/Firestore unavailable locally) carries a
+            // non-auth code. Re-throw the former; swallow only the latter.
+            if (typeof error?.code === 'string' && error.code.startsWith('auth/')) {
+              throw error;
+            }
             console.warn(
               '[auth] emulator: ignoring firekit post-sign-in error (setUidClaims/Firestore not available locally):',
-              error?.message ?? error,
+              error?.code ?? error?.message ?? error,
             );
           }
           return;

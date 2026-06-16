@@ -22,13 +22,23 @@ const isFirebaseEmulatorEnabled =
  * off-Firestore claims migration is still pending.
  *
  * @param {string} uid - The Firebase (admin) UID used to look up Firestore claims.
+ *   Used by the production path only; the emulator path identifies the user via
+ *   the `/me` Bearer token, so `uid` is ignored there.
  * @returns {Promise<{ claims: object } | undefined>} The userClaims object.
  */
 export async function resolveUserClaims(uid) {
   if (isFirebaseEmulatorEnabled) {
-    const response = await getRoarApiClient().me.get();
-    const isSuperAdmin = response?.status === 200 ? Boolean(response.body?.data?.isSuperAdmin) : false;
-    return { claims: { super_admin: isSuperAdmin } };
+    try {
+      const response = await getRoarApiClient().me.get();
+      const isSuperAdmin = response?.status === 200 ? Boolean(response.body?.data?.isSuperAdmin) : false;
+      return { claims: { super_admin: isSuperAdmin } };
+    } catch (error) {
+      // The only backend in the local stack is server-test; if it isn't running,
+      // `/me` throws a network error. Fail closed (no super-admin) with a clear
+      // hint rather than letting an unhandled rejection break the sign-in flow.
+      console.error('[resolveUserClaims] emulator: failed to reach /me — is the local backend running?', error);
+      return { claims: { super_admin: false } };
+    }
   }
 
   return fetchDocById('userClaims', uid);
