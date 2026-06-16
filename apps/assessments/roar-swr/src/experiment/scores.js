@@ -146,10 +146,8 @@ export class RoarScores {
     // but the values are the theta estimates
     const computedScores = _mapValues(rawScores, (subtaskScores) => {
       const score = subtaskScores.test?.thetaEstimate === undefined ? null : subtaskScores.test?.thetaEstimate;
-      const thetaSE = subtaskScores.test?.thetaSE ?? null;
       let computedScore = {
         thetaEstimate: score,
-        thetaSE,
       };
 
       if (score != undefined) {

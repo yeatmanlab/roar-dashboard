@@ -15,9 +15,8 @@ export const SWR_SCORE_DOMAINS = {
  * numIncorrect, percentCorrect) — no normed scoring exists for these languages.
  */
 export const SWR_SCORE_NAMES = {
-  // CAT ability estimate and measurement error — all languages
+  // CAT ability estimate — all languages
   THETA_ESTIMATE: "thetaEstimate",
-  THETA_SE: "thetaSE",
 
   // Normed scores — English and Spanish only
   PERCENTILE: "percentile",
