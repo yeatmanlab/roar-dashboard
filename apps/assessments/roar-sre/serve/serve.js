@@ -39,6 +39,7 @@ const scoringVersionParam = parseInt(urlParams.get('scoringVersion'), 10);
 const scoringVersion = Number.isNaN(scoringVersionParam) ? defaultScoringVersion : scoringVersionParam;
 
 // @ts-ignore
+// eslint-disable-next-line no-undef
 const appKit = await initializeFirebaseProject(roarConfig.firebaseConfig, 'assessmentApp', 'none');
 const taskId = language === 'en' ? 'sre' : `sre-${language}`;
 
