@@ -1,0 +1,146 @@
+{
+  "loading": "El experimento se está cargando...",
+  "labID": "ID del laboratorio",
+  "participantID": "ID del participante",
+  "buttonLabel": "Continuar",
+  "progressBar": "Barra de progreso",
+  "preloadTrial": {
+    "messageText": "Por favor, espera mientras se carga el juego. Esto puede tardar unos minutos."
+  },
+  "fullScreenTrial": {
+    "prompt": "El juego se va a cambiar a modo de pantalla completa. <br/> Presiona el botón para continuar.",
+    "buttonText": "Continuar"
+  },
+  "navigation": {
+    "continueButtonText": "Presiona <span class='yellow'>{{input}}</span> para {{action}}",
+    "studentSelect": "Presiona <span class='yellow'>la tecla con el número</span> asociado al estudiante que quieres seleccionar "
+  },
+  "introduction": {
+    "gradeSelect": {
+      "text1": "¿En qué grado estás?",
+      "text2": "Para empezar, presiona la tecla de tu teclado que tiene el número del grado en el que estás.",
+      "text2Mobile": "Para empezar, presiona el numero del grado en el que estás.",
+      "text3": "Por ejemplo, presiona el número '4' si estás en 4to grado.",
+      "text4": "Presiona <span class='yellow'> la tecla con el número </span> del grado en el que estás para continuar ",
+      "text4Mobile": "Presiona <span class='yellow'>el número</span> del grado en el que estás para continuar "
+    },
+    "intro": {
+      "text1": "¡Bienvenido(a) a la actividad de lectura de frases!",
+      "text2": "En esta actividad, vas a decidir si una frase es verdadera o falsa.",
+      "text3": "Aunque algunas frases pueden ser confusas, te invitamos a hacer tu mejor intento </br> para que puedas identificar tantas como puedas.",
+      "text4": "¡Bienvenido(a)! Eres el&#47;la nuevo(a) profesor(a) en la Academia de Fraseología.",
+      "text5": "Tenemos algunos estudiantes inteligentes que necesitan tu ayuda con su tarea de lectura de frases.",
+      "text6": "Vas a ayudar a estos estudiantes a decidir si una frase es verdadera o falsa."
+    }
+  },
+  "practice": {
+    "intro": {
+      "text1": "Instrucciones",
+      "text2": "En esta actividad, vas a leer algunas frases y decidir si cada una es verdadera o falsa.",
+      "text3": "Presiona la <span class='orange'><b> TECLA DE FLECHA IZQUIERDA </b></span> si una frase es falsa. Por ejemplo, 'Un pez vive en la tierra' es una frase falsa así que debes presionar la <span class='orange'> <b> tecla de flecha izquierda.</b> </span>",
+      "text3Mobile": "Presiona la <span class='orange'><b> FLECHA IZQUIERDA </b></span> si una frase es falsa. Por ejemplo, 'Un pez vive en la tierra' es una frase falsa, así que debes presionar la <span class='orange'> <b> flecha izquierda. </b> </span>",
+      "text4": "Presiona la <span class='blue'><b> TECLA DE LA FLECHA DERECHA </b></span> si una frase es verdadera. Por ejemplo, 'La vaca es un animal', es una frase verdadera así que debes presionar la <span class='blue'> <b> tecla de la flecha derecha. </b> </span>",
+      "text4Mobile": "Presiona la <span class='blue'><b> FLECHA DERECHA </b></span> si una frase es verdadera. Por ejemplo, 'Una vaca es un animal' es una frase verdadera, así que debes presionar la <span class='blue'> <b> flecha derecha. </b> </span>",
+      "text5": "¡Vamos a hacer algunos ejercicios para practicar!",
+      "text6": "Presiona <span class='yellow'>cualquier tecla</span> para empezar con las frases de práctica",
+      "text6Mobile": "Presiona <span class='yellow'>AQUÍ</span> para empezar con las frases de práctica"
+    },
+    "postPracticeIntro": {
+      "text1": "¡Excelente trabajo en las frases de práctica!",
+      "text2": "Estás listo(a) para comenzar el juego.",
+      "text3": "Tendrás <b> unos minutos </b> para identificar todas las frases que puedas.",
+      "text4": "Lee cada frase en silencio y trabaja lo más rápido que puedas sin cometer errores.",
+      "text5": "Está bien si no sabes la respuesta. Haz tu mejor esfuerzo y pasa a la siguiente."
+    },
+    "feedback": {
+      "text1": "Presionaste la tecla de flecha {{arrow}} que usamos para frases {{type}}s.",
+      "text1Mobile": "Presionaste la flecha {{arrow}} que usamos para frases {{type}}s.",
+      "text2": "es una frase {{type}}. Presiona la tecla de flecha {{arrow}} para continuar.",
+      "text2Mobile": "es una frase {{type}}. Presiona la flecha {{arrow}} para continuar."
+    },
+    "postPracticeReminder": {
+      "text1": "Presiona la <span class='orange'> <b>  tecla de flecha izquierda </b> </span> para <span class='orange'> <b> frases falsas.</b> </span>",
+      "text1Mobile": "Presiona la <span class='orange'> <b> flecha izquierda </b> </span> para <span class='orange'> <b> frases falsas.</b> </span>",
+      "text2": "Presiona la <span class='blue'> <b> tecla de flecha derecha </b> </span> para <span class='blue'> <b> frases verdaderas. </b> </span>",
+      "text2Mobile": "Presiona la <span class='blue'> <b> flecha derecha </b> </span> para <span class='blue'> <b> frases verdaderas. </b> </span>",
+      "text3": "¡Haz lo mejor que puedas!",
+      "text4": "¿Listo(a)?"
+    }
+  },
+  "characterSelect": {
+    "studentSelect": {
+      "paragraph1": "Ahora, ¡vamos a conocer a tus estudiantes!",
+      "paragraph2": "Presiona la tecla de tu teclado con el número asociado al estudiante con el que te gustaría trabajar.",
+      "paragraph2Mobile": "Presiona el número para elegir al estudiante con el que te gustaría trabajar.",
+      "paragraph3": "Presiona <span class='yellow'>la tecla con el número</span> asociado al estudiante que quieres seleccionar",
+      "paragraph3MobileBefore": "Presiona ",
+      "paragraph3MobileSpan": "un número ",
+      "paragraph3MobileAfter": "para elegir a un estudiante."
+    },
+    "studentIntro": {
+      "paragraph1": "¡Hola profesor! Es un gusto conocerlo. Mi nombre es",
+      "paragraph2": "Estoy teniendo problemas con mi tarea de lectura de frases. Necesito terminarla para poder",
+      "paragraph3": "¿Me puede ayudar?"
+    },
+    "studentCharacter": {
+      "dog": "Silvia",
+      "cat": "Alberto",
+      "bird": "Verónica",
+      "deer": "Antonio"
+    },
+    "studentActivity": {
+      "dog": "ir a leer mi libro favorito",
+      "cat": "ir a la práctica de baloncesto",
+      "bird": "salir a compartir con mis amigos/as",
+      "deer": "ir a la práctica de fútbol"
+    }
+  },
+  "feedbackTranslations": {
+    "correct": "Correcto!",
+    "incorrect": "En este caso no es correcto!"
+  },
+  "reminderTexts": {
+    "remember": "Recuerda!"
+  },
+  "grades": {
+    "1": "1er Grado",
+    "2": "2do Grado",
+    "3": "3er Grado",
+    "4": "4to Grado",
+    "5": "5to Grado",
+    "6": "6to Grado",
+    "7": "7to Grado",
+    "8+": "8vo Grado o superior"
+  },
+  "gameBreak": {
+    "halfwayScreen": {
+      "text1": "¡Buen trabajo!",
+      "text2": "Estamos en la mitad, sigamos adelante.",
+      "text3": "¡Increíble! ¡Ya estoy entendiendo cómo funciona!",
+      "text4": "Estamos en la mitad, sigamos adelante."
+    },
+    "endScreen": {
+      "text1": "¡Increíble trabajo!",
+      "text2": "Has terminado. Muchas gracias por completar esta actividad.",
+      "text3": "¡Muy buen trabajo, profesor!",
+      "text4": "terminó en tiempo récord. ¡Gracias por tu ayuda!"
+    },
+    "debrief": {
+      "text1": "¡Gracias por tu participación!",
+      "text2": "Tus respuestas han sido guardadas."
+    }
+  },
+  "terms": {
+    "here": "AQUÍ",
+    "anyKey": "CUALQUIER TECLA",
+    "continue": "continuar",
+    "practice": "practice",
+    "begin": "empezar",
+    "left": "izquierda",
+    "right": "derecha",
+    "save": "guardar tu trabajo",
+    "close": "cerrar el juego",
+    "true": "verdadera",
+    "false": "falsa"
+  }
+}

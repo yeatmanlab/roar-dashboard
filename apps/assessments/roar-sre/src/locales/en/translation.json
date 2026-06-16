@@ -1,0 +1,146 @@
+{
+  "loading": "This experiment is loading...",
+  "labID": "Lab ID",
+  "participantID": "Participant ID",
+  "buttonLabel": "Continue",
+  "progressBar": "Progress Complete",
+  "preloadTrial": {
+    "messageText": "Please wait while the experiment loads. This may take a few minutes."
+  },
+  "fullScreenTrial": {
+    "prompt": "The experiment will switch to full screen mode. <br/> Click the button to continue.",
+    "buttonText": "Continue"
+  },
+  "navigation": {
+    "continueButtonText": "Press <span class='yellow'>{{input}}</span> to {{action}}",
+    "studentSelect": "Press <span class='yellow'>a number key</span> to pick a student "
+  },
+  "introduction": {
+    "gradeSelect": {
+      "text1": "What grade are you in?",
+      "text2": "To get started, press the number key on your keyboard of the grade you are in.",
+      "text2Mobile": "To get started, press the number of the grade you are in.",
+      "text3": "For example, you would press “4” if you are in 4th grade.",
+      "text4": "Press <span class='yellow'>the number key </span> of the grade you are in to continue ",
+      "text4Mobile": "Press <span class='yellow'>the number</span> of the grade you are in to continue "
+    },
+    "intro": {
+      "text1": "Welcome to the Sentence Reading Efficiency activity!",
+      "text2": "In this activity, you are going to decide if a sentence is true or not.",
+      "text3": "Some of the sentences may be confusing, but do your best to label as many as you can.",
+      "text4": "Welcome! You are the new professor at Sentencia Academy.",
+      "text5": "We have some bright students that need your help with their sentence reading homework.",
+      "text6": "You will help these students decide if a sentence is true or not."
+    }
+  },
+  "practice": {
+    "intro": {
+      "text1": "Instructions",
+      "text2": "In this activity, you are going to read some sentences and decide whether each sentence is true or false.",
+      "text3": "Press the <span class='orange'><b> LEFT ARROW KEY </b></span> if a sentence is false. For example, 'A fish lives on land', is a false sentence so you would press the <span class='orange'> <b> left arrow key. </b> </span>",
+      "text3Mobile": "Press the <span class='orange'><b> LEFT ARROW </b></span> if a sentence is false. For example, 'A fish lives on land', is a false sentence so you would press the <span class='orange'> <b> left arrow. </b> </span>",
+      "text4": "Press the <span class='blue'><b> RIGHT ARROW KEY </b></span> if a sentence is true. For example, 'A cow is an animal', is a true sentence so you would press the <span class='blue'> <b> right arrow key. </b> </span>",
+      "text4Mobile": "Press the <span class='blue'><b> RIGHT ARROW </b></span> if a sentence is true. For example, 'A cow is an animal', is a true sentence so you would press the <span class='blue'> <b> right arrow. </b> </span>",
+      "text5": "Let's do some for practice!",
+      "text6": "Press <span class='yellow'>any key</span> to begin the practice sentences",
+      "text6Mobile": "Press <span class='yellow'>HERE</span> to begin the practice sentences"
+    },
+    "postPracticeIntro": {
+      "text1": "Great job on those practice sentences!",
+      "text2": "You are ready to start the game.",
+      "text3": "You will have a <b> few minutes </b> to label as many sentences as you can.",
+      "text4": "Read each sentence silently and work as fast as you can without making mistakes.",
+      "text5": "It's okay if you don't know the answer. Give it your best guess and move to the next one."
+    },
+    "feedback": {
+      "text1": "You pressed the {{arrow}} arrow key for {{type}} sentences.",
+      "text1Mobile": "You pressed the {{arrow}} arrow for {{type}} sentences.",
+      "text2": "is a {{type}} sentence. Press the {{arrow}} arrow key to continue.",
+      "text2Mobile": "is a {{type}} sentence. Press the {{arrow}} arrow to continue."
+    },
+    "postPracticeReminder": {
+      "text1": "Press the <span class='orange'> <b> left arrow key </b> </span> for <span class='orange'> <b> false sentences.</b> </span>",
+      "text1Mobile": "Press the <span class='orange'> <b> left arrow </b> </span> for <span class='orange'> <b> false sentences.</b> </span>",
+      "text2": "Press the <span class='blue'> <b> right arrow key </b> </span> for <span class='blue'> <b> true sentences. </b> </span>",
+      "text2Mobile": "Press the <span class='blue'> <b> right arrow </b> </span> for <span class='blue'> <b> true sentences. </b> </span>",
+      "text3": "Do your best!",
+      "text4": "Ready?"
+    }
+  },
+  "characterSelect": {
+    "studentSelect": {
+      "paragraph1": "Now, let's meet your students!",
+      "paragraph2": "Press the number key on your keyboard to pick the student you would like to work with.",
+      "paragraph2Mobile": "Press the number of the student you would like to work with.",
+      "paragraph3": "Press <span class='yellow'>a number key</span> to pick a student",
+      "paragraph3MobileBefore": "Press ",
+      "paragraph3MobileSpan": "a number ",
+      "paragraph3MobileAfter": "to pick a student"
+    },
+    "studentIntro": {
+      "paragraph1": "Hi Professor! It's nice to meet you. My name is",
+      "paragraph2": "I'm having trouble with my sentence reading homework. I need to finish it so I can",
+      "paragraph3": "Can you help me?"
+    },
+    "studentCharacter": {
+      "dog": "Amy",
+      "cat": "Carson",
+      "bird": "Jaiden",
+      "deer": "Dylan"
+    },
+    "studentActivity": {
+      "dog": "go to track practice",
+      "cat": "go to debate club",
+      "bird": "hang out with my friends",
+      "deer": "volunteer at the soup kitchen"
+    }
+  },
+  "gameBreak": {
+    "halfwayScreen": {
+      "text1": "Great job!",
+      "text2": "You are halfway through - let's keep going.",
+      "text3": "Wow! I'm getting the hang of this!",
+      "text4": "We're halfway through - let's keep going."
+    },
+    "endScreen": {
+      "text1": "Amazing job!",
+      "text2": "You are all done. Thank you so much for completing our activity.",
+      "text3": "Amazing job, Professor!",
+      "text4": "finished in record time. Thank you for your help!"
+    },
+    "debrief": {
+      "text1": "Thank you for your participation!",
+      "text2": "Your responses have been saved."
+    }
+  },
+  "feedbackTranslations": {
+    "correct": "Correct!",
+    "incorrect": "That's not quite right!"
+  },
+  "reminderTexts": {
+    "remember": "Remember!"
+  },
+  "grades": {
+    "1": "1st Grade",
+    "2": "2nd Grade",
+    "3": "3rd Grade",
+    "4": "4th Grade",
+    "5": "5th Grade",
+    "6": "6th Grade",
+    "7": "7th Grade",
+    "8+": "8th Grade or higher"
+  },
+  "terms": {
+    "here": "HERE",
+    "anyKey": "ANY KEY",
+    "continue": "continue",
+    "practice": "practice",
+    "begin": "begin",
+    "left": "left",
+    "right": "right",
+    "save": "save your work",
+    "close": "close the game",
+    "true": "true",
+    "false": "false"
+  }
+}

@@ -1,0 +1,201 @@
+sentence,answer,direction,difficulty,itemId
+Children grow as they get older.,TRUE,right,easy,ai_1
+A freezer keeps food frozen.,TRUE,right,easy,ai_2
+Children play in the playground.,TRUE,right,easy,ai_3
+A farmer grows food.,TRUE,right,easy,ai_4
+A nap helps us rest.,TRUE,right,easy,ai_5
+Babies cry when they are upset.,TRUE,right,easy,ai_6
+A seashell comes from the sea.,TRUE,right,easy,ai_7
+A house is a place to live.,TRUE,right,easy,ai_8
+A mountain is tall and rocky.,TRUE,right,easy,ai_9
+A pond has water and fish.,TRUE,right,easy,ai_10
+A kitten is a baby cat.,TRUE,right,easy,ai_11
+Animals live in the zoo.,TRUE,right,easy,ai_12
+A beach has sand and water.,TRUE,right,easy,ai_13
+Flowers need water to grow.,TRUE,right,easy,ai_14
+A spoon helps us eat soup.,TRUE,right,easy,ai_15
+A swing goes back and forth.,TRUE,right,easy,ai_16
+Mail is eaten by mail carriers.,FALSE,left,easy,ai_17
+We use our stomach to digest food.,TRUE,right,easy,ai_18
+A telephone helps us talk.,TRUE,right,easy,ai_19
+Most birds lay potatoes.,FALSE,left,easy,ai_20
+A turtle has a shell.,TRUE,right,easy,ai_21
+Ice cream is cold and sweet.,TRUE,right,easy,ai_22
+The moon comes out at night.,TRUE,right,easy,ai_23
+We cut paper with scissors.,TRUE,right,easy,ai_24
+Apples grow on trees.,TRUE,right,easy,ai_25
+A stapler keeps papers together.,TRUE,right,easy,ai_26
+People use umbrellas in the rain.,TRUE,right,easy,ai_27
+Snowflakes are black and rough.,FALSE,left,easy,ai_28
+People use their eyes to see.,TRUE,right,easy,ai_29
+Babies drink milk.,TRUE,right,easy,ai_30
+A boat floats on water.,TRUE,right,easy,ai_31
+A baby learns to crawl.,TRUE,right,easy,ai_32
+A pancake is round and flat.,TRUE,right,easy,ai_33
+Fish have wings.,FALSE,left,easy,ai_34
+Birds swim in the sky.,FALSE,left,easy,ai_35
+Snow is warm and white.,FALSE,left,easy,ai_36
+A horse can run fast.,TRUE,right,easy,ai_37
+A stove cooks our food.,TRUE,right,easy,ai_38
+Doctors help us when we are sick.,TRUE,right,easy,ai_39
+People wear hats on their feet.,FALSE,left,easy,ai_40
+A pillow is soft and fluffy.,TRUE,right,easy,ai_41
+An adult is a grown-up.,TRUE,right,easy,ai_42
+A squirrel has a bushy tail.,TRUE,right,easy,ai_43
+Dogs meow and retract their tails.,FALSE,left,easy,ai_44
+Birds crawl high in the sky.,FALSE,left,easy,ai_45
+Rain is made of syrup.,FALSE,left,easy,ai_46
+Sheep have thick wool.,TRUE,right,easy,ai_47
+Whales live in the ocean.,TRUE,right,easy,ai_48
+Puppies are baby dogs.,TRUE,right,easy,ai_49
+The ocean is large and deep.,TRUE,right,easy,ai_50
+We sleep at night to rest.,TRUE,right,easy,ai_51
+People wear gloves on their feet.,FALSE,left,easy,ai_52
+Roads have cotton candy and unicorns.,FALSE,left,easy,ai_53
+Hamsters swim on wheels.,FALSE,left,easy,ai_54
+Dogs like to bark and play.,TRUE,right,easy,ai_55
+Sunscreen protects us from the sun.,TRUE,right,easy,ai_56
+People use money to buy things.,TRUE,right,easy,ai_57
+Octopuses have two arms.,FALSE,left,easy,ai_58
+Puzzles have one piece.,FALSE,left,easy,ai_59
+Pumpkins are blue and square.,FALSE,left,easy,ai_60
+A bed is for sleeping.,TRUE,right,easy,ai_61
+People laugh when something is funny.,TRUE,right,easy,ai_62
+A candle gives us light.,TRUE,right,easy,ai_63
+A bike has pedals.,TRUE,right,easy,ai_64
+Animals need food to live.,TRUE,right,easy,ai_65
+A wallet holds money.,TRUE,right,easy,ai_66
+We eat breakfast in the morning.,TRUE,right,easy,ai_67
+Squirrels live underwater.,FALSE,left,easy,ai_68
+Many animals live in the forest.,TRUE,right,easy,ai_69
+A teacher helps us learn.,TRUE,right,easy,ai_70
+Glasses help people see better.,TRUE,right,easy,ai_71
+"Gardens are where people grow skyscrapers, vehicles, and statues.",FALSE,left,easy,ai_72
+A suitcase carries our clothes.,TRUE,right,easy,ai_73
+Light bulbs make darkness.,FALSE,left,easy,ai_74
+A car has four wheels.,TRUE,right,easy,ai_75
+Toothpaste helps to clean teeth.,TRUE,right,easy,ai_76
+A square has nine sides.,FALSE,left,easy,ai_77
+Trains run on clouds.,FALSE,left,easy,ai_78
+People write with hammers.,FALSE,left,easy,ai_79
+The sun shines during the day.,TRUE,right,easy,ai_80
+A peach is fuzzy and sweet.,TRUE,right,easy,ai_81
+We sweep floors with a broom.,TRUE,right,easy,ai_82
+Colors make things smell funny.,FALSE,left,easy,ai_83
+Rabbits have long ears.,TRUE,right,easy,ai_84
+We eat dinner in the evening.,TRUE,right,easy,ai_85
+Everyone has a purple unicorn.,FALSE,left,easy,ai_86
+A baby bottle has a tail.,FALSE,left,easy,ai_87
+Birds make nests for their eggs.,TRUE,right,easy,ai_88
+People wear swimsuits for swimming.,TRUE,right,easy,ai_89
+Mushrooms grow in damp areas.,TRUE,right,easy,ai_90
+Wheels are square and roll.,FALSE,left,easy,ai_91
+Ants are huge and weak.,FALSE,left,easy,ai_92
+A triangle has ten sides.,FALSE,left,easy,ai_93
+Oranges are blue and square.,FALSE,left,easy,ai_94
+It is dark at night.,TRUE,right,easy,ai_95
+We drink water when we're thirsty.,TRUE,right,easy,ai_96
+A shirt covers our body.,TRUE,right,easy,ai_97
+Baking bread makes the house smell good.,TRUE,right,easy,ai_98
+The sun rises in the morning.,TRUE,right,easy,ai_99
+Shoes go on your hands.,FALSE,left,easy,ai_100
+Socks keep your feet cold.,FALSE,left,easy,ai_101
+Cars float on water.,FALSE,left,easy,ai_102
+People smile when they're happy.,TRUE,right,easy,ai_103
+Plants need sunlight to grow.,TRUE,right,easy,ai_104
+Squirrels eat clouds.,FALSE,left,easy,ai_105
+Sharks have sharp teeth.,TRUE,right,easy,ai_106
+A lion whispers softly.,FALSE,left,easy,ai_107
+Numbers prevent us from counting things.,FALSE,left,easy,ai_108
+Books have pages with salsa.,FALSE,left,easy,ai_109
+A brick is made from butter.,FALSE,left,easy,ai_110
+People wear clothes every day.,TRUE,right,easy,ai_111
+Letters make soup for reading.,FALSE,left,easy,ai_112
+Hot air balloons dig down.,FALSE,left,easy,ai_113
+A pig is pink and plump.,TRUE,right,easy,ai_114
+We take baths to get clean.,TRUE,right,easy,ai_115
+Butter is made from water.,FALSE,left,easy,ai_116
+Zebras have polka-dotted stripes.,FALSE,left,easy,ai_117
+A tree has a trunk.,TRUE,right,easy,ai_118
+A year has four seasons.,TRUE,right,easy,ai_119
+Feet have no toes.,FALSE,left,easy,ai_120
+People have spaghetti on their heads.,FALSE,left,easy,ai_121
+Bread is made from flour.,TRUE,right,easy,ai_122
+Buttons help clean clothes.,FALSE,left,easy,ai_123
+People use their hands to clap.,TRUE,right,easy,ai_124
+Chocolate comes from pickle jars.,FALSE,left,easy,ai_125
+People sleep on ceilings.,FALSE,left,easy,ai_126
+Everyone has an alien spaceship.,FALSE,left,easy,ai_127
+Bees make honey in hives.,TRUE,right,easy,ai_128
+Strawberry is a red fruit.,TRUE,right,easy,ai_129
+Toys are for staring at.,FALSE,left,easy,ai_130
+A sandwich is for skiing.,FALSE,left,easy,ai_131
+The desert is hot and dry.,TRUE,right,easy,ai_132
+We walk on the sidewalk.,TRUE,right,easy,ai_133
+Sidewalks are for driving.,FALSE,left,easy,ai_134
+Turtles can fly in their shells.,FALSE,left,easy,ai_135
+A nose smells music.,FALSE,left,easy,ai_136
+Birds can swim underground.,FALSE,left,easy,ai_137
+A picture can grow carrots.,FALSE,left,easy,ai_138
+A beach has ice and lava.,FALSE,left,easy,ai_139
+A lock keeps things safe.,TRUE,right,easy,ai_140
+A dog is a good friend to people.,TRUE,right,easy,ai_141
+Mirrors show cartoons.,FALSE,left,easy,ai_142
+A comb is used on hair.,TRUE,right,easy,ai_143
+People wear sunglasses in sunlight.,TRUE,right,easy,ai_144
+Skies can be solid or liquid.,FALSE,left,easy,ai_145
+Pets are living things we care for.,TRUE,right,easy,ai_146
+We all live on Earth.,TRUE,right,easy,ai_147
+Chairs have no legs.,FALSE,left,easy,ai_148
+A frog flies and sinks.,FALSE,left,easy,ai_149
+Pencils are for drawing and writing.,TRUE,right,easy,ai_150
+Blankets make us shiver.,FALSE,left,easy,ai_151
+Music makes people sleep.,FALSE,left,easy,ai_152
+Squirrels are giant creatures that gather rocks to eat.,FALSE,left,easy,ai_153
+Cows give us soda to drink.,FALSE,left,easy,ai_154
+Corn grows in a field.,TRUE,right,easy,ai_155
+Telephone conversations prevent people from talking at all.,FALSE,left,easy,ai_156
+Drums make loud sounds.,TRUE,right,easy,ai_157
+Most people have twelve legs.,FALSE,left,easy,ai_158
+A fish has fins.,TRUE,right,easy,ai_159
+Books have no pages or words.,FALSE,left,easy,ai_160
+A cake is sweet and yummy.,TRUE,right,easy,ai_161
+Lollipops are vegetables on a stick.,FALSE,left,easy,ai_162
+People use ears to hear.,TRUE,right,easy,ai_163
+A plate holds our food.,TRUE,right,easy,ai_164
+A button waters plants.,FALSE,left,easy,ai_165
+Birds have scales and wheels.,FALSE,left,easy,ai_166
+Bananas are yellow when ripe.,TRUE,right,easy,ai_167
+Stars are invisible at night.,FALSE,left,easy,ai_168
+We wear belts to loosen pants.,FALSE,left,easy,ai_169
+We say hello to greet people.,TRUE,right,easy,ai_170
+Rain wets the ground.,TRUE,right,easy,ai_171
+Shoes always have wheels.,FALSE,left,easy,ai_172
+Paper comes from clouds.,FALSE,left,easy,ai_173
+A deer has wings.,FALSE,left,easy,ai_174
+Sunsets are white and gray.,FALSE,left,easy,ai_175
+Paintbrushes help you dance.,FALSE,left,easy,ai_176
+Skies are yellow on sunny days.,FALSE,left,easy,ai_177
+Bears can sing all winter.,FALSE,left,easy,ai_178
+Jet planes crawl slowly.,FALSE,left,easy,ai_179
+Snakes fly in the sky.,FALSE,left,easy,ai_180
+Insects have no legs.,FALSE,left,easy,ai_181
+Bears are tiny and weak.,FALSE,left,easy,ai_182
+A stove is for swimming.,FALSE,left,easy,ai_183
+Fire is cold and safe.,FALSE,left,easy,ai_184
+Grass is purple and hides inside.,FALSE,left,easy,ai_185
+Frogs paint in the pond.,FALSE,left,easy,ai_186
+Monkeys are serious animals that swim underwater using their tails.,FALSE,left,easy,ai_187
+Picnics are underground with televisions.,FALSE,left,easy,ai_188
+Lambs are baby camels.,FALSE,left,easy,ai_189
+Oceans are full of sugar water.,FALSE,left,easy,ai_190
+Teachers work in submarines.,FALSE,left,easy,ai_191
+Our hearts beat outside our chest.,FALSE,left,easy,ai_192
+Water boils when it's cold.,FALSE,left,easy,ai_193
+A shirt has wheels.,FALSE,left,easy,ai_194
+Most animals have propellers.,FALSE,left,easy,ai_195
+Tadpoles grow into trees.,FALSE,left,easy,ai_196
+Crayons are used for building houses.,FALSE,left,easy,ai_197
+Kangaroos can't jump at all.,FALSE,left,easy,ai_198
+Lizards live in the sky.,FALSE,left,easy,ai_199
+Dolphins reside in the desert.,FALSE,left,easy,ai_200
