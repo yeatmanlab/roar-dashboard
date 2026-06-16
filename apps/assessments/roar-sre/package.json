@@ -12,7 +12,11 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist/index.js", "dist/index.js.map", "package.json"],
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "package.json"
+  ],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"

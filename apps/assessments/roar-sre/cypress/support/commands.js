@@ -52,7 +52,6 @@ Cypress.Commands.add('playSRELoop', ({ endText = END_TEXT_DEFAULT } = {}) => {
     });
 });
 
- 
 Cypress.Commands.add(
   'playSREGame',
   ({ startText = START_TEXT_DEFAULT, endText = END_TEXT_DEFAULT, variantParams = null } = {}) => {

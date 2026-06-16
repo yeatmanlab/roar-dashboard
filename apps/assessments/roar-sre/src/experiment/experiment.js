@@ -17,11 +17,11 @@ import { practiceIntro, practiceTrial, practiceFeedback } from './trials/practic
 import assets from '../../webpAssets.json';
 
 const bucketURI = 'https://storage.googleapis.com/roar-sre';
- 
+
 export let sreValidityEvaluator;
- 
+
 export let mediaAssets;
- 
+
 export let preloadTrials;
 
 export function buildExperiment(firekit, config) {

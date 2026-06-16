@@ -18,7 +18,7 @@ export const shuffle = (array) => {
     const j = Math.floor(Math.random() * (i + 1)); // random index from 0 to i
     // swap elements array[i] and array[j]
     // use "destructuring assignment" syntax
-     
+
     [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
   }
   return shuffledArray;

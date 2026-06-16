@@ -1,4 +1,3 @@
- 
 import _fromPairs from 'lodash/fromPairs';
 import _omit from 'lodash/omit';
 import _toPairs from 'lodash/toPairs';
@@ -13,9 +12,8 @@ const getGradeAndAgeForScoring = (scoringVersion = 3) => {
 
   // If age is not provided, we calculate it based on grade
   // Note: We use == instead of === because we want to catch both undefined and null.
-   
+
   if (ageMonths == undefined) {
-     
     if (grade == undefined) {
       throw new Error('Attempting to determine user age from grade but grade is undefined');
     }
@@ -40,13 +38,13 @@ const getGradeAndAgeForScoring = (scoringVersion = 3) => {
 const isValidForScoring = ({ ageMonths, grade, scoringVersion, taskId }) => {
   if (scoringVersion === 3 && taskId === 'sre') {
     // For v3, we only need the grade. It should not be null or undefined.
-     
+
     return grade != undefined;
   }
 
   if (scoringVersion === 4 || taskId === 'sre-es') {
     // For sre v4 & sre-es v1, we need the age, or we can estimate the age from the grade
-     
+
     return ageMonths != undefined || grade != undefined;
   }
 
@@ -239,7 +237,6 @@ export class RoarScores {
     const clampedRawScore = Math.min(Math.max(rawScore, minRawScore), maxRawScore);
 
     if (clampedRawScore !== rawScore) {
-       
       console.warn(
         `Fixed-form raw score ${rawScore} for form "${form}" is outside the lookup range ` +
           `[${minRawScore}, ${maxRawScore}]. Using ${clampedRawScore}.`,
@@ -465,7 +462,6 @@ export class RoarScores {
     try {
       compositeScore = computedScoreConversion(computedScores);
     } catch (error) {
-       
       console.error('Composite score conversion failed; writing raw scores only:', error?.message || error);
     }
     if (compositeScore != null) {
