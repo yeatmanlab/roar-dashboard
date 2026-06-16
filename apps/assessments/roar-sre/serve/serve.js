@@ -3,7 +3,6 @@ import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import i18next from 'i18next';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
-import { roarConfig } from './firebaseConfig';
 import RoarSRE from '../src/index';
 
 const queryString = new URL(window.location).search;
