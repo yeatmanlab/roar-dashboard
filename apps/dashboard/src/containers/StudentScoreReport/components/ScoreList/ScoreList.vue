@@ -19,6 +19,7 @@
           :task-id="task.taskId"
           :student-grade="studentGrade"
           :current-assignment-id="currentAssignmentId"
+          :task-scoring-version="taskScoringVersions?.[task.taskId]"
         />
       </template>
     </div>

@@ -7,6 +7,7 @@
 
 <script setup>
 import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
 import { useLongitudinalSeries } from './useLongitudinalSeries';
@@ -15,24 +16,45 @@ const props = defineProps({
   longitudinalData: { type: Array, required: true },
   taskId: { type: String, required: true },
   studentGrade: { type: String, required: true },
+  currentAssignmentId: { type: String, required: true },
+  taskScoringVersion: { type: Number, required: false, default: null },
 });
 
+const { t } = useI18n();
+
 const { series, seriesLabel } = useLongitudinalSeries(props);
+
+// Determine the metric key based on series label (matching dashboard logic)
+const metricKey = computed(() => {
+  if (seriesLabel.value.includes('percent')) return 'percentCorrect';
+  if (seriesLabel.value.includes('total')) return 'rawScore';
+  if (seriesLabel.value.includes('grade')) return 'gradeEstimate';
+  return 'rawScore';
+});
+
+// Filter series to only show points up to current assignment (matching dashboard view)
+const filteredSeries = computed(() => {
+  const currentAssignment = series.value.find((p) => p.assignmentId === props.currentAssignmentId);
+  if (!currentAssignment) return [];
+  const currentDate = currentAssignment.x;
+  return series.value.filter((p) => p.x <= currentDate);
+});
 
 const canvasRef = ref(null);
 let chartInstance = null;
 const showCanvas = ref(true);
 const imgSrc = ref('');
+const WINDOW_DAYS = 7 * 24 * 60 * 60 * 1000;
 
 const chartData = computed(() => ({
   datasets: [
     {
       label: seriesLabel.value,
-      data: series.value.map((p) => ({ x: p.x, y: p.y })),
+      data: filteredSeries.value.map((p) => ({ x: p.x, y: p.y })),
       borderColor: 'rgba(0,0,0,0.85)',
       backgroundColor: 'rgba(0,0,0,0.85)',
-      pointBackgroundColor: series.value.map((p) => p.color),
-      pointBorderColor: series.value.map((p) => p.color),
+      pointBackgroundColor: filteredSeries.value.map((p) => p.color),
+      pointBorderColor: filteredSeries.value.map((p) => p.color),
       borderWidth: 2,
       pointRadius: 5,
       pointHoverRadius: 5,
@@ -54,12 +76,35 @@ const chartOptions = computed(() => ({
       beginAtZero: true,
       ticks: { color: '#000' },
       grid: { color: 'rgba(0,0,0,0.15)' },
+      title: {
+        display: true,
+        text: t(`scoreReports.${metricKey.value}`),
+        font: {
+          size: 12,
+        },
+      },
     },
     x: {
-      type: 'timeseries',
-      time: { unit: 'month', displayFormats: { month: 'MMM yyyy' } },
-      ticks: { color: '#000', maxRotation: 0, autoSkip: true, autoSkipPadding: 8 },
+      type: 'time',
+      time: {
+        unit: filteredSeries.value.length === 1 ? 'day' : 'month',
+        displayFormats: { month: 'MMM yyyy', day: 'MMM d, yyyy' },
+      },
+      ticks: {
+        color: '#000',
+        maxRotation: 0,
+        autoSkip: false,
+        source: 'data',
+        maxTicksLimit:
+          filteredSeries.value.length === 0 ? 1 : filteredSeries.value.length <= 5 ? filteredSeries.value.length : 8,
+      },
       grid: { display: false },
+      ...(filteredSeries.value.length === 1
+        ? (() => {
+            const timestamp = new Date(filteredSeries.value[0].x).getTime();
+            return { min: timestamp - WINDOW_DAYS, max: timestamp + WINDOW_DAYS };
+          })()
+        : {}),
     },
   },
 }));

@@ -54,6 +54,7 @@
     "deletion": "Eliminación (DEL)",
     "skillsToWorkOn": "Habilidades para trabajar",
     "progressOverTime": "Progreso a lo largo del tiempo",
+    "currentScoreReport": "Informe de Puntuación Actual",
     "none": "Ninguna",
     "upperCase": "Mayúsculas",
     "lowerCase": "Minúsculas",
@@ -108,6 +109,20 @@
     "st": "º",
     "nd": "º",
     "rd": "º",
-    "th": "º"
+    "th": "º",
+    "months": {
+      "Jan": "Ene",
+      "Feb": "Feb",
+      "Mar": "Mar",
+      "Apr": "Abr",
+      "May": "May",
+      "Jun": "Jun",
+      "Jul": "Jul",
+      "Aug": "Ago",
+      "Sep": "Sep",
+      "Oct": "Oct",
+      "Nov": "Nov",
+      "Dec": "Dic"
+    }
   }
 }
