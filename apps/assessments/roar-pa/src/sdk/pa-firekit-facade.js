@@ -14,11 +14,14 @@ import { RoarScores } from '../experiment/scores';
  *    - Accumulates per-trial raw counts (correct/attempted/incorrect) by subtask and stage.
  *    - Passes accumulated raw counts to `computedScoreCallback` for test-phase norming.
  *    - Converts computed scores + practice raw counts to `ScoreEntry[]` for backend persistence.
- * 3. Returns `roarScores.computedScoreCallback.bind(roarScores)` for use in `writeTrial`.
+ * 3. Returns a lazy callback that instantiates `RoarScores` on the first `writeTrial` call
+ *    and delegates to its `computedScoreCallback`. Instantiation is deferred because
+ *    `RoarScores` reads `store.session.get('config').scoringVersion` in its constructor,
+ *    which is only available after `initStore()` runs.
  *
  * Must be called after `initFirekitCompat` and before `startRun`.
  *
- * @returns {Function} computedScoreCallback bound to the internal RoarScores instance
+ * @returns {Function} lazy computedScoreCallback — pass to `writeTrial` on each trial
  *
  * @example
  * ```js
@@ -90,8 +93,5 @@ export function wireScoreAdapter() {
     };
   };
 
-  // Deferred instantiation — RoarScores reads store.session.get('config').scoringVersion
-  // in its constructor, which is only available after initStore() runs. By deferring to
-  // the first writeTrial call we guarantee the store is populated.
   return makeLazyComputedCallback(RoarScores);
 }
