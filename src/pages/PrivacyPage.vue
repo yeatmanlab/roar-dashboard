@@ -13,8 +13,8 @@
 
       <h2>1. Information We Collect</h2>
       <ul>
-        <li>For researchersContact information such as name and email when they login to the Dashboard.</li>
-        <li>Technical data such as IP address, browser type, and usage data for site functionality and anonymized data analytics.</li>
+        <li>From researchers: Contact information such as name and email when they login to the Dashboard.</li>
+        <li>From participants: Technical data such as IP address, browser type, and usage data for site functionality and anonymized data analytics.</li>
         <li>An anonymized version of assessment results and abstracted location data when participants consent.</li>
       </ul>
 
