@@ -115,7 +115,7 @@ describe('ScoreList.vue', () => {
     },
     tasksDictionary: {
       swr: {
-        publicName: 'Single Word Reading',
+        nameSimple: 'Single Word Reading',
       },
     },
     longitudinalData: {},

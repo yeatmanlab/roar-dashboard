@@ -14,6 +14,5 @@ export function registerTaskVariantsRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, query }) => TaskVariantsController.list(user!, query),
     },
   });
-  // @ts-expect-error - ts-rest middleware type incompatibility with Express
   createExpressEndpoints(TaskVariantsContract, TaskVariantsRoutes, routerInstance);
 }

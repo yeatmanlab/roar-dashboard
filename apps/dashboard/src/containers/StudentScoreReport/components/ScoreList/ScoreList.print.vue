@@ -5,7 +5,7 @@
     <ul class="p-0 m-0">
       <li v-for="task in computedTaskData" :key="task.taskId" class="list-none">
         <ScoreCard
-          :public-name="tasksDictionary[task.taskId]?.publicName ?? task.taskId"
+          :public-name="tasksDictionary[task.taskId]?.nameSimple ?? task.taskId"
           :score-label="getScoreLabel(task[task.scoreToDisplay].name)"
           :score="task[task.scoreToDisplay]"
           :tags="task.tags"

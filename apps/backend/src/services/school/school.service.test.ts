@@ -363,6 +363,7 @@ describe('SchoolService', () => {
         ),
       ).rejects.toThrow(ApiError);
 
+      let thrownError: unknown;
       try {
         await service.list(
           { userId: 'admin-123', isSuperAdmin: true },
@@ -374,10 +375,12 @@ describe('SchoolService', () => {
           },
         );
       } catch (err) {
-        expect(err).toBeInstanceOf(ApiError);
-        expect((err as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
-        expect((err as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+        thrownError = err;
       }
+
+      expect(thrownError).toBeInstanceOf(ApiError);
+      expect((thrownError as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      expect((thrownError as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('should return schools with counts when embedCounts is true', async () => {

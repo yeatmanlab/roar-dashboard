@@ -21,14 +21,15 @@ describe('extractFgaObjectId', () => {
   });
 
   it('throws ApiError with EXTERNAL_SERVICE_FAILED code on malformed input', () => {
+    let thrownError: unknown;
     try {
       extractFgaObjectId('administration:');
     } catch (error) {
-      expect(error).toBeInstanceOf(ApiError);
-      expect((error as ApiError).code).toBe(ApiErrorCode.EXTERNAL_SERVICE_FAILED);
-      return;
+      thrownError = error;
     }
-    expect.fail('Expected ApiError to be thrown');
+
+    expect(thrownError).toBeInstanceOf(ApiError);
+    expect((thrownError as ApiError).code).toBe(ApiErrorCode.EXTERNAL_SERVICE_FAILED);
   });
 
   it('throws ApiError on empty string', () => {
