@@ -20,10 +20,6 @@
         <li>Technical data such as IP address, browser type, and usage data for site functionality and analytics.</li>
         <li>An anonymized version of assessment results and abstracted location data when participants consent.</li>
       </ul>
-      <p>
-        Sensitive personal information is not collected unless explicitly required for a specific research purpose, with
-        notice and consent where required by law.
-      </p>
 
       <h2>2. How We Use Your Information</h2>
       <ul>
@@ -31,6 +27,7 @@
         <li>Respond to inquiries and support requests.</li>
         <li>Ensure service security and integrity.</li>
         <li>Comply with legal obligations.</li>
+        <li>Stated research purposes.</li>
       </ul>
       <p>
         Personal information is not sold or shared with third parties for marketing or commercial purposes. If data is
@@ -87,7 +84,7 @@
         <a href="mailto:levante-contact@stanford.edu">levante-contact@stanford.edu</a>.
       </p>
 
-      <h2>Special Note: Do Not Sell or Share My Personal Information</h2>
+      <h2>Special Note: We do not sell or Share Personal Information</h2>
       <p>The LEVANTE researcher site does not sell or share personal information.</p>
     </section>
   </main>
