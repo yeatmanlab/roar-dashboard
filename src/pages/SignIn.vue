@@ -56,9 +56,8 @@
           </div>
         </section> -->
       </section>
-      <footer style="display: none">
-        <!-- TODO: figure out a link for this -->
-        <a href="#trouble">{{ $t('pageSignIn.havingTrouble') }}</a>
+      <footer class="signin-footer">
+        <a href="/privacy-page" class="signin-footer-link">Privacy Policy</a>
       </footer>
     </section>
   </div>
@@ -306,5 +305,21 @@ input.p-inputtext.p-component.p-password-input {
 }
 div#password {
   width: 100% !important;
+}
+
+.signin-footer {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.signin-footer-link {
+  color: var(--primary-color);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.signin-footer-link:hover {
+  text-decoration: underline;
 }
 </style>

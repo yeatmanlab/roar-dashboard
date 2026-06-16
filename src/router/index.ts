@@ -252,6 +252,15 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: '/privacy-page',
+    name: 'PrivacyPage',
+    component: () => import('@/pages/PrivacyPage.vue'),
+    meta: {
+      pageTitle: 'Privacy Policy',
+      allowedRoles: ['*'],
+    },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/pages/NotFound.vue'),

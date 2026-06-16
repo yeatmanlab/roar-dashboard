@@ -155,6 +155,10 @@
         Participant Login
       </PvButton>
     </div>
+
+    <footer class="login-footer">
+      <a href="/privacy-page" :class="`login-footer-link login-footer-link--${mode}`">Privacy Policy</a>
+    </footer>
   </div>
 
   <RoarModal
@@ -649,5 +653,31 @@ const sendResetPasswordEmail = () => {
       color: var(--secondary-color) !important;
     }
   }
+}
+
+.login-footer {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.login-footer-link {
+  background-color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.login-footer-link:hover {
+  text-decoration: underline;
+}
+
+.login-footer-link--participant {
+  color: var(--primary-color);
+}
+
+.login-footer-link--researcher {
+  color: var(--secondary-color);
 }
 </style>
