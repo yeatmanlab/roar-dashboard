@@ -1,8 +1,11 @@
 import type { ScoringConfig } from './scoring.config-schema';
 import { ScoringConfigSchema } from './scoring.config-schema';
 
-import swrConfig from './configs/swr.json';
-import swrEsConfig from './configs/swr-es.json';
+import swrConfig from './configs/swr';
+import swrEsConfig from './configs/swr-es';
+import swrItConfig from './configs/swr-it';
+import swrPtConfig from './configs/swr-pt';
+import swrDeConfig from './configs/swr-de';
 import sreConfig from './configs/sre.json';
 import sreEsConfig from './configs/sre-es.json';
 import paConfig from './configs/pa';
@@ -13,6 +16,9 @@ import roamAlpacaConfig from './configs/roam-alpaca.json';
 const RAW_CONFIGS = [
   swrConfig,
   swrEsConfig,
+  swrItConfig,
+  swrPtConfig,
+  swrDeConfig,
   sreConfig,
   sreEsConfig,
   paConfig,

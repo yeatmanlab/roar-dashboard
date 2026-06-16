@@ -12,7 +12,6 @@ folders to ensure continued functionality as new test versions are deployed.
 ## Instructions for Testing
 
 - To run tests use the command npx playwright test
-
   - Optionally add --trace on flag to get detailed logs (flags go at the end of the command)
   - To pass in arguments (env variables) use all caps and prefix before the command
     Ex. MODE=demo npx playwright test

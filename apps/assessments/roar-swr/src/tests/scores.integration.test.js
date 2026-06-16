@@ -22,11 +22,11 @@ const getCsvContent = (input) => {
 
 /**
  * Lookup table contain only subset of data for testing purposes
- * 
+ *
  * SWR:
  * V6 - ageMonths 108-110
  * V7 - ageMonths 108-110
- * 
+ *
  * SWR-ES:
  * V1 - ageMonths 108-110
  */
@@ -34,7 +34,7 @@ describe('RoarScores Integration Tests', () => {
   let papaParseSpy;
   let consoleErrorSpy;
   let originalParse = papaparse.parse;
-  
+
   beforeEach(() => {
     papaParseSpy = vi.spyOn(papaparse, 'parse');
     papaParseSpy.mockImplementation((input, config) => {
@@ -45,11 +45,11 @@ describe('RoarScores Integration Tests', () => {
         // Call the complete callback with parsed data
         if (config.complete) {
           setTimeout(() => {
-          originalParse(csvContent, {
-            ...config,
-            download: false, // disable recursive download
-            complete: config.complete,
-          });
+            originalParse(csvContent, {
+              ...config,
+              download: false, // disable recursive download
+              complete: config.complete,
+            });
           }, 100);
           // Don't call originalParse again, just let the first one complete
         }
@@ -61,7 +61,7 @@ describe('RoarScores Integration Tests', () => {
 
     consoleErrorSpy = vi.spyOn(console, 'error');
   });
-  
+
   afterEach(() => {
     papaParseSpy.mockRestore();
     consoleErrorSpy.mockRestore();
@@ -71,35 +71,35 @@ describe('RoarScores Integration Tests', () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 6,
       userMetadata: { ageMonths: 108 },
-      taskId: 'swr'
+      taskId: 'swr',
     }));
 
     const scores = new RoarScores();
-    
+
     await scores.initTable('swr');
 
     expect(papaParseSpy).toHaveBeenCalledWith(
       'https://storage.googleapis.com/roar-swr/scores/swr_lookup_v6.csv',
-      expect.anything()
+      expect.anything(),
     );
-    
+
     expect(scores.tableLoaded).toBe(true);
     expect(scores.lookupTable.length).toBeGreaterThan(0);
-    expect(scores.lookupTable.every(row => row.ageMonths === 108)).toBe(true);
+    expect(scores.lookupTable.every((row) => row.ageMonths === 108)).toBe(true);
   });
 
   test('should return v6 scores for given theta and age', async () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 6,
       userMetadata: { ageMonths: 108 },
-      taskId: 'swr'
+      taskId: 'swr',
     }));
 
     const scores = new RoarScores();
     const rawScores = {
       composite: {
-        test: { thetaEstimate: -1.0 }
-      }
+        test: { thetaEstimate: -1.0 },
+      },
     };
 
     const result = await scores.computedScoreCallback(rawScores);
@@ -115,14 +115,14 @@ describe('RoarScores Integration Tests', () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 7,
       userMetadata: { ageMonths: 108 },
-      taskId: 'swr'
+      taskId: 'swr',
     }));
 
     const scores = new RoarScores();
     const rawScores = {
       composite: {
-        test: { thetaEstimate: -1.0 }
-      }
+        test: { thetaEstimate: -1.0 },
+      },
     };
 
     const result = await scores.computedScoreCallback(rawScores);
@@ -138,18 +138,18 @@ describe('RoarScores Integration Tests', () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 0,
       userMetadata: { ageMonths: 108 },
-      taskId: 'swr-es'
+      taskId: 'swr-es',
     }));
 
     const scores = new RoarScores();
     const rawScores = {
       composite: {
-        test: { thetaEstimate: 0.5 }
-      }
+        test: { thetaEstimate: 0.5 },
+      },
     };
 
     const result = await scores.computedScoreCallback(rawScores);
-    
+
     expect(papaParseSpy).not.toHaveBeenCalled();
     expect(scores.tableLoaded).toBe(false);
     expect(scores.lookupTable).toEqual([]);
@@ -161,14 +161,14 @@ describe('RoarScores Integration Tests', () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 1,
       userMetadata: { ageMonths: 108 },
-      taskId: 'swr-es'
+      taskId: 'swr-es',
     }));
 
     const scores = new RoarScores();
     const rawScores = {
       composite: {
-        test: { thetaEstimate: 0.5 }
-      }
+        test: { thetaEstimate: 0.5 },
+      },
     };
 
     const result = await scores.computedScoreCallback(rawScores);
@@ -183,12 +183,12 @@ describe('RoarScores Integration Tests', () => {
   test('should clamp age to minimum (72 months) when age is below ageMin', async () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 6,
-      userMetadata: { ageMonths: 60 },  // Below ageMin of 72
-      taskId: 'swr'
+      userMetadata: { ageMonths: 60 }, // Below ageMin of 72
+      taskId: 'swr',
     }));
 
     const scores = new RoarScores();
-    
+
     await scores.initTable('swr');
 
     expect(scores.ageForScore).toBe(72);
@@ -197,12 +197,12 @@ describe('RoarScores Integration Tests', () => {
   test('should clamp age to maximum (216 months) when age is above ageMax', async () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 6,
-      userMetadata: { ageMonths: 250 },  // Above ageMax of 216
-      taskId: 'swr'
+      userMetadata: { ageMonths: 250 }, // Above ageMax of 216
+      taskId: 'swr',
     }));
 
     const scores = new RoarScores();
-    
+
     await scores.initTable('swr');
 
     // Should clamp to 216 months
@@ -213,31 +213,31 @@ describe('RoarScores Integration Tests', () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 6,
       userMetadata: { ageMonths: 108 },
-      taskId: 'swr'
+      taskId: 'swr',
     }));
 
     const scores = new RoarScores();
     const rawScores = { composite: { test: { thetaEstimate: 0.5 } } };
-    
+
     const promises = [
       scores.computedScoreCallback(rawScores),
       scores.computedScoreCallback(rawScores),
       scores.computedScoreCallback(rawScores),
     ];
-    
+
     await Promise.all(promises);
-    
+
     expect(papaParseSpy).toHaveBeenCalledTimes(1);
     expect(scores.tableLoaded).toBe(true);
-  }); 
+  });
 
   test('should compute most recent theta value after failed initial load', async () => {
     let hasFailed = false;
-    
+
     papaParseSpy.mockImplementation((input, config) => {
       if (hasFailed) {
         const csvContent = getCsvContent(input);
-        
+
         if (config.complete) {
           originalParse(csvContent, {
             ...config,
@@ -256,45 +256,45 @@ describe('RoarScores Integration Tests', () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 7,
       userMetadata: { ageMonths: 108 },
-      taskId: 'swr'
+      taskId: 'swr',
     }));
 
     const scores = new RoarScores();
-    
+
     // First trial with theta = -1.0
     const rawScoresA = { composite: { test: { thetaEstimate: -1.0 } } };
-    
+
     // Second trial with theta = 0.5 (different score)
     const rawScoresB = { composite: { test: { thetaEstimate: 0.5 } } };
-    
+
     // First call with rawScoresA fails to load table
     const resultA_failed = await scores.computedScoreCallback(rawScoresA);
-    
+
     expect(scores.tableLoaded).toBe(false);
     expect(consoleErrorSpy).toHaveBeenCalled();
-    
+
     // rawScoresA should NOT have computed normed scores (only raw theta)
     expect(resultA_failed.composite.thetaEstimate).toBe(-1.0);
     expect(resultA_failed.composite.roarScore).toBeUndefined();
     expect(resultA_failed.composite.standardScore).toBeUndefined();
     expect(resultA_failed.composite.percentile).toBeUndefined();
-    
+
     // Second call with rawScoresB - retries and succeeds, updating the same score instance
     const resultB = await scores.computedScoreCallback(rawScoresB);
-    
+
     // Verify the score instance now has the lookup table loaded
     expect(scores.tableLoaded).toBe(true);
     expect(scores.lookupTable.length).toBeGreaterThan(0);
-    
+
     // Verify it computed scores for rawScoresB correctly using the newly loaded table
     expect(resultB.composite.thetaEstimate).toBe(0.5);
     expect(resultB.composite.roarScore).toBe(533);
     expect(resultB.composite.standardScore).toBe(111);
     expect(resultB.composite.percentile).toBe(76);
-    
+
     // Only 2 Papa.parse calls: 1 failed (rawScoresA), 1 succeeded (rawScoresB)
     expect(papaParseSpy).toHaveBeenCalledTimes(2);
-    
+
     // The scores instance's lookup table is now loaded and ready for future calls
     expect(scores.tableLoaded).toBe(true);
   });
@@ -302,7 +302,7 @@ describe('RoarScores Integration Tests', () => {
   test('should return null for non-SWR or SWR-ES taskIds', async () => {
     store.session.get = vi.fn(() => ({
       userMetadata: { ageMonths: 84 },
-      taskId: 'sre'
+      taskId: 'sre',
     }));
 
     const scores = new RoarScores();
@@ -315,14 +315,14 @@ describe('RoarScores Integration Tests', () => {
   test('should handle missing userMetadata gracefully', async () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 7,
-      taskId: 'swr'
+      taskId: 'swr',
     }));
 
     const scores = new RoarScores();
     const rawScores = {
       composite: {
-        test: { thetaEstimate: 0.5 }
-      }
+        test: { thetaEstimate: 0.5 },
+      },
     };
 
     const result = await scores.computedScoreCallback(rawScores);

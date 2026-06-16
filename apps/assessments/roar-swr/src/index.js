@@ -1,17 +1,14 @@
-/* eslint-disable import/extensions */
 import store from 'store2';
+import { startRun, abortRun } from '@roar-platform/assessment-sdk/compat/firekit';
 import { initConfig } from './experiment/config/config';
 import { buildExperiment } from './experiment/experiment';
 import './experiment/styles/game.scss';
-import { waitFor } from './experiment/helperFunctions';
 import { initSentry } from './sentry';
 
 class RoarSWR {
-  constructor(firekit, gameParams, userParams, displayElement, useParameterValidation) {
-    // TODO: Add validation of params so that if any are missing, we throw an error
+  constructor(gameParams, userParams, displayElement, useParameterValidation) {
     this.gameParams = gameParams;
     this.userParams = userParams;
-    this.firekit = firekit;
     this.displayElement = displayElement;
     this.useParameterValidation = useParameterValidation;
     this.jsPsych = null;
@@ -19,29 +16,21 @@ class RoarSWR {
 
   async init() {
     initSentry();
-    await this.firekit.startRun();
-    const config = await initConfig(
-      this.firekit,
-      this.gameParams,
-      this.userParams,
-      this.displayElement,
-      this.useParameterValidation,
-    );
+    await startRun(this.userParams ?? {});
+    const config = await initConfig(this.gameParams, this.userParams, this.displayElement, this.useParameterValidation);
 
     store.session.set('config', config);
-    return buildExperiment(this.firekit, config);
+    return buildExperiment(config);
   }
 
   async run() {
     const { jsPsych, timeline } = await this.init();
     this.jsPsych = jsPsych;
-    this.jsPsych.run(timeline);
-
-    await waitFor(() => this.firekit.run.completed === true);
+    await this.jsPsych.run(timeline);
   }
 
   async abort() {
-    this.firekit.abortRun();
+    abortRun().catch((err) => console.warn('[roar-swr] abortRun failed:', err));
     document.querySelectorAll('audio').forEach((el) => el.pause());
     if (this.jsPsych) {
       this.jsPsych.endExperiment();

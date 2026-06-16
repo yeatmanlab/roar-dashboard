@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import store from 'store2';
 import {
   generateAssetObject,
@@ -8,6 +7,7 @@ import {
 } from '@bdelab/roar-utils';
 import { Cat } from '@bdelab/jscat';
 import i18next from 'i18next';
+import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/firekit';
 
 // setup
 import { initRoarJsPsych, initRoarTimeline } from './config/config';
@@ -27,23 +27,19 @@ import { ifCoinTracking } from './trials/coinFeedback';
 
 const bucketURI = 'https://storage.googleapis.com/roar-swr';
 
-// eslint-disable-next-line import/no-mutable-exports
 export let cat;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let cat2;
 
-// eslint-disable-next-line import/no-mutable-exports
 export const presentationTimeCats = {};
 
-// eslint-disable-next-line import/no-mutable-exports
 export let mediaAssets;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let preloadTrials;
 
-// eslint-disable-next-line import/no-mutable-exports
 export let swrValidityEvaluator;
 
-export function buildExperiment(firekit, config) {
+export function buildExperiment(config) {
   const { language } = i18next;
   mediaAssets = generateAssetObject(assets, bucketURI, language);
   preloadTrials = createPreloadTrials(assets, bucketURI, language).default;
@@ -51,7 +47,7 @@ export function buildExperiment(firekit, config) {
 
   // Initialize jsPsych and timeline
   initRoarJsPsych(config);
-  const initialTimeline = initRoarTimeline(firekit);
+  const initialTimeline = initRoarTimeline(config);
 
   const catParams = {
     method: 'mle',
@@ -219,8 +215,8 @@ export function buildExperiment(firekit, config) {
   });
 
   const swrHandleEngagementFlags = (flags, reliable) => {
-    if (config.firekit.run.started) {
-      return config.firekit?.updateEngagementFlags(flags, reliable);
+    if (config.runStarted) {
+      return updateEngagementFlags(flags, reliable);
     }
     return null;
   };

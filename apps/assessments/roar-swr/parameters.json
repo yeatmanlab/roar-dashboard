@@ -45,7 +45,7 @@
       "oneOf": [
         {
           "type": "string",
-          "enum": ["en", "es", "it", "pt"]
+          "enum": ["en", "es", "it", "pt", "de"]
         },
         {
           "type": "null"
@@ -176,7 +176,7 @@
       "addNoResponse": "addNoResponse must be a boolean or null.",
       "audioFeedbackOption": "audioFeedbackOption must be a string with a value of 'random', 'neutral', 'binary', or null.",
       "consent": "consent must be a boolean or null.",
-      "lng": "lng must be a string with a value of 'en', 'es', 'it', 'pt', or null.",
+      "lng": "lng must be a string with a value of 'en', 'es', 'it', 'pt', 'de', or null.",
       "numAdaptive": "numAdaptive must be a number between 0 and 1000 or null.",
       "numNew": "numNew must be a number between 0 and 1000 or null.",
       "numValidated": "numValidated must be a number between 0 and 1000 or null.",

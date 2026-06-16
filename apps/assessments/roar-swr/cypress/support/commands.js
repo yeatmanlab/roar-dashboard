@@ -10,7 +10,6 @@ const languageOptions = {
 };
 
 Cypress.Commands.add('playIntro', (language) => {
-  // eslint-disable-next-line no-plusplus
   for (let i = 0; i <= 5; i++) {
     cy.log(i);
     cy.wait(0.3 * TIMEOUT);
@@ -101,7 +100,7 @@ Cypress.Commands.add(
     cy.get('.jspsych-btn', { timeout: TIMEOUT }).click();
     // play tutorial
     cy.contains(startText, { timeout: TIMEOUT });
-    // eslint-disable-next-line no-plusplus
+
     for (let i = 0; i < 3; i++) {
       cy.get('body', { timeout: TIMEOUT }).type('{leftarrow}');
     }

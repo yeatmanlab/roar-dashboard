@@ -1,17 +1,25 @@
 import store from 'store2';
+import Ajv from 'ajv/dist/2020';
+import addErrors from 'ajv-errors';
 import _omitBy from 'lodash/omitBy';
 import _isNull from 'lodash/isNull';
 import _isUndefined from 'lodash/isUndefined';
+import parameterSchema from '../../../parameters.json';
 import { getAgeData, getGrade } from '@bdelab/roar-utils';
 import i18next from 'i18next';
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
+import { SWR_LANGUAGES } from '@roar-platform/assessment-schema/roar-swr';
+import { writeTrial, finishRun, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { enterFullscreen } from '../trials/fullScreen';
 import { processCSV, getCorpusForPresentationExp } from './corpus';
 import { RoarScores } from '../scores';
 import { jsPsych } from '../jsPsych';
 import { shuffle, createBlocks } from '../helperFunctions';
-import parameterSchema from '../../../parameters.json';
+
+const ajv = new Ajv({ allErrors: true });
+addErrors(ajv);
+const validateParams = ajv.compile(parameterSchema);
 
 const makePid = () => {
   let text = '';
@@ -117,7 +125,6 @@ const fixationTimeOptions = [1000, 2000, 25000];
 // Trial completion time options in milliseconds
 const trialTimeOptions = [null, 5000, 8000, 100000];
 
-// eslint-disable-next-line max-len
 const divideTrial2Block = (n1, n2, nBlock) => {
   const n = parseInt(n1, 10) + parseInt(n2, 10);
   return [Math.floor(n / nBlock), Math.floor(n / nBlock), n - 2 * Math.floor(n / nBlock)];
@@ -162,9 +169,15 @@ export const adjustNumNewItems = (userMode) => {
   return 0;
 };
 
-export const initConfig = async (firekit, gameParams, userParams, displayElement, useParameterValidation) => {
+export const initConfig = async (gameParams, userParams, displayElement, useParameterValidation) => {
   const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
-  const defaultScoringVersion = i18next.language === 'es' ? 1 : 6;
+
+  // Derive taskId from the lng param via schema constants
+  const lng = cleanParams.lng ?? 'en';
+  const languageEntry = SWR_LANGUAGES[lng] ?? SWR_LANGUAGES.en;
+  const taskId = languageEntry.taskId;
+  const defaultScoringVersion = languageEntry.defaultScoringVersion ?? 6;
+
   const {
     userMode = 'shortAdaptive',
     assessmentPid,
@@ -174,7 +187,7 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
     userMetadata = {},
     consent,
     audioFeedbackOption,
-    language = i18next.language,
+    language = lng,
     numAdaptive = ['shortAdaptive', 'shortAdaptiveEasyBlock'].includes(userMode) ? 84 : 150,
     numNew = 0, // save for later: adjustNumNewItems(userMode)
     numValidated = userMode === 'fullItemBank' ? 246 : 84,
@@ -196,7 +209,7 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
   if (language !== 'en') i18next.changeLanguage(language);
 
   const config = {
-    taskId: firekit.task.taskId,
+    taskId,
     userMode,
     pid: assessmentPid,
     labId,
@@ -229,7 +242,7 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
       trialTime: trialTimeOptions[0],
     },
     startTime: new Date(),
-    firekit,
+    runStarted: true,
     addNoResponse: addNoResponse ?? false,
     displayElement: displayElement || null,
     useParameterValidation: useParameterValidation ?? true,
@@ -240,14 +253,27 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
     Object.entries(gameParams).map(([key, value]) => [key, config[key] ?? value]),
   );
 
-  await config.firekit.updateTaskParams(updatedGameParams);
+  // updateTaskParams is deprecated and will be removed in a future version.
+  // Task parameters are now recorded via the assessment-sdk run metadata.
+  console.warn('[roar-swr] updateTaskParams is deprecated and has no effect.', updatedGameParams);
 
   if (config.useParameterValidation) {
-    await config.firekit.validateParameters(parameterSchema);
+    // Exclude the internal control flag — it is not a game parameter and is not in the schema.
+    const { useParameterValidation: _useParameterValidation, ...paramsToValidate } = gameParams;
+    const valid = validateParams(paramsToValidate);
+    if (!valid) {
+      console.warn(
+        '[roar-swr] Parameter validation warnings:\n' + validateParams.errors.map((e) => e.message).join('\n'),
+      );
+    }
   }
 
   if (config.pid) {
-    await config.firekit.updateUser({ assessmentPid: config.pid, ...userMetadata });
+    try {
+      await updateUser({ assessmentPid: config.pid, ...userMetadata });
+    } catch (err) {
+      console.error('[roar-swr] updateUser failed (non-fatal):', err);
+    }
   }
   return config;
 };
@@ -261,30 +287,31 @@ export const initRoarJsPsych = (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-      // eslint-disable-next-line prefer-rest-params
       fn.apply(fn, arguments);
-      // eslint-disable-next-line prefer-rest-params
+
       code.apply(fn, arguments);
     };
 
   jsPsych.opts.on_finish = extend(jsPsych.opts.on_finish, () => {
-    config.firekit.finishRun();
+    finishRun().catch((err) => console.error('[roar-swr] finishRun failed:', err));
   });
 
   const roarScores = new RoarScores();
   jsPsych.opts.on_data_update = extend(jsPsych.opts.on_data_update, (data) => {
     if (data.save_trial) {
-      config.firekit.writeTrial(data, roarScores.computedScoreCallback.bind(roarScores));
+      writeTrial(data, roarScores.computedScoreCallback.bind(roarScores)).catch((err) =>
+        console.error('[roar-swr] writeTrial failed:', err),
+      );
     }
   });
   jsPsych.opts.on_interaction_data_update = function (data) {
-    config.firekit.addInteraction(data);
+    addInteraction(data);
   };
 
   initStore(config);
 };
 
-export const initRoarTimeline = (firekit) => {
+export const initRoarTimeline = (config) => {
   // If the participant's ID was **not** supplied through the query string, then
   // ask the user to fill out a form with their ID, class and school.
   const beginningTimeline = [
@@ -292,11 +319,19 @@ export const initRoarTimeline = (firekit) => {
     ...getUserDataTimeline,
     {
       type: jsPsychCallFunction,
-      func: () => {
-        // eslint-disable-next-line no-param-reassign
-        const config = store.session.get('config');
+      async: true,
+      func: async (done) => {
         config.pid = config.pid || makePid();
-        firekit.updateUser({ assessmentPid: config.pid, labId: config.labId, ...config.userMetadata });
+        try {
+          await updateUser({
+            assessmentPid: config.pid,
+            labId: config.labId,
+            ...config.userMetadata,
+          });
+        } catch (err) {
+          console.error('[roar-swr] updateUser failed (non-fatal):', err);
+        }
+        done();
       },
     },
   ];

@@ -22,11 +22,11 @@ export class RoarScores {
       let ageInMonths = store.session.get('config').userMetadata?.ageMonths;
 
       // Note: We use == instead of === because we want to catch both undefined and null.
-      // eslint-disable-next-line eqeqeq
+
       if (ageInMonths == undefined) {
         const grade = getGrade(store.session.get('config').userMetadata?.grade);
-        // eslint-disable-next-line eqeqeq
-        if (grade == undefined) { 
+
+        if (grade == undefined) {
           reject(new Error('Cannot determine age: both ageMonths and grade are undefined'));
           return;
         }
@@ -116,7 +116,6 @@ export class RoarScores {
     const grade = getGrade(userMetadata?.grade);
     const isNormed = taskId === 'swr' || (taskId === 'swr-es' && this.scoringVersion === 1);
 
-    // eslint-disable-next-line eqeqeq
     if (configAge != undefined || grade != undefined) {
       if (!this.tableLoaded && isNormed) {
         if (!this.tableLoadingPromise) {
@@ -148,7 +147,6 @@ export class RoarScores {
         thetaEstimate: score,
       };
 
-      // eslint-disable-next-line eqeqeq
       if (score != undefined) {
         const rounded = Number(score.toFixed(1));
         const { ageForScore } = this;
