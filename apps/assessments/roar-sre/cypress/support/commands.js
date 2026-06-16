@@ -52,7 +52,7 @@ Cypress.Commands.add('playSRELoop', ({ endText = END_TEXT_DEFAULT } = {}) => {
     });
 });
 
-// eslint-disable-next-line no-unused-vars
+ 
 Cypress.Commands.add(
   'playSREGame',
   ({ startText = START_TEXT_DEFAULT, endText = END_TEXT_DEFAULT, variantParams = null } = {}) => {

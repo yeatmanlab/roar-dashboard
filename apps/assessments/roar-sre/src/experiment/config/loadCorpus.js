@@ -1,7 +1,7 @@
 import i18next from 'i18next';
-// eslint-disable-next-line import/no-duplicates
+ 
 import '../i18n';
-// eslint-disable-next-line import/no-duplicates
+ 
 import enCorpusPractice from '../corpus/en/practice-sentences.csv';
 import enCorpusLab from '../corpus/en/sre-lab-sentence-id-lookup.csv';
 import enCorpusTOSREC from '../corpus/en/sre-tosrec-sentence-id-lookup.csv';
@@ -19,7 +19,7 @@ import deCorpusPractice from '../corpus/de/practice-sentences-de.csv';
 import deCorpusTest from '../corpus/de/sre-combined-sentence-id-lookup-de.csv';
 import { shuffle } from '../experimentHelpers';
 
-// eslint-disable-next-line import/no-mutable-exports
+ 
 export let corpus = {};
 
 export function processCSV() {
@@ -204,9 +204,9 @@ export function processCSV() {
     return testform;
   };
 
-  // eslint-disable-next-line no-shadow
+   
   const generateLanguageSpecificCorpus = (csvAssets) => {
-    // eslint-disable-next-line prefer-destructuring
+     
     if (language !== 'en') {
       const testCorpus = transformCSVespTest(csvAssets.test);
       const fixedCorpus = transformCSVfixedform(csvAssets.fixedforms);

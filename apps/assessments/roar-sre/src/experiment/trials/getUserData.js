@@ -293,7 +293,7 @@ const ifGradeSelect = {
     const { grade } = store.session.get('config').userMetadata;
     // Check if grade is defined.
     // Note, we use != to compare against both undefined and null.
-    // eslint-disable-next-line eqeqeq
+     
     if (getGrade(grade) != undefined) {
       store.session.set('tosrecCorpusId', `tosrec${grade}`);
       return false;

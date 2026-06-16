@@ -18,7 +18,7 @@ import parameterSchema from '../../../parameters.json';
 const makePid = () => {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  // eslint-disable-next-line max-len
+   
   for (let i = 0; i < 16; i += 1) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
   }
@@ -69,7 +69,7 @@ export const getStoryOption = (opt, grade) => {
   return story;
 };
 
-// eslint-disable-next-line no-shadow
+ 
 function getBlockOrder(userMode, corpus, language) {
   if (userMode === '3minParallelAIFormV1') {
     // this mode is parallel mode version 1: student will be randomly assigned a parallel AI form + a lab form
@@ -212,9 +212,9 @@ export const initRoarJsPsych = (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-      // eslint-disable-next-line prefer-rest-params
+       
       fn.apply(fn, arguments);
-      // eslint-disable-next-line prefer-rest-params
+       
       code.apply(fn, arguments);
     };
 
@@ -246,7 +246,7 @@ export const initRoarTimeline = (firekit) => {
     {
       type: jsPsychCallFunction,
       func: () => {
-        // eslint-disable-next-line no-param-reassign
+         
         const config = store.session.get('config');
         config.pid = config.pid || makePid();
         firekit.updateUser({ assessmentPid: config.pid, labId: config.labId, ...config.userMetadata });
