@@ -80,7 +80,7 @@ const overviewDistributionChart = computed(() => {
     spacing: 10,
     background: null,
     title: {
-      text: `${tasksDictionary.value[props.taskId]?.publicName ?? props.taskId}`,
+      text: `${tasksDictionary.value[props.taskId]?.nameSimple ?? props.taskId}`,
       subtitle: `Count by Support Level`,
       anchor: 'middle',
       fontSize: 20,

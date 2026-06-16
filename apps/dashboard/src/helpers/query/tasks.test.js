@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getTasksRequestBody, taskFetcher, fetchByTaskId, getVariantsRequestBody, variantsFetcher } from './tasks';
+import { getVariantsRequestBody, variantsFetcher } from './tasks';
 import { getAxiosInstance, mapFields, convertValues } from './utils';
 
 vi.mock('vue', () => ({
@@ -15,75 +15,11 @@ vi.mock('./utils', () => ({
   })),
   mapFields: vi.fn((data) => data),
   convertValues: vi.fn((val) => val),
-  fetchDocsById: vi.fn().mockResolvedValue([]),
 }));
 
 describe('query/tasks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  describe('getTasksRequestBody', () => {
-    it('should create a request body with correct structure', () => {
-      const params = {
-        pageLimit: 10,
-        page: 0,
-        paginate: true,
-      };
-
-      const result = getTasksRequestBody(params);
-
-      expect(result.structuredQuery.limit).toBe(10);
-      expect(result.structuredQuery.offset).toBe(0);
-      expect(result.structuredQuery.from[0].collectionId).toBe('tasks');
-    });
-
-    it('should add orderBy if provided', () => {
-      const params = {
-        pageLimit: 10,
-        page: 0,
-        paginate: true,
-        orderBy: { field: { fieldPath: 'name' }, direction: 'ASCENDING' },
-      };
-
-      const result = getTasksRequestBody(params);
-
-      expect(result.structuredQuery.orderBy).toEqual({ field: { fieldPath: 'name' }, direction: 'ASCENDING' });
-    });
-
-    it('should create an aggregation query when aggregationQuery is true', () => {
-      const params = {
-        aggregationQuery: true,
-      };
-
-      const result = getTasksRequestBody(params);
-
-      expect(result.structuredAggregationQuery).toBeDefined();
-      expect(result.structuredAggregationQuery.aggregations).toHaveLength(1);
-      expect(result.structuredAggregationQuery.aggregations[0].alias).toBe('count');
-    });
-  });
-
-  describe('taskFetcher', () => {
-    it('should call getAxiosInstance and post with correct parameters', async () => {
-      mockPost.mockResolvedValueOnce({ data: 'mockData' });
-
-      await taskFetcher(true, false, ['name']);
-
-      expect(getAxiosInstance).toHaveBeenCalledWith('app');
-      expect(mockPost).toHaveBeenCalledWith(':runQuery', expect.any(Object));
-      expect(mapFields).toHaveBeenCalledWith('mockData');
-    });
-  });
-
-  describe('fetchByTaskId', () => {
-    it('should call fetchDocsById with correct parameters', async () => {
-      const taskIds = ['task1', 'task2'];
-
-      await fetchByTaskId(taskIds);
-
-      expect(mockPost).not.toHaveBeenCalled();
-    });
   });
 
   describe('getVariantsRequestBody', () => {

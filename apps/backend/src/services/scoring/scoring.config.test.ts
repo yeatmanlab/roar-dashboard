@@ -89,9 +89,10 @@ describe('scoring config validation', () => {
   it('percentileBelowGrade defaults to 6 when omitted', () => {
     const config = getScoringConfig('swr');
     expect(config?.classification.type).toBe('percentile-then-rawscore');
-    if (config?.classification.type === 'percentile-then-rawscore') {
-      expect(config.classification.percentileBelowGrade).toBe(6);
+    if (config?.classification.type !== 'percentile-then-rawscore') {
+      throw new Error('Expected swr to use percentile-then-rawscore classification');
     }
+    expect(config.classification.percentileBelowGrade).toBe(6);
   });
 
   describe('classification types', () => {

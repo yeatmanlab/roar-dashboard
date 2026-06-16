@@ -1,7 +1,7 @@
 # ============================================================
 # Shared base image with Turbo CLI
 # ============================================================
-FROM node:20-slim AS node-image
+FROM node:24-slim AS node-image
 RUN npm install turbo --global
 
 # ============================================================
@@ -37,7 +37,7 @@ RUN turbo build --filter=roar-backend
 # ============================================================
 # Stage 3: Minimal runtime image
 # ============================================================
-FROM gcr.io/distroless/nodejs20-debian12:nonroot AS runtime
+FROM gcr.io/distroless/nodejs24-debian12:nonroot AS runtime
 
 WORKDIR /app
 
