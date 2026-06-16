@@ -12,6 +12,7 @@ import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/fire
 // setup
 import { initRoarJsPsych, initRoarTimeline } from './config/config';
 import { jsPsych } from './jsPsych';
+import { createAdaptiveTimingTimeline } from './adaptiveTimingTimeline';
 import assets from '../../webpAssets.json';
 
 // trials
@@ -101,6 +102,21 @@ export function buildExperiment(config) {
   const coreProcedure = {
     timeline: [setupFixationTest, lexicalityTest, audioResponse, ifCoinTracking],
   };
+  const shouldContinueAdaptiveTimingTrial = () => store.session('adaptiveTimingStopEarly') !== true;
+  const adaptiveTimingCoreProcedure = {
+    timeline: [
+      setupFixationTest,
+      lexicalityTest,
+      {
+        timeline: [audioResponse],
+        conditional_function: shouldContinueAdaptiveTimingTrial,
+      },
+      {
+        timeline: [ifCoinTracking],
+        conditional_function: shouldContinueAdaptiveTimingTrial,
+      },
+    ],
+  };
 
   const pushTrialsTotimeline = (userMode, stimulusCounts) => {
     const presentationExperimentsModes = ['presentationExp', 'presentationExpShort', 'presentationExp2Conditions'];
@@ -111,6 +127,20 @@ export function buildExperiment(config) {
       }
       return [Math.floor(number / 2) + 1, Math.floor(number / 2)];
     };
+
+    if (userMode === 'adaptiveTimingMultiStage') {
+      timeline.push(
+        ...createAdaptiveTimingTimeline({
+          config,
+          coreProcedure: adaptiveTimingCoreProcedure,
+          countdownTrials,
+          midBlockPageList,
+          postBlockPageList,
+          ifNotFullscreen,
+        }),
+      );
+      return;
+    }
 
     for (let i = 0; i < stimulusCounts.length; i += 1) {
       // for each block: add trials
@@ -210,7 +240,7 @@ export function buildExperiment(config) {
 
   const swrEvaluateValidity = createEvaluateValidity({
     responseTimeLowThreshold: 400,
-    minResponsesRequired: 40,
+    minResponsesRequired: config.userMode === 'adaptiveTimingMultiStage' ? config.adaptiveTiming.earlyStopNumItems : 40,
     includedReliabilityFlags: ['responseTimeTooFast'],
   });
 

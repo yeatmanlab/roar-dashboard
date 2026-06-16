@@ -24,11 +24,12 @@ export const getStimulus = () => {
   let corpusType;
   let itemSuggestion;
   const currentBlockIndex = store.session('currentBlockIndex');
-  const currentItemSelectionRule = store.session.get('config').stimulusRuleList[currentBlockIndex];
+  const { userMode, stimulusRuleList } = store.session.get('config');
+  const currentItemSelectionRule = stimulusRuleList[currentBlockIndex];
   if (
-    store.session.get('config').userMode === 'presentationExp' ||
-    store.session.get('config').userMode === 'presentationExpShort' ||
-    store.session.get('config').userMode === 'presentationExp2Conditions'
+    userMode === 'presentationExp' ||
+    userMode === 'presentationExpShort' ||
+    userMode === 'presentationExp2Conditions'
   ) {
     corpus = store.session('corpusExperiment');
 
@@ -38,7 +39,7 @@ export const getStimulus = () => {
     store.session.set('nextStimulus', itemSuggestion.nextStimulus);
     corpus[currentBlockIndex] = itemSuggestion.remainingStimuli;
     store.session.set('corpusExperiment', corpus);
-  } else if (store.session.get('config').userMode === 'shortAdaptiveEasyBlock') {
+  } else if (['shortAdaptiveEasyBlock', 'adaptiveTimingMultiStage'].includes(userMode)) {
     // Set corpus and corpus key based on block index
     const corpusKey = currentBlockIndex === 0 ? 'corpusNewEasy' : 'corpusAll';
     corpus = store.session.get(corpusKey);
@@ -54,11 +55,7 @@ export const getStimulus = () => {
 
     // Update the corpus in the session
     store.session.set(corpusKey, corpus);
-  } else if (
-    store.session.get('config').userMode === 'shortAdaptive' ||
-    store.session.get('config').userMode === 'longAdaptive' ||
-    store.session.get('config').userMode === 'demo'
-  ) {
+  } else if (userMode === 'shortAdaptive' || userMode === 'longAdaptive' || userMode === 'demo') {
     if (demoCounter !== store.session.get('config').adaptive2new) {
       // validated corpus
       corpus = store.session('corpusAll');
@@ -82,7 +79,7 @@ export const getStimulus = () => {
       corpus[corpusType] = itemSuggestion.remainingStimuli;
       store.session.set('corpusNew', corpus);
     }
-  } else if (store.session.get('config').userMode === 'fullItemBank') {
+  } else if (userMode === 'fullItemBank') {
     // new corpus
     if (store.session.get('config').indexArray[store.session('trialNumTotal')] === 0) {
       // new corpus

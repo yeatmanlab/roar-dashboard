@@ -52,6 +52,10 @@ const initStore = (config) => {
   store.session.set('demoCounter', 0);
   store.session.set('nextStimulus', null);
   store.session.set('response', '');
+  store.session.set('adaptiveTimingConsecutiveCorrect', 0);
+  store.session.set('adaptiveTimingFirstStageComplete', false);
+  store.session.set('adaptiveTimingStopEarly', false);
+  store.session.set('adaptiveTimingTransitionBreakShown', false);
 
   // variables to track current state of the experiment
   store.session.set('currentTrialCorrect', true); // return true or false
@@ -108,6 +112,7 @@ const stimulusRuleLists = {
   fullAdaptive: ['mfi', 'mfi', 'mfi'],
   shortAdaptive: ['mfi', 'mfi', 'mfi'],
   shortAdaptiveEasyBlock: ['random', 'mfi', 'mfi', 'mfi'],
+  adaptiveTimingMultiStage: ['mfi', 'mfi'],
   longAdaptive: ['mfi', 'mfi', 'mfi'],
   fullItemBank: ['random', 'random', 'random'],
   demo: ['demo'],
@@ -124,6 +129,17 @@ const stimulusTimeOptions = [null, 350, 160, 72, 36];
 const fixationTimeOptions = [1000, 2000, 25000];
 // Trial completion time options in milliseconds
 const trialTimeOptions = [null, 5000, 8000, 100000];
+
+// This config is only used for adaptiveTimingMultiStage mode.
+// It contains the thresholds from the timing-stage rule: transition from
+// untimed to timed items after enough correct responses and theta threshold, or stop early for low theta after enough trials.
+// earlyStopNumItems is also used as the mode-specific validity minResponsesRequired.
+const adaptiveTimingConfig = {
+  transitionConsecutiveCorrect: 4,
+  transitionThetaThres: -2,
+  earlyStopNumItems: 30,
+  earlyStopThetaThres: -5,
+};
 
 const divideTrial2Block = (n1, n2, nBlock) => {
   const n = parseInt(n1, 10) + parseInt(n2, 10);
@@ -152,6 +168,8 @@ export const getStimulusCount = (userMode, numAdaptive, numNew, numValidated) =>
     longAdaptive: blockAdaptive,
     fullItemBank: divideTrial2Block(numValidated, numNew, 3),
     shortAdaptiveEasyBlock: [10, blockAdaptive[0], blockAdaptive[1], blockAdaptive[2]],
+    // adaptiveTimingMultiStage splits stages dynamically; keep metadata sum equal to the actual trial cap.
+    adaptiveTimingMultiStage: [numAdaptive, 0],
     demo: [60],
     testAdaptive: [6, 4, 4],
     testRandom: [6, 4, 4],
@@ -188,7 +206,7 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
     consent,
     audioFeedbackOption,
     language = lng,
-    numAdaptive = ['shortAdaptive', 'shortAdaptiveEasyBlock'].includes(userMode) ? 84 : 150,
+    numAdaptive = ['shortAdaptive', 'shortAdaptiveEasyBlock', 'adaptiveTimingMultiStage'].includes(userMode) ? 84 : 150,
     numNew = 0, // save for later: adjustNumNewItems(userMode)
     numValidated = userMode === 'fullItemBank' ? 246 : 84,
     skipInstructions,
@@ -241,6 +259,7 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
       trialTimePracticeOnly: trialTimeOptions[0],
       trialTime: trialTimeOptions[0],
     },
+    adaptiveTiming: adaptiveTimingConfig,
     startTime: new Date(),
     runStarted: true,
     addNoResponse: addNoResponse ?? false,
