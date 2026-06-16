@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { toPaScoreEntries } from "./score-entries.js";
-import type { ComputedScoreEntry } from "./score-entries.js";
-import { PA_SCORE_NAMES } from "./index.js";
+import type { PaScoreEntry } from "./score-entries.js";
+import { PA_SCORE_NAMES, PA_SCORE_DOMAINS } from "./index.js";
 
 describe("toPaScoreEntries", () => {
   describe("subtask scores (FSM, LSM, DEL)", () => {
-    it("maps subtask scores to ScoreEntry array", () => {
+    it("maps subtask scores to ScoreEntry array with uppercase domains and generic names", () => {
       const computed = {
         fsm: { numCorrect: 10, numAttempted: 15, percentCorrect: 67 },
         lsm: { numCorrect: 12, numAttempted: 15, percentCorrect: 80 },
@@ -14,68 +14,116 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // 9 entries: 3 per subtask (correct, attempted, percentCorrect), each under
-      // the subtask's own domain (fsm/lsm/del).
+      // 9 entries: 3 per subtask (correct=raw, attempted=raw, percentCorrect=computed),
+      // each under the subtask's UPPERCASE domain (FSM/LSM/DEL).
       expect(entries).toHaveLength(9);
 
-      // Verify FSM entries
+      // Verify FSM entries — uppercase domain, generic names, correct types, TEST stage
       expect(entries).toContainEqual({
-        type: "computed",
-        domain: "fsm",
-        name: PA_SCORE_NAMES.FSM_CORRECT,
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.FSM,
+        name: PA_SCORE_NAMES.NUM_CORRECT,
         value: "10",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
-        type: "computed",
-        domain: "fsm",
-        name: PA_SCORE_NAMES.FSM_ATTEMPTED,
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.FSM,
+        name: PA_SCORE_NAMES.NUM_ATTEMPTED,
         value: "15",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
         type: "computed",
-        domain: "fsm",
-        name: PA_SCORE_NAMES.FSM_PERCENT_CORRECT,
+        domain: PA_SCORE_DOMAINS.FSM,
+        name: PA_SCORE_NAMES.PERCENT_CORRECT,
         value: "67",
+        assessmentStage: "test",
       });
 
       // Verify LSM entries
       expect(entries).toContainEqual({
-        type: "computed",
-        domain: "lsm",
-        name: PA_SCORE_NAMES.LSM_CORRECT,
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.LSM,
+        name: PA_SCORE_NAMES.NUM_CORRECT,
         value: "12",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
-        type: "computed",
-        domain: "lsm",
-        name: PA_SCORE_NAMES.LSM_ATTEMPTED,
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.LSM,
+        name: PA_SCORE_NAMES.NUM_ATTEMPTED,
         value: "15",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
         type: "computed",
-        domain: "lsm",
-        name: PA_SCORE_NAMES.LSM_PERCENT_CORRECT,
+        domain: PA_SCORE_DOMAINS.LSM,
+        name: PA_SCORE_NAMES.PERCENT_CORRECT,
         value: "80",
+        assessmentStage: "test",
       });
 
       // Verify DEL entries
       expect(entries).toContainEqual({
-        type: "computed",
-        domain: "del",
-        name: PA_SCORE_NAMES.DEL_CORRECT,
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.DEL,
+        name: PA_SCORE_NAMES.NUM_CORRECT,
         value: "8",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
-        type: "computed",
-        domain: "del",
-        name: PA_SCORE_NAMES.DEL_ATTEMPTED,
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.DEL,
+        name: PA_SCORE_NAMES.NUM_ATTEMPTED,
         value: "15",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
         type: "computed",
-        domain: "del",
-        name: PA_SCORE_NAMES.DEL_PERCENT_CORRECT,
+        domain: PA_SCORE_DOMAINS.DEL,
+        name: PA_SCORE_NAMES.PERCENT_CORRECT,
         value: "53",
+        assessmentStage: "test",
+      });
+    });
+
+    it("emits numIncorrect when present in subtask scores", () => {
+      const computed = {
+        fsm: { numCorrect: 10, numAttempted: 15, numIncorrect: 5, percentCorrect: 67 },
+      };
+
+      const entries = toPaScoreEntries(computed);
+
+      expect(entries).toContainEqual({
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.FSM,
+        name: PA_SCORE_NAMES.NUM_INCORRECT,
+        value: "5",
+        assessmentStage: "test",
+      });
+    });
+
+    it("emits roarScoreKind and scoringVersion when present in subtask scores", () => {
+      const computed = {
+        fsm: { numCorrect: 10, numAttempted: 15, percentCorrect: 67, roarScoreKind: "raw_total_correct", scoringVersion: 4 },
+      };
+
+      const entries = toPaScoreEntries(computed);
+
+      expect(entries).toContainEqual({
+        type: "computed",
+        domain: PA_SCORE_DOMAINS.FSM,
+        name: PA_SCORE_NAMES.ROAR_SCORE_KIND,
+        value: "raw_total_correct",
+        assessmentStage: "test",
+      });
+      expect(entries).toContainEqual({
+        type: "computed",
+        domain: PA_SCORE_DOMAINS.FSM,
+        name: PA_SCORE_NAMES.SCORING_VERSION,
+        value: "4",
+        assessmentStage: "test",
       });
     });
 
@@ -88,23 +136,19 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Should skip null/undefined values
+      // Null numCorrect for LSM is skipped
       expect(entries).not.toContainEqual(
-        expect.objectContaining({
-          name: PA_SCORE_NAMES.LSM_CORRECT,
-        }),
+        expect.objectContaining({ domain: PA_SCORE_DOMAINS.LSM, name: PA_SCORE_NAMES.NUM_CORRECT }),
       );
-      // del has numAttempted: undefined, so its delAttempted entry is also skipped
+      // Undefined numAttempted for DEL is skipped
       expect(entries).not.toContainEqual(
-        expect.objectContaining({
-          name: PA_SCORE_NAMES.DEL_ATTEMPTED,
-        }),
+        expect.objectContaining({ domain: PA_SCORE_DOMAINS.DEL, name: PA_SCORE_NAMES.NUM_ATTEMPTED }),
       );
     });
   });
 
   describe("composite scores", () => {
-    it("maps composite summary scores with domain=composite", () => {
+    it("maps composite summary scores with domain=composite and correct types", () => {
       const computed = {
         composite: {
           roarScore: 30,
@@ -121,66 +165,104 @@ describe("toPaScoreEntries", () => {
 
       expect(entries).toContainEqual({
         type: "computed",
-        domain: "composite",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
         name: PA_SCORE_NAMES.RAW_SCORE,
         value: "30",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
         type: "computed",
-        domain: "composite",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
         name: PA_SCORE_NAMES.PERCENTILE,
         value: "60",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
         type: "computed",
-        domain: "composite",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
         name: PA_SCORE_NAMES.PERCENTILE_SPR,
         value: "65",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
         type: "computed",
-        domain: "composite",
-        name: PA_SCORE_NAMES.PERCENTILE_STRING_SPR,
-        value: "65th",
-      });
-      expect(entries).toContainEqual({
-        type: "computed",
-        domain: "composite",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
         name: PA_SCORE_NAMES.STANDARD_SCORE,
         value: "105",
-      });
-      expect(entries).toContainEqual({
-        type: "computed",
-        domain: "composite",
-        name: PA_SCORE_NAMES.STANDARD_SCORE_SPR,
-        value: "108",
-      });
-      expect(entries).toContainEqual({
-        type: "computed",
-        domain: "composite",
-        name: PA_SCORE_NAMES.STANDARD_SCORE_STRING_SPR,
-        value: "108",
+        assessmentStage: "test",
       });
     });
 
-    it("maps composite raw counts (numCorrect/numAttempted) under domain=composite", () => {
+    it("maps composite raw counts as type=raw", () => {
       const computed = {
-        composite: { numCorrect: 30, numAttempted: 45, percentile: 60 },
+        composite: { numCorrect: 30, numAttempted: 45, numIncorrect: 15, percentile: 60 },
+      };
+
+      const entries = toPaScoreEntries(computed);
+
+      expect(entries).toContainEqual({
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
+        name: PA_SCORE_NAMES.NUM_CORRECT,
+        value: "30",
+        assessmentStage: "test",
+      });
+      expect(entries).toContainEqual({
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
+        name: PA_SCORE_NAMES.NUM_ATTEMPTED,
+        value: "45",
+        assessmentStage: "test",
+      });
+      expect(entries).toContainEqual({
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
+        name: PA_SCORE_NAMES.NUM_INCORRECT,
+        value: "15",
+        assessmentStage: "test",
+      });
+    });
+
+    it("maps ceilingFlag, categoryScore, roarScoreKind, scoringVersion as computed", () => {
+      const computed = {
+        composite: {
+          roarScore: 30,
+          ceilingFlag: true,
+          categoryScore: 2,
+          roarScoreKind: "scaled_irt",
+          scoringVersion: 5,
+        },
       };
 
       const entries = toPaScoreEntries(computed);
 
       expect(entries).toContainEqual({
         type: "computed",
-        domain: "composite",
-        name: PA_SCORE_NAMES.NUM_CORRECT,
-        value: "30",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
+        name: PA_SCORE_NAMES.CEILING_FLAG,
+        value: "true",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
         type: "computed",
-        domain: "composite",
-        name: PA_SCORE_NAMES.NUM_ATTEMPTED,
-        value: "45",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
+        name: PA_SCORE_NAMES.CATEGORY_SCORE,
+        value: "2",
+        assessmentStage: "test",
+      });
+      expect(entries).toContainEqual({
+        type: "computed",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
+        name: PA_SCORE_NAMES.ROAR_SCORE_KIND,
+        value: "scaled_irt",
+        assessmentStage: "test",
+      });
+      expect(entries).toContainEqual({
+        type: "computed",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
+        name: PA_SCORE_NAMES.SCORING_VERSION,
+        value: "5",
+        assessmentStage: "test",
       });
     });
 
@@ -199,13 +281,13 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Should have 7 entries for composite_foundational summary scores
       expect(entries).toHaveLength(7);
       expect(entries).toContainEqual({
         type: "computed",
-        domain: "composite_foundational",
+        domain: PA_SCORE_DOMAINS.COMPOSITE_FOUNDATIONAL,
         name: PA_SCORE_NAMES.RAW_SCORE,
         value: "25",
+        assessmentStage: "test",
       });
     });
 
@@ -233,26 +315,14 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Extract domains used for each composite group
-      const compositeDomains = entries
-        .filter((e: ComputedScoreEntry) => e.name === PA_SCORE_NAMES.RAW_SCORE)
-        .map((e: ComputedScoreEntry) => e.domain);
-
-      // Should have exactly 2 entries with RAW_SCORE name, one per domain
-      expect(compositeDomains).toHaveLength(2);
-      expect(compositeDomains).toContain("composite");
-      expect(compositeDomains).toContain("composite_foundational");
-
-      // Verify no collision: both groups' entries should not share the same domain
-      const compositeEntries = entries.filter(
-        (e: ComputedScoreEntry) => e.domain === "composite",
+      const roarScoreEntries = entries.filter(
+        (e: PaScoreEntry) => e.name === PA_SCORE_NAMES.RAW_SCORE,
       );
-      const foundationalEntries = entries.filter(
-        (e: ComputedScoreEntry) => e.domain === "composite_foundational",
-      );
+      const domains = roarScoreEntries.map((e: PaScoreEntry) => e.domain);
 
-      expect(compositeEntries.length).toBeGreaterThan(0);
-      expect(foundationalEntries.length).toBeGreaterThan(0);
+      expect(domains).toHaveLength(2);
+      expect(domains).toContain(PA_SCORE_DOMAINS.COMPOSITE);
+      expect(domains).toContain(PA_SCORE_DOMAINS.COMPOSITE_FOUNDATIONAL);
     });
 
     it("skips null/undefined composite scores", () => {
@@ -267,17 +337,27 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Should skip null/undefined values
       expect(entries).not.toContainEqual(
-        expect.objectContaining({
-          name: PA_SCORE_NAMES.PERCENTILE,
-        }),
+        expect.objectContaining({ name: PA_SCORE_NAMES.PERCENTILE }),
       );
       expect(entries).not.toContainEqual(
-        expect.objectContaining({
-          name: PA_SCORE_NAMES.PERCENTILE_SPR,
-        }),
+        expect.objectContaining({ name: PA_SCORE_NAMES.PERCENTILE_SPR }),
       );
+    });
+  });
+
+  describe("all entries carry assessmentStage=test", () => {
+    it("all entries have assessmentStage=test", () => {
+      const computed = {
+        fsm: { numCorrect: 10, numAttempted: 15, percentCorrect: 67 },
+        composite: { roarScore: 30, percentile: 60 },
+      };
+
+      const entries = toPaScoreEntries(computed);
+
+      for (const entry of entries) {
+        expect(entry.assessmentStage).toBe("test");
+      }
     });
   });
 
@@ -313,48 +393,58 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Should have: 9 subtask (3 per subtask: correct, attempted, percentCorrect)
-      //   + 9 composite (7 summary names + thetaEstimate + thetaSE)
-      //   + 9 composite_foundational (same) = 27 entries.
-      // (composite/composite_foundational have no numCorrect/numAttempted here, so
-      //  those count entries are skipped.)
+      // 9 subtask (3 per subtask × 3 subtasks)
+      // + 9 composite (7 normed + thetaEstimate + thetaSE)
+      // + 9 composite_foundational (same)
+      // = 27 entries
       expect(entries.length).toBe(27);
 
-      // Verify all entries have correct type and valid domain
-      entries.forEach((entry: ComputedScoreEntry) => {
-        expect(entry.type).toBe("computed");
+      // All entries have assessmentStage=test
+      for (const entry of entries) {
+        expect(entry.assessmentStage).toBe("test");
+      }
+
+      // All entries have valid domains
+      for (const entry of entries) {
         expect([
-          "fsm",
-          "lsm",
-          "del",
-          "composite",
-          "composite_foundational",
+          PA_SCORE_DOMAINS.FSM,
+          PA_SCORE_DOMAINS.LSM,
+          PA_SCORE_DOMAINS.DEL,
+          PA_SCORE_DOMAINS.COMPOSITE,
+          PA_SCORE_DOMAINS.COMPOSITE_FOUNDATIONAL,
         ]).toContain(entry.domain);
-        expect(entry.name).toBeTruthy();
-        expect(entry.value).toBeTruthy();
-      });
+      }
+
+      // Subtask counts are raw
+      const fsmCorrect = entries.find(
+        (e: PaScoreEntry) => e.domain === PA_SCORE_DOMAINS.FSM && e.name === PA_SCORE_NAMES.NUM_CORRECT,
+      );
+      expect(fsmCorrect).toMatchObject({ type: "raw", value: "10" });
+
+      // Subtask percentCorrect is computed
+      const fsmPct = entries.find(
+        (e: PaScoreEntry) => e.domain === PA_SCORE_DOMAINS.FSM && e.name === PA_SCORE_NAMES.PERCENT_CORRECT,
+      );
+      expect(fsmPct).toMatchObject({ type: "computed", value: "67" });
+
+      // Composite theta is raw
+      const compositeTheta = entries.find(
+        (e: PaScoreEntry) => e.domain === PA_SCORE_DOMAINS.COMPOSITE && e.name === PA_SCORE_NAMES.THETA_ESTIMATE,
+      );
+      expect(compositeTheta).toMatchObject({ type: "raw", value: "0.5" });
+
+      // Composite roarScore is computed
+      const compositeRoar = entries.find(
+        (e: PaScoreEntry) => e.domain === PA_SCORE_DOMAINS.COMPOSITE && e.name === PA_SCORE_NAMES.RAW_SCORE,
+      );
+      expect(compositeRoar).toMatchObject({ type: "computed", value: "30" });
     });
 
     it("maps complete fixed scoring output (v3)", () => {
       const computed = {
-        fsm: {
-          numCorrect: 10,
-          numAttempted: 15,
-          percentCorrect: 67,
-          roarScore: 10,
-        },
-        lsm: {
-          numCorrect: 12,
-          numAttempted: 15,
-          percentCorrect: 80,
-          roarScore: 12,
-        },
-        del: {
-          numCorrect: 8,
-          numAttempted: 15,
-          percentCorrect: 53,
-          roarScore: 8,
-        },
+        fsm: { numCorrect: 10, numAttempted: 15, percentCorrect: 67, roarScore: 10 },
+        lsm: { numCorrect: 12, numAttempted: 15, percentCorrect: 80, roarScore: 12 },
+        del: { numCorrect: 8, numAttempted: 15, percentCorrect: 53, roarScore: 8 },
         composite: {
           roarScore: 30,
           percentile: 60,
@@ -368,15 +458,17 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Should have: 9 subtask (3 per subtask: correct, attempted, percentCorrect)
-      //   + 7 composite summary names = 16 entries.
-      // (roarScore on subtasks is not emitted; composite has no numCorrect/numAttempted here.)
+      // 9 subtask (3 per: numCorrect, numAttempted, percentCorrect — roarScore on
+      // subtasks is NOT in SUBTASK_NAMES so it is not emitted)
+      // + 7 composite summary names = 16 entries
       expect(entries.length).toBe(16);
 
-      // Verify roarScore is included in subtask entries
+      // Verify FSM numCorrect is emitted with uppercase domain
       expect(entries).toContainEqual(
         expect.objectContaining({
-          name: PA_SCORE_NAMES.FSM_CORRECT,
+          type: "raw",
+          domain: PA_SCORE_DOMAINS.FSM,
+          name: PA_SCORE_NAMES.NUM_CORRECT,
           value: "10",
         }),
       );
@@ -403,45 +495,50 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Verify theta fields are emitted for subtask with per-subtask domain
-      // to avoid natural-key collision on (type, domain, name, assessmentStage)
+      // Subtask theta is raw under FSM domain
       expect(entries).toContainEqual({
-        type: "computed",
-        domain: "fsm",
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.FSM,
         name: PA_SCORE_NAMES.THETA_ESTIMATE,
         value: "0.5",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
-        type: "computed",
-        domain: "fsm",
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.FSM,
         name: PA_SCORE_NAMES.THETA_SE,
         value: "0.15",
+        assessmentStage: "test",
       });
 
-      // Verify theta fields are emitted for composite
+      // Composite theta fields
       expect(entries).toContainEqual({
-        type: "computed",
-        domain: "composite",
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
         name: PA_SCORE_NAMES.THETA_ESTIMATE,
         value: "0.45",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
-        type: "computed",
-        domain: "composite",
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
         name: PA_SCORE_NAMES.THETA_SE,
         value: "0.12",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
-        type: "computed",
-        domain: "composite",
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
         name: PA_SCORE_NAMES.THETA_ESTIMATE_RAW,
         value: "0.4",
+        assessmentStage: "test",
       });
       expect(entries).toContainEqual({
-        type: "computed",
-        domain: "composite",
+        type: "raw",
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
         name: PA_SCORE_NAMES.THETA_SE_RAW,
         value: "0.13",
+        assessmentStage: "test",
       });
     });
   });
@@ -460,7 +557,6 @@ describe("toPaScoreEntries", () => {
         },
       };
 
-      // Should not throw even in strict mode
       expect(() => toPaScoreEntries(computed, { strict: true })).not.toThrow();
     });
 
@@ -499,15 +595,11 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Should only have FSM entries (3 per subtask: correct, attempted, percentCorrect)
-      const fsmEntries = entries.filter((e: ComputedScoreEntry) =>
-        e.name.startsWith("fsm"),
-      );
+      // Should only have FSM entries (3: numCorrect, numAttempted, percentCorrect)
+      const fsmEntries = entries.filter((e: PaScoreEntry) => e.domain === PA_SCORE_DOMAINS.FSM);
       expect(fsmEntries.length).toBe(3);
 
-      const lsmEntries = entries.filter((e: ComputedScoreEntry) =>
-        e.name.startsWith("lsm"),
-      );
+      const lsmEntries = entries.filter((e: PaScoreEntry) => e.domain === PA_SCORE_DOMAINS.LSM);
       expect(lsmEntries.length).toBe(0);
     });
 
@@ -519,18 +611,14 @@ describe("toPaScoreEntries", () => {
       const entries = toPaScoreEntries(computed);
 
       expect(entries).toContainEqual(
-        expect.objectContaining({
-          value: "10",
-        }),
+        expect.objectContaining({ name: PA_SCORE_NAMES.NUM_CORRECT, value: "10" }),
       );
       expect(entries).toContainEqual(
-        expect.objectContaining({
-          value: "67.5",
-        }),
+        expect.objectContaining({ name: PA_SCORE_NAMES.PERCENT_CORRECT, value: "67.5" }),
       );
     });
 
-    it("preserves subtask order (FSM, LSM, DEL)", () => {
+    it("preserves subtask order (FSM, LSM, DEL) by domain", () => {
       const computed = {
         del: { numCorrect: 8, numAttempted: 15, percentCorrect: 53 },
         fsm: { numCorrect: 10, numAttempted: 15, percentCorrect: 67 },
@@ -539,19 +627,18 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Extract subtask names in order
-      const subtaskNames = entries
-        .filter(
-          (e: ComputedScoreEntry) =>
-            e.name.includes("Correct") || e.name.includes("Attempted"),
-        )
-        .map((e: ComputedScoreEntry) => e.name.substring(0, 3).toLowerCase());
+      // Extract per-domain numCorrect indices in output order
+      const fsmIndex = entries.findIndex(
+        (e: PaScoreEntry) => e.domain === PA_SCORE_DOMAINS.FSM && e.name === PA_SCORE_NAMES.NUM_CORRECT,
+      );
+      const lsmIndex = entries.findIndex(
+        (e: PaScoreEntry) => e.domain === PA_SCORE_DOMAINS.LSM && e.name === PA_SCORE_NAMES.NUM_CORRECT,
+      );
+      const delIndex = entries.findIndex(
+        (e: PaScoreEntry) => e.domain === PA_SCORE_DOMAINS.DEL && e.name === PA_SCORE_NAMES.NUM_CORRECT,
+      );
 
-      // Should be in canonical order: fsm, lsm, del
-      const fsmIndex = subtaskNames.findIndex((n: string) => n === "fsm");
-      const lsmIndex = subtaskNames.findIndex((n: string) => n === "lsm");
-      const delIndex = subtaskNames.findIndex((n: string) => n === "del");
-
+      // Canonical order: FSM, LSM, DEL — even when input is del, fsm, lsm
       expect(fsmIndex).toBeLessThan(lsmIndex);
       expect(lsmIndex).toBeLessThan(delIndex);
     });

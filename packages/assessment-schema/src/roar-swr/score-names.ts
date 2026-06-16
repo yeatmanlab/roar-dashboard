@@ -15,8 +15,9 @@ export const SWR_SCORE_DOMAINS = {
  * numIncorrect, percentCorrect) — no normed scoring exists for these languages.
  */
 export const SWR_SCORE_NAMES = {
-  // CAT ability estimate — all languages
+  // CAT ability estimate and measurement error — all languages
   THETA_ESTIMATE: "thetaEstimate",
+  THETA_SE: "thetaSE",
 
   // Normed scores — English and Spanish only
   PERCENTILE: "percentile",
@@ -36,10 +37,10 @@ export type SwrScoreName =
 
 /**
  * Score names that map to type='raw' entries — live state captured per trial
- * (CAT estimate, trial counts). All others are type='computed' (normed lookups).
+ * (trial counts). thetaEstimate and thetaSE are type='computed': IRT-derived
+ * ability estimates, not raw trial observations.
  */
 export const SWR_RAW_SCORE_NAMES = new Set<SwrScoreName>([
-  SWR_SCORE_NAMES.THETA_ESTIMATE,
   SWR_SCORE_NAMES.NUM_ATTEMPTED,
   SWR_SCORE_NAMES.NUM_CORRECT,
   SWR_SCORE_NAMES.NUM_INCORRECT,

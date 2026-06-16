@@ -1,47 +1,34 @@
+import { AssessmentStage } from "../enums/assessment-stage.enum.js";
 import { ScoreType } from "../enums/score-type.enum.js";
 import {
   PA_SUBTASK_KEYS,
   PA_SUBSCORE_DEFS,
   PA_SCORE_NAMES,
+  PA_SCORE_DOMAINS,
+  PA_RAW_SCORE_NAMES,
   type PaScoreName,
 } from "./index.js";
 
 /**
- * Score domain constants for PA assessment.
- * These map to the backend's SCORE_DOMAIN values for proper recompute lookups.
- */
-const SCORE_DOMAIN = {
-  COMPOSITE: "composite",
-  COMPOSITE_FOUNDATIONAL: "composite_foundational",
-} as const;
-
-/**
- * Score entry for computed scores (aggregates across stages).
- * Mirrors the shape of the api-contract ComputedScoreEntry type but kept local
- * to avoid coupling assessment-schema to api-contract at build time.
- * The adapter return type is verified at runtime in CI with strict: true.
+ * Score entry for PA scores written to run_scores.
+ * Mirrors the api-contract ScoreEntry discriminated union without importing it
+ * directly, keeping assessment-schema decoupled from api-contract at build time.
  *
- * Compile-time type check: If api-contract adds a required field to ComputedScoreEntry,
- * the _typeCheck assignment below will fail with a TypeScript error, alerting us to update
- * this interface. This ensures contract changes surface immediately at compile time.
- * @see packages/api-contract/src/v1/runs/schema.ts
+ * - type=RAW: live state captured from trial accumulation (counts, theta). assessmentStage required.
+ * - type=COMPUTED: derived values (percentile, standardScore, percentCorrect). assessmentStage required.
+ *
+ * Compile-time assertion below ensures this stays assignable to the api-contract shape.
  */
-export interface ComputedScoreEntry {
-  type: ScoreType.COMPUTED;
+export interface PaScoreEntry {
+  type: ScoreType;
   domain: string;
   name: PaScoreName;
   value: string;
+  assessmentStage: AssessmentStage;
 }
 
-// Compile-time assertion: ComputedScoreEntry must be assignable to api-contract's ComputedScoreEntry shape.
-// The api-contract defines: { type: 'computed'; domain: string; name: string; value: string; categoryScore?: boolean; assessmentStage?: string }
-// If api-contract adds a NEW REQUIRED field, this check will fail and alert us to update this interface.
-// This ensures contract changes surface immediately at compile time rather than being silently missed.
-// NOTE: We use a hardcoded shape instead of importing the type because api-contract doesn't export
-// ComputedScoreEntry from its main entry point (only from dist/v1/runs/schema which isn't in exports).
-// When api-contract's exports are fixed, this can be changed to: declare const _typeCheck: ComputedScoreEntry extends ApiComputedScoreEntry ? true : false;
-declare const _typeCheck: ComputedScoreEntry extends {
-  type: "computed";
+declare const _typeCheck: PaScoreEntry extends {
+  type: "raw" | "computed";
   domain: string;
   name: string;
   value: string;
@@ -52,12 +39,11 @@ declare const _typeCheck: ComputedScoreEntry extends {
   : false;
 
 /**
- * Summary score names that are emitted at the composite level.
- * These are the final aggregate scores (percentile, standard score, theta estimates, etc.)
- * that apply across all subtasks.
- * Theta fields are only populated for adaptive scoring (v4+).
+ * Composite-level score names for PA. These apply to the 'composite' and
+ * 'composite_foundational' domains and cover the full range from raw counts
+ * through normed output and scoring metadata.
  */
-const SUMMARY_NAMES = [
+const COMPOSITE_NAMES = [
   PA_SCORE_NAMES.RAW_SCORE,
   PA_SCORE_NAMES.PERCENTILE,
   PA_SCORE_NAMES.PERCENTILE_SPR,
@@ -65,11 +51,39 @@ const SUMMARY_NAMES = [
   PA_SCORE_NAMES.STANDARD_SCORE,
   PA_SCORE_NAMES.STANDARD_SCORE_SPR,
   PA_SCORE_NAMES.STANDARD_SCORE_STRING_SPR,
+  PA_SCORE_NAMES.CEILING_FLAG,
+  PA_SCORE_NAMES.CATEGORY_SCORE,
+  PA_SCORE_NAMES.ROAR_SCORE_KIND,
+  PA_SCORE_NAMES.SCORING_VERSION,
   PA_SCORE_NAMES.THETA_ESTIMATE,
   PA_SCORE_NAMES.THETA_SE,
   PA_SCORE_NAMES.THETA_ESTIMATE_RAW,
   PA_SCORE_NAMES.THETA_SE_RAW,
+  PA_SCORE_NAMES.NUM_CORRECT,
+  PA_SCORE_NAMES.NUM_ATTEMPTED,
+  PA_SCORE_NAMES.NUM_INCORRECT,
 ] as const;
+
+/**
+ * Per-subtask score names extracted from the callback output for each FSM/LSM/DEL domain.
+ * These are the generic names that appear under each subtask's uppercase domain.
+ */
+const SUBTASK_NAMES = [
+  PA_SCORE_NAMES.NUM_CORRECT,
+  PA_SCORE_NAMES.NUM_ATTEMPTED,
+  PA_SCORE_NAMES.NUM_INCORRECT,
+  PA_SCORE_NAMES.PERCENT_CORRECT,
+  PA_SCORE_NAMES.ROAR_SCORE_KIND,
+  PA_SCORE_NAMES.SCORING_VERSION,
+  PA_SCORE_NAMES.THETA_ESTIMATE,
+  PA_SCORE_NAMES.THETA_SE,
+] as const;
+
+const RECOGNIZED_GROUPS = new Set([
+  ...PA_SUBTASK_KEYS.map((k) => k.toLowerCase()),
+  PA_SCORE_DOMAINS.COMPOSITE,
+  PA_SCORE_DOMAINS.COMPOSITE_FOUNDATIONAL,
+]);
 
 /**
  * Converts PA computed scores (nested object from RoarScores.computedScoreCallback)
@@ -78,137 +92,72 @@ const SUMMARY_NAMES = [
  * Input structure (from scores.js callback):
  * ```
  * {
- *   fsm: { numCorrect, numAttempted, percentCorrect, roarScore?, ... },
- *   lsm: { numCorrect, numAttempted, percentCorrect, roarScore?, ... },
- *   del: { numCorrect, numAttempted, percentCorrect, roarScore?, ... },
- *   composite: { roarScore, percentile, standardScore, ... },
- *   composite_foundational: { roarScore, percentile, standardScore, ... }  // if adaptive
+ *   fsm: { numCorrect, numAttempted, numIncorrect, percentCorrect, thetaEstimate?, thetaSE?, roarScoreKind, scoringVersion },
+ *   lsm: { ... },
+ *   del: { ... },
+ *   composite: { roarScore, percentile, standardScore, numCorrect, numAttempted, numIncorrect, thetaEstimate?, ... },
+ *   composite_foundational: { ... }  // adaptive scoring only
  * }
  * ```
  *
- * Output: Array of ScoreEntry objects with:
- * - type: 'computed' (PA computed scores are final aggregates)
- * - domain: the subtask key (fsm/lsm/del) for all of a subtask's scores (correct, attempted,
- *   percentCorrect, theta fields); 'composite' or 'composite_foundational' for composite scores
- * - name: one of PA_SCORE_NAMES values
- * - value: stringified score value
+ * Output: Array of PaScoreEntry objects where:
+ * - Subtask entries carry the uppercase domain (FSM, LSM, DEL) — never lowercase
+ * - Composite entries carry 'composite' or 'composite_foundational'
+ * - type is RAW for counts/theta, COMPUTED for normed/derived scores
+ * - assessmentStage is always TEST (callback only uses test-phase data)
  *
- * @param computed - Nested computed scores object from RoarScores.computedScoreCallback
- * @param options - Configuration options
- * @param options.strict - If true, throw on unrecognized input group keys; if false, silently skip them
- * @returns Array of ScoreEntry objects ready for backend upsert
- * @throws {Error} If strict=true and an unrecognized input group key is encountered
- *
- * @example
- * ```ts
- * const computed = {
- *   fsm: { numCorrect: 10, percentCorrect: 67, thetaEstimate: 0.5, thetaSE: 0.2 },
- *   lsm: { numCorrect: 12, percentCorrect: 80, thetaEstimate: 0.8, thetaSE: 0.18 },
- *   composite: { roarScore: 25, percentile: 60, standardScore: 105, numCorrect: 30, numAttempted: 45, thetaEstimate: 0.65, thetaSE: 0.15 },
- *   composite_foundational: { roarScore: 22, percentile: 55, standardScore: 100, thetaEstimate: 0.6, thetaSE: 0.16 }
- * };
- * const entries = toPaScoreEntries(computed);
- * // Returns:
- * // [
- * //   { type: 'computed', domain: 'fsm', name: 'fsmCorrect', value: '10' },
- * //   { type: 'computed', domain: 'fsm', name: 'fsmPercentCorrect', value: '67' },
- * //   { type: 'computed', domain: 'fsm', name: 'thetaEstimate', value: '0.5' },
- * //   { type: 'computed', domain: 'fsm', name: 'thetaSE', value: '0.2' },
- * //   { type: 'computed', domain: 'lsm', name: 'lsmCorrect', value: '12' },
- * //   { type: 'computed', domain: 'lsm', name: 'lsmPercentCorrect', value: '80' },
- * //   { type: 'computed', domain: 'lsm', name: 'thetaEstimate', value: '0.8' },
- * //   { type: 'computed', domain: 'lsm', name: 'thetaSE', value: '0.18' },
- * //   { type: 'computed', domain: 'composite', name: 'roarScore', value: '25' },
- * //   { type: 'computed', domain: 'composite', name: 'percentile', value: '60' },
- * //   { type: 'computed', domain: 'composite', name: 'standardScore', value: '105' },
- * //   { type: 'computed', domain: 'composite', name: 'numCorrect', value: '30' },
- * //   { type: 'computed', domain: 'composite', name: 'numAttempted', value: '45' },
- * //   { type: 'computed', domain: 'composite_foundational', name: 'roarScore', value: '22' },
- * //   { type: 'computed', domain: 'composite_foundational', name: 'percentile', value: '55' },
- * //   ...
- * // ]
- * ```
+ * @param computed - Nested computed scores from RoarScores.computedScoreCallback
+ * @param options.strict - If true, throw on unrecognized group keys. Use in CI to catch schema drift.
+ * @returns Array of PaScoreEntry objects ready for backend upsert
+ * @throws {Error} If strict=true and an unrecognized group key is encountered
  */
 export function toPaScoreEntries(
   computed: Record<string, Record<string, unknown>>,
   { strict = false } = {},
-): ComputedScoreEntry[] {
-  const entries: ComputedScoreEntry[] = [];
+): PaScoreEntry[] {
+  const entries: PaScoreEntry[] = [];
 
-  // Iterate over subtasks (FSM, LSM, DEL) in canonical order. Every score for a
-  // subtask is written under that subtask's own domain (fsm/lsm/del) so the
-  // subtask scores stay grouped and never collide on the natural key
-  // (type, domain, name, assessmentStage).
+  const add = (name: PaScoreName, value: unknown, domain: string) => {
+    if (value == null) return;
+    entries.push({
+      type: PA_RAW_SCORE_NAMES.has(name) ? ScoreType.RAW : ScoreType.COMPUTED,
+      domain,
+      name,
+      value: String(value),
+      assessmentStage: AssessmentStage.TEST,
+    });
+  };
+
+  // Per-subtask entries: uppercase domain (FSM/LSM/DEL), generic names.
+  // PA_SUBTASK_KEYS order (FSM, LSM, DEL) is canonical; iterate in that order.
+  // The callback returns lowercase keys ('fsm', 'lsm', 'del') so we lower-case
+  // only for the lookup and use the uppercase key from PA_SUBSCORE_DEFS.domain.
   for (const subtaskKey of PA_SUBTASK_KEYS) {
-    const subtaskKeyLower = subtaskKey.toLowerCase();
-    const subtaskScores = computed[subtaskKeyLower];
+    const subtaskScores = computed[subtaskKey.toLowerCase()];
+    if (!subtaskScores) continue;
 
-    if (subtaskScores) {
-      const def = PA_SUBSCORE_DEFS[subtaskKey];
-      const addToSubtask = (name: PaScoreName, value: unknown) => {
-        if (value == null) return;
-        entries.push({
-          type: ScoreType.COMPUTED,
-          domain: subtaskKeyLower,
-          name,
-          value: String(value),
-        });
-      };
-      addToSubtask(def.correctName, subtaskScores.numCorrect);
-      addToSubtask(def.attemptedName, subtaskScores.numAttempted);
-      addToSubtask(def.percentCorrectName, subtaskScores.percentCorrect);
-      // Theta fields are populated only for adaptive scoring (v4+).
-      addToSubtask(PA_SCORE_NAMES.THETA_ESTIMATE, subtaskScores.thetaEstimate);
-      addToSubtask(PA_SCORE_NAMES.THETA_SE, subtaskScores.thetaSE);
+    const { domain } = PA_SUBSCORE_DEFS[subtaskKey];
+    for (const name of SUBTASK_NAMES) {
+      add(name, subtaskScores[name], domain);
     }
   }
 
-  // Process composite and composite_foundational groups
-  // Use different domains to avoid natural-key collision on (type, domain, name, assessmentStage)
-  for (const groupKey of ["composite", "composite_foundational"]) {
+  // Composite and composite_foundational entries.
+  for (const groupKey of [PA_SCORE_DOMAINS.COMPOSITE, PA_SCORE_DOMAINS.COMPOSITE_FOUNDATIONAL]) {
     const groupScores = computed[groupKey];
-    if (groupScores) {
-      // Use different domain for composite_foundational to distinguish from composite
-      // Domains must match backend SCORE_DOMAIN constants for recompute lookups
-      const domain =
-        groupKey === "composite_foundational"
-          ? SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL
-          : SCORE_DOMAIN.COMPOSITE;
-      const addWithDomain = (name: PaScoreName, value: unknown) => {
-        if (value == null) return;
-        entries.push({
-          type: ScoreType.COMPUTED,
-          domain,
-          name,
-          value: String(value),
-        });
-      };
+    if (!groupScores) continue;
 
-      for (const summaryName of SUMMARY_NAMES) {
-        addWithDomain(summaryName, groupScores[summaryName]);
-      }
-
-      // Composite raw counts (summed across subtasks). Only the main composite
-      // carries these; the backend best-run recompute reads numAttempted under
-      // domain='composite'. composite_foundational has no counts, so these no-op there.
-      addWithDomain(PA_SCORE_NAMES.NUM_CORRECT, groupScores.numCorrect);
-      addWithDomain(PA_SCORE_NAMES.NUM_ATTEMPTED, groupScores.numAttempted);
+    for (const name of COMPOSITE_NAMES) {
+      add(name, groupScores[name], groupKey);
     }
   }
 
-  // Validate that all input group keys are recognized (strict mode)
-  // This catches typos or unexpected groups in the computed scores object
   if (strict) {
-    const recognizedGroups = new Set([
-      ...PA_SUBTASK_KEYS.map((k) => k.toLowerCase()),
-      "composite",
-      "composite_foundational",
-    ]);
     for (const groupKey of Object.keys(computed)) {
-      if (!recognizedGroups.has(groupKey)) {
+      if (!RECOGNIZED_GROUPS.has(groupKey)) {
         throw new Error(
-          `Unrecognized score group "${groupKey}" in computed scores. ` +
-            `Expected one of: ${Array.from(recognizedGroups).sort().join(", ")}`,
+          `Unrecognized score group "${groupKey}" in PA computed scores. ` +
+            `Expected one of: ${Array.from(RECOGNIZED_GROUPS).sort().join(", ")}`,
         );
       }
     }
@@ -216,3 +165,7 @@ export function toPaScoreEntries(
 
   return entries;
 }
+
+// Legacy export alias — kept for any callers not yet updated to PaScoreEntry.
+/** @deprecated Use PaScoreEntry */
+export type ComputedScoreEntry = PaScoreEntry;

@@ -3516,17 +3516,71 @@ describe('ReportService', () => {
       ]);
       const scoreRows: RunScoreRow[] = [
         // FSM at 50% (below 78.9% threshold) — should appear in skillsToWorkOn
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'fsmCorrect', scoreValue: '10' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'fsmAttempted', scoreValue: '20' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'fsmPercentCorrect', scoreValue: '50' },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'FSM',
+          scoreName: 'numCorrect',
+          scoreValue: '10',
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'FSM',
+          scoreName: 'numAttempted',
+          scoreValue: '20',
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'FSM',
+          scoreName: 'percentCorrect',
+          scoreValue: '50',
+        },
         // LSM at 90% (above threshold)
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'lsmCorrect', scoreValue: '18' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'lsmAttempted', scoreValue: '20' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'lsmPercentCorrect', scoreValue: '90' },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'LSM',
+          scoreName: 'numCorrect',
+          scoreValue: '18',
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'LSM',
+          scoreName: 'numAttempted',
+          scoreValue: '20',
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'LSM',
+          scoreName: 'percentCorrect',
+          scoreValue: '90',
+        },
         // DEL at 60% (below threshold)
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'delCorrect', scoreValue: '12' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'delAttempted', scoreValue: '20' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'delPercentCorrect', scoreValue: '60' },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'DEL',
+          scoreName: 'numCorrect',
+          scoreValue: '12',
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'DEL',
+          scoreName: 'numAttempted',
+          scoreValue: '20',
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'DEL',
+          scoreName: 'percentCorrect',
+          scoreValue: '60',
+        },
       ];
       mockReportRepository.getCompletedRunScores.mockResolvedValue(scoreRows);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
@@ -3888,9 +3942,27 @@ describe('ReportService', () => {
       //   LSM correct=18 (>= 15) → NOT in skillsToWorkOn
       //   DEL correct=12 (< 15) → in skillsToWorkOn
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'fsmCorrect', scoreValue: '10' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'lsmCorrect', scoreValue: '18' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'delCorrect', scoreValue: '12' },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'FSM',
+          scoreName: 'numCorrect',
+          scoreValue: '10',
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'LSM',
+          scoreName: 'numCorrect',
+          scoreValue: '18',
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'DEL',
+          scoreName: 'numCorrect',
+          scoreValue: '12',
+        },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -3936,9 +4008,27 @@ describe('ReportService', () => {
       setupDefaults();
       // All three at 90% → all above 78.9% threshold
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'fsmPercentCorrect', scoreValue: '90' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'lsmPercentCorrect', scoreValue: '90' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'delPercentCorrect', scoreValue: '90' },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'FSM',
+          scoreName: 'percentCorrect',
+          scoreValue: '90',
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'LSM',
+          scoreName: 'percentCorrect',
+          scoreValue: '90',
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: PA_VARIANT_ID,
+          scoreDomain: 'DEL',
+          scoreName: 'percentCorrect',
+          scoreValue: '90',
+        },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {

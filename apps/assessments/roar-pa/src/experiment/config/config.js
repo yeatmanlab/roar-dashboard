@@ -8,7 +8,7 @@ import { pa } from '@roar-platform/assessment-schema';
 import { writeTrial, finishRun, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { jsPsych } from '../jsPsych';
-import { RoarScores } from '../scores';
+import { wireScoreAdapter } from '../../sdk/pa-firekit-facade';
 import { paValidityEvaluator } from '../experiment';
 
 // Add this function to create random pid used for demo version later //
@@ -177,12 +177,10 @@ export const initRoarJsPsych = (config) => {
     finishRun().catch((err) => console.error('[roar-pa] finishRun failed:', err));
   });
 
-  const roarScores = new RoarScores();
+  const computedScoreCallback = wireScoreAdapter();
   jsPsych.opts.on_data_update = extend(jsPsych.opts.on_data_update, (data) => {
     if (data.save_trial) {
-      writeTrial(data, roarScores.computedScoreCallback.bind(roarScores)).catch((err) =>
-        console.error('[roar-pa] writeTrial failed:', err),
-      );
+      writeTrial(data, computedScoreCallback).catch((err) => console.error('[roar-pa] writeTrial failed:', err));
     }
   });
   jsPsych.opts.on_interaction_data_update = function (data) {

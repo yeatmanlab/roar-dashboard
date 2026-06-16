@@ -143,6 +143,8 @@ const SubscoreFieldEntrySchema = z.object({
   attemptedName: z.string(),
   percentCorrectName: z.string().optional(),
   label: z.string().optional(),
+  /** Uppercase domain key matching run_scores.domain for this subscore (e.g. FSM, LSM, DEL). */
+  domain: z.string().optional(),
 });
 
 /**

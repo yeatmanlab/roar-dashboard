@@ -33,7 +33,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { initTestSdk, getBaseFixtureData, getTestUserId, getTeacherUserId } from '../test-support/sdk-test-helper';
 import type { RoarApi } from './roar-api';
-import { PA_SCORE_NAMES } from '@roar-platform/assessment-schema/roar-pa';
+import { PA_SCORE_NAMES, PA_SCORE_DOMAINS } from '@roar-platform/assessment-schema/roar-pa';
 
 describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration)', () => {
   let api: RoarApi;
@@ -564,26 +564,27 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
           },
           scores: [
             {
-              type: 'computed',
-              domain: 'pa',
-              name: PA_SCORE_NAMES.FSM_CORRECT,
+              type: 'raw',
+              domain: PA_SCORE_DOMAINS.FSM,
+              name: PA_SCORE_NAMES.NUM_CORRECT,
               value: '10',
+              assessmentStage: 'test' as const,
             },
             {
               type: 'computed',
-              domain: 'pa',
-              name: PA_SCORE_NAMES.FSM_PERCENT_CORRECT,
+              domain: PA_SCORE_DOMAINS.FSM,
+              name: PA_SCORE_NAMES.PERCENT_CORRECT,
               value: '67',
             },
             {
               type: 'computed',
-              domain: 'pa',
+              domain: PA_SCORE_DOMAINS.COMPOSITE,
               name: PA_SCORE_NAMES.RAW_SCORE,
               value: '30',
             },
             {
               type: 'computed',
-              domain: 'pa',
+              domain: PA_SCORE_DOMAINS.COMPOSITE,
               name: PA_SCORE_NAMES.PERCENTILE,
               value: '60',
             },

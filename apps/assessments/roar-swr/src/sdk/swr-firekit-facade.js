@@ -29,7 +29,10 @@ import { RoarScores } from '../experiment/scores';
  */
 export function wireScoreAdapter() {
   const facade = getFirekitCompat();
-  const roarScores = new RoarScores();
+
+  // RoarScores is created lazily on the first trial write so that initStore()
+  // has already populated the session store before the constructor reads it.
+  let roarScores = null;
 
   let currentStage = null;
   let practiceNumAttempted = 0;
@@ -40,7 +43,7 @@ export function wireScoreAdapter() {
   // for assessments like SWR that don't use named subtasks).
   facade._accumulateRawScore = (_subtask, stage, correct) => {
     currentStage = stage;
-    if (currentStage === 'practice') {
+    if (currentStage === AssessmentStage.PRACTICE) {
       practiceNumAttempted++;
       if (correct === 1) practiceNumCorrect++;
     }
@@ -50,7 +53,7 @@ export function wireScoreAdapter() {
   // Test trials: CAT theta drives computedScoreCallback → normed scores.
   // Practice trials: empty placeholder so the adapter can write practice counts.
   facade._getRawScores = () => {
-    if (currentStage === 'test') {
+    if (currentStage === AssessmentStage.TEST) {
       const { cat } = experimentModule;
       const theta = cat?.theta;
       if (!cat || theta == null) return undefined;
@@ -71,16 +74,39 @@ export function wireScoreAdapter() {
   // Test trials: delegate to toSwrScoreEntries (theta + normed scores).
   // Practice trials: write accumulated counts with assessmentStage = 'practice'.
   facade._getScoreAdapter = () => (computed) => {
-    if (currentStage === 'test') {
+    if (currentStage === AssessmentStage.TEST) {
       return toSwrScoreEntries(computed, { strict: true });
     }
     const numIncorrect = practiceNumAttempted - practiceNumCorrect;
     return [
-      { type: ScoreType.RAW, domain: SWR_SCORE_DOMAINS.COMPOSITE, name: SWR_SCORE_NAMES.NUM_ATTEMPTED, value: String(practiceNumAttempted), assessmentStage: AssessmentStage.PRACTICE },
-      { type: ScoreType.RAW, domain: SWR_SCORE_DOMAINS.COMPOSITE, name: SWR_SCORE_NAMES.NUM_CORRECT, value: String(practiceNumCorrect), assessmentStage: AssessmentStage.PRACTICE },
-      { type: ScoreType.RAW, domain: SWR_SCORE_DOMAINS.COMPOSITE, name: SWR_SCORE_NAMES.NUM_INCORRECT, value: String(numIncorrect), assessmentStage: AssessmentStage.PRACTICE },
+      {
+        type: ScoreType.RAW,
+        domain: SWR_SCORE_DOMAINS.COMPOSITE,
+        name: SWR_SCORE_NAMES.NUM_ATTEMPTED,
+        value: String(practiceNumAttempted),
+        assessmentStage: AssessmentStage.PRACTICE,
+      },
+      {
+        type: ScoreType.RAW,
+        domain: SWR_SCORE_DOMAINS.COMPOSITE,
+        name: SWR_SCORE_NAMES.NUM_CORRECT,
+        value: String(practiceNumCorrect),
+        assessmentStage: AssessmentStage.PRACTICE,
+      },
+      {
+        type: ScoreType.RAW,
+        domain: SWR_SCORE_DOMAINS.COMPOSITE,
+        name: SWR_SCORE_NAMES.NUM_INCORRECT,
+        value: String(numIncorrect),
+        assessmentStage: AssessmentStage.PRACTICE,
+      },
     ];
   };
 
-  return roarScores.computedScoreCallback.bind(roarScores);
+  // Deferred instantiation — RoarScores reads store.session.get('config').scoringVersion
+  // in its constructor, which is only available after initStore() runs.
+  return async (rawScores) => {
+    if (!roarScores) roarScores = new RoarScores();
+    return roarScores.computedScoreCallback(rawScores);
+  };
 }

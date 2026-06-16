@@ -60,7 +60,7 @@ export class RoarScores {
         dynamicTyping: true,
         skipEmptyLines: true,
         step: (row) => {
-          if (this.isAdaptiveScoring() && this.ageForScore === Number(row.data.ageMonths)) {
+          if (this.isAdaptiveScoring() && Number(this.ageForScore) === Number(row.data.ageMonths)) {
             // If adaptive, lookup scores by age only.
             this.lookupTable.push(_omit(row.data, ['', 'X']));
           } else if (grade && grade >= 6) {
@@ -68,7 +68,7 @@ export class RoarScores {
             if (grade === Number(row.data.grade)) {
               this.lookupTable.push(_omit(row.data, ['', 'X']));
             }
-          } else if (this.ageForScore === Number(row.data.ageMonths)) {
+          } else if (Number(this.ageForScore) === Number(row.data.ageMonths)) {
             // Otherwise, lookup by age in months.
             this.lookupTable.push(_omit(row.data, ['', 'X']));
           }
@@ -246,17 +246,19 @@ export class RoarScores {
 
       // Then we find the row in the lookup table that corresponds to the total score.
       let myRow;
-      const { ageForScore } = this;
 
       if (this.isAdaptiveScoring()) {
         const thetaEstimate = store.session.get('thetas').scaled;
         const roundedTheta = Number(thetaEstimate.toFixed(1));
         myRow = this.lookupTable.find(
           (row) =>
-            Number(row.ageMonths) === ageForScore && Number(Number(row.thetaEstimate).toFixed(1)) === roundedTheta,
+            Number(row.ageMonths) === Number(this.ageForScore) &&
+            Number(Number(row.thetaEstimate).toFixed(1)) === roundedTheta,
         );
       } else if (grade < 6) {
-        myRow = this.lookupTable.find((row) => Number(row.ageMonths) === ageForScore && row.roarScore === totalScore);
+        myRow = this.lookupTable.find(
+          (row) => Number(row.ageMonths) === Number(this.ageForScore) && row.roarScore === totalScore,
+        );
       } else {
         myRow = this.lookupTable.find((row) => Number(row.grade) === grade && row.roarScore === totalScore);
       }
