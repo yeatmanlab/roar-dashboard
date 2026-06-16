@@ -2,22 +2,19 @@
   <main class="privacy-page container py-5">
     <section class="surface-card border-round p-4 md:p-5">
       <h1 class="mt-0 mb-2">Privacy Policy for the LEVANTE Project</h1>
-      <p class="mt-0 mb-4 text-color-secondary">
-        This page includes the LEVANTE researcher privacy policy content directly.
-      </p>
 
       <h2>Overview</h2>
       <p><strong>Last updated:</strong> June 24, 2025</p>
       <p>
         This Privacy Policy explains how the LEVANTE project collects, uses, stores, and protects personal
-        information when participants use the website. LEVANTE is committed to protecting privacy and complying with
-        GDPR and CCPA/CPRA.
+        information when participants use the website and associated web applications. LEVANTE is committed to protecting privacy and complying with
+        international laws including GDPR and CCPA/CPRA.
       </p>
 
       <h2>1. Information We Collect</h2>
       <ul>
-        <li>Contact information such as name and email when users contact the project or register for access.</li>
-        <li>Technical data such as IP address, browser type, and usage data for site functionality and analytics.</li>
+        <li>For researchersContact information such as name and email when they login to the Dashboard.</li>
+        <li>Technical data such as IP address, browser type, and usage data for site functionality and anonymized data analytics.</li>
         <li>An anonymized version of assessment results and abstracted location data when participants consent.</li>
       </ul>
 
@@ -85,7 +82,7 @@
       </p>
 
       <h2>Special Note: We do not sell or Share Personal Information</h2>
-      <p>The LEVANTE researcher site does not sell or share personal information.</p>
+      <p>The LEVANTE project site does not sell or share personal information.</p>
     </section>
   </main>
 </template>
