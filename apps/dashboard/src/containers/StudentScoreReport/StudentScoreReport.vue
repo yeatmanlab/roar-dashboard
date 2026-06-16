@@ -181,7 +181,7 @@ const tasks = computed(
 );
 
 const tasksListArray = computed(() =>
-  formatListArray(tasks.value, tasksDictionary.value, (task, entry) => entry?.publicName ?? task, {
+  formatListArray(tasks.value, tasksDictionary.value, (task, entry) => entry?.nameSimple ?? task, {
     orderLookup: Object.entries(taskDisplayNames).reduce((acc, [key, value]) => {
       acc[key] = value.order;
       return acc;
