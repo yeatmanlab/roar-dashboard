@@ -427,11 +427,11 @@ describe("toPaScoreEntries", () => {
       );
       expect(fsmPct).toMatchObject({ type: "computed", value: "67" });
 
-      // Composite theta is raw
+      // Composite theta is computed
       const compositeTheta = entries.find(
         (e: PaScoreEntry) => e.domain === PA_SCORE_DOMAINS.COMPOSITE && e.name === PA_SCORE_NAMES.THETA_ESTIMATE,
       );
-      expect(compositeTheta).toMatchObject({ type: "raw", value: "0.5" });
+      expect(compositeTheta).toMatchObject({ type: "computed", value: "0.5" });
 
       // Composite roarScore is computed
       const compositeRoar = entries.find(
@@ -495,16 +495,16 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Subtask theta is raw under FSM domain
+      // Subtask theta is computed under FSM domain
       expect(entries).toContainEqual({
-        type: "raw",
+        type: "computed",
         domain: PA_SCORE_DOMAINS.FSM,
         name: PA_SCORE_NAMES.THETA_ESTIMATE,
         value: "0.5",
         assessmentStage: "test",
       });
       expect(entries).toContainEqual({
-        type: "raw",
+        type: "computed",
         domain: PA_SCORE_DOMAINS.FSM,
         name: PA_SCORE_NAMES.THETA_SE,
         value: "0.15",
@@ -513,14 +513,14 @@ describe("toPaScoreEntries", () => {
 
       // Composite theta fields
       expect(entries).toContainEqual({
-        type: "raw",
+        type: "computed",
         domain: PA_SCORE_DOMAINS.COMPOSITE,
         name: PA_SCORE_NAMES.THETA_ESTIMATE,
         value: "0.45",
         assessmentStage: "test",
       });
       expect(entries).toContainEqual({
-        type: "raw",
+        type: "computed",
         domain: PA_SCORE_DOMAINS.COMPOSITE,
         name: PA_SCORE_NAMES.THETA_SE,
         value: "0.12",
