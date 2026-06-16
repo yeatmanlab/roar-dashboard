@@ -23,13 +23,12 @@
         information when particiants login to the website.
       </p>
 
-      <h2>1. Information We Collect</h2>
+      <h2>1. Information We Collect from Participants</h2>
       <ul>
-        <li>Contact information such as name and email when users contact the project or register for access.</li>
         <li>Technical data such as IP address, browser type, and usage data for site functionality and analytics.</li>
       </ul>
       <p>
-        The policy states that sensitive personal information is not collected unless explicitly required for a
+        Sensitive personal information is not collected unless explicitly required for a
         specific research purpose, with notice and consent where required by law.
       </p>
 
@@ -41,7 +40,7 @@
         <li>Comply with legal obligations.</li>
       </ul>
       <p>
-        The policy states that personal information is not sold or shared with third parties for marketing or
+        Personal information is not sold or shared with third parties for marketing or
         commercial purposes.
       </p>
 
@@ -58,7 +57,7 @@
         <li>Anonymized and geographically abstracted version of your location if you consent to its collection</li>
       </ul>
       <p>
-        The policy states that sensitive personal information is not collected unless explicitly required for a
+        Sensitive personal information is not collected unless explicitly required for a
         specific research purpose, with notice and consent where required by law.
       </p>
 
