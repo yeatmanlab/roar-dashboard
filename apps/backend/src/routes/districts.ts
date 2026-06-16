@@ -15,7 +15,6 @@ const s = initServer();
 export function registerDistrictsRoutes(routerInstance: Router) {
   const DistrictsRoutes = s.router(DistrictsContract, {
     create: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, body }) => DistrictsController.create(user!, body),
     },
@@ -25,7 +24,6 @@ export function registerDistrictsRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, query }) => DistrictsController.list(user!, query),
     },
     get: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => DistrictsController.getById(user!, id),
     },
@@ -43,6 +41,5 @@ export function registerDistrictsRoutes(routerInstance: Router) {
     },
   });
 
-  // @ts-expect-error - Express v4/v5 types mismatch in monorepo
   createExpressEndpoints(DistrictsContract, DistrictsRoutes, routerInstance);
 }

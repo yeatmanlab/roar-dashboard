@@ -124,7 +124,7 @@ export const ifConsentForm = {
         store.session.get('config').recruitment === 'otherLabs' ||
         store.session.get('config').recruitment === 'prolific' ||
         store.session.get('config').recruitment === 'sona') &&
-        store.session.get('config').consent,
+      store.session.get('config').consent,
     ),
 };
 
