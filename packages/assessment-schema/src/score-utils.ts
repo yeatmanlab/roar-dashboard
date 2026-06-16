@@ -1,5 +1,6 @@
 import { AssessmentStage } from './enums/assessment-stage.enum.js';
 import { ScoreType } from './enums/score-type.enum.js';
+import type { ScoreEntryConstraint } from './types/score-entry.type.js';
 
 /**
  * Score names shared across all ROAR assessments.
@@ -35,7 +36,7 @@ export function buildRawCountEntries(
   domain: string,
   counts: RawCounts,
   stage: AssessmentStage,
-): Array<{ type: ScoreType; domain: string; name: string; value: string; assessmentStage: AssessmentStage }> {
+): ScoreEntryConstraint[] {
   return [
     {
       type: ScoreType.RAW,
