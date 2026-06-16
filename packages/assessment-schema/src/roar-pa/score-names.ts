@@ -22,33 +22,33 @@ export type PaScoreDomain = (typeof PA_SCORE_DOMAINS)[keyof typeof PA_SCORE_DOMA
  */
 export const PA_SCORE_NAMES = {
   // Summary scores (composite-level normed output)
-  RAW_SCORE: "roarScore",
-  PERCENTILE: "percentile",
-  PERCENTILE_SPR: "sprPercentile",
-  PERCENTILE_STRING_SPR: "sprPercentileString",
-  STANDARD_SCORE: "standardScore",
-  STANDARD_SCORE_SPR: "sprStandardScore",
-  STANDARD_SCORE_STRING_SPR: "sprStandardScoreString",
-  CEILING_FLAG: "ceilingFlag",
-  CATEGORY_SCORE: "categoryScore",
+  RAW_SCORE: 'roarScore',
+  PERCENTILE: 'percentile',
+  PERCENTILE_SPR: 'sprPercentile',
+  PERCENTILE_STRING_SPR: 'sprPercentileString',
+  STANDARD_SCORE: 'standardScore',
+  STANDARD_SCORE_SPR: 'sprStandardScore',
+  STANDARD_SCORE_STRING_SPR: 'sprStandardScoreString',
+  CEILING_FLAG: 'ceilingFlag',
+  CATEGORY_SCORE: 'categoryScore',
 
   // Raw counts — per subtask and composite
-  NUM_CORRECT: "numCorrect",
-  NUM_ATTEMPTED: "numAttempted",
-  NUM_INCORRECT: "numIncorrect",
+  NUM_CORRECT: 'numCorrect',
+  NUM_ATTEMPTED: 'numAttempted',
+  NUM_INCORRECT: 'numIncorrect',
 
   // Derived per-subtask
-  PERCENT_CORRECT: "percentCorrect",
+  PERCENT_CORRECT: 'percentCorrect',
 
   // Scoring metadata
-  ROAR_SCORE_KIND: "roarScoreKind",
-  SCORING_VERSION: "scoringVersion",
+  ROAR_SCORE_KIND: 'roarScoreKind',
+  SCORING_VERSION: 'scoringVersion',
 
   // Theta estimates (adaptive scoring only, per subtask and composite)
-  THETA_ESTIMATE: "thetaEstimate",
-  THETA_SE: "thetaSE",
-  THETA_ESTIMATE_RAW: "thetaEstimateRaw",
-  THETA_SE_RAW: "thetaSERaw",
+  THETA_ESTIMATE: 'thetaEstimate',
+  THETA_SE: 'thetaSE',
+  THETA_ESTIMATE_RAW: 'thetaEstimateRaw',
+  THETA_SE_RAW: 'thetaSERaw',
 } as const;
 
 export type PaScoreName = (typeof PA_SCORE_NAMES)[keyof typeof PA_SCORE_NAMES];

@@ -840,3 +840,30 @@ export async function getVariantById(
   const cmd = new GetVariantByIdCommand(api);
   return invoker.run(cmd, { variantId });
 }
+
+/**
+ * Creates a lazily-instantiated computedScoreCallback for an assessment's RoarScores class.
+ *
+ * Defers construction of `ScoresClass` until the first trial write, guaranteeing that
+ * `initStore()` has populated the session store before the constructor reads it.
+ *
+ * @param ScoresClass - Constructor for the assessment-specific RoarScores implementation
+ * @returns An async callback suitable for passing to `writeTrial`
+ *
+ * @example
+ * ```js
+ * import { makeLazyComputedCallback } from '@roar-platform/assessment-sdk/compat/firekit';
+ * import { RoarScores } from '../experiment/scores';
+ *
+ * const computedScoreCallback = makeLazyComputedCallback(RoarScores);
+ * ```
+ */
+export function makeLazyComputedCallback<T extends { computedScoreCallback: (rawScores: unknown) => Promise<unknown> }>(
+  ScoresClass: new () => T,
+): (rawScores: unknown) => Promise<unknown> {
+  let instance: T | null = null;
+  return async (rawScores) => {
+    if (!instance) instance = new ScoresClass();
+    return instance.computedScoreCallback(rawScores);
+  };
+}

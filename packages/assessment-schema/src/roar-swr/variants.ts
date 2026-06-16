@@ -1,5 +1,5 @@
-import type { SwrScoringVersion, SwrTaskId } from "./config.js";
-import { SWR_TASK_IDS, SWR_SCORING_VERSION } from "./config.js";
+import type { SwrScoringVersion, SwrTaskId } from './config.js';
+import { SWR_TASK_IDS, SWR_SCORING_VERSION } from './config.js';
 
 type SwrLanguageEntry = {
   code: string;
@@ -21,32 +21,32 @@ type SwrLanguageEntry = {
  */
 export const SWR_LANGUAGES = {
   en: {
-    code: "en",
-    label: "English",
+    code: 'en',
+    label: 'English',
     taskId: SWR_TASK_IDS.EN,
     defaultScoringVersion: SWR_SCORING_VERSION.V7,
   },
   es: {
-    code: "es",
-    label: "Spanish",
+    code: 'es',
+    label: 'Spanish',
     taskId: SWR_TASK_IDS.ES,
     defaultScoringVersion: SWR_SCORING_VERSION.V1,
   },
   it: {
-    code: "it",
-    label: "Italian",
+    code: 'it',
+    label: 'Italian',
     taskId: SWR_TASK_IDS.IT,
     defaultScoringVersion: null,
   },
   pt: {
-    code: "pt",
-    label: "Portuguese",
+    code: 'pt',
+    label: 'Portuguese',
     taskId: SWR_TASK_IDS.PT,
     defaultScoringVersion: null,
   },
   de: {
-    code: "de",
-    label: "German",
+    code: 'de',
+    label: 'German',
     taskId: SWR_TASK_IDS.DE,
     defaultScoringVersion: null,
   },

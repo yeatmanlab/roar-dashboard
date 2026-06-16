@@ -1,11 +1,6 @@
-import { getFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
-import { ScoreType, AssessmentStage } from '@roar-platform/assessment-schema';
-import {
-  PA_SCORE_DOMAINS,
-  PA_SCORE_NAMES,
-  PA_SUBTASK_KEYS,
-  toPaScoreEntries,
-} from '@roar-platform/assessment-schema/roar-pa';
+import { getFirekitCompat, makeLazyComputedCallback } from '@roar-platform/assessment-sdk/compat/firekit';
+import { AssessmentStage, buildRawCountEntries } from '@roar-platform/assessment-schema';
+import { PA_SCORE_DOMAINS, PA_SUBTASK_KEYS, toPaScoreEntries } from '@roar-platform/assessment-schema/roar-pa';
 import { RoarScores } from '../experiment/scores';
 
 /**
@@ -35,10 +30,6 @@ import { RoarScores } from '../experiment/scores';
  */
 export function wireScoreAdapter() {
   const facade = getFirekitCompat();
-
-  // RoarScores is created lazily on the first trial write so that initStore()
-  // has already populated the session store before the constructor reads it.
-  let roarScores = null;
 
   // Accumulated raw scores keyed by subtask (lowercase: 'fsm', 'lsm', 'del')
   // then by stage ('practice' | 'test').
@@ -92,29 +83,7 @@ export function wireScoreAdapter() {
         if (!practiceData || practiceData.numAttempted === 0) continue;
 
         const domain = PA_SCORE_DOMAINS[subtaskKey];
-        entries.push(
-          {
-            type: ScoreType.RAW,
-            domain,
-            name: PA_SCORE_NAMES.NUM_CORRECT,
-            value: String(practiceData.numCorrect),
-            assessmentStage: AssessmentStage.PRACTICE,
-          },
-          {
-            type: ScoreType.RAW,
-            domain,
-            name: PA_SCORE_NAMES.NUM_ATTEMPTED,
-            value: String(practiceData.numAttempted),
-            assessmentStage: AssessmentStage.PRACTICE,
-          },
-          {
-            type: ScoreType.RAW,
-            domain,
-            name: PA_SCORE_NAMES.NUM_INCORRECT,
-            value: String(practiceData.numIncorrect),
-            assessmentStage: AssessmentStage.PRACTICE,
-          },
-        );
+        entries.push(...buildRawCountEntries(domain, practiceData, AssessmentStage.PRACTICE));
       }
 
       return entries;
@@ -124,8 +93,5 @@ export function wireScoreAdapter() {
   // Deferred instantiation — RoarScores reads store.session.get('config').scoringVersion
   // in its constructor, which is only available after initStore() runs. By deferring to
   // the first writeTrial call we guarantee the store is populated.
-  return async (rawScores) => {
-    if (!roarScores) roarScores = new RoarScores();
-    return roarScores.computedScoreCallback(rawScores);
-  };
+  return makeLazyComputedCallback(RoarScores);
 }

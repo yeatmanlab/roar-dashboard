@@ -1,6 +1,7 @@
-import { AssessmentStage } from "../enums/assessment-stage.enum.js";
-import { ScoreType } from "../enums/score-type.enum.js";
-import { SWR_SCORE_DOMAINS, SWR_SCORE_NAMES, SWR_RAW_SCORE_NAMES, type SwrScoreName } from "./score-names.js";
+import type { ScoreEntryConstraint } from '../types/score-entry.type.js';
+import { AssessmentStage } from '../enums/assessment-stage.enum.js';
+import { ScoreType } from '../enums/score-type.enum.js';
+import { SWR_SCORE_DOMAINS, SWR_SCORE_NAMES, SWR_RAW_SCORE_NAMES, type SwrScoreName } from './score-names.js';
 
 /**
  * Score entry shape for SWR scores written to run_scores.
@@ -21,16 +22,7 @@ export interface SwrScoreEntry {
   assessmentStage: AssessmentStage;
 }
 
-declare const _typeCheck: SwrScoreEntry extends {
-  type: "raw" | "computed";
-  domain: string;
-  name: string;
-  value: string;
-  categoryScore?: boolean;
-  assessmentStage?: string;
-}
-  ? true
-  : false;
+export type _TypeCheck = SwrScoreEntry extends ScoreEntryConstraint ? true : false;
 
 const RECOGNIZED_DOMAINS = new Set<string>([SWR_SCORE_DOMAINS.COMPOSITE]);
 
@@ -64,7 +56,7 @@ export function toSwrScoreEntries(
     const unrecognized = Object.keys(computed).filter((k) => !RECOGNIZED_DOMAINS.has(k));
     if (unrecognized.length > 0) {
       throw new Error(
-        `Unrecognized score domains in SWR computed scores: ${unrecognized.join(", ")}. ` +
+        `Unrecognized score domains in SWR computed scores: ${unrecognized.join(', ')}. ` +
           `Update toSwrScoreEntries to handle the new domain.`,
       );
     }

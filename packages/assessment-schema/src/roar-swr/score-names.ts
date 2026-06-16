@@ -16,23 +16,22 @@ export const SWR_SCORE_DOMAINS = {
  */
 export const SWR_SCORE_NAMES = {
   // CAT ability estimate — all languages
-  THETA_ESTIMATE: "thetaEstimate",
+  THETA_ESTIMATE: 'thetaEstimate',
 
   // Normed scores — English and Spanish only
-  PERCENTILE: "percentile",
-  WJ_PERCENTILE: "wjPercentile", // legacy field name used before scoring version 7
-  STANDARD_SCORE: "standardScore",
-  RAW_SCORE: "roarScore",
+  PERCENTILE: 'percentile',
+  WJ_PERCENTILE: 'wjPercentile', // legacy field name used before scoring version 7
+  STANDARD_SCORE: 'standardScore',
+  RAW_SCORE: 'roarScore',
 
   // Raw counts — Italian, Portuguese, and German
-  NUM_ATTEMPTED: "numAttempted",
-  NUM_CORRECT: "numCorrect",
-  NUM_INCORRECT: "numIncorrect",
-  PERCENT_CORRECT: "percentCorrect",
+  NUM_ATTEMPTED: 'numAttempted',
+  NUM_CORRECT: 'numCorrect',
+  NUM_INCORRECT: 'numIncorrect',
+  PERCENT_CORRECT: 'percentCorrect',
 } as const;
 
-export type SwrScoreName =
-  (typeof SWR_SCORE_NAMES)[keyof typeof SWR_SCORE_NAMES];
+export type SwrScoreName = (typeof SWR_SCORE_NAMES)[keyof typeof SWR_SCORE_NAMES];
 
 /**
  * Score names that map to type='raw' entries — live state captured per trial

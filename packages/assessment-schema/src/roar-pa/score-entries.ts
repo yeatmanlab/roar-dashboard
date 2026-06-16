@@ -1,5 +1,6 @@
-import { AssessmentStage } from "../enums/assessment-stage.enum.js";
-import { ScoreType } from "../enums/score-type.enum.js";
+import type { ScoreEntryConstraint } from '../types/score-entry.type.js';
+import { AssessmentStage } from '../enums/assessment-stage.enum.js';
+import { ScoreType } from '../enums/score-type.enum.js';
 import {
   PA_SUBTASK_KEYS,
   PA_SUBSCORE_DEFS,
@@ -7,7 +8,7 @@ import {
   PA_SCORE_DOMAINS,
   PA_RAW_SCORE_NAMES,
   type PaScoreName,
-} from "./index.js";
+} from './index.js';
 
 /**
  * Score entry for PA scores written to run_scores.
@@ -27,16 +28,7 @@ export interface PaScoreEntry {
   assessmentStage: AssessmentStage;
 }
 
-declare const _typeCheck: PaScoreEntry extends {
-  type: "raw" | "computed";
-  domain: string;
-  name: string;
-  value: string;
-  categoryScore?: boolean;
-  assessmentStage?: string;
-}
-  ? true
-  : false;
+export type _TypeCheck = PaScoreEntry extends ScoreEntryConstraint ? true : false;
 
 /**
  * Composite-level score names for PA. These apply to the 'composite' and
@@ -157,7 +149,7 @@ export function toPaScoreEntries(
       if (!RECOGNIZED_GROUPS.has(groupKey)) {
         throw new Error(
           `Unrecognized score group "${groupKey}" in PA computed scores. ` +
-            `Expected one of: ${Array.from(RECOGNIZED_GROUPS).sort().join(", ")}`,
+            `Expected one of: ${Array.from(RECOGNIZED_GROUPS).sort().join(', ')}`,
         );
       }
     }

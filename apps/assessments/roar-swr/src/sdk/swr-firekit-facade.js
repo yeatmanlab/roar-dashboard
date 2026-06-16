@@ -1,6 +1,6 @@
-import { getFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
-import { AssessmentStage, ScoreType } from '@roar-platform/assessment-schema';
-import { toSwrScoreEntries, SWR_SCORE_NAMES, SWR_SCORE_DOMAINS } from '@roar-platform/assessment-schema/roar-swr';
+import { getFirekitCompat, makeLazyComputedCallback } from '@roar-platform/assessment-sdk/compat/firekit';
+import { AssessmentStage, buildRawCountEntries } from '@roar-platform/assessment-schema';
+import { toSwrScoreEntries, SWR_SCORE_DOMAINS } from '@roar-platform/assessment-schema/roar-swr';
 // Namespace import for lazy access — experiment.js imports from config.js,
 // so we avoid a circular-dep evaluation-order issue by only reading .cat
 // inside function closures (at call time, not at module evaluation time).
@@ -30,10 +30,6 @@ import { RoarScores } from '../experiment/scores';
 export function wireScoreAdapter() {
   const facade = getFirekitCompat();
 
-  // RoarScores is created lazily on the first trial write so that initStore()
-  // has already populated the session store before the constructor reads it.
-  let roarScores = null;
-
   let currentStage = null;
   let practiceNumAttempted = 0;
   let practiceNumCorrect = 0;
@@ -51,7 +47,10 @@ export function wireScoreAdapter() {
 
   // Return raw scores to trigger the scoring pipeline.
   // Test trials: CAT theta drives computedScoreCallback → normed scores.
-  // Practice trials: empty placeholder so the adapter can write practice counts.
+  // Practice trials: return a non-null placeholder so computedScoreCallback
+  // fires and preloads the norm table during practice, hiding that network
+  // latency before the first test trial. The computed result is discarded —
+  // _getScoreAdapter reads currentStage directly to emit practice count entries.
   facade._getRawScores = () => {
     if (currentStage === AssessmentStage.TEST) {
       const { cat } = experimentModule;
@@ -77,36 +76,18 @@ export function wireScoreAdapter() {
     if (currentStage === AssessmentStage.TEST) {
       return toSwrScoreEntries(computed, { strict: true });
     }
-    const numIncorrect = practiceNumAttempted - practiceNumCorrect;
-    return [
+    return buildRawCountEntries(
+      SWR_SCORE_DOMAINS.COMPOSITE,
       {
-        type: ScoreType.RAW,
-        domain: SWR_SCORE_DOMAINS.COMPOSITE,
-        name: SWR_SCORE_NAMES.NUM_ATTEMPTED,
-        value: String(practiceNumAttempted),
-        assessmentStage: AssessmentStage.PRACTICE,
+        numCorrect: practiceNumCorrect,
+        numAttempted: practiceNumAttempted,
+        numIncorrect: practiceNumAttempted - practiceNumCorrect,
       },
-      {
-        type: ScoreType.RAW,
-        domain: SWR_SCORE_DOMAINS.COMPOSITE,
-        name: SWR_SCORE_NAMES.NUM_CORRECT,
-        value: String(practiceNumCorrect),
-        assessmentStage: AssessmentStage.PRACTICE,
-      },
-      {
-        type: ScoreType.RAW,
-        domain: SWR_SCORE_DOMAINS.COMPOSITE,
-        name: SWR_SCORE_NAMES.NUM_INCORRECT,
-        value: String(numIncorrect),
-        assessmentStage: AssessmentStage.PRACTICE,
-      },
-    ];
+      AssessmentStage.PRACTICE,
+    );
   };
 
   // Deferred instantiation — RoarScores reads store.session.get('config').scoringVersion
   // in its constructor, which is only available after initStore() runs.
-  return async (rawScores) => {
-    if (!roarScores) roarScores = new RoarScores();
-    return roarScores.computedScoreCallback(rawScores);
-  };
+  return makeLazyComputedCallback(RoarScores);
 }

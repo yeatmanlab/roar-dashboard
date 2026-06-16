@@ -1,15 +1,14 @@
-import { PA_SCORE_DOMAINS, PA_SCORE_NAMES } from "./score-names.js";
-import type { PaSubtaskKey } from "./config.js";
-import type { PaScoreName, PaScoreDomain } from "./score-names.js";
+import { PA_SCORE_DOMAINS, PA_SCORE_NAMES } from './score-names.js';
+import type { PaSubtaskKey } from './config.js';
+import type { PaScoreName, PaScoreDomain } from './score-names.js';
 
 export const PA_SUBTASK_LABELS = {
-  FSM: "First Sound",
-  LSM: "Last Sound",
-  DEL: "Deletion",
+  FSM: 'First Sound',
+  LSM: 'Last Sound',
+  DEL: 'Deletion',
 } as const satisfies Record<PaSubtaskKey, string>;
 
-export type PaSubtaskLabel =
-  (typeof PA_SUBTASK_LABELS)[keyof typeof PA_SUBTASK_LABELS];
+export type PaSubtaskLabel = (typeof PA_SUBTASK_LABELS)[keyof typeof PA_SUBTASK_LABELS];
 
 export interface PaSubscoreDef {
   /** Human-readable label for the subscore column header. */

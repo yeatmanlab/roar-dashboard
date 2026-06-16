@@ -27,6 +27,10 @@
   "scripts": {
     "build": "tsc",
     "check-types": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -34,6 +38,7 @@
     "@roar-platform/api-contract": "*"
   },
   "devDependencies": {
+    "@roar-platform/eslint-config": "*",
     "@roar-platform/typescript-config": "*",
     "typescript": "^5.0.0",
     "vitest": "^3.2.4"
