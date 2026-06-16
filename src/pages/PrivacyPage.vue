@@ -1,9 +1,9 @@
 <template>
   <main class="privacy-page container py-5">
     <section class="surface-card border-round p-4 md:p-5">
-      <h1 class="mt-0 mb-2">Privacy Policy for LEVANTE Researcher Site</h1>
+      <h1 class="mt-0 mb-2">Privacy Policy for the LEVANTE Project</h1>
       <p class="mt-0 mb-4 text-color-secondary">
-        This dashboard page is initially seeded from the LEVANTE researcher privacy policy and should be kept aligned
+         This dashboard page is initially seeded from the LEVANTE project privacy policy and should be kept aligned
         with the canonical source.
       </p>
 
@@ -23,7 +23,7 @@
         information when particiants login to the website.
       </p>
 
-      <h2>1. Information We Collect from Researchers</h2>
+      <h2>1. Information We Collect</h2>
       <ul>
         <li>Contact information such as name and email when users contact the project or register for access.</li>
         <li>Technical data such as IP address, browser type, and usage data for site functionality and analytics.</li>
@@ -95,3 +95,7 @@
     </section>
   </main>
 </template>
+
+<script setup lang="ts">
+defineOptions({ name: 'PrivacyPage' });
+</script>
