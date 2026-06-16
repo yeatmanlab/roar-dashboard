@@ -5,7 +5,7 @@
     <div class="grid gap-2 lg:grid-cols-2 xl:grid-cols-3">
       <template v-for="task in computedTaskData" :key="task.taskId">
         <ScoreCard
-          :public-name="tasksDictionary[task.taskId]?.publicName ?? task.taskId"
+          :public-name="tasksDictionary[task.taskId]?.nameSimple ?? task.taskId"
           :score-label="task[task.scoreToDisplay].name"
           :score="task[task.scoreToDisplay]"
           :tags="task.tags"

@@ -139,7 +139,7 @@ export function useProgressColumns(
       tableColumns.push({
         field: `progress.${taskId}.value`,
         filterField: `progress.${taskId}.tags`,
-        header: tasksDictionary.value[taskId]?.publicName ?? taskId,
+        header: tasksDictionary.value[taskId]?.nameSimple ?? taskId,
         dataType: 'progress',
         tag: true,
         severityField: `progress.${taskId}.severity`,
