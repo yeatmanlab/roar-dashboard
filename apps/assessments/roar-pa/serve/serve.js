@@ -38,7 +38,7 @@ if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     try {
-      const auth = { getToken: () => user.getIdToken() };
+      const authCallbacks = { getToken: () => user.getIdToken() };
 
       // Provision the anonymous ROAR user (and resolve a variant) via the SDK. This replaces
       // the previous raw-fetch workaround: the SDK requires a participantId to initialize, yet
@@ -47,14 +47,14 @@ onAuthStateChanged(auth, async (user) => {
       // The variantId URL param wins; otherwise it falls back to the first published variant.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         // eslint-disable-next-line no-undef
-        { baseUrl: ROAR_API_BASE_URL, auth },
+        { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
         { ...(variantId ? { variantId } : {}), taskId: pa.PA_TASK_ID },
       );
 
       const ctx = {
         // eslint-disable-next-line no-undef
         baseUrl: ROAR_API_BASE_URL,
-        auth,
+        auth: authCallbacks,
         participant: { participantId },
       };
 

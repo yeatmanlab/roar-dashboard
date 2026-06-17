@@ -54,6 +54,13 @@ describe('bootstrapAnonymousSession', () => {
     expect(result).toEqual({ participantId: PARTICIPANT_ID, variantId: VARIANT_ID });
   });
 
+  it('returns the provided variantId without a taskId', async () => {
+    const result = await bootstrapAnonymousSession(ctx, { variantId: VARIANT_ID });
+
+    expect(listTaskVariants).not.toHaveBeenCalled();
+    expect(result).toEqual({ participantId: PARTICIPANT_ID, variantId: VARIANT_ID });
+  });
+
   it('resolves the first published variant for a taskId', async () => {
     listTaskVariants.mockResolvedValue({
       status: StatusCodes.OK,

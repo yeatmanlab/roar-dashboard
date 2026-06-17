@@ -1,4 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
+import type { ApiError } from '@roar-platform/api-contract';
 import { createApiClient } from './receiver/roar-api';
 import type { ApiClientConfig } from './receiver/roar-api';
 import { SDKError } from './errors/sdk-error';
@@ -86,8 +87,8 @@ export async function bootstrapAnonymousSession(
   // lookup, since the variant endpoint requires the user record to already exist.
   const created = await client.users.createAnonymous();
   if (created.status !== StatusCodes.OK) {
-    const errorBody = created.body as { error?: { message?: string } };
-    throw new SDKError(errorBody.error?.message ?? `Failed to provision anonymous user with status ${created.status}`, {
+    const errorBody = created.body as ApiError;
+    throw new SDKError(errorBody.error.message ?? `Failed to provision anonymous user with status ${created.status}`, {
       code: SdkErrorCode.BOOTSTRAP_FAILED,
     });
   }
@@ -101,14 +102,16 @@ export async function bootstrapAnonymousSession(
   // See: https://github.com/yeatmanlab/roar-project-management/issues/1828
   let resolvedVariantId = input.variantId;
   if (!resolvedVariantId && input.taskId) {
+    // Fetch the first published variant (default sort is createdAt asc, oldest first).
+    // If the default sort changes, this will silently pick a different variant.
     const variants = await client.tasks.listTaskVariants({
       params: { taskId: input.taskId },
-      query: { perPage: 1 },
+      query: { perPage: 1, sortBy: 'createdAt', sortOrder: 'asc' },
     });
 
     if (variants.status !== StatusCodes.OK) {
-      const errorBody = variants.body as { error?: { message?: string } };
-      throw new SDKError(errorBody.error?.message ?? `Failed to resolve task variant with status ${variants.status}`, {
+      const errorBody = variants.body as ApiError;
+      throw new SDKError(errorBody.error.message ?? `Failed to resolve task variant with status ${variants.status}`, {
         code: SdkErrorCode.BOOTSTRAP_FAILED,
       });
     }
