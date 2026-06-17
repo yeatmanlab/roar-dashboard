@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { toSreScoreEntries } from './score-entries.js';
 import type { SreScoreEntry } from './score-entries.js';
-import { SRE_COMPOSITE_SCORE_NAMES, SRE_COMPOSITE_DOMAIN, SRE_PRACTICE_DOMAIN, SRE_SUBTASK_SCORE_NAMES } from './score-names.js';
+import {
+  SRE_COMPOSITE_SCORE_NAMES,
+  SRE_COMPOSITE_DOMAIN,
+  SRE_PRACTICE_DOMAIN,
+  SRE_SUBTASK_SCORE_NAMES,
+} from './score-names.js';
 
 describe('toSreScoreEntries', () => {
   describe('null / missing input', () => {

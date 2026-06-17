@@ -417,9 +417,10 @@ export class RoarScores {
           return this.getFixedFormEquatedScore(score);
         }
 
-        // For English, we use the "lab" corpus score as the composite score if it available.
-        if (score.lab?.sreScore) {
-          return Math.max(score.lab.sreScore, 0);
+        // For English, we use the "lab" corpus score as the composite score if it is available.
+        // Return the actual score (can be negative); the normed lookup clamps separately.
+        if (score.lab?.sreScore != null) {
+          return score.lab.sreScore;
         }
 
         // Otherwise, we use the AI corpus equating table to convert the AI score to a composite score.
@@ -435,10 +436,11 @@ export class RoarScores {
           return aiRow.sreScore;
         }
       } else if (this.taskId === SRE_TASK_IDS.ES) {
-        // For Spanish, we omit the practice and composite subtasks and take the sum of the sreScores
+        // For Spanish, we omit the practice and composite subtasks and take the sum of the sreScores.
+        // Return the actual sum (can be negative); the normed lookup clamps separately.
         const nonPracticeScores = _omit(score, [SRE_PRACTICE_DOMAIN, SRE_COMPOSITE_DOMAIN]);
         const sum = Object.values(nonPracticeScores).reduce((acc, val) => acc + (val.sreScore || 0), 0);
-        return Math.max(sum, 0);
+        return sum;
       }
       return 0;
     };
@@ -506,8 +508,10 @@ export class RoarScores {
     }
 
     if (isNormed && this.isValidForScoring) {
-      // Then we find the row in the lookup table that corresponds to the composite score.
-      const myRow = this.lookupTable.find((row) => row.sreScore === compositeScore);
+      // Clamp to 0 for the normed lookup — the table starts at 0.
+      // The actual (possibly negative) compositeScore is still stored as sreScore above.
+      const lookupScore = Math.max(compositeScore ?? 0, 0);
+      const myRow = this.lookupTable.find((row) => row.sreScore === lookupScore);
 
       if (myRow !== undefined) {
         // And add columns in the lookup table except for the grade and sreScore.
