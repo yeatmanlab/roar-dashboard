@@ -79,6 +79,7 @@ describe('GET /me', () => {
       data: {
         id: mockUser.id,
         userType: mockUser.userType,
+        isSuperAdmin: mockUser.isSuperAdmin,
         nameFirst: mockUser.nameFirst,
         nameLast: mockUser.nameLast,
         unsignedAgreements: [],
