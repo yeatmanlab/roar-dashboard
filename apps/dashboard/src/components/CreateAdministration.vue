@@ -102,7 +102,12 @@
         />
 
         <div class="mt-2 flex w-full">
-          <ConsentPicker @consent-selected="handleConsentSelected" />
+          <ConsentPicker
+            :consent-id="existingConsentId"
+            :assent-id="existingAssentId"
+            :no-consent="existingNoConsent"
+            @consent-selected="handleConsentSelected"
+          />
           <small v-if="submitted && v$.consent.$invalid && v$.consent.$invalid" class="p-error mt-2"
             >Please select a consent/assent form.</small
           >
@@ -174,6 +179,7 @@ import { useAuthStore } from '@/store/auth';
 import useAdministrationQuery from '@/composables/queries/useAdministrationQuery';
 import useAdministrationAssigneesQuery from '@/composables/queries/useAdministrationAssigneesQuery';
 import useAdministrationTaskVariantsQuery from '@/composables/queries/useAdministrationTaskVariantsQuery';
+import useAdministrationAgreementsQuery from '@/composables/queries/useAdministrationAgreementsQuery';
 import useTaskVariantsListQuery from '@/composables/queries/useTaskVariantsListQuery';
 import { adaptVariantsForPicker } from '@/helpers/adaptVariantsForPicker';
 import useTaskBundlesQuery from '@/composables/queries/useTaskBundlesQuery';
@@ -183,6 +189,7 @@ import ConsentPicker from './ConsentPicker.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { APP_ROUTES, ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { AGREEMENT_TYPES } from '@/constants/agreements';
 import { usePermissions } from '@/composables/usePermissions';
 import AdministrationDatePicker from '@/components/AdministrationDatePicker';
 const { userCan, Permissions } = usePermissions();
@@ -266,6 +273,27 @@ const { data: existingAssignees } = useAdministrationAssigneesQuery(() => props.
 const { data: existingTaskVariants } = useAdministrationTaskVariantsQuery(() => props.adminId, {
   enabled: fetchAdminitrations,
 });
+
+const { data: existingAgreements } = useAdministrationAgreementsQuery(() => props.adminId, {
+  enabled: fetchAdminitrations,
+});
+
+// Resolve the assigned consent/assent agreements (by type) to pre-fill the picker
+// on edit/duplicate. An administration with no assigned agreements means no
+// consent/assent is required.
+const existingConsentId = computed(
+  () =>
+    (existingAgreements.value ?? []).find((agreement) => agreement.agreementType === AGREEMENT_TYPES.CONSENT)?.id ??
+    null,
+);
+const existingAssentId = computed(
+  () =>
+    (existingAgreements.value ?? []).find((agreement) => agreement.agreementType === AGREEMENT_TYPES.ASSENT)?.id ??
+    null,
+);
+const existingNoConsent = computed(
+  () => Boolean(props.adminId) && Array.isArray(existingAgreements.value) && existingAgreements.value.length === 0,
+);
 
 // Conditions adapters: the read shape (`assigned_if`/`optional_if`) maps to the
 // picker's `assigned`/`optional`, and back out to the write shape
@@ -536,8 +564,8 @@ onMounted(async () => {
 });
 
 watch(
-  [existingAdministration, existingAssignees, existingTaskVariants, allVariants],
-  ([adminInfo, assignees, taskVariants, allVariantInfo]) => {
+  [existingAdministration, existingAssignees, existingTaskVariants, existingAgreements, allVariants],
+  ([adminInfo, assignees, taskVariants, agreements, allVariantInfo]) => {
     if (!adminInfo || _isEmpty(allVariantInfo)) return;
 
     // Exclude name and publicName from duplicate formType
@@ -563,6 +591,20 @@ watch(
     });
 
     state.sequential = adminInfo.isOrdered;
+
+    // Pre-fill consent/assent from the administration's assigned agreements.
+    // No assigned agreements means the administration requires no consent/assent.
+    if (Array.isArray(agreements)) {
+      if (agreements.length === 0) {
+        noConsent.value = 'No Consent';
+        state.consent = 'No Consent';
+        state.assent = 'No Consent';
+      } else {
+        noConsent.value = '';
+        state.consent = agreements.find((agreement) => agreement.agreementType === AGREEMENT_TYPES.CONSENT)?.id ?? null;
+        state.assent = agreements.find((agreement) => agreement.agreementType === AGREEMENT_TYPES.ASSENT)?.id ?? null;
+      }
+    }
   },
   { immediate: true },
 );
