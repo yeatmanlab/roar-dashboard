@@ -26,6 +26,19 @@
     }
   },
   {
+    "variantName": "English — age-based (v5, default)",
+    "params": {
+      "lng": "en",
+      "scoringVersion": 5,
+      "userMode": "default",
+      "recruitment": null,
+      "skipInstructions": true,
+      "consent": true,
+      "storyOption": null,
+      "timerLength": 180000
+    }
+  },
+  {
     "variantName": "Spanish v1",
     "params": {
       "lng": "es",

@@ -2,6 +2,8 @@ import jsPsychHtmlMultiResponse from '@jspsych-contrib/plugin-html-multi-respons
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import store from 'store2';
 import i18next from 'i18next';
+import { AssessmentStage } from '@roar-platform/assessment-schema';
+import { SRE_PRACTICE_DOMAIN } from '@roar-platform/assessment-schema/roar-sre';
 import { jsPsych } from '../jsPsych';
 import '../i18n';
 import { isMobile } from '../experimentHelpers';
@@ -91,8 +93,8 @@ export const practiceTrial = {
   },
   data: {
     // Here is where we specify that we should save the trial to Firestore
-    assessment_stage: 'practice_response',
-    corpusId: 'practice',
+    assessment_stage: AssessmentStage.PRACTICE,
+    corpusId: SRE_PRACTICE_DOMAIN,
     save_trial: true,
   },
   on_finish: (data) => {
@@ -130,8 +132,8 @@ export const practiceTrial = {
 
     jsPsych.data.addDataToLastTrial({
       pid: store.session.get('config').pid,
-      subtask: 'practice',
-      corpusId: 'practice',
+      subtask: SRE_PRACTICE_DOMAIN,
+      corpusId: SRE_PRACTICE_DOMAIN,
       correct: store.session('dataCorrect'),
       trialNumBlock: store.session('indexTracking'),
       item: store.session('practiceCorpus')[store.session('indexTracking')].sentence,

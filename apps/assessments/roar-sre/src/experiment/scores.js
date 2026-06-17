@@ -4,8 +4,10 @@ import _toPairs from 'lodash/toPairs';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
+import { AssessmentStage, TRIAL_COUNT_SCORE_NAMES } from '@roar-platform/assessment-schema';
+import { SRE_COMPOSITE_DOMAIN, SRE_PRACTICE_DOMAIN, SRE_SCORING_VERSION, SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
 
-const getGradeAndAgeForScoring = (scoringVersion = 3) => {
+const getGradeAndAgeForScoring = (scoringVersion = SRE_SCORING_VERSION.V3) => {
   let ageMonths = store.session.get('config').userMetadata?.ageMonths;
   let grade = getGrade(store.session.get('config').userMetadata?.grade);
   const { taskId } = store.session.get('config');
@@ -22,12 +24,12 @@ const getGradeAndAgeForScoring = (scoringVersion = 3) => {
   }
 
   const ageMin = 72;
-  const ageMax = scoringVersion === 3 && taskId === 'sre' ? 180 : 216;
+  const ageMax = scoringVersion === SRE_SCORING_VERSION.V3 && taskId === SRE_TASK_IDS.EN ? 180 : 216;
 
   if (ageMonths < ageMin) ageMonths = ageMin;
   if (ageMonths > ageMax) ageMonths = ageMax;
   // Clamp grade to [1, 12] for v3 SRE if < 1 or > 12. Otherwise, leave it unchanged.
-  if (grade != undefined && taskId === 'sre' && scoringVersion === 3) grade = Math.min(12, Math.max(1, grade));
+  if (grade != undefined && taskId === SRE_TASK_IDS.EN && scoringVersion === SRE_SCORING_VERSION.V3) grade = Math.min(12, Math.max(1, grade));
 
   return {
     ageMonths,
@@ -36,14 +38,14 @@ const getGradeAndAgeForScoring = (scoringVersion = 3) => {
 };
 
 const isValidForScoring = ({ ageMonths, grade, scoringVersion, taskId }) => {
-  if (scoringVersion === 3 && taskId === 'sre') {
+  if (scoringVersion === SRE_SCORING_VERSION.V3 && taskId === SRE_TASK_IDS.EN) {
     // For v3, we only need the grade. It should not be null or undefined.
 
     return grade != undefined;
   }
 
-  if (scoringVersion === 4 || taskId === 'sre-es') {
-    // For sre v4 & sre-es v1, we need the age, or we can estimate the age from the grade
+  if (scoringVersion >= SRE_SCORING_VERSION.V4 || taskId === SRE_TASK_IDS.ES) {
+    // For sre v4+ & sre-es v1, we need the age, or we can estimate the age from the grade
 
     return ageMonths != undefined || grade != undefined;
   }
@@ -51,9 +53,11 @@ const isValidForScoring = ({ ageMonths, grade, scoringVersion, taskId }) => {
   throw new Error('Invalid scoring version');
 };
 
-const useGradeForScoring = ({ scoringVersion, taskId }) => scoringVersion === 3 && taskId === 'sre';
+const useGradeForScoring = ({ scoringVersion, taskId }) =>
+  scoringVersion === SRE_SCORING_VERSION.V3 && taskId === SRE_TASK_IDS.EN;
 
-const useAgeForScoring = ({ scoringVersion, taskId }) => scoringVersion !== 3 || taskId === 'sre-es';
+const useAgeForScoring = ({ scoringVersion, taskId }) =>
+  scoringVersion !== SRE_SCORING_VERSION.V3 || taskId === SRE_TASK_IDS.ES;
 
 export class RoarScores {
   constructor() {
@@ -132,7 +136,7 @@ export class RoarScores {
     }
 
     // Only create AI table promise if not already loaded or loading
-    if (!this.aiTableLoaded && !this.aiTableLoadingPromise && this.taskId === 'sre') {
+    if (!this.aiTableLoaded && !this.aiTableLoadingPromise && this.taskId === SRE_TASK_IDS.EN) {
       this.aiTableLoadingPromise = new Promise((resolve, reject) => {
         Papa.parse(this.aiTableURL, {
           download: true,
@@ -347,9 +351,9 @@ export class RoarScores {
   computedScoreCallback = async (rawScores) => {
     const { taskId, userMode } = store.session.get('config');
 
-    if (!['sre', 'sre-es'].includes(taskId)) return null;
+    if (![SRE_TASK_IDS.EN, SRE_TASK_IDS.ES].includes(taskId)) return null;
 
-    if (taskId === 'sre' && userMode === '90s2BlocksFixedForms' && !this.fixedFormEquatingTableLoaded) {
+    if (taskId === SRE_TASK_IDS.EN && userMode === '90s2BlocksFixedForms' && !this.fixedFormEquatingTableLoaded) {
       if (!this.fixedFormEquatingTablePromise) {
         this.fixedFormEquatingTablePromise = this.initFixedFormEquatingTable();
       }
@@ -378,9 +382,9 @@ export class RoarScores {
         // For the "practice" subtask, we want to use the raw scores associated
         // with the "practice" assessment stage. For all others, we want to use the
         // "test" assessment stage.
-        const scoringStage = subTask === 'practice' ? 'practice' : 'test';
-        const numCorrect = subScore[scoringStage]?.numCorrect || 0;
-        const numIncorrect = subScore[scoringStage]?.numIncorrect || 0;
+        const scoringStage = subTask === SRE_PRACTICE_DOMAIN ? AssessmentStage.PRACTICE : AssessmentStage.TEST;
+        const numCorrect = subScore[scoringStage]?.[TRIAL_COUNT_SCORE_NAMES.NUM_CORRECT] || 0;
+        const numIncorrect = subScore[scoringStage]?.[TRIAL_COUNT_SCORE_NAMES.NUM_INCORRECT] || 0;
         const sreScore = numCorrect - numIncorrect;
         return [subTask, { sreScore }];
       }),
@@ -388,7 +392,7 @@ export class RoarScores {
 
     // this function is to compute the composite score based on corpus (fitting a linear model)
     const computedScoreConversion = (score) => {
-      if (this.taskId === 'sre') {
+      if (this.taskId === SRE_TASK_IDS.EN) {
         // For fixed 90s forms, keep fixedForm* scores raw and equate only the composite score.
         if (userMode === '90s2BlocksFixedForms') {
           return this.getFixedFormEquatedScore(score);
@@ -411,16 +415,18 @@ export class RoarScores {
           const aiRow = this.aiLookupTable.find((row) => row.rawScore === rawScore && row.form === 'aiP2');
           return aiRow.sreScore;
         }
-      } else if (this.taskId === 'sre-es') {
+      } else if (this.taskId === SRE_TASK_IDS.ES) {
         // For Spanish, we omit the practice and composite subtasks and take the sum of the sreScores
-        const nonPracticeScores = _omit(score, ['practice', 'composite']);
+        const nonPracticeScores = _omit(score, [SRE_PRACTICE_DOMAIN, SRE_COMPOSITE_DOMAIN]);
         const sum = Object.values(nonPracticeScores).reduce((acc, val) => acc + (val.sreScore || 0), 0);
         return Math.max(sum, 0);
       }
       return 0;
     };
 
-    const isNormed = this.taskId === 'sre' || (this.taskId === 'sre-es' && this.scoringVersion >= 1);
+    const isNormed =
+      this.taskId === SRE_TASK_IDS.EN ||
+      (this.taskId === SRE_TASK_IDS.ES && this.scoringVersion >= SRE_SCORING_VERSION.V1);
 
     if (isNormed && this.isValidForScoring === undefined) {
       const { ageMonths, grade } = getGradeAndAgeForScoring(this.scoringVersion);
@@ -465,7 +471,7 @@ export class RoarScores {
       console.error('Composite score conversion failed; writing raw scores only:', error?.message || error);
     }
     if (compositeScore != null) {
-      computedScores.composite = { sreScore: compositeScore };
+      computedScores[SRE_COMPOSITE_DOMAIN] = { sreScore: compositeScore };
     }
 
     if (isNormed && this.isValidForScoring) {
@@ -476,7 +482,7 @@ export class RoarScores {
         // And add columns in the lookup table except for the grade and sreScore.
         const { grade, ageMonths, sreScore, ...normedScores } = myRow;
 
-        computedScores.composite = {
+        computedScores[SRE_COMPOSITE_DOMAIN] = {
           sreScore: compositeScore,
           ...normedScores,
           scoringVersion: this.scoringVersion,

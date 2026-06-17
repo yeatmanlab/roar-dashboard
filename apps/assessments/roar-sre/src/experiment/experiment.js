@@ -1,5 +1,3 @@
-// Import necessary for async in the top level of the experiment script
-import 'regenerator-runtime/runtime';
 import i18next from 'i18next';
 import {
   ValidityEvaluator,
@@ -7,6 +5,7 @@ import {
   generateAssetObject,
   createPreloadTrials,
 } from '@bdelab/roar-utils';
+import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/firekit';
 import { jsPsych } from './jsPsych';
 import { initRoarJsPsych, initRoarTimeline } from './config/config';
 import { intro, postPracticeTrials } from './trials/introduction';
@@ -24,14 +23,12 @@ export let mediaAssets;
 
 export let preloadTrials;
 
-export function buildExperiment(firekit, config) {
-  // 'https://storage.googleapis.com/roar-sre';
-
+export function buildExperiment(config) {
   mediaAssets = generateAssetObject(assets, bucketURI, i18next.language);
   preloadTrials = createPreloadTrials(assets, bucketURI, i18next.language).default;
   preloadTrials.message = i18next.t('loading');
   initRoarJsPsych(config);
-  const initialTimeline = initRoarTimeline(firekit);
+  const initialTimeline = initRoarTimeline(config);
 
   const sreEvaluateValidity = createEvaluateValidity({
     responseTimeLowThreshold: 1000,
@@ -42,10 +39,7 @@ export function buildExperiment(firekit, config) {
   });
 
   const sreHandleEngagementFlags = (flags, reliable) => {
-    if (config.firekit.run.started) {
-      return config.firekit.updateEngagementFlags(flags, reliable);
-    }
-    return null;
+    return updateEngagementFlags(flags, reliable);
   };
 
   sreValidityEvaluator = new ValidityEvaluator({
