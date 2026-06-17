@@ -122,36 +122,98 @@ const ClassificationSchema = z.discriminatedUnion('type', [
 // --- Subscores ---
 
 /**
- * Per-subscore field-name conventions for tasks that emit sub-skill breakdowns
- * (PA: FSM/LSM/DEL; phonics: cvc/digraph/initial_blend/...) for individual
- * score report.
+ * The `subscores` block declares an ORDERED list of columns for a task's
+ * sub-skill breakdown. Two endpoints consume it:
  *
- * Each entry declares the `name` value used in `app_assessment_fdw.run_scores`
- * for that subscore and the kind of data we expect:
+ * - The individual-student-report (`extractSubscoresFromScoreMap`) surfaces the
+ *   per-subtask `itemLevel` columns flagged as `subskill` (the default), keyed
+ *   by `key` (e.g. `FSM`/`LSM`/`DEL` for PA, `cvc`/`digraph`/… for phonics).
+ * - The task-subscores endpoint renders the full ordered column list, using
+ *   `key` + `label` as table-header metadata and the per-`kind` value source
+ *   below to populate cells.
  *
- * - `correctName` — the score row whose `value` holds the correct count.
- * - `attemptedName` — the score row whose `value` holds the attempted count.
- * - `percentCorrectName` — optional. When provided, the service uses this
- *   pre-computed percent rather than re-deriving from correct/attempted.
+ * This block replaces the standalone `subscore-table.registry` that previously
+ * hard-coded these columns in the backend. Field-name strings come from the
+ * shared `@roar-platform/assessment-schema` package for verified assessments
+ * (PA, phonics). Best-guess names for not-yet-migrated assessments (letter,
+ * fluency, roam-alpaca) are flagged `provisional: true` and will move into
+ * assessment-schema as each assessment lands in the monorepo — the end state is
+ * zero hard-coded score-name strings in the backend.
  *
- * Names are matched case-sensitively against `run_scores.name`. The response
- * key (e.g., `FSM`, `cvc`) is the map key used in this config — that's what
- * the API surfaces in the per-task `subscores` object.
+ * Column kinds:
+ * - `itemLevel`         — combines `correctName` + `attemptedName` into a
+ *                         `"correct/attempted"` string. `percentCorrectName`,
+ *                         when present, drives numeric sort/filter. `subskill`
+ *                         (default true) marks columns forming the per-subtask
+ *                         breakdown surfaced by the individual-student-report;
+ *                         aggregate columns like a task "Total" set it false.
+ * - `number`            — single `run_scores.name` parsed as a number,
+ *                         optionally `round`ed for display.
+ * - `stringPassthrough` — single `run_scores.name` whose string value is
+ *                         forwarded as-is (e.g. comma-separated "to work on"
+ *                         lists).
+ * - `paSkillsToWorkOn`  — computed PA-only column; value derived from the PA
+ *                         subtask breakdown by the scoring service.
+ *
+ * Names are matched case-sensitively against `app_assessment_fdw.run_scores.name`.
  */
-const SubscoreFieldEntrySchema = z.object({
+const subscoreColumnBaseFields = {
+  /** Stable response key; appears in the per-task `subscores` object and as a `subscoreColumns[].key`. */
+  key: z.string(),
+  /** Human-readable column header label. */
+  label: z.string(),
+  /** Flags a best-guess column for an assessment not yet migrated into assessment-schema. */
+  provisional: z.boolean().optional(),
+};
+
+const ItemLevelSubscoreColumnSchema = z.object({
+  kind: z.literal('itemLevel'),
+  ...subscoreColumnBaseFields,
   correctName: z.string(),
   attemptedName: z.string(),
   percentCorrectName: z.string().optional(),
-  label: z.string().optional(),
-  /** Uppercase domain key matching run_scores.domain for this subscore (e.g. FSM, LSM, DEL). */
+  /**
+   * Uppercase domain key matching `run_scores.domain` for this subscore (e.g.
+   * FSM, LSM, DEL, composite). Only set for tasks that emit GENERIC score names
+   * under per-subtask domains (PA: numCorrect/numAttempted/percentCorrect under
+   * FSM/LSM/DEL). When set, lookups go through the domain-indexed score map;
+   * tasks with distinct per-skill names (phonics, etc.) omit it.
+   */
   domain: z.string().optional(),
+  /** Whether this column is part of the per-subtask sub-skill breakdown (default true). */
+  subskill: z.boolean().optional().default(true),
 });
 
+const NumberSubscoreColumnSchema = z.object({
+  kind: z.literal('number'),
+  ...subscoreColumnBaseFields,
+  name: z.string(),
+  round: z.boolean().optional(),
+});
+
+const StringPassthroughSubscoreColumnSchema = z.object({
+  kind: z.literal('stringPassthrough'),
+  ...subscoreColumnBaseFields,
+  name: z.string(),
+});
+
+const PaSkillsToWorkOnSubscoreColumnSchema = z.object({
+  kind: z.literal('paSkillsToWorkOn'),
+  ...subscoreColumnBaseFields,
+});
+
+const SubscoreColumnSchema = z.discriminatedUnion('kind', [
+  ItemLevelSubscoreColumnSchema,
+  NumberSubscoreColumnSchema,
+  StringPassthroughSubscoreColumnSchema,
+  PaSkillsToWorkOnSubscoreColumnSchema,
+]);
+
 /**
- * Subscores config block. The top-level `key` is the response key (e.g., `FSM`,
- * `cvc`) and the value declares the run_scores names that populate it.
+ * Subscores config block: an ORDERED array of columns. Order is significant —
+ * it is the order the task-subscores table renders columns in.
  */
-const SubscoresSchema = z.record(z.string(), SubscoreFieldEntrySchema);
+const SubscoresSchema = z.array(SubscoreColumnSchema).min(1);
 
 // --- Top-level scoring config ---
 
@@ -176,3 +238,10 @@ export type FieldNameValue = z.infer<typeof FieldNameValueSchema>;
 export type VersionedFieldName = z.infer<typeof VersionedFieldNameSchema>;
 export type Classification = z.infer<typeof ClassificationSchema>;
 export type PercentileThenRawscoreClassification = z.infer<typeof PercentileThenRawscoreClassificationSchema>;
+
+// Subscore column types (consumed by the scoring service helpers + report service)
+export type SubscoreColumn = z.infer<typeof SubscoreColumnSchema>;
+export type ItemLevelSubscoreColumn = z.infer<typeof ItemLevelSubscoreColumnSchema>;
+export type NumberSubscoreColumn = z.infer<typeof NumberSubscoreColumnSchema>;
+export type StringPassthroughSubscoreColumn = z.infer<typeof StringPassthroughSubscoreColumnSchema>;
+export type PaSkillsToWorkOnSubscoreColumn = z.infer<typeof PaSkillsToWorkOnSubscoreColumnSchema>;

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import { ReportService, buildProgressMap, groupVariantsByTaskId } from './report.service';
+import { ReportService, buildProgressMap, groupVariantsByTaskId, extractSubscoresFromScoreMap } from './report.service';
 import { AdministrationService } from '../administration/administration.service';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { UserFactory } from '../../test-support/factories/user.factory';
@@ -23,6 +23,7 @@ import type {
   ScoreFacetsInput,
   StudentScoresInput,
   IndividualStudentReportInput,
+  TaskSubscoresInput,
 } from './report.types';
 import type {
   ReportTaskMeta,
@@ -4544,5 +4545,327 @@ describe('ReportService', () => {
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
       });
     });
+  });
+
+  describe('listTaskSubscores', () => {
+    const PA_TASK_ID = TASK_ID_3; // taskSlug 'pa', variant VARIANT_ID_3
+    const SWR_TASK_ID = TASK_ID_1; // taskSlug 'swr' — no subscores block
+
+    function subscoresQuery(overrides: Partial<TaskSubscoresInput> = {}): TaskSubscoresInput {
+      return {
+        scopeType: 'district',
+        scopeId: 'district-uuid-1',
+        page: 1,
+        perPage: 25,
+        sortBy: 'user.lastName',
+        sortOrder: 'asc',
+        filter: [],
+        ...overrides,
+      };
+    }
+
+    // A PA student row: FSM 50% and DEL 60% are below the ~78.9% threshold
+    // (skillsToWorkOn), LSM 90% is above. numCorrect/numAttempted feed `total`.
+    const paRow = {
+      userId: 'student-1',
+      assessmentPid: 'pid-1',
+      username: 'jdoe',
+      email: 'jdoe@school.edu',
+      nameFirst: 'Jane',
+      nameLast: 'Doe',
+      grade: '1',
+      // PA emits GENERIC names (numCorrect/numAttempted/percentCorrect) under
+      // per-subtask domains; the flat map is unused for PA, the domain map
+      // carries the real values. FSM 50% and DEL 60% are below the ~78.9%
+      // skillsToWorkOn threshold; LSM 90% is above.
+      scores: new Map([[VARIANT_ID_3, new Map<string, string>()]]),
+      domainScores: new Map([
+        [
+          VARIANT_ID_3,
+          new Map([
+            [
+              'FSM',
+              new Map([
+                ['numCorrect', '10'],
+                ['numAttempted', '20'],
+                ['percentCorrect', '50'],
+              ]),
+            ],
+            [
+              'LSM',
+              new Map([
+                ['numCorrect', '18'],
+                ['numAttempted', '20'],
+                ['percentCorrect', '90'],
+              ]),
+            ],
+            [
+              'DEL',
+              new Map([
+                ['numCorrect', '12'],
+                ['numAttempted', '20'],
+                ['percentCorrect', '60'],
+              ]),
+            ],
+            [
+              'composite',
+              new Map([
+                ['numCorrect', '40'],
+                ['numAttempted', '60'],
+              ]),
+            ],
+          ]),
+        ],
+      ]),
+    };
+
+    function setupPaPage() {
+      mockReportRepository.getTaskSubscoreStudents.mockResolvedValue({ items: [paRow], totalItems: 1 });
+      mockReportRepository.getSchoolNamesForUsers.mockResolvedValue(new Map([['student-1', 'Lincoln Elementary']]));
+    }
+
+    it('returns 404 when the administration does not exist', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(superAdminAuth, testAdministrationId, PA_TASK_ID, subscoresQuery()),
+      ).rejects.toMatchObject({ statusCode: StatusCodes.NOT_FOUND });
+    });
+
+    it('returns 403 when the admin FGA check denies a non-super-admin', async () => {
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError('denied', { statusCode: StatusCodes.FORBIDDEN, code: ApiErrorCode.AUTH_FORBIDDEN }),
+      );
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(teacherAuth, testAdministrationId, PA_TASK_ID, subscoresQuery()),
+      ).rejects.toMatchObject({ statusCode: StatusCodes.FORBIDDEN });
+    });
+
+    it('returns 400 when the requested scope is not assigned to the administration', async () => {
+      mockReportRepository.isScopeAssignedToAdministration.mockResolvedValue(false);
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(superAdminAuth, testAdministrationId, PA_TASK_ID, subscoresQuery()),
+      ).rejects.toMatchObject({ statusCode: StatusCodes.BAD_REQUEST });
+    });
+
+    it('returns 404 when the task is not part of the administration', async () => {
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(
+          superAdminAuth,
+          testAdministrationId,
+          '99999999-9999-9999-9999-999999999999',
+          subscoresQuery(),
+        ),
+      ).rejects.toMatchObject({ statusCode: StatusCodes.NOT_FOUND });
+    });
+
+    it('returns 400 for a task with no subscores block (e.g. SWR)', async () => {
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(superAdminAuth, testAdministrationId, SWR_TASK_ID, subscoresQuery()),
+      ).rejects.toMatchObject({ statusCode: StatusCodes.BAD_REQUEST });
+    });
+
+    it('returns 400 for an unknown subscores sort key', async () => {
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(
+          superAdminAuth,
+          testAdministrationId,
+          PA_TASK_ID,
+          subscoresQuery({ sortBy: 'subscores.nope' }),
+        ),
+      ).rejects.toMatchObject({ statusCode: StatusCodes.BAD_REQUEST });
+    });
+
+    it('returns 400 when sorting by a column with no numeric form (paSkillsToWorkOn)', async () => {
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(
+          superAdminAuth,
+          testAdministrationId,
+          PA_TASK_ID,
+          subscoresQuery({ sortBy: 'subscores.skillsToWorkOn' }),
+        ),
+      ).rejects.toMatchObject({ statusCode: StatusCodes.BAD_REQUEST });
+    });
+
+    it('returns 400 for a non-numeric operator on a subscore filter', async () => {
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(
+          superAdminAuth,
+          testAdministrationId,
+          PA_TASK_ID,
+          subscoresQuery({ filter: [{ field: 'subscores.FSM', operator: 'contains', value: 'x' }] }),
+        ),
+      ).rejects.toMatchObject({ statusCode: StatusCodes.BAD_REQUEST });
+    });
+
+    it('returns PA columns + formatted rows, computing skillsToWorkOn and the district schoolName', async () => {
+      setupPaPage();
+      const service = createService();
+      const result = await service.listTaskSubscores(
+        superAdminAuth,
+        testAdministrationId,
+        PA_TASK_ID,
+        subscoresQuery(),
+      );
+
+      expect(result.task).toMatchObject({ taskId: PA_TASK_ID, taskSlug: 'pa' });
+      expect(result.subscoreColumns).toEqual([
+        { key: 'FSM', label: 'First Sound' },
+        { key: 'LSM', label: 'Last Sound' },
+        { key: 'DEL', label: 'Deletion' },
+        { key: 'total', label: 'Total' },
+        { key: 'skillsToWorkOn', label: 'Skills To Work On' },
+      ]);
+      expect(result.totalItems).toBe(1);
+      const row = result.items[0]!;
+      expect(row.subscores).toMatchObject({
+        FSM: '10/20',
+        LSM: '18/20',
+        DEL: '12/20',
+        total: '40/60',
+        skillsToWorkOn: 'FSM, DEL',
+      });
+      expect(row.user.firstName).toBe('Jane');
+      expect(row.user.schoolName).toBe('Lincoln Elementary');
+    });
+
+    it('omits schoolName and skips the lookup for non-district scope', async () => {
+      setupPaPage();
+      const service = createService();
+      const result = await service.listTaskSubscores(
+        superAdminAuth,
+        testAdministrationId,
+        PA_TASK_ID,
+        subscoresQuery({ scopeType: 'school', scopeId: 'school-uuid-1' }),
+      );
+      expect(result.items[0]!.user).not.toHaveProperty('schoolName');
+      expect(mockReportRepository.getSchoolNamesForUsers).not.toHaveBeenCalled();
+    });
+
+    it('forwards a subscores sort to the repository as the column percent-correct name', async () => {
+      setupPaPage();
+      const service = createService();
+      await service.listTaskSubscores(
+        superAdminAuth,
+        testAdministrationId,
+        PA_TASK_ID,
+        subscoresQuery({ sortBy: 'subscores.FSM' }),
+      );
+      expect(mockReportRepository.getTaskSubscoreStudents).toHaveBeenCalledWith(
+        testAdministrationId,
+        { scopeType: 'district', scopeId: 'district-uuid-1' },
+        expect.anything(),
+        [VARIANT_ID_3],
+        expect.objectContaining({ page: 1, perPage: 25 }),
+        undefined,
+        { scoreName: 'percentCorrect', scoreDomain: 'FSM' },
+        [],
+      );
+    });
+
+    it('forwards a numeric subscores filter to the repository', async () => {
+      setupPaPage();
+      const service = createService();
+      await service.listTaskSubscores(
+        superAdminAuth,
+        testAdministrationId,
+        PA_TASK_ID,
+        subscoresQuery({ filter: [{ field: 'subscores.FSM', operator: 'gte', value: '80' }] }),
+      );
+      expect(mockReportRepository.getTaskSubscoreStudents).toHaveBeenCalledWith(
+        testAdministrationId,
+        { scopeType: 'district', scopeId: 'district-uuid-1' },
+        expect.anything(),
+        [VARIANT_ID_3],
+        expect.anything(),
+        undefined,
+        null,
+        [{ scoreName: 'percentCorrect', scoreDomain: 'FSM', operator: 'gte', value: 80 }],
+      );
+    });
+
+    it('wraps an unexpected repository error in a 500', async () => {
+      mockReportRepository.getTaskSubscoreStudents.mockRejectedValue(new Error('boom'));
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(superAdminAuth, testAdministrationId, PA_TASK_ID, subscoresQuery()),
+      ).rejects.toMatchObject({ statusCode: StatusCodes.INTERNAL_SERVER_ERROR });
+    });
+  });
+});
+
+describe('extractSubscoresFromScoreMap (config-driven back-compat)', () => {
+  it('returns only the PA per-subtask sub-skills (FSM/LSM/DEL), excluding total and skillsToWorkOn', () => {
+    // PA emits generic names (numCorrect/numAttempted/percentCorrect) under
+    // per-subtask domains, so the breakdown is read from the domain map.
+    const domainScoreMap = new Map([
+      [
+        'FSM',
+        new Map([
+          ['numCorrect', '10'],
+          ['numAttempted', '20'],
+          ['percentCorrect', '50'],
+        ]),
+      ],
+      [
+        'LSM',
+        new Map([
+          ['numCorrect', '18'],
+          ['numAttempted', '20'],
+          ['percentCorrect', '90'],
+        ]),
+      ],
+      [
+        'DEL',
+        new Map([
+          ['numCorrect', '12'],
+          ['numAttempted', '20'],
+          ['percentCorrect', '60'],
+        ]),
+      ],
+      [
+        'composite',
+        new Map([
+          ['numCorrect', '40'],
+          ['numAttempted', '60'],
+        ]),
+      ],
+    ]);
+    const result = extractSubscoresFromScoreMap(new Map(), 'pa', domainScoreMap);
+    expect(result).not.toBeNull();
+    expect(Object.keys(result!).sort()).toEqual(['DEL', 'FSM', 'LSM']);
+    expect(result!.FSM).toMatchObject({ correct: 10, attempted: 20, percentCorrect: 50 });
+  });
+
+  it('returns the phonics sub-skills with derived percentCorrect (no per-skill percent name), excluding the % total', () => {
+    const scoreMap = new Map([
+      ['cvcCorrect', '8'],
+      ['cvcAttempted', '10'],
+      ['digraphCorrect', '5'],
+      ['digraphAttempted', '10'],
+    ]);
+    const result = extractSubscoresFromScoreMap(scoreMap, 'phonics');
+    expect(result).not.toBeNull();
+    expect(result!.cvc).toMatchObject({ correct: 8, attempted: 10, percentCorrect: 80 });
+    // the `number` totalPercentCorrect column is task-subscores-table-only
+    expect(result).not.toHaveProperty('totalPercentCorrect');
+  });
+
+  it('returns null for tasks whose subscores block has no per-subtask itemLevel columns (letter, fluency, roam-alpaca)', () => {
+    expect(extractSubscoresFromScoreMap(new Map([['lowerCaseScore', '22/26']]), 'letter')).toBeNull();
+    expect(extractSubscoresFromScoreMap(new Map([['frRawScore', '12']]), 'fluency-arf')).toBeNull();
+    expect(extractSubscoresFromScoreMap(new Map([['roarScore', '30']]), 'roam-alpaca')).toBeNull();
+  });
+
+  it('returns null for tasks with no subscores config (SWR, unknown)', () => {
+    expect(extractSubscoresFromScoreMap(new Map(), 'swr')).toBeNull();
+    expect(extractSubscoresFromScoreMap(new Map(), 'unknown-task')).toBeNull();
   });
 });

@@ -10,8 +10,9 @@ import sreConfig from './configs/sre.json';
 import sreEsConfig from './configs/sre-es.json';
 import paConfig from './configs/pa';
 import letterConfig from './configs/letter.json';
-import phonicsConfig from './configs/phonics.json';
+import phonicsConfig from './configs/phonics';
 import roamAlpacaConfig from './configs/roam-alpaca.json';
+import fluencyConfig from './configs/fluency.json';
 
 const RAW_CONFIGS = [
   swrConfig,
@@ -25,6 +26,7 @@ const RAW_CONFIGS = [
   letterConfig,
   phonicsConfig,
   roamAlpacaConfig,
+  fluencyConfig,
 ];
 
 /**

@@ -59,6 +59,7 @@ describe('AdministrationsController', () => {
   const mockGetUserAdministration = vi.fn();
   const mockListStudentScores = vi.fn();
   const mockGetIndividualStudentReport = vi.fn();
+  const mockListTaskSubscores = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -88,6 +89,7 @@ describe('AdministrationsController', () => {
       listStudentScores: mockListStudentScores,
       getIndividualStudentReport: mockGetIndividualStudentReport,
       getGuardianStudentReport: vi.fn(),
+      listTaskSubscores: mockListTaskSubscores,
     });
   });
   describe('list', () => {
@@ -2506,6 +2508,90 @@ describe('AdministrationsController', () => {
         targetUserId,
         reportQuery,
       );
+    });
+  });
+
+  describe('listTaskSubscores', () => {
+    const testAdminId = 'admin-uuid-1';
+    const testTaskId = 'task-uuid-1';
+
+    const subscoresQuery = {
+      scopeType: 'district' as const,
+      scopeId: 'district-uuid-1',
+      page: 1,
+      perPage: 25,
+      sortBy: 'user.lastName',
+      sortOrder: 'asc' as const,
+      filter: [],
+    };
+
+    const testResult = {
+      task: { taskId: testTaskId, taskSlug: 'pa', taskName: 'ROAR - Phoneme', orderIndex: 2 },
+      subscoreColumns: [
+        { key: 'FSM', label: 'First Sound' },
+        { key: 'skillsToWorkOn', label: 'Skills To Work On' },
+      ],
+      items: [
+        {
+          user: {
+            userId: 'user-1',
+            assessmentPid: null,
+            username: 'jdoe',
+            email: 'jdoe@school.edu',
+            firstName: 'Jane',
+            lastName: 'Doe',
+            grade: '1',
+            schoolName: 'Lincoln Elementary',
+          },
+          subscores: { FSM: '10/20', skillsToWorkOn: 'FSM' },
+        },
+      ],
+      totalItems: 50,
+    };
+
+    it('returns 200 with task metadata, columns, items, and computed totalPages', async () => {
+      mockListTaskSubscores.mockResolvedValue(testResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listTaskSubscores(mockAuthContext, testAdminId, testTaskId, subscoresQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.task).toMatchObject({ taskId: testTaskId, taskSlug: 'pa' });
+      expect(data.subscoreColumns).toHaveLength(2);
+      expect(data.items[0]!.subscores).toMatchObject({ FSM: '10/20', skillsToWorkOn: 'FSM' });
+      expect(data.pagination).toEqual({ page: 1, perPage: 25, totalItems: 50, totalPages: 2 });
+    });
+
+    it('passes the service the auth context, admin id, task id, and query', async () => {
+      mockListTaskSubscores.mockResolvedValue(testResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      await Controller.listTaskSubscores(mockAuthContext, testAdminId, testTaskId, subscoresQuery);
+
+      expect(mockListTaskSubscores).toHaveBeenCalledWith(mockAuthContext, testAdminId, testTaskId, subscoresQuery);
+    });
+
+    it.each([
+      ['400', StatusCodes.BAD_REQUEST, ApiErrorCode.REQUEST_VALIDATION_FAILED],
+      ['403', StatusCodes.FORBIDDEN, ApiErrorCode.AUTH_FORBIDDEN],
+      ['404', StatusCodes.NOT_FOUND, ApiErrorCode.RESOURCE_NOT_FOUND],
+      ['500', StatusCodes.INTERNAL_SERVER_ERROR, ApiErrorCode.DATABASE_QUERY_FAILED],
+    ])('maps an ApiError to a typed %s error response', async (_label, status, code) => {
+      mockListTaskSubscores.mockRejectedValue(new ApiError('err', { statusCode: status, code }));
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listTaskSubscores(mockAuthContext, testAdminId, testTaskId, subscoresQuery);
+
+      expect(result.status).toBe(status);
+    });
+
+    it('re-throws non-ApiError errors', async () => {
+      mockListTaskSubscores.mockRejectedValue(new Error('unexpected'));
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      await expect(
+        Controller.listTaskSubscores(mockAuthContext, testAdminId, testTaskId, subscoresQuery),
+      ).rejects.toThrow('unexpected');
     });
   });
 });

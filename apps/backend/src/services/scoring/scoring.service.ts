@@ -1,5 +1,5 @@
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
-import type { ScoringConfig, FieldNameValue, SCORE_FIELD_TYPES } from './scoring.config-schema';
+import type { ScoringConfig, FieldNameValue, SCORE_FIELD_TYPES, SubscoreColumn } from './scoring.config-schema';
 import { getScoringConfig } from './scoring.config-registry';
 import type { SupportLevel, ScoringInput, RawScoreThreshold, ScoreFieldResolution } from './scoring.types';
 
@@ -286,6 +286,108 @@ export function getSupportLevelFieldName(taskSlug: string): string | null {
 export function getSubscoresConfig(taskSlug: string): ScoringConfig['subscores'] | null {
   const config = getScoringConfig(taskSlug);
   return config?.subscores ?? null;
+}
+
+/**
+ * Public column metadata (`{ key, label }`) for a task's subscore table, in
+ * declared order. Returns `null` for tasks without a subscores block.
+ *
+ * @param taskSlug - The task slug
+ * @returns Ordered public column metadata, or `null` if the task has no subscores
+ */
+export function getPublicSubscoreColumns(taskSlug: string): Array<{ key: string; label: string }> | null {
+  const columns = getSubscoresConfig(taskSlug);
+  if (!columns) return null;
+  return columns.map(({ key, label }) => ({ key, label }));
+}
+
+/**
+ * For a column key on a task, return the `run_scores.name` that carries the
+ * column's numeric representation — used by the repository to compile numeric
+ * sort/filter SQL on `subscores.<key>` paths.
+ *
+ * Returns `null` when the column has no numeric form: a `stringPassthrough`
+ * column, the computed `paSkillsToWorkOn` column, an `itemLevel` column without
+ * a `percentCorrectName`, or an unknown task/key combination.
+ *
+ * @param taskSlug - The task slug
+ * @param columnKey - The response-facing column key
+ * @returns The numeric `run_scores.name`, or `null` if not numerically sortable/filterable
+ */
+export function getNumericFieldForSubscore(
+  taskSlug: string,
+  columnKey: string,
+): { scoreName: string; scoreDomain?: string } | null {
+  const column = getSubscoresConfig(taskSlug)?.find((c) => c.key === columnKey);
+  if (!column) return null;
+  if (column.kind === 'itemLevel') {
+    if (!column.percentCorrectName) return null;
+    // Domain-bearing columns (PA) carry the domain so the repository can match
+    // (name, domain); distinct-name columns match on name alone.
+    return column.domain
+      ? { scoreName: column.percentCorrectName, scoreDomain: column.domain }
+      : { scoreName: column.percentCorrectName };
+  }
+  if (column.kind === 'number') return { scoreName: column.name };
+  return null;
+}
+
+/**
+ * Resolve one subscore column's display value for a single student row.
+ *
+ * - `itemLevel`         → `"correct/attempted"` (missing halves default to
+ *                         `"0"`; raw strings preserved so nuance like `">99"`
+ *                         survives display). `null` when both halves are absent.
+ * - `number`            → parsed number, optionally rounded; `null` when absent
+ *                         or non-numeric.
+ * - `stringPassthrough` → the raw string, or `null` when absent.
+ * - `paSkillsToWorkOn`  → comma-joined `paSkillsToWorkOn` list, or `null` when
+ *                         the list is empty/absent.
+ *
+ * @param args.column - The column definition to evaluate
+ * @param args.scoreMap - The student's `run_scores.name → value` map for the run
+ * @param args.paSkillsToWorkOn - PA-only precomputed skills-to-work-on list
+ * @returns The formatted cell value, or `null` when the source data is missing
+ */
+export function formatTaskSubscoreColumnValue(args: {
+  column: SubscoreColumn;
+  scoreMap: Map<string, string>;
+  /** Domain-indexed scores (domain -> name -> value) for tasks whose columns declare a `domain` (PA). */
+  domainScoreMap?: Map<string, Map<string, string>>;
+  paSkillsToWorkOn?: string[] | null;
+}): string | number | null {
+  const { column, scoreMap, domainScoreMap, paSkillsToWorkOn } = args;
+
+  switch (column.kind) {
+    case 'itemLevel': {
+      // Domain-bearing columns (PA's generic names under FSM/LSM/DEL/composite)
+      // look up via the domain map; distinct-name columns use the flat map.
+      const lookup: Map<string, string> | undefined =
+        column.domain && domainScoreMap ? domainScoreMap.get(column.domain) : scoreMap;
+      const correctRaw = lookup?.get(column.correctName);
+      const attemptedRaw = lookup?.get(column.attemptedName);
+      if (correctRaw === undefined && attemptedRaw === undefined) return null;
+      // Preserve raw strings so display nuance like ">99" / "<1" survives, and
+      // default missing halves to "0" so a partial row is still renderable.
+      return `${correctRaw ?? '0'}/${attemptedRaw ?? '0'}`;
+    }
+    case 'number': {
+      const raw = scoreMap.get(column.name);
+      if (raw === undefined) return null;
+      const numeric = Number(raw);
+      if (Number.isNaN(numeric)) return null;
+      return column.round ? Math.round(numeric) : numeric;
+    }
+    case 'stringPassthrough': {
+      const raw = scoreMap.get(column.name);
+      if (raw === undefined) return null;
+      return raw;
+    }
+    case 'paSkillsToWorkOn': {
+      if (!paSkillsToWorkOn || paSkillsToWorkOn.length === 0) return null;
+      return paSkillsToWorkOn.join(', ');
+    }
+  }
 }
 
 // --- PA-specific constants ---

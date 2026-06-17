@@ -8,8 +8,9 @@ import sreConfig from './configs/sre.json';
 import sreEsConfig from './configs/sre-es.json';
 import paConfig from './configs/pa';
 import letterConfig from './configs/letter.json';
-import phonicsConfig from './configs/phonics.json';
+import phonicsConfig from './configs/phonics';
 import roamAlpacaConfig from './configs/roam-alpaca.json';
+import fluencyConfig from './configs/fluency.json';
 
 const ALL_RAW_CONFIGS = [
   { name: 'swr', config: swrConfig },
@@ -20,6 +21,7 @@ const ALL_RAW_CONFIGS = [
   { name: 'letter', config: letterConfig },
   { name: 'phonics', config: phonicsConfig },
   { name: 'roam-alpaca', config: roamAlpacaConfig },
+  { name: 'fluency', config: fluencyConfig },
 ];
 
 describe('scoring config validation', () => {
@@ -49,6 +51,10 @@ describe('scoring config validation', () => {
       'letter-en-ca',
       'phonics',
       'roam-alpaca',
+      'fluency-arf',
+      'fluency-calf',
+      'fluency-arf-es',
+      'fluency-calf-es',
     ];
     const registered = getRegisteredSlugs();
     for (const slug of expected) {

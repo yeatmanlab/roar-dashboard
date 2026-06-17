@@ -64,6 +64,11 @@ function individualStudentReportPath(administrationId: string, userId: string) {
   return `/v1/administrations/${administrationId}/reports/scores/students/${userId}`;
 }
 
+/** Builds the task-subscores endpoint path. */
+function taskSubscoresPath(administrationId: string, taskId: string) {
+  return `/v1/administrations/${administrationId}/reports/scores/tasks/${taskId}`;
+}
+
 /** Default query params for a valid request. */
 function defaultQuery() {
   return {
@@ -3319,6 +3324,135 @@ describe('includeUnenrolledStudents toggle wiring — #1792', () => {
 
       expect(res.status).toBe(StatusCodes.OK);
       expect(res.body.data.student.userId).toBe(withdrawnStudentId);
+    });
+  });
+});
+
+describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
+  // baseFixture.task uses an auto-generated slug (task-N-xxxxx) that is not in
+  // the subscore registry, so authorized callers reach the config-validation
+  // 400 ("task without subscores") rather than a 200. That is sufficient to
+  // prove authorization does NOT gate the request — the registry/config does.
+  // A 200 happy path needs a registered-slug task variant in baseFixture; see
+  // the PR's "known follow-ups".
+  const NON_EXISTENT_UUID = '00000000-0000-0000-0000-000000000000';
+
+  function subscoresQuery() {
+    return { scopeType: 'district', scopeId: baseFixture.district.id, page: 1, perPage: 25 };
+  }
+
+  describe('authorization', () => {
+    it('returns 401 without auth', async () => {
+      const res = await expectRoute(
+        'GET',
+        taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id),
+      )
+        .unauthenticated()
+        .toReturn(401);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('student tier returns 403', async () => {
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier returns 403', async () => {
+      authenticateAs(tiers.caregiver);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator (teacher) at district scope is forbidden', async () => {
+      authenticateAs(tiers.educator);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('returns 403 for an admin in a different district', async () => {
+      authenticateAs(baseFixture.districtBAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToSchoolA.id, baseFixture.task.id))
+        .query({ scopeType: 'school', scopeId: baseFixture.schoolA.id, page: 1, perPage: 25 })
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('super admin passes auth and lands the config-validation 400 (auth does not gate)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('admin at district passes auth and lands the config-validation 400', async () => {
+      authenticateAs(tiers.admin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('principal at school A passes auth at school scope (client error past auth, not 403)', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToSchoolA.id, baseFixture.task.id))
+        .query({ scopeType: 'school', scopeId: baseFixture.schoolA.id, page: 1, perPage: 25 })
+        .set('Authorization', 'Bearer token');
+      expect([StatusCodes.BAD_REQUEST, StatusCodes.NOT_FOUND]).toContain(res.status);
+    });
+  });
+
+  describe('error paths', () => {
+    it('returns 404 for an unknown administration', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(NON_EXISTENT_UUID, baseFixture.task.id))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('returns 404 when the task is not part of the administration', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, NON_EXISTENT_UUID))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('returns 400 when scopeType is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query({ scopeId: baseFixture.district.id, page: 1, perPage: 25 })
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 for a malformed taskId', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, 'not-a-uuid'))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
   });
 });
