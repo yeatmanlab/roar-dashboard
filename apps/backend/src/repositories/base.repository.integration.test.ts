@@ -120,9 +120,11 @@ describe('BaseRepository', () => {
         where: eq(users.isSuperAdmin, true),
       });
 
-      // No fixture users are super admins
-      expect(result.totalItems).toBe(0);
-      expect(result.items).toEqual([]);
+      // The superAdmin fixture user is the only super admin in baseFixture
+      expect(result.totalItems).toBe(1);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]!.id).toBe(baseFixture.superAdmin.id);
+      expect(result.items[0]!.isSuperAdmin).toBe(true);
     });
 
     it('returns correct slice for page 2', async () => {
