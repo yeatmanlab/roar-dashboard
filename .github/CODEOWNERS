@@ -8,3 +8,6 @@ apps/assessments/roar-swr/ @yeatmanlab/roar-maintainers @AnyaWMa
 
 # roar-pa assessment
 apps/assessments/roar-pa/ @yeatmanlab/roar-maintainers @AnyaWMa
+
+# roar-sre assesment
+apps/assessments/roar-sre/ @yeatmanlab/roar-maintainers @AnyaWMa
