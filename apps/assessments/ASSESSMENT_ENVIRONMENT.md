@@ -38,6 +38,58 @@ To stop all Docker services **and permanently delete the database**:
 npm run assessment-environment:down
 ```
 
+## Configuring task variants
+
+Each assessment reads a local **`taskVariantParameters.json`** file to determine which task variants to seed into the ephemeral database. The file is not committed to git — copy the example to get started:
+
+```bash
+cp apps/assessments/roar-swr/taskVariantParameters.example.json \
+   apps/assessments/roar-swr/taskVariantParameters.json
+```
+
+The file is a JSON array. Each entry defines one variant to seed:
+
+```json
+[
+  {
+    "variantName": "English (v7)",
+    "params": {
+      "lng": "en",
+      "scoringVersion": 7,
+      "userMode": "shortAdaptive"
+    }
+  }
+]
+```
+
+The keys in `params` map directly to the URL parameters you would pass to the assessment dev server. The example file documents all available parameters with their valid values and sensible defaults.
+
+**Tasks are derived automatically** — the seed creates a task row for each unique `lng` value in the file. There is no separate task config needed.
+
+**Re-seeding is additive.** Variants are matched by name. If you add a new entry to `taskVariantParameters.json` and restart the environment, the new variant is seeded alongside the existing ones. Use `variantId=<id>` in the dev server URL to target a specific variant.
+
+**Validation** runs at seed time. The seed will fail with a descriptive error if `taskVariantParameters.json` is missing, contains unknown parameter keys, or has invalid values.
+
+---
+
+## Rebuilding the Docker images
+
+Docker caches build layers, so changes to files that are copied into the image are sometimes not picked up by a normal `up`. Force a clean rebuild with:
+
+```bash
+npm run assessment-environment:build
+```
+
+Run this after making changes to any of the following:
+
+- `assessment.Dockerfile`
+- `apps/backend/` — source, migrations, seeds, or dependencies
+- `packages/api-contract/` — shared API types and Zod schemas
+- `packages/assessment-schema/` — shared assessment data schemas
+- Root `package.json` / `package-lock.json` — dependency changes
+
+The environment does not need to be stopped first — the rebuild only updates the images. Run `assessment-environment:up` afterward to start the environment with the new images.
+
 ---
 
 ## Querying your data
