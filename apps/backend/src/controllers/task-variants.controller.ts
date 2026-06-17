@@ -1,10 +1,15 @@
 import type {
   TaskVariantsListQuery,
   TaskVariantListItem as ContractTaskVariantListItem,
+  TaskVariant as ContractTaskVariant,
 } from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../errors/api-error';
-import { TaskVariantService, type TaskVariantListItem } from '../services/task-variant/task-variant.service';
+import {
+  TaskVariantService,
+  type TaskVariantListItem,
+  type TaskVariantWithParameters,
+} from '../services/task-variant/task-variant.service';
 import type { AuthContext } from '../types/auth-context';
 import { toErrorResponse } from '../utils/to-error-response.util';
 
@@ -34,6 +39,28 @@ function transformTaskVariantListItem(item: TaskVariantListItem): ContractTaskVa
     // "requested but empty" (key present, value []). Matches the contract's
     // .optional() modifier, which allows the key itself to be omitted.
     ...(item.parameters !== undefined && { parameters: item.parameters }),
+  };
+}
+
+/**
+ * Maps a service task variant item (with always-present parameters) to the full API contract shape.
+ *
+ * @param item - The service-layer task variant item
+ * @returns The API-formatted task variant
+ */
+function transformTaskVariantItem(item: TaskVariantWithParameters): ContractTaskVariant {
+  return {
+    id: item.id,
+    taskId: item.taskId,
+    name: item.name,
+    description: item.description,
+    status: item.status,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt?.toISOString() ?? null,
+    taskName: item.taskName,
+    taskSlug: item.taskSlug,
+    taskImage: item.taskImage,
+    parameters: item.parameters,
   };
 }
 
@@ -89,6 +116,37 @@ export const TaskVariantsController = {
           StatusCodes.BAD_REQUEST,
           StatusCodes.UNAUTHORIZED,
           StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get a single task variant by ID, with its parameters and denormalized task fields.
+   *
+   * Delegates to TaskVariantService for business logic.
+   * Available to any authenticated user.
+   *
+   * @param authContext - User's authentication context
+   * @param variantId - UUID of the variant to retrieve
+   * @returns The task variant with task details and parameters
+   */
+  getByIdWithTaskDetails: async (authContext: AuthContext, variantId: string) => {
+    try {
+      const item = await taskVariantService.getByIdWithTaskDetails(authContext, variantId);
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformTaskVariantItem(item),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
