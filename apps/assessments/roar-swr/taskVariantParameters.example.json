@@ -1,0 +1,87 @@
+[
+  {
+    "variantName": "English (v7)",
+    "params": {
+      "lng": "en",
+      "scoringVersion": 7,
+      "userMode": "shortAdaptive",
+      "audioFeedbackOption": null,
+      "numAdaptive": null,
+      "numNew": null,
+      "numValidated": null,
+      "addNoResponse": false,
+      "consent": true,
+      "skipInstructions": true,
+      "storyOption": null,
+      "recruitment": null
+    }
+  },
+  {
+    "variantName": "Spanish (v1)",
+    "params": {
+      "lng": "es",
+      "scoringVersion": 1,
+      "userMode": "shortAdaptive",
+      "audioFeedbackOption": null,
+      "numAdaptive": null,
+      "numNew": null,
+      "numValidated": null,
+      "addNoResponse": false,
+      "consent": true,
+      "skipInstructions": true,
+      "storyOption": null,
+      "recruitment": null
+    }
+  },
+  {
+    "variantName": "Italian",
+    "params": {
+      "lng": "it",
+      "scoringVersion": null,
+      "userMode": "shortAdaptive",
+      "audioFeedbackOption": null,
+      "numAdaptive": null,
+      "numNew": null,
+      "numValidated": null,
+      "addNoResponse": false,
+      "consent": true,
+      "skipInstructions": true,
+      "storyOption": null,
+      "recruitment": null
+    }
+  },
+  {
+    "variantName": "Portuguese",
+    "params": {
+      "lng": "pt",
+      "scoringVersion": null,
+      "userMode": "shortAdaptive",
+      "audioFeedbackOption": null,
+      "numAdaptive": null,
+      "numNew": null,
+      "numValidated": null,
+      "addNoResponse": false,
+      "consent": true,
+      "skipInstructions": true,
+      "storyOption": null,
+      "recruitment": null
+    }
+  },
+  {
+    "variantName": "German",
+    "params": {
+      "lng": "de",
+      "scoringVersion": null,
+      "userMode": "shortAdaptive",
+      "audioFeedbackOption": null,
+      "numAdaptive": null,
+      "numNew": null,
+      "numValidated": null,
+      "addNoResponse": false,
+      "consent": true,
+      "skipInstructions": true,
+      "storyOption": null,
+      "recruitment": null
+    }
+  }
+]

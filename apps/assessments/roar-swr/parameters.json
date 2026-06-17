@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://roar.education/schemas/swr/parameters.json",
+  "title": "Valid Parameters",
+  "description": "Valid game parameters for the roar-swr application.",
+  "type": "object",
+  "properties": {
+    "addNoResponse": {
+      "oneOf": [
+        {
+          "type": "boolean",
+          "enum": [true, false]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Indicates if trials with no response should be added."
+    },
+    "audioFeedbackOption": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["random", "neutral", "binary", "null"]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Option for audio feedback type."
+    },
+    "consent": {
+      "oneOf": [
+        {
+          "type": "boolean",
+          "enum": [true, false]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Indicates if consent was provided."
+    },
+    "lng": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["en", "es", "it", "pt", "de"]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Language of the user."
+    },
+    "numAdaptive": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Number of adaptive trials."
+    },
+    "numNew": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Number of new trials."
+    },
+    "numValidated": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Number of validated trials."
+    },
+    "recruitment": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["otherLabs", "school", "parentSignup", "parentSignUp", "redcap", "pilot", "sona", "demo"]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Recruitment source for participants."
+    },
+    "scoringVersion": {
+      "oneOf": [
+        {
+          "type": "number",
+          "enum": [1, 6, 7]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Scoring version for the experiment."
+    },
+    "skipInstructions": {
+      "oneOf": [
+        {
+          "type": "boolean",
+          "enum": [true, false]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Indicates if instructions should be skipped."
+    },
+    "storyOption": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["grade-based"]
+        },
+        {
+          "type": "boolean",
+          "enum": [true, false]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Option for the story mode used."
+    },
+    "userMode": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "shortAdaptive",
+            "fullItemBank",
+            "presentationExpShort",
+            "fullRandom",
+            "shortRandom",
+            "shortRandom80",
+            "presentationExp2Conditions",
+            "shortAdaptiveEasyBlock",
+            "presentationExp"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Mode of the user during the task."
+    }
+  },
+  "additionalProperties": {
+    "not": true,
+    "errorMessage": "Parameter is not allowed."
+  },
+  "errorMessage": {
+    "properties": {
+      "addNoResponse": "addNoResponse must be a boolean or null.",
+      "audioFeedbackOption": "audioFeedbackOption must be a string with a value of 'random', 'neutral', 'binary', or null.",
+      "consent": "consent must be a boolean or null.",
+      "lng": "lng must be a string with a value of 'en', 'es', 'it', 'pt', 'de', or null.",
+      "numAdaptive": "numAdaptive must be a number between 0 and 1000 or null.",
+      "numNew": "numNew must be a number between 0 and 1000 or null.",
+      "numValidated": "numValidated must be a number between 0 and 1000 or null.",
+      "recruitment": "recruitment must be a string with a value of 'otherLabs', 'school', 'parentSignup', 'redcap', 'pilot', 'sona', 'demo', or null.",
+      "scoringVersion": "scoringVersion must be one of the following numbers 1 (swr-es), 6, or 7 (swr), or null.",
+      "skipInstructions": "skipInstructions must be a boolean or null.",
+      "storyOption": "storyOption must be a string with a value of 'grade-based', a boolean, or null.",
+      "userMode": "userMode must be a string with a value of 'shortAdaptive', 'fullItemBank', 'presentationExpShort', 'fullRandom', 'shortRandom', 'shortRandom80', 'shortAdaptiveEasyBlock', 'presentationExp2Conditions', 'presentationExp', or null."
+    }
+  }
+}
