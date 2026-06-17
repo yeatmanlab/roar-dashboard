@@ -1,5 +1,18 @@
 [
   {
+    "variantName": "sentence-school-3min1Block-scoringVersion4",
+    "params": {
+      "lng": "en",
+      "scoringVersion": 4,
+      "userMode": "3min1Block",
+      "recruitment": "school",
+      "skipInstructions": true,
+      "consent": false,
+      "storyOption": "grade-based",
+      "timerLength": 180000
+    }
+  },
+  {
     "variantName": "English — grade-based (v3)",
     "params": {
       "lng": "en",
@@ -70,6 +83,19 @@
       "lng": "de",
       "scoringVersion": null,
       "userMode": null,
+      "recruitment": null,
+      "skipInstructions": true,
+      "consent": true,
+      "storyOption": null,
+      "timerLength": 180000
+    }
+  },
+  {
+    "variantName": "English — fixed forms (90s2BlocksFixedForms)",
+    "params": {
+      "lng": "en",
+      "scoringVersion": 4,
+      "userMode": "90s2BlocksFixedForms",
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
