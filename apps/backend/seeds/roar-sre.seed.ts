@@ -72,7 +72,10 @@ function validateVariants(raw: unknown): VariantDef[] {
     throw new Error('taskVariantParameters.json must be a non-empty array');
   }
 
-  return raw.map((entry: unknown, i: number) => {
+  const results: VariantDef[] = [];
+
+  for (let i = 0; i < raw.length; i++) {
+    const entry = raw[i] as unknown;
     const label = `Entry [${i}]`;
 
     if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
@@ -103,8 +106,13 @@ function validateVariants(raw: unknown): VariantDef[] {
     if (!('lng' in p)) {
       throw new Error(`${loc}: "lng" is required`);
     }
+
+    // Skip (don't throw) entries for languages not yet supported — e.g., stub
+    // entries for in-progress translations that exist in the example file but
+    // have no corresponding task in SRE_LANGUAGES.
     if (!VALID_LNG.has(p.lng as string)) {
-      throw new Error(`${loc}: "lng" must be one of ${[...VALID_LNG].join(', ')}`);
+      console.log(`  Skipping ${loc}: "lng" "${p.lng as string}" is not a supported language — entry ignored.`);
+      continue;
     }
 
     if ('scoringVersion' in p && p.scoringVersion !== null) {
@@ -113,8 +121,10 @@ function validateVariants(raw: unknown): VariantDef[] {
       }
     }
 
-    return { variantName: name, params: p };
-  });
+    results.push({ variantName: name, params: p });
+  }
+
+  return results;
 }
 
 // ─── Load and validate file ───────────────────────────────────────────────────

@@ -33,6 +33,14 @@ if docker ps --filter "name=assessment-backend" --filter "status=running" -q 2>/
 else
   # Check that port 5432 is free before Docker tries to bind it (the error Docker
   # produces when the port is taken is cryptic).
+  if [ ! -f "$ASSESSMENT_DIR/taskVariantParameters.json" ]; then
+    echo "Error: taskVariantParameters.json not found in $ASSESSMENT_DIR." >&2
+    echo "  Create it from the example file before starting:" >&2
+    echo "    cp apps/assessments/$ASSESSMENT_NAME/taskVariantParameters.example.json \\" >&2
+    echo "       apps/assessments/$ASSESSMENT_NAME/taskVariantParameters.json" >&2
+    exit 1
+  fi
+
   if lsof -i :5432 -sTCP:LISTEN &>/dev/null || ss -tlnp 2>/dev/null | grep -q ':5432 '; then
     echo "Error: port 5432 is already in use." >&2
     echo "  Stop your local PostgreSQL instance before starting the assessment environment:" >&2

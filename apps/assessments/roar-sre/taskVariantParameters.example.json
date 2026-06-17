@@ -4,7 +4,7 @@
     "params": {
       "lng": "en",
       "scoringVersion": 3,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -17,7 +17,7 @@
     "params": {
       "lng": "en",
       "scoringVersion": 4,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -30,7 +30,7 @@
     "params": {
       "lng": "en",
       "scoringVersion": 5,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -43,7 +43,7 @@
     "params": {
       "lng": "es",
       "scoringVersion": 1,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -56,7 +56,7 @@
     "params": {
       "lng": "es",
       "scoringVersion": 4,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -69,7 +69,7 @@
     "params": {
       "lng": "pt",
       "scoringVersion": null,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -82,7 +82,7 @@
     "params": {
       "lng": "de",
       "scoringVersion": null,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -95,7 +95,7 @@
     "params": {
       "lng": "it",
       "scoringVersion": null,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
