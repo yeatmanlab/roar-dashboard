@@ -8,7 +8,7 @@
 <script setup>
 import RoarSWR from '@roar-platform/roar-swr';
 import RoarPA from '@roar-platform/roar-pa';
-import RoarSRE from '@bdelab/roar-sre';
+import RoarSRE from '@roar-platform/roar-sre';
 import { useAuthStore } from '@/store/auth';
 import { toRaw, onMounted, ref, watch } from 'vue';
 import AppSpinner from '../components/AppSpinner.vue';

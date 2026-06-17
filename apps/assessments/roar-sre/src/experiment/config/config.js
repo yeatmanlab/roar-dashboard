@@ -12,7 +12,6 @@ import { writeTrial, finishRun, addInteraction, updateUser } from '@roar-platfor
 import { wireScoreAdapter } from '../../sdk/sre-firekit-facade';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { jsPsych } from '../jsPsych';
-import { RoarScores } from '../scores';
 import { corpus } from './loadCorpus';
 import { shuffle } from '../experimentHelpers';
 import { enterFullscreen } from '../trials/fullScreen';
@@ -264,7 +263,7 @@ export const initRoarJsPsych = (config) => {
   initStore(config);
 };
 
-export const initRoarTimeline = (config) => {
+export const initRoarTimeline = () => {
   const beginningTimeline = [
     enterFullscreen,
     ...getUserDataTimeline,

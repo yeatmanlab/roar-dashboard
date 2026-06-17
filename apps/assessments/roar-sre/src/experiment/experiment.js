@@ -28,7 +28,7 @@ export function buildExperiment(config) {
   preloadTrials = createPreloadTrials(assets, bucketURI, i18next.language).default;
   preloadTrials.message = i18next.t('loading');
   initRoarJsPsych(config);
-  const initialTimeline = initRoarTimeline(config);
+  const initialTimeline = initRoarTimeline();
 
   const sreEvaluateValidity = createEvaluateValidity({
     responseTimeLowThreshold: 1000,

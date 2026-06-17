@@ -5,7 +5,12 @@ import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
 import { AssessmentStage, TRIAL_COUNT_SCORE_NAMES } from '@roar-platform/assessment-schema';
-import { SRE_COMPOSITE_DOMAIN, SRE_PRACTICE_DOMAIN, SRE_SCORING_VERSION, SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
+import {
+  SRE_COMPOSITE_DOMAIN,
+  SRE_PRACTICE_DOMAIN,
+  SRE_SCORING_VERSION,
+  SRE_TASK_IDS,
+} from '@roar-platform/assessment-schema/roar-sre';
 
 const getGradeAndAgeForScoring = (scoringVersion = SRE_SCORING_VERSION.V3) => {
   let ageMonths = store.session.get('config').userMetadata?.ageMonths;
@@ -29,7 +34,8 @@ const getGradeAndAgeForScoring = (scoringVersion = SRE_SCORING_VERSION.V3) => {
   if (ageMonths < ageMin) ageMonths = ageMin;
   if (ageMonths > ageMax) ageMonths = ageMax;
   // Clamp grade to [1, 12] for v3 SRE if < 1 or > 12. Otherwise, leave it unchanged.
-  if (grade != undefined && taskId === SRE_TASK_IDS.EN && scoringVersion === SRE_SCORING_VERSION.V3) grade = Math.min(12, Math.max(1, grade));
+  if (grade != undefined && taskId === SRE_TASK_IDS.EN && scoringVersion === SRE_SCORING_VERSION.V3)
+    grade = Math.min(12, Math.max(1, grade));
 
   return {
     ageMonths,
