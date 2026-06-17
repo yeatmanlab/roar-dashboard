@@ -1,4 +1,5 @@
 import { TRIAL_COUNT_SCORE_NAMES } from '../constants/trial-count-score-names.js';
+import { THETA_SCORE_NAMES } from '../constants/theta-score-names.js';
 
 /**
  * Canonical run_scores.domain strings for PA score entries.
@@ -45,10 +46,7 @@ export const PA_SCORE_NAMES = {
   SCORING_VERSION: 'scoringVersion',
 
   // Theta estimates (adaptive scoring only, per subtask and composite)
-  THETA_ESTIMATE: 'thetaEstimate',
-  THETA_SE: 'thetaSE',
-  THETA_ESTIMATE_RAW: 'thetaEstimateRaw',
-  THETA_SE_RAW: 'thetaSERaw',
+  ...THETA_SCORE_NAMES,
 } as const;
 
 export type PaScoreName = (typeof PA_SCORE_NAMES)[keyof typeof PA_SCORE_NAMES];

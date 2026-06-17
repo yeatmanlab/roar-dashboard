@@ -1,4 +1,5 @@
 import { TRIAL_COUNT_SCORE_NAMES } from '../constants/trial-count-score-names.js';
+import { THETA_SCORE_NAMES } from '../constants/theta-score-names.js';
 
 /**
  * Canonical run_scores.domain strings for SRE score entries.
@@ -20,11 +21,8 @@ export const SRE_PRACTICE_DOMAIN = 'practice' as const;
  */
 export const SRE_COMPOSITE_SCORE_NAMES = {
   // IRT ability estimates — written when theta is available (future CAT mode).
-  // thetaEstimateRaw is type=raw (native-scale estimate); thetaEstimate is type=computed.
-  THETA_ESTIMATE_RAW: 'thetaEstimateRaw',
-  THETA_SE_RAW: 'thetaSERaw',
-  THETA_ESTIMATE: 'thetaEstimate',
-  THETA_SE: 'thetaSE',
+  // thetaEstimateRaw/thetaSERaw are type=raw (native-scale); thetaEstimate/thetaSE are type=computed.
+  ...THETA_SCORE_NAMES,
   // Derived score — all versions. Computed as numCorrect - numIncorrect.
   SRE_SCORE: 'sreScore',
   // Normed scores — v4+ English and v1 Spanish

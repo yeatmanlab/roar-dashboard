@@ -1,4 +1,5 @@
 import { TRIAL_COUNT_SCORE_NAMES } from '../constants/trial-count-score-names.js';
+import { THETA_SCORE_NAMES } from '../constants/theta-score-names.js';
 
 /**
  * Canonical run_scores.domain strings for SWR score entries.
@@ -22,8 +23,10 @@ export const SWR_SCORE_NAMES = {
   // thetaEstimateRaw (type=raw) and thetaEstimate (type=computed) carry the same
   // value. Both are written so every IRT-scored assessment exposes a native-scale
   // and a shared-scale theta in run_scores.
-  THETA_ESTIMATE_RAW: 'thetaEstimateRaw',
-  THETA_ESTIMATE: 'thetaEstimate',
+  // SE is not currently written by SWR — use the individual keys rather than
+  // spreading THETA_SCORE_NAMES to avoid implying SE support.
+  THETA_ESTIMATE_RAW: THETA_SCORE_NAMES.THETA_ESTIMATE_RAW,
+  THETA_ESTIMATE: THETA_SCORE_NAMES.THETA_ESTIMATE,
 
   // Normed scores — English and Spanish only
   PERCENTILE: 'percentile',
