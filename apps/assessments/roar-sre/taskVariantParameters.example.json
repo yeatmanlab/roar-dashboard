@@ -1,5 +1,18 @@
 [
   {
+    "variantName": "sentence-school-90s2BlocksFixedForms-scoringVersion4",
+    "params": {
+      "lng": "en",
+      "scoringVersion": 4,
+      "userMode": "90s2BlocksFixedForms",
+      "recruitment": "school",
+      "skipInstructions": true,
+      "consent": false,
+      "storyOption": "grade-based",
+      "timerLength": 180000
+    }
+  },
+  {
     "variantName": "sentence-school-3min1Block-scoringVersion4",
     "params": {
       "lng": "en",
