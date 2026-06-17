@@ -26,7 +26,7 @@
     "@bdelab/roar-levante-tasks": "0.3.0",
     "@bdelab/roar-multichoice": "2.1.0",
     "@bdelab/roar-readaloud": "1.4.2",
-    "@bdelab/roar-sre": "3.0.0",
+    "@roar-platform/roar-sre": "3.1.0",
     "@bdelab/roar-survey": "0.2.2",
     "@roar-platform/roar-swr": "1.15.0",
     "@bdelab/roar-utils": "^1.2.3",
