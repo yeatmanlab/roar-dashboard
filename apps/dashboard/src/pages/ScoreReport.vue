@@ -1173,7 +1173,7 @@ const computeAssignmentAndRunData = computed(() => {
                   currRowScores[taskId][subskill] = {
                     percentCorrect: `${Math.round(subskillInfo.subPercentCorrect * 100)}%`,
                     ...subskillInfo,
-                    rawScore: Number(subskillInfo.rawScore).toFixed(2),
+                    rawScore: parseFloat(Number(subskillInfo.rawScore).toFixed(2)),
                   };
                   const subskillIncorrectSkills = _get(
                     assessment,
@@ -1189,7 +1189,7 @@ const computeAssignmentAndRunData = computed(() => {
                 totalIncorrectSkills: new Set(allIncorrectSkills).size,
                 percentCorrect: `${Math.round(scores.composite?.subPercentCorrect * 100)}%`,
                 ...scores.composite,
-                rawScore: Number(scores.composite?.rawScore).toFixed(2),
+                rawScore: parseFloat(Number(scores.composite?.rawScore).toFixed(2)),
               };
               currRowScores[taskId].percentCorrect = `${Math.round(scores.composite?.subPercentCorrect * 100)}%`;
             }
