@@ -8,9 +8,10 @@ import { SWR_SCORE_DOMAINS, SWR_SCORE_NAMES, SWR_RAW_SCORE_NAMES, type SwrScoreN
  * Mirrors the api-contract ScoreEntry discriminated union without importing it
  * directly, keeping assessment-schema decoupled from api-contract at build time.
  *
- * - type=RAW: live state captured per trial (theta, counts). assessmentStage required.
- * - type=COMPUTED: normed/derived values (percentile, standardScore). assessmentStage
- *   present for SWR because all scores are stage-scoped, though the contract allows it absent.
+ * - type=RAW: live state captured per trial (thetaEstimateRaw, counts). assessmentStage required.
+ * - type=COMPUTED: shared-scale IRT estimate and normed/derived values (thetaEstimate,
+ *   percentile, standardScore). assessmentStage present for SWR because all scores are
+ *   stage-scoped, though the contract allows it absent.
  *
  * Compile-time assertion below ensures this stays assignable to the api-contract shape.
  */
@@ -32,8 +33,8 @@ const RECOGNIZED_DOMAINS = new Set<string>([SWR_SCORE_DOMAINS.COMPOSITE]);
  *
  * Iterates all SWR_SCORE_NAMES and emits an entry for each field present and
  * non-null in the composite domain. Score type is assigned per name:
- * - ScoreType.RAW for live-state scores (thetaEstimate, trial counts)
- * - ScoreType.COMPUTED for normed/derived scores (percentile, standardScore, roarScore)
+ * - ScoreType.RAW for thetaEstimateRaw and trial counts
+ * - ScoreType.COMPUTED for thetaEstimate and normed/derived scores (percentile, standardScore, roarScore)
  *
  * All entries carry assessmentStage: TEST because this function is only called
  * from the test-phase branch of the score adapter.
