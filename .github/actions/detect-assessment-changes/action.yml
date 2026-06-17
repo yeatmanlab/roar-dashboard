@@ -40,6 +40,8 @@ runs:
           #     - 'apps/assessments/roar-swr/**'
           roar-pa:
             - 'apps/assessments/roar-pa/**'
+          roar-swr:
+            - 'apps/assessments/roar-swr/**'
 
     - name: Build matrix
       id: matrix
@@ -50,14 +52,13 @@ runs:
       #   3. Only individual assessments changed — dorny's 'changes' output is already a
       #      JSON array of matched filter names, which map directly to assessment directory names.
       #
-      # When adding a new assessment (e.g. roar-swr):
-      #   - Add a filter entry above: roar-swr: - 'apps/assessments/roar-swr/**'
-      #   - Add its name to the shared-changed list below: echo 'matrix=["roar-pa","roar-swr"]'
+      # When adding a new assessment, add a filter entry above and its name to the
+      # shared-changed list below.
       run: |
         if [ -n "${{ inputs.assessment }}" ]; then
           echo "matrix=$(jq -c -n --arg a "${{ inputs.assessment }}" '[$a]')" >> $GITHUB_OUTPUT
         elif [ "${{ steps.filter.outputs.shared }}" == "true" ]; then
-          echo 'matrix=["roar-pa"]' >> $GITHUB_OUTPUT
+          echo 'matrix=["roar-pa","roar-swr"]' >> $GITHUB_OUTPUT
         else
           echo 'matrix=${{ steps.filter.outputs.changes }}' >> $GITHUB_OUTPUT
         fi

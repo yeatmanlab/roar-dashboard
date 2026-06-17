@@ -26,7 +26,7 @@ export const delPracticeTrials = {
         '<img draggable="false" class="testImageDown" src="%choice%" alt="response" />',
       ],
       data: {
-        assessment_stage: 'practice_response',
+        assessment_stage: 'practice',
         start_time: () => new Date(store.session.get('config').startTime).toLocaleString('PST'),
         start_time_unix: () => new Date(store.session.get('config').startTime).getTime(),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
