@@ -1,9 +1,9 @@
 import type { ScoreEntryConstraint } from '../types/score-entry.type.js';
+import { COMPOSITE_DOMAIN } from '../constants/common-domains.js';
 import { AssessmentStage } from '../enums/assessment-stage.enum.js';
 import { ScoreType } from '../enums/score-type.enum.js';
+import { domainToAssessmentStage } from '../score-utils.js';
 import {
-  SRE_COMPOSITE_DOMAIN,
-  SRE_PRACTICE_DOMAIN,
   SRE_COMPOSITE_SCORE_NAMES,
   SRE_RAW_COMPOSITE_SCORE_NAMES,
   SRE_SUBTASK_SCORE_NAMES,
@@ -65,9 +65,9 @@ export function toSreScoreEntries(
   for (const [domain, scores] of Object.entries(computed)) {
     if (!scores || typeof scores !== 'object') continue;
 
-    const assessmentStage = domain === SRE_PRACTICE_DOMAIN ? AssessmentStage.PRACTICE : AssessmentStage.TEST;
+    const assessmentStage = domainToAssessmentStage(domain);
 
-    if (domain === SRE_COMPOSITE_DOMAIN) {
+    if (domain === COMPOSITE_DOMAIN) {
       if (strict) {
         const unrecognized = Object.keys(scores).filter((k) => !RECOGNIZED_COMPOSITE_NAMES.has(k));
         if (unrecognized.length > 0) {

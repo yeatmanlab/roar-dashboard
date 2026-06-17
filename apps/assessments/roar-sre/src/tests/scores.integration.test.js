@@ -1,5 +1,6 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { RoarScores } from '../experiment/scores.js';
+import { toSreScoreEntries } from '@roar-platform/assessment-schema/roar-sre';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -535,6 +536,125 @@ describe('RoarScores Integration Tests', () => {
 
     // For sre-es, should use sum logic, not fixed form equating
     expect(result.composite.sreScore).toBe(19); // (15-5) + (12-3)
+  });
+
+  // Pipeline integrity tests: run computedScoreCallback end-to-end and verify the output
+  // passes toSreScoreEntries({ strict: true }). strict mode throws on any composite key not
+  // present in SRE_COMPOSITE_SCORE_NAMES, catching score-name drift between scores.js and
+  // score-names.ts at test time rather than at runtime.
+
+  test('v4 English: computedScoreCallback output passes toSreScoreEntries strict mode', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 4,
+      userMetadata: { ageMonths: 85 },
+      taskId: 'sre',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = { lab: { test: { numCorrect: 30, numIncorrect: 2 } } };
+
+    const computed = await scores.computedScoreCallback(rawScores);
+
+    // strict: true throws if scores.js writes a composite key not in SRE_COMPOSITE_SCORE_NAMES
+    let entries;
+    expect(() => {
+      entries = toSreScoreEntries(computed, { strict: true });
+    }).not.toThrow();
+
+    // Sanity-check that normed scores made it through
+    const names = entries.map((e) => e.name);
+    expect(names).toContain('sreScore');
+    expect(names).toContain('standardScore');
+    expect(names).toContain('percentile');
+    expect(names).toContain('scoringVersion');
+  });
+
+  test('v3 English: computedScoreCallback output passes toSreScoreEntries strict mode', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 3,
+      userMetadata: { grade: 2, ageMonths: 84 },
+      taskId: 'sre',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = { lab: { test: { numCorrect: 25, numIncorrect: 0 } } };
+
+    const computed = await scores.computedScoreCallback(rawScores);
+
+    let entries;
+    expect(() => {
+      entries = toSreScoreEntries(computed, { strict: true });
+    }).not.toThrow();
+
+    const names = entries.map((e) => e.name);
+    expect(names).toContain('sreScore');
+    expect(names).toContain('tosrecSS');
+    expect(names).toContain('tosrecPercentile');
+  });
+
+  test('AI equating (aiV1P1): computedScoreCallback output passes toSreScoreEntries strict mode', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 4,
+      userMetadata: { ageMonths: 84 },
+      taskId: 'sre',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = { aiV1P1: { test: { numCorrect: 20, numIncorrect: 0 } } };
+
+    const computed = await scores.computedScoreCallback(rawScores);
+
+    expect(() => {
+      toSreScoreEntries(computed, { strict: true });
+    }).not.toThrow();
+  });
+
+  test('90s2BlocksFixedForms: computedScoreCallback output passes toSreScoreEntries strict mode', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 4,
+      userMetadata: { ageMonths: 85 },
+      taskId: 'sre',
+      userMode: '90s2BlocksFixedForms',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      fixedForm1: { test: { numCorrect: 25, numIncorrect: 5 } },
+      fixedForm2: { test: { numCorrect: 22, numIncorrect: 8 } },
+    };
+
+    const computed = await scores.computedScoreCallback(rawScores);
+
+    let entries;
+    expect(() => {
+      entries = toSreScoreEntries(computed, { strict: true });
+    }).not.toThrow();
+
+    // Both fixedForm domains and composite should appear in the entries
+    const domains = [...new Set(entries.map((e) => e.domain))];
+    expect(domains).toContain('fixedForm1');
+    expect(domains).toContain('fixedForm2');
+    expect(domains).toContain('composite');
+  });
+
+  test('SRE-ES v1: computedScoreCallback output passes toSreScoreEntries strict mode', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 1,
+      userMetadata: { ageMonths: 85 },
+      taskId: 'sre-es',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      subtest1: { test: { numCorrect: 8, numIncorrect: 0 } },
+      subtest2: { test: { numCorrect: 2, numIncorrect: 0 } },
+    };
+
+    const computed = await scores.computedScoreCallback(rawScores);
+
+    expect(() => {
+      toSreScoreEntries(computed, { strict: true });
+    }).not.toThrow();
   });
 
   test('should gracefully degrade when fixed form equating table fails to load', async () => {

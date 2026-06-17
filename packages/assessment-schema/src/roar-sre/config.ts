@@ -10,7 +10,7 @@ export type SreTaskId = (typeof SRE_TASK_IDS)[keyof typeof SRE_TASK_IDS];
 
 /**
  * Scoring versions for SRE.
- * V1 is used for Spanish. V3, V4, and V5 are used for English (V5 is current).
+ * V1 is used for Spanish. V3 and V4 are used for English (V4 is current; V5 is reserved for the next lookup table).
  * Portuguese and German have no normed scoring version.
  */
 export const SRE_SCORING_VERSION = {

@@ -7,7 +7,7 @@ import _isUndefined from 'lodash/isUndefined';
 import { getAgeData, getGrade } from '@bdelab/roar-utils';
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
 import i18next from 'i18next';
-import { SRE_LANGUAGES, SRE_SCORING_VERSION } from '@roar-platform/assessment-schema/roar-sre';
+import { SRE_LANGUAGES, SRE_SCORING_VERSION, SRE_SUBTASK_DOMAINS } from '@roar-platform/assessment-schema/roar-sre';
 import { writeTrial, finishRun, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
 import { wireScoreAdapter } from '../../sdk/sre-firekit-facade';
 import { getUserDataTimeline } from '../trials/getUserData';
@@ -81,22 +81,27 @@ function getBlockOrder(userMode, corpus, language) {
   if (userMode === '3minParallelAIFormV1') {
     // this mode is parallel mode version 1: student will be randomly assigned a parallel AI form + a lab form
     // block order is randomized
-    return Math.random() < 0.5 ? shuffle(['lab', 'aiV1P1']) : shuffle(['lab', 'aiV1P2']);
+    return Math.random() < 0.5
+      ? shuffle([SRE_SUBTASK_DOMAINS.LAB, SRE_SUBTASK_DOMAINS.AI_V1_P1])
+      : shuffle([SRE_SUBTASK_DOMAINS.LAB, SRE_SUBTASK_DOMAINS.AI_V1_P2]);
   }
   if (userMode === '3min1Block') {
-    return [shuffle(['lab', 'aiV1P1', 'aiV1P2'])[0]]; // randomly select 1 out of 3 existing forms
+    return [shuffle([SRE_SUBTASK_DOMAINS.LAB, SRE_SUBTASK_DOMAINS.AI_V1_P1, SRE_SUBTASK_DOMAINS.AI_V1_P2])[0]]; // randomly select 1 out of 3 existing forms
   }
   if (userMode === '2BlocksV2') {
-    return [shuffle(['lab', 'aiV1P1', 'aiV1P2'])[0], 'aiV2'];
+    return [
+      shuffle([SRE_SUBTASK_DOMAINS.LAB, SRE_SUBTASK_DOMAINS.AI_V1_P1, SRE_SUBTASK_DOMAINS.AI_V1_P2])[0],
+      SRE_SUBTASK_DOMAINS.AI_V2,
+    ];
   }
   if (userMode === '3minBlock90sBlock') {
     return [
-      shuffle(['lab', 'aiV1P1', 'aiV1P2'])[0],
+      shuffle([SRE_SUBTASK_DOMAINS.LAB, SRE_SUBTASK_DOMAINS.AI_V1_P1, SRE_SUBTASK_DOMAINS.AI_V1_P2])[0],
       Object.keys(corpus.fixedForms)[Math.floor(Math.random() * Object.keys(corpus.fixedForms).length)],
     ];
   }
   if (userMode === '90s2Blocks') {
-    return shuffle(['test1', 'test2']);
+    return shuffle([SRE_SUBTASK_DOMAINS.TEST1, SRE_SUBTASK_DOMAINS.TEST2]);
   }
   if (userMode === '90s2BlocksFixedForms') {
     // randomly select 2 forms from all fixed ordered forms
@@ -109,9 +114,9 @@ function getBlockOrder(userMode, corpus, language) {
   // this mode is default mode: student will be assigned a lab form and an unordered AI form
   // For non-English languages that only have test1 and test2, use those instead
   if (language === 'pt' || language === 'de') {
-    return shuffle(['test1', 'test2']);
+    return shuffle([SRE_SUBTASK_DOMAINS.TEST1, SRE_SUBTASK_DOMAINS.TEST2]);
   }
-  return ['lab', 'ai'];
+  return [SRE_SUBTASK_DOMAINS.LAB, SRE_SUBTASK_DOMAINS.AI];
 }
 
 function getTimerOption(userMode) {

@@ -1,7 +1,22 @@
 import { AssessmentStage } from './enums/assessment-stage.enum.js';
 import { ScoreType } from './enums/score-type.enum.js';
 import type { ScoreEntryConstraint } from './types/score-entry.type.js';
+import { PRACTICE_DOMAIN } from './constants/common-domains.js';
 import { TRIAL_COUNT_SCORE_NAMES } from './constants/trial-count-score-names.js';
+
+/**
+ * Maps a run_scores domain string to its AssessmentStage.
+ *
+ * Defaults to the shared PRACTICE_DOMAIN ('practice'). Pass a custom practiceDomain
+ * when an assessment uses a different string for its practice phase.
+ *
+ * @param domain - run_scores.domain value
+ * @param practiceDomain - domain string that maps to PRACTICE stage (default: 'practice')
+ * @returns AssessmentStage.PRACTICE when domain matches practiceDomain, TEST otherwise
+ */
+export function domainToAssessmentStage(domain: string, practiceDomain: string = PRACTICE_DOMAIN): AssessmentStage {
+  return domain === practiceDomain ? AssessmentStage.PRACTICE : AssessmentStage.TEST;
+}
 
 /**
  * Trial count fields written as type=raw score entries across all assessments.

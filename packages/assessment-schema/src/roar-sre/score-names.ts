@@ -2,13 +2,22 @@ import { TRIAL_COUNT_SCORE_NAMES } from '../constants/trial-count-score-names.js
 import { THETA_SCORE_NAMES } from '../constants/theta-score-names.js';
 
 /**
- * Canonical run_scores.domain strings for SRE score entries.
- *
- * SRE writes per-subtask domains (practice, lab, ai, composite, etc.) in addition to
- * the composite domain. All domains are emitted on every trial.
+ * Canonical run_scores.domain strings for non-composite SRE subtasks.
+ * These are the static block/corpus identifiers produced by getBlockOrder in config.js.
+ * Dynamic fixed-form domains ('fixedForm1', 'fixedForm2', …) are covered by SreSubtaskDomain
+ * via a template literal type and are not enumerated here.
  */
-export const SRE_COMPOSITE_DOMAIN = 'composite' as const;
-export const SRE_PRACTICE_DOMAIN = 'practice' as const;
+export const SRE_SUBTASK_DOMAINS = {
+  LAB: 'lab',
+  AI: 'ai',
+  AI_V1_P1: 'aiV1P1',
+  AI_V1_P2: 'aiV1P2',
+  AI_V2: 'aiV2',
+  TEST1: 'test1',
+  TEST2: 'test2',
+} as const;
+
+export type SreSubtaskDomain = (typeof SRE_SUBTASK_DOMAINS)[keyof typeof SRE_SUBTASK_DOMAINS] | `fixedForm${number}`;
 
 /**
  * Canonical run_scores.name strings written by the SRE scoring callback for the composite domain.
@@ -72,8 +81,5 @@ export const SRE_RAW_SUBTASK_SCORE_NAMES = new Set<SreSubtaskScoreName>([
   TRIAL_COUNT_SCORE_NAMES.NUM_ATTEMPTED,
   TRIAL_COUNT_SCORE_NAMES.NUM_INCORRECT,
 ]);
-
-/** @deprecated Use SRE_SUBTASK_SCORE_NAMES.SRE_SCORE */
-export const SRE_SUBTASK_SCORE_NAME = 'sreScore' as const;
 
 export type SreScoreName = SreCompositeScoreName | SreSubtaskScoreName;

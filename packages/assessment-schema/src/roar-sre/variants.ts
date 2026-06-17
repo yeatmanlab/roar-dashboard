@@ -25,7 +25,7 @@ export const SRE_LANGUAGES = {
     code: 'en',
     label: 'English',
     taskId: SRE_TASK_IDS.EN,
-    defaultScoringVersion: SRE_SCORING_VERSION.V5,
+    defaultScoringVersion: SRE_SCORING_VERSION.V4,
   },
   es: {
     code: 'es',

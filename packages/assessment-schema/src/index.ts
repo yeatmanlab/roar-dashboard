@@ -1,3 +1,4 @@
+export * from './constants/common-domains.js';
 export * from './constants/trial-count-score-names.js';
 export * from './enums/assessment-stage.enum.js';
 export * from './enums/score-type.enum.js';

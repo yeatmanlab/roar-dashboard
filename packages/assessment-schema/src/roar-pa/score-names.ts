@@ -1,3 +1,4 @@
+import { COMPOSITE_DOMAIN } from '../constants/common-domains.js';
 import { TRIAL_COUNT_SCORE_NAMES } from '../constants/trial-count-score-names.js';
 import { THETA_SCORE_NAMES } from '../constants/theta-score-names.js';
 
@@ -9,7 +10,7 @@ export const PA_SCORE_DOMAINS = {
   FSM: 'FSM',
   LSM: 'LSM',
   DEL: 'DEL',
-  COMPOSITE: 'composite',
+  COMPOSITE: COMPOSITE_DOMAIN,
   COMPOSITE_FOUNDATIONAL: 'composite_foundational',
 } as const;
 

@@ -4,11 +4,16 @@ import _toPairs from 'lodash/toPairs';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
-import { AssessmentStage, TRIAL_COUNT_SCORE_NAMES } from '@roar-platform/assessment-schema';
 import {
-  SRE_COMPOSITE_DOMAIN,
-  SRE_PRACTICE_DOMAIN,
+  COMPOSITE_DOMAIN,
+  PRACTICE_DOMAIN,
+  TRIAL_COUNT_SCORE_NAMES,
+  domainToAssessmentStage,
+} from '@roar-platform/assessment-schema';
+import {
+  SRE_SCORE_TABLE_URL,
   SRE_SCORING_VERSION,
+  SRE_SUBTASK_DOMAINS,
   SRE_TASK_IDS,
 } from '@roar-platform/assessment-schema/roar-sre';
 
@@ -71,8 +76,10 @@ export class RoarScores {
     this.taskId = store.session.get('config').taskId;
     this.useAgeForScoring = useAgeForScoring({ scoringVersion: this.scoringVersion, taskId: this.taskId });
     this.useGradeForScoring = useGradeForScoring({ scoringVersion: this.scoringVersion, taskId: this.taskId });
-    const formattedTaskId = this.taskId.replace('-', '_');
-    this.tableURL = `https://storage.googleapis.com/roar-sre/scores/${formattedTaskId}_lookup_v${this.scoringVersion}.csv`;
+    this.tableURL =
+      this.taskId === SRE_TASK_IDS.EN || this.taskId === SRE_TASK_IDS.ES
+        ? SRE_SCORE_TABLE_URL(this.taskId, this.scoringVersion)
+        : null;
     this.aiTableURL = 'https://storage.googleapis.com/roar-sre/scores/sre_parallel_equating_lookup.csv';
     this.fixedFormEquatingTableURL =
       'https://storage.googleapis.com/roar-sre/scores/sre_parallel_90s_form_equating_lookup.csv';
@@ -388,7 +395,7 @@ export class RoarScores {
         // For the "practice" subtask, we want to use the raw scores associated
         // with the "practice" assessment stage. For all others, we want to use the
         // "test" assessment stage.
-        const scoringStage = subTask === SRE_PRACTICE_DOMAIN ? AssessmentStage.PRACTICE : AssessmentStage.TEST;
+        const scoringStage = domainToAssessmentStage(subTask);
         const numCorrect = subScore[scoringStage]?.[TRIAL_COUNT_SCORE_NAMES.NUM_CORRECT] || 0;
         const numIncorrect = subScore[scoringStage]?.[TRIAL_COUNT_SCORE_NAMES.NUM_INCORRECT] || 0;
         const numAttempted = numCorrect + numIncorrect;
@@ -419,26 +426,32 @@ export class RoarScores {
 
         // For English, we use the "lab" corpus score as the composite score if it is available.
         // Return the actual score (can be negative); the normed lookup clamps separately.
-        if (score.lab?.sreScore != null) {
-          return score.lab.sreScore;
+        if (score[SRE_SUBTASK_DOMAINS.LAB]?.sreScore != null) {
+          return score[SRE_SUBTASK_DOMAINS.LAB].sreScore;
         }
 
         // Otherwise, we use the AI corpus equating table to convert the AI score to a composite score.
         // adjusting the ai scores to equate to the lab scores
-        if (score.aiV1P1?.sreScore) {
-          const rawScore = Math.max(score.aiV1P1.sreScore, 0);
+        if (score[SRE_SUBTASK_DOMAINS.AI_V1_P1]?.sreScore != null) {
+          if (!this.aiTableLoaded)
+            throw new Error('AI equating table not loaded; cannot compute aiV1P1 composite score');
+          const rawScore = Math.max(score[SRE_SUBTASK_DOMAINS.AI_V1_P1].sreScore, 0);
           const aiRow = this.aiLookupTable.find((row) => row.rawScore === rawScore && row.form === 'aiP1');
+          if (!aiRow) throw new Error(`Missing AI equating row for form aiP1, rawScore ${rawScore}`);
           return aiRow.sreScore;
         }
-        if (score.aiV1P2?.sreScore) {
-          const rawScore = Math.max(score.aiV1P2.sreScore, 0);
+        if (score[SRE_SUBTASK_DOMAINS.AI_V1_P2]?.sreScore != null) {
+          if (!this.aiTableLoaded)
+            throw new Error('AI equating table not loaded; cannot compute aiV1P2 composite score');
+          const rawScore = Math.max(score[SRE_SUBTASK_DOMAINS.AI_V1_P2].sreScore, 0);
           const aiRow = this.aiLookupTable.find((row) => row.rawScore === rawScore && row.form === 'aiP2');
+          if (!aiRow) throw new Error(`Missing AI equating row for form aiP2, rawScore ${rawScore}`);
           return aiRow.sreScore;
         }
       } else if (this.taskId === SRE_TASK_IDS.ES) {
         // For Spanish, we omit the practice and composite subtasks and take the sum of the sreScores.
         // Return the actual sum (can be negative); the normed lookup clamps separately.
-        const nonPracticeScores = _omit(score, [SRE_PRACTICE_DOMAIN, SRE_COMPOSITE_DOMAIN]);
+        const nonPracticeScores = _omit(score, [PRACTICE_DOMAIN, COMPOSITE_DOMAIN]);
         const sum = Object.values(nonPracticeScores).reduce((acc, val) => acc + (val.sreScore || 0), 0);
         return sum;
       }
@@ -494,12 +507,12 @@ export class RoarScores {
     if (compositeScore != null) {
       // Sum trial counts from all test subtasks into the composite domain.
       const testSubtaskEntries = Object.entries(computedScores).filter(
-        ([domain]) => domain !== SRE_PRACTICE_DOMAIN && domain !== SRE_COMPOSITE_DOMAIN,
+        ([domain]) => domain !== PRACTICE_DOMAIN && domain !== COMPOSITE_DOMAIN,
       );
       const compositeNumCorrect = testSubtaskEntries.reduce((sum, [, v]) => sum + (v.numCorrect || 0), 0);
       const compositeNumIncorrect = testSubtaskEntries.reduce((sum, [, v]) => sum + (v.numIncorrect || 0), 0);
 
-      computedScores[SRE_COMPOSITE_DOMAIN] = {
+      computedScores[COMPOSITE_DOMAIN] = {
         sreScore: compositeScore,
         numCorrect: compositeNumCorrect,
         numIncorrect: compositeNumIncorrect,
@@ -507,7 +520,7 @@ export class RoarScores {
       };
     }
 
-    if (isNormed && this.isValidForScoring) {
+    if (isNormed && this.isValidForScoring && compositeScore != null) {
       // Clamp to 0 for the normed lookup — the table starts at 0.
       // The actual (possibly negative) compositeScore is still stored as sreScore above.
       const lookupScore = Math.max(compositeScore ?? 0, 0);
@@ -518,8 +531,8 @@ export class RoarScores {
         // Spread existing composite (preserves trial counts) before adding normed scores.
         const { grade, ageMonths, sreScore, ...normedScores } = myRow;
 
-        computedScores[SRE_COMPOSITE_DOMAIN] = {
-          ...computedScores[SRE_COMPOSITE_DOMAIN],
+        computedScores[COMPOSITE_DOMAIN] = {
+          ...computedScores[COMPOSITE_DOMAIN],
           sreScore: compositeScore,
           ...normedScores,
           scoringVersion: this.scoringVersion,

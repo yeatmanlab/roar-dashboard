@@ -4,10 +4,9 @@ import _reduce from 'lodash/reduce';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
-import { pa } from '@roar-platform/assessment-schema';
+import { COMPOSITE_DOMAIN, pa } from '@roar-platform/assessment-schema';
 
-const { PA_TASK_ID, PA_SCORE_KIND, PA_SCORE_TABLE_URL, PA_SCORING_VERSION, PA_COMPOSITE, PA_COMPOSITE_FOUNDATIONAL } =
-  pa;
+const { PA_TASK_ID, PA_SCORE_KIND, PA_SCORE_TABLE_URL, PA_SCORING_VERSION, PA_COMPOSITE_FOUNDATIONAL } = pa;
 
 export class RoarScores {
   constructor() {
@@ -170,7 +169,7 @@ export class RoarScores {
     // computedScores should now have keys for lsm, fsm, and del.
     // But we also want to update the total score so we add up all of the others.
     const totalScore = _reduce(
-      _omit(computedScores, [PA_COMPOSITE, PA_COMPOSITE_FOUNDATIONAL]),
+      _omit(computedScores, [COMPOSITE_DOMAIN, PA_COMPOSITE_FOUNDATIONAL]),
       (sum, score) => sum + score.roarScore,
       0,
     );
@@ -178,11 +177,11 @@ export class RoarScores {
     // Composite raw counts are the sum across the subtasks (fsm/lsm/del). These are
     // emitted for the composite group and read by the backend best-run recompute
     // (numAttempted tiebreaker under domain='composite').
-    const subtaskScoresOnly = _omit(computedScores, [PA_COMPOSITE, PA_COMPOSITE_FOUNDATIONAL]);
+    const subtaskScoresOnly = _omit(computedScores, [COMPOSITE_DOMAIN, PA_COMPOSITE_FOUNDATIONAL]);
     const compositeNumCorrect = _reduce(subtaskScoresOnly, (sum, score) => sum + (score.numCorrect ?? 0), 0);
     const compositeNumAttempted = _reduce(subtaskScoresOnly, (sum, score) => sum + (score.numAttempted ?? 0), 0);
-    computedScores[PA_COMPOSITE] = {
-      ...computedScores[PA_COMPOSITE],
+    computedScores[COMPOSITE_DOMAIN] = {
+      ...computedScores[COMPOSITE_DOMAIN],
       numCorrect: compositeNumCorrect,
       numAttempted: compositeNumAttempted,
     };
