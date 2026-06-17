@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
+import { StatusCodes } from 'http-status-codes';
+import { getRoarApiClient } from '@/clients/roar-api';
 import { ADMINISTRATION_DELETE_MUTATION_KEY } from '@/constants/mutationKeys';
 import {
   ADMINISTRATIONS_QUERY_KEY,
@@ -10,18 +11,26 @@ import {
 /**
  * Delete Administration mutation.
  *
- * TanStack mutation to delete an administration and automatically invalidate the corresponding queries.
+ * TanStack mutation that deletes an administration via `DELETE /administrations/:id`
+ * (204 on success) and invalidates the affected administration queries.
  *
  * @returns {Object} The mutation object returned by `useMutation`.
  */
 const useDeleteAdministrationMutation = () => {
-  const authStore = useAuthStore();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: ADMINISTRATION_DELETE_MUTATION_KEY,
     mutationFn: async (administrationId) => {
-      await authStore.roarfirekit.deleteAdministration(administrationId);
+      const client = getRoarApiClient();
+      const result = await client.administrations.delete({ params: { id: administrationId } });
+
+      if (result.status !== StatusCodes.NO_CONTENT) {
+        const error = new Error(`Failed to delete administration with status ${result.status}`);
+        error.status = result.status;
+        error.body = result.body;
+        throw error;
+      }
     },
     onSuccess: () => {
       // Invalidate the queries to refetch the administration data.
