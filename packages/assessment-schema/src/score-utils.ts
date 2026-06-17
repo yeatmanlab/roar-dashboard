@@ -1,23 +1,14 @@
 import { AssessmentStage } from './enums/assessment-stage.enum.js';
 import { ScoreType } from './enums/score-type.enum.js';
 import type { ScoreEntryConstraint } from './types/score-entry.type.js';
+import { TRIAL_COUNT_SCORE_NAMES } from './constants/trial-count-score-names.js';
 
 /**
- * Score names shared across all ROAR assessments.
- * Assessment-specific score names (e.g. PA_SCORE_NAMES, SWR_SCORE_NAMES) extend
- * these with fields that only apply to their own scoring schema.
+ * Trial count fields written as type=raw score entries across all assessments.
+ * Derived from TRIAL_COUNT_SCORE_NAMES so adding a new count score name
+ * automatically acquires the corresponding field here.
  */
-export const COMMON_SCORE_NAMES = {
-  NUM_CORRECT: 'numCorrect',
-  NUM_ATTEMPTED: 'numAttempted',
-  NUM_INCORRECT: 'numIncorrect',
-} as const;
-
-export interface RawCounts {
-  numCorrect: number;
-  numAttempted: number;
-  numIncorrect: number;
-}
+export type RawCounts = Record<(typeof TRIAL_COUNT_SCORE_NAMES)[keyof typeof TRIAL_COUNT_SCORE_NAMES], number>;
 
 /**
  * Builds the canonical 3-entry array for raw trial-count score entries.
@@ -41,21 +32,21 @@ export function buildRawCountEntries(
     {
       type: ScoreType.RAW,
       domain,
-      name: COMMON_SCORE_NAMES.NUM_CORRECT,
+      name: TRIAL_COUNT_SCORE_NAMES.NUM_CORRECT,
       value: String(counts.numCorrect),
       assessmentStage: stage,
     },
     {
       type: ScoreType.RAW,
       domain,
-      name: COMMON_SCORE_NAMES.NUM_ATTEMPTED,
+      name: TRIAL_COUNT_SCORE_NAMES.NUM_ATTEMPTED,
       value: String(counts.numAttempted),
       assessmentStage: stage,
     },
     {
       type: ScoreType.RAW,
       domain,
-      name: COMMON_SCORE_NAMES.NUM_INCORRECT,
+      name: TRIAL_COUNT_SCORE_NAMES.NUM_INCORRECT,
       value: String(counts.numIncorrect),
       assessmentStage: stage,
     },

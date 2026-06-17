@@ -32,6 +32,31 @@ describe('toSwrScoreEntries', () => {
       });
     });
 
+    it('emits thetaEstimateRaw as type=raw', () => {
+      const computed = { composite: { thetaEstimateRaw: 0.42 } };
+      const entries = toSwrScoreEntries(computed);
+
+      expect(entries).toContainEqual({
+        type: 'raw',
+        domain: SWR_SCORE_DOMAINS.COMPOSITE,
+        name: SWR_SCORE_NAMES.THETA_ESTIMATE_RAW,
+        value: '0.42',
+        assessmentStage: 'test',
+      });
+    });
+
+    it('emits thetaEstimateRaw (raw) and thetaEstimate (computed) with equal values when SWR is the reference scale', () => {
+      const computed = { composite: { thetaEstimateRaw: 0.42, thetaEstimate: 0.42 } };
+      const entries = toSwrScoreEntries(computed);
+
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_ESTIMATE_RAW, type: 'raw', value: '0.42' }),
+      );
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_ESTIMATE, type: 'computed', value: '0.42' }),
+      );
+    });
+
     it('emits normed scores (percentile, standardScore, roarScore) as type=computed', () => {
       const computed = { composite: { percentile: 75, standardScore: 110, roarScore: 32 } };
       const entries = toSwrScoreEntries(computed);
@@ -171,6 +196,7 @@ describe('toSwrScoreEntries', () => {
     it('maps complete scoring output for a normed language variant', () => {
       const computed = {
         composite: {
+          thetaEstimateRaw: 0.42,
           thetaEstimate: 0.42,
           percentile: 75,
           standardScore: 110,
@@ -183,8 +209,9 @@ describe('toSwrScoreEntries', () => {
       };
       const entries = toSwrScoreEntries(computed);
 
-      // 4 computed + 4 raw = 8 entries
-      expect(entries).toHaveLength(8);
+      // 4 computed (thetaEstimate, percentile, standardScore, roarScore) +
+      // 5 raw (thetaEstimateRaw, numCorrect, numAttempted, numIncorrect, percentCorrect) = 9 entries
+      expect(entries).toHaveLength(9);
 
       // All entries have correct domain
       for (const entry of entries) {
@@ -192,6 +219,9 @@ describe('toSwrScoreEntries', () => {
       }
 
       // Type assertions spot-check
+      const thetaRaw = entries.find((e: SwrScoreEntry) => e.name === SWR_SCORE_NAMES.THETA_ESTIMATE_RAW);
+      expect(thetaRaw).toMatchObject({ type: 'raw', value: '0.42' });
+
       const theta = entries.find((e: SwrScoreEntry) => e.name === SWR_SCORE_NAMES.THETA_ESTIMATE);
       expect(theta).toMatchObject({ type: 'computed', value: '0.42' });
 

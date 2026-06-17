@@ -59,6 +59,10 @@ export function wireScoreAdapter() {
       return {
         composite: {
           test: {
+            // SWR defines the shared IRT scale, so the native theta IS the shared
+            // theta. Write both so run_scores has thetaEstimateRaw (type=raw) and
+            // thetaEstimate (type=computed) with equal values, matching the PA shape.
+            thetaEstimateRaw: theta,
             thetaEstimate: theta,
             thetaSE: cat.seMeasurement === Infinity ? null : cat.seMeasurement,
           },
