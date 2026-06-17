@@ -21,6 +21,7 @@ export const SCHOOLS_QUERY_KEY = 'schools';
 export const SCHOOL_CLASSES_QUERY_KEY = 'school-classes';
 export const TASKS_QUERY_KEY = 'tasks';
 export const TASK_BUNDLES_QUERY_KEY = 'task-bundles';
+export const TASK_VARIANT_QUERY_KEY = 'task-variant';
 export const TASK_VARIANTS_QUERY_KEY = 'task-variants';
 export const USER_DATA_QUERY_KEY = 'user';
 export const USER_ADMINISTRATION_ASSIGNMENTS_QUERY_KEY = 'user-administration-assignments';

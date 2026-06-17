@@ -14,10 +14,6 @@
 
             <div class="flex align-items-center gap-2">
               <div class="flex gap-3 align-items-stretch justify-content-start">
-                <div v-if="isSuperAdmin" class="flex flex-column gap-1">
-                  <small class="text-gray-400">Show test administrations</small>
-                  <PvInputSwitch v-model="fetchTestAdministrations" class="align-self-center my-auto" />
-                </div>
                 <div class="flex flex-column gap-1">
                   <small id="search-help" class="text-gray-400">Search by administration name</small>
                   <div class="flex align-items-center">
@@ -73,10 +69,7 @@
 
         <div v-if="!initialized || isLoadingAdministrations" class="loading-container">
           <AppSpinner class="mb-4" />
-          <span class="uppercase font-light text-sm text-gray-600">
-            <template v-if="fetchTestAdministrations">Fetching Test Administrations</template>
-            <template v-else>Fetching Administrations</template>
-          </span>
+          <span class="uppercase font-light text-sm text-gray-600">Fetching Administrations</span>
         </div>
         <div v-else>
           <PvBlockUI :blocked="isFetchingAdministrations">
@@ -101,10 +94,8 @@
                     :title="getTitle(item, isSuperAdmin)"
                     :stats="item.stats"
                     :dates="item.dates"
-                    :assignees="item.assignedOrgs"
                     :assessments="item.assessments"
                     :public-name="item.publicName ?? item.name"
-                    :show-params="isSuperAdmin"
                     :is-super-admin="isSuperAdmin"
                   />
                 </div>
@@ -133,9 +124,7 @@ import PvButton from 'primevue/button';
 import PvDataView from 'primevue/dataview';
 import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
-import PvInputSwitch from 'primevue/inputswitch';
 import { useAuthStore } from '@/store/auth';
-import { orderByDefault } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -152,7 +141,6 @@ const searchInput = ref('');
 const search = ref('');
 
 const filteredAdministrations = ref([]);
-const fetchTestAdministrations = ref(false);
 
 const authStore = useAuthStore();
 
@@ -203,7 +191,7 @@ const {
   isLoading: isLoadingAdministrations,
   isFetching: isFetchingAdministrations,
   data: administrations,
-} = useAdministrationsListQuery(orderByDefault, fetchTestAdministrations, {
+} = useAdministrationsListQuery({
   enabled: initialized,
 });
 

@@ -34,42 +34,39 @@
 
       <div class="card-admin-assessments">
         <span class="mr-1"><strong>Assessments</strong>:</span>
-        <template v-if="!isLoadingTasksDictionary">
-          <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
-            <span>{{ tasksDictionary[assessmentId]?.publicName ?? assessmentId }}</span>
-            <span
-              v-if="showParams"
-              v-tooltip.top="'Click to view params'"
-              class="pi pi-info-circle cursor-pointer ml-1"
-              style="font-size: 1rem"
-              @click="toggleParams($event, assessmentId)"
-            />
-          </span>
-        </template>
+        <span v-for="assessment in sortedAssessments" :key="assessment.variantId" class="card-inline-list-item">
+          {{ assessment.taskName }}
+          <span
+            v-if="isSuperAdmin"
+            v-tooltip.top="'Click to view params'"
+            class="pi pi-info-circle cursor-pointer ml-1"
+            style="font-size: 1rem"
+            @click="showParamsFor($event, assessment)"
+          />
+        </span>
 
-        <div v-if="showParams">
-          <PvPopover
-            v-for="assessmentId in assessmentIds"
-            :key="assessmentId"
-            :ref="(el) => (paramPanelRefs[assessmentId] = el)"
-          >
-            <div v-if="getAssessment(assessmentId).variantId">
-              Variant ID: {{ getAssessment(assessmentId).variantId }}
+        <PvPopover ref="paramsPopover">
+          <div v-if="selectedAssessment" class="flex flex-column gap-2" style="min-width: 24rem">
+            <div>
+              <strong>{{ selectedAssessment.taskName }}</strong>
+              <span v-if="selectedAssessment.variantName" class="text-sm text-gray-600">
+                — {{ selectedAssessment.variantName }}</span
+              >
             </div>
-            <div v-if="getAssessment(assessmentId).variantName">
-              Variant Name: {{ getAssessment(assessmentId).variantName }}
-            </div>
+            <div v-if="isVariantFetching" class="text-sm text-gray-600">Loading parameters…</div>
+            <div v-else-if="variantParameterRows.length === 0" class="text-sm text-gray-600">No parameters.</div>
             <PvDataTable
+              v-else
               striped-rows
               class="p-datatable-small"
-              table-style="min-width: 30rem"
-              :value="toEntryObjects(params[assessmentId])"
+              table-style="min-width: 24rem"
+              :value="variantParameterRows"
             >
               <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
               <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
             </PvDataTable>
-          </PvPopover>
-        </div>
+          </div>
+        </PvPopover>
       </div>
 
       <div>
@@ -179,9 +176,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useRouter } from 'vue-router';
-import _fromPairs from 'lodash/fromPairs';
 import _mapValues from 'lodash/mapValues';
-import _toPairs from 'lodash/toPairs';
 import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
 import PvChart from 'primevue/chart';
@@ -190,10 +185,9 @@ import PvDataTable from 'primevue/datatable';
 import PvPopover from 'primevue/popover';
 import PvSpeedDial from 'primevue/speeddial';
 import PvTreeTable from 'primevue/treetable';
-import { taskDisplayNames } from '@/helpers/reports';
 import { setProgressChartData, setProgressChartOptions } from '@/helpers/plotting';
 import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
-import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+import useTaskVariantQuery from '@/composables/queries/useTaskVariantQuery';
 import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
@@ -212,7 +206,6 @@ const props = defineProps({
   stats: { type: Object, required: false, default: () => ({}) },
   dates: { type: Object, required: true },
   assessments: { type: Array, required: true },
-  showParams: { type: Boolean, required: true },
   isSuperAdmin: { type: Boolean, required: true },
 });
 
@@ -279,38 +272,32 @@ const processedDates = computed(() => {
   });
 });
 
-const assessmentIds = computed(() => {
-  return (props.assessments ?? [])
-    .map((assessment) => assessment.taskId.toLowerCase())
-    .sort((p1, p2) => {
-      return (taskDisplayNames[p1]?.order ?? 0) - (taskDisplayNames[p2]?.order ?? 0);
-    });
+// Assessments come from the administration list's `embed=tasks` payload, which
+// already carries display names and the assigned order.
+const sortedAssessments = computed(() => {
+  return [...(props.assessments ?? [])].sort((a, b) => a.orderIndex - b.orderIndex);
 });
 
-const paramPanelRefs = ref({});
-const params = ref({});
+// Per-variant parameters aren't on the list payload — they live on the variant
+// resource — so fetch them lazily when a super admin opens the params popover.
+const paramsPopover = ref(null);
+const selectedAssessment = ref(null);
+const selectedTaskId = computed(() => selectedAssessment.value?.taskId ?? null);
+const selectedVariantId = computed(() => selectedAssessment.value?.variantId ?? null);
 
-// Watch for changes in assessments prop and update paramPanelRefs and params
-watch(
-  () => props.assessments,
-  (newAssessments) => {
-    paramPanelRefs.value = _fromPairs(newAssessments.map((assessment) => [assessment.taskId.toLowerCase(), ref()]));
-    params.value = _fromPairs(newAssessments.map((assessment) => [assessment.taskId.toLowerCase(), assessment.params]));
-  },
-  { immediate: true },
+const { data: selectedVariant, isFetching: isVariantFetching } = useTaskVariantQuery(selectedTaskId, selectedVariantId);
+
+const variantParameterRows = computed(() =>
+  (selectedVariant.value?.parameters ?? []).map(({ name, value }) => ({
+    key: name,
+    value: value !== null && typeof value === 'object' ? JSON.stringify(value) : value,
+  })),
 );
 
-const toEntryObjects = (inputObj) => {
-  return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
+const showParamsFor = (event, assessment) => {
+  selectedAssessment.value = assessment;
+  paramsPopover.value?.toggle(event);
 };
-
-const toggleParams = (event, id) => {
-  paramPanelRefs.value[id].toggle(event);
-};
-
-function getAssessment(assessmentId) {
-  return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
-}
 
 const showTable = ref(false);
 const enableQueries = ref(false);
@@ -341,8 +328,6 @@ const noOrgsFound = computed(() => {
 const isWideScreen = computed(() => {
   return window.innerWidth > 768;
 });
-
-const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, {
   enabled: enableQueries,
