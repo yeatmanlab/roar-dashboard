@@ -15,8 +15,11 @@ import {
  * Mirrors the api-contract ScoreEntry discriminated union without importing it
  * directly, keeping assessment-schema decoupled from api-contract at build time.
  *
- * - type=RAW: live state captured from trial accumulation (counts, theta). assessmentStage required.
- * - type=COMPUTED: derived values (percentile, standardScore, percentCorrect). assessmentStage required.
+ * - `type='raw'` = values in the assessment's native measurement space: trial
+ *   counts, plus the native-scale IRT estimate (`thetaEstimateRaw`/`thetaSERaw`).
+ * - `type='computed'` = values derived for reporting: the shared-scale ability
+ *   estimate (`thetaEstimate`/`thetaSE`, comparable across assessments) and
+ *   normed lookups (percentile, standardScore).
  *
  * Compile-time assertion below ensures this stays assignable to the api-contract shape.
  */
@@ -95,7 +98,7 @@ const RECOGNIZED_GROUPS = new Set([
  * Output: Array of PaScoreEntry objects where:
  * - Subtask entries carry the uppercase domain (FSM, LSM, DEL) — never lowercase
  * - Composite entries carry 'composite' or 'composite_foundational'
- * - type is RAW for counts/theta, COMPUTED for normed/derived scores
+ * - type is RAW for counts and unscaled theta, COMPUTED is for scaled theta and normed/derived scores
  * - assessmentStage is always TEST (callback only uses test-phase data)
  *
  * @param computed - Nested computed scores from RoarScores.computedScoreCallback

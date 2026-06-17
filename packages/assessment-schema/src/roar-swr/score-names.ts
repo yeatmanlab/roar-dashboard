@@ -1,3 +1,5 @@
+import { TRIAL_COUNT_SCORE_NAMES } from '../constants/trial-count-score-names.js';
+
 /**
  * Canonical run_scores.domain strings for SWR score entries.
  */
@@ -15,7 +17,12 @@ export const SWR_SCORE_DOMAINS = {
  * numIncorrect, percentCorrect) — no normed scoring exists for these languages.
  */
 export const SWR_SCORE_NAMES = {
-  // CAT ability estimate — all languages
+  // CAT ability estimates — all languages.
+  // SWR defines the shared IRT scale, so the native theta IS the shared theta:
+  // thetaEstimateRaw (type=raw) and thetaEstimate (type=computed) carry the same
+  // value. Both are written so every IRT-scored assessment exposes a native-scale
+  // and a shared-scale theta in run_scores.
+  THETA_ESTIMATE_RAW: 'thetaEstimateRaw',
   THETA_ESTIMATE: 'thetaEstimate',
 
   // Normed scores — English and Spanish only
@@ -24,10 +31,8 @@ export const SWR_SCORE_NAMES = {
   STANDARD_SCORE: 'standardScore',
   RAW_SCORE: 'roarScore',
 
-  // Raw counts — Italian, Portuguese, and German
-  NUM_ATTEMPTED: 'numAttempted',
-  NUM_CORRECT: 'numCorrect',
-  NUM_INCORRECT: 'numIncorrect',
+  // Raw counts — Italian, Portuguese, and German produce only these (no normed scores)
+  ...TRIAL_COUNT_SCORE_NAMES,
   PERCENT_CORRECT: 'percentCorrect',
 } as const;
 
@@ -35,10 +40,12 @@ export type SwrScoreName = (typeof SWR_SCORE_NAMES)[keyof typeof SWR_SCORE_NAMES
 
 /**
  * Score names that map to type='raw' entries — live state captured per trial
- * (trial counts). thetaEstimate and thetaSE are type='computed': IRT-derived
- * ability estimates, not raw trial observations.
+ * (trial counts) and thetaEstimateRaw (the native-scale IRT estimate written
+ * as raw). thetaEstimate is type='computed': the shared-scale IRT estimate.
+ * For SWR both carry the same value because SWR defines the shared scale.
  */
 export const SWR_RAW_SCORE_NAMES = new Set<SwrScoreName>([
+  SWR_SCORE_NAMES.THETA_ESTIMATE_RAW,
   SWR_SCORE_NAMES.NUM_ATTEMPTED,
   SWR_SCORE_NAMES.NUM_CORRECT,
   SWR_SCORE_NAMES.NUM_INCORRECT,

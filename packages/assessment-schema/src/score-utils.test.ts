@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildRawCountEntries, COMMON_SCORE_NAMES } from './score-utils.js';
+import { buildRawCountEntries } from './score-utils.js';
+import { TRIAL_COUNT_SCORE_NAMES } from './constants/trial-count-score-names.js';
 import { AssessmentStage } from './enums/assessment-stage.enum.js';
 
 describe('buildRawCountEntries', () => {
@@ -14,21 +15,21 @@ describe('buildRawCountEntries', () => {
     expect(entries).toContainEqual({
       type: 'raw',
       domain: 'composite',
-      name: COMMON_SCORE_NAMES.NUM_CORRECT,
+      name: TRIAL_COUNT_SCORE_NAMES.NUM_CORRECT,
       value: '10',
       assessmentStage: AssessmentStage.PRACTICE,
     });
     expect(entries).toContainEqual({
       type: 'raw',
       domain: 'composite',
-      name: COMMON_SCORE_NAMES.NUM_ATTEMPTED,
+      name: TRIAL_COUNT_SCORE_NAMES.NUM_ATTEMPTED,
       value: '15',
       assessmentStage: AssessmentStage.PRACTICE,
     });
     expect(entries).toContainEqual({
       type: 'raw',
       domain: 'composite',
-      name: COMMON_SCORE_NAMES.NUM_INCORRECT,
+      name: TRIAL_COUNT_SCORE_NAMES.NUM_INCORRECT,
       value: '5',
       assessmentStage: AssessmentStage.PRACTICE,
     });
