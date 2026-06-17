@@ -1171,8 +1171,9 @@ const computeAssignmentAndRunData = computed(() => {
                 const subskillInfo = _get(assessment, `scores.computed.${subskill}`);
                 if (subskillInfo) {
                   currRowScores[taskId][subskill] = {
-                    percentCorrect: `${subskillInfo.subPercentCorrect * 100}%`,
+                    percentCorrect: `${Math.round(subskillInfo.subPercentCorrect * 100)}%`,
                     ...subskillInfo,
+                    rawScore: Number(subskillInfo.rawScore).toFixed(2),
                   };
                   const subskillIncorrectSkills = _get(
                     assessment,
@@ -1186,10 +1187,11 @@ const computeAssignmentAndRunData = computed(() => {
               // Writes percentCorrect to top-level for main score report tooltip and composite for subscore tooltip
               currRowScores[taskId].composite = {
                 totalIncorrectSkills: new Set(allIncorrectSkills).size,
-                percentCorrect: `${scores.composite?.subPercentCorrect * 100}%`,
+                percentCorrect: `${Math.round(scores.composite?.subPercentCorrect * 100)}%`,
                 ...scores.composite,
+                rawScore: Number(scores.composite?.rawScore).toFixed(2),
               };
-              currRowScores[taskId].percentCorrect = `${scores.composite?.subPercentCorrect * 100}%`;
+              currRowScores[taskId].percentCorrect = `${Math.round(scores.composite?.subPercentCorrect * 100)}%`;
             }
           }
 
