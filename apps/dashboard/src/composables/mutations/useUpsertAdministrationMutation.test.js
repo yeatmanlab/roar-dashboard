@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
 import * as VueQuery from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
 import useUpsertAdministrationMutation from './useUpsertAdministrationMutation';
 
-vi.mock('@/store/auth', () => ({
-  useAuthStore: vi.fn(),
+const mockCreate = vi.fn();
+const mockUpdate = vi.fn();
+
+vi.mock('@/clients/roar-api', () => ({
+  getRoarApiClient: () => ({ administrations: { create: mockCreate, update: mockUpdate } }),
 }));
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
@@ -17,11 +18,28 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
+const body = {
+  name: 'Admin A',
+  namePublic: 'Public A',
+  dateStart: '2026-01-01T00:00:00.000Z',
+  dateEnd: '2026-02-01T00:00:00.000Z',
+  isOrdered: false,
+  orgs: ['00000000-0000-0000-0000-0000000000d1'],
+  classes: [],
+  groups: [],
+  taskVariants: [{ taskVariantId: '00000000-0000-0000-0000-0000000000a1', orderIndex: 0 }],
+  agreements: [],
+};
+
 describe('useUpsertAdministrationMutation', () => {
   let queryClient;
 
   beforeEach(() => {
     queryClient = new VueQuery.QueryClient();
+    mockCreate.mockReset();
+    mockUpdate.mockReset();
+    mockCreate.mockResolvedValue({ status: 201, body: { data: 'new-admin-id' } });
+    mockUpdate.mockResolvedValue({ status: 200, body: { data: { id: 'admin-1' } } });
   });
 
   afterEach(() => {
@@ -30,87 +48,57 @@ describe('useUpsertAdministrationMutation', () => {
     queryClient?.clear();
   });
 
-  const mockAdministrationData = {
-    name: 'Test Administration',
-    publicName: 'Test Admin Public',
-    dateOpen: new Date(),
-    dateClose: new Date(),
-    sequential: true,
-    orgs: {
-      districts: [nanoid()],
-      schools: [],
-      classes: [],
-      groups: [],
-      families: [],
-    },
-    assessments: [],
-    isTestData: false,
-    legal: {
-      consent: null,
-      assent: null,
-      amount: '',
-      expectedTime: '',
-    },
-  };
+  it('creates via POST when no administrationId is given', async () => {
+    const [result] = withSetup(() => useUpsertAdministrationMutation(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
 
-  it('should call createAdministration when the mutation is triggered', async () => {
-    const mockAuthStore = { roarfirekit: { createAdministration: vi.fn() } };
-    useAuthStore.mockReturnValue(mockAuthStore);
+    const data = await result.mutateAsync({ body });
+
+    expect(mockCreate).toHaveBeenCalledWith({ body });
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(data).toBe('new-admin-id');
+  });
+
+  it('updates via PATCH when an administrationId is given', async () => {
+    const [result] = withSetup(() => useUpsertAdministrationMutation(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const data = await result.mutateAsync({ administrationId: 'admin-1', body });
+
+    expect(mockUpdate).toHaveBeenCalledWith({ params: { id: 'admin-1' }, body });
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(data).toEqual({ id: 'admin-1' });
+  });
+
+  it('throws a structured error on a non-2xx response', async () => {
+    mockCreate.mockResolvedValueOnce({ status: 422, body: { error: { code: 'validation' } } });
 
     const [result] = withSetup(() => useUpsertAdministrationMutation(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    const { mutateAsync } = result;
-    await mutateAsync(mockAdministrationData);
-
-    expect(mockAuthStore.roarfirekit.createAdministration).toHaveBeenCalledWith(mockAdministrationData);
+    await expect(result.mutateAsync({ body })).rejects.toMatchObject({
+      status: 422,
+      body: { error: { code: 'validation' } },
+    });
   });
 
-  it('should invalidate administration queries upon mutation success', async () => {
+  it('invalidates the administration queries on success', async () => {
     const mockInvalidateQueries = vi.fn();
-    const mockAuthStore = { roarfirekit: { createAdministration: vi.fn() } };
-
-    useAuthStore.mockReturnValue(mockAuthStore);
-
     vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));
 
     const [result] = withSetup(() => useUpsertAdministrationMutation(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    const { mutateAsync, isSuccess } = result;
-    await mutateAsync(mockAdministrationData);
+    await result.mutateAsync({ body });
 
-    expect(isSuccess.value).toBe(true);
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administrations'] });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administrations-list'] });
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration-assignments'] });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration-tree'] });
-  });
-
-  it('should not invalidate administration queries upon mutation failure', async () => {
-    const mockInvalidateQueries = vi.fn();
-    const mockError = new Error('Mock error');
-    const mockAuthStore = { roarfirekit: { createAdministration: vi.fn(() => Promise.reject(mockError)) } };
-
-    useAuthStore.mockReturnValue(mockAuthStore);
-
-    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));
-
-    const [result] = withSetup(() => useUpsertAdministrationMutation(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    const { mutateAsync, isSuccess, isError } = result;
-
-    try {
-      await mutateAsync(mockAdministrationData);
-    } catch (error) {
-      expect(error).toBe(mockError);
-      expect(isSuccess.value).toBe(false);
-      expect(isError.value).toBe(true);
-      expect(mockInvalidateQueries).not.toHaveBeenCalled();
-    }
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration'] });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration-assignees'] });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration-task-variants'] });
   });
 });
