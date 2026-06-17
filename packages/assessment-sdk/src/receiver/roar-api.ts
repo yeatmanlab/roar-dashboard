@@ -1,35 +1,49 @@
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
 import { ApiContractV1 } from '@roar-platform/api-contract';
-import type { CommandContext } from '../command/command';
+import type { CommandContext, Logger } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums/sdk-error-code.enum';
 
 /**
- * Creates a ts-rest client configured with ROAR API contract and authentication.
+ * Configuration required to build a ts-rest client.
+ *
+ * This is the participant-free subset of {@link CommandContext}. It deliberately omits
+ * `participant` so the client can be created before a participantId (ROAR UUID) exists —
+ * for example during anonymous-session bootstrap, where the very call that provisions the
+ * participantId must be made without one.
+ */
+export interface ApiClientConfig {
+  baseUrl: string;
+  auth: {
+    getToken(): Promise<string | undefined>;
+    refreshToken?(): Promise<string | undefined>;
+  };
+  requestId?: () => string;
+  fetchImpl?: typeof fetch;
+  logger?: Logger;
+}
+
+/**
+ * Creates a ts-rest client configured with the ROAR API contract and authentication.
  *
  * The client automatically injects:
  * - Authorization header with Bearer token (when available)
  * - x-request-id header for request tracing (when requestId is defined)
- * - Custom fetch implementation (if provided in context)
+ * - Custom fetch implementation (if provided in config)
  *
- * @param ctx - CommandContext with baseUrl, auth callbacks, participant context, optional logger, and optional custom fetch
+ * Unlike the {@link RoarApi} constructor, this does not require a participantId, so it can
+ * be used for unauthenticated/pre-provisioning calls such as anonymous-session bootstrap.
+ *
+ * @param config - baseUrl, auth callbacks, optional requestId, optional custom fetch, optional logger
  * @returns Initialized ts-rest client for ApiContractV1
  */
-function createClient(ctx: CommandContext) {
-  // Validate participantId is present at client creation time
-  // This is the single enforcement point for the requirement
-  if (!ctx.participant.participantId) {
-    throw new SDKError('participantId is required in CommandContext to create API client', {
-      code: SdkErrorCode.INVALID_CONTEXT,
-    });
-  }
-
+export function createApiClient(config: ApiClientConfig) {
   return initClient(ApiContractV1, {
-    baseUrl: ctx.baseUrl,
+    baseUrl: config.baseUrl,
     baseHeaders: {},
     api: async (args) => {
-      const token = await ctx.auth.getToken();
-      const requestId = ctx.requestId?.();
+      const token = await config.auth.getToken();
+      const requestId = config.requestId?.();
 
       args.headers = {
         ...args.headers,
@@ -39,13 +53,31 @@ function createClient(ctx: CommandContext) {
 
       return tsRestFetchApi({
         ...args,
-        ...(ctx.fetchImpl ? { fetchApi: ctx.fetchImpl } : {}),
+        ...(config.fetchImpl ? { fetchApi: config.fetchImpl } : {}),
       });
     },
   });
 }
 
-type RoarApiClient = ReturnType<typeof createClient>;
+export type RoarApiClient = ReturnType<typeof createApiClient>;
+
+/**
+ * Creates a ts-rest client for command execution, enforcing that a participantId is present.
+ *
+ * @param ctx - CommandContext with baseUrl, auth callbacks, participant context, optional logger, and optional custom fetch
+ * @returns Initialized ts-rest client for ApiContractV1
+ */
+function createClient(ctx: CommandContext): RoarApiClient {
+  // Validate participantId is present at client creation time
+  // This is the single enforcement point for the requirement
+  if (!ctx.participant.participantId) {
+    throw new SDKError('participantId is required in CommandContext to create API client', {
+      code: SdkErrorCode.INVALID_CONTEXT,
+    });
+  }
+
+  return createApiClient(ctx);
+}
 
 /**
  * RoarApi is the Receiver in the GoF Command pattern.
