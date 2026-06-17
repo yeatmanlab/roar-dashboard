@@ -186,18 +186,17 @@ import PvPopover from 'primevue/popover';
 import PvSpeedDial from 'primevue/speeddial';
 import PvTreeTable from 'primevue/treetable';
 import { setProgressChartData, setProgressChartOptions } from '@/helpers/plotting';
-import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
+import useAdministrationTreeQuery, {
+  fetchAdministrationTreeLevel,
+} from '@/composables/queries/useAdministrationTreeQuery';
 import useTaskVariantQuery from '@/composables/queries/useTaskVariantQuery';
 import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { PROGRESS_COLORS } from '@/constants/completionStatus';
-import { useAuthStore } from '@/store/auth';
 
 const router = useRouter();
-const authStore = useAuthStore();
-const { roarfirekit } = authStore;
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -329,12 +328,12 @@ const isWideScreen = computed(() => {
   return window.innerWidth > 768;
 });
 
-const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, {
+const { data: orgs, isLoading: isLoadingTree } = useAdministrationTreeQuery(props.id, {
   enabled: enableQueries,
 });
 
 const loadingTreeTable = computed(() => {
-  return isLoadingDsgfOrgs.value || expanding.value;
+  return isLoadingTree.value || expanding.value;
 });
 
 const treeTableOrgs = ref([]);
@@ -355,50 +354,23 @@ const onExpand = async (node) => {
   ) {
     expanding.value = true;
 
-    // Fetch child orgs using roarfirekit
-    const orgType = node.data.orgType.toLowerCase();
-    const { data: childOrgs } = await roarfirekit.getAdministrationOrgsAndStats(props.id, node.data.id, orgType);
+    // Fetch this node's children from the same tree endpoint, scoped by the
+    // expanding node as the parent. fetchAdministrationTreeLevel returns nodes
+    // already in PvTreeTable shape (with their own placeholder children).
+    const childNodes = await fetchAdministrationTreeLevel(props.id, {
+      parentEntityType: node.data.orgType,
+      parentEntityId: node.data.id,
+    });
 
-    // Lazy node is a copy of the expanding node. We will insert more detailed
-    // children nodes later.
+    // Lazy node is a copy of the expanding node with its real children attached.
     const lazyNode = {
       key: node.key,
       data: {
         ...node.data,
         expanded: true,
       },
+      children: childNodes,
     };
-
-    // Build child nodes from the returned org data
-    const childNodes = childOrgs.map((org, index) => {
-      const childNode = {
-        key: `${node.key}-${index}`,
-        data: {
-          id: org.orgId,
-          name: org.name,
-          orgType: SINGULAR_ORG_TYPES[org.orgType.toUpperCase()],
-          stats: org.stats,
-          ...org,
-        },
-      };
-
-      // Add placeholder child if this org has children
-      if (org.hasChildren) {
-        childNode.children = [
-          {
-            key: `${childNode.key}-placeholder`,
-            data: {
-              name: 'Loading...',
-              isPlaceholder: true,
-            },
-          },
-        ];
-      }
-
-      return childNode;
-    });
-
-    lazyNode.children = childNodes;
 
     // Recursively find and replace the expanding node in the tree
     const replaceNodeInTree = (nodes) => {
