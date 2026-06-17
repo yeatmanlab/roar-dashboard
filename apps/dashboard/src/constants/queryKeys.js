@@ -16,6 +16,7 @@ export const FAMILIES_QUERY_KEY = 'families';
 export const GROUPS_QUERY_KEY = 'groups';
 export const GROUPS_LIST_QUERY_KEY = 'groups-list';
 export const AGREEMENT_VERSION_CONTENT_QUERY_KEY = 'agreement-version-content';
+export const AGREEMENTS_QUERY_KEY = 'agreements';
 export const LEGAL_DOCS_QUERY_KEY = 'legal-docs';
 export const ME_QUERY_KEY = 'me';
 export const ORG_USERS_QUERY_KEY = 'org-users';
