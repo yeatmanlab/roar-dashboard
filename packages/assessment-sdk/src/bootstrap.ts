@@ -87,10 +87,9 @@ export async function bootstrapAnonymousSession(
   const created = await client.users.createAnonymous();
   if (created.status !== StatusCodes.OK) {
     const errorBody = created.body as { error?: { message?: string } };
-    throw new SDKError(
-      errorBody.error?.message ?? `Failed to provision anonymous user with status ${created.status}`,
-      { code: SdkErrorCode.BOOTSTRAP_FAILED },
-    );
+    throw new SDKError(errorBody.error?.message ?? `Failed to provision anonymous user with status ${created.status}`, {
+      code: SdkErrorCode.BOOTSTRAP_FAILED,
+    });
   }
 
   const participantId = created.body.data.id;
@@ -109,10 +108,9 @@ export async function bootstrapAnonymousSession(
 
     if (variants.status !== StatusCodes.OK) {
       const errorBody = variants.body as { error?: { message?: string } };
-      throw new SDKError(
-        errorBody.error?.message ?? `Failed to resolve task variant with status ${variants.status}`,
-        { code: SdkErrorCode.BOOTSTRAP_FAILED },
-      );
+      throw new SDKError(errorBody.error?.message ?? `Failed to resolve task variant with status ${variants.status}`, {
+        code: SdkErrorCode.BOOTSTRAP_FAILED,
+      });
     }
 
     resolvedVariantId = variants.body.data.items[0]?.id;
