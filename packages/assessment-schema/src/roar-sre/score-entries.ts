@@ -5,16 +5,18 @@ import {
   SRE_COMPOSITE_DOMAIN,
   SRE_PRACTICE_DOMAIN,
   SRE_COMPOSITE_SCORE_NAMES,
-  SRE_SUBTASK_SCORE_NAME,
+  SRE_RAW_COMPOSITE_SCORE_NAMES,
+  SRE_SUBTASK_SCORE_NAMES,
+  SRE_RAW_SUBTASK_SCORE_NAMES,
   type SreScoreName,
+  type SreSubtaskScoreName,
 } from './score-names.js';
 
 /**
  * Score entry shape for SRE scores written to run_scores.
  *
- * All SRE scores are type=COMPUTED — sreScore is derived (numCorrect - numIncorrect),
- * not a direct raw measurement. Normed scores (percentile, standardScore, etc.) are
- * also computed from the lookup table.
+ * - type=RAW: direct measurements (trial counts, thetaEstimateRaw, thetaSERaw). assessmentStage required.
+ * - type=COMPUTED: derived values (sreScore, thetaEstimate, thetaSE, normed scores). assessmentStage required.
  *
  * Compile-time assertion below ensures this stays assignable to the api-contract shape.
  */
@@ -34,11 +36,11 @@ const RECOGNIZED_COMPOSITE_NAMES = new Set<string>(Object.values(SRE_COMPOSITE_S
  * Converts SRE computed scores (from RoarScores.computedScoreCallback) to a flat array
  * of ScoreEntry objects suitable for the backend run_scores table.
  *
- * All SRE score entries are type=COMPUTED: sreScore is derived (numCorrect - numIncorrect),
- * not a raw measurement. All domains present in the computed output are emitted on every trial.
- *
- * - Composite domain: emits all SRE_COMPOSITE_SCORE_NAMES values that are present and non-null.
- * - All other domains (practice, lab, ai, etc.): emits only the sreScore.
+ * Score type assignment:
+ * - Composite domain: RAW for trial counts and thetaEstimateRaw/thetaSERaw; COMPUTED for
+ *   sreScore, thetaEstimate, thetaSE, normed scores, and scoringVersion.
+ * - Non-composite domains (practice, lab, ai, test1, test2, etc.): RAW for trial counts;
+ *   COMPUTED for sreScore.
  *
  * assessmentStage is derived from the domain key:
  * - 'practice' → AssessmentStage.PRACTICE
@@ -76,12 +78,11 @@ export function toSreScoreEntries(
         }
       }
 
-      // Object.values on an as-const object is inferred as string[] — cast to the literal union
       for (const name of Object.values(SRE_COMPOSITE_SCORE_NAMES) as SreScoreName[]) {
         const value = scores[name];
         if (value == null) continue;
         entries.push({
-          type: ScoreType.COMPUTED,
+          type: SRE_RAW_COMPOSITE_SCORE_NAMES.has(name) ? ScoreType.RAW : ScoreType.COMPUTED,
           domain,
           name,
           value: String(value),
@@ -89,16 +90,19 @@ export function toSreScoreEntries(
         });
       }
     } else {
-      // Non-composite domain (practice, lab, ai, etc.): emit only sreScore
-      const sreScore = scores[SRE_SUBTASK_SCORE_NAME];
-      if (sreScore == null) continue;
-      entries.push({
-        type: ScoreType.COMPUTED,
-        domain,
-        name: SRE_SUBTASK_SCORE_NAME,
-        value: String(sreScore),
-        assessmentStage,
-      });
+      // Non-composite domain (practice, lab, ai, test1, test2, etc.):
+      // emit sreScore (computed) and trial counts (raw).
+      for (const name of Object.values(SRE_SUBTASK_SCORE_NAMES) as SreSubtaskScoreName[]) {
+        const value = scores[name];
+        if (value == null) continue;
+        entries.push({
+          type: SRE_RAW_SUBTASK_SCORE_NAMES.has(name) ? ScoreType.RAW : ScoreType.COMPUTED,
+          domain,
+          name,
+          value: String(value),
+          assessmentStage,
+        });
+      }
     }
   }
 

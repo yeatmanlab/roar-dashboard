@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { toSreScoreEntries } from './score-entries.js';
 import type { SreScoreEntry } from './score-entries.js';
-import { SRE_COMPOSITE_SCORE_NAMES, SRE_COMPOSITE_DOMAIN, SRE_PRACTICE_DOMAIN } from './score-names.js';
+import { SRE_COMPOSITE_SCORE_NAMES, SRE_COMPOSITE_DOMAIN, SRE_PRACTICE_DOMAIN, SRE_SUBTASK_SCORE_NAMES } from './score-names.js';
 
 describe('toSreScoreEntries', () => {
   describe('null / missing input', () => {
@@ -223,7 +223,7 @@ describe('toSreScoreEntries', () => {
       };
       const entries = toSreScoreEntries(computed);
 
-      // practice: 1, lab: 1, ai: 1, composite: 4 = 7
+      // practice: 1 (sreScore only), lab: 1 (sreScore only), ai: 1 (sreScore only), composite: 4 = 7
       expect(entries).toHaveLength(7);
 
       const compositeEntries = entries.filter((e: SreScoreEntry) => e.domain === 'composite');
@@ -235,6 +235,87 @@ describe('toSreScoreEntries', () => {
 
       const practiceEntry = entries.find((e: SreScoreEntry) => e.domain === 'practice');
       expect(practiceEntry).toMatchObject({ assessmentStage: 'practice', type: 'computed', value: '3' });
+    });
+  });
+
+  describe('raw trial counts', () => {
+    it('emits numCorrect, numIncorrect, numAttempted as type=raw in composite domain', () => {
+      const computed = {
+        composite: { sreScore: 8, numCorrect: 10, numIncorrect: 2, numAttempted: 12 },
+      };
+      const entries = toSreScoreEntries(computed);
+
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: SRE_COMPOSITE_SCORE_NAMES.NUM_CORRECT, type: 'raw', value: '10' }),
+      );
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: SRE_COMPOSITE_SCORE_NAMES.NUM_INCORRECT, type: 'raw', value: '2' }),
+      );
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: SRE_COMPOSITE_SCORE_NAMES.NUM_ATTEMPTED, type: 'raw', value: '12' }),
+      );
+    });
+
+    it('emits numCorrect, numIncorrect, numAttempted as type=raw for non-composite domains', () => {
+      const computed = {
+        lab: { sreScore: 8, numCorrect: 10, numIncorrect: 2, numAttempted: 12 },
+        test1: { sreScore: 5, numCorrect: 7, numIncorrect: 2, numAttempted: 9 },
+        practice: { sreScore: 2, numCorrect: 3, numIncorrect: 1, numAttempted: 4 },
+      };
+      const entries = toSreScoreEntries(computed);
+
+      const labEntries = entries.filter((e: SreScoreEntry) => e.domain === 'lab');
+      expect(labEntries).toHaveLength(4); // sreScore + 3 counts
+      expect(labEntries.find((e) => e.name === SRE_SUBTASK_SCORE_NAMES.SRE_SCORE)?.type).toBe('computed');
+      expect(labEntries.find((e) => e.name === SRE_SUBTASK_SCORE_NAMES.NUM_CORRECT)?.type).toBe('raw');
+      expect(labEntries.find((e) => e.name === SRE_SUBTASK_SCORE_NAMES.NUM_INCORRECT)?.type).toBe('raw');
+      expect(labEntries.find((e) => e.name === SRE_SUBTASK_SCORE_NAMES.NUM_ATTEMPTED)?.type).toBe('raw');
+
+      const practiceEntries = entries.filter((e: SreScoreEntry) => e.domain === 'practice');
+      expect(practiceEntries).toHaveLength(4);
+      for (const entry of practiceEntries) {
+        expect(entry.assessmentStage).toBe('practice');
+      }
+    });
+
+    it('sreScore stays type=computed even when counts are present', () => {
+      const computed = {
+        composite: { sreScore: 10, numCorrect: 12, numIncorrect: 2, numAttempted: 14 },
+      };
+      const entries = toSreScoreEntries(computed);
+
+      const sreEntry = entries.find((e: SreScoreEntry) => e.name === SRE_COMPOSITE_SCORE_NAMES.SRE_SCORE);
+      expect(sreEntry?.type).toBe('computed');
+    });
+  });
+
+  describe('theta scores', () => {
+    it('emits thetaEstimateRaw and thetaSERaw as type=raw', () => {
+      const computed = {
+        composite: { sreScore: 10, thetaEstimateRaw: 1.2, thetaSERaw: 0.3 },
+      };
+      const entries = toSreScoreEntries(computed);
+
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: SRE_COMPOSITE_SCORE_NAMES.THETA_ESTIMATE_RAW, type: 'raw', value: '1.2' }),
+      );
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: SRE_COMPOSITE_SCORE_NAMES.THETA_SE_RAW, type: 'raw', value: '0.3' }),
+      );
+    });
+
+    it('emits thetaEstimate and thetaSE as type=computed', () => {
+      const computed = {
+        composite: { sreScore: 10, thetaEstimate: 1.2, thetaSE: 0.3 },
+      };
+      const entries = toSreScoreEntries(computed);
+
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: SRE_COMPOSITE_SCORE_NAMES.THETA_ESTIMATE, type: 'computed', value: '1.2' }),
+      );
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: SRE_COMPOSITE_SCORE_NAMES.THETA_SE, type: 'computed', value: '0.3' }),
+      );
     });
   });
 });

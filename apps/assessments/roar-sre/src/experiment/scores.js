@@ -380,9 +380,9 @@ export class RoarScores {
       }
     }
 
-    // This returns an object with the same top-level keys as the input raw scores
-    // But the values are the number of correct trials minus the number of
-    // incorrect trials, not including practice trials.
+    // Compute per-subtask scores. For each subtask: sreScore (computed) plus raw trial
+    // counts and theta (when available). Theta fields are absent in the current non-CAT
+    // implementation and are included here for when CAT support is added.
     const computedScores = _fromPairs(
       _toPairs(rawScores).map(([subTask, subScore]) => {
         // For the "practice" subtask, we want to use the raw scores associated
@@ -391,8 +391,21 @@ export class RoarScores {
         const scoringStage = subTask === SRE_PRACTICE_DOMAIN ? AssessmentStage.PRACTICE : AssessmentStage.TEST;
         const numCorrect = subScore[scoringStage]?.[TRIAL_COUNT_SCORE_NAMES.NUM_CORRECT] || 0;
         const numIncorrect = subScore[scoringStage]?.[TRIAL_COUNT_SCORE_NAMES.NUM_INCORRECT] || 0;
+        const numAttempted = numCorrect + numIncorrect;
         const sreScore = numCorrect - numIncorrect;
-        return [subTask, { sreScore }];
+        const thetaEstimateRaw = subScore[scoringStage]?.thetaEstimateRaw ?? null;
+        const thetaSERaw = subScore[scoringStage]?.thetaSERaw ?? null;
+        return [
+          subTask,
+          {
+            sreScore,
+            numCorrect,
+            numIncorrect,
+            numAttempted,
+            ...(thetaEstimateRaw != null ? { thetaEstimateRaw, thetaEstimate: thetaEstimateRaw } : {}),
+            ...(thetaSERaw != null ? { thetaSERaw, thetaSE: thetaSERaw } : {}),
+          },
+        ];
       }),
     );
 
@@ -477,7 +490,19 @@ export class RoarScores {
       console.error('Composite score conversion failed; writing raw scores only:', error?.message || error);
     }
     if (compositeScore != null) {
-      computedScores[SRE_COMPOSITE_DOMAIN] = { sreScore: compositeScore };
+      // Sum trial counts from all test subtasks into the composite domain.
+      const testSubtaskEntries = Object.entries(computedScores).filter(
+        ([domain]) => domain !== SRE_PRACTICE_DOMAIN && domain !== SRE_COMPOSITE_DOMAIN,
+      );
+      const compositeNumCorrect = testSubtaskEntries.reduce((sum, [, v]) => sum + (v.numCorrect || 0), 0);
+      const compositeNumIncorrect = testSubtaskEntries.reduce((sum, [, v]) => sum + (v.numIncorrect || 0), 0);
+
+      computedScores[SRE_COMPOSITE_DOMAIN] = {
+        sreScore: compositeScore,
+        numCorrect: compositeNumCorrect,
+        numIncorrect: compositeNumIncorrect,
+        numAttempted: compositeNumCorrect + compositeNumIncorrect,
+      };
     }
 
     if (isNormed && this.isValidForScoring) {
@@ -486,9 +511,11 @@ export class RoarScores {
 
       if (myRow !== undefined) {
         // And add columns in the lookup table except for the grade and sreScore.
+        // Spread existing composite (preserves trial counts) before adding normed scores.
         const { grade, ageMonths, sreScore, ...normedScores } = myRow;
 
         computedScores[SRE_COMPOSITE_DOMAIN] = {
+          ...computedScores[SRE_COMPOSITE_DOMAIN],
           sreScore: compositeScore,
           ...normedScores,
           scoringVersion: this.scoringVersion,

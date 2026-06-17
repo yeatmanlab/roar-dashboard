@@ -29,7 +29,7 @@
     "variantName": "English — age-based (v5, default)",
     "params": {
       "lng": "en",
-      "scoringVersion": 5,
+      "scoringVersion": 4,
       "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
@@ -52,10 +52,10 @@
     }
   },
   {
-    "variantName": "Spanish — age-based (v4)",
+    "variantName": "Spanish — age-based (v1)",
     "params": {
       "lng": "es",
-      "scoringVersion": 4,
+      "scoringVersion": 1,
       "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
