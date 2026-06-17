@@ -31,6 +31,7 @@ import { FinishRunCommand } from '../commands/finish-run.command';
 import { WriteTrialCommand } from '../commands/write-trial.command';
 import { UpdateRunEngagementFlagsCommand } from '../commands/update-engagement-flags.command';
 import { GetTaskVariantCommand } from '../commands/get-variant-id.command';
+import { GetVariantByIdCommand } from '../commands/get-variant-by-id.command';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -802,4 +803,40 @@ export async function getVariantParamsById(taskId: string, variantId: string): P
   const cmd = new GetTaskVariantCommand(api);
   const { variantParams } = await invoker.run(cmd, { taskId, variantId });
   return variantParams;
+}
+
+/**
+ * Retrieves task variant parameters and the resolved task ID using only the variant UUID.
+ *
+ * Use this instead of `getVariantParamsById` when you have a variant ID but not the task ID —
+ * for example, when the launcher passes only `?variantId=` in the URL.
+ *
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
+ *
+ * @param variantId - The UUID of the variant to retrieve
+ * @returns Promise that resolves with `{ variantParams, taskId }`
+ * @throws {SDKError} If the facade has not been initialized
+ * @throws {SDKError} If the variant lookup fails
+ *
+ * @example
+ * ```ts
+ * initFirekitCompat(ctx, { variantId, taskVersion, isAnonymous: true });
+ * const { variantParams, taskId } = await getVariantById(variantId);
+ * ```
+ */
+export async function getVariantById(
+  variantId: string,
+): Promise<{ variantParams: Record<string, unknown>; taskId: string }> {
+  const facade = getFirekitCompat();
+
+  if (!facade._getTaskInfo()) {
+    throw new SDKError('appkit.getVariantById requires initialization. Call initFirekitCompat() first.');
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+
+  const cmd = new GetVariantByIdCommand(api);
+  return invoker.run(cmd, { variantId });
 }

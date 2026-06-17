@@ -1,4 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
+import { getTableColumns } from 'drizzle-orm';
 import type { RunEventBody } from '@roar-platform/api-contract';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -14,7 +15,13 @@ import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaRelation } from '../authorization/fga-constants';
 import { verifyTargetUserAccess } from '../authorization/verify-target-user-access';
 import type { AuthContext } from '../../types/auth-context';
+import { runTrials } from '../../db/schema';
 import type { NewRunScore } from '../../db/schema';
+import { camelizeKeys } from '../../utils/camelize-keys.util';
+import { sanitizeJsonbMaxValues } from '../../utils/sanitize-jsonb.util';
+
+const TRIAL_COLUMN_KEYS = new Set(Object.keys(getTableColumns(runTrials)));
+const EXCLUDED_TRIAL_FIELDS = new Set<string>(['id', 'runId', 'createdAt', 'updatedAt']);
 
 type RunCompleteEventBody = Extract<RunEventBody, { type: 'complete' }>;
 type RunAbortEventBody = Extract<RunEventBody, { type: 'abort' }>;
@@ -182,15 +189,29 @@ export function RunEventService({
     await verifyUserAccess(authContext, targetUserId);
     const run = await assertRunOwnedByUser(runId, targetUserId);
 
+    const runTrialFields: Record<string, unknown> = {};
+    const metadata: Record<string, unknown> = {};
+
+    // Normalize trial keys to camelCase. skipAliases drops snake_case keys when their
+    // camelCase equivalent is present — the SDK-normalized value takes priority.
+    // Schema-matching keys go to runTrialFields; everything else lands in metadata.
+    const normalizedTrial = camelizeKeys(body.trial, { skipAliases: true });
+    for (const [camelKey, value] of Object.entries(normalizedTrial)) {
+      if (TRIAL_COLUMN_KEYS.has(camelKey) && !EXCLUDED_TRIAL_FIELDS.has(camelKey)) {
+        runTrialFields[camelKey] = sanitizeJsonbMaxValues(value);
+      } else {
+        metadata[camelKey] = sanitizeJsonbMaxValues(value);
+      }
+    }
+
     try {
       await runTrialsRepository.runTransaction({
         fn: async (tx) => {
           const createdTrial = await runTrialsRepository.create({
             data: {
+              ...runTrialFields,
               runId,
-              assessmentStage: body.trial.assessmentStage,
-              correct: body.trial.correct,
-              metadata: body.trial,
+              metadata,
             },
             transaction: tx,
           });

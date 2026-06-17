@@ -15,7 +15,7 @@ class RoarPA {
 
   async init() {
     initSentry();
-    await startRun();
+    await startRun(this.userParams ?? {});
     const config = await initConfig(this.gameParams, this.userParams, this.displayElement);
     return buildExperiment(config);
   }

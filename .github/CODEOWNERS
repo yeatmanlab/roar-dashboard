@@ -2,3 +2,9 @@
 # later match takes precedence, these owners will be requested for review when
 # someone opens a pull request.
 *       @yeatmanlab/roar-maintainers
+
+# roar-swr assessment
+apps/assessments/roar-swr/ @yeatmanlab/roar-maintainers @AnyaWMa
+
+# roar-pa assessment
+apps/assessments/roar-pa/ @yeatmanlab/roar-maintainers @AnyaWMa
