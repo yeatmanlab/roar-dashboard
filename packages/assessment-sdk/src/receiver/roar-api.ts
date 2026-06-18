@@ -20,6 +20,8 @@ export interface ApiClientConfig {
   };
   requestId?: () => string;
   fetchImpl?: typeof fetch;
+  /** Accepted for structural compatibility with CommandContext but not yet used by createApiClient.
+   *  Forward-compatibility field — will be wired into token injection debug logging in a follow-up. */
   logger?: Logger;
 }
 
