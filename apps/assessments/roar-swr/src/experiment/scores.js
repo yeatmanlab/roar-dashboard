@@ -3,6 +3,7 @@ import _omit from 'lodash/omit';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
+import { SWR_TASK_IDS } from '@roar-platform/assessment-schema/roar-swr';
 
 export class RoarScores {
   constructor() {
@@ -110,8 +111,8 @@ export class RoarScores {
   computedScoreCallback = async (rawScores) => {
     const { userMetadata, taskId } = store.session.get('config');
 
-    if (!['swr', 'swr-es'].includes(taskId)) {
-      console.warn('[SWR scores] taskId not in [swr, swr-es] — returning null');
+    if (!Object.values(SWR_TASK_IDS).includes(taskId)) {
+      console.warn(`[SWR scores] unrecognized taskId "${taskId}" — returning null`);
       return null;
     }
 
@@ -152,6 +153,11 @@ export class RoarScores {
         thetaEstimateRaw: subtaskScores.test?.thetaEstimateRaw ?? score,
         thetaSERaw: subtaskScores.test?.thetaSERaw ?? null,
         thetaEstimate: score,
+        // Forward trial counts from raw input — written for all SWR languages.
+        numCorrect: subtaskScores.test?.numCorrect,
+        numAttempted: subtaskScores.test?.numAttempted,
+        numIncorrect: subtaskScores.test?.numIncorrect,
+        percentCorrect: subtaskScores.test?.percentCorrect,
       };
 
       if (score != undefined) {
