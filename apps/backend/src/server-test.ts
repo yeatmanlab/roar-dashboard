@@ -48,6 +48,7 @@ import { seedBaseFixture, type BaseFixture } from './test-support/fixtures';
 import { AgreementFactory } from './test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from './test-support/factories/agreement-version.factory';
 import { AdministrationAgreementFactory } from './test-support/factories/administration-agreement.factory';
+import { AdministrationTaskVariantFactory } from './test-support/factories/administration-task-variant.factory';
 import { initializeFgaTestStore, syncFgaTuplesFromPostgres } from './test-support/fga';
 import {
   seedFirebaseAuthEmulator,
@@ -328,6 +329,41 @@ async function startTestServer(): Promise<void> {
         transient: { administrationId: fixture.administrationAssignedToDistrict.id, agreementId: assentAgreement.id },
       }),
     ]);
+
+    // 5c. Seed task-variant assignments for the remaining administrations (local dev only).
+    // baseFixture deliberately assigns variants to administrationAssignedToDistrict only, so the
+    // integration suite can assert empty-assessment states. The dashboard is far more useful to
+    // exercise locally when every administration card shows assessments, so assign a small, shared
+    // set of the already-seeded variants to the other five administrations. Kept out of baseFixture
+    // (same rationale as the agreements above) so the integration suite is unaffected.
+    logger.info('[server-test] Seeding local-dev assessments for the non-district administrations...');
+    const localDevAdministrationIds = [
+      fixture.administrationAssignedToSchoolA.id,
+      fixture.administrationAssignedToSchoolB.id,
+      fixture.administrationAssignedToClassA.id,
+      fixture.administrationAssignedToGroup.id,
+      fixture.administrationAssignedToDistrictB.id,
+    ];
+    await Promise.all(
+      localDevAdministrationIds.flatMap((administrationId) => [
+        AdministrationTaskVariantFactory.create({
+          administrationId,
+          taskVariantId: fixture.variantForAllGrades.id,
+          orderIndex: 0,
+        }),
+        AdministrationTaskVariantFactory.create({
+          administrationId,
+          taskVariantId: fixture.variantForGrade5.id,
+          orderIndex: 1,
+          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: '5' },
+        }),
+        AdministrationTaskVariantFactory.create({
+          administrationId,
+          taskVariantId: fixture.variantForTask2.id,
+          orderIndex: 2,
+        }),
+      ]),
+    );
 
     // 6. Initialize FGA store, deploy model, and sync tuples
     logger.info('[server-test] Initializing FGA test store...');
