@@ -1,6 +1,7 @@
 // scores.integration.test.js
 import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { RoarScores } from '../experiment/scores.js';
+import { toSwrScoreEntries, SWR_SCORE_NAMES } from '@roar-platform/assessment-schema/roar-swr';
 import fs from 'fs';
 import path from 'path';
 import store from 'store2';
@@ -297,6 +298,54 @@ describe('RoarScores Integration Tests', () => {
 
     // The scores instance's lookup table is now loaded and ready for future calls
     expect(scores.tableLoaded).toBe(true);
+  });
+
+  test('callback output contains thetaEstimateRaw forwarded from raw input', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 7,
+      userMetadata: { ageMonths: 108 },
+      taskId: 'swr',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      composite: {
+        test: { thetaEstimateRaw: 0.42, thetaEstimate: 0.42 },
+      },
+    };
+
+    const result = await scores.computedScoreCallback(rawScores);
+
+    expect(result.composite.thetaEstimateRaw).toBe(0.42);
+    expect(result.composite.thetaEstimate).toBe(0.42);
+  });
+
+  test('toSwrScoreEntries on real callback output emits a type=raw thetaEstimateRaw entry', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 7,
+      userMetadata: { ageMonths: 108 },
+      taskId: 'swr',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      composite: {
+        test: { thetaEstimateRaw: 0.42, thetaEstimate: 0.42, thetaSERaw: 0.15 },
+      },
+    };
+
+    const computed = await scores.computedScoreCallback(rawScores);
+    const entries = toSwrScoreEntries(computed);
+
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_ESTIMATE_RAW, type: 'raw', value: '0.42' }),
+    );
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_SE_RAW, type: 'raw', value: '0.15' }),
+    );
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_ESTIMATE, type: 'computed', value: '0.42' }),
+    );
   });
 
   test('should return null for non-SWR or SWR-ES taskIds', async () => {

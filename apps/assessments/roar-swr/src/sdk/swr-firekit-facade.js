@@ -62,9 +62,11 @@ export function wireScoreAdapter() {
             // SWR defines the shared IRT scale, so the native theta IS the shared
             // theta. Write both so run_scores has thetaEstimateRaw (type=raw) and
             // thetaEstimate (type=computed) with equal values, matching the PA shape.
+            // thetaSERaw (type=raw) is the native-scale SE used by recomputeUseForReporting;
+            // no computed thetaSE is written because SWR has no cross-scale SE transform.
             thetaEstimateRaw: theta,
             thetaEstimate: theta,
-            thetaSE: cat.seMeasurement === Infinity ? null : cat.seMeasurement,
+            thetaSERaw: cat.seMeasurement === Infinity ? null : cat.seMeasurement,
           },
         },
       };

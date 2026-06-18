@@ -147,6 +147,10 @@ export class RoarScores {
     const computedScores = _mapValues(rawScores, (subtaskScores) => {
       const score = subtaskScores.test?.thetaEstimate === undefined ? null : subtaskScores.test?.thetaEstimate;
       let computedScore = {
+        // SWR defines the shared IRT scale, so native === shared. Forward thetaEstimateRaw
+        // and thetaSERaw from the raw input so toSwrScoreEntries can emit type=raw entries.
+        thetaEstimateRaw: subtaskScores.test?.thetaEstimateRaw ?? score,
+        thetaSERaw: subtaskScores.test?.thetaSERaw ?? null,
         thetaEstimate: score,
       };
 
