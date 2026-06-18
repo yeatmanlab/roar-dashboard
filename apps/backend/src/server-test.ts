@@ -45,6 +45,9 @@ import type { TestFixture } from '@roar-platform/api-contract/test-fixture.type'
 import { initializeDatabasePools, closeDatabasePools } from './db/clients';
 import { truncateAllTables, runMigrations, setupFdwForTests } from './test-support/db';
 import { seedBaseFixture, type BaseFixture } from './test-support/fixtures';
+import { AgreementFactory } from './test-support/factories/agreement.factory';
+import { AgreementVersionFactory } from './test-support/factories/agreement-version.factory';
+import { AdministrationAgreementFactory } from './test-support/factories/administration-agreement.factory';
 import { initializeFgaTestStore, syncFgaTuplesFromPostgres } from './test-support/fga';
 import {
   seedFirebaseAuthEmulator,
@@ -298,6 +301,33 @@ async function startTestServer(): Promise<void> {
     logger.info('[server-test] Truncating tables and seeding baseFixture...');
     await truncateAllTables();
     const fixture = await seedBaseFixture();
+
+    // 5b. Seed consent/assent agreements for local dev (kept out of baseFixture so
+    // the integration suite is unaffected) and assign them to the District
+    // administration. This populates the dashboard's consent picker and lets the
+    // edit-mode pre-fill path be exercised. The School A administration is left
+    // without agreements so the "No Consent" pre-fill path is testable too.
+    logger.info('[server-test] Seeding local-dev consent/assent agreements...');
+    const [consentAgreement, assentAgreement] = await Promise.all([
+      AgreementFactory.create({ name: 'Local Dev Consent', agreementType: 'consent' }),
+      AgreementFactory.create({ name: 'Local Dev Assent', agreementType: 'assent' }),
+    ]);
+    await Promise.all([
+      AgreementVersionFactory.create(
+        { locale: 'en-US', githubFilename: 'CONSENT.md' },
+        { transient: { agreementId: consentAgreement.id } },
+      ),
+      AgreementVersionFactory.create(
+        { locale: 'en-US', githubFilename: 'ASSENT.md' },
+        { transient: { agreementId: assentAgreement.id } },
+      ),
+      AdministrationAgreementFactory.create(undefined, {
+        transient: { administrationId: fixture.administrationAssignedToDistrict.id, agreementId: consentAgreement.id },
+      }),
+      AdministrationAgreementFactory.create(undefined, {
+        transient: { administrationId: fixture.administrationAssignedToDistrict.id, agreementId: assentAgreement.id },
+      }),
+    ]);
 
     // 6. Initialize FGA store, deploy model, and sync tuples
     logger.info('[server-test] Initializing FGA test store...');
