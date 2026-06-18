@@ -458,10 +458,9 @@ describe('toPaScoreEntries', () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // 9 subtask (3 per: numCorrect, numAttempted, percentCorrect — roarScore on
-      // subtasks is NOT in SUBTASK_NAMES so it is not emitted)
-      // + 7 composite summary names = 16 entries
-      expect(entries.length).toBe(16);
+      // 12 subtask (4 per: numCorrect, numAttempted, percentCorrect, roarScore) +
+      // 7 composite summary names = 19 entries
+      expect(entries.length).toBe(19);
 
       // Verify FSM numCorrect is emitted with uppercase domain
       expect(entries).toContainEqual(
@@ -472,6 +471,16 @@ describe('toPaScoreEntries', () => {
           value: '10',
         }),
       );
+
+      // Verify FSM roarScore is now emitted (computed — equals numCorrect for fixed scoring)
+      expect(entries).toContainEqual(
+        expect.objectContaining({
+          type: 'computed',
+          domain: PA_SCORE_DOMAINS.FSM,
+          name: PA_SCORE_NAMES.RAW_SCORE,
+          value: '10',
+        }),
+      );
     });
 
     it('emits theta fields for adaptive scoring (v4+)', () => {
@@ -479,6 +488,9 @@ describe('toPaScoreEntries', () => {
         fsm: {
           numCorrect: 10,
           percentCorrect: 67,
+          // Per-subtask: no cross-scale transform, so raw = computed (same values)
+          thetaEstimateRaw: 0.5,
+          thetaSERaw: 0.15,
           thetaEstimate: 0.5,
           thetaSE: 0.15,
         },
@@ -486,16 +498,31 @@ describe('toPaScoreEntries', () => {
           roarScore: 25,
           percentile: 60,
           standardScore: 105,
-          thetaEstimate: 0.45,
-          thetaSE: 0.12,
+          // Composite: cross-scale transform applied, raw ≠ computed
           thetaEstimateRaw: 0.4,
           thetaSERaw: 0.13,
+          thetaEstimate: 0.45,
+          thetaSE: 0.12,
         },
       };
 
       const entries = toPaScoreEntries(computed);
 
-      // Subtask theta is computed under FSM domain
+      // Subtask theta raw/computed pair under FSM domain (equal values, no cross-scale transform)
+      expect(entries).toContainEqual({
+        type: 'raw',
+        domain: PA_SCORE_DOMAINS.FSM,
+        name: PA_SCORE_NAMES.THETA_ESTIMATE_RAW,
+        value: '0.5',
+        assessmentStage: 'test',
+      });
+      expect(entries).toContainEqual({
+        type: 'raw',
+        domain: PA_SCORE_DOMAINS.FSM,
+        name: PA_SCORE_NAMES.THETA_SE_RAW,
+        value: '0.15',
+        assessmentStage: 'test',
+      });
       expect(entries).toContainEqual({
         type: 'computed',
         domain: PA_SCORE_DOMAINS.FSM,
@@ -511,21 +538,7 @@ describe('toPaScoreEntries', () => {
         assessmentStage: 'test',
       });
 
-      // Composite theta fields
-      expect(entries).toContainEqual({
-        type: 'computed',
-        domain: PA_SCORE_DOMAINS.COMPOSITE,
-        name: PA_SCORE_NAMES.THETA_ESTIMATE,
-        value: '0.45',
-        assessmentStage: 'test',
-      });
-      expect(entries).toContainEqual({
-        type: 'computed',
-        domain: PA_SCORE_DOMAINS.COMPOSITE,
-        name: PA_SCORE_NAMES.THETA_SE,
-        value: '0.12',
-        assessmentStage: 'test',
-      });
+      // Composite theta raw/computed pairs (raw = native composite, computed = shared scale)
       expect(entries).toContainEqual({
         type: 'raw',
         domain: PA_SCORE_DOMAINS.COMPOSITE,
@@ -538,6 +551,20 @@ describe('toPaScoreEntries', () => {
         domain: PA_SCORE_DOMAINS.COMPOSITE,
         name: PA_SCORE_NAMES.THETA_SE_RAW,
         value: '0.13',
+        assessmentStage: 'test',
+      });
+      expect(entries).toContainEqual({
+        type: 'computed',
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
+        name: PA_SCORE_NAMES.THETA_ESTIMATE,
+        value: '0.45',
+        assessmentStage: 'test',
+      });
+      expect(entries).toContainEqual({
+        type: 'computed',
+        domain: PA_SCORE_DOMAINS.COMPOSITE,
+        name: PA_SCORE_NAMES.THETA_SE,
+        value: '0.12',
         assessmentStage: 'test',
       });
     });

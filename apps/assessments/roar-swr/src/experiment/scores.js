@@ -152,6 +152,7 @@ export class RoarScores {
         // and thetaSERaw from the raw input so toSwrScoreEntries can emit type=raw entries.
         thetaEstimateRaw: subtaskScores.test?.thetaEstimateRaw ?? score,
         thetaSERaw: subtaskScores.test?.thetaSERaw ?? null,
+        thetaSE: subtaskScores.test?.thetaSE ?? null,
         thetaEstimate: score,
         // Forward trial counts from raw input — written for all SWR languages.
         numCorrect: subtaskScores.test?.numCorrect,
