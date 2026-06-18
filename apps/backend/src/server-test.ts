@@ -42,7 +42,7 @@ import fs from 'fs';
 import http from 'http';
 import type { Express } from 'express';
 import type { TestFixture } from '@roar-platform/api-contract/test-fixture.type';
-import { initializeDatabasePools, closeDatabasePools } from './db/clients';
+import { initializeDatabasePools, closeDatabasePools, AssessmentDbClient } from './db/clients';
 import { truncateAllTables, runMigrations, setupFdwForTests } from './test-support/db';
 import { seedBaseFixture, type BaseFixture } from './test-support/fixtures';
 import { AgreementFactory } from './test-support/factories/agreement.factory';
@@ -51,6 +51,14 @@ import { AdministrationAgreementFactory } from './test-support/factories/adminis
 import { AdministrationTaskVariantFactory } from './test-support/factories/administration-task-variant.factory';
 import { TaskFactory } from './test-support/factories/task.factory';
 import { TaskVariantFactory } from './test-support/factories/task-variant.factory';
+import { UserFactory } from './test-support/factories/user.factory';
+import { UserClassFactory } from './test-support/factories/user-class.factory';
+import { RunFactory } from './test-support/factories/run.factory';
+import { RunScoreFactory } from './test-support/factories/run-score.factory';
+import { runTrials } from './db/schema/assessment';
+import { UserRole } from './enums/user-role.enum';
+import { UserType } from './enums/user-type.enum';
+import { SCORE_TYPE, SCORE_DOMAIN, SCORE_NAME, ASSESSMENT_STAGE } from './constants/run-scores';
 import { initializeFgaTestStore, syncFgaTuplesFromPostgres } from './test-support/fga';
 import {
   seedFirebaseAuthEmulator,
@@ -386,6 +394,185 @@ async function startTestServer(): Promise<void> {
         return AdministrationTaskVariantFactory.create({ administrationId, taskVariantId, orderIndex });
       }),
     );
+
+    // 5d. Seed assessment activity (runs + scores + trials) for local dev so the dashboard's
+    // completion bars and score reports aren't empty. Assessment data lives in the assessment DB
+    // (read back over the FDW) and is unused by the integration suite, which seeds its own runs
+    // per-test — so this is purely additive local-dev data. Wrapped so a hiccup here never blocks
+    // the rest of the stack from booting; worst case the bars stay grey and the error is logged.
+    try {
+      logger.info('[server-test] Seeding local-dev assessment activity (runs, scores, trials)...');
+
+      // baseFixture places District B's only student on the district org, leaving the school and
+      // class beneath it with no assignees (hence no completion bars). Add students at the CLASS
+      // level — the ROAR model enrolls students on a class and derives their school/district from
+      // the class's org path at query time — so the class, its school, and the district all light up.
+      const [cedarClassStudentA, cedarClassStudentB, cedarClassStudentC] = await Promise.all([
+        UserFactory.create({ nameFirst: 'Cedar Grade 5', nameLast: 'Student One', userType: UserType.STUDENT }),
+        UserFactory.create({ nameFirst: 'Cedar Grade 5', nameLast: 'Student Two', userType: UserType.STUDENT }),
+        UserFactory.create({ nameFirst: 'Cedar Grade 5', nameLast: 'Student Three', userType: UserType.STUDENT }),
+      ]);
+      await Promise.all([
+        UserClassFactory.create({
+          userId: cedarClassStudentA.id,
+          classId: fixture.classInDistrictB.id,
+          role: UserRole.STUDENT,
+        }),
+        UserClassFactory.create({
+          userId: cedarClassStudentB.id,
+          classId: fixture.classInDistrictB.id,
+          role: UserRole.STUDENT,
+        }),
+        UserClassFactory.create({
+          userId: cedarClassStudentC.id,
+          classId: fixture.classInDistrictB.id,
+          role: UserRole.STUDENT,
+        }),
+      ]);
+
+      const seededRunAt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+
+      // Create one run per (student, variant). Completed runs also get a couple of scores and
+      // trials so the Scores report and individual-student views have something to render.
+      const seedRun = async (
+        userId: string,
+        variant: { taskId: string; taskVariantId: string },
+        administrationId: string,
+        completed: boolean,
+      ): Promise<void> => {
+        const run = await RunFactory.create({
+          userId,
+          taskId: variant.taskId,
+          taskVariantId: variant.taskVariantId,
+          administrationId,
+          useForReporting: true,
+          completedAt: completed ? seededRunAt : null,
+        });
+        if (!completed) return;
+        await Promise.all([
+          RunScoreFactory.create({
+            runId: run.id,
+            type: SCORE_TYPE.RAW,
+            domain: SCORE_DOMAIN.COMPOSITE,
+            name: SCORE_NAME.THETA_SE,
+            value: (Math.random() * 2 - 1).toFixed(3),
+            assessmentStage: ASSESSMENT_STAGE.TEST,
+          }),
+          RunScoreFactory.create({
+            runId: run.id,
+            type: SCORE_TYPE.RAW,
+            domain: SCORE_DOMAIN.COMPOSITE,
+            name: SCORE_NAME.NUM_ATTEMPTED,
+            value: String(20 + Math.floor(Math.random() * 20)),
+            assessmentStage: ASSESSMENT_STAGE.TEST,
+          }),
+          AssessmentDbClient.insert(runTrials).values([
+            {
+              runId: run.id,
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+              trialIndex: 0,
+              correct: 1,
+              stimulus: 'cat',
+              response: 'cat',
+              responseTimeMs: 820,
+            },
+            {
+              runId: run.id,
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+              trialIndex: 1,
+              correct: 0,
+              stimulus: 'dog',
+              response: 'dig',
+              responseTimeMs: 1110,
+            },
+          ]),
+        ]);
+      };
+
+      // Per administration: which assigned students complete vs. start, over which assigned
+      // variants. Students with no run here stay "assigned" (grey), so each bar shows a mix.
+      // Completion is deduped per task, so completing the unconditional variant marks the task done.
+      const activityPlan: Array<{
+        administrationId: string;
+        variants: Array<{ taskId: string; taskVariantId: string }>;
+        completed: string[];
+        started: string[];
+      }> = [
+        {
+          administrationId: fixture.administrationAssignedToDistrict.id,
+          variants: [
+            { taskId: fixture.task.id, taskVariantId: fixture.variantForAllGrades.id },
+            { taskId: fixture.task2.id, taskVariantId: fixture.variantForTask2.id },
+          ],
+          completed: [fixture.schoolAStudent.id, fixture.grade5Student.id],
+          started: [fixture.classAStudent.id, fixture.grade3Student.id],
+        },
+        {
+          administrationId: fixture.administrationAssignedToSchoolA.id,
+          variants: [
+            { taskId: fixture.task.id, taskVariantId: fixture.variantForAllGrades.id },
+            { taskId: phonemeTask.id, taskVariantId: phonemeVariant.id },
+            { taskId: letterTask.id, taskVariantId: letterVariant.id },
+          ],
+          completed: [fixture.schoolAStudent.id],
+          started: [fixture.classAStudent.id],
+        },
+        {
+          administrationId: fixture.administrationAssignedToSchoolB.id,
+          variants: [
+            { taskId: fixture.task2.id, taskVariantId: fixture.variantForTask2.id },
+            { taskId: morphologyTask.id, taskVariantId: morphologyVariant.id },
+            { taskId: syntaxTask.id, taskVariantId: syntaxVariant.id },
+          ],
+          completed: [fixture.schoolBStudent.id],
+          started: [],
+        },
+        {
+          administrationId: fixture.administrationAssignedToClassA.id,
+          variants: [
+            { taskId: fixture.task.id, taskVariantId: fixture.variantForAllGrades.id },
+            { taskId: inferenceTask.id, taskVariantId: inferenceVariant.id },
+          ],
+          completed: [fixture.classAStudent.id],
+          started: [],
+        },
+        {
+          administrationId: fixture.administrationAssignedToGroup.id,
+          variants: [
+            { taskId: phonemeTask.id, taskVariantId: phonemeVariant.id },
+            { taskId: morphologyTask.id, taskVariantId: morphologyVariant.id },
+          ],
+          completed: [fixture.groupStudent.id],
+          started: [],
+        },
+        {
+          administrationId: fixture.administrationAssignedToDistrictB.id,
+          variants: [
+            { taskId: letterTask.id, taskVariantId: letterVariant.id },
+            { taskId: syntaxTask.id, taskVariantId: syntaxVariant.id },
+            { taskId: inferenceTask.id, taskVariantId: inferenceVariant.id },
+          ],
+          completed: [cedarClassStudentA.id, fixture.districtBStudent.id],
+          started: [cedarClassStudentB.id, cedarClassStudentC.id],
+        },
+      ];
+
+      for (const plan of activityPlan) {
+        await Promise.all([
+          ...plan.completed.flatMap((userId) =>
+            plan.variants.map((variant) => seedRun(userId, variant, plan.administrationId, true)),
+          ),
+          ...plan.started.flatMap((userId) =>
+            plan.variants.map((variant) => seedRun(userId, variant, plan.administrationId, false)),
+          ),
+        ]);
+      }
+    } catch (err) {
+      logger.warn(
+        { err },
+        '[server-test] local-dev assessment activity seeding failed (non-fatal); completion bars may stay empty',
+      );
+    }
 
     // 6. Initialize FGA store, deploy model, and sync tuples
     logger.info('[server-test] Initializing FGA test store...');
