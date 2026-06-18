@@ -533,7 +533,10 @@ export class RoarScores {
       if (myRow !== undefined) {
         // And add columns in the lookup table except for the grade and sreScore.
         // Spread existing composite (preserves trial counts) before adding normed scores.
-        const { grade, ageMonths, sreScore, ...normedScores } = myRow;
+        // Filter out empty strings — PapaParse emits "" for unpopulated CSV cells (e.g.
+        // SPR columns on grade < 6 rows, TOSREC columns on grade >= 6 rows).
+        const { grade, ageMonths, sreScore, ...allNormedScores } = myRow;
+        const normedScores = Object.fromEntries(Object.entries(allNormedScores).filter(([, v]) => v !== ''));
 
         computedScores[COMPOSITE_DOMAIN] = {
           ...computedScores[COMPOSITE_DOMAIN],

@@ -709,6 +709,9 @@ describe('RoarScores Integration Tests', () => {
     expect(names).toContain('sreScore');
     expect(names).toContain('tosrecSS');
     expect(names).toContain('tosrecPercentile');
+    // SPR columns are empty strings in grade < 6 CSV rows — they must not appear in entries
+    expect(names).not.toContain('sprStandardScore');
+    expect(names).not.toContain('sprPercentile');
   });
 
   test('AI equating (aiV1P1): computedScoreCallback output passes toSreScoreEntries strict mode', async () => {
