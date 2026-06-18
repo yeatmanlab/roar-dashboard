@@ -58,6 +58,19 @@ describe('toSwrScoreEntries', () => {
       );
     });
 
+    it('emits thetaSERaw as type=raw', () => {
+      const computed = { composite: { thetaSERaw: 0.15 } };
+      const entries = toSwrScoreEntries(computed);
+
+      expect(entries).toContainEqual({
+        type: 'raw',
+        domain: SWR_SCORE_DOMAINS.COMPOSITE,
+        name: SWR_SCORE_NAMES.THETA_SE_RAW,
+        value: '0.15',
+        assessmentStage: 'test',
+      });
+    });
+
     it('emits normed scores (percentile, standardScore, roarScore) as type=computed', () => {
       const computed = { composite: { percentile: 75, standardScore: 110, roarScore: 32 } };
       const entries = toSwrScoreEntries(computed);
@@ -199,6 +212,7 @@ describe('toSwrScoreEntries', () => {
         composite: {
           thetaEstimateRaw: 0.42,
           thetaEstimate: 0.42,
+          thetaSERaw: 0.15,
           percentile: 75,
           standardScore: 110,
           roarScore: 32,
@@ -211,8 +225,8 @@ describe('toSwrScoreEntries', () => {
       const entries = toSwrScoreEntries(computed);
 
       // 4 computed (thetaEstimate, percentile, standardScore, roarScore) +
-      // 5 raw (thetaEstimateRaw, numCorrect, numAttempted, numIncorrect, percentCorrect) = 9 entries
-      expect(entries).toHaveLength(9);
+      // 6 raw (thetaEstimateRaw, thetaSERaw, numCorrect, numAttempted, numIncorrect, percentCorrect) = 10 entries
+      expect(entries).toHaveLength(10);
 
       // All entries have correct domain
       for (const entry of entries) {
