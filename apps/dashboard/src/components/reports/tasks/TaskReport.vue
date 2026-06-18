@@ -129,7 +129,13 @@
 <script setup>
 import { ref, computed } from 'vue';
 import PvSelectButton from 'primevue/selectbutton';
-import { tasksToDisplayGraphs, taskInfoById, replaceScoreRange, roamFluencyTasks } from '@/helpers/reports.js';
+import {
+  tasksToDisplayGraphs,
+  taskInfoById,
+  replaceScoreRange,
+  replaceDocLinks,
+  roamFluencyTasks,
+} from '@/helpers/reports.js';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery.js';
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 import DistributionChartFacet from '@/components/reports/DistributionChartFacet.vue';
@@ -219,9 +225,13 @@ const taskInfo = computed(() => {
   }
 
   details.subheader = taskInfoById[taskId]?.subheader ?? '';
+  let desc = taskInfoById[taskId]?.desc ?? '';
   // scoringVersion is associated with original task id (props.taskId)
   // Modified task id is to handle multiple descriptions and subheaders for one assessment (e.g. fluency-arf)
-  details.desc = replaceScoreRange(taskInfoById[taskId]?.desc, taskId, props.taskScoringVersions[props.taskId]) ?? '';
+  desc = replaceScoreRange(desc, taskId, props.taskScoringVersions[props.taskId]);
+  // Replace document links (non-response modality fluency arf and calf only)
+  desc = replaceDocLinks(desc, taskId);
+  details.desc = desc;
 
   return details;
 });

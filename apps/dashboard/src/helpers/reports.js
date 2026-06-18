@@ -1416,8 +1416,13 @@ export const taskInfoById = {
       'fluency. Efficiency with basic arithmetic facts has been shown to support more advanced math ' +
       'learning and predict overall math achievement. This assessment will help educators understand ' +
       'student performance in this foundational domain and see where students may benefit from ' +
-      'additional practice and support. Check here for further information on the terms used for ' +
-      'Problem Types Assessed.',
+      'additional practice and support.\n\n' +
+      'Scores will range from 0-140 and can be viewed by selecting ' +
+      "'Raw Score' in the table above. A further breakdown of this score by operation, can be viewed " +
+      'in the table below. In case of multiplication and division, the top 3 math facts that students ' +
+      'need to work on are reported. Due to the timed nature of the assessment, students may not ' +
+      'encounter all Problem Types. Check here for definitions of each Problem Type and associated ' +
+      'terminology.',
   },
   'fluency-calf': {
     header: 'ROAM Calculation Fluency',
@@ -1430,7 +1435,11 @@ export const taskInfoById = {
       'of the algorithms for these four fundamental arithmetic operations forms the building blocks ' +
       "for more advanced math skills. This assessment allows educators to evaluate students' command " +
       'over these key arithmetic procedures and tailor instruction to support any specific areas of ' +
-      'difficulty. Check here for further information on the terms used for Problem Types Assessed.',
+      'difficulty.\n\n' +
+      'Scores will range from 0-120 and can be viewed by selecting ' +
+      "'Raw Score' in the table above. A further breakdown of this score by operation, can be viewed " +
+      'in the table below. Due to the timed nature of the assessment, students may not encounter all ' +
+      'Problem Types. Check here for definitions of each Problem Type and associated terminology.',
   },
   'roam-alpaca': {
     header: 'ROAM Core Math',
@@ -1465,4 +1474,24 @@ export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   }
 
   return desc;
+};
+
+export const replaceDocLinks = (desc, taskId) => {
+  if (!desc) return '';
+
+  let formatted = desc.replace(/\n/g, '<br>');
+
+  if (['fluency-arf', 'fluency-calf'].includes(taskId)) {
+    formatted = formatted.replace(
+      'Check here for definitions of each Problem Type and associated terminology.',
+      '<span class="font-bold">Check {{LINK}} for definitions of each Problem Type and associated terminology.</span>',
+    );
+
+    formatted = formatted.replace(
+      '{{LINK}}',
+      '<a class="underline text-gray-700 hover:text-red-700" href="/docs/roam-arfcalf-subscores-explainer.pdf" target="_blank">here</a>',
+    );
+  }
+
+  return formatted;
 };
