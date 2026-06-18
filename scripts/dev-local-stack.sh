@@ -64,6 +64,12 @@ mkdir -p "$LOG_DIR"
 export CORE_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:${PG_PORT}/roar_core_test"
 export ASSESSMENT_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:${PG_PORT}/roar_assessment_test"
 export POSTGRES_ADMIN_URL="postgresql://postgres:postgres@127.0.0.1:${PG_PORT}/postgres"
+# postgres_fdw dials the assessment DB from *inside* the Postgres container, where the
+# host-mapped 127.0.0.1 the backend connects through does not loop back to the server.
+# Point the foreign server at the container's local Unix socket — always reachable, and
+# independent of the host port mapping. Consumed by setupFdwForTests() in server-test.
+export FDW_ASSESSMENT_HOST="/var/run/postgresql"
+export FDW_ASSESSMENT_PORT="5432"
 export FGA_API_URL="http://127.0.0.1:${FGA_PORT}"
 export FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:${AUTH_PORT}"
 export GCLOUD_PROJECT="$PROJECT"
