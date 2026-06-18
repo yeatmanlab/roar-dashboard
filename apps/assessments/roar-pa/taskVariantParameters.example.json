@@ -1,0 +1,42 @@
+[
+  {
+    "variantName": "English Fixed (v3)",
+    "params": {
+      "language": "en",
+      "scoringVersion": 3,
+      "scoreKind": "raw_total_correct",
+      "userMode": "fixed",
+      "isAdaptive": false,
+      "itemSelect": "fixed",
+      "abilityMethod": "eap",
+      "consent": true,
+      "skipInstructions": true,
+      "earlyStopping": false,
+      "storyOption": null,
+      "numTestItems": null,
+      "logicalOperation": null,
+      "randomSeed": null,
+      "recruitment": null
+    }
+  },
+  {
+    "variantName": "English Adaptive (v5)",
+    "params": {
+      "language": "en",
+      "scoringVersion": 5,
+      "scoreKind": "scaled_irt",
+      "userMode": "shortAdaptive",
+      "isAdaptive": true,
+      "itemSelect": "mfi",
+      "abilityMethod": "eap",
+      "consent": true,
+      "skipInstructions": true,
+      "earlyStopping": false,
+      "storyOption": null,
+      "numTestItems": null,
+      "logicalOperation": null,
+      "randomSeed": null,
+      "recruitment": null
+    }
+  }
+]
