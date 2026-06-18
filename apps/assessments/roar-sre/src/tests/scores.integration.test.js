@@ -217,6 +217,26 @@ describe('RoarScores Integration Tests', () => {
     expect(result.composite.percentile).toBeUndefined();
   });
 
+  test('should sum negative subtest sreScores correctly for sre-es', async () => {
+    store.session.get = vi.fn(() => ({
+      userMetadata: {},
+      taskId: 'sre-es',
+      scoringVersion: 0,
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      subtest1: { test: { numCorrect: 0, numIncorrect: 3 } }, // sreScore = -3
+      subtest2: { test: { numCorrect: 7, numIncorrect: 0 } }, // sreScore = 7
+    };
+
+    const result = await scores.computedScoreCallback(rawScores);
+
+    expect(result.subtest1.sreScore).toBe(-3);
+    expect(result.subtest2.sreScore).toBe(7);
+    expect(result.composite.sreScore).toBe(4); // -3 + 7, not 7 (|| 0 bug)
+  });
+
   test('should return sre-es v1 scores for given sreScore and age', async () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 1,
@@ -242,6 +262,34 @@ describe('RoarScores Integration Tests', () => {
     expect(result.composite.standardScore).toBe(108);
     expect(result.composite.percentile).toBe(71);
     expect(result.composite.scoringVersion).toBe(1);
+  });
+
+  test('should not re-create initTablePromise on every trial for sre-es', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 1,
+      userMetadata: { ageMonths: 85 },
+      taskId: 'sre-es',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      subtest1: { test: { numCorrect: 8, numIncorrect: 0 } },
+      subtest2: { test: { numCorrect: 2, numIncorrect: 0 } },
+    };
+
+    await scores.computedScoreCallback(rawScores);
+
+    // After the first call, the table is loaded and the promise should be retained
+    // (not cleared to null) so subsequent trials skip initTable entirely
+    expect(scores.tableLoaded).toBe(true);
+    expect(scores.aiTableLoaded).toBe(false); // AI table is EN-only — always false for sre-es
+    expect(scores.initTablePromise).not.toBeNull();
+
+    const initTableSpy = vi.spyOn(scores, 'initTable');
+    await scores.computedScoreCallback(rawScores);
+
+    // initTable must not be called again on the second trial
+    expect(initTableSpy).not.toHaveBeenCalled();
   });
 
   test('should use AI equating table to convert aiV1P1 scores to composite sreScore', async () => {
@@ -567,6 +615,26 @@ describe('RoarScores Integration Tests', () => {
     // From sre_lookup_v4.csv: ageMonths 85, sreScore 33 -> standardScore 114, percentile 83
     expect(result.composite.standardScore).toBe(114);
     expect(result.composite.percentile).toBe(83);
+  });
+
+  test('should omit composite when no fixedForm domains are present in 90s2BlocksFixedForms mode', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 4,
+      userMetadata: { ageMonths: 85 },
+      taskId: 'sre',
+      userMode: '90s2BlocksFixedForms',
+    }));
+
+    const scores = new RoarScores();
+    // Raw scores contain no fixedForm* domains — student produced no fixed-form data
+    const rawScores = {
+      subtest1: { test: { numCorrect: 10, numIncorrect: 2 } },
+    };
+
+    const result = await scores.computedScoreCallback(rawScores);
+
+    // composite should be absent, not sreScore: 0
+    expect(result.composite).toBeUndefined();
   });
 
   test('should not use 90s2BlocksFixedForms logic for non-SRE tasks', async () => {

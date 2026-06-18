@@ -285,7 +285,9 @@ export class RoarScores {
         return this.getFixedFormEquatingLookupRow(form, formScore.sreScore).sreScore;
       });
 
-    if (fixedFormScores.length === 0) return 0;
+    if (fixedFormScores.length === 0) {
+      throw new Error('No fixedForm scores available to equate in 90s2BlocksFixedForms mode');
+    }
 
     const totalScore = fixedFormScores.reduce((acc, sreScore) => acc + sreScore, 0);
     // Intentional scoring rule: round fractional fixed-form averages up.
@@ -452,7 +454,7 @@ export class RoarScores {
         // For Spanish, we omit the practice and composite subtasks and take the sum of the sreScores.
         // Return the actual sum (can be negative); the normed lookup clamps separately.
         const nonPracticeScores = _omit(score, [PRACTICE_DOMAIN, COMPOSITE_DOMAIN]);
-        const sum = Object.values(nonPracticeScores).reduce((acc, val) => acc + (val.sreScore || 0), 0);
+        const sum = Object.values(nonPracticeScores).reduce((acc, val) => acc + (val.sreScore ?? 0), 0);
         return sum;
       }
       return 0;
@@ -473,7 +475,9 @@ export class RoarScores {
     }
 
     if (isNormed && this.isValidForScoring) {
-      if (!this.tableLoaded || !this.aiTableLoaded) {
+      // The AI equating table is only used for EN; sre-es never sets aiTableLoaded
+      const needsAiTable = this.taskId === SRE_TASK_IDS.EN;
+      if (!this.tableLoaded || (needsAiTable && !this.aiTableLoaded)) {
         if (!this.initTablePromise) {
           this.initTablePromise = this.initTable();
         }
@@ -481,7 +485,7 @@ export class RoarScores {
         try {
           await this.initTablePromise;
           // If tables still haven't loaded, clear the promise so it can be retried
-          if (!this.tableLoaded || !this.aiTableLoaded) {
+          if (!this.tableLoaded || (needsAiTable && !this.aiTableLoaded)) {
             this.initTablePromise = null;
           }
         } catch (error) {
