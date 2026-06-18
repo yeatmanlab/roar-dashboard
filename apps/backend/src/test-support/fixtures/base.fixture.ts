@@ -68,24 +68,29 @@ import { AdministrationTaskVariantFactory } from '../factories/administration-ta
  * ```
  * district (District A)
  * ├── schoolA
- * │   └── classInSchoolA
- * └── schoolB
- *     └── classInSchoolB
+ * │   └── classInSchoolA  (classAStudent, classATeacher, schoolAStudent, expired/future students)
+ * ├── schoolB
+ * │   └── classInSchoolB  (schoolBStudent)
+ * └── schoolC
+ *     └── classInSchoolC  (grade5Student, grade3Student, grade5EllStudent)
  *
  * districtB (District B - separate branch for cross-district isolation tests)
  * └── schoolInDistrictB
- *     └── classInDistrictB
+ *     └── classInDistrictB  (districtBStudent)
  *
  * group (standalone, no hierarchy)
  * ```
+ *
+ * Students enroll at the CLASS level only; their school/district are derived from the class's
+ * org path at query time. Admins and teachers attach at their org level.
  *
  * User assignments:
  * - districtAdmin: administrator at district level
  * - schoolAAdmin: administrator at School A
  * - schoolAPrincipal: principal at School A (school_admin_tier — inherits school→class)
  * - schoolATeacher: teacher at School A (org level)
- * - schoolAStudent: student at School A (org level)
- * - schoolBStudent: student at School B (for cross-branch tests)
+ * - schoolAStudent: student in classInSchoolA (class level)
+ * - schoolBStudent: student in classInSchoolB (for cross-branch tests)
  * - classAStudent: student in classInSchoolA (class level)
  * - classATeacher: teacher in classInSchoolA (class level)
  * - groupStudent: student in standalone group
@@ -93,18 +98,18 @@ import { AdministrationTaskVariantFactory } from '../factories/administration-ta
  * - superAdmin: platform super admin (isSuperAdmin: true; bypasses FGA; no org/class/group assignment)
  * - multiAssignedUser: user assigned to both district AND schoolA (deduplication tests)
  * - districtBAdmin: administrator at districtB (for cross-district isolation tests)
- * - districtBStudent: student in districtB (for cross-district isolation tests)
+ * - districtBStudent: student in classInDistrictB (for cross-district isolation tests)
  *
  * Enrollment boundary test users:
- * - expiredEnrollmentStudent: student at School A with expired enrollment (enrollment date tests)
- * - futureEnrollmentStudent: student at School A with future enrollment (enrollment date tests)
+ * - expiredEnrollmentStudent: student in classInSchoolA with expired enrollment (enrollment date tests)
+ * - futureEnrollmentStudent: student in classInSchoolA with future enrollment (enrollment date tests)
  * - expiredClassStudent: student in classInSchoolA with expired enrollment (enrollment date tests)
  * - futureGroupStudent: student in group with future enrollment (enrollment date tests)
  *
  * Demographic test users (for task variant eligibility filtering):
- * - grade5Student: grade 5 student in district (sees variantForGrade5 and variantForAllGrades)
- * - grade3Student: grade 3 student in district (sees variantForGrade3 and variantForAllGrades)
- * - grade5EllStudent: grade 5 ELL student in district (variantOptionalForEll is optional for them)
+ * - grade5Student: grade 5 student in classInSchoolC (sees variantForGrade5 and variantForAllGrades)
+ * - grade3Student: grade 3 student in classInSchoolC (sees variantForGrade3 and variantForAllGrades)
+ * - grade5EllStudent: grade 5 ELL student in classInSchoolC (variantOptionalForEll is optional for them)
  *
  * Tasks and Task Variants (assigned to administrationAssignedToDistrict):
  * - task: base task for testing
@@ -138,11 +143,17 @@ export interface BaseFixture {
   /** School B - sibling of School A (for cross-branch tests) */
   schoolB: Org;
 
+  /** School C - third school under District A; home to the demographic (grade/ELL) test cohort */
+  schoolC: Org;
+
   /** Class in School A */
   classInSchoolA: Class;
 
   /** Class in School B */
   classInSchoolB: Class;
+
+  /** Class in School C - holds the demographic (grade/ELL) test students */
+  classInSchoolC: Class;
 
   /** Standalone group (no org hierarchy) */
   group: Group;
@@ -322,7 +333,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     orgType: OrgType.DISTRICT,
   });
 
-  const [schoolA, schoolB, schoolInDistrictB] = await Promise.all([
+  const [schoolA, schoolB, schoolInDistrictB, schoolC] = await Promise.all([
     OrgFactory.create({ name: 'Maple Grove Elementary (School A)', orgType: OrgType.SCHOOL, parentOrgId: district.id }),
     OrgFactory.create({
       name: 'Birch Street Elementary (School B)',
@@ -334,9 +345,14 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
       orgType: OrgType.SCHOOL,
       parentOrgId: districtB.id,
     }),
+    OrgFactory.create({
+      name: 'Maple Grove West Elementary (School C)',
+      orgType: OrgType.SCHOOL,
+      parentOrgId: district.id,
+    }),
   ]);
 
-  const [classInSchoolA, classInSchoolB, classInDistrictB, group] = await Promise.all([
+  const [classInSchoolA, classInSchoolB, classInDistrictB, classInSchoolC, group] = await Promise.all([
     ClassFactory.create({
       name: 'Maple Grove Elem — Grade 3 (Class A)',
       schoolId: schoolA.id,
@@ -351,6 +367,11 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
       name: 'Cedar Falls Elem — Grade 5 (Class in District B)',
       schoolId: schoolInDistrictB.id,
       districtId: districtB.id,
+    }),
+    ClassFactory.create({
+      name: 'Maple Grove West Elem — Demographics (Class C)',
+      schoolId: schoolC.id,
+      districtId: district.id,
     }),
     GroupFactory.create({ name: 'Maple Grove Summer Reading (Group)' }),
   ]);
@@ -432,8 +453,10 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     UserOrgFactory.create({ userId: schoolAAdmin.id, orgId: schoolA.id, role: UserRole.ADMINISTRATOR }),
     UserOrgFactory.create({ userId: schoolAPrincipal.id, orgId: schoolA.id, role: UserRole.PRINCIPAL }),
     UserOrgFactory.create({ userId: schoolATeacher.id, orgId: schoolA.id, role: UserRole.TEACHER }),
-    UserOrgFactory.create({ userId: schoolAStudent.id, orgId: schoolA.id, role: UserRole.STUDENT }),
-    UserOrgFactory.create({ userId: schoolBStudent.id, orgId: schoolB.id, role: UserRole.STUDENT }),
+    // Students enroll at the class level; their school/district are derived from the class's
+    // org path at query time. (Admins/teachers below stay attached at their org level.)
+    UserClassFactory.create({ userId: schoolAStudent.id, classId: classInSchoolA.id, role: UserRole.STUDENT }),
+    UserClassFactory.create({ userId: schoolBStudent.id, classId: classInSchoolB.id, role: UserRole.STUDENT }),
     // Class assignments (active enrollments)
     UserClassFactory.create({ userId: classAStudent.id, classId: classInSchoolA.id, role: UserRole.STUDENT }),
     UserClassFactory.create({ userId: classATeacher.id, classId: classInSchoolA.id, role: UserRole.TEACHER }),
@@ -444,24 +467,24 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     UserOrgFactory.create({ userId: multiAssignedUser.id, orgId: schoolA.id, role: UserRole.TEACHER }),
     // District B users (for cross-district isolation tests)
     UserOrgFactory.create({ userId: districtBAdmin.id, orgId: districtB.id, role: UserRole.ADMINISTRATOR }),
-    UserOrgFactory.create({ userId: districtBStudent.id, orgId: districtB.id, role: UserRole.STUDENT }),
+    UserClassFactory.create({ userId: districtBStudent.id, classId: classInDistrictB.id, role: UserRole.STUDENT }),
 
     // ─────────────────────────────────────────────────────────────────────────────
     // Enrollment boundary test users
     // ─────────────────────────────────────────────────────────────────────────────
 
-    // Expired org enrollment: started 30 days ago, ended 7 days ago
-    UserOrgFactory.create({
+    // Expired class enrollment: started 30 days ago, ended 7 days ago
+    UserClassFactory.create({
       userId: expiredEnrollmentStudent.id,
-      orgId: schoolA.id,
+      classId: classInSchoolA.id,
       role: UserRole.STUDENT,
       enrollmentStart: thirtyDaysAgo,
       enrollmentEnd: sevenDaysAgo,
     }),
-    // Future org enrollment: starts 7 days from now
-    UserOrgFactory.create({
+    // Future class enrollment: starts 7 days from now
+    UserClassFactory.create({
       userId: futureEnrollmentStudent.id,
-      orgId: schoolA.id,
+      classId: classInSchoolA.id,
       role: UserRole.STUDENT,
       enrollmentStart: sevenDaysFromNow,
       enrollmentEnd: thirtyDaysFromNow,
@@ -487,9 +510,12 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     // Demographic test users (for task variant eligibility filtering)
     // ─────────────────────────────────────────────────────────────────────────────
 
-    UserOrgFactory.create({ userId: grade5Student.id, orgId: district.id, role: UserRole.STUDENT }),
-    UserOrgFactory.create({ userId: grade3Student.id, orgId: district.id, role: UserRole.STUDENT }),
-    UserOrgFactory.create({ userId: grade5EllStudent.id, orgId: district.id, role: UserRole.STUDENT }),
+    // Demographic students live in a dedicated class under the district (School C) so they
+    // exercise the district administration's grade/ELL eligibility without joining the
+    // School A / Class A scopes that other tests assert against.
+    UserClassFactory.create({ userId: grade5Student.id, classId: classInSchoolC.id, role: UserRole.STUDENT }),
+    UserClassFactory.create({ userId: grade3Student.id, classId: classInSchoolC.id, role: UserRole.STUDENT }),
+    UserClassFactory.create({ userId: grade5EllStudent.id, classId: classInSchoolC.id, role: UserRole.STUDENT }),
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -634,8 +660,10 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     district,
     schoolA,
     schoolB,
+    schoolC,
     classInSchoolA,
     classInSchoolB,
+    classInSchoolC,
     group,
 
     // Orgs (District B branch - for cross-district isolation tests)
