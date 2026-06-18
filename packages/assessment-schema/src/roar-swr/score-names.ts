@@ -21,9 +21,12 @@ export const SWR_SCORE_NAMES = {
   // SWR defines the shared IRT scale, so the native theta IS the shared theta:
   // thetaEstimateRaw (type=raw) and thetaEstimate (type=computed) carry the same
   // value. Both are written so every IRT-scored assessment exposes a native-scale
-  // and a shared-scale theta in run_scores.
+  // and a shared-scale theta in run_scores. The same applies to SE:
+  // thetaSERaw (type=raw) is the native-scale SE; thetaSE is not reported for SWR
+  // because no cross-scale SE transform exists.
   THETA_ESTIMATE_RAW: 'thetaEstimateRaw',
   THETA_ESTIMATE: 'thetaEstimate',
+  THETA_SE_RAW: 'thetaSERaw',
 
   // Normed scores — English and Spanish only
   PERCENTILE: 'percentile',
@@ -46,6 +49,7 @@ export type SwrScoreName = (typeof SWR_SCORE_NAMES)[keyof typeof SWR_SCORE_NAMES
  */
 export const SWR_RAW_SCORE_NAMES = new Set<SwrScoreName>([
   SWR_SCORE_NAMES.THETA_ESTIMATE_RAW,
+  SWR_SCORE_NAMES.THETA_SE_RAW,
   SWR_SCORE_NAMES.NUM_ATTEMPTED,
   SWR_SCORE_NAMES.NUM_CORRECT,
   SWR_SCORE_NAMES.NUM_INCORRECT,
