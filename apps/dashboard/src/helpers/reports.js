@@ -600,7 +600,7 @@ export function getPaSkillsToWorkOn(scores) {
   return skills;
 }
 
-export const previouslyUnnormedTasks = ['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'inference', 'trog'];
+export const previouslyUnnormedTasks = ['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'roar-inference', 'trog'];
 
 export const updatedNormVersions = {
   swr: 7,
@@ -611,7 +611,7 @@ export const updatedNormVersions = {
   letter: 1,
   morphology: 1,
   cva: 1,
-  inference: 1,
+  'roar-inference': 1,
   trog: 1, // syntax
 };
 
