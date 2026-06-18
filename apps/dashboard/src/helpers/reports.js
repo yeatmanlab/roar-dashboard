@@ -600,12 +600,19 @@ export function getPaSkillsToWorkOn(scores) {
   return skills;
 }
 
+export const previouslyUnnormedTasks = ['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'inference', 'trog'];
+
 export const updatedNormVersions = {
   swr: 7,
   'swr-es': 1,
   sre: 4,
   'sre-es': 1,
   pa: 4,
+  letter: 1,
+  morphology: 1,
+  cva: 1,
+  inference: 1,
+  trog: 1, // syntax
 };
 
 function getOrdinalSuffix(n) {
@@ -718,8 +725,12 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     };
   }
 
+  /**
+   * scoringVersion >= 1 returns normed scores for the following tasks in tasksToDisplayPercentCorrect: letter, swr-es, morphology, cva, roar-inference
+   */
   if (
-    ((tasksToDisplayPercentCorrect.includes(taskId) && !(taskId === 'swr-es' && scoringVersion >= 1)) ||
+    ((tasksToDisplayPercentCorrect.includes(taskId) &&
+      !(previouslyUnnormedTasks.includes(taskId) && scoringVersion >= 1)) ||
       tasksToDisplayTotalCorrect.includes(taskId)) &&
     tasksToDisplayGradeEstimate.includes(taskId) &&
     rawScore !== undefined
@@ -731,11 +742,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   }
   // Try percentile-based scoring for grades < 6
   if (percentile !== null && percentile !== undefined && gradeLevel < 6) {
-    const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
-    const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
-    const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
-    const isUpdatedSwrEs = taskId === 'swr-es' && scoringVersion >= 1;
-    const useUpdatedNorms = isUpdatedSwr || isUpdatedSwrEs || isUpdatedSre || isUpdatedSreEs;
+    const useUpdatedNorms = updatedNormVersions[taskId] && scoringVersion >= updatedNormVersions[taskId];
     const [achievedCutOff, developingCutOff] = useUpdatedNorms ? [40, 20] : [50, 25];
     if (percentile >= achievedCutOff) {
       support_level = 'Achieved Skill';
@@ -1173,10 +1180,10 @@ export const getRawScoreRange = (taskId) => {
  */
 export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
   const tasks = Object.entries(taskScoringVersions);
-  // Filter to only tasks that have updated norms and exclude unnormed Spanish tasks (version < 1)
+  // Filter to only tasks that have updated norms and exclude unnormed tasks (version < 1)
   // isDistributionChartEnabled ensures there are in-progress/completed normed tasks
   const applicableTasks = tasks.filter(
-    ([taskId, version]) => taskId in updatedNormVersions && !(['swr-es', 'sre-es'].includes(taskId) && version < 1),
+    ([taskId, version]) => taskId in updatedNormVersions && !(previouslyUnnormedTasks.includes(taskId) && version < 1),
   );
 
   const pickPath = (baseKey) => {
