@@ -27,12 +27,17 @@ export type UnsignedAgreement = z.infer<typeof UnsignedAgreementSchema>;
 /**
  * Schema for the authenticated user's profile returned by /me endpoint.
  *
+ * Includes `isSuperAdmin` so clients can determine the caller's platform-wide
+ * super-admin status without a separate lookup. Reporting this to the
+ * authenticated user about themselves is not an information-disclosure risk.
+ *
  * Includes unsignedAgreements array for TOS agreements the user has not yet signed.
  * An empty array means the user has signed all current TOS agreements.
  */
 export const MeSchema = z.object({
   id: z.string().uuid(),
   userType: UserTypeSchema,
+  isSuperAdmin: z.boolean(),
   nameFirst: z.string().nullable(),
   nameLast: z.string().nullable(),
   unsignedAgreements: z.array(UnsignedAgreementSchema),
