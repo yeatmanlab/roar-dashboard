@@ -1,6 +1,8 @@
-import { PA_SCORE_DOMAINS, PA_SCORE_NAMES } from './score-names.js';
+import { PA_SCORE_DOMAINS } from './domains.js';
+import { PA_SCORE_NAMES } from './score-names.js';
 import type { PaSubtaskKey } from './config.js';
-import type { PaScoreName, PaScoreDomain } from './score-names.js';
+import type { PaScoreDomain } from './domains.js';
+import type { PaScoreName } from './score-names.js';
 
 export const PA_SUBTASK_LABELS = {
   FSM: 'First Sound',

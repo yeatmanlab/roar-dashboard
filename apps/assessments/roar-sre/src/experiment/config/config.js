@@ -147,7 +147,7 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
   const lng = cleanParams.lng ?? cleanParams.language ?? 'en';
   const languageEntry = SRE_LANGUAGES[lng] ?? SRE_LANGUAGES.en;
   const taskId = languageEntry.taskId;
-  const defaultScoringVersion = languageEntry.defaultScoringVersion ?? SRE_SCORING_VERSION.V5;
+  const defaultScoringVersion = languageEntry.defaultScoringVersion ?? null;
 
   const {
     userMode,

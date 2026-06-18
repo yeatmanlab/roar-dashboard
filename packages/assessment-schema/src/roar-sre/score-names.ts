@@ -2,24 +2,6 @@ import { TRIAL_COUNT_SCORE_NAMES } from '../constants/trial-count-score-names.js
 import { THETA_SCORE_NAMES } from '../constants/theta-score-names.js';
 
 /**
- * Canonical run_scores.domain strings for non-composite SRE subtasks.
- * These are the static block/corpus identifiers produced by getBlockOrder in config.js.
- * Dynamic fixed-form domains ('fixedForm1', 'fixedForm2', …) are covered by SreSubtaskDomain
- * via a template literal type and are not enumerated here.
- */
-export const SRE_SUBTASK_DOMAINS = {
-  LAB: 'lab',
-  AI: 'ai',
-  AI_V1_P1: 'aiV1P1',
-  AI_V1_P2: 'aiV1P2',
-  AI_V2: 'aiV2',
-  TEST1: 'test1',
-  TEST2: 'test2',
-} as const;
-
-export type SreSubtaskDomain = (typeof SRE_SUBTASK_DOMAINS)[keyof typeof SRE_SUBTASK_DOMAINS] | `fixedForm${number}`;
-
-/**
  * Canonical run_scores.name strings written by the SRE scoring callback for the composite domain.
  * This is the single source of truth — both the assessment and the backend scoring registry
  * import from here to prevent field-name drift.

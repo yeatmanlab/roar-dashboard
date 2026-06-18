@@ -296,6 +296,57 @@ describe('RoarScores Integration Tests', () => {
     expect(result.composite.scoringVersion).toBe(4);
   });
 
+  test('should omit composite when aiV1P1 scores exist but AI equating table failed to load', async () => {
+    papaParseSpy.mockImplementation((input, config) => {
+      if (config.download) {
+        const filename = input.split('/').pop();
+
+        if (filename === 'sre_lookup_v4.csv') {
+          const csvContent = getCsvContent(input);
+          setTimeout(() => {
+            originalParse(csvContent, { ...config, download: false, complete: config.complete });
+          }, 100);
+        } else {
+          setTimeout(() => {
+            config.error(new Error('AI table simulated failure'));
+          }, 100);
+        }
+      } else {
+        originalParse(input, config);
+      }
+    });
+
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 4,
+      userMetadata: { ageMonths: 84 },
+      taskId: 'sre',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      aiV1P1: { test: { numCorrect: 20, numIncorrect: 0 } },
+    };
+
+    const result = await scores.computedScoreCallback(rawScores);
+
+    // Raw subtask score is still written — it doesn't depend on the AI table
+    expect(result.aiV1P1.sreScore).toBe(20);
+
+    // Composite is absent: computedScoreConversion throws when AI table is missing,
+    // the throw is caught, and composite is never populated
+    expect(result.composite).toBeUndefined();
+
+    // Table state reflects partial load
+    expect(scores.tableLoaded).toBe(true);
+    expect(scores.aiTableLoaded).toBe(false);
+
+    // The conversion error is logged (distinct from the table-load error)
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Composite score conversion failed; writing raw scores only:',
+      'AI equating table not loaded; cannot compute aiV1P1 composite score',
+    );
+  });
+
   test('should prevent race condition when multiple concurrent calls request the same tables', async () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 4,

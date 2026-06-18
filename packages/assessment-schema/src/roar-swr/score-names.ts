@@ -1,13 +1,5 @@
-import { COMPOSITE_DOMAIN } from '../constants/common-domains.js';
 import { TRIAL_COUNT_SCORE_NAMES } from '../constants/trial-count-score-names.js';
 import { THETA_SCORE_NAMES } from '../constants/theta-score-names.js';
-
-/**
- * Canonical run_scores.domain strings for SWR score entries.
- */
-export const SWR_SCORE_DOMAINS = {
-  COMPOSITE: COMPOSITE_DOMAIN,
-} as const;
 
 /**
  * Canonical run_scores.name strings written by the SWR scoring callback.

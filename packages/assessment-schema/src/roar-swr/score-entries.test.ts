@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { toSwrScoreEntries } from './score-entries.js';
 import type { SwrScoreEntry } from './score-entries.js';
-import { SWR_SCORE_NAMES, SWR_SCORE_DOMAINS } from './score-names.js';
+import { SWR_SCORE_DOMAINS } from './domains.js';
+import { SWR_SCORE_NAMES } from './score-names.js';
 
 describe('toSwrScoreEntries', () => {
   describe('null / missing input', () => {
