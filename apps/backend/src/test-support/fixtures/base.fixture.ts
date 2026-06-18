@@ -557,8 +557,8 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const [task, task2] = await Promise.all([
-    TaskFactory.create({ name: 'Word Reading Fluency' }),
-    TaskFactory.create({ name: 'Sentence Comprehension' }),
+    TaskFactory.create({ name: 'Word' }),
+    TaskFactory.create({ name: 'Sentence' }),
   ]);
 
   const [
@@ -569,12 +569,12 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     variantForTask2,
     variantForTask2Grade5OptionalEll,
   ] = await Promise.all([
-    TaskVariantFactory.create({ taskId: task.id, name: 'Word Reading — All Grades' }),
-    TaskVariantFactory.create({ taskId: task.id, name: 'Word Reading — Grade 5' }),
-    TaskVariantFactory.create({ taskId: task.id, name: 'Word Reading — Grade 3' }),
-    TaskVariantFactory.create({ taskId: task.id, name: 'Word Reading — ELL (Optional)' }),
-    TaskVariantFactory.create({ taskId: task2.id, name: 'Sentence Comprehension — All Grades' }),
-    TaskVariantFactory.create({ taskId: task2.id, name: 'Sentence Comprehension — Grade 5, ELL Optional' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word — All Grades' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word — Grade 5' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word — Grade 3' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word — ELL (Optional)' }),
+    TaskVariantFactory.create({ taskId: task2.id, name: 'Sentence — All Grades' }),
+    TaskVariantFactory.create({ taskId: task2.id, name: 'Sentence — Grade 5, ELL Optional' }),
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════

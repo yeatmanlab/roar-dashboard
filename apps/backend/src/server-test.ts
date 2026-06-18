@@ -49,6 +49,8 @@ import { AgreementFactory } from './test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from './test-support/factories/agreement-version.factory';
 import { AdministrationAgreementFactory } from './test-support/factories/administration-agreement.factory';
 import { AdministrationTaskVariantFactory } from './test-support/factories/administration-task-variant.factory';
+import { TaskFactory } from './test-support/factories/task.factory';
+import { TaskVariantFactory } from './test-support/factories/task-variant.factory';
 import { initializeFgaTestStore, syncFgaTuplesFromPostgres } from './test-support/fga';
 import {
   seedFirebaseAuthEmulator,
@@ -330,39 +332,59 @@ async function startTestServer(): Promise<void> {
       }),
     ]);
 
-    // 5c. Seed task-variant assignments for the remaining administrations (local dev only).
-    // baseFixture deliberately assigns variants to administrationAssignedToDistrict only, so the
-    // integration suite can assert empty-assessment states. The dashboard is far more useful to
-    // exercise locally when every administration card shows assessments, so assign a small, shared
-    // set of the already-seeded variants to the other five administrations. Kept out of baseFixture
-    // (same rationale as the agreements above) so the integration suite is unaffected.
-    logger.info('[server-test] Seeding local-dev assessments for the non-district administrations...');
-    const localDevAdministrationIds = [
-      fixture.administrationAssignedToSchoolA.id,
-      fixture.administrationAssignedToSchoolB.id,
-      fixture.administrationAssignedToClassA.id,
-      fixture.administrationAssignedToGroup.id,
-      fixture.administrationAssignedToDistrictB.id,
+    // 5c. Seed a fuller, nicely-named assessment catalog for local dev (kept out of baseFixture
+    // so the integration suite is unaffected). baseFixture defines two tasks — Word and Sentence —
+    // with the variants the integration tests rely on; here we add the remaining ROAR-style tasks
+    // (Phoneme, Letter, Morphology, Syntax, Inference) so the administration-form assessment picker
+    // lists a realistic catalog, and give every non-district administration a distinct, tidy set of
+    // assessments so the dashboard cards show a clean list of task names.
+    logger.info('[server-test] Seeding local-dev tasks and assessments...');
+    const [phonemeTask, letterTask, morphologyTask, syntaxTask, inferenceTask] = await Promise.all([
+      TaskFactory.create({ name: 'Phoneme' }),
+      TaskFactory.create({ name: 'Letter' }),
+      TaskFactory.create({ name: 'Morphology' }),
+      TaskFactory.create({ name: 'Syntax' }),
+      TaskFactory.create({ name: 'Inference' }),
+    ]);
+    const [phonemeVariant, letterVariant, morphologyVariant, syntaxVariant, inferenceVariant] = await Promise.all([
+      TaskVariantFactory.create({ taskId: phonemeTask.id, name: 'Phoneme (Standard)' }),
+      TaskVariantFactory.create({ taskId: letterTask.id, name: 'Letter (Standard)' }),
+      TaskVariantFactory.create({ taskId: morphologyTask.id, name: 'Morphology (Standard)' }),
+      TaskVariantFactory.create({ taskId: syntaxTask.id, name: 'Syntax (Standard)' }),
+      TaskVariantFactory.create({ taskId: inferenceTask.id, name: 'Inference (Standard)' }),
+    ]);
+
+    // Each non-district administration gets a distinct mix so its card shows a clean list of task
+    // names. Word/Sentence variants are reused from baseFixture; the rest are the new tasks above.
+    const localDevAssignments: Array<{ administrationId: string; taskVariantId: string }> = [
+      // School A → Word, Phoneme, Letter
+      { administrationId: fixture.administrationAssignedToSchoolA.id, taskVariantId: fixture.variantForAllGrades.id },
+      { administrationId: fixture.administrationAssignedToSchoolA.id, taskVariantId: phonemeVariant.id },
+      { administrationId: fixture.administrationAssignedToSchoolA.id, taskVariantId: letterVariant.id },
+      // School B → Sentence, Morphology, Syntax
+      { administrationId: fixture.administrationAssignedToSchoolB.id, taskVariantId: fixture.variantForTask2.id },
+      { administrationId: fixture.administrationAssignedToSchoolB.id, taskVariantId: morphologyVariant.id },
+      { administrationId: fixture.administrationAssignedToSchoolB.id, taskVariantId: syntaxVariant.id },
+      // Class A → Word, Inference
+      { administrationId: fixture.administrationAssignedToClassA.id, taskVariantId: fixture.variantForAllGrades.id },
+      { administrationId: fixture.administrationAssignedToClassA.id, taskVariantId: inferenceVariant.id },
+      // Group → Phoneme, Morphology
+      { administrationId: fixture.administrationAssignedToGroup.id, taskVariantId: phonemeVariant.id },
+      { administrationId: fixture.administrationAssignedToGroup.id, taskVariantId: morphologyVariant.id },
+      // District B → Letter, Syntax, Inference
+      { administrationId: fixture.administrationAssignedToDistrictB.id, taskVariantId: letterVariant.id },
+      { administrationId: fixture.administrationAssignedToDistrictB.id, taskVariantId: syntaxVariant.id },
+      { administrationId: fixture.administrationAssignedToDistrictB.id, taskVariantId: inferenceVariant.id },
     ];
+
+    // orderIndex is per-administration; assign it incrementally as we walk the list.
+    const orderIndexByAdministration = new Map<string, number>();
     await Promise.all(
-      localDevAdministrationIds.flatMap((administrationId) => [
-        AdministrationTaskVariantFactory.create({
-          administrationId,
-          taskVariantId: fixture.variantForAllGrades.id,
-          orderIndex: 0,
-        }),
-        AdministrationTaskVariantFactory.create({
-          administrationId,
-          taskVariantId: fixture.variantForGrade5.id,
-          orderIndex: 1,
-          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: '5' },
-        }),
-        AdministrationTaskVariantFactory.create({
-          administrationId,
-          taskVariantId: fixture.variantForTask2.id,
-          orderIndex: 2,
-        }),
-      ]),
+      localDevAssignments.map(({ administrationId, taskVariantId }) => {
+        const orderIndex = orderIndexByAdministration.get(administrationId) ?? 0;
+        orderIndexByAdministration.set(administrationId, orderIndex + 1);
+        return AdministrationTaskVariantFactory.create({ administrationId, taskVariantId, orderIndex });
+      }),
     );
 
     // 6. Initialize FGA store, deploy model, and sync tuples
