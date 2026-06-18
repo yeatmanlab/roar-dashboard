@@ -34,6 +34,7 @@ import useSentryLogging from '@/composables/useSentryLogging';
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
+import { isEmulatorAuthReady } from '@/helpers/isDashboardReady';
 import AppSpinner from '@/components/AppSpinner.vue';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
@@ -65,7 +66,7 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.roarfirekit.restConfig?.() || isEmulatorAuthReady(state)) init();
 });
 
 const { isLoading: isLoadingUserData, data: userData } = useUserDataQuery(null, {
@@ -173,7 +174,7 @@ onMounted(async () => {
     requireRefresh.value = false;
     router.go(0);
   }
-  if (roarfirekit.value.restConfig?.()) init();
+  if (roarfirekit.value.restConfig?.() || isEmulatorAuthReady(authStore)) init();
   setSentryWidgetVisibility(!isParticipant.value);
 });
 </script>
