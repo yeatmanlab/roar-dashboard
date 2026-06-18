@@ -80,11 +80,21 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
 const { isAdmin, isSuperAdmin, isParticipant, isLaunchAdmin } = useUserType(userClaims);
 
 const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value || isLaunchAdmin.value);
+// Local Firebase Auth emulator mode (VITE_FIREBASE_EMULATOR_ENABLED). Inert in deployed builds.
+const isFirebaseEmulatorEnabled =
+  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === true || import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';
+
 const isLoading = computed(() => {
   // @NOTE: In addition to the loading states, we also check if user data and user claims are loaded as due to the
   // current application initialization flow, the userData and userClaims queries initially reset. Once this is improved
   // these additional checks can be removed.
-  return !initialized.value || isLoadingUserData.value || isLoadingClaims.value || !userData.value || !userClaims.value;
+  if (!initialized.value || isLoadingClaims.value || !userClaims.value) return true;
+  // Local emulator: the legacy Firestore `userData` document never resolves against
+  // the auth-only local stack, so requiring it would pin this spinner open forever.
+  // User claims (derived from /me) are enough to route to the correct home here.
+  // Gated on the emulator flag, so deployed builds keep requiring `userData`.
+  if (isFirebaseEmulatorEnabled) return false;
+  return isLoadingUserData.value || !userData.value;
 });
 
 const showConsent = ref(false);
