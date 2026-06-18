@@ -83,13 +83,6 @@ export function startGame(administration, language, optional, task, auth) {
 
   cy.waitForAssessmentReadyState();
   cy.get('.jspsych-btn').should('be.visible').click();
-
-  cy.wait(0.1 * Cypress.env('timeout'));
-  Cypress.on('uncaught:exception', () => {
-    return false;
-  });
-
-  cy.get('.go-button').should('be.visible').click();
 }
 
 export function playMorphology({
