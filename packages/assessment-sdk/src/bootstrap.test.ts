@@ -71,7 +71,7 @@ describe('bootstrapAnonymousSession', () => {
 
     expect(listTaskVariants).toHaveBeenCalledWith({
       params: { taskId: TASK_ID },
-      query: { perPage: 1, sortBy: 'createdAt', sortOrder: 'asc' },
+      query: { perPage: 1, sortBy: 'createdAt', sortOrder: 'asc', status: 'published' },
     });
     expect(result).toEqual({ participantId: PARTICIPANT_ID, variantId: VARIANT_ID });
   });

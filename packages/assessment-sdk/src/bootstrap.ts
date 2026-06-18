@@ -106,7 +106,7 @@ export async function bootstrapAnonymousSession(
     // If the default sort changes, this will silently pick a different variant.
     const variants = await client.tasks.listTaskVariants({
       params: { taskId: input.taskId },
-      query: { perPage: 1, sortBy: 'createdAt', sortOrder: 'asc' },
+      query: { perPage: 1, sortBy: 'createdAt', sortOrder: 'asc', status: 'published' },
     });
 
     if (variants.status !== StatusCodes.OK) {
