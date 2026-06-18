@@ -1,6 +1,7 @@
 // scores.integration.test.js
 import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { RoarScores } from '../experiment/scores.js';
+import { toSwrScoreEntries, SWR_SCORE_NAMES } from '@roar-platform/assessment-schema/roar-swr';
 import fs from 'fs';
 import path from 'path';
 import store from 'store2';
@@ -299,7 +300,55 @@ describe('RoarScores Integration Tests', () => {
     expect(scores.tableLoaded).toBe(true);
   });
 
-  test('should return null for non-SWR or SWR-ES taskIds', async () => {
+  test('callback output contains thetaEstimateRaw forwarded from raw input', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 7,
+      userMetadata: { ageMonths: 108 },
+      taskId: 'swr',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      composite: {
+        test: { thetaEstimateRaw: 0.42, thetaEstimate: 0.42 },
+      },
+    };
+
+    const result = await scores.computedScoreCallback(rawScores);
+
+    expect(result.composite.thetaEstimateRaw).toBe(0.42);
+    expect(result.composite.thetaEstimate).toBe(0.42);
+  });
+
+  test('toSwrScoreEntries on real callback output emits a type=raw thetaEstimateRaw entry', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 7,
+      userMetadata: { ageMonths: 108 },
+      taskId: 'swr',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      composite: {
+        test: { thetaEstimateRaw: 0.42, thetaEstimate: 0.42, thetaSERaw: 0.15 },
+      },
+    };
+
+    const computed = await scores.computedScoreCallback(rawScores);
+    const entries = toSwrScoreEntries(computed);
+
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_ESTIMATE_RAW, type: 'raw', value: '0.42' }),
+    );
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_SE_RAW, type: 'raw', value: '0.15' }),
+    );
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_ESTIMATE, type: 'computed', value: '0.42' }),
+    );
+  });
+
+  test('should return null for unrecognized task IDs', async () => {
     store.session.get = vi.fn(() => ({
       userMetadata: { ageMonths: 84 },
       taskId: 'sre',
@@ -310,6 +359,44 @@ describe('RoarScores Integration Tests', () => {
     const result = await scores.computedScoreCallback({});
 
     expect(result).toBeNull();
+  });
+
+  test('non-normed SWR languages (swr-it) forward theta and counts through computedScoreCallback', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 0,
+      userMetadata: { ageMonths: 108 },
+      taskId: 'swr-it',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      composite: {
+        test: {
+          thetaEstimateRaw: -0.5,
+          thetaEstimate: -0.5,
+          thetaSERaw: 1.2,
+          numCorrect: 10,
+          numAttempted: 15,
+          numIncorrect: 5,
+          percentCorrect: 66.67,
+        },
+      },
+    };
+
+    const result = await scores.computedScoreCallback(rawScores);
+
+    expect(result).not.toBeNull();
+    expect(result.composite.thetaEstimateRaw).toBe(-0.5);
+    expect(result.composite.thetaEstimate).toBe(-0.5);
+    expect(result.composite.thetaSERaw).toBe(1.2);
+    expect(result.composite.numCorrect).toBe(10);
+    expect(result.composite.numAttempted).toBe(15);
+    expect(result.composite.numIncorrect).toBe(5);
+    expect(result.composite.percentCorrect).toBe(66.67);
+    // No normed scores loaded for non-normed language
+    expect(result.composite.roarScore).toBeUndefined();
+    expect(result.composite.percentile).toBeUndefined();
+    expect(papaParseSpy).not.toHaveBeenCalled();
   });
 
   test('should handle missing userMetadata gracefully', async () => {
