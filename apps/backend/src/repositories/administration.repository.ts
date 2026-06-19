@@ -170,8 +170,10 @@ export interface TaskVariantWithAssignment {
  * NOTE: Database columns conditionsAssignment/conditionsRequirements map to
  * API fields assigned_if/optional_if respectively.
  */
-export interface AssignmentWithOptional
-  extends Omit<AdministrationTaskVariant, 'conditionsAssignment' | 'conditionsRequirements'> {
+export interface AssignmentWithOptional extends Omit<
+  AdministrationTaskVariant,
+  'conditionsAssignment' | 'conditionsRequirements'
+> {
   conditionsAssignment: null;
   conditionsRequirements: null;
   optional: boolean;

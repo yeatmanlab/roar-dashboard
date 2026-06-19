@@ -1811,13 +1811,14 @@ describe('AdministrationsController', () => {
 
       // Assert
       expect(result.status).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
-      if ('error' in result.body) {
-        expect(result.body.error).toMatchObject({
-          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        });
-        expect(result.body.error).toHaveProperty('traceId');
+      if (!('error' in result.body)) {
+        throw new Error('Expected an error envelope in the response body');
       }
+      expect(result.body.error).toMatchObject({
+        message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+      expect(result.body.error).toHaveProperty('traceId');
     });
 
     it('should return 422 when service throws validation error for missing assignments', async () => {
@@ -1836,13 +1837,14 @@ describe('AdministrationsController', () => {
 
       // Assert
       expect(result.status).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
-      if ('error' in result.body) {
-        expect(result.body.error).toMatchObject({
-          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        });
-        expect(result.body.error).toHaveProperty('traceId');
+      if (!('error' in result.body)) {
+        throw new Error('Expected an error envelope in the response body');
       }
+      expect(result.body.error).toMatchObject({
+        message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+      expect(result.body.error).toHaveProperty('traceId');
     });
 
     it('should return 403 when service throws forbidden error', async () => {
@@ -1861,13 +1863,14 @@ describe('AdministrationsController', () => {
 
       // Assert
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
-      if ('error' in result.body) {
-        expect(result.body.error).toMatchObject({
-          message: ApiErrorMessage.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-        });
-        expect(result.body.error).toHaveProperty('traceId');
+      if (!('error' in result.body)) {
+        throw new Error('Expected an error envelope in the response body');
       }
+      expect(result.body.error).toMatchObject({
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      expect(result.body.error).toHaveProperty('traceId');
     });
 
     it('should return 409 when service throws conflict error for duplicate name', async () => {
@@ -1886,13 +1889,14 @@ describe('AdministrationsController', () => {
 
       // Assert
       expect(result.status).toBe(StatusCodes.CONFLICT);
-      if ('error' in result.body) {
-        expect(result.body.error).toMatchObject({
-          message: ApiErrorMessage.CONFLICT,
-          code: ApiErrorCode.RESOURCE_CONFLICT,
-        });
-        expect(result.body.error).toHaveProperty('traceId');
+      if (!('error' in result.body)) {
+        throw new Error('Expected an error envelope in the response body');
       }
+      expect(result.body.error).toMatchObject({
+        message: ApiErrorMessage.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+      expect(result.body.error).toHaveProperty('traceId');
     });
 
     it('should throw when service throws unexpected error', async () => {
@@ -2199,12 +2203,13 @@ describe('AdministrationsController', () => {
       const result = await Controller.update(mockAuthContext, 'non-existent-id', validUpdateBody);
 
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
-      if ('error' in result.body) {
-        expect(result.body.error).toMatchObject({
-          message: ApiErrorMessage.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        });
+      if (!('error' in result.body)) {
+        throw new Error('Expected an error envelope in the response body');
       }
+      expect(result.body.error).toMatchObject({
+        message: ApiErrorMessage.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
     });
 
     it('should return 403 when user is not a super admin', async () => {
@@ -2220,12 +2225,13 @@ describe('AdministrationsController', () => {
       const result = await Controller.update(mockAuthContext, 'admin-123', validUpdateBody);
 
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
-      if ('error' in result.body) {
-        expect(result.body.error).toMatchObject({
-          message: ApiErrorMessage.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-        });
+      if (!('error' in result.body)) {
+        throw new Error('Expected an error envelope in the response body');
       }
+      expect(result.body.error).toMatchObject({
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
     });
 
     it('should return 422 when validation fails', async () => {
@@ -2244,12 +2250,13 @@ describe('AdministrationsController', () => {
       });
 
       expect(result.status).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
-      if ('error' in result.body) {
-        expect(result.body.error).toMatchObject({
-          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        });
+      if (!('error' in result.body)) {
+        throw new Error('Expected an error envelope in the response body');
       }
+      expect(result.body.error).toMatchObject({
+        message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
     });
 
     it('should return 409 when name conflicts with existing administration', async () => {
@@ -2265,12 +2272,13 @@ describe('AdministrationsController', () => {
       const result = await Controller.update(mockAuthContext, 'admin-123', { name: 'Duplicate Name' });
 
       expect(result.status).toBe(StatusCodes.CONFLICT);
-      if ('error' in result.body) {
-        expect(result.body.error).toMatchObject({
-          message: ApiErrorMessage.CONFLICT,
-          code: ApiErrorCode.RESOURCE_CONFLICT,
-        });
+      if (!('error' in result.body)) {
+        throw new Error('Expected an error envelope in the response body');
       }
+      expect(result.body.error).toMatchObject({
+        message: ApiErrorMessage.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
     });
 
     it('should return 500 when internal server error occurs', async () => {

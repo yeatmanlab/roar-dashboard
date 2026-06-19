@@ -209,7 +209,7 @@ const distributionBySupport = computed(() => {
     width: 350,
     background: null,
     title: {
-      text: `${tasksDictionary.value[props.taskId]?.publicName ?? props.taskId}`,
+      text: `${tasksDictionary.value[props.taskId]?.nameSimple ?? props.taskId}`,
       subtitle: `Support Level Distribution By ${props.facetMode.name}`,
       anchor: 'middle',
       fontSize: 18,

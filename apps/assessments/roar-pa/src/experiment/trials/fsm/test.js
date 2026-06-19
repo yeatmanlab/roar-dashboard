@@ -33,7 +33,7 @@ export const fsmTestTrials = {
       button_html: '<img draggable="false" class="testImageDown" src="%choice%" alt="response" />',
       data: {
         save_trial: true,
-        assessment_stage: 'test_response',
+        assessment_stage: 'test',
         start_time: () => new Date(store.session.get('config').startTime).toLocaleString(),
         start_time_unix: () => new Date(store.session.get('config').startTime).getTime(),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,

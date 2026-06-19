@@ -84,19 +84,20 @@ describe('GroupsController', () => {
       const result = await GroupsController.getInvitationCode(mockAuthContext, 'group-id');
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data).toEqual({
-          id: mockInvitationCode.id,
-          groupId: mockInvitationCode.groupId,
-          code: mockInvitationCode.code,
-          validFrom: mockInvitationCode.validFrom.toISOString(),
-          validTo: mockInvitationCode.validTo?.toISOString() ?? null,
-          dates: {
-            created: mockInvitationCode.createdAt.toISOString(),
-            updated: mockInvitationCode.updatedAt?.toISOString() ?? mockInvitationCode.createdAt.toISOString(),
-          },
-        });
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data).toEqual({
+        id: mockInvitationCode.id,
+        groupId: mockInvitationCode.groupId,
+        code: mockInvitationCode.code,
+        validFrom: mockInvitationCode.validFrom.toISOString(),
+        validTo: mockInvitationCode.validTo?.toISOString() ?? null,
+        dates: {
+          created: mockInvitationCode.createdAt.toISOString(),
+          updated: mockInvitationCode.updatedAt?.toISOString() ?? mockInvitationCode.createdAt.toISOString(),
+        },
+      });
       expect(mockGetLatestValidByGroupId).toHaveBeenCalledWith(mockAuthContext, 'group-id');
     });
 
@@ -107,9 +108,10 @@ describe('GroupsController', () => {
       const result = await GroupsController.getInvitationCode(mockAuthContext, 'group-id');
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.validTo).toBeNull();
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.validTo).toBeNull();
     });
 
     it('should handle invitation code with null updatedAt', async () => {
@@ -119,9 +121,10 @@ describe('GroupsController', () => {
       const result = await GroupsController.getInvitationCode(mockAuthContext, 'group-id');
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.dates.updated).toBe(mockInvitationCode.createdAt.toISOString());
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.dates.updated).toBe(mockInvitationCode.createdAt.toISOString());
     });
 
     it('should return typed error response for ApiError', async () => {
@@ -136,9 +139,10 @@ describe('GroupsController', () => {
       const result = await GroupsController.getInvitationCode(mockAuthContext, 'group-id');
 
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
-      if (result.status !== StatusCodes.OK) {
-        expect(result.body.error.message).toBe('Not found');
+      if (result.status === StatusCodes.OK) {
+        throw new Error('Expected an error response');
       }
+      expect(result.body.error.message).toBe('Not found');
     });
 
     it('should propagate non-ApiError exceptions', async () => {
