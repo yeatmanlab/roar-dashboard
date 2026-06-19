@@ -2,6 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { withSetup } from '@/test-support/withSetup.js';
 import * as VueQuery from '@tanstack/vue-query';
 import useUpsertAdministrationMutation from './useUpsertAdministrationMutation';
+import {
+  ADMINISTRATIONS_QUERY_KEY,
+  ADMINISTRATIONS_LIST_QUERY_KEY,
+  ADMINISTRATION_ASSIGNMENTS_QUERY_KEY,
+  ADMINISTRATION_TREE_QUERY_KEY,
+  ADMINISTRATION_QUERY_KEY,
+  ADMINISTRATION_ASSIGNEES_QUERY_KEY,
+  ADMINISTRATION_TASK_VARIANTS_QUERY_KEY,
+} from '@/constants/queryKeys';
 
 const mockCreate = vi.fn();
 const mockUpdate = vi.fn();
@@ -95,10 +104,18 @@ describe('useUpsertAdministrationMutation', () => {
 
     await result.mutateAsync({ body });
 
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administrations-list'] });
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration-tree'] });
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration'] });
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration-assignees'] });
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration-task-variants'] });
+    const expectedKeys = [
+      ADMINISTRATIONS_QUERY_KEY,
+      ADMINISTRATIONS_LIST_QUERY_KEY,
+      ADMINISTRATION_ASSIGNMENTS_QUERY_KEY,
+      ADMINISTRATION_TREE_QUERY_KEY,
+      ADMINISTRATION_QUERY_KEY,
+      ADMINISTRATION_ASSIGNEES_QUERY_KEY,
+      ADMINISTRATION_TASK_VARIANTS_QUERY_KEY,
+    ];
+    expect(mockInvalidateQueries).toHaveBeenCalledTimes(expectedKeys.length);
+    for (const key of expectedKeys) {
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: [key] });
+    }
   });
 });

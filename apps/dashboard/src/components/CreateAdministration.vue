@@ -303,6 +303,9 @@ const adaptConditionsRead = (conditions) => ({
   optional: conditions?.optional_if ?? undefined,
 });
 
+// Normalize a nullish condition to `undefined` so the write payload omits the field
+// entirely rather than sending an explicit `null` (the upsert contract treats an absent
+// field as "no condition"). Non-nullish values pass through unchanged.
 const adaptConditionsWrite = (condition) => (condition === undefined || condition === null ? undefined : condition);
 
 // Pre-existing assessment info supplied to the TaskPicker for conditions display.
@@ -342,8 +345,8 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(noConsent.value === '') },
-  assent: { requiredIf: requiredIf(noConsent.value === '') },
+  consent: { requiredIf: requiredIf(() => noConsent.value === '') },
+  assent: { requiredIf: requiredIf(() => noConsent.value === '') },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -519,7 +522,9 @@ const submit = async () => {
   // Duplicate mode creates a new administration (POST); only edit targets an existing id (PATCH).
   const administrationId = props.formType === ADMINISTRATION_FORM_TYPES.EDIT ? props.adminId : undefined;
 
-  await upsertAdministration(
+  // mutate() is fire-and-forget in TanStack Query v5 (returns void); the onSuccess/onError
+  // callbacks below handle completion, so there is nothing to await here.
+  upsertAdministration(
     { administrationId, body },
     {
       onSuccess: () => {
