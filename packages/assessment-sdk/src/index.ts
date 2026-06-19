@@ -13,6 +13,12 @@ export { SDKError } from './errors/sdk-error';
 // dist/compat/firekit.mjs which the package.json exports map requires.
 export * from './compat/firekit';
 
+// Anonymous-session bootstrap: provisions a participantId (and optionally resolves a
+// variant) before initAssessmentSdk/initFirekitCompat, replacing the raw-fetch workaround.
+export * from './bootstrap';
+export { createApiClient } from './receiver/roar-api';
+export type { ApiClientConfig, RoarApiClient } from './receiver/roar-api';
+
 // Global singleton instances for the SDK
 let globalInvoker: Invoker | undefined;
 let globalApi: RoarApi | undefined;
