@@ -186,7 +186,10 @@ describe('<TaskParametersConfiguratorRow />', () => {
     });
 
     it('Shows error message when a new row value is empty', () => {
-      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, isNew: true }]);
+      // Seed a value so clearing it registers an edit and marks the field dirty.
+      // Vuelidate only surfaces $errors once a field is dirty, and backspacing an
+      // already-empty field is a no-op — so the row must start non-empty.
+      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, value: 'seedvalue', isNew: true }]);
 
       cy.mount(TaskParametersConfiguratorRow, {
         props: {
@@ -269,7 +272,10 @@ describe('<TaskParametersConfiguratorRow />', () => {
 
     it('Automatically clears error messages', () => {
       // Use a new row so the value-required validator (new-rows-only) is exercised.
-      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, isNew: true }]);
+      // Seed name + value so clearing each registers an edit and marks the field
+      // dirty — vuelidate won't surface $errors otherwise, and backspacing an
+      // already-empty field is a no-op.
+      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, name: 'seedname', value: 'seedvalue', isNew: true }]);
 
       cy.mount(TaskParametersConfiguratorRow, {
         props: {
