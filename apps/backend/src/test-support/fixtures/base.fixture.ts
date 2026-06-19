@@ -420,8 +420,8 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     UserFactory.create({ nameFirst: 'District B', nameLast: 'Admin', userType: UserType.ADMIN }),
     UserFactory.create({ nameFirst: 'District B', nameLast: 'Student', userType: UserType.STUDENT }),
     // Enrollment boundary test users
-    UserFactory.create({ nameFirst: 'Expired Enroll', nameLast: 'Student', userType: UserType.STUDENT }),
-    UserFactory.create({ nameFirst: 'Future Enroll', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Expired Org', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Future Org', nameLast: 'Student', userType: UserType.STUDENT }),
     UserFactory.create({ nameFirst: 'Expired Class', nameLast: 'Student', userType: UserType.STUDENT }),
     UserFactory.create({ nameFirst: 'Future Group', nameLast: 'Student', userType: UserType.STUDENT }),
     // Demographic test users (for task variant eligibility filtering)
