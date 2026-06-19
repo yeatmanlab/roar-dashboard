@@ -65,7 +65,7 @@ import { AGREEMENT_TYPES } from '@/constants/agreements';
 const props = defineProps({
   consentId: { type: String, required: false, default: null },
   assentId: { type: String, required: false, default: null },
-  noConsent: { type: Boolean, required: false, default: false },
+  initialNoConsent: { type: Boolean, required: false, default: false },
 });
 
 const emit = defineEmits(['consent-selected']);
@@ -75,11 +75,11 @@ const { data: assentAgreements } = useAgreementsQuery(AGREEMENT_TYPES.ASSENT);
 
 const selectedConsentId = ref(props.consentId);
 const selectedAssentId = ref(props.assentId);
-const noConsent = ref(props.noConsent);
+const noConsent = ref(props.initialNoConsent);
 
 // Pre-fill when the parent resolves existing values (edit / duplicate).
 watch(
-  () => [props.consentId, props.assentId, props.noConsent],
+  () => [props.consentId, props.assentId, props.initialNoConsent],
   ([consentId, assentId, isNoConsent]) => {
     selectedConsentId.value = consentId;
     selectedAssentId.value = assentId;

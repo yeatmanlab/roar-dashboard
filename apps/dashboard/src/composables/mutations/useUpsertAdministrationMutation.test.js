@@ -94,6 +94,19 @@ describe('useUpsertAdministrationMutation', () => {
     });
   });
 
+  it('throws a structured error when the update path returns a non-2xx response', async () => {
+    mockUpdate.mockResolvedValueOnce({ status: 500, body: { error: { code: 'internal' } } });
+
+    const [result] = withSetup(() => useUpsertAdministrationMutation(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    await expect(result.mutateAsync({ administrationId: 'admin-1', body })).rejects.toMatchObject({
+      status: 500,
+      body: { error: { code: 'internal' } },
+    });
+  });
+
   it('invalidates the administration queries on success', async () => {
     const mockInvalidateQueries = vi.fn();
     vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));

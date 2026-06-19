@@ -105,10 +105,10 @@
           <ConsentPicker
             :consent-id="existingConsentId"
             :assent-id="existingAssentId"
-            :no-consent="existingNoConsent"
+            :initial-no-consent="existingNoConsent"
             @consent-selected="handleConsentSelected"
           />
-          <small v-if="submitted && v$.consent.$invalid && v$.consent.$invalid" class="p-error mt-2"
+          <small v-if="submitted && (v$.consent.$invalid || v$.assent.$invalid)" class="p-error mt-2"
             >Please select a consent/assent form.</small
           >
         </div>
