@@ -6,7 +6,7 @@
   </div>
 </template>
 <script setup>
-import RoarSWR from '@bdelab/roar-swr';
+import RoarSWR from '@roar-platform/roar-swr';
 import RoarPA from '@roar-platform/roar-pa';
 import RoarSRE from '@bdelab/roar-sre';
 import { useAuthStore } from '@/store/auth';
