@@ -184,8 +184,8 @@ export class RoarScores {
     const compositeNumIncorrect = compositeNumAttempted - compositeNumCorrect;
     const compositePercentCorrect =
       compositeNumAttempted > 0 ? Math.round((100 * compositeNumCorrect) / compositeNumAttempted) : 0;
-    computedScores[PA_COMPOSITE] = {
-      ...computedScores[PA_COMPOSITE],
+    computedScores[COMPOSITE_DOMAIN] = {
+      ...computedScores[COMPOSITE_DOMAIN],
       numCorrect: compositeNumCorrect,
       numAttempted: compositeNumAttempted,
       numIncorrect: compositeNumIncorrect,
