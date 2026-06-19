@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
-import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { initFirekitCompat, getVariantById } from '@roar-platform/assessment-sdk/compat/firekit';
+import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { pa } from '@roar-platform/assessment-schema';
 import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
@@ -8,27 +9,21 @@ import { wireScoreAdapter } from '../src/sdk/pa-firekit-facade';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
-const { PA_SCORING_VERSION } = pa;
-
 const queryString = new URL(window.location).search;
 const urlParams = new URLSearchParams(queryString);
+
+// Variant / session
+const variantId = urlParams.get('variantId');
+const taskVersion = urlParams.get('taskVersion') ?? '1.0';
+
+// User / participant params — game configuration comes from variant params fetched via SDK
 const assessmentPid = urlParams.get('participant');
 const labId = urlParams.get('labId');
-const recruitment = urlParams.get('recruitment');
-const userMode = urlParams.get('mode');
 const grade = urlParams.get('grade');
 const birthYear = urlParams.get('birthyear');
 const birthMonth = urlParams.get('birthmonth');
 const age = urlParams.get('age');
 const ageMonths = urlParams.get('agemonths');
-const numTestItems = urlParams.get('numtestitems') ? Number(urlParams.get('numtestitems')) : null;
-const variantId = urlParams.get('variantId');
-const taskVersion = urlParams.get('taskVersion') ?? '1.0';
-// Boolean parameters
-const consent = urlParams.get('consent') !== 'false';
-const storyOption = urlParams.get('storyoption');
-const story = urlParams.get('story') ? urlParams.get('story').toLocaleLowerCase() !== 'false' : null;
-const skipInstructions = urlParams.get('skip') !== 'false';
 
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -40,66 +35,27 @@ if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
   connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
 }
 
-const earlyStopping = urlParams.get('earlyStopping')?.toLocaleLowerCase() ?? null;
-const threshold = urlParams.get('threshold') ?? null;
-const patience = urlParams.get('patience') ?? null;
-const tolerance = urlParams.get('tolerance') ?? null;
-const logicalOperation = urlParams.get('logicalOperation')?.toLocaleLowerCase() ?? null;
-const randomSeed = urlParams.get('random') ?? null;
-const isAdaptive = urlParams.get('isAdaptive') === 'true';
-const itemSelect = urlParams.get('itemSelect') ?? 'fixed';
-const abilityMethod = urlParams.get('abilityMethod')?.toLocaleLowerCase() ?? 'eap';
-const scoringVersionParams = parseInt(urlParams.get('scoringVersion') ?? PA_SCORING_VERSION.V5_ADAPTIVE, 10);
-const scoringVersion = Number.isNaN(scoringVersionParams) ? PA_SCORING_VERSION.V5_ADAPTIVE : scoringVersionParams;
-
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     try {
-      const token = await user.getIdToken();
+      const authCallbacks = { getToken: () => user.getIdToken() };
 
-      // Raw fetch is intentional here: the SDK requires a participantId (ROAR UUID) to
-      // initialize, but this call is what provisions that UUID. The SDK can't bootstrap
-      // itself, so we call the endpoint directly before handing control to initFirekitCompat.
-      // eslint-disable-next-line no-undef
-      const res = await fetch(`${ROAR_API_BASE_URL}/users/anonymous`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        console.error('POST /users/anonymous failed:', res.status, json);
-        return;
-      }
-      const { data } = json;
-
-      // Resolve variantId: use URL param if provided, otherwise fall back to the
-      // first published variant for this task.
-      // TODO: Replace with a proper "default variant" concept once the task_variants
-      // schema supports marking a single variant as default per task.
-      // See: https://github.com/yeatmanlab/roar-project-management/issues/1828
-      let resolvedVariantId = variantId;
-      if (!resolvedVariantId) {
+      // Provision the anonymous ROAR user (and resolve a variant) via the SDK. This replaces
+      // the previous raw-fetch workaround: the SDK requires a participantId to initialize, yet
+      // POST /users/anonymous is what provisions that id, so bootstrapAnonymousSession performs
+      // the participant-free calls and hands back the participantId and resolved variantId.
+      // The variantId URL param wins; otherwise it falls back to the first published variant.
+      const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         // eslint-disable-next-line no-undef
-        const variantRes = await fetch(`${ROAR_API_BASE_URL}/tasks/${pa.PA_TASK_ID}/variants?perPage=1`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const variantJson = await variantRes.json();
-        if (!variantRes.ok) {
-          console.error('Failed to fetch roar-pa task variants:', variantRes.status, variantJson);
-          return;
-        }
-        resolvedVariantId = variantJson?.data?.items?.[0]?.id ?? null;
-        if (!resolvedVariantId) {
-          console.error('Could not resolve a roar-pa task variant:', variantJson);
-          return;
-        }
-      }
+        { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
+        { ...(variantId ? { variantId } : {}), taskId: pa.PA_TASK_ID },
+      );
 
       const ctx = {
         // eslint-disable-next-line no-undef
         baseUrl: ROAR_API_BASE_URL,
-        auth: { getToken: () => user.getIdToken() },
-        participant: { participantId: data.id },
+        auth: authCallbacks,
+        participant: { participantId },
       };
 
       initFirekitCompat(ctx, {
@@ -111,6 +67,8 @@ onAuthStateChanged(auth, async (user) => {
       // Wire PA score computation pipeline
       wireScoreAdapter();
 
+      const { variantParams } = await getVariantById(resolvedVariantId);
+
       const userParams = {
         assessmentPid,
         labId,
@@ -121,27 +79,7 @@ onAuthStateChanged(auth, async (user) => {
         ageMonths,
       };
 
-      const gameParams = {
-        userMode,
-        recruitment,
-        skipInstructions,
-        consent,
-        story,
-        storyOption,
-        numTestItems,
-        earlyStopping,
-        threshold,
-        patience,
-        tolerance,
-        logicalOperation,
-        randomSeed,
-        isAdaptive,
-        itemSelect,
-        abilityMethod,
-        scoringVersion,
-      };
-
-      const roarApp = new RoarPA(gameParams, userParams);
+      const roarApp = new RoarPA(variantParams, userParams);
       roarApp.run();
     } catch (err) {
       console.error('Failed to initialize assessment:', err);

@@ -322,7 +322,7 @@
           <PvTabs v-model:value="activeTabIndex">
             <PvTabList>
               <PvTab v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="i" class="text-base">
-                {{ tasksDictionary[taskId]?.publicName ?? taskId }}
+                {{ tasksDictionary[taskId]?.nameSimple ?? taskId }}
               </PvTab>
             </PvTabList>
 
@@ -1424,7 +1424,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
     for (const taskId in scores) {
       const score = scores[taskId];
-      const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
+      const taskName = tasksDictionary.value[taskId]?.nameSimple ?? taskId;
 
       // Add task-specific score information
       if (
@@ -1629,7 +1629,7 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
         .filter((assessment) => excludeFromScoringTasks.includes(assessment.taskId))
         .map((assessment) => assessment.taskId);
       unscoredTaskIds.forEach((taskId) => {
-        const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
+        const taskName = tasksDictionary.value[taskId]?.nameSimple ?? taskId;
         reorderedRow[`${taskName} - Progress`] =
           row[`${taskId} - Progress`] !== undefined ? row[`${taskId} - Progress`] : null;
       });
@@ -1978,7 +1978,7 @@ const scoreReportColumns = computed(() => {
 
     tableColumns.push({
       field: colField,
-      header: tasksDictionary.value[taskId]?.publicName ?? taskId,
+      header: tasksDictionary.value[taskId]?.nameSimple ?? taskId,
       filterField: `scores.${taskId}.tags`,
       dataType: 'score',
       sort: true,

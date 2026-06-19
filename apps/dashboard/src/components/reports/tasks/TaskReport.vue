@@ -48,7 +48,7 @@
     <SubscoreTable
       v-if="taskId === 'phonics' && !isLoadingTasksDictionary"
       task-id="phonics"
-      :task-name="tasksDictionary['phonics'].publicName"
+      :task-name="tasksDictionary['phonics'].nameSimple"
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
@@ -59,7 +59,7 @@
     <SubscoreTable
       v-if="taskId === 'letter' && !isLoadingTasksDictionary"
       task-id="letter"
-      :task-name="tasksDictionary['letter'].publicName"
+      :task-name="tasksDictionary['letter'].nameSimple"
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
@@ -70,7 +70,7 @@
     <SubscoreTable
       v-if="taskId === 'letter-en-ca' && !isLoadingTasksDictionary"
       task-id="letter-en-ca"
-      :task-name="tasksDictionary['letter-en-ca'].publicName"
+      :task-name="tasksDictionary['letter-en-ca'].nameSimple"
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
@@ -81,7 +81,7 @@
     <SubscoreTable
       v-if="taskId === 'pa' && !isLoadingTasksDictionary"
       task-id="pa"
-      :task-name="tasksDictionary['pa'].publicName"
+      :task-name="tasksDictionary['pa'].nameSimple"
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
@@ -92,7 +92,7 @@
     <SubscoreTable
       v-if="taskId === 'fluency-calf' && !isLoadingTasksDictionary"
       task-id="fluency-calf"
-      :task-name="tasksDictionary['fluency-calf'].publicName"
+      :task-name="tasksDictionary['fluency-calf'].nameSimple"
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
@@ -103,7 +103,7 @@
     <SubscoreTable
       v-if="taskId === 'fluency-arf' && !isLoadingTasksDictionary"
       task-id="fluency-arf"
-      :task-name="tasksDictionary['fluency-arf'].publicName"
+      :task-name="tasksDictionary['fluency-arf'].nameSimple"
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
@@ -114,7 +114,7 @@
     <SubscoreTable
       v-if="taskId === 'roam-alpaca' && !isLoadingTasksDictionary"
       task-id="roam-alpaca"
-      :task-name="tasksDictionary['roam-alpaca'].publicName"
+      :task-name="tasksDictionary['roam-alpaca'].nameSimple"
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
