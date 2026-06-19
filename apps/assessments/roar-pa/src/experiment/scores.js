@@ -154,12 +154,13 @@ export class RoarScores {
     // This returns an object with the same top-level keys as the input raw scores
     // But the values are the number of correct trials, not including practice trials.
     const computedScores = _mapValues(rawScores, (subtaskScores) => {
-      const { numCorrect = 0, numAttempted = 0 } = subtaskScores.test ?? {};
+      const { numCorrect = 0, numAttempted = 0, numIncorrect = 0 } = subtaskScores.test ?? {};
       const percentCorrect = numAttempted > 0 ? Math.round((100 * numCorrect) / numAttempted) : 0;
       return {
         ...(this.isAdaptiveScoring() ? {} : { roarScore: numCorrect }),
         numCorrect,
         numAttempted,
+        numIncorrect,
         percentCorrect,
         roarScoreKind: this.roarScoreKind,
         scoringVersion: this.scoringVersion,
@@ -180,16 +181,30 @@ export class RoarScores {
     const subtaskScoresOnly = _omit(computedScores, [COMPOSITE_DOMAIN, PA_COMPOSITE_FOUNDATIONAL]);
     const compositeNumCorrect = _reduce(subtaskScoresOnly, (sum, score) => sum + (score.numCorrect ?? 0), 0);
     const compositeNumAttempted = _reduce(subtaskScoresOnly, (sum, score) => sum + (score.numAttempted ?? 0), 0);
-    computedScores[COMPOSITE_DOMAIN] = {
-      ...computedScores[COMPOSITE_DOMAIN],
+    const compositeNumIncorrect = compositeNumAttempted - compositeNumCorrect;
+    const compositePercentCorrect =
+      compositeNumAttempted > 0 ? Math.round((100 * compositeNumCorrect) / compositeNumAttempted) : 0;
+    computedScores[PA_COMPOSITE] = {
+      ...computedScores[PA_COMPOSITE],
       numCorrect: compositeNumCorrect,
       numAttempted: compositeNumAttempted,
+      numIncorrect: compositeNumIncorrect,
+      percentCorrect: compositePercentCorrect,
+      roarScoreKind: this.roarScoreKind,
+      scoringVersion: this.scoringVersion,
     };
 
     if (this.isAdaptiveScoring()) {
       for (const key of Object.keys(computedScores)) {
-        computedScores[key].thetaEstimate = store.session.get('thetas')[key.toLowerCase()];
-        computedScores[key].thetaSE = store.session.get('thetaSEs')[key.toLowerCase()];
+        const thetaKey = key.toLowerCase();
+        const theta = store.session.get('thetas')[thetaKey];
+        const thetaSE = store.session.get('thetaSEs')[thetaKey];
+        // Raw = native per-subtask scale; computed = same value (no cross-scale transform per subtask).
+        // Composite values are overwritten below by compositeThetas with the shared-scale estimates.
+        computedScores[key].thetaEstimateRaw = theta;
+        computedScores[key].thetaSERaw = thetaSE;
+        computedScores[key].thetaEstimate = theta;
+        computedScores[key].thetaSE = thetaSE;
       }
 
       const compositeThetas = {

@@ -34,6 +34,7 @@ import useSentryLogging from '@/composables/useSentryLogging';
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
+import { isEmulatorAuthReady } from '@/helpers/isDashboardReady';
 import AppSpinner from '@/components/AppSpinner.vue';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
@@ -65,7 +66,7 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.roarfirekit.restConfig?.() || isEmulatorAuthReady(state)) init();
 });
 
 const { isLoading: isLoadingUserData, data: userData } = useUserDataQuery(null, {
@@ -79,11 +80,19 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
 const { isAdmin, isSuperAdmin, isParticipant, isLaunchAdmin } = useUserType(userClaims);
 
 const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value || isLaunchAdmin.value);
+
 const isLoading = computed(() => {
   // @NOTE: In addition to the loading states, we also check if user data and user claims are loaded as due to the
   // current application initialization flow, the userData and userClaims queries initially reset. Once this is improved
   // these additional checks can be removed.
-  return !initialized.value || isLoadingUserData.value || isLoadingClaims.value || !userData.value || !userClaims.value;
+  if (!initialized.value || isLoadingClaims.value || !userClaims.value) return true;
+  // Local emulator: the legacy Firestore `userData` document never resolves against
+  // the auth-only local stack, so requiring it would pin this spinner open forever.
+  // User claims (derived from /me) are enough to route to the correct home here.
+  // `isEmulatorAuthReady` is gated on the emulator flag, so deployed builds keep
+  // requiring `userData`.
+  if (isEmulatorAuthReady(authStore)) return false;
+  return isLoadingUserData.value || !userData.value;
 });
 
 const showConsent = ref(false);
@@ -173,7 +182,7 @@ onMounted(async () => {
     requireRefresh.value = false;
     router.go(0);
   }
-  if (roarfirekit.value.restConfig?.()) init();
+  if (roarfirekit.value.restConfig?.() || isEmulatorAuthReady(authStore)) init();
   setSentryWidgetVisibility(!isParticipant.value);
 });
 </script>

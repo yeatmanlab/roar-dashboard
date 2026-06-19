@@ -320,7 +320,7 @@ describe('RoarScores Integration Tests', () => {
     expect(result.composite.thetaEstimate).toBe(0.42);
   });
 
-  test('toSwrScoreEntries on real callback output emits a type=raw thetaEstimateRaw entry', async () => {
+  test('toSwrScoreEntries on real callback output emits theta raw/computed pairs', async () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 7,
       userMetadata: { ageMonths: 108 },
@@ -330,7 +330,7 @@ describe('RoarScores Integration Tests', () => {
     const scores = new RoarScores();
     const rawScores = {
       composite: {
-        test: { thetaEstimateRaw: 0.42, thetaEstimate: 0.42, thetaSERaw: 0.15 },
+        test: { thetaEstimateRaw: 0.42, thetaEstimate: 0.42, thetaSERaw: 0.15, thetaSE: 0.15 },
       },
     };
 
@@ -341,10 +341,13 @@ describe('RoarScores Integration Tests', () => {
       expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_ESTIMATE_RAW, type: 'raw', value: '0.42' }),
     );
     expect(entries).toContainEqual(
+      expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_ESTIMATE, type: 'computed', value: '0.42' }),
+    );
+    expect(entries).toContainEqual(
       expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_SE_RAW, type: 'raw', value: '0.15' }),
     );
     expect(entries).toContainEqual(
-      expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_ESTIMATE, type: 'computed', value: '0.42' }),
+      expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_SE, type: 'computed', value: '0.15' }),
     );
   });
 

@@ -78,6 +78,7 @@ export function wireScoreAdapter() {
             thetaEstimateRaw: theta,
             thetaEstimate: theta,
             thetaSERaw: cat != null && cat.seMeasurement !== Infinity ? cat.seMeasurement : null,
+            thetaSE: cat != null && cat.seMeasurement !== Infinity ? cat.seMeasurement : null,
             numCorrect: testNumCorrect,
             numAttempted: testNumAttempted,
             numIncorrect: testNumAttempted - testNumCorrect,

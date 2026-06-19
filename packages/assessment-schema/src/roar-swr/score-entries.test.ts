@@ -71,6 +71,31 @@ describe('toSwrScoreEntries', () => {
       });
     });
 
+    it('emits thetaSE as type=computed', () => {
+      const computed = { composite: { thetaSE: 0.15 } };
+      const entries = toSwrScoreEntries(computed);
+
+      expect(entries).toContainEqual({
+        type: 'computed',
+        domain: SWR_SCORE_DOMAINS.COMPOSITE,
+        name: SWR_SCORE_NAMES.THETA_SE,
+        value: '0.15',
+        assessmentStage: 'test',
+      });
+    });
+
+    it('emits thetaSERaw (raw) and thetaSE (computed) with equal values when SWR is the reference scale', () => {
+      const computed = { composite: { thetaSERaw: 0.15, thetaSE: 0.15 } };
+      const entries = toSwrScoreEntries(computed);
+
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_SE_RAW, type: 'raw', value: '0.15' }),
+      );
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: SWR_SCORE_NAMES.THETA_SE, type: 'computed', value: '0.15' }),
+      );
+    });
+
     it('emits normed scores (percentile, standardScore, roarScore) as type=computed', () => {
       const computed = { composite: { percentile: 75, standardScore: 110, roarScore: 32 } };
       const entries = toSwrScoreEntries(computed);
@@ -213,6 +238,7 @@ describe('toSwrScoreEntries', () => {
           thetaEstimateRaw: 0.42,
           thetaEstimate: 0.42,
           thetaSERaw: 0.15,
+          thetaSE: 0.15,
           percentile: 75,
           standardScore: 110,
           roarScore: 32,
@@ -224,9 +250,9 @@ describe('toSwrScoreEntries', () => {
       };
       const entries = toSwrScoreEntries(computed);
 
-      // 4 computed (thetaEstimate, percentile, standardScore, roarScore) +
-      // 6 raw (thetaEstimateRaw, thetaSERaw, numCorrect, numAttempted, numIncorrect, percentCorrect) = 10 entries
-      expect(entries).toHaveLength(10);
+      // 5 computed (thetaEstimate, thetaSE, percentile, standardScore, roarScore) +
+      // 6 raw (thetaEstimateRaw, thetaSERaw, numCorrect, numAttempted, numIncorrect, percentCorrect) = 11 entries
+      expect(entries).toHaveLength(11);
 
       // All entries have correct domain
       for (const entry of entries) {
