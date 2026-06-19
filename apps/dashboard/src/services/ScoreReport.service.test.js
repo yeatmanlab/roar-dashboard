@@ -3,11 +3,12 @@ import ScoreReportService from '@/services/ScoreReport.service';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 
 import { getSupportLevel, getRawScoreRange, getPaSkillsToWorkOn } from '@/helpers/reports';
-
+// TODO: Update tests once normed task cards are implemented (enable condition scoringVersion >= 1 in hasNewlyAddedNorms)
 // Mock dependencies
 vi.mock('@/helpers/reports', () => ({
   rawOnlyTasks: ['mock-raw-task'],
   tasksToDisplayPercentCorrect: ['phonics'],
+  previouslyUnnormedTasks: ['morphology', 'cva', 'trog', 'roar-inference'],
   taskDisplayNames: {
     'mock-task-1': { extendedName: 'Task One', order: 1 },
     'mock-task-2': { extendedName: 'Task Two', order: 2 },
@@ -311,18 +312,6 @@ describe('ScoreReportService', () => {
               rawScore: 20,
               percentileScore: 65,
               standardScore: 95,
-            },
-          },
-        },
-        {
-          taskId: 'cva',
-          optional: false,
-          reliable: true,
-          scores: {
-            composite: {
-              rawScore: 18,
-              percentileScore: 60,
-              standardScore: 90,
             },
           },
         },
