@@ -40,10 +40,8 @@ onAuthStateChanged(auth, async (user) => {
     try {
       const authCallbacks = { getToken: () => user.getIdToken() };
 
-      // Provision the anonymous ROAR user (and resolve a variant) via the SDK. This replaces
-      // the previous raw-fetch workaround: the SDK requires a participantId to initialize, yet
-      // POST /users/anonymous is what provisions that id, so bootstrapAnonymousSession performs
-      // the participant-free calls and hands back the participantId and resolved variantId.
+      // Provision the anonymous ROAR user (and resolve a variant) via the SDK.
+      // Performs the participant-free calls and hands back the participantId and resolved variantId.
       // The variantId URL param wins; otherwise it falls back to the first published variant.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         // eslint-disable-next-line no-undef
