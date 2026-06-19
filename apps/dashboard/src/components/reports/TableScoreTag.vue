@@ -128,9 +128,13 @@ function handleToolTip(_taskId, _toolTip, _colData) {
         }
         _toolTip = fcStats + '\n' + frStats;
       } else {
+        // Non-response modality scores (1.3.6+) requires new formatting, nesting numCorrect and numIncorrect under rawScore
+        // < 1.3.6 only showed numCorrect and numAttempted.
+        const shouldFormat = Object.keys(_colData.scores?.[_taskId] || {}).some((key) => roamFluencySubskills[key]);
+
         for (const [property, propertyHeader] of Object.entries(roamFluencySubskillHeadersNonResponse)) {
           if (_colData.scores?.[_taskId]?.[property] != undefined) {
-            _toolTip += `${property === 'numCorrect' || property === 'numIncorrect' ? `\u00A0\u2022\u00A0` : ''}${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
+            _toolTip += `${shouldFormat && (property === 'numCorrect' || property === 'numIncorrect') ? `\u00A0\u2022\u00A0` : ''}${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
           }
         }
       }

@@ -1193,6 +1193,11 @@ const computeAssignmentAndRunData = computed(() => {
               };
               currRowScores[taskId].percentCorrect = `${Math.round(scores.composite?.subPercentCorrect * 100)}%`;
             }
+
+            // Non-response modality scores (1.3.6+) can return decimal rawScore for main score report
+            if (currRowScores[taskId].rawScore != undefined) {
+              currRowScores[taskId].rawScore = parseFloat(Number(currRowScores[taskId].rawScore).toFixed(2));
+            }
           }
 
           scoreFilterTags += ' Assessed ';
