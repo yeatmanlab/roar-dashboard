@@ -194,10 +194,10 @@ export interface BaseFixture {
   /** Teacher at School A (org assignment) */
   schoolATeacher: User;
 
-  /** Student at School A (org assignment) */
+  /** Student in classInSchoolA (class-level enrollment) */
   schoolAStudent: User;
 
-  /** Student at School B (for cross-branch tests) */
+  /** Student in classInSchoolB (class-level; for cross-branch tests) */
   schoolBStudent: User;
 
   /** Student in classInSchoolA (class assignment) */
@@ -218,17 +218,17 @@ export interface BaseFixture {
   /** Administrator at districtB (for cross-district isolation tests) */
   districtBAdmin: User;
 
-  /** Student in districtB (for cross-district isolation tests) */
+  /** Student in classInDistrictB (class-level; for cross-district isolation tests) */
   districtBStudent: User;
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Enrollment Boundary Test Users
   // ─────────────────────────────────────────────────────────────────────────────
 
-  /** Student at School A with expired enrollment (enrollmentEnd in the past) */
+  /** Student in classInSchoolA with expired enrollment (enrollmentEnd in the past) */
   expiredEnrollmentStudent: User;
 
-  /** Student at School A with future enrollment (enrollmentStart in the future) */
+  /** Student in classInSchoolA with future enrollment (enrollmentStart in the future) */
   futureEnrollmentStudent: User;
 
   /** Student in classInSchoolA with expired enrollment */
@@ -241,13 +241,13 @@ export interface BaseFixture {
   // Demographic Test Users (for task variant eligibility filtering)
   // ─────────────────────────────────────────────────────────────────────────────
 
-  /** Grade 5 student in district (sees variantForGrade5 and variantForAllGrades) */
+  /** Grade 5 student in classInSchoolC (sees variantForGrade5 and variantForAllGrades) */
   grade5Student: User;
 
-  /** Grade 3 student in district (sees variantForGrade3 and variantForAllGrades) */
+  /** Grade 3 student in classInSchoolC (sees variantForGrade3 and variantForAllGrades) */
   grade3Student: User;
 
-  /** Grade 5 ELL student in district (variantOptionalForEll is optional for them) */
+  /** Grade 5 ELL student in classInSchoolC (variantOptionalForEll is optional for them) */
   grade5EllStudent: User;
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -420,8 +420,8 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     UserFactory.create({ nameFirst: 'District B', nameLast: 'Admin', userType: UserType.ADMIN }),
     UserFactory.create({ nameFirst: 'District B', nameLast: 'Student', userType: UserType.STUDENT }),
     // Enrollment boundary test users
-    UserFactory.create({ nameFirst: 'Expired Org', nameLast: 'Student', userType: UserType.STUDENT }),
-    UserFactory.create({ nameFirst: 'Future Org', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Expired Enroll', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Future Enroll', nameLast: 'Student', userType: UserType.STUDENT }),
     UserFactory.create({ nameFirst: 'Expired Class', nameLast: 'Student', userType: UserType.STUDENT }),
     UserFactory.create({ nameFirst: 'Future Group', nameLast: 'Student', userType: UserType.STUDENT }),
     // Demographic test users (for task variant eligibility filtering)

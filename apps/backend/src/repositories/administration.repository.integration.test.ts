@@ -171,7 +171,7 @@ describe('AdministrationRepository', () => {
     it('deduplicates users reachable via multiple paths', async () => {
       // multiAssignedUser has active enrollments at both district AND schoolA. Both orgs are in the
       // district subtree, so viaOrgToOrgUsers emits two rows for them (one per enrollment).
-      // The full UNION ALL produces 13 rows (11 single-path users + 2 rows for multiAssignedUser),
+      // The full UNION ALL produces 13 rows (11 single-path users — 4 org-level + 7 class-level — plus 2 rows for multiAssignedUser),
       // but COUNT(DISTINCT userId) must collapse them to 12 unique users.
       const counts = await repository.getAssignedUserCountsByAdministrationIds([
         baseFixture.administrationAssignedToDistrict.id,
@@ -220,9 +220,9 @@ describe('AdministrationRepository', () => {
 
       const count = counts.get(admin.id) ?? 0;
 
-      // schoolA has 5 active org-level users (schoolAAdmin, schoolAPrincipal, schoolATeacher,
-      // schoolAStudent, multiAssignedUser) + 2 active class-level users (classAStudent, classATeacher).
-      // expiredEnrollmentStudent's enrollment ended 7 days ago and must be excluded.
+      // schoolA has 4 active org-level users (schoolAAdmin, schoolAPrincipal, schoolATeacher,
+      // multiAssignedUser) + 3 active class-level users in classInSchoolA (classAStudent, classATeacher,
+      // schoolAStudent). expiredEnrollmentStudent's enrollment ended 7 days ago and must be excluded.
       expect(count).toBe(7);
     });
 
@@ -779,7 +779,7 @@ describe('AdministrationRepository', () => {
         );
 
         const ids = result.items.map((item) => item.id);
-        // baseFixture.district has schoolA and schoolB as children
+        // baseFixture.district has schoolA, schoolB, and schoolC as children
         expect(ids).toContain(baseFixture.schoolA.id);
         expect(ids).toContain(baseFixture.schoolB.id);
 
