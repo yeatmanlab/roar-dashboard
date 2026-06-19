@@ -49,6 +49,27 @@ describe('adaptVariantsForPicker', () => {
     expect(nested.variant.conditions).toBeUndefined();
   });
 
+  it('preserves input order', () => {
+    const variants = [
+      { ...flatVariant, id: 'id-1' },
+      { ...flatVariant, id: 'id-2' },
+      { ...flatVariant, id: 'id-3' },
+    ];
+    const result = adaptVariantsForPicker(variants);
+    expect(result.map((v) => v.id)).toEqual(['id-1', 'id-2', 'id-3']);
+  });
+
+  it('maps multiple variants across different tasks without grouping or deduping', () => {
+    const variants = [
+      { ...flatVariant, id: 'v1', taskId: 'task-a', taskName: 'Task A' },
+      { ...flatVariant, id: 'v2', taskId: 'task-b', taskName: 'Task B' },
+    ];
+    const result = adaptVariantsForPicker(variants);
+    expect(result).toHaveLength(2);
+    expect(result[0].task.id).toBe('task-a');
+    expect(result[1].task.id).toBe('task-b');
+  });
+
   it('returns an empty array for empty or missing input', () => {
     expect(adaptVariantsForPicker([])).toEqual([]);
     expect(adaptVariantsForPicker()).toEqual([]);

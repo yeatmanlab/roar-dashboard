@@ -37,9 +37,9 @@ const consentAgreement = {
   },
 };
 
-const agPage = (items, totalPages = 1, page = 1) => ({
+const agPage = (items, totalPages = 1, page = 1, totalItems = items.length) => ({
   status: 200,
-  body: { data: { items, pagination: { page, perPage: 100, totalItems: items.length, totalPages } } },
+  body: { data: { items, pagination: { page, perPage: 100, totalItems, totalPages } } },
 });
 
 describe('useAgreementsQuery', () => {
@@ -80,6 +80,22 @@ describe('useAgreementsQuery', () => {
 
     await expect(queryFn()).resolves.toEqual([consentAgreement]);
     expect(mockList).toHaveBeenCalledWith({ query: { page: 1, perPage: 100, agreementType: 'consent' } });
+  });
+
+  it('follows pagination across multiple pages', async () => {
+    const p1 = [{ ...consentAgreement, id: 'a1' }];
+    const p2 = [{ ...consentAgreement, id: 'a2' }];
+    mockList.mockResolvedValueOnce(agPage(p1, 2, 1, 2)).mockResolvedValueOnce(agPage(p2, 2, 2, 2));
+
+    let queryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      queryFn = options.queryFn;
+      return { data: { value: null }, error: { value: null } };
+    });
+    withSetup(() => useAgreementsQuery(ref('consent')), { plugins: [[VueQuery.VueQueryPlugin, { queryClient }]] });
+
+    await expect(queryFn()).resolves.toEqual([...p1, ...p2]);
+    expect(mockList).toHaveBeenCalledTimes(2);
   });
 
   it('omits the agreementType filter when none is given', async () => {

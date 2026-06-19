@@ -10,7 +10,9 @@
  * later, dedicated effort (tracked separately).
  *
  * Field mapping (flat → nested):
- * - `parameters` (array of `{ name, value }`) → `variant.params` (object)
+ * - `parameters` (array of `{ name, value }`) → `variant.params` (object), with parameter
+ *   names preserved verbatim. The backend returns canonical camelCase parameter names, so —
+ *   unlike the legacy `convertParamArrayToObject` (which camelCases) — no key re-casing is applied.
  * - `name` → `variant.name`
  * - `taskName` / `taskImage` / `taskSlug` → `task.name` / `task.image` / `task.slug`
  * - `task.studentFacingName` falls back to `taskName` (no flat equivalent; the
@@ -19,7 +21,9 @@
  *   the form / `EditVariantDialog` when a variant is configured for the administration.
  *
  * @param {Array<object>} [flatVariants] - Flat task-variant items from the API.
- * @returns {Array<object>} Nested variant objects for the picker.
+ * @returns {Array<object>} A flat array of nested variant objects, preserving input order.
+ *   Callers that need the `TaskPicker.allVariants` dict (keyed by task id) should group
+ *   these by `task.id` — this adapter does not group or dedupe.
  */
 export function adaptVariantsForPicker(flatVariants = []) {
   return (flatVariants ?? []).map((item) => ({
