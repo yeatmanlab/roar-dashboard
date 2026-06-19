@@ -20,13 +20,13 @@ export const SWR_SCORE_NAMES = {
   // CAT ability estimates — all languages.
   // SWR defines the shared IRT scale, so the native theta IS the shared theta:
   // thetaEstimateRaw (type=raw) and thetaEstimate (type=computed) carry the same
-  // value. Both are written so every IRT-scored assessment exposes a native-scale
-  // and a shared-scale theta in run_scores. The same applies to SE:
-  // thetaSERaw (type=raw) is the native-scale SE; thetaSE is not reported for SWR
-  // because no cross-scale SE transform exists.
+  // value, and thetaSERaw (type=raw) and thetaSE (type=computed) carry the same
+  // value. Both pairs are written so every IRT-scored assessment exposes a
+  // native-scale and a shared-scale reading for both theta and SE in run_scores.
   THETA_ESTIMATE_RAW: 'thetaEstimateRaw',
   THETA_ESTIMATE: 'thetaEstimate',
   THETA_SE_RAW: 'thetaSERaw',
+  THETA_SE: 'thetaSE',
 
   // Normed scores — English and Spanish only
   PERCENTILE: 'percentile',
