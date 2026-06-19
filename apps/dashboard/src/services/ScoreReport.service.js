@@ -11,6 +11,7 @@ import {
   tasksToDisplayPercentCorrect,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
+  // previouslyUnnormedTasks,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
@@ -264,7 +265,7 @@ const ScoreReportService = (() => {
   };
 
   const processTaskScores = (taskData, grade, i18n, scoringVersions = {}) => {
-    const tasksBlacklist = ['vocab', 'cva'];
+    const tasksBlacklist = ['vocab'];
     const computedTaskAcc = {};
 
     for (const { taskId, scores, reliable, optional, engagementFlags } of taskData) {
@@ -273,12 +274,17 @@ const ScoreReportService = (() => {
       let rawScore = null;
 
       const useSpanishNorms = (taskId === 'swr-es' || taskId === 'sre-es') && scoringVersions[taskId] >= 1;
+      // Uncomment when norms are updated for tasks and want to hide cards for unnormed. Temporarily show unnormed cards as placeholders.
+      // Replace useSpanishNorms.
+      // const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(taskId) && scoringVersions[taskId] >= 1;
+
       if (!taskId.includes('vocab') && (!taskId.includes('es') || useSpanishNorms)) {
         rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore');
       } else {
         rawScore = compositeScores;
       }
 
+      // SCORE_FIELD_MAPPINGS.rawScore enables, SCORE_FIELD_MAPPINGS.percentileScore determines dial value
       if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
         const percentileScore = getScoreValue(compositeScores, taskId, grade, 'percentile');
         const standardScore = getScoreValue(compositeScores, taskId, grade, SCORE_TYPES.STANDARD_SCORE);
@@ -327,6 +333,8 @@ const ScoreReportService = (() => {
       }
     }
 
+    console.log(taskDisplayNames);
+    console.log(computedTaskAcc);
     return Object.keys(computedTaskAcc)
       .sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order)
       .map((taskId) => computedTaskAcc[taskId]);

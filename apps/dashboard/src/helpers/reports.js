@@ -206,6 +206,16 @@ export const taskDisplayNames = {
     extendedName: 'Inference',
     order: 17,
   },
+  // Temporarily duplicate. computedTaskAcc in ScoringService returns roar-inference
+  // Unsure what deleting roarInference will break
+  'roar-inference': {
+    name: 'Inference',
+    publicName: 'ROAR - Inference',
+    studentFacingName: 'Inference',
+    extendedTitle: 'ROAR - Inference',
+    extendedName: 'Inference',
+    order: 17,
+  },
   comp: {
     name: 'Comprehension',
     publicName: 'ROAR - Comprehension',
@@ -985,6 +995,94 @@ const SCORE_FIELD_MAPPINGS = {
     },
   },
   phonics: {
+    percentile: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScoreDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    rawScore: {
+      new: 'totalCorrect',
+      legacy: 'totalCorrect',
+    },
+  },
+  morphology: {
+    percentile: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScoreDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    rawScore: {
+      new: 'totalCorrect',
+      legacy: 'totalCorrect',
+    },
+  },
+  cva: {
+    percentile: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScoreDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    rawScore: {
+      new: 'totalCorrect',
+      legacy: 'totalCorrect',
+    },
+  },
+  'roar-inference': {
+    percentile: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScoreDisplay: {
+      new: 'totalPercentCorrect',
+      legacy: 'totalPercentCorrect',
+    },
+    rawScore: {
+      new: 'totalCorrect',
+      legacy: 'totalCorrect',
+    },
+  },
+  trog: {
     percentile: {
       new: 'totalPercentCorrect',
       legacy: 'totalPercentCorrect',
