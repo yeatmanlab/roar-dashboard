@@ -313,26 +313,46 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const district = await OrgFactory.create({
-    name: 'Test District',
+    name: 'Maple Grove Unified District',
     orgType: OrgType.DISTRICT,
   });
 
   const districtB = await OrgFactory.create({
-    name: 'Test District B',
+    name: 'Cedar Falls Unified District',
     orgType: OrgType.DISTRICT,
   });
 
   const [schoolA, schoolB, schoolInDistrictB] = await Promise.all([
-    OrgFactory.create({ name: 'Test School A', orgType: OrgType.SCHOOL, parentOrgId: district.id }),
-    OrgFactory.create({ name: 'Test School B', orgType: OrgType.SCHOOL, parentOrgId: district.id }),
-    OrgFactory.create({ name: 'Test School in District B', orgType: OrgType.SCHOOL, parentOrgId: districtB.id }),
+    OrgFactory.create({ name: 'Maple Grove Elementary (School A)', orgType: OrgType.SCHOOL, parentOrgId: district.id }),
+    OrgFactory.create({
+      name: 'Birch Street Elementary (School B)',
+      orgType: OrgType.SCHOOL,
+      parentOrgId: district.id,
+    }),
+    OrgFactory.create({
+      name: 'Cedar Falls Elementary (School in District B)',
+      orgType: OrgType.SCHOOL,
+      parentOrgId: districtB.id,
+    }),
   ]);
 
   const [classInSchoolA, classInSchoolB, classInDistrictB, group] = await Promise.all([
-    ClassFactory.create({ name: 'Test Class A', schoolId: schoolA.id, districtId: district.id }),
-    ClassFactory.create({ name: 'Test Class B', schoolId: schoolB.id, districtId: district.id }),
-    ClassFactory.create({ name: 'Test Class in District B', schoolId: schoolInDistrictB.id, districtId: districtB.id }),
-    GroupFactory.create({ name: 'Test Group' }),
+    ClassFactory.create({
+      name: 'Maple Grove Elem — Grade 3 (Class A)',
+      schoolId: schoolA.id,
+      districtId: district.id,
+    }),
+    ClassFactory.create({
+      name: 'Birch Street Elem — Grade 4 (Class B)',
+      schoolId: schoolB.id,
+      districtId: district.id,
+    }),
+    ClassFactory.create({
+      name: 'Cedar Falls Elem — Grade 5 (Class in District B)',
+      schoolId: schoolInDistrictB.id,
+      districtId: districtB.id,
+    }),
+    GroupFactory.create({ name: 'Maple Grove Summer Reading (Group)' }),
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -366,28 +386,28 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
   ] = await Promise.all([
     UserFactory.create({ nameFirst: 'Super', nameLast: 'Admin', userType: UserType.ADMIN, isSuperAdmin: true }),
     UserFactory.create({ nameFirst: 'District', nameLast: 'Admin', userType: UserType.ADMIN }),
-    UserFactory.create({ nameFirst: 'SchoolA', nameLast: 'Admin', userType: UserType.ADMIN }),
-    UserFactory.create({ nameFirst: 'SchoolA', nameLast: 'Principal', userType: UserType.ADMIN }),
-    UserFactory.create({ nameFirst: 'SchoolA', nameLast: 'Teacher', userType: UserType.EDUCATOR }),
-    UserFactory.create({ nameFirst: 'SchoolA', nameLast: 'Student', userType: UserType.STUDENT }),
-    UserFactory.create({ nameFirst: 'SchoolB', nameLast: 'Student', userType: UserType.STUDENT }),
-    UserFactory.create({ nameFirst: 'ClassA', nameLast: 'Student', userType: UserType.STUDENT }),
-    UserFactory.create({ nameFirst: 'ClassA', nameLast: 'Teacher', userType: UserType.EDUCATOR }),
+    UserFactory.create({ nameFirst: 'School A', nameLast: 'Admin', userType: UserType.ADMIN }),
+    UserFactory.create({ nameFirst: 'School A', nameLast: 'Principal', userType: UserType.ADMIN }),
+    UserFactory.create({ nameFirst: 'School A', nameLast: 'Teacher', userType: UserType.EDUCATOR }),
+    UserFactory.create({ nameFirst: 'School A', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'School B', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Class A', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Class A', nameLast: 'Teacher', userType: UserType.EDUCATOR }),
     UserFactory.create({ nameFirst: 'Group', nameLast: 'Student', userType: UserType.STUDENT }),
     UserFactory.create({ nameFirst: 'Unassigned', nameLast: 'User', userType: UserType.STUDENT }),
-    UserFactory.create({ nameFirst: 'Multi', nameLast: 'Assigned', userType: UserType.ADMIN }),
-    UserFactory.create({ nameFirst: 'DistrictB', nameLast: 'Admin', userType: UserType.ADMIN }),
-    UserFactory.create({ nameFirst: 'DistrictB', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Multi-Org', nameLast: 'Admin', userType: UserType.ADMIN }),
+    UserFactory.create({ nameFirst: 'District B', nameLast: 'Admin', userType: UserType.ADMIN }),
+    UserFactory.create({ nameFirst: 'District B', nameLast: 'Student', userType: UserType.STUDENT }),
     // Enrollment boundary test users
-    UserFactory.create({ nameFirst: 'Expired', nameLast: 'OrgStudent', userType: UserType.STUDENT }),
-    UserFactory.create({ nameFirst: 'Future', nameLast: 'OrgStudent', userType: UserType.STUDENT }),
-    UserFactory.create({ nameFirst: 'Expired', nameLast: 'ClassStudent', userType: UserType.STUDENT }),
-    UserFactory.create({ nameFirst: 'Future', nameLast: 'GroupStudent', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Expired Org', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Future Org', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Expired Class', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Future Group', nameLast: 'Student', userType: UserType.STUDENT }),
     // Demographic test users (for task variant eligibility filtering)
-    UserFactory.create({ nameFirst: 'Grade5', nameLast: 'Student', userType: UserType.STUDENT, grade: '5' }),
-    UserFactory.create({ nameFirst: 'Grade3', nameLast: 'Student', userType: UserType.STUDENT, grade: '3' }),
+    UserFactory.create({ nameFirst: 'Grade 5', nameLast: 'Student', userType: UserType.STUDENT, grade: '5' }),
+    UserFactory.create({ nameFirst: 'Grade 3', nameLast: 'Student', userType: UserType.STUDENT, grade: '3' }),
     UserFactory.create({
-      nameFirst: 'Grade5Ell',
+      nameFirst: 'Grade 5 ELL',
       nameLast: 'Student',
       userType: UserType.STUDENT,
       grade: '5',
@@ -484,12 +504,36 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     administrationAssignedToGroup,
     administrationAssignedToDistrictB,
   ] = await Promise.all([
-    AdministrationFactory.create({ name: 'District Administration', createdBy: districtAdmin.id }),
-    AdministrationFactory.create({ name: 'School A Administration', createdBy: schoolAAdmin.id }),
-    AdministrationFactory.create({ name: 'School B Administration', createdBy: districtAdmin.id }),
-    AdministrationFactory.create({ name: 'Class A Administration', createdBy: classATeacher.id }),
-    AdministrationFactory.create({ name: 'Group Administration', createdBy: districtAdmin.id }),
-    AdministrationFactory.create({ name: 'District B Administration', createdBy: districtBAdmin.id }),
+    AdministrationFactory.create({
+      name: 'Fall 2025 Universal Screener (District A)',
+      namePublic: 'Fall 2025 Reading Screener',
+      createdBy: districtAdmin.id,
+    }),
+    AdministrationFactory.create({
+      name: 'Winter Reading Benchmark (School A)',
+      namePublic: 'Winter Reading Benchmark',
+      createdBy: schoolAAdmin.id,
+    }),
+    AdministrationFactory.create({
+      name: 'Winter Reading Benchmark (School B)',
+      namePublic: 'Winter Reading Benchmark',
+      createdBy: districtAdmin.id,
+    }),
+    AdministrationFactory.create({
+      name: 'Grade 3 Progress Check (Class A)',
+      namePublic: 'Grade 3 Progress Check',
+      createdBy: classATeacher.id,
+    }),
+    AdministrationFactory.create({
+      name: 'Summer Reading Cohort Screener (Group)',
+      namePublic: 'Summer Reading Screener',
+      createdBy: districtAdmin.id,
+    }),
+    AdministrationFactory.create({
+      name: 'Fall 2025 Universal Screener (District B)',
+      namePublic: 'Fall 2025 Reading Screener',
+      createdBy: districtBAdmin.id,
+    }),
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -513,8 +557,8 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const [task, task2] = await Promise.all([
-    TaskFactory.create({ name: 'Base Fixture Task' }),
-    TaskFactory.create({ name: 'Base Fixture Task 2' }),
+    TaskFactory.create({ name: 'Word' }),
+    TaskFactory.create({ name: 'Sentence' }),
   ]);
 
   const [
@@ -525,12 +569,12 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     variantForTask2,
     variantForTask2Grade5OptionalEll,
   ] = await Promise.all([
-    TaskVariantFactory.create({ taskId: task.id, name: 'Variant For All Grades' }),
-    TaskVariantFactory.create({ taskId: task.id, name: 'Variant For Grade 5' }),
-    TaskVariantFactory.create({ taskId: task.id, name: 'Variant For Grade 3' }),
-    TaskVariantFactory.create({ taskId: task.id, name: 'Variant Optional For ELL' }),
-    TaskVariantFactory.create({ taskId: task2.id, name: 'Variant For Task 2' }),
-    TaskVariantFactory.create({ taskId: task2.id, name: 'Variant For Task 2 Grade 5 Optional ELL' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word — All Grades' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word — Grade 5' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word — Grade 3' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word — ELL (Optional)' }),
+    TaskVariantFactory.create({ taskId: task2.id, name: 'Sentence — All Grades' }),
+    TaskVariantFactory.create({ taskId: task2.id, name: 'Sentence — Grade 5, ELL Optional' }),
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
