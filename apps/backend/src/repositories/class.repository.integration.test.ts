@@ -176,6 +176,7 @@ describe('ClassRepository', () => {
       const userIds = result.items.map((u) => u.id);
       expect(userIds).toContain(baseFixture.classAStudent.id);
       expect(userIds).toContain(baseFixture.classATeacher.id);
+      expect(userIds).toContain(baseFixture.schoolAStudent.id);
       expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
     });
 
