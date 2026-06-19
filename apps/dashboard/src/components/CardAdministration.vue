@@ -295,7 +295,9 @@ const variantParameterRows = computed(() =>
 
 const showParamsFor = (event, assessment) => {
   selectedAssessment.value = assessment;
-  paramsPopover.value?.toggle(event);
+  // show() (not toggle()) so clicking a different assessment's info icon while the
+  // popover is open re-anchors it to the new target rather than closing it.
+  paramsPopover.value?.show(event);
 };
 
 const showTable = ref(false);
@@ -354,66 +356,71 @@ const onExpand = async (node) => {
   ) {
     expanding.value = true;
 
-    // Fetch this node's children from the same tree endpoint, scoped by the
-    // expanding node as the parent. fetchAdministrationTreeLevel returns nodes
-    // already in PvTreeTable shape (with their own placeholder children).
-    const childNodes = await fetchAdministrationTreeLevel(props.id, {
-      parentEntityType: node.data.orgType,
-      parentEntityId: node.data.id,
-    });
-
-    // Lazy node is a copy of the expanding node with its real children attached.
-    const lazyNode = {
-      key: node.key,
-      data: {
-        ...node.data,
-        expanded: true,
-      },
-      children: childNodes,
-    };
-
-    // Recursively find and replace the expanding node in the tree
-    const replaceNodeInTree = (nodes) => {
-      return nodes.map((n) => {
-        // If this is the node we're expanding, replace it with the lazy node
-        if (n.data.id === node.data.id) {
-          return lazyNode;
-        }
-
-        // If this node has children, recursively search them
-        if (n.children && n.children.length > 0) {
-          return {
-            ...n,
-            children: replaceNodeInTree(n.children),
-          };
-        }
-
-        return n;
+    try {
+      // Fetch this node's children from the same tree endpoint, scoped by the
+      // expanding node as the parent. fetchAdministrationTreeLevel returns nodes
+      // already in PvTreeTable shape (with their own placeholder children).
+      const childNodes = await fetchAdministrationTreeLevel(props.id, {
+        parentEntityType: node.data.orgType,
+        parentEntityId: node.data.id,
       });
-    };
 
-    const newNodes = replaceNodeInTree(treeTableOrgs.value);
+      // Lazy node is a copy of the expanding node with its real children attached.
+      const lazyNode = {
+        key: node.key,
+        data: {
+          ...node.data,
+          expanded: true,
+        },
+        children: childNodes,
+      };
 
-    // Sort the classes by existence of stats then alphabetically
-    // TODO: This fails currently as it tries to set a read only reactive handler
-    // Specifically, setting the `children` key fails because the
-    // schoolNode target is read-only.
-    // Also, I'm pretty sure this is useless now because all classes will have stats
-    // due to preallocation of accounts.
-    for (const districtNode of newNodes ?? []) {
-      for (const schoolNode of districtNode?.children ?? []) {
-        if (schoolNode.children) {
-          schoolNode.children = schoolNode.children.toSorted((a, b) => {
-            if (!a.data.stats) return 1;
-            if (!b.data.stats) return -1;
-            return a.data.name.localeCompare(b.data.name);
-          });
+      // Recursively find and replace the expanding node in the tree
+      const replaceNodeInTree = (nodes) => {
+        return nodes.map((n) => {
+          // If this is the node we're expanding, replace it with the lazy node
+          if (n.data.id === node.data.id) {
+            return lazyNode;
+          }
+
+          // If this node has children, recursively search them
+          if (n.children && n.children.length > 0) {
+            return {
+              ...n,
+              children: replaceNodeInTree(n.children),
+            };
+          }
+
+          return n;
+        });
+      };
+
+      const newNodes = replaceNodeInTree(treeTableOrgs.value);
+
+      // Sort the classes by existence of stats then alphabetically
+      // TODO: This fails currently as it tries to set a read only reactive handler
+      // Specifically, setting the `children` key fails because the
+      // schoolNode target is read-only.
+      // Also, I'm pretty sure this is useless now because all classes will have stats
+      // due to preallocation of accounts.
+      for (const districtNode of newNodes ?? []) {
+        for (const schoolNode of districtNode?.children ?? []) {
+          if (schoolNode.children) {
+            schoolNode.children = schoolNode.children.toSorted((a, b) => {
+              if (!a.data.stats) return 1;
+              if (!b.data.stats) return -1;
+              return a.data.name.localeCompare(b.data.name);
+            });
+          }
         }
       }
-    }
 
-    treeTableOrgs.value = newNodes;
-    expanding.value = false;
+      treeTableOrgs.value = newNodes;
+    } finally {
+      // Always clear the loading state, even if the child fetch throws, so the
+      // tree doesn't lock permanently in the expanding state.
+      expanding.value = false;
+    }
   }
 };
 
