@@ -48,6 +48,7 @@ describe('GET /v1/me', () => {
 
       expect(res.body.data.id).toEqual(expect.any(String));
       expect(res.body.data.userType).toEqual(expect.any(String));
+      expect(res.body.data.isSuperAdmin).toBe(true);
     });
 
     it('siteAdmin tier can retrieve their own profile', async () => {
@@ -72,6 +73,7 @@ describe('GET /v1/me', () => {
       const res = await expectRoute('GET', '/v1/me').as(tiers.student).toReturn(200);
 
       expect(res.body.data.id).toEqual(expect.any(String));
+      expect(res.body.data.isSuperAdmin).toBe(false);
     });
 
     it('caregiver tier can retrieve their own profile', async () => {
@@ -90,6 +92,7 @@ describe('GET /v1/me', () => {
       expect(res.body.data).toMatchObject({
         id: baseFixture.districtAdmin.id,
         userType: baseFixture.districtAdmin.userType,
+        isSuperAdmin: false,
         nameFirst: baseFixture.districtAdmin.nameFirst,
         nameLast: baseFixture.districtAdmin.nameLast,
       });
