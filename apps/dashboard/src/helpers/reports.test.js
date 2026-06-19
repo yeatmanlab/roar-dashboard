@@ -3,6 +3,7 @@ import {
   taskDisplayNames,
   addElementToPdf,
   getSupportLevel,
+  replaceDocLinks,
   getScoreValue,
   getRawScoreThreshold,
   getRawScoreRange,
@@ -1011,6 +1012,36 @@ describe('reports', () => {
         };
         expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM']);
       });
+    });
+  });
+
+  describe('replaceDocLinks', () => {
+    const DOC_LINK_SENTINEL = 'Check here for definitions of each Problem Type and associated terminology.';
+
+    it('should return empty string for falsy desc', () => {
+      expect(replaceDocLinks(null, 'fluency-arf')).toBe('');
+      expect(replaceDocLinks(undefined, 'fluency-arf')).toBe('');
+      expect(replaceDocLinks('', 'fluency-arf')).toBe('');
+    });
+
+    it.each(['fluency-arf', 'fluency-calf'])(
+      'should replace doc link sentinel with bold anchor link for %s',
+      (taskId) => {
+        const result = replaceDocLinks(DOC_LINK_SENTINEL, taskId);
+        expect(result).toContain('<span class="font-bold">');
+        expect(result).toContain('href="/docs/roam-arfcalf-subscores-explainer.pdf"');
+        expect(result).not.toContain(DOC_LINK_SENTINEL);
+      },
+    );
+
+    it('should not replace doc link sentinel for other task IDs', () => {
+      const result = replaceDocLinks(DOC_LINK_SENTINEL, 'swr');
+      expect(result).toBe(DOC_LINK_SENTINEL);
+    });
+
+    it('should not replace unrelated text for fluency-arf', () => {
+      const result = replaceDocLinks('Some other description text.', 'fluency-arf');
+      expect(result).toBe('Some other description text.');
     });
   });
 });
