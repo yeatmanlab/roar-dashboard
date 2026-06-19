@@ -454,7 +454,7 @@ async function startTestServer(): Promise<void> {
             runId: run.id,
             type: SCORE_TYPE.RAW,
             domain: SCORE_DOMAIN.COMPOSITE,
-            name: SCORE_NAME.THETA_SE,
+            name: SCORE_NAME.THETA_SE_RAW,
             value: (Math.random() * 2 - 1).toFixed(3),
             assessmentStage: ASSESSMENT_STAGE.TEST,
           }),
