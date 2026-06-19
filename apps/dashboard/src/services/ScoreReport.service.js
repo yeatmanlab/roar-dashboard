@@ -11,7 +11,7 @@ import {
   tasksToDisplayPercentCorrect,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
-  // previouslyUnnormedTasks,
+  previouslyUnnormedTasks,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
@@ -170,11 +170,13 @@ const ScoreReportService = (() => {
 
   const getScoreDescription = (task, grade, i18n, scoringVersion) => {
     const taskName = taskDisplayNames[task.taskId]?.extendedName;
-
+    // const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(task.taskId) && scoringVersion >= 1;
+    // Temporarily change language to percentile even if unnormed for development purposes
+    const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(task.taskId);
     // --- CHANGED: use safe wrapper instead of direct call ---
     const taskDescription = safeGetExtendedDescription(String(task.taskId));
 
-    if (tasksToDisplayPercentCorrect.includes(task.taskId) && !(task.taskId === 'swr-es' && scoringVersion >= 1)) {
+    if (tasksToDisplayPercentCorrect.includes(task.taskId) && !hasNewlyAddedNorms) {
       return {
         keypath: 'scoreReports.percentageCorrectTaskDescription',
         slots: {
@@ -193,7 +195,7 @@ const ScoreReportService = (() => {
       };
     }
 
-    if (rawOnlyTasks.includes(task.taskId)) {
+    if (rawOnlyTasks.includes(task.taskId) && !hasNewlyAddedNorms) {
       return {
         keypath: 'scoreReports.rawTaskDescription',
         slots: {
@@ -277,6 +279,8 @@ const ScoreReportService = (() => {
       // Uncomment when norms are updated for tasks and want to hide cards for unnormed. Temporarily show unnormed cards as placeholders.
       // Replace useSpanishNorms.
       // const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(taskId) && scoringVersions[taskId] >= 1;
+      // Temporarily change language to percentile even if unnormed for development purposes
+      const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(taskId);
 
       if (!taskId.includes('vocab') && (!taskId.includes('es') || useSpanishNorms)) {
         rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore');
@@ -308,7 +312,8 @@ const ScoreReportService = (() => {
           },
           percentileScore: {
             name:
-              tasksToDisplayPercentCorrect.includes(taskId) && !useSpanishNorms
+              // TODO: Check why !useSpanishNorms is needed here
+              tasksToDisplayPercentCorrect.includes(taskId) && !useSpanishNorms && !hasNewlyAddedNorms
                 ? i18n.t('scoreReports.percentCorrect')
                 : i18n.t('scoreReports.percentileScore'),
             value: Math.round(percentileScore),
@@ -333,8 +338,6 @@ const ScoreReportService = (() => {
       }
     }
 
-    console.log(taskDisplayNames);
-    console.log(computedTaskAcc);
     return Object.keys(computedTaskAcc)
       .sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order)
       .map((taskId) => computedTaskAcc[taskId]);
