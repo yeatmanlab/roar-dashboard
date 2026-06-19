@@ -6,6 +6,7 @@ import {
   ADMINISTRATIONS_QUERY_KEY,
   ADMINISTRATIONS_LIST_QUERY_KEY,
   ADMINISTRATION_ASSIGNMENTS_QUERY_KEY,
+  ADMINISTRATION_TREE_QUERY_KEY,
 } from '@/constants/queryKeys';
 
 /**
@@ -37,6 +38,9 @@ const useDeleteAdministrationMutation = () => {
       queryClient.invalidateQueries({ queryKey: [ADMINISTRATIONS_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [ADMINISTRATION_ASSIGNMENTS_QUERY_KEY] });
+      // Deleting an administration removes it from the org tree — invalidate that cache too,
+      // matching the upsert mutation's invalidation set.
+      queryClient.invalidateQueries({ queryKey: [ADMINISTRATION_TREE_QUERY_KEY] });
     },
   });
 };
