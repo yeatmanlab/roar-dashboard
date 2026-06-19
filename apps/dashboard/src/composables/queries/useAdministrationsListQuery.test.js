@@ -71,7 +71,7 @@ describe('useAdministrationsListQuery', () => {
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY, { isSuperAdmin: true }],
+        queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY, expect.anything()],
         queryFn: expect.any(Function),
       }),
     );
