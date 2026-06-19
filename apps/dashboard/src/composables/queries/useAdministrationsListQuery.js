@@ -59,7 +59,9 @@ const useAdministrationsListQuery = (queryOptions = undefined) => {
   const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
-    queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY],
+    // isSuperAdmin discriminates the cache: super admins fetch embed=stats,tasks while
+    // everyone else fetches embed=tasks, so the two must not share a cache entry.
+    queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY, { isSuperAdmin: isSuperAdmin.value }],
     queryFn: async () => {
       const client = getRoarApiClient();
       const administrations = [];
