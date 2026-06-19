@@ -77,4 +77,18 @@ function rejectRosteringEndedTarget(
   }
 }
 
-export { verifyEntitiesExist, rejectRosteringEndedTarget };
+/**
+ * Narrows an unknown value to a plain object (`Record<string, unknown>`),
+ * excluding arrays, primitives, and null.
+ *
+ * Use this before passing an untyped or union value to functions that expect a
+ * keyed record (e.g., `camelizeKeys`), which only make sense on plain objects.
+ *
+ * @param value - Any value to test
+ * @returns `true` if `value` is a non-null, non-array object
+ */
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+export { verifyEntitiesExist, rejectRosteringEndedTarget, isJsonObject };
