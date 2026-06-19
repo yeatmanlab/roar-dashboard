@@ -211,7 +211,7 @@ but those accepted fastest will follow a workflow similar to the following:
    to your locally cloned repository. For example, to add the upstream ROAR
    dashboard repository, type
 
-   ```Shell
+   ```bash
    git remote add upstream https://github.com/yeatmanlab/roar-dashboard.git
    ```
 
@@ -219,7 +219,7 @@ but those accepted fastest will follow a workflow similar to the following:
    upstream repository.<br />
    For example, to update your main branch on your local cloned repository:
 
-   ```Shell
+   ```bash
    git fetch upstream
    git checkout main
    git merge upstream/main
@@ -230,7 +230,7 @@ but those accepted fastest will follow a workflow similar to the following:
    In most cases, you can install a development version of by navigating to the
    root of your repository and then typing
 
-   ```Shell
+   ```bash
    npm install
    ```
 
@@ -238,7 +238,7 @@ but those accepted fastest will follow a workflow similar to the following:
    code changes.**<br />
    For example:
 
-   ```Shell
+   ```bash
    git fetch upstream  # Always start with an updated upstream
    git checkout -b fix/bug-1222 upstream/main
    ```
@@ -262,7 +262,7 @@ but those accepted fastest will follow a workflow similar to the following:
    address one feature or bug at a time.
    In many of our repositories, you can test your changes locally using
 
-   ```Shell
+   ```bash
    npm run lint
    npm run test
    ```
@@ -299,7 +299,7 @@ real, seeded backend — for example to exercise the backend-backed admin flows
 such as task/variant management as a super admin — bring up the whole stack with
 one command, mirroring the CI end-to-end job:
 
-```Shell
+```bash
 npm run dev:local
 ```
 
@@ -466,7 +466,7 @@ Most ROAR repositories publish three different kinds of releases:
 
 In order to publish a production release, you must run
 
-```Shell
+```bash
 npm version <major|minor|patch>
 ```
 
