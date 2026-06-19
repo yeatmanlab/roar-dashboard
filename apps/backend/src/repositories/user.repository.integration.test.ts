@@ -212,6 +212,21 @@ describe('UserRepository', () => {
       expect(result).toBe(false);
     });
 
+    it('returns false when the platform_admin enrollment is in the future', async () => {
+      const user = await UserFactory.create();
+      await UserOrgFactory.create({
+        userId: user.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.PLATFORM_ADMIN,
+        enrollmentStart: new Date('2999-01-01T00:00:00Z'),
+        enrollmentEnd: new Date('3000-01-01T00:00:00Z'),
+      });
+
+      const result = await repository.hasPlatformAdminRole(user.id);
+
+      expect(result).toBe(false);
+    });
+
     it('returns false when the platform_admin group enrollment has expired', async () => {
       const user = await UserFactory.create();
       await UserGroupFactory.create({

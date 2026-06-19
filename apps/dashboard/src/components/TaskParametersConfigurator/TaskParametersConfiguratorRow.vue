@@ -141,7 +141,15 @@ const rules = {
       ),
     },
     type: { required },
-    value: { required },
+    // Existing backend taskConfig values may legitimately be empty strings (taskConfig is
+    // arbitrary JSON), so only NEW rows require a non-empty value; null/undefined remain
+    // "missing". Mirrors the row.value.isNew gating on nameFormat above.
+    value: {
+      required: helpers.withMessage(
+        'Value is required',
+        (value) => !row.value.isNew || (value !== '' && value !== null && value !== undefined),
+      ),
+    },
   },
 };
 

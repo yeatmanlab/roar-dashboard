@@ -23,6 +23,8 @@ import { logger } from '../../logger';
  * @param action - Short action identifier for structured logging (e.g., 'task-variants.list')
  * @returns Resolves when access is granted
  * @throws {ApiError} FORBIDDEN if the caller is neither a super admin nor a platform admin
+ * @throws {Error} Unexpected errors from `hasPlatformAdminRole` (e.g. a database failure)
+ *   are deliberately propagated to the caller, which wraps them as DATABASE_QUERY_FAILED.
  */
 export async function verifyPlatformAdminAccess(
   authContext: AuthContext,
