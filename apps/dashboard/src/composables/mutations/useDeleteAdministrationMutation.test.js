@@ -28,7 +28,6 @@ describe('useDeleteAdministrationMutation', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
     vi.resetAllMocks();
     queryClient?.clear();
   });
@@ -60,6 +59,7 @@ describe('useDeleteAdministrationMutation', () => {
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administrations'] });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administrations-list'] });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration-assignments'] });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration-tree'] });
   });
 
   it('throws and does not invalidate on a non-204 response', async () => {

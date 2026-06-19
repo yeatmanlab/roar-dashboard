@@ -23,9 +23,9 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
 
 const ADMIN_ID = '00000000-0000-0000-0000-000000000001';
 
-const tvPage = (items, totalPages = 1, page = 1) => ({
+const tvPage = (items, totalPages = 1, page = 1, totalItems = items.length) => ({
   status: 200,
-  body: { data: { items, pagination: { page, perPage: 100, totalItems: items.length, totalPages } } },
+  body: { data: { items, pagination: { page, perPage: 100, totalItems, totalPages } } },
 });
 
 describe('useAdministrationTaskVariantsQuery', () => {
@@ -79,7 +79,7 @@ describe('useAdministrationTaskVariantsQuery', () => {
   it('follows pagination across multiple pages', async () => {
     const p1 = [{ id: 'v1', orderIndex: 0 }];
     const p2 = [{ id: 'v2', orderIndex: 1 }];
-    mockListTaskVariants.mockResolvedValueOnce(tvPage(p1, 2, 1)).mockResolvedValueOnce(tvPage(p2, 2, 2));
+    mockListTaskVariants.mockResolvedValueOnce(tvPage(p1, 2, 1, 2)).mockResolvedValueOnce(tvPage(p2, 2, 2, 2));
 
     let queryFn;
     vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
@@ -109,11 +109,34 @@ describe('useAdministrationTaskVariantsQuery', () => {
     await expect(queryFn()).rejects.toMatchObject({ status: 500 });
   });
 
-  it('is disabled without an id', () => {
+  it('is disabled without an id or without a token', () => {
     vi.spyOn(VueQuery, 'useQuery');
     withSetup(() => useAdministrationTaskVariantsQuery(ref(null)), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
     expect(VueQuery.useQuery.mock.calls[0][0].enabled.value).toBe(false);
+
+    VueQuery.useQuery.mockClear();
+    mockUseAuthStore.mockReturnValue({ accessToken: null });
+    withSetup(() => useAdministrationTaskVariantsQuery(ref(ADMIN_ID)), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+    expect(VueQuery.useQuery.mock.calls[0][0].enabled.value).toBe(false);
+  });
+
+  it('does not retry on terminal auth or rostering-ended errors but retries transient ones', () => {
+    let retryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      retryFn = options.retry;
+      return { data: { value: null }, error: { value: null } };
+    });
+    withSetup(() => useAdministrationTaskVariantsQuery(ref(ADMIN_ID)), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(retryFn(0, { body: { error: { code: 'auth/required' } } })).toBe(false);
+    expect(retryFn(0, { body: { error: { code: 'auth/rostering-ended' } } })).toBe(false);
+    expect(retryFn(0, new Error('network down'))).toBe(true);
+    expect(retryFn(3, new Error('network down'))).toBe(false);
   });
 });
