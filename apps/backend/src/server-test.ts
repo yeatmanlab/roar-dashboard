@@ -70,6 +70,7 @@ const {
  * and migration specs can sign in as that user.
  */
 const CYPRESS_FIXTURE_USER_KEYS = [
+  'superAdmin',
   'districtAdmin',
   'schoolAAdmin',
   'schoolATeacher',

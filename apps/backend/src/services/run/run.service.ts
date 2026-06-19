@@ -15,6 +15,9 @@ import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { verifyTargetUserAccess } from '../authorization/verify-target-user-access';
 import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
+import { camelizeKeys } from '../../utils/camelize-keys.util';
+import { sanitizeJsonbMaxValues } from '../../utils/sanitize-jsonb.util';
+import { isJsonObject } from '../utils/validations.utils';
 
 /**
  * RunService factory function.
@@ -188,7 +191,9 @@ export function RunService({
         taskVersion: body.taskVersion,
         administrationId: isAnonymous ? ANONYMOUS_RUN_ADMINISTRATION_ID : body.administrationId!,
         isAnonymous,
-        ...(body.metadata ? { metadata: body.metadata } : {}),
+        ...(body.metadata !== undefined && isJsonObject(body.metadata)
+          ? { metadata: sanitizeJsonbMaxValues(camelizeKeys(body.metadata)) }
+          : {}),
       };
 
       const run = await runRepository.create({ data });
