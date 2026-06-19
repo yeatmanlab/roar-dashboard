@@ -505,7 +505,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     administrationAssignedToDistrictB,
   ] = await Promise.all([
     AdministrationFactory.create({
-      name: 'Fall 2025 Universal Screener (District)',
+      name: 'Fall 2025 Universal Screener (District A)',
       namePublic: 'Fall 2025 Reading Screener',
       createdBy: districtAdmin.id,
     }),
