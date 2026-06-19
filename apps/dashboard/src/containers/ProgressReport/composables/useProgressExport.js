@@ -44,7 +44,7 @@ export function useProgressExport(
     }
 
     for (const taskId in progress) {
-      tableRow[tasksDictionary.value[taskId]?.publicName ?? taskId] = progress[taskId].value;
+      tableRow[tasksDictionary.value[taskId]?.nameSimple ?? taskId] = progress[taskId].value;
     }
 
     return tableRow;

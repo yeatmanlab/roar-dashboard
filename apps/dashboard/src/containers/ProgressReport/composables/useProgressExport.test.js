@@ -54,8 +54,8 @@ describe('useProgressExport', () => {
     ]);
 
     mockTasksDictionary = ref({
-      swr: { publicName: 'Sight Word Reading' },
-      pa: { publicName: 'Phonological Awareness' },
+      swr: { nameSimple: 'Sight Word Reading' },
+      pa: { nameSimple: 'Phonological Awareness' },
     });
 
     mockAdministrationData = ref({

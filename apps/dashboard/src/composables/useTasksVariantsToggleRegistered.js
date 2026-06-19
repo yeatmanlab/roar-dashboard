@@ -1,32 +1,30 @@
 import { ref, watch } from 'vue';
-import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 
 /**
- * Composable for managing registration state of tasks and variants
+ * Composable for managing registration state of task variants
  *
  * This provides a centralized way to manage the registration status
- * and handle toggling of registered tasks and variants.
+ * and handle toggling of registered variants.
+ *
+ * @NOTE The task-level half of this composable (`registeredTasksOnly`) is gone —
+ * the "registered" concept is retired at the task level now that tasks are
+ * fetched from the backend API. The variant-level toggle remains on its legacy
+ * Firestore path until the variant reads migrate to the per-task backend
+ * endpoint with a status filter (`draft | published | deprecated`).
  */
 export function useTasksVariantsToggleRegistered() {
-  const registeredTasksOnly = ref(localStorage.getItem('registeredTasksOnly') === 'false' ? false : true);
-  const registeredVariantsOnly = ref(localStorage.getItem('registeredVariantsOnly') === 'false' ? false : true);
+  // Cleanup: the task-level toggle is retired, so drop the stale persisted key.
+  // TODO(1881): remove once the migration has been live for a while.
+  localStorage.removeItem('registeredTasksOnly');
 
-  watch(registeredTasksOnly, (value) => {
-    localStorage.setItem('registeredTasksOnly', value);
-  });
+  const registeredVariantsOnly = ref(localStorage.getItem('registeredVariantsOnly') === 'false' ? false : true);
 
   watch(registeredVariantsOnly, (value) => {
     localStorage.setItem('registeredVariantsOnly', value);
   });
 
-  const { refetch: toggleRegisteredTasks } = useTasksQuery(registeredTasksOnly.value);
   const { refetch: toggleRegisteredVariants } = useTaskVariantsQuery(registeredVariantsOnly.value);
-
-  const updateRegisteredTasksOnly = (value) => {
-    registeredTasksOnly.value = value;
-    toggleRegisteredTasks();
-  };
 
   const updateRegisteredVariantsOnly = (value) => {
     registeredVariantsOnly.value = value;
@@ -34,9 +32,7 @@ export function useTasksVariantsToggleRegistered() {
   };
 
   return {
-    registeredTasksOnly,
     registeredVariantsOnly,
-    updateRegisteredTasksOnly,
     updateRegisteredVariantsOnly,
   };
 }

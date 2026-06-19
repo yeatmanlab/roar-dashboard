@@ -32,6 +32,9 @@ export const MeController = {
           data: {
             id: user.id,
             userType: user.userType,
+            // `/me` is always the caller themselves, so the verified
+            // super-admin flag from the auth context is the canonical source.
+            isSuperAdmin: authContext.isSuperAdmin,
             nameFirst: user.nameFirst,
             nameLast: user.nameLast,
             unsignedAgreements,
