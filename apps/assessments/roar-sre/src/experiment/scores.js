@@ -271,9 +271,11 @@ export class RoarScores {
   /**
    * Averages lookup-equated fixed-form scores.
    * The fixedForm* subscores remain raw; only the composite is equated.
+   * Returns null when no fixedForm* keys are present (e.g. during the practice phase),
+   * which signals to the caller that no composite should be written yet.
    * Missing lookup rows throw via getFixedFormEquatingLookupRow.
    * @param {*} score fixedForm* sreScores are raw scores.
-   * @returns {number}
+   * @returns {number | null}
    */
   getFixedFormEquatedScore(score) {
     const fixedFormScores = _toPairs(score)
@@ -286,7 +288,7 @@ export class RoarScores {
       });
 
     if (fixedFormScores.length === 0) {
-      throw new Error('No fixedForm scores available to equate in 90s2BlocksFixedForms mode');
+      return null;
     }
 
     const totalScore = fixedFormScores.reduce((acc, sreScore) => acc + sreScore, 0);
