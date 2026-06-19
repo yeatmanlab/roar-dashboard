@@ -16,12 +16,10 @@ const s = initServer();
 export function registerMeRoutes(routerInstance: Router) {
   const MeRoutes = s.router(MeContract, {
     get: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user } }) => MeController.get(user!),
     },
   });
 
-  // @ts-expect-error - ts-rest middleware type incompatibility with Express
   createExpressEndpoints(MeContract, MeRoutes, routerInstance);
 }

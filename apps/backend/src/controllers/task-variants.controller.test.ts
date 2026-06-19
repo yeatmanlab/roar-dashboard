@@ -46,15 +46,16 @@ describe('TaskVariantsController', () => {
       const result = await TaskVariantsController.list(superAdminContext, baseQuery);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.items).toHaveLength(1);
-        expect(result.body.data.pagination).toEqual({
-          page: 1,
-          perPage: 25,
-          totalItems: 1,
-          totalPages: 1,
-        });
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.items).toHaveLength(1);
+      expect(result.body.data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 1,
+        totalPages: 1,
+      });
     });
 
     it('converts Date fields to ISO strings', async () => {
@@ -67,10 +68,11 @@ describe('TaskVariantsController', () => {
       const result = await TaskVariantsController.list(superAdminContext, baseQuery);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.items[0]!.createdAt).toBe('2024-01-01T00:00:00.000Z');
-        expect(result.body.data.items[0]!.updatedAt).toBe('2024-01-02T00:00:00.000Z');
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.items[0]!.createdAt).toBe('2024-01-01T00:00:00.000Z');
+      expect(result.body.data.items[0]!.updatedAt).toBe('2024-01-02T00:00:00.000Z');
     });
 
     it('returns null for updatedAt when the variant has no updatedAt', async () => {
@@ -81,9 +83,10 @@ describe('TaskVariantsController', () => {
       const result = await TaskVariantsController.list(superAdminContext, baseQuery);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.items[0]!.updatedAt).toBeNull();
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.items[0]!.updatedAt).toBeNull();
     });
 
     it('passes parameters through when embed includes parameters', async () => {
@@ -101,9 +104,10 @@ describe('TaskVariantsController', () => {
       });
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.items[0]!.parameters).toEqual([{ name: 'difficulty', value: 'easy' }]);
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect(result.body.data.items[0]!.parameters).toEqual([{ name: 'difficulty', value: 'easy' }]);
     });
 
     it('does not include parameters key when embed is not requested', async () => {
@@ -114,9 +118,10 @@ describe('TaskVariantsController', () => {
       const result = await TaskVariantsController.list(superAdminContext, baseQuery);
 
       expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect('parameters' in result.body.data.items[0]!).toBe(false);
+      if (result.status !== StatusCodes.OK) {
+        throw new Error('Expected a 200 response');
       }
+      expect('parameters' in result.body.data.items[0]!).toBe(false);
     });
 
     it('maps query filter to service filters', async () => {

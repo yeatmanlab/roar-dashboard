@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { initContract } from '@ts-rest/core';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import {
@@ -211,7 +212,7 @@ export const TasksContract = c.router(
 
 /**
  * Contract for the /task-variants endpoints.
- * Super-admin-only access to published task variants across all tasks.
+ * The list endpoint is super-admin-only. The getById endpoint is available to any authenticated user.
  */
 export const TaskVariantsContract = c.router(
   {
@@ -236,6 +237,24 @@ export const TaskVariantsContract = c.router(
         'and optional embed of variant parameters (?embed=parameters). ' +
         'Returns 400 if query parameters are invalid. ' +
         'Returns 403 if the caller is not a super admin. ' +
+        'Returns 500 if a server error occurs.',
+    },
+    getByIdWithTaskDetails: {
+      method: 'GET',
+      path: '/:variantId',
+      pathParams: z.object({ variantId: z.string().uuid() }),
+      responses: {
+        200: SuccessEnvelopeSchema(GetTaskVariantResponseSchema),
+        401: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get a task variant by ID with task details',
+      description:
+        'Returns a single task variant with its parameters and denormalized task fields. ' +
+        'Available to any authenticated user — does not require super admin privileges. ' +
+        'Returns 404 if no variant exists with the given ID. ' +
         'Returns 500 if a server error occurs.',
     },
   },

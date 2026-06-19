@@ -13,7 +13,11 @@ export function registerTaskVariantsRoutes(routerInstance: Router) {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, query }) => TaskVariantsController.list(user!, query),
     },
+    getByIdWithTaskDetails: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { variantId } }) =>
+        TaskVariantsController.getByIdWithTaskDetails(user!, variantId),
+    },
   });
-  // @ts-expect-error - ts-rest middleware type incompatibility with Express
   createExpressEndpoints(TaskVariantsContract, TaskVariantsRoutes, routerInstance);
 }

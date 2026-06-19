@@ -5,9 +5,9 @@
 
       <template v-for="{ taskId } of administrationData.assessments" :key="taskId">
         <div v-if="tasksDictionary[taskId]" class="chart-label text-lg font-bold text-gray-600">
-          <span class="whitespace-nowrap">{{ tasksDictionary[taskId]?.technicalName ?? taskId }}</span>
+          <span class="whitespace-nowrap">{{ tasksDictionary[taskId]?.nameTechnical ?? taskId }}</span>
           <span v-if="tasksDictionary[taskId].name" class="text-sm font-light uppercase label-secondary">
-            ({{ tasksDictionary[taskId]?.publicName }})
+            ({{ tasksDictionary[taskId]?.nameSimple }})
           </span>
         </div>
         <div v-else class="chart-label whitespace-nowrap text-lg font-bold text-gray-600">
