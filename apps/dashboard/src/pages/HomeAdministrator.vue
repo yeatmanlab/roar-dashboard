@@ -137,6 +137,7 @@ import PvInputSwitch from 'primevue/inputswitch';
 import { useAuthStore } from '@/store/auth';
 import { orderByDefault } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
+import { isEmulatorAuthReady } from '@/helpers/isDashboardReady';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
@@ -165,11 +166,11 @@ const init = () => {
 };
 
 unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.roarfirekit.restConfig?.() || isEmulatorAuthReady(state)) init();
 });
 
 onMounted(() => {
-  if (roarfirekit.value.restConfig?.()) init();
+  if (roarfirekit.value.restConfig?.() || isEmulatorAuthReady(authStore)) init();
 });
 
 const { data: userClaims } = useUserClaimsQuery({

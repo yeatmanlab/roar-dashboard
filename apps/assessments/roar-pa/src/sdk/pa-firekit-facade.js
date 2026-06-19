@@ -78,8 +78,10 @@ export function wireScoreAdapter() {
 
       // Practice raw counts — emitted directly from the accumulator because
       // computedScoreCallback only processes test-phase data and ignores practice.
-      // We emit numCorrect, numAttempted, numIncorrect for each PA subtask so
-      // that run_scores always has a record of practice performance.
+      // We emit numCorrect, numAttempted, numIncorrect for each PA subtask and
+      // for composite (sum across subtasks) so that run_scores always has a
+      // complete record of practice performance at every domain level.
+      const compositePractice = { numCorrect: 0, numAttempted: 0, numIncorrect: 0 };
       for (const subtaskKey of PA_SUBTASK_KEYS) {
         const lower = subtaskKey.toLowerCase();
         const practiceData = accumulatedRawScores[lower]?.[AssessmentStage.PRACTICE];
@@ -87,6 +89,14 @@ export function wireScoreAdapter() {
 
         const domain = PA_SCORE_DOMAINS[subtaskKey];
         entries.push(...buildRawCountEntries(domain, practiceData, AssessmentStage.PRACTICE));
+
+        compositePractice.numCorrect += practiceData.numCorrect ?? 0;
+        compositePractice.numAttempted += practiceData.numAttempted ?? 0;
+        compositePractice.numIncorrect += practiceData.numIncorrect ?? 0;
+      }
+
+      if (compositePractice.numAttempted > 0) {
+        entries.push(...buildRawCountEntries(PA_SCORE_DOMAINS.COMPOSITE, compositePractice, AssessmentStage.PRACTICE));
       }
 
       return entries;
