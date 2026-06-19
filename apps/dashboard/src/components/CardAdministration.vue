@@ -296,7 +296,9 @@ const variantParameterRows = computed(() =>
 
 const showParamsFor = (event, assessment) => {
   selectedAssessment.value = assessment;
-  paramsPopover.value?.toggle(event);
+  // show() (not toggle()) so clicking a different assessment's info icon while the
+  // popover is open re-anchors it to the new target rather than closing it.
+  paramsPopover.value?.show(event);
 };
 
 const showTable = ref(false);
