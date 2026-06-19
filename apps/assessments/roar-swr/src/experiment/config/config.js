@@ -10,10 +10,10 @@ import i18next from 'i18next';
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
 import { SWR_LANGUAGES } from '@roar-platform/assessment-schema/roar-swr';
 import { writeTrial, finishRun, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
+import { wireScoreAdapter } from '../../sdk/swr-firekit-facade';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { enterFullscreen } from '../trials/fullScreen';
 import { processCSV, getCorpusForPresentationExp } from './corpus';
-import { RoarScores } from '../scores';
 import { jsPsych } from '../jsPsych';
 import { shuffle, createBlocks } from '../helperFunctions';
 
@@ -296,12 +296,11 @@ export const initRoarJsPsych = (config) => {
     finishRun().catch((err) => console.error('[roar-swr] finishRun failed:', err));
   });
 
-  const roarScores = new RoarScores();
+  const computedScoreCallback = wireScoreAdapter();
+
   jsPsych.opts.on_data_update = extend(jsPsych.opts.on_data_update, (data) => {
     if (data.save_trial) {
-      writeTrial(data, roarScores.computedScoreCallback.bind(roarScores)).catch((err) =>
-        console.error('[roar-swr] writeTrial failed:', err),
-      );
+      writeTrial(data, computedScoreCallback).catch((err) => console.error('[roar-swr] writeTrial failed:', err));
     }
   });
   jsPsych.opts.on_interaction_data_update = function (data) {

@@ -588,7 +588,7 @@ describe('RunEventService', () => {
             {
               type: SCORE_TYPE.RAW,
               domain: SCORE_DOMAIN.COMPOSITE,
-              name: SCORE_NAME.THETA_SE,
+              name: SCORE_NAME.THETA_SE_RAW,
               value: '0.5',
               assessmentStage: ASSESSMENT_STAGE.TEST,
             },
@@ -614,7 +614,7 @@ describe('RunEventService', () => {
               runId: validRunId,
               type: SCORE_TYPE.RAW,
               domain: SCORE_DOMAIN.COMPOSITE,
-              name: SCORE_NAME.THETA_SE,
+              name: SCORE_NAME.THETA_SE_RAW,
               value: '0.5',
               assessmentStage: ASSESSMENT_STAGE.TEST,
               categoryScore: null,
@@ -633,7 +633,7 @@ describe('RunEventService', () => {
             {
               type: SCORE_TYPE.RAW,
               domain: SCORE_DOMAIN.COMPOSITE,
-              name: SCORE_NAME.THETA_SE,
+              name: SCORE_NAME.THETA_SE_RAW,
               value: '0.5',
               assessmentStage: ASSESSMENT_STAGE.TEST,
             },
@@ -660,7 +660,7 @@ describe('RunEventService', () => {
         expect(runScoresRepository.upsertMany).toHaveBeenCalledTimes(1);
         const call = runScoresRepository.upsertMany.mock.calls[0]![0];
         expect(call.data).toHaveLength(2);
-        expect(call.data[0]!.name).toBe(SCORE_NAME.THETA_SE);
+        expect(call.data[0]!.name).toBe(SCORE_NAME.THETA_SE_RAW);
         expect(call.data[1]!.name).toBe(SCORE_NAME.NUM_ATTEMPTED);
       });
 
@@ -761,7 +761,7 @@ describe('RunEventService', () => {
             {
               type: SCORE_TYPE.RAW,
               domain: SCORE_DOMAIN.COMPOSITE,
-              name: SCORE_NAME.THETA_SE,
+              name: SCORE_NAME.THETA_SE_RAW,
               value: '0.5',
               assessmentStage: ASSESSMENT_STAGE.TEST,
             },
@@ -783,7 +783,7 @@ describe('RunEventService', () => {
             {
               type: SCORE_TYPE.RAW,
               domain: SCORE_DOMAIN.COMPOSITE,
-              name: SCORE_NAME.THETA_SE,
+              name: SCORE_NAME.THETA_SE_RAW,
               value: '0.5',
               assessmentStage: ASSESSMENT_STAGE.TEST,
             },
