@@ -807,13 +807,46 @@ describe('firekit compat', () => {
       // Verify that the callback was invoked
       expect(callbackCalled).toBe(true);
 
-      // Verify that the fetch call was made to the event endpoint
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('/runs/run-computed-scores/event'),
-        expect.objectContaining({
-          method: 'POST',
-        }),
+      // Verify that the fetch call was made and scores were forwarded in the request body
+      const eventCalls = fetchMock.mock.calls.filter((call: unknown[]) =>
+        (call[0] as string).includes('/runs/run-computed-scores/event'),
       );
+      expect(eventCalls).toHaveLength(1);
+      const body = JSON.parse(eventCalls[0]![1].body as string);
+      expect(body.scores).toBeDefined();
+      expect(body.scores).toHaveLength(1);
+      expect(body.scores[0]).toMatchObject({
+        type: 'computed',
+        domain: 'test-domain',
+        name: 'testScore',
+        value: '1',
+      });
+    });
+
+    it("calls _accumulateRawScore with 'composite' when trialDataRecord has no subtask field", async () => {
+      await initializeFirekitAndStartRun('run-no-subtask');
+
+      const facade = getFirekitCompat();
+
+      const accumulatedSubtasks: string[] = [];
+      facade._accumulateRawScore = (subtask: string) => {
+        accumulatedSubtasks.push(subtask);
+      };
+
+      // SWR-style trial: no subtask field
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'cat',
+        rt: 800,
+      };
+
+      await expect(writeTrial(trialData)).resolves.toBeUndefined();
+
+      // Without the ?? 'composite' default, _accumulateRawScore would never be called
+      // and testNumAttempted would stay 0, silently skipping all score computation.
+      expect(accumulatedSubtasks).toHaveLength(1);
+      expect(accumulatedSubtasks[0]).toBe('composite');
     });
   });
 

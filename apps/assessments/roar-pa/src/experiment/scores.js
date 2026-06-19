@@ -60,7 +60,7 @@ export class RoarScores {
         dynamicTyping: true,
         skipEmptyLines: true,
         step: (row) => {
-          if (this.isAdaptiveScoring() && this.ageForScore === Number(row.data.ageMonths)) {
+          if (this.isAdaptiveScoring() && Number(this.ageForScore) === Number(row.data.ageMonths)) {
             // If adaptive, lookup scores by age only.
             this.lookupTable.push(_omit(row.data, ['', 'X']));
           } else if (grade && grade >= 6) {
@@ -68,7 +68,7 @@ export class RoarScores {
             if (grade === Number(row.data.grade)) {
               this.lookupTable.push(_omit(row.data, ['', 'X']));
             }
-          } else if (this.ageForScore === Number(row.data.ageMonths)) {
+          } else if (Number(this.ageForScore) === Number(row.data.ageMonths)) {
             // Otherwise, lookup by age in months.
             this.lookupTable.push(_omit(row.data, ['', 'X']));
           }
@@ -155,12 +155,13 @@ export class RoarScores {
     // This returns an object with the same top-level keys as the input raw scores
     // But the values are the number of correct trials, not including practice trials.
     const computedScores = _mapValues(rawScores, (subtaskScores) => {
-      const { numCorrect = 0, numAttempted = 0 } = subtaskScores.test ?? {};
+      const { numCorrect = 0, numAttempted = 0, numIncorrect = 0 } = subtaskScores.test ?? {};
       const percentCorrect = numAttempted > 0 ? Math.round((100 * numCorrect) / numAttempted) : 0;
       return {
         ...(this.isAdaptiveScoring() ? {} : { roarScore: numCorrect }),
         numCorrect,
         numAttempted,
+        numIncorrect,
         percentCorrect,
         roarScoreKind: this.roarScoreKind,
         scoringVersion: this.scoringVersion,
@@ -181,16 +182,30 @@ export class RoarScores {
     const subtaskScoresOnly = _omit(computedScores, [PA_COMPOSITE, PA_COMPOSITE_FOUNDATIONAL]);
     const compositeNumCorrect = _reduce(subtaskScoresOnly, (sum, score) => sum + (score.numCorrect ?? 0), 0);
     const compositeNumAttempted = _reduce(subtaskScoresOnly, (sum, score) => sum + (score.numAttempted ?? 0), 0);
+    const compositeNumIncorrect = compositeNumAttempted - compositeNumCorrect;
+    const compositePercentCorrect =
+      compositeNumAttempted > 0 ? Math.round((100 * compositeNumCorrect) / compositeNumAttempted) : 0;
     computedScores[PA_COMPOSITE] = {
       ...computedScores[PA_COMPOSITE],
       numCorrect: compositeNumCorrect,
       numAttempted: compositeNumAttempted,
+      numIncorrect: compositeNumIncorrect,
+      percentCorrect: compositePercentCorrect,
+      roarScoreKind: this.roarScoreKind,
+      scoringVersion: this.scoringVersion,
     };
 
     if (this.isAdaptiveScoring()) {
       for (const key of Object.keys(computedScores)) {
-        computedScores[key].thetaEstimate = store.session.get('thetas')[key.toLowerCase()];
-        computedScores[key].thetaSE = store.session.get('thetaSEs')[key.toLowerCase()];
+        const thetaKey = key.toLowerCase();
+        const theta = store.session.get('thetas')[thetaKey];
+        const thetaSE = store.session.get('thetaSEs')[thetaKey];
+        // Raw = native per-subtask scale; computed = same value (no cross-scale transform per subtask).
+        // Composite values are overwritten below by compositeThetas with the shared-scale estimates.
+        computedScores[key].thetaEstimateRaw = theta;
+        computedScores[key].thetaSERaw = thetaSE;
+        computedScores[key].thetaEstimate = theta;
+        computedScores[key].thetaSE = thetaSE;
       }
 
       const compositeThetas = {
@@ -246,17 +261,19 @@ export class RoarScores {
 
       // Then we find the row in the lookup table that corresponds to the total score.
       let myRow;
-      const { ageForScore } = this;
 
       if (this.isAdaptiveScoring()) {
         const thetaEstimate = store.session.get('thetas').scaled;
         const roundedTheta = Number(thetaEstimate.toFixed(1));
         myRow = this.lookupTable.find(
           (row) =>
-            Number(row.ageMonths) === ageForScore && Number(Number(row.thetaEstimate).toFixed(1)) === roundedTheta,
+            Number(row.ageMonths) === Number(this.ageForScore) &&
+            Number(Number(row.thetaEstimate).toFixed(1)) === roundedTheta,
         );
       } else if (grade < 6) {
-        myRow = this.lookupTable.find((row) => Number(row.ageMonths) === ageForScore && row.roarScore === totalScore);
+        myRow = this.lookupTable.find(
+          (row) => Number(row.ageMonths) === Number(this.ageForScore) && row.roarScore === totalScore,
+        );
       } else {
         myRow = this.lookupTable.find((row) => Number(row.grade) === grade && row.roarScore === totalScore);
       }
