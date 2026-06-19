@@ -23,11 +23,11 @@ export let mediaAssets;
 
 export let preloadTrials;
 
-export function buildExperiment(config) {
+export function buildExperiment(config, computedScoreCallback) {
   mediaAssets = generateAssetObject(assets, bucketURI, i18next.language);
   preloadTrials = createPreloadTrials(assets, bucketURI, i18next.language).default;
   preloadTrials.message = i18next.t('loading');
-  initRoarJsPsych(config);
+  initRoarJsPsych(config, computedScoreCallback);
   const initialTimeline = initRoarTimeline();
 
   const sreEvaluateValidity = createEvaluateValidity({

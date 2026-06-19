@@ -10,8 +10,9 @@ import { RoarScores } from '../experiment/scores';
  * convert computed scores to ScoreEntry[] for backend persistence, and emit all domains
  * on every trial.
  *
- * Must be called once during SRE initialization, after initFirekitCompat, before any
- * trials are written.
+ * Must be called once during SRE initialization, after initFirekitCompat and before
+ * startRun (consistent with PA's contract). startRun does not invoke any score adapter
+ * hooks, so the strict requirement is only that this is called before any writeTrial call.
  *
  * @returns {Function} computedScoreCallback — pass to writeTrial on each trial
  *

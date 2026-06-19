@@ -9,7 +9,6 @@ import jsPsychCallFunction from '@jspsych/plugin-call-function';
 import i18next from 'i18next';
 import { SRE_LANGUAGES, SRE_SCORING_VERSION, SRE_SUBTASK_DOMAINS } from '@roar-platform/assessment-schema/roar-sre';
 import { writeTrial, finishRun, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
-import { wireScoreAdapter } from '../../sdk/sre-firekit-facade';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { jsPsych } from '../jsPsych';
 import { corpus } from './loadCorpus';
@@ -232,7 +231,7 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
   return config;
 };
 
-export const initRoarJsPsych = (config) => {
+export const initRoarJsPsych = (config, computedScoreCallback) => {
   if (config.displayElement) {
     jsPsych.opts.display_element = config.displayElement;
   }
@@ -253,8 +252,6 @@ export const initRoarJsPsych = (config) => {
       config.experimentFinished();
     }
   });
-
-  const computedScoreCallback = wireScoreAdapter();
 
   jsPsych.opts.on_data_update = extend(jsPsych.opts.on_data_update, (data) => {
     if (data.save_trial) {

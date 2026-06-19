@@ -1,5 +1,6 @@
 import store from 'store2';
 import { startRun, abortRun } from '@roar-platform/assessment-sdk/compat/firekit';
+import { wireScoreAdapter } from './sdk/sre-firekit-facade';
 import { initConfig } from './experiment/config/config';
 import { buildExperiment } from './experiment/experiment';
 import './experiment/styles/roar.scss';
@@ -16,10 +17,11 @@ class RoarSRE {
 
   async init() {
     initSentry();
+    const computedScoreCallback = wireScoreAdapter();
     await startRun(this.userParams ?? {});
     const config = await initConfig(this.gameParams, this.userParams, this.displayElement, this.useParameterValidation);
     store.session.set('config', config);
-    return buildExperiment(config);
+    return buildExperiment(config, computedScoreCallback);
   }
 
   async run() {
