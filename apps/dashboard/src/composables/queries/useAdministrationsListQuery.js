@@ -60,8 +60,10 @@ const useAdministrationsListQuery = (queryOptions = undefined) => {
 
   return useQuery({
     // isSuperAdmin discriminates the cache: super admins fetch embed=stats,tasks while
-    // everyone else fetches embed=tasks, so the two must not share a cache entry.
-    queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY, { isSuperAdmin: isSuperAdmin.value }],
+    // everyone else fetches embed=tasks, so the two must not share a cache entry. Pass the
+    // computed by reference (not `.value`) so the key stays reactive and re-keys once claims
+    // load and isSuperAdmin flips — a `.value` snapshot would freeze the pre-claims `false`.
+    queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY, isSuperAdmin],
     queryFn: async () => {
       const client = getRoarApiClient();
       const administrations = [];
