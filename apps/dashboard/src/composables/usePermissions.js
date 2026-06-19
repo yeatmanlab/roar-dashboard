@@ -2,11 +2,7 @@ import { PermissionsService, Permissions, UserRoles } from '@bdelab/roar-firekit
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import * as Sentry from '@sentry/vue';
-
-// Local Firebase Auth emulator mode (VITE_FIREBASE_EMULATOR_ENABLED). Inert in
-// deployed builds; see userCan for why it changes permission evaluation.
-const isFirebaseEmulatorEnabled =
-  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === true || import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';
+import { IS_FIREBASE_EMULATOR_ENABLED } from '@/constants/firebase';
 
 export function usePermissions() {
   const userCan = (permission) => {
@@ -34,7 +30,7 @@ export function usePermissions() {
     // those routes are reachable for local testing. Inert in deployed builds.
     // TODO(firekit-removal): route permissions should come from the backend rather
     // than firekit's token claims; this branch goes away with firekit.
-    if (isFirebaseEmulatorEnabled && authStore.isUserSuperAdmin) {
+    if (IS_FIREBASE_EMULATOR_ENABLED && authStore.isUserSuperAdmin) {
       return true;
     }
 
