@@ -151,7 +151,9 @@ describe('GET /v1/tasks', () => {
   describe('response structure', () => {
     it('returns a paginated envelope of flat task fields', async () => {
       authenticateAs(tiers.superAdmin);
-      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+      // perPage large enough that the seeded task is on page 1 regardless of how many tasks
+      // other tests create, so this shape assertion stays order-independent.
+      const res = await request(app).get(`${path()}?perPage=100`).set('Authorization', 'Bearer token');
 
       expect(res.status).toBe(StatusCodes.OK);
       expect(res.body.data).toHaveProperty('items');
