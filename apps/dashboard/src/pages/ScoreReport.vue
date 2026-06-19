@@ -1167,6 +1167,7 @@ const computeAssignmentAndRunData = computed(() => {
             const hasSubskills = scores ? Object.keys(scores).some((key) => roamFluencySubskills[key]) : false;
             if (hasSubskills) {
               const allIncorrectSkills = [];
+              const subsetIncorrectSkills = [];
               Object.keys(roamFluencySubskills).forEach((subskill) => {
                 const subskillInfo = _get(assessment, `scores.computed.${subskill}`);
                 if (subskillInfo) {
@@ -1179,14 +1180,27 @@ const computeAssignmentAndRunData = computed(() => {
                     assessment,
                     `scores.computed.composite.incorrectSkills.${subskill}`,
                   );
-                  if (subskillIncorrectSkills) allIncorrectSkills.push(...subskillIncorrectSkills.split(','));
+                  if (subskillIncorrectSkills) {
+                    const parsedIncorrectSkills = subskillIncorrectSkills.split(',').map((s) => s.trim());
+                    if (taskId === 'fluency-calf' || subskill === 'addition' || subskill === 'subtraction') {
+                      allIncorrectSkills.push(...parsedIncorrectSkills);
+                    } else {
+                      // For fluency-arf, multiplication and division skills are considered the same
+                      // Separate them from addition and subtraction because we want to count duplicate of those skills
+                      subsetIncorrectSkills.push(...parsedIncorrectSkills);
+                    }
+                  }
                 }
               });
-              // Multiplication & division subskills are considered the same when counting the total
+
+              if (taskId === 'fluency-arf') {
+                allIncorrectSkills.push(...new Set(subsetIncorrectSkills));
+              }
+
               // subPercentCorrect field is returned starting 1.3.9
               // Writes percentCorrect to top-level for main score report tooltip and composite for subscore tooltip
               currRowScores[taskId].composite = {
-                totalIncorrectSkills: new Set(allIncorrectSkills).size,
+                totalIncorrectSkills: allIncorrectSkills.length,
                 percentCorrect: `${Math.round(scores.composite?.subPercentCorrect * 100)}%`,
                 ...scores.composite,
                 rawScore: parseFloat(Number(scores.composite?.rawScore).toFixed(2)),
