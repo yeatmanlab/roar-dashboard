@@ -14,7 +14,7 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Stage 1 — Install dependencies and build
 # ──────────────────────────────────────────────────────────────────────────────
-FROM node:22 AS builder
+FROM node:24 AS builder
 
 RUN npm install turbo --global
 
@@ -52,7 +52,7 @@ RUN turbo build --filter=roar-backend
 # Stage 2 — Assessment runtime
 # Serves as both migration runner and API server in docker-compose.assessment.yml.
 # ──────────────────────────────────────────────────────────────────────────────
-FROM node:22-slim AS assessment-runtime
+FROM node:24-slim AS assessment-runtime
 
 RUN apt-get update -qq \
     && apt-get install -y --no-install-recommends curl postgresql-client \
@@ -96,7 +96,7 @@ CMD ["node", "apps/backend/dist/server.js"]
 # ──────────────────────────────────────────────────────────────────────────────
 # Stage 3 — Firebase Auth emulator (independent)
 # ──────────────────────────────────────────────────────────────────────────────
-FROM node:22-slim AS firebase-emulator
+FROM node:24-slim AS firebase-emulator
 
 RUN apt-get update -qq \
     && apt-get install -y --no-install-recommends curl \

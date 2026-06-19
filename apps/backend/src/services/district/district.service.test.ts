@@ -754,13 +754,16 @@ describe('DistrictService', () => {
         ApiError,
       );
 
+      let thrownError: unknown;
       try {
         await service.listDistrictSchools(mockSuperAdminContext, districtId, defaultOptions);
       } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+        thrownError = error;
       }
+
+      expect(thrownError).toBeInstanceOf(ApiError);
+      expect((thrownError as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      expect((thrownError as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
     });
 
     it('re-throws ApiError without wrapping', async () => {

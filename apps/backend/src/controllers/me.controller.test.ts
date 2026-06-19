@@ -45,6 +45,7 @@ describe('MeController', () => {
           data: {
             id: mockUser.id,
             userType: mockUser.userType,
+            isSuperAdmin: false,
             nameFirst: mockUser.nameFirst,
             nameLast: mockUser.nameLast,
             unsignedAgreements: [],
@@ -82,6 +83,7 @@ describe('MeController', () => {
           data: {
             id: mockUser.id,
             userType: mockUser.userType,
+            isSuperAdmin: false,
             nameFirst: mockUser.nameFirst,
             nameLast: mockUser.nameLast,
             unsignedAgreements,
@@ -107,8 +109,35 @@ describe('MeController', () => {
         data: {
           id: mockUser.id,
           userType: mockUser.userType,
+          isSuperAdmin: false,
           nameFirst: null,
           nameLast: null,
+          unsignedAgreements: [],
+        },
+      });
+    });
+
+    it('should report isSuperAdmin: true when the auth context is a super admin', async () => {
+      const authContext = AuthContextFactory.build({ userId: 'user-super', isSuperAdmin: true });
+      const mockUser = UserFactory.build({
+        id: authContext.userId,
+        nameFirst: 'Super',
+        nameLast: 'Admin',
+        userType: 'admin',
+      });
+      mockGetById.mockResolvedValue(mockUser);
+      mockGetUnsignedTosAgreements.mockResolvedValue([]);
+
+      const result = await MeController.get(authContext);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(result.body).toEqual({
+        data: {
+          id: mockUser.id,
+          userType: mockUser.userType,
+          isSuperAdmin: true,
+          nameFirst: mockUser.nameFirst,
+          nameLast: mockUser.nameLast,
           unsignedAgreements: [],
         },
       });
