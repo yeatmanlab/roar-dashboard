@@ -24,8 +24,8 @@
   "type": "module",
   "roar": {
     "hosting": {
-      "staging": "roar-swr-staging",
-      "production": "roar-swr",
+      "staging": "roar-word-monorepo-abc",
+      "production": "roard-word-monorepo",
       "test": "test"
     }
   },
