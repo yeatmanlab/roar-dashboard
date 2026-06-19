@@ -386,6 +386,7 @@ export const excludeFromScoringTasks = [
   ...LEVANTE_TASK_IDS_NO_SCORES,
 ];
 
+// TODO: Add newly normed tasks after fixing exported data
 export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence', 'Palabra', 'Frase'];
 
 /*
@@ -1217,11 +1218,39 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
       above: 55,
       some: 45,
     };
+  } else if (taskId === 'morphology') {
+    if (scoringVersion >= 1) {
+      return {
+        above: 527,
+        some: 463.5,
+      };
+    }
+  } else if (taskId === 'cva') {
+    if (scoringVersion >= 1) {
+      return {
+        above: 520,
+        some: 443.5,
+      };
+    }
+  } else if (taskId === 'roar-inference') {
+    if (scoringVersion >= 1) {
+      return {
+        above: 530.5,
+        some: 467,
+      };
+    }
+  } else if (taskId === 'trog') {
+    if (scoringVersion >= 1) {
+      return {
+        above: 543.5,
+        some: 487,
+      };
+    }
   }
   return { above: null, some: null };
 };
 
-export const getRawScoreRange = (taskId) => {
+export const getRawScoreRange = (taskId, scoringVersion = null) => {
   if (taskId.includes('swr')) {
     return {
       min: 100,
@@ -1248,14 +1277,50 @@ export const getRawScoreRange = (taskId) => {
       max: 130,
     };
   } else if (taskId.includes('morphology')) {
+    if (scoringVersion >= 1) {
+      return {
+        min: 280,
+        max: 720,
+      };
+    }
     return {
       min: 0,
       max: 130,
     };
   } else if (taskId.includes('cva')) {
+    if (scoringVersion >= 1) {
+      return {
+        min: 287,
+        max: 753,
+      };
+    }
     return {
       min: 0,
       max: 130,
+    };
+  } else if (taskId.includes('roar-inference')) {
+    if (scoringVersion >= 1) {
+      return {
+        min: 300,
+        max: 793,
+      };
+    }
+    // TODO: Delete after developing normed task cards
+    return {
+      min: 300,
+      max: 793,
+    };
+  } else if (taskId.includes('trog')) {
+    if (scoringVersion >= 1) {
+      return {
+        min: 53,
+        max: 800,
+      };
+    }
+    // TODO: Delete after developing normed task cards
+    return {
+      min: 53,
+      max: 800,
     };
   }
   return null;
