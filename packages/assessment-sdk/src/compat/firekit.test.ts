@@ -743,7 +743,9 @@ describe('firekit compat', () => {
       let callbackCalled = false;
 
       // Wire the facade methods to accumulate raw scores and return scores
-      const accumulatedRawScores: Record<string, Record<string, Record<string, number>>> = {};
+      // @NOTE: The stage level is typed as a concrete struct (not Record<string, number>) so that
+      // `numCorrect` / `numAttempted` reads are known to exist under noUncheckedIndexedAccess.
+      const accumulatedRawScores: Record<string, Record<string, { numCorrect: number; numAttempted: number }>> = {};
 
       facade._accumulateRawScore = (subtask: string, stage: string, correct: number) => {
         accumulationCalled = true;

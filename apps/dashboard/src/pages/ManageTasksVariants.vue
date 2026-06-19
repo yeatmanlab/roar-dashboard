@@ -4,13 +4,6 @@
       <PageTitle title="Manage Tasks" description="Manage tasks and variants." icon="pencil" />
 
       <CheckboxInput
-        id="registeredTasksOnly"
-        v-model="registeredTasksOnly"
-        label="Show Only Registered Tasks"
-        test-id="registered-tasks-only-checkbox"
-        @update:model-value="updateRegisteredTasksOnly"
-      />
-      <CheckboxInput
         id="registeredVariantsOnly"
         v-model="registeredVariantsOnly"
         label="Show Only Registered Variants"
@@ -20,14 +13,11 @@
       <div class="mx-auto md:flex-none">
         <PvTabView>
           <PvTabPanel header="Tasks">
-            <ManageTasks :registered-tasks-only="registeredTasksOnly" />
+            <ManageTasks />
           </PvTabPanel>
 
           <PvTabPanel header="Variants">
-            <ManageVariants
-              :registered-tasks-only="registeredTasksOnly"
-              :registered-variants-only="registeredVariantsOnly"
-            />
+            <ManageVariants :registered-variants-only="registeredVariantsOnly" />
           </PvTabPanel>
         </PvTabView>
       </div>
@@ -46,14 +36,8 @@ import PageTitle from '@/components/PageTitle';
 import ManageTasks from '@/containers/ManageTasks/ManageTasks.vue';
 import ManageVariants from '@/components/tasks/ManageVariants.vue';
 
-const { registeredTasksOnly, registeredVariantsOnly, updateRegisteredTasksOnly, updateRegisteredVariantsOnly } =
-  useTasksVariantsToggleRegistered();
-const debouncedTasksOnly = useDebounce(registeredTasksOnly, 300);
+const { registeredVariantsOnly, updateRegisteredVariantsOnly } = useTasksVariantsToggleRegistered();
 const debouncedVariantsOnly = useDebounce(registeredVariantsOnly, 300);
-
-watch(debouncedTasksOnly, (value) => {
-  updateRegisteredTasksOnly(value);
-});
 
 watch(debouncedVariantsOnly, (value) => {
   updateRegisteredVariantsOnly(value);

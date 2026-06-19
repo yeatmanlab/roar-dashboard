@@ -45,9 +45,10 @@ export type { PaginatedResult } from './interfaces/base.repository.interface';
  * }
  * ```
  */
-export abstract class BaseRepository<TEntity extends Record<string, unknown>, TTable extends PgTable>
-  implements IBaseRepository<TEntity, InferInsertModel<TTable>>
-{
+export abstract class BaseRepository<
+  TEntity extends Record<string, unknown>,
+  TTable extends PgTable,
+> implements IBaseRepository<TEntity, InferInsertModel<TTable>> {
   /**
    * Type-safe table reference for Drizzle queries.
    *

@@ -24,9 +24,19 @@
     "turbo": "^2.5.8"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "packageManager": "npm@10.8.2",
+  "//": [
+    "overrides.axios: pinned to @openfga/sdk's exact axios pin; a newer root axios forces npm to nest a second copy,",
+    "breaking type identity in fga.client.ts and risking dual module instances at runtime. Remove when the sdk relaxes its pin.",
+    "overrides.canvas: ^3 uses ABI-stable N-API prebuilds that install on Node 24 without a native toolchain; the 2.x line",
+    "(pulled in by @jspsych-contrib/plugin-html-swipe-response, which never imports it at runtime) has no Node 24 binaries."
+  ],
+  "overrides": {
+    "axios": "1.16.0",
+    "canvas": "^3.2.3"
+  },
   "workspaces": [
     "apps/*",
     "apps/assessments/*",

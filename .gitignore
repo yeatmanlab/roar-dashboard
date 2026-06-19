@@ -32,5 +32,11 @@ certs
 # Test coverage
 coverage
 
+# Cypress artifacts
+**/cypress/downloads
+
 # Other
 .DS_Store
+
+# Local assessment environment config (copy from *.example.json to get started)
+taskVariantParameters.json
