@@ -24,9 +24,8 @@
   "type": "module",
   "roar": {
     "hosting": {
-      "staging": "roar-sentence-staging",
-      "production": "roar-sentence",
-      "test": "test"
+      "staging": "roar-sentence-monorepo-abc",
+      "production": "roar-sentence-monorepo"
     }
   },
   "scripts": {
