@@ -83,11 +83,34 @@ describe('useAdministrationAssigneesQuery', () => {
     await expect(queryFn()).rejects.toMatchObject({ status: 403 });
   });
 
-  it('is disabled without an id', () => {
+  it('is disabled without an id or without a token', () => {
     vi.spyOn(VueQuery, 'useQuery');
     withSetup(() => useAdministrationAssigneesQuery(ref(null)), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
     expect(VueQuery.useQuery.mock.calls[0][0].enabled.value).toBe(false);
+
+    VueQuery.useQuery.mockClear();
+    mockUseAuthStore.mockReturnValue({ accessToken: null });
+    withSetup(() => useAdministrationAssigneesQuery(ref(ADMIN_ID)), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+    expect(VueQuery.useQuery.mock.calls[0][0].enabled.value).toBe(false);
+  });
+
+  it('does not retry on terminal auth or rostering-ended errors but retries transient ones', () => {
+    let retryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      retryFn = options.retry;
+      return { data: { value: null }, error: { value: null } };
+    });
+    withSetup(() => useAdministrationAssigneesQuery(ref(ADMIN_ID)), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(retryFn(0, { body: { error: { code: 'auth/required' } } })).toBe(false);
+    expect(retryFn(0, { body: { error: { code: 'auth/rostering-ended' } } })).toBe(false);
+    expect(retryFn(0, new Error('network down'))).toBe(true);
+    expect(retryFn(3, new Error('network down'))).toBe(false);
   });
 });
