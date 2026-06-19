@@ -194,12 +194,14 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData, _subski
         _toolTip += `\nProblem Types Assessed: ${subskillInfo?.skillsAssessed}\n`;
       }
     } else {
+      let incorrectSkillIndex = 0;
       // Handles the "No. of Problem Types to Work On" column
       // Format incorrect skills from scores.computed.composite.incorrectSkills
-      Object.keys(roamFluencySubskills).forEach((subskillId, index) => {
+      Object.keys(roamFluencySubskills).forEach((subskillId) => {
         if (subskillInfo?.incorrectSkills?.[subskillId] != undefined) {
           _toolTip += `${roamFluencySubskills[subskillId]}: ${subskillInfo?.incorrectSkills?.[subskillId] || 0}\n`;
-          if (index < Object.keys(roamFluencySubskills).length - 1) {
+          incorrectSkillIndex++;
+          if (incorrectSkillIndex < Object.keys(subskillInfo?.incorrectSkills).length) {
             _toolTip += '\n';
           }
         }
