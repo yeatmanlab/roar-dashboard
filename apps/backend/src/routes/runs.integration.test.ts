@@ -489,7 +489,7 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
             {
               type: SCORE_TYPE.RAW,
               domain: SCORE_DOMAIN.COMPOSITE,
-              name: SCORE_NAME.THETA_SE,
+              name: SCORE_NAME.THETA_SE_RAW,
               value: '0.5',
               assessmentStage: ASSESSMENT_STAGE.TEST,
             },
@@ -508,7 +508,7 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
       const rows = await readScoresForRun(runId);
       expect(rows).toHaveLength(2);
       const byName = new Map(rows.map((r) => [r.name, r.value]));
-      expect(byName.get(SCORE_NAME.THETA_SE)).toBe('0.5');
+      expect(byName.get(SCORE_NAME.THETA_SE_RAW)).toBe('0.5');
       expect(byName.get(SCORE_NAME.NUM_ATTEMPTED)).toBe('12');
     });
 
@@ -526,7 +526,7 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
             {
               type: SCORE_TYPE.RAW,
               domain: SCORE_DOMAIN.COMPOSITE,
-              name: SCORE_NAME.THETA_SE,
+              name: SCORE_NAME.THETA_SE_RAW,
               value: '0.5',
               assessmentStage: ASSESSMENT_STAGE.TEST,
             },
@@ -544,7 +544,7 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
             {
               type: SCORE_TYPE.RAW,
               domain: SCORE_DOMAIN.COMPOSITE,
-              name: SCORE_NAME.THETA_SE,
+              name: SCORE_NAME.THETA_SE_RAW,
               value: '0.3',
               assessmentStage: ASSESSMENT_STAGE.TEST,
             },
@@ -629,7 +629,7 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
             {
               type: SCORE_TYPE.RAW,
               domain: SCORE_DOMAIN.COMPOSITE,
-              name: SCORE_NAME.THETA_SE,
+              name: SCORE_NAME.THETA_SE_RAW,
               value: '0.5',
               // assessmentStage missing — discriminated union requires it for raw scores
             },
@@ -660,14 +660,14 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
             {
               type: SCORE_TYPE.RAW,
               domain: SCORE_DOMAIN.COMPOSITE,
-              name: SCORE_NAME.THETA_SE,
+              name: SCORE_NAME.THETA_SE_RAW,
               value: '0.5',
               assessmentStage: ASSESSMENT_STAGE.TEST,
             },
             {
               type: SCORE_TYPE.RAW,
               domain: SCORE_DOMAIN.COMPOSITE,
-              name: SCORE_NAME.THETA_SE,
+              name: SCORE_NAME.THETA_SE_RAW,
               value: '0.7',
               assessmentStage: ASSESSMENT_STAGE.TEST,
             },
