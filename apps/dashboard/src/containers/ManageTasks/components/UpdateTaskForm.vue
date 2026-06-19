@@ -79,7 +79,11 @@
         </div>
 
         <template v-if="canEditTaskConfig">
-          <TaskParametersConfigurator v-model="taskConfigModel" edit-mode />
+          <TaskParametersConfigurator
+            v-model="taskConfigModel"
+            edit-mode
+            :validation-key-blacklist="taskConfigPassthroughKeys"
+          />
 
           <p v-if="taskConfigPassthroughKeys.length > 0" class="text-sm text-gray-500 mt-2">
             The following entries hold values this editor can't represent (lists, nested objects, or unset values) and
@@ -253,8 +257,9 @@ function buildDiffedBody(task) {
   const body = {};
 
   for (const field of ['name', 'nameSimple', 'nameTechnical']) {
-    if (formModel[field] !== (task[field] ?? '')) {
-      body[field] = formModel[field];
+    const trimmed = formModel[field].trim();
+    if (trimmed !== (task[field] ?? '')) {
+      body[field] = trimmed;
     }
   }
 
