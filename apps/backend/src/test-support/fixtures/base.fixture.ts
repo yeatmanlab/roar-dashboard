@@ -90,6 +90,7 @@ import { AdministrationTaskVariantFactory } from '../factories/administration-ta
  * - classATeacher: teacher in classInSchoolA (class level)
  * - groupStudent: student in standalone group
  * - unassignedUser: user with no assignments (edge case)
+ * - superAdmin: platform super admin (isSuperAdmin: true; bypasses FGA; no org/class/group assignment)
  * - multiAssignedUser: user assigned to both district AND schoolA (deduplication tests)
  * - districtBAdmin: administrator at districtB (for cross-district isolation tests)
  * - districtBStudent: student in districtB (for cross-district isolation tests)
@@ -162,6 +163,13 @@ export interface BaseFixture {
   // ═══════════════════════════════════════════════════════════════════════════
   // USERS
   // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Platform-wide super admin (isSuperAdmin flag set; bypasses all access control).
+   * Intentionally unassigned to any org — the flag grants global access, and
+   * leaving it out of every org keeps org-scoped list tests unaffected.
+   */
+  superAdmin: User;
 
   /** Administrator at district level */
   districtAdmin: User;
@@ -332,6 +340,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const [
+    superAdmin,
     districtAdmin,
     schoolAAdmin,
     schoolAPrincipal,
@@ -355,6 +364,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     grade3Student,
     grade5EllStudent,
   ] = await Promise.all([
+    UserFactory.create({ nameFirst: 'Super', nameLast: 'Admin', userType: UserType.ADMIN, isSuperAdmin: true }),
     UserFactory.create({ nameFirst: 'District', nameLast: 'Admin', userType: UserType.ADMIN }),
     UserFactory.create({ nameFirst: 'SchoolA', nameLast: 'Admin', userType: UserType.ADMIN }),
     UserFactory.create({ nameFirst: 'SchoolA', nameLast: 'Principal', userType: UserType.ADMIN }),
@@ -590,6 +600,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     classInDistrictB,
 
     // Users
+    superAdmin,
     districtAdmin,
     schoolAAdmin,
     schoolAPrincipal,

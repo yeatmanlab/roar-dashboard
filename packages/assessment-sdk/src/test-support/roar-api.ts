@@ -11,6 +11,7 @@ export function createMockRoarApi() {
   const createRunMock = vi.fn() as Mock;
   const eventMock = vi.fn() as Mock;
   const getTaskVariantMock = vi.fn() as Mock;
+  const getByIdWithTaskDetailsMock = vi.fn() as Mock;
 
   return {
     client: {
@@ -20,6 +21,9 @@ export function createMockRoarApi() {
       },
       tasks: {
         getTaskVariant: getTaskVariantMock,
+      },
+      taskVariants: {
+        getByIdWithTaskDetails: getByIdWithTaskDetailsMock,
       },
     },
   } as unknown as RoarApi;
