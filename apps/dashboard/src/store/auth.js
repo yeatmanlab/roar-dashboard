@@ -7,11 +7,7 @@ import _union from 'lodash/union';
 import { initializeFirekit } from '@/firekit';
 import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
-
-// Local Firebase Auth emulator mode (VITE_FIREBASE_EMULATOR_ENABLED). Inert in
-// deployed builds; see logInWithEmailAndPassword for why it changes sign-in.
-const isFirebaseEmulatorEnabled =
-  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === true || import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';
+import { IS_FIREBASE_EMULATOR_ENABLED } from '@/constants/firebase';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -150,7 +146,7 @@ export const useAuthStore = () => {
         // — the reason a direct sign-in fails today — and the `setUidClaims` dance,
         // so no swallow is needed. This branch exists only because firekit currently
         // owns the emulator-wired Auth instance.
-        if (isFirebaseEmulatorEnabled) {
+        if (IS_FIREBASE_EMULATOR_ENABLED) {
           try {
             await this.roarfirekit.logInWithEmailAndPassword({ email, password });
           } catch (error) {

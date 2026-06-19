@@ -1,12 +1,6 @@
 import { fetchDocById } from '@/helpers/query/utils';
 import { getRoarApiClient } from '@/clients/roar-api';
-
-/**
- * Whether the dashboard is pointed at the local Firebase Auth emulator.
- * Set via VITE_FIREBASE_EMULATOR_ENABLED; inert (false) in deployed builds.
- */
-const isFirebaseEmulatorEnabled =
-  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === true || import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';
+import { IS_FIREBASE_EMULATOR_ENABLED } from '@/constants/firebase';
 
 /**
  * Resolve the authenticated user's claims object: `{ claims: { super_admin, ... } }`.
@@ -27,7 +21,7 @@ const isFirebaseEmulatorEnabled =
  * @returns {Promise<{ claims: object } | undefined>} The userClaims object.
  */
 export async function resolveUserClaims(uid) {
-  if (isFirebaseEmulatorEnabled) {
+  if (IS_FIREBASE_EMULATOR_ENABLED) {
     try {
       const response = await getRoarApiClient().me.get();
       const isSuperAdmin = response?.status === 200 ? Boolean(response.body?.data?.isSuperAdmin) : false;

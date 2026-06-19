@@ -1,9 +1,4 @@
-/**
- * Local Firebase Auth emulator mode (VITE_FIREBASE_EMULATOR_ENABLED). Inert in
- * deployed builds.
- */
-const isFirebaseEmulatorEnabled =
-  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === true || import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';
+import { IS_FIREBASE_EMULATOR_ENABLED } from '@/constants/firebase';
 
 /**
  * Local-emulator readiness signal for gating backend-scoped queries.
@@ -29,5 +24,5 @@ const isFirebaseEmulatorEnabled =
  * @returns {boolean} true only in emulator mode once an access token is present.
  */
 export function isEmulatorAuthReady(authState) {
-  return isFirebaseEmulatorEnabled && Boolean(authState?.accessToken);
+  return IS_FIREBASE_EMULATOR_ENABLED && Boolean(authState?.accessToken);
 }
