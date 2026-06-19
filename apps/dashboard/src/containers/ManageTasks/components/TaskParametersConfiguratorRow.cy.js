@@ -185,7 +185,9 @@ describe('<TaskParametersConfiguratorRow />', () => {
         .and('contain.text', 'Value is required');
     });
 
-    it('Shows error message when value is empty', () => {
+    it('Shows error message when a new row value is empty', () => {
+      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, isNew: true }]);
+
       cy.mount(TaskParametersConfiguratorRow, {
         props: {
           modelValue: mockModel.value,
@@ -200,6 +202,25 @@ describe('<TaskParametersConfiguratorRow />', () => {
         .eq(0)
         .should('be.visible')
         .and('contain.text', 'Value is required');
+    });
+
+    it('Allows an empty value on existing (non-new) rows', () => {
+      // taskConfig is arbitrary JSON — an existing task may legitimately store an
+      // empty-string value, so existing rows must not be blocked by the value validator.
+      mockModel = ref([{ name: 'mock-param', type: 'string', value: 'mock-value' }]);
+
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+        },
+      });
+
+      cy.findByTestId('task-configurator-row__value-string').type('{selectAll}');
+      cy.findByTestId('task-configurator-row__value-string').type('{backspace}');
+      cy.findByTestId('task-configurator-row__value-string')
+        .siblings('[data-testid="textinput__errors"]')
+        .should('not.exist');
     });
 
     it('Prevents using reserved parameter names', () => {
@@ -247,7 +268,8 @@ describe('<TaskParametersConfiguratorRow />', () => {
     });
 
     it('Automatically clears error messages', () => {
-      mockModel = ref([...mockData]);
+      // Use a new row so the value-required validator (new-rows-only) is exercised.
+      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, isNew: true }]);
 
       cy.mount(TaskParametersConfiguratorRow, {
         props: {
@@ -264,7 +286,7 @@ describe('<TaskParametersConfiguratorRow />', () => {
         .should('be.visible')
         .and('contain.text', 'Value is required');
 
-      cy.findByTestId('task-configurator-row__name').type('mock-param-name');
+      cy.findByTestId('task-configurator-row__name').type('mock_param_name');
       cy.findByTestId('task-configurator-row__name').siblings('[data-testid="textinput__errors"]').should('not.exist');
 
       cy.findByTestId('task-configurator-row__value-string').type('{selectAll}');
