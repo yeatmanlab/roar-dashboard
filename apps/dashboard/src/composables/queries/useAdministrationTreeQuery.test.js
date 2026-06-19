@@ -170,5 +170,22 @@ describe('useAdministrationTreeQuery', () => {
 
       expect(VueQuery.useQuery.mock.calls[0][0].enabled.value).toBe(false);
     });
+
+    it('does not retry on terminal auth or rostering-ended errors but retries transient ones', () => {
+      let retryFn;
+      vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+        retryFn = options.retry;
+        return { data: { value: null }, error: { value: null } };
+      });
+
+      withSetup(() => useAdministrationTreeQuery(ref(ADMIN_ID)), {
+        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+      });
+
+      expect(retryFn(0, { body: { error: { code: 'auth/required' } } })).toBe(false);
+      expect(retryFn(0, { body: { error: { code: 'auth/rostering-ended' } } })).toBe(false);
+      expect(retryFn(0, new Error('network down'))).toBe(true);
+      expect(retryFn(3, new Error('network down'))).toBe(false);
+    });
   });
 });
