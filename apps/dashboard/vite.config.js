@@ -287,7 +287,7 @@ export default defineConfig(({ mode }) => {
                 letter: ['@bdelab/roar-letter'],
                 multichoice: ['@bdelab/roar-multichoice'],
                 sre: ['@bdelab/roar-sre'],
-                swr: ['@bdelab/roar-swr'],
+                swr: ['@roar-platform/roar-swr'],
                 utils: ['@bdelab/roar-utils'],
                 vocab: ['@bdelab/roar-vocab'],
                 ran: ['@bdelab/roav-ran'],

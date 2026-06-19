@@ -1,0 +1,144 @@
+{
+  "loading": "Este experimento está carregando...",
+  "labID": "ID do Laboratório",
+  "participantID": "ID do Participante",
+  "buttonLabel": "Continuar",
+  "progressBar": "Progresso concluído",
+  "preloadTrial": {
+    "messageText": "Por favor, aguarde enquanto o experimento carrega. Isso pode levar alguns minutos."
+  },
+  "fullScreenTrial": {
+    "prompt": "O experimento mudará para tela cheia. <br/> Clique no botão para continuar.",
+    "buttonText": "Continuar"
+  },
+  "navigation": {
+    "continueButtonText": "Pressione <span class='yellow'>QUALQUER TECLA</span> para {{action}}",
+    "continueButtonTextMobile": "Pressione a <span class='yellow'>BARRA AZUL</span> para {{action}}"
+  },
+  "introTrials": {
+    "trial1": {
+      "header1": "Bem-vindo(a) ao mundo das Palavras Mágicas!",
+      "paragraph1": "Você é um feiticeiro em busca do portal que o levará de volta a sua casa na Terra. Para alcançar o portal, você deve viajar por terras governadas pelos guardiões mágicos.",
+      "paragraph2": "Para que os guardiões permitam que você passe pela terra deles, será necessário que você diferencie palavras inventadas e palavras reais.&nbsp;",
+      "header2": "Bem-vindo(a) a atividade de Reconhecimento de Palavras Únicas!",
+      "paragraph3": "Nesta atividade, você irá olhar palavras que aparecem na tela.",
+      "paragraph4": "Você então terá que dizer a diferença entre palavras inventadas e reais.&nbsp;"
+    },
+    "trial2": {
+      "header": "Uma palavra real ou inventada aparecerá rapidamente no centro da tela.",
+      "paragraph1": "As palavras inventadas podem parecer com palavras em português, mas elas não têm significado. Por exemplo, trinfla, glina ou blim são palavras inventadas. <span class='orange'><b>Se você vir uma palavra inventada, pressione a tecla de SETA PARA ESQUERDA.</b></span>",
+      "paragraph2": "As palavras reais serão aquelas que você consegue reconhecer. Elas são palavras reais em portguês, como vida, mala, macaco ou comer. <span class='blue'><b> Se você vir uma palavra real, pressione a tecla de SETA PARA DIREITA.</b></span>"
+    },
+    "trial3": {
+      "header": "Vamos relembrar qual seta pressionamos para as palavras inventadas e para as palavras reais.",
+      "paragraph1": "Tente ser o mais preciso possível.",
+      "paragraph2": "Algumas palavras serão difíceis, e está tudo bem. Se não tiver certeza, dê o seu melhor palpite!"
+    },
+    "postPracticeTrial": {
+      "header1": "Parabéns! Você está pronto para iniciar esta aventura",
+      "header2": "Bom trabalho, você está pronto para iniciar a atividade!",
+      "paragraph1": "Ao longo do caminho, você vai ganhar moedas de ouro.",
+      "paragraph2": "Boa sorte!"
+    }
+  },
+  "practiceFeedbackTrial": {
+    "paragraph1": "Você pressionou a seta {{direction}} que é para palavras {{typeWord}}!",
+    "paragraph2": "é uma palavra {{typeWord}}. Pressione a seta {{direction}} para continuar.",
+    "arrowChoicesImgAlt": "arrowChoices"
+  },
+  "gameBreakTrials": {
+    "midBlockTrials": {
+      "trial1": {
+        "header1": "Muito bem!",
+        "paragraph1": "Você está no meio do vale e decide acampar perto de uma pequena vila.",
+        "paragraph2": "Lá, você encontrou outro aventureiro que decide se juntar a sua jornada!",
+        "header2": "Bom trabalho!",
+        "paragraph3": "Você está na metade do primeiro bloco.",
+        "paragraph4": "Fique à vontade para fazer uma breve pausa e continuar quando se sentir pronto(a)."
+      },
+      "trial2": {
+        "header1": "Incrível!",
+        "paragraph1": "Após alguns dias de viagem, você encontra uma pousada!",
+        "paragraph2": "Lá, você encontrou outro aventureiro que se junta à sua jornada!",
+        "header2": "Incrível!",
+        "paragraph3": "Você está na metade do segundo bloco.",
+        "paragraph4": "Fique à vontade para fazer uma breve pausa e continuar quando se sentir pronto(a)."
+      },
+      "trial3": {
+        "header1": "Muito bem!",
+        "paragraph1": "Você está no meio do vale e decide acampar perto uma pequena vila.",
+        "paragraph2": "Lá, você encontroy outro aventureiro que decide se juntar a sua jornada!",
+        "header2": "Excelente trabalho!",
+        "paragraph3": "Você está na metade do terceiro bloco.",
+        "paragraph4": "Fique à vontade para fazer uma breve pausa e continuar quando se sentir pronto(a)."
+      }
+    },
+    "postBlockTrials": {
+      "trial1": {
+        "header1": "Parabéns!",
+        "paragraph1": "Com a ajuda do guardião, você conseguiu atravessar o vale.",
+        "paragraph2": "Você está mais perto do portão!",
+        "header2": "Parabéns!",
+        "paragraph3": "Você completou o primeiro bloco.",
+        "paragraph4": "Fique à vontade para fazer uma breve pausa e continuar quando se sentir pronto(a)."
+      },
+      "trial2": {
+        "header1": "Parabéns!",
+        "paragraph1": "Com a ajuda do guardião, você conseguiu atravessar o vale.",
+        "paragraph2": "Agora, falta só mais um vale para chegar até o portão!",
+        "header2": "Parabéns!",
+        "paragraph3": "Você completou o segundo bloco.",
+        "paragraph4": "Fique à vontade para fazer uma breve pausa e continuar quando se sentir pronto(a)."
+      },
+      "trial3": {
+        "header1": "Parabéns!",
+        "paragraph1": "Com a ajuda do guardião, você conseguiu atravessar o vale.",
+        "paragraph2": "Você está mais perto do portão!",
+        "header2": "Parabéns!",
+        "paragraph3": "Você completou um novo bloco.",
+        "paragraph4": "Fique à vontade para fazer uma breve pausa e continuar quando se sentir pronto(a)."
+      }
+    },
+    "finalTrial": {
+      "header1": "Finalmente, você encontrou o guardião e o portal que levarão você de volta para casa! ",
+      "paragraph1": "Use suas moedas para abrir o portal.",
+      "paragraph2": "Diga adeus aos seus novos amigos e deixe a terra das Palavras Mágicas. Até a próxima!",
+      "header2": "Parabéns!",
+      "paragraph3": "Você completou a atividade de Reconhecimento de Palavras Únicas.",
+      "paragraph4": "Agradecemos pelo seu incrível trabalho!"
+    }
+  },
+  "imagesAlt": {
+    "arrowKeys": "setas",
+    "leftArrow": "seta esquerda",
+    "rightArrow": "seta direita",
+    "valley": "imagem de fundo com morros e árvores",
+    "adventurer1": "aventureiro com harpa",
+    "adventurer2": "aventureiro fazendo arco-íris",
+    "adventurer3": "aventureiro fazendo formas de coração",
+    "wizardCoin": "mago fazendo moedas",
+    "guardian1": "guardião dinossauro laranja",
+    "guardian2": "guardião dragão azul",
+    "endingBackground": "paisagem com árvores",
+    "guardian3": "unicórnio piscando",
+    "endingGateCoinbag": "portal com bolsa de moedas animação",
+    "wizardWand": "mago balancando uma varinha mágica",
+    "leftArrowIntro": "palavra inventada, pressione a seta esquerda",
+    "rightArrowIntro": "palavra real, pressione a seta direita"
+  },
+  "terms": {
+    "__comment1__": "ex. 'pressione qualquer tecla para continuar/praticar/iniciar'",
+    "continue": "continuar",
+    "practice": "praticar",
+    "begin": "continuar",
+    "gold": "ouro",
+    "left": "esquerda",
+    "right": "direita",
+    "__comment2__": "i.e. 'traspa é uma palavra inventada'",
+    "real-singular": "real",
+    "real-plural": "reais",
+    "made-up-singular": "inventada",
+    "made-up-plural": "inventadas",
+    "save": "salvar o seu progresso"
+  }
+}
