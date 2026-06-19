@@ -150,8 +150,8 @@ describe('AdministrationRepository', () => {
         baseFixture.administrationAssignedToClassA.id,
       ]);
 
-      // classInSchoolA has 2 active users (classAStudent, classATeacher); expiredClassStudent excluded
-      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+      // classInSchoolA has 3 active users (classAStudent, classATeacher, schoolAStudent); expiredClassStudent excluded
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(3);
     });
 
     it('counts users via org hierarchy paths (viaOrgToOrgUsers and viaOrgToClassUsers)', async () => {
@@ -160,9 +160,9 @@ describe('AdministrationRepository', () => {
       ]);
 
       // administrationAssignedToDistrict is assigned to district, which via ltree includes:
-      // - viaOrgToOrgUsers: districtAdmin, schoolAAdmin, schoolAPrincipal, schoolATeacher, schoolAStudent,
-      //   schoolBStudent, multiAssignedUser (district+schoolA), grade5Student, grade3Student, grade5EllStudent
-      // - viaOrgToClassUsers: classAStudent, classATeacher (active in classInSchoolA under district)
+      // - viaOrgToOrgUsers: districtAdmin, schoolAAdmin, schoolAPrincipal, schoolATeacher, multiAssignedUser (district+schoolA)
+      // - viaOrgToClassUsers (students now enroll at the class level): classAStudent, classATeacher, schoolAStudent
+      //   (classInSchoolA); schoolBStudent (classInSchoolB); grade5Student, grade3Student, grade5EllStudent (classInSchoolC)
       // Excluded: expiredEnrollmentStudent, futureEnrollmentStudent, expiredClassStudent
       const count = counts.get(baseFixture.administrationAssignedToDistrict.id);
       expect(count).toBe(12);
@@ -188,7 +188,7 @@ describe('AdministrationRepository', () => {
       ]);
 
       expect(counts.get(baseFixture.administrationAssignedToGroup.id)).toBe(1);
-      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(3);
     });
 
     it('omits entry from returned Map for administration with no assigned users', async () => {
@@ -250,9 +250,9 @@ describe('AdministrationRepository', () => {
         baseFixture.administrationAssignedToClassA.id,
       ]);
 
-      // expiredClassStudent has enrollment that ended 7 days ago — should be excluded
-      // Only classAStudent and classATeacher have active enrollments
-      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+      // expiredClassStudent (and expired/future enrollment students) are excluded for inactive enrollments
+      // Active in classInSchoolA: classAStudent, classATeacher, schoolAStudent
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(3);
     });
 
     it('throws when called with an empty administrationIds array', async () => {
