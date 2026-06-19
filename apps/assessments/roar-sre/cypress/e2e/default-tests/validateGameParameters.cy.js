@@ -2,6 +2,8 @@
 // not from URL query params. useParameterValidation is still a URL param that gates
 // whether AJV schema validation runs. Invalid params produce a console.warn (not a throw).
 
+// Distinct from playSREDefault.cy.js's VARIANT_ID (…0001) to prevent intercept
+// collision when Cypress runs both specs in the same session.
 const VARIANT_ID = 'aaaaaaaa-0000-0000-0000-000000000000';
 
 const makeVariantResponse = (params) => ({
@@ -40,9 +42,14 @@ const stubApiCalls = (variantParams) => {
 describe('Validating variant parameters.', () => {
   const TIMEOUT = Cypress.env('timeout');
 
-  beforeEach(() => {
+  before(() => {
+    // Registered once — Cypress.on is global and accumulates across tests if placed in beforeEach.
     Cypress.on('uncaught:exception', () => false);
-    Cypress.on('window:before:load', (win) => {
+  });
+
+  beforeEach(() => {
+    // cy.on is scoped to the current test and does not accumulate across tests.
+    cy.on('window:before:load', (win) => {
       cy.spy(win.console, 'warn').as('consoleWarn');
     });
   });
@@ -68,5 +75,12 @@ describe('Validating variant parameters.', () => {
     cy.visit(`${Cypress.env('baseUrl')}/?useParameterValidation=true&variantId=${VARIANT_ID}`);
     cy.get('.jspsych-btn', { timeout: 5 * TIMEOUT }).should('be.visible');
     cy.get('@consoleWarn').should('have.been.calledWithMatch', /\[roar-sre\] Parameter validation warnings/);
+  });
+
+  it('does not warn when useParameterValidation is false, even with invalid params', () => {
+    stubApiCalls({ timerLength: 200000 });
+    cy.visit(`${Cypress.env('baseUrl')}/?useParameterValidation=false&variantId=${VARIANT_ID}`);
+    cy.get('.jspsych-btn', { timeout: 5 * TIMEOUT }).should('be.visible');
+    cy.get('@consoleWarn').should('not.have.been.calledWithMatch', /\[roar-sre\] Parameter validation warnings/);
   });
 });

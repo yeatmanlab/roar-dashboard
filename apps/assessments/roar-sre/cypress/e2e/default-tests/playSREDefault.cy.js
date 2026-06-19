@@ -1,5 +1,8 @@
 // consent is now a variant parameter, not a URL parameter. The stub returns no
 // consent param so it defaults to true — playIntro clicks through the consent form.
+
+// Distinct from validateGameParameters.cy.js's VARIANT_ID (…0000) to prevent intercept
+// collision when Cypress runs both specs in the same session.
 const VARIANT_ID = 'aaaaaaaa-0000-0000-0000-000000000001';
 
 const stubBootstrap = () => {
