@@ -1,4 +1,5 @@
 import { RoarFirekit } from '@bdelab/roar-firekit';
+import { IS_FIREBASE_EMULATOR_ENABLED } from '@/constants/firebase';
 
 const isLocalhost = window.location.hostname === 'localhost';
 const isCypress = window.Cypress;
@@ -44,7 +45,6 @@ const {
   VITE_FIREKIT_APP_RECAPTCHA_SITE_KEY,
   VITE_FIREKIT_APPCHECK_DEBUG_TOKEN = undefined,
   VITE_FIREKIT_VERBOSE_LOGGING_ENABLED = false,
-  VITE_FIREBASE_EMULATOR_ENABLED = false,
 } = import.meta.env;
 
 // Define the App Check debug token
@@ -99,7 +99,7 @@ const firekitConfig = {
 // exist solely to satisfy roar-firekit's EmulatorFirebaseConfig shape — Firestore
 // and Functions emulators are intentionally not run in this mode.
 // ─────────────────────────────────────────────────────────────────────────────
-const useFirebaseEmulator = VITE_FIREBASE_EMULATOR_ENABLED === true || VITE_FIREBASE_EMULATOR_ENABLED === 'true';
+const useFirebaseEmulator = IS_FIREBASE_EMULATOR_ENABLED;
 
 const emulatorProject = {
   projectId: import.meta.env.VITE_FIREBASE_EMULATOR_PROJECT_ID || 'demo-roar',
