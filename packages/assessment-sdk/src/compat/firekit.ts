@@ -705,12 +705,12 @@ export async function writeTrial(
   const correct =
     typeof trialDataRecord['correct'] === 'boolean' ? (trialDataRecord['correct'] ? 1 : 0) : trialDataRecord['correct'];
 
-  // Accumulate raw scores from this trial for later score computation
-  // Extract subtask from trial data for PA assessments
-  const subtask = trialDataRecord['subtask'] as string | undefined;
-  if (subtask) {
-    facade._accumulateRawScore(subtask, assessmentStage, correct);
-  }
+  // Accumulate raw scores from this trial for later score computation.
+  // Assessments with named subtasks (e.g. PA: 'fsm', 'lsm', 'del') pass the subtask
+  // key explicitly. Assessments without subtasks (e.g. SWR) fall back to 'composite'
+  // so that _accumulateRawScore and _getRawScores overrides still receive a call.
+  const subtask = (trialDataRecord['subtask'] as string | undefined) ?? 'composite';
+  facade._accumulateRawScore(subtask, assessmentStage, correct);
 
   // Drain buffered interactions from addInteraction() calls
   const bufferedInteractions = facade._drainInteractionBuffer();
@@ -839,4 +839,31 @@ export async function getVariantById(
 
   const cmd = new GetVariantByIdCommand(api);
   return invoker.run(cmd, { variantId });
+}
+
+/**
+ * Creates a lazily-instantiated computedScoreCallback for an assessment's RoarScores class.
+ *
+ * Defers construction of `ScoresClass` until the first trial write, guaranteeing that
+ * `initStore()` has populated the session store before the constructor reads it.
+ *
+ * @param ScoresClass - Constructor for the assessment-specific RoarScores implementation
+ * @returns An async callback suitable for passing to `writeTrial`
+ *
+ * @example
+ * ```js
+ * import { makeLazyComputedCallback } from '@roar-platform/assessment-sdk/compat/firekit';
+ * import { RoarScores } from '../experiment/scores';
+ *
+ * const computedScoreCallback = makeLazyComputedCallback(RoarScores);
+ * ```
+ */
+export function makeLazyComputedCallback<T extends { computedScoreCallback: (rawScores: unknown) => Promise<unknown> }>(
+  ScoresClass: new () => T,
+): (rawScores: unknown) => Promise<unknown> {
+  let instance: T | null = null;
+  return async (rawScores) => {
+    if (!instance) instance = new ScoresClass();
+    return instance.computedScoreCallback(rawScores);
+  };
 }
