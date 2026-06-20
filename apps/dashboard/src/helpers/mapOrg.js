@@ -1,9 +1,9 @@
 /**
  * Mapping helpers that adapt the backend org shapes
  * (`DistrictDetailSchema` / `SchoolDetailSchema` / `SchoolClassSchema` /
- * `GroupDetailSchema` / `ClassDetailSchema` from `@roar-platform/api-contract`)
- * to the flat org shape the dashboard consumers historically read from the
- * legacy Firestore documents.
+ * `GroupDetailSchema` / `ClassDetailSchema` / `FamilyDetailSchema` from
+ * `@roar-platform/api-contract`) to the flat org shape the dashboard consumers
+ * historically read from the legacy Firestore documents.
  *
  * For districts and schools the backend nests address fields under `location`
  * and external identifiers (MDR / NCES / state) under `identifiers`. The legacy
@@ -22,6 +22,23 @@
  * address object) and `rosteringEnded`, both of which pass through the spread
  * unchanged. A single `mapClassToOrg` therefore covers both shapes — see its
  * JSDoc for the field-level comparison.
+ *
+ * Families (`FamilyDetailSchema`, from `GET /families/:familyId`) are the
+ * leanest org shape: `{ id, location?, rosteringEnded? }`. The backend table
+ * intentionally has NO `name` (families are identified by UUID), and the shape
+ * also omits `abbreviation`, `identifiers`, and `orgType`/`parentOrgId`. Like
+ * districts/schools/groups, `location` is an assembled address OBJECT (city,
+ * stateProvince, …), so `mapFamilyToOrg` flattens it; `rosteringEnded` passes
+ * through unchanged. There are no `identifiers` to flatten.
+ *
+ * The absence of `name` is inconsequential in practice. `useFamiliesQuery`'s
+ * sole consumer is `useOrgQuery` (the `families` case) → `ScoreReport.vue` /
+ * `ProgressReport.vue`, which read `orgData.name` (via `select: (data) => data[0]`).
+ * That is a VESTIGIAL path: a family-scoped report requires an administration
+ * assigned to a `family` org, but administrations only assign to orgs/classes/
+ * groups (the upsert body has no `families` field), so family-scoped reports
+ * are never generated in practice. The missing `name` therefore lands on a dead
+ * path, not a live feature — reviewed and accepted by the team.
  *
  * @TODO Some legacy fields are not yet provided by the backend org schemas and
  * therefore cannot be mapped here:
@@ -51,6 +68,14 @@
  *     tags contribute nothing to the suggestions. Note that the CreateOrgs read
  *     is fed by `useSchoolClassesQuery`, not the by-id `useClassesQuery` mapped
  *     here. Users can still type tags freely — autocomplete-only, no data loss).
+ *   - families: `name` (and every other display field). `FamilyDetailSchema`
+ *     exposes only `{ id, location, rosteringEnded }` — no `name`,
+ *     `abbreviation`, `identifiers`, or `orgType`/`parentOrgId`. ScoreReport/
+ *     ProgressReport read `orgData.name`, but only on the vestigial family-report
+ *     path (no administration→family assignment exists, so family-scoped reports
+ *     are never generated), so the absence is inconsequential. Unlike the gaps
+ *     above, this one is not "re-map once exposed": the backend family model has
+ *     no name to expose.
  * These degrade gracefully (optional reads with fallbacks) rather than throwing.
  * Re-map them here once the backend exposes them on the org schemas.
  */
@@ -168,4 +193,29 @@ export const mapGroupToOrg = (group) => ({
  */
 export const mapClassToOrg = (schoolClass) => ({
   ...schoolClass,
+});
+
+/**
+ * Map a backend family detail object to the flat org shape consumers read.
+ *
+ * Families are the leanest org shape on the platform — `FamilyDetailSchema`
+ * exposes only `{ id, location?, rosteringEnded? }`. There is NO `name`,
+ * `abbreviation`, `identifiers`, or `orgType`/`parentOrgId`: the family table is
+ * keyed by UUID and sits outside the org hierarchy. This helper preserves the
+ * raw fields (`id`, `rosteringEnded`) and additionally flattens `location` — an
+ * assembled address OBJECT (`city`, `stateProvince`, …) like districts, schools,
+ * and groups, NOT the free-text room-label string that classes carry — to
+ * top-level fields. There is no `identifiers` block to flatten.
+ *
+ * The missing `name` is read by ScoreReport/ProgressReport (`orgData.name`) but
+ * only on the vestigial family-report path — see the module-level note: no
+ * administration is ever assigned to a `family` org, so family-scoped reports
+ * are never generated, and the absence is inconsequential.
+ *
+ * @param {Object} family - A `FamilyDetailSchema` object from the backend.
+ * @returns {Object} The flattened family record.
+ */
+export const mapFamilyToOrg = (family) => ({
+  ...family,
+  ...flattenLocation(family.location),
 });
