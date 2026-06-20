@@ -135,13 +135,16 @@ export const mapDistrictToOrg = (district) => ({
  *
  * Preserves the raw fields (`id`, `name`, `abbreviation`, `orgType`,
  * `parentOrgId`, etc.) and additionally flattens `location` and `identifiers`
- * to top-level fields.
+ * to top-level fields. A school's parent org is always its district, so
+ * `parentOrgId` is also surfaced as the legacy flat `districtId` that consumers
+ * read (e.g. CreateAdministrator derives the parent district from it).
  *
  * @param {Object} school - A `SchoolDetailSchema` object from the backend.
  * @returns {Object} The flattened school record.
  */
 export const mapSchoolToOrg = (school) => ({
   ...school,
+  districtId: school.parentOrgId,
   ...flattenLocation(school.location),
   ...flattenIdentifiers(school.identifiers),
 });

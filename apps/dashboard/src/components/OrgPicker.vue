@@ -89,7 +89,6 @@
 
 <script setup>
 import { reactive, ref, computed, onMounted, watch } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _get from 'lodash/get';
@@ -104,10 +103,11 @@ import PvScrollPanel from 'primevue/scrollpanel';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
 import { useAuthStore } from '@/store/auth';
-import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
-import { orderByDefault } from '@/helpers/query/utils';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
+import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
+import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
+import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
 import useUserType from '@/composables/useUserType';
 
 const initialized = ref(false);
@@ -241,28 +241,41 @@ const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
 });
 
-const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
-  queryKey: ['schools', selectedDistrict],
-  queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
+// Schools for the selected district — backs both the cascading school dropdown
+// (schools/classes tabs) and the schools tab's main listbox. The composable
+// already gates on `accessToken` + a truthy `districtId`; we additionally gate
+// on claims being loaded so behaviour matches the legacy enablement.
+const { isLoading: isLoadingSchools, data: allSchools } = useDistrictSchoolsQuery(selectedDistrict, {
   enabled: schoolQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { data: orgData } = useQuery({
-  queryKey: ['orgs', activeOrgType, selectedDistrict, selectedSchool],
-  queryFn: () =>
-    orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, ref(orderByDefault), isSuperAdmin, adminOrgs, [
-      'id',
-      'name',
-      'districtId',
-      'schoolId',
-      'schools',
-      'classes',
-    ]),
-  keepPreviousData: true,
-  enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+// Classes for the selected school — backs the classes tab's main listbox.
+// Gated internally on `accessToken` + a truthy `selectedSchool`.
+const { data: allClasses } = useSchoolClassesQuery(selectedSchool);
+
+// Groups accessible to the caller — backs the groups tab's main listbox. Gated
+// to the groups tab (in addition to the internal `accessToken` gate) so the
+// list isn't fetched on pickers that never open the Groups tab.
+const { data: allGroups } = useGroupsListQuery({
+  enabled: computed(() => activeOrgType.value === 'groups'),
+});
+
+// Polymorphic listbox source: return the active tab's org set. Each underlying
+// composable only fetches once its parent id / token is available, so this stays
+// minimal — districts and schools reuse the data already fetched above.
+const orgData = computed(() => {
+  switch (activeOrgType.value) {
+    case 'districts':
+      return allDistricts.value ?? [];
+    case 'schools':
+      return allSchools.value ?? [];
+    case 'classes':
+      return allClasses.value ?? [];
+    case 'groups':
+      return allGroups.value ?? [];
+    default:
+      return [];
+  }
 });
 
 const remove = (org, orgKey) => {
