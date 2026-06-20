@@ -905,7 +905,7 @@ describe('GET /v1/administrations/:id/tree', () => {
 
       const districtNode = res.body.data.items.find((item: { id: string }) => item.id === baseFixture.district.id);
       expect(districtNode).toBeDefined();
-      // baseFixture.district has schoolA and schoolB as children
+      // baseFixture.district has schoolA, schoolB, and schoolC as children
       expect(districtNode.hasChildren).toBe(true);
     });
 
@@ -960,7 +960,7 @@ describe('GET /v1/administrations/:id/tree', () => {
         .as(tiers.superAdmin)
         .toReturn(200);
 
-      // baseFixture.district has schoolA and schoolB as children
+      // baseFixture.district has schoolA, schoolB, and schoolC as children
       const ids = res.body.data.items.map((item: { id: string }) => item.id);
       expect(ids).toContain(baseFixture.schoolA.id);
       expect(ids).toContain(baseFixture.schoolB.id);
