@@ -49,15 +49,22 @@ export const ASSESSMENT_STAGE = {
 export type AssessmentStageValue = (typeof ASSESSMENT_STAGE)[keyof typeof ASSESSMENT_STAGE];
 
 /**
- * `app.run_scores.name` values referenced by the best-run recompute logic.
+ * `app.run_scores.name` values the backend consumes by name in queries.
  *
- * These are the score names the four-tier ranking compares within tier 2 and tier 4
- * (lowest `thetaSE`, then highest `numAttempted`). Other code paths may reference
- * additional score names — keep this list to ones the backend actually consumes by
- * name in queries.
+ * - `THETA_SE` / `NUM_ATTEMPTED` are compared by the best-run recompute's four-tier
+ *   ranking (tiers 2 and 4: lowest `thetaSE`, then highest `numAttempted`).
+ * - `THETA_ESTIMATE` / `THETA_SE` (under `domain = composite_foundational`) are the
+ *   per-subtest inputs to the foundational composite. All four subtests write `thetaEstimate`;
+ *   Letter/Phoneme/Word also write `thetaSE` (used for the LPW inverse-variance weights), and
+ *   Sentence's `thetaEstimate` feeds the Stage-2 blend.
+ *
+ * Other code paths may reference additional score names — keep this list to ones the
+ * backend actually consumes by name in queries.
  */
 export const SCORE_NAME = {
-  THETA_SE_RAW: 'thetaSERaw',
+  THETA_ESTIMATE: 'thetaEstimate', // computed composite_foundational input
+  THETA_SE: 'thetaSE',             // computed composite_foundational input
+  THETA_SE_RAW: 'thetaSERaw',      // raw composite SE — best-run recompute ranks on this
   NUM_ATTEMPTED: 'numAttempted',
 } as const;
 

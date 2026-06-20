@@ -1,13 +1,14 @@
-import { sql, inArray, eq, and, isNull } from 'drizzle-orm';
+import { sql, inArray, eq, and, isNull, ne, desc } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { AssessmentDbClient } from '../db/clients';
 import type * as AssessmentDbSchema from '../db/schema/assessment';
 import { BaseRepository } from './base.repository';
 import type { Run } from '../db/schema/';
-import { runs } from '../db/schema/assessment';
+import { runs, runScores } from '../db/schema/assessment';
 import type { BaseGetByIdParams, Transaction } from './interfaces/base.repository.interface';
 import { SCORE_TYPE, SCORE_DOMAIN, ASSESSMENT_STAGE, SCORE_NAME } from '../constants/run-scores';
 import { BEST_RUN_TIER } from '../constants/best-run';
+import { COMPOSITE_RUN_TASK_ID, COMPOSITE_RUN_TASK_VARIANT_ID, COMPOSITE_RUN_TASK_VERSION } from '../constants/run';
 
 /**
  * Run stats for an administration (started/completed counts from assessment DB).
@@ -15,6 +16,30 @@ import { BEST_RUN_TIER } from '../constants/best-run';
 export interface AdministrationRunStats {
   started: number;
   completed: number;
+}
+
+/**
+ * A single foundational-composite input score row: one `run_scores` row from a subtest's
+ * `use_for_reporting` run, tagged with the run's `taskId` so the service can route it to
+ * the correct subtest by slug.
+ */
+export interface CompositeInputScoreRow {
+  taskId: string;
+  runId: string;
+  domain: string;
+  name: string;
+  value: string;
+}
+
+/**
+ * Result of gathering foundational-composite inputs: the relevant score `rows`, plus
+ * `reportingTaskIds` — the requested tasks that have a `use_for_reporting` run at all
+ * (regardless of whether it produced composite scores). The latter lets callers tell
+ * "subtest not taken" apart from "subtest taken but produced no usable score".
+ */
+export interface CompositeGatherResult {
+  rows: CompositeInputScoreRow[];
+  reportingTaskIds: string[];
 }
 
 /**
@@ -74,7 +99,15 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
         completed: sql<number>`COUNT(DISTINCT CASE WHEN ${runs.completedAt} IS NOT NULL THEN ${runs.userId} END)::int`,
       })
       .from(runs)
-      .where(and(inArray(runs.administrationId, administrationIds), isNull(runs.deletedAt)))
+      // Exclude the synthetic foundational-composite run so it cannot inflate the
+      // started/completed participation counts.
+      .where(
+        and(
+          inArray(runs.administrationId, administrationIds),
+          isNull(runs.deletedAt),
+          ne(runs.taskId, COMPOSITE_RUN_TASK_ID),
+        ),
+      )
       .groupBy(runs.administrationId);
 
     const statsMap = new Map<string, AdministrationRunStats>();
@@ -89,19 +122,217 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
   }
 
   /**
+   * Gather the foundational-composite input scores for a student in an administration.
+   *
+   * For each given task, picks that task's winning `use_for_reporting = true`, non-deleted
+   * run — the most recent by `created_at`, with `id` as a deterministic tiebreak — chosen
+   * independently of whether that run has composite scores yet, then returns the relevant
+   * computed score rows from those winning runs:
+   * - `(computed, composite_foundational, thetaEstimate)` — every subtest's estimate
+   * - `(computed, composite_foundational, thetaSE)` — Letter/Phoneme/Word SE (for the LPW
+   *   inverse-variance weights). Sentence's `thetaEstimate` is read the same way and routed
+   *   to the Stage-2 blend by the service (by slug); its SE, if any, is unused.
+   *
+   * Selecting the run from the runs (not from a score join) guarantees the canonical newest
+   * reporting run is used even when it has no composite scores yet — an older run is never
+   * silently substituted. `reportingTaskIds` reports which requested tasks have a reporting
+   * run at all (regardless of scores), so callers can tell "subtest not taken" apart from
+   * "subtest taken but produced no usable score".
+   *
+   * @param params.userId - The student
+   * @param params.administrationId - The administration partition
+   * @param params.taskIds - The foundational subtest task IDs to gather
+   * @param params.transaction - Optional transaction context (the `writeTrial` tx)
+   * @returns `rows` (input score rows tagged with their run's `taskId`) and `reportingTaskIds`
+   */
+  async getReportingRunScoresForComposite(params: {
+    userId: string;
+    administrationId: string;
+    taskIds: string[];
+    transaction?: Transaction;
+  }): Promise<CompositeGatherResult> {
+    const { userId, administrationId, taskIds, transaction } = params;
+    if (taskIds.length === 0) {
+      return { rows: [], reportingTaskIds: [] };
+    }
+    const db = transaction ?? this.db;
+
+    // 1. The winning reporting run per task — most recent by created_at, id as a
+    //    deterministic tiebreak — chosen from the runs themselves (not gated by the score
+    //    join) so the canonical newest reporting run is always the one used.
+    const reportingRuns = await db
+      .select({ taskId: runs.taskId, runId: runs.id })
+      .from(runs)
+      .where(
+        and(
+          eq(runs.userId, userId),
+          eq(runs.administrationId, administrationId),
+          inArray(runs.taskId, taskIds),
+          eq(runs.useForReporting, true),
+          isNull(runs.deletedAt),
+        ),
+      )
+      .orderBy(desc(runs.createdAt), desc(runs.id));
+
+    const runIdByTaskId = new Map<string, string>();
+    for (const run of reportingRuns) {
+      if (!runIdByTaskId.has(run.taskId)) {
+        runIdByTaskId.set(run.taskId, run.runId);
+      }
+    }
+
+    const reportingTaskIds = [...runIdByTaskId.keys()];
+    const runIds = [...runIdByTaskId.values()];
+    if (runIds.length === 0) {
+      return { rows: [], reportingTaskIds };
+    }
+
+    const taskIdByRunId = new Map<string, string>();
+    for (const [taskId, runId] of runIdByTaskId) {
+      taskIdByRunId.set(runId, taskId);
+    }
+
+    // 2. The relevant composite input scores for exactly those winning runs.
+    const scoreRows = await db
+      .select({
+        runId: runScores.runId,
+        domain: runScores.domain,
+        name: runScores.name,
+        value: runScores.value,
+      })
+      .from(runScores)
+      .where(
+        and(
+          inArray(runScores.runId, runIds),
+          eq(runScores.type, SCORE_TYPE.COMPUTED),
+          eq(runScores.domain, SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL),
+          inArray(runScores.name, [SCORE_NAME.THETA_ESTIMATE, SCORE_NAME.THETA_SE]),
+        ),
+      );
+
+    const rows = scoreRows.map((row) => ({
+      taskId: taskIdByRunId.get(row.runId)!,
+      runId: row.runId,
+      domain: row.domain,
+      name: row.name,
+      value: row.value,
+    }));
+
+    return { rows, reportingTaskIds };
+  }
+
+  /**
+   * Acquire the transaction-scoped advisory lock that serializes foundational-composite
+   * recomputation for a `(userId, administrationId)`.
+   *
+   * Must be called BEFORE reading the subtests' `use_for_reporting` runs, so the whole
+   * gather → compute → write sees one consistent, fully-recomputed snapshot and concurrent
+   * writes for the same student/administration cannot race or lose updates.
+   *
+   * `transaction` is **required**: `pg_advisory_xact_lock` is transaction-scoped and
+   * releases at transaction end, so acquiring it outside a transaction would release it
+   * immediately and provide no protection. The required type makes that misuse a compile
+   * error. `hashtext()` yields the int4 keys for the two-argument advisory-lock overload.
+   *
+   * @param params.userId - The student
+   * @param params.administrationId - The administration
+   * @param params.transaction - The transaction the lock must span (required)
+   */
+  async lockCompositeForUpdate(params: {
+    userId: string;
+    administrationId: string;
+    transaction: Transaction;
+  }): Promise<void> {
+    const { userId, administrationId, transaction } = params;
+    await transaction.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtext(${userId}::text), hashtext(${administrationId}::text))`,
+    );
+  }
+
+  /**
+   * Find or create the dedicated foundational-composite run for a `(userId,
+   * administrationId)`, returning its id.
+   *
+   * The composite run is identified by the sentinel `COMPOSITE_RUN_TASK_ID`; there is
+   * exactly one per `(userId, administrationId)`.
+   *
+   * Concurrency: there is no unique constraint on the sentinel run, so callers MUST already
+   * hold the composite advisory lock (see {@link lockCompositeForUpdate}) for this
+   * `(userId, administrationId)` before calling. `FoundationalCompositeService.recomputeForRun`
+   * acquires it at the start of the recompute — that lock, not a DB constraint, is what
+   * prevents duplicate composite runs and lost updates.
+   *
+   * @param params.userId - The student
+   * @param params.administrationId - The administration
+   * @param params.transaction - Transaction to participate in
+   * @returns The composite run's id
+   */
+  async findOrCreateCompositeRun(params: {
+    userId: string;
+    administrationId: string;
+    transaction?: Transaction;
+  }): Promise<{ id: string }> {
+    const { userId, administrationId, transaction } = params;
+    const db = transaction ?? this.db;
+
+    const existing = await db
+      .select({ id: runs.id })
+      .from(runs)
+      .where(
+        and(
+          eq(runs.userId, userId),
+          eq(runs.administrationId, administrationId),
+          eq(runs.taskId, COMPOSITE_RUN_TASK_ID),
+          isNull(runs.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    if (existing[0]) {
+      return existing[0];
+    }
+
+    const [created] = await db
+      .insert(runs)
+      .values({
+        userId,
+        taskId: COMPOSITE_RUN_TASK_ID,
+        taskVariantId: COMPOSITE_RUN_TASK_VARIANT_ID,
+        taskVersion: COMPOSITE_RUN_TASK_VERSION,
+        administrationId,
+        isAnonymous: false,
+        useForReporting: true,
+      })
+      .returning({ id: runs.id });
+
+    // A successful INSERT ... RETURNING always yields exactly one row.
+    return created!;
+  }
+
+  /**
    * Get a non-deleted run by administration ID.
    *
    * Returns the first non-deleted run found for the given administration, or null if none exist.
    * Useful for checking existence (null check) or accessing run data.
    *
+   * Excludes the synthetic foundational-composite run (`COMPOSITE_RUN_TASK_ID`) so that, for
+   * example, a composite run never blocks administration deletion as if it were real
+   * assessment data.
+   *
    * @param administrationId - The administration ID to look up
-   * @returns The first run for this administration, or null if none exist
+   * @returns The first non-composite run for this administration, or null if none exist
    */
   async getByAdministrationId(administrationId: string): Promise<Run | null> {
     const result = await this.db
       .select()
       .from(runs)
-      .where(and(eq(runs.administrationId, administrationId), isNull(runs.deletedAt)))
+      .where(
+        and(
+          eq(runs.administrationId, administrationId),
+          isNull(runs.deletedAt),
+          ne(runs.taskId, COMPOSITE_RUN_TASK_ID),
+        ),
+      )
       .limit(1);
 
     return result[0] ?? null;
