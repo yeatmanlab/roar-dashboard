@@ -4,8 +4,10 @@ import _toPairs from 'lodash/toPairs';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
+import irtHyperparametersSre from './corpus/en/irt_hyperparameters_sre.csv';
 import {
   COMPOSITE_DOMAIN,
+  COMPOSITE_FOUNDATIONAL_DOMAIN,
   PRACTICE_DOMAIN,
   TRIAL_COUNT_SCORE_NAMES,
   domainToAssessmentStage,
@@ -68,7 +70,7 @@ const useGradeForScoring = ({ scoringVersion, taskId }) =>
   scoringVersion === SRE_SCORING_VERSION.V3 && taskId === SRE_TASK_IDS.EN;
 
 const useAgeForScoring = ({ scoringVersion, taskId }) =>
-  scoringVersion !== SRE_SCORING_VERSION.V3 || taskId === SRE_TASK_IDS.ES;
+  scoringVersion >= SRE_SCORING_VERSION.V4 || taskId === SRE_TASK_IDS.ES;
 
 export class RoarScores {
   constructor() {
@@ -545,6 +547,18 @@ export class RoarScores {
           sreScore: compositeScore,
           ...normedScores,
           scoringVersion: this.scoringVersion,
+        };
+      }
+    }
+    if (compositeScore != null && this.taskId === SRE_TASK_IDS.EN) {
+      const irtRow = irtHyperparametersSre.find((row) => row.trial_type === 'composite_foundational'); // this is matching the string on a row
+      const transformationScale = irtRow?.['transformation.scale'];
+      const transformationShift = irtRow?.['transformation.shift'];
+
+      if (transformationScale != null && transformationShift != null) {
+        const clampedSreScore = Math.max(compositeScore, 0);
+        computedScores[COMPOSITE_FOUNDATIONAL_DOMAIN] = {
+          thetaEstimate: Math.round((clampedSreScore * transformationScale + transformationShift) * 10) / 10,
         };
       }
     }
