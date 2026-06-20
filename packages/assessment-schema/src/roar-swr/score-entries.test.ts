@@ -269,4 +269,37 @@ describe('toSwrScoreEntries', () => {
       expect(numCorrect).toMatchObject({ type: 'raw', value: '20' });
     });
   });
+
+  describe('composite_foundational domain', () => {
+    it('emits the theta pair under composite_foundational as well as composite', () => {
+      const computed = {
+        composite: { thetaEstimate: 0.42, thetaSE: 0.15 },
+        composite_foundational: { thetaEstimate: 0.42, thetaSE: 0.15 },
+      };
+      const entries = toSwrScoreEntries(computed);
+
+      for (const domain of [SWR_SCORE_DOMAINS.COMPOSITE, SWR_SCORE_DOMAINS.COMPOSITE_FOUNDATIONAL]) {
+        expect(entries).toContainEqual(
+          expect.objectContaining({ domain, name: SWR_SCORE_NAMES.THETA_ESTIMATE, type: 'computed', value: '0.42' }),
+        );
+        expect(entries).toContainEqual(
+          expect.objectContaining({ domain, name: SWR_SCORE_NAMES.THETA_SE, type: 'computed', value: '0.15' }),
+        );
+      }
+    });
+
+    it('does not invent composite_foundational when the callback did not produce it', () => {
+      const entries = toSwrScoreEntries({ composite: { thetaEstimate: 0.42 } });
+      expect(entries.some((e) => e.domain === SWR_SCORE_DOMAINS.COMPOSITE_FOUNDATIONAL)).toBe(false);
+    });
+
+    it('strict mode accepts composite_foundational', () => {
+      expect(() =>
+        toSwrScoreEntries(
+          { composite: { thetaEstimate: 0.42 }, composite_foundational: { thetaEstimate: 0.42 } },
+          { strict: true },
+        ),
+      ).not.toThrow();
+    });
+  });
 });

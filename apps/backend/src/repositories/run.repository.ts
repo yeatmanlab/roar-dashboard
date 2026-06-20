@@ -264,16 +264,17 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
    *
    * @param params.userId - The student
    * @param params.administrationId - The administration
-   * @param params.transaction - Transaction to participate in
+   * @param params.transaction - The transaction to run in (required; the caller must already
+   *   hold the composite advisory lock via {@link lockCompositeForUpdate})
    * @returns The composite run's id
    */
   async findOrCreateCompositeRun(params: {
     userId: string;
     administrationId: string;
-    transaction?: Transaction;
+    transaction: Transaction;
   }): Promise<{ id: string }> {
     const { userId, administrationId, transaction } = params;
-    const db = transaction ?? this.db;
+    const db = transaction;
 
     const existing = await db
       .select({ id: runs.id })
