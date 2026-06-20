@@ -171,6 +171,47 @@ export const CreateDistrictResponseSchema = z.object({
 export type CreateDistrictResponse = z.infer<typeof CreateDistrictResponseSchema>;
 
 /**
+ * Request body for updating a district (PATCH /districts/:id).
+ *
+ * A partial of the mutable subset of CreateDistrictRequestSchema — every field
+ * is optional and only those present in the body are applied. `.strict()`
+ * rejects unknown keys and immutable identity/hierarchy fields (`id`, `orgType`,
+ * `parentOrgId`, `path`, `isRosteringRootOrg`), which are server-managed and
+ * cannot change after creation.
+ *
+ * As on create, `location.coordinates` and `identifiers.schoolNumber` are
+ * omitted — lat/long isn't accepted and `schoolNumber` is a school-level
+ * identifier, not a district-level one.
+ */
+export const UpdateDistrictRequestSchema = z
+  .object({
+    name: z.string().min(1).max(255).optional(),
+    abbreviation: z
+      .string()
+      .min(1)
+      .max(10)
+      .regex(/^[A-Za-z0-9]+$/, 'abbreviation must contain only letters and digits')
+      .optional(),
+    location: DistrictLocationSchema.omit({ coordinates: true }).optional(),
+    identifiers: DistrictIdentifiersSchema.omit({ schoolNumber: true }).optional(),
+  })
+  .strict();
+
+export type UpdateDistrictRequest = z.infer<typeof UpdateDistrictRequestSchema>;
+
+/**
+ * Response payload for PATCH /districts/:id.
+ *
+ * Returns only the updated district id, matching the create-response shape.
+ * Clients that need the full entity follow up with GET /districts/:id.
+ */
+export const UpdateDistrictResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type UpdateDistrictResponse = z.infer<typeof UpdateDistrictResponseSchema>;
+
+/**
  * Allowed sort fields for schools within a district.
  */
 export const DISTRICT_SCHOOL_SORT_FIELDS = ['name', 'abbreviation'] as const;

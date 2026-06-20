@@ -505,4 +505,85 @@ describe('ClassService', () => {
       });
     });
   });
+
+  describe('update', () => {
+    const classId = '33333333-3333-4333-8333-333333333333';
+    const superAdminContext = { userId: 'admin-123', isSuperAdmin: true };
+    const userContext = { userId: 'user-123', isSuperAdmin: false };
+
+    const buildClass = () => ClassFactory.build({ id: classId });
+
+    const buildService = () =>
+      ClassService({
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+        schoolRepository: mockSchoolRepository,
+      });
+
+    it('should throw 404 and NOT call updateClass when the class does not exist', async () => {
+      mockClassRepository.getById.mockResolvedValue(null);
+
+      await expect(buildService().update(superAdminContext, classId, { name: 'New Name' })).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+      });
+      expect(mockClassRepository.updateClass).not.toHaveBeenCalled();
+    });
+
+    it('should throw 403 and NOT call updateClass when caller is not a super admin (existence-before-authz)', async () => {
+      mockClassRepository.getById.mockResolvedValue(buildClass());
+
+      await expect(buildService().update(userContext, classId, { name: 'New Name' })).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
+      // No FGA permission check is made — can_update is no_one, the bypass is the policy
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      expect(mockClassRepository.updateClass).not.toHaveBeenCalled();
+    });
+
+    it('should throw 400 and NOT call updateClass when no mutable fields are provided', async () => {
+      mockClassRepository.getById.mockResolvedValue(buildClass());
+
+      await expect(buildService().update(superAdminContext, classId, {})).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+      expect(mockClassRepository.updateClass).not.toHaveBeenCalled();
+    });
+
+    it('should call updateClass with the mapped column-shaped partial and return the id (happy path)', async () => {
+      mockClassRepository.getById.mockResolvedValue(buildClass());
+      mockClassRepository.updateClass.mockResolvedValue(undefined);
+
+      const result = await buildService().update(superAdminContext, classId, {
+        name: 'Updated Class',
+        classType: ClassType.SCHEDULED,
+        subjects: ['Math'],
+        grades: ['5'],
+        location: 'Room 7',
+      });
+
+      expect(result).toEqual({ id: classId });
+      expect(mockClassRepository.updateClass).toHaveBeenCalledWith(classId, {
+        name: 'Updated Class',
+        classType: ClassType.SCHEDULED,
+        subjects: ['Math'],
+        grades: ['5'],
+        location: 'Room 7',
+      });
+    });
+
+    it('should wrap unexpected DB errors from updateClass as ApiError 500 with DATABASE_QUERY_FAILED', async () => {
+      mockClassRepository.getById.mockResolvedValue(buildClass());
+      mockClassRepository.updateClass.mockRejectedValue(new Error('connection lost'));
+
+      await expect(buildService().update(superAdminContext, classId, { name: 'New Name' })).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
 });

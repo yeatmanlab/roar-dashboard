@@ -43,6 +43,7 @@ const mockCreate = vi.fn();
 const mockList = vi.fn();
 const mockGetById = vi.fn();
 const mockListUsers = vi.fn();
+const mockUpdate = vi.fn();
 vi.mock('../services/group/group.service', () => ({
   GroupService: vi.fn(),
 }));
@@ -73,6 +74,7 @@ describe('GroupsController', () => {
       list: mockList,
       getById: mockGetById,
       listUsers: mockListUsers,
+      update: mockUpdate,
     });
   });
 
@@ -593,6 +595,102 @@ describe('GroupsController', () => {
       mockCreate.mockRejectedValue(unexpected);
 
       await expect(GroupsController.create(mockAuthContext, validBody)).rejects.toBe(unexpected);
+    });
+  });
+
+  describe('update', () => {
+    let GroupsController: (typeof import('./groups.controller'))['GroupsController'];
+    beforeEach(async () => {
+      vi.clearAllMocks();
+      const { GroupsController: controller } = await import('./groups.controller');
+      GroupsController = controller;
+    });
+
+    it('should return 200 with the updated group id on success', async () => {
+      mockUpdate.mockResolvedValue({ id: 'group-123' });
+
+      const result = await GroupsController.update(mockAuthContext, 'group-123', { name: 'Renamed Cohort' });
+
+      const data = expectOkResponse(result);
+      expect(data).toEqual({ id: 'group-123' });
+      expect(mockUpdate).toHaveBeenCalledWith(mockAuthContext, 'group-123', { name: 'Renamed Cohort' });
+    });
+
+    it('should map the request body to the service input field-by-field, omitting absent location', async () => {
+      mockUpdate.mockResolvedValue({ id: 'group-123' });
+
+      await GroupsController.update(mockAuthContext, 'group-123', {
+        name: 'Updated',
+        abbreviation: 'UPD1',
+        groupType: 'community',
+      });
+
+      expect(mockUpdate).toHaveBeenCalledWith(mockAuthContext, 'group-123', {
+        name: 'Updated',
+        abbreviation: 'UPD1',
+        groupType: 'community',
+      });
+    });
+
+    it('should map ApiError 400 to a Bad Request error response', async () => {
+      const error = new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const result = await GroupsController.update(mockAuthContext, 'group-123', {});
+
+      const errorBody = expectErrorResponse(result, StatusCodes.BAD_REQUEST);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 403 to a Forbidden error response', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const result = await GroupsController.update(mockAuthContext, 'group-123', { name: 'Renamed Cohort' });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 404 to a Not Found error response', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const result = await GroupsController.update(mockAuthContext, 'nonexistent-group', { name: 'Renamed Cohort' });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 500 to an Internal Server Error response', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const result = await GroupsController.update(mockAuthContext, 'group-123', { name: 'Renamed Cohort' });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should re-throw a non-ApiError unchanged so the global error handler catches it', async () => {
+      const unexpected = new Error('Unexpected error');
+      mockUpdate.mockRejectedValue(unexpected);
+
+      await expect(GroupsController.update(mockAuthContext, 'group-123', { name: 'Renamed Cohort' })).rejects.toBe(
+        unexpected,
+      );
     });
   });
 });

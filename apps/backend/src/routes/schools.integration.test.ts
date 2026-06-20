@@ -409,6 +409,91 @@ describe('GET /v1/schools', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// PATCH /v1/schools/:schoolId
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('PATCH /v1/schools/:schoolId', () => {
+  describe('authorization', () => {
+    it('superAdmin tier updates a field, gets 200, and the change persists', async () => {
+      // Create a dedicated school under the fixture district so we don't mutate fixture data
+      const school = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        parentOrgId: baseFixture.district.id,
+        name: 'Patch Target School',
+      });
+
+      const res = await expectRoute('PATCH', `/v1/schools/${school.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ name: 'Patched School Name', abbreviation: 'PATCHED1' })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(school.id);
+
+      // Assert the change persisted by re-fetching via the get endpoint (super admin sees all)
+      const getRes = await expectRoute('GET', `/v1/schools/${school.id}`).as(tiers.superAdmin).toReturn(200);
+      expect(getRes.body.data.name).toBe('Patched School Name');
+      expect(getRes.body.data.abbreviation).toBe('PATCHED1');
+    });
+
+    it('admin tier is forbidden from updating schools', async () => {
+      const res = await expectRoute('PATCH', `/v1/schools/${baseFixture.schoolA.id}`)
+        .as(tiers.admin)
+        .withBody({ name: 'Should Not Apply' })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator tier is forbidden from updating schools', async () => {
+      const res = await expectRoute('PATCH', `/v1/schools/${baseFixture.schoolA.id}`)
+        .as(tiers.educator)
+        .withBody({ name: 'Should Not Apply' })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      await expectRoute('PATCH', `/v1/schools/${baseFixture.schoolA.id}`)
+        .unauthenticated()
+        .withBody({ name: 'Nope' })
+        .toReturn(StatusCodes.UNAUTHORIZED);
+    });
+
+    it('returns 404 for a non-existent school (existence checked before authz)', async () => {
+      const res = await expectRoute('PATCH', '/v1/schools/00000000-0000-0000-0000-000000000000')
+        .as(tiers.superAdmin)
+        .withBody({ name: 'Nope' })
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 400 for an empty body (no mutable fields provided)', async () => {
+      const res = await expectRoute('PATCH', `/v1/schools/${baseFixture.schoolA.id}`)
+        .as(tiers.superAdmin)
+        .withBody({})
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      expect(res.body.error).toBeDefined();
+    });
+
+    it('returns 400 when the body contains only an immutable/unknown key', async () => {
+      // .strict() on the request schema rejects unknown/immutable keys at validation time
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(`/v1/schools/${baseFixture.schoolA.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ districtId: baseFixture.districtB.id });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // GET /v1/schools/:schoolId/classes
 // ═══════════════════════════════════════════════════════════════════════════
 

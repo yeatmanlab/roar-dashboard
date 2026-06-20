@@ -1,9 +1,14 @@
 import { StatusCodes } from 'http-status-codes';
-import type { ClassDetail as ApiClass, CreateClassRequest, EnrolledUsersQuery } from '@roar-platform/api-contract';
+import type {
+  ClassDetail as ApiClass,
+  CreateClassRequest,
+  EnrolledUsersQuery,
+  UpdateClassRequest,
+} from '@roar-platform/api-contract';
 import type { Class } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
-import type { CreateClassServiceInput } from '../services/class/class.service';
+import type { CreateClassServiceInput, UpdateClassServiceInput } from '../services/class/class.service';
 import { ClassService } from '../services/class/class.service';
 import type { AuthContext } from '../types/auth-context';
 import { handleUserSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
@@ -108,6 +113,47 @@ export const ClassesController = {
         return toErrorResponse(error, [
           StatusCodes.NOT_FOUND,
           StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update a class.
+   *
+   * Restricted to super admins (enforced in ClassService). Returns the updated
+   * class id only.
+   *
+   * @param authContext - User's authentication context
+   * @param classId - UUID of the class to update
+   * @param body - Request body with the mutable class fields
+   */
+  update: async (authContext: AuthContext, classId: string, body: UpdateClassRequest) => {
+    try {
+      const serviceInput: UpdateClassServiceInput = {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.classType !== undefined && { classType: body.classType }),
+        ...(body.subjects !== undefined && { subjects: body.subjects }),
+        ...(body.grades !== undefined && { grades: body.grades }),
+        ...(body.location !== undefined && { location: body.location }),
+      };
+
+      const { id } = await classService.update(authContext, classId, serviceInput);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: { id },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }

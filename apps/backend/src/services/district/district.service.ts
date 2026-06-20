@@ -1,5 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
-import type { CreateDistrictInput, District, DistrictWithCounts } from '../../repositories/district.repository';
+import type {
+  CreateDistrictInput,
+  District,
+  DistrictWithCounts,
+  UpdateDistrictInput,
+} from '../../repositories/district.repository';
 import { DistrictRepository } from '../../repositories/district.repository';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
@@ -49,6 +54,37 @@ export interface ListDistrictSchoolsOptions {
 export interface CreateDistrictServiceInput {
   name: string;
   abbreviation: string;
+  location?:
+    | {
+        addressLine1?: string | undefined;
+        addressLine2?: string | undefined;
+        city?: string | undefined;
+        stateProvince?: string | undefined;
+        postalCode?: string | undefined;
+        country?: string | undefined;
+      }
+    | undefined;
+  identifiers?:
+    | {
+        mdrNumber?: string | undefined;
+        ncesId?: string | undefined;
+        stateId?: string | undefined;
+      }
+    | undefined;
+}
+
+/**
+ * Service-layer input for updating a district.
+ *
+ * Mirrors the API contract's UpdateDistrictRequest shape — a partial of the
+ * mutable district fields (nested location and identifiers). Only the fields
+ * present are applied. Defined here rather than imported from the api-contract
+ * so the service stays decoupled from transport concerns
+ * (see backend-service-pattern.md "Service Type Independence").
+ */
+export interface UpdateDistrictServiceInput {
+  name?: string | undefined;
+  abbreviation?: string | undefined;
   location?:
     | {
         addressLine1?: string | undefined;
@@ -417,12 +453,108 @@ export function DistrictService({
     }
   }
 
+  /**
+   * Update an existing district.
+   *
+   * Authorization (super-admin-only — matches create):
+   * 1. Existence check first — a missing district is a 404, not a 403.
+   * 2. Super-admin gate — non-super-admins are rejected with 403. The FGA model
+   *    defines `can_update: no_one` for orgs, so no role grants update; the
+   *    super-admin bypass IS the policy. No FGA `requirePermission` call is made.
+   *
+   * Only the mutable fields present in the input are applied; identity and
+   * hierarchy columns (orgType, parentOrgId, path, isRosteringRootOrg) are not
+   * accepted and never touched.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param districtId - UUID of the district to update
+   * @param input - The mutable district fields the caller is allowed to set
+   * @returns The updated district id
+   * @throws {ApiError} 404 if the district does not exist
+   * @throws {ApiError} 403 if the caller is not a super admin
+   * @throws {ApiError} 400 if no recognized mutable fields are present
+   * @throws {ApiError} 500 if the database update fails
+   */
+  async function update(
+    authContext: AuthContext,
+    districtId: string,
+    input: UpdateDistrictServiceInput,
+  ): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // 1. Existence check first (404 before 403)
+      const existing = await districtRepository.getUnrestrictedById(districtId);
+      if (!existing) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, districtId },
+        });
+      }
+
+      // 2. Super-admin gate (can_update = no_one — the bypass is the policy)
+      if (!isSuperAdmin) {
+        logger.warn({ userId, districtId }, 'Non-super admin attempted to update a district');
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, districtId },
+        });
+      }
+
+      // Map the nested service input to the column-shaped repository partial.
+      // Only keys explicitly present in the input are included.
+      const updates: UpdateDistrictInput = {
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.abbreviation !== undefined && { abbreviation: input.abbreviation }),
+        ...(input.location?.addressLine1 !== undefined && { locationAddressLine1: input.location.addressLine1 }),
+        ...(input.location?.addressLine2 !== undefined && { locationAddressLine2: input.location.addressLine2 }),
+        ...(input.location?.city !== undefined && { locationCity: input.location.city }),
+        ...(input.location?.stateProvince !== undefined && { locationStateProvince: input.location.stateProvince }),
+        ...(input.location?.postalCode !== undefined && { locationPostalCode: input.location.postalCode }),
+        ...(input.location?.country !== undefined && { locationCountry: input.location.country }),
+        ...(input.identifiers?.mdrNumber !== undefined && { mdrNumber: input.identifiers.mdrNumber }),
+        ...(input.identifiers?.ncesId !== undefined && { ncesId: input.identifiers.ncesId }),
+        ...(input.identifiers?.stateId !== undefined && { stateId: input.identifiers.stateId }),
+      };
+
+      // 400 when no recognized mutable fields are present (matches administrations'
+      // empty-body handling)
+      if (Object.keys(updates).length === 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, districtId, reason: 'No updatable fields provided' },
+        });
+      }
+
+      await districtRepository.updateDistrict(districtId, updates);
+
+      logger.info({ userId, districtId }, 'District updated successfully');
+
+      return { id: districtId };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, districtId } }, 'Failed to update district');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, districtId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     create,
     list,
     listUsers,
     getById,
     listDistrictSchools,
+    update,
   };
 }
 
