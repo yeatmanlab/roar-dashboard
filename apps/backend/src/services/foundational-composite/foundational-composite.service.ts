@@ -147,7 +147,9 @@ function assembleInputs(
     }
 
     if (slug === FOUNDATIONAL_COMPOSITE_SLUG.SRE) {
-      sreTransformed = parseScoreValue(scores.get(`${SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL}|${SCORE_NAME.THETA_ESTIMATE}`));
+      sreTransformed = parseScoreValue(
+        scores.get(`${SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL}|${SCORE_NAME.THETA_ESTIMATE}`),
+      );
       continue;
     }
 

@@ -63,8 +63,8 @@ export type AssessmentStageValue = (typeof ASSESSMENT_STAGE)[keyof typeof ASSESS
  */
 export const SCORE_NAME = {
   THETA_ESTIMATE: 'thetaEstimate', // computed composite_foundational input
-  THETA_SE: 'thetaSE',             // computed composite_foundational input
-  THETA_SE_RAW: 'thetaSERaw',      // raw composite SE — best-run recompute ranks on this
+  THETA_SE: 'thetaSE', // computed composite_foundational input
+  THETA_SE_RAW: 'thetaSERaw', // raw composite SE — best-run recompute ranks on this
   NUM_ATTEMPTED: 'numAttempted',
 } as const;
 
