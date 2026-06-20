@@ -41,6 +41,16 @@ export async function setupFdwForTests(): Promise<void> {
 
   const coreHost = core.host;
   const corePort = core.port;
+  // postgres_fdw opens the assessment-server connection from *inside* the Postgres
+  // server process, so the foreign-server host must be reachable from there — which is
+  // not always the address the backend uses in CORE_DATABASE_URL. In CI both are
+  // 127.0.0.1 (Postgres runs natively, so loopback reaches the same server). Against a
+  // containerized Postgres (e.g. `npm run dev:local`) the backend connects via the
+  // host-mapped 127.0.0.1, but the in-container server reaches the assessment DB via its
+  // own local socket instead. Allow overriding the foreign-server host/port independently
+  // of the connection URL; default to the core URL's host/port so CI behavior is unchanged.
+  const fdwHost = process.env.FDW_ASSESSMENT_HOST?.trim() || coreHost;
+  const fdwPort = process.env.FDW_ASSESSMENT_PORT?.trim() || corePort;
   // Mirror the bash script's `${PG_USER:-postgres}` default — local-dev URLs that
   // rely on peer/trust auth often omit the username, but the FDW user mapping
   // needs a non-empty role name. CI URLs always include `postgres` explicitly.
@@ -71,8 +81,8 @@ export async function setupFdwForTests(): Promise<void> {
     await client.query(`
       DO $$
       DECLARE
-        _host constant text := ${literal(coreHost)};
-        _port constant text := ${literal(corePort)};
+        _host constant text := ${literal(fdwHost)};
+        _port constant text := ${literal(fdwPort)};
         _dbname constant text := ${literal(assessmentDb)};
       BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_foreign_server WHERE srvname = 'assessment_server') THEN

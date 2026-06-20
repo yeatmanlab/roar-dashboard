@@ -1,9 +1,9 @@
 export const SWR_TASK_IDS = {
-  EN: "swr",
-  ES: "swr-es",
-  IT: "swr-it",
-  PT: "swr-pt",
-  DE: "swr-de",
+  EN: 'swr',
+  ES: 'swr-es',
+  IT: 'swr-it',
+  PT: 'swr-pt',
+  DE: 'swr-de',
 } as const;
 
 export type SwrTaskId = (typeof SWR_TASK_IDS)[keyof typeof SWR_TASK_IDS];
@@ -19,8 +19,7 @@ export const SWR_SCORING_VERSION = {
   V7: 7,
 } as const;
 
-export type SwrScoringVersion =
-  (typeof SWR_SCORING_VERSION)[keyof typeof SWR_SCORING_VERSION];
+export type SwrScoringVersion = (typeof SWR_SCORING_VERSION)[keyof typeof SWR_SCORING_VERSION];
 
 /**
  * GCS URL for the SWR scoring lookup table.
@@ -33,10 +32,7 @@ export type SwrScoringVersion =
  * @param version - The scoring version
  * @returns The full GCS URL for the lookup table
  */
-export const SWR_SCORE_TABLE_URL = (
-  taskId: "swr" | "swr-es",
-  version: SwrScoringVersion,
-): string => {
-  const prefix = taskId.replace("-", "_");
+export const SWR_SCORE_TABLE_URL = (taskId: 'swr' | 'swr-es', version: SwrScoringVersion): string => {
+  const prefix = taskId.replace('-', '_');
   return `https://storage.googleapis.com/roar-swr/scores/${prefix}_lookup_v${version}.csv`;
 };

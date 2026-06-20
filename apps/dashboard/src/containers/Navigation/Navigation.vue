@@ -17,6 +17,7 @@ import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { getSidebarActions } from '@/router/sidebarActions';
+import { isEmulatorAuthReady } from '@/helpers/isDashboardReady';
 import NavBar from '@/components/NavBar';
 
 const router = useRouter();
@@ -34,7 +35,7 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.roarfirekit.restConfig?.() || isEmulatorAuthReady(state)) init();
 });
 
 const { mutate: signOut } = useSignOutMutation();
@@ -175,6 +176,6 @@ const menuItems = computed(() => {
 });
 
 onMounted(() => {
-  if (roarfirekit?.value?.restConfig?.()) init();
+  if (roarfirekit?.value?.restConfig?.() || isEmulatorAuthReady(authStore)) init();
 });
 </script>
