@@ -37,3 +37,14 @@ export const FIREBASE_FUNCTIONS_ERROR_CODES = Object.freeze({
 export const FIREBASE_FUNCTIONS_ERROR_REASONS = Object.freeze({
   AUTH_PROVIDER_DISABLED: 'auth_provider_disabled',
 });
+
+/**
+ * Whether the dashboard is pointed at the local Firebase Auth emulator.
+ *
+ * Derived once from `VITE_FIREBASE_EMULATOR_ENABLED` at build time (Vite inlines
+ * the value), accepting either the boolean `true` or the string `'true'`. It is
+ * `false` (inert) in deployed builds. Centralized here so every consumer
+ * evaluates the flag identically.
+ */
+export const IS_FIREBASE_EMULATOR_ENABLED =
+  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === true || import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';
