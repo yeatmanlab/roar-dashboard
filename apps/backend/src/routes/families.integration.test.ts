@@ -22,6 +22,9 @@ import { createTestApp, createRouteHelper } from '../test-support/route-test.hel
 import { UserFactory } from '../test-support/factories/user.factory';
 import { FamilyFactory } from '../test-support/factories/family.factory';
 import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
+import { OrgFactory } from '../test-support/factories/org.factory';
+import { UserOrgFactory } from '../test-support/factories/user-org.factory';
+import { UserRole } from '../enums/user-role.enum';
 import { CoreDbClient } from '../test-support/db';
 import { families, invitationCodes, userFamilies, userGroups, users } from '../db/schema';
 import { rosteringProviderIds } from '../db/schema/core';
@@ -286,6 +289,113 @@ describe('GET /v1/families/:familyId/users', () => {
 
     it('returns 404 when family does not exist', async () => {
       const res = await expectRoute('GET', '/v1/families/00000000-0000-0000-0000-000000000000/users')
+        .as(superAdmin)
+        .toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/families/:familyId
+//
+// Family reads are caretaker-only: the FGA `family` type defines
+// `can_read: parent`, so only the family's parent (caretaker) or a super admin
+// may read it. Admins, the family's own children, and all other users get 403 —
+// there is no admin-facing family read. The org-admin 403 case below is the
+// load-bearing assertion: it proves an administrator has no path to a family.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/families/:familyId', () => {
+  const testFamilyPath = () => `/v1/families/${testFamilyId}`;
+
+  // An org administrator with no relationship to the family — used to prove that
+  // admin/supervisory roles do NOT grant read access to a family.
+  let orgAdmin: { id: string; authId: string };
+
+  beforeAll(async () => {
+    const district = await OrgFactory.create();
+    const orgAdminUser = await UserFactory.create({
+      nameFirst: 'Org',
+      nameLast: 'Admin',
+      email: 'families-get-org-admin@example.com',
+    });
+    orgAdmin = { id: orgAdminUser.id, authId: orgAdminUser.authId! };
+    await UserOrgFactory.create({
+      userId: orgAdmin.id,
+      orgId: district.id,
+      role: UserRole.ADMINISTRATOR,
+    });
+
+    // Re-sync FGA tuples so the org-admin membership is reflected at check time.
+    const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+    await syncFgaTuplesFromPostgres();
+  });
+
+  describe('authorization', () => {
+    it('caretaker (parent) can read their family and gets the correct id', async () => {
+      const res = await expectRoute('GET', testFamilyPath()).as(parent).toReturn(200);
+
+      expect(res.body.data.id).toBe(testFamilyId);
+    });
+
+    it('superAdmin can read any family', async () => {
+      const res = await expectRoute('GET', testFamilyPath()).as(superAdmin).toReturn(200);
+
+      expect(res.body.data.id).toBe(testFamilyId);
+    });
+
+    it("the family's own child is forbidden from reading the family", async () => {
+      const res = await expectRoute('GET', testFamilyPath()).as(child).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('a non-member is forbidden from reading the family', async () => {
+      const res = await expectRoute('GET', testFamilyPath()).as(nonMember).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('an org administrator is forbidden from reading the family', async () => {
+      const res = await expectRoute('GET', testFamilyPath()).as(orgAdmin).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('a caretaker of a different family is forbidden from reading this family', async () => {
+      const familyB = await FamilyFactory.create();
+      const isolatedParent = await UserFactory.create({
+        nameFirst: 'Isolated',
+        nameLast: 'GetParent',
+        email: 'families-get-isolated-parent@example.com',
+      });
+      await UserFamilyFactory.create({
+        userId: isolatedParent.id,
+        familyId: familyB.id,
+        role: 'parent',
+      });
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+      await syncFgaTuplesFromPostgres();
+
+      const res = await expectRoute('GET', testFamilyPath())
+        .as({ id: isolatedParent.id, authId: isolatedParent.authId! })
+        .toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', testFamilyPath()).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 404 when the family does not exist', async () => {
+      const res = await expectRoute('GET', '/v1/families/00000000-0000-0000-0000-000000000000')
         .as(superAdmin)
         .toReturn(404);
 
