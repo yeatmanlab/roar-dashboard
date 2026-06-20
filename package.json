@@ -7,6 +7,7 @@
   "version": "3.26.0",
   "scripts": {
     "dev": "turbo run dev --filter=!./apps/assessments/*",
+    "dev:local": "bash scripts/dev-local-stack.sh",
     "dev:setup:certs": "setup-certs",
     "watch": "turbo watch dev",
     "build": "turbo run build",

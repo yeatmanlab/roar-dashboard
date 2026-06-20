@@ -157,6 +157,7 @@
             "shortRandom80",
             "presentationExp2Conditions",
             "shortAdaptiveEasyBlock",
+            "adaptiveTimingMultiStage",
             "presentationExp"
           ]
         },
@@ -184,7 +185,7 @@
       "scoringVersion": "scoringVersion must be one of the following numbers 1 (swr-es), 6, or 7 (swr), or null.",
       "skipInstructions": "skipInstructions must be a boolean or null.",
       "storyOption": "storyOption must be a string with a value of 'grade-based', a boolean, or null.",
-      "userMode": "userMode must be a string with a value of 'shortAdaptive', 'fullItemBank', 'presentationExpShort', 'fullRandom', 'shortRandom', 'shortRandom80', 'shortAdaptiveEasyBlock', 'presentationExp2Conditions', 'presentationExp', or null."
+      "userMode": "userMode must be a string with a value of 'shortAdaptive', 'fullItemBank', 'presentationExpShort', 'fullRandom', 'shortRandom', 'shortRandom80', 'shortAdaptiveEasyBlock', 'adaptiveTimingMultiStage', 'presentationExp2Conditions', 'presentationExp', or null."
     }
   }
 }
