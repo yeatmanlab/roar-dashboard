@@ -4,6 +4,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
+import type { Class } from '../../db/schema';
 import type { CreateClassInput } from '../../repositories/class.repository';
 import { ClassRepository } from '../../repositories/class.repository';
 import { SchoolRepository } from '../../repositories/school.repository';
@@ -75,6 +76,82 @@ export function ClassService({
 
     // FGA checks both access and supervisory role in one call
     await authorizationService.requirePermission(userId, FgaRelation.CAN_LIST_USERS, `${FgaType.CLASS}:${classId}`);
+  }
+
+  /**
+   * Verifies a user can read a specific class and returns it.
+   *
+   * Authorization flow (see backend-authorization-pattern.md):
+   *   1. Existence check first — a missing class is a 404, not a 403.
+   *   2. Super admins bypass the FGA call.
+   *   3. A single can_read FGA check. On class, can_read requires
+   *      supervisory_tier_group, and the class roles inherit `from parent_org`,
+   *      so this passes for supervisory members of the class itself *and* for
+   *      admins/principals of the ancestor school or district (hierarchy
+   *      inheritance is resolved entirely inside FGA). Students and caregivers
+   *      are rejected with 403.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param classId - The class ID to verify access for
+   * @returns The class entity if found and authorized
+   * @throws {ApiError} NOT_FOUND if the class doesn't exist
+   * @throws {ApiError} FORBIDDEN if the user lacks can_read permission
+   */
+  async function verifyClassAccess(authContext: AuthContext, classId: string): Promise<Class> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // 1. Existence check — distinguishes 404 from 403
+    const classEntity = await classRepository.getById({ id: classId });
+    if (!classEntity) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { userId, classId },
+      });
+    }
+
+    // 2. Super admins bypass access checks
+    if (isSuperAdmin) return classEntity;
+
+    // 3. Single FGA permission check — can_read on class requires
+    //    supervisory_tier_group; admin/principal roles inherit from the
+    //    ancestor org, so the model composes the hierarchy for us.
+    await authorizationService.requirePermission(userId, FgaRelation.CAN_READ, `${FgaType.CLASS}:${classId}`);
+
+    return classEntity;
+  }
+
+  /**
+   * Get a single class by ID.
+   *
+   * Authorization behavior:
+   * - Super admin: can read any class.
+   * - Supervisory members of the class, and admins/principals of the ancestor
+   *   school or district (via FGA hierarchy inheritance): can read the class.
+   * - Students and caregivers: 403 Forbidden.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param classId - UUID of the class to retrieve
+   * @returns The class if found and authorized
+   * @throws {ApiError} 404 if not found, 403 if unauthorized, 500 on database errors
+   */
+  async function getById(authContext: AuthContext, classId: string): Promise<Class> {
+    const { userId } = authContext;
+
+    try {
+      return await verifyClassAccess(authContext, classId);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, classId } }, 'Failed to retrieve class');
+
+      throw new ApiError('Failed to retrieve class', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, classId },
+        cause: error,
+      });
+    }
   }
 
   /**
@@ -253,6 +330,7 @@ export function ClassService({
 
   return {
     create,
+    getById,
     listUsers,
   };
 }
