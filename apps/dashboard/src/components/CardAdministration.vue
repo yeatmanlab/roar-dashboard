@@ -89,8 +89,13 @@
         class="mt-3"
         lazy
         row-hover
+        paginator
         :loading="loadingTreeTable"
         :value="treeTableOrgs"
+        :rows="treeRows"
+        :first="treeFirst"
+        :total-records="treeTotalRecords"
+        :rows-per-page-options="[10, 25, 50]"
         :pt="{
           column: {
             nodeToggleButton: {
@@ -103,6 +108,7 @@
         }"
         data-cy="administration-orgs-tree"
         @node-expand="onExpand"
+        @page="onTreePage"
       >
         <PvColumn field="name" header="Name" expander style="width: 20rem"></PvColumn>
         <PvColumn v-if="props.stats && isWideScreen" field="id" header="Completion">
@@ -330,7 +336,15 @@ const isWideScreen = computed(() => {
   return window.innerWidth > 768;
 });
 
-const { data: orgs, isLoading: isLoadingTree } = useAdministrationTreeQuery(props.id, {
+// Server-driven pagination state for the root tree level. `treeFirst` is the
+// 0-indexed row offset PvTreeTable tracks; `treeRows` is the page size; `treePage`
+// is the 1-indexed page the backend expects, derived from first/rows. Only the ROOT
+// level is server-paginated — nested children load in full on expansion.
+const treeRows = ref(10);
+const treeFirst = ref(0);
+const treePage = computed(() => Math.floor(treeFirst.value / treeRows.value) + 1);
+
+const { data: orgs, isLoading: isLoadingTree } = useAdministrationTreeQuery(props.id, treePage, treeRows, {
   enabled: enableQueries,
 });
 
@@ -338,13 +352,22 @@ const loadingTreeTable = computed(() => {
   return isLoadingTree.value || expanding.value;
 });
 
+// The query resolves to `{ items, pagination }`. Surface the server total so the
+// lazy TreeTable can size its paginator.
+const treeTotalRecords = computed(() => orgs.value?.pagination?.totalItems ?? 0);
+
+// `treeTableOrgs` mirrors the current root page's nodes but is a local ref (not the
+// query data directly) so `onExpand` can mutate it to attach lazily-loaded children.
+// Re-syncing it whenever the query data changes also resets expansions when the user
+// pages the root — the new page replaces the root node set, which is the correct
+// behavior (stale expansions must not bleed across pages).
 const treeTableOrgs = ref([]);
 watch(orgs, (newValue) => {
-  treeTableOrgs.value = newValue;
+  treeTableOrgs.value = newValue?.items ?? [];
 });
 
 watch(showTable, (newValue) => {
-  if (newValue) treeTableOrgs.value = orgs.value;
+  if (newValue) treeTableOrgs.value = orgs.value?.items ?? [];
 });
 
 const expanding = ref(false);
@@ -422,6 +445,19 @@ const onExpand = async (node) => {
       expanding.value = false;
     }
   }
+};
+
+/**
+ * TreeTable lazy page handler for the root level. PvTreeTable emits `{ first, rows }`
+ * on page/rows change; mirror them into our state so `treePage` recomputes and the
+ * query refetches the requested server page. Expansions reset on page change because
+ * the new page's nodes replace the root set (see the `watch(orgs, …)` above).
+ * @param {{ first: number, rows: number }} event – PvTreeTable page event.
+ * @returns {void}
+ */
+const onTreePage = (event) => {
+  treeFirst.value = event.first;
+  treeRows.value = event.rows;
 };
 
 const doughnutChartData = ref();
