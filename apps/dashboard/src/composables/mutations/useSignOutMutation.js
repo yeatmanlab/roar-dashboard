@@ -2,11 +2,15 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { useRouter } from 'vue-router';
 import * as Sentry from '@sentry/vue';
 import { useAuthStore } from '@/store/auth';
+import { getAuthService } from '@/services/AuthService';
 import { SIGN_OUT_MUTATION_KEY } from '@/constants/mutationKeys';
 import { APP_ROUTES } from '@/constants/routes';
 
 /**
  * Sign-Out mutation.
+ *
+ * Signs out via the dashboard-owned AuthService. The onIdTokenChanged listener
+ * fires with null, which clears firebaseUser and accessToken in the auth store.
  *
  * @returns {Object} The mutation object returned by `useMutation`.
  */
@@ -18,7 +22,8 @@ const useSignOutMutation = () => {
   return useMutation({
     mutationKey: SIGN_OUT_MUTATION_KEY,
     mutationFn: async () => {
-      await authStore.roarfirekit.signOut();
+      const authService = getAuthService();
+      await authService.signOut();
     },
     onSuccess: async () => {
       // Cancel all actively fetching queries so they don't resolve into a
@@ -38,8 +43,8 @@ const useSignOutMutation = () => {
       // any cached `/me` payload.
       queryClient.clear();
 
-      // Re-initialize Firekit. This is necessary to ensure that Firekit is properly reset after
-      // sign-out in order to allow a new user to sign in.
+      // Re-initialize Firekit for non-auth operations (Firestore, assessments),
+      // so the next sign-in has a fresh firekit instance ready.
       await authStore.initFirekit();
 
       // Redirect to sign-in page.

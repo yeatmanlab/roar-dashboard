@@ -166,7 +166,7 @@ async function handleStudentEnrollment(studentData) {
       await authStore.initFirekit();
     }
     // Get current user's data for family association
-    const { email: parentEmail } = authStore.firebaseUser.adminFirebaseUser;
+    const parentEmail = authStore.email;
 
     // Format caretaker data according to CreateParentInput interface
     const careTakerData = {
