@@ -1,4 +1,20 @@
-import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, countDistinct, inArray, notInArray, ne } from 'drizzle-orm';
+import {
+  and,
+  eq,
+  asc,
+  desc,
+  ilike,
+  lte,
+  gte,
+  lt,
+  gt,
+  sql,
+  count,
+  countDistinct,
+  inArray,
+  notInArray,
+  ne,
+} from 'drizzle-orm';
 import type { SQL, Column, InferInsertModel } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { PgColumn } from 'drizzle-orm/pg-core';
@@ -71,10 +87,15 @@ const AGREEMENT_SORT_COLUMNS: Record<AdministrationAgreementSortFieldType, Colum
 export type AdministrationQueryOptions = PaginationQuery & SortQuery<AdministrationSortFieldType>;
 
 /**
- * Options for listing administrations with optional status filter.
+ * Options for listing administrations with optional status and search filters.
+ *
+ * @property status - Optional administration status filter (active, past, upcoming)
+ * @property search - Optional case-insensitive name substring filter. ANDed with the
+ *   status filter; an empty/whitespace-only term is treated as "no search".
  */
 export interface ListAuthorizedOptions extends BaseGetAllParams {
   status?: AdministrationStatus;
+  search?: string;
 }
 
 /** Represents an assignee of an administration with identifiers. */
@@ -244,7 +265,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
 
   /**
    * Build a SQL condition to filter administrations by status.
-   * Internal method used by listAll and getByIds.
+   * Internal method used by the list filter builder.
    *
    * @param status - The status filter (active, past, upcoming)
    * @returns SQL condition or undefined if no filter
@@ -272,23 +293,90 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   }
 
   /**
-   * List all administrations with optional status filter.
+   * Build a case-insensitive name-substring condition for administration search.
+   *
+   * Trims the term and treats empty/whitespace-only input as "no search" (returns
+   * undefined). Uses Drizzle's parameterized `ilike` with an escaped `%term%` pattern
+   * so user input is never string-concatenated into SQL.
+   *
+   * @param search - The raw search term
+   * @returns SQL condition or undefined when there is no effective term
+   */
+  private getSearchFilterCondition(search?: string): SQL | undefined {
+    const term = search?.trim();
+    if (!term) {
+      return undefined;
+    }
+
+    // Escape LIKE wildcards so a literal % or _ in the term matches itself rather
+    // than acting as a pattern. ilike binds the value as a parameter — no concatenation.
+    const escaped = term.replace(/[\\%_]/g, (char) => `\\${char}`);
+    return ilike(administrations.name, `%${escaped}%`);
+  }
+
+  /**
+   * Combine the status and search filters into a single SQL condition.
+   *
+   * Returns undefined when neither filter is present, the lone condition when only
+   * one is present, and `status AND search` when both are present. This is the single
+   * source of truth for list filtering, shared by `listAll` (super-admin path) and
+   * `getByIds` (authorized path), so both paths narrow identically.
+   *
+   * @param status - Optional status filter
+   * @param search - Optional case-insensitive name search term
+   * @returns Combined SQL condition or undefined if neither filter applies
+   */
+  private buildListFilterCondition(status?: AdministrationStatus, search?: string): SQL | undefined {
+    const statusFilter = this.getStatusFilterCondition(status);
+    const searchFilter = this.getSearchFilterCondition(search);
+
+    if (statusFilter && searchFilter) {
+      return and(statusFilter, searchFilter);
+    }
+    return statusFilter ?? searchFilter;
+  }
+
+  /**
+   * List all administrations with optional status and search filters.
    *
    * This method does not apply authorization filtering and should only be used
    * for super admin access where all administrations are visible.
    *
-   * @param options - Pagination, sorting, and optional status filter
+   * @param options - Pagination, sorting, and optional status/search filters
    * @returns Paginated result with administrations
    */
   async listAll(options: ListAuthorizedOptions): Promise<PaginatedResult<Administration>> {
-    const { page, perPage, orderBy, status } = options;
-    const statusFilter = this.getStatusFilterCondition(status);
+    const { page, perPage, orderBy, status, search } = options;
+    const whereCondition = this.buildListFilterCondition(status, search);
 
     return this.getAll({
       page,
       perPage,
       ...(orderBy && { orderBy }),
-      ...(statusFilter && { where: statusFilter }),
+      ...(whereCondition && { where: whereCondition }),
+    });
+  }
+
+  /**
+   * List administrations restricted to a set of IDs with optional status and search filters.
+   *
+   * Used by the authorized (non-super-admin) path: the service first resolves the set
+   * of administration IDs the caller can access via FGA, then this method narrows that
+   * set further by status/search in SQL. The status/search condition is ANDed with the
+   * ID filter inside `BaseRepository.getByIds`, so search only ever narrows the
+   * already-authorized set — it never widens access.
+   *
+   * @param ids - The administration IDs the caller is authorized to see
+   * @param options - Pagination, sorting, and optional status/search filters
+   * @returns Paginated result with the authorized, filtered administrations
+   */
+  override async getByIds(ids: string[], options: ListAuthorizedOptions): Promise<PaginatedResult<Administration>> {
+    const { status, search } = options;
+    const whereCondition = this.buildListFilterCondition(status, search);
+
+    return super.getByIds(ids, {
+      ...options,
+      ...(whereCondition && { where: whereCondition }),
     });
   }
 
