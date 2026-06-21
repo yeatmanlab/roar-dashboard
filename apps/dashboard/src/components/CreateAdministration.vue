@@ -183,6 +183,7 @@ import useAdministrationAgreementsQuery from '@/composables/queries/useAdministr
 import useTaskVariantsListQuery from '@/composables/queries/useTaskVariantsListQuery';
 import { adaptVariantsForPicker } from '@/helpers/adaptVariantsForPicker';
 import useTaskBundlesQuery from '@/composables/queries/useTaskBundlesQuery';
+import { adaptBundlesForPicker } from '@/helpers/adaptBundlesForPicker';
 import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
 import TaskPicker from './TaskPicker';
 import ConsentPicker from './ConsentPicker.vue';
@@ -253,9 +254,12 @@ const submitPermission = computed(() => {
 const { data: flatVariants } = useTaskVariantsListQuery({ enabled: initialized });
 const allVariants = computed(() => adaptVariantsForPicker(flatVariants.value ?? []));
 
-const { data: allTaskBundles } = useTaskBundlesQuery({
-  enabled: initialized,
-});
+// `useTaskBundlesQuery` returns the flat backend bundle shape; adapt it to the
+// nested shape the TaskPicker/TaskBundleCard components consume. The adapter's
+// variant refs use the backend variant id space so they resolve against
+// `allVariants` above.
+const { data: rawBundles } = useTaskBundlesQuery({ enabled: initialized });
+const allTaskBundles = computed(() => adaptBundlesForPicker(rawBundles.value ?? []));
 
 // +------------------------------------------------------------------------------------------------------------------+
 // | Pre-existing administration data when editing or duplicating
