@@ -1,4 +1,4 @@
-FROM node:22-slim
+FROM node:24-slim
 RUN npm install -g firebase-tools@15
 EXPOSE 9099
 ENTRYPOINT ["firebase"]

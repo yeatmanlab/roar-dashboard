@@ -46,6 +46,7 @@ services:
         --config /firebase.json
     ports:
       - "${ROAR_AUTH_PORT:-9099}:9099"
+      - "${ROAR_AUTH_UI_PORT:-9999}:9999"
     volumes:
       - ./docker/firebase-auth-emulator/firebase.json:/firebase.json:ro
     healthcheck:
