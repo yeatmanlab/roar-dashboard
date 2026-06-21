@@ -248,13 +248,13 @@ describe('RunRepository', () => {
         );
     }
 
-    /** Seeds a thetaSE score row for a run. */
-    async function seedThetaSE(runId: string, value: string) {
+    /** Seeds a thetaSERaw score row for a run. */
+    async function seedThetaSERaw(runId: string, value: string) {
       await RunScoreFactory.create({
         runId,
         type: SCORE_TYPE.RAW,
         domain: SCORE_DOMAIN.COMPOSITE,
-        name: SCORE_NAME.THETA_SE,
+        name: SCORE_NAME.THETA_SE_RAW,
         value,
         assessmentStage: ASSESSMENT_STAGE.TEST,
         categoryScore: null,
@@ -317,8 +317,8 @@ describe('RunRepository', () => {
       const p = newPartition();
       const lowerTheta = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
       const higherTheta = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
-      await seedThetaSE(lowerTheta.id, '0.2');
-      await seedThetaSE(higherTheta.id, '0.5');
+      await seedThetaSERaw(lowerTheta.id, '0.2');
+      await seedThetaSERaw(higherTheta.id, '0.5');
 
       await repository.recomputeUseForReporting(p);
 
@@ -331,8 +331,8 @@ describe('RunRepository', () => {
       const p = newPartition();
       const fewerAttempts = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
       const moreAttempts = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
-      await seedThetaSE(fewerAttempts.id, '0.4');
-      await seedThetaSE(moreAttempts.id, '0.4');
+      await seedThetaSERaw(fewerAttempts.id, '0.4');
+      await seedThetaSERaw(moreAttempts.id, '0.4');
       await seedNumAttempted(fewerAttempts.id, '5');
       await seedNumAttempted(moreAttempts.id, '15');
 
@@ -368,8 +368,8 @@ describe('RunRepository', () => {
       const p = newPartition();
       const winner = await RunFactory.create({ ...p, completedAt: null, reliableRun: false });
       const loserHigherTheta = await RunFactory.create({ ...p, completedAt: null, reliableRun: false });
-      await seedThetaSE(winner.id, '0.2');
-      await seedThetaSE(loserHigherTheta.id, '0.5');
+      await seedThetaSERaw(winner.id, '0.2');
+      await seedThetaSERaw(loserHigherTheta.id, '0.5');
 
       await repository.recomputeUseForReporting(p);
 
@@ -392,7 +392,7 @@ describe('RunRepository', () => {
         completedAt: null,
         reliableRun: true,
       });
-      await seedThetaSE(incomplete.id, '0.01');
+      await seedThetaSERaw(incomplete.id, '0.01');
 
       await repository.recomputeUseForReporting(p);
 
@@ -480,8 +480,8 @@ describe('RunRepository', () => {
       const p = newPartition();
       const original = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
       const challenger = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
-      await seedThetaSE(original.id, '0.3');
-      await seedThetaSE(challenger.id, '0.5');
+      await seedThetaSERaw(original.id, '0.3');
+      await seedThetaSERaw(challenger.id, '0.5');
 
       // Initial recompute — original wins.
       await repository.recomputeUseForReporting(p);
@@ -495,7 +495,7 @@ describe('RunRepository', () => {
       const { and, eq } = await import('drizzle-orm');
       await AssessmentDbClient.update(runScores)
         .set({ value: '0.1' })
-        .where(and(eq(runScores.runId, challenger.id), eq(runScores.name, SCORE_NAME.THETA_SE)));
+        .where(and(eq(runScores.runId, challenger.id), eq(runScores.name, SCORE_NAME.THETA_SE_RAW)));
 
       await repository.recomputeUseForReporting(p);
       m = winnerMap(await readPartition(p));

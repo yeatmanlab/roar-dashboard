@@ -57,7 +57,7 @@ export type AssessmentStageValue = (typeof ASSESSMENT_STAGE)[keyof typeof ASSESS
  * name in queries.
  */
 export const SCORE_NAME = {
-  THETA_SE: 'thetaSE',
+  THETA_SE_RAW: 'thetaSERaw',
   NUM_ATTEMPTED: 'numAttempted',
 } as const;
 
