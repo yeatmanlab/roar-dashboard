@@ -9,3 +9,26 @@ export const TASK_PARAMETER_DEFAULT_SHAPE = {
   value: '',
   type: TASK_PARAMETER_TYPES.STRING,
 };
+
+/**
+ * Task field constraints, mirroring the API contract's CreateTaskRequestBodySchema
+ * (packages/api-contract/src/v1/tasks/schema.ts) so forms can validate inline
+ * instead of surfacing backend 400s.
+ */
+export const TASK_SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+export const TASK_SLUG_MAX_LENGTH = 32;
+export const TASK_NAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_\- ]*$/;
+export const TASK_NAME_MAX_LENGTH = 255;
+export const TASK_DESCRIPTION_MAX_LENGTH = 1024;
+
+/**
+ * UI-only constraint on newly created taskConfig parameter names. Applied only to NEW
+ * rows — existing backend keys are unconstrained server-side and must remain
+ * loadable/editable as-is.
+ *
+ * NOTE: not a contract mirror. The contract's IDENTIFIER_WITH_UNDERSCORES constrains
+ * task *variant* parameter names (TaskVariantParameterSchema), not taskConfig keys,
+ * which are arbitrary JSON object keys with no server-side format constraint. This
+ * regex is purely a form-level guard against junk key names on new rows.
+ */
+export const TASK_PARAMETER_NAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]*$/;
