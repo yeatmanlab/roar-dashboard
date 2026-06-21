@@ -4,6 +4,7 @@ import { fillZetaDefaults, ensureZetaNumericValues, convertZeta } from '@bdelab/
 import { isTouchScreen, updateTracker } from '../experimentSetup';
 import { cat, cat2, presentationTimeCats, mediaAssets, swrValidityEvaluator } from '../experiment';
 import { jsPsych } from '../jsPsych';
+import { shouldCompleteFirstStage, shouldStopEarly, nextConsecutiveCorrect } from '../adaptiveTimingRules';
 
 // Normalize any stimulus’ IRT params to {a,b,c,d} as numbers.
 function buildIrtParams(stim) {
@@ -116,7 +117,10 @@ const lexicalityTrialContent = [
 
       if (['presentationExp', 'presentationExpShort', 'presentationExp2Conditions'].includes(userMode)) {
         presentationTime = store.session.get('nextStimulus').presentationTime;
-      } else if (userMode === 'shortAdaptiveEasyBlock' && store.session.get('currentBlockIndex') === 0) {
+      } else if (
+        ['shortAdaptiveEasyBlock', 'adaptiveTimingMultiStage'].includes(userMode) &&
+        store.session.get('currentBlockIndex') === 0
+      ) {
         presentationTime = null;
       }
 
@@ -165,9 +169,32 @@ const lexicalityTrialContent = [
         if ([160, 350].includes(presentationTime)) {
           cat.updateAbilityEstimate(irtParameters, store.session('response'));
         }
-      } else if (!['corpusNew', 'en-corpusNew-easy'].includes(corpus_src)) {
-        // Update CAT estimate for validated corpus items only
+      } else if (
+        !['corpusNew', 'en-corpusNew-easy'].includes(corpus_src) ||
+        store.session.get('config').userMode === 'adaptiveTimingMultiStage'
+      ) {
+        // adaptiveTimingMultiStage needs cat.theta updated during its corpusNewEasy startup gate.
         cat.updateAbilityEstimate(irtParameters, store.session('response'));
+      }
+
+      if (
+        store.session.get('config').userMode === 'adaptiveTimingMultiStage' &&
+        store.session.get('currentBlockIndex') === 0
+      ) {
+        const { adaptiveTiming } = store.session.get('config');
+
+        store.session.set(
+          'adaptiveTimingConsecutiveCorrect',
+          nextConsecutiveCorrect(store.session('adaptiveTimingConsecutiveCorrect'), store.session('response')),
+        );
+
+        if (shouldCompleteFirstStage(store.session('adaptiveTimingConsecutiveCorrect'), cat.theta, adaptiveTiming)) {
+          store.session.set('adaptiveTimingFirstStageComplete', true);
+        }
+
+        if (shouldStopEarly(store.session('trialNumTotal'), cat.theta, adaptiveTiming)) {
+          store.session.set('adaptiveTimingStopEarly', true);
+        }
       }
 
       // update cat2 as long as params are present
@@ -220,7 +247,15 @@ const lexicalityTrialContent = [
       const config = store.session.get('config');
 
       const currProgressBar = jsPsych.getProgressBarCompleted();
-      jsPsych.setProgressBar(currProgressBar + 1 / config.stimulusCountList.reduce((_a, _b) => _a + _b, 0));
+      const totalTrials =
+        config.userMode === 'adaptiveTimingMultiStage'
+          ? config.numAdaptive
+          : config.stimulusCountList.reduce((_a, _b) => _a + _b, 0);
+      if (config.userMode === 'adaptiveTimingMultiStage' && store.session('adaptiveTimingStopEarly') === true) {
+        jsPsych.setProgressBar(1);
+      } else {
+        jsPsych.setProgressBar(currProgressBar + 1 / totalTrials);
+      }
 
       updateTracker();
     },

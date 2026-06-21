@@ -221,6 +221,8 @@ export interface StudentOverviewRow {
 export interface RunScoreRow {
   userId: string;
   taskVariantId: string;
+  /** Domain key (e.g. 'FSM', 'composite'). Present for domain-indexed assessments (PA); absent for flat-map tasks. */
+  scoreDomain?: string;
   scoreName: string;
   scoreValue: string;
 }
@@ -2035,6 +2037,7 @@ export class ReportRepository {
       .select({
         userId: fdwRuns.userId,
         taskVariantId: fdwRuns.taskVariantId,
+        scoreDomain: fdwRunScores.domain,
         scoreName: fdwRunScores.name,
         scoreValue: fdwRunScores.value,
       })
