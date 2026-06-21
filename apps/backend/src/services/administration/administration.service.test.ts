@@ -296,6 +296,103 @@ describe('AdministrationService', () => {
       });
     });
 
+    describe('search filter', () => {
+      it('should pass search to listAll for super admins', async () => {
+        const mockAdmins = AdministrationFactory.buildList(2);
+        mockAdministrationRepository.listAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await service.list(
+          { userId: 'admin-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc', search: 'winter' },
+        );
+
+        expect(mockAdministrationRepository.listAll).toHaveBeenCalledWith({
+          page: 1,
+          perPage: 25,
+          orderBy: { field: 'name', direction: 'asc' },
+          search: 'winter',
+        });
+      });
+
+      it('should pass search to getByIds for non-super-admin users', async () => {
+        const mockAdmins = AdministrationFactory.buildList(2);
+        mockAuthorizationService.listAccessibleObjects.mockResolvedValue(
+          mockAdmins.map((a) => `administration:${a.id}`),
+        );
+        mockAdministrationRepository.getByIds.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await service.list(
+          { userId: 'user-123', isSuperAdmin: false },
+          { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc', search: 'winter' },
+        );
+
+        expect(mockAdministrationRepository.getByIds).toHaveBeenCalledWith(
+          mockAdmins.map((a) => a.id),
+          {
+            page: 1,
+            perPage: 25,
+            orderBy: { field: 'name', direction: 'asc' },
+            search: 'winter',
+          },
+        );
+      });
+
+      it('should combine search with the status filter on the super-admin path', async () => {
+        const mockAdmins = AdministrationFactory.buildList(1);
+        mockAdministrationRepository.listAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await service.list(
+          { userId: 'admin-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc', status: 'active', search: 'winter' },
+        );
+
+        expect(mockAdministrationRepository.listAll).toHaveBeenCalledWith({
+          page: 1,
+          perPage: 25,
+          orderBy: { field: 'name', direction: 'asc' },
+          status: 'active',
+          search: 'winter',
+        });
+      });
+
+      it('should omit search from the repository call when not provided', async () => {
+        const mockAdmins = AdministrationFactory.buildList(2);
+        mockAdministrationRepository.listAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await service.list(
+          { userId: 'admin-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc' },
+        );
+
+        // The call must not carry a `search` key when the caller didn't supply one.
+        expect(mockAdministrationRepository.listAll).toHaveBeenCalledWith({
+          page: 1,
+          perPage: 25,
+          orderBy: { field: 'name', direction: 'asc' },
+        });
+      });
+    });
+
     describe('embed=stats', () => {
       it('should not fetch stats for non-super-admin users even when requested', async () => {
         const mockAdmins = AdministrationFactory.buildList(2);

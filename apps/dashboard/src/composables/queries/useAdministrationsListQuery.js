@@ -1,4 +1,4 @@
-import { computed } from 'vue';
+import { computed, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import { StatusCodes } from 'http-status-codes';
@@ -13,39 +13,40 @@ import { ADMINISTRATIONS_LIST_QUERY_KEY } from '@/constants/queryKeys';
 const MAX_RETRIES = 3;
 
 /**
- * Page size for the administrations list request.
+ * Administrations list query (server-driven pagination, sort, and search).
  *
- * `HomeAdministrator` paginates and sorts the list client-side, so the query
- * walks the response's pagination and returns the complete set rather than a
- * single server page.
- */
-const ADMINISTRATIONS_LIST_PER_PAGE = 100;
-
-/**
- * Administrations list query.
+ * Fetches a single page of administrations accessible to the caller from the
+ * backend `GET /administrations` endpoint. The API scopes results to the caller's
+ * permissions, paginates, sorts, and (when `search` is provided) filters by name —
+ * so the consumer no longer walks every page or filters client-side. Super admins
+ * additionally request `embed=stats` for the per-administration completion doughnut;
+ * partner admins omit it (the doughnut is super-admin only and stats are
+ * comparatively expensive to compute).
  *
- * Fetches the administrations accessible to the caller from the backend
- * `GET /administrations` endpoint. The API already scopes results to the
- * caller's permissions, so the legacy id-prefetch is gone. Super admins
- * additionally request `embed=stats` for the per-administration completion
- * doughnut; partner admins omit it (the doughnut is super-admin only and stats
- * are comparatively expensive to compute).
+ * **Reactivity.** `page`, `perPage`, `sortBy`, `sortOrder`, and `search` are accepted
+ * as refs/getters and included in the query key by reference (not `.value`), so the
+ * query re-keys and refetches whenever any of them change. `isSuperAdmin` stays in the
+ * key too, since super admins and partner admins fetch different embeds and must not
+ * share a cache entry.
  *
- * **Enablement.** Gated internally on `authStore.accessToken` (for the API call)
- * and on user claims having loaded (to settle super-admin status before the
- * first request). Callers can pass `queryOptions.enabled` to add conditions;
- * `computeQueryOverrides` AND's them together.
+ * **Enablement.** Gated internally on `authStore.accessToken` (for the API call) and
+ * on user claims having loaded (to settle super-admin status before the first request).
+ * Callers can pass `queryOptions.enabled` to add conditions; `computeQueryOverrides`
+ * AND's them together.
  *
- * @NOTE The legacy `testData` concept is retired — there is no test/non-test
- * administration split any more, so the `testAdministrationsOnly` argument and
- * its cache discriminator are gone. The per-administration `assessments` array
- * is the `embed=tasks` payload (task/variant ids, names, and order); it does not
- * include per-variant parameters, which live on the task-variant resource.
+ * @NOTE The per-administration `assessments` array is the `embed=tasks` payload
+ * (task/variant ids, names, and order); it does not include per-variant parameters,
+ * which live on the task-variant resource.
  *
+ * @param {import('vue').MaybeRefOrGetter<number>} page – Current 1-indexed page.
+ * @param {import('vue').MaybeRefOrGetter<number>} perPage – Page size.
+ * @param {import('vue').MaybeRefOrGetter<string>} sortBy – Sort field (name|dateStart|dateEnd).
+ * @param {import('vue').MaybeRefOrGetter<string>} sortOrder – Sort direction (asc|desc).
+ * @param {import('vue').MaybeRefOrGetter<string>} search – Case-insensitive name filter (empty = no filter).
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
- * @returns {UseQueryResult} The TanStack query result resolving to the administration array.
+ * @returns {UseQueryResult} TanStack query result resolving to `{ items, pagination }`.
  */
-const useAdministrationsListQuery = (queryOptions = undefined) => {
+const useAdministrationsListQuery = (page, perPage, sortBy, sortOrder, search, queryOptions = undefined) => {
   const authStore = useAuthStore();
 
   // Claims drive whether we request embedded stats (super-admin-only doughnut).
@@ -59,59 +60,59 @@ const useAdministrationsListQuery = (queryOptions = undefined) => {
   const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
-    // isSuperAdmin discriminates the cache: super admins fetch embed=stats,tasks while
-    // everyone else fetches embed=tasks, so the two must not share a cache entry. Pass the
-    // computed by reference (not `.value`) so the key stays reactive and re-keys once claims
-    // load and isSuperAdmin flips — a `.value` snapshot would freeze the pre-claims `false`.
-    queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY, isSuperAdmin],
+    // The page/sort/search inputs are part of the cache key so each distinct view of
+    // the list is cached separately and the query refetches when any of them change.
+    // isSuperAdmin also discriminates the cache: super admins fetch embed=stats,tasks
+    // while everyone else fetches embed=tasks. Pass each input by reference (not `.value`)
+    // so the key stays reactive — a snapshot would freeze the pre-claims/pre-interaction state.
+    queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY, isSuperAdmin, page, perPage, sortBy, sortOrder, search],
     queryFn: async () => {
       const client = getRoarApiClient();
-      const administrations = [];
-      let page = 1;
-      let totalPages = 1;
+      const searchTerm = toValue(search);
 
-      do {
-        const result = await client.administrations.list({
-          query: {
-            page,
-            perPage: ADMINISTRATIONS_LIST_PER_PAGE,
-            sortBy: 'name',
-            sortOrder: 'asc',
-            // `tasks` powers the per-card assessment list for every role; `stats`
-            // powers the completion doughnut, which is super-admin only — so only
-            // super admins pay for the (more expensive) stats computation.
-            embed: isSuperAdmin.value ? 'stats,tasks' : 'tasks',
-          },
-        });
+      const result = await client.administrations.list({
+        query: {
+          page: toValue(page),
+          perPage: toValue(perPage),
+          sortBy: toValue(sortBy),
+          sortOrder: toValue(sortOrder),
+          // `tasks` powers the per-card assessment list for every role; `stats`
+          // powers the completion doughnut, which is super-admin only — so only
+          // super admins pay for the (more expensive) stats computation.
+          embed: isSuperAdmin.value ? 'stats,tasks' : 'tasks',
+          // Only send `search` when there is a non-empty term so the cache key for the
+          // unfiltered view stays clean and the backend skips the filter entirely.
+          ...(searchTerm ? { search: searchTerm } : {}),
+        },
+      });
 
-        if (result.status !== StatusCodes.OK) {
-          // Surface non-200 ts-rest results as thrown errors so TanStack routes
-          // them through `error`. The thrown shape carries the ts-rest response
-          // so downstream error handlers can introspect it.
-          const error = new Error(`Failed to fetch administrations with status ${result.status}`);
-          error.status = result.status;
-          error.body = result.body;
-          throw error;
-        }
+      if (result.status !== StatusCodes.OK) {
+        // Surface non-200 ts-rest results as thrown errors so TanStack routes them
+        // through `error`. The thrown shape carries the ts-rest response so downstream
+        // error handlers can introspect it.
+        const error = new Error(`Failed to fetch administrations with status ${result.status}`);
+        error.status = result.status;
+        error.body = result.body;
+        throw error;
+      }
 
-        administrations.push(...result.body.data.items);
-        totalPages = result.body.data.pagination.totalPages;
-        page += 1;
-      } while (page <= totalPages);
-
-      // Surface the embedded `tasks` as the card's `assessments` list. This list
-      // shape (taskId, taskName, variantId, variantName, orderIndex) intentionally
-      // omits per-variant parameters, which live on the task-variant resource.
-      return administrations.map((administration) => ({
-        ...administration,
-        assessments: administration.tasks ?? [],
-      }));
+      // Return the page payload so the consumer gets both the current page's rows and
+      // the pagination envelope (for totalRecords). Surface the embedded `tasks` as each
+      // card's `assessments` list; this shape (taskId, taskName, variantId, variantName,
+      // orderIndex) intentionally omits per-variant parameters.
+      return {
+        items: result.body.data.items.map((administration) => ({
+          ...administration,
+          assessments: administration.tasks ?? [],
+        })),
+        pagination: result.body.data.pagination,
+      };
     },
     ...options,
     enabled: isQueryEnabled,
-    // Terminal auth errors and rostering-ended are not transient; retrying only
-    // delays the user-facing error. Placed after `...options` so a
-    // caller-supplied `retry` can't silently override the policy.
+    // Terminal auth errors and rostering-ended are not transient; retrying only delays
+    // the user-facing error. Placed after `...options` so a caller-supplied `retry` can't
+    // silently override the policy.
     retry: (failureCount, error) => {
       if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
         return false;
