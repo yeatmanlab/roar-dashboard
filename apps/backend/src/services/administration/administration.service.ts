@@ -67,17 +67,20 @@ export interface AdministrationWithEmbeds extends Administration {
 }
 
 /**
- * Options for listing administrations including embed and status filter.
+ * Options for listing administrations including embed, status filter, and search.
  *
  * @property embed - Optional array of related data to include ('stats', 'tasks')
  * @property status - Optional filter by administration status:
  *   - 'active': dateStart <= now <= dateEnd
  *   - 'past': dateEnd < now
  *   - 'upcoming': dateStart > now
+ * @property search - Optional case-insensitive name substring filter. Applied as an
+ *   additional narrowing filter AFTER authorization scoping — it never widens access.
  */
 export interface ListOptions extends AdministrationQueryOptions {
   embed?: AdministrationEmbedOptionType[];
   status?: AdministrationStatus;
+  search?: string;
 }
 
 /**
@@ -295,7 +298,10 @@ export function AdministrationService({
     const { userId, isSuperAdmin } = authContext;
 
     try {
-      // Transform API contract format to repository format
+      // Transform API contract format to repository format.
+      // `search` is threaded into both the super-admin (listAll) and authorized
+      // (getByIds) paths below — the repository ANDs it with the status filter, so
+      // it only narrows the already-authorized set.
       const queryParams = {
         page: options.page,
         perPage: options.perPage,
@@ -304,6 +310,7 @@ export function AdministrationService({
           direction: options.sortOrder,
         },
         ...(options.status && { status: options.status }),
+        ...(options.search && { search: options.search }),
       };
 
       // Fetch administrations based on user role and authorization
