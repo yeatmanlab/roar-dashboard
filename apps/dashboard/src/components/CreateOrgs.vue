@@ -63,7 +63,7 @@
                 data-cy="dropdown-parent-school"
               />
               <label for="parent-school">School<span id="required-asterisk">*</span></label>
-              <small v-if="v$.parentSchool.$invalid && submitted" class="p-error"> Please select a district. </small>
+              <small v-if="v$.parentSchool.$invalid && submitted" class="p-error"> Please select a school. </small>
             </PvFloatLabel>
           </div>
         </div>
@@ -77,11 +77,49 @@
             </PvFloatLabel>
           </div>
 
-          <div class="col-12 md:col-6 lg:col-4 mt-3">
+          <div v-if="showAbbreviation" class="col-12 md:col-6 lg:col-4 mt-3">
             <PvFloatLabel>
               <PvInputText id="org-initial" v-model="state.orgInitials" class="w-full" data-cy="input-org-initials" />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation<span id="required-asterisk">*</span></label>
-              <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
+              <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">{{
+                v$.orgInitials.$errors[0]?.$message
+              }}</small>
+            </PvFloatLabel>
+          </div>
+
+          <div v-if="orgType?.singular === 'class'" class="col-12 md:col-6 lg:col-4 mt-3">
+            <PvFloatLabel>
+              <PvSelect
+                v-model="state.classType"
+                input-id="class-type"
+                :options="CLASS_TYPE_OPTIONS"
+                option-label="label"
+                option-value="value"
+                show-clear
+                placeholder="Select a class type"
+                class="w-full"
+                data-cy="dropdown-class-type"
+              />
+              <label for="class-type">Class Type<span id="required-asterisk">*</span></label>
+              <small v-if="v$.classType.$invalid && submitted" class="p-error">Please select a class type</small>
+            </PvFloatLabel>
+          </div>
+
+          <div v-if="orgType?.singular === 'group'" class="col-12 md:col-6 lg:col-4 mt-3">
+            <PvFloatLabel>
+              <PvSelect
+                v-model="state.groupType"
+                input-id="group-type"
+                :options="GROUP_TYPE_OPTIONS"
+                option-label="label"
+                option-value="value"
+                show-clear
+                placeholder="Select a group type"
+                class="w-full"
+                data-cy="dropdown-group-type"
+              />
+              <label for="group-type">Group Type<span id="required-asterisk">*</span></label>
+              <small v-if="v$.groupType.$invalid && submitted" class="p-error">Please select a group type</small>
             </PvFloatLabel>
           </div>
 
@@ -90,9 +128,9 @@
               <PvSelect
                 v-model="state.grade"
                 input-id="grade"
-                :options="grades"
+                :options="GRADE_OPTIONS"
                 show-clear
-                option-label="name"
+                option-label="label"
                 placeholder="Select a grade"
                 class="w-full"
                 data-cy="dropdown-grade"
@@ -103,9 +141,9 @@
           </div>
         </div>
 
-        <div class="mt-5 mb-0 pb-0">Optional fields:</div>
-
         <div v-if="['district', 'school', 'group'].includes(orgType?.singular)">
+          <div class="mt-5 mb-0 pb-0">Optional fields:</div>
+
           <div class="grid column-gap-3">
             <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-4 mt-5">
               <PvFloatLabel>
@@ -149,50 +187,22 @@
           </div>
         </div>
 
-        <div class="grid mt-3">
-          <div class="col-12 md:col-6 lg:col-4 mt-3" data-cy="div-auto-complete">
-            <PvFloatLabel>
-              <PvAutoComplete
-                v-model="state.tags"
-                multiple
-                dropdown
-                :options="allTags"
-                :suggestions="tagSuggestions"
-                name="tags"
-                class="w-full"
-                data-cy="input-autocomplete"
-                @complete="searchTags"
-                @keydown.enter.prevent="addTag"
-              />
-              <label for="tags">Tags</label>
-            </PvFloatLabel>
-          </div>
-        </div>
-        <div class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">
-          <div class="flex flex-row align-items-center">
-            <PvCheckbox v-model="isDemoData" input-id="chbx-demodata" :binary="true" />
-            <label class="ml-1 mr-3" for="chbx-demodata">Mark as <b>Demo Organization</b></label>
-          </div>
-          <div class="flex flex-row align-items-center">
-            <PvCheckbox v-model="isTestData" input-id="chbx-testdata" :binary="true" />
-            <label class="ml-1 mr-3" for="chbx-testdata">Mark as <b>Test Organization</b></label>
-          </div>
-        </div>
-
         <PvDivider />
 
         <div class="grid">
           <div class="col-12">
             <PvButton
               :label="submitted ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
-              :disabled="
-                orgTypeLabel === 'Org' || v$.$invalid || submitted || !userCan(Permissions.Organizations.CREATE)
-              "
+              v-tooltip="canCreateOrg ? false : PERMISSION_TOOLTIP"
+              :disabled="orgTypeLabel === 'Org' || v$.$invalid || submitted || !canCreateOrg"
               :icon="submitted ? 'pi pi-spin pi-spinner' : ''"
               class="bg-primary text-white border-none border-round h-3rem w-3 hover:bg-red-900"
               data-cy="button-create-org"
               @click="submit"
             />
+            <small v-if="!canCreateOrg" class="block mt-2 text-gray-500" data-cy="info-org-permission">{{
+              PERMISSION_TOOLTIP
+            }}</small>
           </div>
         </div>
       </div>
@@ -201,36 +211,36 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, toRaw, onMounted } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { storeToRefs } from 'pinia';
+import { StatusCodes } from 'http-status-codes';
 import _capitalize from 'lodash/capitalize';
-import _union from 'lodash/union';
-import _without from 'lodash/without';
 import { useVuelidate } from '@vuelidate/core';
-import { required, requiredIf } from '@vuelidate/validators';
+import { required, requiredIf, helpers, maxLength } from '@vuelidate/validators';
 import PvSelect from 'primevue/select';
-import PvAutoComplete from 'primevue/autocomplete';
 import PvButton from 'primevue/button';
-import PvCheckbox from 'primevue/checkbox';
 import PvChip from 'primevue/chip';
 import PvDivider from 'primevue/divider';
 import PvInputText from 'primevue/inputtext';
 import PvFloatLabel from 'primevue/floatlabel';
-import { useAuthStore } from '@/store/auth';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
-import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
-import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
-import { usePermissions } from '@/composables/usePermissions';
-const { userCan, Permissions } = usePermissions();
+import useCreateOrgMutation from '@/composables/mutations/useCreateOrgMutation';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useUserType from '@/composables/useUserType';
+import { GRADE_OPTIONS, CLASS_TYPE_OPTIONS, GROUP_TYPE_OPTIONS, buildOrgCreateBody } from '@/helpers/createOrgForm';
 
-const initialized = ref(false);
-const isTestData = ref(false);
-const isDemoData = ref(false);
+// Org creation is super-admin-only on the backend (all four create endpoints gate
+// on `isSuperAdmin`), so the button is gated on the dashboard's super-admin signal
+// to match the create-administrator form. The graceful 403 handler in `submit`
+// remains as a safety net for any client/server gate drift.
+const { data: userClaims } = useUserClaimsQuery();
+const { isSuperAdmin } = useUserType(userClaims);
+const canCreateOrg = computed(() => isSuperAdmin.value);
+const PERMISSION_TOOLTIP = 'You do not have permission to create organizations.';
+
 const toast = useToast();
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { mutateAsync: createOrg } = useCreateOrgMutation();
 
 const state = reactive({
   orgName: '',
@@ -240,61 +250,45 @@ const state = reactive({
   parentDistrict: undefined,
   parentSchool: undefined,
   grade: undefined,
-  tags: [],
+  classType: undefined,
+  groupType: undefined,
 });
 
-let unsubscribe;
-const initTable = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) initTable();
-});
-
-onMounted(() => {
-  if (roarfirekit.value.restConfig?.()) initTable();
-});
-
-const { isLoading: isLoadingDistricts, data: districts } = useDistrictsListQuery({
-  enabled: initialized,
-});
-
-const { data: groups } = useGroupsListQuery({
-  enabled: initialized,
-});
-
-const schoolQueryEnabled = computed(() => {
-  return initialized.value && state.parentDistrict !== undefined;
-});
+// The districts list query self-gates on `authStore.accessToken`, so no firekit
+// init / `initialized` ref is needed — it stays disabled until the user is
+// authenticated and then fetches automatically.
+const { isLoading: isLoadingDistricts, data: districts } = useDistrictsListQuery();
 
 const selectedDistrict = computed(() => state.parentDistrict?.id);
 
-const { isFetching: isFetchingSchools, data: schools } = useDistrictSchoolsQuery(selectedDistrict, {
-  enabled: schoolQueryEnabled,
-});
-
-const classQueryEnabled = computed(() => {
-  return initialized.value && state.parentSchool !== undefined;
-});
+// `useDistrictSchoolsQuery` self-gates on the access token AND on a truthy
+// districtId, so it only fires once a district is chosen.
+const { isFetching: isFetchingSchools, data: schools } = useDistrictSchoolsQuery(selectedDistrict);
 
 const schoolDropdownEnabled = computed(() => {
   return state.parentDistrict && !isFetchingSchools.value;
 });
 
-const selectedSchool = computed(() => state.parentSchool?.id);
-
-const { data: classes } = useSchoolClassesQuery(selectedSchool, {
-  enabled: classQueryEnabled,
-});
-
 const rules = {
   orgName: { required },
-  orgInitials: { required },
-  parentDistrict: { required: requiredIf(() => ['school', 'class'].includes(orgType.value.singular)) },
-  parentSchool: { required: requiredIf(() => orgType.value.singular === 'class') },
-  grade: { required: requiredIf(() => orgType.value.singular === 'class') },
+  orgInitials: {
+    required: helpers.withMessage(
+      'Please supply an abbreviation.',
+      requiredIf(() => orgType.value?.singular !== 'class'),
+    ),
+    maxLength: maxLength(10),
+    // Mirror the backend abbreviation constraint (`^[A-Za-z0-9]+$`) client-side so
+    // a bad value is caught before the request rather than surfacing as a 400.
+    format: helpers.withMessage(
+      'Abbreviation must be letters and digits only (no spaces or symbols).',
+      (value) => !helpers.req(value) || /^[A-Za-z0-9]+$/.test(value),
+    ),
+  },
+  parentDistrict: { required: requiredIf(() => ['school', 'class'].includes(orgType.value?.singular)) },
+  parentSchool: { required: requiredIf(() => orgType.value?.singular === 'class') },
+  grade: { required: requiredIf(() => orgType.value?.singular === 'class') },
+  classType: { required: requiredIf(() => orgType.value?.singular === 'class') },
+  groupType: { required: requiredIf(() => orgType.value?.singular === 'group') },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -317,31 +311,9 @@ const orgTypeLabel = computed(() => {
 
 const parentOrgRequired = computed(() => ['school', 'class'].includes(orgType.value?.singular));
 
-const grades = [
-  { name: 'Pre-K', value: 'PK' },
-  { name: 'Transitional Kindergarten', value: 'TK' },
-  { name: 'Kindergarten', value: 'K' },
-  { name: 'Grade 1', value: 1 },
-  { name: 'Grade 2', value: 2 },
-  { name: 'Grade 3', value: 3 },
-  { name: 'Grade 4', value: 4 },
-  { name: 'Grade 5', value: 5 },
-  { name: 'Grade 6', value: 6 },
-  { name: 'Grade 7', value: 7 },
-  { name: 'Grade 8', value: 8 },
-  { name: 'Grade 9', value: 9 },
-  { name: 'Grade 10', value: 10 },
-  { name: 'Grade 11', value: 11 },
-  { name: 'Grade 12', value: 12 },
-];
-
-const allTags = computed(() => {
-  const districtTags = (districts.value ?? []).map((org) => org.tags);
-  const schoolTags = (districts.value ?? []).map((org) => org.tags);
-  const classTags = (classes.value ?? []).map((org) => org.tags);
-  const groupTags = (groups.value ?? []).map((org) => org.tags);
-  return _without(_union(...districtTags, ...schoolTags, ...classTags, ...groupTags), undefined) || [];
-});
+// Classes have no `abbreviation` field in their create schema, so the input is
+// hidden for them; every other org type requires it.
+const showAbbreviation = computed(() => orgType.value?.singular !== 'class');
 
 const ncesTooltip = computed(() => {
   if (orgType.value?.singular === 'school') {
@@ -351,26 +323,6 @@ const ncesTooltip = computed(() => {
   }
   return '';
 });
-
-const tagSuggestions = ref([]);
-const searchTags = (event) => {
-  const query = event.query.toLowerCase();
-  let filteredOptions = allTags.value.filter((opt) => opt.toLowerCase().includes(query));
-  if (filteredOptions.length === 0 && query) {
-    filteredOptions.push(query);
-  } else {
-    filteredOptions = filteredOptions.map((opt) => opt);
-  }
-  tagSuggestions.value = filteredOptions;
-};
-
-const addTag = (event) => {
-  const input = event.target.value.trim();
-  if (input && !state.tags.includes(input)) {
-    state.tags.push(input);
-  }
-  event.target.value = '';
-};
 
 const setAddress = (place) => {
   state.address = {
@@ -388,38 +340,26 @@ const removeAddress = () => {
 const submit = async () => {
   submitted.value = true;
   const isFormValid = await v$.value.$validate();
-  if (isFormValid) {
-    let orgData = {
-      name: state.orgName,
-      abbreviation: state.orgInitials,
-    };
+  if (!isFormValid) {
+    submitted.value = false;
+    return;
+  }
 
-    if (state.grade) orgData.grade = toRaw(state.grade).value;
-    if (state.ncesId) orgData.ncesId = state.ncesId;
-    if (state.address) orgData.address = state.address;
-    if (state.tags.length > 0) orgData.tags = state.tags;
+  const orgTypePlural = orgType.value.firestoreCollection;
 
-    if (orgType.value?.singular === 'class') {
-      orgData.schoolId = toRaw(state.parentSchool).id;
-      orgData.districtId = toRaw(state.parentDistrict).id;
-    } else if (orgType.value?.singular === 'school') {
-      orgData.districtId = toRaw(state.parentDistrict).id;
-    }
-
-    await roarfirekit.value
-      .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
-      .then(() => {
-        toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
-        submitted.value = false;
-        resetForm();
-      })
-      .catch((error) => {
-        toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-        console.error('Error creating org:', error);
-        submitted.value = false;
-      });
-  } else {
-    console.error('Form is invalid');
+  try {
+    const body = buildOrgCreateBody(orgTypePlural, state);
+    await createOrg({ orgType: orgTypePlural, body });
+    toast.add({ severity: 'success', summary: 'Success', detail: `${orgTypeLabel.value} created`, life: 3000 });
+    resetForm();
+  } catch (error) {
+    const detail =
+      error?.status === StatusCodes.FORBIDDEN
+        ? "You don't have permission to create organizations."
+        : `Failed to create ${orgTypeLabel.value.toLowerCase()}. Please try again.`;
+    toast.add({ severity: 'error', summary: 'Error', detail, life: 3000 });
+  } finally {
+    submitted.value = false;
   }
 };
 
@@ -428,8 +368,11 @@ const resetForm = () => {
   state.orgInitials = '';
   state.ncesId = undefined;
   state.address = undefined;
+  state.parentDistrict = undefined;
+  state.parentSchool = undefined;
   state.grade = undefined;
-  state.tags = [];
+  state.classType = undefined;
+  state.groupType = undefined;
 };
 </script>
 
@@ -443,40 +386,6 @@ const resetForm = () => {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
   color: white;
-}
-
-.p-autocomplete-panel {
-  background: var(--surface-a);
-  color: var(--text-color);
-  border: 0 none;
-  border-radius: var(--border-radius);
-  box-shadow:
-    0 0 #0000,
-    0 0 #0000,
-    0 10px 15px -3px #0000001a,
-    0 4px 6px -2px #0000000d;
-}
-
-.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
-  margin: 0;
-  padding: var(--inline-spacing-larger) 1rem;
-  border: 0 none;
-  color: var(--text-color);
-  background: transparent;
-  transition: none;
-  border-radius: 0;
-}
-
-.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover {
-  background-color: gainsboro;
-}
-
-button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 20%;
-  width: 3rem;
 }
 
 #rectangle {
@@ -540,23 +449,6 @@ button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
   .hide {
     display: none;
   }
-}
-
-.p-autocomplete-token {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  background: var(--primary-color);
-  padding: 0.25rem;
-  border-radius: 0.35rem;
-  color: white;
-  margin: 0.05rem;
-}
-
-.p-autocomplete-token-icon,
-g {
-  margin-left: 0.5rem;
-  color: white;
 }
 
 #required-asterisk {
