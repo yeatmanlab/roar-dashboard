@@ -247,15 +247,14 @@ describe('GET /v1/users/:id', () => {
     });
 
     it('educator (teacher) at district level cannot access students in child schools', async () => {
-      // Teacher role does NOT inherit via parent_org — a district-level teacher
-      // has no teacher role on child schools or classes. This prevents accidental
-      // privilege escalation from mis-rostering a teacher at the district level.
-      const resSchoolA = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}`)
-        .as(tiers.educator)
-        .toReturn(403);
-
-      expect(resSchoolA.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-
+      // Teacher role does NOT inherit via parent_org — a district-level teacher has no
+      // teacher role on child schools or classes. This prevents accidental privilege
+      // escalation from mis-rostering a teacher at the district level.
+      //
+      // We probe schoolBStudent (enrolled in classInSchoolB), a class the educator does
+      // NOT teach. schoolAStudent is intentionally not probed here: the educator is
+      // explicitly rostered on classInSchoolA in beforeAll, and schoolAStudent enrolls in
+      // that class, so reading them is legitimate direct-membership access, not a cascade.
       const resSchoolB = await expectRoute('GET', `/v1/users/${baseFixture.schoolBStudent.id}`)
         .as(tiers.educator)
         .toReturn(403);

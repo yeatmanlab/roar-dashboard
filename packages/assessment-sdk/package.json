@@ -28,11 +28,11 @@
   "scripts": {
     "dev": "rollup -cw --environment NODE_ENV:development",
     "build": "rm -rf dist && rollup -c --environment NODE_ENV:production && tsc -p tsconfig.build.types.json",
+    "check-types": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run --exclude 'src/**/*.integration.test.ts'",
     "test:unit:watch": "vitest --exclude 'src/**/*.integration.test.ts'",
@@ -44,7 +44,7 @@
   "sideEffects": false,
   "dependencies": {
     "@roar-platform/assessment-schema": "*",
-    "@roar-platform/api-contract": "^0.1.0",
+    "@roar-platform/api-contract": "*",
     "@ts-rest/core": "^3.52.1",
     "http-status-codes": "^2.3.0"
   },

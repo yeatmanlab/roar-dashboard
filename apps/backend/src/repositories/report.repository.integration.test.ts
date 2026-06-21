@@ -428,8 +428,8 @@ describe('ReportRepository.getProgressOverviewCountsBulk — multi-scope aggrega
    * task counts and student-level counts correctly.
    *
    * Scope layout:
-   *   School A: schoolAStudent (org), classAStudent (class in school A)
-   *   School B: schoolBStudent (org)
+   *   School A: schoolAStudent (classInSchoolA), classAStudent (classInSchoolA)
+   *   School B: schoolBStudent (classInSchoolB)
    *
    * Task variants: two required tasks (no conditions), from task and task2.
    *
@@ -527,9 +527,9 @@ describe('ReportRepository.getProgressOverviewCountsBulk — multi-scope aggrega
   });
 
   it('computes correct totalStudents per scope', () => {
-    // School A: schoolAStudent (org) + classAStudent (class in school A)
+    // School A: schoolAStudent (classInSchoolA) + classAStudent (classInSchoolA)
     expect(bulkResult.get(baseFixture.schoolA.id)!.totalStudents).toBe(2);
-    // School B: schoolBStudent (org)
+    // School B: schoolBStudent (classInSchoolB)
     expect(bulkResult.get(baseFixture.schoolB.id)!.totalStudents).toBe(1);
   });
 

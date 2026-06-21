@@ -9,7 +9,7 @@ import enDataPracticeURL from '../wordlist/en/ldt-items-practice.csv';
 import enDataValidatedURL520 from '../wordlist/en/item_bank_v5_520.csv';
 import enDataValidatedURL from '../wordlist/en/item_bank_v5.csv';
 import enDataNewURL from '../wordlist/en/ldt-new-items-v3.csv';
-import enDataNewEasyURL from '../wordlist/en/new_items_easy_final_200.csv';
+import enDataNewEasyURL from '../wordlist/en/item_bank_v5_easy_infinite.csv';
 import esDataPracticeURL from '../wordlist/es/ldt-items-practice_esp.csv';
 import esDataValidatedURL from '../wordlist/es/palabra_item_irt.csv';
 import itDataPracticeURL from '../wordlist/it/ldt-items-practice_ita.csv';
@@ -26,7 +26,7 @@ export const wordlist = {
     dataPracticeURL: enDataPracticeURL,
     dataValidatedURL: enDataValidatedURL,
     dataNewURL: enDataNewURL,
-    dataNewEasyURL: enDataNewEasyURL, // this is for infinite presentation time
+    dataNewEasyURL: enDataNewEasyURL, // this is for validated infinite presentation time
     dataValidatedURL2: enDataValidatedURL520,
   },
   es: {
