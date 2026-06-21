@@ -122,11 +122,11 @@ export function getTeacherUserId(): string {
 }
 
 /**
- * Reads the backend's baseFixture data from the fixture file written by server-test.ts.
+ * Reads the dev fixture data from the fixture file written by seed-dev.ts.
  *
- * The test server entrypoint writes fixture data (task variants, users, etc.) to a JSON file
- * during startup. This function reads that file instead of making an HTTP call, avoiding
- * race conditions and keeping test infrastructure out of production code.
+ * The seed script writes fixture data (task variants, users, etc.) to a JSON file
+ * before the server starts. This function reads that file instead of making an HTTP call,
+ * avoiding race conditions and keeping test infrastructure out of production code.
  *
  * @returns The baseFixture data with task variants and other test entities
  */
@@ -144,7 +144,7 @@ export async function getBaseFixtureData(): Promise<TestFixture> {
   } catch (error) {
     throw new Error(
       `Failed to read fixture data from ${fixtureFile}. ` +
-        `Ensure server-test.ts has started and written the fixture file. ` +
+        `Ensure seed-dev.ts has run and written the fixture file. ` +
         `Error: ${error instanceof Error ? error.message : String(error)}`,
     );
   }

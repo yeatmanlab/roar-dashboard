@@ -165,7 +165,7 @@ export const DEV_PASSWORD = 'roar-dev-password';
 
 /**
  * Credential map for each user in the dev fixture. Keys match the
- * `CYPRESS_FIXTURE_USER_KEYS` in server-test.ts so Cypress specs can
+ * `CYPRESS_FIXTURE_USER_KEYS` in seed-dev.ts so Cypress specs can
  * look up any user by logical name.
  */
 export const DEV_USERS = {
@@ -245,7 +245,7 @@ export const DEV_FIXTURE_USER_KEYS = Object.keys(DEV_USERS) as ReadonlyArray<key
  * Seeds the deterministic dev fixture into the database.
  *
  * Replicates the full baseFixture org hierarchy, users, administrations,
- * tasks, and variants — plus the local-dev extras from server-test.ts
+ * tasks, and variants — plus the local-dev extras from seed-dev.ts
  * (agreements, expanded task catalog, and assessment activity).
  *
  * All entities use hardcoded IDs from `DEV_IDS` so they are stable across
@@ -727,7 +727,7 @@ export async function seedDevFixture(): Promise<BaseFixture> {
     }),
   ]);
 
-  // Non-district administrations — expanded catalog (from server-test.ts local-dev extras)
+  // Non-district administrations — expanded catalog (from seed-dev.ts local-dev extras)
   const localDevAssignments: Array<{ administrationId: string; taskVariantId: string }> = [
     // School A: Word, Phoneme, Letter
     { administrationId: administrationAssignedToSchoolA.id, taskVariantId: variantForAllGrades.id },
@@ -759,7 +759,7 @@ export async function seedDevFixture(): Promise<BaseFixture> {
   );
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Step 8: Seed Agreements (local-dev extras from server-test.ts)
+  // Step 8: Seed Agreements (local-dev extras from seed-dev.ts)
   // ═══════════════════════════════════════════════════════════════════════
 
   const [consentAgreement, assentAgreement] = await Promise.all([

@@ -1,5 +1,5 @@
 /**
- * Firebase Auth Emulator seeding helpers for `server-test.ts`.
+ * Firebase Auth Emulator seeding helpers for the dev seed script and CI.
  *
  * Used only when the test server is booted with `FIREBASE_AUTH_EMULATOR_HOST`
  * set (CI Cypress runs and local e2e development). The helpers create users

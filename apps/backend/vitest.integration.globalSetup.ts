@@ -18,7 +18,7 @@ export default async function globalSetup() {
   }
 
   // Provision FDW prerequisites before migrations (superuser-only operations).
-  // Uses the same helper as `server-test.ts` so both bootstrap paths share one
+  // Uses the same helper as `seed-dev.ts` so both bootstrap paths share one
   // implementation. The TS helper replaces an earlier execFileSync on
   // `scripts/setup-fdw-local.sh` so this works in any Node environment without
   // requiring psql on the PATH (e.g., the cypress/browsers e2e container).

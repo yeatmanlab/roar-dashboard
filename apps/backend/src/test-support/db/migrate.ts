@@ -15,7 +15,7 @@ import { BACKEND_ROOT } from '../paths';
  *
  * Paths are anchored to `BACKEND_ROOT` rather than the current working
  * directory so this works under both vitest (cwd is `apps/backend/`) and
- * the bundled `dist/server-test.js` (which CI invokes from the repo root).
+ * the bundled `dist/server.js` or standalone scripts invoked from the repo root.
  */
 export async function runMigrations(): Promise<void> {
   // Run core database migrations

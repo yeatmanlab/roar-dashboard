@@ -13,7 +13,6 @@
  *
  * Called from:
  *  - `vitest.integration.globalSetup.ts` before `runMigrations()`
- *  - `server-test.ts` before `runMigrations()`
  *
  * The bash script under `scripts/` is kept for local developer use
  * (manual one-time setup), but the test runtime no longer depends on it.
