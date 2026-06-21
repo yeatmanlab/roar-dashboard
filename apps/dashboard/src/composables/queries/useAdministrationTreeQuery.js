@@ -9,6 +9,7 @@ import { ADMINISTRATION_TREE_QUERY_KEY } from '@/constants/queryKeys';
 
 const MAX_RETRIES = 3;
 const TREE_LEVEL_PER_PAGE = 100;
+const DEFAULT_ROOT_PER_PAGE = 10;
 
 /**
  * Map a backend `OrganizationTreeNode` to the PvTreeTable node shape the
@@ -95,24 +96,73 @@ export async function fetchAdministrationTreeLevel(administrationId, parent = {}
 }
 
 /**
- * Administration org-tree query (root level).
+ * Fetch a single page of the administration's root org-tree level from
+ * `GET /administrations/:id/tree` (no parent — districts + groups). Unlike
+ * `fetchAdministrationTreeLevel`, this does NOT page-walk: the root level is
+ * paginated by PvTreeTable's native paginator, so the query fetches exactly one
+ * server page and surfaces the pagination envelope for the total-record count.
  *
- * Loads the root entities (districts and groups) of an administration's org
- * tree from `GET /administrations/:id/tree`. Child levels are fetched lazily on
- * node expansion via `fetchAdministrationTreeLevel`.
+ * @param {string} administrationId - The administration UUID.
+ * @param {{ page?: number, perPage?: number }} [pagination] - The 1-indexed page and page size.
+ * @returns {Promise<{ items: Array, pagination: object }>} The page's tree-table nodes plus the pagination envelope.
+ */
+export async function fetchAdministrationTreeRootPage(
+  administrationId,
+  { page = 1, perPage = DEFAULT_ROOT_PER_PAGE } = {},
+) {
+  const client = getRoarApiClient();
+
+  const result = await client.administrations.getTree({
+    params: { id: administrationId },
+    query: { page, perPage, embed: 'stats' },
+  });
+
+  if (result.status !== StatusCodes.OK) {
+    const error = new Error(`Failed to fetch administration tree with status ${result.status}`);
+    error.status = result.status;
+    error.body = result.body;
+    throw error;
+  }
+
+  return {
+    items: result.body.data.items.map(toTreeTableNode),
+    pagination: result.body.data.pagination,
+  };
+}
+
+/**
+ * Administration org-tree query (root level, server-paginated).
+ *
+ * Loads a single page of the root entities (districts and groups) of an
+ * administration's org tree from `GET /administrations/:id/tree`. The root level
+ * is paginated server-side — PvTreeTable's native paginator drives `page`/`perPage`
+ * — so the query fetches exactly one page and resolves to `{ items, pagination }`.
+ * Child levels are fetched lazily and in full on node expansion via
+ * `fetchAdministrationTreeLevel` (nested levels are NOT paginated).
+ *
+ * **Reactivity.** `page` and `perPage` are accepted as refs/getters and included in
+ * the query key by reference (not `.value`), so the query re-keys and refetches when
+ * the user pages the root. Switching the root page replaces the root node set, so
+ * any open expansions naturally reset on page change.
  *
  * @param {import('vue').MaybeRefOrGetter<string>} administrationId - The administration UUID.
+ * @param {import('vue').MaybeRefOrGetter<number>} page - Current 1-indexed root page.
+ * @param {import('vue').MaybeRefOrGetter<number>} perPage - Root page size.
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
- * @returns {UseQueryResult} TanStack query resolving to the root tree-table nodes.
+ * @returns {UseQueryResult} TanStack query resolving to `{ items, pagination }`.
  */
-const useAdministrationTreeQuery = (administrationId, queryOptions = undefined) => {
+const useAdministrationTreeQuery = (administrationId, page, perPage, queryOptions = undefined) => {
   const authStore = useAuthStore();
   const conditions = [() => Boolean(authStore.accessToken), () => Boolean(toValue(administrationId))];
   const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
-    queryKey: [ADMINISTRATION_TREE_QUERY_KEY, administrationId],
-    queryFn: () => fetchAdministrationTreeLevel(toValue(administrationId)),
+    // page/perPage are part of the cache key so each root page is cached separately
+    // and the query refetches when the user pages. Pass them by reference (not `.value`)
+    // so the key stays reactive.
+    queryKey: [ADMINISTRATION_TREE_QUERY_KEY, administrationId, page, perPage],
+    queryFn: () =>
+      fetchAdministrationTreeRootPage(toValue(administrationId), { page: toValue(page), perPage: toValue(perPage) }),
     ...options,
     enabled: isQueryEnabled,
     retry: (failureCount, error) => {

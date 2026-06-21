@@ -18,18 +18,18 @@
                   <small id="search-help" class="text-gray-400">Search by administration name</small>
                   <div class="flex align-items-center">
                     <PvInputGroup>
-                      <PvAutoComplete
+                      <PvInputText
                         v-model="searchInput"
                         placeholder="Search Administrations"
-                        :suggestions="searchSuggestions"
                         data-cy="search-input"
-                        @complete="autocomplete"
-                        @keyup.enter="onSearch"
+                        aria-describedby="search-help"
                       />
                       <PvButton
-                        icon="pi pi-search"
+                        v-if="search.length > 0"
+                        icon="pi pi-times"
                         class="text-xs bg-primary border-none text-white pl-3 pr-3"
-                        @click="onSearch"
+                        aria-label="Clear search"
+                        @click="clearSearch"
                       />
                     </PvInputGroup>
                   </div>
@@ -74,16 +74,16 @@
         <div v-else>
           <PvBlockUI :blocked="isFetchingAdministrations">
             <PvDataView
-              :key="dataViewKey"
-              :value="filteredAdministrations"
+              :value="administrationItems"
+              lazy
               paginator
               paginator-position="both"
-              :total-records="filteredAdministrations?.length"
-              :rows="pageLimit"
+              :total-records="totalRecords"
+              :rows="rows"
+              :first="first"
               :rows-per-page-options="[3, 5, 10, 25]"
               data-key="id"
-              :sort-order="sortOrder"
-              :sort-field="sortField"
+              @page="onPage($event)"
             >
               <template #list="slotProps">
                 <div class="mb-2 w-full" data-cy="administrations-list">
@@ -103,7 +103,9 @@
               <template #empty>
                 <div>
                   {{
-                    'There are no administrations to display. Please contact a lab administrator to add you as an admin to an administration.'
+                    search.length > 0
+                      ? `No administrations match "${search}".`
+                      : 'There are no administrations to display. Please contact a lab administrator to add you as an admin to an administration.'
                   }}
                 </div>
               </template>
@@ -116,35 +118,51 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import PvAutoComplete from 'primevue/autocomplete';
 import PvBlockUI from 'primevue/blockui';
 import PvButton from 'primevue/button';
 import PvDataView from 'primevue/dataview';
 import PvSelect from 'primevue/select';
 import PvInputGroup from 'primevue/inputgroup';
+import PvInputText from 'primevue/inputtext';
 import { useAuthStore } from '@/store/auth';
 import { getTitle } from '@/helpers/query/administrations';
 import { isEmulatorAuthReady } from '@/helpers/isDashboardReady';
+import _debounce from 'lodash/debounce';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 
-const initialized = ref(false);
-const pageLimit = ref(10);
-const page = ref(0);
+const SEARCH_DEBOUNCE_MS = 300;
 
-const searchSuggestions = ref([]);
-const searchTokens = ref([]);
+const initialized = ref(false);
+
+// Server-driven pagination state. `first` is the 0-indexed row offset PrimeVue's
+// DataView tracks; `rows` is the page size; `page` is the 1-indexed page the backend
+// expects, derived from first/rows.
+const rows = ref(10);
+const first = ref(0);
+const page = computed(() => Math.floor(first.value / rows.value) + 1);
+
+// Server-driven sort. Defaults mirror the previous default view (name ascending).
+const sortBy = ref('name');
+const sortOrder = ref('asc');
+
+// Server-driven search. `searchInput` is the live input value; `search` is its
+// debounced projection fed to the query so we don't refetch on every keystroke.
 const searchInput = ref('');
 const search = ref('');
-
-const filteredAdministrations = ref([]);
+// Project the live input into `search` on a trailing debounce: the input stays
+// instant (bound to `searchInput`) while the query — which keys on `search` — only
+// refetches once the user pauses typing.
+const applySearch = _debounce((value) => {
+  search.value = value;
+}, SEARCH_DEBOUNCE_MS);
+watch(searchInput, (value) => applySearch(value));
 
 const authStore = useAuthStore();
-
 const { roarfirekit } = storeToRefs(authStore);
 
 let unsubscribeInitializer;
@@ -167,239 +185,83 @@ const { data: userClaims } = useUserClaimsQuery({
 
 const { isSuperAdmin } = useUserType(userClaims);
 
-/**
- * Generate search tokens for autocomplete.
- *
- * Using the administrations data, generates search tokens for the autocomplete search feature by splitting the
- * invididual administration names into separate tokens. For example, the administration "Partner Test Administration"
- * would be split into three tokens: "partner", "test", and "administration".
- *
- * @returns {void}
- */
-const generateAutoCompleteSearchTokens = () => {
-  if (!administrations.value?.length) return;
-
-  // Set search tokens based on each administration's name.
-  for (const item of administrations.value) {
-    searchTokens.value.push(...item.name.toLowerCase().split(' '));
-  }
-
-  // Remove duplicates from array.
-  searchTokens.value = [...new Set(searchTokens.value)];
-};
-
 const {
   isLoading: isLoadingAdministrations,
   isFetching: isFetchingAdministrations,
   data: administrations,
-} = useAdministrationsListQuery({
+} = useAdministrationsListQuery(page, rows, sortBy, sortOrder, search, {
   enabled: initialized,
 });
 
-/**
- * Administration data watcher
- *
- * Watches the administrations data, and once data is available, generates search tokens and sets the filtered
- * administrations based on the search value.
- *
- * @returns {void}
- */
-watch(
-  administrations,
-  (updatedAdministrationsData) => {
-    if (!updatedAdministrationsData) return;
+// The query resolves to `{ items, pagination }`; expose the current page's rows and
+// the server's total so the lazy DataView can render and size its paginator.
+const administrationItems = computed(() => administrations.value?.items ?? []);
+const totalRecords = computed(() => administrations.value?.pagination?.totalItems ?? 0);
 
-    // Generate auto-complete search tokens based on the data.
-    generateAutoCompleteSearchTokens();
-
-    // Set the filtered administrations based on the search value.
-    if (!search.value) {
-      filteredAdministrations.value = updatedAdministrationsData;
-    } else {
-      filteredAdministrations.value = updatedAdministrationsData?.filter((item) =>
-        item.name.toLowerCase().includes(search.value.toLowerCase()),
-      );
-    }
-  },
-  { immediate: true },
-);
-
-// Table sort options
+// Sort dropdown options. Each maps to a server sort field (name|dateStart|dateEnd)
+// and direction (asc|desc). The backend sorts administrations by `name`; the previous
+// client-side "sort partner admins by publicName" hack is dropped — see the PR notes.
 const sortOptions = ref([
-  {
-    label: 'Name (ascending)',
-    value: [
-      {
-        field: { fieldPath: 'name' },
-        direction: 'ASCENDING',
-      },
-    ],
-  },
-  {
-    label: 'Name (descending)',
-    value: [
-      {
-        field: { fieldPath: 'name' },
-        direction: 'DESCENDING',
-      },
-    ],
-  },
-  {
-    label: 'Start date (ascending)',
-    value: [
-      {
-        field: { fieldPath: 'dates.start' },
-        direction: 'ASCENDING',
-      },
-    ],
-  },
-  {
-    label: 'Start date (descending)',
-    value: [
-      {
-        field: { fieldPath: 'dates.start' },
-        direction: 'DESCENDING',
-      },
-    ],
-  },
-  {
-    label: 'End date (ascending)',
-    value: [
-      {
-        field: { fieldPath: 'dates.end' },
-        direction: 'ASCENDING',
-      },
-    ],
-  },
-  {
-    label: 'End date (descending)',
-    value: [
-      {
-        field: { fieldPath: 'dates.end' },
-        direction: 'DESCENDING',
-      },
-    ],
-  },
-  {
-    label: 'Creation date (ascending)',
-    value: [
-      {
-        field: { fieldPath: 'dates.created' },
-        direction: 'ASCENDING',
-      },
-    ],
-  },
-  {
-    label: 'Creation date (descending)',
-    value: [
-      {
-        field: { fieldPath: 'dates.created' },
-        direction: 'DESCENDING',
-      },
-    ],
-  },
+  { label: 'Name (ascending)', value: { sortBy: 'name', sortOrder: 'asc' } },
+  { label: 'Name (descending)', value: { sortBy: 'name', sortOrder: 'desc' } },
+  { label: 'Start date (ascending)', value: { sortBy: 'dateStart', sortOrder: 'asc' } },
+  { label: 'Start date (descending)', value: { sortBy: 'dateStart', sortOrder: 'desc' } },
+  { label: 'End date (ascending)', value: { sortBy: 'dateEnd', sortOrder: 'asc' } },
+  { label: 'End date (descending)', value: { sortBy: 'dateEnd', sortOrder: 'desc' } },
 ]);
 const sortKey = ref(sortOptions.value[0]);
-const sortOrder = ref();
-const sortField = ref();
-const dataViewKey = ref(0);
 
 /**
- * Clear the search input and reset the filtered administrations list.
+ * Reset to the first page. Called whenever the result set changes shape (new sort or
+ * search) so the user isn't stranded on a now-out-of-range page.
+ * @returns {void}
+ */
+const resetToFirstPage = () => {
+  first.value = 0;
+};
+
+// A new (debounced) search term changes the result set, so jump back to the first page.
+// Watching the debounced ref means we reset once per settled term, not per keystroke.
+watch(search, resetToFirstPage);
+
+/**
+ * Clear the search term immediately. Cancels any pending debounced update and resets
+ * both the live input and the query-facing `search` ref so the unfiltered list loads
+ * at once; the `watch(search, …)` above then resets the page.
  * @returns {void}
  */
 const clearSearch = () => {
-  search.value = '';
+  applySearch.cancel();
   searchInput.value = '';
-  filteredAdministrations.value = administrations.value;
+  search.value = '';
 };
 
 /**
- * Perform a search based on the search input value.
+ * DataView lazy page handler. PrimeVue emits `{ first, rows }` on page/rows change;
+ * mirror them into our state so the query refetches the requested server page.
+ * @param {{ first: number, rows: number }} event – PrimeVue page event.
  * @returns {void}
  */
-const onSearch = () => {
-  search.value = searchInput.value;
-  if (!search.value) filteredAdministrations.value = administrations.value;
-  else {
-    filteredAdministrations.value = administrations.value.filter((item) =>
-      item.name.toLowerCase().includes(search.value.toLowerCase()),
-    );
-  }
+const onPage = (event) => {
+  first.value = event.first;
+  rows.value = event.rows;
 };
 
 /**
- * Perform an autocomplete search based on the search input value.
- * @returns {void}
- */
-const autocomplete = () => {
-  searchSuggestions.value = searchTokens.value.filter((item) => {
-    return item.toLowerCase().includes(searchInput.value.toLowerCase());
-  });
-};
-
-/**
- * Sort change event handler
- * @param {*} event – The sort event object emitted by PrimeVue
+ * Sort change handler. Maps the selected option to server sort field + direction and
+ * resets to the first page so the re-sorted list starts at the top.
+ * @param {{ value: { value: { sortBy: string, sortOrder: string } } }} event – PrimeVue select change event.
  * @returns {void}
  */
 const onSortChange = (event) => {
-  dataViewKey.value += 1;
-  page.value = 0;
-  const value = event.value.value;
-  const sortValue = event.value;
-
-  if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
-    // catches edge case where a partner admin should sort by the public name attribute
-    sortField.value = 'publicName';
-  } else {
-    sortField.value = value[0].field?.fieldPath;
-  }
-  if (value[0].direction === 'DESCENDING') {
-    sortOrder.value = -1;
-  } else {
-    sortOrder.value = 1;
-  }
-
-  sortKey.value = sortValue;
+  const { sortBy: nextSortBy, sortOrder: nextSortOrder } = event.value.value;
+  sortBy.value = nextSortBy;
+  sortOrder.value = nextSortOrder;
+  resetToFirstPage();
 };
 </script>
 
 <style>
-.p-autocomplete-panel {
-  background: var(--surface-a);
-  color: var(--text-color);
-  border: 0 none;
-  border-radius: var(--border-radius);
-  box-shadow:
-    0 0 rgba(0, 0, 0, 0),
-    0 0 rgba(0, 0, 0, 0),
-    0 10px 15px -3px rgba(0, 0, 0, 0.1019607843),
-    0 4px 6px -2px rgba(0, 0, 0, 0.0509803922);
-}
-
-.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
-  margin: 0;
-  padding: var(--inline-spacing-larger) 1rem;
-  border: 0 none;
-  color: var(--text-color);
-  background: transparent;
-  transition: none;
-  border-radius: 0;
-}
-
-.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover {
-  background-color: gainsboro;
-}
-
-button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 20%;
-  width: 3rem;
-}
-
 .card-container {
   display: flex;
   flex-direction: row;

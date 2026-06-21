@@ -5,6 +5,7 @@ import { withSetup } from '@/test-support/withSetup.js';
 import { ADMINISTRATION_TREE_QUERY_KEY } from '@/constants/queryKeys';
 import useAdministrationTreeQuery, {
   fetchAdministrationTreeLevel,
+  fetchAdministrationTreeRootPage,
   toTreeTableNode,
 } from './useAdministrationTreeQuery';
 
@@ -134,26 +135,102 @@ describe('useAdministrationTreeQuery', () => {
     });
   });
 
+  describe('fetchAdministrationTreeRootPage', () => {
+    it('requests a single root page (no parent) with the given page/perPage and embed=stats', async () => {
+      mockGetTree.mockResolvedValueOnce(treePage([districtNode]));
+
+      await fetchAdministrationTreeRootPage(ADMIN_ID, { page: 2, perPage: 25 });
+
+      expect(mockGetTree).toHaveBeenCalledTimes(1);
+      expect(mockGetTree).toHaveBeenCalledWith({
+        params: { id: ADMIN_ID },
+        query: { page: 2, perPage: 25, embed: 'stats' },
+      });
+    });
+
+    it('defaults to page 1 with a default page size', async () => {
+      mockGetTree.mockResolvedValueOnce(treePage([districtNode]));
+
+      await fetchAdministrationTreeRootPage(ADMIN_ID);
+
+      expect(mockGetTree).toHaveBeenCalledWith({
+        params: { id: ADMIN_ID },
+        query: { page: 1, perPage: 10, embed: 'stats' },
+      });
+    });
+
+    it('returns mapped items plus the pagination envelope and does NOT page-walk', async () => {
+      mockGetTree.mockResolvedValueOnce(treePage([districtNode], 3, 1));
+
+      const result = await fetchAdministrationTreeRootPage(ADMIN_ID, { page: 1, perPage: 10 });
+
+      // Only one request even though the server reports 3 total pages — root paging is
+      // driven by the TreeTable paginator, not by walking every page here.
+      expect(mockGetTree).toHaveBeenCalledTimes(1);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].data.orgType).toBe('district');
+      expect(result.pagination).toEqual({ page: 1, perPage: 100, totalItems: 1, totalPages: 3 });
+    });
+
+    it('throws a structured error on non-200 responses', async () => {
+      mockGetTree.mockResolvedValueOnce({ status: 500, body: { error: { code: 'internal' } } });
+
+      await expect(fetchAdministrationTreeRootPage(ADMIN_ID, { page: 1, perPage: 10 })).rejects.toMatchObject({
+        status: 500,
+        body: { error: { code: 'internal' } },
+      });
+    });
+  });
+
   describe('useAdministrationTreeQuery', () => {
-    it('calls useQuery with the tree query key', () => {
+    it('keys on the administration id plus page/perPage refs (by reference)', () => {
       vi.spyOn(VueQuery, 'useQuery');
 
-      withSetup(() => useAdministrationTreeQuery(ref(ADMIN_ID)), {
+      const adminId = ref(ADMIN_ID);
+      const page = ref(1);
+      const perPage = ref(10);
+
+      withSetup(() => useAdministrationTreeQuery(adminId, page, perPage), {
         plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
       });
 
       expect(VueQuery.useQuery).toHaveBeenCalledWith(
         expect.objectContaining({
-          queryKey: [ADMINISTRATION_TREE_QUERY_KEY, expect.anything()],
+          // Refs are passed by reference so the key stays reactive across paging.
+          queryKey: [ADMINISTRATION_TREE_QUERY_KEY, adminId, page, perPage],
           queryFn: expect.any(Function),
         }),
       );
     });
 
+    it('fetches a single root page with the resolved page/perPage and resolves to { items, pagination }', async () => {
+      mockGetTree.mockResolvedValueOnce(treePage([districtNode], 4, 2));
+
+      let queryFn;
+      vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+        queryFn = options.queryFn;
+        return { data: { value: null }, error: { value: null } };
+      });
+
+      withSetup(() => useAdministrationTreeQuery(ref(ADMIN_ID), ref(2), ref(25)), {
+        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+      });
+
+      const result = await queryFn();
+
+      expect(mockGetTree).toHaveBeenCalledTimes(1);
+      expect(mockGetTree).toHaveBeenCalledWith({
+        params: { id: ADMIN_ID },
+        query: { page: 2, perPage: 25, embed: 'stats' },
+      });
+      expect(result.items[0].data.orgType).toBe('district');
+      expect(result.pagination.totalPages).toBe(4);
+    });
+
     it('is disabled without an administration id', () => {
       vi.spyOn(VueQuery, 'useQuery');
 
-      withSetup(() => useAdministrationTreeQuery(ref(null)), {
+      withSetup(() => useAdministrationTreeQuery(ref(null), ref(1), ref(10)), {
         plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
       });
 
@@ -164,7 +241,7 @@ describe('useAdministrationTreeQuery', () => {
       mockUseAuthStore.mockReturnValue({ accessToken: null });
       vi.spyOn(VueQuery, 'useQuery');
 
-      withSetup(() => useAdministrationTreeQuery(ref(ADMIN_ID)), {
+      withSetup(() => useAdministrationTreeQuery(ref(ADMIN_ID), ref(1), ref(10)), {
         plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
       });
 
@@ -178,7 +255,7 @@ describe('useAdministrationTreeQuery', () => {
         return { data: { value: null }, error: { value: null } };
       });
 
-      withSetup(() => useAdministrationTreeQuery(ref(ADMIN_ID)), {
+      withSetup(() => useAdministrationTreeQuery(ref(ADMIN_ID), ref(1), ref(10)), {
         plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
       });
 

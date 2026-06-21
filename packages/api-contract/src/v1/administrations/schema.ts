@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ConditionSchema } from '../common/condition';
 import {
   PaginationQuerySchema,
+  SearchQuerySchema,
   createSortQuerySchema,
   createEmbedQuerySchema,
   createPaginatedResponseSchema,
@@ -124,11 +125,16 @@ export const AdministrationEmbedOption = {
 
 /**
  * Query parameters for listing administrations.
+ *
+ * `search` narrows the result set to administrations whose name matches the term
+ * (case-insensitive substring). It is applied AFTER authorization scoping, so it
+ * only ever narrows the set of administrations the caller is already allowed to see.
  */
 export const AdministrationsListQuerySchema = PaginationQuerySchema.merge(
   createSortQuerySchema(ADMINISTRATION_SORT_FIELDS, 'createdAt'),
 )
   .merge(createEmbedQuerySchema(ADMINISTRATION_EMBED_OPTIONS))
+  .merge(SearchQuerySchema)
   .extend({
     status: AdministrationStatusSchema.optional(),
   });
