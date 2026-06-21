@@ -233,7 +233,7 @@ export const AdministrationsController = {
    */
   list: async (authContext: AuthContext, query: AdministrationsListQuery) => {
     try {
-      const { page, perPage, sortBy, sortOrder, embed, status } = query;
+      const { page, perPage, sortBy, sortOrder, embed, status, search } = query;
 
       const result = await administrationService.list(authContext, {
         page,
@@ -242,6 +242,7 @@ export const AdministrationsController = {
         sortOrder,
         embed,
         ...(status && { status }),
+        ...(search && { search }),
       });
 
       // Transform to API response format
