@@ -1194,8 +1194,10 @@ export function ReportService({
       // 7. Build per-task entries
       const { taskOrder, variantsByTaskId } = groupTaskMetasByTaskId(taskMetas);
 
-      // Index current-admin scores: variantId → name → value
+      // Index current-admin scores: variantId → name → value (summary lookups)
+      // and variantId → domain → name → value (domain-aware subscore lookups).
       const currentScoresByVariant = buildVariantScoreLookup(currentScoreRows);
+      const currentDomainScoresByVariant = buildVariantDomainScoreLookup(currentScoreRows);
 
       // Index current-admin run metadata: variantId → most-recent-completed run.
       // When multiple runs match the (user, variant) — defensive against the rare
@@ -1254,6 +1256,7 @@ export function ReportService({
         if (scoredVariant && scoredScoreMap) {
           completedTaskCount++;
           const runMeta = currentRunByVariant.get(scoredVariant.taskVariantId) ?? null;
+          const scoredDomainScoreMap = currentDomainScoresByVariant.get(scoredVariant.taskVariantId);
           const taskEntry = buildAssessedTaskEntry(
             taskMeta,
             scoredVariant,
@@ -1264,6 +1267,7 @@ export function ReportService({
             historicalRuns,
             historicalScoresByRun,
             runMeta,
+            scoredDomainScoreMap,
           );
           tasks.push(taskEntry);
         } else {
@@ -1443,13 +1447,19 @@ export function ReportService({
           const variants = taskMetadataByAdmin.get(admin.id) ?? [];
           const variantIds = variants.map((v) => v.taskVariantId);
           if (variantIds.length === 0) {
-            return { admin, scoresByVariant: new Map<string, Map<string, string>>(), runMetaByVariant: new Map() };
+            return {
+              admin,
+              scoresByVariant: new Map<string, Map<string, string>>(),
+              domainScoresByVariant: new Map<string, Map<string, Map<string, string>>>(),
+              runMetaByVariant: new Map(),
+            };
           }
           const [scoreRows, runRows] = await Promise.all([
             reportRepository.getCompletedRunScores(admin.id, [targetUserId], variantIds),
             reportRepository.getCompletedRunsForUser(admin.id, targetUserId, variantIds),
           ]);
           const scoresByVariant = buildVariantScoreLookup(scoreRows);
+          const domainScoresByVariant = buildVariantDomainScoreLookup(scoreRows);
           // Pick the most-recent completed run per variant — defensive against
           // the rare multi-run case (matches the pattern in
           // getIndividualStudentReport).
@@ -1465,7 +1475,7 @@ export function ReportService({
               seenCompletedAt.set(r.taskVariantId, r.completedAt);
             }
           }
-          return { admin, scoresByVariant, runMetaByVariant };
+          return { admin, scoresByVariant, domainScoresByVariant, runMetaByVariant };
         }),
       );
 
@@ -1473,7 +1483,7 @@ export function ReportService({
       const administrations: ServiceGuardianAdministrationEntry[] = [];
       const longitudinalScores: Record<string, ServiceHistoricalScore[]> = {};
 
-      for (const { admin, scoresByVariant, runMetaByVariant } of perAdminFetches) {
+      for (const { admin, scoresByVariant, domainScoresByVariant, runMetaByVariant } of perAdminFetches) {
         const taskMetas = taskMetadataByAdmin.get(admin.id) ?? [];
         const { taskOrder, variantsByTaskId } = groupTaskMetasByTaskId(taskMetas);
         const tasks: ServiceGuardianTaskEntry[] = [];
@@ -1505,6 +1515,7 @@ export function ReportService({
 
           if (scoredVariant && scoredScoreMap) {
             const runMeta = runMetaByVariant.get(scoredVariant.taskVariantId) ?? null;
+            const scoredDomainScoreMap = domainScoresByVariant.get(scoredVariant.taskVariantId);
             const { entry } = buildBaseAssessedTaskEntry(
               taskMeta,
               scoredVariant,
@@ -1513,6 +1524,7 @@ export function ReportService({
               targetUser.grade,
               eligibility.isOptional,
               runMeta,
+              scoredDomainScoreMap,
             );
             tasks.push(entry);
 
@@ -2884,6 +2896,23 @@ function buildVariantScoreLookup(rows: RunScoreRow[]): Map<string, Map<string, s
   return out;
 }
 
+/**
+ * Index per-variant run_scores rows by domain: variantId → domain → name → value.
+ * Enables domain-aware subscore lookup when multiple domains share the same generic
+ * score name (e.g. FSM:numCorrect vs LSM:numCorrect vs DEL:numCorrect for PA).
+ */
+function buildVariantDomainScoreLookup(rows: RunScoreRow[]): Map<string, Map<string, Map<string, string>>> {
+  const out = new Map<string, Map<string, Map<string, string>>>();
+  for (const r of rows) {
+    if (!r.scoreDomain) continue;
+    if (!out.has(r.taskVariantId)) out.set(r.taskVariantId, new Map());
+    const variantMap = out.get(r.taskVariantId)!;
+    if (!variantMap.has(r.scoreDomain)) variantMap.set(r.scoreDomain, new Map());
+    variantMap.get(r.scoreDomain)!.set(r.scoreName, r.scoreValue);
+  }
+  return out;
+}
+
 /** Index historical run_scores rows: runId → scoreName → scoreValue. */
 function buildRunScoreLookup(
   rows: ReadonlyArray<{ runId: string; scoreName: string; scoreValue: string }>,
@@ -2941,20 +2970,29 @@ function buildTaskTags(args: { optional: boolean; completed: boolean; reliable: 
 export function extractSubscoresFromScoreMap(
   scoreMap: Map<string, string>,
   taskSlug: string,
+  domainScoreMap?: Map<string, Map<string, string>>,
 ): Record<string, ServiceSubscoreEntry> | null {
   const config = getSubscoresConfig(taskSlug);
   if (!config) return null;
 
   const out: Record<string, ServiceSubscoreEntry> = {};
   for (const [responseKey, fields] of Object.entries(config)) {
-    const correctRaw = scoreMap.get(fields.correctName);
-    const attemptedRaw = scoreMap.get(fields.attemptedName);
+    // When the subscore config declares a domain and a domain-indexed map is
+    // available, use the domain map for lookup — this prevents collisions when
+    // multiple subtasks share the same generic score name (FSM/LSM/DEL each
+    // have "numCorrect"). Fall back to the flat score map for configs without
+    // a domain declaration (all other tasks).
+    const lookup: Map<string, string> | undefined =
+      fields.domain && domainScoreMap ? domainScoreMap.get(fields.domain) : scoreMap;
+
+    const correctRaw = lookup?.get(fields.correctName);
+    const attemptedRaw = lookup?.get(fields.attemptedName);
     const correct = parseScoreValue(correctRaw);
     const attempted = parseScoreValue(attemptedRaw);
 
     let percentCorrect: number | null = null;
     if (fields.percentCorrectName) {
-      const pct = parseScoreValue(scoreMap.get(fields.percentCorrectName));
+      const pct = parseScoreValue(lookup?.get(fields.percentCorrectName));
       if (pct !== null) percentCorrect = Math.round(pct * 10) / 10;
     }
     if (percentCorrect === null && correct !== null && attempted !== null && attempted > 0) {
@@ -3099,6 +3137,7 @@ function buildBaseAssessedTaskEntry(
   grade: string | null,
   optional: boolean,
   runMeta: { reliable: boolean | null; engagementFlags: string[] } | null,
+  domainScoreMap?: Map<string, Map<string, string>>,
 ): { entry: ServiceStudentReportTaskBase; gradeLevel: number | null } {
   const gradeLevel = getGradeAsNumber(grade);
   const scores = resolveTaskScores(scoreMap, scoredVariant.taskSlug, gradeLevel);
@@ -3127,7 +3166,7 @@ function buildBaseAssessedTaskEntry(
   const reliable = runMeta?.reliable ?? null;
   const engagementFlags = runMeta?.engagementFlags ?? [];
 
-  const subscores = extractSubscoresFromScoreMap(scoreMap, scoredVariant.taskSlug);
+  const subscores = extractSubscoresFromScoreMap(scoreMap, scoredVariant.taskSlug, domainScoreMap);
   const skillsToWorkOn = computePaSkillsToWorkOn(scoredVariant.taskSlug, subscores);
 
   const entry: ServiceStudentReportTaskBase = {
@@ -3160,6 +3199,7 @@ function buildAssessedTaskEntry(
   historicalRuns: HistoricalRunRow[],
   historicalScoresByRun: Map<string, Map<string, string>>,
   runMeta: { reliable: boolean | null; engagementFlags: string[] } | null,
+  domainScoreMap?: Map<string, Map<string, string>>,
 ): ServiceIndividualStudentReportTask {
   const { entry, gradeLevel } = buildBaseAssessedTaskEntry(
     taskMeta,
@@ -3169,6 +3209,7 @@ function buildAssessedTaskEntry(
     grade,
     optional,
     runMeta,
+    domainScoreMap,
   );
 
   // Historical entries are resolved with the current variant's slug. Runs for
