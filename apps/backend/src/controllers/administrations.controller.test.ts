@@ -198,6 +198,48 @@ describe('AdministrationsController', () => {
       });
     });
 
+    it('should forward the search term to the service when provided', async () => {
+      mockList.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await Controller.list(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        embed: [],
+        search: 'winter',
+      });
+
+      expect(mockList).toHaveBeenCalledWith(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        embed: [],
+        search: 'winter',
+      });
+    });
+
+    it('should not forward a search term to the service when absent', async () => {
+      mockList.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await Controller.list(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        embed: [],
+      });
+
+      // The service options must not carry a `search` key when the query omits it.
+      const serviceOptions = mockList.mock.calls[0][1];
+      expect(serviceOptions).not.toHaveProperty('search');
+    });
+
     it('should return empty items array when no administrations found', async () => {
       mockList.mockResolvedValue({ items: [], totalItems: 0 });
 
