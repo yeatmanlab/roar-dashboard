@@ -3,7 +3,7 @@
     <fieldset>
       <legend class="sr-only">Task</legend>
       <Dropdown
-        v-model="selectedTask"
+        v-model="selectedTaskId"
         :data="formattedTasks"
         :loading-data="isLoadingTasks"
         label="Select an Existing Task"
@@ -13,38 +13,98 @@
       />
     </fieldset>
 
-    <template v-if="taskData">
-      <fieldset class="flex flex-column row-gap-2">
-        <div>
-          <legend class="text-lg font-medium mb-0">Task Configuration</legend>
-          <p class="text-md text-gray-500 mt-2">Adjust the core configuration for this task.</p>
-        </div>
+    <template v-if="selectedTask">
+      <fieldset class="flex flex-column row-gap-4">
+        <legend class="sr-only">Task Details</legend>
+        <TextInput id="taskSlug" :model-value="selectedTask.slug" label="Slug (immutable)" :disabled="true" />
 
-        <TaskParametersConfigurator
-          v-model="taskCoreConfig"
-          edit-mode
-          disable-deleting-existing-rows
-          :validation-key-blacklist="ignoreFields"
+        <TextInput
+          id="taskName"
+          v-model="v$.name.$model"
+          label="Name"
+          :is-invalid="v$.name.$invalid && v$.name.$dirty"
+          :errors="v$.name.$errors"
+          :required="true"
+        />
+
+        <TextInput
+          id="taskNameSimple"
+          v-model="v$.nameSimple.$model"
+          label="Simple Name"
+          :is-invalid="v$.nameSimple.$invalid && v$.nameSimple.$dirty"
+          :errors="v$.nameSimple.$errors"
+          :required="true"
+        />
+
+        <TextInput
+          id="taskNameTechnical"
+          v-model="v$.nameTechnical.$model"
+          label="Technical Name"
+          :is-invalid="v$.nameTechnical.$invalid && v$.nameTechnical.$dirty"
+          :errors="v$.nameTechnical.$errors"
+          :required="true"
+        />
+
+        <TextInput
+          id="taskDescription"
+          v-model="v$.description.$model"
+          label="Description"
+          :is-invalid="v$.description.$invalid && v$.description.$dirty"
+          :errors="v$.description.$errors"
+        />
+
+        <TextInput
+          id="taskImage"
+          v-model="v$.image.$model"
+          label="Cover Image URL"
+          type="url"
+          :is-invalid="v$.image.$invalid && v$.image.$dirty"
+          :errors="v$.image.$errors"
+        />
+
+        <TextInput
+          id="taskTutorialVideo"
+          v-model="v$.tutorialVideo.$model"
+          label="Tutorial Video URL"
+          type="url"
+          :is-invalid="v$.tutorialVideo.$invalid && v$.tutorialVideo.$dirty"
+          :errors="v$.tutorialVideo.$errors"
         />
       </fieldset>
 
       <fieldset class="flex flex-column row-gap-2">
         <div>
-          <legend class="text-lg font-medium mb-0">Game Parameters</legend>
-          <p class="text-md text-gray-500 mt-2">Create the game parameters for variants of this task.</p>
+          <legend class="text-lg font-medium mb-0">Task Configuration</legend>
+          <p class="text-md text-gray-500 mt-2">Adjust the configuration for this task.</p>
         </div>
 
-        <TaskParametersConfigurator v-model="taskGameParameters" edit-mode :validation-key-blacklist="ignoreFields" />
+        <template v-if="canEditTaskConfig">
+          <TaskParametersConfigurator
+            v-model="taskConfigModel"
+            edit-mode
+            :validation-key-blacklist="taskConfigPassthroughKeys"
+          />
+
+          <p v-if="taskConfigPassthroughKeys.length > 0" class="text-sm text-gray-500 mt-2">
+            The following entries hold values this editor can't represent (lists, nested objects, or unset values) and
+            will be preserved exactly as-is: <b>{{ taskConfigPassthroughKeys.join(', ') }}</b>
+          </p>
+        </template>
+
+        <p v-else class="text-sm text-gray-500 mt-2">
+          This task's configuration is not a set of named parameters and can't be edited here. It will be preserved
+          exactly as-is.
+        </p>
       </fieldset>
 
       <div class="flex flex-column gap-4 lg:align-items-center">
-        <!-- TODO(1881, PR B): Re-enable once the update mutation targets the backend API. The form now reads the
-             new backend task shape (UUID ids, flat name fields, taskConfig), but the surviving firekit mutation
-             expects the legacy Firestore document shape and slug-keyed ids — submitting would write a corrupted
-             document under the wrong key. -->
         <PvButton
-          v-tooltip="'Task updates are temporarily disabled while task editing moves to the new backend API.'"
-          disabled
+          v-tooltip="
+            userCan(Permissions.Tasks.UPDATE)
+              ? false
+              : 'You do not have permission to update tasks. If you feel this is a mistake, please contact your administrator.'
+          "
+          :disabled="!userCan(Permissions.Tasks.UPDATE)"
           type="submit"
           label="Update Task"
           class="self-center w-full lg:w-4 bg-primary align-right text-white border-none border-round p-3 hover:bg-red-900"
@@ -58,69 +118,41 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
+import _isEqual from 'lodash/isEqual';
+import { helpers, maxLength, required, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
-import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvToast from 'primevue/toast';
-import { useAuthStore } from '@/store/auth';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
 import Dropdown from '@/components/Form/Dropdown';
+import TextInput from '@/components/Form/TextInput';
 import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
-import { convertParamArrayToObject } from '@/helpers/convertParamArrayToObject';
-import { convertObjectToParamArray } from '@/helpers/convertObjectToParamArray';
+import { buildTaskConfigFromRows, splitTaskConfig } from '@/helpers/taskConfig';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { TASK_DESCRIPTION_MAX_LENGTH, TASK_NAME_MAX_LENGTH, TASK_NAME_REGEX } from '@/constants/tasks';
+import { usePermissions } from '@/composables/usePermissions';
 
 const toast = useToast();
-const initialized = ref(false);
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
-
+const { userCan, Permissions } = usePermissions();
 const { mutate: updateTask } = useUpdateTaskMutation();
 
-// The selected task to be updated.
-const selectedTask = ref('');
+// The query is internally gated on the auth store's access token, so no
+// firekit-style init guard is needed here.
+const { isLoading: isLoadingTasks, data: tasks } = useTasksQuery();
 
-// Validation rules for the task form model.
-// @NOTE: vuelidate is initialised without any rules or model as this component relies on nested form models. The nested
-// task parameters configurator components handle their own validation rules.
-const v$ = useVuelidate();
+// The selected task's id.
+const selectedTaskId = ref('');
 
-// Ignore these fields when displaying the task data
-const ignoreFields = ['id', 'lastUpdated', 'gameConfig', 'parentDoc'];
-
-let taskData = computed(() => {
-  if (!selectedTask.value) return null;
-  return tasks.value.find((task) => task.id === selectedTask.value);
+// The selected task object from the catalog.
+const selectedTask = computed(() => {
+  if (!selectedTaskId.value) return null;
+  return (tasks.value ?? []).find((task) => task.id === selectedTaskId.value) ?? null;
 });
 
-let taskCoreConfig = reactive([]);
-let taskGameParameters = reactive([]);
-
-let unsubscribe;
-
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
-});
-
-onMounted(() => {
-  if (roarfirekit.value.restConfig?.()) init();
-});
-
-const { isLoading: isLoadingTasks, data: tasks } = useTasksQuery({
-  enabled: initialized,
-});
-
-// Tasks array formatted for the dropdown component
-// @TODO: Verify if this can be removed in favour of simply using the tasks array on the dropdown component and
-// specifying the appropriate label and value keys. This is only possible if all tasks have a name property.
+// Tasks array formatted for the dropdown component.
 const formattedTasks = computed(() => {
   if (!tasks.value) return [];
   return tasks.value.map((task) => {
@@ -131,40 +163,134 @@ const formattedTasks = computed(() => {
   });
 });
 
-watch(
-  taskData,
-  (newVal) => {
-    if (!newVal) return;
+// Editable form model, populated from the selected task. Nullable backend
+// fields are represented as empty strings for the inputs and mapped back to
+// null on submit when cleared.
+const formModel = reactive({
+  name: '',
+  nameSimple: '',
+  nameTechnical: '',
+  description: '',
+  image: '',
+  tutorialVideo: '',
+});
 
-    // When tasks are created, params are stored as an key-value object. To edit tasks, revert to an array of objects
-    // compatible with the TaskParametersConfigurator component, requiring a name, value, and type property.
-    let taskParams = convertObjectToParamArray(newVal);
-    let taskGameConfigParams = newVal.gameConfig ? convertObjectToParamArray(newVal.gameConfig) : [];
+// Task configuration model, edited as rows of { name, value, type }. The array
+// identity is stable (rows are spliced in/out) so template bindings stay reactive.
+// Non-scalar entries (null, arrays, nested objects) can't be represented as rows;
+// they're held in `taskConfigPassthrough` and merged back verbatim on submit.
+const taskConfigModel = reactive([]);
+const taskConfigPassthrough = ref({});
+const canEditTaskConfig = ref(true);
 
-    // Remove ignore fields from the task data
-    taskParams = taskParams.filter((item) => !ignoreFields.includes(item.name));
+const taskConfigPassthroughKeys = computed(() => Object.keys(taskConfigPassthrough.value));
 
-    // Update the form models
-    taskCoreConfig = reactive(taskParams);
-    taskGameParameters = reactive(taskGameConfigParams);
-  },
-  { immediate: true },
+// Validation rules mirroring the contract's UpdateTaskRequestBodySchema.
+const taskNameValidator = helpers.withMessage(
+  'Must start with a letter and contain only letters, numbers, spaces, hyphens, and underscores',
+  helpers.regex(TASK_NAME_REGEX),
 );
+
+const formRules = {
+  name: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
+  nameSimple: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
+  nameTechnical: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
+  // Optional fields simply omit `required` — vuelidate treats every key as a validator function.
+  description: { maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
+  image: { url },
+  tutorialVideo: { url },
+};
+
+const v$ = useVuelidate(formRules, formModel);
+
+// Populate the form whenever a DIFFERENT task is selected. The watch is keyed
+// on the selected id — not the computed task object — so background catalog
+// refetches (which replace the array and produce new object references) can't
+// re-seed the form and wipe in-progress edits.
+watch(selectedTaskId, (taskId) => {
+  if (!taskId) return;
+
+  const task = (tasks.value ?? []).find((candidate) => candidate.id === taskId);
+  if (!task) return;
+
+  Object.assign(formModel, {
+    name: task.name ?? '',
+    nameSimple: task.nameSimple ?? '',
+    nameTechnical: task.nameTechnical ?? '',
+    description: task.description ?? '',
+    image: task.image ?? '',
+    tutorialVideo: task.tutorialVideo ?? '',
+  });
+
+  const { editableRows, passthrough, canEdit } = splitTaskConfig(task.taskConfig);
+  taskConfigModel.splice(0, taskConfigModel.length, ...editableRows);
+  taskConfigPassthrough.value = passthrough;
+  canEditTaskConfig.value = canEdit;
+  v$.value.$reset();
+});
+
 /**
  * Reset the form to its initial state.
  *
  * @returns {void}
  */
 function resetForm() {
-  selectedTask.value = '';
+  selectedTaskId.value = '';
+  taskConfigModel.splice(0, taskConfigModel.length);
+  taskConfigPassthrough.value = {};
+  canEditTaskConfig.value = true;
   v$.value.$reset();
+}
+
+/**
+ * Build the diffed PATCH body from the form state.
+ *
+ * Only changed fields are included — the contract's strict update schema
+ * rejects empty bodies and immutable fields, so no-op submissions are
+ * short-circuited by the caller. Cleared nullable fields (description, image,
+ * tutorialVideo) are sent as null to clear them on the backend.
+ *
+ * @param {Object} task – The original task object from the catalog.
+ * @returns {Object} The PATCH body containing only changed fields.
+ */
+function buildDiffedBody(task) {
+  const body = {};
+
+  for (const field of ['name', 'nameSimple', 'nameTechnical']) {
+    const trimmed = formModel[field].trim();
+    if (trimmed !== (task[field] ?? '')) {
+      body[field] = trimmed;
+    }
+  }
+
+  for (const field of ['description', 'image', 'tutorialVideo']) {
+    const trimmed = formModel[field].trim();
+    if (trimmed !== (task[field] ?? '')) {
+      body[field] = trimmed === '' ? null : trimmed;
+    }
+  }
+
+  // taskConfig is only diffed when it's representable in the editor; keys are
+  // preserved verbatim and passthrough entries are merged back, so an unchanged
+  // form rebuilds the original object exactly. Deep equality (not JSON string
+  // comparison) keeps the diff key-order-insensitive.
+  if (canEditTaskConfig.value) {
+    const editedTaskConfig = buildTaskConfigFromRows(taskConfigModel, taskConfigPassthrough.value);
+    const originalTaskConfig = task.taskConfig ?? {};
+    if (!_isEqual(editedTaskConfig, originalTaskConfig)) {
+      body.taskConfig = editedTaskConfig;
+    }
+  }
+
+  return body;
 }
 
 /**
  * Handle form submission
  *
- * Executes a final form validation before compiling the task object and submitting it to the API via the updateTask
- * mutation. Once submitted, the form is reset to its initial state to allow for further task updates.
+ * Executes a final form validation before compiling the diffed PATCH body and submitting it to the API via the
+ * updateTask mutation. No-op submissions (nothing changed) are short-circuited with an informational toast since the
+ * contract rejects empty PATCH bodies.
  *
  * @returns {void}
  */
@@ -182,48 +308,50 @@ const handleSubmit = async () => {
     return;
   }
 
-  const taskCoreConfigObject = convertParamArrayToObject(taskCoreConfig);
-  const taskGameParametersObject = convertParamArrayToObject(taskGameParameters);
+  // The submit button only renders with a task selected, but the handler sits on the
+  // <form> element — guard against programmatic submits and refetch races.
+  const task = selectedTask.value;
+  if (!task) return;
 
-  // Construct the task object to be submitted.
-  let taskObject = {
-    taskId: selectedTask.value,
-    data: {
-      // Add the updated task core config data.
-      ...taskCoreConfigObject,
+  const body = buildDiffedBody(task);
 
-      // Add the original task data that was not allowed to be edited.
-      // @NOTE: This is necessary as even though we don't display these fields and apply validation rules to prevent
-      // these fields from being added manually, this is an additional layer to ensure data integrity.
-      ...Object.fromEntries(Object.entries(taskData.value).filter(([key]) => ignoreFields.includes(key))),
+  if (Object.keys(body).length === 0) {
+    toast.add({
+      severity: TOAST_SEVERITIES.INFO,
+      summary: 'Nothing to update',
+      detail: 'No fields were changed.',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
 
-      // Add the game config data.
-      gameConfig: {
-        ...taskGameParametersObject,
+    return;
+  }
+
+  updateTask(
+    { taskId: task.id, body },
+    {
+      onSuccess: () => {
+        toast.add({
+          severity: TOAST_SEVERITIES.SUCCESS,
+          summary: 'Hoorah!',
+          detail: 'Task successfully updated.',
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
+        resetForm();
+      },
+      onError: (error) => {
+        // Surface the backend's message when available (e.g. validation details
+        // from a 400) so admins get actionable feedback instead of a generic retry.
+        const backendMessage = error?.body?.error?.message;
+        toast.add({
+          severity: TOAST_SEVERITIES.ERROR,
+          summary: 'Error',
+          detail: backendMessage ?? 'Failed to update task, please try again.',
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
+
+        console.error('Failed to update task.', error);
       },
     },
-  };
-
-  await updateTask(taskObject, {
-    onSuccess: () => {
-      toast.add({
-        severity: TOAST_SEVERITIES.SUCCESS,
-        summary: 'Hoorah!',
-        detail: 'Task successfully updated.',
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-      resetForm();
-    },
-    onError: (error) => {
-      toast.add({
-        severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Error',
-        detail: 'Failed to update task, please try again.',
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-
-      console.error('Failed to update task.', error);
-    },
-  });
+  );
 };
 </script>
