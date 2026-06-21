@@ -1,3 +1,4 @@
+import { ref } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
@@ -41,9 +42,24 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
-describe('useAdministrationsListQuery', () => {
-  let queryClient;
+// Default reactive args used by most tests (page 1, name asc, no search).
+const defaultArgs = () => ({
+  page: ref(1),
+  perPage: ref(25),
+  sortBy: ref('name'),
+  sortOrder: ref('asc'),
+  search: ref(''),
+});
 
+const callComposable = (args = defaultArgs(), queryOptions = undefined) =>
+  withSetup(
+    () => useAdministrationsListQuery(args.page, args.perPage, args.sortBy, args.sortOrder, args.search, queryOptions),
+    { plugins: [[VueQuery.VueQueryPlugin, { queryClient }]] },
+  );
+
+let queryClient;
+
+describe('useAdministrationsListQuery', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     queryClient = new VueQuery.QueryClient({
@@ -62,22 +78,24 @@ describe('useAdministrationsListQuery', () => {
     queryClient?.clear();
   });
 
-  it('calls useQuery with the ADMINISTRATIONS_LIST_QUERY_KEY', () => {
+  it('keys on the list key plus the page/sort/search inputs (by reference)', () => {
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationsListQuery(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
+    const args = defaultArgs();
+    callComposable(args);
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith(
-      expect.objectContaining({
-        queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY, expect.anything()],
-        queryFn: expect.any(Function),
-      }),
-    );
+    const { queryKey } = VueQuery.useQuery.mock.calls[0][0];
+    // [LIST_KEY, isSuperAdmin, page, perPage, sortBy, sortOrder, search]
+    expect(queryKey[0]).toBe(ADMINISTRATIONS_LIST_QUERY_KEY);
+    // The reactive inputs are included by reference so the query re-keys when they change.
+    expect(queryKey).toContain(args.page);
+    expect(queryKey).toContain(args.perPage);
+    expect(queryKey).toContain(args.sortBy);
+    expect(queryKey).toContain(args.sortOrder);
+    expect(queryKey).toContain(args.search);
   });
 
-  it('requests stats + tasks for super admins and maps embedded tasks to assessments', async () => {
+  it('requests the page/sort/embed query params and returns { items, pagination }', async () => {
     const tasks = [
       {
         taskId: '00000000-0000-0000-0000-0000000000aa',
@@ -102,9 +120,10 @@ describe('useAdministrationsListQuery', () => {
         tasks,
       },
     ];
+    const pagination = { page: 2, perPage: 10, totalItems: 12, totalPages: 2 };
     mockAdministrationsList.mockResolvedValueOnce({
       status: 200,
-      body: { data: { items, pagination: { page: 1, perPage: 100, totalItems: 1, totalPages: 1 } } },
+      body: { data: { items, pagination } },
     });
 
     let queryFn;
@@ -113,21 +132,73 @@ describe('useAdministrationsListQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useAdministrationsListQuery(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    callComposable({
+      page: ref(2),
+      perPage: ref(10),
+      sortBy: ref('dateStart'),
+      sortOrder: ref('desc'),
+      search: ref(''),
     });
 
-    await expect(queryFn()).resolves.toEqual([{ ...items[0], assessments: tasks }]);
-    expect(mockAdministrationsList).toHaveBeenCalledWith({
-      query: { page: 1, perPage: 100, sortBy: 'name', sortOrder: 'asc', embed: 'stats,tasks' },
+    await expect(queryFn()).resolves.toEqual({
+      items: [{ ...items[0], assessments: tasks }],
+      pagination,
     });
+    expect(mockAdministrationsList).toHaveBeenCalledWith({
+      query: { page: 2, perPage: 10, sortBy: 'dateStart', sortOrder: 'desc', embed: 'stats,tasks' },
+    });
+  });
+
+  it('includes the search term in the query only when it is non-empty', async () => {
+    mockAdministrationsList.mockResolvedValue({
+      status: 200,
+      body: { data: { items: [], pagination: { page: 1, perPage: 25, totalItems: 0, totalPages: 0 } } },
+    });
+
+    let queryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      queryFn = options.queryFn;
+      return { data: { value: null }, error: { value: null } };
+    });
+
+    callComposable({
+      page: ref(1),
+      perPage: ref(25),
+      sortBy: ref('name'),
+      sortOrder: ref('asc'),
+      search: ref('winter'),
+    });
+
+    await queryFn();
+    expect(mockAdministrationsList).toHaveBeenCalledWith({
+      query: { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc', embed: 'stats,tasks', search: 'winter' },
+    });
+  });
+
+  it('omits the search param when the term is empty', async () => {
+    mockAdministrationsList.mockResolvedValue({
+      status: 200,
+      body: { data: { items: [], pagination: { page: 1, perPage: 25, totalItems: 0, totalPages: 0 } } },
+    });
+
+    let queryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      queryFn = options.queryFn;
+      return { data: { value: null }, error: { value: null } };
+    });
+
+    callComposable();
+
+    await queryFn();
+    const callArg = mockAdministrationsList.mock.calls[0][0];
+    expect(callArg.query).not.toHaveProperty('search');
   });
 
   it('requests only tasks (no stats) for non-super-admins', async () => {
     mockIsSuperAdmin.value = false;
     mockAdministrationsList.mockResolvedValueOnce({
       status: 200,
-      body: { data: { items: [], pagination: { page: 1, perPage: 100, totalItems: 0, totalPages: 1 } } },
+      body: { data: { items: [], pagination: { page: 1, perPage: 25, totalItems: 0, totalPages: 0 } } },
     });
 
     let queryFn;
@@ -136,50 +207,11 @@ describe('useAdministrationsListQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useAdministrationsListQuery(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
+    callComposable();
 
     await queryFn();
     expect(mockAdministrationsList).toHaveBeenCalledWith({
-      query: { page: 1, perPage: 100, sortBy: 'name', sortOrder: 'asc', embed: 'tasks' },
-    });
-  });
-
-  it('follows pagination and aggregates all pages', async () => {
-    const pageOne = [
-      { id: '00000000-0000-0000-0000-000000000001', name: 'A', publicName: 'A', dates: {}, isOrdered: false },
-    ];
-    const pageTwo = [
-      { id: '00000000-0000-0000-0000-000000000002', name: 'B', publicName: 'B', dates: {}, isOrdered: false },
-    ];
-    mockAdministrationsList
-      .mockResolvedValueOnce({
-        status: 200,
-        body: { data: { items: pageOne, pagination: { page: 1, perPage: 100, totalItems: 101, totalPages: 2 } } },
-      })
-      .mockResolvedValueOnce({
-        status: 200,
-        body: { data: { items: pageTwo, pagination: { page: 2, perPage: 100, totalItems: 101, totalPages: 2 } } },
-      });
-
-    let queryFn;
-    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
-      queryFn = options.queryFn;
-      return { data: { value: null }, error: { value: null } };
-    });
-
-    withSetup(() => useAdministrationsListQuery(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    await expect(queryFn()).resolves.toEqual([
-      { ...pageOne[0], assessments: [] },
-      { ...pageTwo[0], assessments: [] },
-    ]);
-    expect(mockAdministrationsList).toHaveBeenCalledTimes(2);
-    expect(mockAdministrationsList).toHaveBeenNthCalledWith(2, {
-      query: { page: 2, perPage: 100, sortBy: 'name', sortOrder: 'asc', embed: 'stats,tasks' },
+      query: { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc', embed: 'tasks' },
     });
   });
 
@@ -195,9 +227,7 @@ describe('useAdministrationsListQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useAdministrationsListQuery(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
+    callComposable();
 
     await expect(queryFn()).rejects.toMatchObject({
       status: 500,
@@ -209,9 +239,7 @@ describe('useAdministrationsListQuery', () => {
     mockUseAuthStore.mockReturnValue({ accessToken: null });
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationsListQuery(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
+    callComposable();
 
     const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
     expect(enabledRef.value).toBe(false);
@@ -221,9 +249,7 @@ describe('useAdministrationsListQuery', () => {
     mockUserClaims.value = {};
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationsListQuery(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
+    callComposable();
 
     const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
     expect(enabledRef.value).toBe(false);
@@ -236,9 +262,7 @@ describe('useAdministrationsListQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useAdministrationsListQuery(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
+    callComposable();
 
     expect(retryFn(0, { body: { error: { code: 'auth/required' } } })).toBe(false);
     expect(retryFn(0, { body: { error: { code: 'auth/rostering-ended' } } })).toBe(false);
