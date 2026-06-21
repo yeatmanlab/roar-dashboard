@@ -76,14 +76,16 @@ describe('RoarScores.computedScoreCallback', () => {
 
   it('fixed scoring (v3): roarScore = numCorrect, percentCorrect computed, no theta', async () => {
     setSession({ config: { scoringVersion: PA_SCORING_VERSION.V3_FIXED, taskId: PA_TASK_ID } });
+    // Include numIncorrect in the raw input — the PA facade always provides it.
     const result = await new RoarScores().computedScoreCallback({
-      fsm: { test: { numCorrect: 8, numAttempted: 10 } },
-      lsm: { test: { numCorrect: 6, numAttempted: 10 } },
+      fsm: { test: { numCorrect: 8, numAttempted: 10, numIncorrect: 2 } },
+      lsm: { test: { numCorrect: 6, numAttempted: 10, numIncorrect: 4 } },
     });
     expect(result.fsm).toMatchObject({
       roarScore: 8,
       numCorrect: 8,
       numAttempted: 10,
+      numIncorrect: 2,
       percentCorrect: 80,
       roarScoreKind: PA_SCORE_KIND.RAW_TOTAL_CORRECT,
       scoringVersion: PA_SCORING_VERSION.V3_FIXED,
@@ -91,21 +93,50 @@ describe('RoarScores.computedScoreCallback', () => {
     expect(result.lsm.percentCorrect).toBe(60);
     expect(result.fsm.thetaEstimate).toBeUndefined();
     // Composite raw counts = sum across subtasks (numCorrect 8+6, numAttempted 10+10).
-    expect(result.composite).toMatchObject({ numCorrect: 14, numAttempted: 20 });
+    expect(result.composite).toMatchObject({
+      numCorrect: 14,
+      numAttempted: 20,
+      numIncorrect: 6,
+      percentCorrect: 70,
+      roarScoreKind: PA_SCORE_KIND.RAW_TOTAL_CORRECT,
+      scoringVersion: PA_SCORING_VERSION.V3_FIXED,
+    });
   });
 
   it('adaptive scoring (v5): attaches per-subtask thetas; composite uses scaled, composite_foundational its own', async () => {
     setSession({
       config: { scoringVersion: PA_SCORING_VERSION.V5_ADAPTIVE, taskId: PA_TASK_ID },
-      thetas: { fsm: 0.5, scaled: 0.65, composite: 0.6, composite_foundational: -1.1 },
-      thetaSEs: { fsm: 0.2, scaled: 0.15, composite: 0.16, composite_foundational: 0.3 },
+      // lsm is included to pin the invariant: for non-composite subtasks raw = computed (no cross-scale transform).
+      // A regression in either scores.js (adaptive loop) or score-entries.ts (SUBTASK_NAMES) would break this.
+      thetas: { fsm: 0.5, lsm: 0.3, scaled: 0.65, composite: 0.6, composite_foundational: -1.1 },
+      thetaSEs: { fsm: 0.2, lsm: 0.18, scaled: 0.15, composite: 0.16, composite_foundational: 0.3 },
     });
     const result = await new RoarScores().computedScoreCallback({
       fsm: { test: { numCorrect: 8, numAttempted: 10 } },
+      lsm: { test: { numCorrect: 5, numAttempted: 8 } },
     });
-    expect(result.fsm).toMatchObject({ thetaEstimate: 0.5, thetaSE: 0.2 });
+    // Per-subtask: no cross-scale transform, so raw = computed (equal values).
+    expect(result.fsm).toMatchObject({
+      thetaEstimateRaw: 0.5,
+      thetaSERaw: 0.2,
+      thetaEstimate: 0.5,
+      thetaSE: 0.2,
+    });
+    expect(result.lsm).toMatchObject({
+      thetaEstimateRaw: 0.3,
+      thetaSERaw: 0.18,
+      thetaEstimate: 0.3,
+      thetaSE: 0.18,
+    });
     expect(result.fsm.roarScore).toBeUndefined(); // adaptive → no raw roarScore on subtasks
-    expect(result.composite).toMatchObject({ thetaEstimate: 0.65, thetaEstimateRaw: 0.6 });
+    // Composite: cross-scale transform applied, thetaEstimate (scaled) ≠ thetaEstimateRaw (native).
+    // roarScoreKind and scoringVersion are set unconditionally on composite.
+    expect(result.composite).toMatchObject({
+      thetaEstimate: 0.65,
+      thetaEstimateRaw: 0.6,
+      roarScoreKind: PA_SCORE_KIND.SCALED_IRT,
+      scoringVersion: PA_SCORING_VERSION.V5_ADAPTIVE,
+    });
     expect(result.composite_foundational).toMatchObject({ thetaEstimate: -1.1, thetaSE: 0.3 });
   });
 

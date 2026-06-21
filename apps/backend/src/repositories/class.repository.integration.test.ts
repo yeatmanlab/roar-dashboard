@@ -51,9 +51,10 @@ describe('ClassRepository', () => {
   });
 
   describe('getUsersByClassId', () => {
-    // baseFixture.classInSchoolA has exactly 2 active users:
+    // baseFixture.classInSchoolA has exactly 3 active users:
     // - classAStudent (student)
     // - classATeacher (teacher)
+    // - schoolAStudent (student; students enroll at the class level)
     // - expiredClassStudent is excluded due to expired enrollment
 
     it('returns all enrolled users for a class', async () => {
@@ -62,20 +63,27 @@ describe('ClassRepository', () => {
         perPage: 100,
       });
 
-      // Exactly 2 active users in classInSchoolA
-      expect(result.totalItems).toBe(2);
-      expect(result.items).toHaveLength(2);
+      // Exactly 3 active users in classInSchoolA
+      expect(result.totalItems).toBe(3);
+      expect(result.items).toHaveLength(3);
 
       const userIds = result.items.map((u) => u.id);
       expect(userIds).toContain(baseFixture.classAStudent.id);
       expect(userIds).toContain(baseFixture.classATeacher.id);
+      expect(userIds).toContain(baseFixture.schoolAStudent.id);
       // Expired enrollment should be excluded
       expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
     });
 
     it('returns empty for class with no enrolled users', async () => {
-      // classInSchoolB has no direct class enrollments in base fixture
-      const result = await repository.getUsersByClassId(baseFixture.classInSchoolB.id, {
+      // Every baseFixture class now has at least one student (students enroll at the
+      // class level), so create a fresh, unenrolled class to exercise the empty path.
+      const emptyClass = await ClassFactory.create({
+        name: 'getUsersByClassId Empty Class',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+      const result = await repository.getUsersByClassId(emptyClass.id, {
         page: 1,
         perPage: 100,
       });
@@ -85,14 +93,14 @@ describe('ClassRepository', () => {
     });
 
     it('respects pagination', async () => {
-      // classInSchoolA has 2 users, request 1 per page
+      // classInSchoolA has 3 users, request 1 per page
       const page1 = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
         page: 1,
         perPage: 1,
       });
 
       expect(page1.items).toHaveLength(1);
-      expect(page1.totalItems).toBe(2);
+      expect(page1.totalItems).toBe(3);
 
       const page2 = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
         page: 2,
@@ -100,7 +108,7 @@ describe('ClassRepository', () => {
       });
 
       expect(page2.items).toHaveLength(1);
-      expect(page2.totalItems).toBe(2);
+      expect(page2.totalItems).toBe(3);
 
       // Pages should have different users
       expect(page1.items[0]!.id).not.toBe(page2.items[0]!.id);
@@ -164,10 +172,11 @@ describe('ClassRepository', () => {
         perPage: 100,
       });
 
-      expect(result.totalItems).toBe(2); // Only active users
+      expect(result.totalItems).toBe(3); // Only active users (classAStudent, classATeacher, schoolAStudent)
       const userIds = result.items.map((u) => u.id);
       expect(userIds).toContain(baseFixture.classAStudent.id);
       expect(userIds).toContain(baseFixture.classATeacher.id);
+      expect(userIds).toContain(baseFixture.schoolAStudent.id);
       expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
     });
 
