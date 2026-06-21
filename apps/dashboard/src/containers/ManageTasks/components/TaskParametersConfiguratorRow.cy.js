@@ -185,7 +185,12 @@ describe('<TaskParametersConfiguratorRow />', () => {
         .and('contain.text', 'Value is required');
     });
 
-    it('Shows error message when value is empty', () => {
+    it('Shows error message when a new row value is empty', () => {
+      // Seed a value so clearing it registers an edit and marks the field dirty.
+      // Vuelidate only surfaces $errors once a field is dirty, and backspacing an
+      // already-empty field is a no-op — so the row must start non-empty.
+      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, value: 'seedvalue', isNew: true }]);
+
       cy.mount(TaskParametersConfiguratorRow, {
         props: {
           modelValue: mockModel.value,
@@ -200,6 +205,25 @@ describe('<TaskParametersConfiguratorRow />', () => {
         .eq(0)
         .should('be.visible')
         .and('contain.text', 'Value is required');
+    });
+
+    it('Allows an empty value on existing (non-new) rows', () => {
+      // taskConfig is arbitrary JSON — an existing task may legitimately store an
+      // empty-string value, so existing rows must not be blocked by the value validator.
+      mockModel = ref([{ name: 'mock-param', type: 'string', value: 'mock-value' }]);
+
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+        },
+      });
+
+      cy.findByTestId('task-configurator-row__value-string').type('{selectAll}');
+      cy.findByTestId('task-configurator-row__value-string').type('{backspace}');
+      cy.findByTestId('task-configurator-row__value-string')
+        .siblings('[data-testid="textinput__errors"]')
+        .should('not.exist');
     });
 
     it('Prevents using reserved parameter names', () => {
@@ -221,8 +245,37 @@ describe('<TaskParametersConfiguratorRow />', () => {
         .and('contain.text', 'Parameter name is reserved');
     });
 
+    it('Enforces the name format on new rows only', () => {
+      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, isNew: true }]);
+
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+        },
+      });
+
+      // Dashes are rejected on new rows (names become taskConfig keys verbatim).
+      cy.findByTestId('task-configurator-row__name').type('invalid-name');
+      cy.findByTestId('task-configurator-row__name')
+        .siblings('[data-testid="textinput__errors"]')
+        .eq(0)
+        .should('be.visible')
+        .and('contain.text', 'Must start with a letter');
+
+      // Underscore-style names are accepted.
+      cy.findByTestId('task-configurator-row__name').type('{selectAll}');
+      cy.findByTestId('task-configurator-row__name').type('{backspace}');
+      cy.findByTestId('task-configurator-row__name').type('valid_name_2');
+      cy.findByTestId('task-configurator-row__name').siblings('[data-testid="textinput__errors"]').should('not.exist');
+    });
+
     it('Automatically clears error messages', () => {
-      mockModel = ref([...mockData]);
+      // Use a new row so the value-required validator (new-rows-only) is exercised.
+      // Seed name + value so clearing each registers an edit and marks the field
+      // dirty — vuelidate won't surface $errors otherwise, and backspacing an
+      // already-empty field is a no-op.
+      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, name: 'seedname', value: 'seedvalue', isNew: true }]);
 
       cy.mount(TaskParametersConfiguratorRow, {
         props: {
@@ -239,7 +292,7 @@ describe('<TaskParametersConfiguratorRow />', () => {
         .should('be.visible')
         .and('contain.text', 'Value is required');
 
-      cy.findByTestId('task-configurator-row__name').type('mock-param-name');
+      cy.findByTestId('task-configurator-row__name').type('mock_param_name');
       cy.findByTestId('task-configurator-row__name').siblings('[data-testid="textinput__errors"]').should('not.exist');
 
       cy.findByTestId('task-configurator-row__value-string').type('{selectAll}');
