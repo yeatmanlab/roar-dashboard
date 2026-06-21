@@ -7,6 +7,7 @@ import { FgaClient } from './clients/fga.client';
 import { initializeDatabasePools, closeDatabasePools } from './db/clients';
 import { setShuttingDown } from './health/shutdown-state';
 import { logger } from './logger';
+import { AuthService } from './services/auth/auth.service';
 
 /** Maximum time to wait for graceful shutdown before force-exiting. */
 const SHUTDOWN_GRACE_MS = 10_000;
@@ -62,6 +63,8 @@ async function startServer(): Promise<void> {
 
   // Attaches OIDC auth to the FGA client when FGA_OIDC_AUDIENCE is set, no-op otherwise.
   await FgaClient.initialize();
+
+  logger.info({ provider: AuthService.getProviderName() }, 'Auth provider active');
 
   // Dynamic import AFTER database is ready.
   // This fixes the initialization order issue where repositories would

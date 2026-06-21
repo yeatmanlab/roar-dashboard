@@ -5,6 +5,7 @@ import { DecodedUserFactory } from '../../test-support/factories/auth.factory';
 import type { MockedClass } from 'vitest';
 
 vi.mock('./providers/firebase-auth.provider');
+vi.mock('./providers/test-auth.provider');
 
 const MockedFirebaseAuthProvider = FirebaseAuthProvider as MockedClass<typeof FirebaseAuthProvider>;
 

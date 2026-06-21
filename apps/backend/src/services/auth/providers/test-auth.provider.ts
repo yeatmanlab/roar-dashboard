@@ -6,8 +6,8 @@ import type { DecodedUser, IAuthProvider } from '../auth.service';
  * Treats the token string directly as the Firebase UID, bypassing Firebase Admin SDK verification.
  * This allows SDK integration tests to use simple test tokens without requiring real Firebase credentials.
  *
- * Explicitly wired up by server-test.ts via AuthService.provider = new TestAuthProvider().
- * Never included in the production server.
+ * Activated by setting `AUTH_PROVIDER=test` in the environment. When unset, the default
+ * `FirebaseAuthProvider` is used instead. See `resolveAuthProvider()` in `auth.service.ts`.
  */
 export class TestAuthProvider implements IAuthProvider {
   /**

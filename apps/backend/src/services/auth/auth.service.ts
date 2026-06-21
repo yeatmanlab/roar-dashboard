@@ -1,4 +1,5 @@
 import { FirebaseAuthProvider } from './providers/firebase-auth.provider';
+import { TestAuthProvider } from './providers/test-auth.provider';
 
 /**
  * Decoded User JWT interface.
@@ -23,9 +24,27 @@ export interface IAuthProvider {
 }
 
 /**
+ * Resolve the auth provider based on the `AUTH_PROVIDER` environment variable.
+ *
+ * - `AUTH_PROVIDER=test` → `TestAuthProvider` (token string == Firebase UID, no verification)
+ * - Unset or any other value → `FirebaseAuthProvider` (real Firebase Admin SDK verification)
+ *
+ * @returns The resolved auth provider instance
+ */
+function resolveAuthProvider(): IAuthProvider {
+  if (process.env.AUTH_PROVIDER === 'test') {
+    return new TestAuthProvider();
+  }
+  return new FirebaseAuthProvider();
+}
+
+/**
  * Auth Service
  *
- * Static service for authenticating requests. Internally constructs the default provider.
+ * Static service for authenticating requests. The provider is resolved at module load
+ * time from the `AUTH_PROVIDER` environment variable:
+ * - `AUTH_PROVIDER=test` → `TestAuthProvider` (for SDK integration tests)
+ * - Unset → `FirebaseAuthProvider` (production and e2e with emulator)
  *
  * @example
  * ```ts
@@ -34,9 +53,18 @@ export interface IAuthProvider {
  * ```
  */
 export class AuthService {
-  private static provider: IAuthProvider = new FirebaseAuthProvider();
+  private static provider: IAuthProvider = resolveAuthProvider();
 
   static verifyToken(token: string): Promise<DecodedUser> {
     return this.provider.verifyToken(token);
+  }
+
+  /**
+   * Returns the name of the active auth provider for logging purposes.
+   *
+   * @returns The class name of the current provider
+   */
+  static getProviderName(): string {
+    return this.provider.constructor.name;
   }
 }
