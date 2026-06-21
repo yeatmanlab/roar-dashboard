@@ -166,7 +166,7 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
     const db = transaction ?? this.db;
 
     // CAT score field names sourced from constants for consistency with the upsert path.
-    const thetaSeName = SCORE_NAME.THETA_SE;
+    const thetaSeName = SCORE_NAME.THETA_SE_RAW;
     const numAttemptedName = SCORE_NAME.NUM_ATTEMPTED;
     const scoreType = SCORE_TYPE.RAW;
     const scoreDomain = SCORE_DOMAIN.COMPOSITE;
