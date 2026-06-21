@@ -1,28 +1,83 @@
 name: roar-platform
 
+# Default services (no profile): local full-stack development.
+# Persistent-FGA profile: TLS + Postgres-backed OpenFGA with playground,
+#   for standalone backend development against a durable FGA store.
+#
+# Usage:
+#   docker compose up -d --wait             # local dev (Postgres + OpenFGA + Auth emulator)
+#   docker compose --profile persistent up   # persistent OpenFGA (needs host Postgres + certs)
+
 services:
   # –––––––––––––––––––––––––––––––––––––––––––––––– #
-  # OpenFGA
-  # Authorization service for relationship-based access control.
+  # Local development stack (default)
+  # –––––––––––––––––––––––––––––––––––––––––––––––– #
+
+  postgres:
+    container_name: roar-postgres
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
+    ports:
+      - "${ROAR_PG_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # In-memory OpenFGA — server-test creates a fresh store and deploys the
+  # model on every boot, matching CI's FGA_API_URL=http://127.0.0.1:8080.
+  openfga:
+    container_name: roar-openfga
+    image: openfga/openfga:v1.12.1
+    command: run
+    ports:
+      - "${ROAR_FGA_PORT:-8080}:8080"
+
+  firebase-auth-emulator:
+    container_name: roar-firebase-auth
+    build: docker/firebase-auth-emulator
+    command: >
+      emulators:start
+        --only auth
+        --project ${GCLOUD_PROJECT:-demo-roar}
+        --config /firebase.json
+    ports:
+      - "${ROAR_AUTH_PORT:-9099}:9099"
+    volumes:
+      - ./docker/firebase-auth-emulator/firebase.json:/firebase.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9099/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # –––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Persistent OpenFGA (profile: persistent)
+  #
+  # TLS-enabled, Postgres-backed OpenFGA with a playground proxy. Used for
+  # standalone backend development when you need a durable FGA store.
+  #
+  # Requires a host Postgres with a `roar_openfga` database and TLS certs
+  # in ./certs/. After first run: npm run fga:init -w apps/backend
   #
   # API:        https://localhost:5050
   # Playground: http://localhost:5051/playground (via nginx proxy)
-  #
-  # After first run, initialise the store and model:
-  #   npm run fga:init -w apps/backend
-  #
-  # Requires Docker Compose v2 (docker compose, not docker-compose).
   # –––––––––––––––––––––––––––––––––––––––––––––––– #
-  openfga:
+
+  openfga-persistent:
     container_name: openfga
     image: openfga/openfga:v1.12.1
     command: run
+    profiles: [persistent]
     depends_on:
       openfga-migrate:
         condition: service_completed_successfully
     ports:
-      - "5050:8080" # HTTP API
-      - "5052:8081" # gRPC
+      - "5050:8080"
+      - "5052:8081"
     volumes:
       - ./certs:/certs:ro
     environment:
@@ -36,26 +91,23 @@ services:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
-  # Nginx reverse proxy for the OpenFGA Playground.
-  # Proxies play.fga.dev through localhost to avoid Chrome's Private Network
-  # Access restriction (public origin → loopback is blocked by default).
   openfga-playground:
     container_name: openfga-playground
     image: nginx:alpine
+    profiles: [persistent]
     depends_on:
-      - openfga
+      - openfga-persistent
     ports:
       - "5051:5051"
     volumes:
       - ./openfga-playground.nginx.conf:/etc/nginx/conf.d/default.conf:ro
     restart: unless-stopped
 
-  # Runs OpenFGA's database migrations against the local openfga Postgres database.
-  # Exits on completion — openfga service waits for this before starting.
   openfga-migrate:
     container_name: openfga-migrate
     image: openfga/openfga:v1.12.1
     command: migrate
+    profiles: [persistent]
     environment:
       - OPENFGA_DATASTORE_ENGINE=postgres
       - OPENFGA_DATASTORE_URI=postgres://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@host.docker.internal:5432/roar_openfga

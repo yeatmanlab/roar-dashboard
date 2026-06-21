@@ -5,19 +5,18 @@
 # (including a super admin) without touching the deployed dev backend.
 #
 # What it starts, in order:
-#   1. Postgres + OpenFGA            (docker compose, docker-compose.local-dev.yml)
+#   1. Postgres + OpenFGA + Firebase Auth emulator  (docker compose)
 #   2. Test databases               (db:create-test-dbs)
-#   3. Firebase Auth emulator       (firebase-tools, :9099, project demo-roar)
-#   4. Backend server-test          (:4000 — seeds DB + FGA tuples + emulator users)
-#   5. Dashboard dev server         (vite, https://localhost:5173, emulator mode)
+#   3. Backend server-test          (:4000 — seeds DB + FGA tuples + emulator users)
+#   4. Dashboard dev server         (vite, https://localhost:5173, emulator mode)
 #
 # Everything is torn down on Ctrl-C. Background-service logs live in .local-dev-logs/.
 #
-# Prerequisites: Docker, a Java runtime (the Auth emulator needs a JRE —
-# `brew install openjdk` on macOS), and launching via `npm run dev:local`.
+# Prerequisites: Docker (the Auth emulator runs in a container — no Java or
+# firebase-tools needed on the host), and launching via `npm run dev:local`.
 #
-# Overridable env: ROAR_LOCAL_PG_PORT (5432), ROAR_LOCAL_FGA_PORT (8080),
-# ROAR_LOCAL_AUTH_PORT (9099), ROAR_LOCAL_BACKEND_PORT (4000), GCLOUD_PROJECT
+# Overridable env: ROAR_PG_PORT (5432), ROAR_FGA_PORT (8080),
+# ROAR_AUTH_PORT (9099), ROAR_LOCAL_BACKEND_PORT (4000), GCLOUD_PROJECT
 # (demo-roar).
 
 set -euo pipefail
@@ -45,9 +44,9 @@ run_turbo() {
   fi
 }
 
-PG_PORT="${ROAR_LOCAL_PG_PORT:-5432}"
-FGA_PORT="${ROAR_LOCAL_FGA_PORT:-8080}"
-AUTH_PORT="${ROAR_LOCAL_AUTH_PORT:-9099}"
+PG_PORT="${ROAR_PG_PORT:-5432}"
+FGA_PORT="${ROAR_FGA_PORT:-8080}"
+AUTH_PORT="${ROAR_AUTH_PORT:-9099}"
 BACKEND_PORT="${ROAR_LOCAL_BACKEND_PORT:-4000}"
 # Vite's port is intentionally fixed (no ROAR_LOCAL_* override): the backend's
 # default ALLOWED_ORIGINS and the dashboard CSP both pin https://localhost:5173,
@@ -55,9 +54,7 @@ BACKEND_PORT="${ROAR_LOCAL_BACKEND_PORT:-4000}"
 DASHBOARD_PORT=5173
 PROJECT="${GCLOUD_PROJECT:-demo-roar}"
 
-COMPOSE_FILE="$ROOT/docker-compose.local-dev.yml"
 LOG_DIR="$ROOT/.local-dev-logs"
-LOCAL_ENV_FILE="$ROOT/apps/dashboard/env-configs/.env.development.local"
 mkdir -p "$LOG_DIR"
 
 # Backend environment (mirrors the CI e2e-tests job).
@@ -77,23 +74,13 @@ export PORT="$BACKEND_PORT"
 # Leave ALLOWED_ORIGINS unset: server-test defaults it to https://localhost:5173,
 # the Vite dev origin, so dashboard requests pass CORS.
 
-EMULATOR_PID=""
 SERVER_PID=""
-MANAGED_LOCAL_ENV=0
 
 cleanup() {
   echo ""
   log "Shutting down..."
   [[ -n "$SERVER_PID" ]] && kill "$SERVER_PID" 2>/dev/null || true
-  if [[ -n "$EMULATOR_PID" ]]; then
-    pkill -P "$EMULATOR_PID" 2>/dev/null || true   # the emulator's Java child
-    kill "$EMULATOR_PID" 2>/dev/null || true
-  fi
-  docker compose -f "$COMPOSE_FILE" down >/dev/null 2>&1 || true
-  if [[ "$MANAGED_LOCAL_ENV" == "1" ]]; then
-    rm -f "$LOCAL_ENV_FILE"
-    log "Removed managed $LOCAL_ENV_FILE"
-  fi
+  docker compose down >/dev/null 2>&1 || true
   log "Done."
 }
 trap cleanup EXIT INT TERM
@@ -125,7 +112,6 @@ wait_for_tcp() {
 # ── Preflight ────────────────────────────────────────────────────────────────
 command -v docker >/dev/null 2>&1 || { log "ERROR: docker is required."; exit 1; }
 docker compose version >/dev/null 2>&1 || { log "ERROR: docker compose v2 is required."; exit 1; }
-command -v java >/dev/null 2>&1 || log "WARNING: 'java' not found — the Firebase Auth emulator needs a JRE (e.g. 'brew install openjdk')."
 
 # Fail fast on port conflicts (before starting any container), naming the override.
 preflight_ok=1
@@ -136,20 +122,20 @@ check_free() {
     preflight_ok=0
   fi
 }
-check_free "$PG_PORT" "Postgres" "set ROAR_LOCAL_PG_PORT=<free port>."
-check_free "$FGA_PORT" "OpenFGA" "set ROAR_LOCAL_FGA_PORT=<free port>."
-check_free "$AUTH_PORT" "Firebase Auth emulator" "set ROAR_LOCAL_AUTH_PORT=<free port> (or stop a leftover emulator)."
+check_free "$PG_PORT" "Postgres" "set ROAR_PG_PORT=<free port>."
+check_free "$FGA_PORT" "OpenFGA" "set ROAR_FGA_PORT=<free port>."
+check_free "$AUTH_PORT" "Firebase Auth emulator" "set ROAR_AUTH_PORT=<free port> (or stop a leftover emulator)."
 check_free "$BACKEND_PORT" "backend" "set ROAR_LOCAL_BACKEND_PORT=<free port>."
 check_free "$DASHBOARD_PORT" "dashboard (vite)" "stop whatever is using ${DASHBOARD_PORT}."
 [[ "$preflight_ok" == "1" ]] || { log "Aborting due to port conflicts (no containers started)."; exit 1; }
 
-# ── 1. Postgres + OpenFGA ────────────────────────────────────────────────────
-log "Starting Postgres + OpenFGA (docker compose)..."
-# `--wait` blocks until healthchecks pass (Postgres has a pg_isready healthcheck),
-# so we don't race a still-initializing Postgres — a bare TCP check passes as soon
-# as Docker maps the port, while initdb is still resetting early connections.
-ROAR_LOCAL_PG_PORT="$PG_PORT" ROAR_LOCAL_FGA_PORT="$FGA_PORT" \
-  docker compose -f "$COMPOSE_FILE" up -d --wait
+# ── 1. Postgres + OpenFGA + Firebase Auth emulator ─────────────────────────
+log "Starting Postgres + OpenFGA + Firebase Auth emulator (docker compose)..."
+# `--wait` blocks until healthchecks pass (Postgres and Auth emulator have
+# healthchecks), so we don't race a still-initializing service.
+ROAR_PG_PORT="$PG_PORT" ROAR_FGA_PORT="$FGA_PORT" ROAR_AUTH_PORT="$AUTH_PORT" \
+  GCLOUD_PROJECT="$PROJECT" \
+  docker compose up -d --wait --build
 wait_for_tcp 127.0.0.1 "$FGA_PORT" "OpenFGA" 60
 
 # ── 2. Test databases ────────────────────────────────────────────────────────
@@ -165,22 +151,7 @@ until run_npm run db:create-test-dbs -w apps/backend; do
   sleep 3
 done
 
-# ── 3. Firebase Auth emulator ────────────────────────────────────────────────
-if [[ ! -x "$ROOT/node_modules/.bin/firebase" ]]; then
-  log "Installing firebase-tools (one-time, --no-save)..."
-  run_npm install --no-save firebase-tools@15
-fi
-log "Starting Firebase Auth emulator (project ${PROJECT}, :${AUTH_PORT})..."
-cat > "$LOG_DIR/firebase.json" <<EOF
-{ "emulators": { "auth": { "host": "127.0.0.1", "port": ${AUTH_PORT} }, "ui": { "enabled": false } } }
-EOF
-"$ROOT/node_modules/.bin/firebase" emulators:start \
-  --only auth --project "$PROJECT" --config "$LOG_DIR/firebase.json" \
-  > "$LOG_DIR/auth-emulator.log" 2>&1 &
-EMULATOR_PID=$!
-wait_for_tcp 127.0.0.1 "$AUTH_PORT" "Firebase Auth emulator" 120
-
-# ── 4. Backend (server-test) ─────────────────────────────────────────────────
+# ── 3. Backend (server-test) ─────────────────────────────────────────────────
 log "Building backend test server..."
 export BUILD_TEST_SERVER=true
 run_turbo build --filter=roar-backend
@@ -201,26 +172,9 @@ try {
   console.log("    (fixture file not found — check .local-dev-logs/server-test.log)");
 }' || true
 
-# ── 5. Dashboard (emulator mode) ─────────────────────────────────────────────
-# dotenvx loads env-configs/.env.development with override:true in development,
-# so a plain inline VITE_* would be clobbered. The intended override channel is
-# env-configs/.env.development.local (loaded last, gitignored). Manage it here.
-if [[ -f "$LOCAL_ENV_FILE" ]]; then
-  log "Using existing $LOCAL_ENV_FILE (not managed by this script)."
-  log "  Ensure it sets: VITE_FIREBASE_EMULATOR_ENABLED=true and VITE_ROAR_API_BASE_URL=http://localhost:${BACKEND_PORT}/v1"
-else
-  cat > "$LOCAL_ENV_FILE" <<EOF
-# Auto-generated by scripts/dev-local-stack.sh for local Firebase Auth emulator
-# development. Removed automatically when the script exits. Safe to delete.
-# NOTE: the backend mounts routes under /v1 (routes/index.ts) and the ts-rest
-# contract has no global /v1 prefix, so the base URL must include /v1.
-VITE_FIREBASE_EMULATOR_ENABLED=true
-VITE_ROAR_API_BASE_URL=http://localhost:${BACKEND_PORT}/v1
-EOF
-  MANAGED_LOCAL_ENV=1
-  log "Wrote managed $LOCAL_ENV_FILE (emulator mode)."
-fi
-
+# ── 4. Dashboard ─────────────────────────────────────────────────────────────
+# VITE_FIREBASE_EMULATOR_AUTH_HOST and VITE_ROAR_API_BASE_URL are set in
+# env-configs/.env.development — no local override file needed.
 log "Building dashboard workspace dependencies..."
 run_turbo build --filter=@roar-platform/api-contract
 

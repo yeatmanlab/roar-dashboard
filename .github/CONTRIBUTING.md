@@ -303,15 +303,16 @@ one command, mirroring the CI end-to-end job:
 npm run dev:local
 ```
 
-This starts Postgres and OpenFGA (via Docker), the Firebase Auth emulator, the
-backend (`server-test`, which seeds fixture data), and the dashboard in local
-emulator mode.
+This starts Postgres, OpenFGA, and the Firebase Auth emulator (all via Docker),
+the backend (`server-test`, which seeds fixture data), and the dashboard in
+local emulator mode.
 
-**Prerequisites:** Docker, a Java runtime for the Auth emulator
-(`brew install openjdk` on macOS), and the usual local state — the `env-configs`
+**Prerequisites:** Docker and the usual local state — the `env-configs`
 submodule, `apps/dashboard/env-configs/.env.keys`, and TLS certs
-(`npm run dev:setup:certs`). If you already run Postgres on `5432`, pick a free
-port: `ROAR_LOCAL_PG_PORT=5433 npm run dev:local`.
+(`npm run dev:setup:certs`). The Firebase Auth emulator runs inside a Docker
+container, so Java and firebase-tools are not required on the host. If you
+already run Postgres on `5432`, pick a free port:
+`ROAR_PG_PORT=5433 npm run dev:local`.
 
 **Signing in:** the script prints the seeded logins on startup (also written to
 `/tmp/roar-cypress-fixture.json`). Sign in at https://localhost:5173 with the
