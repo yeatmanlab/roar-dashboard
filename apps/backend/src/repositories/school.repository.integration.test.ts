@@ -457,12 +457,12 @@ describe('SchoolRepository', () => {
 
   describe('getUsersBySchoolId', () => {
     // baseFixture.schoolA has users enrolled at both org and class levels:
-    // - schoolAStudent (org-level student)
     // - schoolATeacher (org-level teacher)
     // - schoolAAdmin (org-level administrator)
     // - schoolAPrincipal (org-level principal)
     // - classAStudent (class-level student in classInSchoolA)
     // - classATeacher (class-level teacher in classInSchoolA)
+    // - schoolAStudent (class-level student in classInSchoolA)
 
     it('returns all enrolled users for a school (org + class)', async () => {
       const result = await repository.getUsersBySchoolId(baseFixture.schoolA.id, {

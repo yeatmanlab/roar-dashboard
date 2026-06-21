@@ -3,6 +3,7 @@ import _omit from 'lodash/omit';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
+import { SWR_TASK_IDS } from '@roar-platform/assessment-schema/roar-swr';
 
 export class RoarScores {
   constructor() {
@@ -110,13 +111,16 @@ export class RoarScores {
   computedScoreCallback = async (rawScores) => {
     const { userMetadata, taskId } = store.session.get('config');
 
-    if (!['swr', 'swr-es'].includes(taskId)) return null;
+    if (!Object.values(SWR_TASK_IDS).includes(taskId)) {
+      console.warn(`[SWR scores] unrecognized taskId "${taskId}" — returning null`);
+      return null;
+    }
 
     const configAge = userMetadata?.ageMonths;
     const grade = getGrade(userMetadata?.grade);
     const isNormed = taskId === 'swr' || (taskId === 'swr-es' && this.scoringVersion === 1);
 
-    if (configAge != undefined || grade != undefined) {
+    if (configAge != null || grade != null) {
       if (!this.tableLoaded && isNormed) {
         if (!this.tableLoadingPromise) {
           this.tableLoadingPromise = this.initTable(taskId);
@@ -144,7 +148,17 @@ export class RoarScores {
     const computedScores = _mapValues(rawScores, (subtaskScores) => {
       const score = subtaskScores.test?.thetaEstimate === undefined ? null : subtaskScores.test?.thetaEstimate;
       let computedScore = {
+        // SWR defines the shared IRT scale, so native === shared. Forward thetaEstimateRaw
+        // and thetaSERaw from the raw input so toSwrScoreEntries can emit type=raw entries.
+        thetaEstimateRaw: subtaskScores.test?.thetaEstimateRaw ?? score,
+        thetaSERaw: subtaskScores.test?.thetaSERaw ?? null,
+        thetaSE: subtaskScores.test?.thetaSE ?? null,
         thetaEstimate: score,
+        // Forward trial counts from raw input — written for all SWR languages.
+        numCorrect: subtaskScores.test?.numCorrect,
+        numAttempted: subtaskScores.test?.numAttempted,
+        numIncorrect: subtaskScores.test?.numIncorrect,
+        percentCorrect: subtaskScores.test?.percentCorrect,
       };
 
       if (score != undefined) {
