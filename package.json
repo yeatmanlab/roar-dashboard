@@ -8,6 +8,9 @@
   "scripts": {
     "dev": "turbo run dev --filter=!./apps/assessments/*",
     "dev:local": "bash scripts/dev-local-stack.sh",
+    "dev:setup": "docker compose up -d --wait",
+    "dev:seed": "npm run dev:seed -w apps/backend",
+    "dev:reset": "npm run dev:reset -w apps/backend",
     "dev:setup:certs": "setup-certs",
     "watch": "turbo watch dev",
     "build": "turbo run build",
@@ -19,6 +22,9 @@
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "check-types": "turbo run check-types",
+    "dev:setup": "docker compose up -d --wait",
+    "dev:seed": "npm run dev:seed -w apps/backend",
+    "dev:reset": "npm run dev:reset -w apps/backend",
     "prepare": "husky"
   },
   "devDependencies": {
