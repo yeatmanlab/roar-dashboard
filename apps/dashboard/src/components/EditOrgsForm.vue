@@ -63,6 +63,11 @@ const emit = defineEmits(['modalClosed', 'update:orgData']);
 const singularOrgType = computed(() => singularizeFirestoreCollection(props.orgType));
 const orgIds = computed(() => [props.orgId]);
 
+// `singularOrgType.value` is dereferenced once at setup (a plain string, not the
+// ref). That's safe because OrgsList keys this component on
+// `${activeOrgType}:${currentEditOrgId}`, so it remounts whenever the org type
+// changes — the setup-time value is always current. `orgIds` is passed as a ref so
+// it stays reactive.
 const { data: serverOrgData } = useOrgQuery(singularOrgType.value, orgIds, {
   select: (data) => data?.[0],
 });

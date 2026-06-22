@@ -520,7 +520,9 @@ export function DistrictService({
       };
 
       // 400 when no recognized mutable fields are present (matches administrations'
-      // empty-body handling)
+      // empty-body handling). This also covers a request whose only field is an empty
+      // nested location object: Zod accepts it (all nested address fields are
+      // optional) but it maps to no column updates.
       if (Object.keys(updates).length === 0) {
         throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
           statusCode: StatusCodes.BAD_REQUEST,

@@ -70,6 +70,13 @@ describe('parseGooglePlaceToLocation', () => {
     expect(parseGooglePlaceToLocation(numberOnly)).toEqual({ addressLine1: '42' });
   });
 
+  it('includes addressLine2 from a subpremise even when addressLine1 is absent', () => {
+    const subpremiseOnly = {
+      addressComponents: [{ long_name: 'Suite 200', short_name: 'Ste 200', types: ['subpremise'] }],
+    };
+    expect(parseGooglePlaceToLocation(subpremiseOnly)).toEqual({ addressLine2: 'Suite 200' });
+  });
+
   it('falls back to postal_town then sublocality for the city', () => {
     const postalTown = {
       addressComponents: [{ long_name: 'London', short_name: 'London', types: ['postal_town'] }],

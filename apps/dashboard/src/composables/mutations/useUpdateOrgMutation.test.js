@@ -27,12 +27,12 @@ vi.mock('@/clients/roar-api', () => ({
   }),
 }));
 
+// Re-export the real module as a plain (configurable) object so the invalidation
+// test can `vi.spyOn(VueQuery, 'useQueryClient')` — spying directly on the ESM
+// namespace throws. The composable uses the real useMutation / useQueryClient.
 vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
-  return {
-    ...original,
-    useQuery: vi.fn().mockImplementation(original.useQuery),
-  };
+  return { ...original };
 });
 
 describe('useUpdateOrgMutation', () => {
@@ -51,7 +51,6 @@ describe('useUpdateOrgMutation', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
     vi.resetAllMocks();
     queryClient?.clear();
   });
