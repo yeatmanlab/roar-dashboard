@@ -201,11 +201,13 @@ export const mapClassToOrg = (schoolClass) => ({
  * Families are the leanest org shape on the platform — `FamilyDetailSchema`
  * exposes only `{ id, location?, rosteringEnded? }`. There is NO `name`,
  * `abbreviation`, `identifiers`, or `orgType`/`parentOrgId`: the family table is
- * keyed by UUID and sits outside the org hierarchy. This helper preserves the
- * raw fields (`id`, `rosteringEnded`) and additionally flattens `location` — an
- * assembled address OBJECT (`city`, `stateProvince`, …) like districts, schools,
- * and groups, NOT the free-text room-label string that classes carry — to
- * top-level fields. There is no `identifiers` block to flatten.
+ * keyed by UUID and sits outside the org hierarchy. This helper keeps the scalar
+ * fields (`id`, `rosteringEnded`) and replaces the nested `location` object —
+ * an assembled address OBJECT (`city`, `stateProvince`, …) like districts,
+ * schools, and groups, NOT the free-text room-label string that classes carry —
+ * with its flattened top-level fields (the nested object is destructured out so
+ * the result carries a single flat representation). There is no `identifiers`
+ * block to flatten.
  *
  * The missing `name` is read by ScoreReport/ProgressReport (`orgData.name`) but
  * only on the vestigial family-report path — see the module-level note: no
@@ -215,7 +217,7 @@ export const mapClassToOrg = (schoolClass) => ({
  * @param {Object} family - A `FamilyDetailSchema` object from the backend.
  * @returns {Object} The flattened family record.
  */
-export const mapFamilyToOrg = (family) => ({
-  ...family,
-  ...flattenLocation(family.location),
+export const mapFamilyToOrg = ({ location, ...rest }) => ({
+  ...rest,
+  ...flattenLocation(location),
 });
