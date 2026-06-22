@@ -182,6 +182,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useRouter } from 'vue-router';
+import { useQueryClient } from '@tanstack/vue-query';
 import _mapValues from 'lodash/mapValues';
 import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
@@ -198,11 +199,13 @@ import useAdministrationTreeQuery, {
 import useTaskVariantQuery from '@/composables/queries/useTaskVariantQuery';
 import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { ADMINISTRATION_TREE_QUERY_KEY } from '@/constants/queryKeys';
 import { ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { PROGRESS_COLORS } from '@/constants/completionStatus';
 
 const router = useRouter();
+const queryClient = useQueryClient();
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -381,11 +384,18 @@ const onExpand = async (node) => {
 
     try {
       // Fetch this node's children from the same tree endpoint, scoped by the
-      // expanding node as the parent. fetchAdministrationTreeLevel returns nodes
-      // already in PvTreeTable shape (with their own placeholder children).
-      const childNodes = await fetchAdministrationTreeLevel(props.id, {
-        parentEntityType: node.data.orgType,
-        parentEntityId: node.data.id,
+      // expanding node as the parent. Route through queryClient.fetchQuery (not the
+      // bare fetcher) so the children are cached and deduped under a per-node key:
+      // re-expanding a collapsed node hits the cache, and the request is visible in
+      // the query devtools. fetchAdministrationTreeLevel returns nodes already in
+      // PvTreeTable shape (with their own placeholder children).
+      const childNodes = await queryClient.fetchQuery({
+        queryKey: [ADMINISTRATION_TREE_QUERY_KEY, props.id, 'children', node.data.orgType, node.data.id],
+        queryFn: () =>
+          fetchAdministrationTreeLevel(props.id, {
+            parentEntityType: node.data.orgType,
+            parentEntityId: node.data.id,
+          }),
       });
 
       // Lazy node is a copy of the expanding node with its real children attached.
