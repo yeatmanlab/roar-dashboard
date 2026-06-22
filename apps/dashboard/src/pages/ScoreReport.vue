@@ -403,7 +403,6 @@ import { getTitle } from '@/helpers/query/administrations';
 import {
   taskDisplayNames,
   taskInfoById,
-  descriptionsByTaskId,
   getSupportLevel,
   tasksToDisplayGraphs,
   rawOnlyTasks,
