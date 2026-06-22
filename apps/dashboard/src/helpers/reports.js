@@ -1516,7 +1516,7 @@ export const taskInfoById = {
       'improve their overall reading ability. This assessment is helpful for ' +
       'identifying students who may struggle with reading comprehension due to ' +
       'difficulties with decoding words accurately or reading slowly and with effort.' +
-      ` The student's score will range between {{ RANGE }} ` +
+      ` The student's score will range between {{RAW_SCORE_RANGE}} ` +
       "and can be viewed by selecting 'Raw Score' on the table above. " +
       'Students in the pink category need support in sentence-reading ' +
       'efficiency to support growth in reading comprehension. Students in grades ' +
