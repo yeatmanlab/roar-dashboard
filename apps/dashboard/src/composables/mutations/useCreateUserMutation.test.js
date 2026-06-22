@@ -10,12 +10,12 @@ vi.mock('@/clients/roar-api', () => ({
   getRoarApiClient: () => ({ users: { create: mockCreate } }),
 }));
 
+// Re-export the real module as a plain (configurable) object so the success test
+// can `vi.spyOn(VueQuery, 'useQueryClient')` — spying directly on the ESM
+// namespace throws. The composable uses the real useMutation / useQueryClient.
 vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
-  return {
-    ...original,
-    useQuery: vi.fn().mockImplementation(original.useQuery),
-  };
+  return { ...original };
 });
 
 const body = {
@@ -36,7 +36,6 @@ describe('useCreateUserMutation', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
     vi.resetAllMocks();
     queryClient?.clear();
   });
