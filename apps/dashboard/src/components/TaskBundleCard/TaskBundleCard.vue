@@ -133,7 +133,10 @@ const taskList = computed(() => {
 const variantData = computed(() => {
   return props.group.data.variants.map((variant) => {
     const taskInfo = props.allVariants[variant.taskId];
-    const variantInfo = taskInfo.find((taskVariant) => taskVariant.id === variant.variantId);
+    // `taskInfo` is undefined when a bundle references a task that isn't in the
+    // variant catalog (e.g. locally-seeded bundles) — guard so the popover doesn't
+    // throw a TypeError on `.find`.
+    const variantInfo = taskInfo?.find((taskVariant) => taskVariant.id === variant.variantId);
     return variantInfo;
   });
 });
