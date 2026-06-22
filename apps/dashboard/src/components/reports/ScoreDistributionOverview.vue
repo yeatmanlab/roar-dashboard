@@ -1,10 +1,10 @@
 <template>
   <div class="flex flex-wrap gap-3 p-5 bg-gray-100 rounded flex-column align-items-around">
     <div class="chart-grid">
-      <div class="chart-section-header">Score Distribution by Assessment</div>
+      <div class="chart-section-header font-bold">Foundational Literacy Skills</div>
 
       <template v-for="taskId of taskIds" :key="taskId">
-        <div class="chart-label text-lg font-bold text-gray-600">
+        <div class="chart-label text-lg text-gray-600">
           <span class="whitespace-nowrap">{{ tasksDictionary?.[taskId]?.publicName ?? taskId }}</span>
         </div>
         <PvChart
@@ -102,10 +102,9 @@ const getSupportLevelCounts = (taskId) => {
 
 .chart-section-header {
   grid-column: 1 / -1;
-  font-size: 0.875rem;
-  color: #6b7280;
+  text-align: center;
   text-transform: uppercase;
-  margin-bottom: 0.25rem;
+  margin-bottom: 2rem;
 }
 
 .chart-label {

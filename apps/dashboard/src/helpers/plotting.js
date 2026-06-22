@@ -254,9 +254,16 @@ export const setDistributionChartOptions = (supportLevelCounts) => {
     maintainAspectRatio: false,
     aspectRatio: 9,
     plugins: {
-      tooltips: {
-        mode: 'index',
-        intersect: false,
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const label = context.dataset.label || '';
+            const value = context.parsed.x;
+            const total = below + some + above;
+            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+            return `${label}: ${value} (${percentage}%)`;
+          },
+        },
       },
       legend: false,
     },
