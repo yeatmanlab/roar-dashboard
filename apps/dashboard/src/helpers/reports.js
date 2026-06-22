@@ -1631,16 +1631,17 @@ export const taskInfoById = {
 export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   if (!desc) return '';
 
+  let editedDesc = desc;
   // Only process desc field if it contains placeholders
   if (desc.includes('{{RAW_SCORE_RANGE}}')) {
     const range = getRawScoreRange(taskId, scoringVersion);
-    return desc.replace('{{RAW_SCORE_RANGE}}', `${range?.min}-${range?.max}`);
+    editedDesc = editedDesc.replace('{{RAW_SCORE_RANGE}}', `${range?.min}-${range?.max}`);
   }
 
   if (desc.includes('{{SUPPORT_RANGE}}')) {
     const useUpdatedNorms = (taskId === 'sre' && scoringVersion >= 4) || (taskId === 'swr' && scoringVersion >= 7);
-    return desc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
+    editedDesc = editedDesc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
   }
 
-  return desc;
+  return editedDesc;
 };
