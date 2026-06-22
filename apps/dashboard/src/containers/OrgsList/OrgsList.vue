@@ -57,8 +57,12 @@
               </PvFloatLabel>
             </div>
           </div>
+          <!--
+            The table is gated by the outer `v-if="claimsLoaded"` (PvTabView). Once
+            claims are loaded `tableData` is always an array (empty while loading), so
+            the table renders and surfaces its own loading state via `:loading`.
+          -->
           <RoarDataTable
-            v-if="showTable"
             :key="tableKey"
             :columns="tableColumns"
             :data="tableData"
@@ -70,7 +74,6 @@
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
           />
-          <AppSpinner v-else-if="!tableData" />
         </PvTabPanel>
       </PvTabView>
       <AppSpinner v-else />
@@ -610,8 +613,6 @@ const updateOrgData = async () => {
     isSubmitting.value = false;
   }
 };
-
-const showTable = computed(() => !!tableData.value);
 
 let unsubscribe;
 const initTable = () => {

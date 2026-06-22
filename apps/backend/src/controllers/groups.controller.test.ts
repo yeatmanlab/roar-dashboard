@@ -470,6 +470,33 @@ describe('GroupsController', () => {
       expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, group.id);
     });
 
+    it('should assemble location (incl. coordinates) and rosteringEnded in the transform', async () => {
+      const rosteringEnded = new Date('2024-06-01T00:00:00.000Z');
+      const group = GroupFactory.build({
+        name: 'Located Single Group',
+        abbreviation: 'LSG1',
+        groupType: 'community',
+        locationCity: 'Palo Alto',
+        locationCountry: 'US',
+        // Drizzle default point mode: [x, y] = [longitude, latitude]
+        locationLatLong: [-122.17, 37.43],
+        rosteringEnded,
+      });
+      mockGetById.mockResolvedValue(group);
+
+      const { GroupsController: Controller } = await import('./groups.controller');
+
+      const result = await Controller.getById(mockAuthContext, group.id);
+
+      const data = expectOkResponse(result);
+      expect(data.location).toEqual({
+        city: 'Palo Alto',
+        country: 'US',
+        coordinates: { type: 'Point', coordinates: [-122.17, 37.43] },
+      });
+      expect(data.rosteringEnded).toBe(rosteringEnded.toISOString());
+    });
+
     it('should map ApiError 404 to a Not Found error response', async () => {
       const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
