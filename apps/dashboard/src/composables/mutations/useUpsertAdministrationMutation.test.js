@@ -86,7 +86,7 @@ describe('useUpsertAdministrationMutation', () => {
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administrations'] });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administrations-list'] });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration-assignments'] });
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['dsgf-orgs'] });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['administration-tree'] });
   });
 
   it('should not invalidate administration queries upon mutation failure', async () => {
