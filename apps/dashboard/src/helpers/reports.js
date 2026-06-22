@@ -1196,7 +1196,12 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
       };
     }
   } else if (taskId === 'sre') {
-    if (scoringVersion >= 4) {
+    if (scoringVersion >= 5) {
+      return {
+        above: 483.5,
+        some: 420,
+      };
+    } else if (scoringVersion >= 4) {
       return {
         above: 41,
         some: 23,
@@ -1214,10 +1219,23 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
       };
     }
   } else if (taskId === 'pa') {
+    if (scoringVersion >= 5) {
+      return {
+        above: 475.5,
+        some: 416.5,
+      };
+    }
     return {
       above: 55,
       some: 45,
     };
+  } else if (taskId === 'letter') {
+    if (scoringVersion >= 1) {
+      return {
+        above: 95,
+        some: 95,
+      };
+    }
   } else if (taskId === 'morphology') {
     if (scoringVersion >= 1) {
       return {
@@ -1257,6 +1275,12 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       max: 900,
     };
   } else if (taskId.includes('letter')) {
+    if (scoringVersion >= 1) {
+      return {
+        min: 0,
+        max: 100,
+      };
+    }
     return {
       min: 0,
       max: 90,
@@ -1267,11 +1291,23 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       max: 150,
     };
   } else if (taskId.includes('pa')) {
+    if (scoringVersion >= 4) {
+      return {
+        min: 40,
+        max: 733,
+      };
+    }
     return {
       min: 0,
       max: 57,
     };
   } else if (taskId.includes('sre')) {
+    if (scoringVersion >= 5) {
+      return {
+        min: 300,
+        max: 967,
+      };
+    }
     return {
       min: 0,
       max: 130,
@@ -1288,6 +1324,7 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       max: 130,
     };
   } else if (taskId.includes('cva')) {
+    // TODO: Delete one of the if statements after
     if (scoringVersion >= 1) {
       return {
         min: 287,
@@ -1299,13 +1336,13 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       max: 130,
     };
   } else if (taskId.includes('roar-inference')) {
+    // TODO: Delete one of the if statements
     if (scoringVersion >= 1) {
       return {
         min: 300,
         max: 793,
       };
     }
-    // TODO: Delete after developing normed task cards
     return {
       min: 300,
       max: 793,
@@ -1338,7 +1375,7 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
  * - All applicable tasks meet thresholds → v2 chart
  * - All below thresholds → v1 chart
  * - Mixed → no-cutoffs chart
- * - Special case: For Spanish tasks 'swr-es' and 'sre-es', versions < 1 are considered "unnormed" and should be excluded.
+ * - Special case: For certain tasks, versions < 1 are considered "unnormed" and should be excluded.
  * - grade >= 6 → secondary chart only
  */
 export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
@@ -1412,11 +1449,25 @@ export const taskInfoById = {
     color: '#E97A49',
     header: 'ROAR-WORD',
     subheader: 'Single Word Recognition',
-    desc: `ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between ${
-      getRawScoreRange('swr').min
-    }-${
-      getRawScoreRange('swr').max
-    } and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below {{SUPPORT_RANGE}} of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.`,
+    desc:
+      "ROAR - Word evaluates a student's ability to quickly and automatically " +
+      'recognize individual words. To read fluently, students must master ' +
+      'fundamental skills of decoding and automaticity. This test measures a ' +
+      "student's ability to detect real and made-up words, which can then " +
+      "translate to a student's reading levels and need for support. The " +
+      "student's score will range between {{RAW_SCORE_RANGE}} and can be " +
+      "viewed by selecting 'Raw Score' on the table above. Students in the " +
+      'pink category need support in word-level decoding. For these students, ' +
+      'decoding difficulties are likely the bottleneck for growth in reading ' +
+      'fluency and comprehension. Students in grades K-5 in the pink category ' +
+      'have word-level decoding skills below {{SUPPORT_RANGE}} of their peers, ' +
+      'nationally. Students in grades 6-12 in the pink category have word-level ' +
+      'decoding skills below a third-grade level. Students in the yellow ' +
+      'category are still developing their decoding skills and will likely ' +
+      'benefit from further practice and/or support in foundational reading ' +
+      'skills. Students in the green category demonstrate that word-level ' +
+      'decoding is not holding them back from developing fluency and ' +
+      'comprehension of connected text.',
     definitions: [
       {
         header: 'WHAT IS DECODING',
@@ -1439,7 +1490,7 @@ export const taskInfoById = {
       'achieving reading fluency. Without support for their foundational reading ' +
       'abilities, students may struggle to catch up in overall reading proficiency. ' +
       "The student's score will range between " +
-      `${getRawScoreRange('pa').min}-${getRawScoreRange('pa').max} and can be ` +
+      `{{RAW_SCORE_RANGE}} and can be ` +
       "viewed by selecting 'Raw Score' on the table above.",
     definitions: [
       {
@@ -1465,7 +1516,7 @@ export const taskInfoById = {
       'improve their overall reading ability. This assessment is helpful for ' +
       'identifying students who may struggle with reading comprehension due to ' +
       'difficulties with decoding words accurately or reading slowly and with effort.' +
-      ` The student's score will range between ${getRawScoreRange('sre').min}-${getRawScoreRange('sre').max} ` +
+      ` The student's score will range between {{ RANGE }} ` +
       "and can be viewed by selecting 'Raw Score' on the table above. " +
       'Students in the pink category need support in sentence-reading ' +
       'efficiency to support growth in reading comprehension. Students in grades ' +
@@ -1581,9 +1632,9 @@ export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   if (!desc) return '';
 
   // Only process desc field if it contains placeholders
-  if (desc.includes('{{RANGE}}')) {
+  if (desc.includes('{{RAW_SCORE_RANGE}}')) {
     const range = getRawScoreRange(taskId, scoringVersion);
-    return desc.replace('{{RANGE}}', `${range?.min}-${range?.max}`);
+    return desc.replace('{{RAW_SCORE_RANGE}}', `${range?.min}-${range?.max}`);
   }
 
   if (desc.includes('{{SUPPORT_RANGE}}')) {

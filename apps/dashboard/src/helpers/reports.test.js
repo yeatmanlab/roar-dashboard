@@ -640,6 +640,40 @@ describe('reports', () => {
       });
     });
 
+    describe('scoring version changes', () => {
+      it('should return updated range for letter with scoringVersion >= 1', () => {
+        const result = getRawScoreRange('letter', 1);
+        expect(result).toEqual({
+          min: 0,
+          max: 100,
+        });
+      });
+
+      it('should return legacy range for letter with scoringVersion < 1', () => {
+        const result = getRawScoreRange('letter', 0);
+        expect(result).toEqual({
+          min: 0,
+          max: 90,
+        });
+      });
+
+      it('should return updated range for pa with scoringVersion >= 4', () => {
+        const result = getRawScoreRange('pa', 4);
+        expect(result).toEqual({
+          min: 40,
+          max: 733,
+        });
+      });
+
+      it('should return updated range for sre with scoringVersion >= 5', () => {
+        const result = getRawScoreRange('sre', 5);
+        expect(result).toEqual({
+          min: 300,
+          max: 967,
+        });
+      });
+    });
+
     it('should return null for unknown task', () => {
       const result = getRawScoreRange('unknown');
       expect(result).toBeNull();
