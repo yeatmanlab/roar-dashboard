@@ -1,3 +1,17 @@
+/**
+ * IRT linear-transformation parameters for the composite_foundational domain.
+ * Converts the composite sreScore (clamped to ≥ 0) to a shared-scale theta estimate:
+ *   thetaEstimate = round((sreScore * scale + shift) * 10) / 10
+ *
+ * Derived from calibration against the foundational phonological composite in roar-pa.
+ */
+export const SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS = {
+  /** trial_type identifier matching the CSV source these were derived from */
+  TRIAL_TYPE: 'composite_foundational',
+  TRANSFORMATION_SCALE: 0.0770899,
+  TRANSFORMATION_SHIFT: -3.0328717,
+} as const;
+
 export const SRE_TASK_IDS = {
   EN: 'sre',
   ES: 'sre-es',

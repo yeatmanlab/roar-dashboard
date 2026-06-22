@@ -4,4 +4,5 @@
  * across every assessment and backend scoring registry.
  */
 export const COMPOSITE_DOMAIN = 'composite' as const;
+export const COMPOSITE_FOUNDATIONAL_DOMAIN = 'composite_foundational' as const;
 export const PRACTICE_DOMAIN = 'practice' as const;

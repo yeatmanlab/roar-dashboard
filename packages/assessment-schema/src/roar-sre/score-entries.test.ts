@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { toSreScoreEntries } from './score-entries.js';
 import type { SreScoreEntry } from './score-entries.js';
-import { SRE_COMPOSITE_SCORE_NAMES, SRE_SUBTASK_SCORE_NAMES } from './score-names.js';
+import {
+  SRE_COMPOSITE_SCORE_NAMES,
+  SRE_COMPOSITE_FOUNDATIONAL_SCORE_NAMES,
+  SRE_SUBTASK_SCORE_NAMES,
+} from './score-names.js';
 
 describe('toSreScoreEntries', () => {
   describe('null / missing input', () => {
@@ -88,6 +92,51 @@ describe('toSreScoreEntries', () => {
       expect(entries).not.toContainEqual(expect.objectContaining({ name: SRE_COMPOSITE_SCORE_NAMES.PERCENTILE }));
       expect(entries).not.toContainEqual(expect.objectContaining({ name: SRE_COMPOSITE_SCORE_NAMES.STANDARD_SCORE }));
       expect(entries).toContainEqual(expect.objectContaining({ name: SRE_COMPOSITE_SCORE_NAMES.SRE_SCORE }));
+    });
+  });
+
+  describe('composite_foundational domain', () => {
+    it('emits thetaEstimate as type=computed', () => {
+      const computed = { composite_foundational: { thetaEstimate: -1.8 } };
+      const entries = toSreScoreEntries(computed);
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0]).toMatchObject({
+        type: 'computed',
+        domain: 'composite_foundational',
+        name: SRE_COMPOSITE_FOUNDATIONAL_SCORE_NAMES.THETA_ESTIMATE,
+        value: '-1.8',
+        assessmentStage: 'test',
+      });
+    });
+
+    it('skips thetaEstimate when null', () => {
+      const computed = { composite_foundational: { thetaEstimate: null } };
+      const entries = toSreScoreEntries(computed);
+
+      expect(entries).toHaveLength(0);
+    });
+
+    it('emits composite_foundational alongside composite', () => {
+      const computed = {
+        composite: { sreScore: 12, percentile: 75, standardScore: 110, scoringVersion: 5 },
+        composite_foundational: { thetaEstimate: -1.5 },
+      };
+      const entries = toSreScoreEntries(computed);
+
+      const foundationalEntries = entries.filter((e: SreScoreEntry) => e.domain === 'composite_foundational');
+      expect(foundationalEntries).toHaveLength(1);
+      expect(foundationalEntries[0]).toMatchObject({ type: 'computed', name: 'thetaEstimate', value: '-1.5' });
+    });
+
+    it('throws in strict mode on unrecognized composite_foundational score name', () => {
+      const computed = { composite_foundational: { thetaEstimate: -1.5, unknownScore: 99 } };
+      expect(() => toSreScoreEntries(computed, { strict: true })).toThrow(/unknownScore/);
+    });
+
+    it('does not throw in non-strict mode on unrecognized composite_foundational score name', () => {
+      const computed = { composite_foundational: { thetaEstimate: -1.5, unknownScore: 99 } };
+      expect(() => toSreScoreEntries(computed, { strict: false })).not.toThrow();
     });
   });
 

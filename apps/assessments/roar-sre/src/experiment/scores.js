@@ -4,7 +4,6 @@ import _toPairs from 'lodash/toPairs';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
-import irtHyperparametersSre from './corpus/en/irt_hyperparameters_sre.csv';
 import {
   COMPOSITE_DOMAIN,
   COMPOSITE_FOUNDATIONAL_DOMAIN,
@@ -13,6 +12,7 @@ import {
   domainToAssessmentStage,
 } from '@roar-platform/assessment-schema';
 import {
+  SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS,
   SRE_SCORE_TABLE_URL,
   SRE_SCORING_VERSION,
   SRE_SUBTASK_DOMAINS,
@@ -551,16 +551,15 @@ export class RoarScores {
       }
     }
     if (compositeScore != null && this.taskId === SRE_TASK_IDS.EN) {
-      const irtRow = irtHyperparametersSre.find((row) => row.trial_type === 'composite_foundational'); // this is matching the string on a row
-      const transformationScale = irtRow?.['transformation.scale'];
-      const transformationShift = irtRow?.['transformation.shift'];
-
-      if (transformationScale != null && transformationShift != null) {
-        const clampedSreScore = Math.max(compositeScore, 0);
-        computedScores[COMPOSITE_FOUNDATIONAL_DOMAIN] = {
-          thetaEstimate: Math.round((clampedSreScore * transformationScale + transformationShift) * 10) / 10,
-        };
-      }
+      const clampedSreScore = Math.max(compositeScore, 0);
+      computedScores[COMPOSITE_FOUNDATIONAL_DOMAIN] = {
+        thetaEstimate:
+          Math.round(
+            (clampedSreScore * SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS.TRANSFORMATION_SCALE +
+              SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS.TRANSFORMATION_SHIFT) *
+              10,
+          ) / 10,
+      };
     }
     return computedScores;
   };

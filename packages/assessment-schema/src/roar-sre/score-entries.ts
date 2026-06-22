@@ -1,5 +1,5 @@
 import type { ScoreEntryConstraint } from '../types/score-entry.type.js';
-import { COMPOSITE_DOMAIN } from '../constants/common-domains.js';
+import { COMPOSITE_DOMAIN, COMPOSITE_FOUNDATIONAL_DOMAIN } from '../constants/common-domains.js';
 import { AssessmentStage } from '../enums/assessment-stage.enum.js';
 import { ScoreType } from '../enums/score-type.enum.js';
 import { domainToAssessmentStage } from '../score-utils.js';
@@ -8,6 +8,7 @@ import {
   SRE_RAW_COMPOSITE_SCORE_NAMES,
   SRE_SUBTASK_SCORE_NAMES,
   SRE_RAW_SUBTASK_SCORE_NAMES,
+  SRE_COMPOSITE_FOUNDATIONAL_SCORE_NAMES,
   type SreScoreName,
   type SreSubtaskScoreName,
 } from './score-names.js';
@@ -31,6 +32,7 @@ export interface SreScoreEntry {
 export type _TypeCheck = SreScoreEntry extends ScoreEntryConstraint ? true : false;
 
 const RECOGNIZED_COMPOSITE_NAMES = new Set<string>(Object.values(SRE_COMPOSITE_SCORE_NAMES));
+const RECOGNIZED_COMPOSITE_FOUNDATIONAL_NAMES = new Set<string>(Object.values(SRE_COMPOSITE_FOUNDATIONAL_SCORE_NAMES));
 
 /**
  * Converts SRE computed scores (from RoarScores.computedScoreCallback) to a flat array
@@ -39,6 +41,7 @@ const RECOGNIZED_COMPOSITE_NAMES = new Set<string>(Object.values(SRE_COMPOSITE_S
  * Score type assignment:
  * - Composite domain: RAW for trial counts and thetaEstimateRaw/thetaSERaw; COMPUTED for
  *   sreScore, thetaEstimate, thetaSE, normed scores, and scoringVersion.
+ * - composite_foundational domain: COMPUTED for thetaEstimate only.
  * - Non-composite domains (practice, lab, ai, test1, test2, etc.): RAW for trial counts;
  *   COMPUTED for sreScore.
  *
@@ -83,6 +86,28 @@ export function toSreScoreEntries(
         if (value == null) continue;
         entries.push({
           type: SRE_RAW_COMPOSITE_SCORE_NAMES.has(name) ? ScoreType.RAW : ScoreType.COMPUTED,
+          domain,
+          name,
+          value: String(value),
+          assessmentStage,
+        });
+      }
+    } else if (domain === COMPOSITE_FOUNDATIONAL_DOMAIN) {
+      if (strict) {
+        const unrecognized = Object.keys(scores).filter((k) => !RECOGNIZED_COMPOSITE_FOUNDATIONAL_NAMES.has(k));
+        if (unrecognized.length > 0) {
+          throw new Error(
+            `Unrecognized score names in SRE composite_foundational domain: ${unrecognized.join(', ')}. ` +
+              `Update SRE_COMPOSITE_FOUNDATIONAL_SCORE_NAMES to handle the new score name.`,
+          );
+        }
+      }
+
+      for (const name of Object.values(SRE_COMPOSITE_FOUNDATIONAL_SCORE_NAMES) as SreScoreName[]) {
+        const value = scores[name];
+        if (value == null) continue;
+        entries.push({
+          type: ScoreType.COMPUTED,
           domain,
           name,
           value: String(value),

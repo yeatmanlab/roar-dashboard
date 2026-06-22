@@ -64,4 +64,16 @@ export const SRE_RAW_SUBTASK_SCORE_NAMES = new Set<SreSubtaskScoreName>([
   TRIAL_COUNT_SCORE_NAMES.NUM_INCORRECT,
 ]);
 
-export type SreScoreName = SreCompositeScoreName | SreSubtaskScoreName;
+/**
+ * Score names for the composite_foundational domain.
+ * Only thetaEstimate is produced — the IRT ability estimate calibrated to the shared
+ * cross-assessment scale via a linear transformation of the composite sreScore.
+ */
+export const SRE_COMPOSITE_FOUNDATIONAL_SCORE_NAMES = {
+  THETA_ESTIMATE: THETA_SCORE_NAMES.THETA_ESTIMATE,
+} as const;
+
+export type SreCompositeFoundationalScoreName =
+  (typeof SRE_COMPOSITE_FOUNDATIONAL_SCORE_NAMES)[keyof typeof SRE_COMPOSITE_FOUNDATIONAL_SCORE_NAMES];
+
+export type SreScoreName = SreCompositeScoreName | SreSubtaskScoreName | SreCompositeFoundationalScoreName;
