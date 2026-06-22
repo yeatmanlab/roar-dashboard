@@ -16,7 +16,20 @@ const preferredTypes = Object.values(SCORE_TYPES)
 export function useLongitudinalSeries(props) {
   const sorted = computed(() => {
     const a = props.longitudinalData || [];
-    return [...a].sort((x, y) => new Date(x.date) - new Date(y.date));
+    const filtered = a.filter((e) => e.scores?.scoringVersion === props.taskScoringVersions?.[props.taskId]);
+
+    // For swr, sre, pa we want to include runs with undefined scoringVersion
+    // scoringVersions were not tracked until norm updates in fall 2025
+    if (
+      (props.taskId === 'swr' && props.taskScoringVersions?.[props.taskId] === 6) ||
+      (props.taskId === 'sre' && props.taskScoringVersions?.[props.taskId] === 3) ||
+      (props.taskId === 'pa' && props.taskScoringVersions?.[props.taskId] === 3)
+    ) {
+      const legacyRuns = a.filter((e) => e.scores?.scoringVersion == undefined);
+      filtered.push(...legacyRuns);
+    }
+
+    return [...filtered].sort((x, y) => new Date(x.date) - new Date(y.date));
   });
 
   const chosenType = computed(() => preferredTypes.find((t) => sorted.value.some((e) => e.scores?.[t] != null)));
