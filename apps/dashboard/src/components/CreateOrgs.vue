@@ -237,7 +237,8 @@ import { GRADE_OPTIONS, CLASS_TYPE_OPTIONS, GROUP_TYPE_OPTIONS, buildOrgCreateBo
 // remains as a safety net for any client/server gate drift.
 const { data: userClaims } = useUserClaimsQuery();
 const { isSuperAdmin } = useUserType(userClaims);
-const canCreateOrg = computed(() => isSuperAdmin.value);
+// `isSuperAdmin` is already a computed ref from `useUserType`; alias it directly.
+const canCreateOrg = isSuperAdmin;
 const PERMISSION_TOOLTIP = 'You do not have permission to create organizations.';
 
 const toast = useToast();
