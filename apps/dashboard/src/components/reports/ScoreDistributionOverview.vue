@@ -24,15 +24,15 @@
 
     <div class="flex mx-5 flex-column align-items-center">
       <div class="flex flex-wrap gap-3 px-2 py-1 rounded justify-content-around align-items-center">
-        <div class="flex flex-row items-center gap-2 text-sm font-light">
+        <div class="flex flex-row items-center gap-2 text-sm font-light align-items-center">
           <div class="legend-circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW}`" />
           <div>Needs Extra Support</div>
         </div>
-        <div class="flex flex-row items-center gap-2 text-sm font-light">
+        <div class="flex flex-row items-center gap-2 text-sm font-light align-items-center">
           <div class="legend-circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.SOME}`" />
           <div>Developing Skill</div>
         </div>
-        <div class="flex flex-row items-center gap-2 text-sm font-light">
+        <div class="flex flex-row items-center gap-2 text-sm font-light align-items-center">
           <div class="legend-circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ABOVE}`" />
           <div>Achieved Skill</div>
         </div>
