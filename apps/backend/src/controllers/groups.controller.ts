@@ -14,6 +14,7 @@ import { GroupService } from '../services/group/group.service';
 import type { AuthContext } from '../types/auth-context';
 import { ApiError } from '../errors/api-error';
 import { handleUserSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
+import { isPresentString } from './utils/is-present';
 import { toErrorResponse } from '../utils/to-error-response.util';
 
 const invitationCodeService = InvitationCodeService();
@@ -59,14 +60,15 @@ function transformGroup(group: Group): ApiGroup {
     };
   }
 
-  // Build location object only if at least one field is present
+  // Build the location object from the present fields. Null and empty-string
+  // columns are treated as absent and omitted (see `isPresentString`).
   const location = {
-    ...(group.locationAddressLine1 && { addressLine1: group.locationAddressLine1 }),
-    ...(group.locationAddressLine2 && { addressLine2: group.locationAddressLine2 }),
-    ...(group.locationCity && { city: group.locationCity }),
-    ...(group.locationStateProvince && { stateProvince: group.locationStateProvince }),
-    ...(group.locationPostalCode && { postalCode: group.locationPostalCode }),
-    ...(group.locationCountry && { country: group.locationCountry }),
+    ...(isPresentString(group.locationAddressLine1) && { addressLine1: group.locationAddressLine1 }),
+    ...(isPresentString(group.locationAddressLine2) && { addressLine2: group.locationAddressLine2 }),
+    ...(isPresentString(group.locationCity) && { city: group.locationCity }),
+    ...(isPresentString(group.locationStateProvince) && { stateProvince: group.locationStateProvince }),
+    ...(isPresentString(group.locationPostalCode) && { postalCode: group.locationPostalCode }),
+    ...(isPresentString(group.locationCountry) && { country: group.locationCountry }),
     ...(coordinates && { coordinates }),
   };
 

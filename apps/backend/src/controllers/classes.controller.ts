@@ -7,6 +7,7 @@ import type { CreateClassServiceInput } from '../services/class/class.service';
 import { ClassService } from '../services/class/class.service';
 import type { AuthContext } from '../types/auth-context';
 import { handleUserSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
+import { isPresentString } from './utils/is-present';
 
 const classService = ClassService();
 
@@ -29,13 +30,15 @@ function transformClass(classEntity: Class): ApiClass {
     schoolId: classEntity.schoolId,
     districtId: classEntity.districtId,
     classType: classEntity.classType,
-    ...(classEntity.courseId && { courseId: classEntity.courseId }),
-    ...(classEntity.number && { number: classEntity.number }),
-    ...(classEntity.period && { period: classEntity.period }),
+    // String columns: null and empty-string are treated as absent (see `isPresentString`).
+    ...(isPresentString(classEntity.courseId) && { courseId: classEntity.courseId }),
+    ...(isPresentString(classEntity.number) && { number: classEntity.number }),
+    ...(isPresentString(classEntity.period) && { period: classEntity.period }),
+    // Array columns: a populated array is kept; an empty array is valid and not dropped here.
     ...(classEntity.subjects && { subjects: classEntity.subjects }),
     ...(classEntity.grades && { grades: classEntity.grades }),
     ...(classEntity.schoolLevels && { schoolLevels: classEntity.schoolLevels }),
-    ...(classEntity.location && { location: classEntity.location }),
+    ...(isPresentString(classEntity.location) && { location: classEntity.location }),
     ...(classEntity.rosteringEnded && { rosteringEnded: classEntity.rosteringEnded.toISOString() }),
   };
 }

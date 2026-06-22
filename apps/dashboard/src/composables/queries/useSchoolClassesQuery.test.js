@@ -28,9 +28,9 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
 
 const SCHOOL_ID = '00000000-0000-0000-0000-0000000000s1';
 
-const classPage = (items, totalPages = 1, page = 1) => ({
+const classPage = (items, totalPages = 1, page = 1, totalItems = items.length) => ({
   status: 200,
-  body: { data: { items, pagination: { page, perPage: 100, totalItems: items.length, totalPages } } },
+  body: { data: { items, pagination: { page, perPage: 100, totalItems, totalPages } } },
 });
 
 describe('useSchoolClassesQuery', () => {
@@ -112,7 +112,10 @@ describe('useSchoolClassesQuery', () => {
   it('follows pagination and aggregates all pages', async () => {
     const pageOne = [{ id: '00000000-0000-0000-0000-0000000000c1', name: 'A' }];
     const pageTwo = [{ id: '00000000-0000-0000-0000-0000000000c2', name: 'B' }];
-    mockListClasses.mockResolvedValueOnce(classPage(pageOne, 2, 1)).mockResolvedValueOnce(classPage(pageTwo, 2, 2));
+    // Two pages of one item each → a realistic total of 2 (not items.length per page).
+    mockListClasses
+      .mockResolvedValueOnce(classPage(pageOne, 2, 1, 2))
+      .mockResolvedValueOnce(classPage(pageTwo, 2, 2, 2));
 
     let queryFn;
     vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
