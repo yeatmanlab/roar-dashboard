@@ -396,9 +396,9 @@ export class RoarScores {
     }
 
     // Compute per-subtask scores. For each subtask, we report the computed SRE score, raw trial counts, and theta fields when available.
-    // 
+    //
     // Note: The current non-CAT implementation does not produce real theta values.
-    // 
+    //
     // SRE cannot be CATified, but we still include thetaEstimate for consistency with the score shape used by other apps. In this case, thetaEstimate should be treated as a transformed/reported score, not a true CAT theta estimate.
     const computedScores = _fromPairs(
       _toPairs(rawScores).map(([subTask, subScore]) => {
