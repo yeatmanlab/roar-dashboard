@@ -52,6 +52,30 @@
         </p>
       </div>
 
+      <!-- Bulk import: upload a JSON array of { name, type, value } to replace the rows below. -->
+      <div class="flex flex-column gap-1 my-3">
+        <PvButton
+          type="button"
+          label="Upload parameters (JSON)"
+          icon="pi pi-upload"
+          outlined
+          data-testid="create-variant-form__params-upload"
+          @click="paramsFileInput?.click()"
+        />
+        <small class="text-gray-500">
+          Replaces the rows below with a JSON array of
+          <code>{ "name": "…", "type": "string" | "number" | "boolean", "value": … }</code>.
+        </small>
+        <input
+          ref="paramsFileInput"
+          type="file"
+          accept="application/json,.json"
+          class="hidden"
+          data-testid="create-variant-form__params-file"
+          @change="handleParamsFileUpload"
+        />
+      </div>
+
       <TaskParametersConfigurator v-model="paramsModel" />
     </fieldset>
 
@@ -73,7 +97,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { helpers, maxLength } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useToast } from 'primevue/usetoast';
@@ -84,6 +108,7 @@ import Dropdown from '@/components/Form/Dropdown';
 import TextInput from '@/components/Form/TextInput';
 import TaskParametersConfigurator from '@/components/TaskParametersConfigurator/TaskParametersConfigurator.vue';
 import { buildVariantParametersFromRows } from '@/helpers/taskConfig';
+import { parseVariantParametersJson } from '@/helpers/parseVariantParametersFile';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import {
   TASK_DESCRIPTION_MAX_LENGTH,
@@ -135,6 +160,51 @@ const paramsModel = reactive([]);
 watch(selectedTaskId, () => {
   paramsModel.splice(0, paramsModel.length);
 });
+
+// ─── Bulk parameter upload ───────────────────────────────────────────────────
+// Lets the user upload a JSON array of { name, type, value } instead of adding
+// each parameter row by hand. Uploading REPLACES the current rows (the file is
+// the full parameter set).
+const paramsFileInput = ref(null);
+
+const handleParamsFileUpload = (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const rows = parseVariantParametersJson(String(reader.result));
+      paramsModel.splice(0, paramsModel.length, ...rows);
+      toast.add({
+        severity: TOAST_SEVERITIES.SUCCESS,
+        summary: 'Parameters loaded',
+        detail: `Loaded ${rows.length} parameter${rows.length === 1 ? '' : 's'} from file.`,
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
+    } catch (error) {
+      toast.add({
+        severity: TOAST_SEVERITIES.ERROR,
+        summary: 'Invalid parameters file',
+        detail: error.message,
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
+    } finally {
+      // Reset so re-selecting the same file re-fires `change`.
+      event.target.value = '';
+    }
+  };
+  reader.onerror = () => {
+    toast.add({
+      severity: TOAST_SEVERITIES.ERROR,
+      summary: 'Could not read file',
+      detail: 'The selected file could not be read. Please try again.',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+};
 
 const variantNameValidator = helpers.withMessage(
   'Must start with a letter and contain only letters, numbers, spaces, hyphens, and underscores',
