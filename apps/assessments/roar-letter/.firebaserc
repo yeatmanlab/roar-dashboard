@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "gse-roar-assessment"
+  },
+  "targets": {
+    "gse-roar-assessment": {
+      "hosting": {
+        "production": [
+          "roar-letter"
+        ],
+        "staging": [
+          "roar-letter-staging"
+        ]
+      }
+    }
+  }
+}
