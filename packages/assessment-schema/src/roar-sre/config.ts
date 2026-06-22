@@ -1,13 +1,19 @@
+import { COMPOSITE_FOUNDATIONAL_DOMAIN } from '../constants/common-domains.js';
+
 /**
  * IRT linear-transformation parameters for the composite_foundational domain.
  * Converts the composite sreScore (clamped to ≥ 0) to a shared-scale theta estimate:
  *   thetaEstimate = round((sreScore * scale + shift) * 10) / 10
  *
  * Derived from calibration against the foundational phonological composite in roar-pa.
+ *
+ * NOTE: When SRE adopts CAT, theta bounds (theta.min, theta.max) will also be needed.
+ * At that point, consider migrating to a CSV alongside roar-pa/irt_hyperparameters.csv
+ * so both assessments share the same infrastructure for the CAT engine.
  */
 export const SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS = {
-  /** trial_type identifier matching the CSV source these were derived from */
-  TRIAL_TYPE: 'composite_foundational',
+  /** domain identifier — derived from COMPOSITE_FOUNDATIONAL_DOMAIN to stay in sync */
+  TRIAL_TYPE: COMPOSITE_FOUNDATIONAL_DOMAIN,
   TRANSFORMATION_SCALE: 0.0770899,
   TRANSFORMATION_SHIFT: -3.0328717,
 } as const;

@@ -686,6 +686,15 @@ describe('RoarScores Integration Tests', () => {
     expect(names).toContain('standardScore');
     expect(names).toContain('percentile');
     expect(names).toContain('scoringVersion');
+
+    // composite_foundational must be present for English runs with a composite score.
+    // thetaEstimate = Math.round((28 * 0.0770899 + -3.0328717) * 10) / 10 = -0.9
+    const domains = [...new Set(entries.map((e) => e.domain))];
+    expect(domains).toContain('composite_foundational');
+
+    const foundationalEntries = entries.filter((e) => e.domain === 'composite_foundational');
+    expect(foundationalEntries).toHaveLength(1);
+    expect(foundationalEntries[0]).toMatchObject({ name: 'thetaEstimate', value: '-0.9' });
   });
 
   test('v3 English: computedScoreCallback output passes toSreScoreEntries strict mode', async () => {
@@ -774,9 +783,14 @@ describe('RoarScores Integration Tests', () => {
 
     const computed = await scores.computedScoreCallback(rawScores);
 
+    let entries;
     expect(() => {
-      toSreScoreEntries(computed, { strict: true });
+      entries = toSreScoreEntries(computed, { strict: true });
     }).not.toThrow();
+
+    // composite_foundational must NOT appear for non-English tasks
+    const domains = [...new Set(entries.map((e) => e.domain))];
+    expect(domains).not.toContain('composite_foundational');
   });
 
   test('should gracefully degrade when fixed form equating table fails to load', async () => {

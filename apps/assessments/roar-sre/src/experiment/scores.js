@@ -69,6 +69,8 @@ const isValidForScoring = ({ ageMonths, grade, scoringVersion, taskId }) => {
 const useGradeForScoring = ({ scoringVersion, taskId }) =>
   scoringVersion === SRE_SCORING_VERSION.V3 && taskId === SRE_TASK_IDS.EN;
 
+// V4 is the first EN version with age-based scoring; V3 uses grade.
+// V1 exists only for ES (always age-based), and V2 is not in use.
 const useAgeForScoring = ({ scoringVersion, taskId }) =>
   scoringVersion >= SRE_SCORING_VERSION.V4 || taskId === SRE_TASK_IDS.ES;
 
