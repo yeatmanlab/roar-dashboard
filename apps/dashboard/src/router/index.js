@@ -963,13 +963,14 @@ router.beforeEach(async (to, from, next) => {
 
   // Prevent routing to routes that the user does not have permission to access.
   //
-  // Super admins bypass route-permission checks. Read the flag from the `/me`
-  // payload already awaited above (the canonical backend source) rather than only
-  // from `userCan` → `authStore.userClaims`, which is populated by a *separate*
-  // async `resolveUserClaims('/me')` in App.vue that settles after the first
-  // navigation. That timing gap is what bounced the first navigation (and made it
-  // work only on the second click) on the emulator stack, where super-admin is the
-  // sole route-access signal (the emulator token carries no role claim).
+  // Super admins bypass route-permission checks. Read the flag primarily from the
+  // `/me` payload already awaited above (the canonical backend source), keeping
+  // `store.isUserSuperAdmin` only as a fallback. That store getter derives from
+  // `authStore.userClaims`, which is populated by a *separate* async
+  // `resolveUserClaims('/me')` in App.vue that settles after the first navigation —
+  // the timing gap that bounced the first navigation (and made it work only on the
+  // second click) on the emulator stack, where super-admin is the sole route-access
+  // signal (the emulator token carries no role claim).
   const isSuperAdmin = Boolean(meData?.isSuperAdmin) || store.isUserSuperAdmin;
   if (Object.keys(to?.meta).includes('permission') && !isSuperAdmin && !userCan(to.meta.permission)) {
     logNavEvent(NAV_LOG_MESSAGES.FORBIDDEN_ROUTE, {
