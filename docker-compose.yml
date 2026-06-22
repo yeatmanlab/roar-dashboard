@@ -59,8 +59,15 @@ services:
   # One-shot init container: creates the FGA store and deploys the authorization
   # model. Idempotent — skips creation if /fga-env/fga-env.json already exists.
   # The backend reads store/model IDs from the fga-env volume on startup.
+  #
+  # Uses `profiles: [init]` so it doesn't run with the default `docker compose up`.
+  # Instead, it runs automatically on first setup via:
+  #   docker compose up -d --wait && docker compose run --rm openfga-init
+  # Or the seed script handles FGA store creation via the SDK fallback when the
+  # fga-env volume is empty.
   openfga-init:
     container_name: roar-openfga-init
+    profiles: [init]
     build:
       context: docker/openfga
       dockerfile: Dockerfile.init
