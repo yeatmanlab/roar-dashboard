@@ -89,12 +89,17 @@ describe('useGroupsListQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    // Returned objects preserve id/name/abbreviation and flatten location so
-    // consumers (CreateOrgs reads tags off the array; reports read name) keep
-    // working. Groups have no identifiers block, so only location is flattened.
+    // Returned objects keep id/name/abbreviation/groupType and flatten location
+    // to top-level fields so consumers (CreateOrgs reads tags off the array;
+    // reports read name) keep working. The nested `location` object is dropped
+    // (single flat representation). Groups have no identifiers block, so only
+    // location is flattened.
     await expect(queryFn()).resolves.toEqual([
       {
-        ...items[0],
+        id: '00000000-0000-0000-0000-000000000001',
+        name: 'Group A',
+        abbreviation: 'GA',
+        groupType: 'cohort',
         city: 'Palo Alto',
         stateProvince: 'CA',
         addressLine1: undefined,
