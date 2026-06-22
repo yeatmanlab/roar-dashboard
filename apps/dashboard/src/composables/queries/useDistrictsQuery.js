@@ -47,7 +47,9 @@ const useDistrictsQuery = (districtIds, queryOptions = undefined) => {
       const client = getRoarApiClient();
       const ids = toValue(districtIds) ?? [];
 
-      // One request per id, preserving input order via Promise.all.
+      // One request per id, preserving input order via Promise.all. All-or-nothing:
+      // a non-200 for any id rejects the whole query (acceptable — the sole caller,
+      // useOrgQuery, passes a single id).
       const districts = await Promise.all(
         ids.map(async (id) => {
           const result = await client.districts.get({ params: { id } });

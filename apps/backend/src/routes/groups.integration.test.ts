@@ -3,16 +3,15 @@
  *
  * Tests the full HTTP lifecycle: middleware → controller → service → repository → DB.
  * Only Firebase token verification is mocked — everything else runs for real.
-
- * Authorization is tested by permission tier (resolved via OpenFGA):
- *   - superAdmin:  isSuperAdmin=true (bypasses all access control)
- *   - siteAdmin:   site_administrator → 403
- *   - admin:       administrator → 403
- *   - educator:    teacher → 403
- *   - student:     student → 403
- *   - caregiver:   guardian → 403
  *
- * The invitation code endpoint is restricted to super admins only.
+ * Authorization is tested by permission tier (resolved via OpenFGA). The tier
+ * behavior varies by endpoint:
+ *   - superAdmin (isSuperAdmin=true) bypasses all access control everywhere.
+ *   - GET /groups (list): supervisory members (siteAdmin, admin, educator) get 200
+ *     with data; supervised tiers (student, caregiver) and non-members get an empty
+ *     result set, not 403.
+ *   - GET /groups/:groupId (read): supervisory members get 200; others get 403.
+ *   - The invitation-code endpoint is restricted to super admins only (others 403).
  *
  * Each endpoint section follows the structure:
  *   1. Authorization — one spec per tier with status + content assertions
