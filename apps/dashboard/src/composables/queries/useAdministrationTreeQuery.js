@@ -53,16 +53,17 @@ export function toTreeTableNode(apiNode) {
 }
 
 /**
- * Fetch one level of an administration's org tree from
- * `GET /administrations/:id/tree`, following pagination so a level with many
- * entities is returned in full. Pass a parent to fetch that node's children;
- * omit it for the root level (districts + groups). Returns PvTreeTable nodes.
+ * Fetch a non-root level of an administration's org tree — a parent node's
+ * children — from `GET /administrations/:id/tree`, following pagination so a level
+ * with many entities is returned in full. The root level is not fetched here (it is
+ * server-paginated via `fetchAdministrationTreeRootPage`), so `parent` is required.
+ * Returns PvTreeTable nodes.
  *
  * @param {string} administrationId - The administration UUID.
- * @param {{ parentEntityType?: string, parentEntityId?: string }} [parent] - The parent node to expand, if any.
+ * @param {{ parentEntityType: string, parentEntityId: string }} parent - The node whose children to fetch.
  * @returns {Promise<Array>} Mapped tree-table nodes for the requested level.
  */
-export async function fetchAdministrationTreeLevel(administrationId, parent = {}) {
+export async function fetchAdministrationTreeLevel(administrationId, { parentEntityType, parentEntityId }) {
   const client = getRoarApiClient();
   const apiNodes = [];
   let page = 1;
@@ -75,8 +76,8 @@ export async function fetchAdministrationTreeLevel(administrationId, parent = {}
         page,
         perPage: TREE_LEVEL_PER_PAGE,
         embed: 'stats',
-        ...(parent.parentEntityType ? { parentEntityType: parent.parentEntityType } : {}),
-        ...(parent.parentEntityId ? { parentEntityId: parent.parentEntityId } : {}),
+        parentEntityType,
+        parentEntityId,
       },
     });
 
