@@ -95,6 +95,98 @@ function buildVariantBody(overrides: Record<string, unknown> = {}) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/tasks  (list)
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/tasks', () => {
+  const path = () => '/v1/tasks';
+
+  describe('authorization', () => {
+    // The list endpoint is open to any authenticated user — the contract declares no
+    // 403 for it. (This coverage replaces the former cypress smoke spec.)
+    it('superAdmin tier can list tasks', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(Array.isArray(res.body.data.items)).toBe(true);
+    });
+
+    it('siteAdmin tier can list tasks', async () => {
+      authenticateAs(tiers.siteAdmin);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+    });
+
+    it('admin tier can list tasks', async () => {
+      authenticateAs(tiers.admin);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+    });
+
+    it('educator tier can list tasks', async () => {
+      authenticateAs(tiers.educator);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+    });
+
+    it('student tier can list tasks', async () => {
+      authenticateAs(tiers.student);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+    });
+
+    it('caregiver tier can list tasks', async () => {
+      authenticateAs(tiers.caregiver);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+    });
+  });
+
+  describe('response structure', () => {
+    it('returns a paginated envelope of flat task fields', async () => {
+      authenticateAs(tiers.superAdmin);
+      // perPage large enough that the seeded task is on page 1 regardless of how many tasks
+      // other tests create, so this shape assertion stays order-independent.
+      const res = await request(app).get(`${path()}?perPage=100`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toHaveProperty('items');
+      expect(res.body.data).toHaveProperty('pagination');
+      expect(res.body.data.pagination).toMatchObject({
+        page: expect.any(Number),
+        perPage: expect.any(Number),
+        totalItems: expect.any(Number),
+        totalPages: expect.any(Number),
+      });
+
+      const seeded = res.body.data.items.find((task: { id: string }) => task.id === baseFixture.task.id);
+      expect(seeded).toBeDefined();
+      expect(seeded).toMatchObject({
+        id: baseFixture.task.id,
+        slug: baseFixture.task.slug,
+        name: baseFixture.task.name,
+        nameSimple: baseFixture.task.nameSimple,
+        nameTechnical: baseFixture.task.nameTechnical,
+      });
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', path()).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // GET /v1/tasks/:taskId
 // ═══════════════════════════════════════════════════════════════════════════
 

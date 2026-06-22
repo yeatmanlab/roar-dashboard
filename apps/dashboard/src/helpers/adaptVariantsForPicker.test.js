@@ -29,6 +29,7 @@ describe('adaptVariantsForPicker', () => {
       task: {
         id: flatVariant.taskId,
         name: 'ROAR - Word',
+        publicName: 'ROAR - Word',
         studentFacingName: 'ROAR - Word',
         image: 'https://img/swr.png',
         slug: 'swr',
