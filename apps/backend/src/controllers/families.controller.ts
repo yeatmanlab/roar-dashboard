@@ -12,6 +12,7 @@ import type { AuthContext } from '../types/auth-context';
 import type { AddFamilyChildrenServiceInput, CreateFamilyServiceInput } from '../services/family/family.service';
 import { FamilyService } from '../services/family/family.service';
 import { handleUserSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
+import { isPresentString } from './utils/is-present';
 
 const familyService = FamilyService();
 
@@ -38,14 +39,15 @@ function transformFamily(family: Family): ApiFamily {
     };
   }
 
-  // Build location object only if at least one field is present
+  // Build the location object from the present fields. Null and empty-string
+  // columns are treated as absent and omitted (see `isPresentString`).
   const location = {
-    ...(family.locationAddressLine1 && { addressLine1: family.locationAddressLine1 }),
-    ...(family.locationAddressLine2 && { addressLine2: family.locationAddressLine2 }),
-    ...(family.locationCity && { city: family.locationCity }),
-    ...(family.locationStateProvince && { stateProvince: family.locationStateProvince }),
-    ...(family.locationPostalCode && { postalCode: family.locationPostalCode }),
-    ...(family.locationCountry && { country: family.locationCountry }),
+    ...(isPresentString(family.locationAddressLine1) && { addressLine1: family.locationAddressLine1 }),
+    ...(isPresentString(family.locationAddressLine2) && { addressLine2: family.locationAddressLine2 }),
+    ...(isPresentString(family.locationCity) && { city: family.locationCity }),
+    ...(isPresentString(family.locationStateProvince) && { stateProvince: family.locationStateProvince }),
+    ...(isPresentString(family.locationPostalCode) && { postalCode: family.locationPostalCode }),
+    ...(isPresentString(family.locationCountry) && { country: family.locationCountry }),
     ...(coordinates && { coordinates }),
   };
 

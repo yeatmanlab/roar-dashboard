@@ -28,9 +28,9 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
-const groupPage = (items, totalPages = 1, page = 1) => ({
+const groupPage = (items, totalPages = 1, page = 1, totalItems = items.length) => ({
   status: 200,
-  body: { data: { items, pagination: { page, perPage: 100, totalItems: items.length, totalPages } } },
+  body: { data: { items, pagination: { page, perPage: 100, totalItems, totalPages } } },
 });
 
 describe('useGroupsListQuery', () => {
@@ -116,7 +116,10 @@ describe('useGroupsListQuery', () => {
   it('follows pagination and aggregates all pages', async () => {
     const pageOne = [{ id: '00000000-0000-0000-0000-000000000001', name: 'A' }];
     const pageTwo = [{ id: '00000000-0000-0000-0000-000000000002', name: 'B' }];
-    mockGroupsList.mockResolvedValueOnce(groupPage(pageOne, 2, 1)).mockResolvedValueOnce(groupPage(pageTwo, 2, 2));
+    // Two pages of one item each → a realistic total of 2 (not items.length per page).
+    mockGroupsList
+      .mockResolvedValueOnce(groupPage(pageOne, 2, 1, 2))
+      .mockResolvedValueOnce(groupPage(pageTwo, 2, 2, 2));
 
     let queryFn;
     vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
