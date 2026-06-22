@@ -161,7 +161,7 @@ export const DEV_IDS = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Shared password for all dev fixture users. */
-export const DEV_PASSWORD = 'roar-dev-password';
+export const DEV_PASSWORD = 'password';
 
 /**
  * Credential map for each user in the dev fixture. Keys match the
@@ -172,6 +172,7 @@ export const DEV_USERS = {
   superAdmin: {
     id: DEV_IDS.superAdmin,
     authId: DEV_IDS.superAdminAuth,
+    email: 'super-admin@test.local',
     nameFirst: 'Super',
     nameLast: 'Admin',
     userType: UserType.ADMIN,
@@ -179,6 +180,7 @@ export const DEV_USERS = {
   districtAdmin: {
     id: DEV_IDS.districtAdmin,
     authId: DEV_IDS.districtAdminAuth,
+    email: 'district-admin@test.local',
     nameFirst: 'District',
     nameLast: 'Admin',
     userType: UserType.ADMIN,
@@ -186,6 +188,7 @@ export const DEV_USERS = {
   schoolAAdmin: {
     id: DEV_IDS.schoolAAdmin,
     authId: DEV_IDS.schoolAAdminAuth,
+    email: 'school-a-admin@test.local',
     nameFirst: 'School A',
     nameLast: 'Admin',
     userType: UserType.ADMIN,
@@ -193,6 +196,7 @@ export const DEV_USERS = {
   schoolATeacher: {
     id: DEV_IDS.schoolATeacher,
     authId: DEV_IDS.schoolATeacherAuth,
+    email: 'school-a-teacher@test.local',
     nameFirst: 'School A',
     nameLast: 'Teacher',
     userType: UserType.EDUCATOR,
@@ -200,6 +204,7 @@ export const DEV_USERS = {
   schoolAStudent: {
     id: DEV_IDS.schoolAStudent,
     authId: DEV_IDS.schoolAStudentAuth,
+    email: 'school-a-student@test.local',
     nameFirst: 'School A',
     nameLast: 'Student',
     userType: UserType.STUDENT,
@@ -207,6 +212,7 @@ export const DEV_USERS = {
   classATeacher: {
     id: DEV_IDS.classATeacher,
     authId: DEV_IDS.classATeacherAuth,
+    email: 'class-a-teacher@test.local',
     nameFirst: 'Class A',
     nameLast: 'Teacher',
     userType: UserType.EDUCATOR,
@@ -214,6 +220,7 @@ export const DEV_USERS = {
   classAStudent: {
     id: DEV_IDS.classAStudent,
     authId: DEV_IDS.classAStudentAuth,
+    email: 'class-a-student@test.local',
     nameFirst: 'Class A',
     nameLast: 'Student',
     userType: UserType.STUDENT,
@@ -221,6 +228,7 @@ export const DEV_USERS = {
   groupStudent: {
     id: DEV_IDS.groupStudent,
     authId: DEV_IDS.groupStudentAuth,
+    email: 'group-student@test.local',
     nameFirst: 'Group',
     nameLast: 'Student',
     userType: UserType.STUDENT,
@@ -228,6 +236,7 @@ export const DEV_USERS = {
   districtBAdmin: {
     id: DEV_IDS.districtBAdmin,
     authId: DEV_IDS.districtBAdminAuth,
+    email: 'district-b-admin@test.local',
     nameFirst: 'District B',
     nameLast: 'Admin',
     userType: UserType.ADMIN,

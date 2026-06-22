@@ -8,8 +8,8 @@
   "scripts": {
     "dev": "turbo run dev --filter=!./apps/assessments/*",
     "dev:setup": "docker compose up -d --wait",
-    "dev:seed": "npm run dev:seed -w apps/backend",
-    "dev:reset": "npm run dev:reset -w apps/backend",
+    "dev:seed": "cd apps/backend && npm run dev:seed",
+    "dev:reset": "cd apps/backend && npm run dev:reset",
     "dev:setup:certs": "setup-certs",
     "watch": "turbo watch dev",
     "build": "turbo run build",

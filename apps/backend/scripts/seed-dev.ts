@@ -199,6 +199,8 @@ async function main(): Promise<void> {
       logger.info('[seed-dev] Seeding Firebase Auth emulator...');
       const seedable: SeedableEmulatorUser[] = DEV_FIXTURE_USER_KEYS.map((key) => ({
         authId: DEV_USERS[key].authId,
+        email: DEV_USERS[key].email,
+        password: DEV_PASSWORD,
         nameFirst: DEV_USERS[key].nameFirst,
         nameLast: DEV_USERS[key].nameLast,
       }));
@@ -215,7 +217,7 @@ async function main(): Promise<void> {
             {
               id: user.id,
               authId: user.authId,
-              email: `${user.authId}@test.local`,
+              email: user.email,
               password: DEV_PASSWORD,
               nameFirst: user.nameFirst,
               nameLast: user.nameLast,

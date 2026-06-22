@@ -88,11 +88,14 @@ services:
         --only auth
         --project ${GCLOUD_PROJECT:-demo-roar}
         --config /firebase.json
+        --import /emulator-data
+        --export-on-exit /emulator-data
     ports:
       - "${ROAR_AUTH_PORT:-9099}:9099"
       - "${ROAR_AUTH_UI_PORT:-9999}:9999"
     volumes:
       - ./docker/firebase-auth-emulator/firebase.json:/firebase.json:ro
+      - firebase-auth-data:/emulator-data
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:9099/ || exit 1"]
       interval: 5s
@@ -162,3 +165,4 @@ services:
 
 volumes:
   fga-env:
+  firebase-auth-data:
