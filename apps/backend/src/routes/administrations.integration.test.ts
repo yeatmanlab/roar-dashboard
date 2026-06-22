@@ -147,6 +147,93 @@ describe('GET /v1/administrations', () => {
     });
   });
 
+  describe('search filter', () => {
+    // Fixture admin names used by these assertions:
+    //   administrationAssignedToDistrict  → 'Fall 2025 Universal Screener (District A)'
+    //   administrationAssignedToSchoolA   → 'Winter Reading Benchmark (School A)'
+    //   administrationAssignedToSchoolB   → 'Winter Reading Benchmark (School B)'
+    //   administrationAssignedToDistrictB → 'Fall 2025 Universal Screener (District B)'
+
+    it('superAdmin: ?search narrows the list to name-matching administrations', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/administrations?search=${encodeURIComponent('Winter Reading Benchmark')}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      // Both Winter admins match; the Fall "Universal Screener" admins do not.
+      expect(ids).toContain(baseFixture.administrationAssignedToSchoolA.id);
+      expect(ids).toContain(baseFixture.administrationAssignedToSchoolB.id);
+      expect(ids).not.toContain(baseFixture.administrationAssignedToDistrict.id);
+      expect(ids).not.toContain(baseFixture.administrationAssignedToDistrictB.id);
+      // totalItems reflects the filtered set, so every returned name matches.
+      for (const item of res.body.data.items as Array<{ name: string }>) {
+        expect(item.name.toLowerCase()).toContain('winter reading benchmark');
+      }
+    });
+
+    it('superAdmin: ?search is case-insensitive', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/administrations?search=${encodeURIComponent('winter reading benchmark')}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.administrationAssignedToSchoolA.id);
+      expect(ids).toContain(baseFixture.administrationAssignedToSchoolB.id);
+    });
+
+    it('siteAdmin (non-super-admin): ?search narrows the already-authorized set', async () => {
+      // siteAdmin is scoped to District A and (without search) sees the district,
+      // schoolA, and schoolB admins. Searching "Winter" must keep only the two
+      // Winter admins and drop the Fall "Universal Screener (District A)" admin —
+      // proving search is applied AFTER authorization scoping, in SQL.
+      const res = await expectRoute('GET', `/v1/administrations?search=${encodeURIComponent('Winter')}`)
+        .as(tiers.siteAdmin)
+        .toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.administrationAssignedToSchoolA.id);
+      expect(ids).toContain(baseFixture.administrationAssignedToSchoolB.id);
+      expect(ids).not.toContain(baseFixture.administrationAssignedToDistrict.id);
+      // District B is outside the caller's scope and must never appear, search or not.
+      expect(ids).not.toContain(baseFixture.administrationAssignedToDistrictB.id);
+    });
+
+    it('siteAdmin (non-super-admin): ?search cannot widen beyond authorized scope', async () => {
+      // "Universal Screener" matches BOTH the District A and District B Fall admins,
+      // but siteAdmin can only see District A's. Search must not surface District B's.
+      const res = await expectRoute('GET', `/v1/administrations?search=${encodeURIComponent('Universal Screener')}`)
+        .as(tiers.siteAdmin)
+        .toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.administrationAssignedToDistrict.id);
+      expect(ids).not.toContain(baseFixture.administrationAssignedToDistrictB.id);
+      // The Winter admins don't match this term.
+      expect(ids).not.toContain(baseFixture.administrationAssignedToSchoolA.id);
+    });
+
+    it('superAdmin: pagination totalItems reflects the filtered set', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/administrations?search=${encodeURIComponent('Winter Reading Benchmark')}&perPage=1&page=1`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      // Two fixture admins match "Winter Reading Benchmark"; with perPage=1 the page
+      // holds a single item but totalItems still reports the full filtered count (2).
+      expect(res.body.data.items).toHaveLength(1);
+      expect(res.body.data.pagination.totalItems).toBe(2);
+      expect(res.body.data.pagination.totalPages).toBe(2);
+    });
+  });
+
   describe('error cases', () => {
     it('returns 401 when unauthenticated', async () => {
       const res = await expectRoute('GET', '/v1/administrations').unauthenticated().toReturn(401);
@@ -905,7 +992,7 @@ describe('GET /v1/administrations/:id/tree', () => {
 
       const districtNode = res.body.data.items.find((item: { id: string }) => item.id === baseFixture.district.id);
       expect(districtNode).toBeDefined();
-      // baseFixture.district has schoolA and schoolB as children
+      // baseFixture.district has schoolA, schoolB, and schoolC as children
       expect(districtNode.hasChildren).toBe(true);
     });
 
@@ -960,7 +1047,7 @@ describe('GET /v1/administrations/:id/tree', () => {
         .as(tiers.superAdmin)
         .toReturn(200);
 
-      // baseFixture.district has schoolA and schoolB as children
+      // baseFixture.district has schoolA, schoolB, and schoolC as children
       const ids = res.body.data.items.map((item: { id: string }) => item.id);
       expect(ids).toContain(baseFixture.schoolA.id);
       expect(ids).toContain(baseFixture.schoolB.id);

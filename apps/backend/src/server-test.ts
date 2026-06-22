@@ -51,6 +51,7 @@ import { AdministrationAgreementFactory } from './test-support/factories/adminis
 import { AdministrationTaskVariantFactory } from './test-support/factories/administration-task-variant.factory';
 import { TaskFactory } from './test-support/factories/task.factory';
 import { TaskVariantFactory } from './test-support/factories/task-variant.factory';
+import { TaskVariantParameterFactory } from './test-support/factories/task-variant-parameter.factory';
 import { UserFactory } from './test-support/factories/user.factory';
 import { UserClassFactory } from './test-support/factories/user-class.factory';
 import { RunFactory } from './test-support/factories/run.factory';
@@ -361,6 +362,28 @@ async function startTestServer(): Promise<void> {
       TaskVariantFactory.create({ taskId: syntaxTask.id, name: 'Syntax (Standard)' }),
       TaskVariantFactory.create({ taskId: inferenceTask.id, name: 'Inference (Standard)' }),
     ]);
+
+    // Seed a handful of illustrative parameters per local-dev variant so the super-admin
+    // "view params" popover on the administration card shows real rows. Parameters live in
+    // their own table (task_variant_parameters), resolved by GET /tasks/:taskId/variants/:variantId.
+    // Cover the new catalog variants plus the two reused baseFixture variants so every card's
+    // assessments have parameters to display.
+    const localDevVariantIds = [
+      phonemeVariant.id,
+      letterVariant.id,
+      morphologyVariant.id,
+      syntaxVariant.id,
+      inferenceVariant.id,
+      fixture.variantForAllGrades.id,
+      fixture.variantForTask2.id,
+    ];
+    await Promise.all(
+      localDevVariantIds.flatMap((taskVariantId) => [
+        TaskVariantParameterFactory.create({ taskVariantId, name: 'numberOfTrials', value: 30 }),
+        TaskVariantParameterFactory.create({ taskVariantId, name: 'language', value: 'en' }),
+        TaskVariantParameterFactory.create({ taskVariantId, name: 'adaptive', value: true }),
+      ]),
+    );
 
     // Each non-district administration gets a distinct mix so its card shows a clean list of task
     // names. Word/Sentence variants are reused from baseFixture; the rest are the new tasks above.

@@ -135,6 +135,186 @@ describe('AdministrationRepository', () => {
     });
   });
 
+  describe('search filter', () => {
+    // A unique, namespaced token so these search admins can't collide with the
+    // fixture's administrations or with admins created by other tests in this file.
+    // Each admin's name embeds the token so an ilike '%token%' matches all three.
+    const token = `Zephyr-${Math.random().toString(36).slice(2, 8)}`;
+    let matchAlphaId: string;
+    let matchBetaId: string;
+    let matchUpperId: string;
+
+    beforeAll(async () => {
+      const [alpha, beta, upper] = await Promise.all([
+        AdministrationFactory.create({
+          name: `${token} Reading Screener Alpha`,
+          createdBy: baseFixture.districtAdmin.id,
+        }),
+        AdministrationFactory.create({
+          name: `Winter ${token} Benchmark Beta`,
+          createdBy: baseFixture.districtAdmin.id,
+        }),
+        // Same token but upper-cased to prove case-insensitive matching.
+        AdministrationFactory.create({
+          name: `${token.toUpperCase()} Gamma`,
+          createdBy: baseFixture.districtAdmin.id,
+        }),
+      ]);
+      matchAlphaId = alpha.id;
+      matchBetaId = beta.id;
+      matchUpperId = upper.id;
+    });
+
+    describe('listAll (super-admin path)', () => {
+      it('returns only administrations whose name contains the search term', async () => {
+        const result = await repository.listAll({ page: 1, perPage: 100, search: token });
+
+        const ids = result.items.map((a) => a.id).sort();
+        expect(ids).toEqual([matchAlphaId, matchBetaId, matchUpperId].sort());
+        // totalItems reflects the filtered set, not the whole table.
+        expect(result.totalItems).toBe(3);
+      });
+
+      it('matches case-insensitively', async () => {
+        const result = await repository.listAll({ page: 1, perPage: 100, search: token.toLowerCase() });
+
+        const ids = result.items.map((a) => a.id);
+        expect(ids).toContain(matchAlphaId);
+        expect(ids).toContain(matchBetaId);
+        // The upper-cased admin must also match a lower-cased search term.
+        expect(ids).toContain(matchUpperId);
+        expect(result.totalItems).toBe(3);
+      });
+
+      it('matches an interior substring of the name', async () => {
+        // "Benchmark Beta" only appears in the beta admin's name.
+        const result = await repository.listAll({ page: 1, perPage: 100, search: 'Benchmark Beta' });
+
+        const ids = result.items.map((a) => a.id);
+        expect(ids).toContain(matchBetaId);
+        expect(ids).not.toContain(matchAlphaId);
+        expect(ids).not.toContain(matchUpperId);
+      });
+
+      it('treats a whitespace-only search as no filter', async () => {
+        const filtered = await repository.listAll({ page: 1, perPage: 100, search: '   ' });
+        const unfiltered = await repository.listAll({ page: 1, perPage: 100 });
+
+        expect(filtered.totalItems).toBe(unfiltered.totalItems);
+      });
+
+      it('respects pagination over the filtered set (totalItems = filtered count)', async () => {
+        const page1 = await repository.listAll({
+          page: 1,
+          perPage: 2,
+          search: token,
+          orderBy: { field: 'name', direction: 'asc' },
+        });
+
+        // 3 matches, perPage 2 → first page has 2 items but totalItems still reports 3.
+        expect(page1.items.length).toBe(2);
+        expect(page1.totalItems).toBe(3);
+
+        const page2 = await repository.listAll({
+          page: 2,
+          perPage: 2,
+          search: token,
+          orderBy: { field: 'name', direction: 'asc' },
+        });
+        expect(page2.items.length).toBe(1);
+        expect(page2.totalItems).toBe(3);
+      });
+
+      it('ANDs the search term with the status filter', async () => {
+        // All three search admins use the factory's default active window (dateStart in
+        // the recent past, dateEnd in the near future), so status=active keeps them and
+        // status=past removes them — proving search is combined with status, not replaced.
+        const active = await repository.listAll({ page: 1, perPage: 100, search: token, status: 'active' });
+        const activeIds = active.items.map((a) => a.id).sort();
+        expect(activeIds).toEqual([matchAlphaId, matchBetaId, matchUpperId].sort());
+
+        const past = await repository.listAll({ page: 1, perPage: 100, search: token, status: 'past' });
+        const pastIds = past.items.map((a) => a.id);
+        expect(pastIds).not.toContain(matchAlphaId);
+        expect(pastIds).not.toContain(matchBetaId);
+        expect(pastIds).not.toContain(matchUpperId);
+      });
+    });
+
+    describe('getByIds (authorized / non-super-admin path)', () => {
+      it('narrows the authorized id set by the search term', async () => {
+        // Simulate the FGA-resolved id set for a non-super-admin: pass all three
+        // matching admins plus an unrelated one. Search must keep only name matches.
+        const unrelated = await AdministrationFactory.create({
+          name: 'Completely Different Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+
+        const authorizedIds = [matchAlphaId, matchBetaId, matchUpperId, unrelated.id];
+        const result = await repository.getByIds(authorizedIds, { page: 1, perPage: 100, search: token });
+
+        const ids = result.items.map((a) => a.id).sort();
+        expect(ids).toEqual([matchAlphaId, matchBetaId, matchUpperId].sort());
+        expect(result.totalItems).toBe(3);
+      });
+
+      it('never widens beyond the authorized id set', async () => {
+        // Only one matching admin is authorized; the other two match the term but
+        // are not in the id set, so they must not appear.
+        const result = await repository.getByIds([matchAlphaId], { page: 1, perPage: 100, search: token });
+
+        const ids = result.items.map((a) => a.id);
+        expect(ids).toEqual([matchAlphaId]);
+        expect(result.totalItems).toBe(1);
+      });
+
+      it('matches case-insensitively within the authorized set', async () => {
+        const result = await repository.getByIds([matchUpperId], {
+          page: 1,
+          perPage: 100,
+          search: token.toLowerCase(),
+        });
+
+        expect(result.items.map((a) => a.id)).toEqual([matchUpperId]);
+        expect(result.totalItems).toBe(1);
+      });
+
+      it('ANDs the search term with the status filter on the authorized path', async () => {
+        const authorizedIds = [matchAlphaId, matchBetaId, matchUpperId];
+
+        const active = await repository.getByIds(authorizedIds, {
+          page: 1,
+          perPage: 100,
+          search: token,
+          status: 'active',
+        });
+        expect(active.items.map((a) => a.id).sort()).toEqual([...authorizedIds].sort());
+
+        const past = await repository.getByIds(authorizedIds, {
+          page: 1,
+          perPage: 100,
+          search: token,
+          status: 'past',
+        });
+        expect(past.items).toHaveLength(0);
+        expect(past.totalItems).toBe(0);
+      });
+
+      it('respects pagination over the filtered, authorized set', async () => {
+        const authorizedIds = [matchAlphaId, matchBetaId, matchUpperId];
+        const page1 = await repository.getByIds(authorizedIds, {
+          page: 1,
+          perPage: 2,
+          search: token,
+          orderBy: { field: 'name', direction: 'asc' },
+        });
+
+        expect(page1.items.length).toBe(2);
+        expect(page1.totalItems).toBe(3);
+      });
+    });
+  });
+
   describe('getAssignedUserCountsByAdministrationIds', () => {
     it('counts users via direct group path', async () => {
       const counts = await repository.getAssignedUserCountsByAdministrationIds([
@@ -150,8 +330,8 @@ describe('AdministrationRepository', () => {
         baseFixture.administrationAssignedToClassA.id,
       ]);
 
-      // classInSchoolA has 2 active users (classAStudent, classATeacher); expiredClassStudent excluded
-      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+      // classInSchoolA has 3 active users (classAStudent, classATeacher, schoolAStudent); expiredClassStudent excluded
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(3);
     });
 
     it('counts users via org hierarchy paths (viaOrgToOrgUsers and viaOrgToClassUsers)', async () => {
@@ -160,9 +340,9 @@ describe('AdministrationRepository', () => {
       ]);
 
       // administrationAssignedToDistrict is assigned to district, which via ltree includes:
-      // - viaOrgToOrgUsers: districtAdmin, schoolAAdmin, schoolAPrincipal, schoolATeacher, schoolAStudent,
-      //   schoolBStudent, multiAssignedUser (district+schoolA), grade5Student, grade3Student, grade5EllStudent
-      // - viaOrgToClassUsers: classAStudent, classATeacher (active in classInSchoolA under district)
+      // - viaOrgToOrgUsers: districtAdmin, schoolAAdmin, schoolAPrincipal, schoolATeacher, multiAssignedUser (district+schoolA)
+      // - viaOrgToClassUsers (students now enroll at the class level): classAStudent, classATeacher, schoolAStudent
+      //   (classInSchoolA); schoolBStudent (classInSchoolB); grade5Student, grade3Student, grade5EllStudent (classInSchoolC)
       // Excluded: expiredEnrollmentStudent, futureEnrollmentStudent, expiredClassStudent
       const count = counts.get(baseFixture.administrationAssignedToDistrict.id);
       expect(count).toBe(12);
@@ -171,7 +351,7 @@ describe('AdministrationRepository', () => {
     it('deduplicates users reachable via multiple paths', async () => {
       // multiAssignedUser has active enrollments at both district AND schoolA. Both orgs are in the
       // district subtree, so viaOrgToOrgUsers emits two rows for them (one per enrollment).
-      // The full UNION ALL produces 13 rows (11 single-path users + 2 rows for multiAssignedUser),
+      // The full UNION ALL produces 13 rows (11 single-path users — 4 org-level + 7 class-level — plus 2 rows for multiAssignedUser),
       // but COUNT(DISTINCT userId) must collapse them to 12 unique users.
       const counts = await repository.getAssignedUserCountsByAdministrationIds([
         baseFixture.administrationAssignedToDistrict.id,
@@ -188,7 +368,7 @@ describe('AdministrationRepository', () => {
       ]);
 
       expect(counts.get(baseFixture.administrationAssignedToGroup.id)).toBe(1);
-      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(3);
     });
 
     it('omits entry from returned Map for administration with no assigned users', async () => {
@@ -220,9 +400,9 @@ describe('AdministrationRepository', () => {
 
       const count = counts.get(admin.id) ?? 0;
 
-      // schoolA has 5 active org-level users (schoolAAdmin, schoolAPrincipal, schoolATeacher,
-      // schoolAStudent, multiAssignedUser) + 2 active class-level users (classAStudent, classATeacher).
-      // expiredEnrollmentStudent's enrollment ended 7 days ago and must be excluded.
+      // schoolA has 4 active org-level users (schoolAAdmin, schoolAPrincipal, schoolATeacher,
+      // multiAssignedUser) + 3 active class-level users in classInSchoolA (classAStudent, classATeacher,
+      // schoolAStudent). expiredEnrollmentStudent's enrollment ended 7 days ago and must be excluded.
       expect(count).toBe(7);
     });
 
@@ -250,9 +430,9 @@ describe('AdministrationRepository', () => {
         baseFixture.administrationAssignedToClassA.id,
       ]);
 
-      // expiredClassStudent has enrollment that ended 7 days ago — should be excluded
-      // Only classAStudent and classATeacher have active enrollments
-      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+      // expiredClassStudent (and expired/future enrollment students) are excluded for inactive enrollments
+      // Active in classInSchoolA: classAStudent, classATeacher, schoolAStudent
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(3);
     });
 
     it('throws when called with an empty administrationIds array', async () => {
@@ -779,7 +959,7 @@ describe('AdministrationRepository', () => {
         );
 
         const ids = result.items.map((item) => item.id);
-        // baseFixture.district has schoolA and schoolB as children
+        // baseFixture.district has schoolA, schoolB, and schoolC as children
         expect(ids).toContain(baseFixture.schoolA.id);
         expect(ids).toContain(baseFixture.schoolB.id);
 
