@@ -93,11 +93,14 @@ describe('useDistrictSchoolsQuery', () => {
     });
 
     const result = await queryFn();
-    // Consumers read id + name; mapping additionally flattens location/identifiers.
+    // Consumers read id + name; mapping additionally flattens location/identifiers
+    // and surfaces parentOrgId as the legacy flat `districtId` that
+    // CreateAdministrator derives the parent district from.
     expect(result[0].id).toBe(items[0].id);
     expect(result[0].name).toBe('School One');
     expect(result[0].city).toBe('Menlo Park');
     expect(result[0].ncesId).toBe('NCES-S1');
+    expect(result[0].districtId).toBe(DISTRICT_ID);
     expect(mockListSchools).toHaveBeenCalledWith({
       params: { districtId: DISTRICT_ID },
       query: { page: 1, perPage: 100, sortBy: 'name', sortOrder: 'asc' },

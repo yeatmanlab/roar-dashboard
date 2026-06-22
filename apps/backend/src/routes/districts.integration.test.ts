@@ -402,14 +402,13 @@ describe('PATCH /v1/districts/:id', () => {
     });
 
     it('returns 400 when the body contains only an immutable/unknown key', async () => {
-      // .strict() on the request schema rejects unknown/immutable keys at validation time
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(`/v1/districts/${baseFixture.district.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ orgType: 'school' });
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      // .strict() on the request schema rejects unknown/immutable keys at ts-rest
+      // request-validation time — that 400 is ts-rest's own validation response, not the
+      // ApiError envelope, so we assert the status only.
+      await expectRoute('PATCH', `/v1/districts/${baseFixture.district.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ orgType: 'school' })
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
   });
 });

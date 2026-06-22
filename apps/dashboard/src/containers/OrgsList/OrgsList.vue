@@ -568,8 +568,10 @@ const buildOrgUpdateBody = (orgType, orgData) => {
     if (Object.keys(location).length > 0) body.location = location;
   }
 
-  // NCES identifier: districts and schools only.
-  if ((orgType === ORG_TYPES.DISTRICTS || orgType === ORG_TYPES.SCHOOLS) && orgData?.ncesId) {
+  // NCES identifier: districts only. The edit form only surfaces the NCES input
+  // for districts (`showNcesId`), so sending it for schools would silently
+  // re-submit a seeded value the user never saw or touched.
+  if (orgType === ORG_TYPES.DISTRICTS && orgData?.ncesId) {
     body.identifiers = { ncesId: orgData.ncesId };
   }
 
@@ -577,9 +579,17 @@ const buildOrgUpdateBody = (orgType, orgData) => {
 };
 
 const updateOrgData = async () => {
+  const body = buildOrgUpdateBody(activeOrgType.value, localOrgData.value);
+
+  // Nothing the form can edit changed — close without firing a no-op PATCH (an
+  // empty body would otherwise be rejected by the strict update schema).
+  if (Object.keys(body).length === 0) {
+    closeEditModal();
+    return;
+  }
+
   isSubmitting.value = true;
   try {
-    const body = buildOrgUpdateBody(activeOrgType.value, localOrgData.value);
     await updateOrg({ orgType: activeOrgType.value, orgId: currentEditOrgId.value, body });
     closeEditModal();
     toast.add({
