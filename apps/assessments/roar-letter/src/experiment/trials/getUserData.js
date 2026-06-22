@@ -98,7 +98,7 @@ export const ifConsentForm = {
     Boolean(
       (store.session.get('config').taskVariant === 'otherLabs' ||
         store.session.get('config').taskVariant === 'prolific') &&
-        store.session.get('config').consent === true,
+      store.session.get('config').consent === true,
     ),
 };
 
@@ -178,7 +178,7 @@ export const ifGetSurvey = {
     Boolean(
       (store.session.get('config').taskVariant === 'otherLabs' ||
         store.session.get('config').taskVariant === 'prolific') &&
-        store.session.get('config').consent === true,
+      store.session.get('config').consent === true,
     ),
 };
 
