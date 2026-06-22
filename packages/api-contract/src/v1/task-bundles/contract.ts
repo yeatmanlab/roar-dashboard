@@ -6,7 +6,7 @@ const c = initContract();
 
 /**
  * Contract for the /task-bundles endpoints.
- * Super-admin-only access to paginated task bundles with their associated task variants.
+ * Super admin or platform administrator access to paginated task bundles with their associated task variants.
  */
 export const TaskBundlesContract = c.router(
   {
@@ -24,14 +24,14 @@ export const TaskBundlesContract = c.router(
       strictStatusCodes: true,
       summary: 'List task bundles',
       description:
-        'Returns a paginated list of task bundles. Requires super admin privileges. ' +
+        'Returns a paginated list of task bundles. Requires super admin or platform administrator privileges. ' +
         'Each bundle includes a summary list of its task variants ordered by sortOrder. ' +
         'Supports pagination (page, perPage), free-text search across bundle name/description, ' +
         'task slug, and variant name; sorting by name (default, asc), slug, createdAt, or updatedAt; ' +
         'structured filter expressions (?filter=taskBundle.slug:eq:some-slug); ' +
         'and optional embed of full task variant details (?embed=taskVariantDetails). ' +
         'Returns 400 if query parameters are invalid. ' +
-        'Returns 403 if the caller is not a super admin. ' +
+        'Returns 403 if the caller is neither a super admin nor a platform administrator. ' +
         'Returns 500 if a server error occurs.',
     },
   },
