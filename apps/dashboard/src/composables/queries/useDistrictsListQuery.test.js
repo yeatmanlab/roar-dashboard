@@ -93,10 +93,16 @@ describe('useDistrictsListQuery', () => {
     });
 
     // Returned objects preserve id/name and flatten location + identifiers so
-    // consumers (OrgPicker/OrgsList/CreateOrgs read id + name) keep working.
+    // consumers (OrgPicker/OrgsList/CreateOrgs read id + name) keep working. The nested
+    // `location`/`identifiers` objects are dropped (single flat representation).
     await expect(queryFn()).resolves.toEqual([
       {
-        ...items[0],
+        id: '00000000-0000-0000-0000-000000000001',
+        name: 'District A',
+        abbreviation: 'DA',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
         city: 'Palo Alto',
         stateProvince: 'CA',
         addressLine1: undefined,
