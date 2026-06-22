@@ -236,7 +236,7 @@ describe('AdministrationsController', () => {
       });
 
       // The service options must not carry a `search` key when the query omits it.
-      const serviceOptions = mockList.mock.calls[0][1];
+      const serviceOptions = mockList.mock.calls[0]![1];
       expect(serviceOptions).not.toHaveProperty('search');
     });
 
