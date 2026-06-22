@@ -115,10 +115,14 @@ function writeSdkFixtureFile(): void {
     testUser: {
       id: DEV_IDS.schoolAStudent,
       authId: DEV_IDS.schoolAStudentAuth,
+      email: DEV_USERS.schoolAStudent.email,
+      password: DEV_PASSWORD,
     },
     schoolATeacher: {
       id: DEV_IDS.schoolATeacher,
       authId: DEV_IDS.schoolATeacherAuth,
+      email: DEV_USERS.schoolATeacher.email,
+      password: DEV_PASSWORD,
     },
     administrationAssignedToDistrict: {
       id: DEV_IDS.administrationDistrict,

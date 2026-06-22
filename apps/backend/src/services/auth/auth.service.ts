@@ -1,5 +1,4 @@
 import { FirebaseAuthProvider } from './providers/firebase-auth.provider';
-import { TestAuthProvider } from './providers/test-auth.provider';
 
 /**
  * Decoded User JWT interface.
@@ -15,36 +14,12 @@ export type DecodedUser = {
 };
 
 /**
- * Auth Provider interface.
- *
- * @property verifyToken - Verifies a JWT token.
- */
-export interface IAuthProvider {
-  verifyToken(token: string): Promise<DecodedUser>;
-}
-
-/**
- * Resolve the auth provider based on the `AUTH_PROVIDER` environment variable.
- *
- * - `AUTH_PROVIDER=test` → `TestAuthProvider` (token string == Firebase UID, no verification)
- * - Unset or any other value → `FirebaseAuthProvider` (real Firebase Admin SDK verification)
- *
- * @returns The resolved auth provider instance
- */
-function resolveAuthProvider(): IAuthProvider {
-  if (process.env.AUTH_PROVIDER === 'test') {
-    return new TestAuthProvider();
-  }
-  return new FirebaseAuthProvider();
-}
-
-/**
  * Auth Service
  *
- * Static service for authenticating requests. The provider is resolved at module load
- * time from the `AUTH_PROVIDER` environment variable:
- * - `AUTH_PROVIDER=test` → `TestAuthProvider` (for SDK integration tests)
- * - Unset → `FirebaseAuthProvider` (production and e2e with emulator)
+ * Static service for authenticating requests. Uses Firebase Admin SDK to verify
+ * ID tokens. In local development and CI, the Firebase Auth emulator is used
+ * automatically when `FIREBASE_AUTH_EMULATOR_HOST` is set — no code change needed,
+ * the Admin SDK connects to the emulator transparently.
  *
  * @example
  * ```ts
@@ -53,7 +28,7 @@ function resolveAuthProvider(): IAuthProvider {
  * ```
  */
 export class AuthService {
-  private static provider: IAuthProvider = resolveAuthProvider();
+  private static provider = new FirebaseAuthProvider();
 
   static verifyToken(token: string): Promise<DecodedUser> {
     return this.provider.verifyToken(token);

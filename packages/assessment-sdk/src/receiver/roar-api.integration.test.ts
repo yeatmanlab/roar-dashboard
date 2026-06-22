@@ -31,7 +31,13 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { initTestSdk, getBaseFixtureData, getTestUserId, getTeacherUserId } from '../test-support/sdk-test-helper';
+import {
+  initTestSdk,
+  getBaseFixtureData,
+  getTestUserId,
+  getTeacherUserId,
+  createTeacherAuthContext,
+} from '../test-support/sdk-test-helper';
 import type { RoarApi } from './roar-api';
 import { PA_SCORE_NAMES, PA_SCORE_DOMAINS } from '@roar-platform/assessment-schema/roar-pa';
 
@@ -499,14 +505,11 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       const fixtureData = await getBaseFixtureData();
       const administrationId = fixtureData.administrationAssignedToDistrict.id;
 
-      // Create a new SDK instance with schoolATeacher's token
-      const teacherAuthId = fixtureData.schoolATeacher.authId;
+      // Create a new SDK instance with schoolATeacher's real emulator token
       const teacherUserId = getTeacherUserId();
+      const teacherAuth = await createTeacherAuthContext();
       const teacherSdk = initTestSdk({
-        auth: {
-          getToken: async () => teacherAuthId,
-          refreshToken: async () => teacherAuthId,
-        },
+        auth: teacherAuth,
       });
 
       const response = await teacherSdk.api.client.runs.create({

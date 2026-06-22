@@ -2,34 +2,39 @@
  * Global Setup for SDK Integration Tests
  *
  * Runs the standalone seed script (seed-dev.ts) and then spawns the backend
- * server (server.ts with AUTH_PROVIDER=test) before running integration tests.
+ * server (server.ts with Firebase Auth emulator) before running integration tests.
  *
  * The seed script:
  * - Initializes database pools and runs migrations
  * - Truncates tables and seeds deterministic dev fixture data
  * - Initializes OpenFGA store, deploys model, and syncs tuples
+ * - Seeds Firebase Auth emulator users (with deterministic credentials)
  * - Writes fixture data to a JSON file for SDK tests to discover
  * - Writes FGA store/model IDs to /tmp/roar-fga-env.json
  *
- * The server uses AUTH_PROVIDER=test so it accepts test tokens (token = user ID)
- * without requiring Firebase.
+ * The server uses FIREBASE_AUTH_EMULATOR_HOST so Firebase Admin SDK verifies
+ * tokens against the local emulator. SDK tests sign in via the emulator REST
+ * API to get real Firebase ID tokens.
  *
  * PREREQUISITES:
  * - PostgreSQL must be running on the connection string specified by CORE_DATABASE_URL
  * - OpenFGA must be running on the URL specified by FGA_API_URL (default: http://localhost:8080)
+ * - Firebase Auth emulator must be running on FIREBASE_AUTH_EMULATOR_HOST (default: 127.0.0.1:9099)
  * - Backend must be built: `npm run build -w apps/backend`
  *   (This setup automatically builds if dist/server.js is missing)
  *
  * TEST DATA SEEDING:
  * - Dev fixture data is seeded by seed-dev.ts before the server starts
- * - Fixture data (task variant IDs, user authIds) is written to TEST_FIXTURE_FILE
- * - SDK tests read the fixture file instead of making HTTP calls
+ * - Fixture data (task variant IDs, user credentials) is written to TEST_FIXTURE_FILE
+ * - SDK tests read the fixture file and sign in via the emulator
  *
  * ENVIRONMENT VARIABLES:
  * - BACKEND_PORT: Port for the backend server (default: 4001)
  * - CORE_DATABASE_URL: Core database connection string (required)
  * - ASSESSMENT_DATABASE_URL: Assessment database connection string (required)
  * - FGA_API_URL: OpenFGA server URL (default: http://localhost:8080)
+ * - FIREBASE_AUTH_EMULATOR_HOST: Auth emulator host (default: 127.0.0.1:9099)
+ * - GOOGLE_CLOUD_PROJECT: GCP project for emulator (default: demo-roar)
  * - TEST_FIXTURE_FILE: Path to write fixture data JSON (default: /tmp/roar-test-fixture.json)
  *
  * TROUBLESHOOTING:
@@ -37,6 +42,7 @@
  * - "EADDRINUSE: port 4001 already in use": Change BACKEND_PORT or kill the existing process
  * - "Connection refused" on database: Ensure PostgreSQL is running on CORE_DATABASE_URL
  * - "Connection refused" on FGA: Ensure OpenFGA is running on FGA_API_URL
+ * - "Auth emulator sign-in failed": Ensure Auth emulator is running on FIREBASE_AUTH_EMULATOR_HOST
  * - Fixture file not found: Check TEST_FIXTURE_FILE path and ensure seed completed successfully
  */
 
@@ -118,8 +124,8 @@ async function buildBackendIfNeeded(backendDir: string): Promise<void> {
 }
 
 /**
- * Runs the seed-dev.ts script to seed databases, initialize FGA, and write fixture files.
- * Blocks until the script exits.
+ * Runs the seed-dev.ts script to seed databases, initialize FGA, seed Auth emulator,
+ * and write fixture files. Blocks until the script exits.
  *
  * @param backendDir - Absolute path to the backend workspace root
  */
@@ -134,6 +140,9 @@ function runSeedScript(backendDir: string): void {
     env: {
       ...process.env,
       TEST_FIXTURE_FILE: fixtureFile,
+      // Ensure the seed script seeds Auth emulator users
+      FIREBASE_AUTH_EMULATOR_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099',
+      GOOGLE_CLOUD_PROJECT: process.env.GOOGLE_CLOUD_PROJECT || 'demo-roar',
       // Provide absolute path so the seed script can find the FGA model
       AUTHZ_MODEL_PATH: path.resolve(backendDir, '../../packages/authz/authorization-model.fga'),
     },
@@ -204,12 +213,12 @@ async function waitForBackendHealth(port: string, maxAttempts = 30): Promise<voi
  * Global setup for SDK integration tests.
  *
  * 1. Builds the backend if dist/server.js is missing or stale
- * 2. Runs seed-dev.ts to seed databases, initialize FGA, and write fixture files
+ * 2. Runs seed-dev.ts to seed databases, initialize FGA, seed Auth emulator, and write fixture files
  * 3. Reads FGA store/model IDs written by the seed script
- * 4. Spawns the backend server with AUTH_PROVIDER=test and FGA env vars
+ * 4. Spawns the backend server with FIREBASE_AUTH_EMULATOR_HOST and FGA env vars
  * 5. Waits for the server to be healthy
  *
- * Requires CORE_DATABASE_URL and ASSESSMENT_DATABASE_URL environment variables.
+ * Requires CORE_DATABASE_URL, ASSESSMENT_DATABASE_URL, and a running Auth emulator.
  *
  * @returns Promise that resolves when the test server is ready
  */
@@ -254,8 +263,10 @@ export default async function globalSetup() {
     console.warn('[SDK Integration Tests] Could not read FGA env from /tmp/roar-fga-env.json — server may fail to authorize requests');
   }
 
-  // 4. Spawn the backend server with test auth provider
-  console.log(`[SDK Integration Tests] Starting server on port ${BACKEND_PORT}...`);
+  // 4. Spawn the backend server with Firebase Auth emulator
+  const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
+  const gcpProject = process.env.GOOGLE_CLOUD_PROJECT || 'demo-roar';
+  console.log(`[SDK Integration Tests] Starting server on port ${BACKEND_PORT} (Auth emulator: ${emulatorHost})...`);
 
   backendProcess = spawn('node', ['dist/server.js'], {
     cwd: backendDir,
@@ -267,8 +278,10 @@ export default async function globalSetup() {
       // For human-readable logs, rebuild locally: NODE_ENV=development npm run test -w packages/assessment-sdk
       NODE_ENV: 'production',
       PORT: BACKEND_PORT,
-      // Use the test auth provider — accepts token = user ID without Firebase
-      AUTH_PROVIDER: 'test',
+      // Firebase Admin SDK connects to the emulator when this is set —
+      // no TestAuthProvider needed, real Firebase ID tokens are verified.
+      FIREBASE_AUTH_EMULATOR_HOST: emulatorHost,
+      GOOGLE_CLOUD_PROJECT: gcpProject,
       // Provide absolute path so bundled code doesn't rely on __dirname-relative resolution
       AUTHZ_MODEL_PATH: path.resolve(backendDir, '../../packages/authz/authorization-model.fga'),
       // Pass through FGA env vars so the server can authorize requests
