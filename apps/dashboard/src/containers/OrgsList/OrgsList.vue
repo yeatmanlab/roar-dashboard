@@ -543,7 +543,7 @@ const closeDialog = () => {
  *   builds). It is converted to the backend's structured `location` shape via
  *   `parseGooglePlaceToLocation`. Classes are excluded because their `location`
  *   is a free-text room label (a string), not a structured address object.
- * - `identifiers.ncesId`: districts and schools only, when present.
+ * - `identifiers.ncesId`: districts only (the edit form surfaces it for districts), when present.
  *
  * The retired `tags`, `testData`, and `demoData` fields are never sent.
  *
