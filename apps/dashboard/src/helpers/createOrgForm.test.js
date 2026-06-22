@@ -103,7 +103,7 @@ describe('createOrgForm helpers', () => {
       parentSchool: { id: 'school-1' },
       parentDistrict: { id: 'district-1' },
       classType: 'homeroom',
-      grade: { label: 'Grade 3', value: '3' },
+      grade: '3',
     };
 
     it('builds schoolId, name, classType, and grades (schema values, as an array)', () => {
@@ -176,7 +176,7 @@ describe('createOrgForm helpers', () => {
         parentSchool: { id: 's' },
         classType: 'homeroom',
         groupType: 'cohort',
-        grade: { label: 'Grade 1', value: '1' },
+        grade: '1',
         // Stray retired fields that must be ignored:
         tags: ['a', 'b'],
         testData: true,

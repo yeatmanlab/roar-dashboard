@@ -3,16 +3,15 @@
  *
  * Tests the full HTTP lifecycle: middleware → controller → service → repository → DB.
  * Only Firebase token verification is mocked — everything else runs for real.
-
- * Authorization is tested by permission tier (resolved via OpenFGA):
- *   - superAdmin:  isSuperAdmin=true (bypasses all access control)
- *   - siteAdmin:   site_administrator → 403
- *   - admin:       administrator → 403
- *   - educator:    teacher → 403
- *   - student:     student → 403
- *   - caregiver:   guardian → 403
  *
- * The invitation code endpoint is restricted to super admins only.
+ * Authorization is tested by permission tier (resolved via OpenFGA). The tier
+ * behavior varies by endpoint:
+ *   - superAdmin (isSuperAdmin=true) bypasses all access control everywhere.
+ *   - GET /groups (list): supervisory members (siteAdmin, admin, educator) get 200
+ *     with data; supervised tiers (student, caregiver) and non-members get an empty
+ *     result set, not 403.
+ *   - GET /groups/:groupId (read): supervisory members get 200; others get 403.
+ *   - The invitation-code endpoint is restricted to super admins only (others 403).
  *
  * Each endpoint section follows the structure:
  *   1. Authorization — one spec per tier with status + content assertions
@@ -773,13 +772,15 @@ describe('PATCH /v1/groups/:groupId', () => {
     });
 
     it('returns 400 when the body contains only an immutable/unknown key', async () => {
-      // .strict() on the request schema rejects unknown/immutable keys at validation time
-      const res = await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
+      // Unlike the empty-body case above (which clears validation and reaches the
+      // service's "no mutable fields" 400 → ApiError envelope), `.strict()` rejects
+      // unknown/immutable keys at ts-rest request-validation time. That 400 is ts-rest's
+      // own validation response, not the ApiError envelope, so we assert the status only —
+      // matching the districts/schools/classes immutable-key tests.
+      await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
         .as(tiers.superAdmin)
         .withBody({ id: '00000000-0000-0000-0000-000000000000' })
         .toReturn(StatusCodes.BAD_REQUEST);
-
-      expect(res.body.error).toBeDefined();
     });
   });
 });
