@@ -39,6 +39,10 @@ describe('parseVariantParametersJson', () => {
     expect(() => parseVariantParametersJson('["nope"]')).toThrow(/Parameter 1: each entry must be an object/);
   });
 
+  it('throws when an entry is itself an array', () => {
+    expect(() => parseVariantParametersJson('[[1, 2, 3]]')).toThrow(/Parameter 1: each entry must be an object/);
+  });
+
   it('throws when name is missing or blank', () => {
     expect(() => parseVariantParametersJson(JSON.stringify([{ type: 'string', value: 'y' }]))).toThrow(
       /Parameter 1: "name" must be a non-empty string/,
