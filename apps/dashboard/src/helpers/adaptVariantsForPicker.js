@@ -15,8 +15,10 @@
  *   unlike the legacy `convertParamArrayToObject` (which camelCases) — no key re-casing is applied.
  * - `name` → `variant.name`
  * - `taskName` / `taskImage` / `taskSlug` → `task.name` / `task.image` / `task.slug`
- * - `task.studentFacingName` falls back to `taskName` (no flat equivalent; the
- *   picker searches this field)
+ * - `task.studentFacingName` and `task.publicName` both fall back to `taskName` (no
+ *   flat equivalents): the variant search reads `studentFacingName`, while the bundle
+ *   picker (`TaskBundleCard`) reads `publicName`. Mapping both keeps the picker
+ *   components working unchanged, which is the whole point of this shim.
  * - per-assignment `variant.conditions` is intentionally omitted — it is set by
  *   the form / `EditVariantDialog` when a variant is configured for the administration.
  *
@@ -36,6 +38,7 @@ export function adaptVariantsForPicker(flatVariants = []) {
     task: {
       id: item.taskId,
       name: item.taskName,
+      publicName: item.taskName,
       studentFacingName: item.taskName,
       image: item.taskImage,
       slug: item.taskSlug,
