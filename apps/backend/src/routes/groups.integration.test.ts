@@ -773,13 +773,15 @@ describe('PATCH /v1/groups/:groupId', () => {
     });
 
     it('returns 400 when the body contains only an immutable/unknown key', async () => {
-      // .strict() on the request schema rejects unknown/immutable keys at validation time
-      const res = await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
+      // Unlike the empty-body case above (which clears validation and reaches the
+      // service's "no mutable fields" 400 → ApiError envelope), `.strict()` rejects
+      // unknown/immutable keys at ts-rest request-validation time. That 400 is ts-rest's
+      // own validation response, not the ApiError envelope, so we assert the status only —
+      // matching the districts/schools/classes immutable-key tests.
+      await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
         .as(tiers.superAdmin)
         .withBody({ id: '00000000-0000-0000-0000-000000000000' })
         .toReturn(StatusCodes.BAD_REQUEST);
-
-      expect(res.body.error).toBeDefined();
     });
   });
 });
