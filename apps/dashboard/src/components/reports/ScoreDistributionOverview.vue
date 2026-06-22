@@ -108,7 +108,8 @@ const getSupportLevelCounts = (taskId) => {
 }
 
 .chart-label {
-  max-width: 400px;
+  /* Adjust for whitespace in chart */
+  margin-top: -0.25rem;
 }
 
 .chart-item {
