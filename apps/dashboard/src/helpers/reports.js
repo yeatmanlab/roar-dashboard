@@ -908,8 +908,8 @@ const SCORE_FIELD_MAPPINGS = {
       legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     rawScore: {
-      new: 'sreScore',
-      legacy: 'sreScore',
+      new: 'roarScore',
+      legacy: 'sreScore', // scoringVersion < 5
     },
   },
   'sre-es': {
@@ -931,23 +931,23 @@ const SCORE_FIELD_MAPPINGS = {
   },
   letter: {
     percentile: {
-      new: 'totalPercentCorrect',
+      new: 'percentile',
       legacy: 'totalPercentCorrect',
     },
     percentileDisplay: {
-      new: 'totalPercentCorrect',
+      new: 'percentile',
       legacy: 'totalPercentCorrect',
     },
     standardScore: {
-      new: undefined,
+      new: 'standardScore',
       legacy: undefined,
     },
     standardScoreDisplay: {
-      new: undefined,
+      new: 'standardScore',
       legacy: undefined,
     },
     rawScore: {
-      new: 'totalCorrect',
+      new: 'roarScore',
       legacy: 'totalCorrect',
     },
   },
@@ -1019,89 +1019,89 @@ const SCORE_FIELD_MAPPINGS = {
   },
   morphology: {
     percentile: {
-      new: 'totalPercentCorrect',
+      new: 'percentile',
       legacy: 'totalPercentCorrect',
     },
     percentileDisplay: {
-      new: 'totalPercentCorrect',
+      new: 'percentile',
       legacy: 'totalPercentCorrect',
     },
     standardScore: {
-      new: 'totalPercentCorrect',
+      new: 'standardScore',
       legacy: 'totalPercentCorrect',
     },
     standardScoreDisplay: {
-      new: 'totalPercentCorrect',
+      new: 'standardScore',
       legacy: 'totalPercentCorrect',
     },
     rawScore: {
-      new: 'totalCorrect',
+      new: 'roarScore',
       legacy: 'totalCorrect',
     },
   },
   cva: {
     percentile: {
-      new: 'totalPercentCorrect',
+      new: 'percentile',
       legacy: 'totalPercentCorrect',
     },
     percentileDisplay: {
-      new: 'totalPercentCorrect',
+      new: 'percentile',
       legacy: 'totalPercentCorrect',
     },
     standardScore: {
-      new: 'totalPercentCorrect',
+      new: 'standardScore',
       legacy: 'totalPercentCorrect',
     },
     standardScoreDisplay: {
-      new: 'totalPercentCorrect',
+      new: 'standardScore',
       legacy: 'totalPercentCorrect',
     },
     rawScore: {
-      new: 'totalCorrect',
+      new: 'roarScore',
       legacy: 'totalCorrect',
     },
   },
   'roar-inference': {
     percentile: {
-      new: 'totalPercentCorrect',
+      new: 'percentile',
       legacy: 'totalPercentCorrect',
     },
     percentileDisplay: {
-      new: 'totalPercentCorrect',
+      new: 'percentile',
       legacy: 'totalPercentCorrect',
     },
     standardScore: {
-      new: 'totalPercentCorrect',
+      new: 'standardScore',
       legacy: 'totalPercentCorrect',
     },
     standardScoreDisplay: {
-      new: 'totalPercentCorrect',
+      new: 'standardScore',
       legacy: 'totalPercentCorrect',
     },
     rawScore: {
-      new: 'totalCorrect',
+      new: 'roarScore',
       legacy: 'totalCorrect',
     },
   },
   trog: {
     percentile: {
-      new: 'totalPercentCorrect',
+      new: 'percentile',
       legacy: 'totalPercentCorrect',
     },
     percentileDisplay: {
-      new: 'totalPercentCorrect',
+      new: 'percentile',
       legacy: 'totalPercentCorrect',
     },
     standardScore: {
-      new: 'totalPercentCorrect',
+      new: 'standardScore',
       legacy: 'totalPercentCorrect',
     },
     standardScoreDisplay: {
-      new: 'totalPercentCorrect',
+      new: 'standardScore',
       legacy: 'totalPercentCorrect',
     },
     rawScore: {
-      new: 'totalCorrect',
+      new: 'roarScore',
       legacy: 'totalCorrect',
     },
   },
