@@ -122,7 +122,7 @@ describe('Participant: Auth', () => {
         cy.contains('button[type="submit"]', 'Next').should('be.visible').click();
         cy.get('input#password').type(password, { log: false });
         cy.wait(1000);
-        cy.get('button#UsernamePasswordForm--loginButton').click();
+        cy.contains('button[type="submit"]', 'Next').should('be.visible').click();
       },
     );
 
