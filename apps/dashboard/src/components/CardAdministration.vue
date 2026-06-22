@@ -89,8 +89,13 @@
         class="mt-3"
         lazy
         row-hover
+        paginator
         :loading="loadingTreeTable"
         :value="treeTableOrgs"
+        :rows="treeRows"
+        :first="treeFirst"
+        :total-records="treeTotalRecords"
+        :rows-per-page-options="[10, 25, 50]"
         :pt="{
           column: {
             nodeToggleButton: {
@@ -103,6 +108,7 @@
         }"
         data-cy="administration-orgs-tree"
         @node-expand="onExpand"
+        @page="onTreePage"
       >
         <PvColumn field="name" header="Name" expander style="width: 20rem"></PvColumn>
         <PvColumn v-if="props.stats && isWideScreen" field="id" header="Completion">
@@ -176,6 +182,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useRouter } from 'vue-router';
+import { useQueryClient } from '@tanstack/vue-query';
 import _mapValues from 'lodash/mapValues';
 import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
@@ -186,18 +193,19 @@ import PvPopover from 'primevue/popover';
 import PvSpeedDial from 'primevue/speeddial';
 import PvTreeTable from 'primevue/treetable';
 import { setProgressChartData, setProgressChartOptions } from '@/helpers/plotting';
-import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
+import useAdministrationTreeQuery, {
+  fetchAdministrationTreeLevel,
+} from '@/composables/queries/useAdministrationTreeQuery';
 import useTaskVariantQuery from '@/composables/queries/useTaskVariantQuery';
 import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { ADMINISTRATION_TREE_QUERY_KEY } from '@/constants/queryKeys';
 import { ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { PROGRESS_COLORS } from '@/constants/completionStatus';
-import { useAuthStore } from '@/store/auth';
 
 const router = useRouter();
-const authStore = useAuthStore();
-const { roarfirekit } = authStore;
+const queryClient = useQueryClient();
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -331,21 +339,38 @@ const isWideScreen = computed(() => {
   return window.innerWidth > 768;
 });
 
-const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, {
+// Server-driven pagination state for the root tree level. `treeFirst` is the
+// 0-indexed row offset PvTreeTable tracks; `treeRows` is the page size; `treePage`
+// is the 1-indexed page the backend expects, derived from first/rows. Only the ROOT
+// level is server-paginated — nested children load in full on expansion.
+const treeRows = ref(10);
+const treeFirst = ref(0);
+const treePage = computed(() => Math.floor(treeFirst.value / treeRows.value) + 1);
+
+const { data: orgs, isLoading: isLoadingTree } = useAdministrationTreeQuery(props.id, treePage, treeRows, {
   enabled: enableQueries,
 });
 
 const loadingTreeTable = computed(() => {
-  return isLoadingDsgfOrgs.value || expanding.value;
+  return isLoadingTree.value || expanding.value;
 });
 
+// The query resolves to `{ items, pagination }`. Surface the server total so the
+// lazy TreeTable can size its paginator.
+const treeTotalRecords = computed(() => orgs.value?.pagination?.totalItems ?? 0);
+
+// `treeTableOrgs` mirrors the current root page's nodes but is a local ref (not the
+// query data directly) so `onExpand` can mutate it to attach lazily-loaded children.
+// Re-syncing it whenever the query data changes also resets expansions when the user
+// pages the root — the new page replaces the root node set, which is the correct
+// behavior (stale expansions must not bleed across pages).
 const treeTableOrgs = ref([]);
 watch(orgs, (newValue) => {
-  treeTableOrgs.value = newValue;
+  treeTableOrgs.value = newValue?.items ?? [];
 });
 
 watch(showTable, (newValue) => {
-  if (newValue) treeTableOrgs.value = orgs.value;
+  if (newValue) treeTableOrgs.value = orgs.value?.items ?? [];
 });
 
 const expanding = ref(false);
@@ -357,94 +382,92 @@ const onExpand = async (node) => {
   ) {
     expanding.value = true;
 
-    // Fetch child orgs using roarfirekit
-    const orgType = node.data.orgType.toLowerCase();
-    const { data: childOrgs } = await roarfirekit.getAdministrationOrgsAndStats(props.id, node.data.id, orgType);
+    try {
+      // Fetch this node's children from the same tree endpoint, scoped by the
+      // expanding node as the parent. Route through queryClient.fetchQuery (not the
+      // bare fetcher) so the children are cached and deduped under a per-node key:
+      // re-expanding a collapsed node hits the cache, and the request is visible in
+      // the query devtools. fetchAdministrationTreeLevel returns nodes already in
+      // PvTreeTable shape (with their own placeholder children).
+      const childNodes = await queryClient.fetchQuery({
+        queryKey: [ADMINISTRATION_TREE_QUERY_KEY, props.id, 'children', node.data.orgType, node.data.id],
+        queryFn: () =>
+          fetchAdministrationTreeLevel(props.id, {
+            parentEntityType: node.data.orgType,
+            parentEntityId: node.data.id,
+          }),
+      });
 
-    // Lazy node is a copy of the expanding node. We will insert more detailed
-    // children nodes later.
-    const lazyNode = {
-      key: node.key,
-      data: {
-        ...node.data,
-        expanded: true,
-      },
-    };
-
-    // Build child nodes from the returned org data
-    const childNodes = childOrgs.map((org, index) => {
-      const childNode = {
-        key: `${node.key}-${index}`,
+      // Lazy node is a copy of the expanding node with its real children attached.
+      const lazyNode = {
+        key: node.key,
         data: {
-          id: org.orgId,
-          name: org.name,
-          orgType: SINGULAR_ORG_TYPES[org.orgType.toUpperCase()],
-          stats: org.stats,
-          ...org,
+          ...node.data,
+          expanded: true,
         },
+        children: childNodes,
       };
 
-      // Add placeholder child if this org has children
-      if (org.hasChildren) {
-        childNode.children = [
-          {
-            key: `${childNode.key}-placeholder`,
-            data: {
-              name: 'Loading...',
-              isPlaceholder: true,
-            },
-          },
-        ];
-      }
+      // Recursively find and replace the expanding node in the tree
+      const replaceNodeInTree = (nodes) => {
+        return nodes.map((n) => {
+          // If this is the node we're expanding, replace it with the lazy node
+          if (n.data.id === node.data.id) {
+            return lazyNode;
+          }
 
-      return childNode;
-    });
+          // If this node has children, recursively search them
+          if (n.children && n.children.length > 0) {
+            return {
+              ...n,
+              children: replaceNodeInTree(n.children),
+            };
+          }
 
-    lazyNode.children = childNodes;
+          return n;
+        });
+      };
 
-    // Recursively find and replace the expanding node in the tree
-    const replaceNodeInTree = (nodes) => {
-      return nodes.map((n) => {
-        // If this is the node we're expanding, replace it with the lazy node
-        if (n.data.id === node.data.id) {
-          return lazyNode;
-        }
+      const newNodes = replaceNodeInTree(treeTableOrgs.value);
 
-        // If this node has children, recursively search them
-        if (n.children && n.children.length > 0) {
-          return {
-            ...n,
-            children: replaceNodeInTree(n.children),
-          };
-        }
-
-        return n;
-      });
-    };
-
-    const newNodes = replaceNodeInTree(treeTableOrgs.value);
-
-    // Sort the classes by existence of stats then alphabetically
-    // TODO: This fails currently as it tries to set a read only reactive handler
-    // Specifically, setting the `children` key fails because the
-    // schoolNode target is read-only.
-    // Also, I'm pretty sure this is useless now because all classes will have stats
-    // due to preallocation of accounts.
-    for (const districtNode of newNodes ?? []) {
-      for (const schoolNode of districtNode?.children ?? []) {
-        if (schoolNode.children) {
-          schoolNode.children = schoolNode.children.toSorted((a, b) => {
-            if (!a.data.stats) return 1;
-            if (!b.data.stats) return -1;
-            return a.data.name.localeCompare(b.data.name);
-          });
+      // Sort the classes by existence of stats then alphabetically
+      // TODO: This fails currently as it tries to set a read only reactive handler
+      // Specifically, setting the `children` key fails because the
+      // schoolNode target is read-only.
+      // Also, I'm pretty sure this is useless now because all classes will have stats
+      // due to preallocation of accounts.
+      for (const districtNode of newNodes ?? []) {
+        for (const schoolNode of districtNode?.children ?? []) {
+          if (schoolNode.children) {
+            schoolNode.children = schoolNode.children.toSorted((a, b) => {
+              if (!a.data.stats) return 1;
+              if (!b.data.stats) return -1;
+              return a.data.name.localeCompare(b.data.name);
+            });
+          }
         }
       }
+
+      treeTableOrgs.value = newNodes;
+    } finally {
+      // Always clear the loading state, even if the child fetch throws, so the
+      // tree doesn't lock permanently in the expanding state.
+      expanding.value = false;
     }
-
-    treeTableOrgs.value = newNodes;
-    expanding.value = false;
   }
+};
+
+/**
+ * TreeTable lazy page handler for the root level. PvTreeTable emits `{ first, rows }`
+ * on page/rows change; mirror them into our state so `treePage` recomputes and the
+ * query refetches the requested server page. Expansions reset on page change because
+ * the new page's nodes replace the root set (see the `watch(orgs, …)` above).
+ * @param {{ first: number, rows: number }} event – PvTreeTable page event.
+ * @returns {void}
+ */
+const onTreePage = (event) => {
+  treeFirst.value = event.first;
+  treeRows.value = event.rows;
 };
 
 const doughnutChartData = ref();
