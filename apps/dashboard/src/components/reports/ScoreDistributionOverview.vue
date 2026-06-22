@@ -13,6 +13,12 @@
           :options="setDistributionChartOptions(getSupportLevelCounts(taskId))"
           class="h-2rem chart-item"
         />
+        <span
+          v-if="descriptionsByTaskId[taskId]"
+          v-tooltip.top="`${descriptionsByTaskId[taskId].header}${descriptionsByTaskId[taskId].description}`"
+          class="pi pi-info-circle info-icon h-full pt-1"
+        />
+        <span v-else />
       </template>
     </div>
 
@@ -40,6 +46,7 @@
 import PvChart from 'primevue/chart';
 import { setDistributionChartData, setDistributionChartOptions } from '@/helpers/plotting';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
+import { descriptionsByTaskId } from '@/helpers/reports';
 
 const props = defineProps({
   taskIds: {
@@ -87,7 +94,7 @@ const getSupportLevelCounts = (taskId) => {
 <style scoped>
 .chart-grid {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   row-gap: 0.5rem;
   column-gap: 0.75rem;
   align-items: center;
@@ -114,6 +121,12 @@ const getSupportLevelCounts = (taskId) => {
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 9999px;
+}
+
+.info-icon {
+  font-size: 1rem;
+  color: #592cfe;
+  cursor: pointer;
 }
 
 @media (max-width: 1200px) {
