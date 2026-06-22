@@ -9,8 +9,10 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { baseFixture } from '../test-support/fixtures';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
+import { OrgFactory } from '../test-support/factories/org.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
 import { GroupFactory } from '../test-support/factories/group.factory';
+import { UserGroupFactory } from '../test-support/factories/user-group.factory';
 import { FamilyFactory } from '../test-support/factories/family.factory';
 import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
 import { UserRole } from '../enums/user-role.enum';
@@ -152,6 +154,126 @@ describe('UserRepository', () => {
       // Future enrollment student's enrollments haven't started yet — should be excluded
       const districtMembership = result.find((m) => m.entityId === baseFixture.district.id);
       expect(districtMembership).toBeUndefined();
+    });
+  });
+
+  describe('hasPlatformAdminRole', () => {
+    it('returns true for an active platform_admin org membership', async () => {
+      const user = await UserFactory.create();
+      await UserOrgFactory.create({
+        userId: user.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.PLATFORM_ADMIN,
+      });
+
+      const result = await repository.hasPlatformAdminRole(user.id);
+
+      expect(result).toBe(true);
+    });
+
+    it('returns true for an active platform_admin group membership', async () => {
+      const user = await UserFactory.create();
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: baseFixture.group.id,
+        role: UserRole.PLATFORM_ADMIN,
+      });
+
+      const result = await repository.hasPlatformAdminRole(user.id);
+
+      expect(result).toBe(true);
+    });
+
+    it('returns false for a user holding only non-platform-admin roles', async () => {
+      const user = await UserFactory.create();
+      await UserOrgFactory.create({
+        userId: user.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.ADMINISTRATOR,
+      });
+
+      const result = await repository.hasPlatformAdminRole(user.id);
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false when the platform_admin enrollment has expired', async () => {
+      const user = await UserFactory.create();
+      await UserOrgFactory.create({
+        userId: user.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.PLATFORM_ADMIN,
+        enrollmentStart: new Date('2020-01-01T00:00:00Z'),
+        enrollmentEnd: new Date('2021-01-01T00:00:00Z'),
+      });
+
+      const result = await repository.hasPlatformAdminRole(user.id);
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false when the platform_admin enrollment is in the future', async () => {
+      const user = await UserFactory.create();
+      await UserOrgFactory.create({
+        userId: user.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.PLATFORM_ADMIN,
+        enrollmentStart: new Date('2999-01-01T00:00:00Z'),
+        enrollmentEnd: new Date('3000-01-01T00:00:00Z'),
+      });
+
+      const result = await repository.hasPlatformAdminRole(user.id);
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false when the platform_admin group enrollment has expired', async () => {
+      const user = await UserFactory.create();
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: baseFixture.group.id,
+        role: UserRole.PLATFORM_ADMIN,
+        enrollmentStart: new Date('2020-01-01T00:00:00Z'),
+        enrollmentEnd: new Date('2021-01-01T00:00:00Z'),
+      });
+
+      const result = await repository.hasPlatformAdminRole(user.id);
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false when the platform_admin org is rostered out', async () => {
+      const user = await UserFactory.create();
+      const rosteredOutOrg = await OrgFactory.create({ rosteringEnded: new Date('2021-01-01T00:00:00Z') });
+      await UserOrgFactory.create({
+        userId: user.id,
+        orgId: rosteredOutOrg.id,
+        role: UserRole.PLATFORM_ADMIN,
+      });
+
+      const result = await repository.hasPlatformAdminRole(user.id);
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false when the platform_admin group is rostered out', async () => {
+      const user = await UserFactory.create();
+      const rosteredOutGroup = await GroupFactory.create({ rosteringEnded: new Date('2021-01-01T00:00:00Z') });
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: rosteredOutGroup.id,
+        role: UserRole.PLATFORM_ADMIN,
+      });
+
+      const result = await repository.hasPlatformAdminRole(user.id);
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false for a user with no memberships at all', async () => {
+      const result = await repository.hasPlatformAdminRole(baseFixture.unassignedUser.id);
+
+      expect(result).toBe(false);
     });
   });
 
