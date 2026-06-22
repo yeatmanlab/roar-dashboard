@@ -12,7 +12,7 @@
         <PvInputText v-else v-model="localOrgData.abbreviation" />
       </div>
     </div>
-    <div class="form-field">
+    <div v-if="showStructuredLocation" class="form-field">
       <label :class="{ 'font-light uppercase text-sm': !editMode }">
         <span> <i class="pi pi-map"></i></span> Address
       </label>
@@ -72,6 +72,10 @@ const { data: serverOrgData } = useOrgQuery(singularOrgType.value, orgIds, {
 // matching the legacy form.
 const showAbbreviation = computed(() => props.orgType !== ORG_TYPES.CLASSES);
 const showNcesId = computed(() => props.orgType === ORG_TYPES.DISTRICTS);
+// Districts, schools, and groups carry a structured address object; classes use a
+// free-text location string that this form does not edit, so the Google Places
+// autocomplete is hidden for classes (and `buildOrgUpdateBody` excludes it too).
+const showStructuredLocation = computed(() => props.orgType !== ORG_TYPES.CLASSES);
 
 // +-------------+
 // | Local State |
