@@ -4,8 +4,10 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { createMockTaskVariantRepository } from '../../test-support/repositories/task-variant.repository';
 import { createMockTaskVariantParameterRepository } from '../../test-support/repositories/task-variant-parameter.repository';
+import { createMockUserRepository } from '../../test-support/repositories/user.repository';
 import type { MockTaskVariantRepository } from '../../test-support/repositories/task-variant.repository';
 import type { MockTaskVariantParameterRepository } from '../../test-support/repositories/task-variant-parameter.repository';
+import type { MockUserRepository } from '../../test-support/repositories/user.repository';
 import { TaskVariantParameterFactory } from '../../test-support/factories/task-variant-parameter.factory';
 import { buildTaskVariantWithDetails } from '../../test-support/factories/task-variant.factory';
 import { TaskVariantService, TaskVariantSortField } from './task-variant.service';
@@ -14,9 +16,11 @@ import type { AuthContext } from '../../types/auth-context';
 describe('TaskVariantService', () => {
   let mockTaskVariantRepository: MockTaskVariantRepository;
   let mockTaskVariantParameterRepository: MockTaskVariantParameterRepository;
+  let mockUserRepository: MockUserRepository;
   let service: ReturnType<typeof TaskVariantService>;
 
   const superAdminContext: AuthContext = { userId: 'super-admin-1', isSuperAdmin: true };
+  const platformAdminContext: AuthContext = { userId: 'platform-admin-1', isSuperAdmin: false };
   const regularUserContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
 
   const defaultOptions = {
@@ -31,15 +35,19 @@ describe('TaskVariantService', () => {
     vi.clearAllMocks();
     mockTaskVariantRepository = createMockTaskVariantRepository();
     mockTaskVariantParameterRepository = createMockTaskVariantParameterRepository();
+    mockUserRepository = createMockUserRepository();
     service = TaskVariantService({
       taskVariantRepository: mockTaskVariantRepository,
       taskVariantParameterRepository: mockTaskVariantParameterRepository,
+      userRepository: mockUserRepository,
     });
   });
 
   describe('listAllPublished', () => {
     describe('authorization', () => {
-      it('throws 403 when caller is not a super admin', async () => {
+      it('throws 403 when caller is neither a super admin nor a platform admin', async () => {
+        mockUserRepository.hasPlatformAdminRole.mockResolvedValue(false);
+
         await expect(service.listAllPublished(regularUserContext, defaultOptions)).rejects.toMatchObject({
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
@@ -47,10 +55,41 @@ describe('TaskVariantService', () => {
       });
 
       it('does not call the repository when authorization fails', async () => {
+        mockUserRepository.hasPlatformAdminRole.mockResolvedValue(false);
+
         await expect(service.listAllPublished(regularUserContext, defaultOptions)).rejects.toBeInstanceOf(ApiError);
 
         expect(mockTaskVariantRepository.listAllPublished).not.toHaveBeenCalled();
         expect(mockTaskVariantParameterRepository.getByTaskVariantIds).not.toHaveBeenCalled();
+      });
+
+      it('allows a platform admin to list published variants', async () => {
+        mockUserRepository.hasPlatformAdminRole.mockResolvedValue(true);
+        const variant = buildTaskVariantWithDetails();
+        mockTaskVariantRepository.listAllPublished.mockResolvedValue({ items: [variant], totalItems: 1 });
+
+        const result = await service.listAllPublished(platformAdminContext, defaultOptions);
+
+        expect(mockUserRepository.hasPlatformAdminRole).toHaveBeenCalledExactlyOnceWith(platformAdminContext.userId);
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.id).toBe(variant.id);
+      });
+
+      it('does not perform the role lookup for super admins', async () => {
+        mockTaskVariantRepository.listAllPublished.mockResolvedValue({ items: [], totalItems: 0 });
+
+        await service.listAllPublished(superAdminContext, defaultOptions);
+
+        expect(mockUserRepository.hasPlatformAdminRole).not.toHaveBeenCalled();
+      });
+
+      it('wraps unexpected role lookup errors in a DATABASE_QUERY_FAILED ApiError', async () => {
+        mockUserRepository.hasPlatformAdminRole.mockRejectedValue(new Error('DB connection lost'));
+
+        await expect(service.listAllPublished(regularUserContext, defaultOptions)).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        });
       });
     });
 
