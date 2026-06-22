@@ -131,13 +131,18 @@ const taskList = computed(() => {
 });
 
 const variantData = computed(() => {
-  return props.group.data.variants.map((variant) => {
-    const taskInfo = props.allVariants[variant.taskId];
-    // `taskInfo` is undefined when a bundle references a task that isn't in the
-    // variant catalog (e.g. locally-seeded bundles) — guard so the popover doesn't
-    // throw a TypeError on `.find`.
-    const variantInfo = taskInfo?.find((taskVariant) => taskVariant.id === variant.variantId);
-    return variantInfo;
-  });
+  return (
+    props.group.data.variants
+      .map((variant) => {
+        const taskInfo = props.allVariants[variant.taskId];
+        // `taskInfo` is undefined when a bundle references a task that isn't in the
+        // variant catalog (e.g. locally-seeded bundles) — guard so the popover doesn't
+        // throw a TypeError on `.find`.
+        const variantInfo = taskInfo?.find((taskVariant) => taskVariant.id === variant.variantId);
+        return variantInfo;
+      })
+      // Drop variants not found in the catalog so the DataTable doesn't render blank rows.
+      .filter(Boolean)
+  );
 });
 </script>
