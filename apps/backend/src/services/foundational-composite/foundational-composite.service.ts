@@ -62,7 +62,7 @@ export function computeLpwComposite(pairs: SubtestThetaInput[]): number | null {
 /**
  * Compute the final foundational composite from assembled inputs.
  *
- * - LPW available + Sentence available + `sreTransformed >= SRE_TRANSFORMED_FLOOR`:
+ * - LPW available + Sentence available + `LPW >= SRE_TRANSFORMED_FLOOR`:
  *   `final = 0.514 * LPW + 0.486 * sreTransformed`.
  * - LPW available otherwise (Sentence absent, or below the floor): `final = LPW`.
  * - Only Sentence available: `final = sreTransformed` (the floor does not gate this case).
@@ -75,7 +75,7 @@ export function computeFoundationalComposite(inputs: FoundationalCompositeInputs
   const lpw = computeLpwComposite(inputs.lpw);
   const sre = inputs.sreTransformed !== null && Number.isFinite(inputs.sreTransformed) ? inputs.sreTransformed : null;
 
-  if (lpw !== null && sre !== null && sre >= SRE_TRANSFORMED_FLOOR) {
+  if (lpw !== null && sre !== null && lpw >= SRE_TRANSFORMED_FLOOR) {
     return LPW_COMPOSITE_WEIGHT * lpw + SRE_TRANSFORMED_WEIGHT * sre;
   }
   if (lpw !== null) {

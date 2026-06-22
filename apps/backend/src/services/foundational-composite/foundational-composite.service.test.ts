@@ -98,7 +98,7 @@ describe('computeFoundationalComposite', () => {
     expect(result).toBe(2);
   });
 
-  it('blends LPW and Sentence when Sentence is at or above the floor', () => {
+  it('blends LPW and Sentence when LPW is at or above the floor', () => {
     // LPW = 2.4 ; final = 0.514*2.4 + 0.486*1.0 = 1.7196
     const result = computeFoundationalComposite({
       lpw: [
@@ -110,27 +110,21 @@ describe('computeFoundationalComposite', () => {
     expect(result).toBeCloseTo(1.7196, 10);
   });
 
-  it('blends at exactly the floor (-3.03 is included)', () => {
-    // LPW = 2.4 ; final = 0.514*2.4 + 0.486*(-3.03) = -0.23898
+  it('blends at exactly the floor (LPW = -3.03 is included)', () => {
+    // LPW = -3.03 ; final = 0.514*(-3.03) + 0.486*1.0 = -1.07142
     const result = computeFoundationalComposite({
-      lpw: [
-        { thetaEstimate: 2, thetaSE: 0.5 },
-        { thetaEstimate: 4, thetaSE: 1 },
-      ],
-      sreTransformed: -3.03,
+      lpw: [{ thetaEstimate: -3.03, thetaSE: 0.5 }],
+      sreTransformed: 1.0,
     });
-    expect(result).toBeCloseTo(-0.23898, 10);
+    expect(result).toBeCloseTo(-1.07142, 10);
   });
 
-  it('falls back to LPW only when Sentence is below the floor', () => {
+  it('falls back to LPW only when LPW is below the floor', () => {
     const result = computeFoundationalComposite({
-      lpw: [
-        { thetaEstimate: 2, thetaSE: 0.5 },
-        { thetaEstimate: 4, thetaSE: 1 },
-      ],
-      sreTransformed: -5,
+      lpw: [{ thetaEstimate: -5, thetaSE: 0.5 }],
+      sreTransformed: 1.0,
     });
-    expect(result).toBeCloseTo(2.4, 10);
+    expect(result).toBeCloseTo(-5, 10);
   });
 
   it('returns the Sentence score alone when only Sentence is available (floor does not gate)', () => {
@@ -298,12 +292,12 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
     expect(Number.parseFloat(upsertArg.data[0]!.value)).toBeCloseTo(1.257, 10);
   });
 
-  it('falls back to LPW when the Sentence score is below the floor', async () => {
+  it('falls back to LPW when LPW is below the floor', async () => {
     runRepository.getReportingRunScoresForComposite.mockResolvedValue({
       rows: [
-        thetaRow(TASK_ID.letter, SCORE_NAME.THETA_ESTIMATE, '1.5'),
+        thetaRow(TASK_ID.letter, SCORE_NAME.THETA_ESTIMATE, '-5'),
         thetaRow(TASK_ID.letter, SCORE_NAME.THETA_SE, '0.3'),
-        sreRow('-10'),
+        sreRow('1.0'),
       ],
       reportingTaskIds: [TASK_ID.letter, TASK_ID.sre],
     });
@@ -315,7 +309,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
       transaction: tx,
     });
 
-    expect(Number.parseFloat(runScoresRepository.upsertMany.mock.calls[0]![0].data[0]!.value)).toBeCloseTo(1.5, 10);
+    expect(Number.parseFloat(runScoresRepository.upsertMany.mock.calls[0]![0].data[0]!.value)).toBeCloseTo(-5, 10);
   });
 
   it('uses the Sentence score alone when only Sentence was taken', async () => {
