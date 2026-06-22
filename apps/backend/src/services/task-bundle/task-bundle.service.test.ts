@@ -5,9 +5,11 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { createMockTaskBundleRepository } from '../../test-support/repositories/task-bundle.repository';
 import { createMockTaskBundleVariantRepository } from '../../test-support/repositories/task-bundle-variant.repository';
 import { createMockTaskVariantParameterRepository } from '../../test-support/repositories/task-variant-parameter.repository';
+import { createMockUserRepository } from '../../test-support/repositories/user.repository';
 import type { MockTaskBundleRepository } from '../../test-support/repositories/task-bundle.repository';
 import type { MockTaskBundleVariantRepository } from '../../test-support/repositories/task-bundle-variant.repository';
 import type { MockTaskVariantParameterRepository } from '../../test-support/repositories/task-variant-parameter.repository';
+import type { MockUserRepository } from '../../test-support/repositories/user.repository';
 import { TaskBundleFactory, buildTaskBundleVariantWithDetails } from '../../test-support/factories/task-bundle.factory';
 import { TaskVariantParameterFactory } from '../../test-support/factories/task-variant-parameter.factory';
 import { TaskBundleService, TaskBundleSortField } from './task-bundle.service';
@@ -17,9 +19,11 @@ describe('TaskBundleService', () => {
   let mockTaskBundleRepository: MockTaskBundleRepository;
   let mockTaskBundleVariantRepository: MockTaskBundleVariantRepository;
   let mockTaskVariantParameterRepository: MockTaskVariantParameterRepository;
+  let mockUserRepository: MockUserRepository;
   let service: ReturnType<typeof TaskBundleService>;
 
   const superAdminContext: AuthContext = { userId: 'super-admin-1', isSuperAdmin: true };
+  const platformAdminContext: AuthContext = { userId: 'platform-admin-1', isSuperAdmin: false };
   const regularUserContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
 
   const defaultOptions = {
@@ -35,16 +39,20 @@ describe('TaskBundleService', () => {
     mockTaskBundleRepository = createMockTaskBundleRepository();
     mockTaskBundleVariantRepository = createMockTaskBundleVariantRepository();
     mockTaskVariantParameterRepository = createMockTaskVariantParameterRepository();
+    mockUserRepository = createMockUserRepository();
     service = TaskBundleService({
       taskBundleRepository: mockTaskBundleRepository,
       taskBundleVariantRepository: mockTaskBundleVariantRepository,
       taskVariantParameterRepository: mockTaskVariantParameterRepository,
+      userRepository: mockUserRepository,
     });
   });
 
   describe('list', () => {
     describe('authorization', () => {
-      it('throws 403 when caller is not a super admin', async () => {
+      it('throws 403 when caller is neither a super admin nor a platform admin', async () => {
+        mockUserRepository.hasPlatformAdminRole.mockResolvedValue(false);
+
         await expect(service.list(regularUserContext, defaultOptions)).rejects.toMatchObject({
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
@@ -52,11 +60,44 @@ describe('TaskBundleService', () => {
       });
 
       it('does not call any repository when authorization fails', async () => {
+        mockUserRepository.hasPlatformAdminRole.mockResolvedValue(false);
+
         await expect(service.list(regularUserContext, defaultOptions)).rejects.toBeInstanceOf(ApiError);
 
         expect(mockTaskBundleRepository.listAll).not.toHaveBeenCalled();
         expect(mockTaskBundleVariantRepository.getVariantsWithTaskDetailsByBundleIds).not.toHaveBeenCalled();
         expect(mockTaskVariantParameterRepository.getByTaskVariantIds).not.toHaveBeenCalled();
+      });
+
+      it('allows a platform admin to list task bundles', async () => {
+        mockUserRepository.hasPlatformAdminRole.mockResolvedValue(true);
+        const bundle = TaskBundleFactory.build();
+        const variant = buildTaskBundleVariantWithDetails({ taskBundleId: bundle.id });
+        mockTaskBundleRepository.listAll.mockResolvedValue({ items: [bundle], totalItems: 1 });
+        mockTaskBundleVariantRepository.getVariantsWithTaskDetailsByBundleIds.mockResolvedValue([variant]);
+
+        const result = await service.list(platformAdminContext, defaultOptions);
+
+        expect(mockUserRepository.hasPlatformAdminRole).toHaveBeenCalledExactlyOnceWith(platformAdminContext.userId);
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.id).toBe(bundle.id);
+      });
+
+      it('does not perform the role lookup for super admins', async () => {
+        mockTaskBundleRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
+
+        await service.list(superAdminContext, defaultOptions);
+
+        expect(mockUserRepository.hasPlatformAdminRole).not.toHaveBeenCalled();
+      });
+
+      it('wraps unexpected role lookup errors in a DATABASE_QUERY_FAILED ApiError', async () => {
+        mockUserRepository.hasPlatformAdminRole.mockRejectedValue(new Error('DB connection lost'));
+
+        await expect(service.list(regularUserContext, defaultOptions)).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        });
       });
     });
 
