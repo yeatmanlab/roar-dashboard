@@ -124,18 +124,20 @@ export const mapSchoolToOrg = (school) => ({
 /**
  * Map a backend group detail object to the flat org shape consumers read.
  *
- * Preserves the raw fields (`id`, `name`, `abbreviation`, `groupType`,
- * `rosteringEnded`, etc.) and additionally flattens `location` to top-level
- * fields. Unlike districts and schools, groups are flat standalone entities —
- * `GroupDetailSchema` has no `identifiers` block (no MDR/NCES/state ids) and no
- * `orgType`/`parentOrgId` — so there is nothing else to flatten.
+ * Keeps the scalar fields (`id`, `name`, `abbreviation`, `groupType`,
+ * `rosteringEnded`, etc.) and replaces the nested `location` object with its
+ * flattened top-level fields (the nested object is destructured out so the
+ * result carries a single flat representation). Unlike districts and schools,
+ * groups are flat standalone entities — `GroupDetailSchema` has no `identifiers`
+ * block (no MDR/NCES/state ids) and no `orgType`/`parentOrgId` — so there is
+ * nothing else to flatten.
  *
  * @param {Object} group - A `GroupDetailSchema` object from the backend.
  * @returns {Object} The flattened group record.
  */
-export const mapGroupToOrg = (group) => ({
-  ...group,
-  ...flattenLocation(group.location),
+export const mapGroupToOrg = ({ location, ...rest }) => ({
+  ...rest,
+  ...flattenLocation(location),
 });
 
 /**
