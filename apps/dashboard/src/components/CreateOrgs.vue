@@ -131,6 +131,7 @@
                 :options="GRADE_OPTIONS"
                 show-clear
                 option-label="label"
+                option-value="value"
                 placeholder="Select a grade"
                 class="w-full"
                 data-cy="dropdown-grade"
@@ -286,6 +287,9 @@ const rules = {
   },
   parentDistrict: { required: requiredIf(() => ['school', 'class'].includes(orgType.value?.singular)) },
   parentSchool: { required: requiredIf(() => orgType.value?.singular === 'class') },
+  // `grades` is optional on the backend (CreateClassRequestSchema), but the form
+  // requires it for classes to encourage complete data — a class created without
+  // a grade is harder to work with in reporting downstream.
   grade: { required: requiredIf(() => orgType.value?.singular === 'class') },
   classType: { required: requiredIf(() => orgType.value?.singular === 'class') },
   groupType: { required: requiredIf(() => orgType.value?.singular === 'group') },
@@ -294,11 +298,13 @@ const rules = {
 const v$ = useVuelidate(rules, state);
 const submitted = ref(false);
 
+// `plural` is the REST resource path segment (districts/schools/classes/groups),
+// not a Firestore collection — the create flow targets the ts-rest backend.
 const orgTypes = [
-  { firestoreCollection: 'districts', singular: 'district' },
-  { firestoreCollection: 'schools', singular: 'school' },
-  { firestoreCollection: 'classes', singular: 'class' },
-  { firestoreCollection: 'groups', singular: 'group' },
+  { plural: 'districts', singular: 'district' },
+  { plural: 'schools', singular: 'school' },
+  { plural: 'classes', singular: 'class' },
+  { plural: 'groups', singular: 'group' },
 ];
 
 const orgType = ref();
@@ -345,7 +351,7 @@ const submit = async () => {
     return;
   }
 
-  const orgTypePlural = orgType.value.firestoreCollection;
+  const orgTypePlural = orgType.value.plural;
 
   try {
     const body = buildOrgCreateBody(orgTypePlural, state);

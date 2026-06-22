@@ -83,8 +83,8 @@ const resolveLocation = (address) => {
  *
  * The returned object matches the resource's `.strict()` create schema, so only
  * the fields that schema accepts are present and optional fields are omitted
- * when empty. `orgType` is the PLURAL org type (the `firestoreCollection` value
- * on each `orgTypes` entry).
+ * when empty. `orgType` is the PLURAL org type (the `plural` value on each
+ * `orgTypes` entry).
  *
  * Per type:
  * - districts: `{ name, abbreviation, location?, identifiers? }`
@@ -128,7 +128,9 @@ export const buildOrgCreateBody = (orgType, state) => {
         schoolId: state.parentSchool.id,
         name,
         classType: state.classType,
-        ...(state.grade ? { grades: [state.grade.value] } : {}),
+        // `state.grade` is the schema string value directly (the grade select uses
+        // `option-value="value"`, matching classType/groupType).
+        ...(state.grade ? { grades: [state.grade] } : {}),
       };
 
     case ORG_TYPES.GROUPS:
