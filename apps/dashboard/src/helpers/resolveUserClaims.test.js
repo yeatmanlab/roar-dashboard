@@ -35,6 +35,12 @@ describe('deriveEmulatorClaims', () => {
     expect(deriveEmulatorClaims({ isSuperAdmin: false, userType: 'caregiver' })).toEqual({ super_admin: false });
   });
 
+  it('keeps super_admin for a super admin whose userType is not an admin-dashboard type', () => {
+    // super_admin is checked first in useUserType, so SUPER_ADMIN routing wins even
+    // without the admin/role claims.
+    expect(deriveEmulatorClaims({ isSuperAdmin: true, userType: 'student' })).toEqual({ super_admin: true });
+  });
+
   it('fails closed when the /me payload is missing or empty', () => {
     expect(deriveEmulatorClaims(undefined)).toEqual({ super_admin: false });
     expect(deriveEmulatorClaims({})).toEqual({ super_admin: false });

@@ -45,10 +45,11 @@ const useSignOutMutation = () => {
       // until a manual page refresh. That is the cause of the local "hang when
       // logging out and back in as a different user". A full reload to the sign-in
       // page gives the next sign-in a clean Firebase/Firekit init, exactly like the
-      // manual refresh that currently works around it. Gated on the emulator flag,
-      // so deployed builds keep the client-side re-init + SPA redirect below.
+      // manual refresh that currently works around it; `replace` (not `assign`) keeps
+      // the signed-out page out of history so Back can't return to it. Gated on the
+      // emulator flag, so deployed builds keep the client-side re-init + SPA redirect below.
       if (IS_FIREBASE_EMULATOR_ENABLED) {
-        window.location.assign(APP_ROUTES.SIGN_IN);
+        window.location.replace(APP_ROUTES.SIGN_IN);
         return;
       }
 
