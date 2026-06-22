@@ -5,12 +5,13 @@
  * Only Firebase token verification is mocked — everything else runs for real.
  *
  * Authorization behavior:
- *   - superAdmin:  200 — only tier with access
- *   - siteAdmin:   403
- *   - admin:       403
- *   - educator:    403
- *   - student:     403
- *   - caregiver:   403
+ *   - superAdmin:     200
+ *   - platformAdmin:  200 (active platform_admin org/group membership)
+ *   - siteAdmin:      403
+ *   - admin:          403
+ *   - educator:       403
+ *   - student:        403
+ *   - caregiver:      403
  *   - unauthenticated: 401
  */
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -50,6 +51,13 @@ describe('GET /v1/task-variants', () => {
   describe('authorization', () => {
     it('superAdmin tier receives 200', async () => {
       authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(PATH).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+    });
+
+    it('platformAdmin tier receives 200', async () => {
+      authenticateAs(tiers.platformAdmin);
       const res = await request(app).get(PATH).set('Authorization', 'Bearer token');
 
       expect(res.status).toBe(StatusCodes.OK);
