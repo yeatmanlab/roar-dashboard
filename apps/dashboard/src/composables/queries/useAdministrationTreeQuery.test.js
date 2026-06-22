@@ -85,23 +85,13 @@ describe('useAdministrationTreeQuery', () => {
   });
 
   describe('fetchAdministrationTreeLevel', () => {
-    it('requests the root level (no parent) with embed=stats and maps nodes', async () => {
+    it("fetches a node's children with embed=stats and the parent params, and maps nodes", async () => {
       mockGetTree.mockResolvedValueOnce(treePage([districtNode]));
 
-      const nodes = await fetchAdministrationTreeLevel(ADMIN_ID);
-
-      expect(mockGetTree).toHaveBeenCalledWith({
-        params: { id: ADMIN_ID },
-        query: { page: 1, perPage: 100, embed: 'stats' },
+      const nodes = await fetchAdministrationTreeLevel(ADMIN_ID, {
+        parentEntityType: 'district',
+        parentEntityId: districtNode.id,
       });
-      expect(nodes[0].data.orgType).toBe('district');
-      expect(nodes[0].data.stats.assignment).toEqual({ assigned: 5, started: 3, completed: 2 });
-    });
-
-    it("passes parent params when fetching a node's children", async () => {
-      mockGetTree.mockResolvedValueOnce(treePage([]));
-
-      await fetchAdministrationTreeLevel(ADMIN_ID, { parentEntityType: 'district', parentEntityId: districtNode.id });
 
       expect(mockGetTree).toHaveBeenCalledWith({
         params: { id: ADMIN_ID },
@@ -113,13 +103,18 @@ describe('useAdministrationTreeQuery', () => {
           parentEntityId: districtNode.id,
         },
       });
+      expect(nodes[0].data.orgType).toBe('district');
+      expect(nodes[0].data.stats.assignment).toEqual({ assigned: 5, started: 3, completed: 2 });
     });
 
     it('follows pagination across multiple pages', async () => {
       const second = { ...districtNode, id: 'd2', name: 'District B', hasChildren: false, stats: undefined };
       mockGetTree.mockResolvedValueOnce(treePage([districtNode], 2, 1)).mockResolvedValueOnce(treePage([second], 2, 2));
 
-      const nodes = await fetchAdministrationTreeLevel(ADMIN_ID);
+      const nodes = await fetchAdministrationTreeLevel(ADMIN_ID, {
+        parentEntityType: 'district',
+        parentEntityId: districtNode.id,
+      });
 
       expect(mockGetTree).toHaveBeenCalledTimes(2);
       expect(nodes).toHaveLength(2);
@@ -128,7 +123,9 @@ describe('useAdministrationTreeQuery', () => {
     it('throws a structured error on non-200 responses', async () => {
       mockGetTree.mockResolvedValueOnce({ status: 500, body: { error: { code: 'internal' } } });
 
-      await expect(fetchAdministrationTreeLevel(ADMIN_ID)).rejects.toMatchObject({
+      await expect(
+        fetchAdministrationTreeLevel(ADMIN_ID, { parentEntityType: 'district', parentEntityId: districtNode.id }),
+      ).rejects.toMatchObject({
         status: 500,
         body: { error: { code: 'internal' } },
       });
