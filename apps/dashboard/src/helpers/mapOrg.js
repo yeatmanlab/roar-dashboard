@@ -72,33 +72,39 @@ const flattenIdentifiers = (identifiers) => {
 /**
  * Map a backend district detail object to the flat org shape consumers read.
  *
- * Preserves the raw fields (`id`, `name`, `abbreviation`, `orgType`,
- * `parentOrgId`, etc.) and additionally flattens `location` and `identifiers`
- * to top-level fields.
+ * Keeps the scalar fields (`id`, `name`, `abbreviation`, `orgType`,
+ * `parentOrgId`, etc.) and replaces the nested `location` and `identifiers`
+ * objects with their flattened top-level fields. The nested objects are
+ * destructured out so the result carries a single (flat) representation rather
+ * than both; `location.coordinates` is intentionally not surfaced (no consumer
+ * reads it).
  *
  * @param {Object} district - A `DistrictDetailSchema` object from the backend.
  * @returns {Object} The flattened district record.
  */
-export const mapDistrictToOrg = (district) => ({
-  ...district,
-  ...flattenLocation(district.location),
-  ...flattenIdentifiers(district.identifiers),
+export const mapDistrictToOrg = ({ location, identifiers, ...rest }) => ({
+  ...rest,
+  ...flattenLocation(location),
+  ...flattenIdentifiers(identifiers),
 });
 
 /**
  * Map a backend school detail object to the flat org shape consumers read.
  *
- * Preserves the raw fields (`id`, `name`, `abbreviation`, `orgType`,
- * `parentOrgId`, etc.) and additionally flattens `location` and `identifiers`
- * to top-level fields.
+ * Keeps the scalar fields (`id`, `name`, `abbreviation`, `orgType`,
+ * `parentOrgId`, etc.) and replaces the nested `location` and `identifiers`
+ * objects with their flattened top-level fields. The nested objects are
+ * destructured out so the result carries a single (flat) representation rather
+ * than both; `location.coordinates` is intentionally not surfaced (no consumer
+ * reads it).
  *
  * @param {Object} school - A `SchoolDetailSchema` object from the backend.
  * @returns {Object} The flattened school record.
  */
-export const mapSchoolToOrg = (school) => ({
-  ...school,
-  ...flattenLocation(school.location),
-  ...flattenIdentifiers(school.identifiers),
+export const mapSchoolToOrg = ({ location, identifiers, ...rest }) => ({
+  ...rest,
+  ...flattenLocation(location),
+  ...flattenIdentifiers(identifiers),
 });
 
 /**
