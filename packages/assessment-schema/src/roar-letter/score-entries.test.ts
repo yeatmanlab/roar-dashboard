@@ -131,7 +131,7 @@ describe('toLetterScoreEntries', () => {
   });
 
   describe('composite_foundational domain', () => {
-    it('emits all theta scores as type=computed', () => {
+    it('emits thetaEstimateRaw and thetaSERaw as type=raw, scaled estimates as type=computed', () => {
       const computed = {
         composite_foundational: {
           thetaEstimateRaw: 0.8,
@@ -142,12 +142,23 @@ describe('toLetterScoreEntries', () => {
       };
       const entries = toLetterScoreEntries(computed);
 
+      expect(entries).toHaveLength(4);
       for (const entry of entries) {
-        expect(entry.type).toBe('computed');
         expect(entry.domain).toBe('composite_foundational');
         expect(entry.assessmentStage).toBe('test');
       }
-      expect(entries).toHaveLength(4);
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES.THETA_ESTIMATE_RAW, type: 'raw' }),
+      );
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES.THETA_SE_RAW, type: 'raw' }),
+      );
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES.THETA_ESTIMATE, type: 'computed' }),
+      );
+      expect(entries).toContainEqual(
+        expect.objectContaining({ name: LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES.THETA_SE, type: 'computed' }),
+      );
     });
 
     it('emits scoringVersion and roarScoreKind as type=computed', () => {

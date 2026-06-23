@@ -49,16 +49,11 @@ const stubBootstrap = () => {
   }).as('runEvent');
 };
 
-function makeChoiceOrContinue(overflow, iterations) {
+function makeChoiceOrContinue(overflow) {
   cy.wait(0.2 * timeout);
   cy.get('body').then((body) => {
     //   If a go button is found, click it and then return to playMultichoice loop
     if (body.find('.go-button').length > 0) {
-      //   On the last iteration, check if the game is completed
-      if (iterations === variantIterations - 1) {
-        cy.log('Checking if game completed.');
-        cy.get('h1').contains(gameCompleteText).should('be.visible');
-      }
       cy.get('.go-button').click();
     } else {
       //   Only enters this else-block if a go button was not pressed
@@ -69,7 +64,7 @@ function makeChoiceOrContinue(overflow, iterations) {
       }
       // Either presses the glowing button during the tutorial or presses the first button of the stimulus trials, then iterates the overflow
       if (overflow < 100) {
-        makeChoiceOrContinue(overflow + 1, iterations);
+        makeChoiceOrContinue(overflow + 1);
       }
     }
   });
@@ -81,7 +76,7 @@ function playPhonics(iterations) {
   // eslint-disable-next-line no-plusplus
   for (let i = 0; i < iterations; i++) {
     cy.log('iteration: ', i);
-    makeChoiceOrContinue(overflow, i);
+    makeChoiceOrContinue(overflow);
   }
 }
 
@@ -99,5 +94,8 @@ describe('Test play through of ROAR-Letter phonics as a participant', () => {
       .click();
 
     playPhonics(variantIterations);
+
+    cy.log('Checking if game completed.');
+    cy.get('h1').contains(gameCompleteText).should('be.visible');
   });
 });
