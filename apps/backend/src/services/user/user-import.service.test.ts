@@ -75,6 +75,10 @@ describe('UserImportService.bulkImport', () => {
     mockUserService.createWithImportedAuth.mockImplementation(async () => ({ id: `new-user-${counter++}` }));
     mockUserRepository.runTransaction.mockImplementation(async ({ fn }) => fn({} as CoreTransaction));
     mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([]);
+    // Default the update-bin membership-delta check to "no change" (matches makeRow's school-1).
+    mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+      { entityType: EntityType.SCHOOL, entityId: 'school-1' },
+    ]);
   });
 
   describe('create bin', () => {
@@ -448,6 +452,47 @@ describe('UserImportService.bulkImport', () => {
 
       expect(results[0]!.status).toBe('failed');
       expect(results[1]!.status).toBe('ok');
+    });
+
+    it('does not write nameMiddle when the row omits it (no clobber)', async () => {
+      await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+      const updateData = mockUserRepository.update.mock.calls[0]![0].data;
+      expect(updateData).not.toHaveProperty('nameMiddle');
+    });
+
+    it('rejects an update to a rostering-ended (archived) user without writing anything', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([existing({ rosteringEnded: new Date() })]);
+
+      const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+      expect(results[0]!).toMatchObject({
+        classification: 'updated',
+        status: 'failed',
+        error: { code: ApiErrorCode.RESOURCE_NOT_FOUND },
+      });
+      expect(mockUserRepository.update).not.toHaveBeenCalled();
+      expect(updateUser).not.toHaveBeenCalled();
+    });
+
+    it('fails (rather than silently ok) a row whose memberships differ from the current set', async () => {
+      mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-1' },
+      ]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({
+          email: 'updatee@example.org',
+          memberships: [{ entityType: EntityType.SCHOOL, entityId: 'school-2', role: UserRole.STUDENT }],
+        }),
+      ]);
+
+      expect(results[0]!).toMatchObject({
+        classification: 'updated',
+        status: 'failed',
+        error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+      });
+      expect(mockUserRepository.update).not.toHaveBeenCalled();
     });
   });
 });

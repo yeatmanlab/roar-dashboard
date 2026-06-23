@@ -121,6 +121,40 @@ function preRoutingClassification(row: ImportUserRowInput): Classification {
   return row.unenroll ? CLASSIFICATION.UNENROLLED : CLASSIFICATION.CREATED;
 }
 
+/**
+ * Returns true if an update row implies a membership change the update bin does not yet apply — i.e.
+ * for any entity type the row lists, its set of entity IDs differs from the user's current active set
+ * for that type. Entity types the row omits are ignored (the legacy leaves them untouched). Used to
+ * fail such rows explicitly rather than report a misleading `ok` while silently dropping the change.
+ */
+function hasMembershipDelta(
+  rowMemberships: ImportRowMembership[],
+  current: { entityType: EntityType; entityId: string }[],
+): boolean {
+  const currentByType = new Map<EntityType, Set<string>>();
+  for (const m of current) {
+    const set = currentByType.get(m.entityType) ?? new Set<string>();
+    set.add(m.entityId);
+    currentByType.set(m.entityType, set);
+  }
+
+  const rowByType = new Map<EntityType, Set<string>>();
+  for (const m of rowMemberships) {
+    const set = rowByType.get(m.entityType) ?? new Set<string>();
+    set.add(m.entityId);
+    rowByType.set(m.entityType, set);
+  }
+
+  for (const [entityType, rowIds] of rowByType) {
+    const currentIds = currentByType.get(entityType) ?? new Set<string>();
+    if (rowIds.size !== currentIds.size) return true;
+    for (const id of rowIds) {
+      if (!currentIds.has(id)) return true;
+    }
+  }
+  return false;
+}
+
 export function UserImportService({
   userService = UserService(),
   userRepository = new UserRepository(),
@@ -507,8 +541,10 @@ export function UserImportService({
   function toUpdateUserFields(row: ImportUserRowInput) {
     return {
       nameFirst: row.name.first,
-      nameMiddle: row.name.middle ?? null,
       nameLast: row.name.last,
+      // Middle name is optional — only write it when the row carries it, so an omitted middle
+      // doesn't clobber an existing stored value.
+      ...(row.name.middle !== undefined && { nameMiddle: row.name.middle }),
       ...(row.dob !== undefined && { dob: row.dob ?? null }),
       ...(row.grade !== undefined && { grade: row.grade ?? null }),
       ...(row.demographics && {
@@ -550,12 +586,14 @@ export function UserImportService({
    * Process the update bin: update each existing user's profile fields, and sync Firebase Auth
    * (displayName / password) only when those actually changed.
    *
-   * NOTE: membership reconciliation is intentionally NOT performed yet. The legacy replaces a user's
-   * membership set per provided entity type (ending removed memberships, adding new ones), which
-   * needs a reconciliation repository method plus FGA tuple add/delete sync — it's the remaining
-   * update-bin work and is access-control-sensitive enough to warrant its own reviewed change. Until
-   * then an update row's memberships are left unchanged; profile and auth fields are updated. The
-   * dominant re-import case (refreshing profile fields with unchanged memberships) is fully handled.
+   * Rostering-ended (archived) users are rejected (not-found), matching the canonical single-update.
+   *
+   * NOTE: membership reconciliation is intentionally NOT performed yet — the legacy replaces a user's
+   * membership set per provided entity type (ending removed memberships, adding new ones), which needs
+   * a reconciliation repository method plus FGA tuple add/delete sync and is access-control-sensitive
+   * enough to warrant its own reviewed change. To avoid a misleading `ok`, a row whose memberships
+   * differ from the user's current set is failed explicitly; rows that only refresh profile fields
+   * (the dominant re-import case) succeed.
    */
   async function processUpdateBin(
     rows: { index: number; row: ImportUserRowInput; user: User }[],
@@ -563,13 +601,44 @@ export function UserImportService({
   ): Promise<void> {
     for (const { index, row, user } of rows) {
       try {
+        // Rostering-ended (archived) users are not-found for updates, matching the canonical
+        // single-update (404). Never resurrect profile/auth state on an archived account.
+        if (user.rosteringEnded) {
+          outcomes[index] = failed(
+            index,
+            CLASSIFICATION.UPDATED,
+            ApiErrorCode.RESOURCE_NOT_FOUND,
+            ApiErrorMessage.NOT_FOUND,
+          );
+          continue;
+        }
+
+        // Membership reconciliation is deferred (see the JSDoc above). Rather than report a
+        // misleading `ok` for a row that implies a membership change we don't apply, fail it
+        // explicitly when the row's memberships differ from the user's current set.
+        const currentMemberships = await userRepository.getUserEntityMemberships(user.id);
+        if (hasMembershipDelta(row.memberships, currentMemberships)) {
+          outcomes[index] = failed(
+            index,
+            CLASSIFICATION.UPDATED,
+            ApiErrorCode.RESOURCE_UNPROCESSABLE,
+            'Membership changes on update are not yet supported; re-import without membership changes',
+          );
+          continue;
+        }
+
         await userRepository.update({ id: user.id, data: toUpdateUserFields(row) });
 
+        // The DB profile write commits before the Firebase auth sync. If the auth call fails the row
+        // is reported failed even though the profile write persisted — no orphan, just a stale
+        // displayName/password the operator can fix by retrying the row. Acceptable for an update
+        // (unlike create, there's no account to compensate).
         const authUpdate = buildAuthUpdate(row, user);
         if (authUpdate && user.authId) {
           await firebaseAuth.updateUser(user.authId, authUpdate);
         }
 
+        logger.info({ userId: user.id }, 'Updated user (import)');
         outcomes[index] = ok(index, CLASSIFICATION.UPDATED, user.id);
       } catch (error) {
         logger.error({ err: error, context: { userId: user.id } }, 'Update failed during import');
