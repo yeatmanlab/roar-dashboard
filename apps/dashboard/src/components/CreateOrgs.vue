@@ -45,7 +45,7 @@
                 data-cy="dropdown-parent-district"
               />
               <label for="parent-district">District<span id="required-asterisk">*</span></label>
-              <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error"> Please select a district. </small>
+              <small v-if="v$.parentDistrict.$invalid && hasAttemptedSubmit" class="p-error"> Please select a district. </small>
             </PvFloatLabel>
           </div>
 
@@ -63,7 +63,7 @@
                 data-cy="dropdown-parent-school"
               />
               <label for="parent-school">School<span id="required-asterisk">*</span></label>
-              <small v-if="v$.parentSchool.$invalid && submitted" class="p-error"> Please select a school. </small>
+              <small v-if="v$.parentSchool.$invalid && hasAttemptedSubmit" class="p-error"> Please select a school. </small>
             </PvFloatLabel>
           </div>
         </div>
@@ -73,7 +73,7 @@
             <PvFloatLabel>
               <PvInputText id="org-name" v-model="state.orgName" class="w-full" data-cy="input-org-name" />
               <label for="org-name">{{ orgTypeLabel }} Name<span id="required-asterisk">*</span></label>
-              <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
+              <small v-if="v$.orgName.$invalid && hasAttemptedSubmit" class="p-error">Please supply a name</small>
             </PvFloatLabel>
           </div>
 
@@ -81,7 +81,7 @@
             <PvFloatLabel>
               <PvInputText id="org-initial" v-model="state.orgInitials" class="w-full" data-cy="input-org-initials" />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation<span id="required-asterisk">*</span></label>
-              <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">{{
+              <small v-if="v$.orgInitials.$invalid && hasAttemptedSubmit" class="p-error">{{
                 v$.orgInitials.$errors[0]?.$message
               }}</small>
             </PvFloatLabel>
@@ -101,7 +101,7 @@
                 data-cy="dropdown-class-type"
               />
               <label for="class-type">Class Type<span id="required-asterisk">*</span></label>
-              <small v-if="v$.classType.$invalid && submitted" class="p-error">Please select a class type</small>
+              <small v-if="v$.classType.$invalid && hasAttemptedSubmit" class="p-error">Please select a class type</small>
             </PvFloatLabel>
           </div>
 
@@ -119,7 +119,7 @@
                 data-cy="dropdown-group-type"
               />
               <label for="group-type">Group Type<span id="required-asterisk">*</span></label>
-              <small v-if="v$.groupType.$invalid && submitted" class="p-error">Please select a group type</small>
+              <small v-if="v$.groupType.$invalid && hasAttemptedSubmit" class="p-error">Please select a group type</small>
             </PvFloatLabel>
           </div>
 
@@ -137,7 +137,7 @@
                 data-cy="dropdown-grade"
               />
               <label for="grade">Grade<span id="required-asterisk">*</span></label>
-              <small v-if="v$.grade.$invalid && submitted" class="p-error">Please select a grade</small>
+              <small v-if="v$.grade.$invalid && hasAttemptedSubmit" class="p-error">Please select a grade</small>
             </PvFloatLabel>
           </div>
         </div>
@@ -193,10 +193,10 @@
         <div class="grid">
           <div class="col-12">
             <PvButton
-              :label="submitted ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
+              :label="isSubmitting ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
               v-tooltip="canCreateOrg ? false : PERMISSION_TOOLTIP"
-              :disabled="orgTypeLabel === 'Org' || v$.$invalid || submitted || !canCreateOrg"
-              :icon="submitted ? 'pi pi-spin pi-spinner' : ''"
+              :disabled="orgTypeLabel === 'Org' || v$.$invalid || isSubmitting || !canCreateOrg"
+              :icon="isSubmitting ? 'pi pi-spin pi-spinner' : ''"
               class="bg-primary text-white border-none border-round h-3rem w-3 hover:bg-red-900"
               data-cy="button-create-org"
               @click="submit"
@@ -297,7 +297,11 @@ const rules = {
 };
 
 const v$ = useVuelidate(rules, state);
-const submitted = ref(false);
+// `hasAttemptedSubmit` drives validation-error display and stays true once the
+// user has tried to submit (so errors remain visible after an invalid submit).
+// `isSubmitting` is only true while the create request is in flight (spinner/disable).
+const hasAttemptedSubmit = ref(false);
+const isSubmitting = ref(false);
 
 // `plural` is the REST resource path segment (districts/schools/classes/groups),
 // not a Firestore collection — the create flow targets the ts-rest backend.
@@ -345,15 +349,15 @@ const removeAddress = () => {
 };
 
 const submit = async () => {
-  submitted.value = true;
+  hasAttemptedSubmit.value = true;
   const isFormValid = await v$.value.$validate();
   if (!isFormValid) {
-    submitted.value = false;
     return;
   }
 
   const orgTypePlural = orgType.value.plural;
 
+  isSubmitting.value = true;
   try {
     const body = buildOrgCreateBody(orgTypePlural, state);
     await createOrg({ orgType: orgTypePlural, body });
@@ -366,7 +370,7 @@ const submit = async () => {
         : `Failed to create ${orgTypeLabel.value.toLowerCase()}. Please try again.`;
     toast.add({ severity: 'error', summary: 'Error', detail, life: 3000 });
   } finally {
-    submitted.value = false;
+    isSubmitting.value = false;
   }
 };
 
@@ -380,6 +384,7 @@ const resetForm = () => {
   state.grade = undefined;
   state.classType = undefined;
   state.groupType = undefined;
+  hasAttemptedSubmit.value = false;
 };
 </script>
 
