@@ -18,6 +18,8 @@ export function createMockUserRepository(): MockedObject<UserRepository> {
     existsByUniqueFields: vi.fn(),
     findByEmails: vi.fn(),
     endAllEnrollments: vi.fn(),
+    getActiveMembershipsWithRoles: vi.fn(),
+    archiveUser: vi.fn(),
   } as MockedObject<UserRepository>;
 }
 

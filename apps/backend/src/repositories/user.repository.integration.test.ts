@@ -198,6 +198,37 @@ describe('UserRepository', () => {
     });
   });
 
+  describe('getActiveMembershipsWithRoles', () => {
+    it('returns active memberships with their roles', async () => {
+      const user = await UserFactory.create();
+      await UserOrgFactory.create({ userId: user.id, orgId: baseFixture.district.id, role: UserRole.ADMINISTRATOR });
+
+      const result = await repository.getActiveMembershipsWithRoles(user.id);
+
+      const districtMembership = result.find((m) => m.entityId === baseFixture.district.id);
+      expect(districtMembership).toMatchObject({ entityType: 'district', role: UserRole.ADMINISTRATOR });
+    });
+
+    it('excludes ended enrollments', async () => {
+      const user = await UserFactory.create();
+      await UserOrgFactory.create({ userId: user.id, orgId: baseFixture.district.id, role: UserRole.ADMINISTRATOR });
+      await repository.endAllEnrollments(user.id);
+
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
+    });
+  });
+
+  describe('archiveUser', () => {
+    it('stamps rosteringEnded on the user', async () => {
+      const user = await UserFactory.create();
+      expect((await repository.getById({ id: user.id }))!.rosteringEnded).toBeNull();
+
+      await repository.archiveUser(user.id);
+
+      expect((await repository.getById({ id: user.id }))!.rosteringEnded).not.toBeNull();
+    });
+  });
+
   describe('findClassParentSchool', () => {
     it('returns the parent school id for a class that exists', async () => {
       const result = await repository.findClassParentSchool(baseFixture.classInSchoolA.id);

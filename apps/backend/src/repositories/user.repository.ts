@@ -283,4 +283,66 @@ export class UserRepository extends BaseRepository<User, typeof users> {
       .set({ leftOn: endedAt })
       .where(and(eq(userFamilies.userId, userId), isNull(userFamilies.leftOn)));
   }
+
+  /**
+   * Return a user's active memberships with their roles, across orgs, classes, groups, and families.
+   *
+   * Mirrors {@link getUserEntityMemberships} (same active-enrollment filtering and org-type mapping)
+   * but additionally returns the role, which the unenroll flow needs to reconstruct the FGA tuples to
+   * delete. Org memberships with FGA-unsupported org types are dropped (logged by
+   * {@link getUserEntityMemberships}).
+   *
+   * @param userId - The user to look up.
+   * @returns Active memberships as `{ entityType, entityId, role }`.
+   */
+  async getActiveMembershipsWithRoles(
+    userId: string,
+  ): Promise<{ entityType: EntityType; entityId: string; role: string }[]> {
+    const [orgRows, classRows, groupRows, familyRows] = await Promise.all([
+      this.db
+        .select({ entityId: userOrgs.orgId, orgType: orgs.orgType, role: userOrgs.role })
+        .from(userOrgs)
+        .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+        .where(and(eq(userOrgs.userId, userId), isEnrollmentActive(userOrgs))),
+      this.db
+        .select({ entityId: userClasses.classId, role: userClasses.role })
+        .from(userClasses)
+        .where(and(eq(userClasses.userId, userId), isEnrollmentActive(userClasses))),
+      this.db
+        .select({ entityId: userGroups.groupId, role: userGroups.role })
+        .from(userGroups)
+        .where(and(eq(userGroups.userId, userId), isEnrollmentActive(userGroups))),
+      this.db
+        .select({ entityId: userFamilies.familyId, role: userFamilies.role })
+        .from(userFamilies)
+        .where(and(eq(userFamilies.userId, userId), isActiveInFamily(userFamilies))),
+    ]);
+
+    const FGA_SUPPORTED_ORG_TYPES: ReadonlySet<string> = new Set([EntityType.DISTRICT, EntityType.SCHOOL]);
+    const orgMemberships: { entityType: EntityType; entityId: string; role: string }[] = [];
+    for (const row of orgRows) {
+      if (FGA_SUPPORTED_ORG_TYPES.has(row.orgType)) {
+        orgMemberships.push({ entityType: row.orgType as EntityType, entityId: row.entityId, role: row.role });
+      }
+    }
+
+    return [
+      ...orgMemberships,
+      ...classRows.map((r) => ({ entityType: EntityType.CLASS, entityId: r.entityId, role: r.role })),
+      ...groupRows.map((r) => ({ entityType: EntityType.GROUP, entityId: r.entityId, role: r.role })),
+      ...familyRows.map((r) => ({ entityType: EntityType.FAMILY, entityId: r.entityId, role: r.role })),
+    ];
+  }
+
+  /**
+   * Archive a user by stamping `rosteringEnded`. Used by the bulk-import unenroll bin alongside
+   * {@link endAllEnrollments}; pass the same transaction so both land atomically.
+   *
+   * @param userId - The user to archive.
+   * @param transaction - Optional transaction to run within.
+   */
+  async archiveUser(userId: string, transaction?: CoreTransaction): Promise<void> {
+    const db = transaction ?? this.db;
+    await db.update(users).set({ rosteringEnded: new Date() }).where(eq(users.id, userId));
+  }
 }
