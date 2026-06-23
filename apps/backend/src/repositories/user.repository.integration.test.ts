@@ -15,6 +15,7 @@ import { GroupFactory } from '../test-support/factories/group.factory';
 import { FamilyFactory } from '../test-support/factories/family.factory';
 import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
 import { UserRole } from '../enums/user-role.enum';
+import { EntityType } from '../types/entity-type';
 import { UserType } from '../enums/user-type.enum';
 import { AuthProvider } from '../enums/auth-provider.enum';
 import { UserRepository } from './user.repository';
@@ -229,6 +230,49 @@ describe('UserRepository', () => {
       await repository.archiveUser(user.id);
 
       expect((await repository.getById({ id: user.id }))!.rosteringEnded).not.toBeNull();
+    });
+  });
+
+  describe('reconcileMemberships', () => {
+    it('ends removed, adds new, and leaves unchanged memberships (per provided type)', async () => {
+      const user = await UserFactory.create();
+      const groupKept = await GroupFactory.create();
+      const groupRemoved = await GroupFactory.create();
+      const groupAdded = await GroupFactory.create();
+      await UserGroupFactory.create({ userId: user.id, groupId: groupKept.id, role: UserRole.STUDENT });
+      await UserGroupFactory.create({ userId: user.id, groupId: groupRemoved.id, role: UserRole.STUDENT });
+
+      const current = await repository.getActiveMembershipsWithRoles(user.id);
+      const desired = [
+        { entityType: EntityType.GROUP, entityId: groupKept.id, role: 'student' },
+        { entityType: EntityType.GROUP, entityId: groupAdded.id, role: 'student' },
+      ];
+
+      const result = await repository.runTransaction({
+        fn: (tx) => repository.reconcileMemberships(user.id, desired, current, tx),
+      });
+
+      expect(result.removed.map((m) => m.entityId)).toEqual([groupRemoved.id]);
+      expect(result.added.map((m) => m.entityId)).toEqual([groupAdded.id]);
+
+      const afterIds = (await repository.getActiveMembershipsWithRoles(user.id)).map((m) => m.entityId);
+      expect(afterIds).toEqual(expect.arrayContaining([groupKept.id, groupAdded.id]));
+      expect(afterIds).not.toContain(groupRemoved.id);
+    });
+
+    it('reactivates a previously-ended membership via upsert', async () => {
+      const user = await UserFactory.create();
+      const group = await GroupFactory.create();
+      await UserGroupFactory.create({ userId: user.id, groupId: group.id, role: UserRole.STUDENT });
+      await repository.endAllEnrollments(user.id);
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
+
+      const desired = [{ entityType: EntityType.GROUP, entityId: group.id, role: 'student' }];
+      await repository.runTransaction({
+        fn: (tx) => repository.reconcileMemberships(user.id, desired, [], tx),
+      });
+
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(1);
     });
   });
 

@@ -20,6 +20,7 @@ export function createMockUserRepository(): MockedObject<UserRepository> {
     endAllEnrollments: vi.fn(),
     getActiveMembershipsWithRoles: vi.fn(),
     archiveUser: vi.fn(),
+    reconcileMemberships: vi.fn(),
   } as MockedObject<UserRepository>;
 }
 

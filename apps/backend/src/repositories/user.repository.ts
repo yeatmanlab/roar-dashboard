@@ -2,6 +2,8 @@ import { eq, and, or, isNull, inArray, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup, NewUserFamily } from '../db/schema';
 import { EntityType } from '../types/entity-type';
+import type { UserRole } from '../enums/user-role.enum';
+import type { UserFamilyRole } from '../enums/user-family-role.enum';
 import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type { CoreTransaction } from '../db/clients';
@@ -344,5 +346,169 @@ export class UserRepository extends BaseRepository<User, typeof users> {
   async archiveUser(userId: string, transaction?: CoreTransaction): Promise<void> {
     const db = transaction ?? this.db;
     await db.update(users).set({ rosteringEnded: new Date() }).where(eq(users.id, userId));
+  }
+
+  /**
+   * Reconcile a user's memberships to match `desired`, with replace-semantics per entity type (the
+   * legacy `batchImportUpdate` behavior): for every entity type the desired list mentions, memberships
+   * present now but not desired are ended, desired memberships not present now are added, and
+   * memberships in both are left untouched. Entity types `desired` doesn't mention are left alone.
+   *
+   * Adds use an upsert, so a previously-ended membership (e.g. a student returning to a prior school)
+   * is reactivated rather than colliding with its existing junction row. `current` is supplied by the
+   * caller so the diff and the writes share the caller's transaction context.
+   *
+   * @param userId - The user to reconcile.
+   * @param desired - The membership set the row asks for (with roles).
+   * @param current - The user's current active memberships (with roles).
+   * @param transaction - The active transaction.
+   * @returns The memberships added and removed (with roles), so the caller can sync FGA tuples.
+   */
+  async reconcileMemberships(
+    userId: string,
+    desired: { entityType: EntityType; entityId: string; role: string }[],
+    current: { entityType: EntityType; entityId: string; role: string }[],
+    transaction: CoreTransaction,
+  ): Promise<{
+    added: { entityType: EntityType; entityId: string; role: string }[];
+    removed: { entityType: EntityType; entityId: string; role: string }[];
+  }> {
+    const groupByType = (list: { entityType: EntityType; entityId: string; role: string }[]) => {
+      const byType = new Map<EntityType, Map<string, string>>();
+      for (const m of list) {
+        const ids = byType.get(m.entityType) ?? new Map<string, string>();
+        ids.set(m.entityId, m.role);
+        byType.set(m.entityType, ids);
+      }
+      return byType;
+    };
+
+    const desiredByType = groupByType(desired);
+    const currentByType = groupByType(current);
+
+    const added: { entityType: EntityType; entityId: string; role: string }[] = [];
+    const removed: { entityType: EntityType; entityId: string; role: string }[] = [];
+    const now = new Date();
+
+    for (const [entityType, desiredIds] of desiredByType) {
+      const currentIds = currentByType.get(entityType) ?? new Map<string, string>();
+
+      // End memberships present now but no longer desired.
+      for (const [entityId, role] of currentIds) {
+        if (!desiredIds.has(entityId)) {
+          await this.endMembershipRow(entityType, userId, entityId, now, transaction);
+          removed.push({ entityType, entityId, role });
+        }
+      }
+
+      // Add (or reactivate) desired memberships not present now.
+      for (const [entityId, role] of desiredIds) {
+        if (!currentIds.has(entityId)) {
+          await this.upsertMembershipRow(entityType, userId, entityId, role, now, transaction);
+          added.push({ entityType, entityId, role });
+        }
+      }
+    }
+
+    return { added, removed };
+  }
+
+  /** End a single membership row (stamp the end date) for the given entity type. */
+  private async endMembershipRow(
+    entityType: EntityType,
+    userId: string,
+    entityId: string,
+    endedAt: Date,
+    tx: CoreTransaction,
+  ): Promise<void> {
+    switch (entityType) {
+      case EntityType.DISTRICT:
+      case EntityType.SCHOOL:
+        await tx
+          .update(userOrgs)
+          .set({ enrollmentEnd: endedAt })
+          .where(and(eq(userOrgs.userId, userId), eq(userOrgs.orgId, entityId)));
+        return;
+      case EntityType.CLASS:
+        await tx
+          .update(userClasses)
+          .set({ enrollmentEnd: endedAt })
+          .where(and(eq(userClasses.userId, userId), eq(userClasses.classId, entityId)));
+        return;
+      case EntityType.GROUP:
+        await tx
+          .update(userGroups)
+          .set({ enrollmentEnd: endedAt })
+          .where(and(eq(userGroups.userId, userId), eq(userGroups.groupId, entityId)));
+        return;
+      case EntityType.FAMILY:
+        await tx
+          .update(userFamilies)
+          .set({ leftOn: endedAt })
+          .where(and(eq(userFamilies.userId, userId), eq(userFamilies.familyId, entityId)));
+        return;
+    }
+  }
+
+  /** Insert a membership row, reactivating it (clear end date, refresh role + start) on conflict. */
+  private async upsertMembershipRow(
+    entityType: EntityType,
+    userId: string,
+    entityId: string,
+    role: string,
+    startedAt: Date,
+    tx: CoreTransaction,
+  ): Promise<void> {
+    switch (entityType) {
+      case EntityType.DISTRICT:
+      case EntityType.SCHOOL:
+        await tx
+          .insert(userOrgs)
+          .values({ userId, orgId: entityId, role: role as UserRole, enrollmentStart: startedAt, enrollmentEnd: null })
+          .onConflictDoUpdate({
+            target: [userOrgs.userId, userOrgs.orgId],
+            set: { role: role as UserRole, enrollmentStart: startedAt, enrollmentEnd: null },
+          });
+        return;
+      case EntityType.CLASS:
+        await tx
+          .insert(userClasses)
+          .values({
+            userId,
+            classId: entityId,
+            role: role as UserRole,
+            enrollmentStart: startedAt,
+            enrollmentEnd: null,
+          })
+          .onConflictDoUpdate({
+            target: [userClasses.userId, userClasses.classId],
+            set: { role: role as UserRole, enrollmentStart: startedAt, enrollmentEnd: null },
+          });
+        return;
+      case EntityType.GROUP:
+        await tx
+          .insert(userGroups)
+          .values({
+            userId,
+            groupId: entityId,
+            role: role as UserRole,
+            enrollmentStart: startedAt,
+            enrollmentEnd: null,
+          })
+          .onConflictDoUpdate({
+            target: [userGroups.userId, userGroups.groupId],
+            set: { role: role as UserRole, enrollmentStart: startedAt, enrollmentEnd: null },
+          });
+        return;
+      case EntityType.FAMILY:
+        await tx
+          .insert(userFamilies)
+          .values({ userId, familyId: entityId, role: role as UserFamilyRole, joinedOn: startedAt, leftOn: null })
+          .onConflictDoUpdate({
+            target: [userFamilies.userId, userFamilies.familyId],
+            set: { role: role as UserFamilyRole, joinedOn: startedAt, leftOn: null },
+          });
+        return;
+    }
   }
 }
