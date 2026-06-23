@@ -51,7 +51,7 @@ jobs:
             else
               # No specific assessment given — fall back to all known deployable assessments.
               # When adding a new assessment, append its name here.
-              echo "matrix=[\"roar-pa\",\"roar-swr\"]" >> $GITHUB_OUTPUT
+              echo "matrix=[\"roar-pa\",\"roar-swr\",\"roar-sre\"]" >> $GITHUB_OUTPUT
             fi
           else
             echo "matrix=${{ inputs.assessments }}" >> $GITHUB_OUTPUT

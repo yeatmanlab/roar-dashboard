@@ -21,6 +21,11 @@
       "types": "./dist/roar-swr/index.d.ts",
       "import": "./dist/roar-swr/index.js",
       "default": "./dist/roar-swr/index.js"
+    },
+    "./roar-sre": {
+      "types": "./dist/roar-sre/index.d.ts",
+      "import": "./dist/roar-sre/index.js",
+      "default": "./dist/roar-sre/index.js"
     }
   },
   "main": "./dist/index.js",
