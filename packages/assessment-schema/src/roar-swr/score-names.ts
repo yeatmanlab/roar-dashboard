@@ -1,18 +1,7 @@
 import { TRIAL_COUNT_SCORE_NAMES } from '../constants/trial-count-score-names.js';
-
-/**
- * Canonical run_scores.domain strings for SWR score entries.
- */
-export const SWR_SCORE_DOMAINS = {
-  COMPOSITE: 'composite',
-  // SWR defines the shared/foundational IRT scale, so its foundational composite equals its
-  // composite. Emitted so the cross-task foundational composite (which reads this domain)
-  // includes SWR; mirrors how PA exposes its composite_foundational group.
-  COMPOSITE_FOUNDATIONAL: 'composite_foundational',
-} as const;
-
 import { THETA_SCORE_NAMES } from '../constants/theta-score-names.js';
 
+export { SWR_SCORE_DOMAINS } from './domains.js';
 
 /**
  * Canonical run_scores.name strings written by the SWR scoring callback.
