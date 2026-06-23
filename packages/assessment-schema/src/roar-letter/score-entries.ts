@@ -6,6 +6,7 @@ import {
   LETTER_COMPOSITE_SCORE_NAMES,
   LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES,
   LETTER_RAW_COMPOSITE_SCORE_NAMES,
+  LETTER_RAW_FOUNDATIONAL_SCORE_NAMES,
   LETTER_SUBTASK_SCORE_NAMES,
   PHONICS_COMPOSITE_SCORE_NAMES,
   PHONICS_RAW_COMPOSITE_SCORE_NAMES,
@@ -40,6 +41,13 @@ const RECOGNIZED_LETTER_COMPOSITE_NAMES = new Set<string>(Object.values(LETTER_C
 const RECOGNIZED_LETTER_COMPOSITE_FOUNDATIONAL_NAMES = new Set<string>(
   Object.values(LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES),
 );
+const KNOWN_LETTER_SUBTASK_DOMAINS = new Set([
+  'LetterPractice',
+  'LowercaseNames',
+  'UppercaseNames',
+  'PhonemePractice',
+  'Phonemes',
+]);
 
 /**
  * Letter subtask domain → AssessmentStage mapping.
@@ -58,7 +66,8 @@ function letterDomainToAssessmentStage(domain: string): AssessmentStage {
  * Score type assignment:
  * - composite domain: RAW for thetaEstimateRaw, thetaSERaw, totalCorrect, totalNumAttempted;
  *   COMPUTED for everything else (thetaEstimate, thetaSE, normed scores, metadata).
- * - composite_foundational domain: COMPUTED for all scores (derived rollup domain).
+ * - composite_foundational domain: RAW for thetaEstimateRaw and thetaSERaw (native-scale IRT
+ *   estimates); COMPUTED for everything else (scaled estimates, metadata).
  * - Subtask domains (LetterPractice, LowercaseNames, UppercaseNames, PhonemePractice,
  *   Phonemes): COMPUTED for all scores (subScore, subPercentCorrect, item lists).
  *
@@ -68,9 +77,11 @@ function letterDomainToAssessmentStage(domain: string): AssessmentStage {
  * letter-es and letter-en-ca, where computedScoreCallback returns null.
  *
  * @param computed - Nested computed scores from RoarScores.computedScoreCallback, or null
- * @param options.strict - If true, throw on unrecognized score name keys in composite domains.
+ * @param options.strict - If true, throw on unrecognized score names in composite domains or
+ *   unrecognized subtask domain keys. Use in tests to catch schema drift when the game emits
+ *   new domains or score names not yet listed in KNOWN_LETTER_SUBTASK_DOMAINS or score-names.ts.
  * @returns Array of ScoreEntry objects ready for backend upsert
- * @throws {Error} If strict=true and an unrecognized composite score name is encountered
+ * @throws {Error} If strict=true and an unrecognized composite score name or subtask domain is encountered
  */
 export function toLetterScoreEntries(
   computed: Record<string, Record<string, unknown>> | null | undefined,
@@ -100,7 +111,7 @@ export function toLetterScoreEntries(
         const value = scores[name];
         if (value == null) continue;
         const strValue = String(value);
-        if (!strValue) continue;
+        if (!strValue) continue; // String([]) === '' — skip empty item lists
         entries.push({
           type: LETTER_RAW_COMPOSITE_SCORE_NAMES.has(name) ? ScoreType.RAW : ScoreType.COMPUTED,
           domain,
@@ -126,9 +137,9 @@ export function toLetterScoreEntries(
         const value = scores[name];
         if (value == null) continue;
         const strValue = String(value);
-        if (!strValue) continue;
+        if (!strValue) continue; // String([]) === '' — skip empty item lists
         entries.push({
-          type: ScoreType.COMPUTED,
+          type: LETTER_RAW_FOUNDATIONAL_SCORE_NAMES.has(name) ? ScoreType.RAW : ScoreType.COMPUTED,
           domain,
           name,
           value: strValue,
@@ -137,11 +148,17 @@ export function toLetterScoreEntries(
       }
     } else {
       // Subtask domain: LetterPractice, LowercaseNames, UppercaseNames, PhonemePractice, Phonemes
+      if (strict && !KNOWN_LETTER_SUBTASK_DOMAINS.has(domain)) {
+        throw new Error(
+          `Unrecognized letter subtask domain: "${domain}". ` +
+            `Update KNOWN_LETTER_SUBTASK_DOMAINS in score-entries.ts to handle the new domain.`,
+        );
+      }
       for (const name of Object.values(LETTER_SUBTASK_SCORE_NAMES) as LetterSubtaskScoreName[]) {
         const value = scores[name];
         if (value == null) continue;
         const strValue = String(value);
-        if (!strValue) continue;
+        if (!strValue) continue; // String([]) === '' — skip empty item lists
         entries.push({
           type: ScoreType.COMPUTED,
           domain,
@@ -271,7 +288,7 @@ export function toPhonicsScoreEntries(
         const value = scores[name];
         if (value == null) continue;
         const strValue = String(value);
-        if (!strValue) continue;
+        if (!strValue) continue; // String([]) === '' — skip empty item lists
         entries.push({
           type: PHONICS_RAW_COMPOSITE_SCORE_NAMES.has(name) ? ScoreType.RAW : ScoreType.COMPUTED,
           domain,
@@ -322,7 +339,7 @@ export function toPhonicsScoreEntries(
         const value = scores[name];
         if (value == null) continue;
         const strValue = String(value);
-        if (!strValue) continue;
+        if (!strValue) continue; // String([]) === '' — skip empty item lists
         entries.push({
           type: ScoreType.COMPUTED,
           domain,

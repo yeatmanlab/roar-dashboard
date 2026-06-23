@@ -67,7 +67,8 @@ export const LETTER_RAW_COMPOSITE_SCORE_NAMES = new Set<LetterCompositeScoreName
 /**
  * Canonical run_scores.name strings for the letter composite_foundational domain.
  * Carries IRT estimates and metadata for the foundational letter-knowledge sub-score.
- * All entries are type=COMPUTED — this is a derived rollup domain.
+ * thetaEstimateRaw and thetaSERaw are type=RAW (native-scale estimates from the CAT engine);
+ * all other entries are type=COMPUTED.
  */
 export const LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES = {
   ...THETA_SCORE_NAMES,
@@ -77,6 +78,16 @@ export const LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES = {
 
 export type LetterCompositeFoundationalScoreName =
   (typeof LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES)[keyof typeof LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES];
+
+/**
+ * Score names in the composite_foundational domain that map to type='raw'.
+ * Native-scale IRT estimates from the CAT engine, parallel to LETTER_RAW_COMPOSITE_SCORE_NAMES
+ * in the composite domain.
+ */
+export const LETTER_RAW_FOUNDATIONAL_SCORE_NAMES = new Set<LetterCompositeFoundationalScoreName>([
+  LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES.THETA_ESTIMATE_RAW,
+  LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES.THETA_SE_RAW,
+]);
 
 export type LetterScoreName = LetterSubtaskScoreName | LetterCompositeScoreName | LetterCompositeFoundationalScoreName;
 

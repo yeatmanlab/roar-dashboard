@@ -5,11 +5,11 @@
  * The file is a JSON array where each entry has a variantName and a params object.
  *
  * Two task families are supported, distinguished by the required "task" param:
- *   - Letter variants: params.task === "letter" — require params.lng for routing to the
+ *   - Letter variants: params.task === "letter" — require params.language for routing to the
  *     correct language-specific backend task (letter-en, letter-es, letter-en-ca)
  *   - Phonics variants: params.task === "phonics" — always seeded under PHONICS_TASK_IDS.EN
  *
- * All params (including "task" and "lng") are stored as task variant parameters.
+ * All params (including "task" and "language") are stored as task variant parameters.
  *
  * Idempotent — tasks and variants that already exist by slug / name are skipped.
  *

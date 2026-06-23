@@ -32,7 +32,7 @@ export const LETTER_LANGUAGES = {
     taskId: LETTER_TASK_IDS.ES,
     defaultScoringVersion: null,
   },
-  'en-CA': {
+  'en-ca': {
     code: 'en-CA',
     label: 'English (Canada)',
     taskId: LETTER_TASK_IDS.EN_CA,

@@ -118,9 +118,10 @@ async function startTask(selectedAdmin) {
       language: props.language,
     };
 
-    // lng and task are passed explicitly so config.js can derive the correct task ID
-    // and branch between letter and phonics scoring paths.
-    const gameParams = { ...appKit._taskInfo.variantParams, lng: props.language, task: props.task };
+    // variantParams.task (from the DB variant) is the authoritative source for the scoring
+    // path (letter vs. phonics); props.task is the fallback for variants that predate the
+    // task field. language reaches initConfig via userParams.language, not gameParams.
+    const gameParams = { task: props.task, ...appKit._taskInfo.variantParams };
 
     // Initialize the new assessment SDK for the dashboard execution path.
     // Fetches the letter task UUID, the current user's Postgres UUID, and the participant's

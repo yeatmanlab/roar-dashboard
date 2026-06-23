@@ -85,4 +85,6 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-await signInAnonymously(auth);
+await signInAnonymously(auth).catch((err) => {
+  console.error('[roar-letter] Firebase anonymous sign-in failed:', err);
+});
