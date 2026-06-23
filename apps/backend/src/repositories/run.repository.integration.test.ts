@@ -215,6 +215,108 @@ describe('RunRepository', () => {
     });
   });
 
+  describe('getUserCanonicalRunsForAdministrations', () => {
+    it('returns empty array for empty input array', async () => {
+      const result = await repository.getUserCanonicalRunsForAdministrations(faker.string.uuid(), []);
+
+      expect(result).toEqual([]);
+    });
+
+    it('returns only the canonical (use_for_reporting=true) non-deleted run', async () => {
+      const userId = faker.string.uuid();
+      const administrationId = faker.string.uuid();
+      const taskVariantId = faker.string.uuid();
+      const taskId = faker.string.uuid();
+      const createdAt = new Date('2025-09-03T14:01:00.000Z');
+      const completedAt = new Date('2025-09-03T14:20:00.000Z');
+
+      // Canonical run for this partition.
+      await RunFactory.create({
+        userId,
+        administrationId,
+        taskVariantId,
+        taskId,
+        useForReporting: true,
+        reliableRun: false,
+        createdAt,
+        completedAt,
+      });
+      // A non-canonical run in the same partition (must be excluded).
+      await RunFactory.create({
+        userId,
+        administrationId,
+        taskVariantId,
+        taskId,
+        useForReporting: false,
+        completedAt: new Date(),
+      });
+
+      const result = await repository.getUserCanonicalRunsForAdministrations(userId, [administrationId]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        administrationId,
+        taskVariantId,
+        taskId,
+        reliableRun: false,
+      });
+      expect(result[0]!.createdAt.toISOString()).toBe(createdAt.toISOString());
+      expect(result[0]!.completedAt!.toISOString()).toBe(completedAt.toISOString());
+    });
+
+    it('excludes soft-deleted canonical runs', async () => {
+      const userId = faker.string.uuid();
+      const administrationId = faker.string.uuid();
+
+      await RunFactory.create({
+        userId,
+        administrationId,
+        useForReporting: true,
+        deletedAt: new Date(),
+        deletedBy: faker.string.uuid(),
+      });
+
+      const result = await repository.getUserCanonicalRunsForAdministrations(userId, [administrationId]);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('does not return canonical runs belonging to other users', async () => {
+      const userId = faker.string.uuid();
+      const otherUserId = faker.string.uuid();
+      const administrationId = faker.string.uuid();
+
+      await RunFactory.create({ userId: otherUserId, administrationId, useForReporting: true });
+
+      const result = await repository.getUserCanonicalRunsForAdministrations(userId, [administrationId]);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('returns canonical runs across multiple administrations in a single call', async () => {
+      const userId = faker.string.uuid();
+      const adminA = faker.string.uuid();
+      const adminB = faker.string.uuid();
+      const adminUnqueried = faker.string.uuid();
+
+      const variantA = faker.string.uuid();
+      const variantB = faker.string.uuid();
+
+      await RunFactory.create({ userId, administrationId: adminA, taskVariantId: variantA, useForReporting: true });
+      await RunFactory.create({ userId, administrationId: adminB, taskVariantId: variantB, useForReporting: true });
+      // A canonical run in an administration not part of the query — excluded.
+      await RunFactory.create({ userId, administrationId: adminUnqueried, useForReporting: true });
+
+      const result = await repository.getUserCanonicalRunsForAdministrations(userId, [adminA, adminB]);
+
+      expect(result).toHaveLength(2);
+      const byAdmin = new Map(result.map((r) => [r.administrationId, r]));
+      expect(byAdmin.get(adminA)?.taskVariantId).toBe(variantA);
+      expect(byAdmin.get(adminB)?.taskVariantId).toBe(variantB);
+      expect(byAdmin.has(adminUnqueried)).toBe(false);
+    });
+  });
+
   describe('recomputeUseForReporting', () => {
     /**
      * Builds a fresh `(userId, administrationId, taskVariantId)` partition. Each test

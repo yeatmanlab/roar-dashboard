@@ -18,6 +18,22 @@ export interface AdministrationRunStats {
 }
 
 /**
+ * A user's canonical (best) run for a single administration + task.
+ *
+ * Returned by `getUserCanonicalRunsForAdministrations` to drive the per-task
+ * `progress` embed. Carries only the columns the service needs to compute
+ * `startedOn`, `completedOn`, and `allowRetake`.
+ */
+export interface UserCanonicalRun {
+  administrationId: string;
+  taskVariantId: string;
+  taskId: string;
+  createdAt: Date;
+  completedAt: Date | null;
+  reliableRun: boolean;
+}
+
+/**
  * Run Repository
  *
  * Provides data access methods for the runs table.
@@ -105,6 +121,51 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
       .limit(1);
 
     return result[0] ?? null;
+  }
+
+  /**
+   * Get a user's canonical (best) runs across multiple administrations.
+   *
+   * Returns the non-deleted runs where `use_for_reporting = true` for the given
+   * user across the supplied administrations — at most one row per
+   * `(administrationId, taskVariantId)` partition, since `recomputeUseForReporting`
+   * promotes a single best run per partition. The caller groups these by
+   * `(administrationId, taskVariantId)` to attach per-task progress.
+   *
+   * Only the columns needed by the `progress` embed are selected. The query is a
+   * single bulk round-trip (no per-task/per-administration queries) and is backed
+   * by `runs_user_reporting_run_idx` (userId WHERE use_for_reporting = true).
+   *
+   * @param userId - The user whose canonical runs to fetch
+   * @param administrationIds - Administrations to scope the lookup to
+   * @returns Array of canonical runs; empty array when input is empty or none match
+   */
+  async getUserCanonicalRunsForAdministrations(
+    userId: string,
+    administrationIds: string[],
+  ): Promise<UserCanonicalRun[]> {
+    if (administrationIds.length === 0) {
+      return [];
+    }
+
+    return this.db
+      .select({
+        administrationId: runs.administrationId,
+        taskVariantId: runs.taskVariantId,
+        taskId: runs.taskId,
+        createdAt: runs.createdAt,
+        completedAt: runs.completedAt,
+        reliableRun: runs.reliableRun,
+      })
+      .from(runs)
+      .where(
+        and(
+          eq(runs.userId, userId),
+          inArray(runs.administrationId, administrationIds),
+          eq(runs.useForReporting, true),
+          isNull(runs.deletedAt),
+        ),
+      );
   }
 
   /**
