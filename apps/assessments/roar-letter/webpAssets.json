@@ -1,0 +1,34 @@
+{
+  "default": {
+    "languageSpecific": {
+      "device": [],
+      "shared": []
+    },
+    "shared": [
+      "beep.mp3",
+      "click.mp3",
+      "coin.mp3",
+      "countdown0.mp3",
+      "countdown1.mp3",
+      "countdown2.mp3",
+      "countdown3.mp3",
+      "fail.mp3",
+      "fairyCoin.mp3",
+      "goButton.webp",
+      "select.mp3",
+      "coin_bag.webp",
+      "coin_icon.webp",
+      "gold_coin.webp",
+      "icon_speaker.webp",
+      "ROARLion.webp",
+      "LowercasePickingLetter.webp",
+      "UppercasePickingLetter.webp",
+      "uPressLetter.webp",
+      "speakerPressAnimation.webp",
+      "talkingLionWithBubble.webp",
+      "talkingLionIpad.webp",
+      "pointingLionAge12.png",
+      "speakerButton.png"
+    ]
+  }
+}
