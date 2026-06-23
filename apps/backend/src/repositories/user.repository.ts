@@ -1,4 +1,4 @@
-import { eq, and, or, isNull } from 'drizzle-orm';
+import { eq, and, or, isNull, inArray, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup, NewUserFamily } from '../db/schema';
 import { EntityType } from '../types/entity-type';
@@ -220,5 +220,32 @@ export class UserRepository extends BaseRepository<User, typeof users> {
       .limit(1);
 
     return row !== undefined;
+  }
+
+  /**
+   * Find all users whose email matches any in the provided list, case-insensitively.
+   *
+   * Used by the bulk-import pre-flight to classify each row as create vs. update/unenroll by
+   * existence. Matching is case-insensitive to mirror the legacy classification (Firebase Auth
+   * treats emails case-insensitively) and to avoid misclassifying a cased variant as a new create
+   * that would then collide at Firebase. Rostered-out users are included — their email still
+   * occupies the unique field — so a re-import resolves to the existing user rather than a create.
+   *
+   * @param emails - The emails to look up.
+   * @returns The matching user records (may be fewer than the input when some don't exist).
+   *
+   * @NOTE The `lower(email)` predicate won't use the plain email index. For the bulk-import batch
+   *   size (≤100) against admin-initiated requests this is acceptable; a functional index on
+   *   `lower(email)` (or normalizing emails to lowercase on write) would remove the scan at scale.
+   */
+  async findByEmails(emails: string[]): Promise<User[]> {
+    if (emails.length === 0) return [];
+
+    const lowered = emails.map((email) => email.toLowerCase());
+
+    return this.db
+      .select()
+      .from(users)
+      .where(inArray(sql<string>`lower(${users.email})`, lowered));
   }
 }

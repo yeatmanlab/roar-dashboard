@@ -30,5 +30,6 @@ vi.mock('firebase-admin/auth', () => ({
     createCustomToken: vi.fn(),
     listUsers: vi.fn(),
     updateUser: vi.fn(),
+    importUsers: vi.fn(),
   })),
 }));
