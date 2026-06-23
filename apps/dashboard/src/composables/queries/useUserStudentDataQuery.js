@@ -11,11 +11,14 @@ import { USER_STUDENT_DATA_QUERY_KEY } from '@/constants/queryKeys';
 /**
  * User student data query.
  *
- * Returns just the `studentData` slice of a user, fetched from the backend `GET /users/:id`
- * endpoint and reshaped via `mapUser` (mirroring the legacy `['studentData']` subfield read).
+ * Returns the user (with `studentData` nested), fetched from the backend `GET /users/:id`
+ * endpoint and reshaped via `mapUser`. The legacy implementation masked the Firestore doc to
+ * `['studentData']`, which still returned a wrapper object (`{ id, studentData: {...} }`) — so
+ * consumers read `studentData.*` off the result. We preserve that nested shape here (the Task
+ * players read `studentData.dob` / `studentData.grade`), rather than returning the bare slice.
  *
  * @TODO: Evaluate whether this query can be replaced by the existing useUserDataQuery composable
- *   with a `select` — both now hit the same endpoint.
+ *   — both now hit the same endpoint and return the same shape.
  *
  * @param {String|undefined} userId – If passed, return the studentData for that user; otherwise
  *                                    the current authenticated user.
@@ -44,7 +47,7 @@ const useUserStudentDataQuery = (userId = undefined, queryOptions = undefined) =
         throw error;
       }
 
-      return mapUser(result.body.data)?.studentData ?? null;
+      return mapUser(result.body.data);
     },
     enabled: isQueryEnabled,
     ...options,

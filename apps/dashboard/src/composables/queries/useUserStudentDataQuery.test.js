@@ -65,7 +65,7 @@ describe('useUserStudentDataQuery', () => {
     expect(call.enabled.value).toBe(true);
   });
 
-  it('fetches the user and returns only the mapped studentData slice', async () => {
+  it('fetches the user and returns it with studentData nested (the shape consumers read)', async () => {
     const uid = nanoid();
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = ref(uid);
@@ -77,12 +77,12 @@ describe('useUserStudentDataQuery', () => {
     });
 
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
-    const studentData = await queryFn();
+    const user = await queryFn();
 
     expect(mockUsersGet).toHaveBeenCalledWith({ params: { id: uid } });
-    expect(studentData).toMatchObject({ grade: '3', dob: '2015-04-01' });
-    // It returns the studentData slice, not the full user object.
-    expect(studentData).not.toHaveProperty('name');
+    // Consumers (the Task players) read `studentData.dob` / `studentData.grade` off the result,
+    // so studentData must stay nested rather than being returned as a bare slice.
+    expect(user.studentData).toMatchObject({ grade: '3', dob: '2015-04-01' });
   });
 
   it('throws when the API returns a non-200 status', async () => {
