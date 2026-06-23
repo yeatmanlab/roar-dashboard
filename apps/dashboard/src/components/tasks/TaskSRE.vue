@@ -1,6 +1,6 @@
 <template>
   <div id="jspsych-target" class="game-target" translate="no" />
-  <div v-if="!gameStarted" class="text-center col-full">
+  <div v-if="!gameStarted" class="col-full text-center">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
@@ -10,21 +10,23 @@ import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
+import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import { getRoarApiClient } from '@/clients/roar-api';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../../../package-lock.json';
+import { version } from '@roar-platform/roar-sre/package.json';
 
 const props = defineProps({
-  taskId: { type: String, required: true, default: 'sre' },
-  language: { type: String, required: true, default: 'en' },
-  launchId: { type: String, required: false, default: null },
+  taskId: { type: String, default: SRE_TASK_IDS.EN },
+  language: { type: String, default: 'en' },
+  launchId: { type: String, default: null },
 });
 
 let TaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roar-sre'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,7 +64,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roar-sre')).default;
+    TaskLauncher = (await import('@roar-platform/roar-sre')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -115,9 +117,90 @@ async function startTask(selectedAdmin) {
       language: props.language,
     };
 
-    const gameParams = { ...appKit._taskInfo.variantParams };
+    // lng is passed explicitly so config.js can derive taskId via SRE_LANGUAGES.
+    const gameParams = { ...appKit._taskInfo.variantParams, lng: props.language };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    // Initialize the new assessment SDK for the dashboard execution path.
+    // Fetches the SRE task UUID, the current user's Postgres UUID, and the participant's
+    // administrations in parallel to resolve the correct administrationId and variantId.
+    //
+    // authStore.roarUid is a Firestore UID, not a Postgres UUID. GET /me resolves the
+    // Postgres UUID for the currently authenticated user (self-launch path).
+    // TODO: resolve the participant's Postgres UUID for the proxy-launch path (launchId set).
+    //
+    // NOTE: Until the dashboard migrates its administration queries to the new REST API,
+    // selectedAdmin.value.id is a Firestore document ID and will not match any administration
+    // in the new backend. The fallback (matching by SRE task UUID within embedded tasks)
+    // is used until that migration is complete.
+    const roarApiClient = getRoarApiClient();
+
+    const [taskRes, meRes] = await Promise.all([
+      roarApiClient.tasks.get({ params: { taskId: props.taskId } }),
+      roarApiClient.me.get(),
+    ]);
+
+    if (taskRes.status !== 200) {
+      throw new Error(`sre task not found in the ROAR backend (status ${taskRes.status}).`);
+    }
+    if (meRes.status !== 200) {
+      throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
+    }
+
+    // Proxy-launch path (launchId set) requires resolving the participant's Postgres UUID from
+    // the launch record — props.launchId is an assignment/launch ID, not a user ID. Passing it
+    // as participantId would silently create runs under the wrong ID. Fail loudly until this
+    // is properly implemented (see TODO above).
+    if (props.launchId) {
+      throw new Error(
+        'Proxy-launch path is not yet supported for SRE. Resolve the participant Postgres UUID before enabling this path.',
+      );
+    }
+    const participantId = meRes.body.data.id;
+
+    // Fetch the participant's administrations from the ROAR POSTGRES backend.
+    const adminsRes = await roarApiClient.users.listUserAdministrations({
+      params: { userId: participantId },
+      query: { embed: 'tasks', perPage: 50 },
+    });
+
+    if (adminsRes.status !== 200) {
+      throw new Error(`Failed to fetch administrations from the ROAR backend (status ${adminsRes.status}).`);
+    }
+
+    const sreTaskUuid = taskRes.body.data.id;
+    const backendAdmins = adminsRes.body.data.items;
+
+    // TODO: Remove this matching step once the frontend has fully integrated with the ROAR POSTGRES backend.
+    // Until then, we need to match the Postgres backend admin to the selected admin from Firestore.
+    // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1839
+    const matchedAdmin =
+      backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
+      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === sreTaskUuid));
+
+    if (!matchedAdmin) {
+      throw new Error('No administration containing the sre task found in the ROAR backend.');
+    }
+
+    const sreTaskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === sreTaskUuid);
+    if (!sreTaskVariant) {
+      throw new Error('No sre task variant found in the matched administration.');
+    }
+
+    initFirekitCompat(
+      {
+        baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
+        auth: { getToken: () => Promise.resolve(authStore.accessToken) },
+        participant: { participantId },
+      },
+      {
+        variantId: sreTaskVariant.variantId,
+        taskVersion: version,
+        administrationId: matchedAdmin.id,
+        isAnonymous: false,
+      },
+    );
+
+    const roarApp = new TaskLauncher(gameParams, userParams, 'jspsych-target');
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
@@ -125,7 +208,6 @@ async function startTask(selectedAdmin) {
 
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
-
       if (props.launchId) {
         router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
       } else {
@@ -141,8 +223,6 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roar-sre/lib/resources/roar-sre.css';
-
 .game-target {
   position: absolute;
   top: 0;
