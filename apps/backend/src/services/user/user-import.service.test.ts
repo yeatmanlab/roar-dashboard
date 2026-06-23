@@ -13,6 +13,7 @@ import { UserRole } from '../../enums/user-role.enum';
 import { UserType } from '../../enums/user-type.enum';
 import { EntityType } from '../../types/entity-type';
 import type { FirebaseScryptParams } from './utils/firebase-password-hash';
+import type { CoreTransaction } from '../../db/clients';
 
 // Public Firebase scrypt test-vector params — fine for tests (no real secrets needed).
 const SCRYPT_PARAMS: FirebaseScryptParams = {
@@ -71,6 +72,8 @@ describe('UserImportService.bulkImport', () => {
     importUsers.mockResolvedValue({ successCount: 0, failureCount: 0, errors: [] });
     let counter = 0;
     mockUserService.createWithImportedAuth.mockImplementation(async () => ({ id: `new-user-${counter++}` }));
+    mockUserRepository.runTransaction.mockImplementation(async ({ fn }) => fn({} as CoreTransaction));
+    mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([]);
   });
 
   describe('create bin', () => {
@@ -306,9 +309,61 @@ describe('UserImportService.bulkImport', () => {
       const results = await buildService().bulkImport(superAdmin, rows);
 
       expect(results[0]!).toMatchObject({ classification: 'created', status: 'ok' });
-      // update + unenroll bins are not yet implemented, but routing is verified by classification.
+      // Update bin is not yet implemented; create + unenroll route and process independently.
       expect(results[1]!).toMatchObject({ classification: 'updated', status: 'failed' });
-      expect(results[2]!).toMatchObject({ classification: 'unenrolled', status: 'failed' });
+      expect(results[2]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+    });
+  });
+
+  describe('unenroll bin', () => {
+    const existingUser = (email: string) => UserFactory.build({ email });
+
+    beforeEach(() => {
+      mockUserRepository.findByEmails.mockResolvedValue([existingUser('leaver@example.org')]);
+    });
+
+    it('ends enrollments, archives, and deletes the FGA membership tuples, returning ok', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+      ]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'leaver@example.org', unenroll: true }),
+      ]);
+
+      expect(mockUserRepository.endAllEnrollments).toHaveBeenCalled();
+      expect(mockUserRepository.archiveUser).toHaveBeenCalled();
+      expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([
+        { user: expect.stringMatching(/^user:/), relation: UserRole.STUDENT, object: 'school:school-9' },
+      ]);
+      expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+    });
+
+    it('skips deleteTuples when the user has no active memberships', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'leaver@example.org', unenroll: true }),
+      ]);
+
+      expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      expect(results[0]!.status).toBe('ok');
+    });
+
+    it('fails the row and continues the batch when the unenroll transaction throws', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([
+        existingUser('leaver@example.org'),
+        existingUser('other@example.org'),
+      ]);
+      mockUserRepository.runTransaction.mockRejectedValueOnce(new Error('db down'));
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'leaver@example.org', unenroll: true }),
+        makeRow({ email: 'other@example.org', unenroll: true }),
+      ]);
+
+      expect(results[0]!.status).toBe('failed');
+      expect(results[1]!.status).toBe('ok');
     });
   });
 });

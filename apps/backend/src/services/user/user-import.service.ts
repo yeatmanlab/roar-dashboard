@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import type { UserImportRecord, UserImportResult } from 'firebase-admin/auth';
+import type { TupleKeyWithoutCondition } from '@openfga/sdk';
+import type { User } from '../../db/schema';
 import type { AuthContext } from '../../types/auth-context';
 import type { UserType } from '../../enums/user-type.enum';
 import type { Grade } from '../../enums/grade.enum';
@@ -18,7 +20,7 @@ import { isFirebaseError } from '../../types/firebase';
 import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 import { generateAssessmentPid } from '../../utils/assessment-pid.util';
 import { AuthorizationService } from '../authorization/authorization.service';
-import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { FgaType, FgaRelation, FGA_CLASS_VALID_ROLES } from '../authorization/fga-constants';
 import { UserService } from './user.service';
 import {
   hashPasswordForImport,
@@ -434,6 +436,68 @@ export function UserImportService({
   }
 
   /**
+   * Build the FGA membership tuples to delete when unenrolling a user. Mirrors the relations
+   * single-create wrote — a `user:<id>` → `<role>` → `<type>:<id>` tuple per membership — skipping
+   * class memberships whose role isn't FGA-valid (those cascade via the org hierarchy and were never
+   * written to the class type). Conditions are omitted: FGA deletes by tuple key.
+   */
+  function buildMembershipDeletionTuples(
+    userId: string,
+    memberships: { entityType: EntityType; entityId: string; role: string }[],
+  ): TupleKeyWithoutCondition[] {
+    const validClassRoles = FGA_CLASS_VALID_ROLES as ReadonlySet<string>;
+    const tuples: TupleKeyWithoutCondition[] = [];
+    for (const m of memberships) {
+      if (m.entityType === EntityType.CLASS && !validClassRoles.has(m.role)) continue;
+      tuples.push({
+        user: `user:${userId}`,
+        relation: m.role,
+        object: `${ENTITY_TYPE_TO_FGA_TYPE[m.entityType]}:${m.entityId}`,
+      });
+    }
+    return tuples;
+  }
+
+  /**
+   * Process the unenroll bin: per row, end ALL of the user's enrollments and archive them
+   * (`rosteringEnded`) in one transaction, then best-effort delete their FGA membership tuples.
+   *
+   * Ending the DB enrollment does not expire the FGA tuple's stored grant window, so explicit cleanup
+   * is required for the user to actually lose access. Matches the legacy `batchImportUpdate`, which
+   * unenrolls a user from every org and archives them regardless of which memberships the row names.
+   */
+  async function processUnenrollBin(
+    rows: { index: number; user: User }[],
+    outcomes: ImportRowOutcome[],
+  ): Promise<void> {
+    for (const { index, user } of rows) {
+      try {
+        // Capture the tuples to delete before ending the enrollments (afterward they read inactive).
+        const memberships = await userRepository.getActiveMembershipsWithRoles(user.id);
+
+        await userRepository.runTransaction({
+          fn: async (tx) => {
+            await userRepository.endAllEnrollments(user.id, tx);
+            await userRepository.archiveUser(user.id, tx);
+          },
+        });
+
+        // Best-effort: deleteTuples is fire-and-forget (logs on failure, never throws), so a stale
+        // tuple can't fail the row after the DB state has already committed.
+        const tuples = buildMembershipDeletionTuples(user.id, memberships);
+        if (tuples.length > 0) {
+          await authorizationService.deleteTuples(tuples);
+        }
+
+        outcomes[index] = ok(index, CLASSIFICATION.UNENROLLED, user.id);
+      } catch (error) {
+        logger.error({ err: error, context: { userId: user.id } }, 'Unenroll failed during import');
+        outcomes[index] = toFailedOutcome(index, CLASSIFICATION.UNENROLLED, error);
+      }
+    }
+  }
+
+  /**
    * Classify each row into create / update / unenroll and process each bin.
    *
    * @param authContext - The requesting user's auth context.
@@ -465,17 +529,17 @@ export function UserImportService({
     }
 
     const createRows: { index: number; row: ImportUserRowInput }[] = [];
-    const updateRows: { index: number; row: ImportUserRowInput }[] = [];
-    const unenrollRows: { index: number; row: ImportUserRowInput }[] = [];
+    const updateRows: { index: number; row: ImportUserRowInput; user: User }[] = [];
+    const unenrollRows: { index: number; row: ImportUserRowInput; user: User }[] = [];
 
     for (const entry of authorized) {
-      const found = existingByEmail.has(entry.row.email.toLowerCase());
+      const user = existingByEmail.get(entry.row.email.toLowerCase());
       const unenroll = Boolean(entry.row.unenroll);
 
-      if (found && unenroll) {
-        unenrollRows.push(entry);
-      } else if (found) {
-        updateRows.push(entry);
+      if (user && unenroll) {
+        unenrollRows.push({ ...entry, user });
+      } else if (user) {
+        updateRows.push({ ...entry, user });
       } else if (unenroll) {
         // Unenroll requested for a user that does not exist.
         // NOTE: the legacy cloud function routes this to the unenroll bin as a no-op rather than
@@ -494,24 +558,18 @@ export function UserImportService({
     // ── Phase 3: create bin ──────────────────────────────────────────────────────
     await processCreateBin(authContext, createRows, outcomes);
 
-    // ── Phases 4–5: update + unenroll bins (next increment) ──────────────────────
-    // These require new repository support (enrollment-ending, rosteringEnded archiving, membership
-    // reconciliation) and a per-row updateUser path for password/name. Until then, report rather
-    // than silently mishandle.
+    // ── Phase 4: unenroll bin ────────────────────────────────────────────────────
+    await processUnenrollBin(unenrollRows, outcomes);
+
+    // ── Phase 5: update bin (next increment) ─────────────────────────────────────
+    // Requires a membership-reconciliation repository method plus a per-row updateUser path for
+    // password/name. Until then, report rather than silently mishandle.
     for (const entry of updateRows) {
       outcomes[entry.index] = failed(
         entry.index,
         CLASSIFICATION.UPDATED,
         ApiErrorCode.INTERNAL,
         'Update of existing users is not yet supported by this endpoint',
-      );
-    }
-    for (const entry of unenrollRows) {
-      outcomes[entry.index] = failed(
-        entry.index,
-        CLASSIFICATION.UNENROLLED,
-        ApiErrorCode.INTERNAL,
-        'Unenrollment is not yet supported by this endpoint',
       );
     }
 
