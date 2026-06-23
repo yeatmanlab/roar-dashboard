@@ -11,6 +11,7 @@ export function createMockUserService(): MockedObject<ReturnType<typeof UserServ
     findByAuthId: vi.fn(),
     getById: vi.fn(),
     create: vi.fn(),
+    createWithImportedAuth: vi.fn(),
     update: vi.fn(),
     recordUserAgreement: vi.fn(),
     getUnsignedTosAgreements: vi.fn(),

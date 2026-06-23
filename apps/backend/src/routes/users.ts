@@ -23,6 +23,10 @@ export function registerUserRoutes(routerInstance: Router) {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, body }) => UsersController.create(user!, body),
     },
+    bulkImport: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, body }) => UsersController.bulkImport(user!, body),
+    },
     update: {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id }, body }) => UsersController.update(user!, id, body),

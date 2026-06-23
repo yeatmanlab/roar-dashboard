@@ -16,6 +16,7 @@ export function createMockUserRepository(): MockedObject<UserRepository> {
     findClassParentSchool: vi.fn(),
     createWithMemberships: vi.fn(),
     existsByUniqueFields: vi.fn(),
+    findByEmails: vi.fn(),
   } as MockedObject<UserRepository>;
 }
 
