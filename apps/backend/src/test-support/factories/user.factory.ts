@@ -63,7 +63,9 @@ export const UserFactory = Factory.define<User>(({ onCreate }) => {
     nameMiddle: null,
     nameLast: faker.person.lastName(),
     username: `${faker.internet.username()}_${faker.string.alphanumeric(8)}`,
-    email: faker.internet.email(),
+    // Append a unique suffix so generated emails don't collide on the users.email
+    // unique constraint across an integration run (faker.internet.email() is not unique).
+    email: `${faker.internet.username()}_${faker.string.alphanumeric(8)}@example.com`,
     userType: faker.helpers.arrayElement(Object.values(UserType)),
     dob: null,
     grade: null,
