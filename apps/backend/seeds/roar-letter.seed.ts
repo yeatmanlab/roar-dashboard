@@ -100,13 +100,13 @@ function validateVariants(raw: unknown): VariantDef[] {
     let taskSlug: string;
 
     if (p.task === 'letter') {
-      if (typeof p.lng !== 'string') {
-        throw new Error(`${loc}: letter variants require "params.lng"`);
+      if (typeof p.language !== 'string') {
+        throw new Error(`${loc}: letter variants require "params.language"`);
       }
 
       // Skip entries for unsupported languages (e.g., Italian stub entries)
-      if (!VALID_LNG.has(p.lng)) {
-        console.log(`  Skipping ${loc}: "lng" "${p.lng}" is not a supported language — entry ignored.`);
+      if (!VALID_LNG.has(p.language)) {
+        console.log(`  Skipping ${loc}: "language" "${p.language}" is not a supported language — entry ignored.`);
         continue;
       }
 
@@ -116,7 +116,7 @@ function validateVariants(raw: unknown): VariantDef[] {
         }
       }
 
-      taskSlug = LETTER_LANGUAGES[p.lng as LetterLng].taskId;
+      taskSlug = LETTER_LANGUAGES[p.language as LetterLng].taskId;
     } else {
       // phonics
       taskSlug = PHONICS_TASK_IDS.EN;

@@ -39,7 +39,6 @@ if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
 }
 
 onAuthStateChanged(auth, async (user) => {
-  console.log('[roar-letter] onAuthStateChanged', { uid: user?.uid ?? null });
   if (user) {
     try {
       const authCallbacks = { getToken: () => user.getIdToken() };
@@ -47,13 +46,11 @@ onAuthStateChanged(auth, async (user) => {
       // Provision the anonymous ROAR user (and resolve a variant) via the SDK.
       // Performs the participant-free calls and hands back the participantId and resolved variantId.
       // The variantId URL param wins; otherwise it falls back to the first published variant.
-      console.log('[roar-letter] bootstrapAnonymousSession start', { variantId, taskId: language.taskId });
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         // eslint-disable-next-line no-undef
         { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
         { ...(variantId ? { variantId } : {}), taskId: language.taskId },
       );
-      console.log('[roar-letter] bootstrapAnonymousSession done', { participantId, resolvedVariantId });
 
       const ctx = {
         // eslint-disable-next-line no-undef
@@ -68,9 +65,7 @@ onAuthStateChanged(auth, async (user) => {
         isAnonymous: true,
       });
 
-      console.log('[roar-letter] getVariantById start', { resolvedVariantId });
       const { variantParams } = await getVariantById(resolvedVariantId);
-      console.log('[roar-letter] getVariantById done', { variantParams });
 
       const userParams = {
         assessmentPid,
@@ -90,6 +85,4 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-console.log('[roar-letter] signInAnonymously start');
 await signInAnonymously(auth);
-console.log('[roar-letter] signInAnonymously done');

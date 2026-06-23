@@ -3,7 +3,7 @@
     "variantName": "letter-school-cat-random-5min-v2",
     "params": {
       "task": "letter",
-      "lng": "en",
+      "language": "en",
       "consent": true,
       "itemSelectMethod": "random",
       "maxTime": 5,
@@ -19,7 +19,7 @@
     "variantName": "roar-letter-scoring-version-1-first-10-random-mfi",
     "params": {
       "task": "letter",
-      "lng": "en",
+      "language": "en",
       "audioFeedback": "neutral",
       "catsToUpdate": {},
       "consent": false,
@@ -54,7 +54,7 @@
     "variantName": "es-letter-school-shortLetter-5min",
     "params": {
       "task": "letter",
-      "lng": "es",
+      "language": "es",
       "audioFeedback": "neutral",
       "consent": false,
       "maxTime": 5,
@@ -68,7 +68,7 @@
     "variantName": "letter-otherlabsRoadLogin-shortLetter-5min",
     "params": {
       "task": "letter",
-      "lng": "en",
+      "language": "en",
       "audioFeedback": "neutral",
       "consent": false,
       "maxTime": 5,
