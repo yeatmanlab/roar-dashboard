@@ -25,7 +25,7 @@
   "roar": {
     "hosting": {
       "staging": "roar-phoneme-monorepo-abc",
-      "production": "roar-phoneme"
+      "production": "roar-phoneme-monorepo"
     }
   },
   "scripts": {
