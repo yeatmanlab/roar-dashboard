@@ -1,18 +1,16 @@
+import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
-import { DISTRICTS_LIST_QUERY_KEY } from '@/constants/queryKeys';
-import useDistrictsListQuery from './useDistrictsListQuery';
+import { DISTRICT_SCHOOLS_QUERY_KEY } from '@/constants/queryKeys';
+import useDistrictSchoolsQuery from './useDistrictSchoolsQuery';
 
-const mockDistrictsList = vi.fn();
-// Controllable per-test — defaults to a truthy token so most tests don't have
-// to set it up. Override via `mockUseAuthStore.mockReturnValue(...)` to
-// exercise the built-in `accessToken` enablement gate.
+const mockListSchools = vi.fn();
 const mockUseAuthStore = vi.fn(() => ({ accessToken: 'test-token' }));
 
 vi.mock('@/clients/roar-api', () => ({
   getRoarApiClient: () => ({
-    districts: { list: mockDistrictsList },
+    districts: { listSchools: mockListSchools },
   }),
 }));
 
@@ -28,12 +26,14 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
-const districtPage = (items, totalPages = 1, page = 1) => ({
+const DISTRICT_ID = '00000000-0000-0000-0000-0000000000d1';
+
+const schoolPage = (items, totalPages = 1, page = 1) => ({
   status: 200,
   body: { data: { items, pagination: { page, perPage: 100, totalItems: items.length, totalPages } } },
 });
 
-describe('useDistrictsListQuery', () => {
+describe('useDistrictSchoolsQuery', () => {
   let queryClient;
 
   beforeEach(() => {
@@ -43,7 +43,7 @@ describe('useDistrictsListQuery', () => {
         queries: { retry: false },
       },
     });
-    mockDistrictsList.mockReset();
+    mockListSchools.mockReset();
     mockUseAuthStore.mockReset();
     mockUseAuthStore.mockReturnValue({ accessToken: 'test-token' });
   });
@@ -52,35 +52,35 @@ describe('useDistrictsListQuery', () => {
     queryClient?.clear();
   });
 
-  it('calls useQuery with the DISTRICTS_LIST_QUERY_KEY', () => {
+  it('calls useQuery with the DISTRICT_SCHOOLS_QUERY_KEY and the districtId ref', () => {
+    const districtId = ref(DISTRICT_ID);
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useDistrictsListQuery(), {
+    withSetup(() => useDistrictSchoolsQuery(districtId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: [DISTRICTS_LIST_QUERY_KEY],
+        queryKey: [DISTRICT_SCHOOLS_QUERY_KEY, districtId],
         queryFn: expect.any(Function),
       }),
     );
   });
 
-  it('requests the districts and returns the mapped items on a 200', async () => {
+  it('requests the district schools and returns the mapped items on a 200', async () => {
     const items = [
       {
-        id: '00000000-0000-0000-0000-000000000001',
-        name: 'District A',
-        abbreviation: 'DA',
-        orgType: 'district',
-        parentOrgId: null,
-        isRosteringRootOrg: true,
-        location: { city: 'Palo Alto', stateProvince: 'CA' },
-        identifiers: { mdrNumber: 'MDR-1', ncesId: 'NCES-1' },
+        id: '00000000-0000-0000-0000-0000000000s1',
+        name: 'School One',
+        abbreviation: 'S1',
+        orgType: 'school',
+        parentOrgId: DISTRICT_ID,
+        location: { city: 'Menlo Park' },
+        identifiers: { ncesId: 'NCES-S1' },
       },
     ];
-    mockDistrictsList.mockResolvedValueOnce(districtPage(items));
+    mockListSchools.mockResolvedValueOnce(schoolPage(items));
 
     let queryFn;
     vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
@@ -88,38 +88,26 @@ describe('useDistrictsListQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useDistrictsListQuery(), {
+    withSetup(() => useDistrictSchoolsQuery(ref(DISTRICT_ID)), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    // Returned objects preserve id/name and flatten location + identifiers so
-    // consumers (OrgPicker/OrgsList/CreateOrgs read id + name) keep working. The nested
-    // `location`/`identifiers` objects are dropped (single flat representation).
-    await expect(queryFn()).resolves.toEqual([
-      {
-        id: '00000000-0000-0000-0000-000000000001',
-        name: 'District A',
-        abbreviation: 'DA',
-        orgType: 'district',
-        parentOrgId: null,
-        isRosteringRootOrg: true,
-        city: 'Palo Alto',
-        stateProvince: 'CA',
-        mdrNumber: 'MDR-1',
-        ncesId: 'NCES-1',
-      },
-    ]);
-    expect(mockDistrictsList).toHaveBeenCalledWith({
+    const result = await queryFn();
+    // Consumers read id + name; mapping additionally flattens location/identifiers.
+    expect(result[0].id).toBe(items[0].id);
+    expect(result[0].name).toBe('School One');
+    expect(result[0].city).toBe('Menlo Park');
+    expect(result[0].ncesId).toBe('NCES-S1');
+    expect(mockListSchools).toHaveBeenCalledWith({
+      params: { districtId: DISTRICT_ID },
       query: { page: 1, perPage: 100, sortBy: 'name', sortOrder: 'asc' },
     });
   });
 
   it('follows pagination and aggregates all pages', async () => {
-    const pageOne = [{ id: '00000000-0000-0000-0000-000000000001', name: 'A' }];
-    const pageTwo = [{ id: '00000000-0000-0000-0000-000000000002', name: 'B' }];
-    mockDistrictsList
-      .mockResolvedValueOnce(districtPage(pageOne, 2, 1))
-      .mockResolvedValueOnce(districtPage(pageTwo, 2, 2));
+    const pageOne = [{ id: '00000000-0000-0000-0000-0000000000s1', name: 'A' }];
+    const pageTwo = [{ id: '00000000-0000-0000-0000-0000000000s2', name: 'B' }];
+    mockListSchools.mockResolvedValueOnce(schoolPage(pageOne, 2, 1)).mockResolvedValueOnce(schoolPage(pageTwo, 2, 2));
 
     let queryFn;
     vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
@@ -127,23 +115,21 @@ describe('useDistrictsListQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useDistrictsListQuery(), {
+    withSetup(() => useDistrictSchoolsQuery(ref(DISTRICT_ID)), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     const result = await queryFn();
-    expect(result.map((d) => d.id)).toEqual([pageOne[0].id, pageTwo[0].id]);
-    expect(mockDistrictsList).toHaveBeenCalledTimes(2);
-    expect(mockDistrictsList).toHaveBeenNthCalledWith(2, {
+    expect(result.map((s) => s.id)).toEqual([pageOne[0].id, pageTwo[0].id]);
+    expect(mockListSchools).toHaveBeenCalledTimes(2);
+    expect(mockListSchools).toHaveBeenNthCalledWith(2, {
+      params: { districtId: DISTRICT_ID },
       query: { page: 2, perPage: 100, sortBy: 'name', sortOrder: 'asc' },
     });
   });
 
   it('throws a structured error on non-200 responses', async () => {
-    mockDistrictsList.mockResolvedValueOnce({
-      status: 500,
-      body: { error: { code: 'internal', message: 'Internal server error' } },
-    });
+    mockListSchools.mockResolvedValueOnce({ status: 403, body: { error: { code: 'auth/forbidden' } } });
 
     let queryFn;
     vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
@@ -151,26 +137,42 @@ describe('useDistrictsListQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useDistrictsListQuery(), {
+    withSetup(() => useDistrictSchoolsQuery(ref(DISTRICT_ID)), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     await expect(queryFn()).rejects.toMatchObject({
-      status: 500,
-      body: { error: { code: 'internal' } },
+      status: 403,
+      body: { error: { code: 'auth/forbidden' } },
     });
+  });
+
+  it('is disabled when the districtId is not set, and becomes enabled once it is', async () => {
+    const districtId = ref(undefined);
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useDistrictSchoolsQuery(districtId), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
+    expect(enabledRef.value).toBe(false);
+
+    districtId.value = DISTRICT_ID;
+    await nextTick();
+
+    expect(enabledRef.value).toBe(true);
   });
 
   it('is disabled when the auth store has no access token', () => {
     mockUseAuthStore.mockReturnValue({ accessToken: null });
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useDistrictsListQuery(), {
+    withSetup(() => useDistrictSchoolsQuery(ref(DISTRICT_ID)), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
-    expect(enabledRef.value).toBe(false);
+    expect(VueQuery.useQuery.mock.calls[0][0].enabled.value).toBe(false);
   });
 
   it('does not retry on terminal auth or rostering-ended errors but retries transient ones', () => {
@@ -180,7 +182,7 @@ describe('useDistrictsListQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useDistrictsListQuery(), {
+    withSetup(() => useDistrictSchoolsQuery(ref(DISTRICT_ID)), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
