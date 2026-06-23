@@ -25,8 +25,6 @@ const SCRYPT_PARAMS: FirebaseScryptParams = {
   memoryCost: 14,
 };
 
-const firebaseUserNotFound = Object.assign(new Error('no user'), { code: FIREBASE_ERROR_CODES.AUTH.USER_NOT_FOUND });
-
 const makeRow = (overrides: Partial<ImportUserRowInput> = {}): ImportUserRowInput => ({
   email: 'student@example.org',
   password: 'password123',
@@ -42,9 +40,9 @@ describe('UserImportService.bulkImport', () => {
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
   let mockUserService: ReturnType<typeof createMockUserService>;
   let mockAuthz: ReturnType<typeof createMockAuthorizationService>;
-  const getUserByEmail = vi.fn();
+  const getUsers = vi.fn();
   const importUsers = vi.fn();
-  const mockFirebaseAuth = { getUserByEmail, importUsers } as unknown as typeof FirebaseAuthClient;
+  const mockFirebaseAuth = { getUsers, importUsers } as unknown as typeof FirebaseAuthClient;
 
   const superAdmin = AuthContextFactory.build({ isSuperAdmin: true });
   const partnerAdmin = AuthContextFactory.build({ isSuperAdmin: false });
@@ -69,7 +67,7 @@ describe('UserImportService.bulkImport', () => {
     mockUserRepository.existsByUniqueFields.mockResolvedValue(false);
     mockUserRepository.findClassParentSchool.mockResolvedValue('school-parent');
     mockAuthz.requirePermission.mockResolvedValue(undefined);
-    getUserByEmail.mockRejectedValue(firebaseUserNotFound);
+    getUsers.mockResolvedValue({ users: [], notFound: [] });
     importUsers.mockResolvedValue({ successCount: 0, failureCount: 0, errors: [] });
     let counter = 0;
     mockUserService.createWithImportedAuth.mockImplementation(async () => ({ id: `new-user-${counter++}` }));
@@ -127,12 +125,33 @@ describe('UserImportService.bulkImport', () => {
     });
 
     it('fails a create row whose email already exists in Firebase Auth', async () => {
-      getUserByEmail.mockResolvedValue({ uid: 'existing' });
+      getUsers.mockResolvedValue({ users: [{ email: 'student@example.org' }], notFound: [] });
 
       const results = await buildService().bulkImport(superAdmin, [makeRow()]);
 
       expect(results[0]!).toMatchObject({ status: 'failed', error: { code: ApiErrorCode.RESOURCE_CONFLICT } });
       expect(importUsers).not.toHaveBeenCalled();
+    });
+
+    it('checks Firebase existence with a single batched getUsers call', async () => {
+      const rows = [makeRow({ email: 'a@example.org' }), makeRow({ email: 'b@example.org' })];
+
+      await buildService().bulkImport(superAdmin, rows);
+
+      expect(getUsers).toHaveBeenCalledTimes(1);
+      expect(getUsers).toHaveBeenCalledWith([{ email: 'a@example.org' }, { email: 'b@example.org' }]);
+    });
+
+    it('fails a within-batch duplicate assessmentPid', async () => {
+      const rows = [
+        makeRow({ email: 'a@example.org', identifiers: { pid: 'shared-pid' } }),
+        makeRow({ email: 'b@example.org', identifiers: { pid: 'shared-pid' } }),
+      ];
+
+      const results = await buildService().bulkImport(superAdmin, rows);
+
+      expect(results[0]!.status).toBe('ok');
+      expect(results[1]!).toMatchObject({ status: 'failed', error: { code: ApiErrorCode.RESOURCE_CONFLICT } });
     });
 
     it('fails only the row Firebase rejected in importUsers and persists the rest', async () => {
@@ -257,6 +276,39 @@ describe('UserImportService.bulkImport', () => {
         expect.any(String),
         'school:school-parent',
       );
+    });
+
+    it('skips the FGA check for family memberships (matching single-create)', async () => {
+      const rows = [
+        makeRow({ memberships: [{ entityType: EntityType.FAMILY, entityId: 'fam-1', role: UserRole.STUDENT }] }),
+      ];
+
+      const results = await buildService().bulkImport(partnerAdmin, rows);
+
+      expect(mockAuthz.requirePermission).not.toHaveBeenCalled();
+      expect(results[0]!.status).toBe('ok');
+    });
+  });
+
+  describe('mixed batch', () => {
+    it('routes create, update, and unenroll rows independently in one request', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([
+        UserFactory.build({ email: 'update-me@example.org' }),
+        UserFactory.build({ email: 'unenroll-me@example.org' }),
+      ]);
+
+      const rows = [
+        makeRow({ email: 'new@example.org' }),
+        makeRow({ email: 'update-me@example.org' }),
+        makeRow({ email: 'unenroll-me@example.org', unenroll: true }),
+      ];
+
+      const results = await buildService().bulkImport(superAdmin, rows);
+
+      expect(results[0]!).toMatchObject({ classification: 'created', status: 'ok' });
+      // update + unenroll bins are not yet implemented, but routing is verified by classification.
+      expect(results[1]!).toMatchObject({ classification: 'updated', status: 'failed' });
+      expect(results[2]!).toMatchObject({ classification: 'unenrolled', status: 'failed' });
     });
   });
 });
