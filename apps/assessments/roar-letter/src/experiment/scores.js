@@ -161,7 +161,7 @@ export class RoarScores {
 
     let letterCompositeIRTScores = {};
     let foundationalCompositeIRTScores = {};
-    if (taskId === LETTER_TASK_IDS.EN) {
+    if (task === LETTER_TASK_IDS.EN) {
       const thetaEstimateRaw = clowder.theta[COMPOSITE_DOMAIN];
       const thetaSERaw = makeFinite(clowder.seMeasurement[COMPOSITE_DOMAIN]);
       const [thetaEstimate, thetaSE] = scaleTheta(thetaEstimateRaw, thetaSERaw);

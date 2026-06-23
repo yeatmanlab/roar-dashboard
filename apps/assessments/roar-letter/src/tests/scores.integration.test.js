@@ -4,6 +4,7 @@ import {
   toLetterScoreEntries,
   LETTER_COMPOSITE_SCORE_NAMES,
   LETTER_TASK_IDS,
+  PHONICS_TASK_IDS,
   LETTER_SCORING_VERSION,
   LETTER_SUBTASK_SCORE_NAMES,
   LETTER_SUBTASK_DOMAINS,
@@ -306,6 +307,39 @@ describe('RoarScores Integration Tests', () => {
       }),
     );
     expect(entries.some((e) => e.name === LETTER_SUBTASK_SCORE_NAMES.LOWER_CORRECT)).toBe(false);
+  });
+
+  test('phonics run: no IRT theta in composite, no composite_foundational key', async () => {
+    // Production state: phonics variant params contain task='phonics' but no taskId key,
+    // so config.taskId defaults to LETTER_TASK_IDS.EN via config.js. The scoring guard
+    // at line 164 must use `task`, not `taskId`, to prevent spurious theta writes.
+    sessionStore.config = {
+      task: PHONICS_TASK_IDS.EN,
+      taskId: LETTER_TASK_IDS.EN, // production default — no taskId in phonics variant params
+      scoringVersion: LETTER_SCORING_VERSION.V1,
+      userMetadata: { ageMonths: 72 },
+    };
+
+    const scores = new RoarScores();
+    const result = await scores.computedScoreCallback({
+      TextSoundPseudo: { test: { numCorrect: 10, numAttempted: 15 } },
+    });
+
+    // Not null — phonics does return computed scores.
+    expect(result).not.toBeNull();
+
+    // Composite must have totals but no IRT theta fields.
+    expect(result.composite.totalCorrect).toBeDefined();
+    expect(result.composite.thetaEstimateRaw).toBeUndefined();
+    expect(result.composite.thetaSERaw).toBeUndefined();
+    expect(result.composite.thetaEstimate).toBeUndefined();
+    expect(result.composite.thetaSE).toBeUndefined();
+
+    // composite_foundational must not be emitted at all.
+    expect(result.composite_foundational).toBeUndefined();
+
+    // No CSV lookup should fire.
+    expect(papaParseSpy).not.toHaveBeenCalled();
   });
 
   test('should handle missing userMetadata gracefully', async () => {
