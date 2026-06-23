@@ -131,7 +131,18 @@
     :is-enabled="isEditModalEnabled"
     @modal-closed="closeEditModal"
   >
-    <EditOrgsForm :org-id="currentEditOrgId" :org-type="activeOrgType" @update:org-data="localOrgData = $event" />
+    <!--
+      Key on (orgType, orgId) so the form remounts whenever either changes. The
+      modal host (RoarModal) stays mounted, so without this the form would
+      capture the org type at its first mount and dispatch a stale by-id read
+      after a tab switch. Remounting also resets local form state per open.
+    -->
+    <EditOrgsForm
+      :key="`${activeOrgType}:${currentEditOrgId}`"
+      :org-id="currentEditOrgId"
+      :org-type="activeOrgType"
+      @update:org-data="localOrgData = $event"
+    />
     <template #footer>
       <div>
         <div class="flex gap-2">
@@ -220,6 +231,8 @@ import Dialog from '@/components/Dialog';
 import OrgExportModal from './components/OrgExportModal.vue';
 import { useOrgExportOrchestrator } from './composables/useOrgExportOrchestrator';
 import { useOrgTableColumns } from './composables/useOrgTableColumns';
+import useUpdateOrgMutation from '@/composables/mutations/useUpdateOrgMutation';
+import { parseGooglePlaceToLocation } from '@/helpers/parseGooglePlaceToLocation';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable';
 import { ORG_TYPES } from '@/constants/orgTypes';
@@ -237,6 +250,7 @@ const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
 const { userCan, Permissions } = usePermissions();
+const { mutateAsync: updateOrg } = useUpdateOrgMutation();
 
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
@@ -516,37 +530,88 @@ const closeDialog = () => {
   isDialogVisible.value = false;
 };
 
+/**
+ * Build the PATCH body for an org update, including only the fields that are
+ * valid for the given org type (per each resource's `Update<Resource>Request`
+ * schema) and only when present/changed.
+ *
+ * - `name`: sent for every org type when present.
+ * - `abbreviation`: districts, schools, and groups only — classes have no
+ *   abbreviation column, so it is never sent for them.
+ * - `location`: districts, schools, and groups only, and only when the user
+ *   picked a new address (`localOrgData.address` is the object `setAddress`
+ *   builds). It is converted to the backend's structured `location` shape via
+ *   `parseGooglePlaceToLocation`. Classes are excluded because their `location`
+ *   is a free-text room label (a string), not a structured address object.
+ * - `identifiers.ncesId`: districts only (the edit form surfaces it for districts), when present.
+ *
+ * The retired `tags`, `testData`, and `demoData` fields are never sent.
+ *
+ * @param {string} orgType - The active (plural) org type.
+ * @param {Object} orgData - The edited local org data from EditOrgsForm.
+ * @returns {Object} The PATCH body for the resource's update endpoint.
+ */
+const buildOrgUpdateBody = (orgType, orgData) => {
+  const body = {};
+
+  if (orgData?.name) body.name = orgData.name;
+
+  // Abbreviation: every org type except classes.
+  if (orgType !== ORG_TYPES.CLASSES && orgData?.abbreviation) {
+    body.abbreviation = orgData.abbreviation;
+  }
+
+  // Structured location: only for org types whose location is an address
+  // object (districts, schools, groups), and only when the user picked a new
+  // place. Classes carry a free-text location string, so they are excluded.
+  const supportsStructuredLocation =
+    orgType === ORG_TYPES.DISTRICTS || orgType === ORG_TYPES.SCHOOLS || orgType === ORG_TYPES.GROUPS;
+  if (supportsStructuredLocation && orgData?.address) {
+    const location = parseGooglePlaceToLocation(orgData.address);
+    if (Object.keys(location).length > 0) body.location = location;
+  }
+
+  // NCES identifier: districts only. The edit form only surfaces the NCES input
+  // for districts (`showNcesId`), so sending it for schools would silently
+  // re-submit a seeded value the user never saw or touched.
+  if (orgType === ORG_TYPES.DISTRICTS && orgData?.ncesId) {
+    body.identifiers = { ncesId: orgData.ncesId };
+  }
+
+  return body;
+};
+
 const updateOrgData = async () => {
+  const body = buildOrgUpdateBody(activeOrgType.value, localOrgData.value);
+
+  // Nothing the form can edit changed — close without firing a no-op PATCH (an
+  // empty body would otherwise be rejected by the strict update schema).
+  if (Object.keys(body).length === 0) {
+    closeEditModal();
+    return;
+  }
+
   isSubmitting.value = true;
-  await roarfirekit.value
-    .createOrg(
-      activeOrgType.value,
-      localOrgData.value,
-      _get(localOrgData.value, 'testData', false),
-      _get(localOrgData.value, 'demoData', false),
-      currentEditOrgId.value,
-    )
-    .then(() => {
-      closeEditModal();
-      toast.add({
-        severity: TOAST_SEVERITIES.SUCCESS,
-        summary: 'Updated',
-        detail: 'Organization data updated successfully!',
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-    })
-    .catch((error) => {
-      toast.add({
-        severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Unexpected error',
-        detail: `Unexpected error occurred: ${error.message}`,
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-      Sentry.captureException(error);
-    })
-    .finally(() => {
-      isSubmitting.value = false;
+  try {
+    await updateOrg({ orgType: activeOrgType.value, orgId: currentEditOrgId.value, body });
+    closeEditModal();
+    toast.add({
+      severity: TOAST_SEVERITIES.SUCCESS,
+      summary: 'Updated',
+      detail: 'Organization data updated successfully!',
+      life: TOAST_DEFAULT_LIFE_DURATION,
     });
+  } catch (error) {
+    toast.add({
+      severity: TOAST_SEVERITIES.ERROR,
+      summary: 'Unexpected error',
+      detail: `Unexpected error occurred: ${error.message}`,
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+    Sentry.captureException(error);
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 let unsubscribe;
