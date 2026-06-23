@@ -354,6 +354,9 @@ export const includedValidityFlags = {
   'sre-es': ['incomplete', 'responseTimeTooFast'],
   swr: ['responseTimeTooFast', 'notEnoughResponses'], // adding 'notEnoughResponses' for SWR since there is no current flag in the game to mark as incomplete like SRE does
   'swr-es': ['responseTimeTooFast', 'notEnoughResponses'],
+  // Add morphology, letter, and cva here
+  trog: ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
+  'roar-inference': ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
 };
 
 /*
@@ -735,16 +738,15 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color: undefined,
     };
   }
-
   /**
    * scoringVersion >= 1 returns normed scores for the following tasks in tasksToDisplayPercentCorrect: letter, swr-es, morphology, cva, roar-inference
    */
   if (
-    ((tasksToDisplayPercentCorrect.includes(taskId) &&
-      !(previouslyUnnormedTasks.includes(taskId) && scoringVersion >= 1)) ||
-      tasksToDisplayTotalCorrect.includes(taskId)) &&
-    tasksToDisplayGradeEstimate.includes(taskId) &&
-    rawScore !== undefined
+    (tasksToDisplayPercentCorrect.includes(taskId) ||
+      tasksToDisplayTotalCorrect.includes(taskId) ||
+      tasksToDisplayGradeEstimate.includes(taskId)) &&
+    rawScore !== undefined &&
+    !(previouslyUnnormedTasks.includes(taskId) && scoringVersion >= 1)
   ) {
     return {
       support_level: 'Raw Score',

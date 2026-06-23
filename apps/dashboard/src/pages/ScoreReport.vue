@@ -458,6 +458,7 @@ import {
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
+  previouslyUnnormedTasks,
 } from '@/helpers/reports';
 import { i18n } from '@/translations/i18n';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
@@ -887,10 +888,10 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   let rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore');
 
   if (
-    (tasksToDisplayPercentCorrect.includes(assessment.taskId) &&
-      !(taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) ||
-    tasksToDisplayTotalCorrect.includes(taskId) ||
-    tasksToDisplayGradeEstimate.includes(assessment.taskId)
+    (tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
+      tasksToDisplayTotalCorrect.includes(taskId) ||
+      tasksToDisplayGradeEstimate.includes(assessment.taskId)) &&
+    !(previouslyUnnormedTasks.includes(taskId) && getScoringVersions.value[taskId] >= 1)
   ) {
     if (assessment.scores === undefined) {
       support_level = null;
@@ -1126,8 +1127,8 @@ const computeAssignmentAndRunData = computed(() => {
 
           Object.assign(currRowScores[taskId], { numCorrect, numAttempted, percentCorrect, scoringVersion });
 
-          // Only assign these values for swr-es if unnormed score
-          if (assessment.taskId !== 'swr-es' || !scoringVersion) {
+          // Applies only to unnormed scores. Scores are considered normed when scoringVersion >= 1
+          if (!(previouslyUnnormedTasks.includes(taskId) && getScoringVersions.value[taskId] >= 1)) {
             currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
             scoreFilterTags += ' Assessed ';
             // @TODO: Remove after decoupling the percentile returned by getScoreValue from the individual score report.
@@ -1429,7 +1430,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
       // Add task-specific score information
       if (
         tasksToDisplayPercentCorrect.includes(taskId) &&
-        !(taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)
+        !(previouslyUnnormedTasks.includes(taskId) && getScoringVersions.value[taskId] >= 1)
       ) {
         tableRow[`${taskName} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
