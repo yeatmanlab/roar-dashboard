@@ -81,9 +81,10 @@ Cypress.Commands.add('performCleverOAuth', (schoolName, username, password) => {
       cy.get('ul > li').contains(schoolName).should('be.visible').click();
 
       cy.get('input#username').type(username);
+      cy.contains('button[type="submit"]', 'Next').should('be.visible').click();
       cy.get('input#password').type(password, { log: false });
-      cy.wait(1000); // Delay to simulate user input, as Clever SSO is sensitive to rapid input.
-      cy.get('button#UsernamePasswordForm--loginButton').click();
+      cy.wait(1000);
+      cy.contains('button[type="submit"]', 'Next').should('be.visible').click();
     },
   );
 
