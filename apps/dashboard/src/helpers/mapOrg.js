@@ -137,13 +137,16 @@ export const mapDistrictToOrg = ({ location, identifiers, ...rest }) => ({
  * objects with their flattened top-level fields. The nested objects are
  * destructured out so the result carries a single (flat) representation rather
  * than both; `location.coordinates` is intentionally not surfaced (no consumer
- * reads it).
+ * reads it). A school's parent org is always its district, so `parentOrgId` is
+ * also surfaced as the legacy flat `districtId` that consumers read (e.g.
+ * CreateAdministrator derives the parent district from it).
  *
  * @param {Object} school - A `SchoolDetailSchema` object from the backend.
  * @returns {Object} The flattened school record.
  */
 export const mapSchoolToOrg = ({ location, identifiers, ...rest }) => ({
   ...rest,
+  districtId: rest.parentOrgId,
   ...flattenLocation(location),
   ...flattenIdentifiers(identifiers),
 });
