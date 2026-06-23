@@ -75,7 +75,7 @@ const useGradeForScoring = ({ scoringVersion, taskId }) =>
 // V4 is the first EN version with age-based scoring; V3 uses grade.
 // V1 exists only for ES (always age-based), and V2 is not in use.
 const useAgeForScoring = ({ scoringVersion, taskId }) =>
-  scoringVersion >= SRE_SCORING_VERSION.V4 || taskId === SRE_TASK_IDS.ES;
+  scoringVersion >= SRE_SCORING_VERSION.V4 || (taskId === SRE_TASK_IDS.ES && scoringVersion === SRE_SCORING_VERSION.V1);
 
 export class RoarScores {
   constructor() {
