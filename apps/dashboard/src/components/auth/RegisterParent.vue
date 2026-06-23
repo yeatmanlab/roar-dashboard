@@ -164,7 +164,7 @@
         <div class="form-submit2">
           <PvButton
             type="submit"
-            label="Next"
+            label="Register"
             :disabled="isNextButtonDisabled"
             class="p-3 w-5 text-white border-none bg-primary border-round z-5 hover:bg-red-900"
           />

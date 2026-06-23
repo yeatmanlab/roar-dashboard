@@ -360,7 +360,7 @@ const onSortChange = (event) => {
   const value = event.value.value;
   const sortValue = event.value;
 
-  if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
+  if (!isSuperAdmin.value && value[0].field.fieldPath === 'name') {
     // catches edge case where a partner admin should sort by the public name attribute
     sortField.value = 'publicName';
   } else {

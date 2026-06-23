@@ -114,7 +114,6 @@ describe('LongitudinalChart.vue', () => {
     taskId: 'swr',
     studentGrade: '3',
     currentAssignmentId: 'a2',
-    scoreLabel: 'Percentile Score',
   };
 
   beforeEach(() => {

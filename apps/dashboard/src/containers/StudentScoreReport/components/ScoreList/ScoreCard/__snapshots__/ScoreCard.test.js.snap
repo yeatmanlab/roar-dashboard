@@ -308,7 +308,7 @@ exports[`ScoreCard.vue > snapshots > renders with longitudinal data 1`] = `
       <transition-stub name="p-toggleable-content" appear="false" persisted="false" css="true">
         <div class="p-accordioncontent" id="pv_id_3_accordioncontent_longitudinal" role="region" aria-labelledby="pv_id_3_accordionheader_longitudinal" data-pc-name="accordioncontent" data-p-active="false" pc11="" data-pc-section="root" style="display: none;">
           <div class="p-accordioncontent-content px-0" data-pc-section="content">
-            <longitudinal-chart-screen-stub longitudinal-data="[object Object],[object Object]" task-id="swr" student-grade="3" current-assignment-id="a2" score-label="Percentile Score"></longitudinal-chart-screen-stub>
+            <longitudinal-chart-screen-stub longitudinal-data="[object Object],[object Object]" task-id="swr" student-grade="3" current-assignment-id="a2"></longitudinal-chart-screen-stub>
           </div>
         </div>
       </transition-stub>

@@ -1,70 +1,185 @@
 /**
  * Creates a UTC date for the given year, month, and day.
  *
- * @param {number} year - The year of the date.
- * @param {number} month - The month of the date (0-11).
- * @param {number} day - The day of the date (1-31).
- * @returns {Date} The UTC date.
+ * @param {number} year
+ * @param {number} month - 0–11
+ * @param {number} day - 1–31
+ * @returns {Date}
  */
 function createUTCDate(year, month, day) {
-  // Create date at UTC midnight.
   return new Date(Date.UTC(year, month, day));
 }
 
 /**
- * Creates an object containing the date presets.
- * Dates will be in UTC, and will be set for the following year if the current date is past the end of the preset.
+ * Converts a Date to a UTC date-only string in YYYY-MM-DD format.
  *
- * @returns {Object} An object containing the date presets.
+ * @param {Date} date
+ * @returns {string}
  */
-export function generateDatePresets() {
-  const now = new Date();
-  const currentYear = now.getFullYear();
+function toUTCDateOnlyString(date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
-  // Create initial presets
-  const presets = [
+// Season index constants for clarity
+const WINTER_SEASON_INDEX = 3;
+// Month indices (0-indexed) for winter boundary checks
+const MARCH_MONTH_INDEX = 2;
+
+/**
+ * Creates an object containing the administration date presets (Spring/Summer/Fall/Winter).
+ *
+ * Dates are generated in UTC. The presets rotate based on the current date:
+ * - Current season starts from today (or March 31 for Spring) and ends on its scheduled end date
+ * - Remaining seasons follow in order: Summer, Fall, Winter, Spring (next year)
+ * - The rotation ensures that when a season ends, it moves to the end of the list
+ *
+ * @param {Date} referenceDate
+ * @returns {Object}
+ */
+export function generateDatePresets(referenceDate = new Date()) {
+  const now = referenceDate;
+  const currentYear = now.getUTCFullYear();
+  const currentMonth = now.getUTCMonth();
+  const currentDay = now.getUTCDate();
+
+  // Define all season boundaries for the current and next year
+  const seasonDates = [
+    {
+      key: 'spring',
+      label: 'Spring',
+      startMonth: 3,
+      startDay: 1,
+      endMonth: 5,
+      endDay: 14,
+    },
     {
       key: 'summer',
       label: 'Summer',
-      start: createUTCDate(currentYear, 5, 16), // June 16th
-      end: createUTCDate(currentYear, 7, 1), // August 1st
+      startMonth: 5,
+      startDay: 15,
+      endMonth: 7,
+      endDay: 1,
     },
     {
       key: 'fall',
       label: 'Fall',
-      start: createUTCDate(currentYear, 7, 1), // August 1st
-      end: createUTCDate(currentYear, 11, 1), // December 1st
+      startMonth: 7,
+      startDay: 1,
+      endMonth: 11,
+      endDay: 1,
     },
     {
       key: 'winter',
       label: 'Winter',
-      start: createUTCDate(currentYear, 11, 1), // December 1st
-      end: createUTCDate(currentYear + 1, 3, 1), // April 1st
-    },
-    {
-      key: 'spring',
-      label: 'Spring',
-      start: createUTCDate(currentYear, 3, 1), // April 1st
-      end: createUTCDate(currentYear, 5, 16), // June 16th
+      startMonth: 11,
+      startDay: 1,
+      endMonth: 3,
+      endDay: 1,
+      crossesYear: true,
     },
   ];
 
-  // Determine which presets are in the past, move them to next year
-  presets.forEach((preset) => {
-    if (now > preset.end) {
-      preset.start = createUTCDate(
-        preset.start.getUTCFullYear() + 1,
-        preset.start.getUTCMonth(),
-        preset.start.getUTCDate(),
-      );
-      preset.end = createUTCDate(preset.end.getUTCFullYear() + 1, preset.end.getUTCMonth(), preset.end.getUTCDate());
+  // Determine which season is currently active
+  let currentSeasonIndex = -1;
+
+  for (let i = 0; i < seasonDates.length; i++) {
+    const season = seasonDates[i];
+    let startDate, endDate;
+
+    if (season.crossesYear) {
+      // Winter: December 1 to April 1 (next year)
+      const winterStartYear = currentMonth <= MARCH_MONTH_INDEX ? currentYear - 1 : currentYear;
+      startDate = createUTCDate(winterStartYear, season.startMonth, season.startDay);
+      endDate = createUTCDate(winterStartYear + 1, season.endMonth, season.endDay);
+    } else {
+      startDate = createUTCDate(currentYear, season.startMonth, season.startDay);
+      endDate = createUTCDate(currentYear, season.endMonth, season.endDay);
     }
-  });
 
-  // Sort by start date
-  presets.sort((a, b) => a.start - b.start);
+    // Check if current date falls within this season
+    if (now >= startDate && now < endDate) {
+      currentSeasonIndex = i;
+      break;
+    }
+  }
 
-  return Object.fromEntries(presets.map(({ key, label, start, end }) => [key, { label, start, end }]));
+  // If no season found, default to Winter (for dates before Spring starts)
+  if (currentSeasonIndex === -1) {
+    currentSeasonIndex = WINTER_SEASON_INDEX;
+  }
+
+  // Build the rotated preset list starting with the current season
+  const presets = [];
+  const baseYear = currentYear;
+
+  for (let i = 0; i < 4; i++) {
+    const seasonIndex = (currentSeasonIndex + i) % 4;
+    const season = seasonDates[seasonIndex];
+    let startDate, endDate;
+
+    // Calculate year offset based on whether we've wrapped around
+    let yearOffset = 0;
+    if (i > 0 && seasonIndex < currentSeasonIndex) {
+      // We've wrapped around, so this season might be in the next year
+      // Exception: if we're in winter and it's Jan-Mar, seasons spring/summer/fall
+      // are still in the current year (they haven't happened yet this year)
+      const inWinterJanMar = currentSeasonIndex === WINTER_SEASON_INDEX && currentMonth <= MARCH_MONTH_INDEX;
+      if (!inWinterJanMar) {
+        yearOffset = 1;
+      }
+    }
+
+    if (i === 0) {
+      // Current season: starts from today (or March 31 for Spring if before that date)
+      if (season.key === 'spring' && (currentMonth < 3 || (currentMonth === 3 && currentDay < 1))) {
+        startDate = createUTCDate(baseYear, MARCH_MONTH_INDEX, 31);
+      } else {
+        // For all other cases, use today's date
+        startDate = createUTCDate(baseYear, currentMonth, currentDay);
+      }
+      // Current season end date is in the same year, unless it's Winter which crosses the year
+      if (season.crossesYear) {
+        // If we're in Jan-Mar, we're in the winter that started last year, so end is this year
+        // If we're in Dec, we're in the winter that started this year, so end is next year
+        const endYearOffset = currentMonth <= MARCH_MONTH_INDEX ? 0 : 1;
+        endDate = createUTCDate(baseYear + endYearOffset, season.endMonth, season.endDay);
+      } else {
+        endDate = createUTCDate(baseYear, season.endMonth, season.endDay);
+      }
+    } else {
+      // Future seasons: use their standard dates
+      if (season.crossesYear) {
+        startDate = createUTCDate(baseYear + yearOffset, season.startMonth, season.startDay);
+        endDate = createUTCDate(baseYear + yearOffset + 1, season.endMonth, season.endDay);
+      } else {
+        startDate = createUTCDate(baseYear + yearOffset, season.startMonth, season.startDay);
+        endDate = createUTCDate(baseYear + yearOffset, season.endMonth, season.endDay);
+      }
+    }
+
+    presets.push({
+      key: season.key,
+      label: season.label,
+      start: startDate,
+      end: endDate,
+    });
+  }
+
+  return Object.fromEntries(
+    presets.map(({ key, label, start, end }) => [
+      key,
+      {
+        label,
+        start,
+        end,
+        startDate: toUTCDateOnlyString(start),
+        endDate: toUTCDateOnlyString(end),
+      },
+    ]),
+  );
 }
 
 export const datePresets = Object.freeze(generateDatePresets());

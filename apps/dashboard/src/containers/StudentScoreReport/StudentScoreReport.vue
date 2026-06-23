@@ -39,6 +39,7 @@
             :task-data="taskData"
             :tasks-dictionary="tasksDictionary"
             :longitudinal-data="longitudinalData"
+            :current-assignment-id="administrationId"
             :task-scoring-versions="getScoringVersions"
           />
         </template>

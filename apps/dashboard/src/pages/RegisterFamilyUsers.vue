@@ -6,7 +6,7 @@
           <div class="signin-logo">
             <ROARLogoShort />
           </div>
-          <div v-if="activeIndex === 0" class="flex flex-wrap flex-column align-items-start gap-2">
+          <div class="flex flex-wrap flex-column align-items-start gap-2">
             <div class="flex">
               <div class="text-center font-bold text-3xl text-red-800 mb-1 italic">ROAR@Home</div>
               <div class="text-sm font-bold text-red-800 ml-1 uppercase">beta</div>
@@ -19,40 +19,15 @@
                 This account allows your family to participate in ROAR research studies!
               </div>
               <div class="flex flex-wrap text-gray-400 text-sm">
-                You will be able to add children to your family in the next step.
-              </div>
-            </div>
-          </div>
-          <div v-else class="flex flex-wrap flex-column align-items-start gap-2">
-            <div class="flex">
-              <div class="text-center font-bold text-3xl text-red-800 mb-1 italic">ROAR@Home</div>
-              <div class="text-sm font-bold text-red-800 ml-1 uppercase">beta</div>
-            </div>
-            <div class="bg-gray-100 rounded p-2">
-              <div class="flex flex-wrap text-gray-600 text-md font-bold">
-                Register children or students for ROAR Research Portal
-              </div>
-              <div class="flex flex-wrap text-gray-400 text-sm">
-                These accounts will be linked to your parent/guardian account.
+                After registration, you can add children from your dashboard.
               </div>
             </div>
           </div>
         </div>
       </header>
       <div>
-        <div v-if="activeIndex === 1">
-          <PvButton
-            class="justify-start z-1 bg-white text-primary text-center justify-content-center border-none border-round p-2 h-3rem hover:surface-300 hover:text-900 border-none"
-            style="width: 8rem; margin-left: 1rem"
-            :disabled="spinner"
-            @click="activeIndex = 0"
-            ><i class="pi pi-arrow-left mr-2"></i> Back
-          </PvButton>
-        </div>
         <div v-if="spinner === false">
-          <KeepAlive>
-            <component :is="activeComp()" :code="code" :consent="consent" @submit="handleSubmit($event)" />
-          </KeepAlive>
+          <Register :code="code" @submit="handleSubmit($event)" />
           <div
             v-if="isSuperAdmin"
             class="flex flex-row justify-content-center align-content-center z-2 absolute ml-5"
@@ -82,22 +57,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, toRaw, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
 import PvButton from 'primevue/button';
 import PvCheckbox from 'primevue/checkbox';
 import PvDialog from 'primevue/dialog';
 import { useAuthStore } from '@/store/auth';
-import router from '../router';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import Register from '../components/auth/RegisterParent.vue';
-import RegisterStudent from '../components/auth/RegisterChildren.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 
 const authStore = useAuthStore();
 const initialized = ref(false);
 const spinner = ref(false);
 
-// eslint-disable-next-line no-unused-vars
 const props = defineProps({
   code: { type: String, default: null },
 });
@@ -108,16 +80,10 @@ const { data: userClaims } = useUserClaimsQuery({
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 
-const activeIndex = ref(0); // Current active step
 const isTestData = ref(false);
-
-const parentInfo = ref(null);
-const studentInfo = ref(null);
 const dialogHeader = ref('');
 const dialogMessage = ref('');
-
 const isDialogVisible = ref(false);
-const consent = ref(null);
 const consentName = ref('consent-behavioral-eye-tracking');
 
 const showDialog = () => {
@@ -126,29 +92,57 @@ const showDialog = () => {
 
 const closeDialog = () => {
   isDialogVisible.value = false;
-  router.push({ name: 'SignIn' });
+  // Don't redirect here - let the success handler do it
 };
 
 async function handleParentSubmit(data) {
   try {
-    parentInfo.value = data;
-    // Fetch consent document when moving to student registration
-    const consentDoc = await authStore.getLegalDoc(consentName.value);
-    consent.value = {
-      version: consentDoc.currentCommit,
-    };
-    activeIndex.value = 1;
-  } catch (error) {
-    dialogHeader.value = 'Error!';
-    dialogMessage.value = error.message;
-    showDialog();
-  }
-}
+    spinner.value = true;
 
-async function handleStudentSubmit(data) {
-  try {
-    studentInfo.value = data;
+    // Fetch consent document
+    const consentDoc = await authStore.getLegalDoc(consentName.value);
+    const consentData = {
+      version: consentDoc.currentCommit,
+      name: consentName.value,
+    };
+
+    const parentUserData = {
+      name: {
+        first: data.firstName,
+        last: data.lastName,
+      },
+      canContactForFutureStudies: data.canContactForFutureStudies || false,
+      invitationCodes: props.code ? [props.code] : [], // Now supported by CreateParentInput interface
+    };
+
+    // Create parent account only (no children)
+    await authStore.createNewFamily(
+      data.ParentEmail,
+      data.password,
+      parentUserData,
+      [], // Empty array - no children yet
+      consentData,
+      isTestData.value,
+    );
+
+    // Now sign in the parent to establish their auth session
+    await authStore.roarfirekit.logInWithEmailAndPassword({
+      email: data.ParentEmail,
+      password: data.password,
+    });
+
+    spinner.value = false;
+    dialogHeader.value = 'Success!';
+    dialogMessage.value = 'Your account has been created! Redirecting to your dashboard...';
+    isDialogVisible.value = true;
+
+    // Use a full page reload to ensure auth state is properly initialized
+    // This is more reliable than router.push for post-authentication redirects
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 1500);
   } catch (error) {
+    spinner.value = false;
     dialogHeader.value = 'Error!';
     dialogMessage.value = error.message;
     showDialog();
@@ -156,87 +150,13 @@ async function handleStudentSubmit(data) {
 }
 
 async function handleSubmit(event) {
-  if (activeComp() == RegisterStudent) {
-    handleStudentSubmit(event);
-  } else {
-    handleParentSubmit(event);
-    activeIndex.value = 1;
-    activeComp();
-  }
+  // Only handle parent registration now
+  handleParentSubmit(event);
 }
 
 function updateState() {
   isTestData.value = !isTestData.value;
 }
-
-function activeComp() {
-  if (activeIndex.value === 0) {
-    return Register;
-  } else {
-    return RegisterStudent;
-  }
-}
-
-watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
-  if (newParentInfo && newStudentInfo) {
-    spinner.value = true;
-    const rawParentInfo = toRaw(newParentInfo);
-    const rawStudentInfo = toRaw(newStudentInfo);
-    const parentUserData = {
-      name: {
-        first: rawParentInfo.firstName,
-        last: rawParentInfo.lastName,
-      },
-      canContactForFutureStudies: rawParentInfo.canContactForFutureStudies || false,
-    };
-    const studentSendObject = rawStudentInfo.map((student) => {
-      return {
-        email: student.studentUsername,
-        password: student.password,
-        userData: {
-          name: {
-            first: student.firstName,
-            middle: student.middleName,
-            last: student.lastName,
-          },
-          activationCode: student.activationCode,
-          grade: student.grade,
-          dob: student.dob,
-          gender: student.gender,
-          ell_status: student.ell,
-          iep_status: student.IEPStatus,
-          frl_status: student.freeReducedLunch,
-          race: student.race,
-          hispanic_ethnicity: student.hispanicEthnicity,
-          home_language: student.homeLanguage,
-          accept: student.accept,
-        },
-      };
-    });
-    const consentData = { version: consent.value?.version, name: consentName.value };
-    authStore
-      .createNewFamily(
-        rawParentInfo.ParentEmail,
-        rawParentInfo.password,
-        parentUserData,
-        studentSendObject,
-        consentData,
-        isTestData.value,
-      )
-      .then(() => {
-        spinner.value = false;
-        dialogHeader.value = 'Success!';
-        dialogMessage.value = 'Your family has been created!';
-        showDialog();
-      })
-      .catch((error) => {
-        spinner.value = false;
-        dialogHeader.value = 'Error!';
-        dialogMessage.value = error.message;
-        showDialog();
-      });
-  }
-});
 
 onMounted(async () => {
   document.body.classList.add('page-register');
