@@ -155,6 +155,49 @@ describe('UserRepository', () => {
     });
   });
 
+  describe('findByEmails', () => {
+    it('returns users matching the emails, case-insensitively', async () => {
+      const user = await UserFactory.create({ email: 'Found.User@example.org' });
+
+      const result = await repository.findByEmails(['found.user@EXAMPLE.org', 'missing@example.org']);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(user.id);
+    });
+
+    it('returns an empty array for empty input', async () => {
+      expect(await repository.findByEmails([])).toEqual([]);
+    });
+  });
+
+  describe('endAllEnrollments', () => {
+    it('ends every active org, class, and family enrollment for the user', async () => {
+      const user = await UserFactory.create();
+      const family = await FamilyFactory.create();
+      await UserOrgFactory.create({ userId: user.id, orgId: baseFixture.district.id, role: UserRole.ADMINISTRATOR });
+      await UserClassFactory.create({
+        userId: user.id,
+        classId: baseFixture.classInSchoolA.id,
+        role: UserRole.TEACHER,
+      });
+      await UserFamilyFactory.create({ userId: user.id, familyId: family.id, role: 'parent' });
+
+      expect(await repository.getUserEntityMemberships(user.id)).not.toHaveLength(0);
+
+      await repository.endAllEnrollments(user.id);
+
+      // Every enrollment is now ended, so none are active.
+      expect(await repository.getUserEntityMemberships(user.id)).toHaveLength(0);
+    });
+
+    it('is a no-op for a user with no enrollments', async () => {
+      const user = await UserFactory.create();
+
+      await expect(repository.endAllEnrollments(user.id)).resolves.toBeUndefined();
+      expect(await repository.getUserEntityMemberships(user.id)).toHaveLength(0);
+    });
+  });
+
   describe('findClassParentSchool', () => {
     it('returns the parent school id for a class that exists', async () => {
       const result = await repository.findClassParentSchool(baseFixture.classInSchoolA.id);

@@ -248,4 +248,39 @@ export class UserRepository extends BaseRepository<User, typeof users> {
       .from(users)
       .where(inArray(sql<string>`lower(${users.email})`, lowered));
   }
+
+  /**
+   * End all of a user's currently-active enrollments by stamping the end date on every open junction
+   * row across orgs, classes, groups, and families.
+   *
+   * Used by the bulk-import unenroll bin, which — matching the legacy `batchImportUpdate` — ends ALL
+   * of a user's enrollments (not just the memberships named in the request). Already-ended rows are
+   * left untouched so their original end date is preserved.
+   *
+   * @param userId - The user whose enrollments to end.
+   * @param transaction - Optional transaction so the caller can archive the user and clean up FGA in
+   *   the same unit of work.
+   */
+  async endAllEnrollments(userId: string, transaction?: CoreTransaction): Promise<void> {
+    const db = transaction ?? this.db;
+    const endedAt = new Date();
+
+    // Sequential (not Promise.all) so this is safe inside a single transaction/connection.
+    await db
+      .update(userOrgs)
+      .set({ enrollmentEnd: endedAt })
+      .where(and(eq(userOrgs.userId, userId), isNull(userOrgs.enrollmentEnd)));
+    await db
+      .update(userClasses)
+      .set({ enrollmentEnd: endedAt })
+      .where(and(eq(userClasses.userId, userId), isNull(userClasses.enrollmentEnd)));
+    await db
+      .update(userGroups)
+      .set({ enrollmentEnd: endedAt })
+      .where(and(eq(userGroups.userId, userId), isNull(userGroups.enrollmentEnd)));
+    await db
+      .update(userFamilies)
+      .set({ leftOn: endedAt })
+      .where(and(eq(userFamilies.userId, userId), isNull(userFamilies.leftOn)));
+  }
 }
