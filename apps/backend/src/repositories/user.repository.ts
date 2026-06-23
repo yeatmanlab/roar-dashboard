@@ -358,6 +358,11 @@ export class UserRepository extends BaseRepository<User, typeof users> {
    * is reactivated rather than colliding with its existing junction row. `current` is supplied by the
    * caller so the diff and the writes share the caller's transaction context.
    *
+   * Reconciliation is by presence only: a membership present in both `current` and `desired` is left
+   * untouched even if its role differs, so a re-import does not change the role of an existing
+   * membership (matching the legacy behavior and avoiding needless FGA churn). Within a single entity
+   * type, a duplicate `entityId` in `desired` collapses to its last role.
+   *
    * @param userId - The user to reconcile.
    * @param desired - The membership set the row asks for (with roles).
    * @param current - The user's current active memberships (with roles).

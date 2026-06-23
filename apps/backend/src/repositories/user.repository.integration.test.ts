@@ -274,6 +274,34 @@ describe('UserRepository', () => {
 
       expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(1);
     });
+
+    it('reconciles family memberships via the joinedOn/leftOn columns', async () => {
+      // Families use joinedOn/leftOn (not enrollmentStart/enrollmentEnd), so exercise that branch of
+      // endMembershipRow and upsertMembershipRow directly.
+      const user = await UserFactory.create();
+      const familyKept = await FamilyFactory.create();
+      const familyRemoved = await FamilyFactory.create();
+      const familyAdded = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: user.id, familyId: familyKept.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: user.id, familyId: familyRemoved.id, role: 'parent' });
+
+      const current = await repository.getActiveMembershipsWithRoles(user.id);
+      const desired = [
+        { entityType: EntityType.FAMILY, entityId: familyKept.id, role: 'parent' },
+        { entityType: EntityType.FAMILY, entityId: familyAdded.id, role: 'parent' },
+      ];
+
+      const result = await repository.runTransaction({
+        fn: (tx) => repository.reconcileMemberships(user.id, desired, current, tx),
+      });
+
+      expect(result.removed.map((m) => m.entityId)).toEqual([familyRemoved.id]);
+      expect(result.added.map((m) => m.entityId)).toEqual([familyAdded.id]);
+
+      const afterIds = (await repository.getActiveMembershipsWithRoles(user.id)).map((m) => m.entityId);
+      expect(afterIds).toEqual(expect.arrayContaining([familyKept.id, familyAdded.id]));
+      expect(afterIds).not.toContain(familyRemoved.id);
+    });
   });
 
   describe('findClassParentSchool', () => {

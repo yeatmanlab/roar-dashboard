@@ -12,6 +12,7 @@ import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 import { UserRole } from '../../enums/user-role.enum';
 import { UserType } from '../../enums/user-type.enum';
 import { EntityType } from '../../types/entity-type';
+import { FGA_CONDITION_ACTIVE_MEMBERSHIP } from '../authorization/fga-constants';
 import type { FirebaseScryptParams } from './utils/firebase-password-hash';
 import type { CoreTransaction } from '../../db/clients';
 
@@ -476,10 +477,9 @@ describe('UserImportService.bulkImport', () => {
       expect(updateUser).not.toHaveBeenCalled();
     });
 
-    it('reconciles memberships and syncs FGA tuples (write added, delete removed)', async () => {
-      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
-        { entityType: EntityType.SCHOOL, entityId: 'school-1', role: 'student' },
-      ]);
+    it('reconciles memberships and syncs FGA tuples with the right shapes', async () => {
+      const user = existing();
+      mockUserRepository.findByEmails.mockResolvedValue([user]);
       mockUserRepository.reconcileMemberships.mockResolvedValue({
         added: [{ entityType: EntityType.SCHOOL, entityId: 'school-2', role: 'student' }],
         removed: [{ entityType: EntityType.SCHOOL, entityId: 'school-1', role: 'student' }],
@@ -492,10 +492,74 @@ describe('UserImportService.bulkImport', () => {
         }),
       ]);
 
-      expect(mockUserRepository.reconcileMemberships).toHaveBeenCalled();
-      expect(mockAuthz.writeTuplesOrThrow).toHaveBeenCalled(); // tuple for the added membership
-      expect(mockAuthz.deleteTuples).toHaveBeenCalled(); // tuple for the removed membership
+      // Added membership → condition-carrying tuple (identical shape to single-create). Without the
+      // active_membership condition the grant would never evaluate true, so assert it explicitly.
+      expect(mockAuthz.writeTuplesOrThrow).toHaveBeenCalledWith([
+        {
+          user: `user:${user.id}`,
+          relation: 'student',
+          object: 'school:school-2',
+          condition: expect.objectContaining({ name: FGA_CONDITION_ACTIVE_MEMBERSHIP }),
+        },
+      ]);
+      // Removed membership → key-only deletion tuple (no condition; FGA deletes by key).
+      expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([
+        { user: `user:${user.id}`, relation: 'student', object: 'school:school-1' },
+      ]);
       expect(results[0]!).toMatchObject({ classification: 'updated', status: 'ok' });
+    });
+
+    it('revokes before granting so a failed grant-write cannot strand a removed tuple', async () => {
+      mockUserRepository.reconcileMemberships.mockResolvedValue({
+        added: [{ entityType: EntityType.SCHOOL, entityId: 'school-2', role: 'student' }],
+        removed: [{ entityType: EntityType.SCHOOL, entityId: 'school-1', role: 'student' }],
+      });
+      mockAuthz.writeTuplesOrThrow.mockRejectedValueOnce(new Error('fga down'));
+
+      const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+      // The revocation must have run (and run first) even though the grant-write threw — otherwise the
+      // removed membership would stay authorized in FGA.
+      expect(mockAuthz.deleteTuples).toHaveBeenCalled();
+      const deleteOrder = mockAuthz.deleteTuples.mock.invocationCallOrder[0]!;
+      const writeOrder = mockAuthz.writeTuplesOrThrow.mock.invocationCallOrder[0]!;
+      expect(deleteOrder).toBeLessThan(writeOrder);
+      expect(results[0]!.status).toBe('failed');
+    });
+
+    it('uses the family relation when reconciliation adds a family membership', async () => {
+      const user = existing();
+      mockUserRepository.findByEmails.mockResolvedValue([user]);
+      mockUserRepository.reconcileMemberships.mockResolvedValue({
+        added: [{ entityType: EntityType.FAMILY, entityId: 'fam-1', role: 'parent' }],
+        removed: [],
+      });
+
+      await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+      expect(mockAuthz.writeTuplesOrThrow).toHaveBeenCalledWith([
+        {
+          user: `user:${user.id}`,
+          relation: 'parent',
+          object: 'family:fam-1',
+          condition: expect.objectContaining({ name: FGA_CONDITION_ACTIVE_MEMBERSHIP }),
+        },
+      ]);
+    });
+
+    it('writes and deletes no FGA tuple for an admin-tier class membership (add/delete symmetry)', async () => {
+      // administrator is not an FGA-valid class role — class admin access cascades via the org
+      // hierarchy. Such a membership reconciles in the DB but maps to zero tuples on both paths.
+      mockUserRepository.reconcileMemberships.mockResolvedValue({
+        added: [{ entityType: EntityType.CLASS, entityId: 'class-1', role: 'administrator' }],
+        removed: [{ entityType: EntityType.CLASS, entityId: 'class-2', role: 'administrator' }],
+      });
+
+      const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+      expect(mockAuthz.writeTuplesOrThrow).not.toHaveBeenCalled();
+      expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      expect(results[0]!.status).toBe('ok');
     });
 
     it('does not touch FGA when reconciliation reports no membership change', async () => {
