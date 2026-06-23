@@ -59,6 +59,7 @@
     "https://storage.googleapis.com/roar-levante-tasks/",
     "https://storage.googleapis.com/levante-assets-dev/",
     "https://storage.googleapis.com/levante-assets-prod/",
+    "https://storage.googleapis.com/tasks-shared/",
     "https://www.gstatic.com"
   ],
   "media-src": [
@@ -89,7 +90,8 @@
     "https://storage.googleapis.com/trog/",
     "https://storage.googleapis.com/roar-levante-tasks/",
     "https://storage.googleapis.com/levante-assets-dev/",
-    "https://storage.googleapis.com/levante-assets-prod/"
+    "https://storage.googleapis.com/levante-assets-prod/",
+    "https://storage.googleapis.com/tasks-shared/"
   ],
   "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
   "connect-src": [
