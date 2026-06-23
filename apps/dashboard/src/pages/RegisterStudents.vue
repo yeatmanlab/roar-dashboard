@@ -382,6 +382,9 @@ import Button from 'primevue/button';
 import PvFileUpload from 'primevue/fileupload';
 import PvToggleSwitch from 'primevue/toggleswitch';
 import { csvFileToJson } from '@/helpers';
+import csvRowToImportRow from '@/helpers/csvRowToImportRow';
+import { getRoarApiClient } from '@/clients/roar-api';
+import { StatusCodes } from 'http-status-codes';
 import { orgFetchAll } from '@/helpers/query/orgs';
 import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
@@ -782,137 +785,112 @@ const preTransformStudents = () => {
   mappedStudents.value = transformedStudents;
   showSubmitTable.value = true;
 };
+// Maps the org-field key (plural) to the import-row membership entity type (singular).
+const ORG_KEY_TO_ENTITY_TYPE = {
+  districts: 'district',
+  schools: 'school',
+  classes: 'class',
+  groups: 'group',
+  families: 'family',
+};
+
 const transformStudentData = async (rawStudent) => {
-  const transformedStudent = {};
+  // Build the import-row shape directly from the CSV-mapped row; fill memberships below.
+  const importRow = csvRowToImportRow(rawStudent);
 
-  // Handle required fields
-  Object.keys(mappedColumns.value.required).forEach((key) => {
-    if (rawStudent[key]) {
-      if (key === 'username') {
-        _set(transformedStudent, 'email', `${rawStudent[key]}@roar-auth.com`);
-        _set(transformedStudent, 'userData.username', rawStudent[key]);
-      } else if (['email', 'password'].includes(key)) {
-        _set(transformedStudent, key, rawStudent[key]);
-      } else {
-        _set(transformedStudent, `userData.${key}`, rawStudent[key]);
-      }
+  const addMembership = (entityType, entityId) => {
+    if (entityId) {
+      // Students belong to a family as a `child`; to every other entity as a `student`.
+      importRow.memberships.push({ entityType, entityId, role: entityType === 'family' ? 'child' : 'student' });
     }
-  });
+  };
 
-  // Handle name fields
-  Object.keys(mappedColumns.value.names).forEach((key) => {
-    if (rawStudent[key]) _set(transformedStudent, `userData.name.${key}`, rawStudent[key]);
-  });
-
-  // Handle demographic fields
-  Object.keys(mappedColumns.value.demographics).forEach((key) => {
-    if (rawStudent[key] && key === 'race') {
-      _set(transformedStudent, `userData.${key}`, rawStudent[key].split(', '));
-    } else if (rawStudent[key]) {
-      _set(transformedStudent, `userData.${key}`, rawStudent[key]);
-    }
-  });
-
-  // Handle optional fields
-  Object.keys(mappedColumns.value.optional).forEach((key) => {
-    if (rawStudent[key]) {
-      _set(transformedStudent, `userData.${key}`, rawStudent[key]);
-    }
-  });
-
-  // Handle organizations
   if (!usingOrgPicker.value) {
-    // If the org picker is not being used, we are given the names of the orgs as values.
-    // To submit, we need to send orgIds. Education orgs, districts, schools, and classes
-    // are fetched in order. First district, then school, then class. If any of these are not
-    // found, it will skip the rest as they are required to find the class.
+    // The CSV supplies org names; resolve them to IDs in district -> school -> class order. If a
+    // parent is missing the dependent lookups are skipped (they need the parent to resolve).
+    const orgFields = mappedColumns.value.organizations;
     let studentDistrictId = null;
     let studentSchoolId = null;
-    const orgFields = mappedColumns.value.organizations;
 
-    // First check for non-educational orgs
     if (orgFields.groups && rawStudent['groups']) {
-      const groupName = rawStudent['groups'];
-      const groupId = await getOrgId('groups', groupName);
-      if (groupId) {
-        _set(transformedStudent, 'userData.groups', { id: groupId });
-      }
+      addMembership('group', await getOrgId('groups', rawStudent['groups']));
     }
-    // Process district -> school -> class hierarchy
+
     if (orgFields.districts && rawStudent['districts']) {
-      const districtName = rawStudent['districts'];
-      studentDistrictId = await getOrgId('districts', districtName);
-      if (studentDistrictId) {
-        _set(transformedStudent, 'userData.districts', { id: studentDistrictId });
-      } else {
-        // TODO: display this gracefully on the UI.
-        console.error(`District ${districtName} not found.`);
-      }
+      studentDistrictId = await getOrgId('districts', rawStudent['districts']);
+      if (studentDistrictId) addMembership('district', studentDistrictId);
+      // TODO: display this gracefully on the UI.
+      else console.error(`District ${rawStudent['districts']} not found.`);
     }
 
     if (studentDistrictId && orgFields.schools && rawStudent['schools']) {
-      const schoolName = rawStudent['schools'];
-      studentSchoolId = await getOrgId('schools', schoolName, studentDistrictId);
-      if (studentSchoolId) {
-        _set(transformedStudent, 'userData.schools', { id: studentSchoolId });
-      } else {
-        // TODO: display this gracefully on the UI.
-        console.error(`School ${schoolName} not found.`);
-      }
+      studentSchoolId = await getOrgId('schools', rawStudent['schools'], studentDistrictId);
+      if (studentSchoolId) addMembership('school', studentSchoolId);
+      else console.error(`School ${rawStudent['schools']} not found.`);
     }
 
     if (studentSchoolId && orgFields.classes && rawStudent['classes']) {
-      const className = rawStudent['classes'];
-      const classId = await getOrgId('classes', className, studentDistrictId, studentSchoolId);
-      if (classId) {
-        _set(transformedStudent, 'userData.classes', { id: classId });
-      } else {
-        // TODO: display this gracefully on the UI.
-        console.error(`Class ${className} not found.`);
-      }
+      const classId = await getOrgId('classes', rawStudent['classes'], studentDistrictId, studentSchoolId);
+      if (classId) addMembership('class', classId);
+      else console.error(`Class ${rawStudent['classes']} not found.`);
     }
   } else {
-    // Take input from the org picker
+    // The org picker supplies selected org IDs directly.
     Object.keys(selectedOrgs.value).forEach((key) => {
       if (selectedOrgs.value[key].length) {
-        _set(transformedStudent, `userData.${key}`, { id: selectedOrgs.value[key][0].id });
+        addMembership(ORG_KEY_TO_ENTITY_TYPE[key], selectedOrgs.value[key][0].id);
       }
     });
   }
 
-  return transformedStudent;
+  return importRow;
 };
 
 const submit = async () => {
   submitting.value = SubmitStatus.TRANSFORMING;
 
-  // Transform each student's data according to the mappings
-  const transformedStudents = [];
+  // Transform each student into an import row (memberships resolved via org-id lookups).
+  const importRows = [];
   for (const student of mappedStudents.value) {
-    const transformedStudent = await transformStudentData(student);
-    transformedStudents.push(transformedStudent);
+    importRows.push(await transformStudentData(student));
   }
   submitting.value = SubmitStatus.SUBMITTING;
 
-  // Chunk users into chunks of 50 for submission
-  const chunkedUsers = _chunk(transformedStudents, 50);
+  // Chunk under the endpoint's 100-row cap (50 keeps headroom) and submit each chunk.
+  const client = getRoarApiClient();
+  const chunkedUsers = _chunk(importRows, 50);
   for (const chunk of chunkedUsers) {
-    await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
-      for (const result of results.data) {
-        if (result?.status === 'rejected') {
-          const email = result.email;
-          toast.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: `User ${email} failed to process: ${result.reason}`,
-            life: 5000,
-          });
-        } else if (result?.status === 'fulfilled') {
-          const email = result.email;
-          toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
-        }
+    const response = await client.users.bulkImport({ body: { users: chunk } });
+
+    if (response.status !== StatusCodes.OK) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: `A batch of ${chunk.length} users failed to process (status ${response.status}).`,
+        life: 5000,
+      });
+      continue;
+    }
+
+    // The endpoint returns a per-row multi-status body; map each result back to its row's email.
+    for (const rowResult of response.body.data.results) {
+      const email = chunk[rowResult.index]?.email;
+      if (rowResult.status === 'ok') {
+        toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: `User ${email} ${rowResult.classification}.`,
+          life: 3000,
+        });
+      } else {
+        toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: `User ${email} failed: ${rowResult.error.message}`,
+          life: 5000,
+        });
       }
-    });
+    }
   }
   submitting.value = SubmitStatus.COMPLETE;
 };
