@@ -28,9 +28,8 @@ function getClampedAgeForScore() {
   const grade = getGrade(store.session.get('config').userMetadata?.grade);
 
   // Note: We use == instead of === because we want to catch both undefined and null.
-  // eslint-disable-next-line eqeqeq
+
   if (ageInMonths == undefined) {
-    // eslint-disable-next-line eqeqeq
     if (grade == undefined) throw new Error('Age or grade is undefined');
 
     ageInMonths = 66 + grade * 12;
@@ -121,7 +120,12 @@ export class RoarScores {
     const { task } = store.session.get('config');
     const { taskId } = store.session.get('config');
 
-    if (taskId !== LETTER_TASK_IDS.EN) return null; // For non-letter tasks, we currently only return composite scores, so we can skip subtask score computation.
+    // Phonics variants do not include a taskId field, so config.taskId defaults to 'letter'.
+    // This guard correctly exits for letter-es / letter-en-ca (taskId !== 'letter') while
+    // letting phonics pass through (taskId defaults to 'letter'). If a phonics variant ever
+    // adds taskId: 'phonics' to its params, this guard would incorrectly return null — use
+    // task !== LETTER_TASK_IDS.EN instead and update the integration test accordingly.
+    if (taskId !== LETTER_TASK_IDS.EN) return null;
 
     const computedScores = _mapValues(rawScores, (subtaskScores) => {
       const subScore = subtaskScores.test?.numCorrect || 0;
@@ -229,7 +233,6 @@ export class RoarScores {
     const rawGrade = userMetadata?.grade;
     const ageMonths = userMetadata?.ageMonths;
 
-    // eslint-disable-next-line eqeqeq
     if ((rawGrade != null || ageMonths != null) && task === LETTER_TASK_IDS.EN) {
       if (!this.tableLoaded) {
         if (!this.tableLoadingPromise) {

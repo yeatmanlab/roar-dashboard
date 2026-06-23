@@ -13,7 +13,7 @@ export const shuffle = (array) => {
 
     // swap elements array[i] and array[j]
     // use "destructuring assignment" syntax
-    // eslint-disable-next-line no-param-reassign
+
     [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
   }
   return shuffledArray;
@@ -58,7 +58,6 @@ export const updateProgressBar = () => {
 // add an item to a list in the store, creating it if necessary
 export const addItemToSortedStoreList = (tag, entry) => {
   if (!store.session.has(tag)) {
-    // eslint-disable-next-line no-console
     console.warn(`uninitialized store tag: ${tag}`);
   } else {
     // read existing list

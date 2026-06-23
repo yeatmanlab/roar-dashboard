@@ -91,11 +91,10 @@ import enCaPracticePhonics from '../stimuli/en-ca/practicePhonics.csv';
 const esStoryLionAge12 = esStoryLion;
 const itStoryLionAge12 = itStoryLion;
 
-// eslint-disable-next-line import/no-mutable-exports
 export let letterValidityEvaluator;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let mediaAssets;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let preloadTrials;
 
 const bucketURI = 'https://storage.googleapis.com/roar-ak';

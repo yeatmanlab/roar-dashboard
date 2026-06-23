@@ -32,7 +32,7 @@ function makeChoiceOrContinue(overflow, iterations) {
 function playLetter(iterations) {
   // overflow prevents recursive call from recursing forever
   const overflow = 0;
-  // eslint-disable-next-line no-plusplus
+
   for (let i = 0; i < iterations; i++) {
     cy.log('iteration: ', i);
     makeChoiceOrContinue(overflow, i);

@@ -170,7 +170,7 @@ async function startTask(selectedAdmin) {
       throw new Error(`Failed to fetch administrations from the ROAR backend (status ${adminsRes.status}).`);
     }
 
-    const letterTaskUuid = taskRes.body.data.id;
+    const taskUuid = taskRes.body.data.id;
     const backendAdmins = adminsRes.body.data.items;
 
     // TODO: Remove this matching step once the frontend has fully integrated with the ROAR POSTGRES backend.
@@ -178,25 +178,28 @@ async function startTask(selectedAdmin) {
     // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1839
     const matchedAdmin =
       backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
-      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === letterTaskUuid));
+      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === taskUuid));
 
     if (!matchedAdmin) {
       throw new Error('No administration containing the letter task found in the ROAR backend.');
     }
 
-    const letterTaskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === letterTaskUuid);
-    if (!letterTaskVariant) {
+    const taskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === taskUuid);
+    if (!taskVariant) {
       throw new Error('No letter task variant found in the matched administration.');
     }
 
     initFirekitCompat(
       {
         baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
-        auth: { getToken: () => Promise.resolve(authStore.accessToken) },
+        auth: {
+          getToken: () => Promise.resolve(authStore.accessToken),
+          refreshToken: () => authStore.forceIdTokenRefresh(),
+        },
         participant: { participantId },
       },
       {
-        variantId: letterTaskVariant.variantId,
+        variantId: taskVariant.variantId,
         taskVersion: version,
         administrationId: matchedAdmin.id,
         isAnonymous: false,

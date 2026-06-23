@@ -1,4 +1,3 @@
-/* eslint-disable import/no-cycle */
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
 import store from 'store2';
 import { LETTER_SUBTASK_DOMAINS } from '@roar-platform/assessment-schema/roar-letter';

@@ -1,16 +1,15 @@
 import i18next from 'i18next';
-// eslint-disable-next-line import/no-duplicates
+
 import { letters } from '../i18n';
 import { shuffle } from '../helperFunctions';
 import { PHONICS_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
 
-// eslint-disable-next-line import/no-mutable-exports
 export let corpusLetterAll;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let storyActive;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let corpusTypePhonics;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let loadCorpus;
 
 // Function processCVS

@@ -4,8 +4,6 @@
 const PHONICS_VARIANT_ID = 'aaaaaaaa-0001-0000-0000-000000000000';
 
 const timeout = Cypress.env('timeout');
-// 9 intro iterations plus 2 stimulus block iterations
-const variantIterations = 12;
 const gameCompleteText = "You're all done!";
 
 const stubBootstrap = () => {
@@ -49,35 +47,36 @@ const stubBootstrap = () => {
   }).as('runEvent');
 };
 
-function makeChoiceOrContinue(overflow) {
+/**
+ * Drives the game forward one step. On each call:
+ * 1. If the game-complete heading is visible → done, do nothing.
+ * 2. If a break/go-button screen is showing → click it and recurse.
+ * 3. Otherwise → click a trial answer button and recurse.
+ *
+ * Recursion is bounded by maxSteps to prevent infinite loops if the game
+ * never reaches the end screen.
+ */
+function playStep(maxSteps) {
+  if (maxSteps <= 0) return;
+
   cy.wait(0.2 * timeout);
+
   cy.get('body').then((body) => {
-    //   If a go button is found, click it and then return to playMultichoice loop
+    if (body.find('h1').filter(`:contains("${gameCompleteText}")`).length > 0) {
+      // Game is over — stop recursing.
+      return;
+    }
+
     if (body.find('.go-button').length > 0) {
       cy.get('.go-button').click();
+    } else if (body.find('.glowingButton').length > 0) {
+      cy.get('.glowingButton').click();
     } else {
-      //   Only enters this else-block if a go button was not pressed
-      if (body.find('.glowingButton').length > 0) {
-        cy.get('.glowingButton').click();
-      } else {
-        cy.get('button').first().click();
-      }
-      // Either presses the glowing button during the tutorial or presses the first button of the stimulus trials, then iterates the overflow
-      if (overflow < 100) {
-        makeChoiceOrContinue(overflow + 1);
-      }
+      cy.get('button').first().click();
     }
-  });
-}
 
-function playPhonics(iterations) {
-  // overflow prevents recursive call from recursing forever
-  const overflow = 0;
-  // eslint-disable-next-line no-plusplus
-  for (let i = 0; i < iterations; i++) {
-    cy.log('iteration: ', i);
-    makeChoiceOrContinue(overflow);
-  }
+    playStep(maxSteps - 1);
+  });
 }
 
 describe('Test play through of ROAR-Letter phonics as a participant', () => {
@@ -93,7 +92,7 @@ describe('Test play through of ROAR-Letter phonics as a participant', () => {
       .should('be.visible')
       .click();
 
-    playPhonics(variantIterations);
+    playStep(200);
 
     cy.log('Checking if game completed.');
     cy.get('h1').contains(gameCompleteText).should('be.visible');

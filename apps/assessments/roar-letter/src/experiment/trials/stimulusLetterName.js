@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import i18next from 'i18next';
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import store from 'store2';
@@ -65,12 +64,10 @@ const prepareLetterChoices = (target, distractors) => {
 function updatePhonicsItemGroupStats(itemGroup, correct) {
   // Validate input
   if (typeof itemGroup !== 'string' || itemGroup.trim() === '') {
-    // eslint-disable-next-line no-console
     console.warn("Invalid 'itemGroup' parameter. It must be a non-empty string.");
     return;
   }
   if (correct !== 0 && correct !== 1) {
-    // eslint-disable-next-line no-console
     console.warn("Invalid 'correct' parameter. It must be 0 or 1.");
     return;
   }
@@ -85,7 +82,6 @@ function updatePhonicsItemGroupStats(itemGroup, correct) {
     try {
       itemGroupData = JSON.parse(currentItemGroupDataString);
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error(`Error parsing data for item group '${itemGroup}':`, error);
       // If parsing fails, re-initialize to prevent further errors
       itemGroupData = { correct: 0, attempted: 0 };
@@ -112,7 +108,6 @@ function updatePhonicsItemGroupStats(itemGroup, correct) {
  */
 export function getItemGroupStats(itemGroup) {
   if (typeof itemGroup !== 'string' || itemGroup.trim() === '') {
-    // eslint-disable-next-line no-console
     console.warn("Invalid 'itemGroup' parameter. It must be a non-empty string.");
     return { correct: 0, attempted: 0 };
   }
@@ -137,12 +132,10 @@ export function getItemGroupStats(itemGroup) {
       return itemGroupData;
     }
 
-    // eslint-disable-next-line no-console
     console.warn(`Data for item group '${itemGroup}' (key: '${itemGroupKey}') is malformed. Returning default counts.`);
 
     return { correct: 0, attempted: 0 };
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error(`Error parsing data for item group '${itemGroup}' (key: '${itemGroupKey}'):`, error);
     // If parsing fails, return default zeros
     return { correct: 0, attempted: 0 };

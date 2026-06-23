@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import store from 'store2';
 import jsPsychAudioButtonResponse from '@jspsych/plugin-audio-button-response';
 import { mediaAssets } from '../experiment';
@@ -8,37 +7,36 @@ import { isMaxTimeoutReached } from './appTimer';
 import { isEarlyStopReached } from './stimulusLetterName';
 import { PHONICS_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
 
-// eslint-disable-next-line import/no-mutable-exports
 export let letterIntroAndInstructions;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let letterPracticeDone;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let letterTransition;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let soundIntroAndInstructions;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let practiceCorrectFeedback;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let soundPracticeDone;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let endTrial;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let storyByLabel;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let storyBreak;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let storyBreakList;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let blockBreaks;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let phonicsIntroAndInstructions;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let phonicsYoureReady;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let phonicsAllDone;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let breakVariables;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let breakTrials;
 
 export function createStory() {
@@ -65,12 +63,10 @@ export function createStory() {
     }
 
     if (!mediaAssets.images[content.imageName]) {
-      // eslint-disable-next-line no-console
       console.log(`${content.imageName} not found. Note: first letter must be lowercase.`);
     }
 
     if (!mediaAssets.audio[content.audioName]) {
-      // eslint-disable-next-line no-console
       console.log(`${content.audioName} not found. Note: first letter must be lowercase.`);
     }
   }
@@ -172,7 +168,7 @@ export function createStory() {
       storyByLabel.lettersIns6,
       storyByLabel.lettersPractice,
     ],
-    // eslint-disable-next-line consistent-return
+
     conditional_function: () => {
       // don't play when skipping trials because app is finished
       if (isMaxTimeoutReached()) return false;
@@ -181,7 +177,7 @@ export function createStory() {
 
   storyBreak = {
     timeline: [storyByLabel.break3],
-    // eslint-disable-next-line consistent-return
+
     conditional_function: () => {
       // don't play when skipping trials because app is finished
       if (isMaxTimeoutReached() || isEarlyStopReached()) return false;
@@ -218,7 +214,7 @@ export function createStory() {
 
   letterPracticeDone = {
     timeline: [storyByLabel.lettersPostPractice],
-    // eslint-disable-next-line consistent-return
+
     conditional_function: () => {
       // don't play when skipping trials because app is finished
       if (isMaxTimeoutReached()) return false;
@@ -227,7 +223,7 @@ export function createStory() {
 
   letterTransition = {
     timeline: [storyByLabel.lettersUppercaseTrans],
-    // eslint-disable-next-line consistent-return
+
     conditional_function: () => {
       // don't play when skipping trials because app is finished
       if (isMaxTimeoutReached()) return false;
@@ -243,7 +239,7 @@ export function createStory() {
       storyByLabel.soundsIns6,
       storyByLabel.soundsPractice,
     ],
-    // eslint-disable-next-line consistent-return
+
     conditional_function: () => {
       // don't play when skipping trials because app is finished
       if (isMaxTimeoutReached()) return false;
@@ -252,7 +248,7 @@ export function createStory() {
 
   soundPracticeDone = {
     timeline: [storyByLabel.soundsPostPractice],
-    // eslint-disable-next-line consistent-return
+
     conditional_function: () => {
       // don't play when skipping trials because app is finished
       if (isMaxTimeoutReached()) return false;
@@ -283,7 +279,7 @@ export function createStory() {
 
   practiceCorrectFeedback = {
     timeline: [storyByLabel.thatsRight],
-    // eslint-disable-next-line consistent-return
+
     conditional_function: () => {
       // don't play when skipping trials because app is finished
       if (isMaxTimeoutReached()) return false;
@@ -308,7 +304,7 @@ export function createStory() {
       storyByLabel.phonicsSpeaker,
       storyByLabel.phonicsPractice,
     ],
-    // eslint-disable-next-line consistent-return
+
     conditional_function: () => {
       // don't play when skipping trials because app is finished
       if (isMaxTimeoutReached()) return false;
@@ -317,7 +313,7 @@ export function createStory() {
 
   phonicsYoureReady = {
     timeline: [storyByLabel.phonicsYoureReady],
-    // eslint-disable-next-line consistent-return
+
     conditional_function: () => {
       // don't play when skipping trials because app is finished
       if (isMaxTimeoutReached()) return false;

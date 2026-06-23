@@ -117,7 +117,6 @@ export const getStimulusCountPhonics = () => {
       break;
 
     default:
-      // eslint-disable-next-line no-console
       console.log('Unexpected corpusTypePhonics:', corpusTypePhonics);
       return [];
   }
@@ -243,9 +242,8 @@ export const initRoarJsPsych = (config, computedScoreCallback) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-      // eslint-disable-next-line prefer-rest-params
       fn.apply(fn, arguments);
-      // eslint-disable-next-line prefer-rest-params
+
       code.apply(fn, arguments);
     };
 
@@ -278,7 +276,6 @@ export const initRoarTimeline = (config) => {
   const beginningTimeline = {
     timeline: initialTimeline,
     on_timeline_finish: async () => {
-      // eslint-disable-next-line no-param-reassign
       config.pid = config.pid || makePid();
       try {
         await updateUser({

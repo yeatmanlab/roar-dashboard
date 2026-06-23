@@ -1,4 +1,3 @@
-/* eslint-disable import/no-cycle */
 import store from 'store2';
 import i18next from 'i18next';
 import { getDevice } from '@bdelab/roar-utils';
@@ -38,10 +37,8 @@ const catToSubTaskMap = {
 
 export const isTouchScreen = getDevice() === 'mobile';
 
-// eslint-disable-next-line import/no-mutable-exports
 export let clowder;
 
-// eslint-disable-next-line import/no-mutable-exports
 export let cat;
 
 const hyperParams = irtHyperparameters.reduce((acc, row) => {
@@ -255,7 +252,6 @@ export const moveToNextBlock = () => {
 const safeGetCatIndex = () => {
   let catIndex = store.session.get('currentCatIndex');
 
-  // eslint-disable-next-line eqeqeq
   if (catIndex == undefined) {
     store.session.set('currentCatIndex', 0);
     catIndex = 0;
