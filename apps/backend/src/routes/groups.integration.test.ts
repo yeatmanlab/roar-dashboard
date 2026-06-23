@@ -3,16 +3,15 @@
  *
  * Tests the full HTTP lifecycle: middleware → controller → service → repository → DB.
  * Only Firebase token verification is mocked — everything else runs for real.
-
- * Authorization is tested by permission tier (resolved via OpenFGA):
- *   - superAdmin:  isSuperAdmin=true (bypasses all access control)
- *   - siteAdmin:   site_administrator → 403
- *   - admin:       administrator → 403
- *   - educator:    teacher → 403
- *   - student:     student → 403
- *   - caregiver:   guardian → 403
  *
- * The invitation code endpoint is restricted to super admins only.
+ * Authorization is tested by permission tier (resolved via OpenFGA). The tier
+ * behavior varies by endpoint:
+ *   - superAdmin (isSuperAdmin=true) bypasses all access control everywhere.
+ *   - GET /groups (list): supervisory members (siteAdmin, admin, educator) get 200
+ *     with data; supervised tiers (student, caregiver) and non-members get an empty
+ *     result set, not 403.
+ *   - GET /groups/:groupId (read): supervisory members get 200; others get 403.
+ *   - The invitation-code endpoint is restricted to super admins only (others 403).
  *
  * Each endpoint section follows the structure:
  *   1. Authorization — one spec per tier with status + content assertions
@@ -250,6 +249,168 @@ describe('POST /v1/groups', () => {
         .as(tiers.superAdmin)
         .withBody(buildCreateGroupBody({ abbreviation: 'GRP-001' }))
         .toReturn(StatusCodes.BAD_REQUEST);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/groups
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/groups', () => {
+  const path = () => '/v1/groups';
+
+  describe('authorization', () => {
+    it('superAdmin tier can list all groups', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.pagination).toBeDefined();
+      // Super admin sees every group, including the seeded fixture group
+      const ids = res.body.data.items.map((group: { id: string }) => group.id);
+      expect(ids).toContain(testUserGroupId);
+    });
+
+    // Users with a supervisory role on a group can list it (FGA can_list =
+    // supervisory_tier_group). These tiers are members of testUserGroup.
+    const supervisoryTierConfigs = [
+      { name: 'siteAdmin', getTier: () => userGroupTiers.siteAdmin },
+      { name: 'admin', getTier: () => userGroupTiers.admin },
+      { name: 'educator', getTier: () => userGroupTiers.educator },
+    ];
+
+    supervisoryTierConfigs.forEach(({ name: tierName, getTier }) => {
+      it(`${tierName} tier (group member) sees the groups it supervises`, async () => {
+        const res = await expectRoute('GET', path()).as(getTier()).toReturn(200);
+
+        expect(res.body.data.items).toBeInstanceOf(Array);
+        const ids = res.body.data.items.map((group: { id: string }) => group.id);
+        expect(ids).toContain(testUserGroupId);
+      });
+    });
+
+    // Supervised roles on a group do NOT get can_list — they see an empty set,
+    // not a 403.
+    const emptySetTierConfigs = [
+      { name: 'student (group member)', getTier: () => userGroupTiers.student },
+      { name: 'caregiver (group member)', getTier: () => userGroupTiers.caregiver },
+      // An org admin with no group membership at all also sees nothing.
+      { name: 'admin (no group membership)', getTier: () => tiers.admin },
+    ];
+
+    emptySetTierConfigs.forEach(({ name: tierName, getTier }) => {
+      it(`${tierName} receives an empty result set, not a 403`, async () => {
+        const res = await expectRoute('GET', path()).as(getTier()).toReturn(200);
+
+        expect(res.body.data.items).toBeInstanceOf(Array);
+        expect(res.body.data.items).toHaveLength(0);
+        expect(res.body.data.pagination.totalItems).toBe(0);
+      });
+    });
+  });
+
+  describe('query parameters', () => {
+    it('supports pagination with page and perPage parameters', async () => {
+      const res = await expectRoute('GET', `${path()}?page=1&perPage=1`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toHaveLength(1);
+      expect(res.body.data.pagination.page).toBe(1);
+      expect(res.body.data.pagination.perPage).toBe(1);
+      expect(res.body.data.pagination.totalItems).toBeGreaterThan(0);
+      expect(res.body.data.pagination.totalPages).toBeGreaterThan(0);
+    });
+
+    it('excludes rostering-ended groups by default and includes them with includeEnded=true', async () => {
+      // Use super admin so listAll (which bypasses FGA) isolates the includeEnded
+      // filter from access control.
+      const endedGroup = await GroupFactory.create({
+        name: 'Rostering Ended Group',
+        rosteringEnded: new Date('2000-01-01T00:00:00.000Z'),
+      });
+
+      const defaultRes = await expectRoute('GET', `${path()}?perPage=100`).as(tiers.superAdmin).toReturn(200);
+      expect(defaultRes.body.data.items.map((group: { id: string }) => group.id)).not.toContain(endedGroup.id);
+
+      const includedRes = await expectRoute('GET', `${path()}?perPage=100&includeEnded=true`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+      expect(includedRes.body.data.items.map((group: { id: string }) => group.id)).toContain(endedGroup.id);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', path()).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/groups/:groupId
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/groups/:groupId', () => {
+  const path = (groupId: string) => `/v1/groups/${groupId}`;
+
+  describe('authorization', () => {
+    it('superAdmin tier can read any group', async () => {
+      const res = await expectRoute('GET', path(testUserGroupId)).as(userGroupTiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.id).toBe(testUserGroupId);
+      expect(res.body.data.groupType).toBeDefined();
+    });
+
+    // Supervisory roles on a group can read it (FGA can_read = supervisory_tier_group).
+    const supervisoryTierConfigs = [
+      { name: 'siteAdmin', getTier: () => userGroupTiers.siteAdmin },
+      { name: 'admin', getTier: () => userGroupTiers.admin },
+      { name: 'educator', getTier: () => userGroupTiers.educator },
+    ];
+
+    supervisoryTierConfigs.forEach(({ name: tierName, getTier }) => {
+      it(`${tierName} tier (group member) can read the group`, async () => {
+        const res = await expectRoute('GET', path(testUserGroupId)).as(getTier()).toReturn(200);
+
+        expect(res.body.data.id).toBe(testUserGroupId);
+      });
+    });
+
+    // Supervised roles on a group are denied read access with a 403.
+    const forbiddenTierConfigs = [
+      { name: 'student (group member)', getTier: () => userGroupTiers.student },
+      { name: 'caregiver (group member)', getTier: () => userGroupTiers.caregiver },
+    ];
+
+    forbiddenTierConfigs.forEach(({ name: tierName, getTier }) => {
+      it(`${tierName} is forbidden from reading the group`, async () => {
+        const res = await expectRoute('GET', path(testUserGroupId)).as(getTier()).toReturn(403);
+
+        expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      });
+    });
+
+    it('returns 403 when the user has no membership in the group', async () => {
+      const res = await expectRoute('GET', path(testUserGroupId)).as(tiers.admin).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', path(testUserGroupId)).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 404 when the group does not exist', async () => {
+      const res = await expectRoute('GET', path('00000000-0000-0000-0000-000000000000'))
+        .as(tiers.superAdmin)
+        .toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
   });
 });

@@ -129,7 +129,7 @@ import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
 import Dropdown from '@/components/Form/Dropdown';
 import TextInput from '@/components/Form/TextInput';
-import TaskParametersConfigurator from './TaskParametersConfigurator.vue';
+import TaskParametersConfigurator from '@/components/TaskParametersConfigurator/TaskParametersConfigurator.vue';
 import { buildTaskConfigFromRows, splitTaskConfig } from '@/helpers/taskConfig';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { TASK_DESCRIPTION_MAX_LENGTH, TASK_NAME_MAX_LENGTH, TASK_NAME_REGEX } from '@/constants/tasks';
@@ -186,15 +186,24 @@ const canEditTaskConfig = ref(true);
 const taskConfigPassthroughKeys = computed(() => Object.keys(taskConfigPassthrough.value));
 
 // Validation rules mirroring the contract's UpdateTaskRequestBodySchema.
-const taskNameValidator = helpers.withMessage(
-  'Must start with a letter and contain only letters, numbers, spaces, hyphens, and underscores',
-  helpers.regex(TASK_NAME_REGEX),
-);
+// The format rule only applies to CHANGED names: legacy tasks may hold names that
+// predate the contract's format constraint, and validating the seeded value would
+// block unrelated updates (e.g. a description-only change) until the user renames
+// the task — which would then PATCH the name as a side effect.
+const taskNameValidator = (field) =>
+  helpers.withMessage(
+    'Must start with a letter and contain only letters, numbers, spaces, hyphens, and underscores',
+    (value) => !value || value === (selectedTask.value?.[field] ?? '') || TASK_NAME_REGEX.test(value),
+  );
 
 const formRules = {
-  name: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
-  nameSimple: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
-  nameTechnical: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator },
+  name: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator('name') },
+  nameSimple: { required, maxLength: maxLength(TASK_NAME_MAX_LENGTH), nameFormat: taskNameValidator('nameSimple') },
+  nameTechnical: {
+    required,
+    maxLength: maxLength(TASK_NAME_MAX_LENGTH),
+    nameFormat: taskNameValidator('nameTechnical'),
+  },
   // Optional fields simply omit `required` — vuelidate treats every key as a validator function.
   description: { maxLength: maxLength(TASK_DESCRIPTION_MAX_LENGTH) },
   image: { url },

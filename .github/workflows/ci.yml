@@ -473,7 +473,7 @@ jobs:
   # Assessment E2E tests
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   e2e-assessments:
-    name: E2E ${{ matrix.assessment }} (${{ matrix.browser }})
+    name: E2E ${{ matrix.assessment }} (${{ matrix.browser }}) [${{ matrix.containers }}]
     needs: [detect-assessment-changes]
     if: needs.detect-assessment-changes.outputs.matrix != '[]'
     runs-on: ubuntu-latest
@@ -483,6 +483,7 @@ jobs:
       matrix:
         assessment: ${{ fromJson(needs.detect-assessment-changes.outputs.matrix) }}
         browser: [chrome, edge]
+        containers: [1, 2]
 
     steps:
       - name: Checkout repository

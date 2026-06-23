@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
+import { TASKS_QUERY_KEY } from '@/constants/queryKeys';
 import useUpdateTaskMutation from './useUpdateTaskMutation';
 
 const mockTasksUpdate = vi.fn();
@@ -50,7 +51,7 @@ describe('useUpdateTaskMutation', () => {
 
     await result.mutateAsync({ taskId: mockTaskId, body: mockBody });
 
-    expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: ['tasks'] });
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: [TASKS_QUERY_KEY] });
   });
 
   it('throws a structured error and does not invalidate queries on non-200 responses', async () => {

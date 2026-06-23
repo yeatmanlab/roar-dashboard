@@ -1,6 +1,7 @@
 import { SortOrder } from '@roar-platform/api-contract';
-import type { GroupType } from '@roar-platform/api-contract';
+import type { GroupSortFieldType, GroupType } from '@roar-platform/api-contract';
 import { and, asc, count, desc, eq, isNull } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CoreDbClient } from '../db/clients';
 import type { Group } from '../db/schema';
@@ -15,6 +16,11 @@ import {
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
+
+// Re-export the Group entity type so service/controller layers can import it
+// from the repository alongside the repository's own option/input types,
+// mirroring the District repository convention.
+export type { Group } from '../db/schema';
 
 /**
  * Input for creating a group at the repository layer.
@@ -32,6 +38,19 @@ export interface CreateGroupInput {
   locationStateProvince?: string | undefined;
   locationPostalCode?: string | undefined;
   locationCountry?: string | undefined;
+}
+
+/**
+ * Options for listing groups.
+ */
+export interface ListGroupOptions {
+  page: number;
+  perPage: number;
+  orderBy?: {
+    field: GroupSortFieldType;
+    direction: 'asc' | 'desc';
+  };
+  includeEnded?: boolean;
 }
 
 export class GroupRepository extends BaseRepository<Group, typeof groups> {
@@ -62,6 +81,70 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
         ...(input.locationPostalCode !== undefined && { locationPostalCode: input.locationPostalCode }),
         ...(input.locationCountry !== undefined && { locationCountry: input.locationCountry }),
       },
+    });
+  }
+
+  /**
+   * Build the shared where clause for group listing queries.
+   *
+   * Groups are a dedicated table, so unlike orgs there is no orgType filter —
+   * the only optional filter excludes rostering-ended groups. This helper
+   * eliminates duplication across listAll and listByIds.
+   *
+   * @param includeEnded - Whether to include groups with rosteringEnded set
+   * @returns A SQL condition, or undefined when no filter applies
+   */
+  private buildGroupWhereClause(includeEnded: boolean): SQL | undefined {
+    if (includeEnded) {
+      return undefined;
+    }
+
+    return isNull(groups.rosteringEnded);
+  }
+
+  /**
+   * List all groups with optional filtering.
+   *
+   * This method does not apply authorization filtering and should only be used
+   * for super admin access where all groups are visible.
+   *
+   * @param options - Pagination, sorting, and optional filters
+   * @returns Paginated result with groups
+   */
+  async listAll(options: ListGroupOptions): Promise<PaginatedResult<Group>> {
+    const { page, perPage, orderBy, includeEnded = false } = options;
+
+    const where = this.buildGroupWhereClause(includeEnded);
+
+    // Delegate to getAll() — tiebreaker asc(id) is handled by getAll() itself
+    return this.getAll({
+      page,
+      perPage,
+      ...(orderBy && { orderBy }),
+      ...(where && { where }),
+    });
+  }
+
+  /**
+   * List groups by a pre-determined set of IDs with pagination and sorting.
+   *
+   * Used after FGA resolves the set of accessible group IDs — this method
+   * fetches the actual records with pagination.
+   *
+   * @param ids - Array of group IDs to fetch (from FGA listAccessibleObjects)
+   * @param options - Pagination, sorting, and optional filters
+   * @returns Paginated result with groups
+   */
+  async listByIds(ids: string[], options: ListGroupOptions): Promise<PaginatedResult<Group>> {
+    const { includeEnded = false } = options;
+
+    const where = this.buildGroupWhereClause(includeEnded);
+
+    return this.getByIds(ids, {
+      page: options.page,
+      perPage: options.perPage,
+      ...(options.orderBy && { orderBy: options.orderBy }),
+      ...(where && { where }),
     });
   }
 
