@@ -10,6 +10,7 @@ import { baseFixture } from '../test-support/fixtures';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
+import { UserGroupFactory } from '../test-support/factories/user-group.factory';
 import { GroupFactory } from '../test-support/factories/group.factory';
 import { FamilyFactory } from '../test-support/factories/family.factory';
 import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
@@ -171,10 +172,12 @@ describe('UserRepository', () => {
   });
 
   describe('endAllEnrollments', () => {
-    it('ends every active org, class, and family enrollment for the user', async () => {
+    it('ends every active org, class, group, and family enrollment for the user', async () => {
       const user = await UserFactory.create();
       const family = await FamilyFactory.create();
+      const group = await GroupFactory.create();
       await UserOrgFactory.create({ userId: user.id, orgId: baseFixture.district.id, role: UserRole.ADMINISTRATOR });
+      await UserGroupFactory.create({ userId: user.id, groupId: group.id, role: UserRole.STUDENT });
       await UserClassFactory.create({
         userId: user.id,
         classId: baseFixture.classInSchoolA.id,

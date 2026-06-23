@@ -42,9 +42,12 @@ import {
  * persisted via {@link UserService.createWithImportedAuth}, which runs the same DB+FGA saga and
  * compensation as single-create. Passwords are SCRYPT-hashed for `importUsers`.
  *
- * **Update / unenroll bins**: tracked as the next increment — they require new repository support
- * for enrollment-ending, `rosteringEnded` archiving, and membership reconciliation. Until then, such
- * rows are reported as a per-row failure rather than silently mishandled.
+ * **Unenroll bin** (implemented): ends all of a user's enrollments and archives them
+ * (`rosteringEnded`) in one transaction, then best-effort deletes their FGA membership tuples.
+ *
+ * **Update bin**: tracked as the next increment — it needs a membership-reconciliation repository
+ * method plus a per-row `updateUser` path for password/name. Until then update rows are reported as
+ * a per-row failure rather than silently mishandled.
  *
  * Authorization mirrors single-create and is applied per row: super admin, or `can_create_users` on
  * every membership target (the legacy uses the same coarse permission for all three bins).
