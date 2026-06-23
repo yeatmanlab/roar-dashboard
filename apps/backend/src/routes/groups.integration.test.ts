@@ -702,3 +702,85 @@ describe('GET /v1/groups/:groupId/users', () => {
     });
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PATCH /v1/groups/:groupId
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('PATCH /v1/groups/:groupId', () => {
+  describe('authorization', () => {
+    it('superAdmin tier updates a field, gets 200, and the change persists', async () => {
+      // Create a dedicated group so we don't mutate fixture data
+      const group = await GroupFactory.create({ name: 'Patch Target Group' });
+
+      const res = await expectRoute('PATCH', `/v1/groups/${group.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ name: 'Patched Group Name', abbreviation: 'PATCHED1' })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(group.id);
+
+      // Assert the change persisted by re-fetching via the get endpoint
+      const getRes = await expectRoute('GET', `/v1/groups/${group.id}`).as(tiers.superAdmin).toReturn(200);
+      expect(getRes.body.data.name).toBe('Patched Group Name');
+      expect(getRes.body.data.abbreviation).toBe('PATCHED1');
+    });
+
+    it('admin tier is forbidden from updating groups', async () => {
+      const res = await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
+        .as(tiers.admin)
+        .withBody({ name: 'Should Not Apply' })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator tier is forbidden from updating groups', async () => {
+      const res = await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
+        .as(tiers.educator)
+        .withBody({ name: 'Should Not Apply' })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
+        .unauthenticated()
+        .withBody({ name: 'Nope' })
+        .toReturn(StatusCodes.UNAUTHORIZED);
+    });
+
+    it('returns 404 for a non-existent group (existence checked before authz)', async () => {
+      const res = await expectRoute('PATCH', '/v1/groups/00000000-0000-0000-0000-000000000000')
+        .as(tiers.superAdmin)
+        .withBody({ name: 'Nope' })
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 400 for an empty body (no mutable fields provided)', async () => {
+      const res = await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
+        .as(tiers.superAdmin)
+        .withBody({})
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      expect(res.body.error).toBeDefined();
+    });
+
+    it('returns 400 when the body contains only an immutable/unknown key', async () => {
+      // Unlike the empty-body case above (which clears validation and reaches the
+      // service's "no mutable fields" 400 → ApiError envelope), `.strict()` rejects
+      // unknown/immutable keys at ts-rest request-validation time. That 400 is ts-rest's
+      // own validation response, not the ApiError envelope, so we assert the status only —
+      // matching the districts/schools/classes immutable-key tests.
+      await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ id: '00000000-0000-0000-0000-000000000000' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+  });
+});
