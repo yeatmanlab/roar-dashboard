@@ -45,7 +45,9 @@
                 data-cy="dropdown-parent-district"
               />
               <label for="parent-district">District<span id="required-asterisk">*</span></label>
-              <small v-if="v$.parentDistrict.$invalid && hasAttemptedSubmit" class="p-error"> Please select a district. </small>
+              <small v-if="v$.parentDistrict.$invalid && hasAttemptedSubmit" class="p-error">
+                Please select a district.
+              </small>
             </PvFloatLabel>
           </div>
 
@@ -63,7 +65,9 @@
                 data-cy="dropdown-parent-school"
               />
               <label for="parent-school">School<span id="required-asterisk">*</span></label>
-              <small v-if="v$.parentSchool.$invalid && hasAttemptedSubmit" class="p-error"> Please select a school. </small>
+              <small v-if="v$.parentSchool.$invalid && hasAttemptedSubmit" class="p-error">
+                Please select a school.
+              </small>
             </PvFloatLabel>
           </div>
         </div>
@@ -101,7 +105,9 @@
                 data-cy="dropdown-class-type"
               />
               <label for="class-type">Class Type<span id="required-asterisk">*</span></label>
-              <small v-if="v$.classType.$invalid && hasAttemptedSubmit" class="p-error">Please select a class type</small>
+              <small v-if="v$.classType.$invalid && hasAttemptedSubmit" class="p-error"
+                >Please select a class type</small
+              >
             </PvFloatLabel>
           </div>
 
@@ -119,7 +125,9 @@
                 data-cy="dropdown-group-type"
               />
               <label for="group-type">Group Type<span id="required-asterisk">*</span></label>
-              <small v-if="v$.groupType.$invalid && hasAttemptedSubmit" class="p-error">Please select a group type</small>
+              <small v-if="v$.groupType.$invalid && hasAttemptedSubmit" class="p-error"
+                >Please select a group type</small
+              >
             </PvFloatLabel>
           </div>
 
@@ -193,8 +201,8 @@
         <div class="grid">
           <div class="col-12">
             <PvButton
-              :label="isSubmitting ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
               v-tooltip="canCreateOrg ? false : PERMISSION_TOOLTIP"
+              :label="isSubmitting ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
               :disabled="orgTypeLabel === 'Org' || v$.$invalid || isSubmitting || !canCreateOrg"
               :icon="isSubmitting ? 'pi pi-spin pi-spinner' : ''"
               class="bg-primary text-white border-none border-round h-3rem w-3 hover:bg-red-900"
