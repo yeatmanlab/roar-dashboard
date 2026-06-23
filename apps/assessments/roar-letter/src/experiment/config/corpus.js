@@ -2,6 +2,7 @@ import i18next from 'i18next';
 // eslint-disable-next-line import/no-duplicates
 import { letters } from '../i18n';
 import { shuffle } from '../helperFunctions';
+import { PHONICS_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
 
 // eslint-disable-next-line import/no-mutable-exports
 export let corpusLetterAll;
@@ -139,7 +140,7 @@ export function processCVS() {
       const { userMetadata, task } = config;
       const { grade } = userMetadata;
 
-      if (task === 'phonics') {
+      if (task === PHONICS_TASK_IDS.EN) {
         return csvTransformed.storyPhonics;
       }
 
@@ -162,7 +163,7 @@ export function processCVS() {
       const { task, phonicsSet } = config;
 
       // return must match one of the keys in corpusLetterAll
-      if (task !== 'phonics') {
+      if (task !== PHONICS_TASK_IDS.EN) {
         // other tasks
         return null;
       }

@@ -1,6 +1,14 @@
 import { vi, describe, test, expect, beforeEach } from 'vitest';
 import { wireScoreAdapter } from '../sdk/letter-firekit-facade.js';
 import { RoarScores } from '../experiment/scores.js';
+import {
+  LETTER_TASK_IDS,
+  PHONICS_TASK_IDS,
+  LETTER_COMPOSITE_SCORE_NAMES,
+  PHONICS_GROUP_SCORE_NAMES,
+  LETTER_SUBTASK_DOMAINS,
+} from '@roar-platform/assessment-schema/roar-letter';
+import { AssessmentStage } from '@roar-platform/assessment-schema';
 
 // Facade and lazy-callback factories — captured so tests can verify calls and
 // interact with the facade object that wireScoreAdapter populates.
@@ -41,7 +49,7 @@ describe('wireScoreAdapter', () => {
     mockGetFirekitCompat.mockReturnValue(mockFacade);
     mockMakeLazyComputedCallback.mockReturnValue(mockComputedCallback);
 
-    sessionStore.config = { task: 'letter' };
+    sessionStore.config = { task: LETTER_TASK_IDS.EN };
   });
 
   test('_getRawScores returns undefined before any trial is accumulated', () => {
@@ -53,13 +61,13 @@ describe('wireScoreAdapter', () => {
   test('_accumulateRawScore increments numCorrect, numIncorrect, and numAttempted', () => {
     wireScoreAdapter();
 
-    mockFacade._accumulateRawScore('LowercaseNames', 'test', 1); // correct
-    mockFacade._accumulateRawScore('LowercaseNames', 'test', 0); // incorrect
-    mockFacade._accumulateRawScore('LowercaseNames', 'test', 1); // correct
+    mockFacade._accumulateRawScore(LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES, AssessmentStage.TEST, 1); // correct
+    mockFacade._accumulateRawScore(LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES, AssessmentStage.TEST, 0); // incorrect
+    mockFacade._accumulateRawScore(LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES, AssessmentStage.TEST, 1); // correct
 
     expect(mockFacade._getRawScores()).toEqual({
-      LowercaseNames: {
-        test: { numCorrect: 2, numIncorrect: 1, numAttempted: 3 },
+      [LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES]: {
+        [AssessmentStage.TEST]: { numCorrect: 2, numIncorrect: 1, numAttempted: 3 },
       },
     });
   });
@@ -67,18 +75,30 @@ describe('wireScoreAdapter', () => {
   test('_accumulateRawScore tracks multiple subtasks and stages independently', () => {
     wireScoreAdapter();
 
-    mockFacade._accumulateRawScore('LowercaseNames', 'practice', 1);
-    mockFacade._accumulateRawScore('LowercaseNames', 'test', 0);
-    mockFacade._accumulateRawScore('UppercaseNames', 'test', 1);
+    mockFacade._accumulateRawScore(LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES, AssessmentStage.PRACTICE, 1);
+    mockFacade._accumulateRawScore(LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES, AssessmentStage.TEST, 0);
+    mockFacade._accumulateRawScore(LETTER_SUBTASK_DOMAINS.UPPERCASE_NAMES, AssessmentStage.TEST, 1);
 
     const raw = mockFacade._getRawScores();
-    expect(raw.LowercaseNames.practice).toEqual({ numCorrect: 1, numIncorrect: 0, numAttempted: 1 });
-    expect(raw.LowercaseNames.test).toEqual({ numCorrect: 0, numIncorrect: 1, numAttempted: 1 });
-    expect(raw.UppercaseNames.test).toEqual({ numCorrect: 1, numIncorrect: 0, numAttempted: 1 });
+    expect(raw[LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES][AssessmentStage.PRACTICE]).toEqual({
+      numCorrect: 1,
+      numIncorrect: 0,
+      numAttempted: 1,
+    });
+    expect(raw[LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES][AssessmentStage.TEST]).toEqual({
+      numCorrect: 0,
+      numIncorrect: 1,
+      numAttempted: 1,
+    });
+    expect(raw[LETTER_SUBTASK_DOMAINS.UPPERCASE_NAMES][AssessmentStage.TEST]).toEqual({
+      numCorrect: 1,
+      numIncorrect: 0,
+      numAttempted: 1,
+    });
   });
 
   test('_getScoreAdapter dispatches to toLetterScoreEntries for task=letter', () => {
-    sessionStore.config = { task: 'letter' };
+    sessionStore.config = { task: LETTER_TASK_IDS.EN };
     wireScoreAdapter();
 
     const adapter = mockFacade._getScoreAdapter();
@@ -88,11 +108,11 @@ describe('wireScoreAdapter', () => {
     const computed = { composite: { thetaEstimateRaw: 1.5, thetaEstimate: 1.5 } };
     const entries = adapter(computed);
 
-    expect(entries.some((e) => e.name === 'thetaEstimateRaw')).toBe(true);
+    expect(entries.some((e) => e.name === LETTER_COMPOSITE_SCORE_NAMES.THETA_ESTIMATE_RAW)).toBe(true);
   });
 
   test('_getScoreAdapter dispatches to toPhonicsScoreEntries for task=phonics', () => {
-    sessionStore.config = { task: 'phonics' };
+    sessionStore.config = { task: PHONICS_TASK_IDS.EN };
     wireScoreAdapter();
 
     const adapter = mockFacade._getScoreAdapter();
@@ -107,8 +127,8 @@ describe('wireScoreAdapter', () => {
     };
     const entries = adapter(computed);
 
-    expect(entries.some((e) => e.name === 'cvcCorrect')).toBe(true);
-    expect(entries.some((e) => e.name === 'thetaEstimateRaw')).toBe(false);
+    expect(entries.some((e) => e.name === PHONICS_GROUP_SCORE_NAMES.CVC_CORRECT)).toBe(true);
+    expect(entries.some((e) => e.name === LETTER_COMPOSITE_SCORE_NAMES.THETA_ESTIMATE_RAW)).toBe(false);
   });
 
   test('wireScoreAdapter passes RoarScores to makeLazyComputedCallback and returns its result', () => {

@@ -30,6 +30,20 @@ export const LETTER_SUBTASK_SCORE_NAMES = {
 export type LetterSubtaskScoreName = (typeof LETTER_SUBTASK_SCORE_NAMES)[keyof typeof LETTER_SUBTASK_SCORE_NAMES];
 
 /**
+ * Subtask domain names emitted by RoarScores.computedScoreCallback for the letter task.
+ * These are the five CAT subtask groups produced by the Clowder engine.
+ * Domains whose name contains "Practice" (LetterPractice, PhonemePractice) map to
+ * assessmentStage=PRACTICE; all others (LowercaseNames, UppercaseNames, Phonemes) map to TEST.
+ */
+export const LETTER_SUBTASK_DOMAINS = {
+  LETTER_PRACTICE: 'LetterPractice',
+  LOWERCASE_NAMES: 'LowercaseNames',
+  UPPERCASE_NAMES: 'UppercaseNames',
+  PHONEME_PRACTICE: 'PhonemePractice',
+  PHONEMES: 'Phonemes',
+} as const;
+
+/**
  * Canonical run_scores.name strings for the letter composite domain.
  * English (letter) produces IRT theta estimates and normed scores.
  * Spanish and Canadian English (letter-es, letter-en-ca) return null from

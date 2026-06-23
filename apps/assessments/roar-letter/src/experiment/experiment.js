@@ -11,6 +11,7 @@ import {
 import webpAssets from '../../webpAssets.json';
 // setup
 import { initRoarJsPsych, initRoarTimeline, getStimulusCountPhonics, getPracticeCount } from './config/config';
+import { PHONICS_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
 import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/firekit';
 import { jsPsych } from './jsPsych';
 import { initializeCat } from './experimentSetup';
@@ -239,7 +240,7 @@ export function buildExperiment(config, computedScoreCallback) {
 
   let pushSubTaskToTimeline;
 
-  if (config.task === 'phonics') {
+  if (config.task === PHONICS_TASK_IDS.EN) {
     let breakNum = 0;
     pushSubTaskToTimeline = (subTaskInitBlock, fixationBlock, stimulusCounts) => {
       // begin the subtask
@@ -290,7 +291,7 @@ export function buildExperiment(config, computedScoreCallback) {
   // start the timer that limits the runtime of the app
   timeline.push(startAppTimer);
 
-  if (config.task === 'phonics') {
+  if (config.task === PHONICS_TASK_IDS.EN) {
     // phonics (previously called TextSoundPseudo)
 
     // intro

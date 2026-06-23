@@ -1,6 +1,11 @@
 import store from 'store2';
 import { getFirekitCompat, makeLazyComputedCallback } from '@roar-platform/assessment-sdk/compat/firekit';
-import { toLetterScoreEntries, toPhonicsScoreEntries } from '@roar-platform/assessment-schema/roar-letter';
+import {
+  LETTER_TASK_IDS,
+  PHONICS_TASK_IDS,
+  toLetterScoreEntries,
+  toPhonicsScoreEntries,
+} from '@roar-platform/assessment-schema/roar-letter';
 import { RoarScores } from '../experiment/scores';
 
 /**
@@ -55,8 +60,9 @@ export function wireScoreAdapter() {
   // Select the entry adapter based on which task is running.
   // task is read from config at call time so it reflects the actual running task.
   facade._getScoreAdapter = () => {
-    const task = store.session.get('config')?.task ?? 'letter';
-    return (computed) => (task === 'phonics' ? toPhonicsScoreEntries(computed) : toLetterScoreEntries(computed));
+    const task = store.session.get('config')?.task ?? LETTER_TASK_IDS.EN;
+    return (computed) =>
+      task === PHONICS_TASK_IDS.EN ? toPhonicsScoreEntries(computed) : toLetterScoreEntries(computed);
   };
 
   // Deferred instantiation — RoarScores reads store.session.get('config').scoringVersion

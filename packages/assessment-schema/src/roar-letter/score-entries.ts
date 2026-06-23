@@ -8,6 +8,7 @@ import {
   LETTER_RAW_COMPOSITE_SCORE_NAMES,
   LETTER_RAW_FOUNDATIONAL_SCORE_NAMES,
   LETTER_SUBTASK_SCORE_NAMES,
+  LETTER_SUBTASK_DOMAINS,
   PHONICS_COMPOSITE_SCORE_NAMES,
   PHONICS_RAW_COMPOSITE_SCORE_NAMES,
   PHONICS_SUBTASK_SCORE_NAMES,
@@ -41,13 +42,7 @@ const RECOGNIZED_LETTER_COMPOSITE_NAMES = new Set<string>(Object.values(LETTER_C
 const RECOGNIZED_LETTER_COMPOSITE_FOUNDATIONAL_NAMES = new Set<string>(
   Object.values(LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES),
 );
-const KNOWN_LETTER_SUBTASK_DOMAINS = new Set([
-  'LetterPractice',
-  'LowercaseNames',
-  'UppercaseNames',
-  'PhonemePractice',
-  'Phonemes',
-]);
+const KNOWN_LETTER_SUBTASK_DOMAINS = new Set<string>(Object.values(LETTER_SUBTASK_DOMAINS));
 
 /**
  * Letter subtask domain → AssessmentStage mapping.

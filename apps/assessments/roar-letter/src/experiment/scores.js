@@ -6,6 +6,12 @@ import { getGrade } from '@bdelab/roar-utils';
 import { clowder, scaleTheta } from './experimentSetup';
 import { makeFinite } from './helperFunctions';
 import { getItemGroupStats } from './trials/stimulusLetterName';
+import {
+  LETTER_TASK_IDS,
+  PHONICS_TASK_IDS,
+  LETTER_SCORE_TABLE_URL,
+} from '@roar-platform/assessment-schema/roar-letter';
+import { COMPOSITE_DOMAIN, COMPOSITE_FOUNDATIONAL_DOMAIN } from '@roar-platform/assessment-schema';
 
 /**
  * Extracts age in months from user metadata, converting from grade if needed.
@@ -41,7 +47,7 @@ export class RoarScores {
   constructor() {
     this.scoringVersion = parseInt(store.session.get('config').scoringVersion, 10);
     this.roarScoreKind = 'scaled_irt';
-    this.tableURL = `https://storage.googleapis.com/roar-ak/scores/letter_lookup_v${this.scoringVersion}.csv`;
+    this.tableURL = LETTER_SCORE_TABLE_URL(this.scoringVersion);
     this.lookupTable = [];
     this.tableLoaded = false;
     this.tableLoadingPromise = null;
@@ -115,7 +121,7 @@ export class RoarScores {
     const { task } = store.session.get('config');
     const { taskId } = store.session.get('config');
 
-    if (taskId !== 'letter') return null; // For non-letter tasks, we currently only return composite scores, so we can skip subtask score computation.
+    if (taskId !== LETTER_TASK_IDS.EN) return null; // For non-letter tasks, we currently only return composite scores, so we can skip subtask score computation.
 
     const computedScores = _mapValues(rawScores, (subtaskScores) => {
       const subScore = subtaskScores.test?.numCorrect || 0;
@@ -123,7 +129,7 @@ export class RoarScores {
       const subPercentCorrect =
         typeof numAttempted === 'number' && numAttempted > 0 ? Math.round((100 * subScore) / numAttempted) : 0;
 
-      if (task === 'letter') {
+      if (task === LETTER_TASK_IDS.EN) {
         const lowerCorrect = store.session('lowerCorrectItems');
         const lowerIncorrect = store.session('lowerIncorrectItems');
         const upperCorrect = store.session('upperCorrectItems');
@@ -155,9 +161,9 @@ export class RoarScores {
 
     let letterCompositeIRTScores = {};
     let foundationalCompositeIRTScores = {};
-    if (taskId === 'letter') {
-      const thetaEstimateRaw = clowder.theta.composite;
-      const thetaSERaw = makeFinite(clowder.seMeasurement.composite);
+    if (taskId === LETTER_TASK_IDS.EN) {
+      const thetaEstimateRaw = clowder.theta[COMPOSITE_DOMAIN];
+      const thetaSERaw = makeFinite(clowder.seMeasurement[COMPOSITE_DOMAIN]);
       const [thetaEstimate, thetaSE] = scaleTheta(thetaEstimateRaw, thetaSERaw);
       letterCompositeIRTScores = {
         thetaEstimateRaw,
@@ -166,8 +172,8 @@ export class RoarScores {
         thetaSE: makeFinite(thetaSE),
       };
 
-      const foundationalThetaEstimateRaw = clowder.theta.composite_foundational;
-      const foundationalThetaSERaw = makeFinite(clowder.seMeasurement.composite_foundational);
+      const foundationalThetaEstimateRaw = clowder.theta[COMPOSITE_FOUNDATIONAL_DOMAIN];
+      const foundationalThetaSERaw = makeFinite(clowder.seMeasurement[COMPOSITE_FOUNDATIONAL_DOMAIN]);
       const [foundationalThetaEstimate, foundationalThetaSE] = scaleTheta(
         foundationalThetaEstimateRaw,
         foundationalThetaSERaw,
@@ -179,7 +185,7 @@ export class RoarScores {
         thetaSE: makeFinite(foundationalThetaSE),
       };
 
-      computedScores.composite = {
+      computedScores[COMPOSITE_DOMAIN] = {
         totalCorrect: store.session('totalCorrect'),
         totalNumAttempted: store.session.get('trialNumTotal'),
         totalPercentCorrect: store.session('totalPercentCorrect'),
@@ -188,23 +194,23 @@ export class RoarScores {
         scoringVersion: this.scoringVersion,
       };
 
-      computedScores.composite_foundational = {
+      computedScores[COMPOSITE_FOUNDATIONAL_DOMAIN] = {
         roarScoreKind: this.roarScoreKind,
         scoringVersion: this.scoringVersion,
         ...foundationalCompositeIRTScores,
       };
     } else {
       // Initialize composite for non-letter tasks (e.g., phonics) or letter-es
-      computedScores.composite = {
+      computedScores[COMPOSITE_DOMAIN] = {
         totalCorrect: store.session('totalCorrect'),
         totalNumAttempted: store.session.get('trialNumTotal'),
         totalPercentCorrect: store.session('totalPercentCorrect'),
       };
     }
 
-    if (task === 'phonics') {
-      computedScores.composite = {
-        ...computedScores.composite,
+    if (task === PHONICS_TASK_IDS.EN) {
+      computedScores[COMPOSITE_DOMAIN] = {
+        ...computedScores[COMPOSITE_DOMAIN],
         subscores: {
           cvc: getItemGroupStats('cvc'), // consonant-vowel-consonant
           digraph: getItemGroupStats('digraph'), // digraph
@@ -224,7 +230,7 @@ export class RoarScores {
     const ageMonths = userMetadata?.ageMonths;
 
     // eslint-disable-next-line eqeqeq
-    if ((rawGrade != null || ageMonths != null) && task === 'letter') {
+    if ((rawGrade != null || ageMonths != null) && task === LETTER_TASK_IDS.EN) {
       if (!this.tableLoaded) {
         if (!this.tableLoadingPromise) {
           this.tableLoadingPromise = this.initTable();
@@ -268,8 +274,8 @@ export class RoarScores {
       if (myRow !== undefined) {
         const { ageMonths: rowAgeMonths, thetaEstimate: rowThetaEstimate, ...normedScores } = myRow;
 
-        computedScores.composite = {
-          ...computedScores.composite,
+        computedScores[COMPOSITE_DOMAIN] = {
+          ...computedScores[COMPOSITE_DOMAIN],
           ...normedScores,
           roarScoreKind: this.roarScoreKind,
           scoringVersion: this.scoringVersion,

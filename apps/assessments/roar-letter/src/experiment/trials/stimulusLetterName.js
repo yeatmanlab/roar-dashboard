@@ -18,6 +18,8 @@ import { isPractice } from './subTask';
 import { audioResponse } from './audioFeedback';
 import { isMaxTimeoutReached } from './appTimer';
 import { clowder, scaleTheta, setNextStimulus } from '../experimentSetup';
+import { LETTER_TASK_IDS, PHONICS_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
+import { COMPOSITE_DOMAIN, AssessmentStage } from '@roar-platform/assessment-schema';
 
 export const audioContext = new Audio();
 
@@ -158,7 +160,7 @@ const letterNameTrials = {
     const stimulus = store.session.get('nextStimulus');
     const { task } = store.session.get('config');
 
-    if (task === 'phonics') {
+    if (task === PHONICS_TASK_IDS.EN) {
       if (mediaAssets.audio[stimulus.audio_filename]) {
         return mediaAssets.audio[stimulus.audio_filename];
       }
@@ -191,7 +193,7 @@ const letterNameTrials = {
     const stimulus = store.session.get('nextStimulus');
 
     let target;
-    if (store.session.get('config').task === 'phonics') {
+    if (store.session.get('config').task === PHONICS_TASK_IDS.EN) {
       target = stimulus.target_letter;
     } else {
       ({ target } = stimulus); // Destructuring in parentheses
@@ -216,7 +218,7 @@ const letterNameTrials = {
   on_finish: (data) => {
     // N.B.: nextStimulus is actually the current stimulus
     const currentStimulus = store.session.get('nextStimulus');
-    const { zeta } = currentStimulus?.zetas?.find?.((zetaCatMap) => zetaCatMap.cats.includes('composite')) ?? {};
+    const { zeta } = currentStimulus?.zetas?.find?.((zetaCatMap) => zetaCatMap.cats.includes(COMPOSITE_DOMAIN)) ?? {};
     const { a, b, c, d } = zeta ?? {};
     const itemParameters = { a, b, c, d };
     const choices = store.session('choices');
@@ -226,7 +228,7 @@ const letterNameTrials = {
 
     // check response and record it
     data.correct = data.button_response === store.session('correctResponseNum') ? 1 : 0;
-    data.assessment_stage = isPractice(subTaskName) ? 'practice' : 'test';
+    data.assessment_stage = isPractice(subTaskName) ? AssessmentStage.PRACTICE : AssessmentStage.TEST;
     store.session.set('correct', data.correct);
     store.session.set('response', data.button_response);
     store.session.set('responseValue', choices[data.button_response]);
@@ -240,7 +242,7 @@ const letterNameTrials = {
 
     // Update theta and get next stimulus before writing trial data
     // Phonics uses cat.findNextItem() directly instead of clowder
-    if (store.session.get('config').task !== 'phonics') {
+    if (store.session.get('config').task !== PHONICS_TASK_IDS.EN) {
       setNextStimulus();
     }
 
@@ -295,7 +297,7 @@ const letterNameTrials = {
       corpusId: currentStimulus.corpus_src,
 
       // Specific to this trial
-      assessment_stage: isPractice(subTaskName) ? 'practice' : 'test',
+      assessment_stage: isPractice(subTaskName) ? AssessmentStage.PRACTICE : AssessmentStage.TEST,
       target: store.session('target'),
       choices: store.session('choices'),
       responseValue: store.session('responseValue'),
@@ -310,7 +312,7 @@ const letterNameTrials = {
       trialNumTotal: store.session('trialNumTotal'),
     };
 
-    if (taskId === 'letter') {
+    if (taskId === LETTER_TASK_IDS.EN) {
       const thetaEstimateRaw = clowder.theta.composite;
       const thetaSERaw = makeFinite(clowder.seMeasurement.composite);
       const [thetaEstimate, thetaSE] = scaleTheta(thetaEstimateRaw, thetaSERaw);
@@ -352,7 +354,7 @@ const letterNameTrials = {
         phonemeCorrect: store.session('phonemeCorrectItems'),
         phonemeIncorrect: store.session('phonemeIncorrectItems'),
       });
-    } else if (task === 'phonics') {
+    } else if (task === PHONICS_TASK_IDS.EN) {
       const { itemGroup, itemId, pattern } = currentStimulus;
 
       Object.assign(commonData, {

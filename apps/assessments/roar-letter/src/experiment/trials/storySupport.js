@@ -6,6 +6,7 @@ import '../i18n';
 import { storyActive } from '../config/corpus';
 import { isMaxTimeoutReached } from './appTimer';
 import { isEarlyStopReached } from './stimulusLetterName';
+import { PHONICS_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
 
 // eslint-disable-next-line import/no-mutable-exports
 export let letterIntroAndInstructions;
@@ -77,7 +78,7 @@ export function createStory() {
   // This function is used to create the Html for the prompt field of the trial. Each screenStyle is a general pattern
   // (such as text below an image) that will be populated with a specific image and text from the csv file
   function createScreenHtml(content) {
-    if (store.session.get('config').task === 'phonics') {
+    if (store.session.get('config').task === PHONICS_TASK_IDS.EN) {
       if (content.screenStyle === 'speechBubble') {
         return `
       <div class="phonics-gif-container">

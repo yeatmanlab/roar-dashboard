@@ -1,6 +1,14 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { RoarScores } from '../experiment/scores.js';
-import { toLetterScoreEntries, LETTER_COMPOSITE_SCORE_NAMES } from '@roar-platform/assessment-schema/roar-letter';
+import {
+  toLetterScoreEntries,
+  LETTER_COMPOSITE_SCORE_NAMES,
+  LETTER_TASK_IDS,
+  LETTER_SCORING_VERSION,
+  LETTER_SUBTASK_SCORE_NAMES,
+  LETTER_SUBTASK_DOMAINS,
+} from '@roar-platform/assessment-schema/roar-letter';
+import { ScoreType } from '@roar-platform/assessment-schema';
 import fs from 'fs';
 import path from 'path';
 import papaparse from 'papaparse';
@@ -62,9 +70,9 @@ describe('RoarScores Integration Tests', () => {
     for (const key of Object.keys(sessionStore)) delete sessionStore[key];
     Object.assign(sessionStore, {
       config: {
-        task: 'letter',
-        taskId: 'letter',
-        scoringVersion: 1,
+        task: LETTER_TASK_IDS.EN,
+        taskId: LETTER_TASK_IDS.EN,
+        scoringVersion: LETTER_SCORING_VERSION.V1,
         userMetadata: { ageMonths: 72 },
       },
       lowerCorrectItems: [],
@@ -223,9 +231,9 @@ describe('RoarScores Integration Tests', () => {
 
   test('should return null for non-English letter tasks (letter-es, letter-en-ca)', async () => {
     sessionStore.config = {
-      task: 'letter',
-      taskId: 'letter-es',
-      scoringVersion: 1,
+      task: LETTER_TASK_IDS.EN,
+      taskId: LETTER_TASK_IDS.ES,
+      scoringVersion: LETTER_SCORING_VERSION.V1,
       userMetadata: { ageMonths: 72 },
     };
 
@@ -265,30 +273,46 @@ describe('RoarScores Integration Tests', () => {
 
     // Composite domain: theta raw/computed pair, normed scores from CSV lookup.
     expect(entries).toContainEqual(
-      expect.objectContaining({ name: LETTER_COMPOSITE_SCORE_NAMES.THETA_ESTIMATE_RAW, type: 'raw', value: '-1' }),
+      expect.objectContaining({
+        name: LETTER_COMPOSITE_SCORE_NAMES.THETA_ESTIMATE_RAW,
+        type: ScoreType.RAW,
+        value: '-1',
+      }),
     );
     expect(entries).toContainEqual(
-      expect.objectContaining({ name: LETTER_COMPOSITE_SCORE_NAMES.THETA_ESTIMATE, type: 'computed', value: '-1' }),
+      expect.objectContaining({
+        name: LETTER_COMPOSITE_SCORE_NAMES.THETA_ESTIMATE,
+        type: ScoreType.COMPUTED,
+        value: '-1',
+      }),
     );
     expect(entries).toContainEqual(
-      expect.objectContaining({ name: LETTER_COMPOSITE_SCORE_NAMES.ROAR_SCORE, type: 'computed', value: '430' }),
+      expect.objectContaining({
+        name: LETTER_COMPOSITE_SCORE_NAMES.ROAR_SCORE,
+        type: ScoreType.COMPUTED,
+        value: '430',
+      }),
     );
     expect(entries).toContainEqual(
-      expect.objectContaining({ name: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT, type: 'raw', value: '5' }),
+      expect.objectContaining({ name: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT, type: ScoreType.RAW, value: '5' }),
     );
 
     // Subtask domain: subScore should appear, but empty item lists should not.
     expect(entries).toContainEqual(
-      expect.objectContaining({ name: 'subScore', domain: 'LowercaseNames', type: 'computed' }),
+      expect.objectContaining({
+        name: LETTER_SUBTASK_SCORE_NAMES.SUB_SCORE,
+        domain: LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES,
+        type: ScoreType.COMPUTED,
+      }),
     );
-    expect(entries.some((e) => e.name === 'lowerCorrect')).toBe(false);
+    expect(entries.some((e) => e.name === LETTER_SUBTASK_SCORE_NAMES.LOWER_CORRECT)).toBe(false);
   });
 
   test('should handle missing userMetadata gracefully', async () => {
     sessionStore.config = {
-      task: 'letter',
-      taskId: 'letter',
-      scoringVersion: 1,
+      task: LETTER_TASK_IDS.EN,
+      taskId: LETTER_TASK_IDS.EN,
+      scoringVersion: LETTER_SCORING_VERSION.V1,
     };
 
     mockClowder.theta.composite = 0.5;

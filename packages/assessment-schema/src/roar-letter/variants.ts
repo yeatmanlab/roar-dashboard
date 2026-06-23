@@ -39,3 +39,19 @@ export const LETTER_LANGUAGES = {
     defaultScoringVersion: null,
   },
 } as const satisfies Record<string, LetterLanguageEntry>;
+
+/**
+ * i18next language codes used for corpus and configuration branching in the letter assessment.
+ * These are the values that i18next.language returns after changeLanguage() is called —
+ * they may differ from LETTER_LANGUAGES keys (which are lowercase URL-convention codes).
+ *
+ * EN, ES, EN_CA correspond to supported letter variants registered in LETTER_LANGUAGES.
+ * IT (Italian) has stimulus CSVs in the source but is not a registered backend task;
+ * it is included here only for the corpus-selection code path that predates task registration.
+ */
+export const LETTER_LANGUAGE_CODES = {
+  EN: 'en',
+  ES: 'es',
+  IT: 'it',
+  EN_CA: 'en-CA',
+} as const;

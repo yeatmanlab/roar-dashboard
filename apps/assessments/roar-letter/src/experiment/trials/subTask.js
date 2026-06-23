@@ -1,6 +1,7 @@
 /* eslint-disable import/no-cycle */
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
 import store from 'store2';
+import { LETTER_SUBTASK_DOMAINS } from '@roar-platform/assessment-schema/roar-letter';
 
 // order of subTasks
 // note: subTaskName must be initialized to "" in config
@@ -23,7 +24,11 @@ import store from 'store2';
 
 export const isPractice = () => {
   const currentSubTask = store.session.get('subTaskName');
-  const practiceTasks = ['LetterPractice', 'PhonicsPractice', 'PhonemePractice'];
+  const practiceTasks = [
+    LETTER_SUBTASK_DOMAINS.LETTER_PRACTICE,
+    'PhonicsPractice',
+    LETTER_SUBTASK_DOMAINS.PHONEME_PRACTICE,
+  ];
   return practiceTasks.includes(currentSubTask);
 };
 
@@ -62,35 +67,35 @@ const subTaskFinish = () => {
 export const subTaskInitLowercase = {
   type: jsPsychCallFunction,
   func: function () {
-    subTaskInit('LowercaseNames');
+    subTaskInit(LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES);
   },
 };
 
 export const subTaskInitUppercase = {
   type: jsPsychCallFunction,
   func: function () {
-    subTaskInit('UppercaseNames');
+    subTaskInit(LETTER_SUBTASK_DOMAINS.UPPERCASE_NAMES);
   },
 };
 
 export const subTaskInitPhoneme = {
   type: jsPsychCallFunction,
   func: function () {
-    subTaskInit('Phonemes');
+    subTaskInit(LETTER_SUBTASK_DOMAINS.PHONEMES);
   },
 };
 
 export const subTaskInitLetterPractice = {
   type: jsPsychCallFunction,
   func: function () {
-    subTaskInit('LetterPractice');
+    subTaskInit(LETTER_SUBTASK_DOMAINS.LETTER_PRACTICE);
   },
 };
 
 export const subTaskInitPhonemePractice = {
   type: jsPsychCallFunction,
   func: function () {
-    subTaskInit('PhonemePractice');
+    subTaskInit(LETTER_SUBTASK_DOMAINS.PHONEME_PRACTICE);
   },
 };
 

@@ -4,6 +4,7 @@ import _isNull from 'lodash/isNull';
 import _isUndefined from 'lodash/isUndefined';
 import i18next from 'i18next';
 import { getAgeData } from '@bdelab/roar-utils';
+import { LETTER_TASK_IDS, LETTER_SCORING_VERSION } from '@roar-platform/assessment-schema/roar-letter';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { enterFullscreen } from '../trials/fullScreen';
 import { corpusLetterAll, corpusTypePhonics } from './corpus';
@@ -185,7 +186,7 @@ export const initConfig = async (gameParams, userParams, displayElement) => {
     labId,
     recruitment: recruitment || 'pilot',
     story: story ?? false,
-    task: task ?? 'letter',
+    task: task ?? LETTER_TASK_IDS.EN,
     phonicsSet: phonicsSet ?? 'all',
     phonicsCorpus: phonicsCorpus ?? 'letter-Corpus',
     userMetadata: { ...userMetadata, grade, ...ageData },
@@ -215,8 +216,8 @@ export const initConfig = async (gameParams, userParams, displayElement) => {
     randomSeed,
     nStartItems,
     startSelectMethod,
-    scoringVersion: scoringVersion ?? 1,
-    taskId: taskId ?? 'letter',
+    scoringVersion: scoringVersion ?? LETTER_SCORING_VERSION.V1,
+    taskId: taskId ?? LETTER_TASK_IDS.EN,
   };
 
   if (config.pid) {

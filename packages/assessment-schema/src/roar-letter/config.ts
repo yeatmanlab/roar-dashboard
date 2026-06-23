@@ -42,3 +42,20 @@ export type LetterScoringVersion = (typeof LETTER_SCORING_VERSION)[keyof typeof 
  */
 export const LETTER_SCORE_TABLE_URL = (version: LetterScoringVersion): string =>
   `https://storage.googleapis.com/roar-ak/scores/letter_lookup_v${version}.csv`;
+
+/**
+ * Clowder CAT category names for the letter assessment engine.
+ * These are the internal identifiers for the Clowder adaptive testing algorithm —
+ * used in catOrderMap, catsConfig, requiredItems, and catsToUpdate arrays.
+ * Distinct from run_scores domain names (see LETTER_SUBTASK_DOMAINS in score-names.ts).
+ * The mapping between these names and domain names lives in catToSubTaskMap in experimentSetup.js.
+ */
+export const LETTER_CAT_NAMES = {
+  LETTER_NAME_PRACTICE: 'letterNamePractice',
+  LETTER_NAME_LOWER: 'letterNameLower',
+  LETTER_NAME_UPPER: 'letterNameUpper',
+  LETTER_PHONEME_PRACTICE: 'letterPhonemePractice',
+  LETTER_PHONEME: 'letterPhoneme',
+} as const;
+
+export type LetterCatName = (typeof LETTER_CAT_NAMES)[keyof typeof LETTER_CAT_NAMES];
