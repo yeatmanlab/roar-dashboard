@@ -3,17 +3,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestingPinia } from '@pinia/testing';
 import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
-import { StatusCodes } from 'http-status-codes';
 import { withSetup } from '@/test-support/withSetup.js';
 import { useAuthStore } from '@/store/auth';
+import { fetchDocById } from '@/helpers/query/utils';
 import useUserDataQuery from './useUserDataQuery';
 
-const mockUsersGet = vi.fn();
-
-vi.mock('@/clients/roar-api', () => ({
-  getRoarApiClient: () => ({
-    users: { get: mockUsersGet },
-  }),
+vi.mock('@/helpers/query/utils', () => ({
+  fetchDocById: vi.fn().mockImplementation(() => []),
 }));
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
@@ -30,17 +26,11 @@ describe('useUserDataQuery', () => {
 
   beforeEach(() => {
     piniaInstance = createTestingPinia();
-    queryClient = new VueQuery.QueryClient({ defaultOptions: { queries: { retry: false } } });
-    mockUsersGet.mockReset();
-    mockUsersGet.mockResolvedValue({
-      status: StatusCodes.OK,
-      body: { data: { id: 'user-uuid', nameFirst: 'Ada', nameMiddle: null, nameLast: 'Lovelace' } },
-    });
+    queryClient = new VueQuery.QueryClient();
   });
 
   afterEach(() => {
     queryClient?.clear();
-    vi.clearAllMocks();
   });
 
   it('should call query with correct parameters', () => {
@@ -64,6 +54,8 @@ describe('useUserDataQuery', () => {
         }),
       }),
     );
+
+    expect(fetchDocById).toHaveBeenCalledWith('users', expect.objectContaining({ _value: authStore.roarUid }));
   });
 
   it('should allow the use of a manual user ID', async () => {
@@ -79,50 +71,15 @@ describe('useUserDataQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith(
-      expect.objectContaining({
-        queryKey: ['user', expect.objectContaining({ _value: mockStudentUserId })],
-        queryFn: expect.any(Function),
-        enabled: expect.objectContaining({
-          _value: true,
-        }),
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['user', expect.objectContaining({ _value: mockStudentUserId })],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: true,
       }),
-    );
-  });
-
-  it('fetches via GET /users/:id and maps the response into the legacy shape', async () => {
-    const uid = nanoid();
-    const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = ref(uid);
-
-    vi.spyOn(VueQuery, 'useQuery');
-
-    withSetup(() => useUserDataQuery(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    // Invoke the queryFn directly for deterministic assertions (no TanStack scheduling).
-    const { queryFn } = VueQuery.useQuery.mock.calls[0][0];
-    const data = await queryFn();
-
-    expect(mockUsersGet).toHaveBeenCalledWith({ params: { id: uid } });
-    expect(data.name).toEqual({ first: 'Ada', middle: null, last: 'Lovelace' });
-  });
-
-  it('throws when the API returns a non-200 status', async () => {
-    mockUsersGet.mockResolvedValue({ status: StatusCodes.FORBIDDEN, body: {} });
-
-    const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = ref(nanoid());
-
-    vi.spyOn(VueQuery, 'useQuery');
-
-    withSetup(() => useUserDataQuery(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    const { queryFn } = VueQuery.useQuery.mock.calls[0][0];
-    await expect(queryFn()).rejects.toThrow(/status 403/);
+    expect(fetchDocById).toHaveBeenCalledWith('users', expect.objectContaining({ _value: mockStudentUserId }));
   });
 
   it('should correctly control the enabled state of the query', async () => {
@@ -132,58 +89,82 @@ describe('useUserDataQuery', () => {
     authStore.roarUid = mockUserRoarUid;
 
     const enableQuery = ref(false);
-    const queryOptions = { enabled: enableQuery };
 
-    vi.spyOn(VueQuery, 'useQuery');
+    const queryOptions = {
+      enabled: enableQuery,
+    };
 
     withSetup(() => useUserDataQuery(null, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
-    expect(enabledRef._value).toBe(false);
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['user', expect.objectContaining({ _value: authStore.roarUid })],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+        __v_isRef: true,
+      }),
+    });
+
+    expect(fetchDocById).not.toHaveBeenCalled();
 
     enableQuery.value = true;
     await nextTick();
 
-    expect(enabledRef._value).toBe(true);
+    expect(fetchDocById).toHaveBeenCalledWith('users', expect.objectContaining({ _value: authStore.roarUid }));
   });
 
-  it('should only enable the query once the roarUid is available', async () => {
+  it('should only fetch data once the roarUid is available', async () => {
     const mockUserRoarUid = ref(null);
 
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = mockUserRoarUid;
 
-    vi.spyOn(VueQuery, 'useQuery');
+    const queryOptions = { enabled: true };
 
-    withSetup(() => useUserDataQuery(null, { enabled: true }), {
+    withSetup(() => useUserDataQuery(null, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
-    expect(enabledRef._value).toBe(false);
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['user', expect.objectContaining({ _value: authStore.roarUid })],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+        __v_isRef: true,
+      }),
+    });
+
+    expect(fetchDocById).not.toHaveBeenCalled();
 
     mockUserRoarUid.value = nanoid();
     await nextTick();
 
-    expect(enabledRef._value).toBe(true);
+    expect(fetchDocById).toHaveBeenCalledWith('users', expect.objectContaining({ _value: authStore.roarUid }));
   });
 
-  it('should not let queryOptions override the internally computed enabled value', () => {
+  it('should not let queryOptions override the internally computed value', async () => {
     const mockUserRoarUid = ref(null);
 
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = mockUserRoarUid;
 
-    vi.spyOn(VueQuery, 'useQuery');
+    const queryOptions = { enabled: true };
 
-    withSetup(() => useUserDataQuery(null, { enabled: true }), {
+    withSetup(() => useUserDataQuery(null, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    // uid is still null, so the internal condition keeps the query disabled despite enabled: true.
-    expect(VueQuery.useQuery.mock.calls[0][0].enabled._value).toBe(false);
-    expect(mockUsersGet).not.toHaveBeenCalled();
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['user', expect.objectContaining({ _value: authStore.roarUid })],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+        __v_isRef: true,
+      }),
+    });
+
+    expect(fetchDocById).not.toHaveBeenCalled();
   });
 });
