@@ -205,6 +205,16 @@ jobs:
       # the job container (no official emulator-only Docker image).
       FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
       GCLOUD_PROJECT: demo-roar
+      # Firebase scrypt parameters for the bulk-import create bin. These are the
+      # PUBLIC values from Firebase's own documentation/known-answer test vector
+      # (also pinned in firebase-password-hash.test.ts) — NOT real project
+      # secrets. The import service hashes with these and passes the same params
+      # to importUsers, so the emulator round-trip is self-consistent regardless
+      # of the values. Real deployments inject the project's actual secrets.
+      FIREBASE_SCRYPT_SIGNER_KEY: jxspr8Ki0RYycVU8zykbdLGjFQ3McFUH0uiiTvC8pVMXAn210wjLNmdZJzxUECKbm0QsEmYUSDzZvpjeJ9WmXA==
+      FIREBASE_SCRYPT_SALT_SEPARATOR: Bw==
+      FIREBASE_SCRYPT_ROUNDS: "8"
+      FIREBASE_SCRYPT_MEM_COST: "14"
       # The dashboard bakes this into its bundle at build time so it can
       # reach the locally-running backend.
       VITE_ROAR_API_BASE_URL: http://127.0.0.1:4000
