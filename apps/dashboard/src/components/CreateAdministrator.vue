@@ -301,82 +301,8 @@ const submit = async () => {
 </script>
 
 <style lang="scss">
-.return-button {
-  display: block;
-  margin: 1rem 1.75rem;
-}
-
 .loading-container {
   width: 100%;
   text-align: center;
-}
-
-.p-checkbox-box.p-highlight {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-  color: white;
-}
-
-#rectangle {
-  background: #fcfcfc;
-  border-radius: 0.3125rem;
-  border-style: solid;
-  border-width: 0.0625rem;
-  border-color: #e5e5e5;
-  margin: 0 1.75rem;
-  padding-top: 1.75rem;
-  padding-left: 1.875rem;
-  text-align: left;
-  overflow: hidden;
-
-  hr {
-    margin-top: 2rem;
-    margin-left: -1.875rem;
-  }
-
-  #heading {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    color: #000000;
-    font-size: 1.625rem;
-    line-height: 2.0425rem;
-  }
-
-  #section-heading {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    font-size: 1.125rem;
-    line-height: 1.5681rem;
-    color: #525252;
-  }
-
-  #administration-name {
-    height: 100%;
-    border-radius: 0.3125rem;
-    border-width: 0.0625rem;
-    border-color: #e5e5e5;
-  }
-
-  #section {
-    margin-top: 1.375rem;
-  }
-
-  #section-content {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    font-size: 0.875rem;
-    line-height: 1.22rem;
-    color: #525252;
-    margin: 0.625rem 0rem;
-  }
-
-  ::placeholder {
-    font-family: 'Source Sans Pro', sans-serif;
-    color: #c4c4c4;
-  }
-
-  .hide {
-    display: none;
-  }
 }
 </style>
