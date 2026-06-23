@@ -106,11 +106,8 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, watchEffect, computed } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import _filter from 'lodash/filter';
-import _get from 'lodash/get';
-import _find from 'lodash/find';
-import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { storeToRefs } from 'pinia';
 import PvFloatLabel from 'primevue/floatlabel';
@@ -119,8 +116,9 @@ import PvSelect from 'primevue/select';
 import PvToggleSwitch from 'primevue/toggleswitch';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import useMeQuery from '@/composables/queries/useMeQuery';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
-import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
+import useUserAdministrationsQuery from '@/composables/queries/useUserAdministrationsQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
@@ -129,11 +127,8 @@ import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import { AppMessageState, MESSAGE_STATE_TYPES } from '@/components/AppMessageState';
 import AppSpinner from '@/components/AppSpinner.vue';
-import useUserType from '@/composables/useUserType';
-import { highestAdminOrgIntersection } from '@/helpers/query/assignments';
 import { checkConsentRenewalDate } from '@/helpers/checkConsentRenewalDate';
-import { findTaskByIdOrSlug, filterTasksByIdOrSlug } from '@/helpers/taskIdentifiers';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { mapAdministrationTasksToGames } from '@/helpers/participantGames';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -190,74 +185,41 @@ const {
   enabled: initialized,
 });
 
-const adminOrgIntersection = computed(() => {
-  return highestAdminOrgIntersection(userData.value, authStore?.userClaims?.claims?.adminOrgs);
-});
-const orgType = ref(null);
-const orgIds = ref(null);
-
-watch(
-  adminOrgIntersection,
-  (newOrgIntersection) => {
-    orgType.value = newOrgIntersection?.orgType;
-    orgIds.value = newOrgIntersection?.orgIds;
-  },
-  { immediate: true },
-);
-
-const isOrgIntersectionReady = ref(false);
-
-const userAssignmentsQueryEnabled = computed(() => {
-  return isOrgIntersectionReady.value && initialized.value;
-});
-
-const { data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-const { isSuperAdmin } = useUserType(userClaims);
-
-watchEffect(() => {
-  // If user is superadmin, or is a non-externally launched participant we won't need to compute the orgIntersection
-  if (isSuperAdmin.value || !props.launchId) {
-    isOrgIntersectionReady.value = true;
-  } else {
-    isOrgIntersectionReady.value = !!orgType.value && !!orgIds.value;
-  }
-});
+// Resolve the student's ROAR (Postgres) user ID from the backend `/me` endpoint,
+// the same way the Task players do. This is the identity the new
+// `GET /users/:userId/administrations` endpoint expects — NOT the Firebase
+// `roarUid`.
+//
+// NOTE: In proxy-launch mode (`props.launchId` set), `me.id` is the launching
+// user's ID, not the participant's. Resolving the participant's UUID from the
+// launch record is not yet implemented (mirrors the documented limitation in
+// the Task players). The standard student homepage path is unaffected.
+const { data: me } = useMeQuery({ enabled: initialized });
+const userId = computed(() => me.value?.id);
 
 const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
   data: userAssignments,
-} = useUserAssignmentsQuery(
-  {
-    enabled: userAssignmentsQueryEnabled,
-  },
-  props.launchId,
-  !isSuperAdmin.value ? orgType : null,
-  !isSuperAdmin.value ? orgIds : null,
-);
+} = useUserAdministrationsQuery(userId, {
+  enabled: initialized,
+});
 
 const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
-const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
-const tasksQueryEnabled = computed(() => !isLoadingAssignments.value && !_isEmpty(taskIds.value));
-
+// The task catalog supplies presentational fields (name, description, image,
+// tutorial video, external/URL config) keyed by the task's UUID `id` or `slug`.
+// The administration tasks carry the per-student `optional`/`assigned`/`progress`
+// state, so we only need the catalog for display data.
 const {
   isLoading: isLoadingTasks,
   isFetching: isFetchingTasks,
   data: tasks,
 } = useTasksQuery({
-  enabled: tasksQueryEnabled,
+  enabled: initialized,
 });
-
-// The tasks contract has no `?ids=` filter, so filter the full catalog
-// client-side. Legacy `assessment.taskId` values correspond to the new
-// contract's `slug`, so match on either `id` (UUID) or `slug`.
-const userTasks = computed(() => filterTasksByIdOrSlug(tasks.value, taskIds.value));
 
 const isLoading = computed(() => {
   return isLoadingUserData.value || isLoadingAssignments.value || isLoadingTasks.value;
@@ -330,8 +292,11 @@ async function checkConsent() {
 
 async function updateConsent() {
   consentParams.value = {
-    amount: selectedAdmin.value?.legal.amount,
-    expectedTime: selectedAdmin.value?.legal.expectedTime,
+    // The new user-administrations endpoint does not (yet) carry the `legal`
+    // block, so guard against it being absent; these resolve to undefined until
+    // consent data is available from the backend.
+    amount: selectedAdmin.value?.legal?.amount,
+    expectedTime: selectedAdmin.value?.legal?.expectedTime,
     dateSigned: new Date(),
   };
 
@@ -347,48 +312,17 @@ const toggleShowOptionalAssessments = async () => {
   showOptionalAssessments.value = null;
 };
 
-// Assessments to populate the game tabs.
-// Generated based on the current selected administration Id
+// Games to populate the game tabs, derived from the selected administration's tasks.
+//
+// The backend computes `optional`, `assigned`, and `progress` for the target
+// student and attaches them to each task, so the homepage maps them straight
+// through (see mapAdministrationTasksToGames) — there is no client-side
+// condition evaluation or cross-assignment merge. Tasks with `assigned: false`
+// are in the administration but not assigned to this student, so they are
+// filtered out and don't appear on the homepage.
 const assessments = computed(() => {
-  if (!isFetching.value && selectedAdmin.value && (userTasks.value ?? []).length > 0) {
-    const fetchedAssessments = _without(
-      selectedAdmin.value.assessments.map((assessment) => {
-        // Get the matching assessment from userAssignments
-        const matchingAssignment = _find(userAssignments.value, { id: selectedAdmin.value.id });
-        const matchingAssessments = matchingAssignment?.assessments ?? [];
-        const matchingAssessment = _find(matchingAssessments, { taskId: assessment.taskId });
-
-        // If no matching assessments were found, then this assessment is not assigned to the user.
-        // It is in the administration but the user does not meet the conditional requirements for assignment.
-        // Return undefined, which will be filtered out using lodash _without above.
-        if (!matchingAssessment) return undefined;
-        const optionalAssessment = _find(matchingAssessments, { taskId: assessment.taskId, optional: true });
-        const matchedTask = findTaskByIdOrSlug(userTasks.value, assessment.taskId);
-        const combinedAssessment = {
-          ...matchingAssessment,
-          ...optionalAssessment,
-          ...assessment,
-          taskData: {
-            ...matchedTask,
-            // GameTabs consumes the legacy `external` / `taskURL` / `meta` fields, which aren't first-class on
-            // the new contract shape — Firestore-era extras live inside the task's `taskConfig` jsonb. Map them
-            // out defensively: `taskConfig` is free-form JSON, so tasks whose config lacks these keys (or isn't
-            // an object) fall back to a non-external rendering instead of breaking the assessment list. The
-            // mapping can go away once GameTabs reads `taskConfig` directly.
-            external: matchedTask?.taskConfig?.external ?? false,
-            taskURL: matchedTask?.taskConfig?.taskURL,
-            meta: matchedTask?.taskConfig?.meta,
-            variantURL: assessment?.params?.variantURL,
-          },
-        };
-        return combinedAssessment;
-      }),
-      undefined,
-    );
-
-    return fetchedAssessments;
-  }
-  return [];
+  if (isFetching.value || !selectedAdmin.value) return [];
+  return mapAdministrationTasksToGames(selectedAdmin.value, tasks.value);
 });
 
 const requiredAssessments = computed(() => {
@@ -399,16 +333,9 @@ const optionalAssessments = computed(() => {
   return _filter(assessments.value, (assessment) => assessment.optional);
 });
 
-// Grab the sequential key from the current administration's data object
+// Tasks must be completed sequentially when the administration is ordered.
 const isSequential = computed(() => {
-  return (
-    _get(
-      _find(userAssignments.value, (administration) => {
-        return administration.id === selectedAdmin.value.id;
-      }),
-      'sequential',
-    ) ?? true
-  );
+  return selectedAdmin.value?.isOrdered ?? true;
 });
 
 // Total games completed from the current list of assessments
