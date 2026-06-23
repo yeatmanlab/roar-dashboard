@@ -216,7 +216,8 @@ describe('UserImportService.bulkImport', () => {
       ]);
 
       expect(results[0]!.classification).toBe('unenrolled');
-      expect(results[0]!.status).toBe('failed'); // unenroll bin not yet implemented
+      expect(results[0]!.status).toBe('ok');
+      expect(importUsers).not.toHaveBeenCalled();
     });
 
     it('fails an unenroll request for a non-existent user', async () => {
@@ -348,6 +349,21 @@ describe('UserImportService.bulkImport', () => {
 
       expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
       expect(results[0]!.status).toBe('ok');
+    });
+
+    it('does not delete class tuples for FGA-invalid (admin-tier) roles', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+        { entityType: EntityType.CLASS, entityId: 'class-9', role: UserRole.ADMINISTRATOR },
+      ]);
+
+      await buildService().bulkImport(superAdmin, [makeRow({ email: 'leaver@example.org', unenroll: true })]);
+
+      // The admin-tier class tuple was never written (it cascades via the org hierarchy), so deletion
+      // must skip it — only the school tuple is removed.
+      const deleted = mockAuthz.deleteTuples.mock.calls[0]![0];
+      expect(deleted).toHaveLength(1);
+      expect(deleted[0]).toMatchObject({ object: 'school:school-9' });
     });
 
     it('fails the row and continues the batch when the unenroll transaction throws', async () => {
