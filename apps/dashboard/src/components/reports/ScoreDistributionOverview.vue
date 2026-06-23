@@ -9,8 +9,8 @@
         </div>
         <PvChart
           type="bar"
-          :data="setDistributionChartData(getSupportLevelCounts(taskId))"
-          :options="setDistributionChartOptions(getSupportLevelCounts(taskId))"
+          :data="setDistributionChartData(supportLevelCountsByTaskId[taskId])"
+          :options="setDistributionChartOptions(supportLevelCountsByTaskId[taskId])"
           class="h-2rem chart-item"
         />
         <span
@@ -43,6 +43,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import PvChart from 'primevue/chart';
 import { setDistributionChartData, setDistributionChartOptions } from '@/helpers/plotting';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
@@ -68,27 +69,34 @@ const props = defineProps({
   },
 });
 
-const getSupportLevelCounts = (taskId) => {
-  const runs = props.runsByTaskId?.[taskId];
-  if (!runs) return { below: 0, some: 0, above: 0 };
+const supportLevelCountsByTaskId = computed(() => {
+  const result = {};
+  for (const taskId of props.taskIds) {
+    const runs = props.runsByTaskId?.[taskId];
+    if (!runs) {
+      result[taskId] = { below: 0, some: 0, above: 0 };
+      continue;
+    }
 
-  if (props.orgType === 'district') {
-    return {
-      below: runs.below?.total ?? 0,
-      some: runs.some?.total ?? 0,
-      above: runs.above?.total ?? 0,
-    };
+    if (props.orgType === 'district') {
+      result[taskId] = {
+        below: runs.below?.total ?? 0,
+        some: runs.some?.total ?? 0,
+        above: runs.above?.total ?? 0,
+      };
+    } else {
+      const counts = { below: 0, some: 0, above: 0 };
+      for (const run of runs) {
+        const supportLevel = run.scores?.support_level;
+        if (supportLevel === 'Needs Extra Support') counts.below++;
+        else if (supportLevel === 'Developing Skill') counts.some++;
+        else if (supportLevel === 'Achieved Skill') counts.above++;
+      }
+      result[taskId] = counts;
+    }
   }
-
-  const counts = { below: 0, some: 0, above: 0 };
-  for (const run of runs) {
-    const supportLevel = run.scores?.support_level;
-    if (supportLevel === 'Needs Extra Support') counts.below++;
-    else if (supportLevel === 'Developing Skill') counts.some++;
-    else if (supportLevel === 'Achieved Skill') counts.above++;
-  }
-  return counts;
-};
+  return result;
+});
 </script>
 
 <style scoped>
