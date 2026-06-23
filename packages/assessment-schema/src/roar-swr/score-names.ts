@@ -1,11 +1,5 @@
 import { TRIAL_COUNT_SCORE_NAMES } from '../constants/trial-count-score-names.js';
-
-/**
- * Canonical run_scores.domain strings for SWR score entries.
- */
-export const SWR_SCORE_DOMAINS = {
-  COMPOSITE: 'composite',
-} as const;
+import { THETA_SCORE_NAMES } from '../constants/theta-score-names.js';
 
 /**
  * Canonical run_scores.name strings written by the SWR scoring callback.
@@ -20,13 +14,12 @@ export const SWR_SCORE_NAMES = {
   // CAT ability estimates — all languages.
   // SWR defines the shared IRT scale, so the native theta IS the shared theta:
   // thetaEstimateRaw (type=raw) and thetaEstimate (type=computed) carry the same
-  // value, and thetaSERaw (type=raw) and thetaSE (type=computed) carry the same
-  // value. Both pairs are written so every IRT-scored assessment exposes a
-  // native-scale and a shared-scale reading for both theta and SE in run_scores.
-  THETA_ESTIMATE_RAW: 'thetaEstimateRaw',
-  THETA_ESTIMATE: 'thetaEstimate',
-  THETA_SE_RAW: 'thetaSERaw',
-  THETA_SE: 'thetaSE',
+  // value. Both are written so every IRT-scored assessment exposes a native-scale
+  // and a shared-scale theta in run_scores.
+  THETA_ESTIMATE_RAW: THETA_SCORE_NAMES.THETA_ESTIMATE_RAW,
+  THETA_ESTIMATE: THETA_SCORE_NAMES.THETA_ESTIMATE,
+  THETA_SE_RAW: THETA_SCORE_NAMES.THETA_SE_RAW,
+  THETA_SE: THETA_SCORE_NAMES.THETA_SE,
 
   // Normed scores — English and Spanish only
   PERCENTILE: 'percentile',
