@@ -193,6 +193,213 @@ describe('GroupService', () => {
     });
   });
 
+  describe('list', () => {
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'name' as const,
+      sortOrder: SortOrder.DESC,
+    };
+
+    it('should return all groups for super admins (unrestricted)', async () => {
+      const mockGroups = GroupFactory.buildList(3);
+      mockGroupRepository.listAll.mockResolvedValue({ items: mockGroups, totalItems: 3 });
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.list({ userId: 'admin-123', isSuperAdmin: true }, defaultOptions);
+
+      expect(mockGroupRepository.listAll).toHaveBeenCalledWith({
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: SortOrder.DESC },
+        includeEnded: false,
+      });
+      expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
+      expect(result.items).toHaveLength(3);
+      expect(result.totalItems).toBe(3);
+    });
+
+    it('should use FGA listAccessibleObjects + listByIds for non-super admin users', async () => {
+      const mockGroups = GroupFactory.buildList(2);
+
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([
+        `${FgaType.GROUP}:${mockGroups[0]!.id}`,
+        `${FgaType.GROUP}:${mockGroups[1]!.id}`,
+      ]);
+      mockGroupRepository.listByIds.mockResolvedValue({ items: mockGroups, totalItems: 2 });
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.list(
+        { userId: 'user-123', isSuperAdmin: false },
+        { ...defaultOptions, sortOrder: SortOrder.ASC },
+      );
+
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_LIST,
+        FgaType.GROUP,
+      );
+      expect(mockGroupRepository.listByIds).toHaveBeenCalledWith([mockGroups[0]!.id, mockGroups[1]!.id], {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: SortOrder.ASC },
+        includeEnded: false,
+      });
+      expect(mockGroupRepository.listAll).not.toHaveBeenCalled();
+      expect(result.items).toHaveLength(2);
+      expect(result.totalItems).toBe(2);
+    });
+
+    it('should short-circuit to an empty result when the user can access no groups', async () => {
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.list({ userId: 'user-123', isSuperAdmin: false }, defaultOptions);
+
+      expect(result).toEqual({ items: [], totalItems: 0 });
+      expect(mockGroupRepository.listByIds).not.toHaveBeenCalled();
+      expect(mockGroupRepository.listAll).not.toHaveBeenCalled();
+    });
+
+    it('should forward includeEnded to the repository', async () => {
+      mockGroupRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.list({ userId: 'admin-123', isSuperAdmin: true }, { ...defaultOptions, includeEnded: true });
+
+      expect(mockGroupRepository.listAll).toHaveBeenCalledWith(expect.objectContaining({ includeEnded: true }));
+    });
+
+    it('should wrap unexpected repository errors in a 500 ApiError', async () => {
+      const dbError = new Error('Connection refused');
+      mockGroupRepository.listAll.mockRejectedValue(dbError);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.list({ userId: 'admin-123', isSuperAdmin: true }, defaultOptions)).rejects.toMatchObject({
+        message: 'Failed to retrieve groups',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
+
+  describe('getById', () => {
+    const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
+    const mockSuperAdminContext = { userId: 'admin-123', isSuperAdmin: true };
+
+    it('should fetch a group by ID for regular users via FGA can_read', async () => {
+      const mockGroup = GroupFactory.build({ id: 'group-123' });
+      mockGroupRepository.getById.mockResolvedValue(mockGroup);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getById(mockAuthContext, 'group-123');
+
+      expect(mockGroupRepository.getById).toHaveBeenCalledWith({ id: 'group-123' });
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_READ,
+        `${FgaType.GROUP}:group-123`,
+      );
+      expect(result).toEqual(mockGroup);
+    });
+
+    it('should bypass the FGA check for super admins', async () => {
+      const mockGroup = GroupFactory.build({ id: 'group-123' });
+      mockGroupRepository.getById.mockResolvedValue(mockGroup);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getById(mockSuperAdminContext, 'group-123');
+
+      expect(mockGroupRepository.getById).toHaveBeenCalledWith({ id: 'group-123' });
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      expect(result).toEqual(mockGroup);
+    });
+
+    it('should throw 404 when the group does not exist', async () => {
+      mockGroupRepository.getById.mockResolvedValue(null);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(mockAuthContext, 'missing-group')).rejects.toMatchObject({
+        message: ApiErrorMessage.NOT_FOUND,
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      // Existence check precedes the FGA call — a missing group is a 404, not a 403.
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+    });
+
+    it('should throw 403 when FGA denies can_read', async () => {
+      const mockGroup = GroupFactory.build({ id: 'group-123' });
+      mockGroupRepository.getById.mockResolvedValue(mockGroup);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(mockAuthContext, 'group-123')).rejects.toMatchObject({
+        message: ApiErrorMessage.FORBIDDEN,
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('should wrap unexpected repository errors in a 500 ApiError', async () => {
+      const dbError = new Error('Connection refused');
+      mockGroupRepository.getById.mockRejectedValue(dbError);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(mockAuthContext, 'group-123')).rejects.toMatchObject({
+        message: 'Failed to retrieve group',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
+
   describe('create', () => {
     const validInput = {
       name: 'Pilot Cohort',

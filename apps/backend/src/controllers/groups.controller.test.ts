@@ -8,6 +8,7 @@ import { ApiErrorMessage } from '../enums/api-error-message.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { ApiError } from '../errors/api-error';
 import { EnrolledUserFactory } from '../test-support/factories/user.factory';
+import { GroupFactory } from '../test-support/factories/group.factory';
 
 /**
  * Type-safe assertion helper for success responses.
@@ -39,6 +40,8 @@ vi.mock('../services/invitation-code/invitation-code.service', () => ({
 }));
 
 const mockCreate = vi.fn();
+const mockList = vi.fn();
+const mockGetById = vi.fn();
 const mockListUsers = vi.fn();
 vi.mock('../services/group/group.service', () => ({
   GroupService: vi.fn(),
@@ -67,6 +70,8 @@ describe('GroupsController', () => {
 
     vi.mocked(GroupService).mockReturnValue({
       create: mockCreate,
+      list: mockList,
+      getById: mockGetById,
       listUsers: mockListUsers,
     });
   });
@@ -304,6 +309,229 @@ describe('GroupsController', () => {
           sortOrder: SortOrder.ASC,
         }),
       ).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('list', () => {
+    it('should return paginated groups with 200 status and transformed items', async () => {
+      const group = GroupFactory.build({
+        name: 'Pilot Cohort',
+        abbreviation: 'PC1',
+        groupType: 'cohort',
+      });
+      mockList.mockResolvedValue({ items: [group], totalItems: 1 });
+
+      const { GroupsController: Controller } = await import('./groups.controller');
+
+      const result = await Controller.list(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(1);
+      expect(data.items[0]).toEqual({
+        id: group.id,
+        name: 'Pilot Cohort',
+        abbreviation: 'PC1',
+        groupType: 'cohort',
+      });
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 1,
+        totalPages: 1,
+      });
+    });
+
+    it('should assemble location (incl. coordinates) and rosteringEnded in the transform', async () => {
+      const rosteringEnded = new Date('2024-06-01T00:00:00.000Z');
+      const group = GroupFactory.build({
+        name: 'Located Group',
+        abbreviation: 'LG1',
+        groupType: 'community',
+        locationCity: 'Palo Alto',
+        locationCountry: 'US',
+        // Drizzle default point mode: [x, y] = [longitude, latitude]
+        locationLatLong: [-122.17, 37.43],
+        rosteringEnded,
+      });
+      mockList.mockResolvedValue({ items: [group], totalItems: 1 });
+
+      const { GroupsController: Controller } = await import('./groups.controller');
+
+      const result = await Controller.list(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]?.location).toEqual({
+        city: 'Palo Alto',
+        country: 'US',
+        coordinates: { type: 'Point', coordinates: [-122.17, 37.43] },
+      });
+      expect(data.items[0]?.rosteringEnded).toBe(rosteringEnded.toISOString());
+    });
+
+    it('should return an empty page when the service returns no groups', async () => {
+      mockList.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { GroupsController: Controller } = await import('./groups.controller');
+
+      const result = await Controller.list(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toEqual([]);
+      expect(data.pagination.totalItems).toBe(0);
+      expect(data.pagination.totalPages).toBe(0);
+    });
+
+    it('should forward includeEnded to the service when present', async () => {
+      mockList.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { GroupsController: Controller } = await import('./groups.controller');
+
+      await Controller.list(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: SortOrder.ASC,
+        includeEnded: true,
+      });
+
+      expect(mockList).toHaveBeenCalledWith(mockAuthContext, expect.objectContaining({ includeEnded: true }));
+    });
+
+    it('should map ApiError 500 to an Internal Server Error response', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockList.mockRejectedValue(error);
+
+      const { GroupsController: Controller } = await import('./groups.controller');
+
+      const result = await Controller.list(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should re-throw non-ApiError errors', async () => {
+      const error = new Error('Unexpected error');
+      mockList.mockRejectedValue(error);
+
+      const { GroupsController: Controller } = await import('./groups.controller');
+
+      await expect(
+        Controller.list(mockAuthContext, {
+          page: 1,
+          perPage: 25,
+          sortBy: 'name',
+          sortOrder: SortOrder.ASC,
+        }),
+      ).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('getById', () => {
+    it('should return the transformed group with 200 status', async () => {
+      const group = GroupFactory.build({ name: 'Single Group', abbreviation: 'SG1', groupType: 'business' });
+      mockGetById.mockResolvedValue(group);
+
+      const { GroupsController: Controller } = await import('./groups.controller');
+
+      const result = await Controller.getById(mockAuthContext, group.id);
+
+      const data = expectOkResponse(result);
+      expect(data).toEqual({
+        id: group.id,
+        name: 'Single Group',
+        abbreviation: 'SG1',
+        groupType: 'business',
+      });
+      expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, group.id);
+    });
+
+    it('should assemble location (incl. coordinates) and rosteringEnded in the transform', async () => {
+      const rosteringEnded = new Date('2024-06-01T00:00:00.000Z');
+      const group = GroupFactory.build({
+        name: 'Located Single Group',
+        abbreviation: 'LSG1',
+        groupType: 'community',
+        locationCity: 'Palo Alto',
+        locationCountry: 'US',
+        // Drizzle default point mode: [x, y] = [longitude, latitude]
+        locationLatLong: [-122.17, 37.43],
+        rosteringEnded,
+      });
+      mockGetById.mockResolvedValue(group);
+
+      const { GroupsController: Controller } = await import('./groups.controller');
+
+      const result = await Controller.getById(mockAuthContext, group.id);
+
+      const data = expectOkResponse(result);
+      expect(data.location).toEqual({
+        city: 'Palo Alto',
+        country: 'US',
+        coordinates: { type: 'Point', coordinates: [-122.17, 37.43] },
+      });
+      expect(data.rosteringEnded).toBe(rosteringEnded.toISOString());
+    });
+
+    it('should map ApiError 404 to a Not Found error response', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockGetById.mockRejectedValue(error);
+
+      const { GroupsController: Controller } = await import('./groups.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'missing-group');
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 403 to a Forbidden error response', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockGetById.mockRejectedValue(error);
+
+      const { GroupsController: Controller } = await import('./groups.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'group-123');
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should re-throw non-ApiError errors', async () => {
+      const error = new Error('Unexpected error');
+      mockGetById.mockRejectedValue(error);
+
+      const { GroupsController: Controller } = await import('./groups.controller');
+
+      await expect(Controller.getById(mockAuthContext, 'group-123')).rejects.toThrow('Unexpected error');
     });
   });
 

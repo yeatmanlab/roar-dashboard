@@ -4,12 +4,28 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
-import type { CreateGroupInput } from '../../repositories/group.repository';
+import type { CreateGroupInput, Group } from '../../repositories/group.repository';
 import { GroupRepository } from '../../repositories/group.repository';
 import type { AuthContext } from '../../types/auth-context';
 import type { EnrolledUserEntity, EnrolledUsersQuery, ListEnrolledUsersOptions } from '../../types/user';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
+
+/**
+ * Options for listing groups.
+ *
+ * Defined here rather than imported from the api-contract so the service stays
+ * decoupled from transport concerns (see backend-service-pattern.md
+ * "Service Type Independence").
+ */
+export interface ListOptions {
+  page: number;
+  perPage: number;
+  sortBy: 'name' | 'abbreviation';
+  sortOrder: 'asc' | 'desc';
+  includeEnded?: boolean;
+}
 
 /**
  * Service-layer input for creating a group.
@@ -72,6 +88,129 @@ export function GroupService({
 
     // FGA checks both access and supervisory role in one call
     await authorizationService.requirePermission(userId, FgaRelation.CAN_LIST_USERS, `${FgaType.GROUP}:${groupId}`);
+  }
+
+  /**
+   * Verifies a user can read a specific group and returns it.
+   *
+   * Authorization flow (see backend-authorization-pattern.md):
+   *   1. Existence check first — a missing group is a 404, not a 403.
+   *   2. Super admins bypass the FGA call.
+   *   3. A single can_read FGA check. On group, can_read requires
+   *      supervisory_tier_group, so this rejects caregivers and students with 403.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param groupId - The group ID to verify access for
+   * @returns The group entity if found and authorized
+   * @throws {ApiError} NOT_FOUND if the group doesn't exist
+   * @throws {ApiError} FORBIDDEN if the user lacks can_read permission
+   */
+  async function verifyGroupAccess(authContext: AuthContext, groupId: string): Promise<Group> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // 1. Existence check — distinguishes 404 from 403
+    const group = await groupRepository.getById({ id: groupId });
+    if (!group) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { userId, groupId },
+      });
+    }
+
+    // 2. Super admins bypass access checks
+    if (isSuperAdmin) return group;
+
+    // 3. Single FGA permission check — can_read on group requires supervisory_tier_group
+    await authorizationService.requirePermission(userId, FgaRelation.CAN_READ, `${FgaType.GROUP}:${groupId}`);
+
+    return group;
+  }
+
+  /**
+   * List groups accessible to a user with pagination and sorting.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all groups (unrestricted).
+   * - Other users: sees only groups they can `can_list` (supervisory_tier_group
+   *   membership). FGA resolves the accessible set; an empty set yields an empty
+   *   paginated result rather than a 403.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param options - Query options including pagination and sorting
+   * @returns Paginated result with groups
+   * @throws {ApiError} If the database query fails
+   */
+  async function list(authContext: AuthContext, options: ListOptions): Promise<PaginatedResult<Group>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // Transform API contract format to repository format
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        includeEnded: options.includeEnded ?? false,
+      };
+
+      if (isSuperAdmin) {
+        return await groupRepository.listAll(queryParams);
+      }
+
+      // FGA resolves which groups the user can list based on their supervisory
+      // memberships. Unauthorized users get an empty set, not a 403.
+      const objects = await authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_LIST, FgaType.GROUP);
+      const ids = objects.map(extractFgaObjectId);
+      if (ids.length === 0) {
+        return { items: [], totalItems: 0 };
+      }
+
+      return await groupRepository.listByIds(ids, queryParams);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId } }, 'Failed to list groups');
+
+      throw new ApiError('Failed to retrieve groups', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * Get a single group by ID.
+   *
+   * Super admins can access any group. Other users can only access groups they
+   * belong to in a supervisory role (can_read).
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param groupId - UUID of the group to retrieve
+   * @returns The group if found and authorized
+   * @throws {ApiError} 404 if not found, 403 if unauthorized, 500 on database errors
+   */
+  async function getById(authContext: AuthContext, groupId: string): Promise<Group> {
+    const { userId } = authContext;
+
+    try {
+      return await verifyGroupAccess(authContext, groupId);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, groupId } }, 'Failed to retrieve group');
+
+      throw new ApiError('Failed to retrieve group', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, groupId },
+        cause: error,
+      });
+    }
   }
 
   /**
@@ -186,6 +325,8 @@ export function GroupService({
 
   return {
     create,
+    list,
+    getById,
     listUsers,
   };
 }
