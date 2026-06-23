@@ -40,11 +40,11 @@ vi.mock('papaparse', () => {
 // (rather than imported) because the built dist can be stale and the src entry pulls
 // in firebase-emulator; these constant values are stable and asserted via the same import.
 vi.mock('@roar-platform/assessment-schema', () => ({
+  COMPOSITE_DOMAIN: 'composite',
   pa: {
     PA_TASK_ID: 'pa',
     PA_SCORING_VERSION: { V3_FIXED: 3, V4_ADAPTIVE: 4, V5_ADAPTIVE: 5 },
     PA_SCORE_KIND: { RAW_TOTAL_CORRECT: 'raw_total_correct', SCALED_IRT: 'scaled_irt' },
-    PA_COMPOSITE: 'composite',
     PA_COMPOSITE_FOUNDATIONAL: 'composite_foundational',
     PA_SCORE_TABLE_URL: (version) => `https://example.test/pa-score-table-${version}.csv`,
   },
