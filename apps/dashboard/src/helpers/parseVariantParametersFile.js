@@ -59,5 +59,3 @@ export function parseVariantParametersJson(text) {
     return { name: name.trim(), type, value, isNew: true };
   });
 }
-
-export default parseVariantParametersJson;
