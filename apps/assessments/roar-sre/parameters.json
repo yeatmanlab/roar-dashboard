@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://roar.education/schemas/sre/parameters.json",
+  "title": "Valid Parameters",
+  "description": "Valid game parameters for the roar-sre application.",
+  "type": "object",
+  "properties": {
+    "consent": {
+      "oneOf": [
+        {
+          "type": "boolean",
+          "enum": [true, false]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Indicates if consent was provided."
+    },
+    "lng": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["de", "en", "es", "it", "pt"]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Language of the user."
+    },
+    "recruitment": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["demo", "otherLabs", "parentSignUp", "pilot", "school"]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Recruitment source for participants."
+    },
+    "scoringVersion": {
+      "oneOf": [
+        {
+          "type": "number",
+          "enum": [1, 3, 4]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Version of the scoring system to use."
+    },
+    "skipInstructions": {
+      "oneOf": [
+        {
+          "type": "boolean",
+          "enum": [true, false]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Indicates if instructions should be skipped."
+    },
+    "storyOption": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["grade-based"]
+        },
+        {
+          "type": "boolean",
+          "enum": [true, false]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Indicates if story should be shown."
+    },
+    "timerLength": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 180000
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Length of the timer in milliseconds."
+    },
+    "userMode": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "default",
+            "demo",
+            "2BlocksV2",
+            "3min1Block",
+            "3minBlock90sBlock",
+            "3minParallelAIFormV1",
+            "90s2Blocks",
+            "90s2BlocksFixedForms"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Mode of the user during the task."
+    }
+  },
+  "additionalProperties": {
+    "not": true,
+    "errorMessage": "Parameter is not allowed."
+  },
+  "errorMessage": {
+    "properties": {
+      "consent": "consent must be a boolean or null.",
+      "lng": "lng must be a string with a value of 'de', 'en', 'es', 'it', 'pt' or null.",
+      "recruitment": "recruitment must be a string with a value of 'demo', 'otherLabs', 'pilot' or null.",
+      "scoringVersion": "scoringVersion must be a number value of one of the following: 1 (sre-es), 3 or 4 (sre), or null.",
+      "skipInstructions": "skipInstructions must be a boolean or null.",
+      "storyOption": "storyOption must be a string with a value of 'grade-based', boolean, or null.",
+      "timerLength": "timerLength must be a number between 0 and 180000 or null.",
+      "userMode": "userMode must be a string with a value of 'default', 'demo', '2BlocksV2', '3min1Block', '3minBlock90sBlock', '3minParallelAIFormV1', '90s2Blocks', '90s2BlocksFixedForms' or null."
+    }
+  }
+}
