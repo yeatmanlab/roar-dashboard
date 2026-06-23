@@ -43,7 +43,8 @@ describe('UserImportService.bulkImport', () => {
   let mockAuthz: ReturnType<typeof createMockAuthorizationService>;
   const getUsers = vi.fn();
   const importUsers = vi.fn();
-  const mockFirebaseAuth = { getUsers, importUsers } as unknown as typeof FirebaseAuthClient;
+  const updateUser = vi.fn();
+  const mockFirebaseAuth = { getUsers, importUsers, updateUser } as unknown as typeof FirebaseAuthClient;
 
   const superAdmin = AuthContextFactory.build({ isSuperAdmin: true });
   const partnerAdmin = AuthContextFactory.build({ isSuperAdmin: false });
@@ -204,7 +205,7 @@ describe('UserImportService.bulkImport', () => {
       const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'exists@example.org' })]);
 
       expect(results[0]!.classification).toBe('updated');
-      expect(results[0]!.status).toBe('failed'); // update bin not yet implemented
+      expect(results[0]!.status).toBe('ok');
       expect(importUsers).not.toHaveBeenCalled();
     });
 
@@ -310,8 +311,8 @@ describe('UserImportService.bulkImport', () => {
       const results = await buildService().bulkImport(superAdmin, rows);
 
       expect(results[0]!).toMatchObject({ classification: 'created', status: 'ok' });
-      // Update bin is not yet implemented; create + unenroll route and process independently.
-      expect(results[1]!).toMatchObject({ classification: 'updated', status: 'failed' });
+      // Each bin routes and processes independently in one request.
+      expect(results[1]!).toMatchObject({ classification: 'updated', status: 'ok' });
       expect(results[2]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
     });
   });
@@ -376,6 +377,73 @@ describe('UserImportService.bulkImport', () => {
       const results = await buildService().bulkImport(superAdmin, [
         makeRow({ email: 'leaver@example.org', unenroll: true }),
         makeRow({ email: 'other@example.org', unenroll: true }),
+      ]);
+
+      expect(results[0]!.status).toBe('failed');
+      expect(results[1]!.status).toBe('ok');
+    });
+  });
+
+  describe('update bin', () => {
+    const existing = (overrides = {}) =>
+      UserFactory.build({
+        email: 'updatee@example.org',
+        nameFirst: 'Old',
+        nameMiddle: null,
+        nameLast: 'Name',
+        ...overrides,
+      });
+
+    beforeEach(() => {
+      mockUserRepository.findByEmails.mockResolvedValue([existing()]);
+    });
+
+    it('updates the profile fields and returns ok without touching importUsers', async () => {
+      const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+      expect(mockUserRepository.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ nameFirst: 'Ada', nameLast: 'Lovelace' }) }),
+      );
+      expect(results[0]!).toMatchObject({ classification: 'updated', status: 'ok' });
+      expect(importUsers).not.toHaveBeenCalled();
+    });
+
+    it('syncs the Firebase displayName when the name changed', async () => {
+      await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+      expect(updateUser).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ displayName: 'Ada Lovelace' }),
+      );
+    });
+
+    it('resets the Firebase password when one is supplied', async () => {
+      await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org', password: 'newpass123' })]);
+
+      expect(updateUser).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ password: 'newpass123' }));
+    });
+
+    it('skips the Firebase write when neither name nor password changed', async () => {
+      // The existing user already matches the row's name (Ada Lovelace), and no password is sent.
+      mockUserRepository.findByEmails.mockResolvedValue([
+        existing({ nameFirst: 'Ada', nameMiddle: null, nameLast: 'Lovelace' }),
+      ]);
+
+      await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org', password: undefined })]);
+
+      expect(updateUser).not.toHaveBeenCalled();
+    });
+
+    it('fails the row and continues the batch when the profile update throws', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([
+        existing({ email: 'a@example.org' }),
+        existing({ email: 'b@example.org' }),
+      ]);
+      mockUserRepository.update.mockRejectedValueOnce(new Error('db down'));
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'a@example.org' }),
+        makeRow({ email: 'b@example.org' }),
       ]);
 
       expect(results[0]!.status).toBe('failed');

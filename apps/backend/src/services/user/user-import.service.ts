@@ -45,9 +45,9 @@ import {
  * **Unenroll bin** (implemented): ends all of a user's enrollments and archives them
  * (`rosteringEnded`) in one transaction, then best-effort deletes their FGA membership tuples.
  *
- * **Update bin**: tracked as the next increment — it needs a membership-reconciliation repository
- * method plus a per-row `updateUser` path for password/name. Until then update rows are reported as
- * a per-row failure rather than silently mishandled.
+ * **Update bin** (profile + auth implemented): updates an existing user's profile fields and syncs
+ * Firebase Auth (displayName / password) when they changed. Membership reconciliation
+ * (replace-semantics per the legacy) is the remaining piece — see `processUpdateBin`.
  *
  * Authorization mirrors single-create and is applied per row: super admin, or `can_create_users` on
  * every membership target (the legacy uses the same coarse permission for all three bins).
@@ -501,6 +501,84 @@ export function UserImportService({
   }
 
   /**
+   * Map an import row to the user-table fields an update writes. Import rows always carry the full
+   * name; other profile fields are written only when provided (an omitted field is left unchanged).
+   */
+  function toUpdateUserFields(row: ImportUserRowInput) {
+    return {
+      nameFirst: row.name.first,
+      nameMiddle: row.name.middle ?? null,
+      nameLast: row.name.last,
+      ...(row.dob !== undefined && { dob: row.dob ?? null }),
+      ...(row.grade !== undefined && { grade: row.grade ?? null }),
+      ...(row.demographics && {
+        statusEll: row.demographics.statusEll ?? null,
+        statusFrl: row.demographics.statusFrl ?? null,
+        statusIep: row.demographics.statusIep ?? null,
+        gender: row.demographics.gender ?? null,
+        race: row.demographics.race ?? null,
+        hispanicEthnicity: row.demographics.hispanicEthnicity ?? null,
+        homeLanguage: row.demographics.homeLanguage ?? null,
+      }),
+      ...(row.identifiers?.stateId !== undefined && { stateId: row.identifiers.stateId }),
+    };
+  }
+
+  /**
+   * Build the Firebase Auth update for an update row, or null if nothing auth-related changed.
+   * `displayName` is synced only when the name actually changed; the password is set when provided.
+   * This keeps update-bin Firebase writes off the per-row path for pure profile/demographic updates.
+   */
+  function buildAuthUpdate(row: ImportUserRowInput, user: User): { displayName?: string; password?: string } | null {
+    const update: { displayName?: string; password?: string } = {};
+
+    const nameChanged =
+      row.name.first !== user.nameFirst ||
+      row.name.last !== user.nameLast ||
+      (row.name.middle ?? null) !== (user.nameMiddle ?? null);
+    if (nameChanged) {
+      update.displayName = [row.name.first, row.name.last].filter(Boolean).join(' ');
+    }
+    if (row.password) {
+      update.password = row.password;
+    }
+
+    return Object.keys(update).length > 0 ? update : null;
+  }
+
+  /**
+   * Process the update bin: update each existing user's profile fields, and sync Firebase Auth
+   * (displayName / password) only when those actually changed.
+   *
+   * NOTE: membership reconciliation is intentionally NOT performed yet. The legacy replaces a user's
+   * membership set per provided entity type (ending removed memberships, adding new ones), which
+   * needs a reconciliation repository method plus FGA tuple add/delete sync — it's the remaining
+   * update-bin work and is access-control-sensitive enough to warrant its own reviewed change. Until
+   * then an update row's memberships are left unchanged; profile and auth fields are updated. The
+   * dominant re-import case (refreshing profile fields with unchanged memberships) is fully handled.
+   */
+  async function processUpdateBin(
+    rows: { index: number; row: ImportUserRowInput; user: User }[],
+    outcomes: ImportRowOutcome[],
+  ): Promise<void> {
+    for (const { index, row, user } of rows) {
+      try {
+        await userRepository.update({ id: user.id, data: toUpdateUserFields(row) });
+
+        const authUpdate = buildAuthUpdate(row, user);
+        if (authUpdate && user.authId) {
+          await firebaseAuth.updateUser(user.authId, authUpdate);
+        }
+
+        outcomes[index] = ok(index, CLASSIFICATION.UPDATED, user.id);
+      } catch (error) {
+        logger.error({ err: error, context: { userId: user.id } }, 'Update failed during import');
+        outcomes[index] = toFailedOutcome(index, CLASSIFICATION.UPDATED, error);
+      }
+    }
+  }
+
+  /**
    * Classify each row into create / update / unenroll and process each bin.
    *
    * @param authContext - The requesting user's auth context.
@@ -564,17 +642,9 @@ export function UserImportService({
     // ── Phase 4: unenroll bin ────────────────────────────────────────────────────
     await processUnenrollBin(unenrollRows, outcomes);
 
-    // ── Phase 5: update bin (next increment) ─────────────────────────────────────
-    // Requires a membership-reconciliation repository method plus a per-row updateUser path for
-    // password/name. Until then, report rather than silently mishandle.
-    for (const entry of updateRows) {
-      outcomes[entry.index] = failed(
-        entry.index,
-        CLASSIFICATION.UPDATED,
-        ApiErrorCode.INTERNAL,
-        'Update of existing users is not yet supported by this endpoint',
-      );
-    }
+    // ── Phase 5: update bin ──────────────────────────────────────────────────────
+    // Updates profile + auth fields. Membership reconciliation is deferred (see processUpdateBin).
+    await processUpdateBin(updateRows, outcomes);
 
     return outcomes;
   }
