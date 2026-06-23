@@ -3,7 +3,7 @@
     <div class="chart-grid">
       <div class="chart-section-header font-bold">Foundational Literacy Skills</div>
 
-      <template v-for="taskId of taskIds" :key="taskId">
+      <div v-for="taskId of taskIds" :key="taskId" class="chart-row">
         <div class="chart-label text-lg text-gray-600">
           <span class="whitespace-nowrap">{{ tasksDictionary?.[taskId]?.publicName ?? taskId }}</span>
         </div>
@@ -18,8 +18,11 @@
           v-tooltip.top="`${descriptionsByTaskId[taskId].header}${descriptionsByTaskId[taskId].description}`"
           class="pi pi-info-circle info-icon h-full pt-1"
         />
-        <span v-else />
-      </template>
+        <span v-else class="info-icon-placeholder" />
+        <div v-if="descriptionsByTaskId[taskId]" class="chart-description text-sm text-gray-500">
+          {{ descriptionsByTaskId[taskId].header }}{{ descriptionsByTaskId[taskId].description }}
+        </div>
+      </div>
     </div>
 
     <div class="flex mx-5 flex-column align-items-center">
@@ -108,6 +111,13 @@ const supportLevelCountsByTaskId = computed(() => {
   align-items: center;
 }
 
+.chart-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+}
+
 .chart-section-header {
   grid-column: 1 / -1;
   text-align: center;
@@ -122,6 +132,10 @@ const supportLevelCountsByTaskId = computed(() => {
 
 .chart-item {
   min-width: 0;
+}
+
+.chart-description {
+  display: none;
 }
 
 .legend-circle {
@@ -145,11 +159,27 @@ const supportLevelCountsByTaskId = computed(() => {
 
 @media (max-width: 768px) {
   .chart-grid {
-    grid-template-columns: minmax(150px, auto) 1fr;
+    grid-template-columns: 1fr;
+    row-gap: 1rem;
+  }
+
+  .chart-row {
+    grid-template-columns: 1fr;
+    row-gap: 0.25rem;
   }
 
   .chart-label {
-    max-width: 200px;
+    max-width: none;
+    margin-top: 0;
+  }
+
+  .info-icon,
+  .info-icon-placeholder {
+    display: none;
+  }
+
+  .chart-description {
+    display: block;
   }
 }
 </style>
