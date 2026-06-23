@@ -20,12 +20,12 @@ RUN npm install turbo --global
 
 WORKDIR /app
 
-# Copy package manifests for every workspace so npm ci can install and hoist
-# correctly. Source files for stub workspaces are intentionally excluded —
-# those packages are not imported at migration or server runtime.
+# Copy package manifests for the workspaces needed to build the backend.
+# Assessment workspace stubs are not needed — npm ci resolves only what
+# the backend's dependency tree requires, and the assessment glob matches
+# nothing when assessment directories aren't present in the build context.
 COPY package.json package-lock.json ./
 COPY apps/backend/package.json                    apps/backend/
-COPY apps/assessments/roar-pa/package.json        apps/assessments/roar-pa/
 COPY packages/api-contract/package.json           packages/api-contract/
 COPY packages/assessment-schema/package.json      packages/assessment-schema/
 COPY packages/assessment-sdk/package.json         packages/assessment-sdk/
@@ -81,7 +81,6 @@ COPY --from=builder /app/apps/backend/src/db                       ./apps/backen
 # Package manifests for `cd apps/backend && npm run` commands inside the container
 COPY --from=builder /app/package.json                           ./package.json
 COPY --from=builder /app/apps/backend/package.json              ./apps/backend/package.json
-COPY --from=builder /app/apps/assessments/roar-pa/package.json  ./apps/assessments/roar-pa/package.json
 
 # FDW setup script — lives at repo root/scripts/, not in turbo prune output.
 # Copied directly from build context.

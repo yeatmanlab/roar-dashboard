@@ -1,0 +1,573 @@
+import _fromPairs from 'lodash/fromPairs';
+import _omit from 'lodash/omit';
+import _toPairs from 'lodash/toPairs';
+import * as Papa from 'papaparse';
+import store from 'store2';
+import { getGrade } from '@bdelab/roar-utils';
+import {
+  COMPOSITE_DOMAIN,
+  COMPOSITE_FOUNDATIONAL_DOMAIN,
+  PRACTICE_DOMAIN,
+  TRIAL_COUNT_SCORE_NAMES,
+  domainToAssessmentStage,
+} from '@roar-platform/assessment-schema';
+import {
+  SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS,
+  SRE_SCORE_TABLE_URL,
+  SRE_SCORING_VERSION,
+  SRE_SUBTASK_DOMAINS,
+  SRE_TASK_IDS,
+} from '@roar-platform/assessment-schema/roar-sre';
+
+const getGradeAndAgeForScoring = (scoringVersion = SRE_SCORING_VERSION.V3) => {
+  let ageMonths = store.session.get('config').userMetadata?.ageMonths;
+  let grade = getGrade(store.session.get('config').userMetadata?.grade);
+  const { taskId } = store.session.get('config');
+
+  // If age is not provided, we calculate it based on grade
+  // Note: We use == instead of === because we want to catch both undefined and null.
+
+  if (ageMonths == undefined) {
+    if (grade == undefined) {
+      throw new Error('Attempting to determine user age from grade but grade is undefined');
+    }
+
+    ageMonths = 66 + grade * 12;
+  }
+
+  const ageMin = 72;
+  const ageMax = scoringVersion === SRE_SCORING_VERSION.V3 && taskId === SRE_TASK_IDS.EN ? 180 : 216;
+
+  if (ageMonths < ageMin) ageMonths = ageMin;
+  if (ageMonths > ageMax) ageMonths = ageMax;
+  // Clamp grade to [1, 12] for v3 SRE if < 1 or > 12. Otherwise, leave it unchanged.
+  if (grade != undefined && taskId === SRE_TASK_IDS.EN && scoringVersion === SRE_SCORING_VERSION.V3)
+    grade = Math.min(12, Math.max(1, grade));
+
+  return {
+    ageMonths,
+    grade,
+  };
+};
+
+const isValidForScoring = ({ ageMonths, grade, scoringVersion, taskId }) => {
+  if (scoringVersion === SRE_SCORING_VERSION.V3 && taskId === SRE_TASK_IDS.EN) {
+    // For v3, we only need the grade. It should not be null or undefined.
+
+    return grade != undefined;
+  }
+
+  if (
+    scoringVersion >= SRE_SCORING_VERSION.V4 ||
+    (taskId === SRE_TASK_IDS.ES && scoringVersion === SRE_SCORING_VERSION.V1)
+  ) {
+    // For sre v4+ & sre-es v1, we need the age, or we can estimate the age from the grade
+
+    return ageMonths != undefined || grade != undefined;
+  }
+
+  throw new Error('Invalid scoring version');
+};
+
+const useGradeForScoring = ({ scoringVersion, taskId }) =>
+  scoringVersion === SRE_SCORING_VERSION.V3 && taskId === SRE_TASK_IDS.EN;
+
+// V4 is the first EN version with age-based scoring; V3 uses grade.
+// V1 exists only for ES (always age-based), and V2 is not in use.
+const useAgeForScoring = ({ scoringVersion, taskId }) =>
+  scoringVersion >= SRE_SCORING_VERSION.V4 || (taskId === SRE_TASK_IDS.ES && scoringVersion === SRE_SCORING_VERSION.V1);
+
+export class RoarScores {
+  constructor() {
+    this.scoringVersion = store.session.get('config').scoringVersion;
+    this.taskId = store.session.get('config').taskId;
+    this.useAgeForScoring = useAgeForScoring({ scoringVersion: this.scoringVersion, taskId: this.taskId });
+    this.useGradeForScoring = useGradeForScoring({ scoringVersion: this.scoringVersion, taskId: this.taskId });
+    this.tableURL =
+      this.taskId === SRE_TASK_IDS.EN || this.taskId === SRE_TASK_IDS.ES
+        ? SRE_SCORE_TABLE_URL(this.taskId, this.scoringVersion)
+        : null;
+    this.aiTableURL = 'https://storage.googleapis.com/roar-sre/scores/sre_parallel_equating_lookup.csv';
+    this.fixedFormEquatingTableURL =
+      'https://storage.googleapis.com/roar-sre/scores/sre_parallel_90s_form_equating_lookup.csv';
+    this.lookupTable = [];
+    this.aiLookupTable = []; // loading in the AI table — could be an easier way to do this?
+    this.fixedFormEquatingLookupTable = [];
+    this.tableLoaded = false; // wanted to leave original tables in tact
+    this.aiTableLoaded = false;
+    this.fixedFormEquatingTableLoaded = false;
+    this.isValidForScoring = undefined;
+    this.tableLoadingPromise = null;
+    this.aiTableLoadingPromise = null;
+    this.initTablePromise = null;
+    this.tableLoadingError = null;
+    this.fixedFormEquatingTablePromise = null;
+    this.fixedFormEquatingTableLoadingError = null;
+  }
+
+  async initTable() {
+    const { ageMonths, grade } = getGradeAndAgeForScoring(this.scoringVersion);
+
+    if (this.isValidForScoring === undefined) {
+      this.isValidForScoring = isValidForScoring({
+        ageMonths,
+        grade,
+        scoringVersion: this.scoringVersion,
+        taskId: this.taskId,
+      });
+    }
+
+    if (!this.isValidForScoring) {
+      throw new Error('Invalid age or grade for scoring');
+    }
+
+    this.ageForScore = ageMonths;
+    this.gradeForScore = grade;
+
+    // Only create main table promise if not already loaded or loading
+    if (!this.tableLoaded && !this.tableLoadingPromise) {
+      this.tableLoadingPromise = new Promise((resolve, reject) => {
+        Papa.parse(this.tableURL, {
+          download: true,
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          step: (row) => {
+            if (this.useGradeForScoring && this.gradeForScore === Number(row.data.grade)) {
+              // In v3 we only have grade-based tables, so match the row based on the user's grade
+              this.lookupTable.push(_omit(row.data, ['', 'X']));
+            } else if (this.useAgeForScoring && this.ageForScore === Number(row.data.ageMonths)) {
+              // In v4 we have to match age in the lookup table
+              this.lookupTable.push(_omit(row.data, ['', 'X']));
+            }
+          },
+          complete: () => {
+            this.tableLoaded = true;
+            resolve();
+          },
+          error: (error) => {
+            this.tableLoadingPromise = null;
+            // Reset to prevent stale data on retry
+            this.lookupTable = [];
+            reject(new Error(`Failed to load main lookup table: ${error.message}`));
+          },
+        });
+      });
+    }
+
+    // Only create AI table promise if not already loaded or loading
+    if (!this.aiTableLoaded && !this.aiTableLoadingPromise && this.taskId === SRE_TASK_IDS.EN) {
+      this.aiTableLoadingPromise = new Promise((resolve, reject) => {
+        Papa.parse(this.aiTableURL, {
+          download: true,
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          step: (row) => {
+            this.aiLookupTable.push(_omit(row.data, ['', 'X']));
+          },
+          complete: () => {
+            this.aiTableLoaded = true;
+            resolve();
+          },
+          error: (error) => {
+            this.aiTableLoadingPromise = null;
+            // Reset to prevent stale data on retry
+            this.aiLookupTable = [];
+            reject(new Error(`Failed to load AI lookup table: ${error.message}`));
+          },
+        });
+      });
+    }
+
+    // Wait for whichever tables are currently loading
+    const promises = [];
+    if (this.tableLoadingPromise) promises.push(this.tableLoadingPromise);
+    if (this.aiTableLoadingPromise) promises.push(this.aiTableLoadingPromise);
+
+    if (promises.length > 0) {
+      const results = await Promise.allSettled(promises);
+
+      // Promise.allSettled returns an array of objects with status and value/reason
+      const failures = results.filter((r) => r.status === 'rejected');
+
+      // If all failed, throw so the catch block handles it
+      if (failures.length === results.length) {
+        throw failures[0].reason;
+      }
+
+      // If some (but not all) failed, log which ones
+      // Only log when error state changes to avoid flooding logs
+      if (failures.length > 0 && failures.length < results.length) {
+        const errorMessage = failures.map((f) => f.reason?.message || f.reason).join(', ');
+        if (this.tableLoadingError?.message !== errorMessage) {
+          console.error('Failed tables:', failures);
+          this.tableLoadingError = { message: errorMessage };
+        }
+      }
+    }
+  }
+
+  /**
+   * Loads the 90s -> 180s fixed-form equating table.
+   * Rejects on parse errors or empty tables.
+   * @returns {Promise<void>}
+   */
+  async initFixedFormEquatingTable() {
+    return new Promise((resolve, reject) => {
+      Papa.parse(this.fixedFormEquatingTableURL, {
+        download: true,
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        step: (row) => {
+          this.fixedFormEquatingLookupTable.push(_omit(row.data, ['', 'X']));
+        },
+        complete: () => {
+          if (this.fixedFormEquatingLookupTable.length === 0) {
+            reject(new Error(`No fixed-form equating rows loaded from ${this.fixedFormEquatingTableURL}.`));
+            return;
+          }
+          this.fixedFormEquatingTableLoaded = true;
+          resolve();
+        },
+        error: (error) => {
+          this.fixedFormEquatingTablePromise = null;
+          // Reset to prevent stale data on retry
+          this.fixedFormEquatingLookupTable = [];
+          reject(new Error(`Failed to load fixed form equating table: ${error.message}`));
+        },
+      });
+    });
+  }
+
+  /**
+   * Gets the lookup row after clamping raw score to the form range.
+   * Throws on missing form/score rows.
+   * @param {string} form
+   * @param {number} rawSreScore
+   * @returns {*}
+   */
+  getFixedFormEquatingLookupRow(form, rawSreScore) {
+    const formRows = this.fixedFormEquatingLookupTable.filter((row) => row.form === form);
+    if (formRows.length === 0) {
+      throw new Error(`Missing fixed-form equating lookup rows for form "${form}".`);
+    }
+
+    const rawScore = Math.max(rawSreScore || 0, 0);
+    const rawScores = formRows.map((row) => row.rawScore);
+    const minRawScore = Math.min(...rawScores);
+    const maxRawScore = Math.max(...rawScores);
+    const clampedRawScore = Math.min(Math.max(rawScore, minRawScore), maxRawScore);
+
+    if (clampedRawScore !== rawScore) {
+      console.warn(
+        `Fixed-form raw score ${rawScore} for form "${form}" is outside the lookup range ` +
+          `[${minRawScore}, ${maxRawScore}]. Using ${clampedRawScore}.`,
+      );
+    }
+
+    const lookupRow = formRows.find((row) => row.rawScore === clampedRawScore);
+    if (lookupRow === undefined) {
+      throw new Error(`Missing fixed-form equating lookup row for form "${form}" and rawScore ${clampedRawScore}.`);
+    }
+
+    return lookupRow;
+  }
+
+  /**
+   * Averages lookup-equated fixed-form scores.
+   * The fixedForm* subscores remain raw; only the composite is equated.
+   * Returns null when no fixedForm* keys are present (e.g. during the practice phase),
+   * which signals to the caller that no composite should be written yet.
+   * Missing lookup rows throw via getFixedFormEquatingLookupRow.
+   * @param {*} score fixedForm* sreScores are raw scores.
+   * @returns {number | null}
+   */
+  getFixedFormEquatedScore(score) {
+    const fixedFormScores = _toPairs(score)
+      .filter(([subTask]) => subTask.startsWith('fixedForm'))
+      .map(([form, formScore]) => {
+        if (formScore.sreScore === undefined) {
+          throw new Error(`Missing fixed-form score for form "${form}".`);
+        }
+        return this.getFixedFormEquatingLookupRow(form, formScore.sreScore).sreScore;
+      });
+
+    if (fixedFormScores.length === 0) {
+      return null;
+    }
+
+    const totalScore = fixedFormScores.reduce((acc, sreScore) => acc + sreScore, 0);
+    // Intentional scoring rule: round fractional fixed-form averages up.
+    return Math.ceil(totalScore / fixedFormScores.length);
+  }
+
+  /**
+   * This function calculates computed scores given raw scores for each subtask.
+   *
+   * The input raw scores are expected to conform to the following interface:
+   *
+   * interface IRawScores {
+   *   [key: string]: {
+   *     practice: ISummaryScores;
+   *     test: ISummaryScores;
+   *   };
+   * }
+   *
+   * where the top-level keys correspond to this assessment's subtasks. If this
+   * assessment has no subtasks, then there will be only one top-level key called
+   * "composite." Each summary score object implements this interface:
+   *
+   * interface ISummaryScores {
+   *   thetaEstimate: number | null;
+   *   thetaSE: number | null;
+   *   numAttempted: number;
+   *   numCorrect: number;
+   *   numIncorrect: number;
+   * }
+   *
+   * The returned computed scores must have that same top-level keys as the
+   * input raw scores, and each value must be an object with arbitrary computed
+   * scores.  For example, one might return the SRE score (i.e., total correct
+   * minus the total incorrect), a predicted TOSREC standard score, and a
+   * predicted TOSREC percentile.
+   *
+   * {
+   *   practice: {
+   *    sreScore: w;
+   *   },
+   *   ai: {
+   *     sreScore: x;
+   *   },
+   *   lab: {
+   *     sreScore: y;
+   *   },
+   *   tosrec: {
+   *     sreScore: z;
+   *   },
+   *   composite: {
+   *     sreScore: y;
+   *     tosrecSS: number;
+   *     tosrecPercentile: number;
+   *   }
+   * }
+   *
+   * For 90s2BlocksFixedForms, fixed-form subscores remain raw and only the
+   * composite score is equated:
+   *
+   * {
+   *   fixedForm1: {
+   *     sreScore: rawScore1;
+   *   },
+   *   fixedForm2: {
+   *     sreScore: rawScore2;
+   *   },
+   *   composite: {
+   *     sreScore: Math.ceil((equated(rawScore1) + equated(rawScore2))/2);
+   *   }
+   * }
+   *
+   * @param {*} rawScores
+   * @returns {*} computedScores
+   */
+
+  computedScoreCallback = async (rawScores) => {
+    const { taskId, userMode } = store.session.get('config');
+
+    if (![SRE_TASK_IDS.EN, SRE_TASK_IDS.ES].includes(taskId)) return null;
+
+    if (taskId === SRE_TASK_IDS.EN && userMode === '90s2BlocksFixedForms' && !this.fixedFormEquatingTableLoaded) {
+      if (!this.fixedFormEquatingTablePromise) {
+        this.fixedFormEquatingTablePromise = this.initFixedFormEquatingTable();
+      }
+
+      try {
+        await this.fixedFormEquatingTablePromise;
+        // clear error once table is loaded
+        this.fixedFormEquatingTableLoadingError = null;
+      } catch (error) {
+        // Only log when error state changes to avoid flooding logs
+        const errorMessage = error?.message || error;
+        const previousErrorMessage =
+          this.fixedFormEquatingTableLoadingError?.message || this.fixedFormEquatingTableLoadingError;
+        if (previousErrorMessage !== errorMessage) {
+          console.error('Error loading fixed form equating table:', errorMessage);
+          this.fixedFormEquatingTableLoadingError = error;
+        }
+      }
+    }
+
+    // Compute per-subtask scores. For each subtask, we report the computed SRE score, raw trial counts, and theta fields when available.
+    //
+    // Note: The current non-CAT implementation does not produce real theta values.
+    //
+    // SRE cannot be CATified, but we still include thetaEstimate for consistency with the score shape used by other apps. In this case, thetaEstimate should be treated as a transformed/reported score, not a true CAT theta estimate.
+    const computedScores = _fromPairs(
+      _toPairs(rawScores).map(([subTask, subScore]) => {
+        // For the "practice" subtask, we want to use the raw scores associated
+        // with the "practice" assessment stage. For all others, we want to use the
+        // "test" assessment stage.
+        const scoringStage = domainToAssessmentStage(subTask);
+        const numCorrect = subScore[scoringStage]?.[TRIAL_COUNT_SCORE_NAMES.NUM_CORRECT] || 0;
+        const numIncorrect = subScore[scoringStage]?.[TRIAL_COUNT_SCORE_NAMES.NUM_INCORRECT] || 0;
+        const numAttempted = numCorrect + numIncorrect;
+        const sreScore = numCorrect - numIncorrect;
+        const thetaEstimateRaw = subScore[scoringStage]?.thetaEstimateRaw ?? null;
+        const thetaSERaw = subScore[scoringStage]?.thetaSERaw ?? null;
+        return [
+          subTask,
+          {
+            sreScore,
+            numCorrect,
+            numIncorrect,
+            numAttempted,
+            ...(thetaEstimateRaw != null ? { thetaEstimateRaw, thetaEstimate: thetaEstimateRaw } : {}),
+            ...(thetaSERaw != null ? { thetaSERaw, thetaSE: thetaSERaw } : {}),
+          },
+        ];
+      }),
+    );
+
+    // this function is to compute the composite score based on corpus (fitting a linear model)
+    const computedScoreConversion = (score) => {
+      if (this.taskId === SRE_TASK_IDS.EN) {
+        // For fixed 90s forms, keep fixedForm* scores raw and equate only the composite score.
+        if (userMode === '90s2BlocksFixedForms') {
+          return this.getFixedFormEquatedScore(score);
+        }
+
+        // For English, we use the "lab" corpus score as the composite score if it is available.
+        // Return the actual score (can be negative); the normed lookup clamps separately.
+        if (score[SRE_SUBTASK_DOMAINS.LAB]?.sreScore != null) {
+          return score[SRE_SUBTASK_DOMAINS.LAB].sreScore;
+        }
+
+        // Otherwise, we use the AI corpus equating table to convert the AI score to a composite score.
+        // adjusting the ai scores to equate to the lab scores
+        if (score[SRE_SUBTASK_DOMAINS.AI_V1_P1]?.sreScore != null) {
+          if (!this.aiTableLoaded)
+            throw new Error('AI equating table not loaded; cannot compute aiV1P1 composite score');
+          const rawScore = Math.max(score[SRE_SUBTASK_DOMAINS.AI_V1_P1].sreScore, 0);
+          const aiRow = this.aiLookupTable.find((row) => row.rawScore === rawScore && row.form === 'aiP1');
+          if (!aiRow) throw new Error(`Missing AI equating row for form aiP1, rawScore ${rawScore}`);
+          return aiRow.sreScore;
+        }
+        if (score[SRE_SUBTASK_DOMAINS.AI_V1_P2]?.sreScore != null) {
+          if (!this.aiTableLoaded)
+            throw new Error('AI equating table not loaded; cannot compute aiV1P2 composite score');
+          const rawScore = Math.max(score[SRE_SUBTASK_DOMAINS.AI_V1_P2].sreScore, 0);
+          const aiRow = this.aiLookupTable.find((row) => row.rawScore === rawScore && row.form === 'aiP2');
+          if (!aiRow) throw new Error(`Missing AI equating row for form aiP2, rawScore ${rawScore}`);
+          return aiRow.sreScore;
+        }
+      } else if (this.taskId === SRE_TASK_IDS.ES) {
+        // For Spanish, we omit the practice and composite subtasks and take the sum of the sreScores.
+        // Return the actual sum (can be negative); the normed lookup clamps separately.
+        const nonPracticeScores = _omit(score, [PRACTICE_DOMAIN, COMPOSITE_DOMAIN]);
+        const sum = Object.values(nonPracticeScores).reduce((acc, val) => acc + (val.sreScore ?? 0), 0);
+        return sum;
+      }
+      return 0;
+    };
+
+    const isNormed =
+      this.taskId === SRE_TASK_IDS.EN ||
+      (this.taskId === SRE_TASK_IDS.ES && this.scoringVersion >= SRE_SCORING_VERSION.V1);
+
+    if (isNormed && this.isValidForScoring === undefined) {
+      const { ageMonths, grade } = getGradeAndAgeForScoring(this.scoringVersion);
+      this.isValidForScoring = isValidForScoring({
+        ageMonths,
+        grade,
+        scoringVersion: this.scoringVersion,
+        taskId: this.taskId,
+      });
+    }
+
+    if (isNormed && this.isValidForScoring) {
+      // The AI equating table is only used for EN; sre-es never sets aiTableLoaded
+      const needsAiTable = this.taskId === SRE_TASK_IDS.EN;
+      if (!this.tableLoaded || (needsAiTable && !this.aiTableLoaded)) {
+        if (!this.initTablePromise) {
+          this.initTablePromise = this.initTable();
+        }
+
+        try {
+          await this.initTablePromise;
+          // If tables still haven't loaded, clear the promise so it can be retried
+          if (!this.tableLoaded || (needsAiTable && !this.aiTableLoaded)) {
+            this.initTablePromise = null;
+          }
+        } catch (error) {
+          // Only log when error state changes to avoid flooding logs
+          this.initTablePromise = null;
+          const errorMessage = error?.message || error;
+          const previousErrorMessage = this.tableLoadingError?.message || this.tableLoadingError;
+          if (previousErrorMessage !== errorMessage) {
+            console.error('Error loading scoring table:', errorMessage);
+            this.tableLoadingError = error;
+          }
+        }
+      }
+    }
+
+    // Now compute composite score after tables are loaded (so AI equating works)
+    let compositeScore;
+    try {
+      compositeScore = computedScoreConversion(computedScores);
+    } catch (error) {
+      console.error('Composite score conversion failed; writing raw scores only:', error?.message || error);
+    }
+    if (compositeScore != null) {
+      // Sum trial counts from all test subtasks into the composite domain.
+      const testSubtaskEntries = Object.entries(computedScores).filter(
+        ([domain]) => domain !== PRACTICE_DOMAIN && domain !== COMPOSITE_DOMAIN,
+      );
+      const compositeNumCorrect = testSubtaskEntries.reduce((sum, [, v]) => sum + (v.numCorrect || 0), 0);
+      const compositeNumIncorrect = testSubtaskEntries.reduce((sum, [, v]) => sum + (v.numIncorrect || 0), 0);
+
+      computedScores[COMPOSITE_DOMAIN] = {
+        sreScore: compositeScore,
+        numCorrect: compositeNumCorrect,
+        numIncorrect: compositeNumIncorrect,
+        numAttempted: compositeNumCorrect + compositeNumIncorrect,
+      };
+    }
+
+    if (isNormed && this.isValidForScoring && compositeScore != null) {
+      // Clamp to 0 for the normed lookup — the table starts at 0.
+      // The actual (possibly negative) compositeScore is still stored as sreScore above.
+      const lookupScore = Math.max(compositeScore ?? 0, 0);
+      const myRow = this.lookupTable.find((row) => row.sreScore === lookupScore);
+
+      if (myRow !== undefined) {
+        // And add columns in the lookup table except for the grade and sreScore.
+        // Spread existing composite (preserves trial counts) before adding normed scores.
+        // Filter out empty strings — PapaParse emits "" for unpopulated CSV cells (e.g.
+        // SPR columns on grade < 6 rows, TOSREC columns on grade >= 6 rows).
+        const { grade, ageMonths, sreScore, ...allNormedScores } = myRow;
+        const normedScores = Object.fromEntries(Object.entries(allNormedScores).filter(([, v]) => v !== ''));
+
+        computedScores[COMPOSITE_DOMAIN] = {
+          ...computedScores[COMPOSITE_DOMAIN],
+          sreScore: compositeScore,
+          ...normedScores,
+          scoringVersion: this.scoringVersion,
+        };
+      }
+    }
+    if (compositeScore != null && this.taskId === SRE_TASK_IDS.EN) {
+      const clampedSreScore = Math.max(compositeScore, 0);
+      computedScores[COMPOSITE_FOUNDATIONAL_DOMAIN] = {
+        thetaEstimate:
+          Math.round(
+            (clampedSreScore * SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS.TRANSFORMATION_SCALE +
+              SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS.TRANSFORMATION_SHIFT) *
+              10,
+          ) / 10,
+      };
+    }
+    return computedScores;
+  };
+}

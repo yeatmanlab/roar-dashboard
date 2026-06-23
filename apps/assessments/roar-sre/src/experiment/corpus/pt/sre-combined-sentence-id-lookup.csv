@@ -1,0 +1,141 @@
+sentence,answer,direction,corpusId,itemId
+UM COBERTOR PODE SER MUITO MACIO.,TRUE,right,portuguse_lab,portuguese_lab_1
+PEIXES TÊM DEDOS.,FALSE,left,portuguse_lab,portuguese_lab_2
+SANDUÍCHES SÃO COMIDAS.,TRUE,right,portuguse_lab,portuguese_lab_3
+ALGUMAS MINHOCAS VÃO À ESCOLA EM ABÓBORAS.,FALSE,left,portuguse_lab,portuguese_lab_4
+CASACOS PODEM SER FEITOS DE CARVÃO.,FALSE,left,portuguse_lab,portuguese_lab_5
+ALGUMAS CRIANÇAS TÊM MEDO DO ESCURO.,TRUE,right,portuguse_lab,portuguese_lab_6
+O PROFESSOR É UMA PESSOA QUE TRABALHA EM ESCOLA.,TRUE,right,portuguse_lab,portuguese_lab_7
+O OCEANO É A CASA DE MUITOS ANIMAIS AQUÁTICOS.,TRUE,right,portuguse_lab,portuguese_lab_8
+A ÁGUA É VERMELHA.,FALSE,left,portuguse_lab,portuguese_lab_9
+COZINHEIROS PREPARAM REFEIÇÕES NAS SUAS CAMAS.,FALSE,left,portuguse_lab,portuguese_lab_10
+AS PESSOAS GOSTAM DE COMER LAMA.,FALSE,left,portuguse_lab,portuguese_lab_11
+AS CRIANÇAS PODEM FICAR TRISTES.,TRUE,right,portuguse_lab,portuguese_lab_12
+CARROS TÊM RODAS.,TRUE,right,portuguse_lab,portuguese_lab_13
+TODOS OS CARROS SÃO AMARELOS.,FALSE,left,portuguse_lab,portuguese_lab_14
+ÁRVORES TÊM GALHOS.,TRUE,right,portuguse_lab,portuguese_lab_15
+A NEVE CAI EM LUGARES MUITO QUENTES.,FALSE,left,portuguse_lab,portuguese_lab_16
+LIXO É JOGADO FORA NOS CHUVEIROS.,FALSE,left,portuguse_lab,portuguese_lab_17
+AS BOLHAS SÃO FEITAS DE AREIA.,FALSE,left,portuguse_lab,portuguese_lab_18
+CRIANÇAS GOSTAM DE BRINCAR COM BRINQUEDOS.,TRUE,right,portuguse_lab,portuguese_lab_19
+TODAS AS CRIANÇAS TÊM MEDO DO SOL.,FALSE,left,portuguse_lab,portuguese_lab_20
+NORMALMENTE É ESCURO À NOITE.,TRUE,right,portuguse_lab,portuguese_lab_21
+TOALHAS SÃO FEITAS DE VIDRO.,FALSE,left,portuguse_lab,portuguese_lab_22
+UM TRAVESSEIRO PODE SER MUITO MACIO.,TRUE,right,portuguse_lab,portuguese_lab_23
+O MACACO TEM UM ROSTO.,TRUE,right,portuguse_lab,portuguese_lab_24
+OS ÓCULOS AJUDAM A ENXERGAR MELHOR.,TRUE,right,portuguse_lab,portuguese_lab_25
+ALGUMAS CASAS TÊM QUINTAL.,TRUE,right,portuguse_lab,portuguese_lab_26
+O FUTEBOL É JOGADO APENAS COM AS MÃOS.,FALSE,left,portuguse_lab,portuguese_lab_27
+"QUANDO VOCÊ QUEBRA UM OSSO, NORMALMENTE PRECISA USAR GESSO.",TRUE,right,portuguse_lab,portuguese_lab_28
+COMPUTADORES PRECISAM DE ELETRICIDADE PARA FUNCIONAR.,TRUE,right,portuguse_lab,portuguese_lab_29
+OS CÃES SEMPRE ANDAM EM DUAS PATAS,FALSE,left,portuguse_lab,portuguese_lab_30
+O SOL APARECE À NOITE.,FALSE,left,portuguse_lab,portuguese_lab_31
+NAVES ESPACIAIS SÃO PILOTADAS POR FAZENDEIROS.,FALSE,left,portuguse_lab,portuguese_lab_32
+ALGUMAS CRIANÇAS FAZEM AULAS DE MÚSICA.,TRUE,right,portuguse_lab,portuguese_lab_33
+OS AVÓS PODEM TRAZER PRESENTES QUANDO VISITAM A FAMÍLIA.,TRUE,right,portuguse_lab,portuguese_lab_34
+O SUCO DE LARANJA É FEITO COM PERAS.,FALSE,left,portuguse_lab,portuguese_lab_35
+A MAIORIA DOS HUMANOS OUVE COM OS PÉS.,FALSE,left,portuguse_lab,portuguese_lab_36
+CADEIRAS SÃO VIVAS.,FALSE,left,portuguse_lab,portuguese_lab_37
+AS PESSOAS PODEM COMPRAR TOMATES NO MERCARDO.,TRUE,right,portuguse_lab,portuguese_lab_38
+SUCO DE LARANJA É SEMPRE FEITO DE UVAS.,FALSE,left,portuguse_lab,portuguese_lab_39
+ALGUMAS PESSOAS GOSTAM DE CORRER PARA FAZER EXERCÍCIOS PELA MANHÃ.,TRUE,right,portuguse_lab,portuguese_lab_40
+CARACÓIS GERALMENTE SÃO MUITO RÁPIDOS.,FALSE,left,portuguse_lab,portuguese_lab_41
+MAÇÃS CRESCEM EM ÁRVORES.,TRUE,right,portuguse_lab,portuguese_lab_42
+ALGUMAS LESMAS VÃO PARA A ESCOLA MONTADAS EM ELEFANTES.,FALSE,left,portuguse_lab,portuguese_lab_43
+AS PESSOAS DIRIGEM CARROS NA ESTRADA.,TRUE,right,portuguse_lab,portuguese_lab_44
+AS FORMIGAS MORAM NO MAR.,FALSE,left,portuguse_lab,portuguse_lab_45
+BALEIAS TÊM DUAS PERNAS.,FALSE,left,portuguse_lab,portuguese_lab_46
+MENINAS PODEM OUVIR MÚSICA COM FONES DE OUVIDO.,TRUE,right,portuguse_lab,portuguese_lab_47
+UMA CORTINA É ALGO QUE VOCÊ VESTE.,FALSE,left,portuguse_lab,portuguese_lab_48
+MUITOS ENFERMEIROS TRABALHAM EM HOSPITAIS.,TRUE,right,portuguse_lab,portuguese_lab_49
+REMÉDIOS FAZEM VOCÊ FICAR DOENTE POR MAIS TEMPO.,FALSE,left,portuguse_lab,portuguese_lab_50
+AS MOTOS SERVEM PARA VOAR.,FALSE,left,portuguse_lab,portuguese_lab_51
+O SOL É BRILHANTE.,TRUE,right,portuguse_lab,portuguese_lab_52
+É MAIS RÁPIDO CORRER DO QUE ANDAR.,TRUE,right,portuguse_lab,portuguese_lab_53
+LOJAS SÃO LUGARES ONDE VOCÊ VAI PARA COMPRAR COISAS.,TRUE,right,portuguse_lab,portuguese_lab_54
+ELEFANTES SÃO ANIMAIS GRANDES.,TRUE,right,portuguse_lab,portuguese_lab_55
+COBERTORES SÃO FEITOS DE METAL.,FALSE,left,portuguse_lab,portuguese_lab_56
+PESSOAS GOSTAM DE COMER POEIRA.,FALSE,left,portuguse_lab,portuguese_lab_57
+A MAIORIA DOS CÃES USAM COLEIRAS QUANDO VÃO PASSEAR.,TRUE,right,portuguse_lab,portuguese_lab_58
+ARANHAS GOSTAM DE BEBER SUCO DE LARANJA EM CANECAS DE CAFÉ.,FALSE,left,portuguse_lab,portuguese_lab_59
+ALGUMAS CRIANÇAS GOSTAM DE LÁPIS DE COR VERMELHO.,TRUE,right,portuguse_lab,portuguese_lab_60
+UM MÉDICO PODE TRABALHAR EM UM HOSPITAL QUE ATENDE MUITAS PESSOAS.,TRUE,right,portuguse_lab,portuguese_lab_61
+PESSOAS PODEM USAR DINHEIRO PARA PAGAR EM LOJAS.,TRUE,right,portuguse_lab,portuguese_lab_62
+MÃES GOSTAM DE COMER CHAPÉUS.,FALSE,left,portuguse_lab,portuguese_lab_63
+LAGARTOS GOSTAM DE COZINHAR MACARRÃO.,FALSE,left,portuguse_lab,portuguese_lab_64
+MUITOS BEBÊS BEBEM LEITE.,TRUE,right,portuguse_lab,portuguese_lab_65
+TODO MÁGICO É UMA FADA.,FALSE,left,portuguse_lab,portuguese_lab_66
+PESSOAS PODEM USAR MEIAS PARA MANTER OS PÉS AQUECIDOS.,TRUE,right,portuguse_lab,portuguese_lab_67
+ÀS VEZES AS PESSOAS BEBEM LEITE.,TRUE,right,portuguse_lab,portuguese_lab_68
+OS LIVROS TÊM QUE FICAR GUARDADOS NA GELADEIRA.,FALSE,left,portuguse_lab,portuguese_lab_69
+BOLSOS PODEM SER USADOS PARA GUARDAR DINHEIRO.,TRUE,right,portuguse_lab,portuguese_lab_70
+AS PESSOAS PODEM ANDAR NAS NUVENS.,FALSE,left,portuguse_lab,portuguese_lab_71
+PIRULITOS SÃO SEMPRE FEITOS DE VEGETAIS.,FALSE,left,portuguse_lab,portuguese_lab_72
+TOALHAS SÃO USADAS PARA DEIXAR AS COISAS SECAS.,TRUE,right,portuguse_lab,portuguese_lab_73
+SUBIR UM MORRO PODE SER CANSATIVO.,TRUE,right,portuguse_lab,portuguese_lab_74
+ALGUNS SAPATOS TÊM CADARÇOS.,TRUE,right,portuguse_lab,portuguese_lab_75
+AS PESSOAS DIRIGEM CARROS NA PIA.,FALSE,left,portuguse_lab,portuguese_lab_76
+O GARFO SERVE PARA CORTAR TECIDO.,TRUE,right,portuguse_lab,portuguese_lab_77
+A MAIORIA DAS CASAS TEM GRAMA NO TETO.,FALSE,left,portuguse_lab,portuguese_lab_78
+A MAIORIA DAS CASAS É FEITA DE ESPUMA.,FALSE,left,portuguse_lab,portuguese_lab_79
+OS PATOS FAZEM AS SUAS CASAS EM CIMA DAS ÁRVORES,FALSE,left,portuguse_lab,portuguese_lab_80
+PESSOAS ESCOVAM OS DENTES COM MAIONESE.,FALSE,left,portuguse_lab,portuguese_lab_81
+OS PESCADORES PESCAM OVELHAS NO MAR.,FALSE,left,portuguse_lab,portuguese_lab_82
+VACAS CANTAM À NOITE.,FALSE,left,portuguse_lab,portuguese_lab_83
+ALGUMAS MENINAS TOCAM O PIANO.,TRUE,right,portuguse_lab,portuguese_lab_84
+ANIMAIS DE ESTIMAÇÃO PODEM FAZER COMPANHIA ÀS PESSOAS.,TRUE,right,portuguse_lab,portuguese_lab_85
+ADULTOS PODEM FICAR TRISTES.,TRUE,right,portuguse_lab,portuguese_lab_86
+COBERTORES AJUDAM A MANTER VOCÊ FRIO.,FALSE,left,portuguse_lab,portuguese_lab_87
+FILHOTES DE CACHORROS CARREGAM MOCHILAS EM SUAS COSTAS.,FALSE,left,portuguse_lab,portuguese_lab_88
+"QUANDO A LUZ DO SEMÁFORO ESTÁ VERMELHA, VOCÊ PRECISA PARAR.",TRUE,right,portuguse_lab,portuguese_lab_89
+TODAS AS FLORES SÃO AMARELAS.,FALSE,left,portuguse_lab,portuguese_lab_90
+AMIGOS PODEM TE ANIMAR QUANDO VOCÊ ESTÁ TENDO UM DIA RUIM.,TRUE,right,portuguse_lab,portuguese_lab_91
+TODOS OS ARTISTAS PINTAM COM BANANAS.,FALSE,left,portuguse_lab,portuguese_lab_92
+OS RATOS TÊM ORELHAS.,TRUE,right,portuguse_lab,portuguese_lab_93
+DIAS NUBLADOS SEMPRE SÃO QUENTES.,FALSE,left,portuguse_lab,portuguese_lab_94
+MENINOS NORMALMENTE LAVAM OS CABELOS COM IORGURTE.,FALSE,left,portuguse_lab,portuguese_lab_95
+GUARDA-CHUVAS SÃO ÚTEIS PARA PROTEGER DA CHUVA.,TRUE,right,portuguse_lab,portuguese_lab_96
+URSOS PODEM FALAR.,TRUE,right,portuguse_lab,portuguese_lab_97
+UMA FOTO PODE SER PENDURADA NA PAREDE.,TRUE,right,portuguse_lab,portuguese_lab_98
+ALGUMAS PESSOAS GOSTAM DE LER LIVROS ANTES DE DORMIR.,TRUE,right,portuguse_lab,portuguese_lab_99
+ADULTOS GERALMENTE SÃO MAIS ALTOS DO QUE CRIANÇAS.,TRUE,right,portuguse_lab,portuguese_lab_100
+CARNAVAL É UM FERIADO EM OUTUBRO.,FALSE,left,portuguse_lab,portuguese_lab_101
+A MAIORIA DOS BEBÊS SABE COMO DIRIGIR UM CARRO.,FALSE,left,portuguse_lab,portuguese_lab_102
+PEDRAS PODEM SER ENCONTRADAS PERTO DE RIOS.,TRUE,right,portuguse_lab,portuguese_lab_103
+O POMBO É UM PÁSSARO.,TRUE,right,portuguse_lab,portuguese_lab_104
+O CAFÉ É AZUL.,FALSE,left,portuguse_lab,portuguese_lab_105
+RODAS SÃO REDONDAS.,TRUE,right,portuguse_lab,portuguese_lab_106
+CHAPÉUS DEVEM SER USADOS NO COTOVELO.,FALSE,left,portuguse_lab,portuguese_lab_107
+OS PORCOS SEMPRE CAMINHAM SOBRE DUAS PERNAS.,FALSE,left,portuguse_lab,portuguese_lab_108
+SEMPRE FAZ FRIO NO VERÃO.,FALSE,left,portuguse_lab,portuguese_lab_109
+UM JARDINEIRO TRABALHA EM UMA PADARIA.,FALSE,left,portuguse_lab,portuguese_lab_110
+O FOGO PODE SER FEITO COM GELO.,FALSE,left,portuguse_lab,portuguese_lab_111
+ALGUMAS PESSOAS VÃO PARA O TRABALHO USANDO UMA NAVE ESPACIAL.,FALSE,left,portuguse_lab,portuguese_lab_112
+AMIGOS PODEM FAZER MUITAS COISAS JUNTOS DEPOIS DA ESCOLA.,TRUE,right,portuguse_lab,portuguese_lab_113
+UM TRICICLO TEM DUAS RODAS.,FALSE,left,portuguse_lab,portuguese_lab_114
+GELO AJUDA A DEIXAR AS COISAS FRIAS.,TRUE,right,portuguse_lab,portuguese_lab_115
+PESSOAS PODEM USAR CARTÕES DE CRÉDITO PARA PAGAR EM LOJAS.,TRUE,right,portuguse_lab,portuguese_lab_116
+OUTRO NOME PARA PRESENTE É LEMBRANCINHA.,TRUE,right,portuguse_lab,portuguese_lab_117
+MÁQUINAS DE LAVAR LOUÇA SUJAM PRATOS.,FALSE,left,portuguse_lab,portuguese_lab_118
+PORTAS ESTÃO SEMPRE ABERTAS.,FALSE,left,portuguse_lab,portuguese_lab_119
+CAMA ELÁSTICA TE AJUDA A PULAR MAIS ALTO.,TRUE,right,portuguse_lab,portuguese_lab_120
+LIXEIRAS PODEM FICAR COM MAU CHEIRO SE O LIXO FOR DEIXADO POR MUITO TEMPO DENTRO DELAS.,TRUE,right,portuguse_lab,portuguese_lab_121
+O RATO É UM ANIMAL.,TRUE,right,portuguse_lab,portuguese_lab_122
+O CLIMA NO INVERNO PODE SER FRIO.,TRUE,right,portuguse_lab,portuguese_lab_123
+EXISTEM MUITOS TIPOS DE CACHORROS.,TRUE,right,portuguse_lab,portuguese_lab_124
+A MAIORIA DAS PESSOAS BRINCA DE JOGOS DE TABULEIRO COM PELO MENOS UMA OUTRA PESSOA.,TRUE,right,portuguse_lab,portuguese_lab_125
+NO MAR MORAM ANIMAIS DE TAMANHOS DIFERENTES.,TRUE,right,portuguese_lab,portuguese_lab_126
+OS PROFESSORES ENSINAM OS ESTUDANTES NA ESCOLA.,TRUE,right,portuguese_lab,portuguese_lab_127
+LER LIVROS AJUDA A APRENDER COISAS NOVAS.,TRUE,right,portuguese_lab,portuguese_lab_128
+AS VACAS PRODUZEM LEITE.,TRUE,right,portuguese_lab,portuguese_lab_129
+AS GARRAFAS DE PLÁSTICO POLUEM O MAR.,TRUE,right,portuguese_lab,portuguese_lab_130
+AS GALINHAS COLOCAM OVOS.,TRUE,right,portuguese_lab,portuguese_lab_131
+OS PEIXES MORAM FORA DA ÁGUA.,FALSE,left,portuguese_lab,portuguese_lab_132
+OS SAPATOS SÃO USADOS NA CABEÇA.,FALSE,left,portuguese_lab,portuguese_lab_133
+"PARA ADOÇAR O CAFÉ, VOCÊ COLOCA SAL.",FALSE,left,portuguese_lab,portuguese_lab_134
+OS PATOS VÃO ATÉ A ESCOLA MONTADOS EM GIRAFAS.,FALSE,left,portuguese_lab,portuguese_lab_135
+OS GORILAS TÊM TRES OLHOS.,FALSE,left,portuguese_lab,portuguese_lab_137
+UMA CANETA SERVE PARA BEBER UMA BEBIDA.,FALSE,left,portuguese_lab,portuguese_lab_138
+OS MORANGOS SÃO SALGADOS.,FALSE,left,portuguese_lab,portuguese_lab_139
+OS COELHOS SÃO TIPOS DE AVES.,FALSE,left,portuguese_lab,portuguese_lab_140
+COMER SOMENTE SORVETE É SAUDÁVEL., FALSE, left, portuguese_lab,portuguese_lab_141
