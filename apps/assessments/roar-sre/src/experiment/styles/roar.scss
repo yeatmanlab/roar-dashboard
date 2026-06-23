@@ -1,0 +1,759 @@
+/* CSS Document */
+.this-is-roar {
+  content: 'is a game';
+}
+
+$text-yellow: rgba(255, 202, 97, 1);
+$btn-bg: rgba(76, 101, 139, 1);
+$btn-border: rgb(65, 91, 127);
+$arrowOrange: rgba(219, 97, 69, 1);
+$arrowBlue: rgba(66, 152, 181, 1);
+
+.jspsych-display-element {
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  width: 60%;
+  height: 100%;
+  margin: auto;
+  text-align: center;
+  touch-action: manipulation;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+									supported by Chrome, Edge, Opera and Firefox */
+
+  // MOBILE
+  .grade-btn {
+    padding: 1vh 2vh;
+    margin: 1vh;
+    margin-top: 4vh;
+    font-size: 4vh;
+    font-weight: bold;
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
+    border: 1vh solid transparent;
+    border-radius: 1vh;
+    color: $text-yellow;
+    background-color: $btn-bg;
+    border-color: $btn-border;
+  }
+
+  .mobile-grade-select {
+    margin-top: 8rem;
+  }
+
+  .mobile-student-select-characters {
+    margin-top: 40vh;
+  }
+
+  #mobile-classroom-bg {
+    position: fixed; /* or absolute, depending on your needs */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* This ensures the image stays behind other content */
+    object-fit: cover;
+  }
+
+  .mobile-character-select {
+    width: 20%;
+  }
+
+  .mobile-audio-btn-container {
+    display: flex;
+    justify-content: center;
+    gap: 10%;
+  }
+
+  .mobile-stimulus-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+
+    .mobile-stimulus-jspsych-content {
+      height: 40%;
+
+      #mobile-stimulus {
+        font-size: 4rem;
+      }
+
+      #mobile-placeholder-stimulus {
+        color: white;
+        font-size: 4rem;
+      }
+
+      .mobile-stimulus-btn {
+        border: transparent;
+        padding: 0;
+        position: relative;
+        border: none;
+        background: transparent none;
+        cursor: pointer;
+        display: inline-block; // To allow width and height adjustments
+
+        img {
+          display: block;
+          width: 100%;
+          height: 100%;
+        }
+
+        span {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%); // Center the text over the image
+          color: white;
+          font-size: 7rem;
+        }
+      }
+    }
+  }
+
+  .mobile-practice-feedback {
+    background: none;
+    margin-top: 4rem;
+  }
+
+  .mobile-disable-button {
+    pointer-events: none;
+  }
+
+  #mobile-stimulus-text {
+    font-size: 1.75rem;
+  }
+
+  // DESKTOP
+  #sre-background {
+    background-color: rgb(250, 246, 236);
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+    max-height: 100%;
+    max-width: 100%;
+    padding: 0px;
+    margin: 0px;
+    z-index: -1;
+  }
+
+  #end-classroom {
+    position: absolute;
+    height: 80%;
+    left: 0vh;
+    bottom: 45vh;
+  }
+
+  #end-student {
+    position: relative;
+    left: 0vh;
+    top: 10vh;
+    height: 65%;
+  }
+
+  .instruction-background {
+    display: block;
+    background-color: rgb(250, 246, 236);
+    padding-top: 0vh;
+    min-height: 100%;
+    min-width: 100%;
+  }
+
+  h1 {
+    margin-top: 10%;
+    margin-right: 10%;
+    margin-left: 10%;
+    text-align: center;
+    padding-inline: 10px;
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    font-weight: semi-bold;
+    font-size: 6vh;
+    color: $btn-bg;
+  }
+
+  h2 {
+    text-align: center;
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    font-style: normal;
+    font-weight: regular;
+    font-size: 5vh;
+    color: $btn-bg;
+  }
+
+  h3 {
+    text-align: center;
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    font-style: normal;
+    font-weight: regular;
+    font-size: 4vh;
+    color: $btn-bg;
+    z-index: 1;
+  }
+
+  p:not(.feedback, .stimulus) {
+    text-align: center;
+    vertical-align: middle;
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    font-style: normal;
+    font-weight: normal;
+    font-size: 3vh;
+    color: rgba(0, 0, 0, 1);
+    z-index: 1;
+  }
+
+  n {
+    text-align: center;
+    vertical-align: middle;
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    font-style: normal;
+    font-weight: bold;
+    font-size: 3vh;
+    color: $text-yellow;
+    z-index: 1;
+  }
+
+  .consent_form_title {
+    margin-right: 10%;
+    margin-left: 10%;
+    font-size: 3vh;
+  }
+
+  .consent_form_text {
+    margin: 10%;
+    text-align: left;
+    font-size: 2vh;
+  }
+
+  .survey_form_text {
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    text-align: center;
+    font-size: 3vh;
+  }
+
+  .consent_form_agree {
+    margin: 5%;
+    text-align: left;
+    font-size: 2vh;
+  }
+
+  .debrief_text {
+    margin: 20%;
+    text-align: left;
+    font-size: 2vh;
+  }
+
+  .jspsych-survey-multi-select-option {
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    font-size: 2vh;
+    text-align: center;
+  }
+
+  .stimulus {
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    text-align: center;
+    vertical-align: middle;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 4vh;
+    line-height: 4vh;
+    color: rgba(0, 0, 0, 1);
+  }
+
+  .full_screen {
+    text-align: center;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 32px;
+    line-height: 32px;
+    padding-top: 300px;
+    color: rgba(0, 0, 0, 1);
+  }
+
+  .feedback {
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    text-align: center;
+    font-style: normal;
+    font-weight: bold;
+    font-size: 3vh;
+    line-height: 3vh;
+    color: rgba(0, 0, 0, 1);
+  }
+  /*
+	.jspsych-content {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		position: fixed;
+		left: 0;
+		top: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+     */
+
+  .jspsych-content-modified {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+
+    .class-container {
+      width: 100%;
+      position: absolute;
+      margin: auto;
+      display: block;
+
+      #classroom-bg {
+        position: fixed; /* or absolute, depending on your needs */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1; /* This ensures the image stays behind other content */
+        object-fit: cover;
+      }
+    }
+  }
+
+  .text-block {
+    position: relative;
+    bottom: 15px;
+    top: 15px;
+    background-color: rgba(246, 241, 230, 1);
+    padding-left: 25px;
+    padding-right: 25px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    border: 6px solid rgba(229, 218, 191, 1);
+    border-radius: 10px;
+  }
+
+  .demo-text-block {
+    position: relative;
+    bottom: 25px;
+    top: 15px;
+    background-color: rgba(246, 241, 230, 1);
+    padding-left: 85px;
+    padding-right: 85px;
+    padding-top: 60px;
+    padding-bottom: 60px;
+    border: 6px solid rgba(229, 218, 191, 1);
+    border-radius: 10px;
+  }
+
+  .grade-text-block {
+    position: relative;
+    bottom: 0px;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    background-color: rgba(246, 241, 230, 1);
+    padding-left: 0px;
+    padding-right: 0px;
+    padding-top: 50px;
+    padding-bottom: 90px;
+    border: 6px solid rgba(229, 218, 191, 1);
+    border-radius: 10px;
+  }
+
+  .select-text-block {
+    position: relative;
+    bottom: 15px;
+    top: 30px;
+    background-color: rgba(246, 241, 230, 1);
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border: 6px solid rgba(229, 218, 191, 1);
+    border-radius: 10px;
+  }
+
+  .number-block {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    height: 5vh;
+    width: 6vh;
+    padding-left: 3vh;
+    padding-right: 3vh;
+    text-align: center;
+    vertical-align: middle;
+    background-color: $btn-bg;
+    border: 6px solid $btn-border;
+    border-radius: 10px;
+    align-self: center;
+  }
+
+  .container {
+    width: 100%;
+    position: fixed;
+    display: block;
+  }
+
+  .transparent {
+    background: rgba(255, 255, 255, 0);
+    border-color: rgba(255, 255, 255, 0);
+  }
+
+  .center {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+  }
+
+  .star-center {
+    margin: 0;
+    position: absolute;
+    top: 45%;
+    left: 51%;
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+  }
+
+  .vertical-center {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+  }
+
+  .jspsych-video-button-response-stimulus {
+    margin: 0;
+    position: absolute;
+    top: 45%;
+    height: 90%;
+    -ms-transform: translateY(-45%);
+    transform: translateY(-45%);
+  }
+
+  .stimulus_div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .text_div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 60%;
+  }
+
+  .center {
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  .upper {
+    position: fixed;
+    top: 0%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 2vh;
+  }
+
+  .lower {
+    position: fixed;
+    bottom: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 7vh;
+  }
+
+  .orange {
+    color: rgba(219, 97, 69, 1);
+  }
+
+  .blue {
+    color: rgba(66, 152, 181, 1);
+  }
+
+  .yellow {
+    color: $text-yellow;
+  }
+
+  .row {
+    display: flex;
+
+    .instruction-boxes {
+      margin-top: 2%;
+      margin-bottom: 2%;
+      padding: 3vh 2vh 3vh 2vh;
+      border: 6px solid rgba(229, 218, 191, 1);
+      border-radius: 10px;
+      margin-right: 5%;
+      margin-left: 5%;
+      background-color: #ffffff;
+
+      p {
+        text-align: center;
+      }
+
+      img {
+        width: 60%;
+      }
+    }
+
+    .column_1 {
+      padding: 0 0 10vh 0;
+
+      .characterleft {
+        text-align: center;
+        vertical-align: middle;
+        position: relative;
+        top: 10%;
+        height: 70vh;
+      }
+    }
+
+    .column_3 {
+      margin-top: 10rem;
+      height: 36vh;
+      padding-right: 1vw;
+      padding-left: 1vw;
+    }
+
+    .halfway-text-block {
+      background-color: rgb(255, 255, 255);
+      border: 6px solid rgba(229, 218, 191, 1);
+      border-radius: 10px;
+    }
+
+    .middle {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-content: center;
+    }
+
+    .student-text-block {
+      position: relative;
+      margin-top: 10vh;
+      margin-left: 5vh;
+      margin-right: 5vh;
+      height: 50vh;
+      background-color: rgb(255, 255, 255);
+      border: 6px solid rgba(229, 218, 191, 1);
+      border-radius: 10px;
+    }
+  }
+
+  .column_2_lower {
+    padding: 0 2vh 3vh 2vh;
+    flex: 50%;
+    border: 6px solid rgba(229, 218, 191, 1);
+    border-radius: 10px;
+    margin-right: 5%;
+    margin-left: 5%;
+  }
+
+  .button {
+    left: 0;
+    right: 0;
+    background-color: $btn-bg;
+    text-align: center;
+    vertical-align: middle;
+    padding: 2vh;
+    font-style: normal;
+    font-weight: bold;
+    font-size: 3vh;
+    color: white;
+    position: fixed;
+    display: block;
+    bottom: 0;
+    border: 0;
+    z-index: 1;
+  }
+
+  .story-scene {
+    width: 100%;
+    position: fixed;
+    display: block;
+    bottom: 5vh;
+  }
+
+  .scene {
+    position: fixed;
+    bottom: 5vh;
+    width: 100%;
+    display: block;
+  }
+
+  .student {
+    position: relative;
+    display: inline-flex;
+    flex-direction: row;
+    height: 50%;
+    width: 50%;
+    bottom: 10vh;
+    right: 0vh;
+    justify-content: center;
+    gap: 50px;
+  }
+
+  .number {
+    position: relative;
+    display: inline-flex;
+    flex-direction: row;
+    height: 50%;
+    width: 50%;
+    bottom: -10vh;
+    left: 1vh;
+    justify-content: center;
+    gap: 200px;
+  }
+
+  .imageleft {
+    text-align: center;
+    position: relative;
+    top: 50%;
+    height: 30vh;
+  }
+
+  /* jsPsych progress bar */
+
+  #jspsych-progressbar-container {
+    color: #555;
+    border-bottom: 1px solid #dedede;
+    background-color: #f9f9f9;
+    margin-bottom: 1em;
+    text-align: center;
+    padding: 8px 0px;
+    width: 100%;
+    line-height: 1em;
+  }
+  #jspsych-progressbar-container span {
+    font-size: 14px;
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    padding-right: 14px;
+  }
+  #jspsych-progressbar-outer {
+    background-color: #eee;
+    width: 50%;
+    margin: auto;
+    height: 14px;
+    display: inline-block;
+    vertical-align: middle;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  #jspsych-progressbar-inner {
+    background-color: #aaa;
+    width: 0%;
+    height: 100%;
+  }
+
+  /* Control appearance of jsPsych.data.displayData() */
+  #jspsych-data-display {
+    text-align: left;
+  }
+
+  /* borrowing Bootstrap style for btn elements, but combining styles a bit */
+  .jspsych-btn {
+    display: inline-block;
+    padding: 1vh 2vh;
+    margin: 1vh;
+    font-size: 4vh;
+    font-weight: bold;
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    cursor: pointer;
+    line-height: 1.4;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    background-image: none;
+    border: 1vh solid transparent;
+    border-radius: 1vh;
+    color: $text-yellow;
+    background-color: $btn-bg;
+    border-color: $btn-border;
+  }
+
+  .mep-stimulus {
+    display: inline-block;
+    width: 1.65vw;
+    height: 1.65vw;
+    margin: 0.13vw;
+    padding: 0px 0px 0.825vw 0px;
+    background: white;
+    border-style: solid;
+    border-width: 0px 0px 8px 0px;
+    border-color: rgba(255, 255, 255, 0);
+  }
+
+  .bottom-border-blue {
+    border-bottom-color: blue !important;
+  }
+
+  #jspsych-html-button-response-stimulus {
+    margin-bottom: 25vw;
+  }
+
+  #jspsych-html-multi-response-btngroup {
+    position: relative;
+    bottom: -70%;
+    width: 100%;
+
+    display: flex;
+    gap: 9rem;
+  }
+
+  #jspsych-audio-multi-response-btngroup {
+    position: relative;
+    bottom: -70%;
+    width: 100%;
+  }
+
+  #fixation-prompt {
+    margin-bottom: 0.825%;
+  }
+
+  .jspsych-html-button-response-button {
+    display: inline-block;
+    width: 4vw;
+    height: 4vw;
+    margin: 0.75vw;
+  }
+
+  #jspsych-fullscreen-btn {
+    position: fixed;
+    bottom: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .jspsych-survey-html-form {
+    position: fixed;
+    bottom: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "name": "@roar-platform/roar-sre",
+  "description": "Sentence Reading Efficiency — a timed comprehension assessment for ROAR",
+  "version": "3.1.0",
+  "author": "Jasmine Tran <jasetran@stanford.edu>",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "package.json"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "type": "module",
+  "roar": {
+    "hosting": {
+      "staging": "roar-sentence-staging",
+      "production": "roar-sentence",
+      "test": "test"
+    }
+  },
+  "scripts": {
+    "build": "rollup -c rollup.lib.config.mjs",
+    "build:staging": "webpack --mode production --env dbmode=staging",
+    "build:production": "webpack --mode production --env dbmode=production",
+    "predev": "if lsof -i :8000 -sTCP:LISTEN >/dev/null 2>&1 || ss -tlnp 2>/dev/null | grep -q ':8000 '; then echo 'Error: port 8000 is already in use.' >&2; exit 1; fi",
+    "dev": "bash ../../../scripts/dev-platform.sh",
+    "dev:ci": "npx webpack serve --mode development --env dbmode=development",
+    "start": "bash ../../../scripts/assessment-env-up.sh",
+    "update": "npm --prefix ../../../packages/assessment-schema run build && npm --prefix ../../../packages/assessment-sdk run build",
+    "stop": "bash ../../../scripts/assessment-env-down.sh",
+    "restart": "npm run stop && npm run start",
+    "rebuild": "bash ../../../scripts/assessment-env-build.sh",
+    "test": "vitest --run",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write --log-level=warn",
+    "format:check": "prettier . --check",
+    "cypress:open": "cypress open"
+  },
+  "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
+  "dependencies": {
+    "@roar-platform/assessment-schema": "^0.1.0",
+    "@roar-platform/assessment-sdk": "^0.1.0",
+    "@bdelab/roar-firekit": "^9.6.0",
+    "@bdelab/roar-utils": "^1.2.3",
+    "@jspsych-contrib/plugin-audio-multi-response": "^1.0.0",
+    "@jspsych-contrib/plugin-html-multi-response": "^1.0.2",
+    "@jspsych/plugin-audio-keyboard-response": "^1.1.2",
+    "@jspsych/plugin-call-function": "^1.1.3",
+    "@jspsych/plugin-fullscreen": "^1.1.2",
+    "@jspsych/plugin-html-keyboard-response": "^1.1.2",
+    "@jspsych/plugin-preload": "^1.1.2",
+    "@jspsych/plugin-survey-html-form": "^1.0.2",
+    "@jspsych/plugin-survey-multi-select": "^1.1.2",
+    "@jspsych/plugin-survey-text": "^1.1.2",
+    "firebase": "^10.13.2",
+    "i18next": "^23.2.11",
+    "i18next-browser-languagedetector": "^7.1.0",
+    "jspsych": "^7.3.4",
+    "lodash": "^4.17.21",
+    "papaparse": "^5.4.1",
+    "regenerator-runtime": "^0.13.10",
+    "roarr": "^7.14.0",
+    "store2": "^2.14.2"
+  },
+  "peerDependencies": {
+    "@sentry/browser": ">=7",
+    "@sentry/integrations": ">=7"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.19.3",
+    "@babel/preset-env": "^7.19.4",
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-dsv": "^3.0.4",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@roar-platform/eslint-config": "*",
+    "@roar-platform/prettier-config": "*",
+    "@sentry/webpack-plugin": "^2.14.0",
+    "@types/node": "^20.9.0",
+    "babel-loader": "^8.2.5",
+    "buffer": "^6.0.3",
+    "concurrently": "^9.1.0",
+    "css-loader": "^6.7.1",
+    "csv-loader": "^3.0.5",
+    "cypress": "^13.15.0",
+    "dotenv": "^16.4.5",
+    "eslint": "^9.0.0",
+    "eslint-plugin-cypress": "^5.1.0",
+    "events": "^3.3.0",
+    "file-loader": "^6.2.0",
+    "folder-hash": "^4.0.2",
+    "globals": "^16.0.0",
+    "html-webpack-plugin": "^5.6.0",
+    "path-browserify": "^1.0.1",
+    "prettier": "^3.6.0",
+    "process": "^0.11.10",
+    "rollup": "^4.48.1",
+    "rollup-plugin-esbuild": "^6.1.1",
+    "rollup-plugin-postcss": "^4.0.2",
+    "sass": "^1.65.1",
+    "sass-loader": "^13.3.2",
+    "stream-browserify": "^3.0.0",
+    "style-loader": "^3.3.1",
+    "util": "^0.12.5",
+    "vitest": "^3.2.4",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.11.1",
+    "webpack-merge": "^5.8.0"
+  }
+}

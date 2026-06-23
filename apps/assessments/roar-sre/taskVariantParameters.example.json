@@ -1,0 +1,93 @@
+[
+  {
+    "variantName": "English — grade-based (v3)",
+    "params": {
+      "lng": "en",
+      "scoringVersion": 3,
+      "userMode": "default",
+      "recruitment": null,
+      "skipInstructions": true,
+      "consent": true,
+      "storyOption": "grade-based",
+      "timerLength": 180000
+    }
+  },
+  {
+    "variantName": "English — age-based (v4)",
+    "params": {
+      "lng": "en",
+      "scoringVersion": 4,
+      "userMode": "default",
+      "recruitment": null,
+      "skipInstructions": true,
+      "consent": true,
+      "storyOption": null,
+      "timerLength": 180000
+    }
+  },
+  {
+    "variantName": "Spanish v1",
+    "params": {
+      "lng": "es",
+      "scoringVersion": 1,
+      "userMode": "default",
+      "recruitment": null,
+      "skipInstructions": true,
+      "consent": true,
+      "storyOption": null,
+      "timerLength": 180000
+    }
+  },
+  {
+    "variantName": "Spanish — age-based (v4)",
+    "params": {
+      "lng": "es",
+      "scoringVersion": 4,
+      "userMode": "default",
+      "recruitment": null,
+      "skipInstructions": true,
+      "consent": true,
+      "storyOption": null,
+      "timerLength": 180000
+    }
+  },
+  {
+    "variantName": "Portuguese",
+    "params": {
+      "lng": "pt",
+      "scoringVersion": null,
+      "userMode": "default",
+      "recruitment": null,
+      "skipInstructions": true,
+      "consent": true,
+      "storyOption": null,
+      "timerLength": 180000
+    }
+  },
+  {
+    "variantName": "German",
+    "params": {
+      "lng": "de",
+      "scoringVersion": null,
+      "userMode": "default",
+      "recruitment": null,
+      "skipInstructions": true,
+      "consent": true,
+      "storyOption": null,
+      "timerLength": 180000
+    }
+  },
+  {
+    "variantName": "Italian (stub — translation not yet complete, do not seed)",
+    "params": {
+      "lng": "it",
+      "scoringVersion": null,
+      "userMode": "default",
+      "recruitment": null,
+      "skipInstructions": true,
+      "consent": true,
+      "storyOption": null,
+      "timerLength": 180000
+    }
+  }
+]
