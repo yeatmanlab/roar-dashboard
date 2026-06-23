@@ -60,9 +60,10 @@
           icon="pi pi-upload"
           outlined
           data-testid="create-variant-form__params-upload"
+          aria-describedby="params-upload-hint"
           @click="paramsFileInput?.click()"
         />
-        <small class="text-gray-500">
+        <small id="params-upload-hint" class="text-gray-500">
           Replaces the rows below with a JSON array of
           <code>{ "name": "…", "type": "string" | "number" | "boolean", "value": … }</code>.
         </small>
