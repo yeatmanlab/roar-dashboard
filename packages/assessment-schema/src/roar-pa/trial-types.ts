@@ -6,6 +6,8 @@ export const PA_TRIAL_TYPES = {
 
 export type PaTrialType = (typeof PA_TRIAL_TYPES)[keyof typeof PA_TRIAL_TYPES];
 
+import { COMPOSITE_DOMAIN } from '../constants/common-domains.js';
+
 export const PA_CATS = [
   'practiceFSM',
   'practiceLSM',
@@ -13,7 +15,7 @@ export const PA_CATS = [
   'fsm',
   'lsm',
   'del',
-  'composite',
+  COMPOSITE_DOMAIN,
   'composite_foundational',
 ] as const;
 
@@ -34,7 +36,5 @@ export const PA_CORPUS_TYPES = {
 } as const;
 
 export type PaCorpusType = (typeof PA_CORPUS_TYPES)[keyof typeof PA_CORPUS_TYPES];
-
-export const PA_COMPOSITE = 'composite' as const;
 
 export const PA_COMPOSITE_FOUNDATIONAL = 'composite_foundational' as const;
