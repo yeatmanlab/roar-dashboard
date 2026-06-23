@@ -55,6 +55,45 @@ export const FamilyLocationSchema = z.object({
 export type FamilyLocation = z.infer<typeof FamilyLocationSchema>;
 
 /**
+ * Family detail location schema (read shape).
+ *
+ * Extends the address fields stored on the `app.families.location_*` columns
+ * with the optional `coordinates` (lat/long) that the create-request
+ * `FamilyLocationSchema` intentionally omits — on read, the persisted
+ * `locationLatLong` point is surfaced as GeoJSON.
+ */
+export const FamilyDetailLocationSchema = FamilyLocationSchema.extend({
+  coordinates: z
+    .object({
+      type: z.literal('Point'),
+      coordinates: z.tuple([z.number(), z.number()]), // [longitude, latitude]
+    })
+    .optional(),
+});
+
+export type FamilyDetailLocation = z.infer<typeof FamilyDetailLocationSchema>;
+
+/**
+ * Family detail schema (read shape).
+ *
+ * Families are flat, standalone entities outside the org hierarchy. The table
+ * intentionally has no `name` — families are identified by their UUID and
+ * referenced through the `user_families` junction. The fields here do not map
+ * 1:1 to columns: `id` maps directly, but `location` is *assembled* from the
+ * `location_*` address columns plus the `locationLatLong` point, and nullable
+ * columns (`location`, `rosteringEnded`) become optional fields that are
+ * omitted when null. `createdBy` and the `timestamps` columns are intentionally
+ * not surfaced.
+ */
+export const FamilyDetailSchema = z.object({
+  id: z.string().uuid(),
+  location: FamilyDetailLocationSchema.optional(),
+  rosteringEnded: z.string().datetime().optional(),
+});
+
+export type FamilyDetail = z.infer<typeof FamilyDetailSchema>;
+
+/**
  * Request body for POST /families.
  *
  * This endpoint registers a new caretaker (a `users` row with
