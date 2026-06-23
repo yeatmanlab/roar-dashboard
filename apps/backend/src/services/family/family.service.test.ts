@@ -199,4 +199,116 @@ describe('FamilyService', () => {
       });
     });
   });
+
+  describe('getById', () => {
+    let mockFamilyRepo: ReturnType<typeof createMockFamilyRepository>;
+    let mockAuthorizationService: ReturnType<typeof createMockAuthorizationService>;
+
+    const callerContext = { userId: 'user-123', isSuperAdmin: false };
+    const superAdminContext = { userId: 'admin-123', isSuperAdmin: true };
+
+    beforeEach(() => {
+      mockFamilyRepo = createMockFamilyRepository();
+      mockAuthorizationService = createMockAuthorizationService();
+      vi.clearAllMocks();
+    });
+
+    it('should fetch a family by ID for the caretaker via FGA can_read', async () => {
+      const mockFamily = FamilyFactory.build({ id: 'family-123' });
+      mockFamilyRepo.getById.mockResolvedValue(mockFamily);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+
+      const service = FamilyService({
+        familyRepository: mockFamilyRepo,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getById(callerContext, 'family-123');
+
+      expect(mockFamilyRepo.getById).toHaveBeenCalledWith({ id: 'family-123' });
+      // can_read on the family type is `parent` — only the caretaker passes.
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_READ,
+        `${FgaType.FAMILY}:family-123`,
+      );
+      expect(result).toEqual(mockFamily);
+    });
+
+    it('should bypass the FGA check for super admins', async () => {
+      const mockFamily = FamilyFactory.build({ id: 'family-123' });
+      mockFamilyRepo.getById.mockResolvedValue(mockFamily);
+
+      const service = FamilyService({
+        familyRepository: mockFamilyRepo,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getById(superAdminContext, 'family-123');
+
+      expect(mockFamilyRepo.getById).toHaveBeenCalledWith({ id: 'family-123' });
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      expect(result).toEqual(mockFamily);
+    });
+
+    it('should throw 404 when the family does not exist', async () => {
+      mockFamilyRepo.getById.mockResolvedValue(null);
+
+      const service = FamilyService({
+        familyRepository: mockFamilyRepo,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(callerContext, 'missing-family')).rejects.toMatchObject({
+        message: ApiErrorMessage.NOT_FOUND,
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      // Existence check precedes the FGA call — a missing family is a 404, not a 403.
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+    });
+
+    it('should throw 403 when FGA denies can_read (non-caretaker, admins included)', async () => {
+      const mockFamily = FamilyFactory.build({ id: 'family-123' });
+      mockFamilyRepo.getById.mockResolvedValue(mockFamily);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = FamilyService({
+        familyRepository: mockFamilyRepo,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(callerContext, 'family-123')).rejects.toMatchObject({
+        message: ApiErrorMessage.FORBIDDEN,
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_READ,
+        `${FgaType.FAMILY}:family-123`,
+      );
+    });
+
+    it('should wrap unexpected repository errors in a 500 ApiError', async () => {
+      const dbError = new Error('Connection refused');
+      mockFamilyRepo.getById.mockRejectedValue(dbError);
+
+      const service = FamilyService({
+        familyRepository: mockFamilyRepo,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(callerContext, 'family-123')).rejects.toMatchObject({
+        message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
 });

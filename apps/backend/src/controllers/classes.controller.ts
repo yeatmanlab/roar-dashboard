@@ -1,13 +1,47 @@
 import { StatusCodes } from 'http-status-codes';
-import type { CreateClassRequest, EnrolledUsersQuery } from '@roar-platform/api-contract';
+import type { ClassDetail as ApiClass, CreateClassRequest, EnrolledUsersQuery } from '@roar-platform/api-contract';
+import type { Class } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { CreateClassServiceInput } from '../services/class/class.service';
 import { ClassService } from '../services/class/class.service';
 import type { AuthContext } from '../types/auth-context';
 import { handleUserSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
+import { isPresentString } from './utils/is-present';
 
 const classService = ClassService();
+
+/**
+ * Maps a database Class entity to the API schema.
+ *
+ * Renames nothing — the surfaced column names already match the API fields —
+ * but converts the `rosteringEnded` Date to an ISO string and drops fields that
+ * are absent. `courseId`, `number`, `period`, `location`, and `rosteringEnded`
+ * are nullable columns omitted when null; `subjects`, `grades`, and the
+ * generated `schoolLevels` arrays are included only when populated. `location`
+ * is a single free-text column (a room/location label), not an assembled
+ * address object, so it passes through as a string. `orgPath`, `termId`, and
+ * the timestamps columns are intentionally not surfaced.
+ */
+function transformClass(classEntity: Class): ApiClass {
+  return {
+    id: classEntity.id,
+    name: classEntity.name,
+    schoolId: classEntity.schoolId,
+    districtId: classEntity.districtId,
+    classType: classEntity.classType,
+    // String columns: null and empty-string are treated as absent (see `isPresentString`).
+    ...(isPresentString(classEntity.courseId) && { courseId: classEntity.courseId }),
+    ...(isPresentString(classEntity.number) && { number: classEntity.number }),
+    ...(isPresentString(classEntity.period) && { period: classEntity.period }),
+    // Array columns: a populated array is kept; an empty array is valid and not dropped here.
+    ...(classEntity.subjects && { subjects: classEntity.subjects }),
+    ...(classEntity.grades && { grades: classEntity.grades }),
+    ...(classEntity.schoolLevels && { schoolLevels: classEntity.schoolLevels }),
+    ...(isPresentString(classEntity.location) && { location: classEntity.location }),
+    ...(classEntity.rosteringEnded && { rosteringEnded: classEntity.rosteringEnded.toISOString() }),
+  };
+}
 
 export const ClassesController = {
   /**
@@ -47,6 +81,36 @@ export const ClassesController = {
         return toErrorResponse(error, [
           StatusCodes.FORBIDDEN,
           StatusCodes.UNPROCESSABLE_ENTITY,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get a single class by ID.
+   *
+   * Delegates to ClassService for authorization and retrieval.
+   *
+   * @param authContext - User's authentication context
+   * @param classId - UUID of the class to retrieve
+   */
+  get: async (authContext: AuthContext, classId: string) => {
+    try {
+      const classEntity = await classService.getById(authContext, classId);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformClass(classEntity),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }

@@ -1,7 +1,9 @@
 import type { ScoreEntryConstraint } from '../types/score-entry.type.js';
 import { AssessmentStage } from '../enums/assessment-stage.enum.js';
 import { ScoreType } from '../enums/score-type.enum.js';
-import { SWR_SCORE_DOMAINS, SWR_SCORE_NAMES, SWR_RAW_SCORE_NAMES, type SwrScoreName } from './score-names.js';
+import { SWR_SCORE_DOMAINS } from './domains.js';
+import { SWR_SCORE_NAMES, SWR_RAW_SCORE_NAMES } from './score-names.js';
+import type { SwrScoreName } from './score-names.js';
 
 /**
  * Score entry shape for SWR scores written to run_scores.
