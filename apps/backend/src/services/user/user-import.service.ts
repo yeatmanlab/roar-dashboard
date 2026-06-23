@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import type { UserImportRecord, UserImportResult } from 'firebase-admin/auth';
-import type { TupleKeyWithoutCondition } from '@openfga/sdk';
+import type { TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import type { User } from '../../db/schema';
 import type { AuthContext } from '../../types/auth-context';
 import type { UserType } from '../../enums/user-type.enum';
@@ -21,6 +21,13 @@ import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 import { generateAssessmentPid } from '../../utils/assessment-pid.util';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation, FGA_CLASS_VALID_ROLES } from '../authorization/fga-constants';
+import {
+  districtMembershipTuple,
+  schoolMembershipTuple,
+  classMembershipTuple,
+  groupMembershipTuple,
+  familyMembershipTuple,
+} from '../authorization/helpers/fga-tuples';
 import { UserService } from './user.service';
 import {
   hashPasswordForImport,
@@ -45,9 +52,9 @@ import {
  * **Unenroll bin** (implemented): ends all of a user's enrollments and archives them
  * (`rosteringEnded`) in one transaction, then best-effort deletes their FGA membership tuples.
  *
- * **Update bin** (profile + auth implemented): updates an existing user's profile fields and syncs
- * Firebase Auth (displayName / password) when they changed. Membership reconciliation
- * (replace-semantics per the legacy) is the remaining piece — see `processUpdateBin`.
+ * **Update bin** (implemented): updates an existing user's profile fields, reconciles their
+ * memberships (replace-semantics per the legacy, with FGA tuple add/delete sync), and syncs Firebase
+ * Auth (displayName / password) when they changed.
  *
  * Authorization mirrors single-create and is applied per row: super admin, or `can_create_users` on
  * every membership target (the legacy uses the same coarse permission for all three bins).
@@ -119,40 +126,6 @@ function toFailedOutcome(index: number, classification: Classification, error: u
 /** Best-effort classification for a row that fails before bin routing (e.g. authorization). */
 function preRoutingClassification(row: ImportUserRowInput): Classification {
   return row.unenroll ? CLASSIFICATION.UNENROLLED : CLASSIFICATION.CREATED;
-}
-
-/**
- * Returns true if an update row implies a membership change the update bin does not yet apply — i.e.
- * for any entity type the row lists, its set of entity IDs differs from the user's current active set
- * for that type. Entity types the row omits are ignored (the legacy leaves them untouched). Used to
- * fail such rows explicitly rather than report a misleading `ok` while silently dropping the change.
- */
-function hasMembershipDelta(
-  rowMemberships: ImportRowMembership[],
-  current: { entityType: EntityType; entityId: string }[],
-): boolean {
-  const currentByType = new Map<EntityType, Set<string>>();
-  for (const m of current) {
-    const set = currentByType.get(m.entityType) ?? new Set<string>();
-    set.add(m.entityId);
-    currentByType.set(m.entityType, set);
-  }
-
-  const rowByType = new Map<EntityType, Set<string>>();
-  for (const m of rowMemberships) {
-    const set = rowByType.get(m.entityType) ?? new Set<string>();
-    set.add(m.entityId);
-    rowByType.set(m.entityType, set);
-  }
-
-  for (const [entityType, rowIds] of rowByType) {
-    const currentIds = currentByType.get(entityType) ?? new Set<string>();
-    if (rowIds.size !== currentIds.size) return true;
-    for (const id of rowIds) {
-      if (!currentIds.has(id)) return true;
-    }
-  }
-  return false;
 }
 
 export function UserImportService({
@@ -496,6 +469,42 @@ export function UserImportService({
   }
 
   /**
+   * Build the FGA membership tuples to write for newly-added memberships, carrying the
+   * `active_membership` condition (grant window starting now). Mirrors single-create's
+   * buildMembershipTuples — class tuples are only written for FGA-valid roles.
+   */
+  function buildMembershipAdditionTuples(
+    userId: string,
+    memberships: { entityType: EntityType; entityId: string; role: string }[],
+  ): TupleKey[] {
+    const validClassRoles = FGA_CLASS_VALID_ROLES as ReadonlySet<string>;
+    const tuples: TupleKey[] = [];
+    const start = new Date();
+    for (const m of memberships) {
+      switch (m.entityType) {
+        case EntityType.DISTRICT:
+          tuples.push(districtMembershipTuple(userId, m.entityId, m.role as UserRole, start, null));
+          break;
+        case EntityType.SCHOOL:
+          tuples.push(schoolMembershipTuple(userId, m.entityId, m.role as UserRole, start, null));
+          break;
+        case EntityType.CLASS:
+          if (validClassRoles.has(m.role)) {
+            tuples.push(classMembershipTuple(userId, m.entityId, m.role as UserRole, start, null));
+          }
+          break;
+        case EntityType.GROUP:
+          tuples.push(groupMembershipTuple(userId, m.entityId, m.role as UserRole, start, null));
+          break;
+        case EntityType.FAMILY:
+          tuples.push(familyMembershipTuple(userId, m.entityId, m.role as UserFamilyRole, start, null));
+          break;
+      }
+    }
+    return tuples;
+  }
+
+  /**
    * Process the unenroll bin: per row, end ALL of the user's enrollments and archive them
    * (`rosteringEnded`) in one transaction, then best-effort delete their FGA membership tuples.
    *
@@ -583,17 +592,13 @@ export function UserImportService({
   }
 
   /**
-   * Process the update bin: update each existing user's profile fields, and sync Firebase Auth
-   * (displayName / password) only when those actually changed.
+   * Process the update bin: update each existing user's profile fields, reconcile their memberships
+   * (replace-semantics per provided entity type — end removed, add/reactivate new, leave unchanged),
+   * and sync Firebase Auth (displayName / password) only when those actually changed.
    *
-   * Rostering-ended (archived) users are rejected (not-found), matching the canonical single-update.
-   *
-   * NOTE: membership reconciliation is intentionally NOT performed yet — the legacy replaces a user's
-   * membership set per provided entity type (ending removed memberships, adding new ones), which needs
-   * a reconciliation repository method plus FGA tuple add/delete sync and is access-control-sensitive
-   * enough to warrant its own reviewed change. To avoid a misleading `ok`, a row whose memberships
-   * differ from the user's current set is failed explicitly; rows that only refresh profile fields
-   * (the dominant re-import case) succeed.
+   * Profile fields and membership reconciliation run in one transaction; FGA tuples are then synced
+   * (written for added memberships, best-effort deleted for removed). Rostering-ended (archived) users
+   * are rejected (not-found), matching the canonical single-update.
    */
   async function processUpdateBin(
     rows: { index: number; row: ImportUserRowInput; user: User }[],
@@ -613,24 +618,38 @@ export function UserImportService({
           continue;
         }
 
-        // Membership reconciliation is deferred (see the JSDoc above). Rather than report a
-        // misleading `ok` for a row that implies a membership change we don't apply, fail it
-        // explicitly when the row's memberships differ from the user's current set.
-        const currentMemberships = await userRepository.getUserEntityMemberships(user.id);
-        if (hasMembershipDelta(row.memberships, currentMemberships)) {
-          outcomes[index] = failed(
-            index,
-            CLASSIFICATION.UPDATED,
-            ApiErrorCode.RESOURCE_UNPROCESSABLE,
-            'Membership changes on update are not yet supported; re-import without membership changes',
-          );
-          continue;
+        // Reconcile memberships with replace-semantics per provided entity type. Read the current
+        // set first (snapshot), then update profile fields + reconcile in one transaction.
+        const currentMemberships = await userRepository.getActiveMembershipsWithRoles(user.id);
+        const desiredMemberships = row.memberships.map((m) => ({
+          entityType: m.entityType,
+          entityId: m.entityId,
+          role: String(m.role),
+        }));
+
+        let reconciled: {
+          added: { entityType: EntityType; entityId: string; role: string }[];
+          removed: { entityType: EntityType; entityId: string; role: string }[];
+        } = { added: [], removed: [] };
+
+        await userRepository.runTransaction({
+          fn: async (tx) => {
+            await userRepository.update({ id: user.id, data: toUpdateUserFields(row), transaction: tx });
+            reconciled = await userRepository.reconcileMemberships(user.id, desiredMemberships, currentMemberships, tx);
+          },
+        });
+
+        // Sync FGA after the DB commit: write tuples for added memberships (carrying the
+        // active_membership condition), best-effort delete tuples for removed ones.
+        if (reconciled.added.length > 0) {
+          await authorizationService.writeTuplesOrThrow(buildMembershipAdditionTuples(user.id, reconciled.added));
+        }
+        if (reconciled.removed.length > 0) {
+          await authorizationService.deleteTuples(buildMembershipDeletionTuples(user.id, reconciled.removed));
         }
 
-        await userRepository.update({ id: user.id, data: toUpdateUserFields(row) });
-
-        // The DB profile write commits before the Firebase auth sync. If the auth call fails the row
-        // is reported failed even though the profile write persisted — no orphan, just a stale
+        // The DB writes commit before the Firebase auth sync. If the auth call fails the row is
+        // reported failed even though the DB writes persisted — no orphan, just a stale
         // displayName/password the operator can fix by retrying the row. Acceptable for an update
         // (unlike create, there's no account to compensate).
         const authUpdate = buildAuthUpdate(row, user);
@@ -638,7 +657,10 @@ export function UserImportService({
           await firebaseAuth.updateUser(user.authId, authUpdate);
         }
 
-        logger.info({ userId: user.id }, 'Updated user (import)');
+        logger.info(
+          { userId: user.id, added: reconciled.added.length, removed: reconciled.removed.length },
+          'Updated user (import)',
+        );
         outcomes[index] = ok(index, CLASSIFICATION.UPDATED, user.id);
       } catch (error) {
         logger.error({ err: error, context: { userId: user.id } }, 'Update failed during import');

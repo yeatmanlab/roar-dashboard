@@ -75,10 +75,11 @@ describe('UserImportService.bulkImport', () => {
     mockUserService.createWithImportedAuth.mockImplementation(async () => ({ id: `new-user-${counter++}` }));
     mockUserRepository.runTransaction.mockImplementation(async ({ fn }) => fn({} as CoreTransaction));
     mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([]);
-    // Default the update-bin membership-delta check to "no change" (matches makeRow's school-1).
     mockUserRepository.getUserEntityMemberships.mockResolvedValue([
       { entityType: EntityType.SCHOOL, entityId: 'school-1' },
     ]);
+    // Default the update-bin reconciliation to "no membership change".
+    mockUserRepository.reconcileMemberships.mockResolvedValue({ added: [], removed: [] });
   });
 
   describe('create bin', () => {
@@ -475,10 +476,14 @@ describe('UserImportService.bulkImport', () => {
       expect(updateUser).not.toHaveBeenCalled();
     });
 
-    it('fails (rather than silently ok) a row whose memberships differ from the current set', async () => {
-      mockUserRepository.getUserEntityMemberships.mockResolvedValue([
-        { entityType: EntityType.SCHOOL, entityId: 'school-1' },
+    it('reconciles memberships and syncs FGA tuples (write added, delete removed)', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-1', role: 'student' },
       ]);
+      mockUserRepository.reconcileMemberships.mockResolvedValue({
+        added: [{ entityType: EntityType.SCHOOL, entityId: 'school-2', role: 'student' }],
+        removed: [{ entityType: EntityType.SCHOOL, entityId: 'school-1', role: 'student' }],
+      });
 
       const results = await buildService().bulkImport(superAdmin, [
         makeRow({
@@ -487,12 +492,19 @@ describe('UserImportService.bulkImport', () => {
         }),
       ]);
 
-      expect(results[0]!).toMatchObject({
-        classification: 'updated',
-        status: 'failed',
-        error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
-      });
-      expect(mockUserRepository.update).not.toHaveBeenCalled();
+      expect(mockUserRepository.reconcileMemberships).toHaveBeenCalled();
+      expect(mockAuthz.writeTuplesOrThrow).toHaveBeenCalled(); // tuple for the added membership
+      expect(mockAuthz.deleteTuples).toHaveBeenCalled(); // tuple for the removed membership
+      expect(results[0]!).toMatchObject({ classification: 'updated', status: 'ok' });
+    });
+
+    it('does not touch FGA when reconciliation reports no membership change', async () => {
+      const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+      expect(mockUserRepository.reconcileMemberships).toHaveBeenCalled();
+      expect(mockAuthz.writeTuplesOrThrow).not.toHaveBeenCalled();
+      expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      expect(results[0]!.status).toBe('ok');
     });
   });
 });
