@@ -226,7 +226,7 @@ const letterNameTrials = {
 
     // check response and record it
     data.correct = data.button_response === store.session('correctResponseNum') ? 1 : 0;
-    data.assessment_stage = isPractice(subTaskName) ? 'practice_response' : 'test_response';
+    data.assessment_stage = isPractice(subTaskName) ? 'practice' : 'test';
     store.session.set('correct', data.correct);
     store.session.set('response', data.button_response);
     store.session.set('responseValue', choices[data.button_response]);
@@ -295,7 +295,7 @@ const letterNameTrials = {
       corpusId: currentStimulus.corpus_src,
 
       // Specific to this trial
-      assessment_stage: isPractice(subTaskName) ? 'practice_response' : 'test_response',
+      assessment_stage: isPractice(subTaskName) ? 'practice' : 'test',
       target: store.session('target'),
       choices: store.session('choices'),
       responseValue: store.session('responseValue'),

@@ -17,11 +17,7 @@ const commonConfig = {
         vendor: {
           test: /[\\/]node_modules[\\/]/,
           name(module) {
-            // get the name. E.g. node_modules/packageName/not/this/part.js
-            // or node_modules/packageName
-            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
-
-            // npm package names are URL-safe, but some servers don't like @ symbols
+            const packageName = module.request?.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1] ?? 'vendor';
             return `npm.${packageName.replace('@', '')}`;
           },
           chunks: 'all',
@@ -122,6 +118,7 @@ const webConfig = merge(commonConfig, {
       project: 'letter',
       authToken: process.env.SENTRY_AUTH_TOKEN,
       debug: true,
+      deleteSourcemapsAfterUpload: true,
       errorHandler: (err) => {
         console.warn(err);
       },
@@ -131,31 +128,51 @@ const webConfig = merge(commonConfig, {
 
 const productionConfig = merge(webConfig, {
   mode: 'production',
+  devtool: false,
 });
 
 const developmentConfig = merge(webConfig, {
   mode: 'development',
+  devtool: 'inline-source-map',
   devServer: {
-    https: true,
     port: 8000,
     static: './dist',
     client: {
       overlay: false,
     },
+    proxy: [
+      {
+        context: ['/v1'],
+        target: process.env.BACKEND_URL ?? 'http://localhost:4000',
+        secure: false,
+        changeOrigin: true,
+      },
+    ],
   },
 });
 
 module.exports = async (env, args) => {
-  const roarDB = env.dbmode === 'production' ? 'production' : 'development';
+  const roarDB = env.dbmode ?? 'development';
+
+  const devFirebaseConfig =
+    roarDB === 'development'
+      ? {
+          FIREBASE_AUTH_EMULATOR_HOST: JSON.stringify(process.env.FIREBASE_AUTH_EMULATOR_HOST ?? ''),
+        }
+      : {};
 
   const envDependentConfig = {
     plugins: [
-      new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL ?? '/v1'),
+        ...devFirebaseConfig,
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
+      }),
+      new webpack.EnvironmentPlugin({
+        FIREBASE_AUTH_EMULATOR_HOST: '',
       }),
     ],
   };

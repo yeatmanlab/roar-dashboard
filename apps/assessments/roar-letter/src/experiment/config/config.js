@@ -8,7 +8,7 @@ import { getUserDataTimeline } from '../trials/getUserData';
 import { enterFullscreen } from '../trials/fullScreen';
 import { corpusLetterAll, corpusTypePhonics } from './corpus';
 
-import { computedScoreCallback } from '../scores';
+import { finishRun, writeTrial, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
 import { jsPsych } from '../jsPsych';
 import { initializeClowder } from '../experimentSetup';
 
@@ -130,7 +130,7 @@ export const getStimulusCountPhonics = () => {
   return countList;
 };
 
-export const initConfig = async (firekit, gameParams, userParams, displayElement) => {
+export const initConfig = async (gameParams, userParams, displayElement) => {
   const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
 
   const {
@@ -206,7 +206,6 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
       trialTime: trialTimeOptions[0],
     },
     startTime: new Date(),
-    firekit,
     displayElement: displayElement || null,
     minTheta: minTheta || -8,
     maxTheta: maxTheta || 8,
@@ -220,13 +219,8 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
     taskId: taskId ?? 'letter',
   };
 
-  const updatedGameParams = Object.fromEntries(
-    Object.entries(gameParams).map(([key, value]) => [key, config[key] ?? value]),
-  );
-  await config.firekit.updateTaskParams(updatedGameParams);
-
   if (config.pid !== null) {
-    await config.firekit.updateUser({
+    await updateUser({
       assessmentPid: config.pid,
       ...userMetadata,
     });
@@ -235,7 +229,7 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
   return config;
 };
 
-export const initRoarJsPsych = (config) => {
+export const initRoarJsPsych = (config, computedScoreCallback) => {
   if (config.displayElement) {
     jsPsych.opts.display_element = config.displayElement;
   }
@@ -251,7 +245,7 @@ export const initRoarJsPsych = (config) => {
     };
 
   jsPsych.opts.on_finish = extend(jsPsych.opts.on_finish, () => {
-    config.firekit.finishRun();
+    finishRun();
   });
 
   jsPsych.opts.on_data_update = extend(jsPsych.opts.on_data_update, (data) => {
@@ -260,11 +254,11 @@ export const initRoarJsPsych = (config) => {
       if (updatedData.corpusId === 'textSoundPseudo') {
         updatedData.phonicsCorpus = 'roar-phonics-2025-08-01-v3.csv';
       }
-      config.firekit.writeTrial(updatedData, computedScoreCallback);
+      writeTrial(updatedData, computedScoreCallback);
     }
   });
   jsPsych.opts.on_interaction_data_update = function (data) {
-    config.firekit.addInteraction(data);
+    addInteraction(data);
   };
 
   initStore(config);
@@ -281,7 +275,7 @@ export const initRoarTimeline = (config) => {
     on_timeline_finish: async () => {
       // eslint-disable-next-line no-param-reassign
       config.pid = config.pid || makePid();
-      await config.firekit.updateUser({
+      await updateUser({
         assessmentPid: config.pid,
         labId: config.labId,
         ...config.userMetadata,

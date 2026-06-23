@@ -11,6 +11,7 @@ import {
 import webpAssets from '../../webpAssets.json';
 // setup
 import { initRoarJsPsych, initRoarTimeline, getStimulusCountPhonics, getPracticeCount } from './config/config';
+import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/firekit';
 import { jsPsych } from './jsPsych';
 import { initializeCat } from './experimentSetup';
 import { buildBlock } from './trials/stimulus';
@@ -98,7 +99,7 @@ export let preloadTrials;
 
 const bucketURI = 'https://storage.googleapis.com/roar-ak';
 
-export function buildExperiment(config) {
+export function buildExperiment(config, computedScoreCallback) {
   // Add media assest here
 
   // TODO: Check back here in Letter task breaks
@@ -209,7 +210,7 @@ export function buildExperiment(config) {
   addToPreloadTrial();
 
   // Initialize jsPsych and timeline
-  initRoarJsPsych(config);
+  initRoarJsPsych(config, computedScoreCallback);
   const initialTimeline = initRoarTimeline(config);
   const letterEvaluateValidity = createEvaluateValidity({
     responseTimeThreshold: 600,
@@ -219,15 +220,7 @@ export function buildExperiment(config) {
   });
 
   const letterHandleEngagementFlags = (flags, reliable) => {
-    // eslint-disable-next-line no-console
-    // console.log('Flags triggered: ', flags);
-    // eslint-disable-next-line no-console
-    // console.log('Reliable: ', reliable);
-    if (config.firekit.run.started) {
-      return config.firekit?.updateEngagementFlags(flags, reliable);
-    }
-    // eslint-disable-next-line no-console
-    return console.log('Run not started.');
+    return updateEngagementFlags(flags, reliable);
   };
 
   letterValidityEvaluator = new ValidityEvaluator({

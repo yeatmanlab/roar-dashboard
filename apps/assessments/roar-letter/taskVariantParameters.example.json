@@ -1,0 +1,27 @@
+[
+  {
+    "variantName": "English",
+    "params": {
+      "lng": "en",
+      "scoringVersion": 1
+    }
+  },
+  {
+    "variantName": "Spanish",
+    "params": {
+      "lng": "es"
+    }
+  },
+  {
+    "variantName": "English (Canada)",
+    "params": {
+      "lng": "en-CA"
+    }
+  },
+  {
+    "variantName": "Phonics (English)",
+    "params": {
+      "phonicsCorpus": "roar-phonics-2025-08-01-v3.csv"
+    }
+  }
+]
