@@ -99,11 +99,13 @@ export function toLetterScoreEntries(
       for (const name of Object.values(LETTER_COMPOSITE_SCORE_NAMES) as LetterCompositeScoreName[]) {
         const value = scores[name];
         if (value == null) continue;
+        const strValue = String(value);
+        if (!strValue) continue;
         entries.push({
           type: LETTER_RAW_COMPOSITE_SCORE_NAMES.has(name) ? ScoreType.RAW : ScoreType.COMPUTED,
           domain,
           name,
-          value: String(value),
+          value: strValue,
           assessmentStage,
         });
       }
@@ -123,11 +125,13 @@ export function toLetterScoreEntries(
       ) as LetterCompositeFoundationalScoreName[]) {
         const value = scores[name];
         if (value == null) continue;
+        const strValue = String(value);
+        if (!strValue) continue;
         entries.push({
           type: ScoreType.COMPUTED,
           domain,
           name,
-          value: String(value),
+          value: strValue,
           assessmentStage,
         });
       }
@@ -136,11 +140,13 @@ export function toLetterScoreEntries(
       for (const name of Object.values(LETTER_SUBTASK_SCORE_NAMES) as LetterSubtaskScoreName[]) {
         const value = scores[name];
         if (value == null) continue;
+        const strValue = String(value);
+        if (!strValue) continue;
         entries.push({
           type: ScoreType.COMPUTED,
           domain,
           name,
-          value: String(value),
+          value: strValue,
           assessmentStage,
         });
       }
@@ -264,11 +270,13 @@ export function toPhonicsScoreEntries(
       for (const name of Object.values(PHONICS_COMPOSITE_SCORE_NAMES)) {
         const value = scores[name];
         if (value == null) continue;
+        const strValue = String(value);
+        if (!strValue) continue;
         entries.push({
           type: PHONICS_RAW_COMPOSITE_SCORE_NAMES.has(name) ? ScoreType.RAW : ScoreType.COMPUTED,
           domain,
           name,
-          value: String(value),
+          value: strValue,
           assessmentStage,
         });
       }
@@ -283,22 +291,28 @@ export function toPhonicsScoreEntries(
           if (!mapping) continue;
 
           if (groupData.correct != null) {
-            entries.push({
-              type: ScoreType.COMPUTED,
-              domain,
-              name: mapping.correct,
-              value: String(groupData.correct),
-              assessmentStage,
-            });
+            const strCorrect = String(groupData.correct);
+            if (strCorrect) {
+              entries.push({
+                type: ScoreType.COMPUTED,
+                domain,
+                name: mapping.correct,
+                value: strCorrect,
+                assessmentStage,
+              });
+            }
           }
           if (groupData.attempted != null) {
-            entries.push({
-              type: ScoreType.COMPUTED,
-              domain,
-              name: mapping.attempted,
-              value: String(groupData.attempted),
-              assessmentStage,
-            });
+            const strAttempted = String(groupData.attempted);
+            if (strAttempted) {
+              entries.push({
+                type: ScoreType.COMPUTED,
+                domain,
+                name: mapping.attempted,
+                value: strAttempted,
+                assessmentStage,
+              });
+            }
           }
         }
       }
@@ -307,11 +321,13 @@ export function toPhonicsScoreEntries(
       for (const name of Object.values(PHONICS_SUBTASK_SCORE_NAMES)) {
         const value = scores[name];
         if (value == null) continue;
+        const strValue = String(value);
+        if (!strValue) continue;
         entries.push({
           type: ScoreType.COMPUTED,
           domain,
           name,
-          value: String(value),
+          value: strValue,
           assessmentStage,
         });
       }

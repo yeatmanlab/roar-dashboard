@@ -219,11 +219,15 @@ export const initConfig = async (gameParams, userParams, displayElement) => {
     taskId: taskId ?? 'letter',
   };
 
-  if (config.pid !== null) {
-    await updateUser({
-      assessmentPid: config.pid,
-      ...userMetadata,
-    });
+  if (config.pid) {
+    try {
+      await updateUser({
+        assessmentPid: config.pid,
+        ...userMetadata,
+      });
+    } catch (err) {
+      console.warn('[roar-letter] updateUser skipped (not yet implemented in SDK):', err.message);
+    }
   }
 
   return config;
@@ -275,11 +279,15 @@ export const initRoarTimeline = (config) => {
     on_timeline_finish: async () => {
       // eslint-disable-next-line no-param-reassign
       config.pid = config.pid || makePid();
-      await updateUser({
-        assessmentPid: config.pid,
-        labId: config.labId,
-        ...config.userMetadata,
-      });
+      try {
+        await updateUser({
+          assessmentPid: config.pid,
+          labId: config.labId,
+          ...config.userMetadata,
+        });
+      } catch (err) {
+        console.warn('[roar-letter] updateUser skipped (not yet implemented in SDK):', err.message);
+      }
     },
   };
   return beginningTimeline;

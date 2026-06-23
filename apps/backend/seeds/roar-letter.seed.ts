@@ -4,9 +4,12 @@
  * Reads variant definitions from the file at TASK_VARIANT_PARAMETERS_FILE (required).
  * The file is a JSON array where each entry has a variantName and a params object.
  *
- * Two task families are supported:
- *   - Letter variants: include a "lng" param → task determined by LETTER_LANGUAGES
- *   - Phonics variants: include a "phonicsCorpus" param (no "lng") → seeded under PHONICS_TASK_IDS.EN
+ * Two task families are supported, distinguished by the required "task" param:
+ *   - Letter variants: params.task === "letter" — require params.lng for routing to the
+ *     correct language-specific backend task (letter-en, letter-es, letter-en-ca)
+ *   - Phonics variants: params.task === "phonics" — always seeded under PHONICS_TASK_IDS.EN
+ *
+ * All params (including "task" and "lng") are stored as task variant parameters.
  *
  * Idempotent — tasks and variants that already exist by slug / name are skipped.
  *
@@ -58,8 +61,7 @@ type VariantDef = {
 
 const VALID_LNG = new Set(Object.keys(LETTER_LANGUAGES));
 const VALID_SCORING_VERSIONS = new Set<unknown>(Object.values(LETTER_SCORING_VERSION));
-
-const ALLOWED_PARAM_KEYS = new Set(['lng', 'scoringVersion', 'phonicsCorpus']);
+const VALID_TASK_VALUES = new Set(['letter', 'phonics']);
 
 function validateVariants(raw: unknown): VariantDef[] {
   if (!Array.isArray(raw) || raw.length === 0) {
@@ -91,31 +93,20 @@ function validateVariants(raw: unknown): VariantDef[] {
 
     const p = params as Record<string, unknown>;
 
-    for (const key of Object.keys(p)) {
-      if (!ALLOWED_PARAM_KEYS.has(key)) {
-        throw new Error(`${loc}: unknown param "${key}"`);
-      }
-    }
-
-    const hasLng = 'lng' in p;
-    const hasPhonicsCorpus = 'phonicsCorpus' in p;
-
-    if (!hasLng && !hasPhonicsCorpus) {
-      throw new Error(`${loc}: must have either "lng" (letter task) or "phonicsCorpus" (phonics task)`);
-    }
-
-    if (hasLng && hasPhonicsCorpus) {
-      throw new Error(`${loc}: cannot have both "lng" and "phonicsCorpus"`);
+    if (typeof p.task !== 'string' || !VALID_TASK_VALUES.has(p.task)) {
+      throw new Error(`${loc}: "params.task" must be "letter" or "phonics"`);
     }
 
     let taskSlug: string;
 
-    if (hasLng) {
-      const lng = p.lng as string;
+    if (p.task === 'letter') {
+      if (typeof p.lng !== 'string') {
+        throw new Error(`${loc}: letter variants require "params.lng"`);
+      }
 
       // Skip entries for unsupported languages (e.g., Italian stub entries)
-      if (!VALID_LNG.has(lng)) {
-        console.log(`  Skipping ${loc}: "lng" "${lng}" is not a supported language — entry ignored.`);
+      if (!VALID_LNG.has(p.lng)) {
+        console.log(`  Skipping ${loc}: "lng" "${p.lng}" is not a supported language — entry ignored.`);
         continue;
       }
 
@@ -125,12 +116,9 @@ function validateVariants(raw: unknown): VariantDef[] {
         }
       }
 
-      taskSlug = LETTER_LANGUAGES[lng as LetterLng].taskId;
+      taskSlug = LETTER_LANGUAGES[p.lng as LetterLng].taskId;
     } else {
-      // Phonics task
-      if (typeof p.phonicsCorpus !== 'string' || p.phonicsCorpus.trim() === '') {
-        throw new Error(`${loc}: "phonicsCorpus" must be a non-empty string`);
-      }
+      // phonics
       taskSlug = PHONICS_TASK_IDS.EN;
     }
 

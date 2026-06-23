@@ -17,20 +17,30 @@ class RoarLetter {
   }
 
   async init() {
+    console.log('[roar-letter] init: start', { gameParams: this.gameParams });
     initSentry();
     const computedScoreCallback = wireScoreAdapter();
+    console.log('[roar-letter] init: wireScoreAdapter done');
     await startRun(this.userParams ?? {});
+    console.log('[roar-letter] init: startRun done');
     const config = await initConfig(this.gameParams, this.userParams, this.displayElement);
+    console.log('[roar-letter] init: initConfig done', { task: config.task, language: config.language, scoringVersion: config.scoringVersion });
     store.session.set('config', config);
     await loadCorpus(config);
-    return buildExperiment(config, computedScoreCallback);
+    console.log('[roar-letter] init: loadCorpus done');
+    const result = buildExperiment(config, computedScoreCallback);
+    console.log('[roar-letter] init: buildExperiment done', { timelineLength: result.timeline.length });
+    return result;
   }
 
   async run() {
+    console.log('[roar-letter] run: start');
     const { jsPsych, timeline } = await this.init();
+    console.log('[roar-letter] run: calling jsPsych.run with', timeline.length, 'nodes');
     this.jsPsych = jsPsych;
     this.jsPsych.message_progress_bar = `${i18next.t('progressBar')}`;
     await this.jsPsych.run(timeline);
+    console.log('[roar-letter] run: jsPsych.run complete');
   }
 
   async abort() {
