@@ -8,6 +8,7 @@ import {
   CreateFamilyResponseSchema,
   EnrolledFamilyUsersQuerySchema,
   EnrolledFamilyUsersResponseSchema,
+  FamilyDetailSchema,
 } from './schema';
 
 const c = initContract();
@@ -44,6 +45,32 @@ export const FamiliesContract = c.router(
         'Returns 422 if the caregiver has already created a family. ' +
         'Returns 429 if Firebase Auth rate-limits the create. ' +
         'Returns 500 for unexpected errors (Firebase compensation runs; no orphaned records).',
+    },
+    get: {
+      method: 'GET',
+      path: '/:familyId',
+      pathParams: z.object({
+        familyId: z.string().uuid(),
+      }),
+      responses: {
+        200: SuccessEnvelopeSchema(FamilyDetailSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get family by ID',
+      description:
+        'Returns a single family by ID. ' +
+        'Access is restricted to the family caretaker: only a user with the parent ' +
+        'role on the family (its caretaker) or a super admin may read it. ' +
+        'Unlike org and group reads, no admin or supervisory role grants access — ' +
+        "admins, the family's own children, and all other users receive 403. " +
+        'Returns 401 if the user is not authenticated. ' +
+        'Returns 403 if the user is neither the family caretaker nor a super admin. ' +
+        'Returns 404 if the family does not exist. ' +
+        'Returns 500 if an internal server error occurs.',
     },
     listUsers: {
       method: 'GET',

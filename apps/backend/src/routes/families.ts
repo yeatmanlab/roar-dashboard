@@ -22,6 +22,11 @@ export function registerFamiliesRoutes(routerInstance: Router) {
     create: {
       handler: async ({ body }) => FamiliesController.create(body),
     },
+    get: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req, params }) =>
+        FamiliesController.getById({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.familyId),
+    },
     addChildren: {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { familyId }, body }) =>

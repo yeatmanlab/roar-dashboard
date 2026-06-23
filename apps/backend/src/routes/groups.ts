@@ -18,6 +18,17 @@ export function registerGroupsRoutes(routerInstance: Router) {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, body }) => GroupsController.create(user!, body),
     },
+    list: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req, query }) =>
+        GroupsController.list({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, query),
+    },
+    get: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req, params }) =>
+        GroupsController.getById({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.groupId),
+    },
     getInvitationCode: {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, params }) =>

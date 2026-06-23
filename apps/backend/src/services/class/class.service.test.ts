@@ -198,6 +198,103 @@ describe('ClassService', () => {
     });
   });
 
+  describe('getById', () => {
+    const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
+    const mockSuperAdminContext = { userId: 'admin-123', isSuperAdmin: true };
+
+    it('should fetch a class by ID for regular users via FGA can_read', async () => {
+      const mockClass = ClassFactory.build({ id: 'class-123' });
+      mockClassRepository.getById.mockResolvedValue(mockClass);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+
+      const service = ClassService({
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getById(mockAuthContext, 'class-123');
+
+      expect(mockClassRepository.getById).toHaveBeenCalledWith({ id: 'class-123' });
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_READ,
+        `${FgaType.CLASS}:class-123`,
+      );
+      expect(result).toEqual(mockClass);
+    });
+
+    it('should bypass the FGA check for super admins', async () => {
+      const mockClass = ClassFactory.build({ id: 'class-123' });
+      mockClassRepository.getById.mockResolvedValue(mockClass);
+
+      const service = ClassService({
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getById(mockSuperAdminContext, 'class-123');
+
+      expect(mockClassRepository.getById).toHaveBeenCalledWith({ id: 'class-123' });
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      expect(result).toEqual(mockClass);
+    });
+
+    it('should throw 404 when the class does not exist', async () => {
+      mockClassRepository.getById.mockResolvedValue(null);
+
+      const service = ClassService({
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(mockAuthContext, 'missing-class')).rejects.toMatchObject({
+        message: ApiErrorMessage.NOT_FOUND,
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      // Existence check precedes the FGA call — a missing class is a 404, not a 403.
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+    });
+
+    it('should throw 403 when FGA denies can_read', async () => {
+      const mockClass = ClassFactory.build({ id: 'class-123' });
+      mockClassRepository.getById.mockResolvedValue(mockClass);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = ClassService({
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(mockAuthContext, 'class-123')).rejects.toMatchObject({
+        message: ApiErrorMessage.FORBIDDEN,
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('should wrap unexpected repository errors in a 500 ApiError', async () => {
+      const dbError = new Error('Connection refused');
+      mockClassRepository.getById.mockRejectedValue(dbError);
+
+      const service = ClassService({
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(mockAuthContext, 'class-123')).rejects.toMatchObject({
+        message: 'Failed to retrieve class',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
+
   describe('create', () => {
     const districtId = '11111111-1111-4111-8111-111111111111';
     const schoolId = '22222222-2222-4222-8222-222222222222';
