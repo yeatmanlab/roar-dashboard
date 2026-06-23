@@ -6,6 +6,8 @@ import {
   CreateUserRequestBodySchema,
   CreateUserResponseSchema,
   UpdateUserRequestBodySchema,
+  ImportUsersRequestSchema,
+  ImportUsersResponseSchema,
   RecordUserAgreementRequestBodySchema,
   RecordUserAgreementResponseSchema,
 } from './schema';
@@ -76,6 +78,28 @@ export const UsersContract = c.router(
         'Returns a 422 if the request body is well-formed but contains semantically invalid data (e.g., invalid grade level). ' +
         'Returns a 429 if the user creation rate limit has been exceeded. ' +
         'Returns a 500 if an internal server error occurs.',
+    },
+    bulkImport: {
+      method: 'POST',
+      path: '/import',
+      contentType: 'application/json',
+      body: ImportUsersRequestSchema,
+      responses: {
+        200: SuccessEnvelopeSchema(ImportUsersResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Bulk create, update, and unenroll users',
+      description:
+        'Processes up to 100 rows, classifying each by email into create, update, or unenroll and ' +
+        'applying it against Firebase Auth, Postgres, and OpenFGA with per-row atomicity. ' +
+        'Always returns 200 with a multi-status body for any well-formed, authenticated request — ' +
+        'per-row outcomes (including failures) live in `results`, never in the HTTP status code. ' +
+        'Returns a 400 if the request body is missing, empty, over 100 rows, or malformed. ' +
+        'Returns a 401 if the requesting user is not authenticated. ' +
+        'Returns a 500 if an internal error occurs before per-row processing begins.',
     },
     update: {
       method: 'PATCH',
