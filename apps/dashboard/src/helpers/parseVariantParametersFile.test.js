@@ -25,6 +25,11 @@ describe('parseVariantParametersJson', () => {
     expect(parseVariantParametersJson('[]')).toEqual([]);
   });
 
+  it('ignores unknown extra properties on an entry', () => {
+    const text = JSON.stringify([{ name: 'x', type: 'string', value: 'y', extra: 'ignored' }]);
+    expect(parseVariantParametersJson(text)).toEqual([{ name: 'x', type: 'string', value: 'y', isNew: true }]);
+  });
+
   it('throws on invalid JSON', () => {
     expect(() => parseVariantParametersJson('{not json')).toThrow(/not valid JSON/i);
   });
@@ -41,6 +46,10 @@ describe('parseVariantParametersJson', () => {
 
   it('throws when an entry is itself an array', () => {
     expect(() => parseVariantParametersJson('[[1, 2, 3]]')).toThrow(/Parameter 1: each entry must be an object/);
+  });
+
+  it('throws when an entry is null', () => {
+    expect(() => parseVariantParametersJson('[null]')).toThrow(/Parameter 1: each entry must be an object/);
   });
 
   it('throws when name is missing or blank', () => {
