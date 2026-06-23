@@ -1,0 +1,146 @@
+{
+  "loading": "Este experimento está carregando...",
+  "labID": "ID do Laboratório",
+  "participantID": "ID do Participante",
+  "buttonLabel": "Continuar",
+  "progressBar": "Progresso concluído",
+  "preloadTrial": {
+    "messageText": "Por favor, aguarde enquanto o experimento carrega. Isso pode levar alguns minutos."
+  },
+  "fullScreenTrial": {
+    "prompt": "O experimento mudará para tela cheia. <br/> Clique no botão para continuar.",
+    "buttonText": "Continuar"
+  },
+  "navigation": {
+    "continueButtonText": "Pressione <span class='yellow'>{{input}}</span> para {{action}}",
+    "studentSelect": "Pressione <span class='yellow'> uma tecla numérica </span> para selecionar um estudante. "
+  },
+  "introduction": {
+    "gradeSelect": {
+      "text1": "Em qual ano você está matriculado?",
+      "text2": "Pressione a tecla numérica correspondente ao ano em que você está na escola.",
+      "text2Mobile": "Pressione a tecla numérica correspondente ao ano em que você está na escola.",
+      "text3": "Por exemplo, pressione “2” se estiver no 2º ano.",
+      "text4": "Pressione <span class='yellow'> a tecla numérica </span> do ano escolar em que você está para continuar",
+      "text4Mobile": "Pressione <span class='yellow'> a tecla numérica </span> do ano escolar em que você está para continuar"
+    },
+    "intro": {
+      "text1": "Bem-vindo à atividade de Eficiência na Leitura de Frases!",
+      "text2": "Nesta atividade, você vai decidir se uma frase é verdadeira ou não.",
+      "text3": "Algumas frases podem parecer confusas, mas faça o seu melhor para responder o máximo que puder.",
+      "text4": "Bem-vindo! Você dará aulas na Escola de Leitura.",
+      "text5": "Alguns alunos talentosos precisam da sua ajuda com os exercícios de leitura de frases.",
+      "text6": "Você ajudará esses alunos a decidirem se uma frase é verdadeira ou não."
+    }
+  },
+  "practice": {
+    "intro": {
+      "text1": "Instruções",
+      "text2": "Nesta atividade, você vai ler algumas frases e decidir se cada uma delas é verdadeira ou falsa.",
+      "text3": "Pressione a tecla de <span class='orange'><b> SETA PARA ESQUERDA </b></span> se uma frase for falsa. Por exemplo, 'O peixe vive na terra', é uma frase falsa, então você deve pressionar a tecla de <span class='orange'> <b> SETA PARA ESQUERDA. </b> </span>",
+      "text3Mobile": "Pressione a tecla de <span class='orange'><b> SETA PARA ESQUERDA </b></span> se uma frase for falsa. Por exemplo, 'O peixe vive na terra', é uma frase falsa, então você deve pressionar a tecla de <span class='orange'> <b> SETA PARA ESQUERDA. </b> </span>",
+      "text4": "Pressione a tecla de <span class='blue'><b> SETA PARA DIREITA </b></span> se uma frase for verdadeira. Por exemplo, 'A vaca é um animal', é uma frase verdadeira, então você deve pressionar a tecla de <span class='blue'> <b> SETA PARA DIREITA. </b> </span>",
+      "text4Mobile": "Pressione a tecla de <span class='blue'><b> SETA PARA DIREITA </b></span> se uma frase for verdadeira. Por exemplo, 'A vaca é um animal', é uma frase verdadeira, então você deve pressionar a tecla de <span class='blue'> <b> SETA PARA DIREITA. </b> </span>",
+      "text5": "Vamos treinar!",
+      "text6": "Pressione <span class='yellow'>qualquer tecla</span> para começar as frases de treino",
+      "text6Mobile": "Pressione <span class='yellow'>AQUI</span> para começar as frases de treino"
+    },
+    "postPracticeIntro": {
+      "text1": "Ótimo trabalho!",
+      "text2": "Você está pronto para começar o jogo.",
+      "text3": "Você terá <b> 3 minutos </b> para responder o máximo de frases que puder.",
+      "text4": "Leia cada frase silenciosamente e trabalhe o mais rápido possível sem cometer erros.",
+      "text5": "Está tudo bem se você não souber a resposta. Dê seu melhor palpite e siga para a próxima sentença."
+    },
+    "feedback": {
+      "text1": "Você pressionou a seta {{arrow}} para frases {{type}}s.",
+      "text1Mobile": "Você pressionou a seta {{arrow}} para frases {{type}}s.",
+      "text2": "é uma frase {{type}}. Pressione a seta {{arrow}} para continuar.",
+      "text2Mobile": "é uma frase {{type}}. Pressione a seta {{arrow}} para continuar."
+    },
+    "postPracticeReminder": {
+      "text1": " Pressione a tecla de <span class='orange'> <b> seta para esquerda </b> </span> para <span class='orange'> <b> frases falsas.</b> </span>",
+      "text1Mobile": "Pressione a tecla de <span class='orange'> <b> seta para esquerda </b> </span> para <span class='orange'> <b> frases falsas.</b> </span>",
+      "text2": "Pressione a tecla de <span class='blue'> <b> seta para direita </b> </span> para <span class='blue'> <b> frases verdadeiras. </b> </span>",
+      "text2Mobile": "Pressione a tecla de <span class='blue'> <b> seta para direita </b> </span> para <span class='blue'> <b> frases verdadeiras. </b> </span>",
+      "text3": "Dê o seu melhor!",
+      "text4": "Preparado?"
+    }
+  },
+  "characterSelect": {
+    "studentSelect": {
+      "paragraph1": "Agora, vamos conhecer seus alunos!",
+      "paragraph2": "Pressione a tecla numérica no seu teclado para escolher o aluno com quem você gostaria de trabalhar.",
+      "paragraph2Mobile": "Pressione uma tecla numérica para selecionar um estudante",
+      "paragraph3": "Pressione <span class='yellow'> uma tecla numérica </span> para escolher um estudante",
+      "paragraph3MobileBefore": "Pressione",
+      "paragraph3MobileSpan": "uma tecla numérica",
+      "paragraph3MobileAfter": "para escolher um estudante"
+    },
+    "studentIntro": {
+      "paragraph1": "Olá, professor! É um prazer te conhecer. Meu nome é",
+      "paragraph2": "Estou com dificuldades nas tarefas de leitura de frases. Preciso terminá-las para",
+      "paragraph3": "Você pode me ajudar?"
+    },
+    "studentCharacter": {
+      "dog": "Ana",
+      "cat": "Pedro",
+      "bird": "Bia",
+      "deer": "Felipe"
+    },
+    "studentActivity": {
+      "dog": "poder ir para a aula de Educação Física",
+      "cat": "ir para o recreio",
+      "bird": "poder sair com meus amigos",
+      "deer": "poder jogar videogame com meus amigos"
+    }
+  },
+  "gameBreak": {
+    "halfwayScreen": {
+      "text1": "Ótimo trabalho!",
+      "text2": "Você está na metade do caminho. Vamos continuar.",
+      "text3": "Uau! Estou pegando o jeito.",
+      "text4": "Estamos na metade - vamos continuar."
+    },
+    "endScreen": {
+      "text1": "Trabalho incrível!",
+      "text2": "Você concluiu tudo. Muito obrigado por participar da nossa atividade.",
+      "text3": "Ótimo trabalho, professor!",
+      "text4": "terminou em tempo recorde. Obrigado pela sua ajuda!"
+    },
+    "debrief": {
+      "text1": "Obrigado pela sua participação!",
+      "text2": "Suas respostas foram salvas."
+    }
+  },
+  "feedbackTranslations": {
+    "correct": "Correto!",
+    "incorrect": "Isto não está certo!"
+  },
+  "reminderTexts": {
+    "remember": "Lembre-se!"
+  },
+  "grades": {
+    "1": "1º ano",
+    "2": "2º ano",
+    "3": "3º ano",
+    "4": "4º ano",
+    "5": "5º ano",
+    "6": "6º ano",
+    "7": "7º ano",
+    "8+": "8º ano ou mais"
+  },
+  "terms": {
+    "here": "AQUI",
+    "anyKey": "QUALQUER TECLA",
+    "continue": "continuar",
+    "practice": "praticar",
+    "begin": "começar a atividade",
+    "left": "esquerda",
+    "right": "direita",
+    "save": "salvar seu progresso",
+    "close": "feche o jogo",
+    "true": "verdadeira",
+    "false": "falsa"
+  }
+}
