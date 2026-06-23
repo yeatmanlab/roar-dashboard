@@ -62,6 +62,12 @@ import { OrgFactory } from '../test-support/factories/org.factory';
 import { ClassFactory } from '../test-support/factories/class.factory';
 import { OrgType } from '../enums/org-type.enum';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
+import { AgreementFactory } from '../test-support/factories/agreement.factory';
+import { AdministrationFactory } from '../test-support/factories/administration.factory';
+import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
+import { AdministrationAgreementFactory } from '../test-support/factories/administration-agreement.factory';
+import { UserAgreementFactory } from '../test-support/factories/user-agreement.factory';
+import { AgreementType } from '../enums/agreement-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { UserRepository } from '../repositories/user.repository';
 import { FirebaseAuthClient } from '../clients/firebase-auth.clients';
@@ -70,6 +76,7 @@ import { RosteringProvider } from '../enums/rostering-provider.enum';
 import { RosteringEntityType } from '../enums/rostering-entity-type.enum';
 import { FgaClient } from '../clients/fga.client';
 import { FgaType } from '../services/authorization/fga-constants';
+import { writeFgaAdministrationAssignment } from '../test-support/fga/fga-test-tuples.helper';
 import type { Condition } from '../types/condition';
 import { Operator } from '../types/condition';
 
@@ -2894,6 +2901,122 @@ describe('GET /v1/users/:userId/administrations/:administrationId', () => {
         .toReturn(StatusCodes.OK);
 
       expect(res.body.data.id).toBe(baseFixture.administrationAssignedToSchoolA.id);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/users/:userId/administrations/:administrationId/agreements
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/users/:userId/administrations/:administrationId/agreements', () => {
+  // A fresh district-assigned administration with a consent + assent agreement.
+  // tiers.student (created at baseFixture.district) can self-read it, and we sign
+  // the consent for that student so we can assert the signed flags.
+  let administrationId: string;
+  let consentAgreementId: string;
+  let assentAgreementId: string;
+
+  beforeAll(async () => {
+    const administration = await AdministrationFactory.create({
+      name: `User Agreements Admin ${faker.string.uuid()}`,
+      createdBy: baseFixture.districtAdmin.id,
+    });
+    administrationId = administration.id;
+
+    await AdministrationOrgFactory.create({ administrationId, orgId: baseFixture.district.id });
+    await writeFgaAdministrationAssignment(administrationId, baseFixture.district.id, FgaType.DISTRICT);
+
+    // Required agreements: a consent and an assent, each with a current en-US version.
+    const consent = await AgreementFactory.create({ agreementType: AgreementType.CONSENT });
+    const assent = await AgreementFactory.create({ agreementType: AgreementType.ASSENT });
+    consentAgreementId = consent.id;
+    assentAgreementId = assent.id;
+
+    const consentVersion = await AgreementVersionFactory.create(
+      { isCurrent: true, locale: 'en-US' },
+      { transient: { agreementId: consent.id } },
+    );
+    await AgreementVersionFactory.create(
+      { isCurrent: true, locale: 'en-US' },
+      { transient: { agreementId: assent.id } },
+    );
+
+    await AdministrationAgreementFactory.create({}, { transient: { administrationId, agreementId: consent.id } });
+    await AdministrationAgreementFactory.create({}, { transient: { administrationId, agreementId: assent.id } });
+
+    // The student signs only the consent (current version) — the assent stays unsigned.
+    await UserAgreementFactory.create({ userId: tiers.student.id, agreementVersionId: consentVersion.id });
+  });
+
+  function path(userId: string, adminId: string) {
+    return `/v1/users/${userId}/administrations/${adminId}/agreements`;
+  }
+
+  describe('authorization', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', path(tiers.student.id, administrationId))
+        .unauthenticated()
+        .toReturn(StatusCodes.UNAUTHORIZED);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('super admin can list agreements for any user', async () => {
+      const res = await expectRoute('GET', path(tiers.student.id, administrationId))
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data).toHaveProperty('items');
+      expect(res.body.data).toHaveProperty('pagination');
+    });
+
+    it('returns 404 when the target user does not exist', async () => {
+      const res = await expectRoute('GET', path('00000000-0000-0000-0000-000000000000', administrationId))
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 404 when the administration does not exist', async () => {
+      const res = await expectRoute('GET', path(tiers.student.id, '00000000-0000-0000-0000-000000000000'))
+        .as(tiers.student)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+  });
+
+  describe('signed status', () => {
+    it('annotates each agreement with the target user signed status (self-read)', async () => {
+      const res = await expectRoute('GET', path(tiers.student.id, administrationId))
+        .as(tiers.student)
+        .toReturn(StatusCodes.OK);
+
+      const items: Array<{ id: string; agreementType: string; signed: boolean }> = res.body.data.items;
+      const consentItem = items.find((i) => i.id === consentAgreementId);
+      const assentItem = items.find((i) => i.id === assentAgreementId);
+
+      expect(consentItem).toBeDefined();
+      expect(assentItem).toBeDefined();
+      // The student signed the consent's current version; the assent is unsigned.
+      expect(consentItem!.signed).toBe(true);
+      expect(assentItem!.signed).toBe(false);
+    });
+
+    it('reports all agreements as unsigned for a different user who signed nothing', async () => {
+      // Super admin reads on behalf of districtAdmin, who signed neither agreement.
+      const res = await expectRoute('GET', path(baseFixture.districtAdmin.id, administrationId))
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      const items: Array<{ id: string; signed: boolean }> = res.body.data.items;
+      const consentItem = items.find((i) => i.id === consentAgreementId);
+      const assentItem = items.find((i) => i.id === assentAgreementId);
+
+      expect(consentItem!.signed).toBe(false);
+      expect(assentItem!.signed).toBe(false);
     });
   });
 });

@@ -5153,6 +5153,347 @@ describe('AdministrationService', () => {
     });
   });
 
+  describe('listUserAdministrationAgreements', () => {
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'name' as const,
+      sortOrder: 'asc' as const,
+      locale: 'en-US',
+    };
+
+    /**
+     * Build an agreement-with-version item in the repository's
+     * `{ agreement, currentVersion }` shape for a given agreement id.
+     */
+    const buildAgreementItem = (agreementId: string) => {
+      const agreement = AgreementFactory.build({ id: agreementId });
+      const currentVersion = AgreementVersionFactory.build({ agreementId });
+      return { agreement, currentVersion };
+    };
+
+    it('annotates each agreement with the target user signed status', async () => {
+      const mockUser = UserFactory.build({ id: 'user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+        items: [buildAgreementItem('agreement-signed'), buildAgreementItem('agreement-unsigned')],
+        totalItems: 2,
+      });
+      // Target user has signed only the first agreement
+      mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set(['agreement-signed']));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      const result = await service.listUserAdministrationAgreements(
+        { userId: 'user-123', isSuperAdmin: false },
+        'user-123',
+        'admin-123',
+        defaultOptions,
+      );
+
+      // signed flags reflect the signed set; the bulk query receives every agreement id
+      expect(mockAgreementRepo.getSignedAgreementIds).toHaveBeenCalledTimes(1);
+      expect(mockAgreementRepo.getSignedAgreementIds).toHaveBeenCalledWith('user-123', [
+        'agreement-signed',
+        'agreement-unsigned',
+      ]);
+      expect(result.totalItems).toBe(2);
+      const signedItem = result.items.find((i) => i.agreement.id === 'agreement-signed');
+      const unsignedItem = result.items.find((i) => i.agreement.id === 'agreement-unsigned');
+      expect(signedItem!.signed).toBe(true);
+      expect(unsignedItem!.signed).toBe(false);
+    });
+
+    it('allows a self-read (requester === target) with a single requirePermission call', async () => {
+      const mockUser = UserFactory.build({ id: 'user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+      mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+        items: [buildAgreementItem('agreement-1')],
+        totalItems: 1,
+      });
+      mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set());
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      const result = await service.listUserAdministrationAgreements(
+        { userId: 'user-123', isSuperAdmin: false },
+        'user-123',
+        'admin-123',
+        defaultOptions,
+      );
+
+      // Only the target-access check runs; the cross-user check is skipped for self-reads.
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledTimes(1);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(result.items[0]!.signed).toBe(false);
+    });
+
+    it('allows supervisory access when the requester also has access to the administration', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+      mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+        items: [buildAgreementItem('agreement-1')],
+        totalItems: 1,
+      });
+      mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set(['agreement-1']));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      const result = await service.listUserAdministrationAgreements(
+        { userId: 'requester-456', isSuperAdmin: false },
+        'target-user-123',
+        'admin-123',
+        defaultOptions,
+      );
+
+      // Two checks: target user access, then requester (cross-user) access.
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledTimes(2);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'target-user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'requester-456',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(result.items[0]!.signed).toBe(true);
+    });
+
+    it('throws forbidden when the requester has no shared access to the administration', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      // Target user passes; requester is denied.
+      mockAuthorizationService.requirePermission.mockResolvedValueOnce(undefined).mockRejectedValueOnce(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      await expect(
+        service.listUserAdministrationAgreements(
+          { userId: 'requester-456', isSuperAdmin: false },
+          'target-user-123',
+          'admin-123',
+          defaultOptions,
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      // No signed lookup should happen when authorization fails.
+      expect(mockAgreementRepo.getSignedAgreementIds).not.toHaveBeenCalled();
+    });
+
+    it('throws not-found when the target user does not exist', async () => {
+      mockUserRepository.getById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.listUserAdministrationAgreements(
+          { userId: 'requester-456', isSuperAdmin: false },
+          'non-existent-user',
+          'admin-123',
+          defaultOptions,
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(mockAdministrationRepository.getById).not.toHaveBeenCalled();
+    });
+
+    it('throws not-found when the administration does not exist', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.listUserAdministrationAgreements(
+          { userId: 'requester-456', isSuperAdmin: false },
+          'target-user-123',
+          'non-existent-admin',
+          defaultOptions,
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('throws not-found (as forbidden translated upstream) when the target user lacks administration access', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      // verifyAdministrationAccess denies the TARGET user.
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.listUserAdministrationAgreements(
+          { userId: 'requester-456', isSuperAdmin: false },
+          'target-user-123',
+          'admin-123',
+          defaultOptions,
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'target-user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+    });
+
+    it('throws not-found when the target user is rostering-ended', async () => {
+      const rosteringEndedUser = UserFactory.build({
+        id: 'target-user-123',
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      mockUserRepository.getById.mockResolvedValue(rosteringEndedUser);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.listUserAdministrationAgreements(
+          { userId: 'requester-456', isSuperAdmin: false },
+          'target-user-123',
+          'admin-123',
+          defaultOptions,
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      // Rostering-ended target is rejected before any administration lookup.
+      expect(mockAdministrationRepository.getById).not.toHaveBeenCalled();
+    });
+
+    it('super admin reads another user without a cross-user check', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+        items: [buildAgreementItem('agreement-1')],
+        totalItems: 1,
+      });
+      mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set(['agreement-1']));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      const result = await service.listUserAdministrationAgreements(
+        { userId: 'super-admin', isSuperAdmin: true },
+        'target-user-123',
+        'admin-123',
+        defaultOptions,
+      );
+
+      // verifyAdministrationAccess still runs the target-user FGA check; the
+      // requester super-admin bypass skips the second (cross-user) check.
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledTimes(1);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'target-user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(result.items[0]!.signed).toBe(true);
+    });
+  });
+
   describe('update', () => {
     const superAdminAuthContext = { userId: 'super-admin-123', isSuperAdmin: true };
     const regularUserAuthContext = { userId: 'user-123', isSuperAdmin: false };

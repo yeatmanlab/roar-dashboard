@@ -139,6 +139,15 @@ export interface ListAgreementsOptions {
 }
 
 /**
+ * An administration agreement annotated with whether the target user has
+ * already signed it (any current version, cross-locale). Returned by
+ * {@link listUserAdministrationAgreements} to drive the per-user consent gate.
+ */
+export interface AgreementWithSignedStatus extends AgreementWithVersion {
+  signed: boolean;
+}
+
+/**
  * Options for the tree endpoint.
  */
 export interface GetTreeOptions {
@@ -1426,6 +1435,122 @@ export function AdministrationService({
   }
 
   /**
+   * List an administration's required agreements for a specific user, annotated
+   * with whether that user has already signed each one.
+   *
+   * Powers the per-user consent gate: every required agreement is returned with
+   * a `signed` flag so the caller can decide what the target user must sign
+   * before assessments. Signed detection is cross-locale — signing any current
+   * version of an agreement marks it signed (see
+   * {@link AgreementRepository.getSignedAgreementIds}).
+   *
+   * Authorization mirrors {@link getUserAdministration} exactly:
+   * - The target user must exist (404 otherwise) and not be rostering-ended
+   *   (symmetric 404 otherwise).
+   * - The administration must exist (404 otherwise) and the TARGET user must
+   *   have access to it (403 otherwise) — verified via {@link verifyAdministrationAccess}
+   *   with the target user's context.
+   * - Super admins and self-reads (requester === target) are then allowed; any
+   *   other requester must additionally hold `can_read` on the administration.
+   * Existence is always checked before access (404 before 403).
+   *
+   * @param authContext - Requesting user's auth context
+   * @param userId - The target user whose signed status to report
+   * @param administrationId - The administration whose required agreements to list
+   * @param options - Pagination, sorting, and locale options
+   * @returns Paginated agreements, each with a `signed` flag for the target user
+   * @throws {ApiError} NOT_FOUND if the target user or administration doesn't exist,
+   *   the target user is rostering-ended, or the target user lacks administration access
+   * @throws {ApiError} FORBIDDEN if the requester lacks access to the administration
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if a database operation fails
+   */
+  async function listUserAdministrationAgreements(
+    authContext: AuthContext,
+    userId: string,
+    administrationId: string,
+    options: ListAgreementsOptions,
+  ): Promise<PaginatedResult<AgreementWithSignedStatus>> {
+    const { userId: requesterUserId, isSuperAdmin } = authContext;
+
+    try {
+      const targetUser = await userRepository.getById({ id: userId });
+
+      if (!targetUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId },
+        });
+      }
+
+      // Rostering-ended target → symmetric 404 (#1742).
+      rejectRosteringEndedTarget(
+        targetUser,
+        { requesterUserId, targetUserId: userId, administrationId },
+        'Per-user administration agreements lookup',
+      );
+
+      // Verify the administration exists (404) and the TARGET user has access to
+      // it (403) — checked with the target user's context, exactly as
+      // getUserAdministration does.
+      await verifyAdministrationAccess({ userId, isSuperAdmin: targetUser.isSuperAdmin }, administrationId);
+
+      // Super admins and self-reads bypass the cross-user access check.
+      if (!isSuperAdmin && requesterUserId !== userId) {
+        // Separate log to track cross-user access attempts
+        logger.warn(
+          { requesterUserId, userId, administrationId },
+          'Requester attempting cross-user administration agreements access',
+        );
+        await authorizationService.requirePermission(
+          requesterUserId,
+          FgaRelation.CAN_READ,
+          `${FgaType.ADMINISTRATION}:${administrationId}`,
+        );
+      }
+
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        locale: options.locale,
+      };
+
+      // Fetch the administration's required agreements, then resolve the target
+      // user's signed set in a single bulk query (no per-agreement lookup).
+      const result = await administrationRepository.getAgreementsByAdministrationId(administrationId, queryParams);
+
+      const agreementIds = result.items.map((item) => item.agreement.id);
+      const signedIds = await agreementRepository.getSignedAgreementIds(userId, agreementIds);
+
+      return {
+        items: result.items.map((item) => ({
+          ...item,
+          signed: signedIds.has(item.agreement.id),
+        })),
+        totalItems: result.totalItems,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { requesterUserId, userId, administrationId, options } },
+        'Failed to list user administration agreements',
+      );
+
+      throw new ApiError('Failed to retrieve user administration agreements', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
    * Create a new administration with task variants and entity assignments.
    *
    * Validates:
@@ -2099,6 +2224,7 @@ export function AdministrationService({
     getTree,
     create,
     getUserAdministration,
+    listUserAdministrationAgreements,
     update,
   };
 }

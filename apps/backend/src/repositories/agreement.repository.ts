@@ -178,6 +178,43 @@ export class AgreementRepository extends BaseRepository<Agreement, typeof agreem
   }
 
   /**
+   * Determine which of the given agreements the user has already signed.
+   *
+   * An agreement counts as signed when the user has a `user_agreements` row
+   * pointing at ANY current version of that agreement — the same signed-set
+   * shape used by {@link getUnsignedTosAgreements}. This yields cross-locale
+   * satisfaction: signing any current-locale version satisfies the agreement.
+   *
+   * Resolves the full signed set in a single query (no per-agreement lookup).
+   *
+   * @param userId - The user whose signatures to check
+   * @param agreementIds - The agreement IDs to check against
+   * @returns The subset of `agreementIds` the user has signed
+   */
+  async getSignedAgreementIds(userId: string, agreementIds: string[]): Promise<Set<string>> {
+    if (agreementIds.length === 0) {
+      return new Set();
+    }
+
+    // Agreement IDs (restricted to the requested set) where the user has signed
+    // any current version. INNER JOIN to agreement_versions filtered on
+    // isCurrent gives cross-locale satisfaction without an extra round-trip.
+    const signedRows = await this.db
+      .selectDistinct({ agreementId: agreementVersions.agreementId })
+      .from(userAgreements)
+      .innerJoin(agreementVersions, eq(userAgreements.agreementVersionId, agreementVersions.id))
+      .where(
+        and(
+          eq(userAgreements.userId, userId),
+          eq(agreementVersions.isCurrent, true),
+          inArray(agreementVersions.agreementId, agreementIds),
+        ),
+      );
+
+    return new Set(signedRows.map((row) => row.agreementId));
+  }
+
+  /**
    * Look up a single agreement version by ID, verifying it belongs to the specified agreement.
    *
    * @param agreementId - The agreement the version must belong to
