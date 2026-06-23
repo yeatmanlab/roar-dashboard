@@ -57,7 +57,10 @@ const isValidForScoring = ({ ageMonths, grade, scoringVersion, taskId }) => {
     return grade != undefined;
   }
 
-  if (scoringVersion >= SRE_SCORING_VERSION.V4 || taskId === SRE_TASK_IDS.ES) {
+  if (
+    scoringVersion >= SRE_SCORING_VERSION.V4 ||
+    (taskId === SRE_TASK_IDS.ES && scoringVersion === SRE_SCORING_VERSION.V1)
+  ) {
     // For sre v4+ & sre-es v1, we need the age, or we can estimate the age from the grade
 
     return ageMonths != undefined || grade != undefined;
