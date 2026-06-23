@@ -195,17 +195,18 @@ export function UserImportService({
     }
   }
 
-  /** Returns true if a Firebase Auth account already exists for the email. */
-  async function firebaseEmailExists(email: string): Promise<boolean> {
-    try {
-      await firebaseAuth.getUserByEmail(email);
-      return true;
-    } catch (error) {
-      if (isFirebaseError(error) && error.code === FIREBASE_ERROR_CODES.AUTH.USER_NOT_FOUND) {
-        return false;
-      }
-      throw error;
-    }
+  /**
+   * Batch-check which of the given emails already have a Firebase Auth account. Uses the Admin SDK's
+   * `getUsers` (one call for up to 100 identifiers — the batch cap) instead of a per-row
+   * `getUserByEmail`, keeping Firebase round-trips to one regardless of batch size
+   * (performance-avoid-quadratic).
+   *
+   * @returns A set of the lowercased emails that already exist in Firebase Auth.
+   */
+  async function getExistingFirebaseEmails(emails: string[]): Promise<Set<string>> {
+    if (emails.length === 0) return new Set();
+    const { users } = await firebaseAuth.getUsers(emails.map((email) => ({ email })));
+    return new Set(users.map((user) => user.email?.toLowerCase()).filter((email): email is string => Boolean(email)));
   }
 
   /** Map a Firebase `importUsers` FailedAccount error to a safe per-row error code. */
@@ -264,7 +265,30 @@ export function UserImportService({
 
     const params = getScryptParams();
 
-    // Pre-flight each candidate: password required, PID + Postgres/Firebase uniqueness, then hash.
+    // Batch Firebase existence check — one getUsers call for the whole batch (≤100). importUsers
+    // bypasses uniqueness validation, so we must pre-check; batching avoids per-row round-trips.
+    let firebaseExistingEmails: Set<string>;
+    try {
+      firebaseExistingEmails = await getExistingFirebaseEmails(candidates.map((candidate) => candidate.row.email));
+    } catch (error) {
+      logger.error({ err: error, context: { count: candidates.length } }, 'Firebase getUsers pre-check failed');
+      for (const candidate of candidates) {
+        outcomes[candidate.index] = failed(
+          candidate.index,
+          CLASSIFICATION.CREATED,
+          ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        );
+      }
+      return;
+    }
+
+    // Pre-flight each candidate: password required, within-batch PID + Postgres/Firebase uniqueness,
+    // then hash. Note: super admins skip the explicit membership-existence pre-flight that
+    // single-create performs; an invalid entity instead fails at the FK constraint inside
+    // createWithImportedAuth, which compensates by deleting the just-imported Firebase account
+    // (no orphan, just slightly more create+delete churn for that row).
+    const seenPids = new Set<string>();
     const prepared: {
       index: number;
       row: ImportUserRowInput;
@@ -289,9 +313,30 @@ export function UserImportService({
 
       const assessmentPid = row.identifiers?.pid ?? generateAssessmentPid({ userId: row.email });
 
+      // Within-batch PID uniqueness (email is already deduped above; importUsers validates neither).
+      if (seenPids.has(assessmentPid)) {
+        outcomes[index] = failed(
+          index,
+          CLASSIFICATION.CREATED,
+          ApiErrorCode.RESOURCE_CONFLICT,
+          ApiErrorMessage.CONFLICT,
+        );
+        continue;
+      }
+      seenPids.add(assessmentPid);
+
+      if (firebaseExistingEmails.has(row.email.toLowerCase())) {
+        outcomes[index] = failed(
+          index,
+          CLASSIFICATION.CREATED,
+          ApiErrorCode.RESOURCE_CONFLICT,
+          ApiErrorMessage.CONFLICT,
+        );
+        continue;
+      }
+
       try {
-        const exists = await userRepository.existsByUniqueFields({ email: row.email, assessmentPid });
-        if (exists || (await firebaseEmailExists(row.email))) {
+        if (await userRepository.existsByUniqueFields({ email: row.email, assessmentPid })) {
           outcomes[index] = failed(
             index,
             CLASSIFICATION.CREATED,
@@ -301,7 +346,10 @@ export function UserImportService({
           continue;
         }
       } catch (error) {
-        logger.error({ err: error, context: { email: row.email } }, 'Uniqueness pre-check failed during import');
+        logger.error(
+          { err: error, context: { email: row.email } },
+          'Postgres uniqueness pre-check failed during import',
+        );
         outcomes[index] = failed(
           index,
           CLASSIFICATION.CREATED,
@@ -354,7 +402,7 @@ export function UserImportService({
 
     // Mark rows that Firebase rejected (by their position in the records array).
     const failedRecordIndexes = new Set<number>();
-    for (const failure of result.errors ?? []) {
+    for (const failure of result.errors) {
       failedRecordIndexes.add(failure.index);
       const p = prepared[failure.index];
       if (p) {
