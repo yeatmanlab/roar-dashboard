@@ -8,4 +8,7 @@ export const TASK_ADD_MUTATION_KEY = 'task-add';
 export const TASK_UPDATE_MUTATION_KEY = 'task-update';
 export const TASK_VARIANT_ADD_MUTATION_KEY = 'task-variant-add';
 export const TASK_VARIANT_UPDATE_MUTATION_KEY = 'task-variant-update';
+export const TOGGLE_REGISTERED_TASKS_MUTATION_KEY = 'toggle-registered-tasks';
+export const TOGGLE_REGISTERED_VARIANTS_MUTATION_KEY = 'toggle-registered-variants';
+export const USER_CREATE_MUTATION_KEY = 'user-create';
 export const USER_UPDATE_MUTATION_KEY = 'user-update';
