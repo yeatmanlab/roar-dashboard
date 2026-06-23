@@ -2,6 +2,7 @@ import jsPsychHtmlMultiResponse from '@jspsych-contrib/plugin-html-multi-respons
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import store from 'store2';
 import i18next from 'i18next';
+import { AssessmentStage } from '@roar-platform/assessment-schema';
 import { corpus } from '../config/loadCorpus';
 import { jsPsych } from '../jsPsych';
 import { isMobile } from '../experimentHelpers';
@@ -74,7 +75,7 @@ export const testSentenceTrial = (corpusId, blockId, timerLength) => ({
       },
       data: {
         // Here is where we specify that we should save the trial to Firestore
-        assessment_stage: 'test_response',
+        assessment_stage: AssessmentStage.TEST,
       },
       on_finish: (data) => {
         if (data.keyboard_response) {

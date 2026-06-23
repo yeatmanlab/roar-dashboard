@@ -24,9 +24,8 @@
   "type": "module",
   "roar": {
     "hosting": {
-      "staging": "roar-sentence-staging",
-      "production": "roar-sentence",
-      "test": "test"
+      "staging": "roar-sentence-monorepo-abc",
+      "production": "roar-sentence-monorepo"
     }
   },
   "scripts": {
@@ -52,6 +51,8 @@
   "dependencies": {
     "@roar-platform/assessment-schema": "^0.1.0",
     "@roar-platform/assessment-sdk": "^0.1.0",
+    "ajv": "^8.17.1",
+    "ajv-errors": "^3.0.0",
     "@bdelab/roar-firekit": "^9.6.0",
     "@bdelab/roar-utils": "^1.2.3",
     "@jspsych-contrib/plugin-audio-multi-response": "^1.0.0",

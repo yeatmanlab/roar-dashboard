@@ -1,10 +1,36 @@
 [
   {
+    "variantName": "sentence-school-90s2BlocksFixedForms-scoringVersion4",
+    "params": {
+      "lng": "en",
+      "scoringVersion": 4,
+      "userMode": "90s2BlocksFixedForms",
+      "recruitment": "school",
+      "skipInstructions": true,
+      "consent": false,
+      "storyOption": "grade-based",
+      "timerLength": 180000
+    }
+  },
+  {
+    "variantName": "sentence-school-3min1Block-scoringVersion4",
+    "params": {
+      "lng": "en",
+      "scoringVersion": 4,
+      "userMode": "3min1Block",
+      "recruitment": "school",
+      "skipInstructions": true,
+      "consent": false,
+      "storyOption": "grade-based",
+      "timerLength": 180000
+    }
+  },
+  {
     "variantName": "English — grade-based (v3)",
     "params": {
       "lng": "en",
       "scoringVersion": 3,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -13,11 +39,11 @@
     }
   },
   {
-    "variantName": "English — age-based (v4)",
+    "variantName": "English — age-based (v4, default)",
     "params": {
       "lng": "en",
       "scoringVersion": 4,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -30,7 +56,7 @@
     "params": {
       "lng": "es",
       "scoringVersion": 1,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -39,11 +65,11 @@
     }
   },
   {
-    "variantName": "Spanish — age-based (v4)",
+    "variantName": "Spanish — age-based (v1)",
     "params": {
       "lng": "es",
-      "scoringVersion": 4,
-      "userMode": "default",
+      "scoringVersion": 1,
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -56,7 +82,7 @@
     "params": {
       "lng": "pt",
       "scoringVersion": null,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -69,7 +95,20 @@
     "params": {
       "lng": "de",
       "scoringVersion": null,
-      "userMode": "default",
+      "userMode": null,
+      "recruitment": null,
+      "skipInstructions": true,
+      "consent": true,
+      "storyOption": null,
+      "timerLength": 180000
+    }
+  },
+  {
+    "variantName": "English — fixed forms (90s2BlocksFixedForms)",
+    "params": {
+      "lng": "en",
+      "scoringVersion": 4,
+      "userMode": "90s2BlocksFixedForms",
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,
@@ -82,7 +121,7 @@
     "params": {
       "lng": "it",
       "scoringVersion": null,
-      "userMode": "default",
+      "userMode": null,
       "recruitment": null,
       "skipInstructions": true,
       "consent": true,

@@ -1,5 +1,6 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { RoarScores } from '../experiment/scores.js';
+import { toSreScoreEntries } from '@roar-platform/assessment-schema/roar-sre';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -216,6 +217,26 @@ describe('RoarScores Integration Tests', () => {
     expect(result.composite.percentile).toBeUndefined();
   });
 
+  test('should sum negative subtest sreScores correctly for sre-es', async () => {
+    store.session.get = vi.fn(() => ({
+      userMetadata: {},
+      taskId: 'sre-es',
+      scoringVersion: 0,
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      subtest1: { test: { numCorrect: 0, numIncorrect: 3 } }, // sreScore = -3
+      subtest2: { test: { numCorrect: 7, numIncorrect: 0 } }, // sreScore = 7
+    };
+
+    const result = await scores.computedScoreCallback(rawScores);
+
+    expect(result.subtest1.sreScore).toBe(-3);
+    expect(result.subtest2.sreScore).toBe(7);
+    expect(result.composite.sreScore).toBe(4); // -3 + 7, not 7 (|| 0 bug)
+  });
+
   test('should return sre-es v1 scores for given sreScore and age', async () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 1,
@@ -241,6 +262,34 @@ describe('RoarScores Integration Tests', () => {
     expect(result.composite.standardScore).toBe(108);
     expect(result.composite.percentile).toBe(71);
     expect(result.composite.scoringVersion).toBe(1);
+  });
+
+  test('should not re-create initTablePromise on every trial for sre-es', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 1,
+      userMetadata: { ageMonths: 85 },
+      taskId: 'sre-es',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      subtest1: { test: { numCorrect: 8, numIncorrect: 0 } },
+      subtest2: { test: { numCorrect: 2, numIncorrect: 0 } },
+    };
+
+    await scores.computedScoreCallback(rawScores);
+
+    // After the first call, the table is loaded and the promise should be retained
+    // (not cleared to null) so subsequent trials skip initTable entirely
+    expect(scores.tableLoaded).toBe(true);
+    expect(scores.aiTableLoaded).toBe(false); // AI table is EN-only — always false for sre-es
+    expect(scores.initTablePromise).not.toBeNull();
+
+    const initTableSpy = vi.spyOn(scores, 'initTable');
+    await scores.computedScoreCallback(rawScores);
+
+    // initTable must not be called again on the second trial
+    expect(initTableSpy).not.toHaveBeenCalled();
   });
 
   test('should use AI equating table to convert aiV1P1 scores to composite sreScore', async () => {
@@ -293,6 +342,57 @@ describe('RoarScores Integration Tests', () => {
     expect(result.composite.standardScore).toBe(113);
     expect(result.composite.percentile).toBe(81);
     expect(result.composite.scoringVersion).toBe(4);
+  });
+
+  test('should omit composite when aiV1P1 scores exist but AI equating table failed to load', async () => {
+    papaParseSpy.mockImplementation((input, config) => {
+      if (config.download) {
+        const filename = input.split('/').pop();
+
+        if (filename === 'sre_lookup_v4.csv') {
+          const csvContent = getCsvContent(input);
+          setTimeout(() => {
+            originalParse(csvContent, { ...config, download: false, complete: config.complete });
+          }, 100);
+        } else {
+          setTimeout(() => {
+            config.error(new Error('AI table simulated failure'));
+          }, 100);
+        }
+      } else {
+        originalParse(input, config);
+      }
+    });
+
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 4,
+      userMetadata: { ageMonths: 84 },
+      taskId: 'sre',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      aiV1P1: { test: { numCorrect: 20, numIncorrect: 0 } },
+    };
+
+    const result = await scores.computedScoreCallback(rawScores);
+
+    // Raw subtask score is still written — it doesn't depend on the AI table
+    expect(result.aiV1P1.sreScore).toBe(20);
+
+    // Composite is absent: computedScoreConversion throws when AI table is missing,
+    // the throw is caught, and composite is never populated
+    expect(result.composite).toBeUndefined();
+
+    // Table state reflects partial load
+    expect(scores.tableLoaded).toBe(true);
+    expect(scores.aiTableLoaded).toBe(false);
+
+    // The conversion error is logged (distinct from the table-load error)
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Composite score conversion failed; writing raw scores only:',
+      'AI equating table not loaded; cannot compute aiV1P1 composite score',
+    );
   });
 
   test('should prevent race condition when multiple concurrent calls request the same tables', async () => {
@@ -517,6 +617,26 @@ describe('RoarScores Integration Tests', () => {
     expect(result.composite.percentile).toBe(83);
   });
 
+  test('should omit composite when no fixedForm domains are present in 90s2BlocksFixedForms mode', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 4,
+      userMetadata: { ageMonths: 85 },
+      taskId: 'sre',
+      userMode: '90s2BlocksFixedForms',
+    }));
+
+    const scores = new RoarScores();
+    // Raw scores contain no fixedForm* domains — student produced no fixed-form data
+    const rawScores = {
+      subtest1: { test: { numCorrect: 10, numIncorrect: 2 } },
+    };
+
+    const result = await scores.computedScoreCallback(rawScores);
+
+    // composite should be absent, not sreScore: 0
+    expect(result.composite).toBeUndefined();
+  });
+
   test('should not use 90s2BlocksFixedForms logic for non-SRE tasks', async () => {
     store.session.get = vi.fn(() => ({
       scoringVersion: 1,
@@ -535,6 +655,142 @@ describe('RoarScores Integration Tests', () => {
 
     // For sre-es, should use sum logic, not fixed form equating
     expect(result.composite.sreScore).toBe(19); // (15-5) + (12-3)
+  });
+
+  // Pipeline integrity tests: run computedScoreCallback end-to-end and verify the output
+  // passes toSreScoreEntries({ strict: true }). strict mode throws on any composite key not
+  // present in SRE_COMPOSITE_SCORE_NAMES, catching score-name drift between scores.js and
+  // score-names.ts at test time rather than at runtime.
+
+  test('v4 English: computedScoreCallback output passes toSreScoreEntries strict mode', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 4,
+      userMetadata: { ageMonths: 85 },
+      taskId: 'sre',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = { lab: { test: { numCorrect: 30, numIncorrect: 2 } } };
+
+    const computed = await scores.computedScoreCallback(rawScores);
+
+    // strict: true throws if scores.js writes a composite key not in SRE_COMPOSITE_SCORE_NAMES
+    let entries;
+    expect(() => {
+      entries = toSreScoreEntries(computed, { strict: true });
+    }).not.toThrow();
+
+    // Sanity-check that normed scores made it through
+    const names = entries.map((e) => e.name);
+    expect(names).toContain('sreScore');
+    expect(names).toContain('standardScore');
+    expect(names).toContain('percentile');
+    expect(names).toContain('scoringVersion');
+
+    // composite_foundational must be present for English runs with a composite score.
+    // thetaEstimate = Math.round((28 * 0.0770899 + -3.0328717) * 10) / 10 = -0.9
+    const domains = [...new Set(entries.map((e) => e.domain))];
+    expect(domains).toContain('composite_foundational');
+
+    const foundationalEntries = entries.filter((e) => e.domain === 'composite_foundational');
+    expect(foundationalEntries).toHaveLength(1);
+    expect(foundationalEntries[0]).toMatchObject({ name: 'thetaEstimate', value: '-0.9' });
+  });
+
+  test('v3 English: computedScoreCallback output passes toSreScoreEntries strict mode', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 3,
+      userMetadata: { grade: 2, ageMonths: 84 },
+      taskId: 'sre',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = { lab: { test: { numCorrect: 25, numIncorrect: 0 } } };
+
+    const computed = await scores.computedScoreCallback(rawScores);
+
+    let entries;
+    expect(() => {
+      entries = toSreScoreEntries(computed, { strict: true });
+    }).not.toThrow();
+
+    const names = entries.map((e) => e.name);
+    expect(names).toContain('sreScore');
+    expect(names).toContain('tosrecSS');
+    expect(names).toContain('tosrecPercentile');
+    // SPR columns are empty strings in grade < 6 CSV rows — they must not appear in entries
+    expect(names).not.toContain('sprStandardScore');
+    expect(names).not.toContain('sprPercentile');
+  });
+
+  test('AI equating (aiV1P1): computedScoreCallback output passes toSreScoreEntries strict mode', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 4,
+      userMetadata: { ageMonths: 84 },
+      taskId: 'sre',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = { aiV1P1: { test: { numCorrect: 20, numIncorrect: 0 } } };
+
+    const computed = await scores.computedScoreCallback(rawScores);
+
+    expect(() => {
+      toSreScoreEntries(computed, { strict: true });
+    }).not.toThrow();
+  });
+
+  test('90s2BlocksFixedForms: computedScoreCallback output passes toSreScoreEntries strict mode', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 4,
+      userMetadata: { ageMonths: 85 },
+      taskId: 'sre',
+      userMode: '90s2BlocksFixedForms',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      fixedForm1: { test: { numCorrect: 25, numIncorrect: 5 } },
+      fixedForm2: { test: { numCorrect: 22, numIncorrect: 8 } },
+    };
+
+    const computed = await scores.computedScoreCallback(rawScores);
+
+    let entries;
+    expect(() => {
+      entries = toSreScoreEntries(computed, { strict: true });
+    }).not.toThrow();
+
+    // Both fixedForm domains and composite should appear in the entries
+    const domains = [...new Set(entries.map((e) => e.domain))];
+    expect(domains).toContain('fixedForm1');
+    expect(domains).toContain('fixedForm2');
+    expect(domains).toContain('composite');
+  });
+
+  test('SRE-ES v1: computedScoreCallback output passes toSreScoreEntries strict mode', async () => {
+    store.session.get = vi.fn(() => ({
+      scoringVersion: 1,
+      userMetadata: { ageMonths: 85 },
+      taskId: 'sre-es',
+    }));
+
+    const scores = new RoarScores();
+    const rawScores = {
+      subtest1: { test: { numCorrect: 8, numIncorrect: 0 } },
+      subtest2: { test: { numCorrect: 2, numIncorrect: 0 } },
+    };
+
+    const computed = await scores.computedScoreCallback(rawScores);
+
+    let entries;
+    expect(() => {
+      entries = toSreScoreEntries(computed, { strict: true });
+    }).not.toThrow();
+
+    // composite_foundational must NOT appear for non-English tasks
+    const domains = [...new Set(entries.map((e) => e.domain))];
+    expect(domains).not.toContain('composite_foundational');
   });
 
   test('should gracefully degrade when fixed form equating table fails to load', async () => {

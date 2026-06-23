@@ -1,40 +1,44 @@
 import { TIMEOUT, START_TEXT_DEFAULT, END_TEXT_DEFAULT } from './constants';
 
-Cypress.Commands.add('playIntro', ({ startText = START_TEXT_DEFAULT, variantParams = null } = {}) => {
-  // handles error where full screen throws a permissions error
-  Cypress.on('uncaught:exception', () => false);
+Cypress.Commands.add(
+  'playIntro',
+  ({ startText = START_TEXT_DEFAULT, variantParams = null, skipConsent = false } = {}) => {
+    // handles error where full screen throws a permissions error
+    Cypress.on('uncaught:exception', () => false);
 
-  if (variantParams) {
-    cy.visit(`${Cypress.env('baseUrl')}/?${variantParams}`, { timeout: 2 * TIMEOUT });
-  } else {
-    cy.visit(`${Cypress.env('baseUrl')}`, { timeout: 2 * TIMEOUT });
-  }
+    if (variantParams) {
+      cy.visit(`${Cypress.env('baseUrl')}/?${variantParams}`, { timeout: 2 * TIMEOUT });
+    } else {
+      cy.visit(`${Cypress.env('baseUrl')}`, { timeout: 2 * TIMEOUT });
+    }
 
-  // Enter fullscreen
-  cy.get('.jspsych-btn', { timeout: 5 * TIMEOUT })
-    .should('be.visible')
-    .click();
+    // Enter fullscreen
+    cy.get('.jspsych-btn', { timeout: 5 * TIMEOUT })
+      .should('be.visible')
+      .click();
 
-  cy.wait(0.2 * TIMEOUT);
+    cy.wait(0.2 * TIMEOUT);
 
-  // Consent form is shown unless the consent query parameter is explicitly set to 'false'.
-  if (!variantParams?.includes('consent=false')) {
-    // Click through consent form
-    cy.get('b').contains('I agree').click();
-    cy.get('.jspsych-btn', { timeout: TIMEOUT }).should('be.visible').click();
-    cy.get('.jspsych-btn', { timeout: TIMEOUT }).should('be.visible').click();
-  }
+    // Consent is now a variant parameter (not a URL parameter). Pass skipConsent: true
+    // when the stubbed variant returns consent: false.
+    if (!skipConsent) {
+      // Click through consent form
+      cy.get('b').contains('I agree').click();
+      cy.get('.jspsych-btn', { timeout: TIMEOUT }).should('be.visible').click();
+      cy.get('.jspsych-btn', { timeout: TIMEOUT }).should('be.visible').click();
+    }
 
-  // Select 6th grade
-  cy.get('body', { timeout: TIMEOUT }).type('{6}');
+    // Select 6th grade
+    cy.get('body', { timeout: TIMEOUT }).type('{6}');
 
-  //  Assert startText is visible
-  cy.get('body', { timeout: TIMEOUT }).invoke('text').should('include', startText);
+    //  Assert startText is visible
+    cy.get('body', { timeout: TIMEOUT }).invoke('text').should('include', startText);
 
-  // Select first avatar
-  cy.get('body', { timeout: TIMEOUT }).type('{enter}');
-  cy.get('body', { timeout: TIMEOUT }).type('{1}');
-});
+    // Select first avatar
+    cy.get('body', { timeout: TIMEOUT }).type('{enter}');
+    cy.get('body', { timeout: TIMEOUT }).type('{1}');
+  },
+);
 
 Cypress.Commands.add('playSRELoop', ({ endText = END_TEXT_DEFAULT } = {}) => {
   //  Recursively check for the end game text to appear; end the game if it appears otherwise click left and right arrow keys
@@ -54,10 +58,11 @@ Cypress.Commands.add('playSRELoop', ({ endText = END_TEXT_DEFAULT } = {}) => {
 
 Cypress.Commands.add(
   'playSREGame',
-  ({ startText = START_TEXT_DEFAULT, endText = END_TEXT_DEFAULT, variantParams = null } = {}) => {
+  ({ startText = START_TEXT_DEFAULT, endText = END_TEXT_DEFAULT, variantParams = null, skipConsent = false } = {}) => {
     cy.playIntro({
-      startText: startText,
-      variantParams: variantParams,
+      startText,
+      variantParams,
+      skipConsent,
     });
 
     cy.playSRELoop(endText);
