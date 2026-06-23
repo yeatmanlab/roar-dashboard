@@ -1,42 +1,36 @@
 const timeout = Cypress.env('timeout');
-// 7 intro iterations plus 21 stimulus block iterations
-const variantIterations = 16;
 const gameCompleteText = 'Congratulations!';
 
-function makeChoiceOrContinue(overflow, iterations) {
+/**
+ * Drives the game forward one step. On each call:
+ * 1. If the game-complete heading is visible → done, do nothing.
+ * 2. If a break/go-button screen is showing → click it and recurse.
+ * 3. Otherwise → click a trial answer button and recurse.
+ *
+ * Recursion is bounded by maxSteps to prevent infinite loops if the game
+ * never reaches the end screen.
+ */
+function playStep(maxSteps) {
+  if (maxSteps <= 0) return;
+
   cy.wait(0.2 * timeout);
+
   cy.get('body').then((body) => {
-    //   If a go button is found, click it and then return to playMultichoice loop
-    if (body.find('.go-button').length > 0) {
-      //   On the last iteration, check if the game is completed
-      if (iterations === variantIterations - 1) {
-        cy.log('Checking if game completed.');
-        cy.get('h1').contains(gameCompleteText).should('be.visible');
-      }
-      cy.get('.go-button').click();
-    } else {
-      //   Only enters this else-block if a go button was not pressed
-      if (body.find('.glowingButton').length > 0) {
-        cy.get('.glowingButton').click();
-      } else {
-        cy.get('button').first().click();
-      }
-      // Either presses the glowing button during the tutorial or presses the first button of the stimulus trials, then iterates the overflow
-      if (overflow < 100) {
-        makeChoiceOrContinue(overflow + 1, iterations);
-      }
+    if (body.find('h1').filter(`:contains("${gameCompleteText}")`).length > 0) {
+      // Game is over — stop recursing.
+      return;
     }
+
+    if (body.find('.go-button').length > 0) {
+      cy.get('.go-button').click();
+    } else if (body.find('.glowingButton').length > 0) {
+      cy.get('.glowingButton').click();
+    } else {
+      cy.get('button').first().click();
+    }
+
+    playStep(maxSteps - 1);
   });
-}
-
-function playLetter(iterations) {
-  // overflow prevents recursive call from recursing forever
-  const overflow = 0;
-
-  for (let i = 0; i < iterations; i++) {
-    cy.log('iteration: ', i);
-    makeChoiceOrContinue(overflow, i);
-  }
 }
 
 describe('Test play through of ROAR-Letter as a participant', () => {
@@ -49,6 +43,9 @@ describe('Test play through of ROAR-Letter as a participant', () => {
       .should('be.visible')
       .click();
 
-    playLetter(variantIterations);
+    playStep(200);
+
+    cy.log('Checking if game completed.');
+    cy.get('h1').contains(gameCompleteText).should('be.visible');
   });
 });
