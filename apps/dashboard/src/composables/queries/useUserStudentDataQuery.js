@@ -1,21 +1,26 @@
+import { computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
+import { StatusCodes } from 'http-status-codes';
+import { getRoarApiClient } from '@/clients/roar-api';
 import { useAuthStore } from '@/store/auth';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
-import { fetchDocById } from '@/helpers/query/utils';
+import { mapUser } from '@/helpers/mappers/mapUser';
 import { USER_STUDENT_DATA_QUERY_KEY } from '@/constants/queryKeys';
-import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
-import { computed } from 'vue';
 
 /**
  * User student data query.
  *
- * @TODO: Evaluate wether this query can be replaced by the existing useUserDataQuery composable.
+ * Returns just the `studentData` slice of a user, fetched from the backend `GET /users/:id`
+ * endpoint and reshaped via `mapUser` (mirroring the legacy `['studentData']` subfield read).
  *
+ * @TODO: Evaluate whether this query can be replaced by the existing useUserDataQuery composable
+ *   with a `select` — both now hit the same endpoint.
+ *
+ * @param {String|undefined} userId – If passed, return the studentData for that user; otherwise
+ *                                    the current authenticated user.
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
- * @param {String|undefined} userId – If this is passed in, return the studentData for the student under this adminUid.
- *                                    If undefined, query will return the data for the current authenticated user
- * @returns {UseQueryResult} The TanStack query result.
+ * @returns {UseQueryResult} The TanStack query result (the user's `studentData`).
  */
 const useUserStudentDataQuery = (userId = undefined, queryOptions = undefined) => {
   const authStore = useAuthStore();
@@ -28,7 +33,19 @@ const useUserStudentDataQuery = (userId = undefined, queryOptions = undefined) =
 
   return useQuery({
     queryKey: [USER_STUDENT_DATA_QUERY_KEY, uid],
-    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid.value, ['studentData']),
+    queryFn: async () => {
+      const client = getRoarApiClient();
+      const result = await client.users.get({ params: { id: uid.value } });
+
+      if (result.status !== StatusCodes.OK) {
+        const error = new Error(`Failed to fetch user student data with status ${result.status}`);
+        error.status = result.status;
+        error.body = result.body;
+        throw error;
+      }
+
+      return mapUser(result.body.data)?.studentData ?? null;
+    },
     enabled: isQueryEnabled,
     ...options,
   });
