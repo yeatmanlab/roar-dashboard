@@ -105,14 +105,8 @@ describe('useDistrictsListQuery', () => {
         isRosteringRootOrg: true,
         city: 'Palo Alto',
         stateProvince: 'CA',
-        addressLine1: undefined,
-        addressLine2: undefined,
-        postalCode: undefined,
-        country: undefined,
         mdrNumber: 'MDR-1',
         ncesId: 'NCES-1',
-        stateId: undefined,
-        schoolNumber: undefined,
       },
     ]);
     expect(mockDistrictsList).toHaveBeenCalledWith({
