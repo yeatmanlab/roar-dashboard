@@ -354,9 +354,12 @@ export const includedValidityFlags = {
   'sre-es': ['incomplete', 'responseTimeTooFast'],
   swr: ['responseTimeTooFast', 'notEnoughResponses'], // adding 'notEnoughResponses' for SWR since there is no current flag in the game to mark as incomplete like SRE does
   'swr-es': ['responseTimeTooFast', 'notEnoughResponses'],
-  // Add morphology, letter, and cva here
-  trog: ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
+  // letter does not have engagementFlags
+  letter: [],
+  morphology: ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
+  cva: ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
   'roar-inference': ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
+  trog: ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
 };
 
 /*
@@ -1326,7 +1329,6 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       max: 130,
     };
   } else if (taskId.includes('cva')) {
-    // TODO: Delete one of the if statements after
     if (scoringVersion >= 1) {
       return {
         min: 287,
@@ -1338,17 +1340,12 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       max: 130,
     };
   } else if (taskId.includes('roar-inference')) {
-    // TODO: Delete one of the if statements
     if (scoringVersion >= 1) {
       return {
         min: 300,
         max: 793,
       };
     }
-    return {
-      min: 300,
-      max: 793,
-    };
   } else if (taskId.includes('trog')) {
     if (scoringVersion >= 1) {
       return {
@@ -1356,11 +1353,6 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
         max: 800,
       };
     }
-    // TODO: Delete after developing normed task cards
-    return {
-      min: 53,
-      max: 800,
-    };
   }
   return null;
 };

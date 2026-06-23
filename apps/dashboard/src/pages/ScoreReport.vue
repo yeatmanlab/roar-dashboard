@@ -850,8 +850,9 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
     } else if (support_level === 'Achieved Skill' && engagementFlagExists) {
       return '#c0d9bd';
     } else if (
-      tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
-      tasksToDisplayPercentCorrect.includes(assessment.taskId)
+      (tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
+        tasksToDisplayPercentCorrect.includes(assessment.taskId)) &&
+      !(previouslyUnnormedTasks.includes(assessment.taskId) && getScoringVersions.value[assessment.taskId] >= 1)
     ) {
       const test = assessment.scores?.raw?.composite?.test;
       const tasksWithUndefinedPercentCorrect = ['swr-es', 'letter', 'letter-es', 'morphology', 'phonics'];
