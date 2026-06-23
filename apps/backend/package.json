@@ -31,7 +31,8 @@
     "db:studio:assess": "drizzle-kit studio --config ./drizzle.assessment.config.ts",
     "fga:init": "bash ../../scripts/init-openfga-store.sh",
     "db:seed:roar-pa": "tsx seeds/roar-pa.seed.ts",
-    "db:seed:roar-swr": "tsx seeds/roar-swr.seed.ts"
+    "db:seed:roar-swr": "tsx seeds/roar-swr.seed.ts",
+    "db:seed:roar-sre": "tsx seeds/roar-sre.seed.ts"
   },
   "dependencies": {
     "@google-cloud/cloud-sql-connector": "^1.4.3",
