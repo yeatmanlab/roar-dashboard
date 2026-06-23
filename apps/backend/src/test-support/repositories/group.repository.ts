@@ -15,6 +15,7 @@ export function createMockGroupRepository(): MockedObject<GroupRepository> {
     listByIds: vi.fn(),
     getUsersByGroupId: vi.fn(),
     createGroup: vi.fn(),
+    updateGroup: vi.fn(),
   } as unknown as MockedObject<GroupRepository>;
 }
 
