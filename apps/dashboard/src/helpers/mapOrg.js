@@ -43,14 +43,11 @@
  */
 const flattenLocation = (location) => {
   if (!location) return {};
-  return {
-    addressLine1: location.addressLine1,
-    addressLine2: location.addressLine2,
-    city: location.city,
-    stateProvince: location.stateProvince,
-    postalCode: location.postalCode,
-    country: location.country,
-  };
+  return Object.fromEntries(
+    ['addressLine1', 'addressLine2', 'city', 'stateProvince', 'postalCode', 'country']
+      .filter((key) => Object.hasOwn(location, key) && location[key] !== undefined)
+      .map((key) => [key, location[key]]),
+  );
 };
 
 /**
@@ -61,12 +58,11 @@ const flattenLocation = (location) => {
  */
 const flattenIdentifiers = (identifiers) => {
   if (!identifiers) return {};
-  return {
-    mdrNumber: identifiers.mdrNumber,
-    ncesId: identifiers.ncesId,
-    stateId: identifiers.stateId,
-    schoolNumber: identifiers.schoolNumber,
-  };
+  return Object.fromEntries(
+    ['mdrNumber', 'ncesId', 'stateId', 'schoolNumber']
+      .filter((key) => Object.hasOwn(identifiers, key) && identifiers[key] !== undefined)
+      .map((key) => [key, identifiers[key]]),
+  );
 };
 
 /**
