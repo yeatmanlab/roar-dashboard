@@ -77,13 +77,15 @@
       </div>
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">Free-Reduced Lunch</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.frl_status ?? false }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.frl_status ?? 'None' }}</div>
         <PvSelect
           v-else
           v-model="localUserData.studentData.frl_status"
           option-label="label"
           option-value="value"
-          :options="binaryDropdownOptions"
+          :options="frlOptions"
+          placeholder="None"
+          show-clear
         />
       </div>
 
@@ -239,7 +241,7 @@ const localUserData = ref({
     race: [],
     hispanic_ethnicity: false,
     ell_status: false,
-    frl_status: false,
+    frl_status: null,
     iep_status: false,
   },
   dataInitialized: false,
@@ -261,7 +263,7 @@ const setupUserData = () => {
       race: props.userData?.studentData?.race || [],
       hispanic_ethnicity: props.userData?.studentData?.hispanic_ethnicity || false,
       ell_status: props.userData?.studentData?.ell_status || false,
-      frl_status: props.userData?.studentData?.frl_status || false,
+      frl_status: props.userData?.studentData?.frl_status || null,
       iep_status: props.userData?.studentData?.iep_status || false,
     },
     userType: localUserType.value,
@@ -295,6 +297,14 @@ const raceOptions = ref([...races]);
 const binaryDropdownOptions = [
   { label: 'Yes', value: true },
   { label: 'No', value: false },
+];
+
+// Free/reduced-lunch is the `Free | Reduced | Paid` enum (FreeReducedLunchStatusSchema).
+// `show-clear` on the select lets the user reset to the None state, which binds to null.
+const frlOptions = [
+  { label: 'Free', value: 'Free' },
+  { label: 'Reduced', value: 'Reduced' },
+  { label: 'Paid', value: 'Paid' },
 ];
 
 const searchRaces = (event) => {

@@ -13,7 +13,7 @@ const formModel = () => ({
     hispanic_ethnicity: false,
     ell_status: true,
     iep_status: false,
-    frl_status: false,
+    frl_status: 'Free',
   },
   userType: 'student',
   dataInitialized: true,
@@ -73,9 +73,26 @@ describe('mapUserFormToUpdateBody', () => {
     expect(body.hispanicEthnicity).toBe(false);
   });
 
-  it('omits statusFrl — the boolean control cannot map to the Free|Reduced|Paid enum', () => {
+  it('passes the Free|Reduced|Paid enum through to statusFrl', () => {
     const body = mapUserFormToUpdateBody(formModel());
-    expect(body).not.toHaveProperty('statusFrl');
+    expect(body.statusFrl).toBe('Free');
+  });
+
+  it('preserves each FRL enum value', () => {
+    for (const value of ['Free', 'Reduced', 'Paid']) {
+      const form = formModel();
+      form.studentData.frl_status = value;
+      expect(mapUserFormToUpdateBody(form).statusFrl).toBe(value);
+    }
+  });
+
+  it('maps a None/empty FRL selection to null', () => {
+    for (const empty of [null, undefined, '']) {
+      const form = formModel();
+      form.studentData.frl_status = empty;
+      // null clears the value under the strict schema rather than rejecting it.
+      expect(mapUserFormToUpdateBody(form).statusFrl).toBeNull();
+    }
   });
 
   it('does not write the retired testData/demoData/tags fields', () => {
@@ -89,8 +106,8 @@ describe('mapUserFormToUpdateBody', () => {
   it('produces only flat, camelCased keys allowed by UpdateUserRequestBodySchema', () => {
     const body = mapUserFormToUpdateBody(formModel());
     // Every key must be a member of the contract's strict allow-list. Notably
-    // absent: nested `name`/`studentData`, snake_case keys, statusFrl, and the
-    // retired flags.
+    // absent: nested `name`/`studentData`, snake_case keys, and the retired
+    // testData/demoData/tags flags. `statusFrl` is now emitted (the enum/null).
     const allowedKeys = new Set([
       'nameFirst',
       'nameMiddle',

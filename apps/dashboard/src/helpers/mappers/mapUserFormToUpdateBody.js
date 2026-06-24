@@ -21,16 +21,16 @@
  *   `binaryDropdownOptions` control, but the contract types `statusEll` /
  *   `statusIep` as nullable strings — coerced via `String()` so the body
  *   validates (and round-trips through `mapUser`, which reads them as strings).
+ * - `studentData.frl_status` is the enum `Free | Reduced | Paid` selected via
+ *   the form's `frlOptions` control (the empty/None option maps to `null`).
+ *   It is passed straight through to the contract's `statusFrl` enum, with any
+ *   empty/falsy selection normalized to `null` so it clears the value rather
+ *   than failing `.strict()` validation. This round-trips through {@link mapUser},
+ *   which reads `statusFrl` back as the same enum value.
  * - `studentData.hispanic_ethnicity` is a boolean and maps directly to the
  *   contract's `hispanicEthnicity` boolean.
  *
  * Intentionally NOT written:
- * - `studentData.frl_status` — the form control is a boolean, but the contract
- *   types `statusFrl` as the enum `Free | Reduced | Paid`. There is no lossless
- *   boolean → enum coercion, and `UpdateUserRequestBodySchema` is `.strict()`,
- *   so sending the boolean would reject the **entire** request. Faithfully
- *   editing FRL needs a control rework, which is out of scope for this
- *   transport migration. The field is omitted rather than risk breaking saves.
  * - `testData` / `demoData` / `tags` — retired platform-wide and excluded from
  *   `UpdateUserRequestBodySchema`; they must not be reintroduced.
  *
@@ -55,6 +55,7 @@ export function mapUserFormToUpdateBody(form) {
     gender: studentData.gender ?? null,
     race: serializeRace(studentData.race),
     statusEll: coerceBooleanStatus(studentData.ell_status),
+    statusFrl: normalizeFrlStatus(studentData.frl_status),
     statusIep: coerceBooleanStatus(studentData.iep_status),
     hispanicEthnicity: studentData.hispanic_ethnicity ?? null,
   };
@@ -107,6 +108,20 @@ function serializeRace(race) {
 function coerceBooleanStatus(value) {
   if (value === null || value === undefined) return null;
   return String(value);
+}
+
+/**
+ * Normalizes the form's free/reduced-lunch selection to the contract's
+ * `statusFrl` enum (`Free | Reduced | Paid`) or `null`. The form's `frlOptions`
+ * control already holds one of those enum values, and its empty/None option
+ * binds to `null`; any empty/falsy value (`null`, `undefined`, `''`) is mapped
+ * to `null` so it clears the field rather than failing the strict schema.
+ *
+ * @param {string|null|undefined} value – The FRL value from the form.
+ * @returns {string|null} The enum value, or `null`.
+ */
+function normalizeFrlStatus(value) {
+  return value ? value : null;
 }
 
 export default mapUserFormToUpdateBody;

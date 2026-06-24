@@ -103,7 +103,9 @@
                 v-model="localUserData.studentData.frl_status"
                 option-label="label"
                 option-value="value"
-                :options="binaryDropdownOptions"
+                :options="frlOptions"
+                placeholder="None"
+                show-clear
               />
             </div>
 
@@ -140,9 +142,9 @@
           <div class="flex" style="gap: 1rem">
             <div class="form-field" style="width: 100%">
               <label>New Password</label>
-              <PvInputText v-model="newPassword" :class="{ 'p-invalid': errorMessage.includes('6 characters') }" />
-              <small v-if="errorMessage.includes('6 characters')" class="p-error"
-                >Password must be at least 6 characters.</small
+              <PvInputText v-model="newPassword" :class="{ 'p-invalid': errorMessage.includes('8 characters') }" />
+              <small v-if="errorMessage.includes('8 characters')" class="p-error"
+                >Password must be at least 8 characters.</small
               >
             </div>
             <div class="form-field" style="width: 100%">
@@ -211,6 +213,8 @@ import PvDialog from 'primevue/dialog';
 import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useUpdateUserMutation from '@/composables/mutations/useUpdateUserMutation';
+import { mapUserFormToUpdateBody } from '@/helpers/mappers/mapUserFormToUpdateBody';
 
 const props = defineProps({
   userData: {
@@ -234,6 +238,10 @@ const emit = defineEmits(['modalClosed']);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
+
+// API-backed user update (`PATCH /v1/users/:id`) — replaces the legacy
+// `roarfirekit.updateUserData` write for both the profile and password flows.
+const { mutateAsync: updateUser } = useUpdateUserMutation();
 
 watch(
   () => props.isEnabled,
@@ -260,23 +268,27 @@ const closeModal = () => {
 const onAccept = async () => {
   errorMessage.value = '';
   isSubmitting.value = true;
-  await roarfirekit.value
-    .updateUserData(props.userData.id, { ...localUserData.value })
-    .then(() => {
-      isSubmitting.value = false;
-      closeModal();
-      toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
-    })
-    .catch((error) => {
-      console.log('Error occurred during submission:', error);
-      errorMessage.value = error.message;
-      isSubmitting.value = false;
-    });
+
+  try {
+    // Map the modal's nested local model to the flat `UpdateUserRequestBodySchema`
+    // body before writing, so the read and write stay on the same API source.
+    // The mapper drops the modal-only `testData`/`demoData`/`userType` keys.
+    const body = mapUserFormToUpdateBody(localUserData.value);
+    await updateUser({ userId: props.userData.id, userData: body });
+    closeModal();
+    toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
+  } catch (error) {
+    console.log('Error occurred during submission:', error);
+    errorMessage.value = resolveUpdateErrorMessage(error);
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 const updatePassword = async () => {
-  if (newPassword.value.length < 6) {
-    errorMessage.value = 'Password must be at least 6 characters';
+  // Min length matches the contract's `password: z.string().min(8)`.
+  if (newPassword.value.length < 8) {
+    errorMessage.value = 'Password must be at least 8 characters';
     return;
   }
   if (newPassword.value !== confirmPassword.value) {
@@ -285,22 +297,37 @@ const updatePassword = async () => {
   }
   isSubmitting.value = true;
 
-  await roarfirekit.value
-    .updateUserData(props.userData.id, { password: newPassword.value })
-    .then(() => {
-      isSubmitting.value = false;
-      showPassword.value = false;
-      toast.add({ severity: 'success', summary: 'Updated', detail: 'Password has been updated', life: 3000 });
-    })
-    .catch((error) => {
-      console.log('Error occurred during submission:', error);
-      errorMessage.value = error.message;
-      isSubmitting.value = false;
-    });
+  try {
+    // The backend updates the Firebase Auth credential when `password` is sent
+    // on PATCH; it is not persisted to the user record.
+    await updateUser({ userId: props.userData.id, userData: { password: newPassword.value } });
+    showPassword.value = false;
+    toast.add({ severity: 'success', summary: 'Updated', detail: 'Password has been updated', life: 3000 });
+  } catch (error) {
+    console.log('Error occurred during submission:', error);
+    errorMessage.value = resolveUpdateErrorMessage(error);
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 const onReject = () => {
   closeModal();
+};
+
+/**
+ * Extracts a user-facing message from a failed `useUpdateUserMutation` call.
+ *
+ * The mutation rejects with an `Error` that carries the ts-rest response on
+ * `.status` / `.body` (the body envelope is `{ error: { message, code, traceId } }`).
+ * Prefer the API's message when present, otherwise fall back to the generic
+ * thrown message.
+ *
+ * @param {Error & { body?: { error?: { message?: string } } }} error – The thrown mutation error.
+ * @returns {string} A message suitable for display in the form.
+ */
+const resolveUpdateErrorMessage = (error) => {
+  return error?.body?.error?.message ?? error?.message ?? 'An unexpected error has occurred.';
 };
 
 // Utility functions
@@ -326,7 +353,7 @@ const setupUserData = () => {
       race: props.userData?.studentData?.race || [],
       hispanic_ethnicity: props.userData?.studentData?.hispanic_ethnicity || false,
       ell_status: props.userData?.studentData?.ell_status || false,
-      frl_status: props.userData?.studentData?.frl_status || false,
+      frl_status: props.userData?.studentData?.frl_status || null,
       iep_status: props.userData?.studentData?.iep_status || false,
     },
     testData: props.userData?.testData || false,
@@ -354,6 +381,14 @@ const raceOptions = ref([...races]);
 const binaryDropdownOptions = [
   { label: 'Yes', value: true },
   { label: 'No', value: false },
+];
+
+// Free/reduced-lunch is the `Free | Reduced | Paid` enum (FreeReducedLunchStatusSchema).
+// `show-clear` on the select lets the user reset to the None state, which binds to null.
+const frlOptions = [
+  { label: 'Free', value: 'Free' },
+  { label: 'Reduced', value: 'Reduced' },
+  { label: 'Paid', value: 'Paid' },
 ];
 
 const searchRaces = (event) => {
