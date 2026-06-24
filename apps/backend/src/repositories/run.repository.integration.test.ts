@@ -15,6 +15,7 @@ import { RunFactory } from '../test-support/factories/run.factory';
 import { RunScoreFactory } from '../test-support/factories/run-score.factory';
 import { RunRepository } from './run.repository';
 import { SCORE_TYPE, SCORE_DOMAIN, ASSESSMENT_STAGE, SCORE_NAME } from '../constants/run-scores';
+import { COMPOSITE_RUN_TASK_ID } from '../constants/run';
 
 describe('RunRepository', () => {
   let repository: RunRepository;
@@ -538,6 +539,189 @@ describe('RunRepository', () => {
 
       expect(second).toEqual(first);
       expect(first.get(a.id)).toBe(true);
+    });
+  });
+
+  describe('foundational composite', () => {
+    it('getRunStatsByAdministrationIds does not count the synthetic composite run', async () => {
+      const administrationId = faker.string.uuid();
+
+      // One real subtest run → one "started" user.
+      await RunFactory.create({ userId: faker.string.uuid(), administrationId, completedAt: null });
+
+      // A composite sentinel run for a different user — must NOT inflate started/completed.
+      await RunFactory.create({
+        userId: faker.string.uuid(),
+        administrationId,
+        taskId: COMPOSITE_RUN_TASK_ID,
+        completedAt: new Date(),
+        useForReporting: true,
+      });
+
+      const result = await repository.getRunStatsByAdministrationIds([administrationId]);
+
+      expect(result.get(administrationId)).toEqual({ started: 1, completed: 0 });
+    });
+
+    it('findOrCreateCompositeRun creates exactly one composite run per (user, admin) and reuses it', async () => {
+      const userId = faker.string.uuid();
+      const administrationId = faker.string.uuid();
+
+      const { first, second } = await repository.runTransaction({
+        fn: async (tx) => {
+          await repository.lockCompositeForUpdate({ userId, administrationId, transaction: tx });
+          const firstRun = await repository.findOrCreateCompositeRun({ userId, administrationId, transaction: tx });
+          const secondRun = await repository.findOrCreateCompositeRun({ userId, administrationId, transaction: tx });
+          return { first: firstRun, second: secondRun };
+        },
+      });
+
+      // Same run both times — no duplicate composite run.
+      expect(second.id).toBe(first.id);
+
+      const created = await repository.getById({ id: first.id });
+      expect(created).not.toBeNull();
+      expect(created!.taskId).toBe(COMPOSITE_RUN_TASK_ID);
+      expect(created!.useForReporting).toBe(true);
+      expect(created!.isAnonymous).toBe(false);
+    });
+
+    it('getReportingRunScoresForComposite returns the reporting theta pair, ignoring non-reporting and unrelated rows', async () => {
+      const userId = faker.string.uuid();
+      const administrationId = faker.string.uuid();
+      const paTaskId = faker.string.uuid();
+
+      const reportingRun = await RunFactory.create({
+        userId,
+        administrationId,
+        taskId: paTaskId,
+        useForReporting: true,
+      });
+      await RunScoreFactory.create({
+        runId: reportingRun.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.THETA_ESTIMATE,
+        value: '1.5',
+        assessmentStage: null,
+        categoryScore: null,
+      });
+      await RunScoreFactory.create({
+        runId: reportingRun.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.THETA_SE,
+        value: '0.5',
+        assessmentStage: null,
+        categoryScore: null,
+      });
+      // Unrelated computed score under the same domain — must be ignored by the name filter.
+      await RunScoreFactory.create({
+        runId: reportingRun.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: 'percentile',
+        value: '60',
+        assessmentStage: null,
+        categoryScore: null,
+      });
+      // A non-reporting run with composite scores — must be ignored by the use_for_reporting filter.
+      const nonReporting = await RunFactory.create({
+        userId,
+        administrationId,
+        taskId: paTaskId,
+        useForReporting: false,
+      });
+      await RunScoreFactory.create({
+        runId: nonReporting.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.THETA_ESTIMATE,
+        value: '9.9',
+        assessmentStage: null,
+        categoryScore: null,
+      });
+
+      const { rows, reportingTaskIds } = await repository.getReportingRunScoresForComposite({
+        userId,
+        administrationId,
+        taskIds: [paTaskId],
+      });
+
+      expect(reportingTaskIds).toEqual([paTaskId]);
+      expect(rows).toHaveLength(2);
+      expect(rows.every((r) => r.runId === reportingRun.id && r.taskId === paTaskId)).toBe(true);
+      const byName = new Map(rows.map((r) => [r.name, r.value]));
+      expect(byName.get(SCORE_NAME.THETA_ESTIMATE)).toBe('1.5');
+      expect(byName.get(SCORE_NAME.THETA_SE)).toBe('0.5');
+    });
+
+    it('getReportingRunScoresForComposite returns the Sentence transformed score', async () => {
+      const userId = faker.string.uuid();
+      const administrationId = faker.string.uuid();
+      const sreTaskId = faker.string.uuid();
+
+      // Sentence/SRE writes its transformed score as `thetaEstimate` under
+      // `composite_foundational`, the same as the other subtests.
+      const sreRun = await RunFactory.create({ userId, administrationId, taskId: sreTaskId, useForReporting: true });
+      await RunScoreFactory.create({
+        runId: sreRun.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.THETA_ESTIMATE,
+        value: '-1.2',
+        assessmentStage: null,
+        categoryScore: null,
+      });
+
+      const { rows, reportingTaskIds } = await repository.getReportingRunScoresForComposite({
+        userId,
+        administrationId,
+        taskIds: [sreTaskId],
+      });
+
+      expect(reportingTaskIds).toEqual([sreTaskId]);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.name).toBe(SCORE_NAME.THETA_ESTIMATE);
+      expect(rows[0]!.value).toBe('-1.2');
+    });
+
+    it('getReportingRunScoresForComposite uses the newest reporting run even when it has no composite scores', async () => {
+      const userId = faker.string.uuid();
+      const administrationId = faker.string.uuid();
+      const taskId = faker.string.uuid();
+
+      // Older reporting run WITH a composite theta estimate.
+      const olderRun = await RunFactory.create({ userId, administrationId, taskId, useForReporting: true });
+      await RunScoreFactory.create({
+        runId: olderRun.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.THETA_ESTIMATE,
+        value: '9.9',
+        assessmentStage: null,
+        categoryScore: null,
+      });
+
+      // Strictly later created_at for the newest run.
+      await new Promise((r) => setTimeout(r, 5));
+
+      // Newest reporting run for the same task WITHOUT composite scores yet.
+      const newerRun = await RunFactory.create({ userId, administrationId, taskId, useForReporting: true });
+
+      const { rows, reportingTaskIds } = await repository.getReportingRunScoresForComposite({
+        userId,
+        administrationId,
+        taskIds: [taskId],
+      });
+
+      // The task has a reporting run...
+      expect(reportingTaskIds).toEqual([taskId]);
+      // ...but the winner is the newest run (which has no composite scores), so the older
+      // run's stale theta is NOT substituted — no input rows are returned.
+      expect(rows).toHaveLength(0);
+      expect(rows.some((r) => r.runId === olderRun.id)).toBe(false);
+      expect(newerRun.id).not.toBe(olderRun.id);
     });
   });
 });
