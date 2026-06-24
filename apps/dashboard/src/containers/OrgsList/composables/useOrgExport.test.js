@@ -321,4 +321,83 @@ describe('useOrgExport', () => {
       expect(hasNameProperty(undefined)).toBeFalsy();
     });
   });
+
+  describe('performExport — page-fetch error path', () => {
+    it('rejects with the ts-rest status/body and reports to Sentry when a page fetch returns non-200', async () => {
+      const { performExport } = useOrgExport(activeOrgType);
+
+      // The export's per-page fetch (fetchUsersPage) surfaces a non-200 ts-rest
+      // result as a thrown error carrying .status/.body; performExport's catch
+      // then reports it to Sentry and rethrows.
+      mockListDistrictUsers.mockResolvedValue({
+        status: 403,
+        body: { error: { message: 'Forbidden' } },
+      });
+
+      await expect(performExport({ id: 'org-1', name: 'Test Org' }, 6)).rejects.toMatchObject({
+        status: 403,
+        body: { error: { message: 'Forbidden' } },
+      });
+      // performExport's own try/catch reports and rethrows.
+      expect(Sentry.captureException).toHaveBeenCalled();
+      // The failure happened during fetch, so no file was written.
+      expect(queryUtils.exportCsv).not.toHaveBeenCalled();
+    });
+
+    it('rethrows the original error from performExport after reporting it', async () => {
+      const { performExport } = useOrgExport(activeOrgType);
+
+      const thrown = new Error('boom');
+      mockListDistrictUsers.mockRejectedValue(thrown);
+
+      await expect(performExport({ id: 'org-1', name: 'Test Org' }, 6)).rejects.toBe(thrown);
+      expect(Sentry.captureException).toHaveBeenCalledWith(thrown);
+    });
+  });
+
+  describe('performExport — onProgress callback', () => {
+    it('invokes onProgress during a batched export (single batch suffices to hit the call)', async () => {
+      const { performExport } = useOrgExport(activeOrgType);
+
+      // A single page of two rows: above CSV_EXPORT_CRITICAL_THRESHOLD the export
+      // batches, and with < CSV_EXPORT_BATCH_SIZE accumulated rows it forms one
+      // batch — enough to exercise the onProgress callback exactly once.
+      mockListDistrictUsers.mockResolvedValue(
+        okPage([enrolledUser({ id: 'u1', username: 'u1' }), enrolledUser({ id: 'u2', username: 'u2' })], {
+          page: 1,
+          perPage: 100,
+          totalItems: 2,
+          totalPages: 1,
+        }),
+      );
+
+      const onProgress = vi.fn();
+      const result = await performExport({ id: 'org-1', name: 'Test Org' }, 60000, onProgress);
+
+      expect(result).toEqual({ success: true, batched: true, batchCount: 1 });
+      // Called once for the single batch, with (currentBatch, totalBatches).
+      expect(onProgress).toHaveBeenCalledTimes(1);
+      expect(onProgress).toHaveBeenCalledWith(1, 1);
+    });
+  });
+
+  describe('resetExportState', () => {
+    it('clears the batch-tracking refs back to 0 after a batched export', async () => {
+      const { performExport, resetExportState, currentBatch, totalBatches } = useOrgExport(activeOrgType);
+
+      mockListDistrictUsers.mockResolvedValue(
+        okPage([enrolledUser()], { page: 1, perPage: 100, totalItems: 1, totalPages: 1 }),
+      );
+
+      // Run a batched export so the tracking refs advance past 0.
+      await performExport({ id: 'org-1', name: 'Test Org' }, 60000);
+      expect(currentBatch.value).toBe(1);
+      expect(totalBatches.value).toBe(1);
+
+      resetExportState();
+
+      expect(currentBatch.value).toBe(0);
+      expect(totalBatches.value).toBe(0);
+    });
+  });
 });
