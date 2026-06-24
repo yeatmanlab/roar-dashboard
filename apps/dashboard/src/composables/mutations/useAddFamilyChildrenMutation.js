@@ -12,12 +12,12 @@ import { FAMILIES_QUERY_KEY, USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
  * must be a parent of the target family. All DB writes commit atomically; on
  * failure the backend rolls back any Firebase Auth accounts it created.
  *
- * Returns `{ ids }` — the new child user ids in request order — so the caller
- * can record each child's consent against their id.
+ * Returns `{ ids }` — the new child user ids in request order.
  *
  * Note: consent is NOT part of this request (the families contract intentionally
- * drops `consentData`). The registration saga records consent separately via
- * `POST /v1/users/:userId/agreements` for each returned child id.
+ * drops `consentData`). Per-child consent/assent is administration-specific and
+ * is handled post-auth by the per-administration consent gate — not at account
+ * creation.
  *
  * Expected mutate payload:
  *   `{ familyId, body: { children: [{ email, password, name, dob, grade, activationCode, demographics? }] } }`
