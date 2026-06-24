@@ -107,7 +107,6 @@
                         :href="externalLinksByTask[game.taskId]"
                         target="_blank"
                         class="no-underline text-900 text-center w-full h-full"
-                        @click="onExternalTaskClick(game)"
                       >
                         <div class="flex align-items-center justify-content-center">
                           <i v-if="!allGamesComplete" class="pi"
@@ -169,7 +168,6 @@
                                 :href="externalLinksByTask[game.taskId]"
                                 target="_blank"
                                 class="no-underline text-yellow-900 hover:text-yellow-800 w-full flex align-items-center justify-content-center p-3 hover:bg-yellow-100"
-                                @click="onExternalTaskClick(game)"
                               >
                                 <i class="pi pi-refresh mr-2"></i>{{ $t('gameTabs.retakeAssessment') }}
                               </a>
@@ -395,11 +393,6 @@ const externalLinksByTask = computed(() => {
 
   return externalLinks;
 });
-
-async function onExternalTaskClick(game) {
-  // Mark the assessment as complete immediately if external roar task and clicked the button
-  await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
-}
 
 const returnVideoOptions = (videoURL) => {
   return {

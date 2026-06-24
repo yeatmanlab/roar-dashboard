@@ -115,10 +115,8 @@ async function startTask(selectedAdmin) {
   }
 }
 
-async function handleCompleteSurvey() {
+function handleCompleteSurvey() {
   try {
-    const { selectedAdmin } = storeToRefs(gameStore);
-    await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
     gameStore.requireHomeRefresh();
     // if session is externally launched, return instead fo participant home
     if (props.launchId) {
