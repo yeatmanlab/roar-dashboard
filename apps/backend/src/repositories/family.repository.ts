@@ -15,7 +15,7 @@ import {
   ENROLLED_USERS_SORT_COLUMNS,
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
-import { isEnrollmentActive } from './utils/enrollment.utils';
+import { isEnrollmentActive, isActiveInFamily } from './utils/enrollment.utils';
 
 /**
  * Name of the partial unique index that enforces "one family per caretaker"
@@ -159,6 +159,30 @@ export class FamilyRepository extends BaseRepository<Family, typeof families> {
       .from(userFamilies)
       .where(and(eq(userFamilies.userId, userId), isNull(userFamilies.leftOn)));
     return rows.map((r) => r.familyId);
+  }
+
+  /**
+   * Get the active family memberships for a specific user, with their role in
+   * each family.
+   *
+   * Returns one entry per active `user_families` row for the given user. "Active"
+   * uses the same {@link isActiveInFamily} window as every other family read
+   * (`joinedOn <= NOW()` and `leftOn IS NULL OR leftOn >= NOW()`). Unlike
+   * {@link getFamilyIdsForUser}, the role is included so callers can distinguish
+   * a `parent` membership from a `child` membership.
+   *
+   * This is a self-scoped read — it returns only the rows that name `userId` as
+   * the member. It performs no access-control join because the caller is only
+   * ever asking about their own memberships (see the /me service).
+   *
+   * @param userId - The user whose family memberships to retrieve
+   * @returns Array of `{ familyId, role }` for each active membership (empty when none)
+   */
+  async getFamilyMembershipsForUser(userId: string): Promise<Array<{ familyId: string; role: UserFamilyRole }>> {
+    return this.db
+      .select({ familyId: userFamilies.familyId, role: userFamilies.role })
+      .from(userFamilies)
+      .where(and(eq(userFamilies.userId, userId), isActiveInFamily(userFamilies)));
   }
 
   /**

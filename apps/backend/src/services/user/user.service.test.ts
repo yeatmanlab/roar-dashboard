@@ -9,6 +9,7 @@ import { createMockUserRepository } from '../../test-support/repositories/user.r
 import { createMockUserAgreementRepository } from '../../test-support/repositories/user-agreement.repository';
 import { createMockAgreementVersionRepository } from '../../test-support/repositories/agreement-version.repository';
 import { createMockAgreementRepository } from '../../test-support/repositories/agreement.repository';
+import { createMockFamilyRepository } from '../../test-support/repositories/family.repository';
 import { createMockAuthorizationService } from '../../test-support/services/authorization.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -1205,6 +1206,107 @@ describe('UserService', () => {
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({ err: expect.any(Error) }),
         'Failed to get unsigned TOS agreements',
+      );
+    });
+  });
+
+  describe('getFamilies', () => {
+    it('returns an empty array when the user has no family memberships', async () => {
+      const mockFamilyRepository = createMockFamilyRepository();
+      mockFamilyRepository.getFamilyMembershipsForUser.mockResolvedValue([]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      const result = await userService.getFamilies('user-123');
+
+      expect(mockFamilyRepository.getFamilyMembershipsForUser).toHaveBeenCalledWith('user-123');
+      expect(result).toEqual([]);
+    });
+
+    it('maps each membership to { id, role }, preserving a parent role', async () => {
+      const mockFamilyRepository = createMockFamilyRepository();
+      mockFamilyRepository.getFamilyMembershipsForUser.mockResolvedValue([{ familyId: 'family-abc', role: 'parent' }]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      const result = await userService.getFamilies('parent-123');
+
+      expect(result).toEqual([{ id: 'family-abc', role: 'parent' }]);
+    });
+
+    it('preserves a child role (ROAR@Home child is a member too)', async () => {
+      const mockFamilyRepository = createMockFamilyRepository();
+      mockFamilyRepository.getFamilyMembershipsForUser.mockResolvedValue([{ familyId: 'family-xyz', role: 'child' }]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      const result = await userService.getFamilies('child-456');
+
+      expect(result).toEqual([{ id: 'family-xyz', role: 'child' }]);
+    });
+
+    it('maps multiple memberships, preserving order and each role', async () => {
+      const mockFamilyRepository = createMockFamilyRepository();
+      mockFamilyRepository.getFamilyMembershipsForUser.mockResolvedValue([
+        { familyId: 'family-1', role: 'parent' },
+        { familyId: 'family-2', role: 'child' },
+      ]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      const result = await userService.getFamilies('user-123');
+
+      expect(result).toEqual([
+        { id: 'family-1', role: 'parent' },
+        { id: 'family-2', role: 'child' },
+      ]);
+    });
+
+    it('re-throws ApiError from the repository without wrapping', async () => {
+      const mockFamilyRepository = createMockFamilyRepository();
+      const apiError = new ApiError('Not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockFamilyRepository.getFamilyMembershipsForUser.mockRejectedValue(apiError);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      await expect(userService.getFamilies('user-123')).rejects.toThrow(apiError);
+    });
+
+    it('wraps unexpected errors in ApiError with 500/DATABASE_QUERY_FAILED', async () => {
+      const mockFamilyRepository = createMockFamilyRepository();
+      mockFamilyRepository.getFamilyMembershipsForUser.mockRejectedValue(new Error('DB connection lost'));
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      await expect(userService.getFamilies('user-123')).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error) }),
+        'Failed to get user families',
       );
     });
   });
