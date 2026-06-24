@@ -7,6 +7,8 @@ import {
   GroupsListQuerySchema,
   GroupsListResponseSchema,
   InvitationCodeSchema,
+  UpdateGroupRequestSchema,
+  UpdateGroupResponseSchema,
 } from './schema';
 import { EnrolledUsersQuerySchema, EnrolledUsersResponseSchema } from '../common/user';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
@@ -75,6 +77,34 @@ export const GroupsContract = c.router(
       description:
         'Returns a single group by ID. ' +
         'Super admins can access any group. Regular users can only access groups they belong to in a supervisory role.',
+    },
+    update: {
+      method: 'PATCH',
+      path: '/:groupId',
+      pathParams: z.object({
+        groupId: z.string().uuid(),
+      }),
+      body: UpdateGroupRequestSchema,
+      responses: {
+        200: SuccessEnvelopeSchema(UpdateGroupResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Update a group',
+      description:
+        'Updates an existing group. Only the mutable fields present in the request body are applied ' +
+        '(name, abbreviation, groupType, location); the immutable id cannot change and is rejected. ' +
+        'Restricted to super admins. ' +
+        'Returns 200 with the updated group id. ' +
+        'Returns 400 if the body is malformed or contains no recognized mutable fields. ' +
+        'Returns 401 if the user is not authenticated. ' +
+        'Returns 403 if the user is not a super admin. ' +
+        'Returns 404 if the group does not exist. ' +
+        'Returns 500 if an internal server error occurs.',
     },
     getInvitationCode: {
       method: 'GET',
