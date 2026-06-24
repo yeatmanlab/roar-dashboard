@@ -52,6 +52,8 @@ import { AdministrationTaskVariantFactory } from './test-support/factories/admin
 import { TaskFactory } from './test-support/factories/task.factory';
 import { TaskVariantFactory } from './test-support/factories/task-variant.factory';
 import { TaskVariantParameterFactory } from './test-support/factories/task-variant-parameter.factory';
+import { TaskBundleFactory } from './test-support/factories/task-bundle.factory';
+import { TaskBundleVariantFactory } from './test-support/factories/task-bundle-variant.factory';
 import { UserFactory } from './test-support/factories/user.factory';
 import { UserClassFactory } from './test-support/factories/user-class.factory';
 import { RunFactory } from './test-support/factories/run.factory';
@@ -383,6 +385,43 @@ async function startTestServer(): Promise<void> {
         TaskVariantParameterFactory.create({ taskVariantId, name: 'language', value: 'en' }),
         TaskVariantParameterFactory.create({ taskVariantId, name: 'adaptive', value: true }),
       ]),
+    );
+
+    // Seed a few task bundles (the picker catalog) so the create-administration TaskPicker's
+    // bundle list isn't empty locally. Bundles group variants via the task_bundle_variants
+    // junction; GET /task-bundles?embed=taskVariantDetails resolves them for the picker.
+    const [earlyLiteracyBundle, languageReasoningBundle, comprehensiveBundle] = await Promise.all([
+      TaskBundleFactory.create({
+        slug: 'early-literacy-screener',
+        name: 'Early Literacy Screener',
+        description: 'Foundational decoding skills: phoneme awareness, letter knowledge, and word reading.',
+      }),
+      TaskBundleFactory.create({
+        slug: 'language-and-reasoning',
+        name: 'Language & Reasoning',
+        description: 'Morphology, syntax, and inference for comprehension-focused assessment.',
+      }),
+      TaskBundleFactory.create({
+        slug: 'comprehensive-battery',
+        name: 'Comprehensive Battery',
+        description: 'A broad mix spanning decoding, sentence reading, and comprehension.',
+      }),
+    ]);
+    const localDevBundleVariants: Array<{ taskBundleId: string; taskVariantId: string; sortOrder: number }> = [
+      { taskBundleId: earlyLiteracyBundle.id, taskVariantId: phonemeVariant.id, sortOrder: 0 },
+      { taskBundleId: earlyLiteracyBundle.id, taskVariantId: letterVariant.id, sortOrder: 1 },
+      { taskBundleId: earlyLiteracyBundle.id, taskVariantId: fixture.variantForAllGrades.id, sortOrder: 2 },
+      { taskBundleId: languageReasoningBundle.id, taskVariantId: morphologyVariant.id, sortOrder: 0 },
+      { taskBundleId: languageReasoningBundle.id, taskVariantId: syntaxVariant.id, sortOrder: 1 },
+      { taskBundleId: languageReasoningBundle.id, taskVariantId: inferenceVariant.id, sortOrder: 2 },
+      { taskBundleId: comprehensiveBundle.id, taskVariantId: phonemeVariant.id, sortOrder: 0 },
+      { taskBundleId: comprehensiveBundle.id, taskVariantId: fixture.variantForTask2.id, sortOrder: 1 },
+      { taskBundleId: comprehensiveBundle.id, taskVariantId: inferenceVariant.id, sortOrder: 2 },
+    ];
+    await Promise.all(
+      localDevBundleVariants.map(({ taskBundleId, taskVariantId, sortOrder }) =>
+        TaskBundleVariantFactory.create({ taskBundleId, taskVariantId, sortOrder }),
+      ),
     );
 
     // Each non-district administration gets a distinct mix so its card shows a clean list of task

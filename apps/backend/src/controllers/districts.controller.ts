@@ -1,5 +1,9 @@
 import { StatusCodes } from 'http-status-codes';
-import type { CreateDistrictServiceInput, DistrictWithEmbeds } from '../services/district/district.service';
+import type {
+  CreateDistrictServiceInput,
+  DistrictWithEmbeds,
+  UpdateDistrictServiceInput,
+} from '../services/district/district.service';
 import type { SchoolWithCounts } from '../repositories/school.repository';
 import { DistrictService } from '../services/district/district.service';
 import type {
@@ -9,6 +13,7 @@ import type {
   DistrictSchoolsListQuery,
   DistrictSchoolsListResponse,
   EnrolledUsersQuery,
+  UpdateDistrictRequest,
 } from '@roar-platform/api-contract';
 import { DistrictEmbedOption, DistrictSchoolEmbedOption } from '@roar-platform/api-contract';
 import { ApiError } from '../errors/api-error';
@@ -249,6 +254,47 @@ export const DistrictsController = {
     } catch (error) {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update a district.
+   *
+   * Restricted to super admins (enforced in DistrictService). Returns the
+   * updated district id only — clients that need the full entity should follow
+   * up with GET /districts/:id.
+   *
+   * @param authContext - User's authentication context
+   * @param districtId - UUID of the district to update
+   * @param body - Request body with the mutable district fields
+   */
+  update: async (authContext: AuthContext, districtId: string, body: UpdateDistrictRequest) => {
+    try {
+      const serviceInput: UpdateDistrictServiceInput = {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.abbreviation !== undefined && { abbreviation: body.abbreviation }),
+        ...(body.location !== undefined && { location: body.location }),
+        ...(body.identifiers !== undefined && { identifiers: body.identifiers }),
+      };
+
+      const { id } = await districtService.update(authContext, districtId, serviceInput);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: { id },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,

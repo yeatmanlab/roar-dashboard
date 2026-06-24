@@ -1,0 +1,8 @@
+{
+  "loading": "L'esperimento si sta caricando...",
+  "progressBar": "Avanzamento Completato:",
+  "fullScreenTrial": {
+    "prompt": "L'esperimento passerà alla modalità schermo intero. <br/> Clicca sul tasto per continuare.",
+    "buttonText": "Continua"
+  }
+}

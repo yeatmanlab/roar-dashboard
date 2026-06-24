@@ -1,0 +1,5 @@
+﻿sentence,answer,direction,correctresponse
+Katzen haben Räder.,F,left,arrowleft
+Ameisen sind klein.,T,right,arrowright
+Berge sind hoch.,T,right,arrowright
+Wir trinken aus Hüten.,F,left,arrowleft

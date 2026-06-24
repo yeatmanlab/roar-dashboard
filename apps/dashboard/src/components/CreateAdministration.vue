@@ -67,10 +67,7 @@
           :pt="{ pcRejectButton: { root: { class: 'hidden' } } }"
         >
           <template #message>
-            <span
-              >Organization selections are not valid. Please select at least one district and school, or a group or
-              family.</span
-            >
+            <span>Organization selections are not valid. Please select at least one district, school, or group.</span>
           </template>
         </PvConfirmDialog>
 
@@ -105,8 +102,13 @@
         />
 
         <div class="mt-2 flex w-full">
-          <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
-          <small v-if="submitted && v$.consent.$invalid && v$.consent.$invalid" class="p-error mt-2"
+          <ConsentPicker
+            :consent-id="existingConsentId"
+            :assent-id="existingAssentId"
+            :initial-no-consent="existingNoConsent"
+            @consent-selected="handleConsentSelected"
+          />
+          <small v-if="submitted && (v$.consent.$invalid || v$.assent.$invalid)" class="p-error mt-2"
             >Please select a consent/assent form.</small
           >
         </div>
@@ -128,10 +130,6 @@
               <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
                 >Please specify sequential behavior.</small
               >
-            </div>
-            <div class="mt-2 mb-2">
-              <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
-              <label for="isTestData" class="ml-2">Mark As <b>Test Administration</b></label>
             </div>
           </div>
           <div class="divider mx-2 my-3" />
@@ -161,7 +159,6 @@ import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
-import PvCheckbox from 'primevue/checkbox';
 import PvConfirmDialog from 'primevue/confirmdialog';
 import PvDivider from 'primevue/divider';
 import PvInputText from 'primevue/inputtext';
@@ -172,7 +169,6 @@ import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
 import _forEach from 'lodash/forEach';
 import _find from 'lodash/find';
-import _isEqual from 'lodash/isEqual';
 import _union from 'lodash/union';
 import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
@@ -180,21 +176,21 @@ import _cloneDeep from 'lodash/cloneDeep';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
-import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
-import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
-import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
-import useClassesQuery from '@/composables/queries/useClassesQuery';
-import useGroupsQuery from '@/composables/queries/useGroupsQuery';
-import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
-import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
+import useAdministrationQuery from '@/composables/queries/useAdministrationQuery';
+import useAdministrationAssigneesQuery from '@/composables/queries/useAdministrationAssigneesQuery';
+import useAdministrationTaskVariantsQuery from '@/composables/queries/useAdministrationTaskVariantsQuery';
+import useAdministrationAgreementsQuery from '@/composables/queries/useAdministrationAgreementsQuery';
+import useTaskVariantsListQuery from '@/composables/queries/useTaskVariantsListQuery';
+import { adaptVariantsForPicker } from '@/helpers/adaptVariantsForPicker';
 import useTaskBundlesQuery from '@/composables/queries/useTaskBundlesQuery';
+import { adaptBundlesForPicker } from '@/helpers/adaptBundlesForPicker';
 import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
 import TaskPicker from './TaskPicker';
 import ConsentPicker from './ConsentPicker.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { APP_ROUTES, ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
-import { ORG_TYPES } from '@/constants/orgTypes';
+import { AGREEMENT_TYPES } from '@/constants/agreements';
 import { usePermissions } from '@/composables/usePermissions';
 import AdministrationDatePicker from '@/components/AdministrationDatePicker';
 const { userCan, Permissions } = usePermissions();
@@ -251,73 +247,79 @@ const submitPermission = computed(() => {
 });
 
 // +------------------------------------------------------------------------------------------------------------------+
-// | Fetch Variants with Params
+// | Variant catalog (picker source) and task bundles
 // +------------------------------------------------------------------------------------------------------------------+
-const findVariantWithParams = (variants, params) => {
-  // TODO: implement tie breakers if found.length > 1
-  return _find(variants, (variant) => {
-    const cleanVariantParams = removeNull(variant.variant.params);
-    const cleanInputParams = removeNull(params);
-    return _isEqual(cleanInputParams, cleanVariantParams);
-  });
-};
+// `useTaskVariantsListQuery` returns the flat backend shape; adapt it to the
+// nested shape the TaskPicker/VariantCard components consume.
+const { data: flatVariants } = useTaskVariantsListQuery({ enabled: initialized });
+const allVariants = computed(() => adaptVariantsForPicker(flatVariants.value ?? []));
 
-const { data: allVariants } = useTaskVariantsQuery(false, {
-  enabled: initialized,
-});
-
-const { data: allTaskBundles } = useTaskBundlesQuery({
-  enabled: initialized,
-});
+// `useTaskBundlesQuery` returns the flat backend bundle shape; adapt it to the
+// nested shape the TaskPicker/TaskBundleCard components consume. The adapter's
+// variant refs use the backend variant id space so they resolve against
+// `allVariants` above.
+const { data: rawBundles } = useTaskBundlesQuery({ enabled: initialized });
+const allTaskBundles = computed(() => adaptBundlesForPicker(rawBundles.value ?? []));
 
 // +------------------------------------------------------------------------------------------------------------------+
-// | Fetch pre-existing administration data when editing an administration
+// | Pre-existing administration data when editing or duplicating
 // +------------------------------------------------------------------------------------------------------------------+
-// Fetch the data of the currently being edited administration, incl. its assigned assessments.
 const fetchAdminitrations = computed(() => initialized.value && !!props.adminId);
-const { data: existingAdministrationData } = useAdministrationsQuery([props.adminId], {
+
+const { data: existingAdministration } = useAdministrationQuery(() => props.adminId, {
   enabled: fetchAdminitrations,
-  select: (data) => data[0],
 });
 
-const existingAssessments = computed(() => {
-  return existingAdministrationData?.value?.assessments ?? [];
+const { data: existingAssignees } = useAdministrationAssigneesQuery(() => props.adminId, {
+  enabled: fetchAdminitrations,
 });
 
-// Fetch the districts assigned to the administration.
-const districtIds = computed(() => existingAdministrationData?.value?.minimalOrgs?.districts ?? []);
-
-const { data: existingDistrictsData } = useDistrictsQuery(districtIds, {
-  enabled: initialized,
+const { data: existingTaskVariants } = useAdministrationTaskVariantsQuery(() => props.adminId, {
+  enabled: fetchAdminitrations,
 });
 
-// Fetch the schools assigned to the administration.
-const schoolIds = computed(() => existingAdministrationData.value?.minimalOrgs?.schools ?? []);
-
-const { data: existingSchoolsData } = useSchoolsQuery(schoolIds, {
-  enabled: initialized,
+const { data: existingAgreements } = useAdministrationAgreementsQuery(() => props.adminId, {
+  enabled: fetchAdminitrations,
 });
 
-// Fetch the classes assigned to the administration.
-const classIds = computed(() => existingAdministrationData.value?.minimalOrgs?.classes ?? []);
+// Resolve the assigned consent/assent agreements (by type) to pre-fill the picker
+// on edit/duplicate. An administration with no assigned agreements means no
+// consent/assent is required.
+const existingConsentId = computed(
+  () =>
+    (existingAgreements.value ?? []).find((agreement) => agreement.agreementType === AGREEMENT_TYPES.CONSENT)?.id ??
+    null,
+);
+const existingAssentId = computed(
+  () =>
+    (existingAgreements.value ?? []).find((agreement) => agreement.agreementType === AGREEMENT_TYPES.ASSENT)?.id ??
+    null,
+);
+const existingNoConsent = computed(
+  () => Boolean(props.adminId) && Array.isArray(existingAgreements.value) && existingAgreements.value.length === 0,
+);
 
-const { data: existingClassesData } = useClassesQuery(classIds, {
-  enabled: initialized,
+// Conditions adapters: the read shape (`assigned_if`/`optional_if`) maps to the
+// picker's `assigned`/`optional`, and back out to the write shape
+// (`conditionsEligibility`/`conditionsRequirement`).
+const adaptConditionsRead = (conditions) => ({
+  assigned: conditions?.assigned_if ?? undefined,
+  optional: conditions?.optional_if ?? undefined,
 });
 
-// Fetch the groups assigned to the administration.
-const groupIds = computed(() => existingAdministrationData.value?.minimalOrgs?.groups ?? []);
+// Normalize a nullish condition to `undefined` so the write payload omits the field
+// entirely rather than sending an explicit `null` (the upsert contract treats an absent
+// field as "no condition"). Non-nullish values pass through unchanged.
+const adaptConditionsWrite = (condition) => (condition === undefined || condition === null ? undefined : condition);
 
-const { data: existingGroupData } = useGroupsQuery(groupIds, {
-  enabled: initialized,
-});
-
-// Fetch the families assigned to the administration.
-const familyIds = computed(() => existingAdministrationData.value?.minimalOrgs?.families ?? []);
-
-const { data: existingFamiliesData } = useFamiliesQuery(familyIds, {
-  enabled: initialized,
-});
+// Pre-existing assessment info supplied to the TaskPicker for conditions display.
+const existingAssessments = computed(() =>
+  (existingTaskVariants.value ?? []).map((tv) => ({
+    variantId: tv.id,
+    taskId: tv.task.id,
+    conditions: adaptConditionsRead(tv.conditions),
+  })),
+);
 
 // +------------------------------------------------------------------------------------------------------------------+
 // | Form state and validation rules
@@ -325,7 +327,6 @@ const { data: existingFamiliesData } = useFamiliesQuery(familyIds, {
 let noConsent = ref('');
 
 const submitted = ref(false);
-const isTestData = ref(false);
 const statePopulated = ref(false);
 
 const state = reactive({
@@ -334,16 +335,12 @@ const state = reactive({
   dateStarted: null,
   dateClosed: null,
   sequential: null,
-  legal: null,
   consent: null,
   assent: null,
   districts: [],
   schools: [],
   classes: [],
   groups: [],
-  families: [],
-  amount: '',
-  expectedTime: '',
 });
 
 const rules = {
@@ -352,8 +349,8 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(noConsent.value === '') },
-  assent: { requiredIf: requiredIf(noConsent.value === '') },
+  consent: { requiredIf: requiredIf(() => noConsent.value === '') },
+  assent: { requiredIf: requiredIf(() => noConsent.value === '') },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -377,15 +374,12 @@ const minEndDate = computed(() => {
 // +------------------------------------------------------------------------------------------------------------------+
 // | Org Selection
 // +------------------------------------------------------------------------------------------------------------------+
-const orgsList = computed(() => {
-  return {
-    districts: existingDistrictsData.value,
-    schools: existingSchoolsData.value,
-    classes: existingClassesData.value,
-    groups: existingGroupData.value,
-    families: existingFamiliesData.value,
-  };
-});
+const orgsList = computed(() => ({
+  districts: existingAssignees.value?.districts ?? [],
+  schools: existingAssignees.value?.schools ?? [],
+  classes: existingAssignees.value?.classes ?? [],
+  groups: existingAssignees.value?.groups ?? [],
+}));
 
 const selection = (selected) => {
   for (const [key, value] of _toPairs(selected)) {
@@ -404,14 +398,12 @@ const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
 
-const handleFoundVariant = (assessment, allVariants) => {
-  const { conditions: assessmentConditions = undefined, params: assessmentParams, taskId } = assessment;
-  const allVariantsForThisTask = _filter(allVariants, (variant) => variant.task.id === taskId);
-  const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
+const handleFoundVariant = (assessment, allVariantInfo) => {
+  const found = _find(allVariantInfo, (variant) => variant.id === assessment.variantId);
   if (found) {
     const clonedFound = _cloneDeep(found);
-    // Set conditions from assessment, or undefined if no conditions exist
-    clonedFound.variant.conditions = !_isEmpty(assessmentConditions) ? assessmentConditions : undefined;
+    // Attach the assignment conditions for this administration, if any.
+    clonedFound.variant.conditions = !_isEmpty(assessment.conditions) ? assessment.conditions : undefined;
     preSelectedVariants.value = _union(preSelectedVariants.value, [clonedFound]);
     variants.value = _union(variants.value, [clonedFound]);
   }
@@ -421,18 +413,19 @@ const handleVariantsChanged = (newVariants) => {
   variants.value = newVariants;
 };
 
-const handleConsentSelected = (newConsentAssent) => {
-  if (newConsentAssent !== 'No Consent') {
+const handleConsentSelected = (selectionResult) => {
+  if (selectionResult === 'No Consent') {
+    noConsent.value = 'No Consent';
+    state.consent = 'No Consent';
+    state.assent = 'No Consent';
+  } else if (selectionResult === '') {
     noConsent.value = '';
-    state.consent = newConsentAssent.consent;
-    state.assent = newConsentAssent.assent;
-    state.amount = newConsentAssent.amount;
-    state.expectedTime = newConsentAssent.expectedTime;
+    state.consent = null;
+    state.assent = null;
   } else {
-    // Set to "No Consent"
-    noConsent.value = newConsentAssent;
-    state.consent = newConsentAssent;
-    state.assent = newConsentAssent;
+    noConsent.value = '';
+    state.consent = selectionResult.consent;
+    state.assent = selectionResult.assent;
   }
 };
 
@@ -457,11 +450,6 @@ const checkForRequiredOrgs = (orgs) => {
 // +------------------------------------------------------------------------------------------------------------------+
 // | Form submission
 // +------------------------------------------------------------------------------------------------------------------+
-const removeNull = (obj) => {
-  // eslint-disable-next-line no-unused-vars
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== null));
-};
-
 const removeUndefined = (obj) => {
   // eslint-disable-next-line no-unused-vars
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
@@ -471,25 +459,15 @@ const submit = async () => {
   submitted.value = true;
   const isFormValid = await v$.value.$validate();
   if (!isFormValid) {
-    console.log('form is invalid');
     return;
   }
 
-  const submittedAssessments = variants.value.map((assessment) =>
-    removeUndefined({
-      variantId: assessment.variant.id,
-      variantName: assessment.variant.name,
-      taskId: assessment.task.id,
-      params: toRaw(assessment.variant.params),
-      // Exclude conditions key if there are no conditions to be set.
-      ...(!_isEmpty(assessment.variant.conditions) && { conditions: toRaw(assessment.variant.conditions) }),
-    }),
-  );
+  // One variant per task — check uniqueness on the selected variants' tasks.
+  const selectedTasks = variants.value.map((assessment) => ({ taskId: assessment.task.id }));
+  const tasksUnique = checkForUniqueTasks(selectedTasks);
 
-  const tasksUnique = checkForUniqueTasks(submittedAssessments);
-
-  if (!tasksUnique || _isEmpty(submittedAssessments)) {
-    getNonUniqueTasks(submittedAssessments);
+  if (!tasksUnique || _isEmpty(variants.value)) {
+    getNonUniqueTasks(selectedTasks);
     confirm.require({
       group: 'task-errors',
       header: 'Task Selections',
@@ -500,15 +478,21 @@ const submit = async () => {
     return;
   }
 
-  const orgs = {
-    districts: toRaw(state.districts).map((org) => org.id),
-    schools: toRaw(state.schools).map((org) => org.id),
-    classes: toRaw(state.classes).map((org) => org.id),
-    groups: toRaw(state.groups).map((org) => org.id),
-    families: toRaw(state.families).map((org) => org.id),
-  };
+  const taskVariants = variants.value.map((assessment, index) =>
+    removeUndefined({
+      taskVariantId: assessment.variant.id,
+      orderIndex: index,
+      conditionsEligibility: adaptConditionsWrite(assessment.variant.conditions?.assigned),
+      conditionsRequirement: adaptConditionsWrite(assessment.variant.conditions?.optional),
+    }),
+  );
 
-  const orgsValid = checkForRequiredOrgs(orgs);
+  // The write contract merges districts + schools into `orgs`; classes and groups are separate.
+  const orgs = [...toRaw(state.districts).map((org) => org.id), ...toRaw(state.schools).map((org) => org.id)];
+  const classes = toRaw(state.classes).map((org) => org.id);
+  const groups = toRaw(state.groups).map((org) => org.id);
+
+  const orgsValid = checkForRequiredOrgs([orgs, classes, groups]);
   if (!orgsValid) {
     confirm.require({
       group: 'org-errors',
@@ -520,51 +504,55 @@ const submit = async () => {
     return;
   }
 
-  const dateClose = new Date(state.dateClosed);
-  dateClose.setHours(23, 59, 59, 999);
+  const dateEnd = new Date(state.dateClosed);
+  dateEnd.setHours(23, 59, 59, 999);
 
-  const args = {
+  const agreements =
+    noConsent.value === 'No Consent' ? [] : [state.consent, state.assent].filter((id) => id && id !== 'No Consent');
+
+  const body = {
     name: toRaw(state).administrationName,
-    publicName: toRaw(state).administrationPublicName,
-    assessments: submittedAssessments,
-    dateOpen: toRaw(state).dateStarted,
-    dateClose,
-    sequential: toRaw(state).sequential,
-    orgs: orgs,
-    isTestData: isTestData.value,
-    legal: {
-      consent: toRaw(state).consent ?? null,
-      assent: toRaw(state).assent ?? null,
-      amount: toRaw(state).amount ?? '',
-      expectedTime: toRaw(state).expectedTime ?? '',
-    },
+    namePublic: toRaw(state).administrationPublicName,
+    dateStart: new Date(state.dateStarted).toISOString(),
+    dateEnd: dateEnd.toISOString(),
+    isOrdered: toRaw(state).sequential,
+    orgs,
+    classes,
+    groups,
+    taskVariants,
+    agreements,
   };
 
-  // Only overwrite the given adminId if we are in edit mode.
-  if (props.formType === ADMINISTRATION_FORM_TYPES.EDIT && props.adminId) args.administrationId = props.adminId;
+  // Duplicate mode creates a new administration (POST); only edit targets an existing id (PATCH).
+  const administrationId = props.formType === ADMINISTRATION_FORM_TYPES.EDIT ? props.adminId : undefined;
 
-  await upsertAdministration(args, {
-    onSuccess: () => {
-      toast.add({
-        severity: TOAST_SEVERITIES.SUCCESS,
-        summary: 'Success',
-        detail: props.adminId ? 'Administration updated' : 'Administration created',
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
+  // mutate() is fire-and-forget in TanStack Query v5 (returns void); the onSuccess/onError
+  // callbacks below handle completion, so there is nothing to await here.
+  upsertAdministration(
+    { administrationId, body },
+    {
+      onSuccess: () => {
+        toast.add({
+          severity: TOAST_SEVERITIES.SUCCESS,
+          summary: 'Success',
+          detail: administrationId ? 'Administration updated' : 'Administration created',
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
 
-      router.push({ path: APP_ROUTES.HOME });
+        router.push({ path: APP_ROUTES.HOME });
+      },
+      onError: (error) => {
+        toast.add({
+          severity: TOAST_SEVERITIES.ERROR,
+          summary: 'Error',
+          detail: error.message,
+          life: TOAST_DEFAULT_LIFE_DURATION,
+        });
+
+        console.error('Error saving administration:', error.message);
+      },
     },
-    onError: (error) => {
-      toast.add({
-        severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Error',
-        detail: error.message,
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-
-      console.error('Error creating administration:', error.message);
-    },
-  });
+  );
 };
 
 // +------------------------------------------------------------------------------------------------------------------+
@@ -585,38 +573,45 @@ onMounted(async () => {
 });
 
 watch(
-  [existingAdministrationData, allVariants],
-  ([adminInfo, allVariantInfo]) => {
-    if (adminInfo && !_isEmpty(allVariantInfo)) {
-      // Exclude name and publicName from duplicate formType
-      if (props.formType === ADMINISTRATION_FORM_TYPES.DUPLICATE) {
-        state.administrationName = `${adminInfo.name} - Copy`;
-        state.administrationPublicName = `${adminInfo.publicName} - Copy`;
-      } else {
-        state.administrationName = adminInfo.name;
-        state.administrationPublicName = adminInfo.publicName;
-      }
-      // For each orgtype, find the orgs in adminInfo.minimalOrgs and add them to state
-      _forEach(ORG_TYPES, (orgType) => {
-        if (!_isEmpty(adminInfo.minimalOrgs?.[orgType])) {
-          state[orgType] = adminInfo.minimalOrgs[orgType].map((orgId) => ({ id: orgId }));
-        } else {
-          state[orgType] = [];
-        }
-      });
-      state.dateStarted = new Date(adminInfo.dateOpened);
-      state.dateClosed = new Date(adminInfo.dateClosed);
-      _forEach(adminInfo.assessments, (assessment) => {
-        handleFoundVariant(assessment, allVariantInfo);
-      });
-      state.legal = adminInfo.legal;
-      state.consent = adminInfo?.legal?.consent ?? null;
-      state.assent = adminInfo?.legal?.assent ?? null;
-      isTestData.value = adminInfo.testData;
-      state.sequential = adminInfo.sequential;
+  [existingAdministration, existingAssignees, existingTaskVariants, existingAgreements, allVariants],
+  ([adminInfo, assignees, taskVariants, agreements, allVariantInfo]) => {
+    if (!adminInfo || _isEmpty(allVariantInfo)) return;
 
-      if (state.consent === 'No Consent') {
-        noConsent.value = state.consent;
+    // Exclude name and publicName from duplicate formType
+    if (props.formType === ADMINISTRATION_FORM_TYPES.DUPLICATE) {
+      state.administrationName = `${adminInfo.name} - Copy`;
+      state.administrationPublicName = `${adminInfo.publicName} - Copy`;
+    } else {
+      state.administrationName = adminInfo.name;
+      state.administrationPublicName = adminInfo.publicName;
+    }
+
+    // The assignees endpoint returns full `{ id, name, ... }` objects per bucket.
+    state.districts = assignees?.districts ?? [];
+    state.schools = assignees?.schools ?? [];
+    state.classes = assignees?.classes ?? [];
+    state.groups = assignees?.groups ?? [];
+
+    state.dateStarted = new Date(adminInfo.dates.start);
+    state.dateClosed = new Date(adminInfo.dates.end);
+
+    _forEach(taskVariants ?? [], (tv) => {
+      handleFoundVariant({ variantId: tv.id, conditions: adaptConditionsRead(tv.conditions) }, allVariantInfo);
+    });
+
+    state.sequential = adminInfo.isOrdered;
+
+    // Pre-fill consent/assent from the administration's assigned agreements.
+    // No assigned agreements means the administration requires no consent/assent.
+    if (Array.isArray(agreements)) {
+      if (agreements.length === 0) {
+        noConsent.value = 'No Consent';
+        state.consent = 'No Consent';
+        state.assent = 'No Consent';
+      } else {
+        noConsent.value = '';
+        state.consent = agreements.find((agreement) => agreement.agreementType === AGREEMENT_TYPES.CONSENT)?.id ?? null;
+        state.assent = agreements.find((agreement) => agreement.agreementType === AGREEMENT_TYPES.ASSENT)?.id ?? null;
       }
     }
   },
@@ -643,12 +638,6 @@ watch(
 .return-button {
   display: block;
   margin: 1rem 1.75rem;
-}
-
-.p-checkbox-box.p-highlight {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-  color: white;
 }
 
 .loading-container {
@@ -696,73 +685,6 @@ watch(
   display: none !important;
 }
 
-#rectangle {
-  background: #fcfcfc;
-  border-radius: 0.3125rem;
-  border-style: solid;
-  border-width: 0.0625rem;
-  border-color: #e5e5e5;
-  margin: 0 1.75rem;
-  padding-top: 1.75rem;
-  padding-left: 1.875rem;
-  text-align: left;
-  overflow: hidden;
-
-  hr {
-    margin-top: 2rem;
-    margin-left: -1.875rem;
-  }
-
-  #heading {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    color: #000000;
-    font-size: 1.625rem;
-    line-height: 2.0425rem;
-  }
-
-  #section-heading {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    font-size: 1.125rem;
-    line-height: 1.5681rem;
-    color: #525252;
-  }
-
-  #administration-name {
-    height: 100%;
-    border-radius: 0.3125rem;
-    border-width: 0.0625rem;
-    border-color: #e5e5e5;
-  }
-
-  #section {
-    margin-top: 1.375rem;
-  }
-
-  #section-content {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    font-size: 0.875rem;
-    line-height: 1.22rem;
-    color: #525252;
-    margin: 0.625rem 0rem;
-  }
-
-  .p-dropdown-label {
-    font-family: 'Source Sans Pro', sans-serif;
-    color: #c4c4c4;
-  }
-
-  ::placeholder {
-    font-family: 'Source Sans Pro', sans-serif;
-    color: #c4c4c4;
-  }
-
-  .hide {
-    display: none;
-  }
-}
 .p-radiobutton.p-component.p-radiobutton-checked {
   position: relative;
   width: 20px;
