@@ -394,4 +394,62 @@ describe('ListUsers.vue — edit flow migration', () => {
       expect(mockUpdateUserMutate).not.toHaveBeenCalled();
     });
   });
+
+  describe('modal close resets showPassword', () => {
+    it('reopening after closing from the password form shows the profile form, not the password form', async () => {
+      const wrapper = mountListUsers();
+
+      // Open the modal for a row and load its full profile so the profile form
+      // (v-else-if="!showPassword && editUserProfile") is renderable.
+      wrapper.vm.onEditButtonClick(LEAN_ROW);
+      editUserProfile.value = FULL_PROFILE;
+      await nextTick();
+
+      // Switch to the password form, mirroring the "Change Password" button.
+      wrapper.vm.showPassword = true;
+      await nextTick();
+
+      // Sanity: the password form is showing and the profile form is hidden.
+      expect(wrapper.vm.showPassword).toBe(true);
+      expect(wrapper.find('[data-testid="edit-form"]').exists()).toBe(false);
+
+      // Close via closeModal (the cleanup path the X-button now routes through).
+      wrapper.vm.closeModal();
+      await nextTick();
+
+      // closeModal clears all modal state, including showPassword.
+      expect(wrapper.vm.isModalEnabled).toBe(false);
+      expect(wrapper.vm.selectedUserId).toBe(null);
+      expect(wrapper.vm.showPassword).toBe(false);
+
+      // Reopen for the next user and reload the profile.
+      wrapper.vm.onEditButtonClick(LEAN_ROW);
+      editUserProfile.value = FULL_PROFILE;
+      await nextTick();
+
+      // The profile form is shown (not the leftover password form).
+      expect(wrapper.vm.showPassword).toBe(false);
+      expect(wrapper.find('[data-testid="edit-form"]').exists()).toBe(true);
+    });
+
+    it('dismissing the modal via @modal-closed routes through closeModal and resets showPassword', async () => {
+      const wrapper = mountListUsers();
+
+      wrapper.vm.onEditButtonClick(LEAN_ROW);
+      editUserProfile.value = FULL_PROFILE;
+      await nextTick();
+
+      wrapper.vm.showPassword = true;
+      await nextTick();
+      expect(wrapper.vm.showPassword).toBe(true);
+
+      // Emit the modal's close event from the stub; the handler is closeModal.
+      await wrapper.findComponent(RoarModalStub).vm.$emit('modalClosed');
+      await nextTick();
+
+      expect(wrapper.vm.isModalEnabled).toBe(false);
+      expect(wrapper.vm.selectedUserId).toBe(null);
+      expect(wrapper.vm.showPassword).toBe(false);
+    });
+  });
 });

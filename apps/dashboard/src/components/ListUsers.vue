@@ -87,7 +87,7 @@
         title="Edit User Information"
         subtitle="Modify, add, or remove user information"
         :is-enabled="isModalEnabled"
-        @modal-closed="isModalEnabled = false"
+        @modal-closed="closeModal"
       >
         <AppSpinner v-if="!showPassword && isLoadingEditUser" />
         <EditUsersForm
@@ -170,6 +170,7 @@
                 tabindex="0"
                 class="p-2 text-white border-none border-round bg-primary hover:surface-400"
                 label="Save Password"
+                :disabled="isSubmitting"
                 @click="updatePassword"
                 ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
               ></PvButton>
@@ -396,6 +397,7 @@ const closeModal = () => {
   isModalEnabled.value = false;
   localUserData.value = null;
   selectedUserId.value = null;
+  showPassword.value = false;
 };
 
 /**
