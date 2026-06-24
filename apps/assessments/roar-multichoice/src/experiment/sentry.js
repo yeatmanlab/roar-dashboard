@@ -1,22 +1,16 @@
-import * as Sentry from "@sentry/browser";
-import {
-  captureConsoleIntegration,
-  contextLinesIntegration,
-  extraErrorDataIntegration,
-} from "@sentry/integrations";
+import * as Sentry from '@sentry/browser';
+import { captureConsoleIntegration, contextLinesIntegration, extraErrorDataIntegration } from '@sentry/integrations';
 
-const game = "roar-multichoice";
-const gameShortened = "multichoice";
-const regexRoarApp = new RegExp(
-  `^https:\\/\\/${game}--pr\\d+-\\w+\\.web\\.app\\/`,
-);
+const game = 'roar-multichoice';
+const gameShortened = 'multichoice';
+const regexRoarApp = new RegExp(`^https:\\/\\/${game}--pr\\d+-\\w+\\.web\\.app\\/`);
 const regexRoarStaging = new RegExp(
   `^https:\\/\\/roar-staging\\.web\\.app\\/game\\/${gameShortened}|https:\\/\\/roar-staging--pr\\d+-\\w+\\.web\\.app\\/`,
 );
 
 export function initSentry() {
   Sentry.init({
-    dsn: "https://dfe5374b0cffde34efd7a8208d7c7121@o4505913837420544.ingest.sentry.io/4506656405716992",
+    dsn: 'https://dfe5374b0cffde34efd7a8208d7c7121@o4505913837420544.ingest.sentry.io/4506656405716992',
     integrations: [
       Sentry.replayIntegration({
         maskAllText: true,
@@ -24,7 +18,7 @@ export function initSentry() {
       }),
       Sentry.browserTracingIntegration(),
       captureConsoleIntegration({
-        levels: ["warning", "error", "debug", "assert"],
+        levels: ['warning', 'error', 'debug', 'assert'],
       }),
       contextLinesIntegration(),
       extraErrorDataIntegration(),
@@ -36,11 +30,11 @@ export function initSentry() {
       regexRoarApp,
       regexRoarStaging,
       `https://roar.education/game/${gameShortened}`,
-      "https://roar.education/game/morphology",
-      "https://roar.education/game/cva",
-      "https://roar-staging.web.app/game/morphology",
-      "https://roar-staging.web.app/game/cva",
-      "localhost",
+      'https://roar.education/game/morphology',
+      'https://roar.education/game/cva',
+      'https://roar-staging.web.app/game/morphology',
+      'https://roar-staging.web.app/game/cva',
+      'localhost',
     ],
 
     // Session Replay

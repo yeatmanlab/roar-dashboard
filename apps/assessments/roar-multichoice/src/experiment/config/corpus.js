@@ -1,14 +1,14 @@
 /* eslint-disable no-plusplus */
-import i18next from "i18next";
+import i18next from 'i18next';
 // eslint-disable-next-line import/no-duplicates
-import "../i18n";
+import '../i18n';
 // eslint-disable-next-line import/no-duplicates
-import Papa from "papaparse";
-import store from "store2";
-import { shuffle } from "../helperFunctions";
+import Papa from 'papaparse';
+import store from 'store2';
+import { shuffle } from '../helperFunctions';
 // eslint-disable-next-line import/no-duplicates
-import { multichoiceCorpus } from "../i18n";
-import "regenerator-runtime/runtime";
+import { multichoiceCorpus } from '../i18n';
+import 'regenerator-runtime/runtime';
 
 // eslint-disable-next-line import/no-mutable-exports
 export let corpora;
@@ -23,13 +23,8 @@ const transformCSV = (csvInput, isPractice) =>
     const newRow = {
       item: row.item || row.Item,
       // eslint-disable-next-line no-nested-ternary
-      itemId:
-        row.corpus && row.id
-          ? `${row.corpus}-${row.id}`
-          : row.itemId
-          ? row.itemId
-          : "practiceItem",
-      itemGroup: row.itemGroup || "core",
+      itemId: row.corpus && row.id ? `${row.corpus}-${row.id}` : row.itemId ? row.itemId : 'practiceItem',
+      itemGroup: row.itemGroup || 'core',
       target: row.target || row.Target || row.answer || row.Answer,
       distractor1: row.distractor1 || row.Distractor1,
       distractor2: row.distractor2 || row.Distractor2,
@@ -40,23 +35,15 @@ const transformCSV = (csvInput, isPractice) =>
       corpusId: row.corpus,
       decorated: row.decorated,
     };
-    [
-      "total",
-      "core",
-      "new",
-      "spare",
-      "practice",
-      "secondary",
-      "composite_comprehension",
-    ].forEach((op) => {
-      ["a", "b", "c", "d"].forEach((suffix) => {
+    ['total', 'core', 'new', 'spare', 'practice', 'secondary', 'composite_comprehension'].forEach((op) => {
+      ['a', 'b', 'c', 'd'].forEach((suffix) => {
         const key = `${op}.${suffix}`;
         newRow[key] = row[key];
       });
     });
     // Copy core zetas to composite_comprehension if not already set
-    if (!newRow["composite_comprehension.a"]) {
-      ["a", "b", "c", "d"].forEach((suffix) => {
+    if (!newRow['composite_comprehension.a']) {
+      ['a', 'b', 'c', 'd'].forEach((suffix) => {
         newRow[`composite_comprehension.${suffix}`] = row[`core.${suffix}`];
       });
     }
@@ -65,13 +52,8 @@ const transformCSV = (csvInput, isPractice) =>
     return accum;
   }, []);
 
-export async function loadCorpus(
-  practiceCorpus,
-  stimulusCorpus,
-  sequentialPractice,
-  sequentialStimulus,
-) {
-  const currentTask = store.session.get("config").task;
+export async function loadCorpus(practiceCorpus, stimulusCorpus, sequentialPractice, sequentialStimulus) {
+  const currentTask = store.session.get('config').task;
   const csvAssets = {
     // storyLion: multichoiceCorpus[i18next.language].storyLion,
     storyLion: multichoiceCorpus[i18next.language].task[currentTask],
@@ -114,9 +96,9 @@ export async function loadCorpus(
 
     try {
       await parseMultipleCSVs(urls);
-      store.session.set("maxStimulusTrials", maxStimlulusTrials);
+      store.session.set('maxStimulusTrials', maxStimlulusTrials);
     } catch (error) {
-      console.error("Error:", error);
+      console.error('Error:', error);
     }
   }
 
@@ -124,7 +106,7 @@ export async function loadCorpus(
 
   const transformStoryCSV = (csvInput) =>
     csvInput.reduce((accum, row) => {
-      if (store.session.get("config").task === "cva") {
+      if (store.session.get('config').task === 'cva') {
         const newRow = {
           label: row.label,
           screenStyle: row.screenStyle,
@@ -150,24 +132,16 @@ export async function loadCorpus(
         header1: row.header1,
         text1: row.text1,
       };
-      [
-        "total",
-        "core",
-        "new",
-        "spare",
-        "practice",
-        "secondary",
-        "composite_comprehension",
-      ].forEach((op) => {
-        ["a", "b", "c", "d"].forEach((suffix) => {
+      ['total', 'core', 'new', 'spare', 'practice', 'secondary', 'composite_comprehension'].forEach((op) => {
+        ['a', 'b', 'c', 'd'].forEach((suffix) => {
           const key = `${op}.${suffix}`;
           newRow[key] = row[key];
         });
       });
       // Fallback: Copy core parameters to composite_comprehension if not already set
       // This handles older CSVs that don't have explicit composite_comprehension columns
-      if (!newRow["composite_comprehension.a"]) {
-        ["a", "b", "c", "d"].forEach((suffix) => {
+      if (!newRow['composite_comprehension.a']) {
+        ['a', 'b', 'c', 'd'].forEach((suffix) => {
           newRow[`composite_comprehension.${suffix}`] = row[`core.${suffix}`];
         });
       }
@@ -190,22 +164,22 @@ export async function loadCorpus(
     story: csvTransformed.storyROARLion,
   };
 
-  store.session.set("corpora", corpora);
+  store.session.set('corpora', corpora);
 
-  const { numberOfTrials } = store.session.get("config");
+  const { numberOfTrials } = store.session.get('config');
   if (numberOfTrials > stimulus.length) {
     console.log(
-      "Number of trials exceeds the number of stimuli in the corpus, reducing the number of trials to match the number of stimuli.",
+      'Number of trials exceeds the number of stimuli in the corpus, reducing the number of trials to match the number of stimuli.',
     );
-    store.session.set("config", {
-      ...store.session.get("config"),
+    store.session.set('config', {
+      ...store.session.get('config'),
       numberOfTrials: corpora.stimulus.length,
     });
   }
 
   // Introduction & Story
   const storyAll = {
-    name: "corpusStory",
+    name: 'corpusStory',
     corpusStory: csvTransformed.storyROARLion,
   };
 

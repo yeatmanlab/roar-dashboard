@@ -1,30 +1,30 @@
-import store from "store2";
-import jsPsychCallFunction from "@jspsych/plugin-call-function";
-import { jsPsych } from "../jsPsych";
+import store from 'store2';
+import jsPsychCallFunction from '@jspsych/plugin-call-function';
+import { jsPsych } from '../jsPsych';
 
 export const initAppTimer = () => {
-  const cfg = store.session.get("config") || {};
+  const cfg = store.session.get('config') || {};
   const maxTime = cfg.maxTime;
-  store.session.set("maxTimeReached", false);
+  store.session.set('maxTimeReached', false);
 
   if (maxTime) {
     const startMs = Date.now();
     const maxTimeMs = maxTime * 60_000;
 
-    store.session.set("appTimerStartMs", startMs);
+    store.session.set('appTimerStartMs', startMs);
 
     const timerId = setInterval(() => {
       if (Date.now() - startMs >= maxTimeMs) {
-        store.session.set("maxTimeReached", true);
+        store.session.set('maxTimeReached', true);
         clearInterval(timerId);
         jsPsych.setProgressBar(1);
       }
     }, 1000);
 
-    store.session.set("maxTimerId", timerId);
+    store.session.set('maxTimerId', timerId);
   } else {
-    store.session.remove("appTimerStartMs");
-    store.session.remove("maxTimerId");
+    store.session.remove('appTimerStartMs');
+    store.session.remove('maxTimerId');
   }
 };
 
@@ -44,38 +44,37 @@ export const startAppTimer = {
 export const clearAppTimer = {
   type: jsPsychCallFunction,
   func: () => {
-    const timerId = store.session.get("maxTimerId");
+    const timerId = store.session.get('maxTimerId');
     if (timerId) clearInterval(timerId);
-    store.session.remove("maxTimerId");
+    store.session.remove('maxTimerId');
   },
 };
 
-export const isMaxTimeoutReached = () => !!store.session.get("maxTimeReached");
+export const isMaxTimeoutReached = () => !!store.session.get('maxTimeReached');
 
 /**
  * Derives total trials from config.numberOfTrials OR from nItemsCore/nItemsSecondary OR from stimulusCountList sum as a fallback.
  * Ensures we never divide by zero.
  */
 const getTotalTrials = () => {
-  const cfg = store.session.get("config") || {};
+  const cfg = store.session.get('config') || {};
 
   // Priority 1: Use explicit numberOfTrials if provided
-  if (typeof cfg.numberOfTrials === "number" && cfg.numberOfTrials > 0) {
+  if (typeof cfg.numberOfTrials === 'number' && cfg.numberOfTrials > 0) {
     return cfg.numberOfTrials;
   }
 
   // Priority 2: Calculate based on nItemsCore + nItemsSecondary (initial counts, not remaining)
   const nItemsCore = cfg.nItemsCore;
   const nItemsSecondary = cfg.nItemsSecondary;
-  if (typeof nItemsCore === "number") {
-    const secondaryCount =
-      typeof nItemsSecondary === "number" ? nItemsSecondary : 0;
+  if (typeof nItemsCore === 'number') {
+    const secondaryCount = typeof nItemsSecondary === 'number' ? nItemsSecondary : 0;
     const total = nItemsCore + secondaryCount;
     return total;
   }
 
   // Priority 3: Fall back to stimulusCountList sum
-  const stimulusCountList = store.session.get("stimulusCountList") || [];
+  const stimulusCountList = store.session.get('stimulusCountList') || [];
   const total = stimulusCountList.reduce((a, b) => a + (Number(b) || 0), 0);
   return total || 1; // Ensure we never return 0
 };
@@ -89,16 +88,16 @@ const clamp01 = (x) => Math.max(0, Math.min(1, x));
  */
 const getItemProgress = () => {
   const total = getTotalTrials();
-  const itemsCompleted = store.session.get("itemsCompleted") || 0;
+  const itemsCompleted = store.session.get('itemsCompleted') || 0;
   const progress = clamp01(itemsCompleted / total);
   return progress;
 };
 
 /** Computes progress by TIME: elapsed / maxTime (only if maxTime exists) */
 const getTimeProgress = () => {
-  const cfg = store.session.get("config") || {};
+  const cfg = store.session.get('config') || {};
   const maxTime = cfg.maxTime;
-  const startMs = store.session.get("appTimerStartMs");
+  const startMs = store.session.get('appTimerStartMs');
   if (!maxTime || !startMs) return null;
   const elapsed = Date.now() - startMs;
   return clamp01(elapsed / (maxTime * 60_000));

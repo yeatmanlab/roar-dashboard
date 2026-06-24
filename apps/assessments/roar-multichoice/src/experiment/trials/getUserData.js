@@ -1,44 +1,44 @@
-import jsPsychSurveyText from "@jspsych/plugin-survey-text";
-import jsPsychSurveyHtmlForm from "@jspsych/plugin-survey-html-form";
-import jsPsychSurveyMultiSelect from "@jspsych/plugin-survey-multi-select";
-import store from "store2";
+import jsPsychSurveyText from '@jspsych/plugin-survey-text';
+import jsPsychSurveyHtmlForm from '@jspsych/plugin-survey-html-form';
+import jsPsychSurveyMultiSelect from '@jspsych/plugin-survey-multi-select';
+import store from 'store2';
 
 const getLabId = {
   type: jsPsychSurveyText,
   questions: [
     {
-      prompt: "Lab ID:",
-      name: "labId",
+      prompt: 'Lab ID:',
+      name: 'labId',
       required: true,
     },
   ],
   on_finish: (data) => {
-    store.session.get("config").labId = data.response.labId;
+    store.session.get('config').labId = data.response.labId;
   },
 };
 
 const ifGetLabId = {
   timeline: [getLabId],
-  conditional_function: () => store.session.get("config").labId === null,
+  conditional_function: () => store.session.get('config').labId === null,
 };
 
 const getPid = {
   type: jsPsychSurveyText,
   questions: [
     {
-      prompt: "Participant ID:",
-      name: "pid",
+      prompt: 'Participant ID:',
+      name: 'pid',
       required: true,
     },
   ],
   on_finish: (data) => {
-    store.session.get("config").pid = data.response.pid;
+    store.session.get('config').pid = data.response.pid;
   },
 };
 
 const ifGetPid = {
   timeline: [getPid],
-  conditional_function: () => store.session.get("config").pid === null,
+  conditional_function: () => store.session.get('config').pid === null,
 };
 
 const consent_form = {
@@ -86,8 +86,8 @@ const consent_form = {
         `<b>I agree to participate in this research. Participation in this research is voluntary, and I can stop at any time without penalty. <br> I feel that I understand what I am getting into, and I know I am free to leave the experiment at any time by simply closing the web browser.</b>`,
       ],
       required: true,
-      required_message: "You must check the box to continue",
-      name: "Agree",
+      required_message: 'You must check the box to continue',
+      name: 'Agree',
     },
   ],
 };
@@ -96,19 +96,17 @@ export const ifConsentForm = {
   timeline: [consent_form],
   conditional_function: () =>
     Boolean(
-      (store.session.get("config").userMode === "demo" ||
-        store.session.get("config").taskVariant === "otherLabs" ||
-        store.session.get("config").taskVariant === "prolific") &&
-        store.session.get("config").consent === true,
+      (store.session.get('config').userMode === 'demo' ||
+        store.session.get('config').taskVariant === 'otherLabs' ||
+        store.session.get('config').taskVariant === 'prolific') &&
+      store.session.get('config').consent === true,
     ),
 };
 
 /* demo survey */
 const survey_pid = {
   type: jsPsychSurveyHtmlForm,
-  preamble: () =>
-    "<div><h1>Please share a bit more to help us understand your data!</h1>" +
-    "<p>[Optional]</p></div>",
+  preamble: () => '<div><h1>Please share a bit more to help us understand your data!</h1>' + '<p>[Optional]</p></div>',
   html: () => `
   <div className="item">
   <span htmlFor="instructions" class = "survey_form_text">How old are you? (Please type a number)</span>
@@ -162,16 +160,16 @@ const survey_pid = {
   on_finish: (data) => {
     const tmpMetadata = {};
     Object.keys(data).forEach((field) => {
-      if (data.response[field] === "") {
+      if (data.response[field] === '') {
         tmpMetadata[field] = null;
-      } else if (field === "retake" || field === "ell") {
+      } else if (field === 'retake' || field === 'ell') {
         tmpMetadata[field] = parseInt(data.response[field], 10);
       } else {
         tmpMetadata[field] = data.response[field];
       }
     });
-    tmpMetadata.labId = store.session.get("config").labId;
-    store.session.get("config").userMetadata = tmpMetadata;
+    tmpMetadata.labId = store.session.get('config').labId;
+    store.session.get('config').userMetadata = tmpMetadata;
   },
 };
 
@@ -179,23 +177,18 @@ export const ifGetSurvey = {
   timeline: [survey_pid],
   conditional_function: () =>
     Boolean(
-      (store.session.get("config").userMode === "demo" ||
-        store.session.get("config").taskVariant === "otherLabs" ||
-        store.session.get("config").taskVariant === "prolific") &&
-        store.session.get("config").consent === true,
+      (store.session.get('config').userMode === 'demo' ||
+        store.session.get('config').taskVariant === 'otherLabs' ||
+        store.session.get('config').taskVariant === 'prolific') &&
+      store.session.get('config').consent === true,
     ),
 };
 
 export const if_get_pid = {
   timeline: [ifGetLabId, ifGetPid],
   conditional_function: function () {
-    return store.session.get("config").taskVariant === "otherLabs";
+    return store.session.get('config').taskVariant === 'otherLabs';
   },
 };
 
-export const getUserDataTimeline = [
-  ifGetLabId,
-  ifGetPid,
-  ifConsentForm,
-  ifGetSurvey,
-];
+export const getUserDataTimeline = [ifGetLabId, ifGetPid, ifConsentForm, ifGetSurvey];

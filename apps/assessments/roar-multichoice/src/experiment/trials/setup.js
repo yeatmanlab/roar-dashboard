@@ -1,6 +1,6 @@
 /* eslint-disable arrow-body-style */
-import jsPsychHtmlKeyboardResponse from "@jspsych/plugin-html-keyboard-response";
-import { setNextStimulus } from "../experimentSetup";
+import jsPsychHtmlKeyboardResponse from '@jspsych/plugin-html-keyboard-response';
+import { setNextStimulus } from '../experimentSetup';
 
 // choosing the next stimulus from the corpus occurs during the fixation trial
 // prior to the actual display of the stimulus, where user response is collected
@@ -26,12 +26,12 @@ const setupSurveyTrials = setupSurveyData.map((trial, i) => {
                 <p class='stimulus'> </p>
               </div>`;
     },
-    prompt: "",
-    choices: "NO_KEYS",
+    prompt: '',
+    choices: 'NO_KEYS',
     trial_duration: 10, // store.session.get("config").timing.fixationTime, //TODO fix
 
     data: {
-      task: "fixation",
+      task: 'fixation',
     },
     on_finish: trial.onFinish,
   };

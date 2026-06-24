@@ -7,49 +7,32 @@
 // npm run build:dev
 // firebase deploy --only hosting
 
-import "regenerator-runtime/runtime";
-import store from "store2";
-import { ValidityEvaluator, createEvaluateValidity } from "@bdelab/roar-utils";
-import {
-  getPracticeCount,
-  getStimulusCount,
-  initRoarJsPsych,
-  initRoarTimeline,
-} from "./config/config";
+import 'regenerator-runtime/runtime';
+import store from 'store2';
+import { ValidityEvaluator, createEvaluateValidity } from '@bdelab/roar-utils';
+import { getPracticeCount, getStimulusCount, initRoarJsPsych, initRoarTimeline } from './config/config';
 
 // setup
-import { jsPsych } from "./jsPsych";
-import { preloadTrials } from "./experimentSetup";
+import { jsPsych } from './jsPsych';
+import { preloadTrials } from './experimentSetup';
 // trials
 // eslint-disable-next-line import/no-cycle
-import { ifRealTrialResponse, trialWrapped } from "./trials/stimulus";
-import { setupSurveyMainTrial, setupSurveyPracticeTrial } from "./trials/setup";
+import { ifRealTrialResponse, trialWrapped } from './trials/stimulus';
+import { setupSurveyMainTrial, setupSurveyPracticeTrial } from './trials/setup';
 
-import { exitFullscreen } from "./trials/fullScreen";
-import {
-  subTaskComplete,
-  subTaskInitSurveyMain,
-  subTaskInitSurveyPractice,
-} from "./trials/subTask";
+import { exitFullscreen } from './trials/fullScreen';
+import { subTaskComplete, subTaskInitSurveyMain, subTaskInitSurveyPractice } from './trials/subTask';
 
-import {
-  createPracticeTrials,
-  ifPracticeCorrect,
-  ifPracticeIncorrect,
-} from "./trials/practice";
+import { createPracticeTrials, ifPracticeCorrect, ifPracticeIncorrect } from './trials/practice';
 import {
   endTrial,
   storyBreakList,
   surveyIntroAndInstructions,
   surveyPracticeDone,
   createStory,
-} from "./trials/storySupport";
+} from './trials/storySupport';
 
-import {
-  startAppTimer,
-  clearAppTimer,
-  isMaxTimeoutReached,
-} from "./trials/appTimer";
+import { startAppTimer, clearAppTimer, isMaxTimeoutReached } from './trials/appTimer';
 
 // eslint-disable-next-line import/no-mutable-exports
 export let multichoiceValidityEvaluator;
@@ -63,17 +46,14 @@ export async function buildExperiment(config) {
     responseTimeLowThreshold: 2000,
     accuracyThreshold: 0.5,
     minResponsesRequired: 10,
-    includedReliabilityFlags: [
-      "notEnoughResponses",
-      "accuracyTooLowAndResponseTimeTooFast",
-    ],
+    includedReliabilityFlags: ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
     customValidations: [
       {
-        flag: "accuracyTooLowAndResponseTimeTooFast",
-        logicalOperation: "and",
+        flag: 'accuracyTooLowAndResponseTimeTooFast',
+        logicalOperation: 'and',
         conditions: [
-          (data) => data.existingFlags.includes("accuracyTooLow"),
-          (data) => data.existingFlags.includes("responseTimeTooFast"),
+          (data) => data.existingFlags.includes('accuracyTooLow'),
+          (data) => data.existingFlags.includes('responseTimeTooFast'),
         ],
       },
     ],
@@ -82,8 +62,8 @@ export async function buildExperiment(config) {
   const multichoiceHandleEngagementFlags = (flags, reliable) => {
     // Only update engagement flags for adaptive tasks
     if (config.isAdaptive) {
-      store.session.set("engagementFlags", flags);
-      store.session.set("isReliable", reliable);
+      store.session.set('engagementFlags', flags);
+      store.session.set('isReliable', reliable);
       if (config.firekit.run.started) {
         return config.firekit?.updateEngagementFlags(flags, reliable);
       }
@@ -107,12 +87,7 @@ export async function buildExperiment(config) {
   // stimulusCounts: an array of numbers, each entry defines the number of trials before a mid-subtask break
   let breakNum = 0;
 
-  const pushSubTaskToTimeline = (
-    subTaskInitBlock,
-    fixationBlock,
-    stimulusCounts,
-    trialType,
-  ) => {
+  const pushSubTaskToTimeline = (subTaskInitBlock, fixationBlock, stimulusCounts, trialType) => {
     // begin the subtask
     timeline.push(subTaskInitBlock);
 
@@ -124,15 +99,9 @@ export async function buildExperiment(config) {
     for (let i = 0; i < stimulusCounts.length; i += 1) {
       // add trials to the block (this is the core procedure for each trial)
       const surveyBlock = {
-        timeline: [
-          fixationBlock,
-          trialWrapped(trialType),
-          ifPracticeCorrect,
-          ifPracticeIncorrect,
-          ifRealTrialResponse,
-        ],
+        timeline: [fixationBlock, trialWrapped(trialType), ifPracticeCorrect, ifPracticeIncorrect, ifRealTrialResponse],
         conditional_function: () => {
-          store.session.set("currentBlockIndex", i);
+          store.session.set('currentBlockIndex', i);
           return true;
         },
         repetitions: stimulusCounts[i],
@@ -149,7 +118,7 @@ export async function buildExperiment(config) {
           conditional_function: () => {
             // skip breaks after app timer expires or if no more items
             if (isMaxTimeoutReached()) return false;
-            const nextStimulus = store.session.get("nextStimulus");
+            const nextStimulus = store.session.get('nextStimulus');
             return nextStimulus != undefined;
           },
         };
@@ -168,7 +137,7 @@ export async function buildExperiment(config) {
   };
 
   // load configuration
-  const currentTask = store.session.get("config").task;
+  const currentTask = store.session.get('config').task;
 
   // survey intro
   timeline.push(surveyIntroAndInstructions[currentTask]);
@@ -177,23 +146,13 @@ export async function buildExperiment(config) {
   timeline.push(startAppTimer);
 
   // practice trials
-  pushSubTaskToTimeline(
-    subTaskInitSurveyPractice,
-    setupSurveyPracticeTrial,
-    getPracticeCount("practice"),
-    "practice",
-  ); // Survey Practice Trials
+  pushSubTaskToTimeline(subTaskInitSurveyPractice, setupSurveyPracticeTrial, getPracticeCount('practice'), 'practice'); // Survey Practice Trials
 
   // practice complete screen
   timeline.push(surveyPracticeDone[currentTask]); // Practice done
 
   // real trials
-  pushSubTaskToTimeline(
-    subTaskInitSurveyMain,
-    setupSurveyMainTrial,
-    getStimulusCount(config.userMode),
-    "stimulus",
-  ); // Survey Trials
+  pushSubTaskToTimeline(subTaskInitSurveyMain, setupSurveyMainTrial, getStimulusCount(config.userMode), 'stimulus'); // Survey Trials
 
   // cleanup
   timeline.push(clearAppTimer);

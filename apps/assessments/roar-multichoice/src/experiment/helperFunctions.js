@@ -1,5 +1,5 @@
-import store from "store2";
-import _clamp from "lodash/clamp";
+import store from 'store2';
+import _clamp from 'lodash/clamp';
 
 export const shuffle = (array) => {
   const shuffledArray = [...array];
@@ -45,15 +45,11 @@ export const addItemToSortedStoreList = (tag, entry) => {
 };
 
 export function addGlowingClass(textContent, className) {
-  const container = document.querySelector(
-    "#jspsych-audio-multi-response-btngroup",
-  );
-  const buttons = container.querySelectorAll(
-    "div.jspsych-audio-multi-response-button",
-  );
+  const container = document.querySelector('#jspsych-audio-multi-response-btngroup');
+  const buttons = container.querySelectorAll('div.jspsych-audio-multi-response-button');
   console.log(buttons);
   buttons.forEach((buttonDiv) => {
-    const button = buttonDiv.querySelector("button");
+    const button = buttonDiv.querySelector('button');
     if (button && button.textContent.trim() === textContent) {
       console.log(button);
       button.classList.add(className);
@@ -85,15 +81,15 @@ export const getPrompt = () => {
   // Insert the first half of the stimulus
   // Insert the underlined word
   // Insert the second half of the stimulus
-  const { promptWidth } = store.session.get("config");
-  const nextStimulus = store.session.get("nextStimulus");
+  const { promptWidth } = store.session.get('config');
+  const nextStimulus = store.session.get('nextStimulus');
 
   // Handle case when no more items are available
   if (!nextStimulus) {
-    return "<p>No more items available</p>";
+    return '<p>No more items available</p>';
   }
 
-  if (store.session.get("config").task === "cva") {
+  if (store.session.get('config').task === 'cva') {
     const splitWord = nextStimulus.decorated;
 
     const regex = new RegExp(`(${splitWord}[^w])`);

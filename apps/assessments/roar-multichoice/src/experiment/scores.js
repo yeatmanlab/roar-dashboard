@@ -1,10 +1,10 @@
-import _mapValues from "lodash/mapValues";
-import _omit from "lodash/omit";
-import store from "store2";
-import * as Papa from "papaparse";
-import { getGrade } from "@bdelab/roar-utils";
-import { clowder, scaleTheta } from "./experimentSetup";
-import { clampPositive } from "./helperFunctions";
+import _mapValues from 'lodash/mapValues';
+import _omit from 'lodash/omit';
+import store from 'store2';
+import * as Papa from 'papaparse';
+import { getGrade } from '@bdelab/roar-utils';
+import { clowder, scaleTheta } from './experimentSetup';
+import { clampPositive } from './helperFunctions';
 
 /**
  * Extracts age in months from user metadata, converting from grade if needed.
@@ -17,14 +17,14 @@ function getClampedAgeForScore() {
   const ageMin = 84;
   const ageMax = 180;
 
-  let ageInMonths = store.session.get("config").userMetadata?.ageMonths;
-  const grade = getGrade(store.session.get("config").userMetadata?.grade);
+  let ageInMonths = store.session.get('config').userMetadata?.ageMonths;
+  const grade = getGrade(store.session.get('config').userMetadata?.grade);
 
   // Note: We use == instead of === because we want to catch both undefined and null.
   // eslint-disable-next-line eqeqeq
   if (ageInMonths == undefined) {
     // eslint-disable-next-line eqeqeq
-    if (grade == undefined) throw new Error("Age or grade is undefined");
+    if (grade == undefined) throw new Error('Age or grade is undefined');
 
     ageInMonths = 66 + grade * 12;
   }
@@ -38,14 +38,14 @@ function getClampedAgeForScore() {
 
 export class RoarScores {
   constructor() {
-    const config = store.session.get("config");
+    const config = store.session.get('config');
     const task = config.task;
     const scoringVersion = config.scoringVersion;
 
     this.scoringVersion = scoringVersion ? parseInt(scoringVersion, 10) : 1;
-    this.roarScoreKind = "scaled_irt";
+    this.roarScoreKind = 'scaled_irt';
 
-    const taskPrefix = task === "cva" ? "cva_lookup" : "morphology_lookup";
+    const taskPrefix = task === 'cva' ? 'cva_lookup' : 'morphology_lookup';
     this.tableURL = `https://storage.googleapis.com/roar-survey/scores/${taskPrefix}_v${this.scoringVersion}.csv`;
 
     this.lookupTable = [];
@@ -70,7 +70,7 @@ export class RoarScores {
         skipEmptyLines: true,
         step: (row) => {
           if (Number(this.ageForScore) === Number(row.data.ageMonths)) {
-            this.lookupTable.push(_omit(row.data, ["", "X"]));
+            this.lookupTable.push(_omit(row.data, ['', 'X']));
           }
         },
         complete: (results) => {
@@ -118,14 +118,12 @@ export class RoarScores {
    * @returns {*} computedScores
    */
   computedScoreCallback = async (rawScores) => {
-    const { task, isAdaptive } = store.session.get("config");
+    const { task, isAdaptive } = store.session.get('config');
     const computedScores = _mapValues(rawScores, (subtaskScores) => {
       const subScore = subtaskScores.test?.numCorrect || 0;
       const numAttempted = subtaskScores.test?.numAttempted;
       const subPercentCorrect =
-        typeof numAttempted === "number" && numAttempted > 0
-          ? Math.round((100 * subScore) / numAttempted)
-          : 0;
+        typeof numAttempted === 'number' && numAttempted > 0 ? Math.round((100 * subScore) / numAttempted) : 0;
 
       return {
         subScore,
@@ -141,17 +139,9 @@ export class RoarScores {
     if (isAdaptive) {
       const thetaEstimateRaw = clowder?.theta?.core;
       const thetaSERaw = clampPositive(clowder?.seMeasurement?.core);
-      const comprehensionThetaEstimateRaw =
-        clowder?.theta?.composite_comprehension;
-      const comprehensionThetaSERaw = clampPositive(
-        clowder?.seMeasurement?.composite_comprehension,
-      );
-      const [
-        thetaEstimate,
-        thetaSE,
-        comprehensionThetaEstimate,
-        comprehensionThetaSE,
-      ] = scaleTheta(
+      const comprehensionThetaEstimateRaw = clowder?.theta?.composite_comprehension;
+      const comprehensionThetaSERaw = clampPositive(clowder?.seMeasurement?.composite_comprehension);
+      const [thetaEstimate, thetaSE, comprehensionThetaEstimate, comprehensionThetaSE] = scaleTheta(
         thetaEstimateRaw,
         thetaSERaw,
         comprehensionThetaEstimateRaw,
@@ -175,9 +165,9 @@ export class RoarScores {
     // Only include composite scores for adaptive tasks
     if (isAdaptive) {
       computedScores.composite = {
-        totalCorrect: store.session.get("totalCorrect"),
-        totalNumAttempted: store.session.get("trialNumTotal"),
-        totalPercentCorrect: store.session.get("totalPercentCorrect"),
+        totalCorrect: store.session.get('totalCorrect'),
+        totalNumAttempted: store.session.get('trialNumTotal'),
+        totalPercentCorrect: store.session.get('totalPercentCorrect'),
         ...compositeIRTScores,
         roarScoreKind: this.roarScoreKind,
         scoringVersion: this.scoringVersion,
@@ -190,7 +180,7 @@ export class RoarScores {
       };
     }
 
-    const { userMetadata } = store.session.get("config");
+    const { userMetadata } = store.session.get('config');
     const rawGrade = userMetadata?.grade;
     const ageMonths = userMetadata?.ageMonths;
 
@@ -209,10 +199,9 @@ export class RoarScores {
         } catch (error) {
           // Only log when error state changes to avoid flooding logs
           const errorMessage = error?.message || error;
-          const previousErrorMessage =
-            this.tableLoadingError?.message || this.tableLoadingError;
+          const previousErrorMessage = this.tableLoadingError?.message || this.tableLoadingError;
           if (previousErrorMessage !== errorMessage) {
-            console.error("Error loading scoring table:", errorMessage);
+            console.error('Error loading scoring table:', errorMessage);
             this.tableLoadingError = error;
           }
         }
@@ -238,16 +227,12 @@ export class RoarScores {
       }
 
       if (myRow !== undefined) {
-        const {
-          ageMonths: rowAgeMonths,
-          thetaEstimate: rowThetaEstimate,
-          ...normedScores
-        } = myRow;
+        const { ageMonths: rowAgeMonths, thetaEstimate: rowThetaEstimate, ...normedScores } = myRow;
 
         computedScores.composite = {
-          totalCorrect: store.session.get("totalCorrect"),
-          totalNumAttempted: store.session.get("trialNumTotal"),
-          totalPercentCorrect: store.session.get("totalPercentCorrect"),
+          totalCorrect: store.session.get('totalCorrect'),
+          totalNumAttempted: store.session.get('trialNumTotal'),
+          totalPercentCorrect: store.session.get('totalPercentCorrect'),
           ...compositeIRTScores,
           ...normedScores,
           roarScoreKind: this.roarScoreKind,
@@ -297,7 +282,5 @@ export const computedScoreCallback = async (rawScores) => {
 // eslint-disable-next-line no-unused-vars
 export const normedScoreCallback = (computedScores, demographic_data) => {
   // TODO: Add table lookup after norms have been collected and established.
-  return Object.fromEntries(
-    Object.entries(computedScores).map(([key, val]) => [key, val]),
-  );
+  return Object.fromEntries(Object.entries(computedScores).map(([key, val]) => [key, val]));
 };

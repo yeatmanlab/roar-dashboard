@@ -1,72 +1,70 @@
-import store from "store2";
-import _omitBy from "lodash/omitBy";
-import _isNull from "lodash/isNull";
-import _isUndefined from "lodash/isUndefined";
-import i18next from "i18next";
-import { getAgeData } from "@bdelab/roar-utils";
-import { getUserDataTimeline } from "../trials/getUserData";
-import { enterFullscreen } from "../trials/fullScreen";
-import { corpora } from "./corpus";
-import { jsPsych } from "../jsPsych";
-import { computedScoreCallback } from "../scores";
-import { initializeClowder } from "../experimentSetup";
+import store from 'store2';
+import _omitBy from 'lodash/omitBy';
+import _isNull from 'lodash/isNull';
+import _isUndefined from 'lodash/isUndefined';
+import i18next from 'i18next';
+import { getAgeData } from '@bdelab/roar-utils';
+import { getUserDataTimeline } from '../trials/getUserData';
+import { enterFullscreen } from '../trials/fullScreen';
+import { corpora } from './corpus';
+import { jsPsych } from '../jsPsych';
+import { computedScoreCallback } from '../scores';
+import { initializeClowder } from '../experimentSetup';
 
 const makePid = () => {
-  let text = "";
-  const possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 16; i += 1)
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  let text = '';
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 16; i += 1) text += possible.charAt(Math.floor(Math.random() * possible.length));
   return text;
 };
 
 const initStore = async () => {
-  if (store.session.has("initialized") && store.local("initialized")) {
+  if (store.session.has('initialized') && store.local('initialized')) {
     return store.session;
   }
 
   // Counting variables
-  store.session.set("practiceIndex", 0);
-  store.session.set("currentBlockIndex", 0); // counter for breaks within subtask
-  store.session.set("subTaskName", ""); // init to "" so getNextSubTask will work
+  store.session.set('practiceIndex', 0);
+  store.session.set('currentBlockIndex', 0); // counter for breaks within subtask
+  store.session.set('subTaskName', ''); // init to "" so getNextSubTask will work
 
-  store.session.set("trialNumSubtask", 0); // counter for trials in subtask
-  store.session.set("trialNumTotal", 0); // counter for trials in experiment
+  store.session.set('trialNumSubtask', 0); // counter for trials in subtask
+  store.session.set('trialNumTotal', 0); // counter for trials in experiment
 
   // variables related to stimulus and response
-  store.session.set("nextStimulus", null);
-  store.session.set("response", "");
+  store.session.set('nextStimulus', null);
+  store.session.set('response', '');
 
   // variables to track current state of the experiment
-  store.session.set("currentTrialCorrect", true); // return true or false
-  store.session.set("coinTrackingIndex", 0);
-  store.session.set("maxTimeReached", false);
+  store.session.set('currentTrialCorrect', true); // return true or false
+  store.session.set('coinTrackingIndex', 0);
+  store.session.set('maxTimeReached', false);
 
-  store.session.set("itemGroupCounter", 0);
-  store.session.set("coreRemaining", 0);
-  store.session.set("newRemaining", 0);
-  store.session.set("spareRemaining", 0);
-  store.session.set("secondaryRemaining", 0);
+  store.session.set('itemGroupCounter', 0);
+  store.session.set('coreRemaining', 0);
+  store.session.set('newRemaining', 0);
+  store.session.set('spareRemaining', 0);
+  store.session.set('secondaryRemaining', 0);
 
   // running computations
-  store.session.set("subtaskCorrect", 0);
-  store.session.set("totalCorrect", 0);
-  store.session.set("totalPercentCorrect", 0);
-  store.session.set("itemsCompleted", 0);
-  store.session.set("correctItems", []);
-  store.session.set("incorrectItems", []);
+  store.session.set('subtaskCorrect', 0);
+  store.session.set('totalCorrect', 0);
+  store.session.set('totalPercentCorrect', 0);
+  store.session.set('itemsCompleted', 0);
+  store.session.set('correctItems', []);
+  store.session.set('incorrectItems', []);
 
-  store.session.set("previousItem", null);
-  store.session.set("previousAnswer", null);
+  store.session.set('previousItem', null);
+  store.session.set('previousAnswer', null);
 
   // working copy of the all corpuses (items are removed as they are used)
-  store.session.set("corpora", corpora);
+  store.session.set('corpora', corpora);
 
   // Divide items into groups BEFORE initializing clowder
   divideItemsIntoGroups();
 
   // this should be the last set before return
-  store.session.set("initialized", true);
+  store.session.set('initialized', true);
   await initializeClowder();
 
   return store.session;
@@ -84,7 +82,7 @@ export const getPracticeCount = (practiceType) => {
   const stimulusCountMap = {
     // this table is indexed by practiceType and returns a list with the number of trials in each block
     // userMode: [block1, block2, ...blockN]
-    practice: store.session.get("config").task === "cva" ? [3] : [2],
+    practice: store.session.get('config').task === 'cva' ? [3] : [2],
     stimulus: [5, 5, 5],
   };
 
@@ -134,18 +132,18 @@ function divideBlockSize(num, numPerBlock) {
 
 // separate incoming stimulus into separate corpus based on itemGroup
 const divideItemsIntoGroups = () => {
-  const corpus = store.session.get("corpora");
+  const corpus = store.session.get('corpora');
 
   // split corpus into stimulus ("core"), new, and spare
   corpus.stimulus = corpus.stimulus.filter((item) => {
-    const itemGroup = item.itemGroup || "core"; // Default to "core" if no itemGroup
-    if (itemGroup === "new") {
+    const itemGroup = item.itemGroup || 'core'; // Default to "core" if no itemGroup
+    if (itemGroup === 'new') {
       corpus.newGroup.push(item); // Move to new group
       return false; // Remove from stimulus
-    } else if (itemGroup === "spare") {
+    } else if (itemGroup === 'spare') {
       corpus.spareGroup.push(item); // Move to spare group
       return false; // Remove from stimulus
-    } else if (itemGroup === "secondary") {
+    } else if (itemGroup === 'secondary') {
       corpus.secondaryGroup.push(item); // Move to secondary group
       return false; // Remove from stimulus
     }
@@ -158,24 +156,24 @@ const divideItemsIntoGroups = () => {
   const secondaryCount = corpus.secondaryGroup.length;
 
   // Save the modified corpus back to session storage (with all items)
-  store.session.set("corpora", corpus);
+  store.session.set('corpora', corpus);
 
-  store.session.set("coreRemaining", coreCount);
-  store.session.set("newRemaining", corpus.newGroup.length);
-  store.session.set("spareRemaining", corpus.spareGroup.length);
-  store.session.set("practiceRemaining", corpus.practice.length);
-  store.session.set("secondaryRemaining", secondaryCount);
+  store.session.set('coreRemaining', coreCount);
+  store.session.set('newRemaining', corpus.newGroup.length);
+  store.session.set('spareRemaining', corpus.spareGroup.length);
+  store.session.set('practiceRemaining', corpus.practice.length);
+  store.session.set('secondaryRemaining', secondaryCount);
 };
 
 // get size of blocks
 export const getStimulusCount = (userMode) => {
-  const { numberOfTrials } = store.session.get("config");
-  const maxNumberOfTrials = store.session.get("maxStimulusTrials");
+  const { numberOfTrials } = store.session.get('config');
+  const maxNumberOfTrials = store.session.get('maxStimulusTrials');
 
   let countList;
 
   // divide stimuli into groups if needed
-  if (userMode === "groupRandom") {
+  if (userMode === 'groupRandom') {
     divideItemsIntoGroups();
   } else if (numberOfTrials) {
     // note: we don't currently handle using numberOfTrials with groupRandom
@@ -185,34 +183,28 @@ export const getStimulusCount = (userMode) => {
       countList = divideByThree(numberOfTrials);
     }
 
-    store.session.set("stimulusCountList", countList);
+    store.session.set('stimulusCountList', countList);
 
     return countList;
   }
 
   const getFullRandomBlocksArray = (_taskId) => {
-    const { stimulus } = store.session.get("corpora");
+    const { stimulus } = store.session.get('corpora');
     return divideByThree(stimulus.length);
   };
 
   const getGroupRandomBlocksArray = (_taskId, blockSize) => {
-    const { nItemsCore, nItemsSecondary } = store.session.get("config");
-    const { stimulus } = store.session.get("corpora");
-    const { newGroup } = store.session.get("corpora");
-    const { spareGroup } = store.session.get("corpora");
-    const { secondaryGroup } = store.session.get("corpora");
+    const { nItemsCore, nItemsSecondary } = store.session.get('config');
+    const { stimulus } = store.session.get('corpora');
+    const { newGroup } = store.session.get('corpora');
+    const { spareGroup } = store.session.get('corpora');
+    const { secondaryGroup } = store.session.get('corpora');
 
     // Use actual corpus lengths if limits are null (non-adaptive tasks)
-    const coreCount =
-      nItemsCore !== null
-        ? Math.min(stimulus.length, nItemsCore)
-        : stimulus.length;
+    const coreCount = nItemsCore !== null ? Math.min(stimulus.length, nItemsCore) : stimulus.length;
     const secondaryCount =
-      nItemsSecondary !== null
-        ? Math.min(secondaryGroup.length, nItemsSecondary)
-        : secondaryGroup.length;
-    const totalCount =
-      coreCount + newGroup.length + spareGroup.length + secondaryCount;
+      nItemsSecondary !== null ? Math.min(secondaryGroup.length, nItemsSecondary) : secondaryGroup.length;
+    const totalCount = coreCount + newGroup.length + spareGroup.length + secondaryCount;
 
     return divideBlockSize(totalCount, blockSize);
   };
@@ -221,39 +213,31 @@ export const getStimulusCount = (userMode) => {
     // this table is indexed by userMode and returns a list with the number of trials in each block
     // userMode: [block1, block2, ...blockN]
     // The sum of the blocks cannot exceed the number of items in the corpus, else stimuli will be undefined
-    fullAdaptive: getFullRandomBlocksArray(store.session.get("config").task),
-    fullRandom: getFullRandomBlocksArray(store.session.get("config").task),
-    groupRandom: getGroupRandomBlocksArray(store.session.get("config").task, 9),
+    fullAdaptive: getFullRandomBlocksArray(store.session.get('config').task),
+    fullRandom: getFullRandomBlocksArray(store.session.get('config').task),
+    groupRandom: getGroupRandomBlocksArray(store.session.get('config').task, 9),
     testRandom: [7, 7, 6],
     demo: [3, 3, 3], // 9 letters with 2 breaks
   };
-  store.session.set("stimulusCountList", stimulusCountMap[userMode]);
+  store.session.set('stimulusCountList', stimulusCountMap[userMode]);
   return stimulusCountMap[userMode];
 };
 
 const setItemSelect = (algorithm) => {
-  if (algorithm === "adaptive") {
-    store.session.set("itemSelect", "mfi");
-    return "mfi";
+  if (algorithm === 'adaptive') {
+    store.session.set('itemSelect', 'mfi');
+    return 'mfi';
   }
-  if (algorithm === "closest") {
-    store.session.set("itemSelect", "closest");
-    return "closest";
+  if (algorithm === 'closest') {
+    store.session.set('itemSelect', 'closest');
+    return 'closest';
   }
-  store.session.set("itemSelect", "random");
-  return "random";
+  store.session.set('itemSelect', 'random');
+  return 'random';
 };
 
-export const initConfig = async (
-  firekit,
-  gameParams,
-  userParams,
-  displayElement,
-) => {
-  const cleanParams = _omitBy(
-    _omitBy({ ...gameParams, ...userParams }, _isNull),
-    _isUndefined,
-  );
+export const initConfig = async (firekit, gameParams, userParams, displayElement) => {
+  const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
 
   const {
     // Setting default userMode to fullAdaptive, which uses mfi item selection rather than random
@@ -293,20 +277,19 @@ export const initConfig = async (
 
   const ageData = getAgeData(birthMonth, birthYear, age, ageMonths);
   // eslint-disable-next-line no-unused-expressions
-  language !== "en" && i18next.changeLanguage(language);
+  language !== 'en' && i18next.changeLanguage(language);
 
-  const isCvaGroupRandom =
-    task === "cva" && (userMode ?? "groupRandom") === "groupRandom";
+  const isCvaGroupRandom = task === 'cva' && (userMode ?? 'groupRandom') === 'groupRandom';
 
   const config = {
-    userMode: userMode ?? "groupRandom",
+    userMode: userMode ?? 'groupRandom',
     pid: assessmentPid,
     labId,
-    recruitment: recruitment || "pilot",
+    recruitment: recruitment || 'pilot',
     userMetadata: { ...userMetadata, grade, ...ageData },
     testingOnly,
     consent: consent ?? true,
-    audioFeedback: audioFeedback || "neutral",
+    audioFeedback: audioFeedback || 'neutral',
     skipInstructions: skipInstructions ?? true,
     totalTrialsPractice: 5,
     countSlowPractice: 2,
@@ -322,41 +305,30 @@ export const initConfig = async (
     firekit,
     displayElement: displayElement || null,
     // name of the csv files in the bucket
-    task: task ?? "morphology",
-    practiceCorpus:
-      task === "cva"
-        ? practiceCorpus || "cva-practice-cat"
-        : practiceCorpus || "morphology-practice-cat",
+    task: task ?? 'morphology',
+    practiceCorpus: task === 'cva' ? practiceCorpus || 'cva-practice-cat' : practiceCorpus || 'morphology-practice-cat',
 
-    stimulusCorpus:
-      task === "cva"
-        ? stimulusCorpus || "cva-stimulus-cat"
-        : stimulusCorpus || "morphology-cat",
+    stimulusCorpus: task === 'cva' ? stimulusCorpus || 'cva-stimulus-cat' : stimulusCorpus || 'morphology-cat',
 
     sequentialPractice: sequentialPractice ?? true,
     sequentialStimulus: sequentialStimulus ?? false,
     corpusId: corpusId,
-    buttonLayout: buttonLayout || "default",
+    buttonLayout: buttonLayout || 'default',
     numberOfTrials: numberOfTrials || null,
-    promptWidth: promptWidth ?? "75",
+    promptWidth: promptWidth ?? '75',
     maxTime: maxTime, // null defaults to no time limit
     nStartItems,
-    selectionAlgorithm: selectionAlgorithm ?? "random",
+    selectionAlgorithm: selectionAlgorithm ?? 'random',
     itemSelect: setItemSelect(selectionAlgorithm),
     isAdaptive: isAdaptive ?? isCvaGroupRandom,
-    nItemsCore: nItemsCore ?? (isAdaptive ?? isCvaGroupRandom ? 25 : null),
-    nItemsSecondary:
-      nItemsSecondary ??
-      ((isAdaptive ?? isCvaGroupRandom) && task === "cva" ? 5 : null),
+    nItemsCore: nItemsCore ?? ((isAdaptive ?? isCvaGroupRandom) ? 25 : null),
+    nItemsSecondary: nItemsSecondary ?? ((isAdaptive ?? isCvaGroupRandom) && task === 'cva' ? 5 : null),
     forceSecondaryBehavior,
     startItemSelect,
   };
 
   const updatedGameParams = Object.fromEntries(
-    Object.entries(gameParams).map(([key, value]) => [
-      key,
-      config[key] ?? value,
-    ]),
+    Object.entries(gameParams).map(([key, value]) => [key, config[key] ?? value]),
   );
 
   await config.firekit.updateTaskParams(updatedGameParams);

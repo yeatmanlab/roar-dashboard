@@ -1,22 +1,17 @@
 /* eslint-disable no-plusplus */
 /* eslint-disable prefer-const */
 /* eslint-disable arrow-body-style */
-import jsPsychAudioMultiResponse from "@jspsych-contrib/plugin-audio-multi-response";
-import store from "store2";
+import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
+import store from 'store2';
 // import {itemId} from "../config/corpus"
-import { jsPsych } from "../jsPsych";
-import {
-  shuffle,
-  addItemToSortedStoreList,
-  getPrompt,
-  clampPositive,
-} from "../helperFunctions";
+import { jsPsych } from '../jsPsych';
+import { shuffle, addItemToSortedStoreList, getPrompt, clampPositive } from '../helperFunctions';
 // eslint-disable-next-line import/no-cycle
-import { multichoiceValidityEvaluator } from "../experiment";
-import { mediaAssets, clowder, scaleTheta } from "../experimentSetup";
-import { isPractice } from "./subTask";
-import { audioResponse } from "./audioFeedback";
-import { isMaxTimeoutReached, updateProgressBar } from "./appTimer";
+import { multichoiceValidityEvaluator } from '../experiment';
+import { mediaAssets, clowder, scaleTheta } from '../experimentSetup';
+import { isPractice } from './subTask';
+import { audioResponse } from './audioFeedback';
+import { isMaxTimeoutReached, updateProgressBar } from './appTimer';
 
 export const audioContext = new Audio();
 
@@ -43,9 +38,7 @@ const prepareSurveyChoices = (target, distractors) => {
 
 const trialsMapped = [0, 1].map((i) => {
   const isPracticeTrial = i === 0;
-  const assessmentStage = isPracticeTrial
-    ? "practice"
-    : "test";
+  const assessmentStage = isPracticeTrial ? 'practice' : 'test';
   return {
     type: jsPsychAudioMultiResponse,
     response_allowed_while_playing: true,
@@ -58,7 +51,7 @@ const trialsMapped = [0, 1].map((i) => {
     prompt: () => getPrompt(),
     prompt_above_buttons: true,
     button_choices: () => {
-      const stimulus = store.session.get("nextStimulus");
+      const stimulus = store.session.get('nextStimulus');
 
       // Handle case when no more items are available
       if (!stimulus) {
@@ -72,97 +65,75 @@ const trialsMapped = [0, 1].map((i) => {
 
       const trialInfo = prepareSurveyChoices(target, [d1, d2, d3]);
 
-      store.session.set("target", target);
-      store.session.set("correctResponseNum", trialInfo.correctResponseNum);
-      store.session.set("choices", trialInfo.choices);
+      store.session.set('target', target);
+      store.session.set('correctResponseNum', trialInfo.correctResponseNum);
+      store.session.set('choices', trialInfo.choices);
 
       return trialInfo.choices;
     },
     button_html: () => {
-      return "<button>%choice%</button>";
+      return '<button>%choice%</button>';
     },
     on_load: () => {
-      const btnOption = store.session.get("config").buttonLayout;
-      document
-        .getElementById("jspsych-audio-multi-response-btngroup")
-        .classList.add(`${btnOption}-layout`);
+      const btnOption = store.session.get('config').buttonLayout;
+      document.getElementById('jspsych-audio-multi-response-btngroup').classList.add(`${btnOption}-layout`);
 
-      if (store.session.get("config").task === "cva") {
-        document.getElementById("decorated").style.textDecoration = "underline";
-        document.getElementById("decorated").style.textDecorationThickness =
-          "2px";
+      if (store.session.get('config').task === 'cva') {
+        document.getElementById('decorated').style.textDecoration = 'underline';
+        document.getElementById('decorated').style.textDecorationThickness = '2px';
       }
     },
     on_finish: (data) => {
-      const nextStimulus = store.session("nextStimulus");
-      const choices = store.session("choices");
-      const subTaskName = store.session("subTaskName");
+      const nextStimulus = store.session('nextStimulus');
+      const choices = store.session('choices');
+      const subTaskName = store.session('subTaskName');
       let totalPercentCorrect;
 
       // eslint-disable-next-line no-param-reassign
-      data.correct =
-        data.button_response === store.session("correctResponseNum") ? 1 : 0;
-      store.session.set("correct", data.correct);
-      store.session.set("response", data.button_response);
-      store.session.set("responseValue", choices[data.button_response]);
+      data.correct = data.button_response === store.session('correctResponseNum') ? 1 : 0;
+      store.session.set('correct', data.correct);
+      store.session.set('response', data.button_response);
+      store.session.set('responseValue', choices[data.button_response]);
 
       // Only increment trial counts if user actually responded
       if (data.button_response !== null && data.button_response !== undefined) {
-        store.session.transact("trialNumSubtask", (oldVal) => oldVal + 1);
+        store.session.transact('trialNumSubtask', (oldVal) => oldVal + 1);
         if (!isPractice(subTaskName)) {
-          store.session.transact("trialNumTotal", (oldVal) => oldVal + 1);
-          store.session.transact(
-            "itemsCompleted",
-            (oldVal) => (oldVal || 0) + 1,
-          );
+          store.session.transact('trialNumTotal', (oldVal) => oldVal + 1);
+          store.session.transact('itemsCompleted', (oldVal) => (oldVal || 0) + 1);
         }
       }
 
       if (data.correct === 1) {
         if (!isPractice(subTaskName)) {
-          store.session.set("previousItem", store.session.get("nextStimulus"));
-          store.session.set("previousAnswer", data.correct);
-          store.session.transact("totalCorrect", (oldVal) => oldVal + 1);
+          store.session.set('previousItem', store.session.get('nextStimulus'));
+          store.session.set('previousAnswer', data.correct);
+          store.session.transact('totalCorrect', (oldVal) => oldVal + 1);
         }
       } else {
-        store.session.set("previousItem", store.session.get("nextStimulus"));
-        store.session.set("previousAnswer", 0);
-        addItemToSortedStoreList("incorrectItems", store.session("target"));
+        store.session.set('previousItem', store.session.get('nextStimulus'));
+        store.session.set('previousAnswer', 0);
+        addItemToSortedStoreList('incorrectItems', store.session('target'));
       }
 
-      totalPercentCorrect = Math.round(
-        (100 * store.session.get("totalCorrect")) /
-          store.session.get("trialNumTotal"),
-      );
-      store.session.set("totalPercentCorrect", totalPercentCorrect);
+      totalPercentCorrect = Math.round((100 * store.session.get('totalCorrect')) / store.session.get('trialNumTotal'));
+      store.session.set('totalPercentCorrect', totalPercentCorrect);
 
       // Update engagement flags - only for test responses, not practice
-      if (
-        assessmentStage === "test" &&
-        store.session.get("catName") === "core"
-      ) {
-        multichoiceValidityEvaluator.addResponseData(
-          data.rt,
-          data.button_response,
-          data.correct,
-        );
+      if (assessmentStage === 'test' && store.session.get('catName') === 'core') {
+        multichoiceValidityEvaluator.addResponseData(data.rt, data.button_response, data.correct);
       }
 
       let itemId;
-      if (
-        (nextStimulus.itemId === undefined || nextStimulus.itemId === null) &&
-        assessmentStage === "practice"
-      ) {
-        itemId = "practiceItem";
+      if ((nextStimulus.itemId === undefined || nextStimulus.itemId === null) && assessmentStage === 'practice') {
+        itemId = 'practiceItem';
       } else {
         itemId = nextStimulus.itemId;
       }
 
       // Collect theta SEs from clowder
       const thetaComprehensionRaw = clowder?.theta?.composite_comprehension;
-      const thetaSEComprehensionRaw = clampPositive(
-        clowder?.seMeasurement?.composite_comprehension,
-      );
+      const thetaSEComprehensionRaw = clampPositive(clowder?.seMeasurement?.composite_comprehension);
       const [, thetaSEScaled, , thetaSEScaledComprehension] = scaleTheta(
         thetaComprehensionRaw,
         thetaSEComprehensionRaw,
@@ -178,8 +149,8 @@ const trialsMapped = [0, 1].map((i) => {
 
       let adaptiveTrialData = {};
 
-      if (store.session("config").isAdaptive) {
-        const zetas = store.session("nextStimulus")?.zetas ?? [];
+      if (store.session('config').isAdaptive) {
+        const zetas = store.session('nextStimulus')?.zetas ?? [];
         const catParameterPairs = [];
         zetas.forEach(({ cats, zeta }) => {
           for (const cat of cats) {
@@ -201,23 +172,23 @@ const trialsMapped = [0, 1].map((i) => {
         item: nextStimulus.item,
         itemId: itemId,
         assessment_stage: assessmentStage,
-        target: store.session("target"),
-        choices: store.session("choices"),
+        target: store.session('target'),
+        choices: store.session('choices'),
         decorated: nextStimulus.decorated,
         distractor1: nextStimulus.distractor1,
         distractor2: nextStimulus.distractor2,
         distractor3: nextStimulus.distractor3,
         corpusId: isPractice(subTaskName)
-          ? store.session.get("config").practiceCorpus
-          : store.session.get("config").stimulusCorpus,
-        response: store.session("responseValue"),
+          ? store.session.get('config').practiceCorpus
+          : store.session.get('config').stimulusCorpus,
+        response: store.session('responseValue'),
         responseNum: data.button_response,
-        correctResponseNum: store.session("correctResponseNum"),
+        correctResponseNum: store.session('correctResponseNum'),
         correct: data.correct,
-        replay: store.session("ifReplay"),
+        replay: store.session('ifReplay'),
         ...adaptiveTrialData,
       });
-      store.session.set("ifReplay", 0);
+      store.session.set('ifReplay', 0);
 
       if (!isPractice(subTaskName)) {
         updateProgressBar();
@@ -230,8 +201,8 @@ export const [practiceTrials, stimulusTrials] = trialsMapped;
 
 // A single practice or stimulus trial, which will be skipped if AppTimer has expired
 // eslint-disable-next-line consistent-return
-export const trialWrapped = (trialType = "") => {
-  if (trialType === "practice") {
+export const trialWrapped = (trialType = '') => {
+  if (trialType === 'practice') {
     return {
       timeline: [practiceTrials],
       // eslint-disable-next-line consistent-return
@@ -241,7 +212,7 @@ export const trialWrapped = (trialType = "") => {
       },
     };
   }
-  if (trialType === "stimulus") {
+  if (trialType === 'stimulus') {
     return {
       timeline: [stimulusTrials],
       // eslint-disable-next-line consistent-return
@@ -250,7 +221,7 @@ export const trialWrapped = (trialType = "") => {
         if (isMaxTimeoutReached()) return false;
 
         // Check if no more items are available
-        const nextStimulus = store.session.get("nextStimulus");
+        const nextStimulus = store.session.get('nextStimulus');
         return !!nextStimulus;
       },
     };
@@ -265,10 +236,10 @@ export const ifRealTrialResponse = {
     if (isMaxTimeoutReached()) return false;
 
     // don't play when no stimulus was shown (items exhausted)
-    if (!store.session.get("nextStimulus")) return false;
+    if (!store.session.get('nextStimulus')) return false;
 
     // doesn't apply to practice trials
-    const subTaskName = store.session("subTaskName");
+    const subTaskName = store.session('subTaskName');
     if (isPractice(subTaskName)) {
       return false;
     }

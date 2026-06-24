@@ -1,28 +1,28 @@
-import { Roarr as log } from "roarr";
+import { Roarr as log } from 'roarr';
 
 const getLogLevel = (level) => {
   let prettyLevel;
   switch (level) {
     case 10:
-      prettyLevel = "TRACE";
+      prettyLevel = 'TRACE';
       break;
     case 20:
-      prettyLevel = "DEBUG";
+      prettyLevel = 'DEBUG';
       break;
     case 30:
-      prettyLevel = "INFO";
+      prettyLevel = 'INFO';
       break;
     case 40:
-      prettyLevel = "WARN";
+      prettyLevel = 'WARN';
       break;
     case 50:
-      prettyLevel = "ERROR";
+      prettyLevel = 'ERROR';
       break;
     case 60:
-      prettyLevel = "FATAL";
+      prettyLevel = 'FATAL';
       break;
     default:
-      prettyLevel = "LOG";
+      prettyLevel = 'LOG';
   }
 
   return `[ROAR:${prettyLevel}]`;

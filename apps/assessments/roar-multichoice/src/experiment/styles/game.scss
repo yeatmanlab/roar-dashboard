@@ -1,19 +1,17 @@
 /* CSS Document */
 .this-is-roar {
-  content: "This is a game.";
+  content: 'This is a game.';
 }
 
 // ONLY FOR THE STIMULUS BUTTONS (Letters)
 @font-face {
   font-family: primerRegular;
-  src: url(https://storage.googleapis.com/roar-ak/font/primer_print.ttf)
-    format("truetype");
+  src: url(https://storage.googleapis.com/roar-ak/font/primer_print.ttf) format('truetype');
 }
 
 @font-face {
   font-family: primerBold;
-  src: url(https://storage.googleapis.com/roar-ak/font/primer_print_bold.ttf)
-    format("truetype");
+  src: url(https://storage.googleapis.com/roar-ak/font/primer_print_bold.ttf) format('truetype');
 }
 
 @media only screen and (max-width: 600px) {
@@ -23,8 +21,7 @@
   height: 100%;
   width: 100%;
   margin: 0;
-  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-    "sans-serif";
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
   touch-action: manipulation;
   -webkit-touch-callout: none; /* iOS Safari */
   -webkit-user-select: none; /* Safari */
@@ -127,10 +124,7 @@
       .column-layout {
         // 4 x 1
         display: grid;
-        grid-template-columns: repeat(
-          auto-fit,
-          minmax(300px, 1fr)
-        ); /* two columns of equal width */
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* two columns of equal width */
         gap: 2rem;
 
         div {
@@ -252,8 +246,7 @@
     text-align: center;
     justify-content: center;
     color: rgb(0, 0, 0); /* Set the text color */
-    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-      "sans-serif";
+    font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
     font-size: 45px;
     padding: 10px 20px; /* Optional: add padding to the text */
     z-index: 1; /* Place the text above the GIF */
@@ -264,8 +257,7 @@
     text-align: center;
     justify-content: center;
     color: rgb(0, 0, 0); /* Set the text color */
-    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-      "sans-serif";
+    font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
     font-size: 35px;
     z-index: 1; /* Place the text above the GIF */
   }
@@ -274,8 +266,7 @@
     display: flex;
     text-align: center;
     justify-content: center;
-    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-      "sans-serif";
+    font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
     font-size: 30px;
   }
 
@@ -283,8 +274,7 @@
     margin: 24px;
     top: 10%;
     text-align: center;
-    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-      "sans-serif";
+    font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
     font-size: 40px;
     color: green;
     max-width: 60%;
@@ -406,8 +396,7 @@
     top: 5%;
     text-align: center;
     color: rgb(0, 0, 0); /* Set the text color */
-    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-      "sans-serif";
+    font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
     font-size: 45px;
     padding: 10px 20px; /* Optional: add padding to the text */
     z-index: 1; /* Place the text above the GIF */
@@ -415,8 +404,7 @@
 
   .speechbubble-text-cva {
     color: rgb(0, 0, 0); /* Set the text color */
-    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-      "sans-serif";
+    font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
     z-index: 1; /* Place the text above the GIF */
     position: relative;
     // top: -20%;
@@ -442,8 +430,7 @@
 
   .speechbubble-text-cva-adjusted {
     color: rgb(0, 0, 0); /* Set the text color */
-    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-      "sans-serif";
+    font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
     z-index: 1;
     position: relative;
     top: 140%;

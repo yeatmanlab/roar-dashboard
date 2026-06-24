@@ -1,4 +1,4 @@
-const timeout = Cypress.env("timeout");
+const timeout = Cypress.env('timeout');
 
 function clickButton(selector) {
   cy.get(selector).then(($btn) => {
@@ -10,34 +10,34 @@ function clickButton(selector) {
 
 function makeChoiceOrContinue(gameCompleteText) {
   cy.wait(0.4 * timeout);
-  cy.get("body").then((body) => {
-    const text = body.text().replace(/\s\s+/g, " ").trim();
-    cy.log("Found text: ", text, "game complete text: ", gameCompleteText);
+  cy.get('body').then((body) => {
+    const text = body.text().replace(/\s\s+/g, ' ').trim();
+    cy.log('Found text: ', text, 'game complete text: ', gameCompleteText);
     if (text.includes(gameCompleteText)) {
-      cy.log("Game is complete.").then(() => true);
+      cy.log('Game is complete.').then(() => true);
     } else {
-      if (body.find(".go-button").length > 0) {
-        clickButton(".go-button");
-      } else if (body.find(".glowingButton").length > 0) {
-        clickButton(".glowingButton");
+      if (body.find('.go-button').length > 0) {
+        clickButton('.go-button');
+      } else if (body.find('.glowingButton').length > 0) {
+        clickButton('.glowingButton');
       } else {
-        clickButton("button:first");
+        clickButton('button:first');
       }
-      cy.log("Making choice or continuing.");
+      cy.log('Making choice or continuing.');
       makeChoiceOrContinue(gameCompleteText);
     }
   });
 }
 
 export function startGame(gameParams) {
-  Cypress.on("uncaught:exception", () => false);
-  cy.visit(`${Cypress.env("baseUrl")}/?${gameParams}`);
-  cy.url().should("include", gameParams);
+  Cypress.on('uncaught:exception', () => false);
+  cy.visit(`${Cypress.env('baseUrl')}/?${gameParams}`);
+  cy.url().should('include', gameParams);
 
-  cy.get(".jspsych-btn", { timeout: timeout }).should("be.visible").click();
+  cy.get('.jspsych-btn', { timeout: timeout }).should('be.visible').click();
 }
 
 export function playMultichoice(gameCompleteText) {
   makeChoiceOrContinue(gameCompleteText);
-  cy.log("Game finished successfully.");
+  cy.log('Game finished successfully.');
 }
