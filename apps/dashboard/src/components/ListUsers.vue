@@ -89,9 +89,10 @@
         :is-enabled="isModalEnabled"
         @modal-closed="isModalEnabled = false"
       >
+        <AppSpinner v-if="!showPassword && isLoadingEditUser" />
         <EditUsersForm
-          v-if="!showPassword"
-          :user-data="currentEditUser"
+          v-else-if="!showPassword && editUserProfile"
+          :user-data="editUserProfile"
           :edit-mode="true"
           @update:user-data="localUserData = $event"
         />
@@ -108,7 +109,7 @@
                 toggle-mask
               />
               <small v-if="v$.password.$invalid && submitted" class="p-error">
-                Password must be at least 6 characters long.
+                Password must be at least 8 characters long.
               </small>
             </div>
             <div class="flex gap-1 flex-column form-field" style="width: 100%">
@@ -151,6 +152,7 @@
                 tabindex="0"
                 class="p-2 text-white border-none border-round bg-primary hover:surface-400"
                 label="Save"
+                :disabled="isLoadingEditUser || isSubmitting"
                 @click="updateUserData"
                 ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
               ></PvButton>
@@ -181,6 +183,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useQueryClient } from '@tanstack/vue-query';
 import { useVuelidate } from '@vuelidate/core';
 import { required, sameAs, minLength } from '@vuelidate/validators';
 import { useToast } from 'primevue/usetoast';
@@ -191,6 +194,10 @@ import PvPassword from 'primevue/password';
 import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import useOrgUsersQuery from '@/composables/queries/useOrgUsersQuery';
+import useUserProfileQuery from '@/composables/queries/useUserProfileQuery';
+import useUpdateUserMutation from '@/composables/mutations/useUpdateUserMutation';
+import { mapUserFormToUpdateBody } from '@/helpers/mappers/mapUserFormToUpdateBody';
+import { ORG_USERS_QUERY_KEY } from '@/constants/queryKeys';
 import { singularizeFirestoreCollection } from '@/helpers';
 import AppSpinner from './AppSpinner.vue';
 import EditUsersForm from './EditUsersForm.vue';
@@ -199,7 +206,11 @@ import { usePermissions } from '@/composables/usePermissions';
 const { userCan, Permissions } = usePermissions();
 
 const authStore = useAuthStore();
+const queryClient = useQueryClient();
 
+// `roarfirekit` is retained solely for the `restConfig` readiness gate in
+// `init()` / `onMounted` below (the deferred AU chain). All profile and password
+// writes now go through the typed API via `useUpdateUserMutation`.
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 const toast = useToast();
@@ -295,8 +306,20 @@ const canShowEditColumn = computed(
 const sortField = computed(() => SORT_FIELD_TO_COLUMN[sortBy.value] ?? null);
 const primeSortOrder = computed(() => (sortOrder.value === 'asc' ? 1 : -1));
 
-const currentEditUser = ref(null);
+// The id of the row whose edit modal is open. The lean list row (mapEnrolledUser)
+// carries only enough to identify the user — it lacks `userType` and the editable
+// demographic/identifier fields — so the modal drives off the full profile fetched
+// below, keyed on this id, rather than off the row itself.
+const selectedUserId = ref(null);
 const isModalEnabled = ref(false);
+
+// Full user profile for the row being edited (`GET /v1/users/:id` → mapUser).
+// Unlike the list row this includes `userType` (so `canUserEdit` can branch) and
+// every editable field, so editing off it never drops data. Gated on the modal
+// being open with a selected id; the query also self-gates on the access token.
+const { data: editUserProfile, isLoading: isLoadingEditUser } = useUserProfileQuery(selectedUserId, {
+  enabled: computed(() => isModalEnabled.value && Boolean(selectedUserId.value)),
+});
 
 /**
  * Format a date value for display, tolerating ISO strings and Date instances.
@@ -314,7 +337,10 @@ function getFormattedDate(value) {
 // | Permissions Handling |
 // +----------------------+
 const canUserEdit = computed(() => {
-  const userType = currentEditUser.value?.userType;
+  // Branch on the fetched full profile's `userType`. The list row does not carry
+  // `userType`, so this would never resolve to the admin branch if read from the
+  // row — the profile fetch is what makes the admin/student distinction work.
+  const userType = editUserProfile.value?.userType;
   if (userType === 'admin') {
     return userCan(Permissions.Administrators.UPDATE);
   } else {
@@ -327,33 +353,49 @@ const canUserEdit = computed(() => {
 // +-----------------+
 const localUserData = ref(null);
 
+const { mutateAsync: updateUser } = useUpdateUserMutation();
+
+// Open the edit modal for a row. Only the row's id is retained — it keys the
+// full-profile query that drives the form and `canUserEdit`. The lean row itself
+// is not used for editing (it lacks `userType` and the editable fields).
 const onEditButtonClick = (rowData) => {
-  currentEditUser.value = rowData;
+  selectedUserId.value = rowData.id;
   isModalEnabled.value = true;
 };
 
 const isSubmitting = ref(false);
 
 const updateUserData = async () => {
-  if (!localUserData.value) return;
+  if (!localUserData.value || !selectedUserId.value) return;
   isSubmitting.value = true;
 
-  await roarfirekit.value
-    .updateUserData(currentEditUser.value.id, localUserData.value)
-    .then(() => {
-      isSubmitting.value = false;
-      closeModal();
-      toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
-    })
-    .catch((error) => {
-      console.log('Error occurred during submission:', error);
-      isSubmitting.value = false;
-    });
+  try {
+    // Map the form's nested model to the flat `UpdateUserRequestBodySchema` body
+    // so the read (GET /v1/users/:id) and write (PATCH /v1/users/:id) stay on the
+    // same API source — without this the row would show stale data after a save.
+    const body = mapUserFormToUpdateBody(localUserData.value);
+    await updateUser({ userId: selectedUserId.value, userData: body });
+
+    // Invalidate the org-users list so the edited row reflects the change. The
+    // mutation itself invalidates the user-profile/user keys; the list lives under
+    // a separate key and must be invalidated here.
+    queryClient.invalidateQueries({ queryKey: [ORG_USERS_QUERY_KEY] });
+
+    closeModal();
+    toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
+  } catch (error) {
+    // The mutation throws a structured error carrying the ts-rest `.status`/`.body`.
+    const detail = error?.body?.error?.message ?? 'Unable to update user';
+    toast.add({ severity: 'error', summary: 'Error', detail, life: 3000 });
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 const closeModal = () => {
   isModalEnabled.value = false;
   localUserData.value = null;
+  selectedUserId.value = null;
 };
 
 /**
@@ -397,14 +439,16 @@ const onSort = (event) => {
 const submitted = ref(false);
 const showPassword = ref(false);
 const passwordRef = computed(() => state.password);
+// Minimum length is 8 to match the contract (`password: z.string().min(8)` on
+// `UpdateUserRequestBodySchema`); a shorter value would be rejected server-side.
 const rules = {
   password: {
     required,
-    minLength: minLength(6),
+    minLength: minLength(8),
   },
   confirmPassword: {
     required,
-    minLength: minLength(6),
+    minLength: minLength(8),
     sameAsPassword: sameAs(passwordRef),
   },
 };
@@ -416,21 +460,25 @@ const v$ = useVuelidate(rules, state);
 
 async function updatePassword() {
   submitted.value = true;
-  if (!v$.value.$invalid) {
-    isSubmitting.value = true;
-    await roarfirekit.value
-      .updateUserData(currentEditUser.value.id, { password: state.password })
-      .then(() => {
-        submitted.value = false;
-        isSubmitting.value = false;
-        state.password = '';
-        state.confirmPassword = '';
-        showPassword.value = false;
-        toast.add({ severity: 'success', summary: 'Updated', detail: 'Password Updated!', life: 3000 });
-      })
-      .catch(() => {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Unable to update password' });
-      });
+  // Vuelidate blocks the call when the password is < 8 chars or the confirm
+  // doesn't match, so an invalid form never reaches the mutation.
+  if (v$.value.$invalid || !selectedUserId.value) return;
+
+  isSubmitting.value = true;
+  try {
+    // Password resets go through the same PATCH endpoint; the backend routes a
+    // supplied `password` to the target's Firebase Auth credential (never the DB).
+    await updateUser({ userId: selectedUserId.value, userData: { password: state.password } });
+    submitted.value = false;
+    state.password = '';
+    state.confirmPassword = '';
+    showPassword.value = false;
+    toast.add({ severity: 'success', summary: 'Updated', detail: 'Password Updated!', life: 3000 });
+  } catch (error) {
+    const detail = error?.body?.error?.message ?? 'Unable to update password';
+    toast.add({ severity: 'error', summary: 'Error', detail, life: 3000 });
+  } finally {
+    isSubmitting.value = false;
   }
 }
 
