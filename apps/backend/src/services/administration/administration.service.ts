@@ -343,6 +343,11 @@ export function AdministrationService({
    * `optional`, and `assigned` — to each task in the already-resolved `tasks`
    * embed.
    *
+   * NOTE: `optional` and `assigned` ride the progress pass — they are populated
+   * only when `?embed=progress` is requested (both call sites gate on
+   * `shouldEmbedProgress`). Callers that need the assignment flags must request
+   * `embed=progress`; `embed=tasks` alone returns the bare task list.
+   *
    * Mutates `items[].tasks[]` in place (setting `progress`/`optional`/`assigned`).
    * The assignment `conditions*` are read from `tasksByAdminId` (the source map
    * the repository returned) — they are never present on the response tasks
@@ -1038,6 +1043,11 @@ export function AdministrationService({
       rejectRosteringEndedTarget(targetUser, { requesterUserId, targetUserId: userId }, 'User-administration list');
 
       if (requesterUserId === userId) {
+        // Self-read: delegate to list(), which owns the requester-scoped embed pass.
+        // NOTE: list() re-fetches this same user (by authContext.userId) for per-student
+        // enrichment. The re-fetch is deliberate — `targetUser` above exists only to gate
+        // the 404 / rostering-ended boundary, and list() is also reachable directly. Keep
+        // them independent rather than threading `targetUser` through to save one lookup.
         return list(authContext, options);
       }
 
