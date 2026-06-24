@@ -49,6 +49,7 @@ describe('useUserStudentDataQuery', () => {
 
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = mockUserRoarId;
+    authStore.accessToken = 'test-token';
 
     vi.spyOn(VueQuery, 'useQuery');
 
@@ -106,6 +107,7 @@ describe('useUserStudentDataQuery', () => {
 
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = mockUserRoarId;
+    authStore.accessToken = 'test-token';
 
     const enableQuery = ref(false);
 
@@ -127,6 +129,7 @@ describe('useUserStudentDataQuery', () => {
 
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = mockUserRoarId;
+    authStore.accessToken = 'test-token';
 
     withSetup(() => useUserStudentDataQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
@@ -140,6 +143,71 @@ describe('useUserStudentDataQuery', () => {
     await nextTick();
 
     expect(call.enabled.value).toBe(true);
+  });
+
+  it('should only enable the query once the access token is available', async () => {
+    const mockUserRoarId = ref(nanoid());
+
+    const authStore = useAuthStore(piniaInstance);
+    authStore.roarUid = mockUserRoarId;
+    authStore.accessToken = null;
+
+    withSetup(() => useUserStudentDataQuery(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const call = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
+    // Even with a resolved uid, the query stays disabled until the access token is present.
+    expect(call.enabled.value).toBe(false);
+
+    authStore.accessToken = 'test-token';
+    await nextTick();
+
+    expect(call.enabled.value).toBe(true);
+  });
+
+  it('does not retry on terminal auth or rostering-ended errors', () => {
+    const authStore = useAuthStore(piniaInstance);
+    authStore.roarUid = ref(nanoid());
+    authStore.accessToken = 'test-token';
+
+    let retryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      retryFn = options.retry;
+      return { data: { value: null }, error: { value: null } };
+    });
+
+    withSetup(() => useUserStudentDataQuery(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const authRequiredError = { body: { error: { code: 'auth/required' } } };
+    const tokenExpiredError = { body: { error: { code: 'auth/token-expired' } } };
+    const rosteringEndedError = { body: { error: { code: 'auth/rostering-ended' } } };
+    expect(retryFn(0, authRequiredError)).toBe(false);
+    expect(retryFn(0, tokenExpiredError)).toBe(false);
+    expect(retryFn(0, rosteringEndedError)).toBe(false);
+  });
+
+  it('retries up to 3 times on transient errors', () => {
+    const authStore = useAuthStore(piniaInstance);
+    authStore.roarUid = ref(nanoid());
+    authStore.accessToken = 'test-token';
+
+    let retryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      retryFn = options.retry;
+      return { data: { value: null }, error: { value: null } };
+    });
+
+    withSetup(() => useUserStudentDataQuery(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const networkError = new Error('network down');
+    expect(retryFn(0, networkError)).toBe(true);
+    expect(retryFn(2, networkError)).toBe(true);
+    expect(retryFn(3, networkError)).toBe(false);
   });
 
   it('should not let queryOptions override the internally computed value', () => {

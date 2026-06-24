@@ -64,6 +64,32 @@ export function mapUserFormToUpdateBody(form) {
 }
 
 /**
+ * Parses a date-only string (`YYYY-MM-DD`) into a `Date` using **local**
+ * calendar components rather than `new Date(str)`, which interprets a date-only
+ * ISO string as UTC midnight and shifts the day by one in any timezone west of
+ * UTC. This is the inverse of {@link serializeDob}: parsing locally here and
+ * serializing locally there makes the DOB round-trip lossless, so saving a form
+ * without touching the date can't corrupt it by a day.
+ *
+ * Defensive against nullish/unparseable input so it can replace a raw
+ * `new Date(...)` at the call site without a separate guard. An existing `Date`
+ * is already in local time and passes through unchanged.
+ *
+ * @param {Date|string|null|undefined} str – The date-only string (`YYYY-MM-DD`) or a `Date`.
+ * @returns {Date|null} The local-midnight `Date`, or `null` when absent/invalid.
+ */
+export function parseDateLocal(str) {
+  if (!str) return null;
+  if (str instanceof Date) return isNaN(str.getTime()) ? null : str;
+  if (typeof str !== 'string') return null;
+
+  const [year, month, day] = str.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+
+  return isNaN(date.getTime()) ? null : date;
+}
+
+/**
  * Serializes a `PvDatePicker` value to a `YYYY-MM-DD` string from its local
  * calendar components, or `null` when unset/invalid.
  *

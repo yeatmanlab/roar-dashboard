@@ -18,7 +18,7 @@
                 </div>
               </div>
               <div class="flex flex-wrap gap-2 justify-content-between">
-                <div class="mb-1 font-light text-gray-400 uppercase font-sm">Student Count</div>
+                <div class="mb-1 font-light text-gray-400 uppercase font-sm">User Count</div>
                 <div class="text-xl text-gray-600">
                   <b> {{ totalRecords }} </b>
                 </div>
