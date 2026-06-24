@@ -28,6 +28,7 @@ import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
 import { generateAssessmentPid } from '../../utils/assessment-pid.util';
 import { families, userFamilies, userGroups, users } from '../../db/schema';
+import type { Family } from '../../db/schema';
 import { rosteringProviderIds } from '../../db/schema/core';
 import { and, eq, inArray } from 'drizzle-orm';
 import type {
@@ -131,6 +132,80 @@ export function FamilyService({
   rosterProviderIdRepository?: RosterProviderIdRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
+  /**
+   * Verifies a user can read a specific family and returns it.
+   *
+   * Authorization flow (see backend-authorization-pattern.md):
+   *   1. Existence check first — a missing family is a 404, not a 403.
+   *   2. Super admins bypass the FGA call.
+   *   3. A single can_read FGA check. On the `family` type, can_read is defined
+   *      as `parent`, so only the family's caretaker passes. This intentionally
+   *      rejects admins, supervisory roles, and the family's own children with
+   *      403 — there is no admin-facing family read. Granting one would require
+   *      a separate FGA-model/policy change.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param familyId - The family ID to verify access for
+   * @returns The family entity if found and authorized
+   * @throws {ApiError} NOT_FOUND if the family doesn't exist
+   * @throws {ApiError} FORBIDDEN if the user is not the family caretaker
+   */
+  async function verifyFamilyAccess(authContext: AuthContext, familyId: string): Promise<Family> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // 1. Existence check — distinguishes 404 from 403
+    const family = await familyRepository.getById({ id: familyId });
+    if (!family) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { userId, familyId },
+      });
+    }
+
+    // 2. Super admins bypass access checks
+    if (isSuperAdmin) return family;
+
+    // 3. Single FGA permission check — can_read on family is `parent`, so only
+    //    the caretaker passes; everyone else (admins included) gets 403.
+    await authorizationService.requirePermission(userId, FgaRelation.CAN_READ, `${FgaType.FAMILY}:${familyId}`);
+
+    return family;
+  }
+
+  /**
+   * Get a single family by ID.
+   *
+   * Authorization behavior:
+   * - Super admin: can read any family.
+   * - Family caretaker (FGA `parent`): can read their own family.
+   * - Everyone else (admins, supervisory roles, the family's own children):
+   *   403 Forbidden. Family reads are caretaker-only by design.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param familyId - UUID of the family to retrieve
+   * @returns The family if found and authorized
+   * @throws {ApiError} 404 if not found, 403 if not the caretaker, 500 on database errors
+   */
+  async function getById(authContext: AuthContext, familyId: string): Promise<Family> {
+    const { userId } = authContext;
+
+    try {
+      return await verifyFamilyAccess(authContext, familyId);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, familyId } }, 'Failed to retrieve family');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, familyId },
+        cause: error,
+      });
+    }
+  }
+
   /**
    * Get users enrolled in a family.
    *
@@ -840,6 +915,7 @@ export function FamilyService({
   return {
     addChildren,
     create,
+    getById,
     listUsers,
   };
 }

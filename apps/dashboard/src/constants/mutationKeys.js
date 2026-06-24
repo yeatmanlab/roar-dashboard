@@ -1,5 +1,7 @@
 export const ADMINISTRATION_UPSERT_MUTATION_KEY = 'administration-upsert';
 export const ADMINISTRATION_DELETE_MUTATION_KEY = 'administration-delete';
+export const ORG_CREATE_MUTATION_KEY = 'org-create';
+export const ORG_UPDATE_MUTATION_KEY = 'org-update';
 export const CONSENT_UPDATE_MUTATION_KEY = 'consent-update';
 export const USER_AGREEMENT_RECORD_MUTATION_KEY = 'user-agreement-record';
 export const SIGN_OUT_MUTATION_KEY = 'sign-out';
@@ -7,4 +9,7 @@ export const TASK_ADD_MUTATION_KEY = 'task-add';
 export const TASK_UPDATE_MUTATION_KEY = 'task-update';
 export const TASK_VARIANT_ADD_MUTATION_KEY = 'task-variant-add';
 export const TASK_VARIANT_UPDATE_MUTATION_KEY = 'task-variant-update';
+export const TOGGLE_REGISTERED_TASKS_MUTATION_KEY = 'toggle-registered-tasks';
+export const TOGGLE_REGISTERED_VARIANTS_MUTATION_KEY = 'toggle-registered-variants';
+export const USER_CREATE_MUTATION_KEY = 'user-create';
 export const USER_UPDATE_MUTATION_KEY = 'user-update';

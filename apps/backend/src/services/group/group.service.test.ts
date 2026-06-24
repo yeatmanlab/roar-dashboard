@@ -193,6 +193,213 @@ describe('GroupService', () => {
     });
   });
 
+  describe('list', () => {
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'name' as const,
+      sortOrder: SortOrder.DESC,
+    };
+
+    it('should return all groups for super admins (unrestricted)', async () => {
+      const mockGroups = GroupFactory.buildList(3);
+      mockGroupRepository.listAll.mockResolvedValue({ items: mockGroups, totalItems: 3 });
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.list({ userId: 'admin-123', isSuperAdmin: true }, defaultOptions);
+
+      expect(mockGroupRepository.listAll).toHaveBeenCalledWith({
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: SortOrder.DESC },
+        includeEnded: false,
+      });
+      expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
+      expect(result.items).toHaveLength(3);
+      expect(result.totalItems).toBe(3);
+    });
+
+    it('should use FGA listAccessibleObjects + listByIds for non-super admin users', async () => {
+      const mockGroups = GroupFactory.buildList(2);
+
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([
+        `${FgaType.GROUP}:${mockGroups[0]!.id}`,
+        `${FgaType.GROUP}:${mockGroups[1]!.id}`,
+      ]);
+      mockGroupRepository.listByIds.mockResolvedValue({ items: mockGroups, totalItems: 2 });
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.list(
+        { userId: 'user-123', isSuperAdmin: false },
+        { ...defaultOptions, sortOrder: SortOrder.ASC },
+      );
+
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_LIST,
+        FgaType.GROUP,
+      );
+      expect(mockGroupRepository.listByIds).toHaveBeenCalledWith([mockGroups[0]!.id, mockGroups[1]!.id], {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: SortOrder.ASC },
+        includeEnded: false,
+      });
+      expect(mockGroupRepository.listAll).not.toHaveBeenCalled();
+      expect(result.items).toHaveLength(2);
+      expect(result.totalItems).toBe(2);
+    });
+
+    it('should short-circuit to an empty result when the user can access no groups', async () => {
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.list({ userId: 'user-123', isSuperAdmin: false }, defaultOptions);
+
+      expect(result).toEqual({ items: [], totalItems: 0 });
+      expect(mockGroupRepository.listByIds).not.toHaveBeenCalled();
+      expect(mockGroupRepository.listAll).not.toHaveBeenCalled();
+    });
+
+    it('should forward includeEnded to the repository', async () => {
+      mockGroupRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.list({ userId: 'admin-123', isSuperAdmin: true }, { ...defaultOptions, includeEnded: true });
+
+      expect(mockGroupRepository.listAll).toHaveBeenCalledWith(expect.objectContaining({ includeEnded: true }));
+    });
+
+    it('should wrap unexpected repository errors in a 500 ApiError', async () => {
+      const dbError = new Error('Connection refused');
+      mockGroupRepository.listAll.mockRejectedValue(dbError);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.list({ userId: 'admin-123', isSuperAdmin: true }, defaultOptions)).rejects.toMatchObject({
+        message: 'Failed to retrieve groups',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
+
+  describe('getById', () => {
+    const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
+    const mockSuperAdminContext = { userId: 'admin-123', isSuperAdmin: true };
+
+    it('should fetch a group by ID for regular users via FGA can_read', async () => {
+      const mockGroup = GroupFactory.build({ id: 'group-123' });
+      mockGroupRepository.getById.mockResolvedValue(mockGroup);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getById(mockAuthContext, 'group-123');
+
+      expect(mockGroupRepository.getById).toHaveBeenCalledWith({ id: 'group-123' });
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_READ,
+        `${FgaType.GROUP}:group-123`,
+      );
+      expect(result).toEqual(mockGroup);
+    });
+
+    it('should bypass the FGA check for super admins', async () => {
+      const mockGroup = GroupFactory.build({ id: 'group-123' });
+      mockGroupRepository.getById.mockResolvedValue(mockGroup);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getById(mockSuperAdminContext, 'group-123');
+
+      expect(mockGroupRepository.getById).toHaveBeenCalledWith({ id: 'group-123' });
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      expect(result).toEqual(mockGroup);
+    });
+
+    it('should throw 404 when the group does not exist', async () => {
+      mockGroupRepository.getById.mockResolvedValue(null);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(mockAuthContext, 'missing-group')).rejects.toMatchObject({
+        message: ApiErrorMessage.NOT_FOUND,
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      // Existence check precedes the FGA call — a missing group is a 404, not a 403.
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+    });
+
+    it('should throw 403 when FGA denies can_read', async () => {
+      const mockGroup = GroupFactory.build({ id: 'group-123' });
+      mockGroupRepository.getById.mockResolvedValue(mockGroup);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(mockAuthContext, 'group-123')).rejects.toMatchObject({
+        message: ApiErrorMessage.FORBIDDEN,
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('should wrap unexpected repository errors in a 500 ApiError', async () => {
+      const dbError = new Error('Connection refused');
+      mockGroupRepository.getById.mockRejectedValue(dbError);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(mockAuthContext, 'group-123')).rejects.toMatchObject({
+        message: 'Failed to retrieve group',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
+
   describe('create', () => {
     const validInput = {
       name: 'Pilot Cohort',
@@ -288,6 +495,84 @@ describe('GroupService', () => {
       });
 
       await expect(service.create(superAdminContext, validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
+
+  describe('update', () => {
+    const groupId = '44444444-4444-4444-8444-444444444444';
+    const superAdminContext = { userId: 'admin-123', isSuperAdmin: true };
+    const userContext = { userId: 'user-123', isSuperAdmin: false };
+
+    const buildGroup = () => GroupFactory.build({ id: groupId });
+
+    const buildService = () =>
+      GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+    it('should throw 404 and NOT call updateGroup when the group does not exist', async () => {
+      mockGroupRepository.getById.mockResolvedValue(null);
+
+      await expect(buildService().update(superAdminContext, groupId, { name: 'New Name' })).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+      });
+      expect(mockGroupRepository.updateGroup).not.toHaveBeenCalled();
+    });
+
+    it('should throw 403 and NOT call updateGroup when caller is not a super admin (existence-before-authz)', async () => {
+      mockGroupRepository.getById.mockResolvedValue(buildGroup());
+
+      await expect(buildService().update(userContext, groupId, { name: 'New Name' })).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
+      // No FGA permission check is made — can_update is no_one, the bypass is the policy
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      expect(mockGroupRepository.updateGroup).not.toHaveBeenCalled();
+    });
+
+    it('should throw 400 and NOT call updateGroup when no mutable fields are provided', async () => {
+      mockGroupRepository.getById.mockResolvedValue(buildGroup());
+
+      await expect(buildService().update(superAdminContext, groupId, {})).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+      expect(mockGroupRepository.updateGroup).not.toHaveBeenCalled();
+    });
+
+    it('should call updateGroup with the mapped column-shaped partial and return the id (happy path)', async () => {
+      mockGroupRepository.getById.mockResolvedValue(buildGroup());
+      mockGroupRepository.updateGroup.mockResolvedValue(undefined);
+
+      const result = await buildService().update(superAdminContext, groupId, {
+        name: 'Updated Group',
+        abbreviation: 'UPD',
+        groupType: 'community',
+        location: { city: 'Palo Alto' },
+      });
+
+      expect(result).toEqual({ id: groupId });
+      expect(mockGroupRepository.updateGroup).toHaveBeenCalledWith(groupId, {
+        name: 'Updated Group',
+        abbreviation: 'UPD',
+        groupType: 'community',
+        locationCity: 'Palo Alto',
+      });
+    });
+
+    it('should wrap unexpected DB errors from updateGroup as ApiError 500 with DATABASE_QUERY_FAILED', async () => {
+      mockGroupRepository.getById.mockResolvedValue(buildGroup());
+      mockGroupRepository.updateGroup.mockRejectedValue(new Error('connection lost'));
+
+      await expect(buildService().update(superAdminContext, groupId, { name: 'New Name' })).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });

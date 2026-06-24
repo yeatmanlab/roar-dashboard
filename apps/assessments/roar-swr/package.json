@@ -25,8 +25,7 @@
   "roar": {
     "hosting": {
       "staging": "roar-word-monorepo-abc",
-      "production": "roard-word-monorepo",
-      "test": "test"
+      "production": "roard-word-monorepo"
     }
   },
   "scripts": {

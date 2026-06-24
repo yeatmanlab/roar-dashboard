@@ -9,6 +9,8 @@ import {
   type TaskBundleVariantWithTaskDetails,
 } from '../../repositories/task-bundle-variant.repository';
 import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
+import { UserRepository } from '../../repositories/user.repository';
+import { verifyPlatformAdminAccess } from '../authorization/verify-platform-admin-access';
 import type { AuthContext } from '../../types/auth-context';
 import type { ParsedFilter } from '../../types/filter';
 
@@ -96,16 +98,20 @@ export function TaskBundleService({
   taskBundleRepository = new TaskBundleRepository(),
   taskBundleVariantRepository = new TaskBundleVariantRepository(),
   taskVariantParameterRepository = new TaskVariantParameterRepository(),
+  userRepository = new UserRepository(),
 }: {
   taskBundleRepository?: TaskBundleRepository;
   taskBundleVariantRepository?: TaskBundleVariantRepository;
   taskVariantParameterRepository?: TaskVariantParameterRepository;
+  userRepository?: UserRepository;
 } = {}) {
   /**
    * List task bundles with their associated task variants.
    *
    * Authorization behavior:
-   * - Super admin only — returns 403 for all other callers.
+   * - Super admin: full access (bypasses the role lookup)
+   * - Platform administrator (active `platform_admin` org/group membership): full access
+   * - All other callers: 403 Forbidden
    *
    * Each bundle in the response always includes a summary variant list (taskVariantId,
    * taskSlug, taskName, taskVariantName, sortOrder, and full task variant metadata).
@@ -119,25 +125,19 @@ export function TaskBundleService({
    * @param authContext - The caller's auth context
    * @param options - Pagination, sort, search, embed, and filter options
    * @returns Paginated list of task bundles with their variant lists
-   * @throws {ApiError} FORBIDDEN if the caller is not a super admin
+   * @throws {ApiError} FORBIDDEN if the caller is neither a super admin nor a platform administrator
    * @throws {ApiError} DATABASE_QUERY_FAILED if any query fails unexpectedly
    */
   async function list(authContext: AuthContext, options: ListTaskBundlesOptions): Promise<ListTaskBundlesResult> {
-    const { userId, isSuperAdmin } = authContext;
-
-    // Super admin only — no DB call to protect, so auth check lives before try block
-    if (!isSuperAdmin) {
-      logger.warn({ userId }, 'Non-super admin attempted to list task bundles');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId },
-      });
-    }
+    const { userId } = authContext;
 
     const { page, perPage, sortBy, sortOrder, search, embed = [], filters } = options;
 
     try {
+      // Authorization: super admin or active platform administrator. Lives inside the
+      // try block because the platform admin check performs a role lookup in the DB.
+      await verifyPlatformAdminAccess(authContext, userRepository, 'task-bundles.list');
+
       const bundleResult = await taskBundleRepository
         .listAll({
           page,

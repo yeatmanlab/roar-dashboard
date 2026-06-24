@@ -8,6 +8,8 @@ import {
   DistrictDetailSchema,
   DistrictSchoolsListQuerySchema,
   DistrictSchoolsListResponseSchema,
+  UpdateDistrictRequestSchema,
+  UpdateDistrictResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import { EnrolledUsersQuerySchema, EnrolledUsersResponseSchema } from '../common/user';
@@ -79,6 +81,35 @@ export const DistrictsContract = c.router(
       description:
         'Returns a single district by ID. ' +
         'Super admins can access any district. Regular users can only access districts they belong to.',
+    },
+    update: {
+      method: 'PATCH',
+      path: '/:id',
+      pathParams: z.object({
+        id: z.string().uuid(),
+      }),
+      body: UpdateDistrictRequestSchema,
+      responses: {
+        200: SuccessEnvelopeSchema(UpdateDistrictResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Update a district',
+      description:
+        'Updates an existing district. Only the mutable fields present in the request body are applied ' +
+        '(name, abbreviation, location, identifiers); identity and hierarchy fields ' +
+        '(id, orgType, parentOrgId, path, isRosteringRootOrg) cannot change and are rejected. ' +
+        'Restricted to super admins. ' +
+        'Returns 200 with the updated district id. ' +
+        'Returns 400 if the body is malformed or contains no recognized mutable fields. ' +
+        'Returns 401 if the user is not authenticated. ' +
+        'Returns 403 if the user is not a super admin. ' +
+        'Returns 404 if the district does not exist. ' +
+        'Returns 500 if an internal server error occurs.',
     },
     listSchools: {
       method: 'GET',
