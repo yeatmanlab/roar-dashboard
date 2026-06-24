@@ -1,4 +1,3 @@
- 
 import store from 'store2';
 import Papa from 'papaparse';
 import { createPreloadTrials, generateAssetObject, getDevice } from '@bdelab/roar-utils';

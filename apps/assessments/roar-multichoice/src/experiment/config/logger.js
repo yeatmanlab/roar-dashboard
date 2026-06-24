@@ -33,10 +33,9 @@ globalThis.ROARR.write = (message) => {
 
   if (payload.context.logLevel >= 30) {
     const logLevel = getLogLevel(payload.context.logLevel);
-     
+
     console.log(`${logLevel} ${payload.message}`);
   }
 };
 
- 
 export { log };

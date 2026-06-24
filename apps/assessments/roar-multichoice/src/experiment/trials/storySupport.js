@@ -122,7 +122,7 @@ export function createStory() {
   // note filenames for image and audio must start with a lowercase letter
   storyActive.forEach((row) => {
     const { label } = row;
-     
+
     const storyTrial = createStoryTrial(row);
 
     // add entry to array

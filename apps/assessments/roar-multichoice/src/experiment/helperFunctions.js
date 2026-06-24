@@ -8,7 +8,7 @@ export const shuffle = (array) => {
 
     // swap elements array[i] and array[j]
     // use "destructuring assignment" syntax
-     
+
     [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
   }
   return shuffledArray;
@@ -34,7 +34,6 @@ export const addItemToSortedStoreList = (tag, entry) => {
 
     let index = 0;
     while (index < sortedList.length && entry >= sortedList[index]) {
-       
       index++;
     }
 

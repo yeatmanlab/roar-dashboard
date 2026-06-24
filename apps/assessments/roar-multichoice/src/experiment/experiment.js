@@ -16,7 +16,7 @@ import { getPracticeCount, getStimulusCount, initRoarJsPsych, initRoarTimeline }
 import { jsPsych } from './jsPsych';
 import { preloadTrials } from './experimentSetup';
 // trials
- 
+
 import { ifRealTrialResponse, trialWrapped } from './trials/stimulus';
 import { setupSurveyMainTrial, setupSurveyPracticeTrial } from './trials/setup';
 
@@ -34,7 +34,6 @@ import {
 
 import { startAppTimer, clearAppTimer, isMaxTimeoutReached } from './trials/appTimer';
 
- 
 export let multichoiceValidityEvaluator;
 
 export async function buildExperiment(config) {

@@ -1,12 +1,9 @@
- 
- 
- 
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import store from 'store2';
 // import {itemId} from "../config/corpus"
 import { jsPsych } from '../jsPsych';
 import { shuffle, addItemToSortedStoreList, getPrompt, clampPositive } from '../helperFunctions';
- 
+
 import { multichoiceValidityEvaluator } from '../experiment';
 import { mediaAssets, clowder, scaleTheta } from '../experimentSetup';
 import { isPractice } from './subTask';
@@ -89,7 +86,6 @@ const trialsMapped = [0, 1].map((i) => {
       const subTaskName = store.session('subTaskName');
       let totalPercentCorrect;
 
-       
       data.correct = data.button_response === store.session('correctResponseNum') ? 1 : 0;
       store.session.set('correct', data.correct);
       store.session.set('response', data.button_response);
@@ -200,12 +196,12 @@ const trialsMapped = [0, 1].map((i) => {
 export const [practiceTrials, stimulusTrials] = trialsMapped;
 
 // A single practice or stimulus trial, which will be skipped if AppTimer has expired
- 
+
 export const trialWrapped = (trialType = '') => {
   if (trialType === 'practice') {
     return {
       timeline: [practiceTrials],
-       
+
       conditional_function: () => {
         // don't play when skipping trials because app is finished
         if (isMaxTimeoutReached()) return false;
@@ -215,7 +211,7 @@ export const trialWrapped = (trialType = '') => {
   if (trialType === 'stimulus') {
     return {
       timeline: [stimulusTrials],
-       
+
       conditional_function: () => {
         // don't play when skipping trials because app is finished or no more items available
         if (isMaxTimeoutReached()) return false;

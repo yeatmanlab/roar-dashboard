@@ -92,7 +92,7 @@ export const getPracticeCount = (practiceType) => {
 // This is based on stimulusCountMap. It does not need to be 3.
 function divideByThree(num) {
   // Minimum number of trials, also random. Can change to whatever.
-   
+
   if (num < 9) num = 9;
   const baseFraction = Math.floor(num / 3);
   const remainder = num % 3;
@@ -111,7 +111,6 @@ function divideByThree(num) {
 // Divide the trials into blocks of size n or n+1
 // remainder is evenly distributed across intial blocks
 function divideBlockSize(num, numPerBlock) {
-   
   if (num < numPerBlock) num = numPerBlock;
   const numBlocks = Math.floor(num / numPerBlock);
   const remainder = num % numPerBlock;
@@ -276,7 +275,7 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
   } = cleanParams;
 
   const ageData = getAgeData(birthMonth, birthYear, age, ageMonths);
-   
+
   language !== 'en' && i18next.changeLanguage(language);
 
   const isCvaGroupRandom = task === 'cva' && (userMode ?? 'groupRandom') === 'groupRandom';
@@ -352,9 +351,8 @@ export const initRoarJsPsych = async (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-       
       fn.apply(fn, arguments);
-       
+
       code.apply(fn, arguments);
     };
 
@@ -383,7 +381,6 @@ export const initRoarTimeline = (config) => {
   const beginningTimeline = {
     timeline: initialTimeline,
     on_timeline_finish: async () => {
-       
       config.pid = config.pid || makePid();
       await config.firekit.updateUser({
         assessmentPid: config.pid,

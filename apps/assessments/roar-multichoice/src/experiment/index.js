@@ -1,4 +1,3 @@
- 
 import store from 'store2';
 import { initConfig } from './config/config';
 import { buildExperiment } from './experiment';

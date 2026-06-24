@@ -21,9 +21,8 @@ function getClampedAgeForScore() {
   const grade = getGrade(store.session.get('config').userMetadata?.grade);
 
   // Note: We use == instead of === because we want to catch both undefined and null.
-   
+
   if (ageInMonths == undefined) {
-     
     if (grade == undefined) throw new Error('Age or grade is undefined');
 
     ageInMonths = 66 + grade * 12;
@@ -184,7 +183,6 @@ export class RoarScores {
     const rawGrade = userMetadata?.grade;
     const ageMonths = userMetadata?.ageMonths;
 
-     
     if ((rawGrade != null || ageMonths != null) && isAdaptive) {
       if (!this.tableLoaded) {
         if (!this.tableLoadingPromise) {

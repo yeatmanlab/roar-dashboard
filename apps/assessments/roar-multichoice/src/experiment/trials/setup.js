@@ -1,4 +1,3 @@
- 
 import jsPsychHtmlKeyboardResponse from '@jspsych/plugin-html-keyboard-response';
 import { setNextStimulus } from '../experimentSetup';
 

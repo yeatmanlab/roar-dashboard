@@ -1,4 +1,3 @@
- 
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
 import store from 'store2';
 
