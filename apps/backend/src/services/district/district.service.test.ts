@@ -1124,4 +1124,100 @@ describe('DistrictService', () => {
       });
     });
   });
+
+  describe('update', () => {
+    const districtId = '123e4567-e89b-12d3-a456-426614174000';
+
+    const buildDistrict = () => OrgFactory.build({ id: districtId, orgType: OrgType.DISTRICT }) as unknown as District;
+
+    it('should throw 404 and NOT call updateDistrict when the district does not exist', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(null);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.update(mockSuperAdminContext, districtId, { name: 'New Name' })).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+      });
+      expect(mockDistrictRepository.updateDistrict).not.toHaveBeenCalled();
+    });
+
+    it('should throw 403 and NOT call updateDistrict when caller is not a super admin (existence-before-authz)', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(buildDistrict());
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.update(mockAuthContext, districtId, { name: 'New Name' })).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
+      // No FGA permission check is made — can_update is no_one, the bypass is the policy
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      expect(mockDistrictRepository.updateDistrict).not.toHaveBeenCalled();
+    });
+
+    it('should throw 400 and NOT call updateDistrict when no mutable fields are provided', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(buildDistrict());
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.update(mockSuperAdminContext, districtId, {})).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+      expect(mockDistrictRepository.updateDistrict).not.toHaveBeenCalled();
+    });
+
+    it('should call updateDistrict with the mapped column-shaped partial and return the id (happy path)', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(buildDistrict());
+      mockDistrictRepository.updateDistrict.mockResolvedValue(undefined);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.update(mockSuperAdminContext, districtId, {
+        name: 'Updated District',
+        abbreviation: 'UPD',
+        location: { city: 'Springfield', stateProvince: 'IL' },
+        identifiers: { ncesId: 'NCES-2' },
+      });
+
+      expect(result).toEqual({ id: districtId });
+      expect(mockDistrictRepository.updateDistrict).toHaveBeenCalledWith(districtId, {
+        name: 'Updated District',
+        abbreviation: 'UPD',
+        locationCity: 'Springfield',
+        locationStateProvince: 'IL',
+        ncesId: 'NCES-2',
+      });
+    });
+
+    it('should wrap unexpected DB errors from updateDistrict as ApiError 500 with DATABASE_QUERY_FAILED', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(buildDistrict());
+      mockDistrictRepository.updateDistrict.mockRejectedValue(new Error('connection lost'));
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.update(mockSuperAdminContext, districtId, { name: 'New Name' })).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
 });

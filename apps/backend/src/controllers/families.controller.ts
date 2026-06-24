@@ -3,15 +3,60 @@ import type {
   AddFamilyChildrenRequest,
   CreateFamilyRequest,
   EnrolledFamilyUsersQuery,
+  FamilyDetail as ApiFamily,
 } from '@roar-platform/api-contract';
+import type { Family } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
 import type { AddFamilyChildrenServiceInput, CreateFamilyServiceInput } from '../services/family/family.service';
 import { FamilyService } from '../services/family/family.service';
 import { handleUserSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
+import { isPresentString } from './utils/is-present';
 
 const familyService = FamilyService();
+
+/**
+ * Maps a database Family entity to the API schema.
+ *
+ * Converts Date fields to ISO strings and assembles the location object,
+ * surfacing the persisted point as GeoJSON coordinates. Families have no
+ * name/abbreviation/groupType — they are identified by UUID. `createdBy` and
+ * the timestamps columns are intentionally not surfaced. Nullable fields
+ * (`location`, `rosteringEnded`) are omitted from the response when absent.
+ */
+function transformFamily(family: Family): ApiFamily {
+  // Transform PostgreSQL point to GeoJSON format if present.
+  // The families.locationLatLong column uses Drizzle's default point mode, which
+  // surfaces the value as a [x, y] = [longitude, latitude] tuple — already the
+  // GeoJSON coordinate order, so it can be passed through directly.
+  let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
+  const { locationLatLong } = family;
+  if (locationLatLong) {
+    coordinates = {
+      type: 'Point',
+      coordinates: [locationLatLong[0], locationLatLong[1]],
+    };
+  }
+
+  // Build the location object from the present fields. Null and empty-string
+  // columns are treated as absent and omitted (see `isPresentString`).
+  const location = {
+    ...(isPresentString(family.locationAddressLine1) && { addressLine1: family.locationAddressLine1 }),
+    ...(isPresentString(family.locationAddressLine2) && { addressLine2: family.locationAddressLine2 }),
+    ...(isPresentString(family.locationCity) && { city: family.locationCity }),
+    ...(isPresentString(family.locationStateProvince) && { stateProvince: family.locationStateProvince }),
+    ...(isPresentString(family.locationPostalCode) && { postalCode: family.locationPostalCode }),
+    ...(isPresentString(family.locationCountry) && { country: family.locationCountry }),
+    ...(coordinates && { coordinates }),
+  };
+
+  return {
+    id: family.id,
+    ...(Object.keys(location).length > 0 && { location }),
+    ...(family.rosteringEnded && { rosteringEnded: family.rosteringEnded.toISOString() }),
+  };
+}
 
 /**
  * FamiliesController
@@ -52,6 +97,38 @@ export const FamiliesController = {
           StatusCodes.CONFLICT,
           StatusCodes.UNPROCESSABLE_ENTITY,
           StatusCodes.TOO_MANY_REQUESTS,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get a single family by ID.
+   *
+   * Delegates to FamilyService for authorization and retrieval. Access is
+   * caretaker-only — only the family's parent (caretaker) or a super admin may
+   * read it; everyone else receives 403.
+   *
+   * @param authContext - User's authentication context
+   * @param familyId - UUID of the family to retrieve
+   */
+  getById: async (authContext: AuthContext, familyId: string) => {
+    try {
+      const family = await familyService.getById(authContext, familyId);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformFamily(family),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
