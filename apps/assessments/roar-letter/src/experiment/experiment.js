@@ -11,6 +11,8 @@ import {
 import webpAssets from '../../webpAssets.json';
 // setup
 import { initRoarJsPsych, initRoarTimeline, getStimulusCountPhonics, getPracticeCount } from './config/config';
+import { PHONICS_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
+import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/firekit';
 import { jsPsych } from './jsPsych';
 import { initializeCat } from './experimentSetup';
 import { buildBlock } from './trials/stimulus';
@@ -89,16 +91,15 @@ import enCaPracticePhonics from '../stimuli/en-ca/practicePhonics.csv';
 const esStoryLionAge12 = esStoryLion;
 const itStoryLionAge12 = itStoryLion;
 
-// eslint-disable-next-line import/no-mutable-exports
 export let letterValidityEvaluator;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let mediaAssets;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let preloadTrials;
 
 const bucketURI = 'https://storage.googleapis.com/roar-ak';
 
-export function buildExperiment(config) {
+export function buildExperiment(config, computedScoreCallback) {
   // Add media assest here
 
   // TODO: Check back here in Letter task breaks
@@ -209,7 +210,7 @@ export function buildExperiment(config) {
   addToPreloadTrial();
 
   // Initialize jsPsych and timeline
-  initRoarJsPsych(config);
+  initRoarJsPsych(config, computedScoreCallback);
   const initialTimeline = initRoarTimeline(config);
   const letterEvaluateValidity = createEvaluateValidity({
     responseTimeThreshold: 600,
@@ -219,15 +220,7 @@ export function buildExperiment(config) {
   });
 
   const letterHandleEngagementFlags = (flags, reliable) => {
-    // eslint-disable-next-line no-console
-    // console.log('Flags triggered: ', flags);
-    // eslint-disable-next-line no-console
-    // console.log('Reliable: ', reliable);
-    if (config.firekit.run.started) {
-      return config.firekit?.updateEngagementFlags(flags, reliable);
-    }
-    // eslint-disable-next-line no-console
-    return console.log('Run not started.');
+    return updateEngagementFlags(flags, reliable);
   };
 
   letterValidityEvaluator = new ValidityEvaluator({
@@ -246,7 +239,7 @@ export function buildExperiment(config) {
 
   let pushSubTaskToTimeline;
 
-  if (config.task === 'phonics') {
+  if (config.task === PHONICS_TASK_IDS.EN) {
     let breakNum = 0;
     pushSubTaskToTimeline = (subTaskInitBlock, fixationBlock, stimulusCounts) => {
       // begin the subtask
@@ -297,7 +290,7 @@ export function buildExperiment(config) {
   // start the timer that limits the runtime of the app
   timeline.push(startAppTimer);
 
-  if (config.task === 'phonics') {
+  if (config.task === PHONICS_TASK_IDS.EN) {
     // phonics (previously called TextSoundPseudo)
 
     // intro

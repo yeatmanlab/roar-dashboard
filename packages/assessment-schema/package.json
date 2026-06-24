@@ -26,6 +26,11 @@
       "types": "./dist/roar-sre/index.d.ts",
       "import": "./dist/roar-sre/index.js",
       "default": "./dist/roar-sre/index.js"
+    },
+    "./roar-letter": {
+      "types": "./dist/roar-letter/index.d.ts",
+      "import": "./dist/roar-letter/index.js",
+      "default": "./dist/roar-letter/index.js"
     }
   },
   "main": "./dist/index.js",
