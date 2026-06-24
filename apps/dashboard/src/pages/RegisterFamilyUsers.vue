@@ -28,14 +28,6 @@
       <div>
         <div v-if="spinner === false">
           <Register :code="code" @submit="handleSubmit($event)" />
-          <div
-            v-if="isSuperAdmin"
-            class="flex flex-row justify-content-center align-content-center z-2 absolute ml-5"
-            style="margin-top: -5rem; margin-bottom: 4rem"
-          >
-            <PvCheckbox :model-value="isTestData" :binary="true" name="isTestDatalabel" @change="updateState" />
-            <label for="isTestDatalabel" class="ml-2">This is test data</label>
-          </div>
         </div>
         <div v-else class="loading-container flex flex-column text-center justify-content-center align-content-center">
           <AppSpinner style="margin-bottom: 1rem" />
@@ -57,34 +49,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import PvButton from 'primevue/button';
-import PvCheckbox from 'primevue/checkbox';
 import PvDialog from 'primevue/dialog';
-import { useAuthStore } from '@/store/auth';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { useFamilyRegistration } from '@/containers/FamilyRegistration/composables/useFamilyRegistration';
 import Register from '../components/auth/RegisterParent.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 
-const authStore = useAuthStore();
-const initialized = ref(false);
-const spinner = ref(false);
-
-const props = defineProps({
+defineProps({
   code: { type: String, default: null },
 });
 
-const { data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
+const { submit: submitRegistration } = useFamilyRegistration();
 
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-
-const isTestData = ref(false);
+const spinner = ref(false);
 const dialogHeader = ref('');
 const dialogMessage = ref('');
 const isDialogVisible = ref(false);
-const consentName = ref('consent-behavioral-eye-tracking');
 
 const showDialog = () => {
   isDialogVisible.value = true;
@@ -99,36 +80,14 @@ async function handleParentSubmit(data) {
   try {
     spinner.value = true;
 
-    // Fetch consent document
-    const consentDoc = await authStore.getLegalDoc(consentName.value);
-    const consentData = {
-      version: consentDoc.currentCommit,
-      name: consentName.value,
-    };
-
-    const parentUserData = {
-      name: {
-        first: data.firstName,
-        last: data.lastName,
-      },
-      canContactForFutureStudies: data.canContactForFutureStudies || false,
-      invitationCodes: props.code ? [props.code] : [], // Now supported by CreateParentInput interface
-    };
-
-    // Create parent account only (no children)
-    await authStore.createNewFamily(
-      data.ParentEmail,
-      data.password,
-      parentUserData,
-      [], // Empty array - no children yet
-      consentData,
-      isTestData.value,
-    );
-
-    // Now sign in the parent to establish their auth session
-    await authStore.roarfirekit.logInWithEmailAndPassword({
+    // Run the registration saga: resolve consent → create family → sign in →
+    // record the caretaker's consent. Consent recording is handled inside the
+    // saga (no separate consentData payload, unlike the legacy firekit call).
+    await submitRegistration({
       email: data.ParentEmail,
       password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
     });
 
     spinner.value = false;
@@ -152,10 +111,6 @@ async function handleParentSubmit(data) {
 async function handleSubmit(event) {
   // Only handle parent registration now
   handleParentSubmit(event);
-}
-
-function updateState() {
-  isTestData.value = !isTestData.value;
 }
 
 onMounted(async () => {
