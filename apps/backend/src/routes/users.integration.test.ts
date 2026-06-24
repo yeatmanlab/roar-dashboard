@@ -1435,9 +1435,14 @@ describe('GET /v1/users/:userId/administrations', () => {
       const { writeFgaAdministrationAssignment } = await import('../test-support/fga/fga-test-tuples.helper');
       const { TASKS_EXCLUDED_FROM_RETAKE } = await import('../constants/tasks-excluded-from-retake');
 
-      // Guard the premise of case 4: the slug we treat as excluded really is.
-      expect(TASKS_EXCLUDED_FROM_RETAKE.has(EXCLUDED_SLUG)).toBe(true);
-      expect(TASKS_EXCLUDED_FROM_RETAKE.has(NON_EXCLUDED_SLUG)).toBe(false);
+      // Guard the premise of case 4: assert in setup via throws, since expect()
+      // outside a test block violates vitest/no-standalone-expect.
+      if (!TASKS_EXCLUDED_FROM_RETAKE.has(EXCLUDED_SLUG)) {
+        throw new Error(`Test premise broken: "${EXCLUDED_SLUG}" must be in TASKS_EXCLUDED_FROM_RETAKE`);
+      }
+      if (TASKS_EXCLUDED_FROM_RETAKE.has(NON_EXCLUDED_SLUG)) {
+        throw new Error(`Test premise broken: "${NON_EXCLUDED_SLUG}" must NOT be in TASKS_EXCLUDED_FROM_RETAKE`);
+      }
 
       // Self-contained district-level administration the student can access via
       // the same class → school → district hierarchy as the other fixtures.
