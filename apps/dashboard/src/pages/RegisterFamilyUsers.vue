@@ -66,6 +66,9 @@ const spinner = ref(false);
 const dialogHeader = ref('');
 const dialogMessage = ref('');
 const isDialogVisible = ref(false);
+// Handle for the pending post-success redirect timer so it can be cancelled if
+// the user dismisses the success dialog before the auto-redirect fires.
+const redirectTimeout = ref(null);
 
 const showDialog = () => {
   isDialogVisible.value = true;
@@ -73,7 +76,11 @@ const showDialog = () => {
 
 const closeDialog = () => {
   isDialogVisible.value = false;
-  // Don't redirect here - let the success handler do it
+  // Cancel the pending auto-redirect if the user closes the dialog first.
+  if (redirectTimeout.value !== null) {
+    clearTimeout(redirectTimeout.value);
+    redirectTimeout.value = null;
+  }
 };
 
 async function handleParentSubmit(data) {
@@ -96,8 +103,9 @@ async function handleParentSubmit(data) {
     isDialogVisible.value = true;
 
     // Use a full page reload to ensure auth state is properly initialized
-    // This is more reliable than router.push for post-authentication redirects
-    setTimeout(() => {
+    // This is more reliable than router.push for post-authentication redirects.
+    // Keep the handle so closeDialog can cancel it if the user dismisses first.
+    redirectTimeout.value = setTimeout(() => {
       window.location.href = '/';
     }, 1500);
   } catch (error) {
@@ -108,9 +116,11 @@ async function handleParentSubmit(data) {
   }
 }
 
-async function handleSubmit(event) {
-  // Only handle parent registration now
-  handleParentSubmit(event);
+function handleSubmit(event) {
+  // Only handle parent registration now. Return the promise so callers/tests can
+  // await completion and so a synchronous throw isn't silently swallowed (an
+  // `async` wrapper that doesn't await/return the call would drop both).
+  return handleParentSubmit(event);
 }
 
 onMounted(async () => {
@@ -119,6 +129,11 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.body.classList.remove('page-register');
+  // Cancel any pending redirect so it can't fire after the component is gone.
+  if (redirectTimeout.value !== null) {
+    clearTimeout(redirectTimeout.value);
+    redirectTimeout.value = null;
+  }
 });
 </script>
 

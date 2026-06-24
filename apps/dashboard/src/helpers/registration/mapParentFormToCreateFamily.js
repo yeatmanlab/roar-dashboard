@@ -42,6 +42,11 @@ export function mapParentFormToCreateFamily(form) {
     throw new Error('Parent first and last name are required.');
   }
 
+  // NOTE: `form.canContactForFutureStudies` is intentionally omitted. The
+  // `POST /v1/families/` body (`CreateFamilyRequestSchema`) is `.strict()` and
+  // does not yet accept this flag, so including it would make the create request
+  // fail. Preserving it (form schema + backend support) is tracked for a
+  // follow-up; left here so the dropped field isn't silently forgotten.
   return {
     email,
     password: form.password,

@@ -160,18 +160,15 @@ export function mapStudentFormToAddChild(student) {
 
   const demographics = mapDemographics(student);
 
-  const child = {
+  return {
     email,
     password: student.password,
     name,
     dob: formatDobToApiDate(student.dob),
     grade: mapGradeToApi(student.grade),
     activationCode: student.activationCode.trim(),
+    ...(demographics !== undefined && { demographics }),
   };
-
-  if (demographics !== undefined) child.demographics = demographics;
-
-  return child;
 }
 
 export default mapStudentFormToAddChild;

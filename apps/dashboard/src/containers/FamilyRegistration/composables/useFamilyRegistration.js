@@ -99,6 +99,17 @@ export function useFamilyRegistration() {
       const body = mapParentFormToCreateFamily(form);
 
       // 1. Resolve consent BEFORE creating any account.
+      //
+      // NOTE: this runs pre-auth — there is no signed-in caretaker yet, so the
+      // request carries no bearer token. The agreements list route currently
+      // requires authentication (`apps/backend/src/routes/agreements.ts` applies
+      // `AuthGuardMiddleware` to `list`, and the contract declares a 401), so as
+      // things stand this call would 401 and block every new registration. The
+      // backend must make `GET /v1/agreements?agreementType=consent` resolvable
+      // pre-auth (public list route, or a dedicated public consent lookup) — see
+      // the migration report for the flagged backend gap. Do not silently default
+      // the consent version: `resolveConsentAgreementVersionId` deliberately
+      // throws so registration aborts before any account is created.
       const client = getRoarApiClient();
       const agreementVersionId = await resolveConsentAgreementVersionId(client);
 

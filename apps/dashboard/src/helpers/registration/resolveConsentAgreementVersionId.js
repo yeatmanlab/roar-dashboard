@@ -45,13 +45,12 @@ export async function resolveConsentAgreementVersionId(client, perPage = 100) {
     page += 1;
   } while (page <= totalPages);
 
-  // Select the consent agreement that actually has a current version. A consent
-  // agreement without a `currentVersion.id` (e.g. a superseded one) may be
-  // returned ahead of the valid one across pages, so we must scan for the first
-  // one with a usable current version rather than taking the first consent match.
-  const consent = agreements.find(
-    (agreement) => agreement.agreementType === AGREEMENT_TYPES.CONSENT && agreement.currentVersion?.id,
-  );
+  // Select a consent agreement that actually has a current version. The list is
+  // already filtered to `agreementType: consent` by the query above, so we only
+  // need to scan for the first one with a usable `currentVersion.id` — a consent
+  // agreement without one (e.g. a superseded one) may be returned ahead of the
+  // valid one across pages.
+  const consent = agreements.find((agreement) => agreement.currentVersion?.id);
 
   if (!consent) {
     throw new Error('No current consent agreement is available; registration cannot record consent.');
