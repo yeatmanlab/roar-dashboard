@@ -133,6 +133,9 @@ function serializeRace(race) {
  */
 function coerceBooleanStatus(value) {
   if (value === null || value === undefined) return null;
+  // Explicitly handle boolean → 'true'/'false'; fall back to String() for a value
+  // already in string form so this never returns undefined.
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
   return String(value);
 }
 
