@@ -26,7 +26,6 @@ const props = defineProps({
 
 let TaskLauncher;
 
-const taskId = props.taskId;
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
