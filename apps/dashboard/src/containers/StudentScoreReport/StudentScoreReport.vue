@@ -100,8 +100,12 @@ import useUserLongitudinalRunsQuery from '@/composables/queries/useUserLongitudi
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import usePagedPreview from '@/composables/usePagedPreview';
 import PdfExportService from '@/services/PdfExport.service';
-// TODO: import previouslyUnnormedTasks when norms are updated
-import { taskDisplayNames, getDistributionChartPath, updatedNormVersions } from '@/helpers/reports';
+import {
+  taskDisplayNames,
+  getDistributionChartPath,
+  updatedNormVersions,
+  previouslyUnnormedTasks,
+} from '@/helpers/reports';
 
 import AppSpinner from '@/components/AppSpinner.vue';
 import { HeaderScreen, HeaderPrint } from './components/Header';
@@ -176,9 +180,7 @@ const tasks = computed(
       ?.map((assignment) => assignment.taskId)
       .filter((t) => {
         if (!STUDENT_SCORE_REPORT_TASK_IDS.includes(t)) return false;
-        if (t === 'swr-es' || t === 'sre-es') return getScoringVersions.value[t] >= 1;
-        // TODO: Remove this when norms are updated for these tasks
-        // if (previouslyUnnormedTasks.includes(t)) return getScoringVersions.value[t] >= 1;
+        if (previouslyUnnormedTasks.includes(t)) return getScoringVersions.value[t] >= 1;
         return true;
       }) || [],
 );
@@ -230,7 +232,6 @@ const isDistributionChartEnabled = computed(() => {
     if (!task.scores || !normedTaskIds.includes(task.taskId)) return false;
 
     // Spanish tasks require a non-null scoring version
-    // TODO: replace with previouslyUnnormedTasks check when norms are updated
     if (task.taskId === 'sre-es' || task.taskId === 'swr-es') {
       return getScoringVersions.value[task.taskId] >= 1;
     }

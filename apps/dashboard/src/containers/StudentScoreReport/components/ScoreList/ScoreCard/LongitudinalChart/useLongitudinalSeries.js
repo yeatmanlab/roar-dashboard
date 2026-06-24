@@ -16,17 +16,26 @@ const preferredTypes = Object.values(SCORE_TYPES)
 export function useLongitudinalSeries(props) {
   const sorted = computed(() => {
     const a = props.longitudinalData || [];
-    const filtered = a.filter((e) => e.scores?.scoringVersion === props.taskScoringVersions);
+    const filtered = a.filter((e) => e.scores?.scoringVersion == props.taskScoringVersion);
+
+    const minNormedVersions = {
+      swr: 6,
+      sre: 3,
+      pa: 3,
+    };
 
     // For swr, sre, pa we want to include runs with undefined scoringVersion
-    // scoringVersions were not tracked until norm updates in fall 2025
-    if (
-      (props.taskId === 'swr' && props.taskScoringVersions === 6) ||
-      (props.taskId === 'sre' && props.taskScoringVersions === 3) ||
-      (props.taskId === 'pa' && props.taskScoringVersions === 3)
-    ) {
-      const legacyRuns = a.filter((e) => e.scores?.scoringVersion == undefined);
-      filtered.push(...legacyRuns);
+    // scoringVersions were not tracked until norm updates in fall 2025, but these runs are equivalent to the min normed version
+    if (Object.keys(minNormedVersions).includes(props.taskId)) {
+      if (props.taskScoringVersion === minNormedVersions[props.taskId]) {
+        const legacyRuns = a.filter((e) => e.scores?.scoringVersion == undefined);
+        filtered.push(...legacyRuns);
+      }
+      // If no scoring version is provided, include legacy runs with defined minscoring version
+      else if (props.taskScoringVersion == undefined) {
+        const legacyRuns = a.filter((e) => e.scores?.scoringVersion == minNormedVersions[props.taskId]);
+        filtered.push(...legacyRuns);
+      }
     }
 
     return [...filtered].sort((x, y) => new Date(x.date) - new Date(y.date));
