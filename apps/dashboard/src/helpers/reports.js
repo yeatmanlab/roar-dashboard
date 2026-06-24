@@ -1176,7 +1176,7 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
   return undefined;
 }
 
-export const getRawScoreThreshold = (taskId, scoringVersion) => {
+export const getRawScoreThreshold = (taskId, scoringVersion = null) => {
   if (taskId === 'swr') {
     if (scoringVersion >= 7) {
       return {
@@ -1219,7 +1219,7 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
       };
     }
   } else if (taskId === 'pa') {
-    if (scoringVersion >= 5) {
+    if (scoringVersion >= 4) {
       return {
         above: 475.5,
         some: 416.5,
