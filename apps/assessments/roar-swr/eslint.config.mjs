@@ -5,9 +5,9 @@ import globals from 'globals';
 export default [
   ...base,
 
-  // Browser globals for assessment source files
+  // Browser globals for assessment source and serve files
   {
-    files: ['src/**/*.js'],
+    files: ['src/**/*.js', 'serve/**/*.js'],
     languageOptions: {
       globals: {
         ...globals.browser,

@@ -33,6 +33,7 @@ import { EntityType } from '../types/entity-type';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
+import { COMPOSITE_RUN_TASK_ID } from '../constants/run';
 import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
 import {
@@ -2828,12 +2829,13 @@ export class ReportRepository {
         // filter the FDW runs by `r.deleted_at IS NULL` in path A so that
         // soft-deleted runs don't pull dead administrations into the result.
         or(
-          // Path A: student has a run in this admin
+          // Path A: student has a (real, non-composite) run in this admin
           sql`EXISTS (
             SELECT 1 FROM ${fdwRuns} r
             WHERE r.administration_id = ${administrations.id}
               AND r.user_id = ${studentUserId}
               AND r.deleted_at IS NULL
+              AND r.task_id <> ${COMPOSITE_RUN_TASK_ID}
           )`,
           // Path B: org-assignment whose path contains a student effective path
           sql`EXISTS (
