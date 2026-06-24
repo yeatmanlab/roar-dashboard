@@ -11,6 +11,7 @@ import { RunTrialInteractionsRepository } from '../../repositories/run-trial-int
 import { RunScoresRepository } from '../../repositories/run-scores.repository';
 import { FamilyRepository } from '../../repositories/family.repository';
 import { RunService } from '../run/run.service';
+import { FoundationalCompositeService } from '../foundational-composite/foundational-composite.service';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaRelation } from '../authorization/fga-constants';
 import { verifyTargetUserAccess } from '../authorization/verify-target-user-access';
@@ -39,6 +40,7 @@ type RunEngagementEventBody = Extract<RunEventBody, { type: 'engagement' }>;
  * @param runTrialInteractionsRepository - Repository for accessing run trial interactions (injected for testing)
  * @param runScoresRepository - Repository for upserting run scores (injected for testing)
  * @param runService - Service for run-level operations such as recomputing use_for_reporting (injected for testing)
+ * @param foundationalCompositeService - Service that recomputes the foundational composite (injected for testing)
  * @param familyRepository - Repository for accessing family relationships (injected for testing)
  * @param authorizationService - FGA authorization service (injected for testing)
  * @returns Object with event handling methods
@@ -49,6 +51,7 @@ export function RunEventService({
   runTrialInteractionsRepository = new RunTrialInteractionsRepository(),
   runScoresRepository = new RunScoresRepository(),
   runService = RunService(),
+  foundationalCompositeService = FoundationalCompositeService(),
   familyRepository = new FamilyRepository(),
   authorizationService = AuthorizationService(),
 }: {
@@ -57,6 +60,7 @@ export function RunEventService({
   runTrialInteractionsRepository?: RunTrialInteractionsRepository;
   runScoresRepository?: RunScoresRepository;
   runService?: ReturnType<typeof RunService>;
+  foundationalCompositeService?: ReturnType<typeof FoundationalCompositeService>;
   familyRepository?: FamilyRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
@@ -248,12 +252,24 @@ export function RunEventService({
             });
           }
 
-          // Last step of the transaction so the recompute sees this trial's score writes.
-          // Anonymous runs short-circuit inside RunService.recomputeBestRunForVariant.
+          // Recompute use_for_reporting before the composite so the composite reads the
+          // up-to-date reporting run for this variant. Anonymous runs short-circuit inside
+          // RunService.recomputeBestRunForVariant.
           await runService.recomputeBestRunForVariant({
             userId: run.userId,
             administrationId: run.administrationId,
             taskVariantId: run.taskVariantId,
+            transaction: tx,
+          });
+
+          // Last step of the transaction so the composite sees this trial's score writes
+          // and the fresh use_for_reporting flags. No-ops unless the triggering run is a
+          // foundational subtest (pa/swr/letter/sre); anonymous runs short-circuit inside
+          // the service.
+          await foundationalCompositeService.recomputeForRun({
+            userId: run.userId,
+            administrationId: run.administrationId,
+            triggeringTaskId: run.taskId,
             transaction: tx,
           });
         },

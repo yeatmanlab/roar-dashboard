@@ -1,6 +1,8 @@
 import { TRIAL_COUNT_SCORE_NAMES } from '../constants/trial-count-score-names.js';
 import { THETA_SCORE_NAMES } from '../constants/theta-score-names.js';
 
+export { SWR_SCORE_DOMAINS } from './domains.js';
+
 /**
  * Canonical run_scores.name strings written by the SWR scoring callback.
  * This is the single source of truth — both the assessment and the backend
