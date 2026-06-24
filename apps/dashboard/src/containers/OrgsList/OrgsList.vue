@@ -319,7 +319,7 @@ const {
   exportModalMessage,
   exportModalSeverity,
   EXPORT_PHASE,
-} = useOrgExportOrchestrator(activeOrgType, orderBy);
+} = useOrgExportOrchestrator(activeOrgType);
 
 // Use table columns composable (must be after activeOrgType is defined)
 const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, Permissions);
