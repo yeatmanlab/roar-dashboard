@@ -3,15 +3,11 @@ import cypress from 'eslint-plugin-cypress/flat';
 import globals from 'globals';
 
 export default [
-  // serve/ uses the deleted standalone firebaseConfig and is pending a full
-  // SDK-migration rewrite in the configure-letter PR. Exclude it until then.
-  { ignores: ['serve/**'] },
-
   ...base,
 
-  // Browser globals for assessment source files
+  // Browser globals for assessment source and serve files
   {
-    files: ['src/**/*.js'],
+    files: ['src/**/*.js', 'serve/**/*.js'],
     languageOptions: {
       globals: {
         ...globals.browser,

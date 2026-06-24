@@ -54,7 +54,7 @@ export const buildBlock = (preInstructions) => {
     },
     loop_function: () => {
       trialCount += 1;
-      // eslint-disable-next-line eqeqeq
+
       return store.session.get('nextStimulus') != undefined;
     },
   };
