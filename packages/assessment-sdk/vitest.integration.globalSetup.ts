@@ -277,6 +277,7 @@ export default async function globalSetup() {
       // Trade-off: logs are JSON only, less readable during debugging.
       // For human-readable logs, rebuild locally: NODE_ENV=development npm run test -w packages/assessment-sdk
       NODE_ENV: 'production',
+      ALLOWED_ORIGINS: `http://localhost:${BACKEND_PORT}`,
       PORT: BACKEND_PORT,
       // Firebase Admin SDK connects to the emulator when this is set —
       // no TestAuthProvider needed, real Firebase ID tokens are verified.
