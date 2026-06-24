@@ -259,6 +259,7 @@
             :page-limit="pageLimit"
             :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
+            :task-scoring-versions="getScoringVersions"
             test-id="score-report__data-table"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
