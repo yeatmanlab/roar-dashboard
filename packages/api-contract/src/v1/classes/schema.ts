@@ -43,6 +43,42 @@ export const CreateClassResponseSchema = z.object({
 export type CreateClassResponse = z.infer<typeof CreateClassResponseSchema>;
 
 /**
+ * Request body for updating a class (PATCH /classes/:classId).
+ *
+ * A partial of the mutable subset of CreateClassRequestSchema, EXCLUDING
+ * `schoolId` — every field is optional and only those present in the body are
+ * applied. `.strict()` rejects unknown keys and immutable identity/hierarchy
+ * fields (`id`, `schoolId`, `districtId`, `orgPath`): a class cannot be moved
+ * to a different school/district after creation (`orgPath` and `districtId` are
+ * derived from the parent school and enforced by DB triggers).
+ *
+ * `schoolLevels` is a generated column computed from `grades`, so it is never
+ * accepted in the body — updating `grades` recomputes it server-side.
+ */
+export const UpdateClassRequestSchema = z
+  .object({
+    name: z.string().min(1).max(255).optional(),
+    classType: ClassTypeSchema.optional(),
+    subjects: z.array(z.string()).optional(),
+    grades: z.array(UserGradeSchema).optional(),
+    location: z.string().optional(),
+  })
+  .strict();
+
+export type UpdateClassRequest = z.infer<typeof UpdateClassRequestSchema>;
+
+/**
+ * Response payload for PATCH /classes/:classId.
+ *
+ * Returns only the updated class id, matching the create-response shape.
+ */
+export const UpdateClassResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type UpdateClassResponse = z.infer<typeof UpdateClassResponseSchema>;
+
+/**
  * Class detail schema (read shape).
  *
  * Classes sit at the bottom of the org hierarchy (district > school > class).

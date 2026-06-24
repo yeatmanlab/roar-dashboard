@@ -6,10 +6,11 @@ import type {
   GroupsListQuery,
   InvitationCode as ApiInvitationCode,
   EnrolledUsersQuery,
+  UpdateGroupRequest,
 } from '@roar-platform/api-contract';
 import type { InvitationCode } from '../db/schema';
 import type { Group } from '../repositories/group.repository';
-import type { CreateGroupServiceInput } from '../services/group/group.service';
+import type { CreateGroupServiceInput, UpdateGroupServiceInput } from '../services/group/group.service';
 import { GroupService } from '../services/group/group.service';
 import type { AuthContext } from '../types/auth-context';
 import { ApiError } from '../errors/api-error';
@@ -189,6 +190,46 @@ export const GroupsController = {
     } catch (error) {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update a group.
+   *
+   * Restricted to super admins (enforced in GroupService). Returns the updated
+   * group id only.
+   *
+   * @param authContext - User's authentication context
+   * @param groupId - UUID of the group to update
+   * @param body - Request body with the mutable group fields
+   */
+  update: async (authContext: AuthContext, groupId: string, body: UpdateGroupRequest) => {
+    try {
+      const serviceInput: UpdateGroupServiceInput = {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.abbreviation !== undefined && { abbreviation: body.abbreviation }),
+        ...(body.groupType !== undefined && { groupType: body.groupType }),
+        ...(body.location !== undefined && { location: body.location }),
+      };
+
+      const { id } = await groupService.update(authContext, groupId, serviceInput);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: { id },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,
