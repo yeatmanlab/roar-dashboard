@@ -1,43 +1,37 @@
 import { describe, it, expect } from 'vitest';
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useProgressData } from './useProgressData';
 
+const buildStudents = (progress, userOverrides = {}) =>
+  ref([
+    {
+      user: {
+        userId: 'user1',
+        assessmentPid: 'PID123',
+        username: 'student1',
+        email: 'student1@test.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        grade: '3',
+        schoolName: 'Test School',
+        ...userOverrides,
+      },
+      progress,
+    },
+  ]);
+
 describe('useProgressData', () => {
-  it('should return empty array when assignment data is null', () => {
-    const assignmentData = ref(null);
-    const schoolNameDictionary = computed(() => ({}));
-
-    const { computedProgressData } = useProgressData(assignmentData, schoolNameDictionary);
-
+  it('returns an empty array when student data is null', () => {
+    const { computedProgressData } = useProgressData(ref(null));
     expect(computedProgressData.value).toEqual([]);
   });
 
-  it('should transform assignment data into progress data', () => {
-    const assignmentData = ref([
-      {
-        assignment: {
-          userData: { grade: 3 },
-          assessments: [
-            { taskId: 'swr', completedOn: '2023-01-01' },
-            { taskId: 'pa', startedOn: '2023-01-02' },
-          ],
-        },
-        user: {
-          username: 'student1',
-          email: 'student1@test.com',
-          userId: 'user1',
-          name: { first: 'John', last: 'Doe' },
-          assessmentPid: 'PID123',
-          schools: { current: ['school1'] },
-        },
-      },
-    ]);
+  it('maps a student row through to the table shape', () => {
+    const students = buildStudents({
+      't-swr': { status: 'completed-required', startedAt: null, completedAt: '2023-01-01T00:00:00.000Z' },
+    });
 
-    const schoolNameDictionary = computed(() => ({
-      school1: 'Test School',
-    }));
-
-    const { computedProgressData } = useProgressData(assignmentData, schoolNameDictionary);
+    const { computedProgressData } = useProgressData(students);
 
     expect(computedProgressData.value).toHaveLength(1);
     expect(computedProgressData.value[0]).toMatchObject({
@@ -51,32 +45,15 @@ describe('useProgressData', () => {
         assessmentPid: 'PID123',
         schoolName: 'Test School',
       },
-      routeParams: {
-        userId: 'user1',
-      },
+      routeParams: { userId: 'user1' },
       launchTooltip: 'View assessment portal for John',
     });
   });
 
-  it('should handle completed assessment status', () => {
-    const assignmentData = ref([
-      {
-        assignment: {
-          userData: { grade: 3 },
-          assessments: [{ taskId: 'swr', completedOn: '2023-01-01' }],
-        },
-        user: {
-          username: 'student1',
-          userId: 'user1',
-          name: { first: 'John' },
-        },
-      },
-    ]);
+  it('maps completed-required to the completed descriptor', () => {
+    const { computedProgressData } = useProgressData(buildStudents({ 't-swr': { status: 'completed-required' } }));
 
-    const schoolNameDictionary = computed(() => ({}));
-    const { computedProgressData } = useProgressData(assignmentData, schoolNameDictionary);
-
-    expect(computedProgressData.value[0].progress.swr).toMatchObject({
+    expect(computedProgressData.value[0].progress['t-swr']).toMatchObject({
       value: 'completed',
       icon: 'pi pi-check',
       severity: 'success',
@@ -84,25 +61,10 @@ describe('useProgressData', () => {
     });
   });
 
-  it('should handle started assessment status', () => {
-    const assignmentData = ref([
-      {
-        assignment: {
-          userData: { grade: 3 },
-          assessments: [{ taskId: 'pa', startedOn: '2023-01-02' }],
-        },
-        user: {
-          username: 'student1',
-          userId: 'user1',
-          name: { first: 'John' },
-        },
-      },
-    ]);
+  it('maps started-required to the started descriptor', () => {
+    const { computedProgressData } = useProgressData(buildStudents({ 't-pa': { status: 'started-required' } }));
 
-    const schoolNameDictionary = computed(() => ({}));
-    const { computedProgressData } = useProgressData(assignmentData, schoolNameDictionary);
-
-    expect(computedProgressData.value[0].progress.pa).toMatchObject({
+    expect(computedProgressData.value[0].progress['t-pa']).toMatchObject({
       value: 'started',
       icon: 'pi pi-spinner-dotted',
       severity: 'warning',
@@ -110,25 +72,10 @@ describe('useProgressData', () => {
     });
   });
 
-  it('should handle assigned assessment status', () => {
-    const assignmentData = ref([
-      {
-        assignment: {
-          userData: { grade: 3 },
-          assessments: [{ taskId: 'sre' }],
-        },
-        user: {
-          username: 'student1',
-          userId: 'user1',
-          name: { first: 'John' },
-        },
-      },
-    ]);
+  it('maps assigned-required to the assigned descriptor', () => {
+    const { computedProgressData } = useProgressData(buildStudents({ 't-sre': { status: 'assigned-required' } }));
 
-    const schoolNameDictionary = computed(() => ({}));
-    const { computedProgressData } = useProgressData(assignmentData, schoolNameDictionary);
-
-    expect(computedProgressData.value[0].progress.sre).toMatchObject({
+    expect(computedProgressData.value[0].progress['t-sre']).toMatchObject({
       value: 'assigned',
       icon: 'pi pi-book',
       severity: 'danger',
@@ -136,25 +83,10 @@ describe('useProgressData', () => {
     });
   });
 
-  it('should handle optional assessment status', () => {
-    const assignmentData = ref([
-      {
-        assignment: {
-          userData: { grade: 3 },
-          assessments: [{ taskId: 'vocab', optional: true }],
-        },
-        user: {
-          username: 'student1',
-          userId: 'user1',
-          name: { first: 'John' },
-        },
-      },
-    ]);
+  it('maps any optional status to the optional descriptor, even when completed', () => {
+    const { computedProgressData } = useProgressData(buildStudents({ 't-vocab': { status: 'completed-optional' } }));
 
-    const schoolNameDictionary = computed(() => ({}));
-    const { computedProgressData } = useProgressData(assignmentData, schoolNameDictionary);
-
-    expect(computedProgressData.value[0].progress.vocab).toMatchObject({
+    expect(computedProgressData.value[0].progress['t-vocab']).toMatchObject({
       value: 'optional',
       icon: 'pi pi-question',
       severity: 'info',
@@ -162,73 +94,24 @@ describe('useProgressData', () => {
     });
   });
 
-  it('should handle missing school name', () => {
-    const assignmentData = ref([
-      {
-        assignment: {
-          userData: { grade: 3 },
-          assessments: [],
-        },
-        user: {
-          username: 'student1',
-          userId: 'user1',
-          name: { first: 'John' },
-          schools: { current: ['nonexistent'] },
-        },
-      },
-    ]);
-
-    const schoolNameDictionary = computed(() => ({}));
-    const { computedProgressData } = useProgressData(assignmentData, schoolNameDictionary);
-
-    expect(computedProgressData.value[0].user.schoolName).toBe(undefined);
-  });
-
-  it('should use username in launch tooltip when first name is missing', () => {
-    const assignmentData = ref([
-      {
-        assignment: {
-          userData: { grade: 3 },
-          assessments: [],
-        },
-        user: {
-          username: 'student1',
-          userId: 'user1',
-        },
-      },
-    ]);
-
-    const schoolNameDictionary = computed(() => ({}));
-    const { computedProgressData } = useProgressData(assignmentData, schoolNameDictionary);
+  it('falls back to username in the launch tooltip when first name is missing', () => {
+    const { computedProgressData } = useProgressData(buildStudents({}, { firstName: null }));
 
     expect(computedProgressData.value[0].launchTooltip).toBe('View assessment portal for student1');
   });
 
-  it('should handle multiple assessments per student', () => {
-    const assignmentData = ref([
-      {
-        assignment: {
-          userData: { grade: 4 },
-          assessments: [
-            { taskId: 'swr', completedOn: '2023-01-01' },
-            { taskId: 'pa', startedOn: '2023-01-02' },
-            { taskId: 'sre' },
-          ],
-        },
-        user: {
-          username: 'student1',
-          userId: 'user1',
-          name: { first: 'Jane' },
-        },
-      },
-    ]);
-
-    const schoolNameDictionary = computed(() => ({}));
-    const { computedProgressData } = useProgressData(assignmentData, schoolNameDictionary);
+  it('maps multiple tasks per student', () => {
+    const { computedProgressData } = useProgressData(
+      buildStudents({
+        't-swr': { status: 'completed-required' },
+        't-pa': { status: 'started-required' },
+        't-sre': { status: 'assigned-required' },
+      }),
+    );
 
     expect(Object.keys(computedProgressData.value[0].progress)).toHaveLength(3);
-    expect(computedProgressData.value[0].progress.swr.value).toBe('completed');
-    expect(computedProgressData.value[0].progress.pa.value).toBe('started');
-    expect(computedProgressData.value[0].progress.sre.value).toBe('assigned');
+    expect(computedProgressData.value[0].progress['t-swr'].value).toBe('completed');
+    expect(computedProgressData.value[0].progress['t-pa'].value).toBe('started');
+    expect(computedProgressData.value[0].progress['t-sre'].value).toBe('assigned');
   });
 });

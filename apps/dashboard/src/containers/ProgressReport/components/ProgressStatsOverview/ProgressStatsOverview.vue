@@ -3,20 +3,20 @@
     <div class="chart-grid">
       <div class="chart-section-header">Progress by Assessment</div>
 
-      <template v-for="{ taskId } of administrationData.assessments" :key="taskId">
-        <div v-if="tasksDictionary[taskId]" class="chart-label text-lg font-bold text-gray-600">
-          <span class="whitespace-nowrap">{{ tasksDictionary[taskId]?.nameTechnical ?? taskId }}</span>
-          <span v-if="tasksDictionary[taskId].name" class="text-sm font-light uppercase label-secondary">
-            ({{ tasksDictionary[taskId]?.nameSimple }})
+      <template v-for="task of adminStats.byTask" :key="task.taskId">
+        <div v-if="tasksDictionary[task.taskSlug]" class="chart-label text-lg font-bold text-gray-600">
+          <span class="whitespace-nowrap">{{ tasksDictionary[task.taskSlug]?.nameTechnical ?? task.taskName }}</span>
+          <span v-if="tasksDictionary[task.taskSlug].name" class="text-sm font-light uppercase label-secondary">
+            ({{ tasksDictionary[task.taskSlug]?.nameSimple }})
           </span>
         </div>
         <div v-else class="chart-label whitespace-nowrap text-lg font-bold text-gray-600">
-          {{ taskId }}
+          {{ task.taskName }}
         </div>
         <PvChart
           type="bar"
-          :data="setProgressChartData(getTaskStats(taskId))"
-          :options="setProgressChartOptions(getTaskStats(taskId))"
+          :data="setProgressChartData(getTaskStats(task))"
+          :options="setProgressChartOptions(getTaskStats(task))"
           class="h-2rem chart-item"
         />
       </template>
@@ -49,10 +49,6 @@ const props = defineProps({
     type: Object,
     required: true,
   },
-  administrationData: {
-    type: Object,
-    required: true,
-  },
   tasksDictionary: {
     type: Object,
     required: true,
@@ -60,28 +56,36 @@ const props = defineProps({
 });
 
 const totalAssignments = computed(() => {
-  return (props.adminStats?.assigned || 0) + (props.adminStats?.started || 0) + (props.adminStats?.completed || 0);
+  return (
+    (props.adminStats?.studentsAssigned || 0) +
+    (props.adminStats?.studentsStarted || 0) +
+    (props.adminStats?.studentsCompleted || 0)
+  );
 });
 
 /**
- * Get stats for a specific task from the new data structure
- * New format: { byTask: { "task-id": { assigned, started, completed } } }
+ * Per-task chart stats from a `byTask` overview entry.
+ * The convenience totals (`assigned`/`started`/`completed`) are per-task,
+ * mutually-exclusive student counts.
  */
-const getTaskStats = (taskId) => {
-  // Convert taskId format: "roar-inference" -> "roar-inference" (keep as is)
-  // The byTask object uses the taskId directly
-  return props.adminStats?.byTask?.[taskId] || { assigned: 0, started: 0, completed: 0 };
+const getTaskStats = (task) => {
+  return {
+    assigned: task?.assigned || 0,
+    started: task?.started || 0,
+    completed: task?.completed || 0,
+  };
 };
 
 /**
- * Get total stats from the new data structure
- * New format: { assigned, started, completed, byTask: {...} }
+ * Total stats are the per-student, assignment-level buckets across required tasks
+ * (`studentsAssigned` + `studentsStarted` + `studentsCompleted` =
+ * `studentsWithRequiredTasks`).
  */
 const getTotalStats = () => {
   return {
-    assigned: props.adminStats?.assigned || 0,
-    started: props.adminStats?.started || 0,
-    completed: props.adminStats?.completed || 0,
+    assigned: props.adminStats?.studentsAssigned || 0,
+    started: props.adminStats?.studentsStarted || 0,
+    completed: props.adminStats?.studentsCompleted || 0,
   };
 };
 </script>
