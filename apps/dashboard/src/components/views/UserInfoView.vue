@@ -1,12 +1,7 @@
 <template>
   <section id="your-information" class="form-section">
     <h2>Your Information</h2>
-    <EditUsersForm
-      v-model="userDataModel"
-      :user-data="userData"
-      :edit-mode="isEditMode"
-      @update:user-data="localUserData = $event"
-    />
+    <EditUsersForm :user-data="userData" :edit-mode="isEditMode" @update:user-data="localUserData = $event" />
     <div v-if="userType === 'admin'" class="flex">
       <PvButton
         v-if="!isEditMode"
@@ -37,7 +32,9 @@ import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useUserProfileQuery from '@/composables/queries/useUserProfileQuery';
+import useUpdateUserMutation from '@/composables/mutations/useUpdateUserMutation';
+import { mapUserFormToUpdateBody } from '@/helpers/mappers/mapUserFormToUpdateBody';
 import EditUsersForm from '../EditUsersForm.vue';
 
 // +----------------+
@@ -74,9 +71,17 @@ onMounted(() => {
 // +---------+
 // | Queries |
 // +---------+
-const { data: userData } = useUserDataQuery(null, {
+// Reads the current user from the API (`GET /v1/users/:id`). The `restConfig`
+// readiness gate (above) still drives `initialized`; the query additionally
+// self-gates on the access token, so it won't fire before auth is ready.
+const { data: userData } = useUserProfileQuery(roarUid, {
   enabled: initialized,
 });
+
+// +------------+
+// | Mutations  |
+// +------------+
+const { mutateAsync: updateUser } = useUpdateUserMutation();
 
 // +------------+
 // | Submission |
@@ -84,21 +89,36 @@ const { data: userData } = useUserDataQuery(null, {
 async function submitUserData() {
   isSubmitting.value = true;
 
-  await roarfirekit.value
-    .updateUserData(roarUid.value, localUserData.value)
-    .then(() => {
-      isEditMode.value = false;
-      isSubmitting.value = false;
-      toast.add({ severity: 'success', summary: 'Updated', detail: 'Your Info has been updated', life: 3000 });
-    })
-    .catch((error) => {
-      console.log('Error updating user data', error);
+  try {
+    // Map the form's nested model to the flat `UpdateUserRequestBodySchema`
+    // body before writing, so the read and write stay on the same API source.
+    const body = mapUserFormToUpdateBody(localUserData.value);
+
+    // UpdateUserRequestBodySchema requires at least one field, so an empty body
+    // would be rejected. Guard it and tell the user instead of firing a 400.
+    // (isSubmitting is reset by the finally block on the early return.)
+    if (!body || Object.keys(body).length === 0) {
       toast.add({
-        severity: 'error',
-        summary: 'Unexpected Error',
-        detail: 'An unexpected error has occurred.',
+        severity: 'warn',
+        summary: 'No Changes',
+        detail: 'Please edit at least one field before updating.',
         life: 3000,
       });
+      return;
+    }
+
+    await updateUser({ userId: roarUid.value, userData: body });
+    isEditMode.value = false;
+    toast.add({ severity: 'success', summary: 'Updated', detail: 'Your Info has been updated', life: 3000 });
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Unexpected Error',
+      detail: 'An unexpected error has occurred.',
+      life: 3000,
     });
+  } finally {
+    isSubmitting.value = false;
+  }
 }
 </script>
