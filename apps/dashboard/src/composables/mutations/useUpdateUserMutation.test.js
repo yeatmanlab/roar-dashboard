@@ -1,97 +1,89 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { withSetup } from '@/test-support/withSetup.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
+import { withSetup } from '@/test-support/withSetup.js';
+import { USER_DATA_QUERY_KEY, USER_PROFILE_QUERY_KEY } from '@/constants/queryKeys';
 import useUpdateUserMutation from './useUpdateUserMutation';
 
-vi.mock('@/store/auth', () => ({
-  useAuthStore: vi.fn(),
+const mockUpdateUser = vi.fn();
+
+vi.mock('@/clients/roar-api', () => ({
+  getRoarApiClient: () => ({
+    users: { update: mockUpdateUser },
+  }),
 }));
 
-vi.mock('@tanstack/vue-query', async (getModule) => {
-  const original = await getModule();
-  return {
-    ...original,
-    useQuery: vi.fn().mockImplementation(original.useQuery),
-  };
-});
+const MOCK_USER_ID = '00000000-0000-0000-0000-000000000001';
+const mockBody = { nameFirst: 'Ada', nameLast: 'Lovelace' };
 
 describe('useUpdateUserMutation', () => {
   let queryClient;
 
   beforeEach(() => {
-    queryClient = new VueQuery.QueryClient();
+    vi.restoreAllMocks();
+    queryClient = new VueQuery.QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
+    mockUpdateUser.mockReset();
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
-    vi.resetAllMocks();
-    queryClient?.clear();
-  });
-
-  const mockUser = { userId: 'mock-user-id', userData: { email: 'mock-user@stanford.edu' } };
-
-  it('should call updateUserData when the mutation is triggered', async () => {
-    const mockAuthStore = { roarfirekit: { updateUserData: vi.fn() } };
-    useAuthStore.mockReturnValue(mockAuthStore);
+  it('calls users.update with the path param and body and treats 204 as success', async () => {
+    // The contract returns 204 No Content — no body to unwrap.
+    mockUpdateUser.mockResolvedValue({ status: 204, body: undefined });
 
     const [result] = withSetup(() => useUpdateUserMutation(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    const { mutateAsync } = result;
-    await mutateAsync(mockUser);
+    const data = await result.mutateAsync({ userId: MOCK_USER_ID, userData: mockBody });
 
-    expect(mockAuthStore.roarfirekit.updateUserData).toHaveBeenCalledWith(mockUser.userId, mockUser.userData);
+    expect(mockUpdateUser).toHaveBeenCalledWith({
+      params: { id: MOCK_USER_ID },
+      body: mockBody,
+    });
+    expect(data).toBeUndefined();
+    expect(result.isSuccess.value).toBe(true);
   });
 
-  it('should invalidate task queries upon mutation success', async () => {
-    const mockInvalidateQueries = vi.fn();
-    const mockAuthStore = { roarfirekit: { updateUserData: vi.fn() } };
-
-    useAuthStore.mockReturnValue(mockAuthStore);
-
-    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));
+  it('invalidates both the profile and legacy user queries on success', async () => {
+    // useQueryClient() resolves to the plugin-provided client, so spying on the
+    // instance avoids mocking the @tanstack/vue-query module itself.
+    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue();
+    mockUpdateUser.mockResolvedValue({ status: 204, body: undefined });
 
     const [result] = withSetup(() => useUpdateUserMutation(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    const { mutateAsync, isSuccess } = result;
-    await mutateAsync(mockUser);
+    await result.mutateAsync({ userId: MOCK_USER_ID, userData: mockBody });
 
-    expect(isSuccess.value).toBe(true);
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['user'] });
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: [USER_PROFILE_QUERY_KEY] });
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: [USER_DATA_QUERY_KEY] });
   });
 
-  it('should not invalidate task queries upon mutation failure', async () => {
-    const mockInvalidateQueries = vi.fn();
-    const mockError = new Error('Mock error');
-    const mockAuthStore = { roarfirekit: { updateUserData: vi.fn(() => Promise.reject(mockError)) } };
-
-    useAuthStore.mockReturnValue(mockAuthStore);
-
-    vi.spyOn(VueQuery, 'useQueryClient').mockImplementation(() => ({ invalidateQueries: mockInvalidateQueries }));
+  it('throws a structured error and does not invalidate queries on non-204 responses', async () => {
+    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue();
+    mockUpdateUser.mockResolvedValue({
+      status: 404,
+      body: { error: { message: 'Not found' } },
+    });
 
     const [result] = withSetup(() => useUpdateUserMutation(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    const { mutateAsync, isSuccess, isError } = result;
-
-    // Capture the rejection so the assertions run unconditionally — if the
-    // mutation unexpectedly succeeds, `thrownError` stays undefined and the
-    // `toBe(mockError)` assertion fails.
+    // Capture the rejection so the assertions run unconditionally.
     let thrownError;
     try {
-      await mutateAsync(mockUser);
+      await result.mutateAsync({ userId: MOCK_USER_ID, userData: mockBody });
     } catch (error) {
       thrownError = error;
     }
 
-    expect(thrownError).toBe(mockError);
-    expect(isSuccess.value).toBe(false);
-    expect(isError.value).toBe(true);
-    expect(mockInvalidateQueries).not.toHaveBeenCalled();
+    expect(thrownError).toMatchObject({
+      status: 404,
+      body: { error: { message: 'Not found' } },
+    });
+    expect(result.isError.value).toBe(true);
+    expect(invalidateQueriesSpy).not.toHaveBeenCalled();
   });
 });
