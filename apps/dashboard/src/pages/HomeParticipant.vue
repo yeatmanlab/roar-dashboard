@@ -397,7 +397,7 @@ async function updateConsent() {
   // agreements query so the server re-computes `signed` (now true) and the next
   // `checkConsent()` run closes the modal. The gate only clears after a real
   // signature is recorded.
-  if (!userId.value || !consentVersionId.value) return;
+  if (!userId.value || !consentAgreementId.value || !consentVersionId.value) return;
 
   await recordUserAgreement({
     userId: userId.value,
@@ -500,7 +500,7 @@ watch(
 // administration and its agreements loading.
 watch(
   [userData, selectedAdminId, administrationAgreements, isAgreementsResolved],
-  async ([newUserData], [, previousSelectedAdminId] = []) => {
+  ([newUserData], [, previousSelectedAdminId] = []) => {
     // A new administration was selected: re-gate until the new administration's
     // requirement resolves.
     if (selectedAdminId.value !== previousSelectedAdminId) {
