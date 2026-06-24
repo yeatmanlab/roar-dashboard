@@ -69,6 +69,28 @@ export interface CreateDistrictInput {
 }
 
 /**
+ * Column-shaped partial for updating a district at the repository layer.
+ *
+ * Only the mutable, caller-settable columns appear here. Server-managed and
+ * hierarchy columns (`orgType`, `parentOrgId`, `path`, `isRosteringRootOrg`)
+ * are intentionally excluded — they cannot change after creation. `schoolNumber`
+ * is a school-level identifier and is not part of the district update input.
+ */
+export interface UpdateDistrictInput {
+  name?: string;
+  abbreviation?: string;
+  locationAddressLine1?: string;
+  locationAddressLine2?: string;
+  locationCity?: string;
+  locationStateProvince?: string;
+  locationPostalCode?: string;
+  locationCountry?: string;
+  mdrNumber?: string;
+  ncesId?: string;
+  stateId?: string;
+}
+
+/**
  * Options for listing districts
  */
 export interface ListDistrictOptions {
@@ -317,6 +339,21 @@ export class DistrictRepository extends LtreeRepository<District, typeof orgs> {
         ...(input.stateId !== undefined && { stateId: input.stateId }),
       },
     });
+  }
+
+  /**
+   * Update a district's mutable columns.
+   *
+   * Thin wrapper over `BaseRepository.update` that scopes the typed partial to
+   * the district's mutable columns. Identity and hierarchy columns are never
+   * passed in (enforced by the `UpdateDistrictInput` shape). The service is
+   * responsible for existence and authorization checks before calling this.
+   *
+   * @param districtId - UUID of the district to update
+   * @param updates - Column-shaped partial of mutable fields
+   */
+  async updateDistrict(districtId: string, updates: UpdateDistrictInput): Promise<void> {
+    await this.update({ id: districtId, data: updates });
   }
 
   /**

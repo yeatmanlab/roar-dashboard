@@ -1,5 +1,9 @@
 import { StatusCodes } from 'http-status-codes';
-import type { CreateSchoolServiceInput, SchoolWithEmbeds } from '../services/school/school.service';
+import type {
+  CreateSchoolServiceInput,
+  SchoolWithEmbeds,
+  UpdateSchoolServiceInput,
+} from '../services/school/school.service';
 import { SchoolService } from '../services/school/school.service';
 import type {
   CreateSchoolRequest,
@@ -8,6 +12,7 @@ import type {
   SchoolClassesListQuery,
   SchoolClass as ApiSchoolClass,
   EnrolledUsersQuery,
+  UpdateSchoolRequest,
 } from '@roar-platform/api-contract';
 import { SchoolEmbedOption } from '@roar-platform/api-contract';
 import { ApiError } from '../errors/api-error';
@@ -223,6 +228,47 @@ export const SchoolsController = {
           StatusCodes.UNAUTHORIZED,
           StatusCodes.NOT_FOUND,
           StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update a school.
+   *
+   * Restricted to super admins (enforced in SchoolService). Returns the updated
+   * school id only — clients that need the full entity should follow up with
+   * GET /schools/:schoolId.
+   *
+   * @param authContext - User's authentication context
+   * @param schoolId - UUID of the school to update
+   * @param body - Request body with the mutable school fields
+   */
+  update: async (authContext: AuthContext, schoolId: string, body: UpdateSchoolRequest) => {
+    try {
+      const serviceInput: UpdateSchoolServiceInput = {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.abbreviation !== undefined && { abbreviation: body.abbreviation }),
+        ...(body.location !== undefined && { location: body.location }),
+        ...(body.identifiers !== undefined && { identifiers: body.identifiers }),
+      };
+
+      const { id } = await schoolService.update(authContext, schoolId, serviceInput);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: { id },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
