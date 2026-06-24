@@ -90,7 +90,6 @@ export const UsersContract = c.router(
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
         409: ErrorEnvelopeSchema,
-        422: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
@@ -99,14 +98,12 @@ export const UsersContract = c.router(
         'Partially updates a user by their ID. ' +
         'Only the fields present in the request body are updated — omitted fields are left unchanged. ' +
         'Nullable fields may be explicitly set to null to clear their value. ' +
-        "When a password is supplied it updates the target user's Firebase Auth credential rather than the database. " +
         'Returns a 204 No Content on success. ' +
         'Returns a 400 if the request body is missing or contains invalid field values. ' +
         'Returns a 401 if the requesting user is not authenticated. ' +
         'Returns a 403 if the requesting user is not authorized to update the requested user. ' +
         'Returns a 404 if the requested user is not found. ' +
         'Returns a 409 if a unique field (email or username) conflicts with an existing user. ' +
-        'Returns a 422 if a password is supplied for a user with no linked Firebase account. ' +
         'Returns a 500 if an internal server error occurs.',
     },
     recordUserAgreement: {
