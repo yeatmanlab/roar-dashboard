@@ -270,14 +270,10 @@ const ScoreReportService = (() => {
     const computedTaskAcc = {};
 
     for (const { taskId, scores, reliable, optional, engagementFlags } of taskData) {
-      console.log(scores?.composite);
       const compositeScores = scores?.composite;
 
       let rawScore = null;
 
-      const useSpanishNorms = (taskId === 'swr-es' || taskId === 'sre-es') && scoringVersions[taskId] >= 1;
-      // Uncomment when norms are updated for tasks and want to hide cards for unnormed. Temporarily show unnormed cards as placeholders.
-      // Replace useSpanishNorms.
       const hasNorms =
         (!previouslyUnnormedTasks.includes(taskId) || scoringVersions[taskId] >= 1) &&
         (!taskId.includes('es') || scoringVersions[taskId] >= 1);
@@ -312,8 +308,7 @@ const ScoreReportService = (() => {
           },
           percentileScore: {
             name:
-              // TODO: Check why !useSpanishNorms is needed here
-              tasksToDisplayPercentCorrect.includes(taskId) && !useSpanishNorms && !hasNorms
+              tasksToDisplayPercentCorrect.includes(taskId) && !hasNorms
                 ? i18n.t('scoreReports.percentCorrect')
                 : i18n.t('scoreReports.percentileScore'),
             value: Math.round(percentileScore),

@@ -232,7 +232,6 @@ const isDistributionChartEnabled = computed(() => {
     if (!task.scores || !normedTaskIds.includes(task.taskId)) return false;
 
     // Spanish tasks require a non-null scoring version
-    // TODO: replace with previouslyUnnormedTasks check when norms are updated
     if (task.taskId === 'sre-es' || task.taskId === 'swr-es') {
       return getScoringVersions.value[task.taskId] >= 1;
     }
