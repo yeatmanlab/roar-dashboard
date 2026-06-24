@@ -49,6 +49,9 @@ function toGame(task, matchedTask) {
       external: matchedTask?.taskConfig?.external ?? false,
       taskURL: matchedTask?.taskConfig?.taskURL,
       meta: matchedTask?.taskConfig?.meta,
+      // `variantURL` is intentionally not carried here: the decision was to drop
+      // variant-level URLs, so GameTabs falls back to `taskURL` for external
+      // links. This omission is deliberate, not an oversight.
     },
   };
 }

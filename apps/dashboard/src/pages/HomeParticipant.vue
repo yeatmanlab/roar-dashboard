@@ -217,19 +217,19 @@ const sortedUserAdministrations = computed(() => {
 // `GET /administrations/:id/agreements`.
 const selectedAdminId = computed(() => selectedAdmin.value?.id);
 
-const {
-  data: administrationAgreements,
-  isSuccess: isAgreementsSuccess,
-  isError: isAgreementsError,
-} = useAdministrationAgreementsQuery(selectedAdminId, {
-  enabled: initialized,
-});
+const { data: administrationAgreements, isSuccess: isAgreementsSuccess } = useAdministrationAgreementsQuery(
+  selectedAdminId,
+  {
+    enabled: initialized,
+  },
+);
 
 // The agreements requirement is "resolved" only when the query has succeeded for
-// the currently selected administration and is not in an error state. While it
-// is loading or errored we must treat consent as UNRESOLVED and block the
-// student rather than proceeding as if no consent were required.
-const isAgreementsResolved = computed(() => isAgreementsSuccess.value && !isAgreementsError.value);
+// the currently selected administration. While it is loading or errored we must
+// treat consent as UNRESOLVED and block the student rather than proceeding as if
+// no consent were required. `isSuccess` already excludes the error state (the two
+// are mutually exclusive in TanStack Query), so checking it alone is sufficient.
+const isAgreementsResolved = computed(() => isAgreementsSuccess.value);
 
 // Tracks whether the consent gate has been evaluated to a definitive outcome
 // (either "not required" or "required + decision made") for the current
