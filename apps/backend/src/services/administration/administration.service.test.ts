@@ -892,8 +892,11 @@ describe('AdministrationService', () => {
         ]);
         mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
 
-        // The self-read path resolves the in-context user before enrichment.
-        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: 'student-123' }));
+        // The self-read path resolves the in-context user (authContext.userId) before
+        // enrichment. Echo the requested id so the resolved user mirrors the caller —
+        // this is what drives the per-student canonical-runs lookup, so the test must
+        // not pin it to a fixed id that diverges from the requester.
+        mockUserRepository.getById.mockImplementation(({ id }) => Promise.resolve(UserFactory.build({ id })));
         // Null conditions → assigned to all, required.
         mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
       }
@@ -1091,6 +1094,10 @@ describe('AdministrationService', () => {
         mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
         mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
         mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+        // Self-read enrichment resolves the in-context user first; without this stub
+        // the per-student pass is skipped and no canonical-runs query is issued.
+        mockUserRepository.getById.mockImplementation(({ id }) => Promise.resolve(UserFactory.build({ id })));
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
 
         await buildService().list(
           { userId: 'student-123', isSuperAdmin: true },
