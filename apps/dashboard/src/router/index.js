@@ -101,7 +101,7 @@ const routes = [
     path: GAME_ROUTES.PHONICS,
     name: 'Phonics',
     component: () => import('../components/tasks/TaskLetter.vue'),
-    props: { taskId: 'phonics', language: 'en' },
+    props: { task: 'phonics', taskId: 'phonics', language: 'en' },
     meta: { pageTitle: 'Phonics' },
   },
   {
@@ -504,6 +504,7 @@ const routes = [
     name: 'Launch Phonics',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: (route) => ({
+      task: 'phonics',
       taskId: 'phonics',
       language: 'en',
       launchId: route.params.launchId,

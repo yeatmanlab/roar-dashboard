@@ -49,8 +49,9 @@
   },
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "dependencies": {
+    "@roar-platform/assessment-schema": "^0.1.0",
+    "@roar-platform/assessment-sdk": "^0.1.0",
     "@bdelab/jscat": "^5.2.2",
-    "@bdelab/roar-firekit": "9.11.0",
     "@bdelab/roar-utils": "^1.0.18",
     "@jspsych-contrib/plugin-audio-multi-response": "^1.0.0",
     "@jspsych-contrib/plugin-html-multi-response": "^1.0.2",
