@@ -1142,6 +1142,20 @@ describe('AdministrationService', () => {
           ),
         ).rejects.toThrow('Failed to fetch administration progress');
       });
+
+      it('throws ApiError when the excluded-task slug query fails', async () => {
+        arrangeSingleTaskAdmin();
+        // Canonical runs resolve so execution reaches the slug-resolution branch.
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
+        mockTaskRepository.getIdsBySlugs.mockRejectedValue(new Error('db down'));
+
+        await expect(
+          buildService().list(
+            { userId: 'student-123', isSuperAdmin: true },
+            { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+          ),
+        ).rejects.toThrow('Failed to fetch administration progress');
+      });
     });
 
     describe('per-student optional/assigned (tasks embed)', () => {
