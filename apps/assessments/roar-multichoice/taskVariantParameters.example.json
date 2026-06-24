@@ -1,0 +1,10 @@
+[
+  {
+    "variantName": "Morphology (English)",
+    "params": { "task": "morphology", "scoringVersion": 1 }
+  },
+  {
+    "variantName": "Written Vocabulary (English)",
+    "params": { "task": "cva", "scoringVersion": 1 }
+  }
+]

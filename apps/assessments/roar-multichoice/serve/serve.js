@@ -1,119 +1,87 @@
-import { RoarAppkit, initializeFirebaseProject } from '@bdelab/roar-firekit';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import i18next from 'i18next';
+import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
+import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
+import { getMultichoiceTaskId } from '@roar-platform/assessment-schema/roar-multichoice';
 import RoarMultichoice from '../src/experiment/index';
-// eslint-disable-next-line import/no-unresolved -- firebaseConfig.js is replaced by shared/firebaseConfig.js in PR 2
-import { roarConfig } from './firebaseConfig';
+import { getFirebaseConfig } from '../../shared/firebaseConfig';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
 const queryString = new URL(window.location).search;
 const urlParams = new URLSearchParams(queryString);
-const userMode = urlParams.get('mode');
+
+// Task family — 'morphology' or 'cva' (English only)
 const task = urlParams.get('task') ?? 'morphology';
-const recruitment = urlParams.get('recruitment');
-const assessmentPid = urlParams.get('PROLIFIC_PID') || urlParams.get('participant');
-const audioFeedback = urlParams.get('feedback');
-const numAdaptive = urlParams.get('numAdaptive') === null ? null : parseInt(urlParams.get('numAdaptive'), 10);
-const numNew = urlParams.get('numNew') === null ? null : parseInt(urlParams.get('numNew'), 10);
-const numValidated = urlParams.get('numValidated') === null ? null : parseInt(urlParams.get('numValidated'), 10);
-const maxTime = urlParams.get('maxTime') === null ? null : parseInt(urlParams.get('maxTime'), 10); // time limit for real trials
-const nStartItems = urlParams.get('nStartItems') === null ? null : parseInt(urlParams.get('nStartItems'), 10);
+const taskId = getMultichoiceTaskId(task);
 
-const forceSecondaryBehavior = urlParams.has('forceSecondaryBehavior')
-  ? urlParams.get('forceSecondaryBehavior') === 'true'
-  : undefined;
+// Participant / session
+const assessmentPid = urlParams.get('participant');
+const labId = urlParams.get('labId');
+const variantId = urlParams.get('variantId');
+const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 
-export const labId = urlParams.get('labId');
+// Demographics
+const grade = urlParams.get('grade') ? parseInt(urlParams.get('grade'), 10) : null;
 const birthYear = urlParams.get('birthyear');
 const birthMonth = urlParams.get('birthmonth');
 const age = urlParams.get('age');
 const ageMonths = urlParams.get('agemonths');
-const grade = urlParams.get('grade') ? parseInt(urlParams.get('grade'), 10) : null;
-const practiceCorpus = urlParams.get('practiceCorpus');
-const stimulusCorpus = urlParams.get('stimulusCorpus');
-const buttonLayout = urlParams.get('buttonLayout');
-const numberOfTrials = parseInt(urlParams.get('trials'), 10) || null;
-const promptWidth = urlParams.get('width') ?? '75';
-const startItemSelect = urlParams.get('startItemSelect') ?? 'random';
-const consent = urlParams.get('consent')?.toLocaleLowerCase() !== 'false';
-const skipInstructions = urlParams.get('skip')?.toLocaleLowerCase() !== 'true';
-const sequentialPractice = JSON.parse(urlParams.get('sequentialPractice')) ?? true;
-const sequentialStimulus = JSON.parse(urlParams.get('sequentialStimulus')) ?? false;
-const corpusId = stimulusCorpus;
-const isAdaptive = urlParams.get('isAdaptive')?.toLocaleLowerCase() === 'true';
-const selectionAlgorithm = isAdaptive ? 'adaptive' : (urlParams.get('algorithm') ?? 'random');
-const scoringVersion =
-  urlParams.get('scoringVersion') === null ? (isAdaptive ? 1 : null) : parseInt(urlParams.get('scoringVersion'), 10);
-const { language } = i18next;
 
-// @ts-ignore
-const appKit = await initializeFirebaseProject(roarConfig.firebaseConfig, 'assessmentApp', 'none');
+const firebaseConfig = await getFirebaseConfig();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-const taskId = language === 'en' ? task : `${task}-${language}`;
+// eslint-disable-next-line no-undef
+if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+  // eslint-disable-next-line no-undef
+  connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
+}
 
-onAuthStateChanged(appKit.auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (user) {
-    const userInfo = {
-      assessmentPid,
-      assessmentUid: user.uid,
-      userMetadata: {
-        districtId: '',
-      },
-    };
+    try {
+      const authCallbacks = { getToken: () => user.getIdToken() };
 
-    const userParams = {
-      assessmentPid,
-      labId,
-      birthMonth,
-      birthYear,
-      age,
-      ageMonths,
-      grade,
-    };
+      // Provision the anonymous ROAR user (and resolve a variant) via the SDK.
+      // The variantId URL param wins; otherwise it falls back to the first published variant.
+      const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
+        // eslint-disable-next-line no-undef
+        { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
+        { ...(variantId ? { variantId } : {}), taskId },
+      );
 
-    const gameParams = {
-      userMode,
-      task,
-      recruitment,
-      skipInstructions,
-      consent,
-      audioFeedback,
-      numAdaptive,
-      numNew,
-      numValidated,
-      maxTime,
-      nStartItems,
-      practiceCorpus,
-      stimulusCorpus,
-      corpusId,
-      sequentialPractice,
-      sequentialStimulus,
-      buttonLayout,
-      numberOfTrials,
-      promptWidth,
-      startItemSelect,
-      selectionAlgorithm,
-      isAdaptive,
-      scoringVersion,
-      ...(forceSecondaryBehavior !== undefined && { forceSecondaryBehavior }),
-    };
+      const ctx = {
+        // eslint-disable-next-line no-undef
+        baseUrl: ROAR_API_BASE_URL,
+        auth: authCallbacks,
+        participant: { participantId },
+      };
 
-    const taskInfo = {
-      taskId: taskId,
-      variantParams: gameParams,
-    };
+      initFirekitCompat(ctx, {
+        variantId: resolvedVariantId,
+        taskVersion,
+        isAnonymous: true,
+      });
 
-    const firekit = new RoarAppkit({
-      firebaseProject: appKit,
-      taskInfo,
-      userInfo,
-    });
+      const { variantParams } = await getVariantById(resolvedVariantId);
 
-    const roarApp = new RoarMultichoice(firekit, gameParams, userParams);
-    roarApp.run();
+      const userParams = {
+        assessmentPid,
+        labId,
+        grade,
+        birthMonth,
+        birthYear,
+        age,
+        ageMonths,
+      };
+
+      const roarApp = new RoarMultichoice(variantParams, userParams, null);
+      roarApp.run();
+    } catch (err) {
+      console.error('Failed to initialize assessment:', err);
+    }
   }
 });
 
-await signInAnonymously(appKit.auth);
+await signInAnonymously(auth);
