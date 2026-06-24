@@ -229,19 +229,20 @@ const sortedUserAdministrations = computed(() => {
 // mapping, and no client-side renewal-date logic.
 const selectedAdminId = computed(() => selectedAdmin.value?.id);
 
-const {
-  data: administrationAgreements,
-  isSuccess: isAgreementsSuccess,
-  isError: isAgreementsError,
-} = useUserAdministrationAgreementsQuery(userId, selectedAdminId, {
-  enabled: initialized,
-});
+const { data: administrationAgreements, isSuccess: isAgreementsSuccess } = useUserAdministrationAgreementsQuery(
+  userId,
+  selectedAdminId,
+  {
+    enabled: initialized,
+  },
+);
 
 // The agreements requirement is "resolved" only when the query has succeeded for
-// the currently selected administration and is not in an error state. While it
-// is loading or errored we must treat consent as UNRESOLVED and block the
-// student rather than proceeding as if no consent were required.
-const isAgreementsResolved = computed(() => isAgreementsSuccess.value && !isAgreementsError.value);
+// the currently selected administration. While it is loading or errored we must
+// treat consent as UNRESOLVED and block the student rather than proceeding as if
+// no consent were required. `isSuccess` already excludes the error state (the two
+// are mutually exclusive in TanStack Query), so checking it alone is sufficient.
+const isAgreementsResolved = computed(() => isAgreementsSuccess.value);
 
 // The consent/assent document text for the gate. Fetched reactively for the
 // agreement + current version the gate selected (`consentAgreementId` /

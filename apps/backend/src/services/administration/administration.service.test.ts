@@ -10,6 +10,7 @@ import { AgreementFactory } from '../../test-support/factories/agreement.factory
 import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
 import { RunFactory } from '../../test-support/factories/run.factory';
 import { ApiError } from '../../errors/api-error';
+import type { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { FgaRelation, FgaType } from '../authorization/fga-constants';
@@ -892,8 +893,11 @@ describe('AdministrationService', () => {
         ]);
         mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
 
-        // The self-read path resolves the in-context user before enrichment.
-        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: 'student-123' }));
+        // The self-read path resolves the in-context user (authContext.userId) before
+        // enrichment. Echo the requested id so the resolved user mirrors the caller —
+        // this is what drives the per-student canonical-runs lookup, so the test must
+        // not pin it to a fixed id that diverges from the requester.
+        mockUserRepository.getById.mockImplementation(({ id }) => Promise.resolve(UserFactory.build({ id })));
         // Null conditions → assigned to all, required.
         mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
       }
@@ -1091,6 +1095,10 @@ describe('AdministrationService', () => {
         mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
         mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
         mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+        // Self-read enrichment resolves the in-context user first; without this stub
+        // the per-student pass is skipped and no canonical-runs query is issued.
+        mockUserRepository.getById.mockImplementation(({ id }) => Promise.resolve(UserFactory.build({ id })));
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
 
         await buildService().list(
           { userId: 'student-123', isSuperAdmin: true },
@@ -1127,6 +1135,20 @@ describe('AdministrationService', () => {
         arrangeSingleTaskAdmin();
         mockRunRepository.getUserCanonicalRunsForAdministrations.mockRejectedValue(new Error('db down'));
         mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        await expect(
+          buildService().list(
+            { userId: 'student-123', isSuperAdmin: true },
+            { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+          ),
+        ).rejects.toThrow('Failed to fetch administration progress');
+      });
+
+      it('throws ApiError when the excluded-task slug query fails', async () => {
+        arrangeSingleTaskAdmin();
+        // Canonical runs resolve so execution reaches the slug-resolution branch.
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
+        mockTaskRepository.getIdsBySlugs.mockRejectedValue(new Error('db down'));
 
         await expect(
           buildService().list(
@@ -5165,9 +5187,13 @@ describe('AdministrationService', () => {
     /**
      * Build an agreement-with-version item in the repository's
      * `{ agreement, currentVersion }` shape for a given agreement id.
+     *
+     * The agreement type defaults to `assent` so items survive the target-user
+     * age filter for the default (dob/grade null → minor) user these tests use.
+     * Tests that assert age behavior pass an explicit type.
      */
-    const buildAgreementItem = (agreementId: string) => {
-      const agreement = AgreementFactory.build({ id: agreementId });
+    const buildAgreementItem = (agreementId: string, agreementType: AgreementType = 'assent') => {
+      const agreement = AgreementFactory.build({ id: agreementId, agreementType });
       const currentVersion = AgreementVersionFactory.build({ agreementId });
       return { agreement, currentVersion };
     };
@@ -5491,6 +5517,166 @@ describe('AdministrationService', () => {
         'administration:admin-123',
       );
       expect(result.items[0]!.signed).toBe(true);
+    });
+
+    describe('agreement type filtering by target user age', () => {
+      // The administration always carries one of each agreement type; the
+      // assertions verify only the type appropriate to the TARGET user's age
+      // survives, mirroring the listAgreements student-filtering block.
+      const buildAllAgreementTypes = () => [
+        buildAgreementItem('agreement-tos', 'tos'),
+        buildAgreementItem('agreement-assent', 'assent'),
+        buildAgreementItem('agreement-consent', 'consent'),
+      ];
+
+      it('shows only assent (excludes consent and TOS) for a minor target', async () => {
+        // dob 10 years ago → under majority age → minor.
+        const tenYearsAgo = new Date();
+        tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+        const dobString = tenYearsAgo.toISOString().split('T')[0]!;
+        const minorTarget = UserFactory.build({ id: 'minor-123', dob: dobString, grade: null, isSuperAdmin: false });
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockAgreementRepo = createMockAgreementRepository();
+
+        mockUserRepository.getById.mockResolvedValue(minorTarget);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: buildAllAgreementTypes(),
+          totalItems: 3,
+        });
+        mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set());
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+          agreementRepository: mockAgreementRepo,
+        });
+
+        const result = await service.listUserAdministrationAgreements(
+          { userId: 'minor-123', isSuperAdmin: false },
+          'minor-123',
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.id).toBe('agreement-assent');
+        expect(result.items[0]!.agreement.agreementType).toBe('assent');
+        expect(result.totalItems).toBe(1);
+        // Only the surviving (assent) agreement is looked up for signed status.
+        expect(mockAgreementRepo.getSignedAgreementIds).toHaveBeenCalledWith('minor-123', ['agreement-assent']);
+      });
+
+      it('shows only consent (excludes assent and TOS) for an adult target', async () => {
+        // dob 20 years ago → over majority age → adult.
+        const twentyYearsAgo = new Date();
+        twentyYearsAgo.setFullYear(twentyYearsAgo.getFullYear() - 20);
+        const dobString = twentyYearsAgo.toISOString().split('T')[0]!;
+        const adultTarget = UserFactory.build({ id: 'adult-123', dob: dobString, grade: null, isSuperAdmin: false });
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockAgreementRepo = createMockAgreementRepository();
+
+        mockUserRepository.getById.mockResolvedValue(adultTarget);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: buildAllAgreementTypes(),
+          totalItems: 3,
+        });
+        // Adult has signed their consent agreement.
+        mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set(['agreement-consent']));
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+          agreementRepository: mockAgreementRepo,
+        });
+
+        const result = await service.listUserAdministrationAgreements(
+          { userId: 'adult-123', isSuperAdmin: false },
+          'adult-123',
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.id).toBe('agreement-consent');
+        expect(result.items[0]!.agreement.agreementType).toBe('consent');
+        // Signed annotation flows through after filtering.
+        expect(result.items[0]!.signed).toBe(true);
+        expect(result.totalItems).toBe(1);
+        expect(mockAgreementRepo.getSignedAgreementIds).toHaveBeenCalledWith('adult-123', ['agreement-consent']);
+      });
+
+      it('treats a target with unknown age (no dob/grade) as a minor → assent only', async () => {
+        // dob and grade null → isMajorityAge returns null → conservatively a minor.
+        const unknownAgeTarget = UserFactory.build({ id: 'unknown-123', dob: null, grade: null, isSuperAdmin: false });
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockAgreementRepo = createMockAgreementRepository();
+
+        mockUserRepository.getById.mockResolvedValue(unknownAgeTarget);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: buildAllAgreementTypes(),
+          totalItems: 3,
+        });
+        mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set());
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+          agreementRepository: mockAgreementRepo,
+        });
+
+        const result = await service.listUserAdministrationAgreements(
+          { userId: 'unknown-123', isSuperAdmin: false },
+          'unknown-123',
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.agreementType).toBe('assent');
+      });
+
+      it('estimates the target age from grade when dob is absent (grade 13 = adult → consent)', async () => {
+        // Grade 13 maps to age 18 (adult) in the conservative grade-to-age table.
+        const gradeAdultTarget = UserFactory.build({
+          id: 'grade-adult-123',
+          dob: null,
+          grade: '13',
+          isSuperAdmin: false,
+        });
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockAgreementRepo = createMockAgreementRepository();
+
+        mockUserRepository.getById.mockResolvedValue(gradeAdultTarget);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: buildAllAgreementTypes(),
+          totalItems: 3,
+        });
+        mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set());
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+          agreementRepository: mockAgreementRepo,
+        });
+
+        const result = await service.listUserAdministrationAgreements(
+          { userId: 'grade-adult-123', isSuperAdmin: false },
+          'grade-adult-123',
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.agreementType).toBe('consent');
+      });
     });
   });
 
