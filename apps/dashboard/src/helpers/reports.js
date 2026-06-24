@@ -1619,6 +1619,52 @@ export const taskInfoById = {
       'student-level and classroom-wide competencies so that instruction can be customized ' +
       'appropriately.',
   },
+  cva: {
+    header: 'ROAR-CVA',
+    color: '#52627E',
+    subheader: 'CVA Assessment',
+    desc:
+      'ROAR-CVA assesses a student’s ability to comprehend and analyze visual information. ' +
+      'This assessment evaluates skills such as interpreting graphs, charts, and diagrams, ' +
+      'as well as understanding visual representations of data. The student’s score will range ' +
+      'between {{RAW_SCORE_RANGE}} and can be viewed by selecting "Raw Score" on the table above. ' +
+      'Students in the pink category may need additional support in visual comprehension skills, ' +
+      'while those in the yellow category are developing their abilities and may benefit from further practice. ' +
+      'Students in the green category demonstrate strong visual comprehension skills.',
+  },
+  morphology: {
+    header: 'ROAR-Morphology',
+    color: '#52627E',
+    subheader: 'Morphology Assessment',
+    desc:
+      'ROAR-Morphology evaluates a student’s understanding of word structure and the ability to analyze and manipulate morphemes, the smallest units of meaning in language. ' +
+      'This assessment measures skills such as identifying prefixes, suffixes, and root words, which are essential for vocabulary development and reading comprehension. ' +
+      'The student’s score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting "Raw Score" on the table above. ' +
+      'Students in the pink category may require additional support in morphological analysis, while those in the yellow category are developing their abilities. ' +
+      'Students in the green category demonstrate strong morphological awareness.',
+  },
+  'roar-inference': {
+    header: 'ROAR-Inference',
+    color: '#52627E',
+    subheader: 'Inference Assessment',
+    desc:
+      'ROAR-Inference evaluates a student’s ability to make logical inferences based on given information. ' +
+      'This assessment measures critical thinking and reasoning skills, which are essential for understanding complex texts. ' +
+      'The student’s score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting "Raw Score" on the table above. ' +
+      'Students in the pink category may require additional support in inference skills, while those in the yellow category are developing their abilities. ' +
+      'Students in the green category demonstrate strong inference-making skills.',
+  },
+  trog: {
+    header: 'ROAR-TROG',
+    color: '#52627E',
+    subheader: 'TROG Assessment',
+    desc:
+      'ROAR-TROG assesses a student’s understanding of grammatical structures and their ability to comprehend sentences. ' +
+      'This assessment evaluates skills such as identifying sentence components, understanding syntax, and interpreting meaning from sentence context. ' +
+      'The student’s score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting "Raw Score" on the table above. ' +
+      'Students in the pink category may require additional support in grammar and sentence comprehension, while those in the yellow category are developing their abilities. ' +
+      'Students in the green category demonstrate strong grammatical understanding.',
+  },
 };
 
 // Then create a function to populate the template
