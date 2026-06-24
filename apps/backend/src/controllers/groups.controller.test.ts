@@ -174,6 +174,7 @@ describe('GroupsController', () => {
         perPage: 25,
         sortBy: 'nameLast',
         sortOrder: SortOrder.ASC,
+        embed: [],
       });
 
       const data = expectOkResponse(result);
@@ -199,6 +200,7 @@ describe('GroupsController', () => {
         perPage: 25,
         sortBy: 'nameLast',
         sortOrder: SortOrder.ASC,
+        embed: [],
       });
 
       const data = expectOkResponse(result);
@@ -223,6 +225,7 @@ describe('GroupsController', () => {
         sortOrder: SortOrder.DESC,
         grade: ['5'],
         role: UserRole.STUDENT,
+        embed: [],
       });
 
       expect(mockListUsers).toHaveBeenCalledWith(mockAuthContext, 'group-456', {
@@ -232,6 +235,7 @@ describe('GroupsController', () => {
         sortOrder: SortOrder.DESC,
         grade: ['5'],
         role: UserRole.STUDENT,
+        embed: [],
       });
     });
 
@@ -249,6 +253,7 @@ describe('GroupsController', () => {
         perPage: 25,
         sortBy: 'nameLast',
         sortOrder: SortOrder.ASC,
+        embed: [],
       });
 
       const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
@@ -269,6 +274,7 @@ describe('GroupsController', () => {
         perPage: 25,
         sortBy: 'nameLast',
         sortOrder: SortOrder.ASC,
+        embed: [],
       });
 
       const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
@@ -289,6 +295,7 @@ describe('GroupsController', () => {
         perPage: 25,
         sortBy: 'nameLast',
         sortOrder: SortOrder.ASC,
+        embed: [],
       });
 
       const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -307,6 +314,7 @@ describe('GroupsController', () => {
           perPage: 25,
           sortBy: 'nameLast',
           sortOrder: SortOrder.ASC,
+          embed: [],
         }),
       ).rejects.toThrow('Unexpected error');
     });

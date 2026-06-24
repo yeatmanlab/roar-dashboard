@@ -726,6 +726,7 @@ describe('DistrictsController', () => {
         perPage: 25,
         sortBy: 'nameLast',
         sortOrder: SortOrder.ASC,
+        embed: [],
       });
 
       const data = expectOkResponse(result);
@@ -751,6 +752,7 @@ describe('DistrictsController', () => {
         perPage: 25,
         sortBy: 'nameLast',
         sortOrder: SortOrder.ASC,
+        embed: [],
       });
 
       const data = expectOkResponse(result);
@@ -774,6 +776,7 @@ describe('DistrictsController', () => {
         sortOrder: SortOrder.DESC,
         grade: ['5'],
         role: UserRole.STUDENT,
+        embed: [],
       });
 
       expect(mockListUsers).toHaveBeenCalledWith(mockAuthContext, 'district-456', {
@@ -783,6 +786,64 @@ describe('DistrictsController', () => {
         sortOrder: SortOrder.DESC,
         grade: ['5'],
         role: UserRole.STUDENT,
+        embed: [],
+      });
+    });
+
+    it('passes the demographics embed through to the service', async () => {
+      mockListUsers.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      await Controller.listUsers(mockAuthContext, 'district-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+        embed: ['demographics'],
+      });
+
+      expect(mockListUsers).toHaveBeenCalledWith(
+        mockAuthContext,
+        'district-123',
+        expect.objectContaining({ embed: ['demographics'] }),
+      );
+    });
+
+    it('surfaces the demographics sub-object in the response when the entity carries it', async () => {
+      const userWithDemographics = EnrolledUserFactory.build({
+        roles: [UserRole.STUDENT],
+        demographics: {
+          userType: 'student',
+          statusEll: 'Yes',
+          statusFrl: 'Free',
+          statusIep: 'No',
+          race: 'White',
+          hispanicEthnicity: false,
+          homeLanguage: 'English',
+        },
+      });
+      mockListUsers.mockResolvedValue({ items: [userWithDemographics], totalItems: 1 });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'district-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+        embed: ['demographics'],
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]!.demographics).toEqual({
+        userType: 'student',
+        statusEll: 'Yes',
+        statusFrl: 'Free',
+        statusIep: 'No',
+        race: 'White',
+        hispanicEthnicity: false,
+        homeLanguage: 'English',
       });
     });
 
@@ -800,6 +861,7 @@ describe('DistrictsController', () => {
         perPage: 25,
         sortBy: 'nameLast',
         sortOrder: SortOrder.ASC,
+        embed: [],
       });
 
       const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
@@ -820,6 +882,7 @@ describe('DistrictsController', () => {
         perPage: 25,
         sortBy: 'nameLast',
         sortOrder: SortOrder.ASC,
+        embed: [],
       });
 
       const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
@@ -840,6 +903,7 @@ describe('DistrictsController', () => {
         perPage: 25,
         sortBy: 'nameLast',
         sortOrder: SortOrder.ASC,
+        embed: [],
       });
 
       const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -858,6 +922,7 @@ describe('DistrictsController', () => {
           perPage: 25,
           sortBy: 'nameLast',
           sortOrder: SortOrder.ASC,
+          embed: [],
         }),
       ).rejects.toThrow('Unexpected error');
     });

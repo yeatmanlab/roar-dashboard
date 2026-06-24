@@ -34,6 +34,7 @@ describe('ClassService', () => {
       perPage: 25,
       sortBy: 'nameLast' as const,
       sortOrder: SortOrder.ASC,
+      embed: [] as 'demographics'[],
     };
 
     it('should return users for super admin (unrestricted)', async () => {
@@ -58,6 +59,7 @@ describe('ClassService', () => {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: false,
       });
       expect(result.items).toHaveLength(3);
       expect(result.totalItems).toBe(3);
@@ -84,6 +86,7 @@ describe('ClassService', () => {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: false,
       });
       expect(result.items).toHaveLength(3);
       expect(result.totalItems).toBe(3);
@@ -115,6 +118,7 @@ describe('ClassService', () => {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: false,
       });
       expect(result.items).toHaveLength(2);
       expect(result.totalItems).toBe(2);
@@ -194,6 +198,29 @@ describe('ClassService', () => {
         message: 'Failed to retrieve class users',
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should pass embedDemographics=true to the repository when the demographics embed is requested', async () => {
+      const mockClass = ClassFactory.build({ id: 'class-123' });
+      mockClassRepository.getById.mockResolvedValue(mockClass);
+      mockClassRepository.getUsersByClassId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = ClassService({
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'class-123', {
+        ...defaultOptions,
+        embed: ['demographics'],
+      });
+
+      expect(mockClassRepository.getUsersByClassId).toHaveBeenCalledWith('class-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: true,
       });
     });
   });

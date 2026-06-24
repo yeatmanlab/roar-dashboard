@@ -29,6 +29,7 @@ describe('GroupService', () => {
       perPage: 25,
       sortBy: 'nameLast' as const,
       sortOrder: SortOrder.ASC,
+      embed: [] as 'demographics'[],
     };
 
     it('should return users for super admin (unrestricted)', async () => {
@@ -53,6 +54,7 @@ describe('GroupService', () => {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: false,
       });
       expect(result.items).toHaveLength(3);
       expect(result.totalItems).toBe(3);
@@ -79,6 +81,7 @@ describe('GroupService', () => {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: false,
       });
       expect(result.items).toHaveLength(3);
       expect(result.totalItems).toBe(3);
@@ -110,6 +113,7 @@ describe('GroupService', () => {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: false,
       });
       expect(result.items).toHaveLength(2);
       expect(result.totalItems).toBe(2);
@@ -189,6 +193,29 @@ describe('GroupService', () => {
         message: 'Failed to retrieve group users',
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should pass embedDemographics=true to the repository when the demographics embed is requested', async () => {
+      const mockGroup = GroupFactory.build({ id: 'group-123' });
+      mockGroupRepository.getById.mockResolvedValue(mockGroup);
+      mockGroupRepository.getUsersByGroupId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'group-123', {
+        ...defaultOptions,
+        embed: ['demographics'],
+      });
+
+      expect(mockGroupRepository.getUsersByGroupId).toHaveBeenCalledWith('group-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: true,
       });
     });
   });

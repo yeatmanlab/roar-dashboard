@@ -1,4 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
+import { EnrolledUsersEmbedOption } from '@roar-platform/api-contract';
 import type { CreateSchoolInput, SchoolWithCounts } from '../../repositories/school.repository';
 import { SchoolRepository } from '../../repositories/school.repository';
 import { DistrictRepository } from '../../repositories/district.repository';
@@ -365,6 +366,7 @@ export function SchoolService({
         orderBy: { field: options.sortBy, direction: options.sortOrder },
         ...(options.role && { role: options.role }),
         ...(options.grade && { grade: options.grade }),
+        embedDemographics: options.embed?.includes(EnrolledUsersEmbedOption.DEMOGRAPHICS) ?? false,
       };
 
       if (!isSuperAdmin) {

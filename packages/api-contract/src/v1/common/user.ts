@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { PaginationQuerySchema, createPaginatedResponseSchema, createSortQuerySchema } from './query';
+import {
+  PaginationQuerySchema,
+  createEmbedQuerySchema,
+  createPaginatedResponseSchema,
+  createSortQuerySchema,
+} from './query';
 import { IDENTIFIER_WITH_SPACES } from './regex';
 
 export const UserRoleSchema = z.enum([
@@ -55,6 +60,11 @@ export const AuthProviderSchema = z.enum(['password', 'google', 'oidc.clever', '
  */
 export const UserTypeSchema = z.enum(['student', 'educator', 'caregiver', 'admin']);
 
+/**
+ * Schema for free/reduced lunch status
+ */
+export const FreeReducedLunchStatusSchema = z.enum(['Free', 'Reduced', 'Paid']);
+
 export type UserGrade = z.infer<typeof UserGradeSchema>;
 
 const UserDemographicSchema = z.object({
@@ -81,10 +91,55 @@ export const UserBaseSchema = z.object({
 
 export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentifierSchema);
 
+/**
+ * Demographic and status fields embedded into the org enrolled-user list via
+ * `?embed=demographics`. These carry student PII (race, ethnicity, ELL/IEP/FRL
+ * status, home language) that the lean base list intentionally omits — they are
+ * surfaced only when explicitly requested, e.g. by the org-users CSV export.
+ *
+ * Field names and nullability mirror the full user-profile read shape
+ * (`UserResponseSchema` in `../users/schema`) so a consumer that resolves both
+ * sees the same names: `userType` is always present, every other field is
+ * nullable. `gender`, `grade`, and `dob` are not repeated here — they already
+ * live on the base `EnrolledUserSchema`.
+ */
+export const EnrolledUserDemographicsSchema = z.object({
+  userType: UserTypeSchema,
+  statusEll: z.string().nullable(),
+  statusFrl: FreeReducedLunchStatusSchema.nullable(),
+  statusIep: z.string().nullable(),
+  race: z.string().nullable(),
+  hispanicEthnicity: z.boolean().nullable(),
+  homeLanguage: z.string().nullable(),
+});
+export type EnrolledUserDemographics = z.infer<typeof EnrolledUserDemographicsSchema>;
+
 export const EnrolledUserSchema = UserSchema.extend({
   roles: z.array(UserRoleSchema),
+  // Present only when the request includes `?embed=demographics`; omitted otherwise.
+  demographics: EnrolledUserDemographicsSchema.optional(),
 });
 export type EnrolledUser = z.infer<typeof EnrolledUserSchema>;
+
+/**
+ * Embed options for the org enrolled-user list endpoints
+ * (`GET /v1/{districts|schools|classes|groups}/:id/users`).
+ *
+ * Scoped to the org query rather than the shared `EnrolledUsersBaseQuerySchema`
+ * so the families list (which reuses the base query but returns a different,
+ * demographics-free response shape) does not advertise an embed it can't honor.
+ */
+export const ENROLLED_USERS_EMBED_OPTIONS = ['demographics'] as const;
+
+export type EnrolledUsersEmbedOptionType = (typeof ENROLLED_USERS_EMBED_OPTIONS)[number];
+
+/**
+ * Type-safe constants for the enrolled-user embed options, for use in the
+ * service/controller layers instead of raw strings.
+ */
+export const EnrolledUsersEmbedOption = {
+  DEMOGRAPHICS: 'demographics',
+} as const satisfies Record<string, EnrolledUsersEmbedOptionType>;
 
 export const ENROLLED_USERS_SORT_FIELDS = ['nameLast', 'username', 'grade'] as const;
 export type EnrolledUsersSortFieldType = (typeof ENROLLED_USERS_SORT_FIELDS)[number];
@@ -112,7 +167,9 @@ export const EnrolledUsersBaseQuerySchema = PaginationQuerySchema.merge(
   grade: GradeFilterSchema,
 });
 
-export const EnrolledUsersQuerySchema = EnrolledUsersBaseQuerySchema.extend({
+export const EnrolledUsersQuerySchema = EnrolledUsersBaseQuerySchema.merge(
+  createEmbedQuerySchema(ENROLLED_USERS_EMBED_OPTIONS),
+).extend({
   role: UserRoleSchema.optional(),
 });
 
@@ -130,11 +187,6 @@ export const SchoolLevelSchema = z.enum(['early_childhood', 'elementary', 'middl
  * Schema for class types following the OneRoster specification.
  */
 export const ClassTypeSchema = z.enum(['homeroom', 'scheduled', 'other']);
-
-/**
- * Schema for free/reduced lunch status
- */
-export const FreeReducedLunchStatusSchema = z.enum(['Free', 'Reduced', 'Paid']);
 
 /**
  * Name shape shared across user-creation endpoints (POST /v1/users,

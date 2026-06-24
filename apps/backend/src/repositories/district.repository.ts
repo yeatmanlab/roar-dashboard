@@ -14,7 +14,9 @@ import type { PaginatedResult } from './base.repository';
 import { LtreeRepository } from './ltree.repository';
 import {
   ENROLLED_USERS_SORT_COLUMNS,
+  buildEnrolledUserSelection,
   getEnrolledUsersFilterConditions,
+  mapEnrolledUserRow,
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive, isActiveRoster } from './utils/enrollment.utils';
@@ -405,7 +407,7 @@ export class DistrictRepository extends LtreeRepository<District, typeof orgs> {
 
     const dataResult = await this.db
       .select({
-        user: users,
+        ...buildEnrolledUserSelection(options.embedDemographics ?? false),
         roles: sql<UserRole[]>`json_agg(${combinedUsersQuery.role})`,
       })
       .from(users)
@@ -416,10 +418,7 @@ export class DistrictRepository extends LtreeRepository<District, typeof orgs> {
       .offset(offset);
 
     return {
-      items: dataResult.map((row) => ({
-        ...row.user,
-        roles: row.roles,
-      })),
+      items: dataResult.map((row) => mapEnrolledUserRow(row, row.roles)),
       totalItems,
     };
   }
