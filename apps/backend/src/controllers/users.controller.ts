@@ -19,6 +19,7 @@ import type { AgreementWithSignedStatus } from '../services/administration/admin
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import { transformAdministration, transformAdministrationBase } from './utils/administration.transform';
+import { toAgreementItem } from './utils/agreement.transform';
 
 const userService = UserService();
 const administrationService = AdministrationService();
@@ -69,26 +70,16 @@ function toUserResponse(user: User, authContext: AuthContext): UserResponse {
 /**
  * Map a service-layer agreement-with-signed-status into the API response shape.
  *
- * Flattens the repository's nested `{ agreement, currentVersion }` into the
- * contract's agreement shape and passes the `signed` flag through unchanged.
+ * Reuses the shared `toAgreementItem` transform for the agreement shape (kept
+ * identical to the administrations controller), then layers the per-user
+ * `signed` flag on top.
  *
  * @param item - Service result carrying the agreement, its current version, and signed status
  * @returns The API-formatted agreement with nested currentVersion and signed flag
  */
 function toUserAdministrationAgreement(item: AgreementWithSignedStatus): UserAdministrationAgreement {
   return {
-    id: item.agreement.id,
-    name: item.agreement.name,
-    agreementType: item.agreement.agreementType,
-    currentVersion: item.currentVersion
-      ? {
-          id: item.currentVersion.id,
-          locale: item.currentVersion.locale,
-          githubFilename: item.currentVersion.githubFilename,
-          githubOrgRepo: item.currentVersion.githubOrgRepo,
-          githubCommitSha: item.currentVersion.githubCommitSha,
-        }
-      : null,
+    ...toAgreementItem(item),
     signed: item.signed,
   };
 }
