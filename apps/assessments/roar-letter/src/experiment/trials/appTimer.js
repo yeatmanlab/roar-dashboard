@@ -10,7 +10,7 @@ export const initAppTimer = () => {
     const timerId = setInterval(() => {
       if (Date.now() - startTime >= maxTimeMs) {
         store.session.set('maxTimeReached', true);
-        // eslint-disable-next-line no-console
+
         console.log(`AppTimer expired after:${maxTimeMs}ms`);
         clearInterval(timerId);
       }
