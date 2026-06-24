@@ -40,7 +40,7 @@
     "stop": "bash ../../../scripts/assessment-env-down.sh",
     "restart": "npm run stop && npm run start",
     "rebuild": "bash ../../../scripts/assessment-env-build.sh",
-    "test": "vitest --run",
+    "test": "vitest --run --passWithNoTests",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write --log-level=warn",
