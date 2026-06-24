@@ -1,38 +1,37 @@
 import { ref } from 'vue';
 import { StatusCodes } from 'http-status-codes';
 import { useAuthStore } from '@/store/auth';
-import { getRoarApiClient } from '@/clients/roar-api';
 import useCreateFamilyMutation from '@/composables/mutations/useCreateFamilyMutation';
 import { mapParentFormToCreateFamily } from '@/helpers/registration/mapParentFormToCreateFamily';
-import { resolveConsentAgreementVersionId } from '@/helpers/registration/resolveConsentAgreementVersionId';
 
 /**
  * Orchestrates the ROAR@Home parent/guardian registration saga against the
  * typed API, replacing the legacy one-shot firekit `createNewFamily` call used
  * by `pages/RegisterFamilyUsers.vue`.
  *
- * The old call atomically created the caretaker's Firebase account, the family,
- * and recorded consent. The new flow is a multi-step saga:
+ * Registration does NO agreement work. The legacy firekit call also recorded a
+ * behavioral-consent document at sign-up; under the migrated design that is
+ * wrong. Terms-of-service acceptance is handled AFTER login by the existing
+ * `/me.unsignedAgreements` gate (which prompts non-student users for any
+ * unsigned TOS), and consent/assent are administration-specific and handled
+ * post-auth by the per-administration consent gate. So registration is purely:
  *
- *   1. Resolve the current consent agreement version (FAIL HARD if unavailable —
- *      consent must never be silently skipped). Done first so the most
- *      compliance-sensitive failure aborts BEFORE any account is created.
- *   2. `POST /v1/families/` — create the caretaker + family (public, no token).
- *   3. Sign in the new caretaker (stays on firekit per the auth-unit migration
- *      boundary) and force a fresh ID token so the next calls are authenticated.
- *   4. `GET /me` — obtain the caretaker's user id (not returned by step 2).
- *   5. `POST /v1/users/:id/agreements` — record the caretaker's consent.
+ *   1. `POST /v1/families/` — create the caretaker + family (public, no token).
+ *   2. Sign in the new caretaker (stays on firekit per the auth-unit migration
+ *      boundary) and force a fresh ID token so the dashboard loads authenticated.
+ *
+ * Crucially this removes the pre-sign-in `GET /v1/agreements` lookup (which would
+ * 401, since the agreements list route requires auth) and the consent recording.
  *
  * Sign-in (`logInWithEmailAndPassword`) and availability pre-checks intentionally
  * remain on firekit and are out of scope for this migration.
  *
  * Partial-failure / re-entry: once the family exists, re-`POST /families/` returns
  * 422 ("one family per caretaker"). When that happens we treat it as a resumed
- * attempt — sign in with the submitted credentials and resume at consent — which
- * recovers the common case (a prior attempt that died after create but before
- * consent) without needing the familyId (consent is recorded against the
- * caretaker's `/me` id, not the family). If sign-in then fails, we surface a
- * clear, recoverable error rather than guessing.
+ * attempt and simply sign in with the submitted credentials — there is no consent
+ * to resume, so a successful sign-in fully recovers the common case (a prior
+ * attempt that created the family but never signed the user in). If sign-in then
+ * fails, we surface a clear, recoverable error rather than guessing.
  *
  * @returns {{ submit: (form: Object) => Promise<void>, isSubmitting: import('vue').Ref<boolean>, error: import('vue').Ref<Error|null> }}
  */
@@ -44,52 +43,28 @@ export function useFamilyRegistration() {
   const error = ref(null);
 
   /**
-   * Signs in the caretaker and records their consent. Shared by the happy path
+   * Signs in the caretaker and forces a fresh ID token. Shared by the happy path
    * and the 422 resume path.
    *
    * @param {string} email
    * @param {string} password
-   * @param {string} agreementVersionId
    */
-  async function signInAndRecordParentConsent(email, password, agreementVersionId) {
+  async function signIn(email, password) {
     await authStore.logInWithEmailAndPassword({ email, password });
 
-    // Guarantee a fresh ID token synchronously before calling the API; relying
-    // on the onIdTokenChanged listener to have populated accessToken would race.
+    // Guarantee a fresh ID token synchronously before the dashboard makes its
+    // first authenticated call; relying on the onIdTokenChanged listener to have
+    // populated accessToken would race.
     await authStore.forceIdTokenRefresh();
-
-    const client = getRoarApiClient();
-
-    const meResult = await client.me.get();
-    if (meResult.status !== StatusCodes.OK) {
-      const meError = new Error(`Failed to load account after sign-in (status ${meResult.status}).`);
-      meError.status = meResult.status;
-      meError.body = meResult.body;
-      throw meError;
-    }
-    const parentId = meResult.body.data.id;
-
-    const consentResult = await client.users.recordUserAgreement({
-      params: { userId: parentId },
-      body: { agreementVersionId },
-    });
-
-    // 201 = recorded; 409 = already recorded (idempotent — safe on resume).
-    if (consentResult.status !== StatusCodes.CREATED && consentResult.status !== StatusCodes.CONFLICT) {
-      const consentError = new Error(`Failed to record consent (status ${consentResult.status}).`);
-      consentError.status = consentResult.status;
-      consentError.body = consentResult.body;
-      throw consentError;
-    }
   }
 
   /**
-   * Runs the full registration saga for the submitted parent form values.
+   * Runs the registration saga for the submitted parent form values.
    *
    * @param {Object} form - Parent form values: `{ email, password, firstName, lastName }`.
-   * @returns {Promise<void>} Resolves when registration (incl. consent) completes.
-   *   On failure, `error.value` is set and the error is re-thrown so the caller
-   *   can keep the user on the form.
+   * @returns {Promise<void>} Resolves when the family is created and the caretaker
+   *   is signed in. On failure, `error.value` is set and the error is re-thrown so
+   *   the caller can keep the user on the form.
    */
   async function submit(form) {
     isSubmitting.value = true;
@@ -98,22 +73,7 @@ export function useFamilyRegistration() {
     try {
       const body = mapParentFormToCreateFamily(form);
 
-      // 1. Resolve consent BEFORE creating any account.
-      //
-      // NOTE: this runs pre-auth — there is no signed-in caretaker yet, so the
-      // request carries no bearer token. The agreements list route currently
-      // requires authentication (`apps/backend/src/routes/agreements.ts` applies
-      // `AuthGuardMiddleware` to `list`, and the contract declares a 401), so as
-      // things stand this call would 401 and block every new registration. The
-      // backend must make `GET /v1/agreements?agreementType=consent` resolvable
-      // pre-auth (public list route, or a dedicated public consent lookup) — see
-      // the migration report for the flagged backend gap. Do not silently default
-      // the consent version: `resolveConsentAgreementVersionId` deliberately
-      // throws so registration aborts before any account is created.
-      const client = getRoarApiClient();
-      const agreementVersionId = await resolveConsentAgreementVersionId(client);
-
-      // 2. Create the caretaker + family.
+      // 1. Create the caretaker + family.
       try {
         await createFamilyMutation.mutateAsync({ body });
       } catch (createError) {
@@ -123,9 +83,9 @@ export function useFamilyRegistration() {
         }
         if (createError?.status === StatusCodes.UNPROCESSABLE_ENTITY) {
           // 422 — this caretaker already has a family. Treat as a resumed
-          // attempt: sign in and resume at consent (no familyId needed).
+          // attempt: just sign in with the submitted credentials.
           try {
-            await signInAndRecordParentConsent(body.email, body.password, agreementVersionId);
+            await signIn(body.email, body.password);
             return;
           } catch {
             throw new Error(
@@ -136,8 +96,8 @@ export function useFamilyRegistration() {
         throw createError;
       }
 
-      // 3–5. Sign in, fetch /me, record the caretaker's consent.
-      await signInAndRecordParentConsent(body.email, body.password, agreementVersionId);
+      // 2. Sign in the new caretaker. Post-auth gates handle TOS and consent.
+      await signIn(body.email, body.password);
     } catch (caughtError) {
       error.value = caughtError instanceof Error ? caughtError : new Error(String(caughtError));
       throw error.value;

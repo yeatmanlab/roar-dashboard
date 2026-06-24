@@ -117,9 +117,9 @@
             </small>
           </div>
         </section>
-        <!--Accept Checkbox-->
+        <!--Accept Checkbox (plain TOS submit-gate — no agreement API work)-->
         <section class="flex form-section lg:flex-row">
-          <!-- Recaptcha + consent -->
+          <!-- Recaptcha + terms acceptance -->
           <ChallengeV3 v-model="response" action="submit">
             <div class="field-checkbox terms-checkbox">
               <PvCheckbox
@@ -127,10 +127,9 @@
                 v-model="v$.accept.$model"
                 name="accept"
                 binary
-                :disabled="showConsent"
                 :class="[{ 'p-invalid': v$.accept.$invalid && submitted }]"
                 pt:input:data-testid="checkbox__input"
-                @change="getConsent"
+                @change="handleCheckCaptcha"
               />
               <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
                 >I agree to the terms and conditions<span class="required">*</span></label
@@ -155,12 +154,6 @@
             >
           </div>
         </section>
-        <ConsentModal
-          v-if="showConsent"
-          :consent-text="consentText"
-          consent-type="consent"
-          :on-confirm="handleConsentAccept"
-        />
         <div class="form-submit2">
           <PvButton
             type="submit"
@@ -207,12 +200,10 @@ import PvDialog from 'primevue/dialog';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
 import { useAuthStore } from '@/store/auth';
-import ConsentModal from '../ConsentModal.vue';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const isCaptchaverified = ref(null);
-const consentText = ref(null);
 const dialogMessage = ref('');
 
 const isDialogVisible = ref(false);
@@ -227,7 +218,6 @@ const closeErrorDialog = () => {
 
 defineProps({
   isRegistering: { type: Boolean, default: true },
-  consent: { type: Object, default: null },
 });
 
 const emit = defineEmits(['submit']);
@@ -299,24 +289,6 @@ const validateRoarEmail = async () => {
 
 function handleCaptcha() {
   isCaptchaverified.value = response.value;
-}
-
-const showConsent = ref(false);
-
-async function handleConsentAccept() {
-  state.accept = true;
-}
-
-async function getConsent() {
-  try {
-    const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
-    consentText.value = consentDoc.text;
-    showConsent.value = true;
-    handleCheckCaptcha();
-  } catch (error) {
-    console.error('Failed to fetch consent form: ', error);
-    throw new Error('Could not fetch consent form');
-  }
 }
 
 const isNextButtonDisabled = computed(() => {

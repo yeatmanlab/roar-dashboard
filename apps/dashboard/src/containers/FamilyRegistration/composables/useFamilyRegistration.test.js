@@ -17,18 +17,21 @@ vi.mock('@/composables/mutations/useCreateFamilyMutation', () => ({
   default: () => ({ mutateAsync: (...args) => mockCreateFamily(...args) }),
 }));
 
+// The migrated registration saga does NO agreement work. These API methods are
+// mocked as spies purely so the tests can assert they are NEVER called — the
+// pre-auth `GET /v1/agreements` lookup and the consent `recordUserAgreement`
+// call have both been removed (TOS is handled post-login by the
+// `/me.unsignedAgreements` gate; consent is per-administration and handled by
+// the post-auth consent gate).
 const mockMeGet = vi.fn();
 const mockRecordAgreement = vi.fn();
+const mockAgreementsList = vi.fn();
 vi.mock('@/clients/roar-api', () => ({
   getRoarApiClient: () => ({
     me: { get: (...args) => mockMeGet(...args) },
     users: { recordUserAgreement: (...args) => mockRecordAgreement(...args) },
+    agreements: { list: (...args) => mockAgreementsList(...args) },
   }),
-}));
-
-const mockResolveConsent = vi.fn();
-vi.mock('@/helpers/registration/resolveConsentAgreementVersionId', () => ({
-  resolveConsentAgreementVersionId: (...args) => mockResolveConsent(...args),
 }));
 
 import { useFamilyRegistration } from './useFamilyRegistration';
@@ -40,23 +43,23 @@ function setupSaga() {
   return result;
 }
 
+/** Asserts the saga touched no agreement-related API surface. */
+function expectNoAgreementWork() {
+  expect(mockAgreementsList).not.toHaveBeenCalled();
+  expect(mockMeGet).not.toHaveBeenCalled();
+  expect(mockRecordAgreement).not.toHaveBeenCalled();
+}
+
 describe('useFamilyRegistration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockResolveConsent.mockResolvedValue('ver-1');
     mockCreateFamily.mockResolvedValue({ id: 'fam-1' });
     mockLogIn.mockResolvedValue(undefined);
     mockForceRefresh.mockResolvedValue('fresh-token');
-    mockMeGet.mockResolvedValue({ status: 200, body: { data: { id: 'parent-1' } } });
-    mockRecordAgreement.mockResolvedValue({ status: 201, body: { data: { id: 'rec-1' } } });
   });
 
-  it('runs the happy path in order: resolve consent → create → sign in → /me → record consent', async () => {
+  it('runs the happy path in order: create family → sign in (no agreement work)', async () => {
     const order = [];
-    mockResolveConsent.mockImplementation(async () => {
-      order.push('resolveConsent');
-      return 'ver-1';
-    });
     mockCreateFamily.mockImplementation(async () => {
       order.push('createFamily');
       return { id: 'fam-1' };
@@ -64,40 +67,22 @@ describe('useFamilyRegistration', () => {
     mockLogIn.mockImplementation(async () => {
       order.push('signIn');
     });
-    mockMeGet.mockImplementation(async () => {
-      order.push('me');
-      return { status: 200, body: { data: { id: 'parent-1' } } };
-    });
-    mockRecordAgreement.mockImplementation(async () => {
-      order.push('recordConsent');
-      return { status: 201, body: { data: { id: 'rec-1' } } };
+    mockForceRefresh.mockImplementation(async () => {
+      order.push('refresh');
+      return 'fresh-token';
     });
 
     const saga = setupSaga();
     await saga.submit(FORM);
 
-    expect(order).toEqual(['resolveConsent', 'createFamily', 'signIn', 'me', 'recordConsent']);
+    expect(order).toEqual(['createFamily', 'signIn', 'refresh']);
     // Create body excludes legacy fields / isTestData.
     expect(mockCreateFamily).toHaveBeenCalledWith({
       body: { email: 'parent@example.com', password: 'super-secret', name: { first: 'Pat', last: 'Guardian' } },
     });
-    // Consent recorded for the parent's /me id with the resolved version.
-    expect(mockRecordAgreement).toHaveBeenCalledWith({
-      params: { userId: 'parent-1' },
-      body: { agreementVersionId: 'ver-1' },
-    });
+    expect(mockLogIn).toHaveBeenCalledWith({ email: 'parent@example.com', password: 'super-secret' });
+    expectNoAgreementWork();
     expect(saga.error.value).toBeNull();
-  });
-
-  it('aborts BEFORE creating the family when consent cannot be resolved', async () => {
-    mockResolveConsent.mockRejectedValueOnce(new Error('No current consent agreement is available'));
-
-    const saga = setupSaga();
-    await expect(saga.submit(FORM)).rejects.toThrow(/consent/i);
-
-    expect(mockCreateFamily).not.toHaveBeenCalled();
-    expect(mockLogIn).not.toHaveBeenCalled();
-    expect(mockRecordAgreement).not.toHaveBeenCalled();
   });
 
   it('surfaces a terminal "email in use" error on a 409 create and does not sign in', async () => {
@@ -109,10 +94,10 @@ describe('useFamilyRegistration', () => {
     await expect(saga.submit(FORM)).rejects.toThrow(/already in use/i);
 
     expect(mockLogIn).not.toHaveBeenCalled();
-    expect(mockRecordAgreement).not.toHaveBeenCalled();
+    expectNoAgreementWork();
   });
 
-  it('on a 422 (family already exists) resumes by signing in and recording parent consent', async () => {
+  it('on a 422 (family already exists) resumes by simply signing in', async () => {
     const err = new Error('unprocessable');
     err.status = 422;
     mockCreateFamily.mockRejectedValueOnce(err);
@@ -121,10 +106,8 @@ describe('useFamilyRegistration', () => {
     await saga.submit(FORM);
 
     expect(mockLogIn).toHaveBeenCalledWith({ email: 'parent@example.com', password: 'super-secret' });
-    expect(mockRecordAgreement).toHaveBeenCalledWith({
-      params: { userId: 'parent-1' },
-      body: { agreementVersionId: 'ver-1' },
-    });
+    expectNoAgreementWork();
+    expect(saga.error.value).toBeNull();
   });
 
   it('on a 422 then a failed sign-in surfaces a recoverable "please sign in" error', async () => {
@@ -135,21 +118,19 @@ describe('useFamilyRegistration', () => {
 
     const saga = setupSaga();
     await expect(saga.submit(FORM)).rejects.toThrow(/sign in to finish/i);
+    expectNoAgreementWork();
   });
 
-  it('treats a 409 on the consent record as success (idempotent re-entry)', async () => {
-    mockRecordAgreement.mockResolvedValueOnce({ status: 409, body: { error: { code: 'already-recorded' } } });
+  it('re-throws an unexpected create error and sets error state', async () => {
+    const err = new Error('boom');
+    err.status = 500;
+    mockCreateFamily.mockRejectedValueOnce(err);
 
     const saga = setupSaga();
-    await expect(saga.submit(FORM)).resolves.toBeUndefined();
-    expect(saga.error.value).toBeNull();
-  });
+    await expect(saga.submit(FORM)).rejects.toThrow(/boom/i);
 
-  it('throws and sets error when consent recording fails after sign-in', async () => {
-    mockRecordAgreement.mockResolvedValueOnce({ status: 500, body: { error: { code: 'internal' } } });
-
-    const saga = setupSaga();
-    await expect(saga.submit(FORM)).rejects.toThrow(/record consent/i);
+    expect(mockLogIn).not.toHaveBeenCalled();
     expect(saga.error.value).toBeInstanceOf(Error);
+    expectNoAgreementWork();
   });
 });

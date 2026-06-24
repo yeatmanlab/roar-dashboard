@@ -87,9 +87,10 @@ async function handleParentSubmit(data) {
   try {
     spinner.value = true;
 
-    // Run the registration saga: resolve consent → create family → sign in →
-    // record the caretaker's consent. Consent recording is handled inside the
-    // saga (no separate consentData payload, unlike the legacy firekit call).
+    // Run the registration saga: create family → sign in. No agreement work is
+    // done here — terms-of-service acceptance is handled post-login by the
+    // `/me.unsignedAgreements` gate, and consent/assent are per-administration
+    // and handled by the post-auth consent gate.
     await submitRegistration({
       email: data.ParentEmail,
       password: data.password,
