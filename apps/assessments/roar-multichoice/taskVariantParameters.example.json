@@ -1,10 +1,145 @@
 [
   {
-    "variantName": "Morphology (English)",
-    "params": { "task": "morphology", "scoringVersion": 1 }
+    "variantName": "Morphology — adaptive, school, 5 min (current)",
+    "params": {
+      "task": "morphology",
+      "isAdaptive": true,
+      "selectionAlgorithm": "adaptive",
+      "scoringVersion": 1,
+      "stimulusCorpus": "morphology-items-2026-05-14-v2",
+      "practiceCorpus": "morphology-practice-cat",
+      "corpusId": "morphology-items-2026-05-14-v2",
+      "userMode": "groupRandom",
+      "maxTime": 5,
+      "recruitment": "school",
+      "audioFeedback": "neutral",
+      "buttonLayout": "default",
+      "consent": true,
+      "skipInstructions": true,
+      "sequentialPractice": true,
+      "sequentialStimulus": false,
+      "startItemSelect": "random",
+      "promptWidth": "75"
+    }
   },
   {
-    "variantName": "Written Vocabulary (English)",
-    "params": { "task": "cva", "scoringVersion": 1 }
+    "variantName": "Morphology — non-adaptive, school, 5 min",
+    "params": {
+      "task": "morphology",
+      "stimulusCorpus": "morphology-items-2025-08-22-v1",
+      "practiceCorpus": "morphology-surveyPractice-11-17-2023",
+      "userMode": "groupRandom",
+      "maxTime": "5",
+      "recruitment": "school",
+      "audioFeedback": "neutral",
+      "buttonLayout": "default",
+      "sequentialPractice": true,
+      "sequentialStimulus": false,
+      "promptWidth": "75"
+    }
+  },
+  {
+    "variantName": "Written Vocabulary — adaptive, grade-based secondary behavior, school, 5 min (current)",
+    "params": {
+      "task": "cva",
+      "isAdaptive": true,
+      "selectionAlgorithm": "adaptive",
+      "scoringVersion": 1,
+      "stimulusCorpus": "cva-all-2026-05-14-v2",
+      "practiceCorpus": "cva-practice-cat",
+      "corpusId": "cva-all-2026-05-14-v2",
+      "userMode": "groupRandom",
+      "maxTime": 5,
+      "recruitment": "school",
+      "audioFeedback": "neutral",
+      "buttonLayout": "default",
+      "consent": true,
+      "skipInstructions": true,
+      "sequentialPractice": true,
+      "sequentialStimulus": false,
+      "startItemSelect": "random",
+      "promptWidth": "75"
+    }
+  },
+  {
+    "variantName": "Written Vocabulary — adaptive, force secondary behavior, school, 5 min",
+    "params": {
+      "task": "cva",
+      "isAdaptive": true,
+      "selectionAlgorithm": "adaptive",
+      "scoringVersion": 1,
+      "forceSecondaryBehavior": true,
+      "stimulusCorpus": "cva-all-2026-05-14-v2",
+      "practiceCorpus": "cva-practice-cat",
+      "corpusId": "cva-all-2026-05-14-v2",
+      "userMode": "groupRandom",
+      "maxTime": 5,
+      "recruitment": "school",
+      "audioFeedback": "neutral",
+      "buttonLayout": "default",
+      "consent": true,
+      "skipInstructions": true,
+      "sequentialPractice": true,
+      "sequentialStimulus": false,
+      "startItemSelect": "random",
+      "promptWidth": "75"
+    }
+  },
+  {
+    "variantName": "Written Vocabulary — adaptive, force non-secondary behavior, school, 5 min",
+    "params": {
+      "task": "cva",
+      "isAdaptive": true,
+      "selectionAlgorithm": "adaptive",
+      "scoringVersion": 1,
+      "forceSecondaryBehavior": false,
+      "stimulusCorpus": "cva-all-2026-05-14-v2",
+      "practiceCorpus": "cva-practice-cat",
+      "corpusId": "cva-all-2026-05-14-v2",
+      "userMode": "groupRandom",
+      "maxTime": 5,
+      "recruitment": "school",
+      "audioFeedback": "neutral",
+      "buttonLayout": "default",
+      "consent": true,
+      "skipInstructions": true,
+      "sequentialPractice": true,
+      "sequentialStimulus": false,
+      "startItemSelect": "random",
+      "promptWidth": "75"
+    }
+  },
+  {
+    "variantName": "Written Vocabulary — non-adaptive, elementary, school, 5 min",
+    "params": {
+      "task": "cva",
+      "stimulusCorpus": "cva-elementary-cat-2025-08-22",
+      "practiceCorpus": "cva-assessment-practice-items",
+      "userMode": "groupRandom",
+      "maxTime": 5,
+      "recruitment": "school",
+      "audioFeedback": "neutral",
+      "buttonLayout": "default",
+      "sequentialPractice": true,
+      "sequentialStimulus": false,
+      "promptWidth": "75"
+    }
+  },
+  {
+    "variantName": "Written Vocabulary — non-adaptive, secondary, school, 5 min",
+    "params": {
+      "task": "cva",
+      "stimulusCorpus": "cva-secondary-2025-08-22-v2",
+      "practiceCorpus": "cva-assessment-practice-items",
+      "userMode": "groupRandom",
+      "maxTime": "5",
+      "recruitment": "school",
+      "audioFeedback": "neutral",
+      "buttonLayout": "default",
+      "skipInstructions": true,
+      "sequentialPractice": true,
+      "sequentialStimulus": false,
+      "promptWidth": "75"
+    }
   }
 ]
