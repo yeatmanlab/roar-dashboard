@@ -27,6 +27,10 @@ export function registerDistrictsRoutes(routerInstance: Router) {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => DistrictsController.getById(user!, id),
     },
+    update: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { id }, body }) => DistrictsController.update(user!, id, body),
+    },
     listSchools: {
       // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],

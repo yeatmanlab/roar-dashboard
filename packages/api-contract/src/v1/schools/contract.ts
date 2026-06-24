@@ -8,6 +8,8 @@ import {
   SchoolDetailSchema,
   SchoolClassesListQuerySchema,
   SchoolClassesListResponseSchema,
+  UpdateSchoolRequestSchema,
+  UpdateSchoolResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import { EnrolledUsersQuerySchema, EnrolledUsersResponseSchema } from '../common/user';
@@ -84,6 +86,35 @@ export const SchoolsContract = c.router(
         'Returns 401 if the requesting user is not authenticated. ' +
         'Returns 403 if the requesting user lacks permission to access the school. ' +
         'Returns 404 if the requested school does not exist.',
+    },
+    update: {
+      method: 'PATCH',
+      path: '/:schoolId',
+      pathParams: z.object({
+        schoolId: z.string().uuid(),
+      }),
+      body: UpdateSchoolRequestSchema,
+      responses: {
+        200: SuccessEnvelopeSchema(UpdateSchoolResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Update a school',
+      description:
+        'Updates an existing school. Only the mutable fields present in the request body are applied ' +
+        '(name, abbreviation, location, identifiers); identity and hierarchy fields ' +
+        '(id, orgType, districtId/parentOrgId, path) cannot change and are rejected. ' +
+        'Restricted to super admins. ' +
+        'Returns 200 with the updated school id. ' +
+        'Returns 400 if the body is malformed or contains no recognized mutable fields. ' +
+        'Returns 401 if the user is not authenticated. ' +
+        'Returns 403 if the user is not a super admin. ' +
+        'Returns 404 if the school does not exist. ' +
+        'Returns 500 if an internal server error occurs.',
     },
     listClasses: {
       method: 'GET',

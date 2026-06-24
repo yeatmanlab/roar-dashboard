@@ -2,7 +2,13 @@ import { z } from 'zod';
 import { initContract } from '@ts-rest/core';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import { EnrolledUsersQuerySchema, EnrolledUsersResponseSchema } from '../common/user';
-import { ClassDetailSchema, CreateClassRequestSchema, CreateClassResponseSchema } from './schema';
+import {
+  ClassDetailSchema,
+  CreateClassRequestSchema,
+  CreateClassResponseSchema,
+  UpdateClassRequestSchema,
+  UpdateClassResponseSchema,
+} from './schema';
 
 const c = initContract();
 
@@ -62,6 +68,36 @@ export const ClassesContract = c.router(
         'by admins and principals of the ancestor school or district. ' +
         'Students and caregivers receive 403. ' +
         'Returns 401 if the user is not authenticated. ' +
+        'Returns 404 if the class does not exist. ' +
+        'Returns 500 if an internal server error occurs.',
+    },
+    update: {
+      method: 'PATCH',
+      path: '/:classId',
+      pathParams: z.object({
+        classId: z.string().uuid(),
+      }),
+      body: UpdateClassRequestSchema,
+      responses: {
+        200: SuccessEnvelopeSchema(UpdateClassResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Update a class',
+      description:
+        'Updates an existing class. Only the mutable fields present in the request body are applied ' +
+        '(name, classType, subjects, grades, location); identity and hierarchy fields ' +
+        '(id, schoolId, districtId, orgPath) cannot change and are rejected — a class cannot be moved ' +
+        'to a different school or district. Updating grades recomputes the generated schoolLevels column. ' +
+        'Restricted to super admins. ' +
+        'Returns 200 with the updated class id. ' +
+        'Returns 400 if the body is malformed or contains no recognized mutable fields. ' +
+        'Returns 401 if the user is not authenticated. ' +
+        'Returns 403 if the user is not a super admin. ' +
         'Returns 404 if the class does not exist. ' +
         'Returns 500 if an internal server error occurs.',
     },
