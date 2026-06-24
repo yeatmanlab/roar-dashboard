@@ -350,12 +350,18 @@ function checkConsent() {
   consentType.value = decision.consentType;
 
   if (decision.shouldShow) {
-    // Point the content query at the agreement + current version the gate
-    // checked. The content watcher opens the modal once the text resolves.
+    // Stay gated: point the content query at the agreement + current version the
+    // gate checked, but do NOT mark consent resolved here. The content watcher
+    // opens the modal AND marks consent resolved together once the text loads.
+    // Resolving here would briefly expose the game list before the modal renders
+    // (a fail-open window for an unsigned required consent).
+    isConsentResolved.value = false;
     consentAgreementId.value = decision.agreementId;
     consentVersionId.value = decision.versionId;
+    return;
   }
 
+  // Required but already signed → resolved, no modal.
   isConsentResolved.value = true;
 }
 
@@ -379,6 +385,10 @@ watch([consentContent, isConsentContentError, consentAgreementId], ([content, ha
   if (content?.content) {
     confirmText.value = content.content;
     showConsent.value = true;
+    // Now safe to mark resolved: the hard modal is up, so the game list stays
+    // withheld (`canShowAssessments` requires `!showConsent`). This is the only
+    // place the shouldShow path resolves — never before the modal renders.
+    isConsentResolved.value = true;
   }
 });
 

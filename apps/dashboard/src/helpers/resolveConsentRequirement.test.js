@@ -76,6 +76,18 @@ describe('resolveConsentRequirement', () => {
 
       expect(result.status).toBe(CONSENT_REQUIREMENT_STATUS.UNRESOLVED);
     });
+
+    it('returns UNRESOLVED when a required, unsigned agreement has no current version to present', () => {
+      // Fail safe: an unsigned required consent with a null currentVersion can't
+      // be shown or signed — block rather than resolve the gate open.
+      const result = resolveConsentRequirement({
+        agreements: [{ ...consentAgreement({ signed: false }), currentVersion: null }],
+        agreementsResolved: true,
+        userData: buildUserData({ dob: ADULT_DOB, grade: 12 }),
+      });
+
+      expect(result.status).toBe(CONSENT_REQUIREMENT_STATUS.UNRESOLVED);
+    });
   });
 
   describe('(b) administration requires no matching agreement: no gate', () => {

@@ -114,13 +114,22 @@ export function resolveConsentRequirement({ agreements, agreementsResolved, user
   // old enough to be prompted.
   const shouldShow = !hasSignedCurrentVersion && isOldEnoughToPrompt;
 
+  const versionId = matchingAgreement.currentVersion?.id ?? null;
+
+  // Required + unsigned but no current version available to present → we cannot
+  // show a signable consent form. Fail safe: block (UNRESOLVED) rather than
+  // resolving the gate open with an unpresentable required consent.
+  if (shouldShow && !versionId) {
+    return { status: CONSENT_REQUIREMENT_STATUS.UNRESOLVED };
+  }
+
   return {
     status: CONSENT_REQUIREMENT_STATUS.REQUIRED,
     consentType: requiredAgreementType,
     // The IDs the caller needs to fetch the version content and record
     // acceptance against the SAME version the gate checked.
     agreementId: matchingAgreement.id,
-    versionId: matchingAgreement.currentVersion?.id ?? null,
+    versionId,
     shouldShow,
   };
 }
