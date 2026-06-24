@@ -861,6 +861,26 @@ describe('GET /v1/districts/:districtId/users', () => {
       expect(withEmbed.body.data.pagination.totalItems).toBe(withoutEmbed.body.data.pagination.totalItems);
       expect(withEmbed.body.data.items).toHaveLength(withoutEmbed.body.data.items.length);
     });
+
+    // Authorization is enforced before the embed is resolved — requesting the PII
+    // embed cannot become a side-door past `can_list_users` (CRITICAL: student PII).
+    it('returns 403 for a non-supervisory user requesting the demographics embed', async () => {
+      // Students lack can_list_users on any org, so the request is denied before
+      // any demographic column is ever read.
+      const res = await expectRoute('GET', `${demographicsPath()}?embed=demographics`).as(tiers.student).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 403 for a supervisory user requesting demographics on a district they cannot access', async () => {
+      // tiers.admin is scoped to district A; requesting district B's users with the
+      // demographics embed must not widen visibility across the org boundary.
+      const res = await expectRoute('GET', `/v1/districts/${baseFixture.districtB.id}/users?embed=demographics`)
+        .as(tiers.admin)
+        .toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
   });
 
   describe('error cases', () => {

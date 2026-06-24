@@ -809,7 +809,7 @@ describe('DistrictService', () => {
       perPage: 25,
       sortBy: 'nameLast' as const,
       sortOrder: SortOrder.ASC,
-      embed: [] as 'demographics'[],
+      embed: [],
     };
 
     beforeEach(() => {

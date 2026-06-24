@@ -29,7 +29,7 @@ describe('GroupService', () => {
       perPage: 25,
       sortBy: 'nameLast' as const,
       sortOrder: SortOrder.ASC,
-      embed: [] as 'demographics'[],
+      embed: [],
     };
 
     it('should return users for super admin (unrestricted)', async () => {
