@@ -260,7 +260,9 @@ export default async function globalSetup() {
   // 3. Read FGA env written by seed script
   const fgaEnv = readFgaEnv();
   if (!fgaEnv) {
-    console.warn('[SDK Integration Tests] Could not read FGA env from /tmp/roar-fga-env.json — server may fail to authorize requests');
+    console.warn(
+      '[SDK Integration Tests] Could not read FGA env from /tmp/roar-fga-env.json — server may fail to authorize requests',
+    );
   }
 
   // 4. Spawn the backend server with Firebase Auth emulator

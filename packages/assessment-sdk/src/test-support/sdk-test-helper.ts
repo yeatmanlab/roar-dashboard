@@ -41,8 +41,7 @@ async function signInWithEmulator(email: string, password: string): Promise<stri
   const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
   if (!emulatorHost) {
     throw new Error(
-      'FIREBASE_AUTH_EMULATOR_HOST is not set. ' +
-        'The Auth emulator must be running for SDK integration tests.',
+      'FIREBASE_AUTH_EMULATOR_HOST is not set. ' + 'The Auth emulator must be running for SDK integration tests.',
     );
   }
 
@@ -60,9 +59,7 @@ async function signInWithEmulator(email: string, password: string): Promise<stri
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(
-      `[SDK Test] Auth emulator sign-in failed for ${email}: ${response.status} ${body}`,
-    );
+    throw new Error(`[SDK Test] Auth emulator sign-in failed for ${email}: ${response.status} ${body}`);
   }
 
   const data = (await response.json()) as { idToken?: string };
