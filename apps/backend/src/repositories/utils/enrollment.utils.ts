@@ -1,6 +1,7 @@
 import type { AnyColumn, SQL } from 'drizzle-orm';
 import { and, lte, gte, or, isNull, isNotNull, sql, gt, exists } from 'drizzle-orm';
 import { fdwRuns } from '../../db/schema/assessment-fdw/runs';
+import { COMPOSITE_RUN_TASK_ID } from '../../constants/run';
 
 /**
  * Builds enrollment date boundary conditions for user membership tables.
@@ -226,7 +227,8 @@ export function hasWithdrawnWithDataForAdmin(
           WHERE ${fdwRuns.userId} = ${userIdCol}
             AND ${fdwRuns.administrationId} = ${administrationIdCol}
             AND ${fdwRuns.deletedAt} IS NULL
-            AND ${fdwRuns.abortedAt} IS NULL)`,
+            AND ${fdwRuns.abortedAt} IS NULL
+            AND ${fdwRuns.taskId} <> ${COMPOSITE_RUN_TASK_ID})`,
     ),
   );
 }

@@ -1,4 +1,9 @@
-/* eslint-disable no-param-reassign */
+import {
+  LETTER_SUBTASK_DOMAINS,
+  PHONICS_SUBTASK_DOMAINS,
+  LETTER_TASK_IDS,
+  PHONICS_TASK_IDS,
+} from '@roar-platform/assessment-schema/roar-letter';
 import i18next from 'i18next';
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import store from 'store2';
@@ -18,6 +23,7 @@ import { isPractice } from './subTask';
 import { audioResponse } from './audioFeedback';
 import { isMaxTimeoutReached } from './appTimer';
 import { clowder, scaleTheta, setNextStimulus } from '../experimentSetup';
+import { COMPOSITE_DOMAIN, AssessmentStage } from '@roar-platform/assessment-schema';
 
 export const audioContext = new Audio();
 
@@ -63,12 +69,10 @@ const prepareLetterChoices = (target, distractors) => {
 function updatePhonicsItemGroupStats(itemGroup, correct) {
   // Validate input
   if (typeof itemGroup !== 'string' || itemGroup.trim() === '') {
-    // eslint-disable-next-line no-console
     console.warn("Invalid 'itemGroup' parameter. It must be a non-empty string.");
     return;
   }
   if (correct !== 0 && correct !== 1) {
-    // eslint-disable-next-line no-console
     console.warn("Invalid 'correct' parameter. It must be 0 or 1.");
     return;
   }
@@ -83,7 +87,6 @@ function updatePhonicsItemGroupStats(itemGroup, correct) {
     try {
       itemGroupData = JSON.parse(currentItemGroupDataString);
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error(`Error parsing data for item group '${itemGroup}':`, error);
       // If parsing fails, re-initialize to prevent further errors
       itemGroupData = { correct: 0, attempted: 0 };
@@ -110,7 +113,6 @@ function updatePhonicsItemGroupStats(itemGroup, correct) {
  */
 export function getItemGroupStats(itemGroup) {
   if (typeof itemGroup !== 'string' || itemGroup.trim() === '') {
-    // eslint-disable-next-line no-console
     console.warn("Invalid 'itemGroup' parameter. It must be a non-empty string.");
     return { correct: 0, attempted: 0 };
   }
@@ -135,12 +137,10 @@ export function getItemGroupStats(itemGroup) {
       return itemGroupData;
     }
 
-    // eslint-disable-next-line no-console
     console.warn(`Data for item group '${itemGroup}' (key: '${itemGroupKey}') is malformed. Returning default counts.`);
 
     return { correct: 0, attempted: 0 };
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error(`Error parsing data for item group '${itemGroup}' (key: '${itemGroupKey}'):`, error);
     // If parsing fails, return default zeros
     return { correct: 0, attempted: 0 };
@@ -158,7 +158,7 @@ const letterNameTrials = {
     const stimulus = store.session.get('nextStimulus');
     const { task } = store.session.get('config');
 
-    if (task === 'phonics') {
+    if (task === PHONICS_TASK_IDS.EN) {
       if (mediaAssets.audio[stimulus.audio_filename]) {
         return mediaAssets.audio[stimulus.audio_filename];
       }
@@ -191,7 +191,7 @@ const letterNameTrials = {
     const stimulus = store.session.get('nextStimulus');
 
     let target;
-    if (store.session.get('config').task === 'phonics') {
+    if (store.session.get('config').task === PHONICS_TASK_IDS.EN) {
       target = stimulus.target_letter;
     } else {
       ({ target } = stimulus); // Destructuring in parentheses
@@ -216,7 +216,7 @@ const letterNameTrials = {
   on_finish: (data) => {
     // N.B.: nextStimulus is actually the current stimulus
     const currentStimulus = store.session.get('nextStimulus');
-    const { zeta } = currentStimulus?.zetas?.find?.((zetaCatMap) => zetaCatMap.cats.includes('composite')) ?? {};
+    const { zeta } = currentStimulus?.zetas?.find?.((zetaCatMap) => zetaCatMap.cats.includes(COMPOSITE_DOMAIN)) ?? {};
     const { a, b, c, d } = zeta ?? {};
     const itemParameters = { a, b, c, d };
     const choices = store.session('choices');
@@ -226,7 +226,7 @@ const letterNameTrials = {
 
     // check response and record it
     data.correct = data.button_response === store.session('correctResponseNum') ? 1 : 0;
-    data.assessment_stage = isPractice(subTaskName) ? 'practice_response' : 'test_response';
+    data.assessment_stage = isPractice(subTaskName) ? AssessmentStage.PRACTICE : AssessmentStage.TEST;
     store.session.set('correct', data.correct);
     store.session.set('response', data.button_response);
     store.session.set('responseValue', choices[data.button_response]);
@@ -240,7 +240,7 @@ const letterNameTrials = {
 
     // Update theta and get next stimulus before writing trial data
     // Phonics uses cat.findNextItem() directly instead of clowder
-    if (store.session.get('config').task !== 'phonics') {
+    if (store.session.get('config').task !== PHONICS_TASK_IDS.EN) {
       setNextStimulus();
     }
 
@@ -261,7 +261,7 @@ const letterNameTrials = {
     store.session.set('totalPercentCorrect', totalPercentCorrect);
 
     // check for early stop in phonics
-    if (subTaskName === 'TextSoundPseudo') {
+    if (subTaskName === PHONICS_SUBTASK_DOMAINS.TEXT_SOUND_PSEUDO) {
       if (totalPercentCorrect < phonicsChanceThreshold && trialNumTotal > phonicsMinTrials) {
         store.session.set('phonicsEarlyStop', true);
       }
@@ -270,16 +270,16 @@ const letterNameTrials = {
     // update appropriate summary list
     const correctList = store.session('correctItems');
     const incorrectList = store.session('incorrectItems');
-    if (subTaskName === 'LowercaseNames') {
+    if (subTaskName === LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES) {
       store.session.set('lowerCorrectItems', correctList);
       store.session.set('lowerIncorrectItems', incorrectList);
-    } else if (subTaskName === 'UppercaseNames') {
+    } else if (subTaskName === LETTER_SUBTASK_DOMAINS.UPPERCASE_NAMES) {
       store.session.set('upperCorrectItems', correctList);
       store.session.set('upperIncorrectItems', incorrectList);
-    } else if (subTaskName === 'Phonemes') {
+    } else if (subTaskName === LETTER_SUBTASK_DOMAINS.PHONEMES) {
       store.session.set('phonemeCorrectItems', correctList);
       store.session.set('phonemeIncorrectItems', incorrectList);
-    } else if (subTaskName === 'TextSoundPseudo') {
+    } else if (subTaskName === PHONICS_SUBTASK_DOMAINS.TEXT_SOUND_PSEUDO) {
       // update count for phonics subscores
       const { itemGroup } = currentStimulus;
       updatePhonicsItemGroupStats(itemGroup, data.correct);
@@ -295,7 +295,7 @@ const letterNameTrials = {
       corpusId: currentStimulus.corpus_src,
 
       // Specific to this trial
-      assessment_stage: isPractice(subTaskName) ? 'practice_response' : 'test_response',
+      assessment_stage: isPractice(subTaskName) ? AssessmentStage.PRACTICE : AssessmentStage.TEST,
       target: store.session('target'),
       choices: store.session('choices'),
       responseValue: store.session('responseValue'),
@@ -310,7 +310,7 @@ const letterNameTrials = {
       trialNumTotal: store.session('trialNumTotal'),
     };
 
-    if (taskId === 'letter') {
+    if (taskId === LETTER_TASK_IDS.EN) {
       const thetaEstimateRaw = clowder.theta.composite;
       const thetaSERaw = makeFinite(clowder.seMeasurement.composite);
       const [thetaEstimate, thetaSE] = scaleTheta(thetaEstimateRaw, thetaSERaw);
@@ -352,7 +352,7 @@ const letterNameTrials = {
         phonemeCorrect: store.session('phonemeCorrectItems'),
         phonemeIncorrect: store.session('phonemeIncorrectItems'),
       });
-    } else if (task === 'phonics') {
+    } else if (task === PHONICS_TASK_IDS.EN) {
       const { itemGroup, itemId, pattern } = currentStimulus;
 
       Object.assign(commonData, {
