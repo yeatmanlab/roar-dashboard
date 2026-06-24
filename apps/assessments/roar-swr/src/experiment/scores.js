@@ -185,6 +185,13 @@ export class RoarScores {
       return computedScore;
     });
 
+    // SWR defines the shared/foundational IRT scale, so its foundational composite IS its
+    // composite. Mirror the composite group under composite_foundational so the cross-task
+    // foundational composite (which reads composite_foundational) includes SWR.
+    if (computedScores.composite) {
+      computedScores.composite_foundational = { ...computedScores.composite };
+    }
+
     return computedScores;
   };
 }

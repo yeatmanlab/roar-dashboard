@@ -284,7 +284,7 @@ export default defineConfig(({ mode }) => {
                 jspsych: ['jspsych'],
                 roam: ['@bdelab/roam-apps'],
                 firekit: ['@bdelab/roar-firekit'],
-                letter: ['@bdelab/roar-letter'],
+                letter: ['@roar-platform/roar-letter'],
                 multichoice: ['@bdelab/roar-multichoice'],
                 sre: ['@roar-platform/roar-sre'],
                 swr: ['@roar-platform/roar-swr'],

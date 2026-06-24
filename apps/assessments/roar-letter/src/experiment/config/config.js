@@ -4,11 +4,12 @@ import _isNull from 'lodash/isNull';
 import _isUndefined from 'lodash/isUndefined';
 import i18next from 'i18next';
 import { getAgeData } from '@bdelab/roar-utils';
+import { LETTER_TASK_IDS, LETTER_SCORING_VERSION, resolveTaskId } from '@roar-platform/assessment-schema/roar-letter';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { enterFullscreen } from '../trials/fullScreen';
 import { corpusLetterAll, corpusTypePhonics } from './corpus';
 
-import { computedScoreCallback } from '../scores';
+import { finishRun, writeTrial, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
 import { jsPsych } from '../jsPsych';
 import { initializeClowder } from '../experimentSetup';
 
@@ -116,7 +117,6 @@ export const getStimulusCountPhonics = () => {
       break;
 
     default:
-      // eslint-disable-next-line no-console
       console.log('Unexpected corpusTypePhonics:', corpusTypePhonics);
       return [];
   }
@@ -130,7 +130,7 @@ export const getStimulusCountPhonics = () => {
   return countList;
 };
 
-export const initConfig = async (firekit, gameParams, userParams, displayElement) => {
+export const initConfig = async (gameParams, userParams, displayElement) => {
   const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
 
   const {
@@ -185,7 +185,7 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
     labId,
     recruitment: recruitment || 'pilot',
     story: story ?? false,
-    task: task ?? 'letter',
+    task: task ?? LETTER_TASK_IDS.EN,
     phonicsSet: phonicsSet ?? 'all',
     phonicsCorpus: phonicsCorpus ?? 'letter-Corpus',
     userMetadata: { ...userMetadata, grade, ...ageData },
@@ -206,7 +206,6 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
       trialTime: trialTimeOptions[0],
     },
     startTime: new Date(),
-    firekit,
     displayElement: displayElement || null,
     minTheta: minTheta || -8,
     maxTheta: maxTheta || 8,
@@ -216,26 +215,25 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
     randomSeed,
     nStartItems,
     startSelectMethod,
-    scoringVersion: scoringVersion ?? 1,
-    taskId: taskId ?? 'letter',
+    scoringVersion: scoringVersion ?? LETTER_SCORING_VERSION.V1,
+    taskId: taskId ?? resolveTaskId(task ?? LETTER_TASK_IDS.EN, language ?? 'en'),
   };
 
-  const updatedGameParams = Object.fromEntries(
-    Object.entries(gameParams).map(([key, value]) => [key, config[key] ?? value]),
-  );
-  await config.firekit.updateTaskParams(updatedGameParams);
-
-  if (config.pid !== null) {
-    await config.firekit.updateUser({
-      assessmentPid: config.pid,
-      ...userMetadata,
-    });
+  if (config.pid) {
+    try {
+      await updateUser({
+        assessmentPid: config.pid,
+        ...userMetadata,
+      });
+    } catch (err) {
+      console.warn('[roar-letter] updateUser skipped (not yet implemented in SDK):', err.message);
+    }
   }
 
   return config;
 };
 
-export const initRoarJsPsych = (config) => {
+export const initRoarJsPsych = (config, computedScoreCallback) => {
   if (config.displayElement) {
     jsPsych.opts.display_element = config.displayElement;
   }
@@ -244,14 +242,13 @@ export const initRoarJsPsych = (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-      // eslint-disable-next-line prefer-rest-params
       fn.apply(fn, arguments);
-      // eslint-disable-next-line prefer-rest-params
+
       code.apply(fn, arguments);
     };
 
   jsPsych.opts.on_finish = extend(jsPsych.opts.on_finish, () => {
-    config.firekit.finishRun();
+    finishRun();
   });
 
   jsPsych.opts.on_data_update = extend(jsPsych.opts.on_data_update, (data) => {
@@ -260,11 +257,11 @@ export const initRoarJsPsych = (config) => {
       if (updatedData.corpusId === 'textSoundPseudo') {
         updatedData.phonicsCorpus = 'roar-phonics-2025-08-01-v3.csv';
       }
-      config.firekit.writeTrial(updatedData, computedScoreCallback);
+      writeTrial(updatedData, computedScoreCallback);
     }
   });
   jsPsych.opts.on_interaction_data_update = function (data) {
-    config.firekit.addInteraction(data);
+    addInteraction(data);
   };
 
   initStore(config);
@@ -279,13 +276,16 @@ export const initRoarTimeline = (config) => {
   const beginningTimeline = {
     timeline: initialTimeline,
     on_timeline_finish: async () => {
-      // eslint-disable-next-line no-param-reassign
       config.pid = config.pid || makePid();
-      await config.firekit.updateUser({
-        assessmentPid: config.pid,
-        labId: config.labId,
-        ...config.userMetadata,
-      });
+      try {
+        await updateUser({
+          assessmentPid: config.pid,
+          labId: config.labId,
+          ...config.userMetadata,
+        });
+      } catch (err) {
+        console.warn('[roar-letter] updateUser skipped (not yet implemented in SDK):', err.message);
+      }
     },
   };
   return beginningTimeline;
