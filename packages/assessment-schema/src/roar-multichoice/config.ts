@@ -14,8 +14,7 @@ export const MULTICHOICE_SCORING_VERSION = {
   V1: 1,
 } as const;
 
-export type MultichoiceScoringVersion =
-  (typeof MULTICHOICE_SCORING_VERSION)[keyof typeof MULTICHOICE_SCORING_VERSION];
+export type MultichoiceScoringVersion = (typeof MULTICHOICE_SCORING_VERSION)[keyof typeof MULTICHOICE_SCORING_VERSION];
 
 /**
  * GCS URL for the normed IRT scoring lookup table.
@@ -23,7 +22,5 @@ export type MultichoiceScoringVersion =
  * @param task - 'morphology' or 'cva'
  * @param version - The scoring version (from MULTICHOICE_SCORING_VERSION)
  */
-export const MULTICHOICE_SCORE_TABLE_URL = (
-  task: 'morphology' | 'cva',
-  version: MultichoiceScoringVersion,
-): string => `https://storage.googleapis.com/roar-survey/scores/${task}_lookup_v${version}.csv`;
+export const MULTICHOICE_SCORE_TABLE_URL = (task: 'morphology' | 'cva', version: MultichoiceScoringVersion): string =>
+  `https://storage.googleapis.com/roar-survey/scores/${task}_lookup_v${version}.csv`;

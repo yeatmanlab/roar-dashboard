@@ -363,7 +363,9 @@ export const initRoarJsPsych = async (config, computedScoreCallback) => {
 
   jsPsych.opts.on_data_update = extend(jsPsych.opts.on_data_update, (data) => {
     if (data.save_trial) {
-      writeTrial(data, computedScoreCallback).catch((err) => console.error('[roar-multichoice] writeTrial failed:', err));
+      writeTrial(data, computedScoreCallback).catch((err) =>
+        console.error('[roar-multichoice] writeTrial failed:', err),
+      );
     }
   });
   jsPsych.opts.on_interaction_data_update = function (data) {

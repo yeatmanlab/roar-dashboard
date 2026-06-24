@@ -43,8 +43,7 @@ export function wireScoreAdapter() {
   };
 
   // Return undefined before the first trial to avoid triggering scoring prematurely.
-  facade._getRawScores = () =>
-    Object.keys(accumulator.composite).length > 0 ? { ...accumulator } : undefined;
+  facade._getRawScores = () => (Object.keys(accumulator.composite).length > 0 ? { ...accumulator } : undefined);
 
   facade._getScoreAdapter = () => (computed) => toMultichoiceScoreEntries(computed);
 

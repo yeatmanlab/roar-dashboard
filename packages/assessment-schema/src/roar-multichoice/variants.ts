@@ -35,8 +35,6 @@ export const MULTICHOICE_VARIANTS = {
  * @returns The canonical task ID string
  */
 export function getMultichoiceTaskId(task: MultichoiceTask): MultichoiceTaskId {
-  const safeTask: MultichoiceTask = (MULTICHOICE_TASKS as readonly string[]).includes(task)
-    ? task
-    : 'morphology';
+  const safeTask: MultichoiceTask = (MULTICHOICE_TASKS as readonly string[]).includes(task) ? task : 'morphology';
   return safeTask === 'cva' ? CVA_TASK_ID : MORPHOLOGY_TASK_ID;
 }

@@ -109,9 +109,7 @@ export function toMultichoiceScoreEntries(
     const isAdaptive = 'totalCorrect' in composite;
 
     if (isAdaptive) {
-      for (const name of Object.values(
-        MULTICHOICE_COMPOSITE_SCORE_NAMES,
-      ) as MultichoiceCompositeName[]) {
+      for (const name of Object.values(MULTICHOICE_COMPOSITE_SCORE_NAMES) as MultichoiceCompositeName[]) {
         const value = composite[name];
         if (value == null) continue;
         entries.push({
@@ -123,9 +121,7 @@ export function toMultichoiceScoreEntries(
         });
       }
     } else {
-      for (const name of Object.values(
-        MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES,
-      ) as MultichoiceNonAdaptiveName[]) {
+      for (const name of Object.values(MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES) as MultichoiceNonAdaptiveName[]) {
         const value = composite[name];
         if (value == null) continue;
         entries.push({
@@ -141,9 +137,7 @@ export function toMultichoiceScoreEntries(
 
   const comprehension = computed[MULTICHOICE_SCORE_DOMAINS.COMPOSITE_COMPREHENSION];
   if (comprehension) {
-    for (const name of Object.values(
-      MULTICHOICE_COMPREHENSION_SCORE_NAMES,
-    ) as MultichoiceComprehensionName[]) {
+    for (const name of Object.values(MULTICHOICE_COMPREHENSION_SCORE_NAMES) as MultichoiceComprehensionName[]) {
       const value = comprehension[name];
       if (value == null) continue;
       entries.push({

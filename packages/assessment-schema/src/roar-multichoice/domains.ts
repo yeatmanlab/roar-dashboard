@@ -12,5 +12,4 @@ export const MULTICHOICE_SCORE_DOMAINS = {
   COMPOSITE_COMPREHENSION: 'composite_comprehension',
 } as const;
 
-export type MultichoiceScoreDomain =
-  (typeof MULTICHOICE_SCORE_DOMAINS)[keyof typeof MULTICHOICE_SCORE_DOMAINS];
+export type MultichoiceScoreDomain = (typeof MULTICHOICE_SCORE_DOMAINS)[keyof typeof MULTICHOICE_SCORE_DOMAINS];

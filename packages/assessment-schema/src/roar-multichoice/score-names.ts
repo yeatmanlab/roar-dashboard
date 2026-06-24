@@ -52,7 +52,4 @@ export const MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES = {
 export type MultichoiceNonAdaptiveName =
   (typeof MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES)[keyof typeof MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES];
 
-export type MultichoiceScoreName =
-  | MultichoiceCompositeName
-  | MultichoiceComprehensionName
-  | MultichoiceNonAdaptiveName;
+export type MultichoiceScoreName = MultichoiceCompositeName | MultichoiceComprehensionName | MultichoiceNonAdaptiveName;

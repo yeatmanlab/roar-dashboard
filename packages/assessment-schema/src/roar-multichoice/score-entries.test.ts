@@ -133,9 +133,7 @@ describe('toMultichoiceScoreEntries', () => {
 
     it('does not emit composite_comprehension for non-adaptive runs', () => {
       const entries = toMultichoiceScoreEntries(NON_ADAPTIVE);
-      expect(entries.some((e) => e.domain === MULTICHOICE_SCORE_DOMAINS.COMPOSITE_COMPREHENSION)).toBe(
-        false,
-      );
+      expect(entries.some((e) => e.domain === MULTICHOICE_SCORE_DOMAINS.COMPOSITE_COMPREHENSION)).toBe(false);
     });
   });
 
@@ -439,7 +437,10 @@ describe('toMultichoiceScoreEntries', () => {
       const computed = { composite: { totalCorrect: 1, thetaEstimate: -0.9684045273347119 } };
       const entries = toMultichoiceScoreEntries(computed);
       expect(entries).toContainEqual(
-        expect.objectContaining({ name: MULTICHOICE_COMPOSITE_SCORE_NAMES.THETA_ESTIMATE, value: '-0.9684045273347119' }),
+        expect.objectContaining({
+          name: MULTICHOICE_COMPOSITE_SCORE_NAMES.THETA_ESTIMATE,
+          value: '-0.9684045273347119',
+        }),
       );
     });
 
@@ -510,7 +511,9 @@ describe('toMultichoiceScoreEntries', () => {
       // total = 18
       expect(entries).toHaveLength(18);
 
-      const compositeEntries = entries.filter((e: MultichoiceScoreEntry) => e.domain === MULTICHOICE_SCORE_DOMAINS.COMPOSITE);
+      const compositeEntries = entries.filter(
+        (e: MultichoiceScoreEntry) => e.domain === MULTICHOICE_SCORE_DOMAINS.COMPOSITE,
+      );
       const comprehensionEntries = entries.filter(
         (e: MultichoiceScoreEntry) => e.domain === MULTICHOICE_SCORE_DOMAINS.COMPOSITE_COMPREHENSION,
       );
