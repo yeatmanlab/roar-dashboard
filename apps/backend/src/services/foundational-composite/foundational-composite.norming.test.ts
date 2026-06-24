@@ -120,6 +120,38 @@ describe('FoundationalCompositeService — norming path (gate on)', () => {
     expect(data.find((r) => r.name === SCORE_NAME.PERCENTILE)?.value).toBe('60');
   });
 
+  it('keys the norm by the latest assessment date (latestCompletedAt) when it is later than the trigger', async () => {
+    // The participant is 120 months old at TRIGGERED_AT (2026-06-20) but 132 at this later
+    // completion date. The table only has a row at ageMonths 132, so a normed row is written
+    // only if referenceDate = max(latestCompletedAt, triggeredAt) = latestCompletedAt.
+    runRepository.getReportingRunScoresForComposite.mockResolvedValue({
+      rows: [
+        {
+          taskId: TASK_ID.pa,
+          runId: 'run-pa',
+          domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+          name: SCORE_NAME.THETA_ESTIMATE,
+          value: '1.5',
+        },
+        {
+          taskId: TASK_ID.pa,
+          runId: 'run-pa',
+          domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+          name: SCORE_NAME.THETA_SE,
+          value: '0.5',
+        },
+      ],
+      reportingTaskIds: [TASK_ID.pa],
+      latestCompletedAt: new Date('2027-06-20T00:00:00Z'),
+    });
+    mockedLoadTable.mockResolvedValue([{ ageMonths: 132, thetaEstimate: 1.5, percentile: 70 }]);
+
+    await recompute();
+
+    // Matched only because age was resolved as of 2027-06-20 (132 mo), not the earlier trigger (120 mo).
+    expect(upsertedNames()).toContain(SCORE_NAME.PERCENTILE);
+  });
+
   it('writes only the theta when the user record is missing', async () => {
     userRepository.getById.mockResolvedValue(null);
     mockedLoadTable.mockResolvedValue([{ ageMonths: 120, thetaEstimate: 1.5, percentile: 60 }]);
