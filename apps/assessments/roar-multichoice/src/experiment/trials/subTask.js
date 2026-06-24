@@ -1,25 +1,6 @@
-/* eslint-disable import/no-cycle */
+ 
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import { jsPsych } from '../jsPsych';
 import store from 'store2';
-
-// order of subTasks
-// note: subTaskName must be initialized to "" in config
-const getNextSubTask = (currentSubTask) => {
-  if (currentSubTask === '') {
-    return 'LetterPractice';
-  } else if (currentSubTask === 'LetterPractice') {
-    return 'LowercaseNames';
-  } else if (currentSubTask === 'LowercaseNames') {
-    return 'UppercaseNames';
-  } else if (currentSubTask === 'UppercaseNames') {
-    return 'PhonemePractice';
-  } else if (currentSubTask === 'PhonemePractice') {
-    return 'Phonemes';
-  } else {
-    return '';
-  }
-};
 
 export const isPractice = () => {
   const currentSubTask = store.session.get('subTaskName');
@@ -53,11 +34,7 @@ export const getCurrentSubTaskSummary = () => {
   return subTaskSummary;
 };
 
-// wrap-up after the subtask is done
-const subTaskFinish = () => {
-  // log subtask results for debugging
-  const summary = getCurrentSubTaskSummary();
-};
+const subTaskFinish = () => {};
 
 // trials to initialize each subtask
 export const subTaskInitSurvey = {

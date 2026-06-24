@@ -1,4 +1,4 @@
-/* eslint-disable import/no-cycle */
+ 
 import store from 'store2';
 import Papa from 'papaparse';
 import { createPreloadTrials, generateAssetObject, getDevice } from '@bdelab/roar-utils';
@@ -236,7 +236,6 @@ export const initializeClowder = async () => {
   let earlyStoppingCats = null;
   if (isAdaptive) {
     const config = store.session.get('config');
-    const corpora = store.session.get('corpora');
 
     if (task === 'cva') {
       const nItemsCore = config.nItemsCore || 25;

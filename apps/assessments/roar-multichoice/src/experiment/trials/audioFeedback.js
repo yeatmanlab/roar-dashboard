@@ -1,4 +1,4 @@
-/* eslint-disable import/no-cycle */
+ 
 import jsPsychAudioKeyboardResponse from '@jspsych/plugin-audio-keyboard-response';
 import store from 'store2';
 import { mediaAssets } from '../experimentSetup';

@@ -21,9 +21,9 @@ function getClampedAgeForScore() {
   const grade = getGrade(store.session.get('config').userMetadata?.grade);
 
   // Note: We use == instead of === because we want to catch both undefined and null.
-  // eslint-disable-next-line eqeqeq
+   
   if (ageInMonths == undefined) {
-    // eslint-disable-next-line eqeqeq
+     
     if (grade == undefined) throw new Error('Age or grade is undefined');
 
     ageInMonths = 66 + grade * 12;
@@ -118,7 +118,7 @@ export class RoarScores {
    * @returns {*} computedScores
    */
   computedScoreCallback = async (rawScores) => {
-    const { task, isAdaptive } = store.session.get('config');
+    const { isAdaptive } = store.session.get('config');
     const computedScores = _mapValues(rawScores, (subtaskScores) => {
       const subScore = subtaskScores.test?.numCorrect || 0;
       const numAttempted = subtaskScores.test?.numAttempted;
@@ -184,7 +184,7 @@ export class RoarScores {
     const rawGrade = userMetadata?.grade;
     const ageMonths = userMetadata?.ageMonths;
 
-    // eslint-disable-next-line eqeqeq
+     
     if ((rawGrade != null || ageMonths != null) && isAdaptive) {
       if (!this.tableLoaded) {
         if (!this.tableLoadingPromise) {

@@ -1,4 +1,4 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
+ 
 import { defineConfig } from 'cypress';
 
 export default defineConfig({
@@ -6,7 +6,7 @@ export default defineConfig({
   e2e: {
     experimentalRunAllSpecs: true,
     retries: 2,
-    setupNodeEvents(on, config) {
+    setupNodeEvents() {
       // implement node event listeners here
     },
     env: {

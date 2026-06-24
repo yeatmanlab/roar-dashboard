@@ -1,8 +1,8 @@
-/* eslint-disable no-plusplus */
+ 
 import i18next from 'i18next';
 // eslint-disable-next-line import/no-duplicates
 import '../i18n';
-// eslint-disable-next-line import/no-duplicates
+ 
 import Papa from 'papaparse';
 import store from 'store2';
 import { shuffle } from '../helperFunctions';
@@ -10,10 +10,10 @@ import { shuffle } from '../helperFunctions';
 import { multichoiceCorpus } from '../i18n';
 import 'regenerator-runtime/runtime';
 
-// eslint-disable-next-line import/no-mutable-exports
+ 
 export let corpora;
 
-// eslint-disable-next-line import/no-mutable-exports
+ 
 export let storyActive;
 
 let maxStimlulusTrials = 0;
@@ -22,7 +22,7 @@ const transformCSV = (csvInput, isPractice) =>
   csvInput.reduce((accum, row) => {
     const newRow = {
       item: row.item || row.Item,
-      // eslint-disable-next-line no-nested-ternary
+       
       itemId: row.corpus && row.id ? `${row.corpus}-${row.id}` : row.itemId ? row.itemId : 'practiceItem',
       itemGroup: row.itemGroup || 'core',
       target: row.target || row.Target || row.answer || row.Answer,

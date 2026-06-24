@@ -5,8 +5,6 @@ import enCvaIntro from '../stimuli/en/cva-intro.csv';
 import enTranslations from '../locales/en/translation.json';
 import esTranslations from '../locales/es/translation.json';
 import itTranslations from '../locales/it/translation.json';
-import store from 'store2';
-
 const languageDetector = new LanguageDetector();
 
 languageDetector.addDetector({

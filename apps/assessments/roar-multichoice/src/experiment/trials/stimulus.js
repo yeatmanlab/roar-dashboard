@@ -1,12 +1,12 @@
-/* eslint-disable no-plusplus */
-/* eslint-disable prefer-const */
-/* eslint-disable arrow-body-style */
+ 
+ 
+ 
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import store from 'store2';
 // import {itemId} from "../config/corpus"
 import { jsPsych } from '../jsPsych';
 import { shuffle, addItemToSortedStoreList, getPrompt, clampPositive } from '../helperFunctions';
-// eslint-disable-next-line import/no-cycle
+ 
 import { multichoiceValidityEvaluator } from '../experiment';
 import { mediaAssets, clowder, scaleTheta } from '../experimentSetup';
 import { isPractice } from './subTask';
@@ -89,7 +89,7 @@ const trialsMapped = [0, 1].map((i) => {
       const subTaskName = store.session('subTaskName');
       let totalPercentCorrect;
 
-      // eslint-disable-next-line no-param-reassign
+       
       data.correct = data.button_response === store.session('correctResponseNum') ? 1 : 0;
       store.session.set('correct', data.correct);
       store.session.set('response', data.button_response);
@@ -200,12 +200,12 @@ const trialsMapped = [0, 1].map((i) => {
 export const [practiceTrials, stimulusTrials] = trialsMapped;
 
 // A single practice or stimulus trial, which will be skipped if AppTimer has expired
-// eslint-disable-next-line consistent-return
+ 
 export const trialWrapped = (trialType = '') => {
   if (trialType === 'practice') {
     return {
       timeline: [practiceTrials],
-      // eslint-disable-next-line consistent-return
+       
       conditional_function: () => {
         // don't play when skipping trials because app is finished
         if (isMaxTimeoutReached()) return false;
@@ -215,7 +215,7 @@ export const trialWrapped = (trialType = '') => {
   if (trialType === 'stimulus') {
     return {
       timeline: [stimulusTrials],
-      // eslint-disable-next-line consistent-return
+       
       conditional_function: () => {
         // don't play when skipping trials because app is finished or no more items available
         if (isMaxTimeoutReached()) return false;

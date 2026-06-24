@@ -1,4 +1,4 @@
-/* eslint-disable arrow-body-style */
+ 
 import jsPsychHtmlKeyboardResponse from '@jspsych/plugin-html-keyboard-response';
 import { setNextStimulus } from '../experimentSetup';
 
@@ -18,7 +18,7 @@ const setupSurveyData = [
   },
 ];
 
-const setupSurveyTrials = setupSurveyData.map((trial, i) => {
+const setupSurveyTrials = setupSurveyData.map((trial) => {
   return {
     type: jsPsychHtmlKeyboardResponse,
     stimulus: function () {

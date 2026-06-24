@@ -92,7 +92,7 @@ export const getPracticeCount = (practiceType) => {
 // This is based on stimulusCountMap. It does not need to be 3.
 function divideByThree(num) {
   // Minimum number of trials, also random. Can change to whatever.
-  // eslint-disable-next-line no-param-reassign
+   
   if (num < 9) num = 9;
   const baseFraction = Math.floor(num / 3);
   const remainder = num % 3;
@@ -111,7 +111,7 @@ function divideByThree(num) {
 // Divide the trials into blocks of size n or n+1
 // remainder is evenly distributed across intial blocks
 function divideBlockSize(num, numPerBlock) {
-  // eslint-disable-next-line no-param-reassign
+   
   if (num < numPerBlock) num = numPerBlock;
   const numBlocks = Math.floor(num / numPerBlock);
   const remainder = num % numPerBlock;
@@ -188,7 +188,7 @@ export const getStimulusCount = (userMode) => {
     return countList;
   }
 
-  const getFullRandomBlocksArray = (_taskId) => {
+  const getFullRandomBlocksArray = () => {
     const { stimulus } = store.session.get('corpora');
     return divideByThree(stimulus.length);
   };
@@ -276,7 +276,7 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
   } = cleanParams;
 
   const ageData = getAgeData(birthMonth, birthYear, age, ageMonths);
-  // eslint-disable-next-line no-unused-expressions
+   
   language !== 'en' && i18next.changeLanguage(language);
 
   const isCvaGroupRandom = task === 'cva' && (userMode ?? 'groupRandom') === 'groupRandom';
@@ -352,9 +352,9 @@ export const initRoarJsPsych = async (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-      // eslint-disable-next-line prefer-rest-params
+       
       fn.apply(fn, arguments);
-      // eslint-disable-next-line prefer-rest-params
+       
       code.apply(fn, arguments);
     };
 
@@ -383,7 +383,7 @@ export const initRoarTimeline = (config) => {
   const beginningTimeline = {
     timeline: initialTimeline,
     on_timeline_finish: async () => {
-      // eslint-disable-next-line no-param-reassign
+       
       config.pid = config.pid || makePid();
       await config.firekit.updateUser({
         assessmentPid: config.pid,

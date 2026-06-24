@@ -3,6 +3,7 @@ import { RoarAppkit, initializeFirebaseProject } from '@bdelab/roar-firekit';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import i18next from 'i18next';
 import RoarMultichoice from '../src/experiment/index';
+// eslint-disable-next-line import/no-unresolved -- firebaseConfig.js is replaced by shared/firebaseConfig.js in PR 2
 import { roarConfig } from './firebaseConfig';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';

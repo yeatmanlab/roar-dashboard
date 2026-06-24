@@ -1,12 +1,10 @@
 import jsPsychAudioButtonResponse from '@jspsych/plugin-audio-button-response';
-import jsPsychAudioKeyboardResponse from '@jspsych/plugin-audio-keyboard-response';
 
 import { mediaAssets } from '../experimentSetup';
 import '../i18n';
 import { storyActive } from '../config/corpus';
 import '../styles/game.scss';
 import store from 'store2';
-import { isMaxTimeoutReached } from './appTimer';
 
 //@ts-check
 export let storyByLabel, surveyIntroAndInstructions, storyBreakList, practiceCorrect, surveyPracticeDone, endTrial;
@@ -124,7 +122,7 @@ export function createStory() {
   // note filenames for image and audio must start with a lowercase letter
   storyActive.forEach((row) => {
     const { label } = row;
-    // eslint-disable-next-line no-shadow
+     
     const storyTrial = createStoryTrial(row);
 
     // add entry to array
