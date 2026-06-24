@@ -7,6 +7,8 @@ import type {
 } from '@roar-platform/api-contract';
 import { UserFactory, AuthContextFactory } from '../test-support/factories/user.factory';
 import { AdministrationWithEmbedsFactory } from '../test-support/factories/administration.factory';
+import { AgreementFactory } from '../test-support/factories/agreement.factory';
+import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import { createMockUserService } from '../test-support/services/user.service';
 import { createMockAdministrationService } from '../test-support/services/administration.service';
 import { ApiError } from '../errors/api-error';
@@ -63,6 +65,7 @@ describe('UsersController', () => {
   const mockRecordUserAgreement = vi.fn();
   const mockGetUserAdministrations = vi.fn();
   const mockGetUserAdministration = vi.fn();
+  const mockListUserAdministrationAgreements = vi.fn();
   const mockGetGuardianStudentReport = vi.fn();
   const mockAuthContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
 
@@ -81,6 +84,7 @@ describe('UsersController', () => {
     const mockAdministrationService = createMockAdministrationService();
     mockAdministrationService.getUserAdministrations = mockGetUserAdministrations;
     mockAdministrationService.getUserAdministration = mockGetUserAdministration;
+    mockAdministrationService.listUserAdministrationAgreements = mockListUserAdministrationAgreements;
     vi.mocked(AdministrationService).mockReturnValue(mockAdministrationService);
 
     // Setup the mock report service (only getGuardianStudentReport is
@@ -1456,6 +1460,230 @@ describe('UsersController', () => {
       await Controller.getUserAdministration(mockAuthContext, 'user-abc', 'admin-xyz');
 
       expect(mockGetUserAdministration).toHaveBeenCalledWith(mockAuthContext, 'user-abc', 'admin-xyz');
+    });
+  });
+
+  describe('listUserAdministrationAgreements', () => {
+    const targetUserId = 'target-user-123';
+    const administrationId = 'admin-456';
+    const defaultQuery = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'name' as const,
+      sortOrder: 'asc' as const,
+      locale: 'en-US' as const,
+    };
+
+    /**
+     * Build a service-layer agreement-with-signed-status item in the
+     * `{ agreement, currentVersion, signed }` shape the controller transforms.
+     */
+    const buildSignedItem = (agreementId: string, signed: boolean, withVersion = true) => {
+      const agreement = AgreementFactory.build({ id: agreementId, name: `Agreement ${agreementId}` });
+      const currentVersion = withVersion ? AgreementVersionFactory.build({ agreementId }) : null;
+      return { agreement, currentVersion, signed };
+    };
+
+    it('should return 200 with paginated agreements carrying the signed flag', async () => {
+      mockListUserAdministrationAgreements.mockResolvedValue({
+        items: [buildSignedItem('agreement-signed', true), buildSignedItem('agreement-unsigned', false)],
+        totalItems: 2,
+      });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrationAgreements(
+        mockAuthContext,
+        targetUserId,
+        administrationId,
+        defaultQuery,
+      );
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(2);
+      // signed flag is passed through for each item
+      const signedItem = data.items.find((i) => i.id === 'agreement-signed');
+      const unsignedItem = data.items.find((i) => i.id === 'agreement-unsigned');
+      expect(signedItem!.signed).toBe(true);
+      expect(unsignedItem!.signed).toBe(false);
+      // pagination is computed from totalItems / perPage
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 2,
+        totalPages: 1,
+      });
+    });
+
+    it('should transform currentVersion into the nested contract shape', async () => {
+      const agreement = AgreementFactory.build({ id: 'agreement-1', name: 'Consent', agreementType: 'consent' });
+      const currentVersion = AgreementVersionFactory.build({
+        id: 'version-1',
+        agreementId: 'agreement-1',
+        locale: 'en-US',
+        githubFilename: 'CONSENT.md',
+        githubOrgRepo: 'roar-org/legal',
+        githubCommitSha: 'sha-123',
+      });
+      mockListUserAdministrationAgreements.mockResolvedValue({
+        items: [{ agreement, currentVersion, signed: true }],
+        totalItems: 1,
+      });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrationAgreements(
+        mockAuthContext,
+        targetUserId,
+        administrationId,
+        defaultQuery,
+      );
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]).toEqual({
+        id: 'agreement-1',
+        name: 'Consent',
+        agreementType: 'consent',
+        currentVersion: {
+          id: 'version-1',
+          locale: 'en-US',
+          githubFilename: 'CONSENT.md',
+          githubOrgRepo: 'roar-org/legal',
+          githubCommitSha: 'sha-123',
+        },
+        signed: true,
+      });
+    });
+
+    it('should map currentVersion to null when no version exists for the locale', async () => {
+      mockListUserAdministrationAgreements.mockResolvedValue({
+        items: [buildSignedItem('agreement-no-version', false, false)],
+        totalItems: 1,
+      });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrationAgreements(
+        mockAuthContext,
+        targetUserId,
+        administrationId,
+        defaultQuery,
+      );
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]!.currentVersion).toBeNull();
+      expect(data.items[0]!.signed).toBe(false);
+    });
+
+    it('should delegate to the service with the auth context, ids, and query', async () => {
+      mockListUserAdministrationAgreements.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      await Controller.listUserAdministrationAgreements(mockAuthContext, targetUserId, administrationId, defaultQuery);
+
+      expect(mockListUserAdministrationAgreements).toHaveBeenCalledWith(
+        mockAuthContext,
+        targetUserId,
+        administrationId,
+        defaultQuery,
+      );
+      expect(mockListUserAdministrationAgreements).toHaveBeenCalledTimes(1);
+    });
+
+    it('should compute totalPages from totalItems and perPage', async () => {
+      mockListUserAdministrationAgreements.mockResolvedValue({
+        items: [buildSignedItem('a-1', false)],
+        totalItems: 7,
+      });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrationAgreements(
+        mockAuthContext,
+        targetUserId,
+        administrationId,
+        {
+          ...defaultQuery,
+          perPage: 3,
+        },
+      );
+
+      const data = expectOkResponse(result);
+      // ceil(7 / 3) === 3
+      expect(data.pagination.totalPages).toBe(3);
+      expect(data.pagination.perPage).toBe(3);
+    });
+
+    it('should return 404 when the target user or administration does not exist', async () => {
+      mockListUserAdministrationAgreements.mockRejectedValue(
+        new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrationAgreements(
+        mockAuthContext,
+        'non-existent-user',
+        administrationId,
+        defaultQuery,
+      );
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody.message).toBe(ApiErrorMessage.NOT_FOUND);
+      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      expect(errorBody.traceId).toBeDefined();
+    });
+
+    it('should return 403 when the requester lacks access to the administration', async () => {
+      mockListUserAdministrationAgreements.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrationAgreements(
+        mockAuthContext,
+        targetUserId,
+        administrationId,
+        defaultQuery,
+      );
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody.message).toBe(ApiErrorMessage.FORBIDDEN);
+      expect(errorBody.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      expect(errorBody.traceId).toBeDefined();
+    });
+
+    it('should return 500 when the service throws INTERNAL_SERVER_ERROR', async () => {
+      mockListUserAdministrationAgreements.mockRejectedValue(
+        new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrationAgreements(
+        mockAuthContext,
+        targetUserId,
+        administrationId,
+        defaultQuery,
+      );
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody.message).toBe(ApiErrorMessage.INTERNAL_SERVER_ERROR);
+      expect(errorBody.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      expect(errorBody.traceId).toBeDefined();
+    });
+
+    it('should re-throw non-ApiError exceptions so the global handler can take them', async () => {
+      mockListUserAdministrationAgreements.mockRejectedValue(new Error('Unexpected database error'));
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await expect(
+        Controller.listUserAdministrationAgreements(mockAuthContext, targetUserId, administrationId, defaultQuery),
+      ).rejects.toThrow('Unexpected database error');
     });
   });
 
