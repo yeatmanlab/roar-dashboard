@@ -221,16 +221,24 @@ describe('useOrgExportOrchestrator', () => {
     it('forwards progress updates from performExport into the modal progress state', async () => {
       const { confirmExport } = useOrgExportOrchestrator(ref('districts'));
       exportData.value.pendingExportData = { orgType: ORG, userCount: 60000 };
-      // Drive the onProgress callback the orchestrator hands to performExport.
+      // Capture the live progress state at the moment the orchestrator's onProgress
+      // callback fires — the post-export sync (lines 85-86 of the orchestrator) then
+      // overwrites progressState from the export logic's final batch refs, so asserting
+      // after confirmExport() would test the sync, not the onProgress forwarding.
+      let progressDuringExport = null;
       mockPerformExport.mockImplementation(async (_orgType, _count, onProgress) => {
         onProgress(1, 3);
+        progressDuringExport = {
+          currentBatch: progressState.value.currentBatch,
+          totalBatches: progressState.value.totalBatches,
+        };
         return { success: true, batched: true, batchCount: 3 };
       });
 
       await confirmExport();
 
-      expect(progressState.value.currentBatch).toBe(1);
-      expect(progressState.value.totalBatches).toBe(3);
+      // The onProgress callback forwarded the update into the modal progress state live.
+      expect(progressDuringExport).toEqual({ currentBatch: 1, totalBatches: 3 });
       expect(exportPhase.value).toBe(EXPORT_PHASE.SUCCESS);
     });
 
