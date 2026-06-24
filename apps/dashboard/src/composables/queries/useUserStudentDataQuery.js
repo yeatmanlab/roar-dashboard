@@ -5,8 +5,11 @@ import { StatusCodes } from 'http-status-codes';
 import { getRoarApiClient } from '@/clients/roar-api';
 import { useAuthStore } from '@/store/auth';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
+import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 import { mapUser } from '@/helpers/mappers/mapUser';
 import { USER_STUDENT_DATA_QUERY_KEY } from '@/constants/queryKeys';
+
+const MAX_RETRIES = 3;
 
 /**
  * User student data query.
@@ -17,8 +20,8 @@ import { USER_STUDENT_DATA_QUERY_KEY } from '@/constants/queryKeys';
  * consumers read `studentData.*` off the result. We preserve that nested shape here (the Task
  * players read `studentData.dob` / `studentData.grade`), rather than returning the bare slice.
  *
- * @TODO: Evaluate whether this query can be replaced by the existing useUserDataQuery composable
- *   — both now hit the same endpoint and return the same shape.
+ * **Enablement.** Internally gated on `authStore.accessToken` AND a truthy resolved `uid`;
+ * callers can add conditions via `queryOptions.enabled`.
  *
  * @param {String|undefined} userId – If passed, return the studentData for that user; otherwise
  *                                    the current authenticated user.
@@ -30,8 +33,9 @@ const useUserStudentDataQuery = (userId = undefined, queryOptions = undefined) =
   const { roarUid } = storeToRefs(authStore);
   const uid = computed(() => userId || roarUid.value);
 
-  // Ensure all necessary data is loaded before enabling the query.
-  const queryConditions = [() => !!uid.value];
+  // Gate internally on the access token so the query never fires before auth is ready, then on
+  // the resolved uid. Caller conditions arrive via queryOptions.enabled and are AND'ed in.
+  const queryConditions = [() => Boolean(authStore.accessToken), () => !!uid.value];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
@@ -49,8 +53,17 @@ const useUserStudentDataQuery = (userId = undefined, queryOptions = undefined) =
 
       return mapUser(result.body.data);
     },
-    enabled: isQueryEnabled,
     ...options,
+    enabled: isQueryEnabled,
+    // Terminal auth errors and rostering-ended are not transient; retrying
+    // delays the user-facing error UX. Placed after `...options` so a
+    // caller-supplied `retry` can't silently override the policy.
+    retry: (failureCount, error) => {
+      if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
+        return false;
+      }
+      return failureCount < MAX_RETRIES;
+    },
   });
 };
 

@@ -1,12 +1,7 @@
 <template>
   <section id="your-information" class="form-section">
     <h2>Your Information</h2>
-    <EditUsersForm
-      v-model="userDataModel"
-      :user-data="userData"
-      :edit-mode="isEditMode"
-      @update:user-data="localUserData = $event"
-    />
+    <EditUsersForm :user-data="userData" :edit-mode="isEditMode" @update:user-data="localUserData = $event" />
     <div v-if="userType === 'admin'" class="flex">
       <PvButton
         v-if="!isEditMode"
@@ -101,8 +96,7 @@ async function submitUserData() {
     await updateUser({ userId: roarUid.value, userData: body });
     isEditMode.value = false;
     toast.add({ severity: 'success', summary: 'Updated', detail: 'Your Info has been updated', life: 3000 });
-  } catch (error) {
-    console.log('Error updating user data', error);
+  } catch {
     toast.add({
       severity: 'error',
       summary: 'Unexpected Error',
