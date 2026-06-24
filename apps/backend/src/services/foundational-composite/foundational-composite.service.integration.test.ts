@@ -121,7 +121,13 @@ describe('FoundationalCompositeService (integration)', () => {
     for (let i = 0; i < 2; i++) {
       await runRepository.runTransaction({
         fn: async (tx) => {
-          await service.recomputeForRun({ userId, administrationId, triggeringTaskId: PA_TASK_ID, transaction: tx });
+          await service.recomputeForRun({
+            userId,
+            administrationId,
+            triggeringTaskId: PA_TASK_ID,
+            triggeredAt: new Date(),
+            transaction: tx,
+          });
         },
       });
     }
@@ -163,7 +169,13 @@ describe('FoundationalCompositeService (integration)', () => {
 
     await runRepository.runTransaction({
       fn: async (tx) => {
-        await service.recomputeForRun({ userId, administrationId, triggeringTaskId: SWR_TASK_ID, transaction: tx });
+        await service.recomputeForRun({
+          userId,
+          administrationId,
+          triggeringTaskId: SWR_TASK_ID,
+          triggeredAt: new Date(),
+          transaction: tx,
+        });
       },
     });
 

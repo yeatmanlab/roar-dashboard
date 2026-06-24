@@ -7,4 +7,5 @@ export * as pa from './roar-pa/index.js';
 export * as swr from './roar-swr/index.js';
 export * as sre from './roar-sre/index.js';
 export * as letter from './roar-letter/index.js';
+export * as foundationalComposite from './foundational-composite/index.js';
 export * from './firebase-emulator.js';

@@ -7,6 +7,7 @@ import { RunRepository } from '../../repositories/run.repository';
 import type { CompositeInputScoreRow } from '../../repositories/run.repository';
 import { RunScoresRepository } from '../../repositories/run-scores.repository';
 import { TaskRepository } from '../../repositories/task.repository';
+import { UserRepository } from '../../repositories/user.repository';
 import type { NewRunScore } from '../../db/schema';
 import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
 import { SCORE_TYPE, SCORE_DOMAIN, SCORE_NAME } from '../../constants/run-scores';
@@ -16,8 +17,12 @@ import {
   LPW_COMPOSITE_WEIGHT,
   SRE_TRANSFORMED_WEIGHT,
   SRE_TRANSFORMED_FLOOR,
+  FOUNDATIONAL_COMPOSITE_NORMING_ENABLED,
+  FOUNDATIONAL_COMPOSITE_KEYING,
 } from '../../constants/foundational-composite';
 import type { FoundationalCompositeSlug } from '../../constants/foundational-composite';
+import { loadCompositeNormTable } from './composite-norm-table';
+import { buildCompositeNormScoreRows, resolveCompositeDemographics } from './composite-norming';
 import type {
   FoundationalCompositeInputs,
   RecomputeFoundationalCompositeParams,
@@ -186,10 +191,12 @@ export function FoundationalCompositeService({
   runRepository = new RunRepository(),
   runScoresRepository = new RunScoresRepository(),
   taskRepository = new TaskRepository(),
+  userRepository = new UserRepository(),
 }: {
   runRepository?: RunRepository;
   runScoresRepository?: RunScoresRepository;
   taskRepository?: TaskRepository;
+  userRepository?: UserRepository;
 } = {}) {
   // Closure-scoped memo of resolved foundational slug -> taskId. Task slugs are immutable,
   // so a resolved id is cached for the lifetime of the service instance. Unresolved slugs
@@ -227,6 +234,52 @@ export function FoundationalCompositeService({
   }
 
   /**
+   * Resolve the composite's normed score rows (percentile / standard score / …) from the lookup
+   * table. Best-effort: any failure — missing user, unavailable/unpublished table, parse error —
+   * is logged and yields an empty array so the caller still writes the composite `thetaEstimate`.
+   * Returns `[]` (and does no work) when norming is disabled by the feature gate.
+   *
+   * Demographics come from the core-DB user record (a non-transactional read; the assessment-DB
+   * write stays in `transaction`), with the participant's age resolved as of `referenceDate`
+   * (the composite's "date of the latest assessment"). The table load is cached after the first
+   * call, so only the first trial per process pays the fetch.
+   */
+  async function resolveCompositeNormRows(
+    userId: string,
+    administrationId: string,
+    compositeRunId: string,
+    composite: number,
+    referenceDate: Date,
+  ): Promise<NewRunScore[]> {
+    if (!FOUNDATIONAL_COMPOSITE_NORMING_ENABLED) {
+      return [];
+    }
+    try {
+      const user = await userRepository.getById({ id: userId });
+      if (!user) {
+        return [];
+      }
+      const tableRows = await loadCompositeNormTable();
+      if (!tableRows) {
+        return [];
+      }
+      return buildCompositeNormScoreRows({
+        runId: compositeRunId,
+        composite,
+        demographics: resolveCompositeDemographics(user, referenceDate),
+        tableRows,
+        keying: FOUNDATIONAL_COMPOSITE_KEYING,
+      });
+    } catch (error) {
+      logger.warn(
+        { err: error, context: { userId, administrationId, compositeRunId } },
+        'Foundational-composite norming failed; writing composite theta only',
+      );
+      return [];
+    }
+  }
+
+  /**
    * Recompute and persist the foundational composite for the run's student/administration.
    *
    * No-op when: the administration is the anonymous sentinel, the triggering run's task is
@@ -237,7 +290,7 @@ export function FoundationalCompositeService({
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database work fails
    */
   async function recomputeForRun(params: RecomputeFoundationalCompositeParams): Promise<void> {
-    const { userId, administrationId, triggeringTaskId, transaction } = params;
+    const { userId, administrationId, triggeringTaskId, triggeredAt, transaction } = params;
 
     // Anonymous runs have no real administration context to aggregate over.
     if (administrationId === ANONYMOUS_RUN_ADMINISTRATION_ID) {
@@ -273,7 +326,7 @@ export function FoundationalCompositeService({
         transaction,
       });
 
-      const { rows, reportingTaskIds } = await runRepository.getReportingRunScoresForComposite({
+      const { rows, reportingTaskIds, latestCompletedAt } = await runRepository.getReportingRunScoresForComposite({
         userId,
         administrationId,
         taskIds,
@@ -316,7 +369,7 @@ export function FoundationalCompositeService({
         transaction,
       });
 
-      const scoreRow: NewRunScore = {
+      const thetaRow: NewRunScore = {
         runId: compositeRun.id,
         type: SCORE_TYPE.COMPUTED,
         domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
@@ -326,8 +379,27 @@ export function FoundationalCompositeService({
         categoryScore: null,
       };
 
+      // Norming reference age = the user's age at the "date of the latest assessment": the most
+      // recent contributing reporting-run completion, or this trial's timestamp when nothing has
+      // completed yet (scoring runs per-trial, including mid-assessment). DECISION (flagged for
+      // the scoring team): which age to use when it changes across a multi-assessment composite is
+      // a research question; the default here is the latest assessment's date.
+      const referenceDate =
+        latestCompletedAt !== null && latestCompletedAt > triggeredAt ? latestCompletedAt : triggeredAt;
+
+      // Resolve normed scores (percentile / standard score / …) from the lookup table and write
+      // them alongside the theta in one atomic upsert. Best-effort + gated: when norming is
+      // disabled or the table is unavailable this is `[]`, so only the theta is written.
+      const normRows = await resolveCompositeNormRows(
+        userId,
+        administrationId,
+        compositeRun.id,
+        composite,
+        referenceDate,
+      );
+
       await runScoresRepository.upsertMany({
-        data: [scoreRow],
+        data: [thetaRow, ...normRows],
         transaction,
       });
     } catch (error) {
