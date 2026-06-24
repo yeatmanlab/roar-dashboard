@@ -45,16 +45,6 @@
         />
         <small v-if="errorMessage.includes('Grade')" class="p-error">Grade must be a number 1-13, or K/PK/TK</small>
       </div>
-      <div v-if="isSuperAdmin">
-        <div>
-          <PvCheckbox v-model="localUserData.testData" binary />
-          <label class="ml-2">Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label>
-        </div>
-        <div>
-          <PvCheckbox v-model="localUserData.demoData" binary />
-          <label class="ml-2">Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label>
-        </div>
-      </div>
     </div>
     <div class="form-column">
       <div class="form-field">
@@ -146,23 +136,6 @@
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.last ?? 'None' }}</div>
         <PvInputText v-else v-model="localUserData.name.last" />
       </div>
-
-      <div v-if="isSuperAdmin">
-        <div>
-          <PvCheckbox v-if="editMode" v-model="localUserData.testData" binary class="mr-2" />
-          <label :class="{ 'font-light uppercase text-sm': !editMode }"
-            >Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
-          >
-          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ localUserData.testData ? 'Yes' : 'No' }}</div>
-        </div>
-        <div>
-          <PvCheckbox v-if="editMode" v-model="localUserData.demoData" binary class="mr-2" />
-          <label :class="{ 'font-light uppercase text-sm': !editMode }"
-            >Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
-          >
-          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ localUserData.demoData ? 'Yes' : 'No' }}</div>
-        </div>
-      </div>
     </div>
     <div class="form-column">
       <div class="form-field">
@@ -215,16 +188,12 @@
 </template>
 <script setup>
 import { watch, ref, onMounted, computed } from 'vue';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
 import PvAutoComplete from 'primevue/autocomplete';
 import PvDatePicker from 'primevue/datepicker';
-import PvCheckbox from 'primevue/checkbox';
 import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { usePermissions } from '@/composables/usePermissions';
 const { userCan, Permissions, UserRoles } = usePermissions();
 
@@ -245,10 +214,6 @@ const props = defineProps({
 
 // Handle modal opening / closing
 const emit = defineEmits(['modalClosed', 'update:userData']);
-
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
-const initialized = ref(false);
 
 watch(
   () => props.userData,
@@ -277,8 +242,6 @@ const localUserData = ref({
     frl_status: false,
     iep_status: false,
   },
-  testData: false,
-  demoData: false,
   dataInitialized: false,
 });
 const errorMessage = ref('');
@@ -301,8 +264,6 @@ const setupUserData = () => {
       frl_status: props.userData?.studentData?.frl_status || false,
       iep_status: props.userData?.studentData?.iep_status || false,
     },
-    testData: props.userData?.testData || false,
-    demoData: props.userData?.demoData || false,
     userType: localUserType.value,
     dataInitialized: true,
   };
@@ -350,19 +311,7 @@ const searchRaces = (event) => {
   raceOptions.value = filteredOptions;
 };
 
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit?.restConfig?.()) init();
-});
-
 onMounted(() => {
-  console.log('onMounted hook called');
-  if (roarfirekit.value?.restConfig?.()) init();
   if (props.userData) setupUserData();
 });
 
@@ -376,16 +325,6 @@ watch(
   },
   { deep: true, immediate: false },
 );
-
-// Determine if the user is an admin
-const { data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-const isSuperAdmin = computed(() => {
-  if (userClaims.value?.claims?.super_admin) return true;
-  return false;
-});
 </script>
 <style lang="scss">
 .form-container {

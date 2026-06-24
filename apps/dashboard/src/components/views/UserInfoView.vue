@@ -37,7 +37,9 @@ import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useUserProfileQuery from '@/composables/queries/useUserProfileQuery';
+import useUpdateUserMutation from '@/composables/mutations/useUpdateUserMutation';
+import { mapUserFormToUpdateBody } from '@/helpers/mappers/mapUserFormToUpdateBody';
 import EditUsersForm from '../EditUsersForm.vue';
 
 // +----------------+
@@ -74,9 +76,17 @@ onMounted(() => {
 // +---------+
 // | Queries |
 // +---------+
-const { data: userData } = useUserDataQuery(null, {
+// Reads the current user from the API (`GET /v1/users/:id`). The `restConfig`
+// readiness gate (above) still drives `initialized`; the query additionally
+// self-gates on the access token, so it won't fire before auth is ready.
+const { data: userData } = useUserProfileQuery(roarUid, {
   enabled: initialized,
 });
+
+// +------------+
+// | Mutations  |
+// +------------+
+const { mutateAsync: updateUser } = useUpdateUserMutation();
 
 // +------------+
 // | Submission |
@@ -84,21 +94,23 @@ const { data: userData } = useUserDataQuery(null, {
 async function submitUserData() {
   isSubmitting.value = true;
 
-  await roarfirekit.value
-    .updateUserData(roarUid.value, localUserData.value)
-    .then(() => {
-      isEditMode.value = false;
-      isSubmitting.value = false;
-      toast.add({ severity: 'success', summary: 'Updated', detail: 'Your Info has been updated', life: 3000 });
-    })
-    .catch((error) => {
-      console.log('Error updating user data', error);
-      toast.add({
-        severity: 'error',
-        summary: 'Unexpected Error',
-        detail: 'An unexpected error has occurred.',
-        life: 3000,
-      });
+  try {
+    // Map the form's nested model to the flat `UpdateUserRequestBodySchema`
+    // body before writing, so the read and write stay on the same API source.
+    const body = mapUserFormToUpdateBody(localUserData.value);
+    await updateUser({ userId: roarUid.value, userData: body });
+    isEditMode.value = false;
+    toast.add({ severity: 'success', summary: 'Updated', detail: 'Your Info has been updated', life: 3000 });
+  } catch (error) {
+    console.log('Error updating user data', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Unexpected Error',
+      detail: 'An unexpected error has occurred.',
+      life: 3000,
     });
+  } finally {
+    isSubmitting.value = false;
+  }
 }
 </script>
