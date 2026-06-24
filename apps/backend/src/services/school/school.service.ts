@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { EnrolledUsersEmbedOption } from '@roar-platform/api-contract';
-import type { CreateSchoolInput, SchoolWithCounts } from '../../repositories/school.repository';
+import type { CreateSchoolInput, SchoolWithCounts, UpdateSchoolInput } from '../../repositories/school.repository';
 import { SchoolRepository } from '../../repositories/school.repository';
 import { DistrictRepository } from '../../repositories/district.repository';
 import { ApiError } from '../../errors/api-error';
@@ -51,6 +51,39 @@ export interface CreateSchoolServiceInput {
   districtId: string;
   name: string;
   abbreviation: string;
+  location?:
+    | {
+        addressLine1?: string | undefined;
+        addressLine2?: string | undefined;
+        city?: string | undefined;
+        stateProvince?: string | undefined;
+        postalCode?: string | undefined;
+        country?: string | undefined;
+      }
+    | undefined;
+  identifiers?:
+    | {
+        mdrNumber?: string | undefined;
+        ncesId?: string | undefined;
+        stateId?: string | undefined;
+        schoolNumber?: string | undefined;
+      }
+    | undefined;
+}
+
+/**
+ * Service-layer input for updating a school.
+ *
+ * Mirrors the API contract's UpdateSchoolRequest shape — a partial of the
+ * mutable school fields (nested location and identifiers). `districtId` is NOT
+ * part of this shape: a school cannot be re-parented after creation. Defined
+ * here rather than imported from the api-contract so the service stays
+ * decoupled from transport concerns
+ * (see backend-service-pattern.md "Service Type Independence").
+ */
+export interface UpdateSchoolServiceInput {
+  name?: string | undefined;
+  abbreviation?: string | undefined;
   location?:
     | {
         addressLine1?: string | undefined;
@@ -487,12 +520,112 @@ export function SchoolService({
     }
   }
 
+  /**
+   * Update an existing school.
+   *
+   * Authorization (super-admin-only — matches create):
+   * 1. Existence check first — a missing school is a 404, not a 403.
+   * 2. Super-admin gate — non-super-admins are rejected with 403. The FGA model
+   *    defines `can_update: no_one` for orgs, so no role grants update; the
+   *    super-admin bypass IS the policy. No FGA `requirePermission` call is made.
+   *
+   * Only the mutable fields present in the input are applied; identity and
+   * hierarchy columns (orgType, parentOrgId/districtId, path) are not accepted
+   * and never touched.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param schoolId - UUID of the school to update
+   * @param input - The mutable school fields the caller is allowed to set
+   * @returns The updated school id
+   * @throws {ApiError} 404 if the school does not exist
+   * @throws {ApiError} 403 if the caller is not a super admin
+   * @throws {ApiError} 400 if no recognized mutable fields are present
+   * @throws {ApiError} 500 if the database update fails
+   */
+  async function update(
+    authContext: AuthContext,
+    schoolId: string,
+    input: UpdateSchoolServiceInput,
+  ): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // 1. Existence check first (404 before 403). getUnrestrictedById filters
+      // by orgType='school', so a district ID passed here returns null → 404.
+      const existing = await schoolRepository.getUnrestrictedById(schoolId);
+      if (!existing) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, schoolId },
+        });
+      }
+
+      // 2. Super-admin gate (can_update = no_one — the bypass is the policy)
+      if (!isSuperAdmin) {
+        logger.warn({ userId, schoolId }, 'Non-super admin attempted to update a school');
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, schoolId },
+        });
+      }
+
+      // Map the nested service input to the column-shaped repository partial.
+      // Only keys explicitly present in the input are included.
+      const updates: UpdateSchoolInput = {
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.abbreviation !== undefined && { abbreviation: input.abbreviation }),
+        ...(input.location?.addressLine1 !== undefined && { locationAddressLine1: input.location.addressLine1 }),
+        ...(input.location?.addressLine2 !== undefined && { locationAddressLine2: input.location.addressLine2 }),
+        ...(input.location?.city !== undefined && { locationCity: input.location.city }),
+        ...(input.location?.stateProvince !== undefined && { locationStateProvince: input.location.stateProvince }),
+        ...(input.location?.postalCode !== undefined && { locationPostalCode: input.location.postalCode }),
+        ...(input.location?.country !== undefined && { locationCountry: input.location.country }),
+        ...(input.identifiers?.mdrNumber !== undefined && { mdrNumber: input.identifiers.mdrNumber }),
+        ...(input.identifiers?.ncesId !== undefined && { ncesId: input.identifiers.ncesId }),
+        ...(input.identifiers?.stateId !== undefined && { stateId: input.identifiers.stateId }),
+        ...(input.identifiers?.schoolNumber !== undefined && { schoolNumber: input.identifiers.schoolNumber }),
+      };
+
+      // 400 when no recognized mutable fields are present (matches administrations'
+      // empty-body handling). This also covers a request whose only field is an empty
+      // nested location object: Zod accepts it (all nested address fields are
+      // optional) but it maps to no column updates.
+      if (Object.keys(updates).length === 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, schoolId, reason: 'No updatable fields provided' },
+        });
+      }
+
+      await schoolRepository.updateSchool(schoolId, updates);
+
+      logger.info({ userId, schoolId }, 'School updated successfully');
+
+      return { id: schoolId };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, schoolId } }, 'Failed to update school');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, schoolId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     create,
     list,
     getById,
     listSchoolClasses,
     listUsers,
+    update,
   };
 }
 

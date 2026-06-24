@@ -43,6 +43,24 @@ export interface CreateGroupInput {
 }
 
 /**
+ * Column-shaped partial for updating a group at the repository layer.
+ *
+ * Only the mutable, caller-settable columns appear here. The immutable `id` is
+ * never passed in. Groups are flat, so there are no hierarchy columns to guard.
+ */
+export interface UpdateGroupInput {
+  name?: string;
+  abbreviation?: string;
+  groupType?: GroupType;
+  locationAddressLine1?: string;
+  locationAddressLine2?: string;
+  locationCity?: string;
+  locationStateProvince?: string;
+  locationPostalCode?: string;
+  locationCountry?: string;
+}
+
+/**
  * Options for listing groups.
  */
 export interface ListGroupOptions {
@@ -84,6 +102,21 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
         ...(input.locationCountry !== undefined && { locationCountry: input.locationCountry }),
       },
     });
+  }
+
+  /**
+   * Update a group's mutable columns.
+   *
+   * Thin wrapper over `BaseRepository.update` that scopes the typed partial to
+   * the group's mutable columns. The immutable `id` is never passed in
+   * (enforced by the `UpdateGroupInput` shape). The service is responsible for
+   * existence and authorization checks before calling this.
+   *
+   * @param groupId - UUID of the group to update
+   * @param updates - Column-shaped partial of mutable fields
+   */
+  async updateGroup(groupId: string, updates: UpdateGroupInput): Promise<void> {
+    await this.update({ id: groupId, data: updates });
   }
 
   /**

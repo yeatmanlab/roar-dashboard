@@ -5,7 +5,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
-import type { CreateGroupInput, Group } from '../../repositories/group.repository';
+import type { CreateGroupInput, Group, UpdateGroupInput } from '../../repositories/group.repository';
 import { GroupRepository } from '../../repositories/group.repository';
 import type { AuthContext } from '../../types/auth-context';
 import type { EnrolledUserEntity, EnrolledUsersQuery, ListEnrolledUsersOptions } from '../../types/user';
@@ -41,6 +41,31 @@ export interface CreateGroupServiceInput {
   name: string;
   abbreviation: string;
   groupType: GroupType;
+  location?:
+    | {
+        addressLine1?: string | undefined;
+        addressLine2?: string | undefined;
+        city?: string | undefined;
+        stateProvince?: string | undefined;
+        postalCode?: string | undefined;
+        country?: string | undefined;
+      }
+    | undefined;
+}
+
+/**
+ * Service-layer input for updating a group.
+ *
+ * Mirrors the API contract's UpdateGroupRequest shape — a partial of the mutable
+ * group fields (nested location). The service flattens this into the
+ * repository's column-shaped partial. Defined here rather than imported from the
+ * api-contract so the service stays decoupled from transport concerns
+ * (see backend-service-pattern.md "Service Type Independence").
+ */
+export interface UpdateGroupServiceInput {
+  name?: string | undefined;
+  abbreviation?: string | undefined;
+  groupType?: GroupType | undefined;
   location?:
     | {
         addressLine1?: string | undefined;
@@ -325,10 +350,105 @@ export function GroupService({
     }
   }
 
+  /**
+   * Update an existing group.
+   *
+   * Authorization (super-admin-only — matches create):
+   * 1. Existence check first — a missing group is a 404, not a 403.
+   * 2. Super-admin gate — non-super-admins are rejected with 403. The FGA model
+   *    defines `can_update: no_one` for groups, so no role grants update; the
+   *    super-admin bypass IS the policy. No FGA `requirePermission` call is made.
+   *
+   * Only the mutable fields present in the input are applied; the immutable `id`
+   * is not accepted and never touched.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param groupId - UUID of the group to update
+   * @param input - The mutable group fields the caller is allowed to set
+   * @returns The updated group id
+   * @throws {ApiError} 404 if the group does not exist
+   * @throws {ApiError} 403 if the caller is not a super admin
+   * @throws {ApiError} 400 if no recognized mutable fields are present
+   * @throws {ApiError} 500 if the database update fails
+   */
+  async function update(
+    authContext: AuthContext,
+    groupId: string,
+    input: UpdateGroupServiceInput,
+  ): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // 1. Existence check first (404 before 403)
+      const existing = await groupRepository.getById({ id: groupId });
+      if (!existing) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, groupId },
+        });
+      }
+
+      // 2. Super-admin gate (can_update = no_one — the bypass is the policy)
+      if (!isSuperAdmin) {
+        logger.warn({ userId, groupId }, 'Non-super admin attempted to update a group');
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, groupId },
+        });
+      }
+
+      // Map the nested service input to the column-shaped repository partial.
+      // Only keys explicitly present in the input are included.
+      const updates: UpdateGroupInput = {
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.abbreviation !== undefined && { abbreviation: input.abbreviation }),
+        ...(input.groupType !== undefined && { groupType: input.groupType }),
+        ...(input.location?.addressLine1 !== undefined && { locationAddressLine1: input.location.addressLine1 }),
+        ...(input.location?.addressLine2 !== undefined && { locationAddressLine2: input.location.addressLine2 }),
+        ...(input.location?.city !== undefined && { locationCity: input.location.city }),
+        ...(input.location?.stateProvince !== undefined && { locationStateProvince: input.location.stateProvince }),
+        ...(input.location?.postalCode !== undefined && { locationPostalCode: input.location.postalCode }),
+        ...(input.location?.country !== undefined && { locationCountry: input.location.country }),
+      };
+
+      // 400 when no recognized mutable fields are present (matches administrations'
+      // empty-body handling). This also covers a request whose only field is an empty
+      // nested location object: Zod accepts it (all nested address fields are
+      // optional) but it maps to no column updates.
+      if (Object.keys(updates).length === 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, groupId, reason: 'No updatable fields provided' },
+        });
+      }
+
+      await groupRepository.updateGroup(groupId, updates);
+
+      logger.info({ userId, groupId }, 'Group updated successfully');
+
+      return { id: groupId };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, groupId } }, 'Failed to update group');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, groupId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     create,
     list,
     getById,
     listUsers,
+    update,
   };
 }

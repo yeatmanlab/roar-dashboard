@@ -54,6 +54,23 @@ export interface CreateClassInput {
   location?: string | undefined;
 }
 
+/**
+ * Column-shaped partial for updating a class at the repository layer.
+ *
+ * Only the mutable, caller-settable columns appear here. Identity and hierarchy
+ * columns (`schoolId`, `districtId`, `orgPath`) are intentionally excluded — a
+ * class cannot be re-parented after creation. `schoolLevels` is a generated
+ * column (`generatedAlwaysAs`) and cannot be set by UPDATE — PostgreSQL
+ * recomputes it from `grades`.
+ */
+export interface UpdateClassInput {
+  name?: string;
+  classType?: ClassType;
+  subjects?: string[];
+  grades?: Grade[];
+  location?: string;
+}
+
 export class ClassRepository extends LtreeRepository<Class, typeof classes> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, classes, classes.orgPath, orgs, orgs.path);
@@ -97,6 +114,23 @@ export class ClassRepository extends LtreeRepository<Class, typeof classes> {
         ...(input.location !== undefined && { location: input.location }),
       },
     });
+  }
+
+  /**
+   * Update a class's mutable columns.
+   *
+   * Thin wrapper over `BaseRepository.update` that scopes the typed partial to
+   * the class's mutable columns. Identity and hierarchy columns (`schoolId`,
+   * `districtId`, `orgPath`) are never passed in (enforced by the
+   * `UpdateClassInput` shape), and `schoolLevels` is a generated column that
+   * PostgreSQL recomputes from `grades`. The service is responsible for
+   * existence and authorization checks before calling this.
+   *
+   * @param classId - UUID of the class to update
+   * @param updates - Column-shaped partial of mutable fields
+   */
+  async updateClass(classId: string, updates: UpdateClassInput): Promise<void> {
+    await this.update({ id: classId, data: updates });
   }
 
   /**

@@ -71,6 +71,28 @@ export interface CreateSchoolInput {
 }
 
 /**
+ * Column-shaped partial for updating a school at the repository layer.
+ *
+ * Only the mutable, caller-settable columns appear here. Server-managed and
+ * hierarchy columns (`orgType`, `parentOrgId`, `path`, `isRosteringRootOrg`)
+ * are intentionally excluded — they cannot change after creation.
+ */
+export interface UpdateSchoolInput {
+  name?: string;
+  abbreviation?: string;
+  locationAddressLine1?: string;
+  locationAddressLine2?: string;
+  locationCity?: string;
+  locationStateProvince?: string;
+  locationPostalCode?: string;
+  locationCountry?: string;
+  mdrNumber?: string;
+  ncesId?: string;
+  stateId?: string;
+  schoolNumber?: string;
+}
+
+/**
  * Options for listing schools with authorization
  */
 export interface ListAuthorizedOptions {
@@ -353,6 +375,21 @@ export class SchoolRepository extends LtreeRepository<School, typeof orgs> {
         ...(input.schoolNumber !== undefined && { schoolNumber: input.schoolNumber }),
       },
     });
+  }
+
+  /**
+   * Update a school's mutable columns.
+   *
+   * Thin wrapper over `BaseRepository.update` that scopes the typed partial to
+   * the school's mutable columns. Identity and hierarchy columns are never
+   * passed in (enforced by the `UpdateSchoolInput` shape). The service is
+   * responsible for existence and authorization checks before calling this.
+   *
+   * @param schoolId - UUID of the school to update
+   * @param updates - Column-shaped partial of mutable fields
+   */
+  async updateSchool(schoolId: string, updates: UpdateSchoolInput): Promise<void> {
+    await this.update({ id: schoolId, data: updates });
   }
 
   /**
