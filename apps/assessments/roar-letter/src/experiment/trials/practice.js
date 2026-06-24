@@ -7,11 +7,10 @@ import { isPractice } from './subTask';
 import { practiceCorrectFeedback } from './storySupport';
 import { replayAudioStimulus } from '../helperFunctions';
 
-// eslint-disable-next-line import/no-mutable-exports
 export let practiceIncorrectFeedback;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let ifPracticeCorrect;
-// eslint-disable-next-line import/no-mutable-exports
+
 export let ifPracticeIncorrect;
 
 export function createPracticeTrials() {

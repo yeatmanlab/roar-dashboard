@@ -33,10 +33,9 @@ globalThis.ROARR.write = (message) => {
 
   if (payload.context.logLevel >= 30) {
     const logLevel = getLogLevel(payload.context.logLevel);
-    // eslint-disable-next-line no-console
+
     console.log(`${logLevel} ${payload.message}`);
   }
 };
 
-// eslint-disable-next-line import/prefer-default-export
 export { log };
