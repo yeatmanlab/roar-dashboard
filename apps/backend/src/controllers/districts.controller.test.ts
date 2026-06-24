@@ -43,6 +43,7 @@ describe('DistrictsController', () => {
   const mockGetById = vi.fn();
   const mockListDistrictSchools = vi.fn();
   const mockListUsers = vi.fn();
+  const mockUpdate = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -54,6 +55,7 @@ describe('DistrictsController', () => {
       getById: mockGetById,
       listDistrictSchools: mockListDistrictSchools,
       listUsers: mockListUsers,
+      update: mockUpdate,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
   });
@@ -860,6 +862,111 @@ describe('DistrictsController', () => {
           sortOrder: SortOrder.ASC,
         }),
       ).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('update', () => {
+    it('should return 200 with the updated district id on success', async () => {
+      mockUpdate.mockResolvedValue({ id: 'district-123' });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.update(mockAuthContext, 'district-123', { name: 'Renamed District' });
+
+      const data = expectOkResponse(result);
+      expect(data).toEqual({ id: 'district-123' });
+      expect(mockUpdate).toHaveBeenCalledWith(mockAuthContext, 'district-123', { name: 'Renamed District' });
+    });
+
+    it('should map the request body to the service input, omitting absent fields', async () => {
+      mockUpdate.mockResolvedValue({ id: 'district-123' });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      await Controller.update(mockAuthContext, 'district-123', {
+        name: 'Updated',
+        abbreviation: 'UPD1',
+        location: { city: 'Springfield' },
+        identifiers: { ncesId: 'NCES-1' },
+      });
+
+      expect(mockUpdate).toHaveBeenCalledWith(mockAuthContext, 'district-123', {
+        name: 'Updated',
+        abbreviation: 'UPD1',
+        location: { city: 'Springfield' },
+        identifiers: { ncesId: 'NCES-1' },
+      });
+    });
+
+    it('should map ApiError 400 to a Bad Request error response', async () => {
+      const error = new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.update(mockAuthContext, 'district-123', {});
+
+      const errorBody = expectErrorResponse(result, StatusCodes.BAD_REQUEST);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 403 to a Forbidden error response', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.update(mockAuthContext, 'district-123', { name: 'Renamed District' });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 404 to a Not Found error response', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.update(mockAuthContext, 'nonexistent-district', { name: 'Renamed District' });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 500 to an Internal Server Error response', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.update(mockAuthContext, 'district-123', { name: 'Renamed District' });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should rethrow non-ApiError errors', async () => {
+      const error = new Error('Unexpected error');
+      mockUpdate.mockRejectedValue(error);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      await expect(Controller.update(mockAuthContext, 'district-123', { name: 'Renamed District' })).rejects.toThrow(
+        'Unexpected error',
+      );
     });
   });
 });

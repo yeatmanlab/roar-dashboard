@@ -6,6 +6,7 @@ import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../enums/api-error-message.enum';
 import { ApiError } from '../errors/api-error';
 import { EnrolledFamilyUserFactory } from '../test-support/factories/user.factory';
+import { FamilyFactory } from '../test-support/factories/family.factory';
 
 /**
  * Type-safe assertion helper for success responses.
@@ -32,6 +33,7 @@ function expectErrorResponse(
 const mockListUsers = vi.fn();
 const mockCreate = vi.fn();
 const mockAddChildren = vi.fn();
+const mockGetById = vi.fn();
 vi.mock('../services/family/family.service', () => ({
   FamilyService: vi.fn(),
 }));
@@ -50,6 +52,7 @@ describe('FamiliesController', () => {
     vi.mocked(FamilyService).mockReturnValue({
       addChildren: mockAddChildren,
       create: mockCreate,
+      getById: mockGetById,
       listUsers: mockListUsers,
     });
   });
@@ -304,6 +307,114 @@ describe('FamiliesController', () => {
       const { FamiliesController: Controller } = await import('./families.controller');
 
       await expect(Controller.create(validBody)).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('getById', () => {
+    it('returns 200 with the transformed family (id + assembled location, no name)', async () => {
+      const family = FamilyFactory.build({
+        id: 'family-123',
+        locationCity: 'Stanford',
+        locationStateProvince: 'CA',
+        locationCountry: 'US',
+        locationLatLong: [-122.17, 37.43],
+      });
+      mockGetById.mockResolvedValue(family);
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'family-123');
+
+      const data = expectOkResponse(result);
+      expect(data).toEqual({
+        id: 'family-123',
+        location: {
+          city: 'Stanford',
+          stateProvince: 'CA',
+          country: 'US',
+          coordinates: { type: 'Point', coordinates: [-122.17, 37.43] },
+        },
+      });
+      // Families have no name — the response must not surface one.
+      expect(data).not.toHaveProperty('name');
+      expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, 'family-123');
+    });
+
+    it('omits location and rosteringEnded when the family has neither', async () => {
+      const family = FamilyFactory.build({ id: 'family-456' });
+      mockGetById.mockResolvedValue(family);
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'family-456');
+
+      const data = expectOkResponse(result);
+      expect(data).toEqual({ id: 'family-456' });
+      expect(data).not.toHaveProperty('location');
+      expect(data).not.toHaveProperty('rosteringEnded');
+    });
+
+    it('surfaces rosteringEnded as an ISO string when present', async () => {
+      const rosteringEnded = new Date('2025-01-15T00:00:00.000Z');
+      const family = FamilyFactory.build({ id: 'family-789', rosteringEnded });
+      mockGetById.mockResolvedValue(family);
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'family-789');
+
+      const data = expectOkResponse(result);
+      expect(data.rosteringEnded).toBe(rosteringEnded.toISOString());
+    });
+
+    it('maps an ApiError 404 to a Not Found response', async () => {
+      mockGetById.mockRejectedValue(
+        new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'missing-family');
+      expect(expectErrorResponse(result, StatusCodes.NOT_FOUND)).toBeDefined();
+    });
+
+    it('maps an ApiError 403 to a Forbidden response', async () => {
+      mockGetById.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'family-123');
+      expect(expectErrorResponse(result, StatusCodes.FORBIDDEN)).toBeDefined();
+    });
+
+    it('maps an ApiError 500 to an Internal Server Error response', async () => {
+      mockGetById.mockRejectedValue(
+        new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'family-123');
+      expect(expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR)).toBeDefined();
+    });
+
+    it('re-throws non-ApiError exceptions so the global error handler catches them', async () => {
+      mockGetById.mockRejectedValue(new Error('Unexpected error'));
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      await expect(Controller.getById(mockAuthContext, 'family-123')).rejects.toThrow('Unexpected error');
     });
   });
 

@@ -40,9 +40,14 @@ const stubApiCalls = (variantParams) => {
 describe('Validating variant parameters.', () => {
   const TIMEOUT = Cypress.env('timeout');
 
-  beforeEach(() => {
+  before(() => {
+    // Registered once — Cypress.on is global and accumulates across tests if placed in beforeEach.
     Cypress.on('uncaught:exception', () => false);
-    Cypress.on('window:before:load', (win) => {
+  });
+
+  beforeEach(() => {
+    // cy.on is scoped to the current test and does not accumulate across tests.
+    cy.on('window:before:load', (win) => {
       cy.spy(win.console, 'warn').as('consoleWarn');
     });
   });
@@ -68,5 +73,12 @@ describe('Validating variant parameters.', () => {
     cy.visit(`${Cypress.env('baseUrl')}/?useParameterValidation=true&variantId=${VARIANT_ID}`);
     cy.get('.jspsych-btn', { timeout: 5 * TIMEOUT }).should('be.visible');
     cy.get('@consoleWarn').should('have.been.calledWithMatch', /\[roar-swr\] Parameter validation warnings/);
+  });
+
+  it('does not warn when useParameterValidation is false, even with invalid params', () => {
+    stubApiCalls({ numNew: 2000, userMode: 'shortAdaptive' });
+    cy.visit(`${Cypress.env('baseUrl')}/?useParameterValidation=false&variantId=${VARIANT_ID}`);
+    cy.get('.jspsych-btn', { timeout: 5 * TIMEOUT }).should('be.visible');
+    cy.get('@consoleWarn').should('not.have.been.calledWithMatch', /\[roar-swr\] Parameter validation warnings/);
   });
 });

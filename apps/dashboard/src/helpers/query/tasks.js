@@ -2,8 +2,6 @@ import { toValue } from 'vue';
 import _mapValues from 'lodash/mapValues';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
-import { storeToRefs } from 'pinia';
-import { useAuthStore } from '@/store/auth';
 import { convertValues, getAxiosInstance, mapFields } from './utils';
 
 export const getVariantsRequestBody = ({ registered = false, aggregationQuery, pageLimit, page, paginate = false }) => {
@@ -121,12 +119,4 @@ export const variantsFetcher = async (registered = false) => {
     });
     return _without(mappedVariants, undefined);
   });
-};
-
-export const fetchTaskGroups = async () => {
-  const authStore = useAuthStore();
-  const { roarfirekit } = storeToRefs(authStore);
-
-  const taskGroups = await roarfirekit.value.getTaskBundles();
-  return taskGroups;
 };

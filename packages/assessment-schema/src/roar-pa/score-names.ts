@@ -1,18 +1,5 @@
 import { TRIAL_COUNT_SCORE_NAMES } from '../constants/trial-count-score-names.js';
-
-/**
- * Canonical run_scores.domain strings for PA score entries.
- * Casing for these strings is deliberately distinct from the subtask keys ('fsm', 'lsm', 'del')
- */
-export const PA_SCORE_DOMAINS = {
-  FSM: 'FSM',
-  LSM: 'LSM',
-  DEL: 'DEL',
-  COMPOSITE: 'composite',
-  COMPOSITE_FOUNDATIONAL: 'composite_foundational',
-} as const;
-
-export type PaScoreDomain = (typeof PA_SCORE_DOMAINS)[keyof typeof PA_SCORE_DOMAINS];
+import { THETA_SCORE_NAMES } from '../constants/theta-score-names.js';
 
 /**
  * Canonical run_scores.name strings written by the PA scoring callback.
@@ -45,10 +32,7 @@ export const PA_SCORE_NAMES = {
   SCORING_VERSION: 'scoringVersion',
 
   // Theta estimates (adaptive scoring only, per subtask and composite)
-  THETA_ESTIMATE: 'thetaEstimate',
-  THETA_SE: 'thetaSE',
-  THETA_ESTIMATE_RAW: 'thetaEstimateRaw',
-  THETA_SE_RAW: 'thetaSERaw',
+  ...THETA_SCORE_NAMES,
 } as const;
 
 export type PaScoreName = (typeof PA_SCORE_NAMES)[keyof typeof PA_SCORE_NAMES];
