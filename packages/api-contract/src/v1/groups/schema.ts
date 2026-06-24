@@ -80,6 +80,42 @@ export const CreateGroupResponseSchema = z.object({
 export type CreateGroupResponse = z.infer<typeof CreateGroupResponseSchema>;
 
 /**
+ * Request body for updating a group (PATCH /groups/:groupId).
+ *
+ * A partial of the mutable fields of CreateGroupRequestSchema — every field is
+ * optional and only those present in the body are applied. `.strict()` rejects
+ * unknown keys and the immutable `id`.
+ *
+ * As on create, `location.coordinates` is omitted — lat/long isn't accepted.
+ */
+export const UpdateGroupRequestSchema = z
+  .object({
+    name: z.string().min(1).max(255).optional(),
+    abbreviation: z
+      .string()
+      .min(1)
+      .max(10)
+      .regex(/^[A-Za-z0-9]+$/, 'abbreviation must contain only letters and digits')
+      .optional(),
+    groupType: GroupTypeSchema.optional(),
+    location: GroupLocationSchema.optional(),
+  })
+  .strict();
+
+export type UpdateGroupRequest = z.infer<typeof UpdateGroupRequestSchema>;
+
+/**
+ * Response payload for PATCH /groups/:groupId.
+ *
+ * Returns only the updated group id, matching the create-response shape.
+ */
+export const UpdateGroupResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type UpdateGroupResponse = z.infer<typeof UpdateGroupResponseSchema>;
+
+/**
  * Group detail location schema (read shape).
  *
  * Extends the address fields stored on the `groups` table with the optional

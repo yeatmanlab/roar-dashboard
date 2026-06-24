@@ -21,7 +21,6 @@ export const AGREEMENTS_QUERY_KEY = 'agreements';
 export const LEGAL_DOCS_QUERY_KEY = 'legal-docs';
 export const ME_QUERY_KEY = 'me';
 export const ORG_USERS_QUERY_KEY = 'org-users';
-export const ORGS_TABLE_QUERY_KEY = 'orgs-table';
 export const SCHOOLS_QUERY_KEY = 'schools';
 export const SCHOOL_CLASSES_QUERY_KEY = 'school-classes';
 export const TASKS_QUERY_KEY = 'tasks';

@@ -5,7 +5,7 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import type { Class } from '../../db/schema';
-import type { CreateClassInput } from '../../repositories/class.repository';
+import type { CreateClassInput, UpdateClassInput } from '../../repositories/class.repository';
 import { ClassRepository } from '../../repositories/class.repository';
 import { SchoolRepository } from '../../repositories/school.repository';
 import type { AuthContext } from '../../types/auth-context';
@@ -33,6 +33,24 @@ export interface CreateClassServiceInput {
   period?: string | undefined;
   termId?: string | undefined;
   courseId?: string | undefined;
+  subjects?: string[] | undefined;
+  grades?: Grade[] | undefined;
+  location?: string | undefined;
+}
+
+/**
+ * Service-layer input for updating a class.
+ *
+ * Mirrors the API contract's UpdateClassRequest shape — a partial of the mutable
+ * class fields. `schoolId`/`districtId`/`orgPath` are NOT part of this shape: a
+ * class cannot be re-parented after creation. `schoolLevels` is a generated
+ * column and is never set directly — updating `grades` recomputes it. Defined
+ * here rather than imported from the api-contract so the service stays decoupled
+ * from transport concerns (see backend-service-pattern.md "Service Type Independence").
+ */
+export interface UpdateClassServiceInput {
+  name?: string | undefined;
+  classType?: ClassType | undefined;
   subjects?: string[] | undefined;
   grades?: Grade[] | undefined;
   location?: string | undefined;
@@ -328,9 +346,100 @@ export function ClassService({
     }
   }
 
+  /**
+   * Update an existing class.
+   *
+   * Authorization (super-admin-only — matches create):
+   * 1. Existence check first — a missing class is a 404, not a 403.
+   * 2. Super-admin gate — non-super-admins are rejected with 403. The FGA model
+   *    defines `can_update: no_one` for classes, so no role grants update; the
+   *    super-admin bypass IS the policy. No FGA `requirePermission` call is made.
+   *
+   * Only the mutable fields present in the input are applied; identity and
+   * hierarchy columns (schoolId, districtId, orgPath) are not accepted and never
+   * touched. Updating `grades` recomputes the generated `schoolLevels` column.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param classId - UUID of the class to update
+   * @param input - The mutable class fields the caller is allowed to set
+   * @returns The updated class id
+   * @throws {ApiError} 404 if the class does not exist
+   * @throws {ApiError} 403 if the caller is not a super admin
+   * @throws {ApiError} 400 if no recognized mutable fields are present
+   * @throws {ApiError} 500 if the database update fails
+   */
+  async function update(
+    authContext: AuthContext,
+    classId: string,
+    input: UpdateClassServiceInput,
+  ): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // 1. Existence check first (404 before 403)
+      const existing = await classRepository.getById({ id: classId });
+      if (!existing) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, classId },
+        });
+      }
+
+      // 2. Super-admin gate (can_update = no_one — the bypass is the policy)
+      if (!isSuperAdmin) {
+        logger.warn({ userId, classId }, 'Non-super admin attempted to update a class');
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, classId },
+        });
+      }
+
+      // Map the service input to the column-shaped repository partial. Class
+      // columns map directly (no nested location/identifiers). Only keys
+      // explicitly present in the input are included.
+      const updates: UpdateClassInput = {
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.classType !== undefined && { classType: input.classType }),
+        ...(input.subjects !== undefined && { subjects: input.subjects }),
+        ...(input.grades !== undefined && { grades: input.grades }),
+        ...(input.location !== undefined && { location: input.location }),
+      };
+
+      // 400 when no recognized mutable fields are present (matches administrations'
+      // empty-body handling)
+      if (Object.keys(updates).length === 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, classId, reason: 'No updatable fields provided' },
+        });
+      }
+
+      await classRepository.updateClass(classId, updates);
+
+      logger.info({ userId, classId }, 'Class updated successfully');
+
+      return { id: classId };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, classId } }, 'Failed to update class');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, classId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     create,
     getById,
     listUsers,
+    update,
   };
 }

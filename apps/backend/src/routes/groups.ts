@@ -29,6 +29,15 @@ export function registerGroupsRoutes(routerInstance: Router) {
       handler: async ({ req, params }) =>
         GroupsController.getById({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.groupId),
     },
+    update: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req, params, body }) =>
+        GroupsController.update(
+          { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
+          params.groupId,
+          body,
+        ),
+    },
     getInvitationCode: {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, params }) =>
