@@ -266,9 +266,11 @@ const setupUserData = () => {
       gender: props.userData?.studentData?.gender || '',
       race: props.userData?.studentData?.race || [],
       hispanic_ethnicity: props.userData?.studentData?.hispanic_ethnicity || false,
-      ell_status: props.userData?.studentData?.ell_status || false,
+      // ell/iep come back from the API as 'true'/'false' strings; coerce to the
+      // booleans the dropdown binds to (a bare `|| false` would leave 'false' truthy).
+      ell_status: String(props.userData?.studentData?.ell_status) === 'true',
       frl_status: props.userData?.studentData?.frl_status || null,
-      iep_status: props.userData?.studentData?.iep_status || false,
+      iep_status: String(props.userData?.studentData?.iep_status) === 'true',
     },
     userType: localUserType.value,
     dataInitialized: true,
