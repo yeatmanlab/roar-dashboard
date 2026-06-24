@@ -55,6 +55,13 @@ describe('mapUser', () => {
     expect(mapUser(apiUser).studentData.race).toEqual(['White', 'Asian']);
   });
 
+  it('splits race defensively regardless of delimiter spacing', () => {
+    // A delimiter drift between producers (`','` vs `', '`) must not leave leading
+    // spaces on every value but the first — the split tolerates optional whitespace.
+    expect(mapUser({ ...apiUser, race: 'White,Asian' }).studentData.race).toEqual(['White', 'Asian']);
+    expect(mapUser({ ...apiUser, race: 'White,  Asian' }).studentData.race).toEqual(['White', 'Asian']);
+  });
+
   it('maps race to null when absent so the `?? "None"` display fallback fires', () => {
     expect(mapUser({ ...apiUser, race: null }).studentData.race).toBeNull();
   });
