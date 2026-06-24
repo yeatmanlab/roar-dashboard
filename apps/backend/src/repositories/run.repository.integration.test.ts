@@ -9,11 +9,14 @@
  * administration IDs where convenient.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { faker } from '@faker-js/faker';
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
 import { RunScoreFactory } from '../test-support/factories/run-score.factory';
 import { RunRepository } from './run.repository';
+import { AssessmentDbClient } from '../db/clients';
+import { runs } from '../db/schema/assessment';
 import { SCORE_TYPE, SCORE_DOMAIN, ASSESSMENT_STAGE, SCORE_NAME } from '../constants/run-scores';
 import { COMPOSITE_RUN_TASK_ID } from '../constants/run';
 
@@ -231,17 +234,19 @@ describe('RunRepository', () => {
       const createdAt = new Date('2025-09-03T14:01:00.000Z');
       const completedAt = new Date('2025-09-03T14:20:00.000Z');
 
-      // Canonical run for this partition.
-      await RunFactory.create({
+      // Canonical run for this partition. `created_at` is a `defaultNow()` column the
+      // factory's insert leaves to the database, so it can't be seeded via `create()`.
+      // Set both timestamps authoritatively with an explicit UPDATE after insert so the
+      // assertions below are deterministic regardless of insert time.
+      const canonicalRun = await RunFactory.create({
         userId,
         administrationId,
         taskVariantId,
         taskId,
         useForReporting: true,
         reliableRun: false,
-        createdAt,
-        completedAt,
       });
+      await AssessmentDbClient.update(runs).set({ createdAt, completedAt }).where(eq(runs.id, canonicalRun.id));
       // A non-canonical run in the same partition (must be excluded).
       await RunFactory.create({
         userId,
