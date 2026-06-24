@@ -117,7 +117,6 @@ export class RoarScores {
    * @returns {*} computedScores
    */
   computedScoreCallback = async (rawScores) => {
-    const { task } = store.session.get('config');
     const { taskId } = store.session.get('config');
 
     // config.taskId is derived from task + language by resolveTaskId() in config.js, so it
@@ -131,7 +130,7 @@ export class RoarScores {
       const subPercentCorrect =
         typeof numAttempted === 'number' && numAttempted > 0 ? Math.round((100 * subScore) / numAttempted) : 0;
 
-      if (task === LETTER_TASK_IDS.EN) {
+      if (taskId === LETTER_TASK_IDS.EN) {
         const lowerCorrect = store.session('lowerCorrectItems');
         const lowerIncorrect = store.session('lowerIncorrectItems');
         const upperCorrect = store.session('upperCorrectItems');
@@ -163,7 +162,7 @@ export class RoarScores {
 
     let letterCompositeIRTScores = {};
     let foundationalCompositeIRTScores = {};
-    if (task === LETTER_TASK_IDS.EN) {
+    if (taskId === LETTER_TASK_IDS.EN) {
       const thetaEstimateRaw = clowder.theta[COMPOSITE_DOMAIN];
       const thetaSERaw = makeFinite(clowder.seMeasurement[COMPOSITE_DOMAIN]);
       const [thetaEstimate, thetaSE] = scaleTheta(thetaEstimateRaw, thetaSERaw);
@@ -202,7 +201,7 @@ export class RoarScores {
         ...foundationalCompositeIRTScores,
       };
     } else {
-      // Initialize composite for non-letter tasks (e.g., phonics) or letter-es
+      // Initialize composite for phonics runs (no IRT theta)
       computedScores[COMPOSITE_DOMAIN] = {
         totalCorrect: store.session('totalCorrect'),
         totalNumAttempted: store.session.get('trialNumTotal'),
@@ -210,7 +209,7 @@ export class RoarScores {
       };
     }
 
-    if (task === PHONICS_TASK_IDS.EN) {
+    if (taskId === PHONICS_TASK_IDS.EN) {
       computedScores[COMPOSITE_DOMAIN] = {
         ...computedScores[COMPOSITE_DOMAIN],
         subscores: {
@@ -231,7 +230,7 @@ export class RoarScores {
     const rawGrade = userMetadata?.grade;
     const ageMonths = userMetadata?.ageMonths;
 
-    if ((rawGrade != null || ageMonths != null) && task === LETTER_TASK_IDS.EN) {
+    if ((rawGrade != null || ageMonths != null) && taskId === LETTER_TASK_IDS.EN) {
       if (!this.tableLoaded) {
         if (!this.tableLoadingPromise) {
           this.tableLoadingPromise = this.initTable();

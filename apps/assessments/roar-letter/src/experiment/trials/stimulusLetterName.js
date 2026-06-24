@@ -1,4 +1,4 @@
-import { LETTER_SUBTASK_DOMAINS, PHONICS_SUBTASK_DOMAINS } from '@roar-platform/assessment-schema/roar-letter';
+import { LETTER_SUBTASK_DOMAINS, PHONICS_SUBTASK_DOMAINS , LETTER_TASK_IDS, PHONICS_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
 import i18next from 'i18next';
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import store from 'store2';
@@ -18,7 +18,6 @@ import { isPractice } from './subTask';
 import { audioResponse } from './audioFeedback';
 import { isMaxTimeoutReached } from './appTimer';
 import { clowder, scaleTheta, setNextStimulus } from '../experimentSetup';
-import { LETTER_TASK_IDS, PHONICS_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
 import { COMPOSITE_DOMAIN, AssessmentStage } from '@roar-platform/assessment-schema';
 
 export const audioContext = new Audio();
