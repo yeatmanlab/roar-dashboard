@@ -76,6 +76,20 @@ class AuthService {
 
     const isEmulator = Boolean(this.#config.emulatorAuthHost);
 
+    if (!isEmulator) {
+      const required = {
+        projectId: this.#config.projectId,
+        apiKey: this.#config.apiKey,
+        authDomain: this.#config.authDomain,
+      };
+      const missing = Object.entries(required)
+        .filter(([, v]) => !v)
+        .map(([k]) => k);
+      if (missing.length > 0) {
+        throw new Error(`[AuthService] Missing required Firebase config: ${missing.join(', ')}`);
+      }
+    }
+
     const firebaseConfig = {
       projectId: isEmulator ? 'demo-roar' : this.#config.projectId,
       apiKey: isEmulator ? 'fake-api-key' : this.#config.apiKey,

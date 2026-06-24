@@ -55,6 +55,11 @@ services:
     environment:
       - OPENFGA_DATASTORE_ENGINE=postgres
       - OPENFGA_DATASTORE_URI=postgres://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@postgres:5432/roar_openfga
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/healthz || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   # One-shot init container: creates the FGA store and deploys the authorization
   # model. Idempotent — skips creation if /fga-env/fga-env.json already exists.
@@ -73,7 +78,7 @@ services:
       dockerfile: Dockerfile.init
     depends_on:
       openfga:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./packages/authz:/authz:ro
       - fga-env:/fga-env

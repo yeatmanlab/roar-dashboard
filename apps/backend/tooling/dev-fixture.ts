@@ -160,7 +160,10 @@ export const DEV_IDS = {
 // Dev Users — deterministic credentials for login
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Shared password for all dev fixture users. */
+/**
+ * Shared password for all dev fixture users.
+ * Only valid against the local Firebase Auth emulator — never use in deployed environments.
+ */
 export const DEV_PASSWORD = 'password';
 
 /**
@@ -758,6 +761,9 @@ export async function seedDevFixture(): Promise<BaseFixture> {
     { administrationId: administrationAssignedToDistrictB.id, taskVariantId: inferenceVariant.id },
   ];
 
+  // Counter increments are synchronous inside .map() — all orderIndex values
+  // are assigned before any factory promise starts executing, so there is no
+  // race between concurrent creates for the same administration.
   const orderIndexByAdministration = new Map<string, number>();
   await Promise.all(
     localDevAssignments.map(({ administrationId, taskVariantId }) => {

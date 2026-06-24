@@ -54,19 +54,7 @@ jobs:
       FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
       GOOGLE_CLOUD_PROJECT: demo-roar
 
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+    # No services: block — docker compose handles Postgres, OpenFGA, and the Auth emulator.
 
     steps:
       - name: Checkout repository
@@ -75,41 +63,11 @@ jobs:
           submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
 
-      - name: Install OpenFGA
-        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # v3.0.0
-        with:
-          repo: openfga/openfga
-          tag: v1.12.1
-          cache: enable
-
-      - name: Start OpenFGA
-        run: openfga run &
+      - name: Start infrastructure
+        run: docker compose up -d --wait
 
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
-
-      # The Auth emulator is needed by SDK integration tests which now use
-      # real Firebase tokens (no more TestAuthProvider).
-      - name: Start Firebase Auth emulator
-        run: |
-          cat > /tmp/firebase.json <<EOF
-          {
-            "emulators": {
-              "auth": { "host": "0.0.0.0", "port": 9099 },
-              "ui": { "enabled": false }
-            }
-          }
-          EOF
-          npx firebase-tools@15 emulators:start \
-            --only auth \
-            --project demo-roar \
-            --config /tmp/firebase.json &
-          npx --yes wait-on tcp:127.0.0.1:9099 --timeout 60000
-
-      - name: Create test databases
-        run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE roar_core_test;"
-          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE roar_assessment_test;"
 
       - name: Run OpenFGA model tests
         uses: openfga/action-openfga-test@v0.1.2
@@ -172,19 +130,20 @@ jobs:
   # specs are `describe.skip`-ed pending per-domain migration — see
   # `cypress/e2e/README.md` and `.ai/rules/frontend-e2e-testing-pattern.md`.
   #
-  # The job runs inside the cypress/browsers container. Postgres runs as a
-  # service container reachable via `postgres:5432`. OpenFGA can't run as a
-  # service container (the official `openfga/openfga` image has only
-  # `/openfga` as ENTRYPOINT and no CMD, and `services.<id>.options` can't
-  # supply the `run` argument). We also can't reach for `docker run` from
-  # inside the job: `cypress/browsers` doesn't ship curl/wget/docker, and
-  # the container runs as user 1001 with no access to the mounted docker
-  # socket. So OpenFGA is installed as a binary and started as a
-  # background process *in the same step* as the backend — that way the
-  # process doesn't need to survive across `docker exec` step boundaries,
-  # which is what bit us when openfga was started in its own step. The
-  # backend, the Auth emulator, and OpenFGA are all reachable on
-  # `127.0.0.1` inside the job container.
+  # Unlike the `test` job, this job can't use `docker compose` for infra.
+  # It runs inside the cypress/browsers container, which has no Docker
+  # daemon access. Postgres runs as a GHA service container reachable via
+  # `postgres:5432`. OpenFGA can't run as a service container (the official
+  # `openfga/openfga` image has only `/openfga` as ENTRYPOINT and no CMD,
+  # and `services.<id>.options` can't supply the `run` argument). We also
+  # can't reach for `docker run` from inside the job: `cypress/browsers`
+  # doesn't ship curl/wget/docker, and the container runs as user 1001
+  # with no access to the mounted docker socket. So OpenFGA is installed
+  # as a binary and started as a background process *in the same step* as
+  # the backend — that way the process doesn't need to survive across
+  # `docker exec` step boundaries, which is what bit us when openfga was
+  # started in its own step. The backend, the Auth emulator, and OpenFGA
+  # are all reachable on `127.0.0.1` inside the job container.
   e2e-tests:
     name: End-to-end tests
     runs-on: ubuntu-latest
