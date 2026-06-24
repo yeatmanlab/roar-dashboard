@@ -69,7 +69,7 @@
         <section class="flex form-section lg:flex-row">
           <div>
             <div>
-              <label for="password">Password (minimum 6 characters)<span class="p-1 required">*</span></label>
+              <label for="password">Password (minimum 8 characters)<span class="p-1 required">*</span></label>
               <PvPassword
                 v-model="v$.password.$model"
                 name="password"
@@ -253,7 +253,7 @@ const rules = {
   },
   password: {
     required,
-    minLength: minLength(6),
+    minLength: minLength(8),
   },
   confirmPassword: { required, sameAsPassword: sameAs(passwordRef) },
   accept: { sameAs: sameAs(true) },
