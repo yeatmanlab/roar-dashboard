@@ -19,8 +19,16 @@ import {
   createMockRunScoresRepository,
   createMockFamilyRepository,
 } from '../../test-support/repositories';
-import type { MockAuthorizationService, MockRunService } from '../../test-support/services';
-import { createMockAuthorizationService, createMockRunService } from '../../test-support/services';
+import type {
+  MockAuthorizationService,
+  MockRunService,
+  MockFoundationalCompositeService,
+} from '../../test-support/services';
+import {
+  createMockAuthorizationService,
+  createMockRunService,
+  createMockFoundationalCompositeService,
+} from '../../test-support/services';
 import { RunFactory } from '../../test-support/factories/run.factory';
 import { SCORE_TYPE, SCORE_DOMAIN, ASSESSMENT_STAGE, SCORE_NAME } from '../../constants/run-scores';
 
@@ -37,6 +45,7 @@ describe('RunEventService', () => {
   let runTrialInteractionsRepository: MockRunTrialInteractionsRepository;
   let runScoresRepository: MockRunScoresRepository;
   let runService: MockRunService;
+  let foundationalCompositeService: MockFoundationalCompositeService;
   let familyRepository: MockFamilyRepository;
   let authorizationService: MockAuthorizationService;
   let runEventsService: ReturnType<typeof RunEventService>;
@@ -56,6 +65,8 @@ describe('RunEventService', () => {
 
     runService = createMockRunService();
 
+    foundationalCompositeService = createMockFoundationalCompositeService();
+
     familyRepository = createMockFamilyRepository();
 
     authorizationService = createMockAuthorizationService();
@@ -66,6 +77,7 @@ describe('RunEventService', () => {
       runTrialInteractionsRepository,
       runScoresRepository,
       runService,
+      foundationalCompositeService,
       familyRepository,
       authorizationService,
     });
@@ -436,6 +448,19 @@ describe('RunEventService', () => {
             correct: 1,
           }),
         }),
+      );
+
+      // The foundational composite is recomputed for the run's student/administration...
+      expect(foundationalCompositeService.recomputeForRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: mockRun.userId,
+          administrationId: mockRun.administrationId,
+          triggeringTaskId: mockRun.taskId,
+        }),
+      );
+      // ...and only after use_for_reporting has been recomputed, so it reads fresh flags.
+      expect(foundationalCompositeService.recomputeForRun.mock.invocationCallOrder[0]!).toBeGreaterThan(
+        runService.recomputeBestRunForVariant.mock.invocationCallOrder[0]!,
       );
     });
 
