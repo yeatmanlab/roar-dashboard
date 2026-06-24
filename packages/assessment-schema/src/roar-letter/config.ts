@@ -47,7 +47,7 @@ export const LETTER_SCORE_TABLE_URL = (version: LetterScoringVersion): string =>
  * Clowder CAT category names for the letter assessment engine.
  * These are the internal identifiers for the Clowder adaptive testing algorithm —
  * used in catOrderMap, catsConfig, requiredItems, and catsToUpdate arrays.
- * Distinct from run_scores domain names (see LETTER_SUBTASK_DOMAINS in score-names.ts).
+ * Distinct from run_scores domain names (see LETTER_SUBTASK_DOMAINS in domains.ts).
  * The mapping between these names and domain names lives in catToSubTaskMap in experimentSetup.js.
  */
 export const LETTER_CAT_NAMES = {

@@ -2,13 +2,13 @@ import type { ScoreEntryConstraint } from '../types/score-entry.type.js';
 import { COMPOSITE_DOMAIN, COMPOSITE_FOUNDATIONAL_DOMAIN } from '../constants/common-domains.js';
 import { AssessmentStage } from '../enums/assessment-stage.enum.js';
 import { ScoreType } from '../enums/score-type.enum.js';
+import { LETTER_SUBTASK_DOMAINS } from './domains.js';
 import {
   LETTER_COMPOSITE_SCORE_NAMES,
   LETTER_COMPOSITE_FOUNDATIONAL_SCORE_NAMES,
   LETTER_RAW_COMPOSITE_SCORE_NAMES,
   LETTER_RAW_FOUNDATIONAL_SCORE_NAMES,
   LETTER_SUBTASK_SCORE_NAMES,
-  LETTER_SUBTASK_DOMAINS,
   PHONICS_COMPOSITE_SCORE_NAMES,
   PHONICS_RAW_COMPOSITE_SCORE_NAMES,
   PHONICS_SUBTASK_SCORE_NAMES,

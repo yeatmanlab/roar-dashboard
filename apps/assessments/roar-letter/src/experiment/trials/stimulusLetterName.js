@@ -1,3 +1,4 @@
+import { LETTER_SUBTASK_DOMAINS, PHONICS_SUBTASK_DOMAINS } from '@roar-platform/assessment-schema/roar-letter';
 import i18next from 'i18next';
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import store from 'store2';
@@ -256,7 +257,7 @@ const letterNameTrials = {
     store.session.set('totalPercentCorrect', totalPercentCorrect);
 
     // check for early stop in phonics
-    if (subTaskName === 'TextSoundPseudo') {
+    if (subTaskName === PHONICS_SUBTASK_DOMAINS.TEXT_SOUND_PSEUDO) {
       if (totalPercentCorrect < phonicsChanceThreshold && trialNumTotal > phonicsMinTrials) {
         store.session.set('phonicsEarlyStop', true);
       }
@@ -265,16 +266,16 @@ const letterNameTrials = {
     // update appropriate summary list
     const correctList = store.session('correctItems');
     const incorrectList = store.session('incorrectItems');
-    if (subTaskName === 'LowercaseNames') {
+    if (subTaskName === LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES) {
       store.session.set('lowerCorrectItems', correctList);
       store.session.set('lowerIncorrectItems', incorrectList);
-    } else if (subTaskName === 'UppercaseNames') {
+    } else if (subTaskName === LETTER_SUBTASK_DOMAINS.UPPERCASE_NAMES) {
       store.session.set('upperCorrectItems', correctList);
       store.session.set('upperIncorrectItems', incorrectList);
-    } else if (subTaskName === 'Phonemes') {
+    } else if (subTaskName === LETTER_SUBTASK_DOMAINS.PHONEMES) {
       store.session.set('phonemeCorrectItems', correctList);
       store.session.set('phonemeIncorrectItems', incorrectList);
-    } else if (subTaskName === 'TextSoundPseudo') {
+    } else if (subTaskName === PHONICS_SUBTASK_DOMAINS.TEXT_SOUND_PSEUDO) {
       // update count for phonics subscores
       const { itemGroup } = currentStimulus;
       updatePhonicsItemGroupStats(itemGroup, data.correct);

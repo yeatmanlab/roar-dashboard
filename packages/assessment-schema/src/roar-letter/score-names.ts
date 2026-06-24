@@ -7,14 +7,15 @@ import { THETA_SCORE_NAMES } from '../constants/theta-score-names.js';
 // plus composite and composite_foundational rollup domains.
 
 /**
- * Canonical run_scores.name strings for letter subtask domains
- * (LetterPractice, LowercaseNames, UppercaseNames, PhonemePractice, Phonemes).
+ * Canonical run_scores.name strings for letter subtask score fields.
  * All subtask entries are type=COMPUTED — counts and item lists are accumulated
  * across trials rather than captured per-trial.
  *
  * Item list fields (lowerCorrect, etc.) are comma-joined strings of item IDs.
  * They are emitted for ALL subtasks (both practice and test) when non-null,
  * matching observed production Firestore behavior.
+ *
+ * For the subtask domain names themselves, see LETTER_SUBTASK_DOMAINS in domains.ts.
  */
 export const LETTER_SUBTASK_SCORE_NAMES = {
   SUB_SCORE: 'subScore',
@@ -28,20 +29,6 @@ export const LETTER_SUBTASK_SCORE_NAMES = {
 } as const;
 
 export type LetterSubtaskScoreName = (typeof LETTER_SUBTASK_SCORE_NAMES)[keyof typeof LETTER_SUBTASK_SCORE_NAMES];
-
-/**
- * Subtask domain names emitted by RoarScores.computedScoreCallback for the letter task.
- * These are the five CAT subtask groups produced by the Clowder engine.
- * Domains whose name contains "Practice" (LetterPractice, PhonemePractice) map to
- * assessmentStage=PRACTICE; all others (LowercaseNames, UppercaseNames, Phonemes) map to TEST.
- */
-export const LETTER_SUBTASK_DOMAINS = {
-  LETTER_PRACTICE: 'LetterPractice',
-  LOWERCASE_NAMES: 'LowercaseNames',
-  UPPERCASE_NAMES: 'UppercaseNames',
-  PHONEME_PRACTICE: 'PhonemePractice',
-  PHONEMES: 'Phonemes',
-} as const;
 
 /**
  * Canonical run_scores.name strings for the letter composite domain.

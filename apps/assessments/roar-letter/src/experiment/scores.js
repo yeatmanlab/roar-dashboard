@@ -120,12 +120,10 @@ export class RoarScores {
     const { task } = store.session.get('config');
     const { taskId } = store.session.get('config');
 
-    // Phonics variants do not include a taskId field, so config.taskId defaults to 'letter'.
-    // This guard correctly exits for letter-es / letter-en-ca (taskId !== 'letter') while
-    // letting phonics pass through (taskId defaults to 'letter'). If a phonics variant ever
-    // adds taskId: 'phonics' to its params, this guard would incorrectly return null — use
-    // task !== LETTER_TASK_IDS.EN instead and update the integration test accordingly.
-    if (taskId !== LETTER_TASK_IDS.EN) return null;
+    // config.taskId is derived from task + language by resolveTaskId() in config.js, so it
+    // correctly distinguishes all variants: 'letter' (EN), 'letter-es', 'letter-en-ca', 'phonics'.
+    // Exit for non-English letter variants — they have no normed scoring and no IRT theta.
+    if (taskId !== LETTER_TASK_IDS.EN && taskId !== PHONICS_TASK_IDS.EN) return null;
 
     const computedScores = _mapValues(rawScores, (subtaskScores) => {
       const subScore = subtaskScores.test?.numCorrect || 0;

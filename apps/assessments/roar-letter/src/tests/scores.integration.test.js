@@ -310,12 +310,11 @@ describe('RoarScores Integration Tests', () => {
   });
 
   test('phonics run: no IRT theta in composite, no composite_foundational key', async () => {
-    // Production state: phonics variant params contain task='phonics' but no taskId key,
-    // so config.taskId defaults to LETTER_TASK_IDS.EN via config.js. The scoring guard
-    // at line 164 must use `task`, not `taskId`, to prevent spurious theta writes.
+    // config.js now derives taskId via resolveTaskId(task, language), so phonics variants
+    // get taskId=PHONICS_TASK_IDS.EN even though they don't set taskId in their params.
     sessionStore.config = {
       task: PHONICS_TASK_IDS.EN,
-      taskId: LETTER_TASK_IDS.EN, // production default — no taskId in phonics variant params
+      taskId: PHONICS_TASK_IDS.EN,
       scoringVersion: LETTER_SCORING_VERSION.V1,
       userMetadata: { ageMonths: 72 },
     };

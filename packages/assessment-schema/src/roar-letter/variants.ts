@@ -1,5 +1,5 @@
 import type { LetterScoringVersion, LetterTaskId } from './config.js';
-import { LETTER_TASK_IDS, LETTER_SCORING_VERSION } from './config.js';
+import { LETTER_TASK_IDS, LETTER_SCORING_VERSION, PHONICS_TASK_IDS } from './config.js';
 
 type LetterLanguageEntry = {
   code: string;
@@ -39,6 +39,25 @@ export const LETTER_LANGUAGES = {
     defaultScoringVersion: null,
   },
 } as const satisfies Record<string, LetterLanguageEntry>;
+
+/**
+ * Derives a task ID from the task name and i18next language code.
+ *
+ * Task variant parameters carry `task` and `language` but not `taskId`.
+ * This function maps the combination to the correct backend task ID so that
+ * scoring guard logic in the assessment can branch on it correctly.
+ *
+ * Language lookup is case-insensitive: 'en-CA' and 'en-ca' both resolve to
+ * LETTER_TASK_IDS.EN_CA. Unknown languages fall back to LETTER_TASK_IDS.EN.
+ *
+ * @param task - Task name from variant params (e.g. 'letter', 'phonics')
+ * @param language - i18next language code (e.g. 'en', 'es', 'en-CA')
+ * @returns The resolved task ID
+ */
+export function resolveTaskId(task: string, language: string): string {
+  if (task === PHONICS_TASK_IDS.EN) return PHONICS_TASK_IDS.EN;
+  return LETTER_LANGUAGES[language.toLowerCase() as keyof typeof LETTER_LANGUAGES]?.taskId ?? LETTER_TASK_IDS.EN;
+}
 
 /**
  * i18next language codes used for corpus and configuration branching in the letter assessment.

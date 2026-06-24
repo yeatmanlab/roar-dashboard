@@ -1,6 +1,6 @@
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
 import store from 'store2';
-import { LETTER_SUBTASK_DOMAINS } from '@roar-platform/assessment-schema/roar-letter';
+import { LETTER_SUBTASK_DOMAINS, PHONICS_SUBTASK_DOMAINS } from '@roar-platform/assessment-schema/roar-letter';
 
 // order of subTasks
 // note: subTaskName must be initialized to "" in config
@@ -25,7 +25,7 @@ export const isPractice = () => {
   const currentSubTask = store.session.get('subTaskName');
   const practiceTasks = [
     LETTER_SUBTASK_DOMAINS.LETTER_PRACTICE,
-    'PhonicsPractice',
+    PHONICS_SUBTASK_DOMAINS.PHONICS_PRACTICE,
     LETTER_SUBTASK_DOMAINS.PHONEME_PRACTICE,
   ];
   return practiceTasks.includes(currentSubTask);
@@ -101,14 +101,14 @@ export const subTaskInitPhonemePractice = {
 export const subTaskInitPhonicsPractice = {
   type: jsPsychCallFunction,
   func: function () {
-    subTaskInit('PhonicsPractice');
+    subTaskInit(PHONICS_SUBTASK_DOMAINS.PHONICS_PRACTICE);
   },
 };
 
 export const subTaskInitTextSoundPseudo = {
   type: jsPsychCallFunction,
   func: function () {
-    subTaskInit('TextSoundPseudo');
+    subTaskInit(PHONICS_SUBTASK_DOMAINS.TEXT_SOUND_PSEUDO);
   },
 };
 
