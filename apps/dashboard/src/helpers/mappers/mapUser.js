@@ -45,7 +45,9 @@ export function mapUser(user) {
       // The API returns race as a comma-joined string; consumers render it as an array via
       // `.join(', ')`. Split back to an array, or null when absent so the `?? 'None'`
       // display fallback still fires (an empty array would render as an empty string).
-      race: user.race ? user.race.split(', ') : null,
+      // Split on a comma with optional trailing whitespace so a delimiter drift between
+      // producer (`','` vs `', '`) doesn't leave leading spaces on every value but the first.
+      race: user.race ? user.race.split(/,\s*/) : null,
       // Identifier fields: API camelCase → legacy snake_case keys.
       sis_id: user.sisId,
       state_id: user.stateId,
