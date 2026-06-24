@@ -20,6 +20,10 @@ import { version } from '@roar-platform/roar-multichoice/package.json';
 
 const props = defineProps({
   taskId: { type: String, default: MORPHOLOGY_TASK_ID },
+  // Multichoice is currently English-only; the game resolves locale via i18next rather than
+  // a variant param. If language support is added, thread props.language into gameParams here
+  // (e.g. { language: props.language, task: props.task, ...appKit._taskInfo.variantParams })
+  // and add "language" to the variant params in taskVariantParameters.example.json.
   language: { type: String, default: 'en' },
   task: { type: String, default: 'morphology' },
   launchId: { type: String, default: null },
@@ -109,12 +113,12 @@ async function startTask(selectedAdmin) {
     const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
 
     const userDob = _get(userData.value, 'studentData.dob');
-    const userDateObj = new Date(userDob);
+    const userDateObj = userDob ? new Date(userDob) : null;
 
     const userParams = {
       grade: _get(userData.value, 'studentData.grade'),
-      birthMonth: userDateObj.getMonth() + 1,
-      birthYear: userDateObj.getFullYear(),
+      birthMonth: userDateObj ? userDateObj.getMonth() + 1 : undefined,
+      birthYear: userDateObj ? userDateObj.getFullYear() : undefined,
     };
 
     // variantParams.task (from the DB variant) is the authoritative source for the task mode

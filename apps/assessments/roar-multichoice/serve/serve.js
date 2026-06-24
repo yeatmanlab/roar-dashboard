@@ -23,10 +23,10 @@ const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 
 // Demographics
 const grade = urlParams.get('grade') ? parseInt(urlParams.get('grade'), 10) : null;
-const birthYear = urlParams.get('birthyear');
-const birthMonth = urlParams.get('birthmonth');
-const age = urlParams.get('age');
-const ageMonths = urlParams.get('agemonths');
+const birthYear = urlParams.get('birthyear') ? parseInt(urlParams.get('birthyear'), 10) : null;
+const birthMonth = urlParams.get('birthmonth') ? parseInt(urlParams.get('birthmonth'), 10) : null;
+const age = urlParams.get('age') ? parseFloat(urlParams.get('age')) : null;
+const ageMonths = urlParams.get('agemonths') ? parseFloat(urlParams.get('agemonths')) : null;
 
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -74,7 +74,9 @@ onAuthStateChanged(auth, async (user) => {
         ageMonths,
       };
 
-      const roarApp = new RoarMultichoice(variantParams, userParams, null);
+      // task URL param is the fallback for standalone play without a stored variantId;
+      // variantParams.task is authoritative when the variant carries it explicitly.
+      const roarApp = new RoarMultichoice({ task, ...variantParams }, userParams, null);
       roarApp.run();
     } catch (err) {
       console.error('Failed to initialize assessment:', err);

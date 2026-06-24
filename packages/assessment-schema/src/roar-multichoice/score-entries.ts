@@ -106,7 +106,7 @@ export function toMultichoiceScoreEntries(
     // Detect adaptive vs non-adaptive: the adaptive branch of scores.js overwrites
     // composite with totalCorrect/totalNumAttempted; the non-adaptive _mapValues
     // pass produces subScore/subPercentCorrect instead.
-    const isAdaptive = 'totalCorrect' in composite;
+    const isAdaptive = MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT in composite;
 
     if (isAdaptive) {
       for (const name of Object.values(MULTICHOICE_COMPOSITE_SCORE_NAMES) as MultichoiceCompositeName[]) {

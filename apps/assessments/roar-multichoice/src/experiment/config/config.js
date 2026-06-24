@@ -325,12 +325,8 @@ export const initConfig = async (gameParams, userParams, displayElement) => {
     startItemSelect,
   };
 
-  const updatedGameParams = Object.fromEntries(
-    Object.entries(gameParams).map(([key, value]) => [key, config[key] ?? value]),
-  );
-
   // updateTaskParams is not supported in the SDK; log a deprecation warning and continue
-  console.warn('[roar-multichoice] updateTaskParams is deprecated and has no effect.', updatedGameParams);
+  console.warn('[roar-multichoice] updateTaskParams is deprecated and has no effect.');
 
   if (config.pid !== null) {
     try {
@@ -372,7 +368,7 @@ export const initRoarJsPsych = async (config, computedScoreCallback) => {
     addInteraction(data);
   };
 
-  await initStore(config);
+  await initStore();
 };
 
 export const initRoarTimeline = (config) => {

@@ -52,4 +52,15 @@ export const MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES = {
 export type MultichoiceNonAdaptiveName =
   (typeof MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES)[keyof typeof MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES];
 
+/**
+ * Union of all score names across scoring modes.
+ *
+ * Note: `MultichoiceComprehensionName` is currently a strict subset of
+ * `MultichoiceCompositeName` (both spread THETA_SCORE_NAMES and share
+ * roarScoreKind/scoringVersion), so TypeScript collapses this to
+ * `MultichoiceCompositeName | MultichoiceNonAdaptiveName` at the type level.
+ * The three-way union is kept intentionally — if comprehension ever gains
+ * fields that composite does not have (e.g. comprehension-specific normed
+ * scores), the union will widen correctly without a type change here.
+ */
 export type MultichoiceScoreName = MultichoiceCompositeName | MultichoiceComprehensionName | MultichoiceNonAdaptiveName;
