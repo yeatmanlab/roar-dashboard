@@ -182,7 +182,8 @@ export class FamilyRepository extends BaseRepository<Family, typeof families> {
     return this.db
       .select({ familyId: userFamilies.familyId, role: userFamilies.role })
       .from(userFamilies)
-      .where(and(eq(userFamilies.userId, userId), isActiveInFamily(userFamilies)));
+      .where(and(eq(userFamilies.userId, userId), isActiveInFamily(userFamilies)))
+      .orderBy(asc(userFamilies.joinedOn), asc(userFamilies.familyId));
   }
 
   /**

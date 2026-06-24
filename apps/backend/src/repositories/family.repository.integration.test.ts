@@ -442,6 +442,24 @@ describe('FamilyRepository', () => {
       expect(result).toEqual([{ familyId: activeFamily.id, role: 'parent' }]);
     });
 
+    it('excludes memberships whose joinedOn is in the future (active window only)', async () => {
+      const activeFamily = await FamilyFactory.create();
+      const futureFamily = await FamilyFactory.create();
+      const parent = await UserFactory.create({ nameLast: 'FutureParent' });
+
+      await UserFamilyFactory.create({ userId: parent.id, familyId: activeFamily.id, role: 'parent' });
+      await UserFamilyFactory.create({
+        userId: parent.id,
+        familyId: futureFamily.id,
+        role: 'parent',
+        joinedOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
+
+      const result = await repository.getFamilyMembershipsForUser(parent.id);
+
+      expect(result).toEqual([{ familyId: activeFamily.id, role: 'parent' }]);
+    });
+
     it('returns only the queried user’s memberships, never another member’s', async () => {
       const family = await FamilyFactory.create();
       const parent = await UserFactory.create({ nameLast: 'IsolationParent' });
