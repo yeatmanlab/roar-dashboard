@@ -1,8 +1,14 @@
-/* eslint-disable import/no-cycle */
 import store from 'store2';
 import i18next from 'i18next';
 import { getDevice } from '@bdelab/roar-utils';
 import { Cat, Clowder, StopAfterNItems, prepareClowderCorpus } from '@bdelab/jscat';
+import {
+  PHONICS_TASK_IDS,
+  LETTER_CAT_NAMES,
+  LETTER_SUBTASK_DOMAINS,
+  LETTER_LANGUAGE_CODES,
+} from '@roar-platform/assessment-schema/roar-letter';
+import { COMPOSITE_DOMAIN, COMPOSITE_FOUNDATIONAL_DOMAIN } from '@roar-platform/assessment-schema';
 
 // English
 import enLetterCatCorpus from '../stimuli/en/letter_foundational_composite.csv';
@@ -14,27 +20,25 @@ import itLetterCatCorpus from '../stimuli/it/letterCatCorpus.csv';
 import irtHyperparameters from '../stimuli/en/letter_irt_hyperparameters.csv';
 
 const catOrderMap = {
-  0: 'letterNamePractice',
-  1: 'letterNameLower',
-  2: 'letterNameUpper',
-  3: 'letterPhonemePractice',
-  4: 'letterPhoneme',
+  0: LETTER_CAT_NAMES.LETTER_NAME_PRACTICE,
+  1: LETTER_CAT_NAMES.LETTER_NAME_LOWER,
+  2: LETTER_CAT_NAMES.LETTER_NAME_UPPER,
+  3: LETTER_CAT_NAMES.LETTER_PHONEME_PRACTICE,
+  4: LETTER_CAT_NAMES.LETTER_PHONEME,
 };
 
 const catToSubTaskMap = {
-  letterNamePractice: 'LetterPractice',
-  letterNameLower: 'LowercaseNames',
-  letterNameUpper: 'UppercaseNames',
-  letterPhonemePractice: 'PhonemePractice',
-  letterPhoneme: 'Phonemes',
+  [LETTER_CAT_NAMES.LETTER_NAME_PRACTICE]: LETTER_SUBTASK_DOMAINS.LETTER_PRACTICE,
+  [LETTER_CAT_NAMES.LETTER_NAME_LOWER]: LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES,
+  [LETTER_CAT_NAMES.LETTER_NAME_UPPER]: LETTER_SUBTASK_DOMAINS.UPPERCASE_NAMES,
+  [LETTER_CAT_NAMES.LETTER_PHONEME_PRACTICE]: LETTER_SUBTASK_DOMAINS.PHONEME_PRACTICE,
+  [LETTER_CAT_NAMES.LETTER_PHONEME]: LETTER_SUBTASK_DOMAINS.PHONEMES,
 };
 
 export const isTouchScreen = getDevice() === 'mobile';
 
-// eslint-disable-next-line import/no-mutable-exports
 export let clowder;
 
-// eslint-disable-next-line import/no-mutable-exports
 export let cat;
 
 const hyperParams = irtHyperparameters.reduce((acc, row) => {
@@ -89,39 +93,39 @@ export const initializeClowder = () => {
 
   // Define the `cats` configuration
   const catsConfig = {
-    letterNamePractice: {
+    [LETTER_CAT_NAMES.LETTER_NAME_PRACTICE]: {
       ...practiceConfig,
-      ...hyperParams.composite,
+      ...hyperParams[COMPOSITE_DOMAIN],
       randomSeed: randomSeed ? `${randomSeed}-lower-practice` : randomSeed,
     },
-    letterNameLower: {
+    [LETTER_CAT_NAMES.LETTER_NAME_LOWER]: {
       ...testConfig,
-      ...hyperParams.composite,
+      ...hyperParams[COMPOSITE_DOMAIN],
       randomSeed: randomSeed ? `${randomSeed}-lower` : randomSeed,
     },
-    letterNameUpper: {
+    [LETTER_CAT_NAMES.LETTER_NAME_UPPER]: {
       ...testConfig,
-      ...hyperParams.composite,
+      ...hyperParams[COMPOSITE_DOMAIN],
       randomSeed: randomSeed ? `${randomSeed}-upper` : randomSeed,
     },
-    letterPhonemePractice: {
+    [LETTER_CAT_NAMES.LETTER_PHONEME_PRACTICE]: {
       ...practiceConfig,
-      ...hyperParams.composite,
+      ...hyperParams[COMPOSITE_DOMAIN],
       randomSeed: randomSeed ? `${randomSeed}-phoneme-practice` : randomSeed,
     },
-    letterPhoneme: {
+    [LETTER_CAT_NAMES.LETTER_PHONEME]: {
       ...testConfig,
-      ...hyperParams.composite,
+      ...hyperParams[COMPOSITE_DOMAIN],
       randomSeed: randomSeed ? `${randomSeed}-phoneme` : randomSeed,
     },
-    composite: {
+    [COMPOSITE_DOMAIN]: {
       ...testConfig,
-      ...hyperParams.composite,
+      ...hyperParams[COMPOSITE_DOMAIN],
       randomSeed: randomSeed ? `${randomSeed}-composite` : randomSeed,
     },
-    composite_foundational: {
+    [COMPOSITE_FOUNDATIONAL_DOMAIN]: {
       ...testConfig,
-      ...hyperParams.composite_foundational,
+      ...hyperParams[COMPOSITE_FOUNDATIONAL_DOMAIN],
       randomSeed: randomSeed ? `${randomSeed}-composite-foundational` : randomSeed,
     },
   };
@@ -161,11 +165,11 @@ export const initializeClowder = () => {
     } else {
       numItems = 26; // Fallback value
     }
-    if (i18next.language === 'es') {
+    if (i18next.language === LETTER_LANGUAGE_CODES.ES) {
       numItemsPhoneme = 62;
       store.session.set('nItemsBeforeBreak', 9);
       store.session.set('nItemsBeforeBreakPhoneme', 13);
-    } else if (i18next.language === 'it') {
+    } else if (i18next.language === LETTER_LANGUAGE_CODES.IT) {
       numItemsPhoneme = 40;
       store.session.set('nItemsBeforeBreak', 7);
       store.session.set('nItemsBeforeBreakPhoneme', 8);
@@ -182,21 +186,21 @@ export const initializeClowder = () => {
 
   const earlyStoppingCats = new StopAfterNItems({
     requiredItems: {
-      letterNameLower: numItems ?? 5,
-      letterNameUpper: numItems ?? 5,
-      letterPhoneme: numItemsPhoneme ?? 15,
+      [LETTER_CAT_NAMES.LETTER_NAME_LOWER]: numItems ?? 5,
+      [LETTER_CAT_NAMES.LETTER_NAME_UPPER]: numItems ?? 5,
+      [LETTER_CAT_NAMES.LETTER_PHONEME]: numItemsPhoneme ?? 15,
     },
     logicalOperation,
   });
 
   function corpusToPrepare() {
-    if (i18next.language === 'es') {
+    if (i18next.language === LETTER_LANGUAGE_CODES.ES) {
       return esLetterCatCorpus;
     }
-    if (i18next.language === 'it') {
+    if (i18next.language === LETTER_LANGUAGE_CODES.IT) {
       return itLetterCatCorpus;
     }
-    if (i18next.language === 'en-CA') {
+    if (i18next.language === LETTER_LANGUAGE_CODES.EN_CA) {
       return enCALetterCatCorpus;
     }
     return enLetterCatCorpus;
@@ -205,18 +209,18 @@ export const initializeClowder = () => {
   const clowderCorpus = prepareClowderCorpus(
     corpusToPrepare(),
     [
-      'letterNamePractice',
-      'letterNameLower',
-      'letterNameUpper',
-      'letterPhonemePractice',
-      'letterPhoneme',
-      'composite',
-      'composite_foundational',
+      LETTER_CAT_NAMES.LETTER_NAME_PRACTICE,
+      LETTER_CAT_NAMES.LETTER_NAME_LOWER,
+      LETTER_CAT_NAMES.LETTER_NAME_UPPER,
+      LETTER_CAT_NAMES.LETTER_PHONEME_PRACTICE,
+      LETTER_CAT_NAMES.LETTER_PHONEME,
+      COMPOSITE_DOMAIN,
+      COMPOSITE_FOUNDATIONAL_DOMAIN,
     ],
     '.',
   );
 
-  if (store.session.get('config').task !== 'phonics') {
+  if (store.session.get('config').task !== PHONICS_TASK_IDS.EN) {
     store.session.set('corpusLetterAll', clowderCorpus);
   }
 
@@ -229,7 +233,7 @@ export const initializeClowder = () => {
 };
 
 export const scaleTheta = (thetaRaw, thetaSERaw) => {
-  const { transformationScale, transformationShift } = hyperParams.composite;
+  const { transformationScale, transformationShift } = hyperParams[COMPOSITE_DOMAIN];
   const thetaScaled = thetaRaw * transformationScale + transformationShift;
   const thetaSEScaled = thetaSERaw * Math.abs(transformationScale);
 
@@ -248,7 +252,6 @@ export const moveToNextBlock = () => {
 const safeGetCatIndex = () => {
   let catIndex = store.session.get('currentCatIndex');
 
-  // eslint-disable-next-line eqeqeq
   if (catIndex == undefined) {
     store.session.set('currentCatIndex', 0);
     catIndex = 0;
@@ -268,12 +271,18 @@ export const setNextStimulus = (ignorePreviousItem = false) => {
   const previousAnswer = ignorePreviousItem ? undefined : store.session.get('previousAnswer');
 
   const isPractice = isPracticeCat(catName);
-  const catToSelect = isPractice ? catName : 'composite';
+  const catToSelect = isPractice ? catName : COMPOSITE_DOMAIN;
 
   // Practice trials lack item parameters for composite and composite_foundational,
   // so their theta estimates are never updated. We include them in catsToUpdate anyway
   // because they will be safely skipped during updates due to having NA as their zetas.
-  const catsToUpdate = ['letterNameLower', 'letterNameUpper', 'letterPhoneme', 'composite_foundational', 'composite'];
+  const catsToUpdate = [
+    LETTER_CAT_NAMES.LETTER_NAME_LOWER,
+    LETTER_CAT_NAMES.LETTER_NAME_UPPER,
+    LETTER_CAT_NAMES.LETTER_PHONEME,
+    COMPOSITE_FOUNDATIONAL_DOMAIN,
+    COMPOSITE_DOMAIN,
+  ];
 
   const catToEvaluateEarlyStopping = isPractice ? catToSelect : catName;
 

@@ -15,6 +15,9 @@ export function createMockRunRepository(): MockedObject<RunRepository> {
     getByAdministrationId: vi.fn(),
     getUserCanonicalRunsForAdministrations: vi.fn(),
     recomputeUseForReporting: vi.fn(),
+    lockCompositeForUpdate: vi.fn(),
+    getReportingRunScoresForComposite: vi.fn(),
+    findOrCreateCompositeRun: vi.fn(),
   } as MockedObject<RunRepository>;
 }
 
