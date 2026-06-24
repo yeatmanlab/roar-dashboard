@@ -197,6 +197,7 @@ import PvDatePicker from 'primevue/datepicker';
 import PvSelect from 'primevue/select';
 import PvInputText from 'primevue/inputtext';
 import { usePermissions } from '@/composables/usePermissions';
+import { parseDateLocal } from '@/helpers/mappers/mapUserFormToUpdateBody';
 const { userCan, Permissions, UserRoles } = usePermissions();
 
 const props = defineProps({
@@ -257,7 +258,10 @@ const setupUserData = () => {
       last: props.userData?.name?.last || null,
     },
     studentData: {
-      dob: !isNaN(new Date(props.userData?.studentData?.dob)) ? new Date(props.userData?.studentData?.dob) : null,
+      // Parse the date-only DOB string with local calendar components. `new Date('YYYY-MM-DD')`
+      // would read it as UTC midnight and shift the day west of UTC, which then round-trips
+      // through serializeDob (local components) as the wrong date — corrupting it on save.
+      dob: parseDateLocal(props.userData?.studentData?.dob),
       grade: props.userData?.studentData?.grade || '',
       gender: props.userData?.studentData?.gender || '',
       race: props.userData?.studentData?.race || [],

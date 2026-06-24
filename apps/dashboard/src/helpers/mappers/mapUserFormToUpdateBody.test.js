@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapUserFormToUpdateBody } from './mapUserFormToUpdateBody';
+import { mapUserFormToUpdateBody, parseDateLocal } from './mapUserFormToUpdateBody';
 
 // The shape EditUsersForm holds in `localUserData`: nested name, nested
 // studentData with legacy snake_case keys, dob as a Date, race as an array.
@@ -51,6 +51,12 @@ describe('mapUserFormToUpdateBody', () => {
     expect(mapUserFormToUpdateBody(form).dob).toBeNull();
   });
 
+  it('maps an unparseable dob string to null', () => {
+    const form = formModel();
+    form.studentData.dob = 'not-a-date';
+    expect(mapUserFormToUpdateBody(form).dob).toBeNull();
+  });
+
   it('joins the race array into a comma-separated string', () => {
     const body = mapUserFormToUpdateBody(formModel());
     expect(body.race).toBe('White, Asian');
@@ -62,10 +68,36 @@ describe('mapUserFormToUpdateBody', () => {
     expect(mapUserFormToUpdateBody(form).race).toBeNull();
   });
 
+  it('passes a non-array race string straight through', () => {
+    const form = formModel();
+    form.studentData.race = 'White, Asian';
+    expect(mapUserFormToUpdateBody(form).race).toBe('White, Asian');
+  });
+
+  it('maps a nullish race to null', () => {
+    for (const empty of [null, undefined]) {
+      const form = formModel();
+      form.studentData.race = empty;
+      expect(mapUserFormToUpdateBody(form).race).toBeNull();
+    }
+  });
+
   it('coerces boolean ell/iep status flags to strings (statusEll/statusIep)', () => {
     const body = mapUserFormToUpdateBody(formModel());
     expect(body.statusEll).toBe('true');
     expect(body.statusIep).toBe('false');
+  });
+
+  it('leaves nullish ell/iep status flags as null rather than the string "null"', () => {
+    for (const empty of [null, undefined]) {
+      const form = formModel();
+      form.studentData.ell_status = empty;
+      form.studentData.iep_status = empty;
+      const body = mapUserFormToUpdateBody(form);
+      // A nullish flag must not clobber the stored value with the literal string "null".
+      expect(body.statusEll).toBeNull();
+      expect(body.statusIep).toBeNull();
+    }
   });
 
   it('passes hispanicEthnicity through as a boolean', () => {
@@ -134,5 +166,39 @@ describe('mapUserFormToUpdateBody', () => {
     }
     // At least one field present (the schema requires it).
     expect(Object.keys(body).length).toBeGreaterThan(0);
+  });
+});
+
+describe('parseDateLocal', () => {
+  it('returns null for nullish, non-string, or unparseable input', () => {
+    expect(parseDateLocal(null)).toBeNull();
+    expect(parseDateLocal(undefined)).toBeNull();
+    expect(parseDateLocal('')).toBeNull();
+    expect(parseDateLocal('not-a-date')).toBeNull();
+  });
+
+  it('parses a date-only string using local calendar components', () => {
+    const date = parseDateLocal('2015-04-01');
+    // Local components, not UTC — so the parsed day matches the string regardless of timezone.
+    expect(date).toBeInstanceOf(Date);
+    expect(date.getFullYear()).toBe(2015);
+    expect(date.getMonth()).toBe(3); // April (0-indexed)
+    expect(date.getDate()).toBe(1);
+  });
+
+  it('passes an existing Date through unchanged', () => {
+    const input = new Date(2015, 3, 1);
+    expect(parseDateLocal(input)).toBe(input);
+  });
+
+  it('round-trips a YYYY-MM-DD string losslessly through serializeDob', () => {
+    // The DOB corruption bug: parsing a date-only string as UTC midnight (the old
+    // `new Date('2015-04-01')`) then serializing from local components shifts the day
+    // west of UTC. parseDateLocal + serializeDob must return the SAME string in any timezone.
+    for (const dateString of ['2015-04-01', '2015-12-31', '2000-01-01', '2024-02-29']) {
+      const form = formModel();
+      form.studentData.dob = parseDateLocal(dateString);
+      expect(mapUserFormToUpdateBody(form).dob).toBe(dateString);
+    }
   });
 });
