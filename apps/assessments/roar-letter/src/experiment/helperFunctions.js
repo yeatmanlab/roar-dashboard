@@ -4,6 +4,7 @@ import { jsPsych } from './jsPsych';
 import { audioContext } from './trials/stimulusLetterName';
 import { mediaAssets } from './experiment';
 import { clowder } from './experimentSetup';
+import { PHONICS_TASK_IDS, LETTER_CAT_NAMES } from '@roar-platform/assessment-schema/roar-letter';
 
 export const shuffle = (array) => {
   const shuffledArray = [...array];
@@ -12,7 +13,7 @@ export const shuffle = (array) => {
 
     // swap elements array[i] and array[j]
     // use "destructuring assignment" syntax
-    // eslint-disable-next-line no-param-reassign
+
     [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
   }
   return shuffledArray;
@@ -35,9 +36,10 @@ export const updateProgressBar = () => {
   const currProgressBar = jsPsych.getProgressBarCompleted();
 
   const letterTrialsTotal = [
-    clowder.earlyStopping.requiredItems.letterNameLower + clowder.earlyStopping.requiredItems.letterNameUpper,
+    clowder.earlyStopping.requiredItems[LETTER_CAT_NAMES.LETTER_NAME_LOWER] +
+      clowder.earlyStopping.requiredItems[LETTER_CAT_NAMES.LETTER_NAME_UPPER],
   ].reduce((curr, total) => curr + total, 0);
-  const phonemeTrialsTotal = [clowder.earlyStopping.requiredItems.letterPhoneme].reduce(
+  const phonemeTrialsTotal = [clowder.earlyStopping.requiredItems[LETTER_CAT_NAMES.LETTER_PHONEME]].reduce(
     (curr, total) => curr + total,
     0,
   );
@@ -46,7 +48,7 @@ export const updateProgressBar = () => {
   const trialTotal = letterTrialsTotal + phonemeTrialsTotal;
   const { task } = store.session.get('config');
 
-  if (task === 'phonics') {
+  if (task === PHONICS_TASK_IDS.EN) {
     jsPsych.setProgressBar(currProgressBar + 1 / phonicsTrialsTotal);
   } else {
     jsPsych.setProgressBar(currProgressBar + 1 / trialTotal);
@@ -56,7 +58,6 @@ export const updateProgressBar = () => {
 // add an item to a list in the store, creating it if necessary
 export const addItemToSortedStoreList = (tag, entry) => {
   if (!store.session.has(tag)) {
-    // eslint-disable-next-line no-console
     console.warn(`uninitialized store tag: ${tag}`);
   } else {
     // read existing list
@@ -76,7 +77,7 @@ export const addItemToSortedStoreList = (tag, entry) => {
 export function replayAudioStimulus() {
   let stim;
   const { task } = store.session.get('config');
-  if (task === 'phonics') {
+  if (task === PHONICS_TASK_IDS.EN) {
     stim = store.session.get('nextStimulus').audio_filename;
   } else {
     stim = store.session.get('nextStimulus').audioFile;

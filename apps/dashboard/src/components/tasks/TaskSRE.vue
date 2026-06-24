@@ -184,7 +184,10 @@ async function startTask(selectedAdmin) {
     initFirekitCompat(
       {
         baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
-        auth: { getToken: () => Promise.resolve(authStore.accessToken) },
+        auth: {
+          getToken: () => Promise.resolve(authStore.accessToken),
+          refreshToken: () => authStore.forceIdTokenRefresh(),
+        },
         participant: { participantId },
       },
       {
