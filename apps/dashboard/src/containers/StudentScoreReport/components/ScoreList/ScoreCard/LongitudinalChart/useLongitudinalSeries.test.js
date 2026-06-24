@@ -164,14 +164,14 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10, percentile: 50 } }],
         studentGrade: 5,
         taskId: 'swr',
-        taskScoringVersion: 7,
+        taskScoringVersion: 6,
       };
 
       const { series } = useLongitudinalSeries(props);
 
       series.value;
 
-      expect(getDialColor).toHaveBeenCalledWith(5, 50, 10, 'swr', null, 7);
+      expect(getDialColor).toHaveBeenCalledWith(5, 50, 10, 'swr', null, 6);
     });
   });
 
@@ -339,7 +339,7 @@ describe('useLongitudinalSeries', () => {
         ],
         studentGrade: 3,
         taskId: 'test-task',
-        taskScoringVersions: { 'test-task': 6 },
+        taskScoringVersion: 6,
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -359,7 +359,7 @@ describe('useLongitudinalSeries', () => {
         ],
         studentGrade: 3,
         taskId: 'test-task',
-        taskScoringVersions: { 'test-task': 6 },
+        taskScoringVersion: 6,
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -382,7 +382,7 @@ describe('useLongitudinalSeries', () => {
           ],
           studentGrade: 3,
           taskId: 'swr',
-          taskScoringVersions: { swr: 6 },
+          taskScoringVersion: 6,
         };
 
         const { series } = useLongitudinalSeries(props);
@@ -401,7 +401,7 @@ describe('useLongitudinalSeries', () => {
           ],
           studentGrade: 3,
           taskId: 'swr',
-          taskScoringVersions: { swr: 7 },
+          taskScoringVersion: 7,
         };
 
         const { series } = useLongitudinalSeries(props);
@@ -420,7 +420,7 @@ describe('useLongitudinalSeries', () => {
           ],
           studentGrade: 3,
           taskId: 'swr',
-          taskScoringVersions: { swr: 6 },
+          taskScoringVersion: 6,
         };
 
         const { series } = useLongitudinalSeries(props);
@@ -444,7 +444,7 @@ describe('useLongitudinalSeries', () => {
           ],
           studentGrade: 3,
           taskId: 'sre',
-          taskScoringVersions: { sre: 3 },
+          taskScoringVersion: 3,
         };
 
         const { series } = useLongitudinalSeries(props);
@@ -463,7 +463,7 @@ describe('useLongitudinalSeries', () => {
           ],
           studentGrade: 3,
           taskId: 'sre',
-          taskScoringVersions: { sre: 4 },
+          taskScoringVersion: 4,
         };
 
         const { series } = useLongitudinalSeries(props);
@@ -482,7 +482,7 @@ describe('useLongitudinalSeries', () => {
           ],
           studentGrade: 3,
           taskId: 'sre',
-          taskScoringVersions: { sre: 3 },
+          taskScoringVersion: 3,
         };
 
         const { series } = useLongitudinalSeries(props);
@@ -505,7 +505,7 @@ describe('useLongitudinalSeries', () => {
           ],
           studentGrade: 3,
           taskId: 'pa',
-          taskScoringVersions: { pa: 3 },
+          taskScoringVersion: 3,
         };
 
         const { series } = useLongitudinalSeries(props);
@@ -524,7 +524,7 @@ describe('useLongitudinalSeries', () => {
           ],
           studentGrade: 3,
           taskId: 'pa',
-          taskScoringVersions: { pa: 4 },
+          taskScoringVersion: 4,
         };
 
         const { series } = useLongitudinalSeries(props);
@@ -543,7 +543,7 @@ describe('useLongitudinalSeries', () => {
           ],
           studentGrade: 3,
           taskId: 'pa',
-          taskScoringVersions: { pa: 3 },
+          taskScoringVersion: 3,
         };
 
         const { series } = useLongitudinalSeries(props);
@@ -562,7 +562,7 @@ describe('useLongitudinalSeries', () => {
         ],
         studentGrade: 3,
         taskId: 'swr',
-        taskScoringVersions: { swr: 6 },
+        taskScoringVersion: 6,
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -571,6 +571,108 @@ describe('useLongitudinalSeries', () => {
       expect(series.value).toHaveLength(2);
       expect(series.value[0].y).toBe(10); // 2024-01-01 undefined
       expect(series.value[1].y).toBe(20); // 2024-02-01 version 6
+    });
+
+    describe('when taskScoringVersion is undefined', () => {
+      it('should include undefined and min normed version runs for swr', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 6 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 7 } },
+          ],
+          studentGrade: 3,
+          taskId: 'swr',
+          taskScoringVersion: undefined,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // Should include undefined (legacy) and version 6 (min normed), but not version 7
+        expect(series.value).toHaveLength(2);
+        expect(series.value[0].y).toBe(10); // undefined
+        expect(series.value[1].y).toBe(20); // version 6
+      });
+
+      it('should include undefined and min normed version runs for sre', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 3 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 4 } },
+          ],
+          studentGrade: 3,
+          taskId: 'sre',
+          taskScoringVersion: undefined,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // Should include undefined (legacy) and version 3 (min normed), but not version 4
+        expect(series.value).toHaveLength(2);
+        expect(series.value[0].y).toBe(10); // undefined
+        expect(series.value[1].y).toBe(20); // version 3
+      });
+
+      it('should include undefined and min normed version runs for pa', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 3 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 4 } },
+          ],
+          studentGrade: 3,
+          taskId: 'pa',
+          taskScoringVersion: undefined,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // Should include undefined (legacy) and version 3 (min normed), but not version 4
+        expect(series.value).toHaveLength(2);
+        expect(series.value[0].y).toBe(10); // undefined
+        expect(series.value[1].y).toBe(20); // version 3
+      });
+
+      it('should not duplicate undefined runs when taskScoringVersion is undefined', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: undefined } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 6 } },
+          ],
+          studentGrade: 3,
+          taskId: 'swr',
+          taskScoringVersion: undefined,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // Should have 3 entries: 2 undefined + 1 version 6, with no duplicates
+        expect(series.value).toHaveLength(3);
+        expect(series.value[0].y).toBe(10);
+        expect(series.value[1].y).toBe(20);
+        expect(series.value[2].y).toBe(30);
+      });
+
+      it('should only include undefined runs for tasks not in minNormedVersions when taskScoringVersion is undefined', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 1 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 2 } },
+          ],
+          studentGrade: 3,
+          taskId: 'other-task',
+          taskScoringVersion: undefined,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // For tasks not in minNormedVersions, only undefined runs should be included
+        expect(series.value).toHaveLength(1);
+        expect(series.value[0].y).toBe(10);
+      });
     });
   });
 });

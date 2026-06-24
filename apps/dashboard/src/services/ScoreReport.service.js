@@ -170,9 +170,8 @@ const ScoreReportService = (() => {
 
   const getScoreDescription = (task, grade, i18n, scoringVersion) => {
     const taskName = taskDisplayNames[task.taskId]?.extendedName;
-    // const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(task.taskId) && scoringVersion >= 1;
-    // Temporarily change language to percentile even if unnormed for development purposes
-    const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(task.taskId);
+    const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(task.taskId) && scoringVersion >= 1;
+
     // --- CHANGED: use safe wrapper instead of direct call ---
     const taskDescription = safeGetExtendedDescription(String(task.taskId));
 
@@ -271,6 +270,7 @@ const ScoreReportService = (() => {
     const computedTaskAcc = {};
 
     for (const { taskId, scores, reliable, optional, engagementFlags } of taskData) {
+      console.log(scores?.composite);
       const compositeScores = scores?.composite;
 
       let rawScore = null;
@@ -278,11 +278,11 @@ const ScoreReportService = (() => {
       const useSpanishNorms = (taskId === 'swr-es' || taskId === 'sre-es') && scoringVersions[taskId] >= 1;
       // Uncomment when norms are updated for tasks and want to hide cards for unnormed. Temporarily show unnormed cards as placeholders.
       // Replace useSpanishNorms.
-      // const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(taskId) && scoringVersions[taskId] >= 1;
-      // Temporarily change language to percentile even if unnormed for development purposes
-      const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(taskId);
+      const hasNorms =
+        (!previouslyUnnormedTasks.includes(taskId) || scoringVersions[taskId] >= 1) &&
+        (!taskId.includes('es') || scoringVersions[taskId] >= 1);
 
-      if (!taskId.includes('vocab') && (!taskId.includes('es') || useSpanishNorms)) {
+      if (!taskId.includes('vocab') && hasNorms) {
         rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore');
       } else {
         rawScore = compositeScores;
@@ -313,7 +313,7 @@ const ScoreReportService = (() => {
           percentileScore: {
             name:
               // TODO: Check why !useSpanishNorms is needed here
-              tasksToDisplayPercentCorrect.includes(taskId) && !useSpanishNorms && !hasNewlyAddedNorms
+              tasksToDisplayPercentCorrect.includes(taskId) && !useSpanishNorms && !hasNorms
                 ? i18n.t('scoreReports.percentCorrect')
                 : i18n.t('scoreReports.percentileScore'),
             value: Math.round(percentileScore),
