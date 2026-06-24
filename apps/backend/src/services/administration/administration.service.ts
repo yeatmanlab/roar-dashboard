@@ -1523,15 +1523,43 @@ export function AdministrationService({
       // user's signed set in a single bulk query (no per-agreement lookup).
       const result = await administrationRepository.getAgreementsByAdministrationId(administrationId, queryParams);
 
-      const agreementIds = result.items.map((item) => item.agreement.id);
+      // Filter the administration's agreements to the ones the TARGET user is
+      // age-appropriately required to sign, mirroring listAgreements (see the
+      // student-filtering block above). The signed status this endpoint reports
+      // only makes sense for the agreements the target actually needs, so the
+      // age gate applies regardless of who is asking.
+      //
+      // Determine if the target user is of majority age (18+).
+      // null means age cannot be determined - conservatively treat as minor.
+      const isOfMajorityAge = isMajorityAge({ dob: targetUser.dob, grade: targetUser.grade });
+      const isAdult = isOfMajorityAge === true;
+
+      // Filter agreements based on the target user's age:
+      // - assent: shown only to minors (isAdult === false)
+      // - consent: shown only to adults (isAdult === true)
+      // - tos: never shown (institutional terms, not a per-user consent)
+      // TODO: Pagination is broken here - filtering happens after DB pagination,
+      // so totalItems/page counts are incorrect. Fix by moving filter to repository layer.
+      const filteredItems = result.items.filter((item) => {
+        switch (item.agreement.agreementType) {
+          case AgreementType.ASSENT:
+            return !isAdult;
+          case AgreementType.CONSENT:
+            return isAdult;
+          default:
+            return false; // TOS and unknown types are never per-user agreements
+        }
+      });
+
+      const agreementIds = filteredItems.map((item) => item.agreement.id);
       const signedIds = await agreementRepository.getSignedAgreementIds(userId, agreementIds);
 
       return {
-        items: result.items.map((item) => ({
+        items: filteredItems.map((item) => ({
           ...item,
           signed: signedIds.has(item.agreement.id),
         })),
-        totalItems: result.totalItems,
+        totalItems: filteredItems.length,
       };
     } catch (error) {
       if (error instanceof ApiError) throw error;
