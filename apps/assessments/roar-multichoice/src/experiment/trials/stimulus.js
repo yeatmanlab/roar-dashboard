@@ -44,8 +44,8 @@ const prepareSurveyChoices = (target, distractors) => {
 const trialsMapped = [0, 1].map((i) => {
   const isPracticeTrial = i === 0;
   const assessmentStage = isPracticeTrial
-    ? "practice_response"
-    : "test_response";
+    ? "practice"
+    : "test";
   return {
     type: jsPsychAudioMultiResponse,
     response_allowed_while_playing: true,
@@ -138,7 +138,7 @@ const trialsMapped = [0, 1].map((i) => {
 
       // Update engagement flags - only for test responses, not practice
       if (
-        assessmentStage === "test_response" &&
+        assessmentStage === "test" &&
         store.session.get("catName") === "core"
       ) {
         multichoiceValidityEvaluator.addResponseData(
@@ -151,7 +151,7 @@ const trialsMapped = [0, 1].map((i) => {
       let itemId;
       if (
         (nextStimulus.itemId === undefined || nextStimulus.itemId === null) &&
-        assessmentStage === "practice_response"
+        assessmentStage === "practice"
       ) {
         itemId = "practiceItem";
       } else {
