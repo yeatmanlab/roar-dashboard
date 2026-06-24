@@ -24,6 +24,7 @@ import fs from 'node:fs';
 import type { TestFixture } from '@roar-platform/api-contract/test-fixture.type';
 import { initializeDatabasePools, closeDatabasePools } from '../src/db/clients';
 import { runMigrations, truncateAllTables } from '../src/test-support/db';
+import { setupFdwForTests } from '../src/test-support/db/setup-fdw';
 import { initializeFgaTestStore, syncFgaTuplesFromPostgres } from '../src/test-support/fga';
 import {
   seedFirebaseAuthEmulator,
@@ -156,19 +157,27 @@ async function main(): Promise<void> {
   await initializeDatabasePools();
 
   try {
-    // 3. Run migrations (ensures schema is current)
+    // 3. Provision FDW prerequisites (extension, foreign server, user mappings).
+    //    Must run before migrations because migration SQL references the
+    //    assessment_server foreign server. In Docker-based local dev, the
+    //    init script handles this; in CI (bare Postgres), setupFdwForTests()
+    //    creates it via the pg client.
+    logger.info('[seed-dev] Setting up FDW...');
+    await setupFdwForTests();
+
+    // 4. Run migrations (ensures schema is current)
     logger.info('[seed-dev] Running migrations...');
     await runMigrations();
 
-    // 4. Truncate all tables
+    // 5. Truncate all tables
     logger.info('[seed-dev] Truncating all tables...');
     await truncateAllTables();
 
-    // 5. Seed the deterministic dev fixture
+    // 6. Seed the deterministic dev fixture
     logger.info('[seed-dev] Seeding dev fixture...');
     await seedDevFixture();
 
-    // 6. Initialize FGA store + model
+    // 7. Initialize FGA store + model
     // Try to read store/model IDs from Docker volume first (written by openfga-init container).
     // If not available (e.g. CI), create a new store via the Node.js SDK.
     logger.info('[seed-dev] Setting up FGA...');
@@ -194,11 +203,11 @@ async function main(): Promise<void> {
       logger.info({ path: '/tmp/roar-fga-env.json' }, 'FGA env written for backend server');
     }
 
-    // 7. Sync FGA tuples from Postgres
+    // 8. Sync FGA tuples from Postgres
     logger.info('[seed-dev] Syncing FGA tuples from Postgres...');
     await syncFgaTuplesFromPostgres();
 
-    // 8. Seed Firebase Auth emulator users (if running)
+    // 9. Seed Firebase Auth emulator users (if running)
     if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
       logger.info('[seed-dev] Seeding Firebase Auth emulator...');
       const seedable: SeedableEmulatorUser[] = DEV_FIXTURE_USER_KEYS.map((key) => ({
@@ -234,12 +243,12 @@ async function main(): Promise<void> {
       logger.info({ fixtureFile: CYPRESS_FIXTURE_FILE }, 'Cypress fixture written (no emulator)');
     }
 
-    // 9. Write SDK test fixture file
+    // 10. Write SDK test fixture file
     writeSdkFixtureFile();
 
     logger.info('[seed-dev] Seed complete.');
   } finally {
-    // 10. Close DB pools
+    // 11. Close DB pools
     await closeDatabasePools();
   }
 }
