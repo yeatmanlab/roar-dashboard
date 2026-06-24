@@ -101,6 +101,13 @@ vi.mock('pinia', async (getModule) => {
   };
 });
 
+// ListUsers calls `useToast()` at setup and `toast.add(...)` in its save/password
+// handlers. Without a PrimeVue ToastService provider the inject-based `useToast`
+// throws "No PrimeVue Toast provided!" at mount, so stub it to a no-op `add`.
+vi.mock('primevue/usetoast', () => ({
+  useToast: () => ({ add: vi.fn() }),
+}));
+
 vi.mock('@/helpers', () => ({
   singularizeFirestoreCollection: (s) => s,
 }));
