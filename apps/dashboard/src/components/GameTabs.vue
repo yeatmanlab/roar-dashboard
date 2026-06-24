@@ -11,7 +11,31 @@
           style="border: solid 2px #00000014; border-radius: 10px"
         >
           <span class="flex align-items-center gap-2">
-            {{ getTaskName(game.taskId, game.taskData.name) }}
+            <!--
+              Status icons render here in the PvTab header. In PrimeVue 4 the
+              tab header is PvTab (inside PvTabList); PvTabPanel (inside
+              PvTabPanels) is content-only and does NOT render a #header slot,
+              so these icons would never appear if placed there.
+            -->
+            <!--Retake required-->
+            <i v-if="game?.allowRetake === true" class="pi pi-exclamation-circle" data-game-status="retake-required" />
+            <!--Complete Game-->
+            <i v-else-if="game.completedOn" class="pi pi-check-circle" data-game-status="complete" />
+            <!--Current Game-->
+            <i
+              v-else-if="game.taskId == firstIncompleteGameId || !sequential"
+              class="pi pi-circle"
+              data-game-status="current"
+            />
+            <!--Locked Game-->
+            <i v-else-if="sequential" class="pi pi-lock" data-game-status="incomplete" />
+            <!--
+              The status is expressed solely by the icon above (data-game-status).
+              The label below carries only the task name; it must NOT also set a
+              data-game-status, or a completed-but-retake-required tab would
+              expose both "retake-required" (icon) and "complete" (label).
+            -->
+            <span class="tabview-nav-link-label">{{ getTaskName(game.taskId, game.taskData.name) }}</span>
           </span>
         </PvTab>
       </PvTabList>
@@ -23,29 +47,6 @@
           :value="String(index)"
           class="p-0"
         >
-          <template #header>
-            <!--Retake required-->
-            <i
-              v-if="game?.allowRetake === true"
-              class="pi pi-exclamation-circle mr-2"
-              data-game-status="retake-required"
-            />
-            <!--Complete Game-->
-            <i v-else-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
-            <!--Current Game-->
-            <i
-              v-else-if="game.taskId == firstIncompleteGameId || !sequential"
-              class="pi pi-circle mr-2"
-              data-game-status="current"
-            />
-            <!--Locked Game-->
-            <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
-            <span
-              class="tabview-nav-link-label"
-              :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`"
-              >{{ getTaskName(game.taskId, game.taskData.name) }}</span
-            >
-          </template>
           <div class="roar-tabview-game flex flex-row p-5 surface-100 w-full">
             <div class="roar-game-content flex flex-column" style="width: 70%">
               <div class="roar-game-title font-bold">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
