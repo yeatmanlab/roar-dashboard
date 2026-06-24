@@ -1,0 +1,43 @@
+const timeout = Cypress.env("timeout");
+
+function clickButton(selector) {
+  cy.get(selector).then(($btn) => {
+    if ($btn.length > 0) {
+      $btn.click();
+    }
+  });
+}
+
+function makeChoiceOrContinue(gameCompleteText) {
+  cy.wait(0.4 * timeout);
+  cy.get("body").then((body) => {
+    const text = body.text().replace(/\s\s+/g, " ").trim();
+    cy.log("Found text: ", text, "game complete text: ", gameCompleteText);
+    if (text.includes(gameCompleteText)) {
+      cy.log("Game is complete.").then(() => true);
+    } else {
+      if (body.find(".go-button").length > 0) {
+        clickButton(".go-button");
+      } else if (body.find(".glowingButton").length > 0) {
+        clickButton(".glowingButton");
+      } else {
+        clickButton("button:first");
+      }
+      cy.log("Making choice or continuing.");
+      makeChoiceOrContinue(gameCompleteText);
+    }
+  });
+}
+
+export function startGame(gameParams) {
+  Cypress.on("uncaught:exception", () => false);
+  cy.visit(`${Cypress.env("baseUrl")}/?${gameParams}`);
+  cy.url().should("include", gameParams);
+
+  cy.get(".jspsych-btn", { timeout: timeout }).should("be.visible").click();
+}
+
+export function playMultichoice(gameCompleteText) {
+  makeChoiceOrContinue(gameCompleteText);
+  cy.log("Game finished successfully.");
+}

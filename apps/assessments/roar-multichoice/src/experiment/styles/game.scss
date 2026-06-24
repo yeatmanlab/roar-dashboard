@@ -1,0 +1,572 @@
+/* CSS Document */
+.this-is-roar {
+  content: "This is a game.";
+}
+
+// ONLY FOR THE STIMULUS BUTTONS (Letters)
+@font-face {
+  font-family: primerRegular;
+  src: url(https://storage.googleapis.com/roar-ak/font/primer_print.ttf)
+    format("truetype");
+}
+
+@font-face {
+  font-family: primerBold;
+  src: url(https://storage.googleapis.com/roar-ak/font/primer_print_bold.ttf)
+    format("truetype");
+}
+
+@media only screen and (max-width: 600px) {
+}
+
+.jspsych-display-element {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
+    "sans-serif";
+  touch-action: manipulation;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+
+  .jspsych-content-wrapper {
+    height: 100%;
+    width: 100%;
+
+    .jspsych-content {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+      #fullScreen {
+        width: 80vw;
+        text-align: center;
+        color: rgba(76, 101, 139, 1);
+        font-size: 1.7rem;
+      }
+
+      #jspsych-fullscreen-btn {
+        width: 17vw;
+        height: 10vh;
+        background-color: rgba(76, 101, 139, 1);
+        color: white;
+        border-radius: 1rem;
+        border: 0rem;
+        font-size: 3vw;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      #jspsych-audio-multi-response-prompt {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        //width: 100%;
+      }
+
+      .item-stimulus {
+        display: flex;
+        justify-content: center;
+        align-items: center; /* For vertical centering */
+
+        /* Assuming you want this item to take the full height and width of its container to ensure centering: */
+        //padding-left: 12%;
+        //padding-right: 12%;
+        padding-bottom: 5vh;
+
+        font-family: primerBold;
+        font-size: 3.5rem;
+        margin: 0;
+        text-align: center; /* To ensure the text is centered if it wraps to more than one line */
+      }
+
+      .item-stimulus-cva {
+        display: inline-block;
+        margin: 16px auto;
+        padding-bottom: 5vh;
+        font-family: primerBold;
+        font-size: 3.5rem;
+        text-align: center; /* To ensure the text is centered if it wraps to more than one line */
+      }
+
+      #decorated {
+        display: inline-block;
+      }
+
+      .default-layout {
+        // 1 x 4 (default)
+        display: flex;
+        min-width: 100%;
+        justify-content: center;
+        align-items: center;
+
+        div {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          min-width: calc(10% + 10px);
+
+          button {
+            font-family: primerBold;
+            width: 100%;
+            color: black;
+            font-size: clamp(2rem, 4vw, 2.5rem);
+            cursor: pointer;
+          }
+        }
+      }
+
+      .column-layout {
+        // 4 x 1
+        display: grid;
+        grid-template-columns: repeat(
+          auto-fit,
+          minmax(300px, 1fr)
+        ); /* two columns of equal width */
+        gap: 2rem;
+
+        div {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          max-width: 100%;
+
+          button {
+            font-family: primerBold;
+            width: 100%;
+            color: black;
+            font-size: 5vw;
+            cursor: pointer;
+          }
+        }
+      }
+
+      .grid-layout {
+        // 2 x 2
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* two columns of equal width */
+        grid-template-rows: 1fr 1fr; /* two rows of equal height */
+        gap: 2rem;
+
+        div {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          max-width: 100%;
+
+          button {
+            font-family: primerBold;
+            width: 100%;
+            color: black;
+            font-size: 5vw;
+            cursor: pointer;
+          }
+        }
+      }
+
+      .disabled-btn {
+        background-color: #e0e0e0; /* Gray background */
+        color: #a0a0a0; /* Gray text */
+        cursor: not-allowed; /* Indicate that the button is not interactive */
+        pointer-events: none; /* Prevent all click and hover interactions */
+        opacity: 0.6;
+      }
+
+      .glowingButton {
+        animation: glowing 1300ms infinite;
+      }
+      @keyframes glowing {
+        0% {
+          background-color: #2ba805;
+          box-shadow: 0 0 5px #2ba805;
+        }
+        50% {
+          background-color: #49e819;
+          box-shadow: 0 0 20px #49e819;
+        }
+        100% {
+          background-color: #2ba805;
+          box-shadow: 0 0 5px #2ba805;
+        }
+      }
+
+      #replay {
+        position: absolute;
+        bottom: 80%;
+        right: 10%;
+        cursor: pointer;
+      }
+    }
+  }
+
+  // .gif-container img {
+  //max-width: 50vw;
+  //height: auto;
+  // }
+
+  .gif-container {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .lion-gif-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    text-align: center;
+    width: 70%;
+  }
+
+  .device-instructions {
+    width: 492px;
+    height: auto;
+    margin: auto;
+  }
+
+  .roar-lion {
+    order: 1;
+    width: 30%;
+  }
+
+  .roar-lion-adjusted {
+    order: 1;
+    width: 30%;
+  }
+
+  .speechbubble-header {
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    color: rgb(0, 0, 0); /* Set the text color */
+    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
+      "sans-serif";
+    font-size: 45px;
+    padding: 10px 20px; /* Optional: add padding to the text */
+    z-index: 1; /* Place the text above the GIF */
+  }
+
+  .speechbubble-text-morphology {
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    color: rgb(0, 0, 0); /* Set the text color */
+    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
+      "sans-serif";
+    font-size: 35px;
+    z-index: 1; /* Place the text above the GIF */
+  }
+
+  .mid-centered-text {
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
+      "sans-serif";
+    font-size: 30px;
+  }
+
+  .mid-centered-header {
+    margin: 24px;
+    top: 10%;
+    text-align: center;
+    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
+      "sans-serif";
+    font-size: 40px;
+    color: green;
+    max-width: 60%;
+  }
+
+  .go-button {
+    position: fixed;
+    bottom: 5vh;
+    height: 20vh;
+    right: 5vh;
+    z-index: 999;
+    background: none;
+    border: none;
+  }
+
+  #jspsych-progressbar-container {
+    color: #555;
+    border-bottom: 1px solid #dedede;
+    background-color: #f9f9f9;
+    margin-bottom: 1em;
+    text-align: center;
+    padding: 8px 0px;
+    width: 100%;
+    line-height: 1em;
+
+    span {
+      font-size: 14px;
+      padding-right: 14px;
+    }
+
+    #jspsych-progressbar-outer {
+      background-color: #eee;
+      width: 50%;
+      margin: auto;
+      height: 14px;
+      display: inline-block;
+      vertical-align: middle;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+
+      #jspsych-progressbar-inner {
+        background-color: #aaa;
+        width: 0%;
+        height: 100%;
+      }
+    }
+  }
+}
+
+@media only screen and (min-width: 768px) {
+  .flex-container-cva {
+    position: relative;
+    top: -8%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
+    height: auto;
+  }
+
+  .flex-container-cva-adjusted {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
+    height: auto;
+  }
+
+  .cva-gif-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 768px;
+  }
+
+  .speechbubble-container-cva {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+
+    // background-image: url("https://storage.googleapis.com/roar-survey/shared/stickmanSpeechBubble.png");
+    // background-repeat: no-repeat;
+    // background-size: contain;
+    // background-position: center;
+    // width: 100vw;
+    // position: relative;
+    // top: -40%;
+    // left: 3%;
+  }
+
+  .speechbubble-container-cva-adjusted {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+
+    // background-image: url("https://storage.googleapis.com/roar-survey/shared/stickmanSpeechBubble.png");
+    // background-repeat: no-repeat;
+    // background-size: contain;
+    // background-position: center;
+    // position: relative;
+    // top: -50%;
+  }
+
+  .cva-text-next-image {
+    width: 90%;
+    flex-direction: column;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    // left: 10%;
+    position: relative;
+  }
+
+  .speechbubble-header-cva {
+    position: absolute;
+    top: 5%;
+    text-align: center;
+    color: rgb(0, 0, 0); /* Set the text color */
+    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
+      "sans-serif";
+    font-size: 45px;
+    padding: 10px 20px; /* Optional: add padding to the text */
+    z-index: 1; /* Place the text above the GIF */
+  }
+
+  .speechbubble-text-cva {
+    color: rgb(0, 0, 0); /* Set the text color */
+    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
+      "sans-serif";
+    z-index: 1; /* Place the text above the GIF */
+    position: relative;
+    // top: -20%;
+    /* left: 20%; */
+    // max-width: 32%;
+
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .avatar-cva {
+    // position: relative;
+    right: 30%;
+    // top: 45%;
+    max-width: 25%;
+  }
+
+  .cva-text-next-image-adjusted {
+    flex-direction: row;
+    display: flex;
+    width: 100%;
+  }
+
+  .speechbubble-text-cva-adjusted {
+    color: rgb(0, 0, 0); /* Set the text color */
+    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
+      "sans-serif";
+    z-index: 1;
+    position: relative;
+    top: 140%;
+    font-size: 0.5rem;
+    left: -40%;
+    // max-width: 72%;
+    // font-size: 0.64rem;
+  }
+
+  .avatar-cva-adjusted {
+    position: relative;
+    right: 6%;
+    top: 24%;
+    left: -30%;
+    width: 40%;
+  }
+
+  .device-instructions-cva {
+    width: 60%;
+    height: auto;
+    margin: auto;
+    // right: 10%;
+    position: relative;
+  }
+}
+
+@media only screen and (min-width: 1000px) {
+  // .flex-container-cva {
+  // width: 850px;
+  // }
+  .cva-text-next-image {
+    width: 110%;
+  }
+
+  .cva-text-next-image-adjusted {
+    // flex-direction: row;
+    // display: flex;
+    width: 110%;
+  }
+
+  .speechbubble-container-cva {
+    top: -28%;
+    left: 2%;
+  }
+
+  .speechbubble-container-cva-adjusted {
+    left: 1%;
+  }
+
+  .speechbubble-text-cva {
+    // font-size: 1.2rem;
+    // max-width: 24%;
+    //  top: 30%;
+    text-align: center;
+    // font-size: large;
+    top: 3%;
+  }
+
+  .speechbubble-text-cva-adjusted {
+    font-size: 0.7rem;
+    // max-width: 60%;
+    top: -20%;
+    left: -30%;
+  }
+
+  .avatar-cva {
+    right: 30%;
+    top: 40%;
+    position: sticky;
+  }
+
+  .avatar-cva-adjusted {
+    top: -3%;
+    width: 40%;
+  }
+
+  .device-instructions-cva {
+    width: 50%;
+    position: relative;
+    top: -20%;
+    padding-right: 10%;
+  }
+}
+
+@media only screen and (min-width: 1200px) {
+  // .flex-container-cva {
+  // width: 1200px;
+  // }
+  .cva-text-next-image-adjusted {
+    // flex-direction: row;
+    // display: flex;
+    width: 145%;
+  }
+
+  .cva-text-next-image {
+    width: 145%;
+  }
+
+  .speechbubble-container-cva {
+    left: -2%;
+  }
+
+  .speechbubble-container-cva-adjusted {
+    left: -1%;
+    top: 10%;
+  }
+
+  .speechbubble-text-cva-adjusted {
+    font-size: 1rem;
+    top: 10%;
+  }
+
+  .speechbubble-text-cva {
+    font-size: xx-large;
+  }
+
+  .avatar-cva {
+    right: 34%;
+  }
+  .device-instructions-cva {
+    width: 60%;
+  }
+  .avatar-cva-adjusted {
+    width: 70%;
+  }
+}
