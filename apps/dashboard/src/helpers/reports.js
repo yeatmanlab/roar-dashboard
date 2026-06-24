@@ -1626,7 +1626,6 @@ export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   if (!desc) return '';
 
   let editedDesc = desc;
-  // Only process desc field if it contains placeholders
   if (desc.includes('{{RAW_SCORE_RANGE}}')) {
     const range = getRawScoreRange(taskId, scoringVersion);
     editedDesc = editedDesc.replace('{{RAW_SCORE_RANGE}}', `${range?.min}-${range?.max}`);
