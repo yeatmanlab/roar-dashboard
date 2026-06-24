@@ -210,6 +210,10 @@ export async function createGroupTierUsers(groupId: string): Promise<TierUsers> 
       UserFactory.create({ nameFirst: 'Tier', nameLast: 'Caregiver' }),
     ]);
 
+  // The super-admin is also enrolled as a group ADMINISTRATOR. FGA is bypassed for
+  // super admins so the membership isn't what grants access — it's intentional, so
+  // that "super admin who also happens to be a member" behaves like every other
+  // endpoint (access via the bypass, not the tuple).
   await Promise.all([
     UserGroupFactory.create({ userId: superAdminUser.id, groupId, role: UserRole.ADMINISTRATOR }),
     UserGroupFactory.create({ userId: platformAdminUser.id, groupId, role: UserRole.PLATFORM_ADMIN }),

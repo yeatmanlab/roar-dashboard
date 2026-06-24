@@ -17,16 +17,20 @@ describe('useOrgTableColumns', () => {
 
       const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, mockPermissions);
 
-      const baseColumns = tableColumns.value.filter((col) =>
-        ['Name', 'Abbreviation', 'Address', 'Tags'].includes(col.header),
-      );
+      const baseColumns = tableColumns.value.filter((col) => ['Name', 'Abbreviation'].includes(col.header));
 
-      expect(baseColumns).toHaveLength(4);
+      expect(baseColumns).toHaveLength(2);
       expect(baseColumns[0]).toMatchObject({
         field: 'name',
         header: 'Name',
         dataType: 'text',
         pinned: true,
+        sort: true,
+      });
+      expect(baseColumns[1]).toMatchObject({
+        field: 'abbreviation',
+        header: 'Abbreviation',
+        dataType: 'text',
         sort: true,
       });
     });
@@ -50,6 +54,33 @@ describe('useOrgTableColumns', () => {
         sort: false,
       });
     });
+  });
+
+  describe('Dropped Columns', () => {
+    // Address, Tags, Clever, and ClassLink were intentionally dropped during the
+    // ts-rest backend migration — the backend org schemas don't expose them.
+    it.each([['districts'], ['schools'], ['classes'], ['groups']])(
+      'should never include Address, Tags, Clever, or ClassLink for %s',
+      (orgType) => {
+        const activeOrgType = ref(orgType);
+        const isSuperAdmin = ref(true);
+        const userCan = vi.fn(() => true);
+
+        const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, mockPermissions);
+
+        const headers = tableColumns.value.map((col) => col.header);
+        expect(headers).not.toContain('Address');
+        expect(headers).not.toContain('Tags');
+        expect(headers).not.toContain('Clever');
+        expect(headers).not.toContain('ClassLink');
+
+        const fields = tableColumns.value.map((col) => col.field);
+        expect(fields).not.toContain('address.formattedAddress');
+        expect(fields).not.toContain('tags');
+        expect(fields).not.toContain('clever');
+        expect(fields).not.toContain('classlink');
+      },
+    );
   });
 
   describe('Organization Type Specific Columns', () => {
@@ -107,76 +138,6 @@ describe('useOrgTableColumns', () => {
 
       expect(mdrColumn).toBeUndefined();
       expect(ncesColumn).toBeUndefined();
-    });
-  });
-
-  describe('SSO Integration Columns', () => {
-    it('should include Clever and ClassLink columns for districts', () => {
-      const activeOrgType = ref('districts');
-      const isSuperAdmin = ref(false);
-      const userCan = vi.fn(() => false);
-
-      const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, mockPermissions);
-
-      const cleverColumn = tableColumns.value.find((col) => col.header === 'Clever');
-      const classlinkColumn = tableColumns.value.find((col) => col.header === 'ClassLink');
-
-      expect(cleverColumn).toBeDefined();
-      expect(cleverColumn).toMatchObject({
-        field: 'clever',
-        header: 'Clever',
-        dataType: 'boolean',
-        sort: false,
-      });
-      expect(classlinkColumn).toBeDefined();
-      expect(classlinkColumn).toMatchObject({
-        field: 'classlink',
-        header: 'ClassLink',
-        dataType: 'boolean',
-        sort: false,
-      });
-    });
-
-    it('should include Clever and ClassLink columns for schools', () => {
-      const activeOrgType = ref('schools');
-      const isSuperAdmin = ref(false);
-      const userCan = vi.fn(() => false);
-
-      const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, mockPermissions);
-
-      const cleverColumn = tableColumns.value.find((col) => col.header === 'Clever');
-      const classlinkColumn = tableColumns.value.find((col) => col.header === 'ClassLink');
-
-      expect(cleverColumn).toBeDefined();
-      expect(classlinkColumn).toBeDefined();
-    });
-
-    it('should include Clever and ClassLink columns for classes', () => {
-      const activeOrgType = ref('classes');
-      const isSuperAdmin = ref(false);
-      const userCan = vi.fn(() => false);
-
-      const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, mockPermissions);
-
-      const cleverColumn = tableColumns.value.find((col) => col.header === 'Clever');
-      const classlinkColumn = tableColumns.value.find((col) => col.header === 'ClassLink');
-
-      expect(cleverColumn).toBeDefined();
-      expect(classlinkColumn).toBeDefined();
-    });
-
-    it('should NOT include Clever and ClassLink columns for groups', () => {
-      const activeOrgType = ref('groups');
-      const isSuperAdmin = ref(false);
-      const userCan = vi.fn(() => false);
-
-      const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, mockPermissions);
-
-      const cleverColumn = tableColumns.value.find((col) => col.header === 'Clever');
-      const classlinkColumn = tableColumns.value.find((col) => col.header === 'ClassLink');
-
-      expect(cleverColumn).toBeUndefined();
-      expect(classlinkColumn).toBeUndefined();
     });
   });
 
@@ -246,9 +207,12 @@ describe('useOrgTableColumns', () => {
     });
   });
 
-  describe('Super Admin Columns', () => {
-    it('should include Invite Users button for super admins', () => {
-      const activeOrgType = ref('districts');
+  describe('SignUp Code Column', () => {
+    // The SignUp Code (invitation code) action is gated to super admins AND the
+    // Groups tab — invitation codes for districts/schools/classes were dropped
+    // during the ts-rest backend migration (only groups expose the endpoint).
+    it('should include the SignUp Code button for super admins on the groups tab', () => {
+      const activeOrgType = ref('groups');
       const isSuperAdmin = ref(true);
       const userCan = vi.fn(() => false);
 
@@ -267,8 +231,23 @@ describe('useOrgTableColumns', () => {
       });
     });
 
-    it('should NOT include Invite Users button for non-super admins', () => {
-      const activeOrgType = ref('districts');
+    it.each([['districts'], ['schools'], ['classes']])(
+      'should NOT include the SignUp Code button for super admins on the %s tab',
+      (orgType) => {
+        const activeOrgType = ref(orgType);
+        const isSuperAdmin = ref(true);
+        const userCan = vi.fn(() => false);
+
+        const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, mockPermissions);
+
+        const inviteColumn = tableColumns.value.find((col) => col.header === 'SignUp Code');
+
+        expect(inviteColumn).toBeUndefined();
+      },
+    );
+
+    it('should NOT include the SignUp Code button for non-super admins on the groups tab', () => {
+      const activeOrgType = ref('groups');
       const isSuperAdmin = ref(false);
       const userCan = vi.fn(() => false);
 
@@ -300,21 +279,21 @@ describe('useOrgTableColumns', () => {
       expect(mdrColumn).toBeDefined();
     });
 
-    it('should update columns when isSuperAdmin changes', () => {
-      const activeOrgType = ref('districts');
+    it('should update the SignUp Code column when isSuperAdmin changes on the groups tab', () => {
+      const activeOrgType = ref('groups');
       const isSuperAdmin = ref(false);
       const userCan = vi.fn(() => false);
 
       const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, mockPermissions);
 
-      // Initially no Invite Users button
+      // Initially no SignUp Code button (not a super admin)
       let inviteColumn = tableColumns.value.find((col) => col.header === 'SignUp Code');
       expect(inviteColumn).toBeUndefined();
 
       // Become super admin
       isSuperAdmin.value = true;
 
-      // Now should have Invite Users button
+      // Now should have the SignUp Code button (super admin + groups tab)
       inviteColumn = tableColumns.value.find((col) => col.header === 'SignUp Code');
       expect(inviteColumn).toBeDefined();
     });
@@ -333,8 +312,6 @@ describe('useOrgTableColumns', () => {
       // Base columns should come first
       expect(headers[0]).toBe('Name');
       expect(headers[1]).toBe('Abbreviation');
-      expect(headers[2]).toBe('Address');
-      expect(headers[3]).toBe('Tags');
 
       // Export Users should be last
       expect(headers[headers.length - 1]).toBe('Export Users');
@@ -351,18 +328,23 @@ describe('useOrgTableColumns', () => {
 
       const headers = tableColumns.value.map((col) => col.header);
 
-      expect(headers).toContain('Name');
-      expect(headers).toContain('Abbreviation');
-      expect(headers).toContain('Address');
-      expect(headers).toContain('Tags');
-      expect(headers).toContain('MDR Number');
-      expect(headers).toContain('NCES ID');
-      expect(headers).toContain('Clever');
-      expect(headers).toContain('ClassLink');
-      expect(headers).toContain('Users');
-      expect(headers).toContain('Edit');
-      expect(headers).toContain('SignUp Code');
-      expect(headers).toContain('Export Users');
+      // Districts get base columns, MDR/NCES, the permission-gated action
+      // columns, and Export Users — but no SignUp Code (groups only).
+      expect(headers).toEqual(['Name', 'Abbreviation', 'MDR Number', 'NCES ID', 'Users', 'Edit', 'Export Users']);
+    });
+
+    it('should include all possible columns for groups with super admin and all permissions', () => {
+      const activeOrgType = ref('groups');
+      const isSuperAdmin = ref(true);
+      const userCan = vi.fn(() => true);
+
+      const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, mockPermissions);
+
+      const headers = tableColumns.value.map((col) => col.header);
+
+      // Groups have no MDR/NCES, but a super admin on the groups tab gets the
+      // SignUp Code action.
+      expect(headers).toEqual(['Name', 'Abbreviation', 'Users', 'Edit', 'SignUp Code', 'Export Users']);
     });
 
     it('should include minimal columns for groups with no permissions', () => {
@@ -375,7 +357,7 @@ describe('useOrgTableColumns', () => {
       const headers = tableColumns.value.map((col) => col.header);
 
       // Should only have base columns + Export Users
-      expect(headers).toEqual(['Name', 'Abbreviation', 'Address', 'Tags', 'Export Users']);
+      expect(headers).toEqual(['Name', 'Abbreviation', 'Export Users']);
     });
   });
 });
