@@ -104,6 +104,8 @@ export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(User
  * live on the base `EnrolledUserSchema`.
  */
 export const EnrolledUserDemographicsSchema = z.object({
+  // `users.userType` is `.notNull()` in the DB schema, so the non-nullable type
+  // is intentional — a value always flows through. Every other field is nullable.
   userType: UserTypeSchema,
   statusEll: z.string().nullable(),
   statusFrl: FreeReducedLunchStatusSchema.nullable(),
