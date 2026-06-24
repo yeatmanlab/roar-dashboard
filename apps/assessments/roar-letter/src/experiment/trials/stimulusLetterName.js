@@ -1,4 +1,9 @@
-import { LETTER_SUBTASK_DOMAINS, PHONICS_SUBTASK_DOMAINS , LETTER_TASK_IDS, PHONICS_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
+import {
+  LETTER_SUBTASK_DOMAINS,
+  PHONICS_SUBTASK_DOMAINS,
+  LETTER_TASK_IDS,
+  PHONICS_TASK_IDS,
+} from '@roar-platform/assessment-schema/roar-letter';
 import i18next from 'i18next';
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import store from 'store2';
