@@ -90,13 +90,6 @@ const orderBy = ref(
   props.orgType === 'district' ? [DISTRICT_ORDER_BY_PREFIX, ...DEFAULT_ORDER_BY] : [...DEFAULT_ORDER_BY],
 );
 
-// The progress endpoints scope to school/class/group. District-scoped progress is
-// not loaded here (preserving the prior Firestore behavior, which fetched no
-// per-student assignments at the district level) — the backend now supports it,
-// so enabling a district roll-up is a follow-up.
-const isDistrictScope = computed(() => props.orgType === SINGULAR_ORG_TYPES.DISTRICTS);
-const progressEnabled = computed(() => initialized.value && !isDistrictScope.value);
-
 // Queries
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({
   enabled: initialized,
@@ -127,7 +120,7 @@ const {
   isFetching: isFetchingProgress,
   data: progressData,
 } = useAdministrationProgressQuery(props.administrationId, props.orgType, props.orgId, {
-  enabled: progressEnabled,
+  enabled: initialized,
 });
 
 const { data: adminStats } = useAdministrationProgressOverviewQuery(
@@ -135,7 +128,7 @@ const { data: adminStats } = useAdministrationProgressOverviewQuery(
   props.orgType,
   props.orgId,
   {
-    enabled: progressEnabled,
+    enabled: initialized,
   },
 );
 
