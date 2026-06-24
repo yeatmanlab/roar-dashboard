@@ -51,6 +51,7 @@ export function useScoreListData(params) {
               rawScore: getScoreValue(composite, task.taskId, gradeLevel, 'rawScore'),
               percentileScore: getScoreValue(composite, task.taskId, gradeLevel, 'percentile'),
               standardScore: getScoreValue(composite, task.taskId, gradeLevel, 'standardScore'),
+              scoringVersion: composite.scoringVersion ?? null,
             };
 
             const scores = Object.fromEntries(
