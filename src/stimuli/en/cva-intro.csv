@@ -1,0 +1,16 @@
+label,screenStyle,imageName1,imageName2,imageSpeechBubble,imageAlt,audioName,audioGap,header1,text1
+cvaWelcome,speechBubble,pointingLionAge12,,pointingLionAge12,Lion gesturing,cvaWelcome,50,Welcome to ROAR-Written-Vocabulary! ,"In this activity, you're going to look for words that match in meaning."
+cvaYouWillSee,speechBubble,pointingLionAge12,illExampleSentence,pointingLionAge12,Lion gesturing,cvaYouWillSee,50,,You will see a sentence with an underlined word.
+cvaYourJob,speechBubble,pointingLionAge12,illExampleFull,pointingLionAge12,Lion gesturing,cvaYourJob,50,,Your job is to choose the word with the nearest meaning to the underlined word.
+cvaWordsMakeSense,speechBubble,pointingLionAge12,illExampleCorrect,pointingLionAge12,Lion gesturing,cvaWordsMakeSense,50,,"All of the words make sense in the sentence, but only one word has a meaning that matches."
+cvaPractice,speechBubble,pointingLionAge12,,pointingLionAge12,Lion gesturing,cvaPractice,50,Practice on the next 3 sentences. ,Remember to choose the best match for the underlined word.
+cvaYoureReady,speechBubble,pointingLionAge12,,pointingLionAge12,Lion gesturing,cvaYoureReady,50,You're ready to begin. ,Remember to read the sentences and the choices carefully.
+break1,speechBubble,pointingLionAge12,,pointingLionAge12,Lion gesturing,cvaGreatJob,50,,Great job!   
+break2,speechBubble,pointingLionAge12,,pointingLionAge12,Lion gesturing,break2,50,,You are doing great!
+break3,speechBubble,pointingLionAge12,,pointingLionAge12,Lion gesturing,break3,50,,Let's keep going.
+break4,speechBubble,pointingLionAge12,,pointingLionAge12,Lion gesturing,break4,50,,You are an expert at this!
+break5,speechBubble,pointingLionAge12,,pointingLionAge12,Lion gesturing,break5,50,,You can do it!
+break6,speechBubble,pointingLionAge12,,pointingLionAge12,Lion gesturing,cvaKeepUpGood,50,,Keep up the good work!
+ending,speechBubble,pointingLionAge12,,pointingLionAge12,Lion gesturing,allDone,50,You're all done!,Press the arrow to finish.
+practiceCorrect,speechBubble,pointingLionAge12,,pointingLionAge12,Lion gesturing,thatsRight,50,,That's right!
+tryAgain,speechBubble,pointingLionAge12,,pointingLionAge12,Lion gesturing,tryAgain,50,Try Again.,
