@@ -167,6 +167,45 @@ export const CreateSchoolResponseSchema = z.object({
 
 export type CreateSchoolResponse = z.infer<typeof CreateSchoolResponseSchema>;
 
+/**
+ * Request body for updating a school (PATCH /schools/:schoolId).
+ *
+ * A partial of the mutable subset of CreateSchoolRequestSchema — every field is
+ * optional and only those present in the body are applied. `.strict()` rejects
+ * unknown keys and immutable identity/hierarchy fields (`id`, `orgType`,
+ * `districtId`/`parentOrgId`, `path`), which are server-managed and cannot
+ * change after creation.
+ *
+ * As on create, `location.coordinates` is omitted — lat/long isn't accepted.
+ */
+export const UpdateSchoolRequestSchema = z
+  .object({
+    name: z.string().min(1).max(255).optional(),
+    abbreviation: z
+      .string()
+      .min(1)
+      .max(10)
+      .regex(/^[A-Za-z0-9]+$/, 'abbreviation must contain only letters and digits')
+      .optional(),
+    location: SchoolLocationSchema.omit({ coordinates: true }).optional(),
+    identifiers: SchoolIdentifiersSchema.optional(),
+  })
+  .strict();
+
+export type UpdateSchoolRequest = z.infer<typeof UpdateSchoolRequestSchema>;
+
+/**
+ * Response payload for PATCH /schools/:schoolId.
+ *
+ * Returns only the updated school id, matching the create-response shape.
+ * Clients that need the full entity follow up with GET /schools/:schoolId.
+ */
+export const UpdateSchoolResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type UpdateSchoolResponse = z.infer<typeof UpdateSchoolResponseSchema>;
+
 // ─────────────────────────────────────────────────────────────────────────–––––
 // School Classes (sub-resource: GET /schools/:schoolId/classes)
 // ─────────────────────────────────────────────────────────────────────────–––––
