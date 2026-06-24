@@ -93,6 +93,20 @@ async function submitUserData() {
     // Map the form's nested model to the flat `UpdateUserRequestBodySchema`
     // body before writing, so the read and write stay on the same API source.
     const body = mapUserFormToUpdateBody(localUserData.value);
+
+    // UpdateUserRequestBodySchema requires at least one field, so an empty body
+    // would be rejected. Guard it and tell the user instead of firing a 400.
+    // (isSubmitting is reset by the finally block on the early return.)
+    if (!body || Object.keys(body).length === 0) {
+      toast.add({
+        severity: 'warn',
+        summary: 'No Changes',
+        detail: 'Please edit at least one field before updating.',
+        life: 3000,
+      });
+      return;
+    }
+
     await updateUser({ userId: roarUid.value, userData: body });
     isEditMode.value = false;
     toast.add({ severity: 'success', summary: 'Updated', detail: 'Your Info has been updated', life: 3000 });
