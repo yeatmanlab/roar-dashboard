@@ -284,6 +284,51 @@ describe('administration.transform', () => {
       expect(result.tasks![0]!.variantName).toBeNull();
     });
 
+    it('passes through per-task progress when present', () => {
+      const admin = AdministrationWithEmbedsFactory.build({
+        tasks: [
+          {
+            taskId: 'task-1',
+            taskName: 'Task One',
+            variantId: 'variant-1',
+            variantName: 'Variant One',
+            orderIndex: 0,
+            progress: {
+              startedOn: '2025-09-03T14:01:00.000Z',
+              completedOn: '2025-09-03T14:20:00.000Z',
+              allowRetake: true,
+            },
+          },
+        ],
+      });
+
+      const result = transformAdministration(admin);
+
+      expect(result.tasks![0]!.progress).toEqual({
+        startedOn: '2025-09-03T14:01:00.000Z',
+        completedOn: '2025-09-03T14:20:00.000Z',
+        allowRetake: true,
+      });
+    });
+
+    it('omits per-task progress when not present', () => {
+      const admin = AdministrationWithEmbedsFactory.build({
+        tasks: [
+          {
+            taskId: 'task-1',
+            taskName: 'Task One',
+            variantId: 'variant-1',
+            variantName: 'Variant One',
+            orderIndex: 0,
+          },
+        ],
+      });
+
+      const result = transformAdministration(admin);
+
+      expect(result.tasks![0]).not.toHaveProperty('progress');
+    });
+
     it('maintains base administration structure with embeds', () => {
       const admin = AdministrationWithEmbedsFactory.build({
         id: 'embed-test-id',

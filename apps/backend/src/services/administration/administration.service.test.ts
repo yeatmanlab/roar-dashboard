@@ -24,6 +24,7 @@ import {
   createMockAdministrationTaskVariantRepository,
   createMockReportRepository,
   createMockRunRepository,
+  createMockTaskRepository,
   createMockUserRepository,
   createMockDistrictRepository,
   createMockSchoolRepository,
@@ -44,6 +45,7 @@ describe('AdministrationService', () => {
   let mockReportRepository: ReturnType<typeof createMockReportRepository>;
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
   let mockRunRepository: ReturnType<typeof createMockRunRepository>;
+  let mockTaskRepository: ReturnType<typeof createMockTaskRepository>;
   let mockTaskService: ReturnType<typeof createMockTaskService>;
   let mockAuthorizationService: MockAuthorizationService;
 
@@ -54,6 +56,7 @@ describe('AdministrationService', () => {
     mockReportRepository = createMockReportRepository();
     mockUserRepository = createMockUserRepository();
     mockRunRepository = createMockRunRepository();
+    mockTaskRepository = createMockTaskRepository();
     mockTaskService = createMockTaskService();
     mockAuthorizationService = createMockAuthorizationService();
   });
@@ -802,6 +805,259 @@ describe('AdministrationService', () => {
         expect(result.items[0]!.tasks).toEqual([
           { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
         ]);
+      });
+    });
+
+    describe('embed=progress', () => {
+      // Fixed timestamps so ISO assertions are deterministic.
+      const STARTED_AT = new Date('2025-09-03T14:01:00.000Z');
+      const COMPLETED_AT = new Date('2025-09-03T14:20:00.000Z');
+
+      /**
+       * Builds a single super-admin administration ('admin-1') with one task
+       * ('task-1' / 'variant-1') to exercise the per-task progress attachment.
+       */
+      function arrangeSingleTaskAdmin() {
+        const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
+        mockAdministrationRepository.listAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+
+        const tasksMap = new Map([
+          [
+            'admin-1',
+            [{ taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 }],
+          ],
+        ]);
+        mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
+      }
+
+      function buildService() {
+        return AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+          runRepository: mockRunRepository,
+          taskRepository: mockTaskRepository,
+          authorizationService: mockAuthorizationService,
+        });
+      }
+
+      it('allowRetake=true when the canonical run is unreliable and the task is not excluded', async () => {
+        arrangeSingleTaskAdmin();
+        // Canonical run exists, unreliable.
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([
+          {
+            administrationId: 'admin-1',
+            taskVariantId: 'variant-1',
+            taskId: 'task-1',
+            createdAt: STARTED_AT,
+            completedAt: COMPLETED_AT,
+            reliableRun: false,
+          },
+        ]);
+        // No excluded tasks resolve to 'task-1'.
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.progress).toEqual({
+          startedOn: STARTED_AT.toISOString(),
+          completedOn: COMPLETED_AT.toISOString(),
+          allowRetake: true,
+        });
+      });
+
+      it('allowRetake=false when the canonical run is reliable', async () => {
+        arrangeSingleTaskAdmin();
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([
+          {
+            administrationId: 'admin-1',
+            taskVariantId: 'variant-1',
+            taskId: 'task-1',
+            createdAt: STARTED_AT,
+            completedAt: COMPLETED_AT,
+            reliableRun: true,
+          },
+        ]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.progress!.allowRetake).toBe(false);
+      });
+
+      it('allowRetake=false for an excluded task even when the canonical run is unreliable', async () => {
+        arrangeSingleTaskAdmin();
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([
+          {
+            administrationId: 'admin-1',
+            taskVariantId: 'variant-1',
+            taskId: 'task-1',
+            createdAt: STARTED_AT,
+            completedAt: null,
+            reliableRun: false,
+          },
+        ]);
+        // The exclusion resolver returns 'task-1' as an excluded task id.
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue(['task-1']);
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.progress!.allowRetake).toBe(false);
+      });
+
+      it('startedOn/completedOn are null and allowRetake=false when the user has no run', async () => {
+        arrangeSingleTaskAdmin();
+        // No canonical runs for this user.
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.progress).toEqual({
+          startedOn: null,
+          completedOn: null,
+          allowRetake: false,
+        });
+      });
+
+      it('startedOn/completedOn reflect the canonical run createdAt/completedAt ISO strings', async () => {
+        arrangeSingleTaskAdmin();
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([
+          {
+            administrationId: 'admin-1',
+            taskVariantId: 'variant-1',
+            taskId: 'task-1',
+            createdAt: STARTED_AT,
+            completedAt: null, // started but not completed
+            reliableRun: true,
+          },
+        ]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.progress!.startedOn).toBe(STARTED_AT.toISOString());
+        expect(result.items[0]!.tasks![0]!.progress!.completedOn).toBeNull();
+      });
+
+      it('resolves tasks (and progress) even when only progress is requested without tasks', async () => {
+        arrangeSingleTaskAdmin();
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([
+          {
+            administrationId: 'admin-1',
+            taskVariantId: 'variant-1',
+            taskId: 'task-1',
+            createdAt: STARTED_AT,
+            completedAt: COMPLETED_AT,
+            reliableRun: false,
+          },
+        ]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          // Note: 'tasks' intentionally omitted — progress implies tasks.
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['progress'] },
+        );
+
+        // Tasks must be resolved despite not being explicitly requested.
+        expect(mockAdministrationTaskVariantRepository.getByAdministrationIds).toHaveBeenCalledWith(['admin-1']);
+        expect(result.items[0]!.tasks).toHaveLength(1);
+        expect(result.items[0]!.tasks![0]!.progress!.allowRetake).toBe(true);
+      });
+
+      it('fetches canonical runs in a single bulk call (no N+1) across multiple administrations', async () => {
+        // Two administrations, each with one task.
+        const mockAdmins = [
+          AdministrationFactory.build({ id: 'admin-1' }),
+          AdministrationFactory.build({ id: 'admin-2' }),
+        ];
+        mockAdministrationRepository.listAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+
+        const tasksMap = new Map([
+          [
+            'admin-1',
+            [{ taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 }],
+          ],
+          [
+            'admin-2',
+            [{ taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: 'Variant B', orderIndex: 0 }],
+          ],
+        ]);
+        mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        // Exactly one bulk runs query for the whole page, with both admin ids.
+        expect(mockRunRepository.getUserCanonicalRunsForAdministrations).toHaveBeenCalledTimes(1);
+        expect(mockRunRepository.getUserCanonicalRunsForAdministrations).toHaveBeenCalledWith('student-123', [
+          'admin-1',
+          'admin-2',
+        ]);
+        // Exclusion resolution is also a single bulk call.
+        expect(mockTaskRepository.getIdsBySlugs).toHaveBeenCalledTimes(1);
+      });
+
+      it('self-read (list) resolves progress for the requester (authContext.userId)', async () => {
+        arrangeSingleTaskAdmin();
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        await buildService().list(
+          { userId: 'requester-self', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        // Canonical runs must be resolved for the requesting user.
+        expect(mockRunRepository.getUserCanonicalRunsForAdministrations).toHaveBeenCalledWith('requester-self', [
+          'admin-1',
+        ]);
+      });
+
+      it('throws ApiError when the canonical runs query fails', async () => {
+        arrangeSingleTaskAdmin();
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockRejectedValue(new Error('db down'));
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        await expect(
+          buildService().list(
+            { userId: 'student-123', isSuperAdmin: true },
+            { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+          ),
+        ).rejects.toThrow('Failed to fetch administration progress');
+      });
+
+      it('throws ApiError when the excluded-task slug query fails', async () => {
+        arrangeSingleTaskAdmin();
+        // Canonical runs resolve so execution reaches the slug-resolution branch.
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
+        mockTaskRepository.getIdsBySlugs.mockRejectedValue(new Error('db down'));
+
+        await expect(
+          buildService().list(
+            { userId: 'student-123', isSuperAdmin: true },
+            { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+          ),
+        ).rejects.toThrow('Failed to fetch administration progress');
       });
     });
   });
@@ -2944,6 +3200,67 @@ describe('AdministrationService', () => {
         statusCode: 500,
         message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    describe('embed=progress (supervisory path)', () => {
+      it('resolves progress for the TARGET user, not the requester', async () => {
+        // Non-self path: a super-admin requester reads a different target user's
+        // administrations. The in-context user for progress is the TARGET.
+        const targetUserId = 'target-user-123';
+        const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
+        const mockUser = UserFactory.build({ id: targetUserId });
+
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['administration:admin-1']);
+        mockAdministrationRepository.getByIds.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+
+        const tasksMap = new Map([
+          [
+            'admin-1',
+            [{ taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 }],
+          ],
+        ]);
+        mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([
+          {
+            administrationId: 'admin-1',
+            taskVariantId: 'variant-1',
+            taskId: 'task-1',
+            createdAt: new Date('2025-09-03T14:01:00.000Z'),
+            completedAt: null,
+            reliableRun: false,
+          },
+        ]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+          userRepository: mockUserRepository,
+          runRepository: mockRunRepository,
+          taskRepository: mockTaskRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        const result = await service.getUserAdministrations(
+          { userId: 'super-admin', isSuperAdmin: true },
+          targetUserId,
+          {
+            page: 1,
+            perPage: 25,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            embed: ['tasks', 'progress'],
+          },
+        );
+
+        // Canonical runs resolved for the TARGET, not the requester.
+        expect(mockRunRepository.getUserCanonicalRunsForAdministrations).toHaveBeenCalledTimes(1);
+        expect(mockRunRepository.getUserCanonicalRunsForAdministrations).toHaveBeenCalledWith(targetUserId, [
+          'admin-1',
+        ]);
+        expect(result.items[0]!.tasks![0]!.progress!.allowRetake).toBe(true);
       });
     });
   });
