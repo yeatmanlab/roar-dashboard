@@ -30,7 +30,7 @@ const buildTasks = () =>
   ]);
 
 const tasksDictionary = ref({ swr: { nameSimple: 'Sight Words' } });
-const administrationData = ref({ dateClosed: null });
+const administrationData = ref({ dates: { end: '2999-01-01T00:00:00.000Z' } });
 const districtSchools = ref([{ id: 'sch1', name: 'School One' }]);
 
 const fieldsOf = (cols) => cols.map((c) => c.field).filter(Boolean);
@@ -111,20 +111,22 @@ describe('useProgressColumns', () => {
 
     it('is hidden when the user lacks launch permission, even for an open administration', () => {
       mockUserCan.mockReturnValue(false);
-      expect(launchColumns({ dateClosed: null }).value.some((c) => c.launcher)).toBe(false);
+      const future = new Date(Date.now() + 86_400_000).toISOString();
+      expect(launchColumns({ dates: { end: future } }).value.some((c) => c.launcher)).toBe(false);
     });
 
-    it('shows for an administration with no close date (open indefinitely)', () => {
+    it('shows for an open administration (end date in the future)', () => {
       mockUserCan.mockReturnValue(true);
-      expect(launchColumns({ dateClosed: null }).value.some((c) => c.launcher)).toBe(true);
+      const future = new Date(Date.now() + 86_400_000).toISOString();
+      expect(launchColumns({ dates: { end: future } }).value.some((c) => c.launcher)).toBe(true);
     });
 
-    it('treats a future close date as open and a past close date as closed', () => {
+    it('treats a future end date as open and a past end date as closed', () => {
       mockUserCan.mockReturnValue(true);
       const future = new Date(Date.now() + 86_400_000).toISOString();
       const past = new Date(Date.now() - 86_400_000).toISOString();
-      expect(launchColumns({ dateClosed: future }).value.some((c) => c.launcher)).toBe(true);
-      expect(launchColumns({ dateClosed: past }).value.some((c) => c.launcher)).toBe(false);
+      expect(launchColumns({ dates: { end: future } }).value.some((c) => c.launcher)).toBe(true);
+      expect(launchColumns({ dates: { end: past } }).value.some((c) => c.launcher)).toBe(false);
     });
   });
 });

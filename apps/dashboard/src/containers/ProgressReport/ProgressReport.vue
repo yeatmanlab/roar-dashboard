@@ -46,7 +46,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useAdministrationQuery from '@/composables/queries/useAdministrationQuery';
 import useAdministrationProgressQuery from '@/composables/queries/useAdministrationProgressQuery';
 import useAdministrationProgressOverviewQuery from '@/composables/queries/useAdministrationProgressOverviewQuery';
 import useOrgQuery from '@/composables/queries/useOrgQuery';
@@ -101,9 +101,8 @@ const { data: userClaims } = useUserClaimsQuery({
 
 const { isSuperAdmin } = useUserType(userClaims);
 
-const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
+const { data: administrationData } = useAdministrationQuery(props.administrationId, {
   enabled: initialized,
-  select: (data) => data[0],
 });
 
 const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {

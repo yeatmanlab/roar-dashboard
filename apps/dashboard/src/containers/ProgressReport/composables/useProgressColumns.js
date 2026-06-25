@@ -72,17 +72,12 @@ export function useProgressColumns(
 
     // Add launch button if user has permission and administration is open
     const { userCan } = usePermissions();
-    // Open when there's no close date (open indefinitely) or the close date is still in
-    // the future. Guarded on a loaded administration so the Launch button doesn't flash
-    // before the administration query resolves.
-    //
-    // NOTE: `administrationData` still comes from the legacy Firestore read
-    // (`useAdministrationsQuery`), whose shape uses `dateClosed` (nullable — Firestore
-    // administrations can be open-ended). When the administration metadata read is
-    // migrated to the new backend, this becomes `dateEnd` (notNull in the schema), and
-    // the "no close date" branch can be dropped.
+    // Open when the administration's end date is still in the future. `dates.end` is
+    // notNull on the API administration (from `useAdministrationQuery`), so there is no
+    // open-indefinitely case. Guarded on a loaded administration so the Launch button
+    // doesn't flash before the administration query resolves.
     const admin = administrationData.value;
-    const isAdministrationOpen = Boolean(admin) && (!admin.dateClosed || new Date(admin.dateClosed) > new Date());
+    const isAdministrationOpen = Boolean(admin?.dates?.end) && new Date(admin.dates.end) > new Date();
 
     if (userCan(Permissions.Tasks.LAUNCH) && isAdministrationOpen) {
       tableColumns.push({
