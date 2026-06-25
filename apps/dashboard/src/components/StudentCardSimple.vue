@@ -110,8 +110,10 @@ import { getGradeToDisplay, taskDisplayNames, progressTags } from '@/helpers/rep
 import _capitalize from 'lodash/capitalize';
 import PvButton from 'primevue/button';
 import PvTag from 'primevue/tag';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
-import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
+import useUserProfileQuery from '@/composables/queries/useUserProfileQuery';
+import useUserAdministrationsQuery from '@/composables/queries/useUserAdministrationsQuery';
+import useTasksQuery from '@/composables/queries/useTasksQuery';
+import { mapAdministrationTasksToGames } from '@/helpers/participantGames';
 import { useRouter } from 'vue-router';
 
 const props = defineProps({
@@ -122,18 +124,30 @@ const props = defineProps({
 
 const router = useRouter();
 
-const { data: userData } = useUserDataQuery(props.userId);
+// `props.userId` is the child's ROAR (Postgres) user UUID supplied by the parent
+// dashboard's family-users list — the per-user endpoints key on this id, not a
+// Firebase UID.
+const { data: userData } = useUserProfileQuery(props.userId);
 
-// Fetch assignments for this student
-const { data: userAssignments } = useUserAssignmentsQuery(
-  undefined, // queryOptions
-  props.userId, // userId
-  computed(() => props.orgType), // orgType
-  computed(() => [props.orgId]), // orgIds
-);
+// The child's administrations, each task carrying the backend-computed
+// per-student `optional`/`assigned`/`progress` (via embed=tasks,progress).
+const { data: userAdministrations } = useUserAdministrationsQuery(props.userId);
 
+// The task catalog supplies the presentational slug/name; the administrations
+// carry the per-student state. Shared (and cached) with the student homepage.
+const { data: taskCatalog } = useTasksQuery();
+
+// Adapt each administration to the card's assignment shape: a flat list of
+// assessments (assigned tasks only, with their per-student progress), reusing
+// the same catalog-slug resolution the student homepage uses.
 const assignments = computed(() => {
-  return userAssignments.value || [];
+  return (userAdministrations.value ?? []).map((administration) => ({
+    id: administration.id,
+    name: administration.publicName || administration.name,
+    dateOpened: administration.dates?.start,
+    dateClosed: administration.dates?.end,
+    assessments: mapAdministrationTasksToGames(administration, taskCatalog.value ?? []),
+  }));
 });
 
 const hasAssignments = computed(() => {

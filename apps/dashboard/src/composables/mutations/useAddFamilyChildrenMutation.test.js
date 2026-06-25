@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
-import { FAMILIES_QUERY_KEY, USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
+import { FAMILIES_QUERY_KEY, FAMILY_USERS_QUERY_KEY, USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
 import useAddFamilyChildrenMutation from './useAddFamilyChildrenMutation';
 
 const mockAddChildren = vi.fn();
@@ -39,7 +39,7 @@ describe('useAddFamilyChildrenMutation', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns the created child ids and invalidates user/families on a 201', async () => {
+  it('returns the created child ids and invalidates family-users/families/user on a 201', async () => {
     mockAddChildren.mockResolvedValueOnce({ status: 201, body: { data: { ids: ['c1', 'c2'] } } });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -51,8 +51,9 @@ describe('useAddFamilyChildrenMutation', () => {
 
     expect(data).toEqual({ ids: ['c1', 'c2'] });
     expect(mockAddChildren).toHaveBeenCalledWith({ params: { familyId: 'fam-1' }, body: VALID_BODY });
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: [USER_DATA_QUERY_KEY] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: [FAMILY_USERS_QUERY_KEY] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: [FAMILIES_QUERY_KEY] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: [USER_DATA_QUERY_KEY] });
   });
 
   it('throws a structured error on a 409 (child email in use)', async () => {

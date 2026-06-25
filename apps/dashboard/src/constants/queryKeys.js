@@ -16,6 +16,7 @@ export const DISTRICTS_LIST_QUERY_KEY = 'districts-list';
 export const DISTRICT_SCHOOLS_QUERY_KEY = 'district-schools';
 export const DISTRICT_SUPPORT_CATEGORIES_QUERY_KEY = 'district-support-categories';
 export const FAMILIES_QUERY_KEY = 'families';
+export const FAMILY_USERS_QUERY_KEY = 'family-users';
 export const GROUPS_QUERY_KEY = 'groups';
 export const GROUPS_LIST_QUERY_KEY = 'groups-list';
 export const AGREEMENT_VERSION_CONTENT_QUERY_KEY = 'agreement-version-content';
