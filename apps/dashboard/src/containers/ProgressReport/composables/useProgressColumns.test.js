@@ -20,13 +20,20 @@ import { useProgressColumns } from './useProgressColumns';
 const buildStudents = () =>
   ref([{ user: { username: 'student1', email: 's1@test.com', firstName: 'John', lastName: 'Doe', grade: '3' } }]);
 
+// Real task IDs are UUIDs; the slug is the human-readable part. Mirror the
+// fixture style in useProgressExport.test.js (SWR/PA reuse the same UUIDs).
+const SWR_TASK_UUID = '11111111-1111-4111-8111-111111111111';
+const PA_TASK_UUID = '22222222-2222-4222-8222-222222222222';
+const SRE_TASK_UUID = '33333333-3333-4333-8333-333333333333';
+const MEP_TASK_UUID = '44444444-4444-4444-8444-444444444444';
+
 // Intentionally out of display order so the composable's ordering is exercised.
 const buildTasks = () =>
   ref([
-    { taskId: 't-mep', taskSlug: 'mep', taskName: 'MEP', orderIndex: 3 },
-    { taskId: 't-pa', taskSlug: 'pa', taskName: 'PA', orderIndex: 2 },
-    { taskId: 't-swr', taskSlug: 'swr', taskName: 'SWR', orderIndex: 0 },
-    { taskId: 't-sre', taskSlug: 'sre', taskName: 'SRE', orderIndex: 1 },
+    { taskId: MEP_TASK_UUID, taskSlug: 'mep', taskName: 'MEP', orderIndex: 3 },
+    { taskId: PA_TASK_UUID, taskSlug: 'pa', taskName: 'PA', orderIndex: 2 },
+    { taskId: SWR_TASK_UUID, taskSlug: 'swr', taskName: 'SWR', orderIndex: 0 },
+    { taskId: SRE_TASK_UUID, taskSlug: 'sre', taskName: 'SRE', orderIndex: 1 },
   ]);
 
 const tasksDictionary = ref({ swr: { nameSimple: 'Sight Words' } });
@@ -61,18 +68,18 @@ describe('useProgressColumns', () => {
     const columns = buildColumns('school', { isUserSuperAdmin: false });
     const taskCols = columns.value.filter((c) => c.dataType === 'progress').map((c) => c.field);
     expect(taskCols).toEqual([
-      'progress.t-swr.value',
-      'progress.t-sre.value',
-      'progress.t-pa.value',
-      'progress.t-mep.value',
+      `progress.${SWR_TASK_UUID}.value`,
+      `progress.${SRE_TASK_UUID}.value`,
+      `progress.${PA_TASK_UUID}.value`,
+      `progress.${MEP_TASK_UUID}.value`,
     ]);
   });
 
   it('uses the dictionary nameSimple for the header, falling back to the API task name', () => {
     const columns = buildColumns('school', { isUserSuperAdmin: false });
     const progressCols = columns.value.filter((c) => c.dataType === 'progress');
-    expect(progressCols.find((c) => c.field === 'progress.t-swr.value').header).toBe('Sight Words');
-    expect(progressCols.find((c) => c.field === 'progress.t-mep.value').header).toBe('MEP');
+    expect(progressCols.find((c) => c.field === `progress.${SWR_TASK_UUID}.value`).header).toBe('Sight Words');
+    expect(progressCols.find((c) => c.field === `progress.${MEP_TASK_UUID}.value`).header).toBe('MEP');
   });
 
   it('includes user identity columns when present, but not PID or School for a non-district educator', () => {
