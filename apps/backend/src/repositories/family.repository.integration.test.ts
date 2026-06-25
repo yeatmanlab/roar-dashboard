@@ -376,4 +376,103 @@ describe('FamilyRepository', () => {
       });
     });
   });
+
+  describe('getFamilyMembershipsForUser', () => {
+    it('returns one { familyId, role } entry per active membership, preserving the parent role', async () => {
+      const family = await FamilyFactory.create();
+      const parent = await UserFactory.create({ nameLast: 'Parent' });
+
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+
+      const result = await repository.getFamilyMembershipsForUser(parent.id);
+
+      expect(result).toEqual([{ familyId: family.id, role: 'parent' }]);
+    });
+
+    it('preserves the child role (a ROAR@Home child is a member too)', async () => {
+      const family = await FamilyFactory.create();
+      const child = await UserFactory.create({ nameLast: 'Child', dob: '2015-01-01', grade: '3' });
+
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      const result = await repository.getFamilyMembershipsForUser(child.id);
+
+      expect(result).toEqual([{ familyId: family.id, role: 'child' }]);
+    });
+
+    it('returns every active membership when the user belongs to multiple families', async () => {
+      const familyA = await FamilyFactory.create();
+      const familyB = await FamilyFactory.create();
+      const parent = await UserFactory.create({ nameLast: 'MultiParent' });
+
+      await UserFamilyFactory.create({ userId: parent.id, familyId: familyA.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: parent.id, familyId: familyB.id, role: 'parent' });
+
+      const result = await repository.getFamilyMembershipsForUser(parent.id);
+
+      expect(result).toHaveLength(2);
+      expect(result.map((m) => m.familyId).sort()).toEqual([familyA.id, familyB.id].sort());
+      expect(result.every((m) => m.role === 'parent')).toBe(true);
+    });
+
+    it('returns an empty array for a user with no family memberships', async () => {
+      const orgOnlyUser = await UserFactory.create({ nameLast: 'OrgOnly' });
+
+      const result = await repository.getFamilyMembershipsForUser(orgOnlyUser.id);
+
+      expect(result).toEqual([]);
+    });
+
+    it('excludes memberships the user has left (active window only)', async () => {
+      const activeFamily = await FamilyFactory.create();
+      const leftFamily = await FamilyFactory.create();
+      const parent = await UserFactory.create({ nameLast: 'FormerParent' });
+
+      await UserFamilyFactory.create({ userId: parent.id, familyId: activeFamily.id, role: 'parent' });
+      await UserFamilyFactory.create({
+        userId: parent.id,
+        familyId: leftFamily.id,
+        role: 'parent',
+        joinedOn: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        leftOn: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      });
+
+      const result = await repository.getFamilyMembershipsForUser(parent.id);
+
+      expect(result).toEqual([{ familyId: activeFamily.id, role: 'parent' }]);
+    });
+
+    it('excludes memberships whose joinedOn is in the future (active window only)', async () => {
+      const activeFamily = await FamilyFactory.create();
+      const futureFamily = await FamilyFactory.create();
+      const parent = await UserFactory.create({ nameLast: 'FutureParent' });
+
+      await UserFamilyFactory.create({ userId: parent.id, familyId: activeFamily.id, role: 'parent' });
+      await UserFamilyFactory.create({
+        userId: parent.id,
+        familyId: futureFamily.id,
+        role: 'parent',
+        joinedOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
+
+      const result = await repository.getFamilyMembershipsForUser(parent.id);
+
+      expect(result).toEqual([{ familyId: activeFamily.id, role: 'parent' }]);
+    });
+
+    it('returns only the queried user’s memberships, never another member’s', async () => {
+      const family = await FamilyFactory.create();
+      const parent = await UserFactory.create({ nameLast: 'IsolationParent' });
+      const child = await UserFactory.create({ nameLast: 'IsolationChild', dob: '2015-01-01', grade: '3' });
+
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      const parentResult = await repository.getFamilyMembershipsForUser(parent.id);
+      expect(parentResult).toEqual([{ familyId: family.id, role: 'parent' }]);
+
+      const childResult = await repository.getFamilyMembershipsForUser(child.id);
+      expect(childResult).toEqual([{ familyId: family.id, role: 'child' }]);
+    });
+  });
 });
