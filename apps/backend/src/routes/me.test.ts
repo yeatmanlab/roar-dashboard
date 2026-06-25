@@ -15,6 +15,7 @@ vi.mock('../services/auth/auth.service');
 const mockFindByAuthId = vi.hoisted(() => vi.fn());
 const mockGetById = vi.hoisted(() => vi.fn());
 const mockGetUnsignedTosAgreements = vi.hoisted(() => vi.fn());
+const mockGetFamilies = vi.hoisted(() => vi.fn());
 
 // Mock UserService
 vi.mock('../services/user', () => ({
@@ -22,6 +23,7 @@ vi.mock('../services/user', () => ({
     findByAuthId: mockFindByAuthId,
     getById: mockGetById,
     getUnsignedTosAgreements: mockGetUnsignedTosAgreements,
+    getFamilies: mockGetFamilies,
   }),
 }));
 
@@ -72,6 +74,7 @@ describe('GET /me', () => {
     mockFindByAuthId.mockResolvedValue(mockUser);
     mockGetById.mockResolvedValue(mockUser);
     mockGetUnsignedTosAgreements.mockResolvedValue([]);
+    mockGetFamilies.mockResolvedValue([]);
 
     const response = await request(app).get('/me').set('Authorization', 'Bearer valid-token').expect(StatusCodes.OK);
 
@@ -83,6 +86,7 @@ describe('GET /me', () => {
         nameFirst: mockUser.nameFirst,
         nameLast: mockUser.nameLast,
         unsignedAgreements: [],
+        families: [],
       },
     });
   });
@@ -119,6 +123,7 @@ describe('GET /me', () => {
     mockFindByAuthId.mockResolvedValue(mockUser);
     mockGetById.mockResolvedValue(mockUser);
     mockGetUnsignedTosAgreements.mockResolvedValue([]);
+    mockGetFamilies.mockResolvedValue([]);
 
     const response = await request(app).get('/me').set('Authorization', 'Bearer valid-token').expect(StatusCodes.OK);
 
