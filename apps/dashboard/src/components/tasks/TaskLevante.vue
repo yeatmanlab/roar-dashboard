@@ -119,10 +119,7 @@ async function startTask(selectedAdmin) {
 
     const levanteTask = new levanteTaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
-    await levanteTask.run().then(async () => {
-      // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
-
+    await levanteTask.run().then(() => {
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
       router.push({ name: 'Home' });

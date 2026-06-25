@@ -119,10 +119,7 @@ async function startTask(selectedAdmin) {
 
     const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title');
 
-    await roarApp.run().then(async () => {
-      // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
-
+    await roarApp.run().then(() => {
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
       if (props.launchId) {

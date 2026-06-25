@@ -125,10 +125,6 @@ export const useAuthStore = () => {
           }
         });
       },
-      async completeAssessment(adminId, taskId) {
-        //@TODO: Move to mutation since we cannot rotate query keys anymore.
-        await this.roarfirekit.completeAssessment(adminId, taskId);
-      },
       async getLegalDoc(docName) {
         return await this.roarfirekit.getLegalDoc(docName);
       },
