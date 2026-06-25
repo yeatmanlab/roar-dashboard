@@ -8,12 +8,19 @@ import { ME_QUERY_KEY } from '@/constants/queryKeys';
  * Record user agreement mutation.
  *
  * Calls `POST /users/:userId/agreements` to record the user's consent to a
- * specific agreement version. Used by the SignTos flow when a user accepts an
- * unsigned TOS in the `ConsentModal`.
+ * specific agreement version. Two callers use it:
+ * - The SignTos flow, when a user accepts an unsigned TOS in the `ConsentModal`.
+ * - The per-administration consent gate in `HomeParticipant.vue`, when a student
+ *   accepts the required consent/assent for the selected administration.
  *
- * On success, invalidates the `/me` query so `meData.unsignedAgreements` is
- * refreshed; once the array is empty, the router's TOS guard releases the
- * user back to their original destination.
+ * On success, this mutation invalidates the `/me` query so
+ * `meData.unsignedAgreements` is refreshed; once the array is empty, the
+ * router's TOS guard releases the user back to their original destination.
+ *
+ * Callers invalidate any additional query keys they depend on themselves —
+ * notably the consent gate also invalidates `USER_ADMINISTRATION_AGREEMENTS_QUERY_KEY`
+ * so the agreements query re-computes `signed` and the modal closes. This
+ * mutation only owns the `/me` invalidation that is common to both callers.
  *
  * Expected mutate payload:
  *   `{ userId: string, agreementVersionId: string }`
