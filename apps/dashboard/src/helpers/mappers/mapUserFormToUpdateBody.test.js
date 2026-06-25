@@ -14,6 +14,7 @@ const formModel = () => ({
     ell_status: true,
     iep_status: false,
     frl_status: 'Free',
+    home_language: 'Spanish',
   },
   userType: 'student',
   dataInitialized: true,
@@ -103,6 +104,25 @@ describe('mapUserFormToUpdateBody', () => {
   it('passes hispanicEthnicity through as a boolean', () => {
     const body = mapUserFormToUpdateBody(formModel());
     expect(body.hispanicEthnicity).toBe(false);
+  });
+
+  it('passes a non-empty gender through but maps an empty gender to null', () => {
+    expect(mapUserFormToUpdateBody(formModel()).gender).toBe('female');
+    const form = formModel();
+    form.studentData.gender = '';
+    expect(mapUserFormToUpdateBody(form).gender).toBeNull();
+  });
+
+  it('maps home_language to the contract homeLanguage string', () => {
+    expect(mapUserFormToUpdateBody(formModel()).homeLanguage).toBe('Spanish');
+  });
+
+  it('maps a nullish or empty home_language to null', () => {
+    for (const empty of [null, undefined, '']) {
+      const form = formModel();
+      form.studentData.home_language = empty;
+      expect(mapUserFormToUpdateBody(form).homeLanguage).toBeNull();
+    }
   });
 
   it('passes the Free|Reduced|Paid enum through to statusFrl', () => {
