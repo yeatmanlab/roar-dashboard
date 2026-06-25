@@ -789,6 +789,100 @@ describe('GET /v1/districts/:districtId/users', () => {
     });
   });
 
+  describe('demographics embed', () => {
+    // Dedicated district so the demographic assertions are isolated from the
+    // shared fixture. Super admin bypasses FGA, so no tuple re-sync is needed.
+    let demographicsDistrict: Awaited<ReturnType<typeof OrgFactory.create>>;
+    let demographicsStudentId: string;
+
+    beforeAll(async () => {
+      demographicsDistrict = await OrgFactory.create({
+        name: 'Route Demographics District',
+        orgType: OrgType.DISTRICT,
+      });
+
+      const student = await UserFactory.create({
+        nameLast: 'RouteDemographicsStudent',
+        userType: UserType.STUDENT,
+        statusEll: 'Yes',
+        statusFrl: 'Free',
+        statusIep: 'No',
+        race: 'Asian',
+        hispanicEthnicity: true,
+        homeLanguage: 'Mandarin',
+      });
+      demographicsStudentId = student.id;
+
+      await UserOrgFactory.create({
+        userId: student.id,
+        orgId: demographicsDistrict.id,
+        role: UserRole.STUDENT,
+      });
+    });
+
+    const demographicsPath = () => `/v1/districts/${demographicsDistrict.id}/users`;
+
+    it('omits demographics from the base list (no embed)', async () => {
+      const res = await expectRoute('GET', demographicsPath()).as(tiers.superAdmin).toReturn(200);
+
+      const user = res.body.data.items.find((u: { id: string }) => u.id === demographicsStudentId);
+      expect(user).toBeDefined();
+      expect(user).not.toHaveProperty('demographics');
+      // No demographic PII leaks at the top level either.
+      expect(user).not.toHaveProperty('userType');
+      expect(user).not.toHaveProperty('statusEll');
+      expect(user).not.toHaveProperty('race');
+    });
+
+    it('includes the demographics sub-object when ?embed=demographics is requested', async () => {
+      const res = await expectRoute('GET', `${demographicsPath()}?embed=demographics`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      const user = res.body.data.items.find((u: { id: string }) => u.id === demographicsStudentId);
+      expect(user).toBeDefined();
+      expect(user.demographics).toEqual({
+        userType: UserType.STUDENT,
+        statusEll: 'Yes',
+        statusFrl: 'Free',
+        statusIep: 'No',
+        race: 'Asian',
+        hispanicEthnicity: true,
+        homeLanguage: 'Mandarin',
+      });
+    });
+
+    it('does not widen the result set when the embed is requested', async () => {
+      const withoutEmbed = await expectRoute('GET', demographicsPath()).as(tiers.superAdmin).toReturn(200);
+      const withEmbed = await expectRoute('GET', `${demographicsPath()}?embed=demographics`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      expect(withEmbed.body.data.pagination.totalItems).toBe(withoutEmbed.body.data.pagination.totalItems);
+      expect(withEmbed.body.data.items).toHaveLength(withoutEmbed.body.data.items.length);
+    });
+
+    // Authorization is enforced before the embed is resolved — requesting the PII
+    // embed cannot become a side-door past `can_list_users` (CRITICAL: student PII).
+    it('returns 403 for a non-supervisory user requesting the demographics embed', async () => {
+      // Students lack can_list_users on any org, so the request is denied before
+      // any demographic column is ever read.
+      const res = await expectRoute('GET', `${demographicsPath()}?embed=demographics`).as(tiers.student).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 403 for a supervisory user requesting demographics on a district they cannot access', async () => {
+      // tiers.admin is scoped to district A; requesting district B's users with the
+      // demographics embed must not widen visibility across the org boundary.
+      const res = await expectRoute('GET', `/v1/districts/${baseFixture.districtB.id}/users?embed=demographics`)
+        .as(tiers.admin)
+        .toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
   describe('error cases', () => {
     it('returns 401 when unauthenticated', async () => {
       const res = await expectRoute('GET', districtUsersPath()).unauthenticated().toReturn(401);
