@@ -147,6 +147,78 @@ describe('handle-enrolled-users', () => {
       expect(item).not.toHaveProperty('updatedAt');
     });
 
+    describe('demographics embed', () => {
+      it('omits the demographics sub-object when the entity carries no demographics (base list)', () => {
+        // A base entity (no embed resolved) has no `demographics`, so the
+        // transform must not surface the field at all — keeping student PII
+        // out of the default response.
+        const mockUser = EnrolledUserFactory.build();
+
+        const result = handleUserSubResourceResponse({ items: [mockUser], totalItems: 1 }, 1, 10);
+        const item = result.body.data.items[0]!;
+
+        expect(item).not.toHaveProperty('demographics');
+      });
+
+      it('includes the demographics sub-object when the entity carries it (embed requested)', () => {
+        const mockUser = EnrolledUserFactory.build({
+          roles: [UserRole.STUDENT],
+          demographics: {
+            userType: 'student',
+            statusEll: 'Yes',
+            statusFrl: 'Free',
+            statusIep: 'No',
+            race: 'White',
+            hispanicEthnicity: false,
+            homeLanguage: 'English',
+          },
+        });
+
+        const result = handleUserSubResourceResponse({ items: [mockUser], totalItems: 1 }, 1, 10);
+        const item = result.body.data.items[0]!;
+
+        expect(item.demographics).toEqual({
+          userType: 'student',
+          statusEll: 'Yes',
+          statusFrl: 'Free',
+          statusIep: 'No',
+          race: 'White',
+          hispanicEthnicity: false,
+          homeLanguage: 'English',
+        });
+        // Demographic fields live under `demographics`, never at the top level.
+        expect(item).not.toHaveProperty('statusEll');
+        expect(item).not.toHaveProperty('userType');
+      });
+
+      it('preserves null demographic values (null-safe)', () => {
+        const mockUser = EnrolledUserFactory.build({
+          demographics: {
+            userType: 'student',
+            statusEll: null,
+            statusFrl: null,
+            statusIep: null,
+            race: null,
+            hispanicEthnicity: null,
+            homeLanguage: null,
+          },
+        });
+
+        const result = handleUserSubResourceResponse({ items: [mockUser], totalItems: 1 }, 1, 10);
+        const item = result.body.data.items[0]!;
+
+        expect(item.demographics).toEqual({
+          userType: 'student',
+          statusEll: null,
+          statusFrl: null,
+          statusIep: null,
+          race: null,
+          hispanicEthnicity: null,
+          homeLanguage: null,
+        });
+      });
+    });
+
     it('handles EnrolledFamilyUserEntity with child role', () => {
       const mockFamilyUser = EnrolledFamilyUserFactory.build({ roles: [UserFamilyRole.CHILD] });
       const result = handleUserSubResourceResponse({ items: [mockFamilyUser], totalItems: 1 }, 1, 10);
