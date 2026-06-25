@@ -20,6 +20,13 @@ import { RunScoreFactory } from '../test-support/factories/run-score.factory';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
 import { AdministrationTaskVariantFactory } from '../test-support/factories/administration-task-variant.factory';
+import { TaskFactory } from '../test-support/factories/task.factory';
+import { TaskVariantFactory } from '../test-support/factories/task-variant.factory';
+import {
+  PHONICS_SUBSKILL_KEYS,
+  PHONICS_SUBSKILL_DEFS,
+  PHONICS_COMPOSITE_SCORE_NAMES,
+} from '@roar-platform/assessment-schema/roar-letter';
 import { OrgFactory } from '../test-support/factories/org.factory';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
@@ -3333,8 +3340,9 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
   // the subscore registry, so authorized callers reach the config-validation
   // 400 ("task without subscores") rather than a 200. That is sufficient to
   // prove authorization does NOT gate the request — the registry/config does.
-  // A 200 happy path needs a registered-slug task variant in baseFixture; see
-  // the PR's "known follow-ups".
+  // A registered-slug 200 happy path is covered by the dedicated describe
+  // block at the end of this suite, which seeds a phonics task + variant
+  // locally (baseFixture is left untouched).
   const NON_EXISTENT_UUID = '00000000-0000-0000-0000-000000000000';
 
   function subscoresQuery() {
@@ -3451,6 +3459,119 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
       const res = await request(app)
         .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, 'not-a-uuid'))
         .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 200 happy path. The cases above use baseFixture.task (auto-generated slug,
+  // no scoring config) and therefore stop at the config-400. To exercise a real
+  // 200 we seed a registered-slug `phonics` task with a variant assigned to the
+  // district administration, plus a completed reporting run and phonics
+  // run_scores for grade5Student (proven in-scope for district scope by the
+  // score-overview FDW block above). Entities are created locally via factories
+  // — baseFixture is left untouched.
+  //
+  // Like every spec in this file, this runs against the integration Postgres
+  // stack; it mirrors the FDW-backed seeding pattern used by the sibling
+  // score-report blocks above.
+  // ─────────────────────────────────────────────────────────────────────────
+  describe('response shape — 200 happy path (registered-slug phonics task)', () => {
+    let phonicsTaskId: string;
+    const SEEDED_SKILL = 'cvc';
+    const UNSEEDED_SKILL = 'digraph';
+
+    beforeAll(async () => {
+      const phonicsTask = await TaskFactory.create({ slug: 'phonics', name: 'Phonics' });
+      phonicsTaskId = phonicsTask.id;
+
+      const phonicsVariant = await TaskVariantFactory.create({ taskId: phonicsTask.id });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        taskVariantId: phonicsVariant.id,
+        orderIndex: 0,
+      });
+
+      const run = await RunFactory.create({
+        userId: baseFixture.grade5Student.id,
+        taskId: phonicsTask.id,
+        taskVariantId: phonicsVariant.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        useForReporting: true,
+        completedAt: new Date('2025-08-01T10:00:00Z'),
+      });
+
+      // CVC sub-skill: 7/10. The other 8 sub-skills are intentionally unseeded so
+      // their cells resolve to null. totalPercentCorrect is seeded as 82.6 to
+      // exercise the number column's `round: true` end-to-end (-> 83).
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: 'computed',
+        domain: 'default',
+        name: PHONICS_SUBSKILL_DEFS[SEEDED_SKILL].correctName,
+        value: '7',
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: 'computed',
+        domain: 'default',
+        name: PHONICS_SUBSKILL_DEFS[SEEDED_SKILL].attemptedName,
+        value: '10',
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: 'computed',
+        domain: 'default',
+        name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT,
+        value: '82.6',
+      });
+    });
+
+    it('returns 200 with phonics subscore columns and the seeded student values', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, phonicsTaskId))
+        .query({ scopeType: 'district', scopeId: baseFixture.district.id, page: 1, perPage: 100 })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+
+      // Task metadata resolves the registered slug.
+      expect(data.task.taskId).toBe(phonicsTaskId);
+      expect(data.task.taskSlug).toBe('phonics');
+
+      // Columns: the 9 phonics sub-skills (canonical order) + totalPercentCorrect.
+      const columnKeys = data.subscoreColumns.map((c: { key: string }) => c.key);
+      expect(columnKeys).toEqual([...PHONICS_SUBSKILL_KEYS, 'totalPercentCorrect']);
+
+      // The seeded student appears with the expected cell values.
+      const studentRow = data.items.find(
+        (item: { user: { userId: string } }) => item.user.userId === baseFixture.grade5Student.id,
+      );
+      expect(studentRow).toBeDefined();
+      expect(studentRow.subscores[SEEDED_SKILL]).toBe('7/10');
+      expect(studentRow.subscores[UNSEEDED_SKILL]).toBeNull();
+      // number column with round: true (82.6 -> 83)
+      expect(studentRow.subscores.totalPercentCorrect).toBe(83);
+    });
+
+    it('rejects sort on a non-numeric phonics sub-skill column with 400', async () => {
+      // Phonics sub-skill itemLevel columns have no percentCorrectName, so they
+      // are not numerically sortable — the endpoint rejects the sort with 400.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, phonicsTaskId))
+        .query({
+          scopeType: 'district',
+          scopeId: baseFixture.district.id,
+          page: 1,
+          perPage: 25,
+          sortBy: `subscores.${SEEDED_SKILL}`,
+          sortOrder: 'desc',
+        })
         .set('Authorization', 'Bearer token');
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
