@@ -119,10 +119,7 @@ async function startTask(selectedAdmin) {
 
     const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
-    await roarApp.run().then(async () => {
-      // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
-
+    await roarApp.run().then(() => {
       gameStore.requireHomeRefresh();
       // if session is externally launched, return instead fo participant home
       if (props.launchId) {
