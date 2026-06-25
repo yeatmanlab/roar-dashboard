@@ -133,6 +133,11 @@ export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
  * Nullable fields may be explicitly set to null to clear the value.
  * At least one field must be present in the request body.
  *
+ * Profile fields are persisted to the database. The `password` field is the one
+ * exception: it is not stored in the database — when provided, it updates the
+ * target user's Firebase Auth credential instead. Minimum length (8) matches
+ * `CreateUserRequestBodySchema`.
+ *
  * Excluded from this schema (system-managed, not updatable via API):
  * - id, assessmentPid, authId, authProvider — identity/rostering fields
  * - isSuperAdmin — security-sensitive, not user-updatable
@@ -148,6 +153,7 @@ export const UpdateUserRequestBodySchema = z
     nameLast: z.string().nullable().optional(),
     username: z.string().nullable().optional(),
     email: z.string().email().nullable().optional(),
+    password: z.string().min(8).optional(),
     userType: UserTypeSchema.optional(),
     dob: z.string().date().nullable().optional(),
     grade: UserGradeSchema.nullable().optional(),

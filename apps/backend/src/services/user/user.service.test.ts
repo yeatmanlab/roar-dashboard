@@ -1,6 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
+
+// Mock FirebaseAuthClient directly — the service imports it at module level and
+// the firebase-admin/auth mock creates a new object per getAuth() call, so
+// referencing getAuth() in tests would give a different instance.
+// Only `update` exercises Firebase here (password resets); the other methods
+// under test never touch it.
+vi.mock('../../clients/firebase-auth.clients', () => ({
+  FirebaseAuthClient: {
+    updateUser: vi.fn(),
+  },
+}));
+
 import { UserService } from './user.service';
+import { FirebaseAuthClient } from '../../clients/firebase-auth.clients';
 import { UserFactory, AuthContextFactory } from '../../test-support/factories/user.factory';
 import { AgreementFactory } from '../../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
@@ -18,6 +31,11 @@ import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { logger } from '../../logger';
+
+// Typed view of the mocked Firebase Auth client (avoids `as any`).
+const mockAuth = FirebaseAuthClient as unknown as {
+  updateUser: ReturnType<typeof vi.fn>;
+};
 
 describe('UserService', () => {
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
@@ -409,6 +427,141 @@ describe('UserService', () => {
           context: { userId: superAdminContext.userId, id: targetUserId },
           cause: dbError,
         });
+      });
+    });
+
+    describe('password update (Firebase Auth)', () => {
+      const newPassword = 'super-secret-password';
+
+      /**
+       * Serialize every argument passed to every mocked logger method into a
+       * single string. Used to assert the plaintext password never reaches a
+       * log line in any field (message, context, error, etc.).
+       */
+      function allLoggerCallsSerialized(): string {
+        const loggerMethods = [logger.error, logger.warn, logger.info, logger.debug] as const;
+        return loggerMethods
+          .flatMap((method) => vi.mocked(method).mock.calls)
+          .map((args) => JSON.stringify(args))
+          .join('|');
+      }
+
+      it('resets the Firebase password when a password and authId are present', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId, authId: 'firebase-uid-abc' });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.update.mockResolvedValue(undefined);
+        mockAuth.updateUser.mockResolvedValue(undefined);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(
+          userService.update(superAdminContext, targetUserId, { password: newPassword }),
+        ).resolves.toBeUndefined();
+
+        expect(mockAuth.updateUser).toHaveBeenCalledTimes(1);
+        expect(mockAuth.updateUser).toHaveBeenCalledWith('firebase-uid-abc', { password: newPassword });
+        // Password-only request must not issue an (empty) DB update.
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+      });
+
+      it('does not touch Firebase when no password is provided', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId, authId: 'firebase-uid-abc' });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.update.mockResolvedValue(undefined);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await userService.update(superAdminContext, targetUserId, { nameFirst: 'Jane' });
+
+        expect(mockAuth.updateUser).not.toHaveBeenCalled();
+      });
+
+      it('applies both a profile update and a password reset together', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId, authId: 'firebase-uid-abc' });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.update.mockResolvedValue(undefined);
+        mockAuth.updateUser.mockResolvedValue(undefined);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await userService.update(superAdminContext, targetUserId, { nameFirst: 'Jane', password: newPassword });
+
+        expect(mockAuth.updateUser).toHaveBeenCalledWith('firebase-uid-abc', { password: newPassword });
+        // The password must never be persisted to the DB — only the profile field is.
+        expect(mockUserRepository.update).toHaveBeenCalledWith({
+          id: targetUserId,
+          data: { nameFirst: 'Jane' },
+        });
+      });
+
+      it('rejects with 422 when the target user has no Firebase account (null authId)', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId, authId: null });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(
+          userService.update(superAdminContext, targetUserId, { password: newPassword }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.UNPROCESSABLE_ENTITY,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+          context: { userId: superAdminContext.userId, id: targetUserId },
+        });
+
+        // No Firebase call and no DB write when the target can't hold a credential.
+        expect(mockAuth.updateUser).not.toHaveBeenCalled();
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+      });
+
+      it('wraps a Firebase failure as INTERNAL_SERVER_ERROR and aborts before the DB write', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId, authId: 'firebase-uid-abc' });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        const firebaseError = new Error('firebase update failed');
+        mockAuth.updateUser.mockRejectedValue(firebaseError);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(
+          userService.update(superAdminContext, targetUserId, { nameFirst: 'Jane', password: newPassword }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          context: { userId: superAdminContext.userId, id: targetUserId },
+          cause: firebaseError,
+        });
+
+        // Firebase-first ordering: a password failure aborts before the profile write.
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+      });
+
+      it('never logs the plaintext password or places it in a thrown error', async () => {
+        // Drive the failure path so both a log line and a thrown ApiError exist.
+        const mockUser = UserFactory.build({ id: targetUserId, authId: 'firebase-uid-abc' });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockAuth.updateUser.mockRejectedValue(new Error('firebase update failed'));
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        let thrown: unknown;
+        try {
+          await userService.update(superAdminContext, targetUserId, { password: newPassword });
+        } catch (error) {
+          thrown = error;
+        }
+
+        // The error was thrown (sanity check) ...
+        expect(thrown).toBeInstanceOf(ApiError);
+
+        // ... and the password appears in no logger call.
+        expect(allLoggerCallsSerialized()).not.toContain(newPassword);
+
+        // ... nor anywhere on the thrown ApiError (message, context, or cause).
+        const apiError = thrown as ApiError;
+        expect(JSON.stringify(apiError.context ?? {})).not.toContain(newPassword);
+        expect(apiError.message).not.toContain(newPassword);
+        expect(JSON.stringify(apiError.cause ?? {})).not.toContain(newPassword);
       });
     });
   });

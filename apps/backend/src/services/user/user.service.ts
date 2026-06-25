@@ -149,6 +149,9 @@ interface UpdateUserData {
   nameLast?: string | null | undefined;
   username?: string | null | undefined;
   email?: string | null | undefined;
+  // Not persisted to the database — when present, updates the target user's
+  // Firebase Auth credential. Never log, echo, or attach to an error.
+  password?: string | undefined;
   userType?: UserType | undefined;
   dob?: string | null | undefined;
   grade?: Grade | null | undefined;
@@ -1046,15 +1049,23 @@ export function UserService({
    * Only fields present in the request body are written — omitted fields are left unchanged.
    * Nullable fields may be set to null to clear their stored value.
    *
+   * Profile fields are persisted to the database. The `password` field is the
+   * sole exception: it is not stored in the database — when provided, it resets
+   * the target user's Firebase Auth credential. The target must have an `authId`
+   * (a linked Firebase account) for a password update; otherwise the request is
+   * rejected with 422. The plaintext password is never logged, echoed, or
+   * attached to any error.
+   *
    * Authorization: currently restricted to super admins only.
    *
    * @param authContext - Requesting user's authentication context.
    * @param id - UUID of the user to update.
-   * @param data - Partial user fields to apply.
+   * @param data - Partial user fields to apply (may include a `password` reset).
    * @throws {ApiError} FORBIDDEN if the requestor is not a super admin.
    * @throws {ApiError} NOT_FOUND if the target user does not exist.
+   * @throws {ApiError} UNPROCESSABLE_ENTITY if a password is provided for a user with no Firebase account (null authId).
    * @throws {ApiError} CONFLICT if a unique field (email or username) collides with an existing user.
-   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails.
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the Firebase password update or the database query fails.
    */
   async function update(authContext: AuthContext, id: string, data: UpdateUserData): Promise<void> {
     const { userId, isSuperAdmin } = authContext;
@@ -1075,6 +1086,7 @@ export function UserService({
       nameLast,
       username,
       email,
+      password,
       userType,
       dob,
       grade,
@@ -1113,30 +1125,78 @@ export function UserService({
       // a rostering-ended user — not a 403 / 200 race.
       rejectRosteringEndedTarget(user, { userId, id }, 'PATCH');
 
-      await userRepository.update({
-        id,
-        data: {
-          ...(nameFirst !== undefined && { nameFirst }),
-          ...(nameMiddle !== undefined && { nameMiddle }),
-          ...(nameLast !== undefined && { nameLast }),
-          ...(username !== undefined && { username }),
-          ...(email !== undefined && { email }),
-          ...(userType !== undefined && { userType }),
-          ...(dob !== undefined && { dob }),
-          ...(grade !== undefined && { grade }),
-          ...(statusEll !== undefined && { statusEll }),
-          ...(statusFrl !== undefined && { statusFrl }),
-          ...(statusIep !== undefined && { statusIep }),
-          ...(studentId !== undefined && { studentId }),
-          ...(sisId !== undefined && { sisId }),
-          ...(stateId !== undefined && { stateId }),
-          ...(localId !== undefined && { localId }),
-          ...(gender !== undefined && { gender }),
-          ...(race !== undefined && { race }),
-          ...(hispanicEthnicity !== undefined && { hispanicEthnicity }),
-          ...(homeLanguage !== undefined && { homeLanguage }),
-        },
-      });
+      // Password reset (Firebase Auth) runs *before* the DB profile write.
+      //
+      // Rationale: the password lives only in Firebase and the profile fields
+      // live only in the DB — there is no shared transaction across the two
+      // stores. Updating Firebase first means a rejected password (bad value,
+      // Firebase outage) aborts the request before any profile change is
+      // persisted, so the caller never sees a partially-applied update where
+      // the DB changed but the password did not. The reverse failure (DB write
+      // fails after a successful password reset) leaves the new password in
+      // place, which is the safer side for a credential reset and is retryable.
+      //
+      // Security: the plaintext `password` is passed only to Firebase. It is
+      // never written to the DB, logged, echoed, or placed in an error
+      // message / context / cause.
+      if (password !== undefined) {
+        if (user.authId === null) {
+          // No Firebase account to attach a credential to. Treat as an
+          // unprocessable request (422) rather than 404/500 — the user exists
+          // but the operation is semantically invalid for this target.
+          logger.warn({ userId, id }, 'Password update requested for user with no Firebase account');
+          throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+            context: { userId, id },
+          });
+        }
+
+        try {
+          await FirebaseAuthClient.updateUser(user.authId, { password });
+        } catch (firebaseError) {
+          if (firebaseError instanceof ApiError) throw firebaseError;
+
+          // Never include the password in the log or the wrapped error.
+          logger.error({ err: firebaseError, context: { userId, id } }, 'Failed to update Firebase password for user');
+          throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+            context: { userId, id },
+            cause: firebaseError,
+          });
+        }
+      }
+
+      // Profile fields are the only DB-backed update — `password` is excluded
+      // here on purpose (it was applied to Firebase above and is never persisted).
+      const profileData = {
+        ...(nameFirst !== undefined && { nameFirst }),
+        ...(nameMiddle !== undefined && { nameMiddle }),
+        ...(nameLast !== undefined && { nameLast }),
+        ...(username !== undefined && { username }),
+        ...(email !== undefined && { email }),
+        ...(userType !== undefined && { userType }),
+        ...(dob !== undefined && { dob }),
+        ...(grade !== undefined && { grade }),
+        ...(statusEll !== undefined && { statusEll }),
+        ...(statusFrl !== undefined && { statusFrl }),
+        ...(statusIep !== undefined && { statusIep }),
+        ...(studentId !== undefined && { studentId }),
+        ...(sisId !== undefined && { sisId }),
+        ...(stateId !== undefined && { stateId }),
+        ...(localId !== undefined && { localId }),
+        ...(gender !== undefined && { gender }),
+        ...(race !== undefined && { race }),
+        ...(hispanicEthnicity !== undefined && { hispanicEthnicity }),
+        ...(homeLanguage !== undefined && { homeLanguage }),
+      };
+
+      // Skip the DB write when only a password was supplied — an empty SET
+      // clause is invalid SQL, and a password-only change touches Firebase only.
+      if (Object.keys(profileData).length > 0) {
+        await userRepository.update({ id, data: profileData });
+      }
 
       logger.info({ userId, id }, 'Updated user');
     } catch (error) {
