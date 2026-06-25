@@ -137,8 +137,8 @@ const ClassificationSchema = z.discriminatedUnion('type', [
  * shared `@roar-platform/assessment-schema` package for verified assessments
  * (PA, phonics, letter, SWR, SRE). Best-guess names for not-yet-migrated
  * assessments (fluency, roam-alpaca) are flagged `provisional: true` and will
- * move into assessment-schema as each assessment lands in the monorepo — the end
- * state is zero hard-coded score-name strings in the backend.
+ * move into assessment-schema as each assessment lands in the monorepo — the
+ * end state is zero hard-coded score-name strings in the backend.
  *
  * Column kinds:
  * - `itemLevel`         — combines `correctName` + `attemptedName` into a
