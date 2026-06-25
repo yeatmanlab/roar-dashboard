@@ -24,9 +24,6 @@
     },
     "test": {
       "env": ["AUTHZ_MODEL_PATH"]
-    },
-    "lint": {
-      "dependsOn": ["^@roar-platform/api-contract#build"]
     }
   }
 }
