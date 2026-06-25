@@ -31,6 +31,11 @@
       "types": "./dist/roar-letter/index.d.ts",
       "import": "./dist/roar-letter/index.js",
       "default": "./dist/roar-letter/index.js"
+    },
+    "./roar-multichoice": {
+      "types": "./dist/roar-multichoice/index.d.ts",
+      "import": "./dist/roar-multichoice/index.js",
+      "default": "./dist/roar-multichoice/index.js"
     }
   },
   "main": "./dist/index.js",
