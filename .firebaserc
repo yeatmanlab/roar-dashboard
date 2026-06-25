@@ -1,0 +1,24 @@
+{
+  "projects": {
+    "default": "gse-roar-assessment",
+    "production": "gse-roar-assessment",
+    "staging": "gse-roar-assessment-staging"
+  },
+  "targets": {
+    "gse-roar-assessment": {
+      "hosting": {
+        "production": [
+          "roar-survey-app"
+        ]
+      }
+    },
+    "gse-roar-assessment-staging": {
+      "hosting": {
+        "staging": [
+          "roar-survey-app-staging-env"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

@@ -1,0 +1,113 @@
+.sv-header {
+  width: 992px;
+  max-width: 100vw;
+}
+
+div.sd-html p,
+div.sd-html p.intro-text span:not(.intro-highlight) {
+  font-size: clamp(18px, 2.5vw, 22px);
+}
+
+.sv-header__content,
+.sd-body.sd-body--responsive {
+  margin: auto;
+  max-width: calc(90*(var(--sjs-base-unit, var(--base-unit, 8px)))) !important;
+}
+
+div.adaptive-question-wrapper button.replay-btn { 
+  align-items: center;
+  border: 1px solid #8c1515;
+  border-style: ridge;
+  display: flex;
+  flex-direction: column;
+  margin: auto;
+  padding: 0px;
+}
+
+.sd-html button.replay-btn:hover {
+  background-color: #f4f4f5;
+  cursor: pointer;
+}
+
+button.replay-btn .replay-btn-img {
+  margin: 0px;
+  padding: 0px;
+  width: 9rem;
+}
+
+.intro-text {
+  font-size: inherit;
+  margin-right: 15px; 
+  max-width: 75%
+}
+
+p.intro-text span.intro-highlight {
+  color: #8c1515;
+  font-size: clamp(18px, 2.525vw, 22px); 
+  font-weight: bold; 
+}
+
+.replay-btn-container {
+  align-items: center;
+  display: flex; 
+  justify-content: left;  
+  margin-top: 20px;
+}
+
+.replay-btn-demo-gif {
+  width: 12.5rem;
+}
+
+.status-message,
+.status-submessage { 
+  color: #8c1515e8;
+  font-family: "Open Sans", sans-serif;
+  text-align: center;
+}
+
+.status-message {
+  font-size: clamp(1.625rem, 1.2244rem + 1.2821vw, 2.25rem);
+  font-weight: 700;
+}
+
+.status-submessage {
+  font-size: clamp(1.25rem, 0.8494rem + 1.2821vw, 1.875rem);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) { 
+  .sv-header {
+    max-width: 100vw;
+    min-width: unset;
+  }
+
+  button.replay-btn .replay-btn-img {
+    width: 7rem;
+  }
+}
+
+@media (max-width: 480px) { 
+  div.adaptive-question-wrapper {
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* Overrides SurveyJS default inline styling */
+  div.adaptive-question-wrapper > div.adaptive-question-content {
+    max-width: 100% !important;
+  }
+
+  div.adaptive-question-wrapper button.replay-btn {
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+  }
+
+  button.replay-btn .replay-btn-img {
+    width: 4rem;
+  }
+
+  .intro-text {
+    max-width: 100%;
+  }
+}
