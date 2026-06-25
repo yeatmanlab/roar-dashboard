@@ -17,6 +17,9 @@ import { createTestApp, createRouteHelper, createTierUsers } from '../test-suppo
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { FamilyFactory } from '../test-support/factories/family.factory';
+import { UserFactory } from '../test-support/factories/user.factory';
+import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -105,6 +108,37 @@ describe('GET /v1/me', () => {
 
       expect(res.body.data).toHaveProperty('unsignedAgreements');
       expect(res.body.data.unsignedAgreements).toBeInstanceOf(Array);
+    });
+
+    it('returns an empty families array for an org-only user (no family membership)', async () => {
+      const res = await expectRoute('GET', '/v1/me')
+        .as({ id: baseFixture.districtAdmin.id, authId: baseFixture.districtAdmin.authId! })
+        .toReturn(200);
+
+      expect(res.body.data).toHaveProperty('families');
+      expect(res.body.data.families).toEqual([]);
+    });
+
+    it("returns the caller's own family with role 'parent' for a seeded parent", async () => {
+      const family = await FamilyFactory.create();
+      const parent = await UserFactory.create({ nameLast: 'MeRouteParent' });
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+
+      const res = await expectRoute('GET', '/v1/me').as({ id: parent.id, authId: parent.authId! }).toReturn(200);
+
+      expect(res.body.data.id).toBe(parent.id);
+      expect(res.body.data.families).toEqual([{ id: family.id, role: 'parent' }]);
+    });
+
+    it("returns the caller's own family with role 'child' for a seeded ROAR@Home child", async () => {
+      const family = await FamilyFactory.create();
+      const child = await UserFactory.create({ nameLast: 'MeRouteChild', dob: '2015-01-01', grade: '3' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      const res = await expectRoute('GET', '/v1/me').as({ id: child.id, authId: child.authId! }).toReturn(200);
+
+      expect(res.body.data.id).toBe(child.id);
+      expect(res.body.data.families).toEqual([{ id: family.id, role: 'child' }]);
     });
   });
 
