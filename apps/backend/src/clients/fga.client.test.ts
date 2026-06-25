@@ -9,7 +9,7 @@ import { FgaClient } from './fga.client';
 
 // storeId and authorizationModelId must be valid ULIDs (26 Crockford base32 chars)
 const MOCK_ENV = {
-  FGA_API_URL: 'https://localhost:5050',
+  FGA_API_URL: 'http://localhost:8080',
   FGA_STORE_ID: '01JME8Q5R0V9CPHFBCTABT0000',
   FGA_MODEL_ID: '01JME8Q5R0V9CPHFBCTABT0001',
 };

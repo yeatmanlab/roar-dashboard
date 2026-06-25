@@ -1,18 +1,11 @@
 name: roar-platform
 
-# Default services (no profile): local full-stack development.
-# Persistent-FGA profile: TLS + Postgres-backed OpenFGA with playground,
-#   for standalone backend development against a durable FGA store.
+# Local full-stack development: Postgres, OpenFGA, and the Firebase Auth emulator.
 #
 # Usage:
-#   docker compose up -d --wait             # local dev (Postgres + OpenFGA + Auth emulator)
-#   docker compose --profile persistent up   # persistent OpenFGA (needs host Postgres + certs)
+#   docker compose up -d --wait
 
 services:
-  # –––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Local development stack (default)
-  # –––––––––––––––––––––––––––––––––––––––––––––––– #
-
   postgres:
     container_name: roar-postgres
     image: postgres:18
@@ -82,67 +75,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 12
-
-  # –––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Persistent OpenFGA (profile: persistent)
-  #
-  # TLS-enabled, Postgres-backed OpenFGA with a playground proxy. Used for
-  # standalone backend development when you need a durable FGA store.
-  #
-  # Requires a host Postgres with a `roar_openfga` database and TLS certs
-  # in ./certs/.
-  #
-  # API:        https://localhost:5050
-  # Playground: http://localhost:5051/playground (via nginx proxy)
-  # –––––––––––––––––––––––––––––––––––––––––––––––– #
-
-  openfga-persistent:
-    container_name: openfga
-    image: openfga/openfga:v1.12.1
-    command: run
-    profiles: [persistent]
-    depends_on:
-      openfga-migrate-persistent:
-        condition: service_completed_successfully
-    ports:
-      - "5050:8080"
-      - "5052:8081"
-    volumes:
-      - ./certs:/certs:ro
-    environment:
-      - OPENFGA_DATASTORE_ENGINE=postgres
-      - OPENFGA_DATASTORE_URI=postgres://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@host.docker.internal:5432/roar_openfga
-      - OPENFGA_PLAYGROUND_ENABLED=true
-      - OPENFGA_HTTP_TLS_ENABLED=true
-      - OPENFGA_HTTP_TLS_CERT=/certs/roar-local.crt
-      - OPENFGA_HTTP_TLS_KEY=/certs/roar-local.key
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    restart: unless-stopped
-
-  openfga-playground:
-    container_name: openfga-playground
-    image: nginx:alpine
-    profiles: [persistent]
-    depends_on:
-      - openfga-persistent
-    ports:
-      - "5051:5051"
-    volumes:
-      - ./openfga-playground.nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    restart: unless-stopped
-
-  openfga-migrate-persistent:
-    container_name: openfga-migrate
-    image: openfga/openfga:v1.12.1
-    command: migrate
-    profiles: [persistent]
-    environment:
-      - OPENFGA_DATASTORE_ENGINE=postgres
-      - OPENFGA_DATASTORE_URI=postgres://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@host.docker.internal:5432/roar_openfga
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    restart: on-failure
 
 volumes:
   firebase-auth-data:
