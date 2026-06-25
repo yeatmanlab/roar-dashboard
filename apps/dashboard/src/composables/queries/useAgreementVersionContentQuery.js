@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { StatusCodes } from 'http-status-codes';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getRoarApiClient } from '@/clients/roar-api';
+import { useAuthStore } from '@/store/auth';
 import { AGREEMENT_VERSION_CONTENT_QUERY_KEY } from '@/constants/queryKeys';
 
 /**
@@ -16,13 +17,22 @@ import { AGREEMENT_VERSION_CONTENT_QUERY_KEY } from '@/constants/queryKeys';
  * GitHub commit SHA), so it is highly cacheable — TanStack Query's default
  * 10-minute stale time is more than sufficient.
  *
+ * **Enablement.** Internally gated on `authStore.accessToken` (every
+ * backend-client query must wait for auth) AND truthy `agreementId` /
+ * `versionId`; callers can add conditions via `queryOptions.enabled`.
+ *
  * @param {import('vue').MaybeRefOrGetter<string|null|undefined>} agreementId – The agreement ID, reactive.
  * @param {import('vue').MaybeRefOrGetter<string|null|undefined>} versionId – The version ID, reactive.
  * @param {QueryOptions|undefined} [queryOptions] – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useAgreementVersionContentQuery = (agreementId, versionId, queryOptions = undefined) => {
-  const conditions = [() => Boolean(toValue(agreementId)), () => Boolean(toValue(versionId))];
+  const authStore = useAuthStore();
+  const conditions = [
+    () => Boolean(authStore.accessToken),
+    () => Boolean(toValue(agreementId)),
+    () => Boolean(toValue(versionId)),
+  ];
   const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
