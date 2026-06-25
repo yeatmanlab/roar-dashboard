@@ -3,7 +3,6 @@ import type { GetTreeOptions, TreeNodeStats } from '../services/administration/a
 import { AdministrationService } from '../services/administration/administration.service';
 import { ReportService } from '../services/report/report.service';
 import type {
-  AdministrationAgreement,
   AdministrationAgreementsListQuery,
   AdministrationTaskVariantItem,
   AdministrationTaskVariantsListQuery,
@@ -27,7 +26,6 @@ import type {
   TaskSubscoresResponse,
 } from '@roar-platform/api-contract';
 import type {
-  AgreementWithVersion,
   AssignmentWithOptional,
   TaskVariantWithAssignment,
   TreeNode,
@@ -36,6 +34,7 @@ import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
 import { transformAdministrationBase, transformAdministration } from './utils/administration.transform';
+import { toAgreementItem } from './utils/agreement.transform';
 
 const administrationService = AdministrationService();
 const reportService = ReportService();
@@ -96,32 +95,6 @@ function toTaskVariantItem(item: TaskVariantWithAssignment): AdministrationTaskV
       assigned_if: item.assignment.conditionsAssignment as Condition | null,
       optional_if: item.assignment.conditionsRequirements as Condition | null,
     },
-  };
-}
-
-/**
- * Maps an AgreementWithVersion (raw repository data) to the API response schema.
- *
- * Transforms the joined data from the repository into the structure expected
- * by the API contract.
- *
- * @param item - The raw agreement data from the repository (agreement and currentVersion)
- * @returns The API-formatted agreement item with nested currentVersion
- */
-function toAgreementItem(item: AgreementWithVersion): AdministrationAgreement {
-  return {
-    id: item.agreement.id,
-    name: item.agreement.name,
-    agreementType: item.agreement.agreementType,
-    currentVersion: item.currentVersion
-      ? {
-          id: item.currentVersion.id,
-          locale: item.currentVersion.locale,
-          githubFilename: item.currentVersion.githubFilename,
-          githubOrgRepo: item.currentVersion.githubOrgRepo,
-          githubCommitSha: item.currentVersion.githubCommitSha,
-        }
-      : null,
   };
 }
 

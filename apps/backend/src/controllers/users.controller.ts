@@ -7,15 +7,19 @@ import type {
   RecordUserAgreementRequestBody,
   GuardianStudentReportResponse,
   AdministrationsListQuery,
+  AdministrationAgreementsListQuery,
+  UserAdministrationAgreement,
 } from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { UserService } from '../services/user';
 import { ReportService } from '../services/report/report.service';
 import type { GuardianStudentReportResult } from '../services/report/report.types';
 import { AdministrationService } from '../services/administration/administration.service';
+import type { AgreementWithSignedStatus } from '../services/administration/administration.service';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import { transformAdministration, transformAdministrationBase } from './utils/administration.transform';
+import { toAgreementItem } from './utils/agreement.transform';
 
 const userService = UserService();
 const administrationService = AdministrationService();
@@ -60,6 +64,23 @@ function toUserResponse(user: User, authContext: AuthContext): UserResponse {
     rosteringEnded: user.rosteringEnded?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt?.toISOString() ?? null,
+  };
+}
+
+/**
+ * Map a service-layer agreement-with-signed-status into the API response shape.
+ *
+ * Reuses the shared `toAgreementItem` transform for the agreement shape (kept
+ * identical to the administrations controller), then layers the per-user
+ * `signed` flag on top.
+ *
+ * @param item - Service result carrying the agreement, its current version, and signed status
+ * @returns The API-formatted agreement with nested currentVersion and signed flag
+ */
+function toUserAdministrationAgreement(item: AgreementWithSignedStatus): UserAdministrationAgreement {
+  return {
+    ...toAgreementItem(item),
+    signed: item.signed,
   };
 }
 
@@ -279,6 +300,62 @@ export const UsersController = {
         status: StatusCodes.OK as const,
         body: {
           data: transformAdministrationBase(administration),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List an administration's required agreements for a user, annotated with
+   * whether the user has already signed each one.
+   *
+   * Delegates to AdministrationService for authorization and retrieval, then
+   * transforms the service result into the paginated API response, passing the
+   * `signed` flag through unchanged.
+   *
+   * @param authContext - Requesting user's authentication context
+   * @param userId - UUID of the user whose signed status to report
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters (pagination, sorting, locale)
+   */
+  listUserAdministrationAgreements: async (
+    authContext: AuthContext,
+    userId: string,
+    administrationId: string,
+    query: AdministrationAgreementsListQuery,
+  ) => {
+    try {
+      const result = await administrationService.listUserAdministrationAgreements(
+        authContext,
+        userId,
+        administrationId,
+        query,
+      );
+
+      const items = result.items.map(toUserAdministrationAgreement);
+      const totalPages = Math.ceil(result.totalItems / query.perPage);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page: query.page,
+              perPage: query.perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
+          },
         },
       };
     } catch (error) {
