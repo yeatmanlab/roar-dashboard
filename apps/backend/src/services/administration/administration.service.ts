@@ -13,7 +13,7 @@ import type {
 } from '@roar-platform/api-contract';
 import { AdministrationEmbedOption, TreeEmbedOption } from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
-import type { Administration } from '../../db/schema';
+import type { Administration, User } from '../../db/schema';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
@@ -41,7 +41,10 @@ import type {
   UpdateAdministrationInput,
 } from '../../repositories/administration.repository';
 import { AdministrationRepository } from '../../repositories/administration.repository';
-import type { AdministrationTask } from '../../repositories/administration-task-variant.repository';
+import type {
+  AdministrationTask,
+  AdministrationTaskWithConditions,
+} from '../../repositories/administration-task-variant.repository';
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
 import { ReportRepository, toReportAdminWindow } from '../../repositories/report.repository';
 import type { ReportScope } from '../../repositories/report.repository';
@@ -62,20 +65,35 @@ import { isMajorityAge } from '../../utils/is-majority-age.util';
 import { verifyEntitiesExist, rejectRosteringEndedTarget } from '../utils/validations.utils';
 
 /**
- * Administration task enriched with the in-context user's per-task run state.
+ * Administration task enriched with the in-context / target user's per-task
+ * state.
  *
- * Extends the repository's catalog-level `AdministrationTask` with an optional
- * `progress` object that is attached only when `?embed=progress` is requested.
- * Keeping the `progress` shape in the service layer (rather than on the
- * repository type) preserves the layer boundary — the repository stays a pure
- * catalog read.
+ * Extends the repository's catalog-level `AdministrationTask` with the optional
+ * per-student fields that are attached only on the user-scoped paths:
+ * - `progress`: canonical run state (retake eligibility), attached when
+ *   `?embed=progress` is requested.
+ * - `optional`/`assigned`: assignment-condition state for the target user,
+ *   attached alongside `progress` in the same per-student pass.
+ *
+ * Keeping these shapes in the service layer (rather than on the repository
+ * type) preserves the layer boundary — the repository stays a pure catalog
+ * read. The internal `conditions*` fields used to derive `optional`/`assigned`
+ * are intentionally NOT part of this (response-facing) type; they live on
+ * `AdministrationTaskInternal` and are stripped before the response is built.
  */
 export interface AdministrationTaskWithProgress extends AdministrationTask {
   progress?: AdministrationTaskProgress;
+  optional?: boolean;
+  assigned?: boolean;
 }
 
 /**
  * Administration with optional embedded data.
+ *
+ * The `tasks` embed exposes only the response-facing `AdministrationTaskWithProgress`
+ * shape — the internal assignment `conditions*` selected by the repository are
+ * never attached here, so they cannot leak through the service return regardless
+ * of which embeds were requested.
  */
 export interface AdministrationWithEmbeds extends Administration {
   stats?: AdministrationStats;
@@ -272,15 +290,20 @@ export function AdministrationService({
   /**
    * Fetch tasks for administrations.
    *
+   * Returns the conditions-bearing task shape: each task carries its raw
+   * `conditionsAssignment`/`conditionsRequirements` so the per-student pass can
+   * evaluate `optional`/`assigned`. Those internal fields are stripped before
+   * the response is built (see {@link attachPerStudentTaskState}).
+   *
    * @param administrationIds - IDs of administrations to fetch tasks for
    * @param userId - User ID for error context
-   * @returns Map of administration ID to tasks array
+   * @returns Map of administration ID to tasks array (with internal conditions)
    * @throws {ApiError} If query fails
    */
   async function fetchTasksEmbed(
     administrationIds: string[],
     userId: string,
-  ): Promise<Map<string, AdministrationTask[]>> {
+  ): Promise<Map<string, AdministrationTaskWithConditions[]>> {
     try {
       return await administrationTaskVariantRepository.getByAdministrationIds(administrationIds);
     } catch (err) {
@@ -294,26 +317,73 @@ export function AdministrationService({
   }
 
   /**
-   * Attach the target user's per-task `progress` (retake eligibility) to each
-   * task in the already-resolved `tasks` embed.
+   * Map a repository task (which carries the internal assignment `conditions*`)
+   * to the response-facing task shape, dropping the conditions entirely.
    *
-   * Mutates `items[].tasks[].progress` in place. For each task, the target
-   * user's canonical (best) run is matched by `(administrationId, variantId)`
-   * and used to compute:
-   * - `startedOn`   = canonical run's `createdAt` (ISO) or null
-   * - `completedOn` = canonical run's `completedAt` (ISO) or null
-   * - `allowRetake` = a canonical run exists AND it is not reliable AND the
-   *   task implements validity checking (its `taskId` is not in the excluded set)
+   * This is the single boundary where conditions are discarded — by building the
+   * response objects clean from the start, the `conditions*` never live on
+   * anything attached to `AdministrationWithEmbeds.tasks`, regardless of which
+   * embeds were requested.
    *
-   * Both backing queries are single bulk round-trips (no N+1): one for the
-   * user's canonical runs across all administrations on the page, and one to
-   * resolve the excluded task slugs to task UUIDs.
-   *
-   * @param items - Administrations with their `tasks` embed already attached
-   * @param targetUserId - The user whose run state drives the progress fields
-   * @throws {ApiError} INTERNAL_SERVER_ERROR if either bulk query fails
+   * @param task - A conditions-bearing task from the repository
+   * @returns The response task (no `conditions*`)
    */
-  async function attachProgressEmbed(items: AdministrationWithEmbeds[], targetUserId: string): Promise<void> {
+  function toResponseTask(task: AdministrationTaskWithConditions): AdministrationTaskWithProgress {
+    return {
+      taskId: task.taskId,
+      taskName: task.taskName,
+      variantId: task.variantId,
+      variantName: task.variantName,
+      orderIndex: task.orderIndex,
+    };
+  }
+
+  /**
+   * Attach the target user's per-task state — `progress` (retake eligibility),
+   * `optional`, and `assigned` — to each task in the already-resolved `tasks`
+   * embed.
+   *
+   * NOTE: `optional` and `assigned` ride the progress pass — they are populated
+   * only when `?embed=progress` is requested (both call sites gate on
+   * `shouldEmbedProgress`). Callers that need the assignment flags must request
+   * `embed=progress`; `embed=tasks` alone returns the bare task list.
+   *
+   * Mutates `items[].tasks[]` in place (setting `progress`/`optional`/`assigned`).
+   * The assignment `conditions*` are read from `tasksByAdminId` (the source map
+   * the repository returned) — they are never present on the response tasks
+   * themselves, so nothing needs to be stripped here.
+   *
+   * For each task:
+   * - `progress`: the target user's canonical (best) run is matched by
+   *   `(administrationId, variantId)` and used to compute:
+   *   - `startedOn`   = canonical run's `createdAt` (ISO) or null
+   *   - `completedOn` = canonical run's `completedAt` (ISO) or null
+   *   - `allowRetake` = a canonical run exists AND it is not reliable AND the
+   *     task implements validity checking (its `taskId` is not in the excluded set)
+   * - `assigned` / `optional`: derived from the task variant's `assigned_if` /
+   *   `optional_if` conditions evaluated against the target user's demographics
+   *   via `TaskService.evaluateTaskVariantEligibility` (the single source of
+   *   truth for condition evaluation — not re-implemented here). A null
+   *   `assigned_if` means assigned to everyone; a null `optional_if` means
+   *   required. `assigned: false` does NOT remove the task — the full task list
+   *   is always returned; the flag is informational only.
+   *
+   * The two run-state queries are single bulk round-trips (no N+1): one for the
+   * user's canonical runs across all administrations on the page, and one to
+   * resolve the excluded task slugs to task UUIDs. Condition evaluation is a
+   * pure in-memory function called once per task (no I/O).
+   *
+   * @param items - Administrations with their `tasks` embed already attached (clean)
+   * @param tasksByAdminId - The conditions-bearing source tasks keyed by administration ID
+   * @param targetUser - The user whose run state and demographics drive the fields
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if either bulk run-state query fails
+   */
+  async function attachPerStudentTaskState(
+    items: AdministrationWithEmbeds[],
+    tasksByAdminId: Map<string, AdministrationTaskWithConditions[]>,
+    targetUser: User,
+  ): Promise<void> {
+    const targetUserId = targetUser.id;
     const administrationIds = items.map((item) => item.id);
 
     // Bulk fetch the target user's canonical runs across the whole page.
@@ -347,14 +417,31 @@ export function AdministrationService({
     );
 
     for (const item of items) {
+      // Look up the conditions for this administration's tasks by variantId so
+      // the assignment evaluation can read them without re-querying.
+      const conditionsByVariantId = new Map<string, AdministrationTaskWithConditions>();
+      for (const sourceTask of tasksByAdminId.get(item.id) ?? []) {
+        conditionsByVariantId.set(sourceTask.variantId, sourceTask);
+      }
+
       for (const task of item.tasks ?? []) {
         const run = runsByKey.get(`${item.id}:${task.variantId}`);
-        const progress: AdministrationTaskProgress = {
+        task.progress = {
           startedOn: run?.createdAt?.toISOString() ?? null,
           completedOn: run?.completedAt?.toISOString() ?? null,
           allowRetake: !!run && run.reliableRun === false && !excludedTaskIds.has(task.taskId),
         };
-        task.progress = progress;
+
+        // Per-student assignment state. Reuse the shared evaluator rather than
+        // re-deriving the assigned_if/optional_if semantics here.
+        const source = conditionsByVariantId.get(task.variantId);
+        const { isAssigned, isOptional } = taskService.evaluateTaskVariantEligibility(
+          targetUser,
+          source?.conditionsAssignment ?? null,
+          source?.conditionsRequirements ?? null,
+        );
+        task.assigned = isAssigned;
+        task.optional = isOptional;
       }
     }
   }
@@ -447,16 +534,28 @@ export function AdministrationService({
         }
 
         if (tasksMap) {
-          adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
+          // Map to the clean response shape so the internal conditions never
+          // ride along on the embedded tasks.
+          adminWithEmbeds.tasks = (tasksMap.get(admin.id) ?? []).map(toResponseTask);
         }
 
         return adminWithEmbeds;
       });
 
       // Self-read path: the in-context user is the requester. Attach their
-      // per-task run state after tasks have been resolved.
-      if (shouldEmbedProgress) {
-        await attachProgressEmbed(itemsWithEmbeds, userId);
+      // per-task run state and assignment flags after tasks have been resolved.
+      // Fetch the requester once (the same user drives both progress and the
+      // assigned_if/optional_if evaluation). If the user can't be found, skip
+      // enrichment gracefully — the tasks are still returned, just without
+      // progress/optional/assigned. In practice `list()` callers are
+      // authenticated, so the user should exist.
+      if (shouldEmbedProgress && tasksMap) {
+        const targetUser = await userRepository.getById({ id: userId });
+        if (targetUser) {
+          await attachPerStudentTaskState(itemsWithEmbeds, tasksMap, targetUser);
+        } else {
+          logger.warn({ userId }, 'In-context user not found while attaching per-student task state; skipping');
+        }
       }
 
       return {
@@ -944,6 +1043,11 @@ export function AdministrationService({
       rejectRosteringEndedTarget(targetUser, { requesterUserId, targetUserId: userId }, 'User-administration list');
 
       if (requesterUserId === userId) {
+        // Self-read: delegate to list(), which owns the requester-scoped embed pass.
+        // NOTE: list() re-fetches this same user (by authContext.userId) for per-student
+        // enrichment. The re-fetch is deliberate — `targetUser` above exists only to gate
+        // the 404 / rostering-ended boundary, and list() is also reachable directly. Keep
+        // them independent rather than threading `targetUser` through to save one lookup.
         return list(authContext, options);
       }
 
@@ -1028,16 +1132,20 @@ export function AdministrationService({
         }
 
         if (tasksMap) {
-          adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
+          // Map to the clean response shape so the internal conditions never
+          // ride along on the embedded tasks.
+          adminWithEmbeds.tasks = (tasksMap.get(admin.id) ?? []).map(toResponseTask);
         }
 
         return adminWithEmbeds;
       });
 
       // Supervisory path: the in-context user is the TARGET (path) user, so
-      // attach the target user's per-task run state — not the requester's.
-      if (shouldEmbedProgress) {
-        await attachProgressEmbed(itemsWithEmbeds, userId);
+      // attach the TARGET user's per-task run state and assignment flags — not
+      // the requester's. `targetUser` was resolved at the top of this function;
+      // the self-read case already returned early via `list()` above.
+      if (shouldEmbedProgress && tasksMap) {
+        await attachPerStudentTaskState(itemsWithEmbeds, tasksMap, targetUser);
       }
 
       return {
