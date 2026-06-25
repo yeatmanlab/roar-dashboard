@@ -164,6 +164,7 @@ export const UsersController = {
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
           StatusCodes.CONFLICT,
+          StatusCodes.UNPROCESSABLE_ENTITY,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
