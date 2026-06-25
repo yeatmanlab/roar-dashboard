@@ -9,29 +9,18 @@
     <HomeParent v-else-if="isLaunchAdmin" />
     <HomeAdministrator v-else-if="isAdminUser" />
   </div>
-
-  <ConsentModal
-    v-if="!isLoading && showConsent && isAdminUser"
-    :consent-text="confirmText"
-    :consent-type="consentType"
-    :on-confirm="updateConsent"
-  />
 </template>
 
 <script setup>
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserType from '@/composables/useUserType';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
 import useSentryLogging from '@/composables/useSentryLogging';
-import { CONSENT_TYPES } from '@/constants/consentTypes';
 import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
 import { isEmulatorAuthReady } from '@/helpers/isDashboardReady';
@@ -40,15 +29,12 @@ import AppSpinner from '@/components/AppSpinner.vue';
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
 const HomeParent = defineAsyncComponent(() => import('@/pages/HomeParent.vue'));
-const ConsentModal = defineAsyncComponent(() => import('@/components/ConsentModal.vue'));
 
 const authStore = useAuthStore();
 const { roarfirekit, ssoProvider } = storeToRefs(authStore);
 
 const router = useRouter();
-const i18n = useI18n();
 
-const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
 const { logAuthEvent } = useSentryLogging();
 
 if (ssoProvider.value) {
@@ -95,65 +81,11 @@ const isLoading = computed(() => {
   return isLoadingUserData.value || !userData.value;
 });
 
-const showConsent = ref(false);
-const consentType = computed(() => {
-  if (isAdminUser.value) {
-    return CONSENT_TYPES.TOS;
-  } else {
-    return i18n.locale.value.includes('es') ? CONSENT_TYPES.ASSENT_ES : CONSENT_TYPES.ASSENT;
-  }
-});
-
-const confirmText = ref('');
-const consentVersion = ref('');
-
-async function updateConsent() {
-  await updateConsentStatus({ consentType, consentVersion });
-}
-
-async function checkConsent() {
-  if (!isAdminUser.value) return;
-
-  const consentStatus = userData.value?.legal?.[consentType.value];
-  const consentDoc = await authStore.getLegalDoc(consentType.value);
-
-  consentVersion.value = consentDoc.version;
-
-  if (!consentStatus?.[consentDoc.version]) {
-    confirmText.value = consentDoc.text;
-    showConsent.value = true;
-    return;
-  }
-
-  const legalDocs = consentStatus?.[consentDoc.version] || [];
-  const allSignaturesBeforeAugFirst =
-    legalDocs.length === legalDocs.filter((doc) => isSignedBeforeAugustFirst(doc.dateSigned)).length;
-
-  if (allSignaturesBeforeAugFirst) {
-    confirmText.value = consentDoc.text;
-    showConsent.value = true;
-  }
-}
-
-function isSignedBeforeAugustFirst(signedDate) {
-  const currentDate = new Date();
-  // If the current date is before August 1st of the current year, we need to consider the previous year's August 1st.
-  const latestAugust =
-    currentDate.getMonth() < 7
-      ? new Date(currentDate.getFullYear() - 1, 7, 1)
-      : new Date(currentDate.getFullYear(), 7, 1);
-  return new Date(signedDate) < latestAugust;
-}
-
-watch(
-  [userData, isAdminUser],
-  async ([updatedUserData, updatedAdminUserState]) => {
-    if (!_isEmpty(updatedUserData) && updatedAdminUserState) {
-      await checkConsent();
-    }
-  },
-  { immediate: true },
-);
+// Admin Terms-of-Service consent is no longer gated here. The global router
+// guard redirects to SignTos whenever `/me.unsignedAgreements` is non-empty, and
+// annual re-consent / version bumps are computed server-side — so the inline
+// firekit + Firestore consent modal (getLegalDoc, userData.legal, the August-1
+// re-sign heuristic, and useUpdateConsentMutation) has been removed.
 
 watch(userClaims, (updatedUserClaims) => {
   if (updatedUserClaims?.value) {
