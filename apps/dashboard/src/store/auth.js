@@ -272,31 +272,21 @@ export const useAuthStore = () => {
           return false;
         }
       },
-      async createNewFamily(
-        careTakerEmail,
-        careTakerPassword,
-        careTakerData,
-        students,
-        consentData,
-        isTestData = false,
-      ) {
-        if (!this.roarfirekit) {
-          throw new Error('roarfirekit is not initialized');
-        }
-
-        if (!Array.isArray(students)) {
-          throw new Error('students parameter must be an array');
-        }
-
-        return await this.roarfirekit.createNewFamily(
-          careTakerEmail,
-          careTakerPassword,
-          careTakerData,
-          students,
-          consentData,
-          isTestData,
-        );
-      },
+      // NOTE: `createNewFamily` has been removed. ROAR@Home parent registration
+      // now runs through the typed API via
+      // `containers/FamilyRegistration/composables/useFamilyRegistration.js`
+      // (create family → sign in). Consent is not recorded at registration —
+      // TOS is handled post-login by the `/me` gate and per-administration
+      // consent by the consent gate. Sign-in and availability pre-checks remain
+      // on firekit.
+      //
+      // TODO(firekit-removal): `addStudentsToFamily` is the next ROAR@Home
+      // migration step. The API replacement is built and unit-tested
+      // (`useAddFamilyChildrenMutation` + `useAddFamilyChildren` saga), but
+      // wiring it into `HomeParentStudentView` needs a trustworthy backend
+      // family UUID, which the Firestore-based parent dashboard doesn't yet
+      // expose. Until the parent-home Firestore→API migration lands, this
+      // action stays on firekit.
       async addStudentsToFamily(careTakerEmail, careTakerData, students, consentData, isTestData = false) {
         if (!this.roarfirekit) {
           throw new Error('roarfirekit is not initialized');
