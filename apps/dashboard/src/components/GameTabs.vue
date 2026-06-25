@@ -11,7 +11,31 @@
           style="border: solid 2px #00000014; border-radius: 10px"
         >
           <span class="flex align-items-center gap-2">
-            {{ getTaskName(game.taskId, game.taskData.name) }}
+            <!--
+              Status icons render here in the PvTab header. In PrimeVue 4 the
+              tab header is PvTab (inside PvTabList); PvTabPanel (inside
+              PvTabPanels) is content-only and does NOT render a #header slot,
+              so these icons would never appear if placed there.
+            -->
+            <!--Retake required-->
+            <i v-if="game?.allowRetake === true" class="pi pi-exclamation-circle" data-game-status="retake-required" />
+            <!--Complete Game-->
+            <i v-else-if="game.completedOn" class="pi pi-check-circle" data-game-status="complete" />
+            <!--Current Game-->
+            <i
+              v-else-if="game.taskId == firstIncompleteGameId || !sequential"
+              class="pi pi-circle"
+              data-game-status="current"
+            />
+            <!--Locked Game-->
+            <i v-else-if="sequential" class="pi pi-lock" data-game-status="incomplete" />
+            <!--
+              The status is expressed solely by the icon above (data-game-status).
+              The label below carries only the task name; it must NOT also set a
+              data-game-status, or a completed-but-retake-required tab would
+              expose both "retake-required" (icon) and "complete" (label).
+            -->
+            <span class="tabview-nav-link-label">{{ getTaskName(game.taskId, game.taskData.name) }}</span>
           </span>
         </PvTab>
       </PvTabList>
@@ -23,29 +47,6 @@
           :value="String(index)"
           class="p-0"
         >
-          <template #header>
-            <!--Retake required-->
-            <i
-              v-if="game?.allowRetake === true && implementsValidityChecking(game.taskId)"
-              class="pi pi-exclamation-circle mr-2"
-              data-game-status="retake-required"
-            />
-            <!--Complete Game-->
-            <i v-else-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
-            <!--Current Game-->
-            <i
-              v-else-if="game.taskId == firstIncompleteGameId || !sequential"
-              class="pi pi-circle mr-2"
-              data-game-status="current"
-            />
-            <!--Locked Game-->
-            <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
-            <span
-              class="tabview-nav-link-label"
-              :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`"
-              >{{ getTaskName(game.taskId, game.taskData.name) }}</span
-            >
-          </template>
           <div class="roar-tabview-game flex flex-row p-5 surface-100 w-full">
             <div class="roar-game-content flex flex-column" style="width: 70%">
               <div class="roar-game-title font-bold">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
@@ -137,23 +138,12 @@
                         }"
                         class="flex align-items-center justify-content-center"
                       >
-                        <i
-                          v-if="
-                            game.completedOn && (game.allowRetake !== true || !implementsValidityChecking(game.taskId))
-                          "
-                          class="pi pi-check-circle mr-3"
-                        />
+                        <i v-if="game.completedOn && game.allowRetake !== true" class="pi pi-check-circle mr-3" />
                         <div class="flex flex-column align-items-center gap-2">
-                          <span
-                            v-if="game.allowRetake !== true || !implementsValidityChecking(game.taskId)"
-                            style="cursor: default"
-                            >{{ taskCompletedMessage }}</span
-                          >
-                          <PvMessage
-                            v-if="game?.allowRetake === true && implementsValidityChecking(game.taskId)"
-                            severity="warn"
-                            class="w-full"
-                          >
+                          <span v-if="game.allowRetake !== true" style="cursor: default">{{
+                            taskCompletedMessage
+                          }}</span>
+                          <PvMessage v-if="game?.allowRetake === true" severity="warn" class="w-full">
                             <div class="flex flex-column align-items-center gap-2">
                               <span>{{ $t('gameTabs.allowRetake') }}</span>
                               <router-link
@@ -229,7 +219,6 @@ import { useGameStore } from '@/store/game';
 import VideoPlayer from '@/components/VideoPlayer.vue';
 import PvMessage from 'primevue/message';
 import { LEVANTE_TASKS } from '@/constants/levanteTasks';
-import { TASKS_EXCLUDED_FROM_RETAKE } from '@/constants/tasksExcludedFromRetake';
 
 const props = defineProps({
   games: { type: Array, required: true },
@@ -239,11 +228,6 @@ const props = defineProps({
 });
 
 const { t, locale } = useI18n();
-
-/** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. **/
-const implementsValidityChecking = (taskId) => {
-  return !TASKS_EXCLUDED_FROM_RETAKE.includes(taskId);
-};
 
 const getTaskName = (taskId, taskName) => {
   // Translate Levante task names. The task name is not the same as the taskId.
@@ -282,9 +266,11 @@ const getRoutePath = (taskId) => {
   }
 };
 
-// Helper functions for game tab styling conditions
+// Helper functions for game tab styling conditions.
+// `allowRetake` is authoritative from the backend (it already applies the
+// validity-checking exclusion), so retake state keys off it directly.
 const isGameRequiresRetake = (game) => {
-  return game?.allowRetake === true && implementsValidityChecking(game.taskId);
+  return game?.allowRetake === true;
 };
 
 const isGameInProgress = (game) => {
@@ -292,7 +278,7 @@ const isGameInProgress = (game) => {
 };
 
 const isGameCompleted = (game) => {
-  return game.completedOn && (game?.allowRetake !== true || !implementsValidityChecking(game.taskId));
+  return game.completedOn && game?.allowRetake !== true;
 };
 
 const setGameTabTextColor = (game) => {
