@@ -458,6 +458,27 @@ export const AdministrationAgreementsListResponseSchema = createPaginatedRespons
 
 export type AdministrationAgreementsListResponse = z.infer<typeof AdministrationAgreementsListResponseSchema>;
 
+/**
+ * Agreement schema for a specific user's view of an administration's required
+ * agreements. Extends the administration agreement shape with `signed`, which
+ * indicates whether the target user has already signed the agreement (any
+ * current version, cross-locale). Used by the per-user consent gate.
+ */
+export const UserAdministrationAgreementSchema = AdministrationAgreementSchema.extend({
+  signed: z.boolean(),
+});
+
+export type UserAdministrationAgreement = z.infer<typeof UserAdministrationAgreementSchema>;
+
+/**
+ * Paginated response for a user's administration agreements list.
+ */
+export const UserAdministrationAgreementsListResponseSchema = createPaginatedResponseSchema(
+  UserAdministrationAgreementSchema,
+);
+
+export type UserAdministrationAgreementsListResponse = z.infer<typeof UserAdministrationAgreementsListResponseSchema>;
+
 // ---------------------------------------------------------------------------
 // Tree endpoint schemas
 // ---------------------------------------------------------------------------

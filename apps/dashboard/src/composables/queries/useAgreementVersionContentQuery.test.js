@@ -14,6 +14,13 @@ vi.mock('@/clients/roar-api', () => ({
   }),
 }));
 
+// The composable gates on the auth store's access token; mock it so the gate is
+// controllable (withSetup does not install Pinia).
+const mockUseAuthStore = vi.fn(() => ({ accessToken: 'test-token' }));
+vi.mock('@/store/auth', () => ({
+  useAuthStore: () => mockUseAuthStore(),
+}));
+
 vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
   return {
@@ -30,6 +37,7 @@ describe('useAgreementVersionContentQuery', () => {
       defaultOptions: { queries: { retry: false } },
     });
     mockGetVersionContent.mockReset();
+    mockUseAuthStore.mockReturnValue({ accessToken: 'test-token' });
   });
 
   afterEach(() => {
@@ -59,7 +67,19 @@ describe('useAgreementVersionContentQuery', () => {
     expect(call.enabled.value).toBe(false);
   });
 
-  it('is enabled when both ids are present', () => {
+  it('is disabled without an access token, even when both ids are present', () => {
+    mockUseAuthStore.mockReturnValue({ accessToken: null });
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useAgreementVersionContentQuery(ref('a1'), ref('v1')), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const call = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
+    expect(call.enabled.value).toBe(false);
+  });
+
+  it('is enabled when both ids and an access token are present', () => {
     vi.spyOn(VueQuery, 'useQuery');
 
     withSetup(() => useAgreementVersionContentQuery(ref('a1'), ref('v1')), {
