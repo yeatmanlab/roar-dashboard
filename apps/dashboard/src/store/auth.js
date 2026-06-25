@@ -57,6 +57,18 @@ export const useAuthStore = () => {
       isFirekitInit: (state) => {
         return state.roarfirekit?.initialized;
       },
+      /**
+       * Readiness signal for backend (REST/API) calls — the replacement for the
+       * legacy `roarfirekit.restConfig?.()` gate. True once a Firebase ID token
+       * has been captured (via the `onIdTokenChanged` listener), which is all the
+       * backend-scoped queries need: they authenticate off the Bearer token. The
+       * token is only set after firekit's admin auth is initialized, so a truthy
+       * value implies the app is fully ready. Works identically in deployed and
+       * emulator builds, so it also subsumes `isEmulatorAuthReady`.
+       */
+      isAuthReady: (state) => {
+        return Boolean(state.accessToken);
+      },
       isUserAdmin: (state) => {
         if (state.userClaims?.claims?.super_admin || state.userClaims?.claims?.admin) return true;
         if (_isEmpty(_union(...Object.values(state.userClaims?.claims?.minimalAdminOrgs ?? {})))) return false;

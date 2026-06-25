@@ -41,7 +41,6 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import useUserType from '@/composables/useUserType';
@@ -64,7 +63,6 @@ import { REPORT_VIEWS, DEFAULT_ORDER_BY, DISTRICT_ORDER_BY_PREFIX, DEFAULT_PAGE_
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -189,10 +187,10 @@ const refresh = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) refresh();
+  if (state.accessToken) refresh();
 });
 
 onMounted(async () => {
-  if (roarfirekit.value.restConfig?.()) refresh();
+  if (authStore.isAuthReady) refresh();
 });
 </script>

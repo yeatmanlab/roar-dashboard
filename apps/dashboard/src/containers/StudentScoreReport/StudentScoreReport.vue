@@ -315,7 +315,7 @@ watch([isLoading, isPrintMode], ([loading, print]) => {
 
 onMounted(() => {
   unsubscribe = authStore.$subscribe(async (mutation, state) => {
-    if (state.roarfirekit?.restConfig?.()) refresh();
+    if (state.accessToken) refresh();
   });
   refresh();
 });

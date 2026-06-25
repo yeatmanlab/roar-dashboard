@@ -119,7 +119,6 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
-import { storeToRefs } from 'pinia';
 import PvBlockUI from 'primevue/blockui';
 import PvButton from 'primevue/button';
 import PvDataView from 'primevue/dataview';
@@ -128,7 +127,6 @@ import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
 import { useAuthStore } from '@/store/auth';
 import { getTitle } from '@/helpers/query/administrations';
-import { isEmulatorAuthReady } from '@/helpers/isDashboardReady';
 import _debounce from 'lodash/debounce';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -163,7 +161,6 @@ const applySearch = _debounce((value) => {
 watch(searchInput, (value) => applySearch(value));
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 
 let unsubscribeInitializer;
 const init = () => {
@@ -172,11 +169,11 @@ const init = () => {
 };
 
 unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.() || isEmulatorAuthReady(state)) init();
+  if (state.accessToken) init();
 });
 
 onMounted(() => {
-  if (roarfirekit.value.restConfig?.() || isEmulatorAuthReady(authStore)) init();
+  if (authStore.isAuthReady) init();
 });
 
 const { data: userClaims } = useUserClaimsQuery({
