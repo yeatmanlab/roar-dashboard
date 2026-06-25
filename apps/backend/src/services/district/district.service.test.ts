@@ -809,6 +809,7 @@ describe('DistrictService', () => {
       perPage: 25,
       sortBy: 'nameLast' as const,
       sortOrder: SortOrder.ASC,
+      embed: [],
     };
 
     beforeEach(() => {
@@ -839,6 +840,7 @@ describe('DistrictService', () => {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: false,
       });
       expect(result.items).toHaveLength(3);
       expect(result.totalItems).toBe(3);
@@ -996,6 +998,7 @@ describe('DistrictService', () => {
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
         role: UserRole.STUDENT,
+        embedDemographics: false,
       });
     });
 
@@ -1018,6 +1021,29 @@ describe('DistrictService', () => {
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
         grade: ['5', '6'],
+        embedDemographics: false,
+      });
+    });
+
+    it('should pass embedDemographics=true to the repository when the demographics embed is requested', async () => {
+      const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepo,
+      });
+
+      await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'district-123', {
+        ...defaultOptions,
+        embed: ['demographics'],
+      });
+
+      expect(mockDistrictRepo.getUsersByDistrictPath).toHaveBeenCalledWith(mockDistrict.path, {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: true,
       });
     });
   });

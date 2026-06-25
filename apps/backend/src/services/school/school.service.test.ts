@@ -796,6 +796,7 @@ describe('SchoolService', () => {
       perPage: 25,
       sortBy: 'nameLast' as const,
       sortOrder: SortOrder.ASC,
+      embed: [],
     };
 
     it('should return users for super admin (unrestricted)', async () => {
@@ -818,6 +819,7 @@ describe('SchoolService', () => {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: false,
       });
       expect(result.items).toHaveLength(3);
       expect(result.totalItems).toBe(3);
@@ -960,6 +962,7 @@ describe('SchoolService', () => {
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
         role: UserRole.STUDENT,
+        embedDemographics: false,
       });
     });
 
@@ -982,6 +985,29 @@ describe('SchoolService', () => {
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
         grade: ['5', '6'],
+        embedDemographics: false,
+      });
+    });
+
+    it('should pass embedDemographics=true to the repository when the demographics embed is requested', async () => {
+      const mockSchool = OrgFactory.build({ id: 'school-123', orgType: OrgType.SCHOOL });
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockSchoolRepository.getUsersBySchoolId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'school-123', {
+        ...defaultOptions,
+        embed: ['demographics'],
+      });
+
+      expect(mockSchoolRepository.getUsersBySchoolId).toHaveBeenCalledWith('school-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: true,
       });
     });
 

@@ -8,6 +8,11 @@ import { UserFamilyRole } from '../../enums/user-family-role.enum';
  * Maps a database User entity with role to the API contract EnrolledUser schema.
  * Returns select values from User and their associated role(s).
  * User can have multiple roles (e.g., student, teacher, admin) across org hierarchies.
+ *
+ * The `demographics` sub-object is attached only when the entity carries it —
+ * i.e. when the request included `?embed=demographics`. The lean base response
+ * omits it (and therefore the student PII it holds) entirely.
+ *
  * @param user - The user entity to map.
  * @returns The mapped EnrolledUser.
  */
@@ -27,6 +32,7 @@ function toContractEnrolledUser(user: EnrolledUserEntity): EnrolledUser {
     sisId: user.sisId,
     stateId: user.stateId,
     localId: user.localId,
+    ...(user.demographics && { demographics: user.demographics }),
   };
 }
 

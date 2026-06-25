@@ -678,6 +678,81 @@ describe('GET /v1/classes/:classId/users', () => {
       });
     });
   });
+
+  describe('demographics embed', () => {
+    // Dedicated class so the demographic assertions are isolated from the
+    // shared fixture. Super admin bypasses FGA, so no tuple re-sync is needed.
+    let demographicsClass: Awaited<ReturnType<typeof ClassFactory.create>>;
+    let demographicsStudentId: string;
+
+    beforeAll(async () => {
+      demographicsClass = await ClassFactory.create({
+        name: 'Route Demographics Class',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+
+      const student = await UserFactory.create({
+        nameLast: 'RouteDemographicsStudent',
+        userType: UserType.STUDENT,
+        statusEll: 'Yes',
+        statusFrl: 'Free',
+        statusIep: 'No',
+        race: 'Asian',
+        hispanicEthnicity: true,
+        homeLanguage: 'Mandarin',
+      });
+      demographicsStudentId = student.id;
+
+      await UserClassFactory.create({
+        userId: student.id,
+        classId: demographicsClass.id,
+        role: UserRole.STUDENT,
+      });
+    });
+
+    const demographicsPath = () => `/v1/classes/${demographicsClass.id}/users`;
+
+    it('omits demographics from the base list (no embed)', async () => {
+      const res = await expectRoute('GET', demographicsPath()).as(tiers.superAdmin).toReturn(200);
+
+      const user = res.body.data.items.find((u: { id: string }) => u.id === demographicsStudentId);
+      expect(user).toBeDefined();
+      expect(user).not.toHaveProperty('demographics');
+      // No demographic PII leaks at the top level either.
+      expect(user).not.toHaveProperty('userType');
+      expect(user).not.toHaveProperty('statusEll');
+      expect(user).not.toHaveProperty('race');
+    });
+
+    it('includes the demographics sub-object when ?embed=demographics is requested', async () => {
+      const res = await expectRoute('GET', `${demographicsPath()}?embed=demographics`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      const user = res.body.data.items.find((u: { id: string }) => u.id === demographicsStudentId);
+      expect(user).toBeDefined();
+      expect(user.demographics).toEqual({
+        userType: UserType.STUDENT,
+        statusEll: 'Yes',
+        statusFrl: 'Free',
+        statusIep: 'No',
+        race: 'Asian',
+        hispanicEthnicity: true,
+        homeLanguage: 'Mandarin',
+      });
+    });
+
+    it('does not widen the result set when the embed is requested', async () => {
+      const withoutEmbed = await expectRoute('GET', demographicsPath()).as(tiers.superAdmin).toReturn(200);
+      const withEmbed = await expectRoute('GET', `${demographicsPath()}?embed=demographics`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      expect(withEmbed.body.data.pagination.totalItems).toBe(withoutEmbed.body.data.pagination.totalItems);
+      expect(withEmbed.body.data.items).toHaveLength(withoutEmbed.body.data.items.length);
+    });
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
