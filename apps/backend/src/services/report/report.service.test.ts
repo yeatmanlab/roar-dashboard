@@ -69,7 +69,7 @@ const ScoreField = {
    * so the modern name matches when `scoringVersion` is `null` or ≥ 7.
    */
   PERCENTILE: 'percentile',
-  /** Raw-score field for `swr` (see `services/scoring/configs/swr.json`). */
+  /** Raw-score field for `swr` (see `services/scoring/configs/swr.ts`). */
   SWR_RAW_SCORE: 'roarScore',
   /** Assessment-computed support level (e.g., roam-alpaca). */
   SUPPORT_LEVEL: 'supportLevel',

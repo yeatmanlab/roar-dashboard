@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { getRegisteredSlugs, getScoringConfig } from './scoring.config-registry';
 import { ScoringConfigSchema } from './scoring.config-schema';
 
-import swrConfig from './configs/swr.json';
-import swrEsConfig from './configs/swr-es.json';
-import sreConfig from './configs/sre.json';
-import sreEsConfig from './configs/sre-es.json';
+import swrConfig from './configs/swr';
+import swrEsConfig from './configs/swr-es';
+import sreConfig from './configs/sre';
+import sreEsConfig from './configs/sre-es';
 import paConfig from './configs/pa';
 import letterConfig from './configs/letter';
 import phonicsConfig from './configs/phonics';
@@ -25,7 +25,7 @@ const ALL_RAW_CONFIGS = [
 ];
 
 describe('scoring config validation', () => {
-  it.each(ALL_RAW_CONFIGS)('$name.json validates against the Zod schema', ({ config }) => {
+  it.each(ALL_RAW_CONFIGS)('$name config validates against the Zod schema', ({ config }) => {
     expect(() => ScoringConfigSchema.parse(config)).not.toThrow();
   });
 
