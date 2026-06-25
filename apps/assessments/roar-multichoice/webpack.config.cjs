@@ -1,12 +1,13 @@
 const path = require('path');
 const webpack = require('webpack');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const { merge } = require('webpack-merge');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
-// const { EsbuildPlugin } = require('esbuild-loader')
-// access dotenv variables for Playwright testing
 
 const commonConfig = {
   optimization: {
@@ -17,9 +18,7 @@ const commonConfig = {
         vendor: {
           test: /[\\/]node_modules[\\/]/,
           name(module) {
-            // get the name. E.g. node_modules/packageName/not/this/part.js
-            // or node_modules/packageName
-            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
+            const packageName = module.request?.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1] ?? 'vendor';
 
             // npm package names are URL-safe, but some servers don't like @ symbols
             return `npm.${packageName.replace('@', '')}`;
@@ -85,12 +84,9 @@ const commonConfig = {
           {
             loader: 'csv-loader',
             options: {
-              // download: true,
               header: true,
               dynamicTyping: true,
               skipEmptyLines: true,
-              // name: "[name].[ext]",
-              // outputPath: "corpora",
             },
           },
         ],
@@ -122,6 +118,7 @@ const webConfig = merge(commonConfig, {
       org: 'roar-89588e380',
       project: 'multichoice',
       authToken: process.env.SENTRY_AUTH_TOKEN,
+      deleteSourcemapsAfterUpload: true,
       debug: true,
       errorHandler: (err) => {
         console.warn(err);
@@ -132,6 +129,7 @@ const webConfig = merge(commonConfig, {
 
 const productionConfig = merge(webConfig, {
   mode: 'production',
+  devtool: false,
 });
 
 const developmentConfig = merge(webConfig, {
@@ -143,20 +141,39 @@ const developmentConfig = merge(webConfig, {
     client: {
       overlay: false,
     },
+    proxy: [
+      {
+        context: ['/v1'],
+        target: process.env.BACKEND_URL ?? 'http://localhost:4000',
+        secure: false,
+        changeOrigin: true,
+      },
+    ],
   },
 });
 
 module.exports = async (env, args) => {
-  const roarDB = env.dbmode === 'production' ? 'production' : 'development';
+  const roarDB = env.dbmode ?? 'development';
+
+  const devFirebaseConfig =
+    roarDB === 'development'
+      ? {
+          FIREBASE_AUTH_EMULATOR_HOST: JSON.stringify(process.env.FIREBASE_AUTH_EMULATOR_HOST ?? ''),
+        }
+      : {};
 
   const envDependentConfig = {
     plugins: [
-      new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL ?? '/v1'),
+        ...devFirebaseConfig,
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
+      }),
+      new webpack.EnvironmentPlugin({
+        FIREBASE_AUTH_EMULATOR_HOST: '',
       }),
     ],
   };
