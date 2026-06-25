@@ -4,11 +4,11 @@ import _isNull from 'lodash/isNull';
 import _isUndefined from 'lodash/isUndefined';
 import i18next from 'i18next';
 import { getAgeData } from '@bdelab/roar-utils';
+import { writeTrial, finishRun, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { enterFullscreen } from '../trials/fullScreen';
 import { corpora } from './corpus';
 import { jsPsych } from '../jsPsych';
-import { computedScoreCallback } from '../scores';
 import { initializeClowder } from '../experimentSetup';
 
 const makePid = () => {
@@ -235,7 +235,7 @@ const setItemSelect = (algorithm) => {
   return 'random';
 };
 
-export const initConfig = async (firekit, gameParams, userParams, displayElement) => {
+export const initConfig = async (gameParams, userParams, displayElement) => {
   const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
 
   const {
@@ -301,7 +301,6 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
       trialTime: trialTimeOptions[0],
     },
     startTime: new Date(),
-    firekit,
     displayElement: displayElement || null,
     // name of the csv files in the bucket
     task: task ?? 'morphology',
@@ -326,29 +325,27 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
     startItemSelect,
   };
 
-  const updatedGameParams = Object.fromEntries(
-    Object.entries(gameParams).map(([key, value]) => [key, config[key] ?? value]),
-  );
-
-  await config.firekit.updateTaskParams(updatedGameParams);
+  // updateTaskParams is not supported in the SDK; log a deprecation warning and continue
+  console.warn('[roar-multichoice] updateTaskParams is deprecated and has no effect.');
 
   if (config.pid !== null) {
-    await config.firekit.updateUser({
-      assessmentPid: config.pid,
-      ...userMetadata,
-    });
+    try {
+      await updateUser({ assessmentPid: config.pid, ...userMetadata });
+    } catch (err) {
+      console.error('[roar-multichoice] updateUser failed (non-fatal):', err);
+    }
   }
 
   return config;
 };
 
-export const initRoarJsPsych = async (config) => {
+export const initRoarJsPsych = async (config, computedScoreCallback) => {
   if (config.displayElement) {
     jsPsych.opts.display_element = config.displayElement;
   }
 
   // Extend jsPsych's on_finish and on_data_update lifecycle functions to mark the
-  // run as completed and write data to Firestore, respectively.
+  // run as completed and write data to the backend, respectively.
   const extend = (fn, code) =>
     function () {
       fn.apply(fn, arguments);
@@ -357,19 +354,21 @@ export const initRoarJsPsych = async (config) => {
     };
 
   jsPsych.opts.on_finish = extend(jsPsych.opts.on_finish, () => {
-    config.firekit.finishRun();
+    finishRun().catch((err) => console.error('[roar-multichoice] finishRun failed:', err));
   });
 
   jsPsych.opts.on_data_update = extend(jsPsych.opts.on_data_update, (data) => {
     if (data.save_trial) {
-      config.firekit.writeTrial(data, computedScoreCallback);
+      writeTrial(data, computedScoreCallback).catch((err) =>
+        console.error('[roar-multichoice] writeTrial failed:', err),
+      );
     }
   });
   jsPsych.opts.on_interaction_data_update = function (data) {
-    config.firekit.addInteraction(data);
+    addInteraction(data);
   };
 
-  await initStore(config);
+  await initStore();
 };
 
 export const initRoarTimeline = (config) => {
@@ -382,11 +381,11 @@ export const initRoarTimeline = (config) => {
     timeline: initialTimeline,
     on_timeline_finish: async () => {
       config.pid = config.pid || makePid();
-      await config.firekit.updateUser({
-        assessmentPid: config.pid,
-        labId: config.labId,
-        ...config.userMetadata,
-      });
+      try {
+        await updateUser({ assessmentPid: config.pid, labId: config.labId, ...config.userMetadata });
+      } catch (err) {
+        console.error('[roar-multichoice] updateUser failed (non-fatal):', err);
+      }
     },
   };
 

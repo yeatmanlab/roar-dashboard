@@ -1,0 +1,28 @@
+{
+  "taskSlugs": ["morphology"],
+  "scoreFields": {
+    "percentile": [
+      { "minVersion": 1, "fieldName": "percentile" },
+      { "minVersion": 0, "fieldName": null }
+    ],
+    "percentileDisplay": [
+      { "minVersion": 1, "fieldName": "percentile" },
+      { "minVersion": 0, "fieldName": null }
+    ],
+    "standardScore": [
+      { "minVersion": 1, "fieldName": "standardScore" },
+      { "minVersion": 0, "fieldName": null }
+    ],
+    "standardScoreDisplay": [
+      { "minVersion": 1, "fieldName": "standardScore" },
+      { "minVersion": 0, "fieldName": null }
+    ],
+    "rawScore": [
+      { "minVersion": 1, "fieldName": "totalCorrect" },
+      { "minVersion": 0, "fieldName": "subScore" }
+    ]
+  },
+  "classification": {
+    "type": "none"
+  }
+}
