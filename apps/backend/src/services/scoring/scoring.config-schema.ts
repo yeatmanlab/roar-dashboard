@@ -135,10 +135,10 @@ const ClassificationSchema = z.discriminatedUnion('type', [
  * This block replaces the standalone `subscore-table.registry` that previously
  * hard-coded these columns in the backend. Field-name strings come from the
  * shared `@roar-platform/assessment-schema` package for verified assessments
- * (PA, phonics). Best-guess names for not-yet-migrated assessments (letter,
- * fluency, roam-alpaca) are flagged `provisional: true` and will move into
- * assessment-schema as each assessment lands in the monorepo — the end state is
- * zero hard-coded score-name strings in the backend.
+ * (PA, phonics, letter, SWR, SRE). Best-guess names for not-yet-migrated
+ * assessments (fluency, roam-alpaca) are flagged `provisional: true` and will
+ * move into assessment-schema as each assessment lands in the monorepo — the end
+ * state is zero hard-coded score-name strings in the backend.
  *
  * Column kinds:
  * - `itemLevel`         — combines `correctName` + `attemptedName` into a
@@ -154,6 +154,11 @@ const ClassificationSchema = z.discriminatedUnion('type', [
  *                         lists).
  * - `paSkillsToWorkOn`  — computed PA-only column; value derived from the PA
  *                         subtask breakdown by the scoring service.
+ * - `letterToWorkOn`    — computed column that merges several domain-indexed
+ *                         string fields into one comma-separated list (e.g. letter's
+ *                         "Letters To Work On" = upperIncorrect (UppercaseNames) +
+ *                         lowerIncorrect (LowercaseNames), concatenated in declared
+ *                         source order).
  *
  * Names are matched case-sensitively against `app_assessment_fdw.run_scores.name`.
  */
