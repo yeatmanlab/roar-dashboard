@@ -63,7 +63,7 @@ describe('useAdministrationProgressOverviewQuery', () => {
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: [ADMINISTRATION_PROGRESS_OVERVIEW_QUERY_KEY, ADMIN_ID, `group-${SCOPE_ID}`],
+        queryKey: [ADMINISTRATION_PROGRESS_OVERVIEW_QUERY_KEY, ADMIN_ID, 'group', SCOPE_ID],
         queryFn: expect.any(Function),
       }),
     );
@@ -103,6 +103,24 @@ describe('useAdministrationProgressOverviewQuery', () => {
     });
 
     await expect(queryFn()).rejects.toMatchObject({ status: 400, body: { error: { message: 'Invalid scope' } } });
+  });
+
+  it('does not retry on terminal auth or rostering-ended errors, but retries transient up to 3x', () => {
+    let retryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      retryFn = options.retry;
+      return { data: { value: null }, error: { value: null } };
+    });
+
+    withSetup(() => useAdministrationProgressOverviewQuery(ADMIN_ID, 'school', SCOPE_ID), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(retryFn(0, { body: { error: { code: 'auth/token-expired' } } })).toBe(false);
+    expect(retryFn(0, { body: { error: { code: 'auth/rostering-ended' } } })).toBe(false);
+    expect(retryFn(0, new Error('network'))).toBe(true);
+    expect(retryFn(2, new Error('network'))).toBe(true);
+    expect(retryFn(3, new Error('network'))).toBe(false);
   });
 
   it('is disabled without an access token', () => {

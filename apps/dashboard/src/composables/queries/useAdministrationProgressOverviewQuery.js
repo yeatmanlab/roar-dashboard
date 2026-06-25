@@ -43,11 +43,9 @@ const useAdministrationProgressOverviewQuery = (administrationId, scopeType, sco
   const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
-    queryKey: [
-      ADMINISTRATION_PROGRESS_OVERVIEW_QUERY_KEY,
-      administrationId,
-      `${toValue(scopeType)}-${toValue(scopeId)}`,
-    ],
+    // Pass scope params as-is (ref or string) so reactive callers update the key;
+    // TanStack unwraps refs in the key array, matching the canonical composable.
+    queryKey: [ADMINISTRATION_PROGRESS_OVERVIEW_QUERY_KEY, administrationId, scopeType, scopeId],
     queryFn: async () => {
       const client = getRoarApiClient();
       const result = await client.administrations.progressReports.getProgressOverview({

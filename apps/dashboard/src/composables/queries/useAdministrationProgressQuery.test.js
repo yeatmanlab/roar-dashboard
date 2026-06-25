@@ -65,7 +65,7 @@ describe('useAdministrationProgressQuery', () => {
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: [ADMINISTRATION_PROGRESS_QUERY_KEY, ADMIN_ID, `school-${SCOPE_ID}`],
+        queryKey: [ADMINISTRATION_PROGRESS_QUERY_KEY, ADMIN_ID, 'school', SCOPE_ID],
         queryFn: expect.any(Function),
       }),
     );

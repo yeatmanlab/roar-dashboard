@@ -83,15 +83,19 @@ describe('useProgressData', () => {
     });
   });
 
-  it('maps any optional status to the optional descriptor, even when completed', () => {
-    const { computedProgressData } = useProgressData(buildStudents({ 't-vocab': { status: 'completed-optional' } }));
+  it('maps every optional status (assigned/started/completed) to the optional descriptor', () => {
+    // Optional wins over the progress stage — all three optional variants collapse to OPTIONAL,
+    // including completed-optional (a completed-but-optional task still shows "Optional").
+    for (const status of ['assigned-optional', 'started-optional', 'completed-optional']) {
+      const { computedProgressData } = useProgressData(buildStudents({ 't-vocab': { status } }));
 
-    expect(computedProgressData.value[0].progress['t-vocab']).toMatchObject({
-      value: 'optional',
-      icon: 'pi pi-question',
-      severity: 'info',
-      tags: expect.stringContaining('Optional'),
-    });
+      expect(computedProgressData.value[0].progress['t-vocab']).toMatchObject({
+        value: 'optional',
+        icon: 'pi pi-question',
+        severity: 'info',
+        tags: expect.stringContaining('Optional'),
+      });
+    }
   });
 
   it('falls back to username in the launch tooltip when first name is missing', () => {
