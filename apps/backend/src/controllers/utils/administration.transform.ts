@@ -40,9 +40,17 @@ export function transformAdministration(admin: AdministrationWithEmbeds): Contra
     result.stats = admin.stats;
   }
 
-  // Include tasks if embedded
+  // Include tasks if embedded. `progress` is passed through per-task only when
+  // present (i.e. when ?embed=progress was requested).
   if (admin.tasks) {
-    result.tasks = admin.tasks;
+    result.tasks = admin.tasks.map((task) => ({
+      taskId: task.taskId,
+      taskName: task.taskName,
+      variantId: task.variantId,
+      variantName: task.variantName,
+      orderIndex: task.orderIndex,
+      ...(task.progress !== undefined && { progress: task.progress }),
+    }));
   }
 
   return result;
