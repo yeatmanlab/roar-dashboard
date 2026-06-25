@@ -91,7 +91,7 @@ async function startTask(selectedAdmin) {
 
     const roarApiClient = getRoarApiClient();
     const [taskRes, meRes] = await Promise.all([
-      roarApiClient.tasks.get({ params: { taskId: props.taskId } }),
+      roarApiClient.tasks.get({ params: { taskId: props.taskId } }), // tasks.get accepts UUID or slug
       roarApiClient.me.get(),
     ]);
 
@@ -140,7 +140,7 @@ async function startTask(selectedAdmin) {
     // Fetch survey JSON from GCS using the survey file name from variant params.
     // The bucket URL matches src/constants/bucketBaseUrl.js in the assessment source.
     const surveyFile = gameParams.survey ?? 'survey';
-    const bucketUrl = 'https://storage.googleapis.com/roar-survey-app/en/';
+    const bucketUrl = `https://storage.googleapis.com/roar-survey-app/${props.language}/`;
     const response = await fetch(`${bucketUrl}${surveyFile}.json`);
     if (!response.ok) throw new Error(`Survey fetch failed: ${response.statusText}`);
     surveyJson.value = await response.json();
@@ -154,7 +154,7 @@ async function startTask(selectedAdmin) {
   }
 }
 
-function handleCompleteSurvey() {
+async function handleCompleteSurvey() {
   try {
     const { selectedAdmin } = storeToRefs(gameStore);
     await authStore.completeAssessment(selectedAdmin.value.id, props.taskId, props.launchId);

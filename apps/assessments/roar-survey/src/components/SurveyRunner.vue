@@ -19,6 +19,7 @@ import { ref, onMounted } from 'vue';
 import { Model } from 'survey-core';
 import { SurveyComponent } from 'survey-vue3-ui';
 import { startRun, writeTrial, finishRun } from '@roar-platform/assessment-sdk/compat/firekit';
+import { AssessmentStage } from '@roar-platform/assessment-schema';
 import ProgressSpinner from './ProgressSpinner.vue';
 import '../styles/survey-runner.css';
 import 'survey-core/survey-core.min.css';
@@ -44,7 +45,8 @@ const onComplete = async (sender) => {
         questionName,
         response: answer,
         itemIndex: index,
-        assessment_stage: 'test',
+        // Surveys have no practice phase — every response is a test-stage trial.
+        assessment_stage: AssessmentStage.TEST,
         correct: 1,
       }),
     ),

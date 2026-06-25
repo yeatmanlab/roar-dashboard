@@ -60,7 +60,14 @@ async function initAndMountApp() {
     }
   });
 
-  await signInAnonymously(auth);
+  try {
+    await signInAnonymously(auth);
+  } catch (err) {
+    console.error('Failed to sign in anonymously:', err);
+    // Mount the app without survey data so the user sees an error state
+    // rather than a blank page.
+    createApp(App, { surveyData: null }).mount('#app');
+  }
 }
 
 initAndMountApp();
