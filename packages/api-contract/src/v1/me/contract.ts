@@ -22,9 +22,10 @@ export const MeContract = c.router(
       strictStatusCodes: true,
       summary: 'Get current user profile',
       description:
-        'Returns the authenticated user profile including id, userType, name, and unsigned TOS agreements. ' +
+        'Returns the authenticated user profile including id, userType, name, unsigned TOS agreements, and family memberships. ' +
         'The unsignedAgreements array contains TOS agreements the user must sign before using the platform. ' +
         'Each agreement includes all current locale variants so the frontend can present the appropriate one. ' +
+        "The families array contains the caller's own active family memberships as { id, role } so the parent dashboard can resolve its family id and route on the family role. " +
         'Returns 401 if not authenticated. ' +
         'Returns 404 if the user record is not found.',
     },
