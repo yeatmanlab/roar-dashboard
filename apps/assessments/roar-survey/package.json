@@ -1,5 +1,5 @@
 {
-  "name": "@bdelab/roar-survey",
+  "name": "@roar-platform/roar-survey",
   "version": "0.2.2",
   "main": "./lib/roar-survey.umd.js",
   "module": "./lib/roar-survey.es.js",
@@ -22,13 +22,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build:dev": "vite build --mode development",
+    "build": "vite build --mode lib",
     "build:staging": "vite build --mode staging",
-    "build:prod": "vite build --mode production",
-    "package": "vite build --mode lib",
-    "preview": "vite preview",
-    "version": "git add -A",
-    "postversion": "GIT_REMOTE=$(git remote -v | grep \"yeatmanlab/roar-survey-app.git \\(push\\)\" | cut -f 1) && git push $GIT_REMOTE && git push $GIT_REMOTE --tags"
+    "build:production": "vite build --mode production"
   },
   "repository": {
     "type": "git",

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "env": ["ROAR_API_BASE_URL"],
+      "outputs": ["lib/roar-survey.es.js", "lib/roar-survey.umd.js", "lib/roar-survey.css"]
+    },
+    "dev": {
+      "passThroughEnv": ["BACKEND_URL", "FIREBASE_AUTH_EMULATOR_HOST"]
+    }
+  }
+}
