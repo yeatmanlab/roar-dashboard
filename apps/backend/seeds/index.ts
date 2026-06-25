@@ -17,7 +17,7 @@
  * - TEST_FIXTURE_FILE: Path for SDK fixture (default: /tmp/roar-test-fixture.json)
  *
  * Usage:
- *   npx tsx ./scripts/seed-dev.ts
+ *   npx tsx ./seeds/index.ts
  */
 import 'dotenv/config';
 import fs from 'node:fs';

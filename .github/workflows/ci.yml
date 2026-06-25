@@ -159,7 +159,7 @@ jobs:
 
       - name: Seed database and start backend
         run: |
-          npx tsx apps/backend/scripts/seed-dev.ts
+          npx tsx apps/backend/seeds/index.ts
           node apps/backend/dist/server.js &
           npx --yes wait-on tcp:127.0.0.1:4000 --timeout 90000
 

@@ -57,8 +57,8 @@ function onListening(): void {
 
 async function startServer(): Promise<void> {
   // FGA store/model IDs arrive via the dotenv file loaded by `import 'dotenv/config'`
-  // at the top of this module. In local dev, seed-dev.ts writes them to .env;
-  // in CI, seed-dev.ts writes them to .env.test (loaded via DOTENV_CONFIG_PATH).
+  // at the top of this module. In local dev, the seed script writes them to .env;
+  // in CI, the seed script writes them to .env.test (loaded via DOTENV_CONFIG_PATH).
 
   // Initialize database pools FIRST, before importing app.
   // This ensures CoreDbClient and AssessmentDbClient are defined

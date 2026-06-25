@@ -30,7 +30,7 @@ export function getBackendUrl(): string {
  * Signs in to the Firebase Auth emulator and returns an ID token.
  *
  * Uses the emulator's REST API (signInWithPassword) to authenticate with
- * the credentials seeded by seed-dev.ts. Returns a real Firebase ID token
+ * the credentials seeded by the seed script. Returns a real Firebase ID token
  * that the backend's FirebaseAuthProvider can verify.
  *
  * @param email - The user's email address
@@ -188,7 +188,7 @@ export function getTeacherUserId(): string {
 }
 
 /**
- * Reads the dev fixture data from the fixture file written by seed-dev.ts
+ * Reads the dev fixture data from the fixture file written by the seed script
  * and signs in to the Auth emulator to get real Firebase tokens.
  *
  * The seed script writes fixture data (task variants, users, credentials)
@@ -211,7 +211,7 @@ export async function getBaseFixtureData(): Promise<TestFixture> {
   } catch (error) {
     throw new Error(
       `Failed to read fixture data from ${fixtureFile}. ` +
-        `Ensure seed-dev.ts has run and written the fixture file. ` +
+        `Ensure the seed script has run and written the fixture file. ` +
         `Error: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
@@ -222,7 +222,7 @@ export async function getBaseFixtureData(): Promise<TestFixture> {
   } else {
     throw new Error(
       'Test user credentials (email/password) not found in fixture file. ' +
-        'Ensure seed-dev.ts writes email and password to the fixture.',
+        'Ensure the seed script writes email and password to the fixture.',
     );
   }
 

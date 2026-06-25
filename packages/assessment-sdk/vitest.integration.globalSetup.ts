@@ -1,7 +1,7 @@
 /**
  * Global Setup for SDK Integration Tests
  *
- * Runs the standalone seed script (seed-dev.ts) and then spawns the backend
+ * Runs the standalone seed script (seeds/index.ts) and then spawns the backend
  * server (server.ts with Firebase Auth emulator) before running integration tests.
  *
  * The seed script:
@@ -24,7 +24,7 @@
  *   (This setup automatically builds if dist/server.js is missing)
  *
  * TEST DATA SEEDING:
- * - Dev fixture data is seeded by seed-dev.ts before the server starts
+ * - Dev fixture data is seeded by the seed script before the server starts
  * - Fixture data (task variant IDs, user credentials) is written to TEST_FIXTURE_FILE
  * - SDK tests read the fixture file and sign in via the emulator
  *
@@ -124,13 +124,13 @@ async function buildBackendIfNeeded(backendDir: string): Promise<void> {
 }
 
 /**
- * Runs the seed-dev.ts script to seed databases, initialize FGA, seed Auth emulator,
+ * Runs the seed script to seed databases, initialize FGA, seed Auth emulator,
  * and write fixture files. Blocks until the script exits.
  *
  * @param backendDir - Absolute path to the backend workspace root
  */
 function runSeedScript(backendDir: string): void {
-  const seedScript = path.join(backendDir, 'scripts', 'seed-dev.ts');
+  const seedScript = path.join(backendDir, 'seeds', 'index.ts');
   const fixtureFile = process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json';
 
   console.log('[SDK Integration Tests] Running seed script...');
@@ -154,7 +154,7 @@ function runSeedScript(backendDir: string): void {
 }
 
 /**
- * Reads FGA store/model IDs from the backend's dotenv file (written by seed-dev.ts).
+ * Reads FGA store/model IDs from the backend's dotenv file (written by the seed script).
  *
  * @param backendDir - Absolute path to the backend workspace root
  * @returns Object with FGA_STORE_ID and FGA_MODEL_ID, or null if not found
@@ -217,7 +217,7 @@ async function waitForBackendHealth(port: string, maxAttempts = 30): Promise<voi
  * Global setup for SDK integration tests.
  *
  * 1. Builds the backend if dist/server.js is missing or stale
- * 2. Runs seed-dev.ts to seed databases, initialize FGA, seed Auth emulator, and write fixture files
+ * 2. Runs the seed script to seed databases, initialize FGA, seed Auth emulator, and write fixture files
  * 3. Reads FGA store/model IDs written by the seed script
  * 4. Spawns the backend server with FIREBASE_AUTH_EMULATOR_HOST and FGA env vars
  * 5. Waits for the server to be healthy

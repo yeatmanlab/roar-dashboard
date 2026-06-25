@@ -2,7 +2,7 @@
  * Shared TestFixture type for backend test server and SDK integration tests.
  *
  * This type is defined once and imported by both:
- * - Producer: apps/backend/scripts/seed-dev.ts (writes fixture data)
+ * - Producer: apps/backend/seeds/index.ts (writes fixture data)
  * - Consumer: packages/assessment-sdk/src/test-support/sdk-test-helper.ts (reads fixture data)
  *
  * Keeping this type in a single location prevents drift between the producer
