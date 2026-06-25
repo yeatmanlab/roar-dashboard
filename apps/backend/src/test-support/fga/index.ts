@@ -103,6 +103,22 @@ export async function syncFgaTuplesFromPostgres(): Promise<void> {
 }
 
 /**
+ * Delete a specific FGA store by ID. Best-effort — silently ignores failures
+ * (e.g., store already deleted or OpenFGA not reachable).
+ *
+ * @param storeId - The store ID to delete
+ */
+export async function deleteFgaStore(storeId: string): Promise<void> {
+  const apiUrl = process.env.FGA_API_URL || 'http://localhost:8080';
+  const client = new OpenFgaClient({ apiUrl });
+  try {
+    await client.deleteStore({ storeId });
+  } catch {
+    // Best effort — store may already be gone or OpenFGA may not be reachable
+  }
+}
+
+/**
  * Clean up all FGA stores created during the test run.
  *
  * Called in `vitest.integration.globalTeardown.ts`. Best-effort — failures are ignored.

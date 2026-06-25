@@ -26,13 +26,13 @@ npm run test -w packages/authz
 docker compose up -d --wait
 ```
 
-The `openfga-init` container automatically creates the FGA store, deploys the authorization model, and writes store/model IDs to the `fga-env` Docker volume. The backend reads these on startup — no manual `.env` configuration needed.
-
-To seed the database and sync FGA tuples:
+Then seed the database, create the FGA store, deploy the model, and sync tuples:
 
 ```bash
 npm run dev:seed
 ```
+
+The seed script creates a fresh FGA store, deploys the authorization model, and writes the store/model IDs to `apps/backend/.env` automatically.
 
 ### Validate and test the model
 

@@ -21,17 +21,21 @@
  */
 import 'dotenv/config';
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { TestFixture } from '@roar-platform/api-contract/test-fixture.type';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { initializeDatabasePools, closeDatabasePools } from '../src/db/clients';
 import { runMigrations, truncateAllTables } from '../src/test-support/db';
 import { setupFdwForTests } from '../src/test-support/db/setup-fdw';
-import { initializeFgaTestStore, syncFgaTuplesFromPostgres } from '../src/test-support/fga';
+import { deleteFgaStore, initializeFgaTestStore, syncFgaTuplesFromPostgres } from '../src/test-support/fga';
 import {
   seedFirebaseAuthEmulator,
   type SeedableEmulatorUser,
   type SeededEmulatorUser,
 } from '../src/test-support/firebase-emulator';
-import { FgaClient } from '../src/clients/fga.client';
 import { seedDevFixture, DEV_IDS, DEV_USERS, DEV_FIXTURE_USER_KEYS, DEV_PASSWORD } from '../tooling';
 import { logger } from '../src/logger';
 
@@ -39,41 +43,50 @@ const { TEST_FIXTURE_FILE = '/tmp/roar-test-fixture.json', CYPRESS_FIXTURE_FILE 
   process.env;
 
 /**
- * Try to read FGA store/model IDs from the Docker-managed fga-env volume.
+ * Resolve the active dotenv file path.
  *
- * When running with `docker compose up`, the openfga-init container writes
- * store/model IDs to `/fga-env/fga-env.json` (a Docker named volume). If
- * available, we set the env vars so the FgaClient picks them up — no need
- * to create a new store.
+ * In CI, `DOTENV_CONFIG_PATH` points to `.env.test`. In local dev, `dotenv/config`
+ * defaults to `.env` in the package root (`apps/backend/`).
  *
- * @returns true if IDs were loaded from the volume, false otherwise
+ * @returns Absolute path to the dotenv file
  */
-function tryLoadFgaEnvFromDocker(): boolean {
-  // Docker volume path (inside container or bind-mounted)
-  const dockerVolumePath = '/fga-env/fga-env.json';
-  // Also check a local fallback path for non-Docker environments
-  const localFallbackPath = '/tmp/roar-fga-env.json';
+function resolveEnvFilePath(): string {
+  if (process.env.DOTENV_CONFIG_PATH) {
+    // DOTENV_CONFIG_PATH may be relative to the repo root (e.g. "apps/backend/.env.test")
+    return path.resolve(process.env.DOTENV_CONFIG_PATH);
+  }
+  return path.resolve(__dirname, '..', '.env');
+}
 
-  for (const envPath of [dockerVolumePath, localFallbackPath]) {
-    try {
-      if (fs.existsSync(envPath)) {
-        const data = JSON.parse(fs.readFileSync(envPath, 'utf-8')) as {
-          FGA_STORE_ID?: string;
-          FGA_MODEL_ID?: string;
-        };
-        if (data.FGA_STORE_ID && data.FGA_MODEL_ID) {
-          process.env.FGA_STORE_ID = data.FGA_STORE_ID;
-          process.env.FGA_MODEL_ID = data.FGA_MODEL_ID;
-          logger.info({ path: envPath, storeId: data.FGA_STORE_ID }, 'Loaded FGA store/model IDs from file');
-          return true;
-        }
-      }
-    } catch {
-      // File doesn't exist or is malformed — try the next path
+/**
+ * Upsert key=value pairs in the active dotenv file.
+ *
+ * Replaces existing lines for each key; appends any keys that aren't already
+ * present. This is safe to call on repeated seed runs — values are updated
+ * in place rather than duplicated.
+ *
+ * @param vars - Record of env var names to values
+ */
+function upsertEnvVars(vars: Record<string, string>): void {
+  const envPath = resolveEnvFilePath();
+
+  let content = '';
+  if (fs.existsSync(envPath)) {
+    content = fs.readFileSync(envPath, 'utf-8');
+  }
+
+  for (const [key, value] of Object.entries(vars)) {
+    const pattern = new RegExp(`^${key}=.*$`, 'm');
+    const line = `${key}=${value}`;
+    if (pattern.test(content)) {
+      content = content.replace(pattern, line);
+    } else {
+      content = content.trimEnd() + '\n' + line + '\n';
     }
   }
 
-  return false;
+  fs.writeFileSync(envPath, content);
+  logger.info({ path: envPath, keys: Object.keys(vars) }, 'Wrote env vars to dotenv file');
 }
 
 /**
@@ -177,31 +190,25 @@ async function main(): Promise<void> {
     logger.info('[seed-dev] Seeding dev fixture...');
     await seedDevFixture();
 
-    // 7. Initialize FGA store + model
-    // Try to read store/model IDs from Docker volume first (written by openfga-init container).
-    // If not available (e.g. CI), create a new store via the Node.js SDK.
-    logger.info('[seed-dev] Setting up FGA...');
+    // 7. Initialize FGA: delete old store (if any), create a fresh one, deploy the model.
     if (!process.env.FGA_API_URL) {
       process.env.FGA_API_URL = 'http://localhost:8080';
     }
 
-    const dockerFgaLoaded = tryLoadFgaEnvFromDocker();
-    if (dockerFgaLoaded) {
-      // Docker already created the store; just clear the FgaClient cache so it picks up the env vars
-      FgaClient.clearCache();
-    } else {
-      // CI path: create a fresh FGA store and deploy the model
-      logger.info('[seed-dev] No Docker FGA env found, creating FGA store via SDK...');
-      await initializeFgaTestStore();
-
-      // Write the IDs to a fallback file so the backend server can read them
-      const fgaEnv = {
-        FGA_STORE_ID: process.env.FGA_STORE_ID,
-        FGA_MODEL_ID: process.env.FGA_MODEL_ID,
-      };
-      fs.writeFileSync('/tmp/roar-fga-env.json', JSON.stringify(fgaEnv, null, 2));
-      logger.info({ path: '/tmp/roar-fga-env.json' }, 'FGA env written for backend server');
+    if (process.env.FGA_STORE_ID) {
+      logger.info({ storeId: process.env.FGA_STORE_ID }, '[seed-dev] Deleting previous FGA store...');
+      await deleteFgaStore(process.env.FGA_STORE_ID);
     }
+
+    logger.info('[seed-dev] Creating FGA store and deploying model...');
+    await initializeFgaTestStore();
+
+    // Persist FGA IDs to the active dotenv file so the backend server (a
+    // separate process) picks them up via `import 'dotenv/config'`.
+    upsertEnvVars({
+      FGA_STORE_ID: process.env.FGA_STORE_ID!,
+      FGA_MODEL_ID: process.env.FGA_MODEL_ID!,
+    });
 
     // 8. Sync FGA tuples from Postgres
     logger.info('[seed-dev] Syncing FGA tuples from Postgres...');

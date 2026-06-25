@@ -56,29 +56,9 @@ function onListening(): void {
 }
 
 async function startServer(): Promise<void> {
-  // Load FGA store/model IDs from the file written by seed-dev.ts or the Docker
-  // init container, unless they're already set via .env or explicit env vars.
-  // This lets `npm run dev` pick up the IDs without manual .env editing.
-  if (!process.env.FGA_STORE_ID || !process.env.FGA_MODEL_ID) {
-    for (const fgaEnvPath of ['/fga-env/fga-env.json', '/tmp/roar-fga-env.json']) {
-      try {
-        if (fs.existsSync(fgaEnvPath)) {
-          const data = JSON.parse(fs.readFileSync(fgaEnvPath, 'utf-8')) as {
-            FGA_STORE_ID?: string;
-            FGA_MODEL_ID?: string;
-          };
-          if (data.FGA_STORE_ID && data.FGA_MODEL_ID) {
-            process.env.FGA_STORE_ID = data.FGA_STORE_ID;
-            process.env.FGA_MODEL_ID = data.FGA_MODEL_ID;
-            logger.info({ path: fgaEnvPath, storeId: data.FGA_STORE_ID }, 'Loaded FGA store/model IDs from file');
-            break;
-          }
-        }
-      } catch {
-        // File doesn't exist or is malformed — try the next path
-      }
-    }
-  }
+  // FGA store/model IDs arrive via the dotenv file loaded by `import 'dotenv/config'`
+  // at the top of this module. In local dev, seed-dev.ts writes them to .env;
+  // in CI, seed-dev.ts writes them to .env.test (loaded via DOTENV_CONFIG_PATH).
 
   // Initialize database pools FIRST, before importing app.
   // This ensures CoreDbClient and AssessmentDbClient are defined

@@ -10,7 +10,7 @@
  * - Initializes OpenFGA store, deploys model, and syncs tuples
  * - Seeds Firebase Auth emulator users (with deterministic credentials)
  * - Writes fixture data to a JSON file for SDK tests to discover
- * - Writes FGA store/model IDs to /tmp/roar-fga-env.json
+ * - Writes FGA store/model IDs to the backend's .env file
  *
  * The server uses FIREBASE_AUTH_EMULATOR_HOST so Firebase Admin SDK verifies
  * tokens against the local emulator. SDK tests sign in via the emulator REST
@@ -154,20 +154,24 @@ function runSeedScript(backendDir: string): void {
 }
 
 /**
- * Reads FGA store/model IDs from the file written by seed-dev.ts.
+ * Reads FGA store/model IDs from the backend's dotenv file (written by seed-dev.ts).
  *
+ * @param backendDir - Absolute path to the backend workspace root
  * @returns Object with FGA_STORE_ID and FGA_MODEL_ID, or null if not found
  */
-function readFgaEnv(): { FGA_STORE_ID: string; FGA_MODEL_ID: string } | null {
-  const fgaEnvPath = '/tmp/roar-fga-env.json';
+function readFgaEnv(backendDir: string): { FGA_STORE_ID: string; FGA_MODEL_ID: string } | null {
+  // Use DOTENV_CONFIG_PATH if set (CI), otherwise default to .env (local dev)
+  const envPath = process.env.DOTENV_CONFIG_PATH
+    ? path.resolve(process.env.DOTENV_CONFIG_PATH)
+    : path.join(backendDir, '.env');
+
   try {
-    if (existsSync(fgaEnvPath)) {
-      const data = JSON.parse(readFileSync(fgaEnvPath, 'utf-8')) as {
-        FGA_STORE_ID?: string;
-        FGA_MODEL_ID?: string;
-      };
-      if (data.FGA_STORE_ID && data.FGA_MODEL_ID) {
-        return { FGA_STORE_ID: data.FGA_STORE_ID, FGA_MODEL_ID: data.FGA_MODEL_ID };
+    if (existsSync(envPath)) {
+      const content = readFileSync(envPath, 'utf-8');
+      const storeMatch = content.match(/^FGA_STORE_ID=(.+)$/m);
+      const modelMatch = content.match(/^FGA_MODEL_ID=(.+)$/m);
+      if (storeMatch?.[1] && modelMatch?.[1]) {
+        return { FGA_STORE_ID: storeMatch[1], FGA_MODEL_ID: modelMatch[1] };
       }
     }
   } catch {
@@ -257,11 +261,11 @@ export default async function globalSetup() {
     );
   }
 
-  // 3. Read FGA env written by seed script
-  const fgaEnv = readFgaEnv();
+  // 3. Read FGA env written by seed script to the backend .env file
+  const fgaEnv = readFgaEnv(backendDir);
   if (!fgaEnv) {
     console.warn(
-      '[SDK Integration Tests] Could not read FGA env from /tmp/roar-fga-env.json — server may fail to authorize requests',
+      '[SDK Integration Tests] Could not read FGA env from backend .env file — server may fail to authorize requests',
     );
   }
 

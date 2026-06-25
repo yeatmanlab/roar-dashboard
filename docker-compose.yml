@@ -61,30 +61,6 @@ services:
       timeout: 5s
       retries: 12
 
-  # One-shot init container: creates the FGA store and deploys the authorization
-  # model. Idempotent — skips creation if /fga-env/fga-env.json already exists.
-  # The backend reads store/model IDs from the fga-env volume on startup.
-  #
-  # Uses `profiles: [init]` so it doesn't run with the default `docker compose up`.
-  # Instead, it runs automatically on first setup via:
-  #   docker compose up -d --wait && docker compose run --rm openfga-init
-  # Or the seed script handles FGA store creation via the SDK fallback when the
-  # fga-env volume is empty.
-  openfga-init:
-    container_name: roar-openfga-init
-    profiles: [init]
-    build:
-      context: docker/openfga
-      dockerfile: Dockerfile.init
-    depends_on:
-      openfga:
-        condition: service_healthy
-    volumes:
-      - ./packages/authz:/authz:ro
-      - fga-env:/fga-env
-    environment:
-      - FGA_API_URL=http://openfga:8080
-
   firebase-auth-emulator:
     container_name: roar-firebase-auth
     build: docker/firebase-auth-emulator
@@ -169,5 +145,4 @@ services:
     restart: on-failure
 
 volumes:
-  fga-env:
   firebase-auth-data:
