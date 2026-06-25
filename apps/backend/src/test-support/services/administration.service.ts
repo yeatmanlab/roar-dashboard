@@ -18,6 +18,7 @@ export function createMockAdministrationService(): MockedObject<ReturnType<typeo
     getUserAdministrations: vi.fn(),
     getTree: vi.fn(),
     getUserAdministration: vi.fn(),
+    listUserAdministrationAgreements: vi.fn(),
   } as MockedObject<ReturnType<typeof AdministrationService>>;
 }
 
