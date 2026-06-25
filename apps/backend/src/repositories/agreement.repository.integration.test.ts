@@ -487,4 +487,105 @@ describe('AgreementRepository Integration', () => {
       expect(versionIds).toHaveLength(2);
     });
   });
+
+  describe('getSignedAgreementIds', () => {
+    it('returns an empty set for an empty ids array', async () => {
+      const userId = baseFixture.districtAdmin.id;
+
+      const result = await repository.getSignedAgreementIds(userId, []);
+
+      expect(result).toBeInstanceOf(Set);
+      expect(result.size).toBe(0);
+    });
+
+    it('returns only the agreements the user has signed (current version)', async () => {
+      const userId = baseFixture.schoolAStudent.id;
+      const signed = await AgreementFactory.create({ agreementType: AgreementType.CONSENT });
+      const unsigned = await AgreementFactory.create({ agreementType: AgreementType.CONSENT });
+
+      const signedVersion = await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: signed.id } },
+      );
+      await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: unsigned.id } },
+      );
+
+      await UserAgreementFactory.create({ userId, agreementVersionId: signedVersion.id });
+
+      const result = await repository.getSignedAgreementIds(userId, [signed.id, unsigned.id]);
+
+      expect(result.has(signed.id)).toBe(true);
+      expect(result.has(unsigned.id)).toBe(false);
+    });
+
+    it('restricts the result to the requested ids', async () => {
+      const userId = baseFixture.classAStudent.id;
+      const requested = await AgreementFactory.create({ agreementType: AgreementType.ASSENT });
+      const notRequested = await AgreementFactory.create({ agreementType: AgreementType.ASSENT });
+
+      const requestedVersion = await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: requested.id } },
+      );
+      const notRequestedVersion = await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: notRequested.id } },
+      );
+
+      // The user has signed both, but only `requested` is in the input set.
+      await UserAgreementFactory.create({ userId, agreementVersionId: requestedVersion.id });
+      await UserAgreementFactory.create({ userId, agreementVersionId: notRequestedVersion.id });
+
+      const result = await repository.getSignedAgreementIds(userId, [requested.id]);
+
+      expect(result.has(requested.id)).toBe(true);
+      expect(result.has(notRequested.id)).toBe(false);
+      expect(result.size).toBe(1);
+    });
+
+    it('cross-locale satisfaction — signing any current locale marks the agreement signed', async () => {
+      const userId = baseFixture.groupStudent.id;
+      const consent = await AgreementFactory.create({ agreementType: AgreementType.CONSENT });
+
+      // Two current versions in different locales.
+      await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: consent.id } },
+      );
+      const esMxVersion = await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'es-MX' },
+        { transient: { agreementId: consent.id } },
+      );
+
+      // User signs only the es-MX version.
+      await UserAgreementFactory.create({ userId, agreementVersionId: esMxVersion.id });
+
+      const result = await repository.getSignedAgreementIds(userId, [consent.id]);
+
+      expect(result.has(consent.id)).toBe(true);
+    });
+
+    it('signing an old non-current version does not mark the agreement signed', async () => {
+      const userId = baseFixture.schoolBStudent.id;
+      const consent = await AgreementFactory.create({ agreementType: AgreementType.CONSENT });
+
+      const oldVersion = await AgreementVersionFactory.create(
+        { isCurrent: false, locale: 'en-US' },
+        { transient: { agreementId: consent.id } },
+      );
+      await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: consent.id } },
+      );
+
+      // User signed only the old, non-current version.
+      await UserAgreementFactory.create({ userId, agreementVersionId: oldVersion.id });
+
+      const result = await repository.getSignedAgreementIds(userId, [consent.id]);
+
+      expect(result.has(consent.id)).toBe(false);
+    });
+  });
 });

@@ -62,6 +62,12 @@ import { OrgFactory } from '../test-support/factories/org.factory';
 import { ClassFactory } from '../test-support/factories/class.factory';
 import { OrgType } from '../enums/org-type.enum';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
+import { AgreementFactory } from '../test-support/factories/agreement.factory';
+import { AdministrationFactory } from '../test-support/factories/administration.factory';
+import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
+import { AdministrationAgreementFactory } from '../test-support/factories/administration-agreement.factory';
+import { UserAgreementFactory } from '../test-support/factories/user-agreement.factory';
+import { AgreementType } from '../enums/agreement-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { UserRepository } from '../repositories/user.repository';
 import { FirebaseAuthClient } from '../clients/firebase-auth.clients';
@@ -70,6 +76,7 @@ import { RosteringProvider } from '../enums/rostering-provider.enum';
 import { RosteringEntityType } from '../enums/rostering-entity-type.enum';
 import { FgaClient } from '../clients/fga.client';
 import { FgaType } from '../services/authorization/fga-constants';
+import { writeFgaAdministrationAssignment } from '../test-support/fga/fga-test-tuples.helper';
 import type { Condition } from '../types/condition';
 import { Operator } from '../types/condition';
 
@@ -2899,6 +2906,219 @@ describe('GET /v1/users/:userId/administrations/:administrationId', () => {
         .toReturn(StatusCodes.OK);
 
       expect(res.body.data.id).toBe(baseFixture.administrationAssignedToSchoolA.id);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/users/:userId/administrations/:administrationId/agreements
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/users/:userId/administrations/:administrationId/agreements', () => {
+  // A fresh district-assigned administration requiring a TOS, a consent, and an
+  // assent agreement. The endpoint filters the returned agreements to the ones
+  // the TARGET user is age-appropriately required to sign (assent → minors,
+  // consent → adults, TOS → never), so we seed both a minor and an adult target
+  // enrolled at the district, each signing the agreement type they actually see.
+  let administrationId: string;
+  let tosAgreementId: string;
+  let consentAgreementId: string;
+  let assentAgreementId: string;
+  // Explicitly-aged targets enrolled at the district (so they can read the admin).
+  let minorTarget: { id: string; authId: string };
+  let adultTarget: { id: string; authId: string };
+
+  beforeAll(async () => {
+    const administration = await AdministrationFactory.create({
+      name: `User Agreements Admin ${faker.string.uuid()}`,
+      createdBy: baseFixture.districtAdmin.id,
+    });
+    administrationId = administration.id;
+
+    await AdministrationOrgFactory.create({ administrationId, orgId: baseFixture.district.id });
+    await writeFgaAdministrationAssignment(administrationId, baseFixture.district.id, FgaType.DISTRICT);
+
+    // Required agreements: TOS, consent, and assent, each with a current en-US version.
+    const tos = await AgreementFactory.create({ agreementType: AgreementType.TOS });
+    const consent = await AgreementFactory.create({ agreementType: AgreementType.CONSENT });
+    const assent = await AgreementFactory.create({ agreementType: AgreementType.ASSENT });
+    tosAgreementId = tos.id;
+    consentAgreementId = consent.id;
+    assentAgreementId = assent.id;
+
+    await AgreementVersionFactory.create({ isCurrent: true, locale: 'en-US' }, { transient: { agreementId: tos.id } });
+    const consentVersion = await AgreementVersionFactory.create(
+      { isCurrent: true, locale: 'en-US' },
+      { transient: { agreementId: consent.id } },
+    );
+    const assentVersion = await AgreementVersionFactory.create(
+      { isCurrent: true, locale: 'en-US' },
+      { transient: { agreementId: assent.id } },
+    );
+
+    await AdministrationAgreementFactory.create({}, { transient: { administrationId, agreementId: tos.id } });
+    await AdministrationAgreementFactory.create({}, { transient: { administrationId, agreementId: consent.id } });
+    await AdministrationAgreementFactory.create({}, { transient: { administrationId, agreementId: assent.id } });
+
+    // Seed two explicitly-aged students enrolled at the district. The minor (dob
+    // 10 years ago) is required to sign the assent; the adult (dob 20 years ago)
+    // the consent. Each signs the current version of the agreement they see.
+    const tenYearsAgo = new Date();
+    tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+    const twentyYearsAgo = new Date();
+    twentyYearsAgo.setFullYear(twentyYearsAgo.getFullYear() - 20);
+
+    const [minorUser, adultUser] = await Promise.all([
+      UserFactory.create({
+        userType: 'student',
+        dob: tenYearsAgo.toISOString().split('T')[0]!,
+        grade: null,
+      }),
+      UserFactory.create({
+        userType: 'student',
+        dob: twentyYearsAgo.toISOString().split('T')[0]!,
+        grade: null,
+      }),
+    ]);
+    minorTarget = { id: minorUser.id, authId: minorUser.authId! };
+    adultTarget = { id: adultUser.id, authId: adultUser.authId! };
+
+    await Promise.all([
+      UserOrgFactory.create({ userId: minorUser.id, orgId: baseFixture.district.id, role: UserRole.STUDENT }),
+      UserOrgFactory.create({ userId: adultUser.id, orgId: baseFixture.district.id, role: UserRole.STUDENT }),
+    ]);
+
+    // The minor signs the assent; the adult signs the consent.
+    await UserAgreementFactory.create({ userId: minorUser.id, agreementVersionId: assentVersion.id });
+    await UserAgreementFactory.create({ userId: adultUser.id, agreementVersionId: consentVersion.id });
+
+    // Re-sync FGA so the two new student memberships grant can_read on the admin.
+    const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+    await syncFgaTuplesFromPostgres();
+  });
+
+  function path(userId: string, adminId: string) {
+    return `/v1/users/${userId}/administrations/${adminId}/agreements`;
+  }
+
+  describe('authorization', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', path(minorTarget.id, administrationId))
+        .unauthenticated()
+        .toReturn(StatusCodes.UNAUTHORIZED);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('super admin can list agreements for any user', async () => {
+      const res = await expectRoute('GET', path(minorTarget.id, administrationId))
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data).toHaveProperty('items');
+      expect(res.body.data).toHaveProperty('pagination');
+    });
+
+    it('returns 404 when the target user does not exist', async () => {
+      const res = await expectRoute('GET', path('00000000-0000-0000-0000-000000000000', administrationId))
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 404 when the administration does not exist', async () => {
+      const res = await expectRoute('GET', path(minorTarget.id, '00000000-0000-0000-0000-000000000000'))
+        .as(minorTarget)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 403 when a non-super-admin requester lacks access to the administration', async () => {
+      // districtBAdmin is an administrator in a fully disjoint district branch:
+      // no ltree ancestry or membership overlap with the district-A admin. The
+      // minor target HAS access (so existence/target checks pass), but the
+      // requester's own can_read check fails → 403. This exercises the full
+      // middleware/FGA stack for the cross-user access path.
+      const res = await expectRoute('GET', path(minorTarget.id, administrationId))
+        .as({ id: baseFixture.districtBAdmin.id, authId: baseFixture.districtBAdmin.authId! })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('agreement type filtering by target user age', () => {
+    it('shows only the assent (excludes consent and TOS) for a minor target', async () => {
+      const res = await expectRoute('GET', path(minorTarget.id, administrationId))
+        .as(minorTarget)
+        .toReturn(StatusCodes.OK);
+
+      const items: Array<{ id: string; agreementType: string; signed: boolean }> = res.body.data.items;
+      const ids = items.map((i) => i.id);
+
+      expect(ids).toContain(assentAgreementId);
+      expect(ids).not.toContain(consentAgreementId);
+      expect(ids).not.toContain(tosAgreementId);
+      // Every returned agreement is an assent.
+      expect(items.every((i) => i.agreementType === AgreementType.ASSENT)).toBe(true);
+    });
+
+    it('shows only the consent (excludes assent and TOS) for an adult target', async () => {
+      const res = await expectRoute('GET', path(adultTarget.id, administrationId))
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      const items: Array<{ id: string; agreementType: string; signed: boolean }> = res.body.data.items;
+      const ids = items.map((i) => i.id);
+
+      expect(ids).toContain(consentAgreementId);
+      expect(ids).not.toContain(assentAgreementId);
+      expect(ids).not.toContain(tosAgreementId);
+      expect(items.every((i) => i.agreementType === AgreementType.CONSENT)).toBe(true);
+    });
+  });
+
+  describe('signed status', () => {
+    it('annotates the assent with signed status for a minor self-read', async () => {
+      const res = await expectRoute('GET', path(minorTarget.id, administrationId))
+        .as(minorTarget)
+        .toReturn(StatusCodes.OK);
+
+      const items: Array<{ id: string; signed: boolean }> = res.body.data.items;
+      const assentItem = items.find((i) => i.id === assentAgreementId);
+
+      expect(assentItem).toBeDefined();
+      // The minor signed the assent's current version.
+      expect(assentItem!.signed).toBe(true);
+    });
+
+    it('reports the adult consent as signed and excludes everything else', async () => {
+      // Super admin reads on behalf of the adult target, who signed the consent.
+      const res = await expectRoute('GET', path(adultTarget.id, administrationId))
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      const items: Array<{ id: string; signed: boolean }> = res.body.data.items;
+      const consentItem = items.find((i) => i.id === consentAgreementId);
+
+      expect(consentItem).toBeDefined();
+      expect(consentItem!.signed).toBe(true);
+    });
+
+    it('reports the relevant agreement as unsigned for a user who signed nothing', async () => {
+      // baseFixture.districtAdmin (no dob/grade → minor) signed neither agreement,
+      // so the assent they are shown comes back unsigned.
+      const res = await expectRoute('GET', path(baseFixture.districtAdmin.id, administrationId))
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      const items: Array<{ id: string; signed: boolean }> = res.body.data.items;
+      const assentItem = items.find((i) => i.id === assentAgreementId);
+
+      expect(assentItem).toBeDefined();
+      expect(assentItem!.signed).toBe(false);
     });
   });
 });
