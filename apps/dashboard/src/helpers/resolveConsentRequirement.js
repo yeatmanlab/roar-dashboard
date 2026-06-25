@@ -19,8 +19,12 @@ export const CONSENT_REQUIREMENT_STATUS = Object.freeze({
   REQUIRED: 'required',
 });
 
-const ADULT_AGE = 18;
-const SENIOR_GRADE = 12;
+// The participant agreement types the consent/assent gate is concerned with. The
+// backend's agreements endpoint returns at most one of these for a given student
+// — the age-appropriate one (consent for adults, assent for minors), selected by
+// date of birth first and grade as a fallback. The dashboard consumes whichever
+// it returns instead of re-deriving the consent-vs-assent choice itself.
+const PARTICIPANT_AGREEMENT_TYPES = Object.freeze(['consent', 'assent']);
 // Below these thresholds a student is too young to be shown the consent/assent
 // form themselves (mirrors the pre-migration `age > 7 || grade > 1` gate).
 const MIN_AGE_FOR_PROMPT = 7;
@@ -52,8 +56,10 @@ function deriveAgeAndGrade(userData) {
  *   is false), returns `UNRESOLVED`. The caller must BLOCK — never proceed as
  *   if no consent is required while the requirement is unknown.
  * - The administration requires consent/assent iff the agreements array contains
- *   an item whose `agreementType` matches the age/grade-selected type
- *   (`consent` for adults / senior-grade students, otherwise `assent`).
+ *   a participant agreement (an item whose `agreementType` is `consent` or
+ *   `assent`). The backend has already selected the age-appropriate one for this
+ *   student (date of birth first, then grade), so the dashboard consumes whichever
+ *   it returned rather than re-deriving the consent-vs-assent choice from grade.
  * - The selected agreement's `name` is the legal-document identifier. It is used
  *   both as the argument to `getLegalDoc(...)` (a Firestore `legal/<name>` lookup)
  *   and as the key under `userData.legal[<name>]` — the same single identifier
@@ -82,14 +88,15 @@ export async function resolveConsentRequirement({ agreements, agreementsResolved
     return { status: CONSENT_REQUIREMENT_STATUS.UNRESOLVED };
   }
 
-  const { age, grade } = deriveAgeAndGrade(userData);
-
-  const isAdult = age >= ADULT_AGE;
-  const isSeniorGrade = grade >= SENIOR_GRADE;
-  const isOlder = isAdult || isSeniorGrade;
-  const requiredAgreementType = isOlder ? 'consent' : 'assent';
-
-  const matchingAgreement = (agreements ?? []).find((agreement) => agreement?.agreementType === requiredAgreementType);
+  // Consume whichever participant agreement the backend returned for this
+  // student. The backend selects consent-vs-assent by age (date of birth first,
+  // grade as a fallback); re-deriving it here from grade alone disagreed with the
+  // backend for students whose grade and age imply different types — e.g. a
+  // 17-year-old in grade 12, for whom the backend returns "assent" but the old
+  // grade-only logic looked for "consent", matched nothing, and dropped the gate.
+  const matchingAgreement = (agreements ?? []).find((agreement) =>
+    PARTICIPANT_AGREEMENT_TYPES.includes(agreement?.agreementType),
+  );
 
   // No matching agreement assigned → this administration requires no
   // consent/assent for this student. No gate (mirrors `if (!legal?.consent) return`).
@@ -123,6 +130,10 @@ export async function resolveConsentRequirement({ agreements, agreementsResolved
   // version AND it is on or after the latest annual renewal date (Aug 1).
   const hasSignedCurrentVersion = Boolean(signedForVersion) && checkConsentRenewalDate(signedForVersion);
 
+  // Age/grade is used ONLY to decide whether the student is old enough to be
+  // shown the form themselves (mirrors the pre-migration `age > 7 || grade > 1`
+  // gate) — never to choose between consent and assent (the backend does that).
+  const { age, grade } = deriveAgeAndGrade(userData);
   const isOldEnoughToPrompt = age > MIN_AGE_FOR_PROMPT || grade > MIN_GRADE_FOR_PROMPT;
 
   // Fail-safe: show the gate whenever the student has not signed the current
