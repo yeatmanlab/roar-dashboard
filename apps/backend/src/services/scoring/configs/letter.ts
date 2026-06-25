@@ -1,21 +1,19 @@
 import {
-  LETTER_SUBTASK_SCORE_NAMES,
-  LETTER_SUBTASK_DOMAINS,
+  LETTER_SUBSCORE_KEYS,
+  LETTER_SUBSCORE_DEFS,
   LETTER_COMPOSITE_SCORE_NAMES,
 } from '@roar-platform/assessment-schema/roar-letter';
 
 /**
  * Letter ("ROAR-Letter") scoring config — letter, letter-es, letter-en-ca.
  *
- * Score-name strings come from the shared roar-letter module (the same
- * assessment that emits them), so letter is no longer provisional. The subscore
- * table is DOMAIN-INDEXED: each per-subtask value is the GENERIC `subScore`
- * emitted under a per-subtask domain (LowercaseNames / UppercaseNames /
- * Phonemes), matching the legacy dashboard mapping in `ScoreReport.vue`
- * (Lower Case = LowercaseNames.subScore, Total = composite.totalCorrect,
- * Letters To Work On = upperIncorrect + lowerIncorrect, etc.). Columns are
- * stringPassthrough — display-as-is, non-sortable — to mirror the dashboard's
- * text columns.
+ * The column grouping — label, run_scores name, and domain per subtask — comes
+ * from `LETTER_SUBSCORE_DEFS` in the shared roar-letter module; the backend adds
+ * only the report-presentation bits (`kind`, `key`) and the composite / computed
+ * columns. Letter is domain-indexed: each per-subtask value is the GENERIC
+ * `subScore` emitted under a per-subtask domain (LowercaseNames / UppercaseNames
+ * / Phonemes). Mirrors the legacy dashboard mapping in `ScoreReport.vue`. Columns
+ * are stringPassthrough — display-as-is, non-sortable — like the dashboard.
  *
  * Note: only English `letter` emits computed scores; `letter-es` and
  * `letter-en-ca` return null from the assessment's computedScoreCallback, so
@@ -35,30 +33,17 @@ export default {
     type: 'none',
   },
   subscores: [
-    {
-      kind: 'stringPassthrough',
-      key: 'lowerCase',
-      label: 'Lower Case',
-      name: LETTER_SUBTASK_SCORE_NAMES.SUB_SCORE,
-      domain: LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES,
-    },
-    {
-      kind: 'stringPassthrough',
-      key: 'upperCase',
-      label: 'Upper Case',
-      name: LETTER_SUBTASK_SCORE_NAMES.SUB_SCORE,
-      domain: LETTER_SUBTASK_DOMAINS.UPPERCASE_NAMES,
-    },
-    {
-      kind: 'stringPassthrough',
-      key: 'letterSounds',
-      label: 'Letter Sounds',
-      name: LETTER_SUBTASK_SCORE_NAMES.SUB_SCORE,
-      domain: LETTER_SUBTASK_DOMAINS.PHONEMES,
-    },
+    // Per-subtask subScore columns (domain-indexed), grouping from roar-letter.
+    ...LETTER_SUBSCORE_KEYS.map((key) => ({
+      kind: 'stringPassthrough' as const,
+      key,
+      label: LETTER_SUBSCORE_DEFS[key].label,
+      name: LETTER_SUBSCORE_DEFS[key].scoreName,
+      domain: LETTER_SUBSCORE_DEFS[key].domain,
+    })),
     {
       // Composite total correct (unique name; flat lookup, no domain needed).
-      kind: 'stringPassthrough',
+      kind: 'stringPassthrough' as const,
       key: 'total',
       label: 'Total',
       name: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT,
@@ -66,20 +51,20 @@ export default {
     {
       // Merge the upper- and lower-case incorrect-item lists, mirroring the
       // dashboard's combined "Letters To Work On" column.
-      kind: 'letterToWorkOn',
+      kind: 'letterToWorkOn' as const,
       key: 'lettersToWorkOn',
       label: 'Letters To Work On',
       sources: [
-        { name: LETTER_SUBTASK_SCORE_NAMES.UPPER_INCORRECT, domain: LETTER_SUBTASK_DOMAINS.UPPERCASE_NAMES },
-        { name: LETTER_SUBTASK_SCORE_NAMES.LOWER_INCORRECT, domain: LETTER_SUBTASK_DOMAINS.LOWERCASE_NAMES },
+        { name: LETTER_SUBSCORE_DEFS.upperCase.incorrectName, domain: LETTER_SUBSCORE_DEFS.upperCase.domain },
+        { name: LETTER_SUBSCORE_DEFS.lowerCase.incorrectName, domain: LETTER_SUBSCORE_DEFS.lowerCase.domain },
       ],
     },
     {
-      kind: 'stringPassthrough',
+      kind: 'stringPassthrough' as const,
       key: 'soundsToWorkOn',
       label: 'Sounds To Work On',
-      name: LETTER_SUBTASK_SCORE_NAMES.PHONEME_INCORRECT,
-      domain: LETTER_SUBTASK_DOMAINS.PHONEMES,
+      name: LETTER_SUBSCORE_DEFS.letterSounds.incorrectName,
+      domain: LETTER_SUBSCORE_DEFS.letterSounds.domain,
     },
   ],
 };
