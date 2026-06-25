@@ -60,7 +60,17 @@ else
   echo "All services healthy. Starting assessment dev server..."
 fi
 cd "$ASSESSMENT_DIR"
-exec env \
-  FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
-  BACKEND_URL=http://localhost:4000 \
-  npx webpack serve --open --mode development --env dbmode=development
+
+# Vite-based assessments (e.g. roar-survey) have no webpack.config.cjs.
+# Use vite for those; webpack for everything else.
+if [[ -f "$ASSESSMENT_DIR/webpack.config.cjs" ]]; then
+  exec env \
+    FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
+    BACKEND_URL=http://localhost:4000 \
+    npx webpack serve --open --mode development --env dbmode=development
+else
+  exec env \
+    FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
+    BACKEND_URL=http://localhost:4000 \
+    npx vite --mode development
+fi
