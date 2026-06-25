@@ -12,6 +12,8 @@ import paConfig from './configs/pa';
 import letterConfig from './configs/letter.json';
 import phonicsConfig from './configs/phonics.json';
 import roamAlpacaConfig from './configs/roam-alpaca.json';
+import morphologyConfig from './configs/morphology.json';
+import cvaConfig from './configs/cva.json';
 
 const RAW_CONFIGS = [
   swrConfig,
@@ -25,6 +27,8 @@ const RAW_CONFIGS = [
   letterConfig,
   phonicsConfig,
   roamAlpacaConfig,
+  morphologyConfig,
+  cvaConfig,
 ];
 
 /**
