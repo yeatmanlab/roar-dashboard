@@ -78,28 +78,18 @@ vi.mock('@/composables/usePermissions', () => ({
   }),
 }));
 
-// Auth store: only `roarfirekit` (for the restConfig gate) and `$subscribe` are
-// touched. `roarfirekit` is exposed as a ref so the component's
-// `storeToRefs(authStore)` destructure yields a usable ref; `restConfig` returns
-// truthy so `init()` flips `initialized` to true. `$subscribe` is a no-op.
+// Auth store: ListUsers gates `init()` on `isAuthReady` (onMounted) and on
+// `accessToken` (the `$subscribe` callback). Provide both so `init()` flips
+// `initialized` to true; `$subscribe` is a no-op. The component no longer reads
+// `roarfirekit` or calls `storeToRefs`, so no pinia override is needed.
 const mockAuthStore = {
-  roarfirekit: ref({ restConfig: () => ({}) }),
+  accessToken: 'mock-token',
+  isAuthReady: true,
   $subscribe: vi.fn(),
 };
 vi.mock('@/store/auth', () => ({
   useAuthStore: () => mockAuthStore,
 }));
-
-// The store's consumed properties are already refs, so storeToRefs can pass the
-// store through unchanged. This avoids standing up a full Pinia instance just to
-// read `roarfirekit` for the restConfig gate.
-vi.mock('pinia', async (getModule) => {
-  const original = await getModule();
-  return {
-    ...original,
-    storeToRefs: (store) => store,
-  };
-});
 
 // ListUsers calls `useToast()` at setup and `toast.add(...)` in its save/password
 // handlers. Without a PrimeVue ToastService provider the inject-based `useToast`

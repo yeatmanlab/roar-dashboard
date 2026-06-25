@@ -202,7 +202,6 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import * as Sentry from '@sentry/vue';
-import { storeToRefs } from 'pinia';
 import { StatusCodes } from 'http-status-codes';
 import { useToast } from 'primevue/usetoast';
 import PvFloatLabel from 'primevue/floatlabel';
@@ -266,7 +265,6 @@ const schoolPlaceholder = computed(() => {
 });
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 
 const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
@@ -620,11 +618,11 @@ const initTable = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) initTable();
+  if (state.accessToken) initTable();
 });
 
 onMounted(() => {
-  if (roarfirekit.value.restConfig?.()) initTable();
+  if (authStore.isAuthReady) initTable();
 });
 
 watch(allDistricts, (newValue) => {

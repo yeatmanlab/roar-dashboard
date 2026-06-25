@@ -17,7 +17,6 @@ import _set from 'lodash/set';
 import _toUpper from 'lodash/toUpper';
 import { exportCsv } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import RoarDataTable from '@/components/RoarDataTable';
 import {
   roamAlpacaSubskills,
@@ -38,7 +37,6 @@ const props = defineProps({
 });
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 
 const initialized = ref(false);
 
@@ -312,11 +310,11 @@ const refresh = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) refresh();
+  if (state.accessToken) refresh();
 });
 
 onMounted(async () => {
-  if (roarfirekit.value.restConfig?.()) refresh();
+  if (authStore.isAuthReady) refresh();
 });
 </script>
 <style>
