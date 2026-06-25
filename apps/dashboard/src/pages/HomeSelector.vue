@@ -18,7 +18,6 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserType from '@/composables/useUserType';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { APP_ROUTES } from '@/constants/routes';
@@ -55,10 +54,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig?.() || isEmulatorAuthReady(state)) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserDataQuery(null, {
-  enabled: initialized,
-});
-
 const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
@@ -68,17 +63,11 @@ const { isAdmin, isSuperAdmin, isParticipant, isLaunchAdmin } = useUserType(user
 const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value || isLaunchAdmin.value);
 
 const isLoading = computed(() => {
-  // @NOTE: In addition to the loading states, we also check if user data and user claims are loaded as due to the
-  // current application initialization flow, the userData and userClaims queries initially reset. Once this is improved
-  // these additional checks can be removed.
-  if (!initialized.value || isLoadingClaims.value || !userClaims.value) return true;
-  // Local emulator: the legacy Firestore `userData` document never resolves against
-  // the auth-only local stack, so requiring it would pin this spinner open forever.
-  // User claims (derived from /me) are enough to route to the correct home here.
-  // `isEmulatorAuthReady` is gated on the emulator flag, so deployed builds keep
-  // requiring `userData`.
-  if (isEmulatorAuthReady(authStore)) return false;
-  return isLoadingUserData.value || !userData.value;
+  // Identity and role come from `/me`-derived claims — the only signal needed to
+  // route to the correct home. The legacy Firestore `userData` gate was removed:
+  // it never resolved on the auth-only local stack, and the claims are sufficient
+  // on every build (the rendered home component fetches its own data).
+  return !initialized.value || isLoadingClaims.value || !userClaims.value;
 });
 
 // Admin Terms-of-Service consent is no longer gated here. The global router
