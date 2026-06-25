@@ -15,12 +15,11 @@ import { mapStudentFormToAddChild } from '@/helpers/registration/mapStudentFormT
  * child's per-administration consent/assent is handled later, post-auth, by the
  * per-administration consent gate — not at account creation.
  *
- * NOTE (wiring follow-up): this saga is parameterized by `familyId`, but the
- * current parent dashboard (`pages/HomeParent.vue` / `components/HomeParentStudentView.vue`)
- * still reads the parent's data — including children — from Firestore and does
- * NOT expose a trustworthy backend family UUID. Wiring this saga into that view
- * requires the parent-home Firestore→API migration to land first. See the
- * migration report. Until then `HomeParentStudentView` keeps the firekit path.
+ * This saga is parameterized by `familyId`, which the parent dashboard resolves
+ * from `/me.families` (`pages/HomeParent.vue`) and threads through
+ * `components/HomeParentStudentView.vue`. That view calls `submit({ familyId,
+ * students })` from its "Add Child" modal; the legacy firekit
+ * `addStudentsToFamily` path has been removed.
  *
  * @returns {{ submit: (args: { familyId: string, students: Array<Object> }) => Promise<{ ids: string[] }>, isSubmitting: import('vue').Ref<boolean>, error: import('vue').Ref<Error|null> }}
  */
