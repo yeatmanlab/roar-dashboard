@@ -10,42 +10,16 @@
           <div class="text-2xl font-bold text-gray-600">Student #{{ outerIndex + 1 }}</div>
           <section class="form-section">
             <div class="p-input-icon-right">
-              <div class="flex gap-2 justify-content-between">
-                <label for="activationCode">Activation code <span class="required">*</span></label>
-              </div>
-
-              <!-- Saved invitation codes (dropdown) when the parent has them,
-                   otherwise manual entry. The activation code is validated by the
-                   backend on submit (422 for an invalid or expired code) — there
-                   is no client-side Firestore lookup or org-name preview. -->
-              <PvSelect
-                v-if="invitationCodes.length > 0 && !student.useManualCode"
-                v-model="student.activationCode"
-                :options="invitationCodes"
-                placeholder="Select an invitation code"
-                data-cy="invitation-code-dropdown"
-                class="w-full"
-              />
+              <label for="activationCode">Activation code <span class="required">*</span></label>
+              <!-- Plain text entry. The activation code is validated by the backend
+                   on submit (422 for an invalid or expired code). -->
               <PvInputText
-                v-else
                 v-model="student.activationCode"
                 name="activationCode"
                 data-cy="activation-code-input"
                 placeholder="Enter activation code"
                 class="w-full"
                 aria-describedby="activation-code-error"
-              />
-              <PvButton
-                v-if="invitationCodes.length > 0"
-                class="mt-2 text-sm"
-                :label="student.useManualCode ? 'Use Saved Code' : 'Enter Manually'"
-                severity="secondary"
-                outlined
-                size="small"
-                @click="
-                  student.useManualCode = !student.useManualCode;
-                  student.activationCode = '';
-                "
               />
             </div>
           </section>
@@ -393,7 +367,6 @@ const props = defineProps({
   isRegistering: { type: Boolean, default: true },
   code: { type: String, default: null },
   submitting: { type: Boolean, default: false },
-  invitationCodes: { type: Array, default: () => [] },
 });
 
 const isDialogVisible = ref(false);
@@ -431,7 +404,6 @@ const state = reactive({
       homeLanguage: [],
       yearOnlyCheck: yearOnlyCheckRef.value,
       accept: false,
-      useManualCode: false, // Toggle between dropdown and manual entry
     },
   ],
 });
