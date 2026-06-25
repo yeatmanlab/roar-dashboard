@@ -29,6 +29,11 @@
  *   which reads `statusFrl` back as the same enum value.
  * - `studentData.hispanic_ethnicity` is a boolean and maps directly to the
  *   contract's `hispanicEthnicity` boolean.
+ * - `studentData.gender` and `studentData.home_language` are free-text strings;
+ *   both run through `emptyToNull` so an emptied field clears the stored value
+ *   (sends `null`) instead of persisting `''`. `home_language` mirrors
+ *   {@link mapUser}, which reads `homeLanguage` back as the same string. (Booleans
+ *   like `hispanicEthnicity` keep `?? null` so a real `false` is preserved.)
  *
  * Intentionally NOT written:
  * - `testData` / `demoData` / `tags` — retired platform-wide and excluded from
@@ -52,12 +57,13 @@ export function mapUserFormToUpdateBody(form) {
     nameLast: name.last ?? null,
     dob: serializeDob(studentData.dob),
     grade: studentData.grade ?? null,
-    gender: studentData.gender ?? null,
+    gender: emptyToNull(studentData.gender),
     race: serializeRace(studentData.race),
     statusEll: coerceBooleanStatus(studentData.ell_status),
     statusFrl: normalizeFrlStatus(studentData.frl_status),
     statusIep: coerceBooleanStatus(studentData.iep_status),
     hispanicEthnicity: studentData.hispanic_ethnicity ?? null,
+    homeLanguage: emptyToNull(studentData.home_language),
   };
 
   return body;
@@ -150,6 +156,20 @@ function coerceBooleanStatus(value) {
  * @returns {string|null} The enum value, or `null`.
  */
 function normalizeFrlStatus(value) {
+  return value ? value : null;
+}
+
+/**
+ * Normalizes an optional free-text field (`gender`, `homeLanguage`) to `null`
+ * when empty, so clearing it in the form clears the stored value rather than
+ * persisting an empty string. This also keeps the read side's `?? 'None'`
+ * display fallback working — it only fires on `null`, not `''`. Boolean fields
+ * use `?? null` instead, so a real `false` is preserved.
+ *
+ * @param {string|null|undefined} value – The free-text value from the form.
+ * @returns {string|null} The non-empty string, or `null`.
+ */
+function emptyToNull(value) {
   return value ? value : null;
 }
 

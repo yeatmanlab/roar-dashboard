@@ -16,6 +16,7 @@ import { UserFactory } from '../test-support/factories/user.factory';
 import type { DistrictWithCounts } from './district.repository';
 import { DistrictRepository } from './district.repository';
 import { UserRole } from '../enums/user-role.enum';
+import { UserType } from '../enums/user-type.enum';
 import { OrgType } from '../enums/org-type.enum';
 
 describe('DistrictRepository', () => {
@@ -755,6 +756,112 @@ describe('DistrictRepository', () => {
 
         expect(result.totalItems).toBe(0);
         expect(result.items).toEqual([]);
+      });
+    });
+
+    describe('demographics embed', () => {
+      it('omits the demographics field by default (no embed)', async () => {
+        const district = await OrgFactory.create({ orgType: OrgType.DISTRICT, name: 'Demographics Default District' });
+        const student = await UserFactory.create({
+          nameLast: 'NoEmbedStudent',
+          userType: UserType.STUDENT,
+          statusEll: 'Yes',
+          race: 'White',
+        });
+        await UserOrgFactory.create({ userId: student.id, orgId: district.id, role: UserRole.STUDENT });
+
+        const result = await repository.getUsersByDistrictPath(district.path, { page: 1, perPage: 100 });
+
+        const user = result.items.find((u) => u.id === student.id);
+        expect(user).toBeDefined();
+        // The default query must not surface demographic PII.
+        expect(user).not.toHaveProperty('demographics');
+        expect(user).not.toHaveProperty('userType');
+        expect(user).not.toHaveProperty('statusEll');
+        expect(user).not.toHaveProperty('race');
+      });
+
+      it('attaches populated demographics when embedDemographics is true', async () => {
+        const district = await OrgFactory.create({
+          orgType: OrgType.DISTRICT,
+          name: 'Demographics Populated District',
+        });
+        const student = await UserFactory.create({
+          nameLast: 'EmbedStudent',
+          userType: UserType.STUDENT,
+          statusEll: 'Yes',
+          statusFrl: 'Free',
+          statusIep: 'No',
+          race: 'Asian',
+          hispanicEthnicity: true,
+          homeLanguage: 'Mandarin',
+        });
+        await UserOrgFactory.create({ userId: student.id, orgId: district.id, role: UserRole.STUDENT });
+
+        const result = await repository.getUsersByDistrictPath(district.path, {
+          page: 1,
+          perPage: 100,
+          embedDemographics: true,
+        });
+
+        const user = result.items.find((u) => u.id === student.id);
+        expect(user).toBeDefined();
+        expect(user!.demographics).toEqual({
+          userType: UserType.STUDENT,
+          statusEll: 'Yes',
+          statusFrl: 'Free',
+          statusIep: 'No',
+          race: 'Asian',
+          hispanicEthnicity: true,
+          homeLanguage: 'Mandarin',
+        });
+      });
+
+      it('is null-safe — surfaces null demographic columns as null', async () => {
+        const district = await OrgFactory.create({ orgType: OrgType.DISTRICT, name: 'Demographics Null District' });
+        // UserFactory defaults all demographic columns (except userType) to null.
+        const student = await UserFactory.create({ nameLast: 'NullDemographicsStudent', userType: UserType.STUDENT });
+        await UserOrgFactory.create({ userId: student.id, orgId: district.id, role: UserRole.STUDENT });
+
+        const result = await repository.getUsersByDistrictPath(district.path, {
+          page: 1,
+          perPage: 100,
+          embedDemographics: true,
+        });
+
+        const user = result.items.find((u) => u.id === student.id);
+        expect(user).toBeDefined();
+        expect(user!.demographics).toEqual({
+          userType: UserType.STUDENT,
+          statusEll: null,
+          statusFrl: null,
+          statusIep: null,
+          race: null,
+          hispanicEthnicity: null,
+          homeLanguage: null,
+        });
+      });
+
+      it('does not widen the result set — same rows and count with and without the embed', async () => {
+        const district = await OrgFactory.create({ orgType: OrgType.DISTRICT, name: 'Demographics Width District' });
+        const studentA = await UserFactory.create({ nameLast: 'WidthStudentA' });
+        const studentB = await UserFactory.create({ nameLast: 'WidthStudentB' });
+        const teacher = await UserFactory.create({ nameLast: 'WidthTeacher' });
+        await UserOrgFactory.create({ userId: studentA.id, orgId: district.id, role: UserRole.STUDENT });
+        await UserOrgFactory.create({ userId: studentB.id, orgId: district.id, role: UserRole.STUDENT });
+        await UserOrgFactory.create({ userId: teacher.id, orgId: district.id, role: UserRole.TEACHER });
+
+        const withoutEmbed = await repository.getUsersByDistrictPath(district.path, { page: 1, perPage: 100 });
+        const withEmbed = await repository.getUsersByDistrictPath(district.path, {
+          page: 1,
+          perPage: 100,
+          embedDemographics: true,
+        });
+
+        // The embed adds columns, not rows: identical totals and identical id sets.
+        expect(withEmbed.totalItems).toBe(withoutEmbed.totalItems);
+        expect(withEmbed.items).toHaveLength(withoutEmbed.items.length);
+        expect(withEmbed.items.map((u) => u.id).sort()).toEqual(withoutEmbed.items.map((u) => u.id).sort());
       });
     });
   });

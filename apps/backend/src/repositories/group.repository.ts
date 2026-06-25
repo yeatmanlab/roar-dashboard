@@ -12,7 +12,9 @@ import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import {
   ENROLLED_USERS_SORT_COLUMNS,
+  buildEnrolledUserSelection,
   getEnrolledUsersFilterConditions,
+  mapEnrolledUserRow,
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
@@ -224,7 +226,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
-      .select({ user: users, role: userGroups.role })
+      .select({ ...buildEnrolledUserSelection(options.embedDemographics ?? false), role: userGroups.role })
       .from(userGroups)
       .innerJoin(users, eq(users.id, userGroups.userId))
       .innerJoin(groups, eq(groups.id, userGroups.groupId))
@@ -234,7 +236,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
       .offset(offset);
 
     return {
-      items: dataResult.map((row) => ({ ...row.user, roles: [row.role] })),
+      items: dataResult.map((row) => mapEnrolledUserRow(row, [row.role])),
       totalItems,
     };
   }
