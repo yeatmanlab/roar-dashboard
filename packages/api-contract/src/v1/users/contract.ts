@@ -158,6 +158,8 @@ export const UsersContract = c.router(
         'Returns a paginated list of administrations the requester and specified user have access to. ' +
         'Use ?status=active|past|upcoming to filter by date status. ' +
         'Use ?embed=stats to include assignment stats. Use ?embed=tasks to include task variants. ' +
+        "Use ?embed=progress to attach the specified user's per-task run state " +
+        '(startedOn, completedOn, allowRetake) to each task; this implies tasks. ' +
         'Returns 403 if the requester does not have access to any administrations for the specified user. ' +
         'Returns 404 if the specified user does not exist.',
     },

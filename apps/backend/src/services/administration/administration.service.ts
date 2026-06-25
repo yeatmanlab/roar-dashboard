@@ -3,6 +3,7 @@ import type {
   AdministrationStats,
   AdministrationEmbedOptionType,
   AdministrationStatus,
+  AdministrationTaskProgress,
   AdministrationTaskVariantSortFieldType,
   AdministrationAgreementSortFieldType,
   TreeEmbedOptionType,
@@ -47,6 +48,8 @@ import type { ReportScope } from '../../repositories/report.repository';
 import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { RunRepository } from '../../repositories/run.repository';
+import { TaskRepository } from '../../repositories/task.repository';
+import { TASKS_EXCLUDED_FROM_RETAKE } from '../../constants/tasks-excluded-from-retake';
 import { TaskService } from '../task/task.service';
 import { DistrictRepository } from '../../repositories/district.repository';
 import { SchoolRepository } from '../../repositories/school.repository';
@@ -59,11 +62,24 @@ import { isMajorityAge } from '../../utils/is-majority-age.util';
 import { verifyEntitiesExist, rejectRosteringEndedTarget } from '../utils/validations.utils';
 
 /**
+ * Administration task enriched with the in-context user's per-task run state.
+ *
+ * Extends the repository's catalog-level `AdministrationTask` with an optional
+ * `progress` object that is attached only when `?embed=progress` is requested.
+ * Keeping the `progress` shape in the service layer (rather than on the
+ * repository type) preserves the layer boundary — the repository stays a pure
+ * catalog read.
+ */
+export interface AdministrationTaskWithProgress extends AdministrationTask {
+  progress?: AdministrationTaskProgress;
+}
+
+/**
  * Administration with optional embedded data.
  */
 export interface AdministrationWithEmbeds extends Administration {
   stats?: AdministrationStats;
-  tasks?: AdministrationTask[];
+  tasks?: AdministrationTaskWithProgress[];
 }
 
 /**
@@ -143,6 +159,7 @@ export function AdministrationService({
   userRepository = new UserRepository(),
   authorizationService = AuthorizationService(),
   runRepository = new RunRepository(),
+  taskRepository = new TaskRepository(),
   taskService = TaskService(),
   districtRepository = new DistrictRepository(),
   schoolRepository = new SchoolRepository(),
@@ -155,6 +172,7 @@ export function AdministrationService({
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
   reportRepository?: ReportRepository;
   runRepository?: RunRepository;
+  taskRepository?: TaskRepository;
   userRepository?: UserRepository;
   taskService?: ReturnType<typeof TaskService>;
   authorizationService?: ReturnType<typeof AuthorizationService>;
@@ -276,6 +294,72 @@ export function AdministrationService({
   }
 
   /**
+   * Attach the target user's per-task `progress` (retake eligibility) to each
+   * task in the already-resolved `tasks` embed.
+   *
+   * Mutates `items[].tasks[].progress` in place. For each task, the target
+   * user's canonical (best) run is matched by `(administrationId, variantId)`
+   * and used to compute:
+   * - `startedOn`   = canonical run's `createdAt` (ISO) or null
+   * - `completedOn` = canonical run's `completedAt` (ISO) or null
+   * - `allowRetake` = a canonical run exists AND it is not reliable AND the
+   *   task implements validity checking (its `taskId` is not in the excluded set)
+   *
+   * Both backing queries are single bulk round-trips (no N+1): one for the
+   * user's canonical runs across all administrations on the page, and one to
+   * resolve the excluded task slugs to task UUIDs.
+   *
+   * @param items - Administrations with their `tasks` embed already attached
+   * @param targetUserId - The user whose run state drives the progress fields
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if either bulk query fails
+   */
+  async function attachProgressEmbed(items: AdministrationWithEmbeds[], targetUserId: string): Promise<void> {
+    const administrationIds = items.map((item) => item.id);
+
+    // Bulk fetch the target user's canonical runs across the whole page.
+    const canonicalRuns = await runRepository
+      .getUserCanonicalRunsForAdministrations(targetUserId, administrationIds)
+      .catch((err) => {
+        throw new ApiError('Failed to fetch administration progress', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: targetUserId, administrationIds, embed: 'progress' },
+          cause: err,
+        });
+      });
+
+    // Key by `${administrationId}:${taskVariantId}` for O(1) per-task lookup.
+    const runsByKey = new Map<string, (typeof canonicalRuns)[number]>();
+    for (const run of canonicalRuns) {
+      runsByKey.set(`${run.administrationId}:${run.taskVariantId}`, run);
+    }
+
+    // Resolve excluded task slugs to task UUIDs once (bulk).
+    const excludedTaskIds = new Set(
+      await taskRepository.getIdsBySlugs([...TASKS_EXCLUDED_FROM_RETAKE]).catch((err) => {
+        throw new ApiError('Failed to fetch administration progress', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: targetUserId, administrationIds, embed: 'progress' },
+          cause: err,
+        });
+      }),
+    );
+
+    for (const item of items) {
+      for (const task of item.tasks ?? []) {
+        const run = runsByKey.get(`${item.id}:${task.variantId}`);
+        const progress: AdministrationTaskProgress = {
+          startedOn: run?.createdAt?.toISOString() ?? null,
+          completedOn: run?.completedAt?.toISOString() ?? null,
+          allowRetake: !!run && run.reliableRun === false && !excludedTaskIds.has(task.taskId),
+        };
+        task.progress = progress;
+      }
+    }
+  }
+
+  /**
    * List administrations accessible to a user with pagination, sorting, and optional embeds.
    *
    * super_admin users have unrestricted access to all administrations.
@@ -345,7 +429,10 @@ export function AdministrationService({
 
       const administrationIds = result.items.map((admin) => admin.id);
       const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
-      const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
+      // `progress` enriches the per-task objects, so it implies `tasks` — resolve
+      // tasks whenever either is requested.
+      const shouldEmbedProgress = embedOptions.includes(AdministrationEmbedOption.PROGRESS);
+      const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS) || shouldEmbedProgress;
 
       // Fetch embed data (throws on failure)
       const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, userId) : null;
@@ -365,6 +452,12 @@ export function AdministrationService({
 
         return adminWithEmbeds;
       });
+
+      // Self-read path: the in-context user is the requester. Attach their
+      // per-task run state after tasks have been resolved.
+      if (shouldEmbedProgress) {
+        await attachProgressEmbed(itemsWithEmbeds, userId);
+      }
 
       return {
         items: itemsWithEmbeds,
@@ -917,7 +1010,10 @@ export function AdministrationService({
 
       const administrationIds = result.items.map((admin) => admin.id);
       const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
-      const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
+      // `progress` enriches the per-task objects, so it implies `tasks` — resolve
+      // tasks whenever either is requested.
+      const shouldEmbedProgress = embedOptions.includes(AdministrationEmbedOption.PROGRESS);
+      const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS) || shouldEmbedProgress;
 
       // Fetch embed data (throws on failure)
       const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, requesterUserId) : null;
@@ -937,6 +1033,12 @@ export function AdministrationService({
 
         return adminWithEmbeds;
       });
+
+      // Supervisory path: the in-context user is the TARGET (path) user, so
+      // attach the target user's per-task run state — not the requester's.
+      if (shouldEmbedProgress) {
+        await attachProgressEmbed(itemsWithEmbeds, userId);
+      }
 
       return {
         items: itemsWithEmbeds,

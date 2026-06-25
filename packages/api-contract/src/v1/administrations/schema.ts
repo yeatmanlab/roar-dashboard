@@ -48,7 +48,31 @@ export const AdministrationStatsSchema = z.object({
 export type AdministrationStats = z.infer<typeof AdministrationStatsSchema>;
 
 /**
+ * Per-task progress schema (embedded via ?embed=progress).
+ *
+ * Describes the in-context user's canonical (best) run state for a single
+ * task within an administration. This is retake-eligibility/assignment state,
+ * NOT scores.
+ *
+ * - startedOn: `createdAt` of the user's canonical run for this task, or null
+ *   if no run exists.
+ * - completedOn: `completedAt` of that run, or null if not completed.
+ * - allowRetake: true iff a canonical run exists, it is not reliable, and the
+ *   task implements validity checking (not in the excluded set).
+ */
+export const AdministrationTaskProgressSchema = z.object({
+  startedOn: z.string().datetime().nullable(),
+  completedOn: z.string().datetime().nullable(),
+  allowRetake: z.boolean(),
+});
+
+export type AdministrationTaskProgress = z.infer<typeof AdministrationTaskProgressSchema>;
+
+/**
  * Administration task schema (embedded via ?embed=tasks).
+ *
+ * `progress` is attached only when `?embed=progress` is requested (which
+ * implies `tasks`).
  */
 export const AdministrationTaskSchema = z.object({
   taskId: z.string().uuid(),
@@ -56,6 +80,7 @@ export const AdministrationTaskSchema = z.object({
   variantId: z.string().uuid(),
   variantName: z.string().nullable(),
   orderIndex: z.number().int(),
+  progress: AdministrationTaskProgressSchema.optional(),
 });
 
 export type AdministrationTask = z.infer<typeof AdministrationTaskSchema>;
@@ -107,8 +132,16 @@ export const AdministrationSortField = {
  * Allowed embed options for administrations.
  * - 'stats': Include assigned user count and run statistics (started/completed)
  * - 'tasks': Include task variants assigned to the administration
+ * - 'progress': Attach the in-context user's per-task run state
+ *   (`startedOn`, `completedOn`, `allowRetake`) to each task in the `tasks`
+ *   embed. Requires/implies `tasks` — the service resolves tasks even if only
+ *   `progress` is requested. The "in-context user" is:
+ *   - on `GET /administrations` and the self-read user-scoped path
+ *     (`GET /users/:ownId/administrations`), the requester, and
+ *   - on the supervisory user-scoped path
+ *     (`GET /users/:targetId/administrations`), the target (path) user.
  */
-export const ADMINISTRATION_EMBED_OPTIONS = ['stats', 'tasks'] as const;
+export const ADMINISTRATION_EMBED_OPTIONS = ['stats', 'tasks', 'progress'] as const;
 
 /**
  * Embed option type for administrations.
@@ -121,6 +154,7 @@ export type AdministrationEmbedOptionType = (typeof ADMINISTRATION_EMBED_OPTIONS
 export const AdministrationEmbedOption = {
   STATS: 'stats',
   TASKS: 'tasks',
+  PROGRESS: 'progress',
 } as const satisfies Record<string, AdministrationEmbedOptionType>;
 
 /**
