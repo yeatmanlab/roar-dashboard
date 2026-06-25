@@ -19,6 +19,8 @@ import type {
   TreeNode,
 } from '../../repositories/administration.repository';
 import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
+import type { Condition } from '../../types/condition';
+import { Operator } from '../../types/condition';
 import {
   createMockAdministrationRepository,
   createMockAdministrationTaskVariantRepository,
@@ -665,13 +667,39 @@ describe('AdministrationService', () => {
           [
             'admin-1',
             [
-              { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
-              { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
+              {
+                taskId: 'task-1',
+                taskName: 'SWR',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+              {
+                taskId: 'task-2',
+                taskName: 'PA',
+                variantId: 'variant-2',
+                variantName: null,
+                orderIndex: 1,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
             ],
           ],
           [
             'admin-2',
-            [{ taskId: 'task-3', taskName: 'SRE', variantId: 'variant-3', variantName: 'Variant C', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-3',
+                taskName: 'SRE',
+                variantId: 'variant-3',
+                variantName: 'Variant C',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]);
         mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
@@ -711,7 +739,17 @@ describe('AdministrationService', () => {
         const tasksMap = new Map([
           [
             'admin-1',
-            [{ taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'SWR',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]);
         mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
@@ -781,7 +819,17 @@ describe('AdministrationService', () => {
         const tasksMap = new Map([
           [
             'admin-1',
-            [{ taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'SWR',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]);
 
@@ -816,6 +864,11 @@ describe('AdministrationService', () => {
       /**
        * Builds a single super-admin administration ('admin-1') with one task
        * ('task-1' / 'variant-1') to exercise the per-task progress attachment.
+       *
+       * Also stubs the dependencies the per-student pass now needs on the
+       * self-read path: the in-context user lookup and the eligibility
+       * evaluator. The tasks carry null conditions (assigned to all, required)
+       * so these progress-focused tests aren't affected by assignment state.
        */
       function arrangeSingleTaskAdmin() {
         const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
@@ -824,10 +877,28 @@ describe('AdministrationService', () => {
         const tasksMap = new Map([
           [
             'admin-1',
-            [{ taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'SWR',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]);
         mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
+
+        // The self-read path resolves the in-context user (authContext.userId) before
+        // enrichment. Echo the requested id so the resolved user mirrors the caller —
+        // this is what drives the per-student canonical-runs lookup, so the test must
+        // not pin it to a fixed id that diverges from the requester.
+        mockUserRepository.getById.mockImplementation(({ id }) => Promise.resolve(UserFactory.build({ id })));
+        // Null conditions → assigned to all, required.
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
       }
 
       function buildService() {
@@ -836,6 +907,8 @@ describe('AdministrationService', () => {
           administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
           runRepository: mockRunRepository,
           taskRepository: mockTaskRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
           authorizationService: mockAuthorizationService,
         });
       }
@@ -991,16 +1064,40 @@ describe('AdministrationService', () => {
         const tasksMap = new Map([
           [
             'admin-1',
-            [{ taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'SWR',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
           [
             'admin-2',
-            [{ taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: 'Variant B', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-2',
+                taskName: 'PA',
+                variantId: 'variant-2',
+                variantName: 'Variant B',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]);
         mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
         mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
         mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+        // Self-read enrichment resolves the in-context user first; without this stub
+        // the per-student pass is skipped and no canonical-runs query is issued.
+        mockUserRepository.getById.mockImplementation(({ id }) => Promise.resolve(UserFactory.build({ id })));
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
 
         await buildService().list(
           { userId: 'student-123', isSuperAdmin: true },
@@ -1058,6 +1155,187 @@ describe('AdministrationService', () => {
             { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
           ),
         ).rejects.toThrow('Failed to fetch administration progress');
+      });
+    });
+
+    describe('per-student optional/assigned (tasks embed)', () => {
+      const ASSIGNED_GRADE_5: Condition = { field: 'studentData.grade', op: Operator.EQUAL, value: '5' };
+      const OPTIONAL_GRADE_3: Condition = { field: 'studentData.grade', op: Operator.EQUAL, value: '3' };
+
+      /**
+       * Arrange a single super-admin administration with one task whose variant
+       * carries the given assignment/optionality conditions. `progress` always
+       * resolves (no runs) so these tests focus purely on optional/assigned.
+       *
+       * @param conditionsAssignment - assigned_if condition on the task variant
+       * @param conditionsRequirements - optional_if condition on the task variant
+       */
+      function arrangeTaskWithConditions(
+        conditionsAssignment: Condition | null,
+        conditionsRequirements: Condition | null,
+      ) {
+        mockAdministrationRepository.listAll.mockResolvedValue({
+          items: [AdministrationFactory.build({ id: 'admin-1' })],
+          totalItems: 1,
+        });
+        mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(
+          new Map([
+            [
+              'admin-1',
+              [
+                {
+                  taskId: 'task-1',
+                  taskName: 'SWR',
+                  variantId: 'variant-1',
+                  variantName: 'Variant A',
+                  orderIndex: 0,
+                  conditionsAssignment,
+                  conditionsRequirements,
+                },
+              ],
+            ],
+          ]),
+        );
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+      }
+
+      function buildService() {
+        return AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+          runRepository: mockRunRepository,
+          taskRepository: mockTaskRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+          authorizationService: mockAuthorizationService,
+        });
+      }
+
+      it('(a) assigned=true when conditionsAssignment is null (assigned to all)', async () => {
+        arrangeTaskWithConditions(null, null);
+        // Use the REAL evaluator semantics for null conditions.
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
+        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: 'student-123', grade: '5' }));
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          // optional/assigned attach alongside progress on the user-scoped path.
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.assigned).toBe(true);
+        // Null assignment condition passed straight through to the evaluator.
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'student-123' }),
+          null,
+          null,
+        );
+      });
+
+      it('(b) assigned=false when the target user fails the assigned_if condition', async () => {
+        arrangeTaskWithConditions(ASSIGNED_GRADE_5, null);
+        // Grade-3 user fails an assigned_if of grade EQUAL 5.
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: false, isOptional: false });
+        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: 'student-123', grade: '3' }));
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        // The task is NOT filtered out — it is still present, just flagged.
+        expect(result.items[0]!.tasks).toHaveLength(1);
+        expect(result.items[0]!.tasks![0]!.assigned).toBe(false);
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'student-123' }),
+          ASSIGNED_GRADE_5,
+          null,
+        );
+      });
+
+      it('(c) optional=false on an assigned task when conditionsRequirements is null (required)', async () => {
+        arrangeTaskWithConditions(null, null);
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
+        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: 'student-123', grade: '5' }));
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.assigned).toBe(true);
+        expect(result.items[0]!.tasks![0]!.optional).toBe(false);
+      });
+
+      it('(d) optional=true when the target user matches the optional_if condition', async () => {
+        arrangeTaskWithConditions(null, OPTIONAL_GRADE_3);
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: true });
+        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: 'student-123', grade: '3' }));
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.optional).toBe(true);
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'student-123' }),
+          null,
+          OPTIONAL_GRADE_3,
+        );
+      });
+
+      it('(e) evaluates the self-read user (list) — the requester drives the conditions', async () => {
+        arrangeTaskWithConditions(ASSIGNED_GRADE_5, null);
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
+        const selfUser = UserFactory.build({ id: 'self-reader', grade: '5' });
+        mockUserRepository.getById.mockResolvedValue(selfUser);
+
+        await buildService().list(
+          { userId: 'self-reader', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        // The in-context (self) user is fetched and passed to the evaluator.
+        expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'self-reader' });
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledWith(selfUser, ASSIGNED_GRADE_5, null);
+      });
+
+      it('(f) does not leak the internal conditions* fields in the output tasks', async () => {
+        arrangeTaskWithConditions(ASSIGNED_GRADE_5, OPTIONAL_GRADE_3);
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: true });
+        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: 'student-123', grade: '3' }));
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        const task = result.items[0]!.tasks![0]!;
+        expect(task).not.toHaveProperty('conditionsAssignment');
+        expect(task).not.toHaveProperty('conditionsRequirements');
+        // The intended fields are present.
+        expect(task).toHaveProperty('assigned', true);
+        expect(task).toHaveProperty('optional', true);
+      });
+
+      it('skips per-student enrichment gracefully when the in-context user is not found', async () => {
+        arrangeTaskWithConditions(null, null);
+        // The self-read user lookup returns null — enrichment is skipped, tasks
+        // are still returned without progress/optional/assigned.
+        mockUserRepository.getById.mockResolvedValue(null);
+
+        const result = await buildService().list(
+          { userId: 'missing-user', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks).toHaveLength(1);
+        expect(result.items[0]!.tasks![0]!.assigned).toBeUndefined();
+        expect(result.items[0]!.tasks![0]!.optional).toBeUndefined();
+        expect(result.items[0]!.tasks![0]!.progress).toBeUndefined();
+        expect(mockTaskService.evaluateTaskVariantEligibility).not.toHaveBeenCalled();
       });
     });
   });
@@ -3074,7 +3352,17 @@ describe('AdministrationService', () => {
         new Map([
           [
             mockAdmin.id,
-            [{ taskId: 'task-1', taskName: 'Task 1', variantId: 'variant-1', variantName: 'Variant 1', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'Task 1',
+                variantId: 'variant-1',
+                variantName: 'Variant 1',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]),
       );
@@ -3119,7 +3407,17 @@ describe('AdministrationService', () => {
         new Map([
           [
             mockAdmin.id,
-            [{ taskId: 'task-1', taskName: 'Task 1', variantId: 'variant-1', variantName: 'Variant 1', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'Task 1',
+                variantId: 'variant-1',
+                variantName: 'Variant 1',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]),
       );
@@ -3218,7 +3516,17 @@ describe('AdministrationService', () => {
         const tasksMap = new Map([
           [
             'admin-1',
-            [{ taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'SWR',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]);
         mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
@@ -3233,6 +3541,7 @@ describe('AdministrationService', () => {
           },
         ]);
         mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -3240,6 +3549,7 @@ describe('AdministrationService', () => {
           userRepository: mockUserRepository,
           runRepository: mockRunRepository,
           taskRepository: mockTaskRepository,
+          taskService: mockTaskService,
           authorizationService: mockAuthorizationService,
         });
 
@@ -3261,6 +3571,8 @@ describe('AdministrationService', () => {
           'admin-1',
         ]);
         expect(result.items[0]!.tasks![0]!.progress!.allowRetake).toBe(true);
+        // Eligibility evaluated for the TARGET user's demographics, not the requester.
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledWith(mockUser, null, null);
       });
     });
   });
