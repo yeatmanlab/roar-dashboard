@@ -4,10 +4,16 @@ import { resolveConsentRequirement, CONSENT_REQUIREMENT_STATUS } from './resolve
 // A fixed "now" so age derivation is deterministic.
 const NOW = new Date('2026-06-23T12:00:00.000Z');
 
-// Born 2008 → age 2026 - 2008 = 18 → adult → requires "consent".
+// Born 2008 → age 2026 - 2008 = 18 (an adult). The backend returns the "consent"
+// agreement for this student.
 const ADULT_DOB = '2008-03-15';
-// Born 2016 → age 2026 - 2016 = 10 → minor → requires "assent".
+// Born 2016 → age 2026 - 2016 = 10 (a minor). The backend returns the "assent"
+// agreement for this student.
 const MINOR_DOB = '2016-03-15';
+// Born 2009 → age 2026 - 2009 = 17: a *minor* who is nonetheless in a senior
+// grade. The backend (date-of-birth first) returns "assent"; the old grade-only
+// frontend logic wrongly derived "consent". The realistic regression case.
+const SENIOR_MINOR_DOB = '2009-03-15';
 // Born 2020 → age 6 (and grade 0 in fixtures) → too young to be prompted.
 const YOUNG_DOB = '2020-03-15';
 
@@ -101,17 +107,6 @@ describe('resolveConsentRequirement', () => {
       expect(result.status).toBe(CONSENT_REQUIREMENT_STATUS.NOT_REQUIRED);
     });
 
-    it('returns NOT_REQUIRED when only a non-matching agreement type is present (adult, only assent assigned)', () => {
-      // Adult requires "consent"; administration only assigns "assent" → no gate.
-      const result = resolveConsentRequirement({
-        agreements: [assentAgreement({ signed: false }), tosAgreement({ signed: false })],
-        agreementsResolved: true,
-        userData: buildUserData({ dob: ADULT_DOB, grade: 12 }),
-      });
-
-      expect(result.status).toBe(CONSENT_REQUIREMENT_STATUS.NOT_REQUIRED);
-    });
-
     it('ignores a `tos` agreement entirely (tos is gated elsewhere)', () => {
       // Only a tos agreement is present; neither consent nor assent → no gate
       // here regardless of the student's age.
@@ -125,10 +120,12 @@ describe('resolveConsentRequirement', () => {
     });
   });
 
-  describe('(c) consent-vs-assent choice follows age/grade', () => {
-    it('selects the consent agreement for an adult (age >= 18)', () => {
+  describe('(c) the dashboard consumes the backend-selected participant agreement (does NOT re-derive consent vs assent)', () => {
+    it('uses the consent agreement the backend returned for an adult', () => {
+      // The backend selects the age-appropriate agreement; for an adult it
+      // returns "consent" (alongside an unrelated ToS the gate ignores).
       const result = resolveConsentRequirement({
-        agreements: [consentAgreement({ signed: false }), assentAgreement({ signed: false })],
+        agreements: [consentAgreement({ signed: false }), tosAgreement({ signed: false })],
         agreementsResolved: true,
         userData: buildUserData({ dob: ADULT_DOB, grade: 4 }),
       });
@@ -139,22 +136,26 @@ describe('resolveConsentRequirement', () => {
       expect(result.versionId).toBe('v-consent');
     });
 
-    it('selects the consent agreement for a senior-grade student (grade >= 12)', () => {
+    it('uses the assent agreement the backend returned for a senior-grade minor (grade 12, age < 18) — the gate is NOT dropped', () => {
+      // Regression for the consent-vs-assent discrepancy: a 17-year-old in grade
+      // 12 is a minor by date of birth, so the backend returns "assent". The
+      // dashboard must use it rather than re-deriving "consent" from grade >= 12
+      // (which would match nothing in the backend-filtered list → no gate).
       const result = resolveConsentRequirement({
-        agreements: [consentAgreement({ signed: false }), assentAgreement({ signed: false })],
+        agreements: [assentAgreement({ signed: false })],
         agreementsResolved: true,
-        // Young dob but senior grade → still "consent".
-        userData: buildUserData({ dob: MINOR_DOB, grade: 12 }),
+        userData: buildUserData({ dob: SENIOR_MINOR_DOB, grade: 12 }),
       });
 
       expect(result.status).toBe(CONSENT_REQUIREMENT_STATUS.REQUIRED);
-      expect(result.consentType).toBe('consent');
-      expect(result.agreementId).toBe('agreement-consent-id');
+      expect(result.consentType).toBe('assent');
+      expect(result.agreementId).toBe('agreement-assent-id');
+      expect(result.versionId).toBe('v-assent');
     });
 
-    it('selects the assent agreement for a minor (age < 18 and grade < 12)', () => {
+    it('uses the assent agreement the backend returned for a minor', () => {
       const result = resolveConsentRequirement({
-        agreements: [consentAgreement({ signed: false }), assentAgreement({ signed: false })],
+        agreements: [assentAgreement({ signed: false }), tosAgreement({ signed: false })],
         agreementsResolved: true,
         userData: buildUserData({ dob: MINOR_DOB, grade: 4 }),
       });
