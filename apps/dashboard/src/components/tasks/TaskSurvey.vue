@@ -15,7 +15,6 @@ import { SURVEY_TASK_ID } from '@roar-platform/assessment-schema/roar-survey';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { getRoarApiClient } from '@/clients/roar-api';
-import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import { version } from '@roar-platform/roar-survey/package.json';
 import SurveyRunner from '@roar-platform/roar-survey';
 
@@ -34,20 +33,14 @@ const sdkInitialized = ref(false);
 const surveyJson = ref(null);
 const taskStarted = ref(false);
 
-const initialized = ref(false);
 let unsubscribe;
 const init = () => {
   if (unsubscribe) unsubscribe();
-  initialized.value = true;
 };
 const handlePopState = () => router.go(0);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.accessToken) init();
-});
-
-const { isLoading: isLoadingUserData } = useUserStudentDataQuery(props.launchId, {
-  enabled: initialized,
 });
 
 window.addEventListener('popstate', handlePopState, { once: true });
@@ -61,9 +54,9 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isFirekitInit, isLoadingUserData],
-  async ([newFirekitInitValue, newLoadingUserData]) => {
-    if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
+  [isFirekitInit],
+  async ([newFirekitInitValue]) => {
+    if (newFirekitInitValue && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
