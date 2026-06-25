@@ -6,36 +6,10 @@ import { getRoarApiClient } from '@/clients/roar-api';
 import { useAuthStore } from '@/store/auth';
 import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 import { mapEnrolledUser } from '@/helpers/mappers/mapEnrolledUser';
+import { orgUsersResolvers } from '@/helpers/orgUsersResolvers';
 import { ORG_USERS_QUERY_KEY } from '@/constants/queryKeys';
 
 const MAX_RETRIES = 3;
-
-/**
- * Dispatch table mapping the (plural) org type used throughout the dashboard to
- * the typed ts-rest `listUsers` action and its path-param name.
- *
- * The plural keys (`districts`, `schools`, `classes`, `groups`) are exactly the
- * values the `ListUsers` route receives as `:orgType` — they originate from
- * `activeOrgType` in `OrgsList.vue`, which is a plural `ORG_TYPES` value. Each
- * org type has its own endpoint (`GET /v1/{type}/:id/users`) with a distinct
- * path-param name, so the resolver returns the correct action plus the param
- * key to populate.
- *
- * Correctness/security note: dispatching to the wrong entry would query a
- * different org type (e.g. asking the schools endpoint for a district id), so
- * this map is the single point that pins org type → endpoint. `families` is
- * intentionally absent — there is no per-family user-list endpoint and the
- * `ListUsers` route is never reached for families.
- *
- * @param {ReturnType<typeof getRoarApiClient>} client – The typed ts-rest client.
- * @returns {Record<string, { action: Function, paramKey: string }>} Resolver map.
- */
-const orgUsersResolvers = (client) => ({
-  districts: { action: client.districts.listUsers, paramKey: 'districtId' },
-  schools: { action: client.schools.listUsers, paramKey: 'schoolId' },
-  classes: { action: client.classes.listUsers, paramKey: 'classId' },
-  groups: { action: client.groups.listUsers, paramKey: 'groupId' },
-});
 
 /**
  * Organisation users query (server-driven pagination and sort).
