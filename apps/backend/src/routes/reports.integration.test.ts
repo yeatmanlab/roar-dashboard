@@ -20,6 +20,13 @@ import { RunScoreFactory } from '../test-support/factories/run-score.factory';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
 import { AdministrationTaskVariantFactory } from '../test-support/factories/administration-task-variant.factory';
+import { TaskFactory } from '../test-support/factories/task.factory';
+import { TaskVariantFactory } from '../test-support/factories/task-variant.factory';
+import {
+  PHONICS_SUBSKILL_KEYS,
+  PHONICS_SUBSKILL_DEFS,
+  PHONICS_COMPOSITE_SCORE_NAMES,
+} from '@roar-platform/assessment-schema/roar-letter';
 import { OrgFactory } from '../test-support/factories/org.factory';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
@@ -62,6 +69,11 @@ function studentScoresPath(administrationId: string) {
 /** Builds the individual student report endpoint path. */
 function individualStudentReportPath(administrationId: string, userId: string) {
   return `/v1/administrations/${administrationId}/reports/scores/students/${userId}`;
+}
+
+/** Builds the task-subscores endpoint path. */
+function taskSubscoresPath(administrationId: string, taskId: string) {
+  return `/v1/administrations/${administrationId}/reports/scores/tasks/${taskId}`;
 }
 
 /** Default query params for a valid request. */
@@ -3319,6 +3331,252 @@ describe('includeUnenrolledStudents toggle wiring — #1792', () => {
 
       expect(res.status).toBe(StatusCodes.OK);
       expect(res.body.data.student.userId).toBe(withdrawnStudentId);
+    });
+  });
+});
+
+describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
+  // baseFixture.task uses an auto-generated slug (task-N-xxxxx) that is not in
+  // the subscore registry, so authorized callers reach the config-validation
+  // 400 ("task without subscores") rather than a 200. That is sufficient to
+  // prove authorization does NOT gate the request — the registry/config does.
+  // A registered-slug 200 happy path is covered by the dedicated describe
+  // block at the end of this suite, which seeds a phonics task + variant
+  // locally (baseFixture is left untouched).
+  const NON_EXISTENT_UUID = '00000000-0000-0000-0000-000000000000';
+
+  function subscoresQuery() {
+    return { scopeType: 'district', scopeId: baseFixture.district.id, page: 1, perPage: 25 };
+  }
+
+  describe('authorization', () => {
+    it('returns 401 without auth', async () => {
+      const res = await expectRoute(
+        'GET',
+        taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id),
+      )
+        .unauthenticated()
+        .toReturn(401);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('student tier returns 403', async () => {
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier returns 403', async () => {
+      authenticateAs(tiers.caregiver);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator (teacher) at district scope is forbidden', async () => {
+      authenticateAs(tiers.educator);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('returns 403 for an admin in a different district', async () => {
+      authenticateAs(baseFixture.districtBAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToSchoolA.id, baseFixture.task.id))
+        .query({ scopeType: 'school', scopeId: baseFixture.schoolA.id, page: 1, perPage: 25 })
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('super admin passes auth and lands the config-validation 400 (auth does not gate)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('admin at district passes auth and lands the config-validation 400', async () => {
+      authenticateAs(tiers.admin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('principal at school A passes auth at school scope (client error past auth, not 403)', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToSchoolA.id, baseFixture.task.id))
+        .query({ scopeType: 'school', scopeId: baseFixture.schoolA.id, page: 1, perPage: 25 })
+        .set('Authorization', 'Bearer token');
+      expect([StatusCodes.BAD_REQUEST, StatusCodes.NOT_FOUND]).toContain(res.status);
+    });
+  });
+
+  describe('error paths', () => {
+    it('returns 404 for an unknown administration', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(NON_EXISTENT_UUID, baseFixture.task.id))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('returns 404 when the task is not part of the administration', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, NON_EXISTENT_UUID))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('returns 400 when scopeType is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query({ scopeId: baseFixture.district.id, page: 1, perPage: 25 })
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 for a malformed taskId', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, 'not-a-uuid'))
+        .query(subscoresQuery())
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 200 happy path. The cases above use baseFixture.task (auto-generated slug,
+  // no scoring config) and therefore stop at the config-400. To exercise a real
+  // 200 we seed a registered-slug `phonics` task with a variant assigned to the
+  // district administration, plus a completed reporting run and phonics
+  // run_scores for grade5Student (proven in-scope for district scope by the
+  // score-overview FDW block above). Entities are created locally via factories
+  // — baseFixture is left untouched.
+  //
+  // Like every spec in this file, this runs against the integration Postgres
+  // stack; it mirrors the FDW-backed seeding pattern used by the sibling
+  // score-report blocks above.
+  // ─────────────────────────────────────────────────────────────────────────
+  describe('response shape — 200 happy path (registered-slug phonics task)', () => {
+    let phonicsTaskId: string;
+    const SEEDED_SKILL = 'cvc';
+    const UNSEEDED_SKILL = 'digraph';
+
+    beforeAll(async () => {
+      const phonicsTask = await TaskFactory.create({ slug: 'phonics', name: 'Phonics' });
+      phonicsTaskId = phonicsTask.id;
+
+      const phonicsVariant = await TaskVariantFactory.create({ taskId: phonicsTask.id });
+      // baseFixture already assigns variants at orderIndex 0–5 on
+      // administrationAssignedToDistrict; the (administration_id, order_index)
+      // unique index means this phonics variant needs an unused index.
+      await AdministrationTaskVariantFactory.create({
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        taskVariantId: phonicsVariant.id,
+        orderIndex: 100,
+      });
+
+      const run = await RunFactory.create({
+        userId: baseFixture.grade5Student.id,
+        taskId: phonicsTask.id,
+        taskVariantId: phonicsVariant.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        useForReporting: true,
+        completedAt: new Date('2025-08-01T10:00:00Z'),
+      });
+
+      // CVC sub-skill: 7/10. The other 8 sub-skills are intentionally unseeded so
+      // their cells resolve to null. totalPercentCorrect is seeded as 82.6 to
+      // exercise the number column's `round: true` end-to-end (-> 83).
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: 'computed',
+        domain: 'default',
+        name: PHONICS_SUBSKILL_DEFS[SEEDED_SKILL].correctName,
+        value: '7',
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: 'computed',
+        domain: 'default',
+        name: PHONICS_SUBSKILL_DEFS[SEEDED_SKILL].attemptedName,
+        value: '10',
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: 'computed',
+        domain: 'default',
+        name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT,
+        value: '82.6',
+      });
+    });
+
+    it('returns 200 with phonics subscore columns and the seeded student values', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, phonicsTaskId))
+        .query({ scopeType: 'district', scopeId: baseFixture.district.id, page: 1, perPage: 100 })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+
+      // Task metadata resolves the registered slug.
+      expect(data.task.taskId).toBe(phonicsTaskId);
+      expect(data.task.taskSlug).toBe('phonics');
+
+      // Columns: the 9 phonics sub-skills (canonical order) + totalPercentCorrect.
+      const columnKeys = data.subscoreColumns.map((c: { key: string }) => c.key);
+      expect(columnKeys).toEqual([...PHONICS_SUBSKILL_KEYS, 'totalPercentCorrect']);
+
+      // The seeded student appears with the expected cell values.
+      const studentRow = data.items.find(
+        (item: { user: { userId: string } }) => item.user.userId === baseFixture.grade5Student.id,
+      );
+      expect(studentRow).toBeDefined();
+      expect(studentRow.subscores[SEEDED_SKILL]).toBe('7/10');
+      expect(studentRow.subscores[UNSEEDED_SKILL]).toBeNull();
+      // number column with round: true (82.6 -> 83)
+      expect(studentRow.subscores.totalPercentCorrect).toBe(83);
+    });
+
+    it('rejects sort on a non-numeric phonics sub-skill column with 400', async () => {
+      // Phonics sub-skill itemLevel columns have no percentCorrectName, so they
+      // are not numerically sortable — the endpoint rejects the sort with 400.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, phonicsTaskId))
+        .query({
+          scopeType: 'district',
+          scopeId: baseFixture.district.id,
+          page: 1,
+          perPage: 25,
+          sortBy: `subscores.${SEEDED_SKILL}`,
+          sortOrder: 'desc',
+        })
+        .set('Authorization', 'Bearer token');
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
   });
 });

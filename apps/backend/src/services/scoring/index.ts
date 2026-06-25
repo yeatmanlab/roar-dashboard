@@ -6,6 +6,9 @@ export {
   resolveScoreFieldName,
   getSupportLevelFieldName,
   getSubscoresConfig,
+  getPublicSubscoreColumns,
+  getNumericFieldForSubscore,
+  formatTaskSubscoreColumnValue,
   PA_SKILL_THRESHOLD,
   PA_SKILL_LEGACY_THRESHOLD,
   PA_SUBTASK_KEYS,
@@ -19,5 +22,11 @@ export type {
   GradeConditionalField,
   FieldNameValue,
   Classification,
+  SubscoreColumn,
+  ItemLevelSubscoreColumn,
+  NumberSubscoreColumn,
+  StringPassthroughSubscoreColumn,
+  PaSkillsToWorkOnSubscoreColumn,
+  LetterToWorkOnSubscoreColumn,
 } from './scoring.config-schema';
 export type { SupportLevel, ScoringInput, RawScoreThreshold, ScoreFieldResolution } from './scoring.types';
