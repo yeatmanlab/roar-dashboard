@@ -15,16 +15,37 @@
     "./lib/*.css": {
       "import": "./lib/*.css",
       "require": "./lib/*.css"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "roar": {
+    "hosting": {
+      "staging": "roar-survey-monorepo-abc",
+      "production": "roar-survey-monorepo"
     }
   },
   "peerDependencies": {
     "vue": "^3.0.0"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "bash ../../../scripts/dev-platform.sh",
+    "dev:ci": "npx vite --mode development",
+    "start": "bash ../../../scripts/assessment-env-up.sh",
+    "stop": "bash ../../../scripts/assessment-env-down.sh",
+    "restart": "npm run stop && npm run start",
+    "rebuild": "bash ../../../scripts/assessment-env-build.sh",
+    "update": "npm --prefix ../../../packages/assessment-schema run build && npm --prefix ../../../packages/assessment-sdk run build",
     "build": "vite build --mode lib",
     "build:staging": "vite build --mode staging",
-    "build:production": "vite build --mode production"
+    "build:production": "vite build --mode production",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write --log-level=warn",
+    "format:check": "prettier . --check"
   },
   "repository": {
     "type": "git",
@@ -32,13 +53,19 @@
   },
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "dependencies": {
-    "@bdelab/roar-firekit": "^9.8.0",
+    "@roar-platform/assessment-sdk": "^0.1.0",
+    "@roar-platform/assessment-schema": "^0.1.0",
+    "firebase": "^10.13.2",
     "regenerator-runtime": "^0.14.1",
     "survey-core": "^2.0.8",
     "survey-vue3-ui": "^2.0.8"
   },
   "devDependencies": {
+    "@roar-platform/eslint-config": "*",
+    "@roar-platform/prettier-config": "*",
     "@vitejs/plugin-vue": "^5.2.3",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
     "vite": "^6.3.5"
   }
 }

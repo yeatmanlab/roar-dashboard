@@ -1,72 +1,44 @@
 {
   "hosting": [
     {
-      "public": "dist",
       "target": "production",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ],
+      "public": "dist",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }],
       "headers": [
         {
-          "source": "**/*",
+          "source": "**",
           "headers": [
+            { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
             {
-              "key": "Feature-Policy",
-              "value": "autoplay=*"
+              "key": "Strict-Transport-Security",
+              "value": "max-age=63072000; includeSubDomains; preload"
             }
           ]
-        }
+        },
+        { "source": "**/*", "headers": [{ "key": "Feature-Policy", "value": "autoplay=*" }] }
       ]
     },
     {
-      "public": "dist",
       "target": "staging",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ],
+      "public": "dist",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }],
       "headers": [
         {
-          "source": "**/*",
+          "source": "**",
           "headers": [
+            { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
             {
-              "key": "Feature-Policy",
-              "value": "autoplay=*"
+              "key": "Strict-Transport-Security",
+              "value": "max-age=63072000; includeSubDomains; preload"
             }
           ]
-        }
+        },
+        { "source": "**/*", "headers": [{ "key": "Feature-Policy", "value": "autoplay=*" }] }
       ]
     }
-  ],
-  "emulators": {
-    "auth": {
-      "port": 9099
-    },
-    "firestore": {
-      "port": 8080
-    },
-    "hosting": {
-      "port": 5000
-    },
-    "ui": {
-      "enabled": true,
-      "port": 4000
-    },
-    "singleProjectMode": true
-  }
+  ]
 }
