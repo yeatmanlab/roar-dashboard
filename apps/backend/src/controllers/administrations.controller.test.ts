@@ -77,6 +77,7 @@ describe('AdministrationsController', () => {
       getTree: mockGetTree,
       create: mockCreate,
       getUserAdministration: mockGetUserAdministration,
+      listUserAdministrationAgreements: vi.fn(),
       update: mockUpdate,
     });
 
