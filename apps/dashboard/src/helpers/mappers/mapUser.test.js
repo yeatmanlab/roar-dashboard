@@ -18,6 +18,7 @@ const apiUser = {
   statusFrl: 'free',
   statusIep: 'false',
   hispanicEthnicity: false,
+  homeLanguage: 'Spanish',
   race: 'White, Asian',
   studentId: 'student-001',
   sisId: 'sis-001',
@@ -48,6 +49,7 @@ describe('mapUser', () => {
       frl_status: 'free',
       iep_status: 'false',
       hispanic_ethnicity: false,
+      home_language: 'Spanish',
     });
   });
 
