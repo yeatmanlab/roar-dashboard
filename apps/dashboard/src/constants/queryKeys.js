@@ -1,7 +1,6 @@
 export const ACTIVATION_CODE_QUERY_KEY = 'activation-code';
 export const ADMINISTRATIONS_QUERY_KEY = 'administrations';
 export const ADMINISTRATIONS_LIST_QUERY_KEY = 'administrations-list';
-export const ADMINISTRATIONS_STATS_QUERY_KEY = 'administrations-stats';
 export const ADMINISTRATION_QUERY_KEY = 'administration';
 export const ADMINISTRATION_ASSIGNMENTS_QUERY_KEY = 'administration-assignments';
 export const ADMINISTRATION_PROGRESS_QUERY_KEY = 'administration-progress';
