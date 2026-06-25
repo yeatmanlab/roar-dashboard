@@ -29,6 +29,10 @@
  *   which reads `statusFrl` back as the same enum value.
  * - `studentData.hispanic_ethnicity` is a boolean and maps directly to the
  *   contract's `hispanicEthnicity` boolean.
+ * - `studentData.home_language` is a free-text string (like `gender`); mapped
+ *   directly to the contract's nullable `homeLanguage`, mirroring {@link mapUser}
+ *   (which reads `homeLanguage` back as the same string). `?? null` matches the
+ *   `gender` handling: a nullish value clears rather than sending `undefined`.
  *
  * Intentionally NOT written:
  * - `testData` / `demoData` / `tags` — retired platform-wide and excluded from
@@ -58,6 +62,7 @@ export function mapUserFormToUpdateBody(form) {
     statusFrl: normalizeFrlStatus(studentData.frl_status),
     statusIep: coerceBooleanStatus(studentData.iep_status),
     hispanicEthnicity: studentData.hispanic_ethnicity ?? null,
+    homeLanguage: studentData.home_language ?? null,
   };
 
   return body;
