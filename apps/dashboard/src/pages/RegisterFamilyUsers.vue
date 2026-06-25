@@ -28,14 +28,6 @@
       <div>
         <div v-if="spinner === false">
           <Register :code="code" @submit="handleSubmit($event)" />
-          <div
-            v-if="isSuperAdmin"
-            class="flex flex-row justify-content-center align-content-center z-2 absolute ml-5"
-            style="margin-top: -5rem; margin-bottom: 4rem"
-          >
-            <PvCheckbox :model-value="isTestData" :binary="true" name="isTestDatalabel" @change="updateState" />
-            <label for="isTestDatalabel" class="ml-2">This is test data</label>
-          </div>
         </div>
         <div v-else class="loading-container flex flex-column text-center justify-content-center align-content-center">
           <AppSpinner style="margin-bottom: 1rem" />
@@ -57,34 +49,26 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import PvButton from 'primevue/button';
-import PvCheckbox from 'primevue/checkbox';
 import PvDialog from 'primevue/dialog';
-import { useAuthStore } from '@/store/auth';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { useFamilyRegistration } from '@/containers/FamilyRegistration/composables/useFamilyRegistration';
 import Register from '../components/auth/RegisterParent.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 
-const authStore = useAuthStore();
-const initialized = ref(false);
-const spinner = ref(false);
-
-const props = defineProps({
+defineProps({
   code: { type: String, default: null },
 });
 
-const { data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
+const { submit: submitRegistration } = useFamilyRegistration();
 
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-
-const isTestData = ref(false);
+const spinner = ref(false);
 const dialogHeader = ref('');
 const dialogMessage = ref('');
 const isDialogVisible = ref(false);
-const consentName = ref('consent-behavioral-eye-tracking');
+// Handle for the pending post-success redirect timer so it can be cancelled if
+// the user dismisses the success dialog before the auto-redirect fires.
+const redirectTimeout = ref(null);
 
 const showDialog = () => {
   isDialogVisible.value = true;
@@ -92,43 +76,26 @@ const showDialog = () => {
 
 const closeDialog = () => {
   isDialogVisible.value = false;
-  // Don't redirect here - let the success handler do it
+  // Cancel the pending auto-redirect if the user closes the dialog first.
+  if (redirectTimeout.value !== null) {
+    clearTimeout(redirectTimeout.value);
+    redirectTimeout.value = null;
+  }
 };
 
 async function handleParentSubmit(data) {
   try {
     spinner.value = true;
 
-    // Fetch consent document
-    const consentDoc = await authStore.getLegalDoc(consentName.value);
-    const consentData = {
-      version: consentDoc.currentCommit,
-      name: consentName.value,
-    };
-
-    const parentUserData = {
-      name: {
-        first: data.firstName,
-        last: data.lastName,
-      },
-      canContactForFutureStudies: data.canContactForFutureStudies || false,
-      invitationCodes: props.code ? [props.code] : [], // Now supported by CreateParentInput interface
-    };
-
-    // Create parent account only (no children)
-    await authStore.createNewFamily(
-      data.ParentEmail,
-      data.password,
-      parentUserData,
-      [], // Empty array - no children yet
-      consentData,
-      isTestData.value,
-    );
-
-    // Now sign in the parent to establish their auth session
-    await authStore.roarfirekit.logInWithEmailAndPassword({
+    // Run the registration saga: create family → sign in. No agreement work is
+    // done here — terms-of-service acceptance is handled post-login by the
+    // `/me.unsignedAgreements` gate, and consent/assent are per-administration
+    // and handled by the post-auth consent gate.
+    await submitRegistration({
       email: data.ParentEmail,
       password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
     });
 
     spinner.value = false;
@@ -137,8 +104,9 @@ async function handleParentSubmit(data) {
     isDialogVisible.value = true;
 
     // Use a full page reload to ensure auth state is properly initialized
-    // This is more reliable than router.push for post-authentication redirects
-    setTimeout(() => {
+    // This is more reliable than router.push for post-authentication redirects.
+    // Keep the handle so closeDialog can cancel it if the user dismisses first.
+    redirectTimeout.value = setTimeout(() => {
       window.location.href = '/';
     }, 1500);
   } catch (error) {
@@ -149,13 +117,11 @@ async function handleParentSubmit(data) {
   }
 }
 
-async function handleSubmit(event) {
-  // Only handle parent registration now
-  handleParentSubmit(event);
-}
-
-function updateState() {
-  isTestData.value = !isTestData.value;
+function handleSubmit(event) {
+  // Only handle parent registration now. Return the promise so callers/tests can
+  // await completion and so a synchronous throw isn't silently swallowed (an
+  // `async` wrapper that doesn't await/return the call would drop both).
+  return handleParentSubmit(event);
 }
 
 onMounted(async () => {
@@ -164,6 +130,11 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.body.classList.remove('page-register');
+  // Cancel any pending redirect so it can't fire after the component is gone.
+  if (redirectTimeout.value !== null) {
+    clearTimeout(redirectTimeout.value);
+    redirectTimeout.value = null;
+  }
 });
 </script>
 
