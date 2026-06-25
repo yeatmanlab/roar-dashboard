@@ -110,6 +110,7 @@ import { onMounted, ref, watch, computed } from 'vue';
 import _filter from 'lodash/filter';
 import _isEmpty from 'lodash/isEmpty';
 import { storeToRefs } from 'pinia';
+import { useQueryClient } from '@tanstack/vue-query';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
 import PvSelect from 'primevue/select';
@@ -119,9 +120,10 @@ import { useGameStore } from '@/store/game';
 import useMeQuery from '@/composables/queries/useMeQuery';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserAdministrationsQuery from '@/composables/queries/useUserAdministrationsQuery';
-import useAdministrationAgreementsQuery from '@/composables/queries/useAdministrationAgreementsQuery';
+import useUserAdministrationAgreementsQuery from '@/composables/queries/useUserAdministrationAgreementsQuery';
+import useAgreementVersionContentQuery from '@/composables/queries/useAgreementVersionContentQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
-import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
+import useRecordUserAgreementMutation from '@/composables/mutations/useRecordUserAgreementMutation';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
@@ -130,12 +132,18 @@ import { AppMessageState, MESSAGE_STATE_TYPES } from '@/components/AppMessageSta
 import AppSpinner from '@/components/AppSpinner.vue';
 import { mapAdministrationTasksToGames } from '@/helpers/participantGames';
 import { resolveConsentRequirement, CONSENT_REQUIREMENT_STATUS } from '@/helpers/resolveConsentRequirement';
+import { USER_ADMINISTRATION_AGREEMENTS_QUERY_KEY } from '@/constants/queryKeys';
 
 const showConsent = ref(false);
-const consentVersion = ref('');
 const confirmText = ref('');
 const consentType = ref('');
-const consentParams = ref({});
+
+// The agreement + current version the gate is currently asking the student to
+// sign. Both must refer to the SAME version the gate checked: the content query
+// fetches this version's text, and the record mutation records acceptance of
+// this exact version.
+const consentAgreementId = ref(null);
+const consentVersionId = ref(null);
 
 const props = defineProps({
   launchId: {
@@ -145,7 +153,8 @@ const props = defineProps({
   },
 });
 
-const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
+const queryClient = useQueryClient();
+const { mutateAsync: recordUserAgreement } = useRecordUserAgreementMutation();
 const { mutate: signOut } = useSignOutMutation();
 
 let unsubscribe;
@@ -210,14 +219,18 @@ const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
-// The selected administration's required consent/assent agreements. This is the
-// signal that drives the consent gate after the Firestore-assignment migration:
-// the deprecated `selectedAdmin.legal` block is gone, so which document the
-// administration requires (if any) now comes from
-// `GET /administrations/:id/agreements`.
+// The selected administration's required consent/assent agreements, annotated
+// with this student's server-computed signed status. This is the signal that
+// drives the consent gate fully off the backend: which document the
+// administration requires (if any) and whether the student has signed the
+// current version both come from
+// `GET /users/:userId/administrations/:administrationId/agreements`. There is no
+// firekit `getLegalDoc`, no `userData.legal` read, no agreement-name→Firestore
+// mapping, and no client-side renewal-date logic.
 const selectedAdminId = computed(() => selectedAdmin.value?.id);
 
-const { data: administrationAgreements, isSuccess: isAgreementsSuccess } = useAdministrationAgreementsQuery(
+const { data: administrationAgreements, isSuccess: isAgreementsSuccess } = useUserAdministrationAgreementsQuery(
+  userId,
   selectedAdminId,
   {
     enabled: initialized,
@@ -230,6 +243,17 @@ const { data: administrationAgreements, isSuccess: isAgreementsSuccess } = useAd
 // no consent were required. `isSuccess` already excludes the error state (the two
 // are mutually exclusive in TanStack Query), so checking it alone is sufficient.
 const isAgreementsResolved = computed(() => isAgreementsSuccess.value);
+
+// The consent/assent document text for the gate. Fetched reactively for the
+// agreement + current version the gate selected (`consentAgreementId` /
+// `consentVersionId`), so the modal renders the exact version's content that the
+// student will be recorded as accepting. The query is internally gated on both
+// IDs being present, so it stays idle until `checkConsent()` selects an
+// agreement to show.
+const { data: consentContent, isError: isConsentContentError } = useAgreementVersionContentQuery(
+  consentAgreementId,
+  consentVersionId,
+);
 
 // Tracks whether the consent gate has been evaluated to a definitive outcome
 // (either "not required" or "required + decision made") for the current
@@ -266,12 +290,17 @@ const hasAssignments = computed(() => {
 /**
  * Evaluate, and apply, the consent/assent gate for the selected administration.
  *
- * The requirement is driven by the administration's agreements
- * (`useAdministrationAgreementsQuery`) — the deprecated `selectedAdmin.legal`
- * block no longer exists. The student's signed status is still read from, and
- * written back to, Firestore (`userData.legal` + `useUpdateConsentMutation`), so
- * the document fetch, the signed-status read, and the consent write all key off
- * the same agreement `name`.
+ * The requirement AND the student's signed status both come from the backend
+ * (`useUserAdministrationAgreementsQuery`): each required agreement carries a
+ * server-computed `signed` flag that already encodes "signed the current
+ * version" (annual re-consent / version bumps are handled server-side). The gate
+ * selects the age-appropriate agreement (`consent` vs `assent`), ignores `tos`,
+ * and shows the modal when the chosen agreement is unsigned.
+ *
+ * When the gate must show, it points the version-content query at the SAME
+ * agreement + current version it checked (`consentAgreementId` /
+ * `consentVersionId`); the content watcher opens the modal once the text loads.
+ * Acceptance is recorded against that same version (see `updateConsent`).
  *
  * Compliance behavior:
  * - While the agreements query is unresolved (loading/errored), consent is
@@ -280,26 +309,26 @@ const hasAssignments = computed(() => {
  * - The gate SHOWS whenever the student has not signed the current version and
  *   is old enough — regardless of the now-absent amount/expectedTime fields.
  */
-async function checkConsent() {
-  // Close the gate for the duration of the (async) evaluation so the game list
-  // is never visible while consent is being (re-)checked. It is only re-opened
-  // below once a definitive resolved branch is reached.
+function checkConsent() {
+  // Close the gate while consent is being (re-)checked so the game list is never
+  // visible mid-evaluation. Clear any pending content fetch so a stale
+  // agreement's text can't open the modal. Re-opened only on a resolved branch.
   isConsentResolved.value = false;
+  consentAgreementId.value = null;
+  consentVersionId.value = null;
 
   // Until the agreements requirement resolves, leave the student gated.
   if (!isAgreementsResolved.value) {
     return;
   }
 
-  const decision = await resolveConsentRequirement({
+  const decision = resolveConsentRequirement({
     agreements: administrationAgreements.value,
     agreementsResolved: isAgreementsResolved.value,
     userData: userData.value,
-    getLegalDoc: (docName) => authStore.getLegalDoc(docName),
   });
 
-  // The legal document could not be resolved (e.g. getLegalDoc returned null or
-  // threw). Treat as unresolved and keep the student gated rather than skipping.
+  // Requirement still unknown → keep the student gated rather than skipping.
   if (decision.status === CONSENT_REQUIREMENT_STATUS.UNRESOLVED) {
     isConsentResolved.value = false;
     return;
@@ -320,34 +349,71 @@ async function checkConsent() {
 
   // decision.status === REQUIRED
   consentType.value = decision.consentType;
-  consentVersion.value = decision.consentVersion;
 
   if (decision.shouldShow) {
-    confirmText.value = decision.consentText;
-    showConsent.value = true;
+    // Stay gated: point the content query at the agreement + current version the
+    // gate checked, but do NOT mark consent resolved here. The content watcher
+    // opens the modal AND marks consent resolved together once the text loads.
+    // Resolving here would briefly expose the game list before the modal renders
+    // (a fail-open window for an unsigned required consent).
+    isConsentResolved.value = false;
+    consentAgreementId.value = decision.agreementId;
+    consentVersionId.value = decision.versionId;
+    return;
   }
 
+  // Required but already signed → resolved, no modal.
   isConsentResolved.value = true;
 }
 
-async function updateConsent() {
-  consentParams.value = {
-    // The legacy `amount` / `expectedTime` fields are not carried by the
-    // agreements endpoint. They are recorded as metadata only; their absence
-    // must never suppress the gate (the gate decision in `checkConsent` does not
-    // depend on them).
-    dateSigned: new Date(),
-  };
+// Open the consent modal once the selected agreement's version content has
+// loaded. Kept reactive (rather than awaited inline) so the modal text always
+// reflects the agreement currently selected by `checkConsent()`. If the content
+// query errors, the gate stays closed and the game list remains withheld
+// (`isConsentResolved` is reset below) — failing safe rather than showing an
+// empty modal or silently letting the student through.
+watch([consentContent, isConsentContentError, consentAgreementId], ([content, hasError, agreementId]) => {
+  if (!agreementId) return;
 
-  await updateConsentStatus({
-    consentType,
-    consentVersion,
-    consentParams,
+  if (hasError) {
+    // Could not fetch the document text → block. Re-gate and keep the modal shut
+    // rather than presenting the student with an un-signable consent form.
+    isConsentResolved.value = false;
+    showConsent.value = false;
+    return;
+  }
+
+  if (content?.content) {
+    confirmText.value = content.content;
+    showConsent.value = true;
+    // Now safe to mark resolved: the hard modal is up, so the game list stays
+    // withheld (`canShowAssessments` requires `!showConsent`). This is the only
+    // place the shouldShow path resolves — never before the modal renders.
+    isConsentResolved.value = true;
+  }
+});
+
+async function updateConsent() {
+  // Record acceptance of the EXACT version the gate checked, then invalidate the
+  // agreements query so the server re-computes `signed` (now true) and the next
+  // `checkConsent()` run closes the modal. The gate only clears after a real
+  // signature is recorded.
+  if (!userId.value || !consentAgreementId.value || !consentVersionId.value) return;
+
+  await recordUserAgreement({
+    userId: userId.value,
+    agreementVersionId: consentVersionId.value,
   });
+
+  await queryClient.invalidateQueries({ queryKey: [USER_ADMINISTRATION_AGREEMENTS_QUERY_KEY] });
 }
 
-const toggleShowOptionalAssessments = async () => {
-  await checkConsent();
+const toggleShowOptionalAssessments = () => {
+  // Re-gate immediately on selection change. `checkConsent()` resets the gate to
+  // "unresolved" against the (possibly stale) current agreements; the agreements
+  // watcher below re-runs it once the newly-selected administration's agreements
+  // resolve, so the student is never treated as consent-free across the switch.
+  checkConsent();
   showOptionalAssessments.value = null;
 };
 
@@ -434,22 +500,24 @@ watch(
 // between selecting an administration and its agreements loading.
 watch(
   [userData, selectedAdminId, administrationAgreements, isAgreementsResolved],
-  async ([newUserData]) => {
+  ([newUserData]) => {
     // Nothing to gate until we have a user and a selected administration. Abort
     // before touching the gate so a transition to "no administration" can't leave
     // it half-reset.
     if (_isEmpty(newUserData) || !selectedAdminId.value) return;
 
     // Re-derive the gate from scratch on every relevant change — an administration
-    // switch OR an agreements refetch for the SAME administration (e.g. after the
-    // student accepts, the consent write invalidates `userData` and re-runs this
-    // watcher). `checkConsent()` resets `isConsentResolved` to false synchronously
-    // at its start and re-opens the modal only if consent is still required, so no
-    // separate per-id pre-reset is needed: close any open modal, then let
-    // `checkConsent()` decide. (Skipping the call when the id is unchanged would
-    // break post-accept modal clearing, which relies on this same-id re-run.)
+    // switch OR an agreements refetch for the SAME administration. This is what
+    // clears the modal after the student accepts: `updateConsent()` records the
+    // signature and invalidates the agreements query, which refetches
+    // `administrationAgreements` (now `signed: true`) and re-runs this watcher;
+    // `checkConsent()` then sees it signed and leaves the modal shut. `checkConsent()`
+    // resets `isConsentResolved` to false synchronously at its start and re-opens
+    // the modal only if consent is still required, so no separate per-id pre-reset
+    // is needed — and skipping the call on an unchanged id would break that
+    // post-accept clearing.
     showConsent.value = false;
-    await checkConsent();
+    checkConsent();
   },
   { immediate: true },
 );
