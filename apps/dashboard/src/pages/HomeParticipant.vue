@@ -495,31 +495,28 @@ watch(
 // Consent gate evaluation. Kept separate from the administration-selection
 // bookkeeping above because the consent requirement depends on the
 // per-administration agreements query, which refetches whenever the selected
-// administration changes. Re-running here when the agreements (re)resolve — and
-// resetting the gate the moment the selection changes — guarantees the student
-// is never treated as consent-free during the window between selecting an
-// administration and its agreements loading.
+// administration changes. Re-running here whenever the agreements (re)resolve
+// guarantees the student is never treated as consent-free during the window
+// between selecting an administration and its agreements loading.
 watch(
   [userData, selectedAdminId, administrationAgreements, isAgreementsResolved],
-  ([newUserData], [, previousSelectedAdminId] = []) => {
-    // A new administration was selected: re-gate until the new administration's
-    // requirement resolves.
-    if (selectedAdminId.value !== previousSelectedAdminId) {
-      isConsentResolved.value = false;
-    }
-
-    // Re-derive the gate from scratch on every relevant change: close any open
-    // modal first, then let `checkConsent()` re-open it only if still required.
-    // This is what clears the modal after the student accepts: `updateConsent()`
-    // records the signature and invalidates the agreements query, which refetches
-    // `administrationAgreements` (now `signed: true`) and re-runs this watcher.
-    // `checkConsent()` then sees the agreement as signed and leaves the modal
-    // shut — so the gate clears only after a real, server-confirmed signature,
-    // with no separate "modal accepted" signal.
-    showConsent.value = false;
-
+  ([newUserData]) => {
+    // Nothing to gate until we have a user and a selected administration. Abort
+    // before touching the gate so a transition to "no administration" can't leave
+    // it half-reset.
     if (_isEmpty(newUserData) || !selectedAdminId.value) return;
 
+    // Re-derive the gate from scratch on every relevant change — an administration
+    // switch OR an agreements refetch for the SAME administration. This is what
+    // clears the modal after the student accepts: `updateConsent()` records the
+    // signature and invalidates the agreements query, which refetches
+    // `administrationAgreements` (now `signed: true`) and re-runs this watcher;
+    // `checkConsent()` then sees it signed and leaves the modal shut. `checkConsent()`
+    // resets `isConsentResolved` to false synchronously at its start and re-opens
+    // the modal only if consent is still required, so no separate per-id pre-reset
+    // is needed — and skipping the call on an unchanged id would break that
+    // post-accept clearing.
+    showConsent.value = false;
     checkConsent();
   },
   { immediate: true },
