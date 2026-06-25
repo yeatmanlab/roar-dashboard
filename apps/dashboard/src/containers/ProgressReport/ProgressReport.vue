@@ -17,7 +17,7 @@
           @view-change="handleViewChange"
         />
 
-        <div v-if="studentRows.length">
+        <template v-if="studentRows.length">
           <ProgressStatsOverview v-if="adminStats" :admin-stats="adminStats" :tasks-dictionary="tasksDictionary" />
 
           <RoarDataTable
@@ -33,7 +33,7 @@
             @export-selected="exportSelected"
             @export-all="exportAll"
           />
-        </div>
+        </template>
       </template>
     </section>
   </main>

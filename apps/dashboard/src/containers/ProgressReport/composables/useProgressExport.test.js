@@ -9,6 +9,11 @@ vi.mock('@/helpers/query/utils', () => ({
 
 import { exportCsv } from '@/helpers/query/utils';
 
+// Progress and tasks are keyed by task UUID in production; use UUID-shaped ids
+// here so the fixtures mirror the real data shape.
+const SWR_TASK_UUID = '11111111-1111-4111-8111-111111111111';
+const PA_TASK_UUID = '22222222-2222-4222-8222-222222222222';
+
 describe('useProgressExport', () => {
   let mockProgressData;
   let mockTasks;
@@ -34,8 +39,8 @@ describe('useProgressExport', () => {
           schoolName: 'Test School',
         },
         progress: {
-          't-swr': { value: 'completed' },
-          't-pa': { value: 'started' },
+          [SWR_TASK_UUID]: { value: 'completed' },
+          [PA_TASK_UUID]: { value: 'started' },
         },
       },
       {
@@ -49,15 +54,15 @@ describe('useProgressExport', () => {
           schoolName: 'Test School',
         },
         progress: {
-          't-swr': { value: 'assigned' },
-          't-pa': { value: 'completed' },
+          [SWR_TASK_UUID]: { value: 'assigned' },
+          [PA_TASK_UUID]: { value: 'completed' },
         },
       },
     ]);
 
     mockTasks = ref([
-      { taskId: 't-swr', taskSlug: 'swr', taskName: 'SWR' },
-      { taskId: 't-pa', taskSlug: 'pa', taskName: 'PA' },
+      { taskId: SWR_TASK_UUID, taskSlug: 'swr', taskName: 'SWR' },
+      { taskId: PA_TASK_UUID, taskSlug: 'pa', taskName: 'PA' },
     ]);
 
     mockTasksDictionary = ref({
