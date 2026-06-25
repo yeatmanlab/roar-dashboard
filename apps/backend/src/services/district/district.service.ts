@@ -1,4 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
+import { EnrolledUsersEmbedOption } from '@roar-platform/api-contract';
 import type {
   CreateDistrictInput,
   District,
@@ -368,6 +369,7 @@ export function DistrictService({
         orderBy: { field: options.sortBy, direction: options.sortOrder },
         ...(options.role && { role: options.role }),
         ...(options.grade && { grade: options.grade }),
+        embedDemographics: options.embed?.includes(EnrolledUsersEmbedOption.DEMOGRAPHICS) ?? false,
       };
 
       if (!isSuperAdmin) {
