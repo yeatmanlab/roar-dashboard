@@ -114,7 +114,7 @@ services:
   # standalone backend development when you need a durable FGA store.
   #
   # Requires a host Postgres with a `roar_openfga` database and TLS certs
-  # in ./certs/. After first run: npm run fga:init -w apps/backend
+  # in ./certs/.
   #
   # API:        https://localhost:5050
   # Playground: http://localhost:5051/playground (via nginx proxy)

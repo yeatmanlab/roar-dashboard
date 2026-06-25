@@ -29,7 +29,6 @@
     "db:push:assess": "drizzle-kit push --config ./drizzle.assessment.config.ts",
     "db:studio:core": "drizzle-kit studio --config ./drizzle.core.config.ts",
     "db:studio:assess": "drizzle-kit studio --config ./drizzle.assessment.config.ts",
-    "fga:init": "bash ../../scripts/init-openfga-store.sh",
     "db:seed:roar-pa": "tsx seeds/roar-pa.seed.ts",
     "db:seed:roar-swr": "tsx seeds/roar-swr.seed.ts",
     "db:seed:roar-sre": "tsx seeds/roar-sre.seed.ts",

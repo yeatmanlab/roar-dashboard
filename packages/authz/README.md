@@ -19,38 +19,20 @@ npm run test -w packages/authz
 
 ## Local development setup
 
-### Prerequisites
-
-1. Install the FGA CLI: `brew install openfga/tap/fga`
-2. Install `jq`: `brew install jq`
-
 ### Start the OpenFGA server
 
 ```bash
-# Create the OpenFGA Postgres database (one-time)
-./scripts/setup-openfga-local.sh
-
-# Start the OpenFGA server (and other services)
-docker compose up
+# Start Postgres, OpenFGA, and the Auth emulator
+docker compose up -d --wait
 ```
 
-### Initialize the FGA store
+The `openfga-init` container automatically creates the FGA store, deploys the authorization model, and writes store/model IDs to the `fga-env` Docker volume. The backend reads these on startup — no manual `.env` configuration needed.
 
-After the OpenFGA server is running, create a store and deploy the authorization model:
+To seed the database and sync FGA tuples:
 
 ```bash
-npm run fga:init -w apps/backend
+npm run dev:seed
 ```
-
-This validates the model, creates a new store, deploys the model from `authorization-model.fga`, and prints the environment variables to add to `apps/backend/.env`:
-
-```
-FGA_API_URL=https://localhost:5050
-FGA_STORE_ID=<generated>
-FGA_MODEL_ID=<generated>
-```
-
-> **Note:** Re-running `fga:init` creates a new store each time. Only the most recently printed IDs should be used in your `.env` file.
 
 ### Validate and test the model
 
