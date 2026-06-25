@@ -3487,10 +3487,13 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
       phonicsTaskId = phonicsTask.id;
 
       const phonicsVariant = await TaskVariantFactory.create({ taskId: phonicsTask.id });
+      // baseFixture already assigns variants at orderIndex 0–5 on
+      // administrationAssignedToDistrict; the (administration_id, order_index)
+      // unique index means this phonics variant needs an unused index.
       await AdministrationTaskVariantFactory.create({
         administrationId: baseFixture.administrationAssignedToDistrict.id,
         taskVariantId: phonicsVariant.id,
-        orderIndex: 0,
+        orderIndex: 100,
       });
 
       const run = await RunFactory.create({
