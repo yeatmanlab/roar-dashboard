@@ -72,9 +72,11 @@ export function useProgressColumns(
 
     // Add launch button if user has permission and administration is open
     const { userCan } = usePermissions();
-    const isAdministrationOpen = administrationData.value?.dateClosed
-      ? new Date(administrationData.value?.dateClosed) > new Date()
-      : false;
+    // Open when there's no close date (open indefinitely) or the close date is still in
+    // the future. Guarded on a loaded administration so the Launch button doesn't flash
+    // before the administration query resolves.
+    const admin = administrationData.value;
+    const isAdministrationOpen = Boolean(admin) && (!admin.dateClosed || new Date(admin.dateClosed) > new Date());
 
     if (userCan(Permissions.Tasks.LAUNCH) && isAdministrationOpen) {
       tableColumns.push({

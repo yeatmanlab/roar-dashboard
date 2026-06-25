@@ -1,10 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ref } from 'vue';
 
-// userCan defaults to false (no launch column); Permissions and task display
-// names are stubbed so the composable can be exercised in isolation.
+// userCan is configurable per-test (defaults to false → no launch column);
+// Permissions and task display names are stubbed so the composable can be
+// exercised in isolation.
+const mockUserCan = vi.fn(() => false);
 vi.mock('@/composables/usePermissions', () => ({
-  usePermissions: () => ({ userCan: () => false }),
+  usePermissions: () => ({ userCan: mockUserCan }),
 }));
 vi.mock('@bdelab/roar-firekit', () => ({
   Permissions: { Tasks: { LAUNCH: 'tasks.launch' } },
@@ -46,6 +48,10 @@ const buildColumns = (orgType, authStore, isLoading = ref(false)) =>
   ).progressReportColumns;
 
 describe('useProgressColumns', () => {
+  beforeEach(() => {
+    mockUserCan.mockReturnValue(false);
+  });
+
   it('returns an empty array while the task dictionary is loading', () => {
     const columns = buildColumns('school', { isUserSuperAdmin: false }, ref(true));
     expect(columns.value).toEqual([]);
@@ -88,5 +94,37 @@ describe('useProgressColumns', () => {
     const schoolCol = columns.value.find((c) => c.field === 'user.schoolName');
     expect(schoolCol).toBeDefined();
     expect(schoolCol.multiSelectOptions).toEqual(['School One']);
+  });
+
+  describe('Launch Student column', () => {
+    const launchColumns = (administration) =>
+      useProgressColumns(
+        ref(administration),
+        buildStudents(),
+        buildTasks(),
+        tasksDictionary,
+        districtSchools,
+        { isUserSuperAdmin: false },
+        'school',
+        ref(false),
+      ).progressReportColumns;
+
+    it('is hidden when the user lacks launch permission, even for an open administration', () => {
+      mockUserCan.mockReturnValue(false);
+      expect(launchColumns({ dateClosed: null }).value.some((c) => c.launcher)).toBe(false);
+    });
+
+    it('shows for an administration with no close date (open indefinitely)', () => {
+      mockUserCan.mockReturnValue(true);
+      expect(launchColumns({ dateClosed: null }).value.some((c) => c.launcher)).toBe(true);
+    });
+
+    it('treats a future close date as open and a past close date as closed', () => {
+      mockUserCan.mockReturnValue(true);
+      const future = new Date(Date.now() + 86_400_000).toISOString();
+      const past = new Date(Date.now() - 86_400_000).toISOString();
+      expect(launchColumns({ dateClosed: future }).value.some((c) => c.launcher)).toBe(true);
+      expect(launchColumns({ dateClosed: past }).value.some((c) => c.launcher)).toBe(false);
+    });
   });
 });
