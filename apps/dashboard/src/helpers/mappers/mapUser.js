@@ -42,6 +42,9 @@ export function mapUser(user) {
       frl_status: user.statusFrl,
       iep_status: user.statusIep,
       hispanic_ethnicity: user.hispanicEthnicity,
+      // Plain string — mirrors the API (`homeLanguage: string | null`) and the export mapper
+      // (`mapEnrolledUserForExport`); not comma-split into an array like `race`.
+      home_language: user.homeLanguage,
       // The API returns race as a comma-joined string; consumers render it as an array via
       // `.join(', ')`. Split back to an array, or null when absent so the `?? 'None'`
       // display fallback still fires (an empty array would render as an empty string).
