@@ -429,28 +429,26 @@ watch(
 // Consent gate evaluation. Kept separate from the administration-selection
 // bookkeeping above because the consent requirement depends on the
 // per-administration agreements query, which refetches whenever the selected
-// administration changes. Re-running here when the agreements (re)resolve — and
-// resetting the gate the moment the selection changes — guarantees the student
-// is never treated as consent-free during the window between selecting an
-// administration and its agreements loading.
+// administration changes. Re-running here whenever the agreements (re)resolve
+// guarantees the student is never treated as consent-free during the window
+// between selecting an administration and its agreements loading.
 watch(
   [userData, selectedAdminId, administrationAgreements, isAgreementsResolved],
-  async ([newUserData], [, previousSelectedAdminId] = []) => {
-    // A new administration was selected: re-gate until the new administration's
-    // requirement resolves.
-    if (selectedAdminId.value !== previousSelectedAdminId) {
-      isConsentResolved.value = false;
-    }
-
-    // Re-derive the gate from scratch on every relevant change: close any open
-    // modal first, then let `checkConsent()` re-open it only if still required.
-    // This is what clears the modal after the student accepts (the consent write
-    // invalidates `userData`, which re-runs this watcher) without a separate
-    // "modal accepted" signal — mirroring the pre-migration reset.
-    showConsent.value = false;
-
+  async ([newUserData]) => {
+    // Nothing to gate until we have a user and a selected administration. Abort
+    // before touching the gate so a transition to "no administration" can't leave
+    // it half-reset.
     if (_isEmpty(newUserData) || !selectedAdminId.value) return;
 
+    // Re-derive the gate from scratch on every relevant change — an administration
+    // switch OR an agreements refetch for the SAME administration (e.g. after the
+    // student accepts, the consent write invalidates `userData` and re-runs this
+    // watcher). `checkConsent()` resets `isConsentResolved` to false synchronously
+    // at its start and re-opens the modal only if consent is still required, so no
+    // separate per-id pre-reset is needed: close any open modal, then let
+    // `checkConsent()` decide. (Skipping the call when the id is unchanged would
+    // break post-accept modal clearing, which relies on this same-id re-run.)
+    showConsent.value = false;
     await checkConsent();
   },
   { immediate: true },
