@@ -29,6 +29,7 @@ export const TASK_VARIANT_QUERY_KEY = 'task-variant';
 export const TASK_VARIANTS_QUERY_KEY = 'task-variants';
 export const USER_DATA_QUERY_KEY = 'user';
 export const USER_ADMINISTRATIONS_QUERY_KEY = 'user-administrations';
+export const USER_PROFILE_QUERY_KEY = 'user-profile';
 export const USER_ADMINISTRATION_ASSIGNMENTS_QUERY_KEY = 'user-administration-assignments';
 export const USER_ASSIGNMENTS_QUERY_KEY = 'user-assignments';
 export const MULTIPLE_USER_ASSIGNMENTS_QUERY_KEY = 'multiple-user-assignments';
