@@ -99,6 +99,7 @@ import PvMessage from 'primevue/message';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
 import RegisterChildren from '@/components/auth/RegisterChildren.vue';
+import { StatusCodes } from 'http-status-codes';
 import { useToast } from 'primevue/usetoast';
 import useAddFamilyChildren from '@/containers/HomeParent/composables/useAddFamilyChildren';
 
@@ -128,8 +129,10 @@ const props = defineProps({
     required: true,
   },
   orgId: {
+    // Receives `null` from the parent while `/me` resolves the family id (same as
+    // `familyId`); the section that consumes it only renders once a family exists.
     type: String,
-    required: true,
+    default: null,
   },
   registrationError: {
     type: Error,
@@ -170,14 +173,20 @@ async function handleStudentEnrollment(students) {
       life: 3000,
     });
   } catch (error) {
-    // The mapper and mutation throw structured errors (e.g. 409 duplicate email,
-    // 422 invalid activation code or family-size cap). Surface a generic toast
-    // and keep the modal open so the caretaker can correct and retry.
+    // The mapper and mutation throw structured errors carrying `.status`. Map the
+    // two common, actionable failures to specific messages; keep the modal open so
+    // the caretaker can correct and retry.
     console.error('Error enrolling student:', error);
+    let detail = 'Failed to enroll student(s). Please try again.';
+    if (error?.status === StatusCodes.CONFLICT) {
+      detail = 'A child with that username/email is already registered.';
+    } else if (error?.status === StatusCodes.UNPROCESSABLE_ENTITY) {
+      detail = 'The activation code is invalid or expired, or this family has reached its size limit.';
+    }
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Failed to enroll student(s). Please try again.',
+      detail,
       life: 3000,
     });
   }
