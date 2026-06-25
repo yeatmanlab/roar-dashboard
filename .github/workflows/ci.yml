@@ -54,8 +54,6 @@ jobs:
       FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
       GOOGLE_CLOUD_PROJECT: demo-roar
 
-    # No services: block — docker compose handles Postgres, OpenFGA, and the Auth emulator.
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -64,10 +62,13 @@ jobs:
           token: ${{ secrets.CI_GITHUB_PAT }}
 
       - name: Start infrastructure
-        run: docker compose up -d --wait
+        run: docker compose up -d
 
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
+
+      - name: Wait for infrastructure
+        run: docker compose up -d --wait
 
       - name: Run OpenFGA model tests
         uses: openfga/action-openfga-test@v0.1.2
@@ -151,9 +152,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Only chrome until dashboard-aware specs exist. The smoke spec runs
-        # backend-only via cy.request, so a second browser would add CI time
-        # without exercising different browser code paths.
+        # Chrome-only until dashboard-aware specs exercise browser rendering.
         browser: [chrome]
     container:
       image: cypress/browsers:node-20.18.0-chrome-130.0.6723.69-1-ff-131.0.3-edge-130.0.2849.52-1
@@ -184,8 +183,8 @@ jobs:
       POSTGRES_ADMIN_URL: postgresql://postgres:postgres@postgres:5432/postgres
       # Backend → OpenFGA inside the job container.
       FGA_API_URL: http://127.0.0.1:8080
-      # The Firebase Auth emulator still runs as a background process inside
-      # the job container (no official emulator-only Docker image).
+      # The Firebase Auth emulator runs as a background process inside the
+      # job container — see the job-level comment for container constraints.
       FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
       GCLOUD_PROJECT: demo-roar
       # The dashboard bakes this into its bundle at build time so it can
@@ -215,13 +214,11 @@ jobs:
           tag: v1.12.1
           cache: enable
 
-      # The Auth emulator is the only one we need; everything else (Firestore,
-      # Functions, etc.) is irrelevant once firekit is gone. The temp config
-      # tells the emulator to bind on all interfaces so the backend and
-      # browser can both reach it on 127.0.0.1.
+      # Only the Auth emulator is needed. The temp config binds it on all
+      # interfaces so both the backend and browser reach it on 127.0.0.1.
       - name: Install firebase-tools and start Auth emulator
         run: |
-          npm install --no-save firebase-tools@15
+          npm install --no-save firebase-tools@15.22.1
           cat > /tmp/firebase.json <<EOF
           {
             "emulators": {
@@ -312,7 +309,7 @@ jobs:
   component-tests:
     name: Component tests
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -396,24 +393,6 @@ jobs:
           dist-path: build/apps/dashboard/dist
           firebase-config-path: build/apps/dashboard/firebase/admin/firebase.json
 
-      # - name: Whitelist AppCheck admin environment
-      #   if: ${{ success() }}
-      #   uses: ./.github/actions/whitelist-appcheck-environment
-      #   with:
-      #     project-id: ${{ secrets.CI_FIREBASE_PROJECT_ID_ADMIN_STAGING }}
-      #     service-account-key: ${{ secrets.CI_FIREBASE_SERVICE_ACCOUNT_ADMIN_STAGING }}
-      #     appcheck-site-key: ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_ADMIN_STAGING }}
-      #     environment-url: ${{ fromJson(steps.firebase-deploy-preview.outputs.urls)[0] }}
-
-      # - name: Whitelist AppCheck assessment environment
-      #   if: ${{ success() }}
-      #   uses: ./.github/actions/whitelist-appcheck-environment
-      #   with:
-      #     project-id: ${{ secrets.FIREBASE_PROJECT_ID_ASSESSMENT_STAGING }}
-      #     service-account-key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASSESSMENT_STAGING }}
-      #     appcheck-site-key: ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_ASSESSMENT_STAGING }}
-      #     environment-url: ${{ fromJson(steps.firebase-deploy-preview.outputs.urls)[0] }}
-
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Detect changed assessments
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
@@ -457,15 +436,6 @@ jobs:
 
       - name: Build workspace packages
         run: npx turbo run build --filter='./packages/*'
-
-      - name: Pull Docker images
-        run: |
-          for i in 1 2 3; do
-            docker pull postgres:17 && break
-            echo "Attempt $i failed, retrying in 15s..."
-            sleep 15
-          done
-        timeout-minutes: 5
 
       - name: Prepare CI variant parameters
         run: |
