@@ -10,6 +10,7 @@
 import 'regenerator-runtime/runtime';
 import store from 'store2';
 import { ValidityEvaluator, createEvaluateValidity } from '@bdelab/roar-utils';
+import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/firekit';
 import { getPracticeCount, getStimulusCount, initRoarJsPsych, initRoarTimeline } from './config/config';
 
 // setup
@@ -36,9 +37,9 @@ import { startAppTimer, clearAppTimer, isMaxTimeoutReached } from './trials/appT
 
 export let multichoiceValidityEvaluator;
 
-export async function buildExperiment(config) {
+export async function buildExperiment(config, computedScoreCallback) {
   // Initialize jsPsych and timeline
-  await initRoarJsPsych(config);
+  await initRoarJsPsych(config, computedScoreCallback);
   const initialTimeline = initRoarTimeline(config);
 
   const multichoiceEvaluateValidity = createEvaluateValidity({
@@ -63,10 +64,7 @@ export async function buildExperiment(config) {
     if (config.isAdaptive) {
       store.session.set('engagementFlags', flags);
       store.session.set('isReliable', reliable);
-      if (config.firekit.run.started) {
-        return config.firekit?.updateEngagementFlags(flags, reliable);
-      }
-      return undefined;
+      return updateEngagementFlags(flags, reliable);
     }
     return null;
   };

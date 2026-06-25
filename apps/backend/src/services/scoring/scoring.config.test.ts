@@ -11,6 +11,8 @@ import letterConfig from './configs/letter';
 import phonicsConfig from './configs/phonics';
 import roamAlpacaConfig from './configs/roam-alpaca.json';
 import fluencyConfig from './configs/fluency.json';
+import morphologyConfig from './configs/morphology.json';
+import cvaConfig from './configs/cva.json';
 
 const ALL_RAW_CONFIGS = [
   { name: 'swr', config: swrConfig },
@@ -22,6 +24,8 @@ const ALL_RAW_CONFIGS = [
   { name: 'phonics', config: phonicsConfig },
   { name: 'roam-alpaca', config: roamAlpacaConfig },
   { name: 'fluency', config: fluencyConfig },
+  { name: 'morphology', config: morphologyConfig },
+  { name: 'cva', config: cvaConfig },
 ];
 
 describe('scoring config validation', () => {
@@ -55,6 +59,8 @@ describe('scoring config validation', () => {
       'fluency-calf',
       'fluency-arf-es',
       'fluency-calf-es',
+      'morphology',
+      'cva',
     ];
     const registered = getRegisteredSlugs();
     for (const slug of expected) {
@@ -64,7 +70,6 @@ describe('scoring config validation', () => {
 
   it('returns undefined for unknown task slugs', () => {
     expect(getScoringConfig('unknown-task')).toBeUndefined();
-    expect(getScoringConfig('morphology')).toBeUndefined();
   });
 
   it('rejects configs with ascending minVersion order', () => {
@@ -128,6 +133,14 @@ describe('scoring config validation', () => {
 
     it('letter-en-ca shares config with letter', () => {
       expect(getScoringConfig('letter-en-ca')).toBe(getScoringConfig('letter'));
+    });
+
+    it('morphology uses none', () => {
+      expect(getScoringConfig('morphology')?.classification.type).toBe('none');
+    });
+
+    it('cva uses none', () => {
+      expect(getScoringConfig('cva')?.classification.type).toBe('none');
     });
   });
 });
