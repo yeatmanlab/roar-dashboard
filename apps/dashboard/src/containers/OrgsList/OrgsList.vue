@@ -218,7 +218,7 @@ import _head from 'lodash/head';
 import _cloneDeep from 'lodash/cloneDeep';
 import { useAuthStore } from '@/store/auth';
 import { getRoarApiClient } from '@/clients/roar-api';
-import { orderByDefault, exportCsv } from '@/helpers/query/utils';
+import { exportCsv } from '@/helpers/query/utils';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
@@ -241,7 +241,6 @@ import { usePermissions } from '@/composables/usePermissions';
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
-const orderBy = ref(orderByDefault);
 let activationCode = ref(null);
 const isDialogVisible = ref(false);
 const toast = useToast();
@@ -326,7 +325,7 @@ const {
   exportModalMessage,
   exportModalSeverity,
   EXPORT_PHASE,
-} = useOrgExportOrchestrator(activeOrgType, orderBy);
+} = useOrgExportOrchestrator(activeOrgType);
 
 // Use table columns composable (must be after activeOrgType is defined)
 const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, Permissions);
