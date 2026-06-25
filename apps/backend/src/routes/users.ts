@@ -43,6 +43,12 @@ export function registerUserRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, params: { userId, administrationId } }) =>
         UsersController.getUserAdministration(user!, userId, administrationId),
     },
+    listUserAdministrationAgreements: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { userId, administrationId }, query }) =>
+        UsersController.listUserAdministrationAgreements(user!, userId, administrationId, query),
+    },
     scoreReports: {
       getGuardianStudentReport: {
         middleware: [AuthGuardMiddleware],

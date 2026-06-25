@@ -15,6 +15,7 @@ export function createMockAgreementRepository(): MockedObject<AgreementRepositor
     getVersionByIdForAgreement: vi.fn(),
     getVersionsByAgreementIds: vi.fn(),
     getUnsignedTosAgreements: vi.fn(),
+    getSignedAgreementIds: vi.fn(),
   } as MockedObject<AgreementRepository>;
 }
 
