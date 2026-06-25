@@ -22,7 +22,6 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
-import { isEmulatorAuthReady } from '@/helpers/isDashboardReady';
 import AppSpinner from '@/components/AppSpinner.vue';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
@@ -30,7 +29,7 @@ const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdminis
 const HomeParent = defineAsyncComponent(() => import('@/pages/HomeParent.vue'));
 
 const authStore = useAuthStore();
-const { roarfirekit, ssoProvider } = storeToRefs(authStore);
+const { ssoProvider } = storeToRefs(authStore);
 
 const router = useRouter();
 
@@ -50,8 +49,8 @@ const init = () => {
   initialized.value = true;
 };
 
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.() || isEmulatorAuthReady(state)) init();
+unsubscribe = authStore.$subscribe((mutation, state) => {
+  if (state.accessToken) init();
 });
 
 const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
@@ -103,7 +102,7 @@ onMounted(async () => {
     requireRefresh.value = false;
     router.go(0);
   }
-  if (roarfirekit.value.restConfig?.() || isEmulatorAuthReady(authStore)) init();
+  if (authStore.isAuthReady) init();
   setSentryWidgetVisibility(!isParticipant.value);
 });
 </script>
