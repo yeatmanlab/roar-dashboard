@@ -14,16 +14,18 @@ const userService = UserService();
  */
 export const MeController = {
   /**
-   * Get the current authenticated user's profile, including unsigned TOS agreements.
+   * Get the current authenticated user's profile, including unsigned TOS
+   * agreements and the caller's own active family memberships.
    *
    * @param authContext - The authenticated user's context from req.user
-   * @returns ts-rest response object with user profile and unsigned agreements, or error
+   * @returns ts-rest response object with user profile, unsigned agreements, and families, or error
    */
   get: async (authContext: AuthContext) => {
     try {
-      const [user, unsignedAgreements] = await Promise.all([
+      const [user, unsignedAgreements, families] = await Promise.all([
         userService.getById(authContext, authContext.userId),
         userService.getUnsignedTosAgreements(authContext.userId),
+        userService.getFamilies(authContext.userId),
       ]);
 
       return {
@@ -38,6 +40,8 @@ export const MeController = {
             nameFirst: user.nameFirst,
             nameLast: user.nameLast,
             unsignedAgreements,
+            // Caller's own active family memberships ({ id, role }); empty when none.
+            families,
           },
         },
       };
