@@ -1,10 +1,10 @@
 /**
- * Standalone dev seed script.
+ * Standalone seed script for local development and CI.
  *
- * Truncates all tables, seeds the deterministic dev fixture, initializes FGA
- * (creating a store + deploying the model if needed), syncs FGA tuples from
- * Postgres, seeds the Firebase Auth emulator (if running), and writes fixture
- * files for Cypress and SDK tests.
+ * Sets up a complete environment: runs migrations, truncates all tables, seeds
+ * the deterministic fixture, creates a fresh OpenFGA store with the authorization
+ * model, syncs FGA tuples from Postgres, optionally seeds the Firebase Auth
+ * emulator, and writes fixture files for Cypress and SDK tests.
  *
  * Run via `npm run dev:seed -w apps/backend` or `npm run dev:seed` from root.
  *
@@ -15,19 +15,16 @@
  * - FIREBASE_AUTH_EMULATOR_HOST: When set, seeds Auth emulator users
  * - CYPRESS_FIXTURE_FILE: Path for Cypress fixture (default: /tmp/roar-cypress-fixture.json)
  * - TEST_FIXTURE_FILE: Path for SDK fixture (default: /tmp/roar-test-fixture.json)
- *
- * Usage:
- *   npx tsx ./seeds/index.ts
  */
 import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import type { TestFixture } from '@roar-platform/api-contract/test-fixture.type';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 import { initializeDatabasePools, closeDatabasePools } from '../src/db/clients';
+import { logger } from '../src/logger';
 import { runMigrations, truncateAllTables } from '../src/test-support/db';
 import { setupFdwForTests } from '../src/test-support/db/setup-fdw';
 import { deleteFgaStore, initializeFgaTestStore, syncFgaTuplesFromPostgres } from '../src/test-support/fga';
@@ -37,7 +34,10 @@ import {
   type SeededEmulatorUser,
 } from '../src/test-support/firebase-emulator';
 import { seedDevFixture, DEV_IDS, DEV_USERS, DEV_FIXTURE_USER_KEYS, DEV_PASSWORD } from '../tooling';
-import { logger } from '../src/logger';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const LOG_PREFIX = '[seed]';
 
 const { TEST_FIXTURE_FILE = '/tmp/roar-test-fixture.json', CYPRESS_FIXTURE_FILE = '/tmp/roar-cypress-fixture.json' } =
   process.env;
@@ -45,14 +45,11 @@ const { TEST_FIXTURE_FILE = '/tmp/roar-test-fixture.json', CYPRESS_FIXTURE_FILE 
 /**
  * Resolve the active dotenv file path.
  *
- * In CI, `DOTENV_CONFIG_PATH` points to `.env.test`. In local dev, `dotenv/config`
- * defaults to `.env` in the package root (`apps/backend/`).
- *
- * @returns Absolute path to the dotenv file
+ * Uses `DOTENV_CONFIG_PATH` when set (CI points this to `.env.test`),
+ * otherwise defaults to `.env` in the package root (`apps/backend/`).
  */
 function resolveEnvFilePath(): string {
   if (process.env.DOTENV_CONFIG_PATH) {
-    // DOTENV_CONFIG_PATH may be relative to the repo root (e.g. "apps/backend/.env.test")
     return path.resolve(process.env.DOTENV_CONFIG_PATH);
   }
   return path.resolve(__dirname, '..', '.env');
@@ -62,10 +59,8 @@ function resolveEnvFilePath(): string {
  * Upsert key=value pairs in the active dotenv file.
  *
  * Replaces existing lines for each key; appends any keys that aren't already
- * present. This is safe to call on repeated seed runs — values are updated
- * in place rather than duplicated.
- *
- * @param vars - Record of env var names to values
+ * present. Safe to call on repeated seed runs — values are updated in place
+ * rather than duplicated.
  */
 function upsertEnvVars(vars: Record<string, string>): void {
   const envPath = resolveEnvFilePath();
@@ -90,40 +85,59 @@ function upsertEnvVars(vars: Record<string, string>): void {
 }
 
 /**
- * Write the Cypress fixture file with one entry per dev user.
+ * Build a Cypress fixture user entry from the dev user definition and
+ * optional emulator credentials (email/password override).
  */
-function writeCypressFixtureFile(seeded: SeededEmulatorUser[]): void {
-  const byAuthId = new Map(seeded.map((u) => [u.authId, u]));
+function buildCypressUserEntry(
+  key: string,
+  creds?: { email: string; password: string },
+): [string, Record<string, string>] {
+  const user = DEV_USERS[key as keyof typeof DEV_USERS];
+  return [
+    key,
+    {
+      id: user.id,
+      authId: user.authId,
+      email: creds?.email ?? user.email,
+      password: creds?.password ?? DEV_PASSWORD,
+      nameFirst: user.nameFirst,
+      nameLast: user.nameLast,
+      userType: user.userType,
+    },
+  ];
+}
+
+/**
+ * Write the Cypress fixture file with one entry per fixture user.
+ *
+ * When `seededUsers` is provided (Auth emulator is running), credentials
+ * come from the emulator. Otherwise, deterministic values from the dev
+ * fixture are used directly.
+ */
+function writeCypressFixtureFile(seededUsers?: SeededEmulatorUser[]): void {
+  const byAuthId = seededUsers ? new Map(seededUsers.map((u) => [u.authId, u])) : null;
 
   const users = Object.fromEntries(
     DEV_FIXTURE_USER_KEYS.map((key) => {
       const user = DEV_USERS[key];
-      const creds = byAuthId.get(user.authId);
-      if (!creds) {
-        throw new Error(`[seed-dev] Missing seeded credentials for fixture key "${key}"`);
+      const creds = byAuthId?.get(user.authId);
+
+      if (byAuthId && !creds) {
+        throw new Error(`${LOG_PREFIX} Missing seeded credentials for fixture key "${key}"`);
       }
-      return [
-        key,
-        {
-          id: user.id,
-          authId: user.authId,
-          email: creds.email,
-          password: creds.password,
-          nameFirst: user.nameFirst,
-          nameLast: user.nameLast,
-          userType: user.userType,
-        },
-      ];
+
+      return buildCypressUserEntry(key, creds);
     }),
   );
 
   fs.writeFileSync(CYPRESS_FIXTURE_FILE, JSON.stringify({ users }, null, 2));
-  logger.info({ fixtureFile: CYPRESS_FIXTURE_FILE, userCount: seeded.length }, 'Cypress fixture written');
+  logger.info(
+    { fixtureFile: CYPRESS_FIXTURE_FILE, userCount: DEV_FIXTURE_USER_KEYS.length },
+    'Cypress fixture written',
+  );
 }
 
-/**
- * Write the SDK test fixture file with deterministic IDs.
- */
+/** Write the SDK test fixture file with deterministic IDs. */
 function writeSdkFixtureFile(): void {
   const fixtureData: TestFixture = {
     testUser: {
@@ -157,50 +171,42 @@ function writeSdkFixtureFile(): void {
 }
 
 async function main(): Promise<void> {
-  // 1. Validate required environment variables
   const required = ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'] as const;
   for (const key of required) {
     if (!process.env[key]) {
-      throw new Error(`[seed-dev] Missing required env var: ${key}`);
+      throw new Error(`${LOG_PREFIX} Missing required env var: ${key}`);
     }
   }
 
-  // 2. Initialize database pools
-  logger.info('[seed-dev] Initializing database pools...');
+  logger.info(`${LOG_PREFIX} Initializing database pools...`);
   await initializeDatabasePools();
 
   try {
-    // 3. Provision FDW prerequisites (extension, foreign server, user mappings).
-    //    Must run before migrations because migration SQL references the
-    //    assessment_server foreign server. In Docker-based local dev, the
-    //    init script handles this; in CI (bare Postgres), setupFdwForTests()
-    //    creates it via the pg client.
-    logger.info('[seed-dev] Setting up FDW...');
+    // FDW prerequisites must run before migrations because migration SQL
+    // references the assessment_server foreign server.
+    logger.info(`${LOG_PREFIX} Setting up FDW...`);
     await setupFdwForTests();
 
-    // 4. Run migrations (ensures schema is current)
-    logger.info('[seed-dev] Running migrations...');
+    logger.info(`${LOG_PREFIX} Running migrations...`);
     await runMigrations();
 
-    // 5. Truncate all tables
-    logger.info('[seed-dev] Truncating all tables...');
+    logger.info(`${LOG_PREFIX} Truncating all tables...`);
     await truncateAllTables();
 
-    // 6. Seed the deterministic dev fixture
-    logger.info('[seed-dev] Seeding dev fixture...');
+    logger.info(`${LOG_PREFIX} Seeding fixture data...`);
     await seedDevFixture();
 
-    // 7. Initialize FGA: delete old store (if any), create a fresh one, deploy the model.
+    // FGA: delete the previous store (if any) and create a fresh one.
     if (!process.env.FGA_API_URL) {
       process.env.FGA_API_URL = 'http://localhost:8080';
     }
 
     if (process.env.FGA_STORE_ID) {
-      logger.info({ storeId: process.env.FGA_STORE_ID }, '[seed-dev] Deleting previous FGA store...');
+      logger.info({ storeId: process.env.FGA_STORE_ID }, `${LOG_PREFIX} Deleting previous FGA store...`);
       await deleteFgaStore(process.env.FGA_STORE_ID);
     }
 
-    logger.info('[seed-dev] Creating FGA store and deploying model...');
+    logger.info(`${LOG_PREFIX} Creating FGA store and deploying model...`);
     await initializeFgaTestStore();
 
     // Persist FGA IDs to the active dotenv file so the backend server (a
@@ -210,13 +216,12 @@ async function main(): Promise<void> {
       FGA_MODEL_ID: process.env.FGA_MODEL_ID!,
     });
 
-    // 8. Sync FGA tuples from Postgres
-    logger.info('[seed-dev] Syncing FGA tuples from Postgres...');
+    logger.info(`${LOG_PREFIX} Syncing FGA tuples from Postgres...`);
     await syncFgaTuplesFromPostgres();
 
-    // 9. Seed Firebase Auth emulator users (if running)
+    // Seed Firebase Auth emulator users when the emulator is running.
     if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-      logger.info('[seed-dev] Seeding Firebase Auth emulator...');
+      logger.info(`${LOG_PREFIX} Seeding Firebase Auth emulator...`);
       const seedable: SeedableEmulatorUser[] = DEV_FIXTURE_USER_KEYS.map((key) => ({
         authId: DEV_USERS[key].authId,
         email: DEV_USERS[key].email,
@@ -227,40 +232,18 @@ async function main(): Promise<void> {
       const seeded = await seedFirebaseAuthEmulator(seedable);
       writeCypressFixtureFile(seeded);
     } else {
-      // No emulator — write a Cypress fixture with deterministic email/password
-      // so downstream scripts have a consistent file format
-      const users = Object.fromEntries(
-        DEV_FIXTURE_USER_KEYS.map((key) => {
-          const user = DEV_USERS[key];
-          return [
-            key,
-            {
-              id: user.id,
-              authId: user.authId,
-              email: user.email,
-              password: DEV_PASSWORD,
-              nameFirst: user.nameFirst,
-              nameLast: user.nameLast,
-              userType: user.userType,
-            },
-          ];
-        }),
-      );
-      fs.writeFileSync(CYPRESS_FIXTURE_FILE, JSON.stringify({ users }, null, 2));
-      logger.info({ fixtureFile: CYPRESS_FIXTURE_FILE }, 'Cypress fixture written (no emulator)');
+      writeCypressFixtureFile();
     }
 
-    // 10. Write SDK test fixture file
     writeSdkFixtureFile();
 
-    logger.info('[seed-dev] Seed complete.');
+    logger.info(`${LOG_PREFIX} Seed complete.`);
   } finally {
-    // 11. Close DB pools
     await closeDatabasePools();
   }
 }
 
 main().catch((err) => {
-  logger.fatal({ err }, '[seed-dev] Seed failed');
+  logger.fatal({ err }, `${LOG_PREFIX} Seed failed`);
   process.exit(1);
 });
