@@ -10,7 +10,7 @@ import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
-import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { MORPHOLOGY_TASK_ID } from '@roar-platform/assessment-schema/roar-multichoice';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
@@ -22,7 +22,7 @@ const props = defineProps({
   taskId: { type: String, default: MORPHOLOGY_TASK_ID },
   // Multichoice is currently English-only; the game resolves locale via i18next rather than
   // a variant param. If language support is added, thread props.language into gameParams here
-  // (e.g. { language: props.language, task: props.task, ...appKit._taskInfo.variantParams })
+  // (e.g. { language: props.language, task: props.task, ...variantParams })
   // and add "language" to the variant params in taskVariantParameters.example.json.
   language: { type: String, default: 'en' },
   task: { type: String, default: 'morphology' },
@@ -31,7 +31,6 @@ const props = defineProps({
 
 let TaskLauncher;
 
-const taskId = props.taskId;
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -110,8 +109,6 @@ async function startTask(selectedAdmin) {
       }
     }, 100);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
-
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = userDob ? new Date(userDob) : null;
 
@@ -120,10 +117,6 @@ async function startTask(selectedAdmin) {
       birthMonth: userDateObj ? userDateObj.getMonth() + 1 : undefined,
       birthYear: userDateObj ? userDateObj.getFullYear() : undefined,
     };
-
-    // variantParams.task (from the DB variant) is the authoritative source for the task mode
-    // (morphology vs. cva); props.task is the fallback for variants that predate the task field.
-    const gameParams = { task: props.task, ...appKit._taskInfo.variantParams };
 
     // Initialize the new assessment SDK for the dashboard execution path.
     // Fetches the task UUID, the current user's Postgres UUID, and the participant's
@@ -208,12 +201,15 @@ async function startTask(selectedAdmin) {
       },
     );
 
+    // Source the variant parameters from the assessment SDK now that initFirekitCompat has run.
+    // variantParams.task (from the DB variant) is the authoritative source for the task mode
+    // (morphology vs. cva); props.task is the fallback for variants that predate the task field.
+    const { variantParams } = await getVariantById(taskVariant.variantId);
+    const gameParams = { task: props.task, ...variantParams };
+
     const roarApp = new TaskLauncher(gameParams, userParams, 'jspsych-target');
 
-    await roarApp.run().then(async () => {
-      // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
-
+    await roarApp.run().then(() => {
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
       if (props.launchId) {
