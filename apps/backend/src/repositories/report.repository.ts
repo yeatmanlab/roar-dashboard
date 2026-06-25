@@ -340,6 +340,53 @@ export interface StudentAdministrationRow {
  * variantId — a student has at most one selected completed run per variant
  * (the one used to populate scores).
  */
+/**
+ * A single row from the paginated task-subscores query — student demographics
+ * plus a `(variantId, name, value)` score map for the variants the student has
+ * completed for this task.
+ *
+ * Multi-variant deduplication (which variant's row to surface when the student
+ * completed multiple) happens in the service layer using the lowest-`orderIndex`
+ * rule shared with the rest of the score-report endpoints.
+ */
+export interface TaskSubscoreQueryRow {
+  userId: string;
+  assessmentPid: string | null;
+  username: string | null;
+  email: string | null;
+  nameFirst: string | null;
+  nameLast: string | null;
+  grade: string | null;
+  /** Map of taskVariantId → (run_scores.name → value); flat, for distinct-name columns. */
+  scores: Map<string, Map<string, string>>;
+  /** Map of taskVariantId → (run_scores.domain → name → value); for domain-indexed tasks (PA). */
+  domainScores: Map<string, Map<string, Map<string, string>>>;
+}
+
+/**
+ * Optional sort/filter parameters specific to the task-subscores endpoint.
+ *
+ * `subscoreSort` selects a `run_scores.name` exposed as the numeric sort
+ * column; `subscoreFilters` are AND-combined, each compiling to its own LEFT
+ * JOIN with a `numericValueSql(value) <op> threshold` predicate. The service
+ * translates the API-level `subscores.<key>` into a concrete `run_scores.name`
+ * via the scoring config — keys without a numeric form are rejected upstream.
+ */
+export interface TaskSubscoreNumericSort {
+  /** `run_scores.name` carrying the numeric representation. */
+  scoreName: string;
+  /** When set, also match `run_scores.domain` (PA's generic names under FSM/LSM/DEL). */
+  scoreDomain?: string;
+}
+
+export interface TaskSubscoreNumericFilter {
+  scoreName: string;
+  /** When set, also match `run_scores.domain`. */
+  scoreDomain?: string;
+  operator: 'eq' | 'neq' | 'gte' | 'lte';
+  value: number;
+}
+
 export interface StudentScoreQueryRow {
   userId: string;
   assessmentPid: string | null;
@@ -2410,6 +2457,305 @@ export class ReportRepository {
   }
 
   /**
+   * Paginated students in scope with their subscore rows for a single task.
+   *
+   * Targets the task-subscores endpoint (#1685). The student population is the
+   * same admin-aware `buildStudentInScopeQuery` set used by the other report
+   * queries; we further restrict to students with at least one completed,
+   * reporting-eligible run for the supplied task variant set, then layer
+   * dynamic numeric subscore filters and sort on top.
+   *
+   * Returns `{ user fields, scores: Map<variantId, Map<name, value>> }` — the
+   * service layer applies multi-variant dedup and config-driven value
+   * formatting.
+   *
+   * @param administrationId - The administration to query
+   * @param scope - Scope filter (district/school/class/group)
+   * @param admin - The administration date window (admin-aware in-scope predicate)
+   * @param taskVariantIds - All variants of the target task in this admin
+   * @param options - Pagination + static sort column
+   * @param filterCondition - Optional SQL filter on `users` columns
+   * @param subscoreSort - Optional dynamic numeric sort on a subscore name
+   * @param subscoreFilters - Optional dynamic numeric filters on subscore names
+   * @param includeUnenrolledStudents - Widen the in-scope predicate to include withdrawn-with-data
+   * @returns Paginated student rows with score maps
+   */
+  async getTaskSubscoreStudents(
+    administrationId: string,
+    scope: ReportScope,
+    admin: ReportAdminWindow,
+    taskVariantIds: string[],
+    options: ReportPaginationOptions,
+    filterCondition?: SQL,
+    subscoreSort?: TaskSubscoreNumericSort | null,
+    subscoreFilters?: TaskSubscoreNumericFilter[],
+    includeUnenrolledStudents = false,
+  ): Promise<PaginatedResult<TaskSubscoreQueryRow>> {
+    const { page, perPage } = options;
+    const offset = (page - 1) * perPage;
+
+    // No variants ⇒ no rows by definition.
+    if (taskVariantIds.length === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    const studentsInScope = this.buildStudentInScopeQuery(scope, admin, includeUnenrolledStudents).as(
+      'students_in_scope',
+    );
+
+    // Encode each variant's position in `taskVariantIds` (which the caller
+    // passes in lowest-orderIndex-first order) as a SQL expression. Used by the
+    // per-user dedup ORDER BY below so the score subquery returns the
+    // lowest-orderIndex variant's value per student, matching the multi-variant
+    // dedup rule applied at the service layer for display.
+    const variantPositionExpr = sql`array_position(ARRAY[${sql.join(
+      taskVariantIds.map((v) => sql`${v}::uuid`),
+      sql`, `,
+    )}]::uuid[], ${fdwRuns.taskVariantId})`;
+
+    /**
+     * Build a runs+run_scores subquery exposing one (variantSet, name) score
+     * value per user.
+     *
+     * Uses `SELECT DISTINCT ON (user_id) … ORDER BY user_id, variantPosition` so
+     * a student who has completed multiple variants of the task collapses to a
+     * single row carrying the lowest-orderIndex variant's score. Without the
+     * dedup, a student with two completed variants would appear twice in the
+     * page (the count query uses `countDistinct(users.id)` so the page size
+     * would silently shrink), and sort comparisons would be against a
+     * non-deterministic value.
+     *
+     * Note: this picks the lowest-orderIndex variant that has a row for THIS
+     * scoreName, which can differ from the service-layer display dedup (first
+     * variant with ANY scores) only for genuinely multi-variant tasks whose
+     * variants emit different score-name sets. Every current subscore family is
+     * single-variant, so the two coincide.
+     */
+    const buildScoreSub = (alias: string, scoreName: string, scoreDomain?: string) =>
+      this.db
+        .selectDistinctOn([fdwRuns.userId], {
+          userId: fdwRuns.userId,
+          value: fdwRunScores.value,
+        })
+        .from(fdwRuns)
+        .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
+        .where(
+          and(
+            eq(fdwRuns.administrationId, administrationId),
+            inArray(fdwRuns.taskVariantId, taskVariantIds),
+            isNull(fdwRuns.deletedAt),
+            isNull(fdwRuns.abortedAt),
+            eq(fdwRuns.useForReporting, true),
+            isNotNull(fdwRuns.completedAt),
+            eq(fdwRunScores.name, scoreName),
+            // PA's subtasks share generic names (numCorrect/percentCorrect) and
+            // are disambiguated by domain; non-domain columns omit this.
+            scoreDomain ? eq(fdwRunScores.domain, scoreDomain) : undefined,
+          ),
+        )
+        .orderBy(fdwRuns.userId, variantPositionExpr)
+        .as(alias);
+
+    // Restrict the population to students with at least one completed
+    // reporting-eligible run for the target variant set. The runs table links
+    // `userId` to `taskVariantId`, so a `WHERE EXISTS` against runs narrows
+    // users-in-scope before the score joins explode the row count.
+    const hasCompletedRunSql = sql`EXISTS (
+      SELECT 1 FROM ${fdwRuns} r
+      WHERE r.user_id = ${users.id}
+        AND r.administration_id = ${administrationId}
+        AND r.task_variant_id IN (${sql.join(
+          taskVariantIds.map((v) => sql`${v}`),
+          sql`, `,
+        )})
+        AND r.deleted_at IS NULL
+        AND r.aborted_at IS NULL
+        AND r.use_for_reporting = true
+        AND r.completed_at IS NOT NULL
+    )`;
+
+    // Plan optional sort/filter score-name joins. PostgreSQL's planner
+    // collapses redundant subqueries when the same name appears more than once;
+    // we still alias each join distinctly for legibility.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery generic
+    const sortJoinPlan: { sub: any; alias: string; expr: SQL } | null = subscoreSort
+      ? (() => {
+          const sub = buildScoreSub(`sort_${subscoreSort.scoreName}`, subscoreSort.scoreName, subscoreSort.scoreDomain);
+          return { sub, alias: `sort_${subscoreSort.scoreName}`, expr: numericValueSql(sub.value) };
+        })()
+      : null;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery generic
+    const filterJoinPlans: Array<{ sub: any; alias: string; condition: SQL }> = (subscoreFilters ?? []).map(
+      (f, idx) => {
+        const alias = `filter_${idx}_${f.scoreName}`;
+        const sub = buildScoreSub(alias, f.scoreName, f.scoreDomain);
+        const numeric = numericValueSql(sub.value);
+        const condition: SQL = (() => {
+          switch (f.operator) {
+            case 'gte':
+              return sql`${numeric} >= ${f.value}`;
+            case 'lte':
+              return sql`${numeric} <= ${f.value}`;
+            case 'eq':
+              return sql`${numeric} = ${f.value}`;
+            case 'neq':
+              return sql`${numeric} <> ${f.value}`;
+            default: {
+              assertUnreachableOperator(f.operator);
+              throw new Error(`Unknown subscore filter operator`);
+            }
+          }
+        })();
+        return { sub, alias, condition };
+      },
+    );
+
+    // Compose the WHERE list shared by count + page-data queries.
+    const whereConditions: SQL[] = [hasCompletedRunSql];
+    if (filterCondition) whereConditions.push(filterCondition);
+    for (const plan of filterJoinPlans) {
+      whereConditions.push(plan.condition);
+    }
+
+    // ─── Count query — total items before pagination ───
+    let countQuery = this.db
+      .select({ count: countDistinct(users.id) })
+      .from(users)
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
+      .$dynamic();
+    for (const plan of filterJoinPlans) {
+      countQuery = countQuery.leftJoin(plan.sub, eq(plan.sub.userId, users.id));
+    }
+    const countResult = await countQuery.where(and(...whereConditions));
+    const totalItems = countResult[0]?.count ?? 0;
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // ─── Page-data query — selects user demographics + applies sort/limit ───
+    const sortDirection = options.sortDirection === SortOrder.DESC ? desc : asc;
+    let pageQuery = this.db
+      .selectDistinct({
+        userId: users.id,
+        assessmentPid: users.assessmentPid,
+        username: users.username,
+        email: users.email,
+        nameFirst: users.nameFirst,
+        nameLast: users.nameLast,
+        grade: users.grade,
+        sortValue: sortJoinPlan ? sortJoinPlan.expr.as('sort_value') : sql`NULL`.as('sort_value'),
+      })
+      .from(users)
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
+      .$dynamic();
+    for (const plan of filterJoinPlans) {
+      pageQuery = pageQuery.leftJoin(plan.sub, eq(plan.sub.userId, users.id));
+    }
+    if (sortJoinPlan) {
+      pageQuery = pageQuery.leftJoin(sortJoinPlan.sub, eq(sortJoinPlan.sub.userId, users.id));
+    }
+
+    // Resolve the primary sort column. When a subscore sort is requested, we
+    // sort by its numeric expression with NULLs LAST so students who didn't
+    // complete the matching subscore drop to the bottom; otherwise we honor the
+    // static `options.sortColumn` (e.g., `users.lastName`). A secondary sort on
+    // `users.id` keeps pagination stable regardless.
+    const primarySort = sortJoinPlan
+      ? sql`${sortJoinPlan.expr} ${sql.raw(options.sortDirection === SortOrder.DESC ? 'DESC' : 'ASC')} NULLS LAST`
+      : options.sortColumn
+        ? sortDirection(options.sortColumn)
+        : asc(users.nameLast);
+
+    const studentRows = await pageQuery
+      .where(and(...whereConditions))
+      .orderBy(primarySort, asc(users.id))
+      .limit(perPage)
+      .offset(offset);
+
+    if (studentRows.length === 0) {
+      return { items: [], totalItems };
+    }
+
+    // ─── Score lookup — fetch all run_scores rows for the chosen page ───
+    const studentIds = studentRows.map((s) => s.userId);
+    const scoreRows = await this.db
+      .select({
+        userId: fdwRuns.userId,
+        taskVariantId: fdwRuns.taskVariantId,
+        scoreDomain: fdwRunScores.domain,
+        scoreName: fdwRunScores.name,
+        scoreValue: fdwRunScores.value,
+      })
+      .from(fdwRuns)
+      .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
+      .where(
+        and(
+          eq(fdwRuns.administrationId, administrationId),
+          inArray(fdwRuns.taskVariantId, taskVariantIds),
+          inArray(fdwRuns.userId, studentIds),
+          isNull(fdwRuns.deletedAt),
+          isNull(fdwRuns.abortedAt),
+          eq(fdwRuns.useForReporting, true),
+          isNotNull(fdwRuns.completedAt),
+        ),
+      );
+
+    // Index scores two ways: a flat (userId → variantId → name → value) map for
+    // distinct-name columns, and a domain-indexed (userId → variantId → domain →
+    // name → value) map for tasks like PA whose columns share generic names
+    // across per-subtask domains (FSM/LSM/DEL/composite each emit numCorrect).
+    const scoresByStudent = new Map<string, Map<string, Map<string, string>>>();
+    const domainScoresByStudent = new Map<string, Map<string, Map<string, Map<string, string>>>>();
+    for (const row of scoreRows) {
+      let byVariant = scoresByStudent.get(row.userId);
+      if (!byVariant) {
+        byVariant = new Map();
+        scoresByStudent.set(row.userId, byVariant);
+      }
+      let byName = byVariant.get(row.taskVariantId);
+      if (!byName) {
+        byName = new Map();
+        byVariant.set(row.taskVariantId, byName);
+      }
+      byName.set(row.scoreName, row.scoreValue);
+
+      if (row.scoreDomain) {
+        let dByVariant = domainScoresByStudent.get(row.userId);
+        if (!dByVariant) {
+          dByVariant = new Map();
+          domainScoresByStudent.set(row.userId, dByVariant);
+        }
+        let dByDomain = dByVariant.get(row.taskVariantId);
+        if (!dByDomain) {
+          dByDomain = new Map();
+          dByVariant.set(row.taskVariantId, dByDomain);
+        }
+        let dByName = dByDomain.get(row.scoreDomain);
+        if (!dByName) {
+          dByName = new Map();
+          dByDomain.set(row.scoreDomain, dByName);
+        }
+        dByName.set(row.scoreName, row.scoreValue);
+      }
+    }
+
+    const items: TaskSubscoreQueryRow[] = studentRows.map((student) => ({
+      userId: student.userId,
+      assessmentPid: student.assessmentPid,
+      username: student.username,
+      email: student.email,
+      nameFirst: student.nameFirst,
+      nameLast: student.nameLast,
+      grade: student.grade,
+      scores: scoresByStudent.get(student.userId) ?? new Map(),
+      domainScores: domainScoresByStudent.get(student.userId) ?? new Map(),
+    }));
+
+    return { items, totalItems };
+  }
+
+  /**
    * Verify that a student is reachable from the requested scope for the given
    * administration. Used by the per-student reporting endpoint.
    *
@@ -2922,6 +3268,13 @@ function gradeAsIntSql(gradeColumn: SQL | Column | PgColumn): SQL {
  * Emit SQL that strips non-numeric characters from a text score value and casts
  * to NUMERIC. Handles angle-bracket strings like `'>99'` (→ 99) and `'<1'` (→ 1).
  * Used for percentile/rawScore/standardScore values stored as text in run_scores.
+ *
+ * Note for sort/filter call sites (e.g. task-subscores `subscores.<key>`):
+ * angle-bracket values lose their `>` / `<` before comparison, so a stored
+ * value of `">99"` evaluates as `99` and a filter like `subscores.cvc:gte:80`
+ * against `">99"` is `99 >= 80 = true`. This is consistent with how the
+ * dashboard renders these values (the display formatter preserves the
+ * angle-bracket form), but means filters compare against the bare numeric part.
  */
 function numericValueSql(valueExpr: SQL | Column): SQL {
   return sql`CAST(NULLIF(REGEXP_REPLACE(${valueExpr}, '[^0-9.-]', '', 'g'), '') AS NUMERIC)`;

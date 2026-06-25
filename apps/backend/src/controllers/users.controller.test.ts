@@ -97,6 +97,7 @@ describe('UsersController', () => {
       listStudentScores: vi.fn(),
       getIndividualStudentReport: vi.fn(),
       getGuardianStudentReport: mockGetGuardianStudentReport,
+      listTaskSubscores: vi.fn(),
     });
   });
 

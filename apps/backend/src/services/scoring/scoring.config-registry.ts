@@ -6,12 +6,13 @@ import swrEsConfig from './configs/swr-es';
 import swrItConfig from './configs/swr-it';
 import swrPtConfig from './configs/swr-pt';
 import swrDeConfig from './configs/swr-de';
-import sreConfig from './configs/sre.json';
-import sreEsConfig from './configs/sre-es.json';
+import sreConfig from './configs/sre';
+import sreEsConfig from './configs/sre-es';
 import paConfig from './configs/pa';
-import letterConfig from './configs/letter.json';
-import phonicsConfig from './configs/phonics.json';
+import letterConfig from './configs/letter';
+import phonicsConfig from './configs/phonics';
 import roamAlpacaConfig from './configs/roam-alpaca.json';
+import fluencyConfig from './configs/fluency.json';
 import morphologyConfig from './configs/morphology.json';
 import cvaConfig from './configs/cva.json';
 
@@ -27,6 +28,7 @@ const RAW_CONFIGS = [
   letterConfig,
   phonicsConfig,
   roamAlpacaConfig,
+  fluencyConfig,
   morphologyConfig,
   cvaConfig,
 ];

@@ -10,5 +10,55 @@
   "classification": {
     "type": "assessment-computed",
     "supportLevelField": "supportLevel"
-  }
+  },
+  "subscores": [
+    { "kind": "number", "key": "rawScore", "label": "Raw Score", "name": "roarScore", "provisional": true },
+    {
+      "kind": "number",
+      "key": "numberKnowledge",
+      "label": "Number Knowledge",
+      "name": "numberKnowledgePercentCorrect",
+      "round": true,
+      "provisional": true
+    },
+    {
+      "kind": "number",
+      "key": "geometry",
+      "label": "Geometry",
+      "name": "geometryPercentCorrect",
+      "round": true,
+      "provisional": true
+    },
+    {
+      "kind": "number",
+      "key": "arithmeticExpressions",
+      "label": "Arithmetic Expressions",
+      "name": "arithmeticExpressionsPercentCorrect",
+      "round": true,
+      "provisional": true
+    },
+    {
+      "kind": "number",
+      "key": "rationalNumbersProbability",
+      "label": "Rational Numbers & Probability",
+      "name": "rationalNumbersProbabilityPercentCorrect",
+      "round": true,
+      "provisional": true
+    },
+    {
+      "kind": "number",
+      "key": "algebraicThinking",
+      "label": "Algebraic Thinking",
+      "name": "algebraicThinkingPercentCorrect",
+      "round": true,
+      "provisional": true
+    },
+    {
+      "kind": "stringPassthrough",
+      "key": "incorrectSkills",
+      "label": "Skills To Work On",
+      "name": "incorrectSkills",
+      "provisional": true
+    }
+  ]
 }
