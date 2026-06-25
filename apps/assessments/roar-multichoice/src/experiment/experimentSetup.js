@@ -334,7 +334,7 @@ export const setNextStimulus = () => {
       // Secondary: 25 core items, 5 secondary items (1 secondary for every 5 core items)
       catToSelect =
         coreRemaining > 0
-          ? itemGroupCounter % 5 === 0 && secondaryRemaining > 0 && itemGroupCounter > 0
+          ? itemGroupCounter % 6 === 5 && secondaryRemaining > 0
             ? 'secondary'
             : 'core'
           : secondaryRemaining > 0
