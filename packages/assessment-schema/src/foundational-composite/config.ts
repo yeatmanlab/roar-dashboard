@@ -23,4 +23,4 @@ export const FOUNDATIONAL_COMPOSITE_SCORING_VERSION = 1 as const;
  */
 export const FOUNDATIONAL_COMPOSITE_SCORE_TABLE_URL = (
   version: number = FOUNDATIONAL_COMPOSITE_SCORING_VERSION,
-): string => `https://storage.googleapis.com/roar-foundational/scores/foundational_composite_lookup_v${version}.csv`;
+): string => `https://storage.googleapis.com/roar-foundational/foundational/scores/composite_lookup_v${version}.csv`;
