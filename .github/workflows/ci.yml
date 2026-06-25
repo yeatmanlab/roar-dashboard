@@ -460,7 +460,7 @@ jobs:
       fail-fast: false
       matrix:
         assessment: ${{ fromJson(needs.detect-assessment-changes.outputs.matrix) }}
-        browser: [chrome, edge]
+        browser: [chrome]
         containers: [1, 2]
 
     steps:

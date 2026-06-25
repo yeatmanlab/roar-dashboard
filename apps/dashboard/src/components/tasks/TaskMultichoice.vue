@@ -10,21 +10,28 @@ import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
+import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { MORPHOLOGY_TASK_ID } from '@roar-platform/assessment-schema/roar-multichoice';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import { getRoarApiClient } from '@/clients/roar-api';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../../../package-lock.json';
+import { version } from '@roar-platform/roar-multichoice/package.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'multichoice' },
+  taskId: { type: String, default: MORPHOLOGY_TASK_ID },
+  // Multichoice is currently English-only; the game resolves locale via i18next rather than
+  // a variant param. If language support is added, thread props.language into gameParams here
+  // (e.g. { language: props.language, task: props.task, ...appKit._taskInfo.variantParams })
+  // and add "language" to the variant params in taskVariantParameters.example.json.
   language: { type: String, default: 'en' },
+  task: { type: String, default: 'morphology' },
   launchId: { type: String, default: null },
 });
 
 let TaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roar-multichoice'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,7 +69,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roar-multichoice')).default;
+    TaskLauncher = (await import('@roar-platform/roar-multichoice')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -106,18 +113,102 @@ async function startTask(selectedAdmin) {
     const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
 
     const userDob = _get(userData.value, 'studentData.dob');
-    const userDateObj = new Date(userDob);
+    const userDateObj = userDob ? new Date(userDob) : null;
 
     const userParams = {
       grade: _get(userData.value, 'studentData.grade'),
-      birthMonth: userDateObj.getMonth() + 1,
-      birthYear: userDateObj.getFullYear(),
-      language: props.language,
+      birthMonth: userDateObj ? userDateObj.getMonth() + 1 : undefined,
+      birthYear: userDateObj ? userDateObj.getFullYear() : undefined,
     };
 
-    const gameParams = { ...appKit._taskInfo.variantParams };
+    // variantParams.task (from the DB variant) is the authoritative source for the task mode
+    // (morphology vs. cva); props.task is the fallback for variants that predate the task field.
+    const gameParams = { task: props.task, ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    // Initialize the new assessment SDK for the dashboard execution path.
+    // Fetches the task UUID, the current user's Postgres UUID, and the participant's
+    // administrations in parallel to resolve the correct administrationId and variantId.
+    //
+    // authStore.roarUid is a Firestore UID, not a Postgres UUID. GET /me resolves the
+    // Postgres UUID for the currently authenticated user (self-launch path).
+    // TODO: resolve the participant's Postgres UUID for the proxy-launch path (launchId set).
+    //
+    // NOTE: Until the dashboard migrates its administration queries to the new REST API,
+    // selectedAdmin.value.id is a Firestore document ID and will not match any administration
+    // in the new backend. The fallback (matching by task UUID within embedded tasks)
+    // is used until that migration is complete.
+    const roarApiClient = getRoarApiClient();
+
+    const [taskRes, meRes] = await Promise.all([
+      roarApiClient.tasks.get({ params: { taskId: props.taskId } }),
+      roarApiClient.me.get(),
+    ]);
+
+    if (taskRes.status !== 200) {
+      throw new Error(`multichoice task not found in the ROAR backend (status ${taskRes.status}).`);
+    }
+    if (meRes.status !== 200) {
+      throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
+    }
+
+    // Proxy-launch path (launchId set) requires resolving the participant's Postgres UUID from
+    // the launch record — props.launchId is an assignment/launch ID, not a user ID. Passing it
+    // as participantId would silently create runs under the wrong ID. Fail loudly until this
+    // is properly implemented (see TODO above).
+    if (props.launchId) {
+      throw new Error(
+        'Proxy-launch path is not yet supported for Multichoice. Resolve the participant Postgres UUID before enabling this path.',
+      );
+    }
+    const participantId = meRes.body.data.id;
+
+    // Fetch the participant's administrations from the ROAR POSTGRES backend.
+    const adminsRes = await roarApiClient.users.listUserAdministrations({
+      params: { userId: participantId },
+      query: { embed: 'tasks', perPage: 50 },
+    });
+
+    if (adminsRes.status !== 200) {
+      throw new Error(`Failed to fetch administrations from the ROAR backend (status ${adminsRes.status}).`);
+    }
+
+    const taskUuid = taskRes.body.data.id;
+    const backendAdmins = adminsRes.body.data.items;
+
+    // TODO: Remove this matching step once the frontend has fully integrated with the ROAR POSTGRES backend.
+    // Until then, we need to match the Postgres backend admin to the selected admin from Firestore.
+    // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1839
+    const matchedAdmin =
+      backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
+      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === taskUuid));
+
+    if (!matchedAdmin) {
+      throw new Error('No administration containing the multichoice task found in the ROAR backend.');
+    }
+
+    const taskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === taskUuid);
+    if (!taskVariant) {
+      throw new Error('No multichoice task variant found in the matched administration.');
+    }
+
+    initFirekitCompat(
+      {
+        baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
+        auth: {
+          getToken: () => Promise.resolve(authStore.accessToken),
+          refreshToken: () => authStore.forceIdTokenRefresh(),
+        },
+        participant: { participantId },
+      },
+      {
+        variantId: taskVariant.variantId,
+        taskVersion: version,
+        administrationId: matchedAdmin.id,
+        isAnonymous: false,
+      },
+    );
+
+    const roarApp = new TaskLauncher(gameParams, userParams, 'jspsych-target');
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
@@ -140,8 +231,6 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roar-multichoice/lib/resources/roar-multichoice.css';
-
 .game-target {
   position: absolute;
   top: 0;
