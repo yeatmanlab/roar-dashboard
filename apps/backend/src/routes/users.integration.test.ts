@@ -70,6 +70,8 @@ import { RosteringProvider } from '../enums/rostering-provider.enum';
 import { RosteringEntityType } from '../enums/rostering-entity-type.enum';
 import { FgaClient } from '../clients/fga.client';
 import { FgaType } from '../services/authorization/fga-constants';
+import type { Condition } from '../types/condition';
+import { Operator } from '../types/condition';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -1608,6 +1610,164 @@ describe('GET /v1/users/:userId/administrations', () => {
         completedOn: excludedCompletedAt.toISOString(),
         allowRetake: false,
       });
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // per-student optional/assigned (attached alongside progress)
+  //
+  // Real-database proof that the assigned_if/optional_if conditions stored as
+  // jsonb on administration_task_variants are evaluated against the TARGET
+  // user's real demographics and surfaced as `assigned`/`optional` on each
+  // task — without dropping any task from the list. These flags ride along on
+  // the `embed=progress` per-student pass (which implies `tasks`).
+  //
+  // The target (path) user is `schoolAStudent`, who has no explicit grade
+  // (grade IS NULL). Three task variants exercise the truth table against that
+  // user:
+  //   1. assigned_if = null,            optional_if = null            → assigned, required
+  //   2. assigned_if = (grade == '5'),  optional_if = null            → NOT assigned (null grade fails), required
+  //   3. assigned_if = null,            optional_if = true (SelectAll)→ assigned, optional
+  //
+  // No runs are seeded — `progress` resolves to nulls, which is fine; this
+  // block asserts only the assignment flags.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('per-student optional/assigned (alongside progress)', () => {
+    // assigned_if the null-grade target student fails (grade EQUAL '5').
+    const ASSIGNED_IF_GRADE_5: Condition = { field: 'studentData.grade', op: Operator.EQUAL, value: '5' };
+    // optional_if that matches everyone (SelectAllCondition).
+    const OPTIONAL_IF_ALL: Condition = true;
+
+    let optionalAdmin: DbAdministration;
+    let requiredAssignedVariant: DbTaskVariant;
+    let notAssignedVariant: DbTaskVariant;
+    let optionalAssignedVariant: DbTaskVariant;
+
+    beforeAll(async () => {
+      const { AdministrationFactory } = await import('../test-support/factories/administration.factory');
+      const { AdministrationOrgFactory } = await import('../test-support/factories/administration-org.factory');
+      const { TaskFactory } = await import('../test-support/factories/task.factory');
+      const { TaskVariantFactory } = await import('../test-support/factories/task-variant.factory');
+      const { AdministrationTaskVariantFactory } =
+        await import('../test-support/factories/administration-task-variant.factory');
+      const { writeFgaAdministrationAssignment } = await import('../test-support/fga/fga-test-tuples.helper');
+
+      // Self-contained district-level administration the student can access via
+      // the same class → school → district hierarchy as the other fixtures.
+      optionalAdmin = await AdministrationFactory.create({
+        name: 'Optional/Assigned Embed Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({ administrationId: optionalAdmin.id, orgId: baseFixture.district.id });
+      await writeFgaAdministrationAssignment(optionalAdmin.id, baseFixture.district.id, FgaType.DISTRICT);
+
+      const task = await TaskFactory.create({
+        name: 'Optional Embed Task',
+        slug: `optional-embed-${faker.string.alphanumeric(8).toLowerCase()}`,
+      });
+
+      [requiredAssignedVariant, notAssignedVariant, optionalAssignedVariant] = await Promise.all([
+        TaskVariantFactory.create({ taskId: task.id, name: 'Required Assigned Variant' }),
+        TaskVariantFactory.create({ taskId: task.id, name: 'Not Assigned Variant' }),
+        TaskVariantFactory.create({ taskId: task.id, name: 'Optional Assigned Variant' }),
+      ]);
+
+      await Promise.all([
+        // assigned (no assigned_if), required (no optional_if).
+        AdministrationTaskVariantFactory.create({
+          administrationId: optionalAdmin.id,
+          taskVariantId: requiredAssignedVariant.id,
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        }),
+        // assigned_if the null-grade student fails → NOT assigned.
+        AdministrationTaskVariantFactory.create({
+          administrationId: optionalAdmin.id,
+          taskVariantId: notAssignedVariant.id,
+          orderIndex: 1,
+          conditionsAssignment: ASSIGNED_IF_GRADE_5,
+          conditionsRequirements: null,
+        }),
+        // assigned (no assigned_if), optional_if matches everyone → optional.
+        AdministrationTaskVariantFactory.create({
+          administrationId: optionalAdmin.id,
+          taskVariantId: optionalAssignedVariant.id,
+          orderIndex: 2,
+          conditionsAssignment: null,
+          conditionsRequirements: OPTIONAL_IF_ALL,
+        }),
+      ]);
+
+      // Pick up the administration assignment tuple written above.
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+      await syncFgaTuplesFromPostgres();
+    });
+
+    /**
+     * Fetch the seeded optional/assigned administration with its tasks embed and
+     * return a lookup from `variantId` → task object (carrying optional/assigned).
+     *
+     * `optional`/`assigned` are attached alongside `progress` on the user-scoped
+     * path, so we request `embed=progress` (which implies `tasks`).
+     */
+    async function getOptionalTasksByVariantId(): Promise<Map<string, AdministrationTask>> {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations?embed=progress&perPage=100`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      const admin = res.body.data.items.find((item: Administration) => item.id === optionalAdmin.id);
+      if (!admin) {
+        throw new Error('Expected the seeded optional/assigned administration in the response');
+      }
+      const tasks = (admin.tasks ?? []) as AdministrationTask[];
+      return new Map(tasks.map((task) => [task.variantId, task]));
+    }
+
+    it('returns the full task list — an unassigned task is flagged, not removed', async () => {
+      const byVariant = await getOptionalTasksByVariantId();
+
+      // All three variants are present despite one being unassigned.
+      expect(byVariant.size).toBe(3);
+      expect(byVariant.has(requiredAssignedVariant.id)).toBe(true);
+      expect(byVariant.has(notAssignedVariant.id)).toBe(true);
+      expect(byVariant.has(optionalAssignedVariant.id)).toBe(true);
+    });
+
+    it('flags a task with no assigned_if and no optional_if as assigned and required', async () => {
+      const byVariant = await getOptionalTasksByVariantId();
+      const task = byVariant.get(requiredAssignedVariant.id);
+
+      expect(task!.assigned).toBe(true);
+      expect(task!.optional).toBe(false);
+    });
+
+    it('flags a task whose assigned_if the target user fails as not assigned', async () => {
+      const byVariant = await getOptionalTasksByVariantId();
+      const task = byVariant.get(notAssignedVariant.id);
+
+      // schoolAStudent has no grade, so `grade == '5'` is false → not assigned.
+      expect(task!.assigned).toBe(false);
+    });
+
+    it('flags a task whose optional_if matches the target user as optional', async () => {
+      const byVariant = await getOptionalTasksByVariantId();
+      const task = byVariant.get(optionalAssignedVariant.id);
+
+      expect(task!.assigned).toBe(true);
+      expect(task!.optional).toBe(true);
+    });
+
+    it('does not leak the internal assignment conditions in the response', async () => {
+      const byVariant = await getOptionalTasksByVariantId();
+      const task = byVariant.get(requiredAssignedVariant.id);
+
+      expect(task).not.toHaveProperty('conditionsAssignment');
+      expect(task).not.toHaveProperty('conditionsRequirements');
     });
   });
 

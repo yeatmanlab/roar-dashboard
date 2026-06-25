@@ -3,6 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { administrationTaskVariants, taskVariants, tasks } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
+import type { Condition } from '../types/condition';
 
 /**
  * Task data for an administration (enriched with task and variant details).
@@ -13,6 +14,20 @@ export interface AdministrationTask {
   variantId: string;
   variantName: string | null;
   orderIndex: number;
+}
+
+/**
+ * Task data for an administration including the raw assignment/optionality
+ * conditions stored on the `administration_task_variants` junction row.
+ *
+ * INTERNAL ONLY: the `conditions*` fields are consumed by the service layer to
+ * evaluate per-student `assigned`/`optional` state. They are NOT part of the
+ * API response — the service strips them before the controller transforms the
+ * task into its contract shape.
+ */
+export interface AdministrationTaskWithConditions extends AdministrationTask {
+  conditionsAssignment: Condition | null;
+  conditionsRequirements: Condition | null;
 }
 
 /**
@@ -29,12 +44,16 @@ export class AdministrationTaskVariantRepository {
    * Get tasks (with variant and task details) for multiple administrations.
    *
    * Joins administration_task_variants with task_variants and tasks to provide
-   * enriched task data including task name and variant name.
+   * enriched task data including task name and variant name. The raw
+   * assignment/optionality conditions (`conditionsAssignment`,
+   * `conditionsRequirements`) are also selected so the service can evaluate
+   * per-student `assigned`/`optional` state; these are internal and must not be
+   * exposed in the API response.
    *
    * @param administrationIds - Array of administration IDs
-   * @returns Map of administration ID to array of tasks, ordered by orderIndex
+   * @returns Map of administration ID to array of tasks (with conditions), ordered by orderIndex
    */
-  async getByAdministrationIds(administrationIds: string[]): Promise<Map<string, AdministrationTask[]>> {
+  async getByAdministrationIds(administrationIds: string[]): Promise<Map<string, AdministrationTaskWithConditions[]>> {
     if (administrationIds.length === 0) {
       return new Map();
     }
@@ -47,6 +66,8 @@ export class AdministrationTaskVariantRepository {
         variantId: administrationTaskVariants.taskVariantId,
         variantName: taskVariants.name,
         orderIndex: administrationTaskVariants.orderIndex,
+        conditionsAssignment: administrationTaskVariants.conditionsAssignment,
+        conditionsRequirements: administrationTaskVariants.conditionsRequirements,
       })
       .from(administrationTaskVariants)
       .innerJoin(taskVariants, eq(administrationTaskVariants.taskVariantId, taskVariants.id))
@@ -54,7 +75,7 @@ export class AdministrationTaskVariantRepository {
       .where(inArray(administrationTaskVariants.administrationId, administrationIds))
       .orderBy(administrationTaskVariants.administrationId, administrationTaskVariants.orderIndex);
 
-    const result = new Map<string, AdministrationTask[]>();
+    const result = new Map<string, AdministrationTaskWithConditions[]>();
 
     for (const row of rows) {
       const adminTasks = result.get(row.administrationId) ?? [];
@@ -64,6 +85,10 @@ export class AdministrationTaskVariantRepository {
         variantId: row.variantId,
         variantName: row.variantName,
         orderIndex: row.orderIndex,
+        // jsonb columns infer as `unknown`; the conditions are persisted in the
+        // Condition shape, so narrow them here for the service-layer evaluator.
+        conditionsAssignment: row.conditionsAssignment as Condition | null,
+        conditionsRequirements: row.conditionsRequirements as Condition | null,
       });
       result.set(row.administrationId, adminTasks);
     }
