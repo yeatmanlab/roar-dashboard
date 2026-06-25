@@ -28,7 +28,7 @@ const props = defineProps({
 const router = useRouter();
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+const { isFirekitInit } = storeToRefs(authStore);
 
 const sdkInitialized = ref(false);
 const surveyJson = ref(null);
@@ -43,7 +43,7 @@ const init = () => {
 const handlePopState = () => router.go(0);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
 const { isLoading: isLoadingUserData } = useUserStudentDataQuery(props.launchId, {
@@ -53,7 +53,7 @@ const { isLoading: isLoadingUserData } = useUserStudentDataQuery(props.launchId,
 window.addEventListener('popstate', handlePopState, { once: true });
 
 onMounted(async () => {
-  if (roarfirekit.value.restConfig?.()) init();
+  if (authStore.isAuthReady) init();
 });
 
 onBeforeUnmount(() => {
@@ -154,7 +154,7 @@ async function startTask(selectedAdmin) {
   }
 }
 
-async function handleCompleteSurvey() {
+function handleCompleteSurvey() {
   try {
     const { selectedAdmin } = storeToRefs(gameStore);
     await authStore.completeAssessment(selectedAdmin.value.id, props.taskId, props.launchId);

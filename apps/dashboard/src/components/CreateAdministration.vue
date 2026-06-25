@@ -154,7 +154,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, toRaw, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import PvFloatLabel from 'primevue/floatlabel';
@@ -203,7 +202,6 @@ const confirm = useConfirm();
 const { mutate: upsertAdministration, isPending: isSubmitting } = useUpsertAdministrationMutation();
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
@@ -565,11 +563,11 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
 onMounted(async () => {
-  if (roarfirekit.value.restConfig?.()) init();
+  if (authStore.isAuthReady) init();
 });
 
 watch(

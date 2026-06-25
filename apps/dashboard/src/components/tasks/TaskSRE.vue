@@ -10,7 +10,7 @@ import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
-import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
@@ -26,13 +26,12 @@ const props = defineProps({
 
 let TaskLauncher;
 
-const taskId = props.taskId;
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+const { isFirekitInit } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -45,7 +44,7 @@ const handlePopState = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
 const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
@@ -69,7 +68,7 @@ onMounted(async () => {
     console.error('An error occurred while importing the game module.', error);
   }
 
-  if (roarfirekit.value.restConfig?.()) init();
+  if (authStore.isAuthReady) init();
 });
 
 // Declare interval at component scope
@@ -105,8 +104,6 @@ async function startTask(selectedAdmin) {
       }
     }, 100);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
-
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
 
@@ -116,9 +113,6 @@ async function startTask(selectedAdmin) {
       birthYear: userDateObj.getFullYear(),
       language: props.language,
     };
-
-    // lng is passed explicitly so config.js can derive taskId via SRE_LANGUAGES.
-    const gameParams = { ...appKit._taskInfo.variantParams, lng: props.language };
 
     // Initialize the new assessment SDK for the dashboard execution path.
     // Fetches the SRE task UUID, the current user's Postgres UUID, and the participant's
@@ -203,12 +197,14 @@ async function startTask(selectedAdmin) {
       },
     );
 
+    // Source the variant parameters from the assessment SDK now that initFirekitCompat has run.
+    // lng is passed explicitly so config.js can derive taskId via SRE_LANGUAGES.
+    const { variantParams } = await getVariantById(sreTaskVariant.variantId);
+    const gameParams = { ...variantParams, lng: props.language };
+
     const roarApp = new TaskLauncher(gameParams, userParams, 'jspsych-target');
 
-    await roarApp.run().then(async () => {
-      // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
-
+    await roarApp.run().then(() => {
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
       if (props.launchId) {
