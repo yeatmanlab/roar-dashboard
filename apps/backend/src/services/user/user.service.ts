@@ -55,6 +55,12 @@ interface UnsignedTosAgreement {
   versions: TosAgreementVersion[];
 }
 
+/** A single active family membership of a user, as surfaced by `/me`. */
+interface UserFamilyMembership {
+  id: string;
+  role: UserFamilyRole;
+}
+
 // Age category for type-safe age classification in agreement consent logic
 const AgeCategory = {
   ADULT: 'ADULT',
@@ -1496,6 +1502,43 @@ export function UserService({
   }
 
   /**
+   * Get a user's own active family memberships.
+   *
+   * Returns one `{ id, role }` entry per family the user actively belongs to,
+   * where `role` is the user's own role in that family (`parent` | `child`).
+   * Returns an empty array when the user belongs to no family — the common case
+   * for teachers, admins, and org-enrolled students.
+   *
+   * Authorization: this is intentionally self-scoped. It is only ever called
+   * with the caller's own `userId` (from `/me`), and the underlying repository
+   * query filters on that exact `userId`, so it can never surface another user's
+   * memberships. No FGA check is required — a user may always read their own
+   * memberships, the same as `unsignedAgreements`.
+   *
+   * @param userId - The user (always the caller) whose families to retrieve
+   * @returns Array of the user's active family memberships (empty when none)
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function getFamilies(userId: string): Promise<UserFamilyMembership[]> {
+    try {
+      const memberships = await familyRepository.getFamilyMembershipsForUser(userId);
+
+      return memberships.map(({ familyId, role }) => ({ id: familyId, role }));
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId } }, 'Failed to get user families');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
    * Create a minimal user record for an anonymous Firebase user.
    *
    * Anonymous standalone users have no name, email, or org memberships. They are
@@ -1531,5 +1574,14 @@ export function UserService({
     }
   }
 
-  return { findByAuthId, getById, create, update, recordUserAgreement, getUnsignedTosAgreements, createAnonymousUser };
+  return {
+    findByAuthId,
+    getById,
+    create,
+    update,
+    recordUserAgreement,
+    getUnsignedTosAgreements,
+    getFamilies,
+    createAnonymousUser,
+  };
 }

@@ -40,9 +40,21 @@ export function transformAdministration(admin: AdministrationWithEmbeds): Contra
     result.stats = admin.stats;
   }
 
-  // Include tasks if embedded
+  // Include tasks if embedded. `progress`, `optional`, and `assigned` are
+  // passed through per-task only when present (i.e. on the user-scoped path).
+  // Only the explicitly listed fields are copied, so internal repository fields
+  // (e.g. the raw assignment conditions) can never leak into the response.
   if (admin.tasks) {
-    result.tasks = admin.tasks;
+    result.tasks = admin.tasks.map((task) => ({
+      taskId: task.taskId,
+      taskName: task.taskName,
+      variantId: task.variantId,
+      variantName: task.variantName,
+      orderIndex: task.orderIndex,
+      ...(task.progress !== undefined && { progress: task.progress }),
+      ...(task.optional !== undefined && { optional: task.optional }),
+      ...(task.assigned !== undefined && { assigned: task.assigned }),
+    }));
   }
 
   return result;

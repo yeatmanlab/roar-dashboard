@@ -46,9 +46,11 @@
  * - Error cases (401, 403, 404)
  */
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
+import { faker } from '@faker-js/faker';
 import type express from 'express';
 import { StatusCodes } from 'http-status-codes';
-import type { Administration } from '@roar-platform/api-contract';
+import type { Administration, AdministrationTask } from '@roar-platform/api-contract';
+import type { Administration as DbAdministration, TaskVariant as DbTaskVariant } from '../db/schema';
 import { createTestApp, createRouteHelper, createTierUsers } from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
@@ -68,6 +70,8 @@ import { RosteringProvider } from '../enums/rostering-provider.enum';
 import { RosteringEntityType } from '../enums/rostering-entity-type.enum';
 import { FgaClient } from '../clients/fga.client';
 import { FgaType } from '../services/authorization/fga-constants';
+import type { Condition } from '../types/condition';
+import { Operator } from '../types/condition';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -1378,6 +1382,392 @@ describe('GET /v1/users/:userId/administrations', () => {
         .toReturn(StatusCodes.OK);
 
       expect(res.body.data).toHaveProperty('items');
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // embed=progress (retake eligibility)
+  //
+  // Real-database proof that the cross-id-space matches the service performs
+  // actually line up against seeded data — a thing mocked unit tests cannot
+  // catch. Two id-space joins are under test:
+  //   1. The canonical run is matched to its administration task by
+  //      `run.taskVariantId === AdministrationTask.variantId`.
+  //   2. `allowRetake` excludes tasks whose `slug` is in
+  //      TASKS_EXCLUDED_FROM_RETAKE, resolved slug → task UUID at runtime.
+  //
+  // A self-contained district-level administration is seeded with four task
+  // variants so each branch of the `allowRetake` rule is exercised against the
+  // SAME response, without mutating any shared baseFixture row. The target
+  // (path) user is `schoolAStudent`; the supervisory user-scoped path attaches
+  // that user's run state, so runs are seeded for `schoolAStudent`.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('embed=progress (retake eligibility)', () => {
+    // A non-excluded slug — the `unreliable` and `reliable` variants hang off
+    // this task so retake eligibility is driven purely by `reliableRun`.
+    const NON_EXCLUDED_SLUG = `progress-included-${faker.string.alphanumeric(8).toLowerCase()}`;
+    // A genuinely-excluded slug (must exist in TASKS_EXCLUDED_FROM_RETAKE).
+    const EXCLUDED_SLUG = 'ran';
+
+    let progressAdmin: DbAdministration;
+    let unreliableVariant: DbTaskVariant;
+    let reliableVariant: DbTaskVariant;
+    let noRunVariant: DbTaskVariant;
+    let excludedVariant: DbTaskVariant;
+    let includedTaskId: string;
+    let excludedTaskId: string;
+
+    // Canonical-run completion timestamps — distinct per task so each
+    // `completedOn` assertion proves the run was matched to the right variant.
+    const unreliableCompletedAt = new Date('2025-09-03T14:20:00.000Z');
+    const reliableCompletedAt = new Date('2025-09-04T09:15:00.000Z');
+    const excludedCompletedAt = new Date('2025-09-05T11:05:00.000Z');
+
+    beforeAll(async () => {
+      const { AdministrationFactory } = await import('../test-support/factories/administration.factory');
+      const { AdministrationOrgFactory } = await import('../test-support/factories/administration-org.factory');
+      const { TaskFactory } = await import('../test-support/factories/task.factory');
+      const { TaskVariantFactory } = await import('../test-support/factories/task-variant.factory');
+      const { AdministrationTaskVariantFactory } =
+        await import('../test-support/factories/administration-task-variant.factory');
+      const { RunFactory } = await import('../test-support/factories/run.factory');
+      const { writeFgaAdministrationAssignment } = await import('../test-support/fga/fga-test-tuples.helper');
+      const { TASKS_EXCLUDED_FROM_RETAKE } = await import('../constants/tasks-excluded-from-retake');
+
+      // Guard the premise of case 4: assert in setup via throws, since expect()
+      // outside a test block violates vitest/no-standalone-expect.
+      if (!TASKS_EXCLUDED_FROM_RETAKE.has(EXCLUDED_SLUG)) {
+        throw new Error(`Test premise broken: "${EXCLUDED_SLUG}" must be in TASKS_EXCLUDED_FROM_RETAKE`);
+      }
+      if (TASKS_EXCLUDED_FROM_RETAKE.has(NON_EXCLUDED_SLUG)) {
+        throw new Error(`Test premise broken: "${NON_EXCLUDED_SLUG}" must NOT be in TASKS_EXCLUDED_FROM_RETAKE`);
+      }
+
+      // Self-contained district-level administration the student can access via
+      // the same class → school → district hierarchy as the other fixtures.
+      progressAdmin = await AdministrationFactory.create({
+        name: 'Progress Embed Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({ administrationId: progressAdmin.id, orgId: baseFixture.district.id });
+      await writeFgaAdministrationAssignment(progressAdmin.id, baseFixture.district.id, FgaType.DISTRICT);
+
+      // Two tasks: one validity-checked (non-excluded slug), one excluded.
+      const includedTask = await TaskFactory.create({ name: 'Progress Included Task', slug: NON_EXCLUDED_SLUG });
+      const excludedTask = await TaskFactory.create({ name: 'Progress Excluded Task', slug: EXCLUDED_SLUG });
+      includedTaskId = includedTask.id;
+      excludedTaskId = excludedTask.id;
+
+      [unreliableVariant, reliableVariant, noRunVariant, excludedVariant] = await Promise.all([
+        TaskVariantFactory.create({ taskId: includedTask.id, name: 'Unreliable Variant' }),
+        TaskVariantFactory.create({ taskId: includedTask.id, name: 'Reliable Variant' }),
+        TaskVariantFactory.create({ taskId: includedTask.id, name: 'No Run Variant' }),
+        TaskVariantFactory.create({ taskId: excludedTask.id, name: 'Excluded Variant' }),
+      ]);
+
+      await Promise.all([
+        AdministrationTaskVariantFactory.create({
+          administrationId: progressAdmin.id,
+          taskVariantId: unreliableVariant.id,
+          orderIndex: 0,
+        }),
+        AdministrationTaskVariantFactory.create({
+          administrationId: progressAdmin.id,
+          taskVariantId: reliableVariant.id,
+          orderIndex: 1,
+        }),
+        AdministrationTaskVariantFactory.create({
+          administrationId: progressAdmin.id,
+          taskVariantId: noRunVariant.id,
+          orderIndex: 2,
+        }),
+        AdministrationTaskVariantFactory.create({
+          administrationId: progressAdmin.id,
+          taskVariantId: excludedVariant.id,
+          orderIndex: 3,
+        }),
+      ]);
+
+      // Canonical (use_for_reporting=true) runs for the target student, keyed to
+      // the REAL taskVariantId of each administration task. `taskVariantId` is the
+      // join under test; `taskId` mirrors the variant's task for realism only.
+      await Promise.all([
+        // Unreliable → retake allowed (non-excluded task).
+        RunFactory.create({
+          userId: baseFixture.schoolAStudent.id,
+          administrationId: progressAdmin.id,
+          taskVariantId: unreliableVariant.id,
+          taskId: includedTask.id,
+          useForReporting: true,
+          reliableRun: false,
+          completedAt: unreliableCompletedAt,
+        }),
+        // Reliable → retake NOT allowed.
+        RunFactory.create({
+          userId: baseFixture.schoolAStudent.id,
+          administrationId: progressAdmin.id,
+          taskVariantId: reliableVariant.id,
+          taskId: includedTask.id,
+          useForReporting: true,
+          reliableRun: true,
+          completedAt: reliableCompletedAt,
+        }),
+        // Excluded slug + unreliable → retake NOT allowed (slug → UUID exclusion).
+        RunFactory.create({
+          userId: baseFixture.schoolAStudent.id,
+          administrationId: progressAdmin.id,
+          taskVariantId: excludedVariant.id,
+          taskId: excludedTask.id,
+          useForReporting: true,
+          reliableRun: false,
+          completedAt: excludedCompletedAt,
+        }),
+        // `noRunVariant` is intentionally left without any run so it reports nulls.
+      ]);
+
+      // Pick up the administration assignment tuple written above.
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+      await syncFgaTuplesFromPostgres();
+    });
+
+    /**
+     * Fetch the seeded progress administration with its tasks embed and return a
+     * lookup from `variantId` → task object (which carries `progress`). Asserts
+     * the administration and all four task variants are present in the response.
+     */
+    async function getProgressTasksByVariantId(): Promise<Map<string, AdministrationTask>> {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations?embed=progress&perPage=100`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      const admin = res.body.data.items.find((item: Administration) => item.id === progressAdmin.id);
+      if (!admin) {
+        throw new Error('Expected the seeded progress administration in the response');
+      }
+      const tasks = (admin.tasks ?? []) as AdministrationTask[];
+      return new Map(tasks.map((task) => [task.variantId, task]));
+    }
+
+    it('matches the canonical run by variantId — the run.taskVariantId join lines up with the response variantId', async () => {
+      const byVariant = await getProgressTasksByVariantId();
+
+      // The match under test: the seeded run.taskVariantId is the SAME id that
+      // surfaces as the administration task's variantId in the response.
+      const unreliableTask = byVariant.get(unreliableVariant.id);
+      expect(unreliableTask).toBeDefined();
+      expect(unreliableTask!.variantId).toBe(unreliableVariant.id);
+      expect(unreliableTask!.taskId).toBe(includedTaskId);
+      expect(unreliableTask!.progress).toBeDefined();
+    });
+
+    it('allows retake for an unreliable canonical run on a validity-checked task', async () => {
+      const byVariant = await getProgressTasksByVariantId();
+      const task = byVariant.get(unreliableVariant.id);
+
+      expect(task!.progress).toEqual({
+        startedOn: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
+        completedOn: unreliableCompletedAt.toISOString(),
+        allowRetake: true,
+      });
+    });
+
+    it('does not allow retake when the canonical run is reliable', async () => {
+      const byVariant = await getProgressTasksByVariantId();
+      const task = byVariant.get(reliableVariant.id);
+
+      expect(task!.progress).toEqual({
+        startedOn: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
+        completedOn: reliableCompletedAt.toISOString(),
+        allowRetake: false,
+      });
+    });
+
+    it('reports nulls and no retake for a task with no canonical run', async () => {
+      const byVariant = await getProgressTasksByVariantId();
+      const task = byVariant.get(noRunVariant.id);
+
+      expect(task!.progress).toEqual({
+        startedOn: null,
+        completedOn: null,
+        allowRetake: false,
+      });
+    });
+
+    it('does not allow retake for an excluded-slug task even when the canonical run is unreliable', async () => {
+      const byVariant = await getProgressTasksByVariantId();
+      const task = byVariant.get(excludedVariant.id);
+
+      // The slug → UUID exclusion proof: an unreliable canonical run would
+      // normally allow a retake, but this task's slug ('ran') is in
+      // TASKS_EXCLUDED_FROM_RETAKE, so retake is suppressed.
+      expect(task!.taskId).toBe(excludedTaskId);
+      expect(task!.progress).toEqual({
+        startedOn: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
+        completedOn: excludedCompletedAt.toISOString(),
+        allowRetake: false,
+      });
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // per-student optional/assigned (attached alongside progress)
+  //
+  // Real-database proof that the assigned_if/optional_if conditions stored as
+  // jsonb on administration_task_variants are evaluated against the TARGET
+  // user's real demographics and surfaced as `assigned`/`optional` on each
+  // task — without dropping any task from the list. These flags ride along on
+  // the `embed=progress` per-student pass (which implies `tasks`).
+  //
+  // The target (path) user is `schoolAStudent`, who has no explicit grade
+  // (grade IS NULL). Three task variants exercise the truth table against that
+  // user:
+  //   1. assigned_if = null,            optional_if = null            → assigned, required
+  //   2. assigned_if = (grade == '5'),  optional_if = null            → NOT assigned (null grade fails), required
+  //   3. assigned_if = null,            optional_if = true (SelectAll)→ assigned, optional
+  //
+  // No runs are seeded — `progress` resolves to nulls, which is fine; this
+  // block asserts only the assignment flags.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('per-student optional/assigned (alongside progress)', () => {
+    // assigned_if the null-grade target student fails (grade EQUAL '5').
+    const ASSIGNED_IF_GRADE_5: Condition = { field: 'studentData.grade', op: Operator.EQUAL, value: '5' };
+    // optional_if that matches everyone (SelectAllCondition).
+    const OPTIONAL_IF_ALL: Condition = true;
+
+    let optionalAdmin: DbAdministration;
+    let requiredAssignedVariant: DbTaskVariant;
+    let notAssignedVariant: DbTaskVariant;
+    let optionalAssignedVariant: DbTaskVariant;
+
+    beforeAll(async () => {
+      const { AdministrationFactory } = await import('../test-support/factories/administration.factory');
+      const { AdministrationOrgFactory } = await import('../test-support/factories/administration-org.factory');
+      const { TaskFactory } = await import('../test-support/factories/task.factory');
+      const { TaskVariantFactory } = await import('../test-support/factories/task-variant.factory');
+      const { AdministrationTaskVariantFactory } =
+        await import('../test-support/factories/administration-task-variant.factory');
+      const { writeFgaAdministrationAssignment } = await import('../test-support/fga/fga-test-tuples.helper');
+
+      // Self-contained district-level administration the student can access via
+      // the same class → school → district hierarchy as the other fixtures.
+      optionalAdmin = await AdministrationFactory.create({
+        name: 'Optional/Assigned Embed Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({ administrationId: optionalAdmin.id, orgId: baseFixture.district.id });
+      await writeFgaAdministrationAssignment(optionalAdmin.id, baseFixture.district.id, FgaType.DISTRICT);
+
+      const task = await TaskFactory.create({
+        name: 'Optional Embed Task',
+        slug: `optional-embed-${faker.string.alphanumeric(8).toLowerCase()}`,
+      });
+
+      [requiredAssignedVariant, notAssignedVariant, optionalAssignedVariant] = await Promise.all([
+        TaskVariantFactory.create({ taskId: task.id, name: 'Required Assigned Variant' }),
+        TaskVariantFactory.create({ taskId: task.id, name: 'Not Assigned Variant' }),
+        TaskVariantFactory.create({ taskId: task.id, name: 'Optional Assigned Variant' }),
+      ]);
+
+      await Promise.all([
+        // assigned (no assigned_if), required (no optional_if).
+        AdministrationTaskVariantFactory.create({
+          administrationId: optionalAdmin.id,
+          taskVariantId: requiredAssignedVariant.id,
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        }),
+        // assigned_if the null-grade student fails → NOT assigned.
+        AdministrationTaskVariantFactory.create({
+          administrationId: optionalAdmin.id,
+          taskVariantId: notAssignedVariant.id,
+          orderIndex: 1,
+          conditionsAssignment: ASSIGNED_IF_GRADE_5,
+          conditionsRequirements: null,
+        }),
+        // assigned (no assigned_if), optional_if matches everyone → optional.
+        AdministrationTaskVariantFactory.create({
+          administrationId: optionalAdmin.id,
+          taskVariantId: optionalAssignedVariant.id,
+          orderIndex: 2,
+          conditionsAssignment: null,
+          conditionsRequirements: OPTIONAL_IF_ALL,
+        }),
+      ]);
+
+      // Pick up the administration assignment tuple written above.
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+      await syncFgaTuplesFromPostgres();
+    });
+
+    /**
+     * Fetch the seeded optional/assigned administration with its tasks embed and
+     * return a lookup from `variantId` → task object (carrying optional/assigned).
+     *
+     * `optional`/`assigned` are attached alongside `progress` on the user-scoped
+     * path, so we request `embed=progress` (which implies `tasks`).
+     */
+    async function getOptionalTasksByVariantId(): Promise<Map<string, AdministrationTask>> {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations?embed=progress&perPage=100`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      const admin = res.body.data.items.find((item: Administration) => item.id === optionalAdmin.id);
+      if (!admin) {
+        throw new Error('Expected the seeded optional/assigned administration in the response');
+      }
+      const tasks = (admin.tasks ?? []) as AdministrationTask[];
+      return new Map(tasks.map((task) => [task.variantId, task]));
+    }
+
+    it('returns the full task list — an unassigned task is flagged, not removed', async () => {
+      const byVariant = await getOptionalTasksByVariantId();
+
+      // All three variants are present despite one being unassigned.
+      expect(byVariant.size).toBe(3);
+      expect(byVariant.has(requiredAssignedVariant.id)).toBe(true);
+      expect(byVariant.has(notAssignedVariant.id)).toBe(true);
+      expect(byVariant.has(optionalAssignedVariant.id)).toBe(true);
+    });
+
+    it('flags a task with no assigned_if and no optional_if as assigned and required', async () => {
+      const byVariant = await getOptionalTasksByVariantId();
+      const task = byVariant.get(requiredAssignedVariant.id);
+
+      expect(task!.assigned).toBe(true);
+      expect(task!.optional).toBe(false);
+    });
+
+    it('flags a task whose assigned_if the target user fails as not assigned', async () => {
+      const byVariant = await getOptionalTasksByVariantId();
+      const task = byVariant.get(notAssignedVariant.id);
+
+      // schoolAStudent has no grade, so `grade == '5'` is false → not assigned.
+      expect(task!.assigned).toBe(false);
+    });
+
+    it('flags a task whose optional_if matches the target user as optional', async () => {
+      const byVariant = await getOptionalTasksByVariantId();
+      const task = byVariant.get(optionalAssignedVariant.id);
+
+      expect(task!.assigned).toBe(true);
+      expect(task!.optional).toBe(true);
+    });
+
+    it('does not leak the internal assignment conditions in the response', async () => {
+      const byVariant = await getOptionalTasksByVariantId();
+      const task = byVariant.get(requiredAssignedVariant.id);
+
+      expect(task).not.toHaveProperty('conditionsAssignment');
+      expect(task).not.toHaveProperty('conditionsRequirements');
     });
   });
 

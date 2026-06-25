@@ -284,6 +284,91 @@ describe('administration.transform', () => {
       expect(result.tasks![0]!.variantName).toBeNull();
     });
 
+    it('passes through per-task progress when present', () => {
+      const admin = AdministrationWithEmbedsFactory.build({
+        tasks: [
+          {
+            taskId: 'task-1',
+            taskName: 'Task One',
+            variantId: 'variant-1',
+            variantName: 'Variant One',
+            orderIndex: 0,
+            progress: {
+              startedOn: '2025-09-03T14:01:00.000Z',
+              completedOn: '2025-09-03T14:20:00.000Z',
+              allowRetake: true,
+            },
+          },
+        ],
+      });
+
+      const result = transformAdministration(admin);
+
+      expect(result.tasks![0]!.progress).toEqual({
+        startedOn: '2025-09-03T14:01:00.000Z',
+        completedOn: '2025-09-03T14:20:00.000Z',
+        allowRetake: true,
+      });
+    });
+
+    it('omits per-task progress when not present', () => {
+      const admin = AdministrationWithEmbedsFactory.build({
+        tasks: [
+          {
+            taskId: 'task-1',
+            taskName: 'Task One',
+            variantId: 'variant-1',
+            variantName: 'Variant One',
+            orderIndex: 0,
+          },
+        ],
+      });
+
+      const result = transformAdministration(admin);
+
+      expect(result.tasks![0]).not.toHaveProperty('progress');
+    });
+
+    it('passes through per-task optional and assigned when present', () => {
+      const admin = AdministrationWithEmbedsFactory.build({
+        tasks: [
+          {
+            taskId: 'task-1',
+            taskName: 'Task One',
+            variantId: 'variant-1',
+            variantName: 'Variant One',
+            orderIndex: 0,
+            optional: true,
+            assigned: false,
+          },
+        ],
+      });
+
+      const result = transformAdministration(admin);
+
+      expect(result.tasks![0]!.optional).toBe(true);
+      expect(result.tasks![0]!.assigned).toBe(false);
+    });
+
+    it('omits per-task optional and assigned when not present', () => {
+      const admin = AdministrationWithEmbedsFactory.build({
+        tasks: [
+          {
+            taskId: 'task-1',
+            taskName: 'Task One',
+            variantId: 'variant-1',
+            variantName: 'Variant One',
+            orderIndex: 0,
+          },
+        ],
+      });
+
+      const result = transformAdministration(admin);
+
+      expect(result.tasks![0]).not.toHaveProperty('optional');
+      expect(result.tasks![0]).not.toHaveProperty('assigned');
+    });
+
     it('maintains base administration structure with embeds', () => {
       const admin = AdministrationWithEmbedsFactory.build({
         id: 'embed-test-id',

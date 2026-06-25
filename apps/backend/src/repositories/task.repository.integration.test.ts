@@ -60,6 +60,40 @@ describe('TaskRepository', () => {
     });
   });
 
+  describe('getIdsBySlugs', () => {
+    it('returns empty array for empty input', async () => {
+      const result = await repository.getIdsBySlugs([]);
+
+      expect(result).toEqual([]);
+    });
+
+    it('resolves known slugs to their task ids', async () => {
+      const taskA = await TaskFactory.create({ slug: 'ids-by-slug-alpha' });
+      const taskB = await TaskFactory.create({ slug: 'ids-by-slug-beta' });
+
+      const result = await repository.getIdsBySlugs(['ids-by-slug-alpha', 'ids-by-slug-beta']);
+
+      expect(new Set(result)).toEqual(new Set([taskA.id, taskB.id]));
+    });
+
+    it('omits slugs that do not correspond to a task', async () => {
+      const task = await TaskFactory.create({ slug: 'ids-by-slug-present' });
+
+      const result = await repository.getIdsBySlugs(['ids-by-slug-present', 'ids-by-slug-missing-xyz']);
+
+      expect(result).toEqual([task.id]);
+    });
+
+    it('matches case-insensitively (slugs are stored lowercase)', async () => {
+      const task = await TaskFactory.create({ slug: 'ids-by-slug-case' });
+
+      // Slugs are constrained to lowercase, but the input may be upper/mixed case.
+      const result = await repository.getIdsBySlugs(['IDS-BY-SLUG-CASE']);
+
+      expect(result).toEqual([task.id]);
+    });
+  });
+
   describe('listAll', () => {
     describe('pagination', () => {
       it('returns paginated results with correct totalItems', async () => {
