@@ -33,7 +33,7 @@ const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+const { isFirekitInit } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
