@@ -7,5 +7,6 @@
   "apps/assessments/roar-pa": "5.1.0",
   "apps/assessments/roar-swr": "1.15.0",
   "apps/assessments/roar-sre": "3.1.0",
-  "apps/assessments/roar-letter": "4.0.10"
+  "apps/assessments/roar-letter": "4.0.10",
+  "apps/assessments/roar-multichoice": "2.2.1"
 }

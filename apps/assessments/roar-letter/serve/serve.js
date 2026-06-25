@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
-import { LETTER_LANGUAGES } from '@roar-platform/assessment-schema/roar-letter';
+import { LETTER_LANGUAGES, PHONICS_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
 import RoarLetter from '../src/experiment/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 // Import necessary for async in the top level of the experiment script
@@ -24,9 +24,14 @@ const birthMonth = urlParams.get('birthmonth');
 const age = urlParams.get('age');
 const ageMonths = urlParams.get('agemonths');
 
-// Language → task ID mapping used only when no variantId is in the URL (fallback variant resolution)
+// Task family ('letter' or 'phonics') and language for bootstrapAnonymousSession task ID resolution.
+// task is also passed as a fallback gameParam so standalone play without a stored variantId works;
+// variantParams.task is authoritative when the resolved variant carries it explicitly.
+const task = urlParams.get('task') ?? 'letter';
 const lngParam = urlParams.get('lng') ?? 'en';
 const language = LETTER_LANGUAGES[lngParam] ?? LETTER_LANGUAGES.en;
+// Phonics is a separate task family — language doesn't affect its task ID.
+const taskId = task === 'phonics' ? PHONICS_TASK_IDS.EN : language.taskId;
 
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -47,7 +52,7 @@ onAuthStateChanged(auth, async (user) => {
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         // eslint-disable-next-line no-undef
         { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
-        { ...(variantId ? { variantId } : {}), taskId: language.taskId },
+        { ...(variantId ? { variantId } : {}), taskId },
       );
 
       const ctx = {
@@ -75,7 +80,7 @@ onAuthStateChanged(auth, async (user) => {
         ageMonths,
       };
 
-      const roarApp = new RoarLetter(variantParams, userParams, null);
+      const roarApp = new RoarLetter({ task, ...variantParams }, userParams, null);
       roarApp.run().catch((err) => console.error('[roar-letter] run() failed:', err));
     } catch (err) {
       console.error('[roar-letter] Failed to initialize assessment:', err);

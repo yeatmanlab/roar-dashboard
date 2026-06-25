@@ -19,7 +19,7 @@
               "value": "{\"group\":\"csp-endpoint\",\"max_age\":10886400,\"endpoints\":[{\"url\":\"https://o4505913837420544.ingest.us.sentry.io/api/4505915663712256/security/?sentry_key=e569875f465207e7bfdd9baaf170501a&sentry_environment=production\"}],\"include_subdomains\":true}"
             },
             {
-              "key": "Content-Security-Policy-Report-Only",
+              "key": "Content-Security-Policy",
               "value": "default-src 'self'; report-uri https://o4505913837420544.ingest.us.sentry.io/api/4505915663712256/security/?sentry_key=e569875f465207e7bfdd9baaf170501a&sentry_environment=production; report-to csp-endpoint"
             },
             {
@@ -66,7 +66,7 @@
               "value": "{\"group\":\"csp-endpoint\",\"max_age\":10886400,\"endpoints\":[{\"url\":\"https://o4505913837420544.ingest.us.sentry.io/api/4505915663712256/security/?sentry_key=e569875f465207e7bfdd9baaf170501a&sentry_environment=staging\"}],\"include_subdomains\":true}"
             },
             {
-              "key": "Content-Security-Policy-Report-Only",
+              "key": "Content-Security-Policy",
               "value": "default-src 'self'; report-uri https://o4505913837420544.ingest.us.sentry.io/api/4505915663712256/security/?sentry_key=e569875f465207e7bfdd9baaf170501a&sentry_environment=staging; report-to csp-endpoint"
             },
             {
