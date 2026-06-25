@@ -147,6 +147,7 @@ jobs:
   # are all reachable on `127.0.0.1` inside the job container.
   e2e-tests:
     name: End-to-end tests
+    needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -308,6 +309,7 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   component-tests:
     name: Component tests
+    needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -416,7 +418,7 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   e2e-assessments:
     name: E2E ${{ matrix.assessment }} (${{ matrix.browser }}) [${{ matrix.containers }}]
-    needs: [detect-assessment-changes]
+    needs: [detect-assessment-changes, build]
     if: needs.detect-assessment-changes.outputs.matrix != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 60
