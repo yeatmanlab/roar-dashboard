@@ -5,22 +5,60 @@ import { taskDisplayNames } from '@/helpers/reports.js';
 import { PRIORITY_TASKS } from '../constants/progressReportConstants';
 
 /**
+ * Orders report task metadata: priority tasks first (in PRIORITY_TASKS order),
+ * then the remainder by their display order (falling back to the API orderIndex).
+ *
+ * @param {Array} tasks – `{ taskId, taskSlug, taskName, orderIndex }[]` from the API.
+ * @returns {Array} the tasks in display order.
+ */
+function orderTasks(tasks) {
+  const priority = [];
+  const remaining = [];
+
+  for (const task of tasks) {
+    if (PRIORITY_TASKS.includes(task.taskSlug)) {
+      priority.push(task);
+    } else {
+      remaining.push(task);
+    }
+  }
+
+  priority.sort((a, b) => PRIORITY_TASKS.indexOf(a.taskSlug) - PRIORITY_TASKS.indexOf(b.taskSlug));
+  remaining.sort((a, b) => {
+    const orderA = taskDisplayNames[a.taskSlug]?.order;
+    const orderB = taskDisplayNames[b.taskSlug]?.order;
+    if (orderA !== undefined && orderB !== undefined) return orderA - orderB;
+    if (orderA !== undefined) return -1;
+    if (orderB !== undefined) return 1;
+    return a.orderIndex - b.orderIndex;
+  });
+
+  return [...priority, ...remaining];
+}
+
+/**
  * Progress Report Columns Composable
  *
- * Dynamically builds table columns based on available data, permissions, and organization type.
+ * Dynamically builds table columns based on available data, permissions, and
+ * organization type. Task columns are driven by the self-describing `tasks`
+ * metadata from the progress API (UUID-keyed progress map), so no separate task
+ * dictionary is required to know which columns exist — the dictionary is used
+ * only for friendly column headers.
  *
- * @param {import('vue').Ref} administrationData - Administration data
- * @param {import('vue').Ref} assignmentData - Assignment data
- * @param {import('vue').Ref} tasksDictionary - Dictionary of task information
- * @param {import('vue').Ref} districtSchoolsData - District schools data (if applicable)
- * @param {Object} authStore - Auth store instance
- * @param {String} orgType - Organization type (district, school, etc.)
- * @param {import('vue').Ref} isLoadingTasksDictionary - Loading state for tasks dictionary
- * @returns {Object} Computed columns
+ * @param {import('vue').Ref} administrationData - Administration data (for the launch/open check).
+ * @param {import('vue').Ref} students - Student progress rows (for user-field presence checks).
+ * @param {import('vue').Ref} tasks - Report task metadata array from the progress API.
+ * @param {import('vue').Ref} tasksDictionary - Dictionary of task display names (keyed by task slug).
+ * @param {import('vue').Ref} districtSchoolsData - District schools data (district scope only).
+ * @param {Object} authStore - Auth store instance.
+ * @param {String} orgType - Organization type (district, school, etc.).
+ * @param {import('vue').Ref} isLoadingTasksDictionary - Loading state for tasks dictionary.
+ * @returns {Object} Computed columns.
  */
 export function useProgressColumns(
   administrationData,
-  assignmentData,
+  students,
+  tasks,
   tasksDictionary,
   districtSchoolsData,
   authStore,
@@ -28,15 +66,18 @@ export function useProgressColumns(
   isLoadingTasksDictionary,
 ) {
   const progressReportColumns = computed(() => {
-    if (isLoadingTasksDictionary.value || assignmentData.value === undefined) return [];
+    if (isLoadingTasksDictionary.value || students.value === undefined) return [];
 
     const tableColumns = [];
 
     // Add launch button if user has permission and administration is open
     const { userCan } = usePermissions();
-    const isAdministrationOpen = administrationData.value?.dateClosed
-      ? new Date(administrationData.value?.dateClosed) > new Date()
-      : false;
+    // Open when the administration's end date is still in the future. `dates.end` is
+    // notNull on the API administration (from `useAdministrationQuery`), so there is no
+    // open-indefinitely case. Guarded on a loaded administration so the Launch button
+    // doesn't flash before the administration query resolves.
+    const admin = administrationData.value;
+    const isAdministrationOpen = Boolean(admin?.dates?.end) && new Date(admin.dates.end) > new Date();
 
     if (userCan(Permissions.Tasks.LAUNCH) && isAdministrationOpen) {
       tableColumns.push({
@@ -51,7 +92,7 @@ export function useProgressColumns(
     }
 
     // Add user fields if they exist in the data
-    if (assignmentData.value.find((assignment) => assignment.user?.username)) {
+    if (students.value.find((student) => student.user?.username)) {
       tableColumns.push({
         field: 'user.username',
         header: 'Username',
@@ -62,7 +103,7 @@ export function useProgressColumns(
       });
     }
 
-    if (assignmentData.value.find((assignment) => assignment.user?.email)) {
+    if (students.value.find((student) => student.user?.email)) {
       tableColumns.push({
         field: 'user.email',
         header: 'Email',
@@ -73,11 +114,11 @@ export function useProgressColumns(
       });
     }
 
-    if (assignmentData.value.find((assignment) => assignment.user?.name?.first)) {
+    if (students.value.find((student) => student.user?.firstName)) {
       tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true });
     }
 
-    if (assignmentData.value.find((assignment) => assignment.user?.name?.last)) {
+    if (students.value.find((student) => student.user?.lastName)) {
       tableColumns.push({ field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true, filter: true });
     }
 
@@ -97,7 +138,7 @@ export function useProgressColumns(
         sort: true,
         filter: false,
         useMultiSelect: true,
-        multiSelectOptions: districtSchoolsData.value.map((school) => school.name),
+        multiSelectOptions: (districtSchoolsData.value ?? []).map((school) => school.name),
         multiSelectPlaceholder: 'Filter by School',
         schoolsMap: schoolsMap,
       });
@@ -108,42 +149,16 @@ export function useProgressColumns(
       tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
     }
 
-    // Add task columns with priority ordering
-    const allTaskIds = administrationData.value.assessments?.map((assessment) => assessment.taskId);
-    const sortedTasks = allTaskIds?.sort((p1, p2) => {
-      if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
-        return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
-      } else {
-        return -1;
-      }
-    });
-
-    const orderedTasks = [];
-
-    // Add priority tasks first
-    for (const task of PRIORITY_TASKS) {
-      if (sortedTasks.includes(task)) {
-        orderedTasks.push(task);
-      }
-    }
-
-    // Add remaining tasks
-    for (const task of sortedTasks) {
-      if (!PRIORITY_TASKS.includes(task)) {
-        orderedTasks.push(task);
-      }
-    }
-
-    // Create columns for each task
-    for (const taskId of orderedTasks) {
+    // Create columns for each task (progress map is keyed by task UUID)
+    for (const task of orderTasks(tasks.value ?? [])) {
       tableColumns.push({
-        field: `progress.${taskId}.value`,
-        filterField: `progress.${taskId}.tags`,
-        header: tasksDictionary.value[taskId]?.nameSimple ?? taskId,
+        field: `progress.${task.taskId}.value`,
+        filterField: `progress.${task.taskId}.tags`,
+        header: tasksDictionary.value?.[task.taskSlug]?.nameSimple ?? task.taskName,
         dataType: 'progress',
         tag: true,
-        severityField: `progress.${taskId}.severity`,
-        iconField: `progress.${taskId}.icon`,
+        severityField: `progress.${task.taskId}.severity`,
+        iconField: `progress.${task.taskId}.icon`,
         sort: true,
       });
     }

@@ -157,12 +157,14 @@ function collectSeedableUsers(fixture: BaseFixture): SeedableEmulatorUser[] {
 }
 
 /**
- * Write the Cypress fixture file with one entry per seeded user.
+ * Write the Cypress fixture file with one entry per seeded user, plus a
+ * `progress` block describing a ready-made progress-report scenario.
  *
  * Cypress reads this from `/tmp/roar-cypress-fixture.json` (or
  * `CYPRESS_FIXTURE_FILE`) to resolve a fixture key like 'schoolATeacher' to
  * the email + password pair the helper uses to sign in via the Firebase
- * Auth emulator.
+ * Auth emulator. `progress.schoolA` carries the administration + scope IDs and
+ * the expected completed/started student IDs for the progress-report spec.
  */
 function writeCypressFixtureFile(fixture: BaseFixture, seeded: SeededEmulatorUser[], fixtureFile: string): void {
   const byAuthId = new Map(seeded.map((u) => [u.authId, u]));
@@ -195,7 +197,22 @@ function writeCypressFixtureFile(fixture: BaseFixture, seeded: SeededEmulatorUse
     }),
   );
 
-  fs.writeFileSync(fixtureFile, JSON.stringify({ users }, null, 2));
+  // Expose a ready-made progress-report scenario so e2e specs don't have to
+  // rediscover seeded IDs through the API. The school-A administration is seeded
+  // (above) with schoolAStudent completed and classAStudent started, and
+  // schoolAAdmin can read it scoped to School A.
+  const progress = {
+    schoolA: {
+      administrationId: fixture.administrationAssignedToSchoolA.id,
+      scopeType: 'school' as const,
+      scopeId: fixture.schoolA.id,
+      adminUserKey: 'schoolAAdmin' as const,
+      completedUserId: fixture.schoolAStudent.id,
+      startedUserId: fixture.classAStudent.id,
+    },
+  };
+
+  fs.writeFileSync(fixtureFile, JSON.stringify({ users, progress }, null, 2));
   logger.info({ fixtureFile, userCount: seeded.length }, '[server-test] Cypress fixture written');
 }
 

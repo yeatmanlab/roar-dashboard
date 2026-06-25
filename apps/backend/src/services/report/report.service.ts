@@ -37,9 +37,19 @@ import type {
   GuardianStudentReportResult,
   ServiceGuardianAdministrationEntry,
   ServiceGuardianTaskEntry,
+  TaskSubscoresInput,
+  TaskSubscoresResult,
+  ServiceTaskSubscoreColumn,
+  ServiceTaskSubscoreRow,
+  ServiceTaskSubscoreValue,
   ParsedFilter,
 } from './report.types';
-import { PROGRESS_TASK_STATUS_PATTERN, SCORE_TASK_FIELD_PATTERN } from '@roar-platform/api-contract';
+import {
+  PROGRESS_TASK_STATUS_PATTERN,
+  SCORE_TASK_FIELD_PATTERN,
+  SUBSCORE_FIELD_PATTERN,
+  SortOrder,
+} from '@roar-platform/api-contract';
 import { PROGRESS_STATUS_PRIORITY } from '../../constants/progress-status';
 import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -68,6 +78,8 @@ import type {
   StudentScoreQueryRow,
   ResolvedScoringRules,
   HistoricalRunRow,
+  TaskSubscoreNumericSort,
+  TaskSubscoreNumericFilter,
 } from '../../repositories/report.repository';
 import { TaskService } from '../task/task.service';
 import { AuthorizationService } from '../authorization/authorization.service';
@@ -77,6 +89,9 @@ import type { TaskVariantParameter } from '../../db/schema';
 import {
   getScoringConfig,
   getSubscoresConfig,
+  getPublicSubscoreColumns,
+  getNumericFieldForSubscore,
+  formatTaskSubscoreColumnValue,
   getSupportLevel,
   parseScoreValue,
   resolveScoreFieldNames,
@@ -1587,6 +1602,287 @@ export function ReportService({
     }
   }
 
+  /**
+   * List per-student subscore breakdown for a single task in an administration.
+   *
+   * Authorization mirrors the score-overview / student-scores endpoints (admin
+   * FGA + scope FGA). Additional contract guarantees:
+   *
+   * - **404** if the task isn't in the administration.
+   * - **400** if the task has no subscores block in its scoring config
+   *   (SWR, SRE, etc.).
+   * - **400** if a `subscores.<key>` sort or numeric filter targets a key the
+   *   config doesn't expose, or a column whose kind has no numeric form
+   *   (`stringPassthrough` or `paSkillsToWorkOn`).
+   *
+   * Per-row assembly: students with multiple completed variants of the task are
+   * deduplicated by lowest-`orderIndex` variant — matching the dedup rule used
+   * by every other score-report endpoint. Each column's value is formatted via
+   * the scoring service (`itemLevel` → `"correct/attempted"`, `number` → a
+   * possibly-rounded number, `stringPassthrough` → forwarded as-is,
+   * `paSkillsToWorkOn` → computed via the PA threshold helper).
+   *
+   * Subscore columns come from the task's scoring config (`getSubscoresConfig`),
+   * whose field names derive from the shared `@roar-platform/assessment-schema`
+   * package for verified assessments — there is no separate hard-coded registry.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to query
+   * @param taskId - The task to fetch subscores for
+   * @param query - Pagination + scope + filter + sort
+   * @returns Paginated subscore rows + column metadata
+   * @throws {ApiError} NOT_FOUND if the administration or task isn't found / in scope
+   * @throws {ApiError} FORBIDDEN if the caller lacks `can_read_scores`
+   * @throws {ApiError} REQUEST_VALIDATION_FAILED (400) if the task has no subscores, or sort/filter targets an unknown/non-numeric key
+   */
+  async function listTaskSubscores(
+    authContext: AuthContext,
+    administrationId: string,
+    taskId: string,
+    query: TaskSubscoresInput,
+  ): Promise<TaskSubscoresResult> {
+    const { userId } = authContext;
+    const { scopeType, scopeId, page, perPage, sortBy, sortOrder, filter } = query;
+
+    try {
+      // 1. Authorization (admin + scope FGA). Capture the admin record so its
+      //    date window flows into the admin-aware repository query (#1792).
+      const administration = await administrationService.verifyAdministrationAccess(
+        authContext,
+        administrationId,
+        FgaRelation.CAN_READ_SCORES,
+      );
+      const adminWindow = toReportAdminWindow(administration);
+      await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
+
+      // 2. Resolve task + variants in this administration. 404 if the task isn't
+      //    part of this administration's task variant set.
+      const allTaskMetas = await reportRepository.getTaskMetadata(administrationId);
+      const variantsForTask = allTaskMetas.filter((t) => t.taskId === taskId);
+      if (variantsForTask.length === 0) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, administrationId, taskId },
+        });
+      }
+
+      // Multi-variant dedup: the lowest-orderIndex variant is the representative
+      // for slug + display + sort/filter compilation.
+      const orderedVariants = [...variantsForTask].sort((a, b) => a.orderIndex - b.orderIndex);
+      const primaryVariant = orderedVariants[0]!;
+      const taskSlug = primaryVariant.taskSlug;
+
+      // 3. Look up the task's subscore columns from its scoring config. Tasks
+      //    with no subscores block return 400 — the score-overview /
+      //    student-scores endpoints are the right entry points for those tasks.
+      const columnDefs = getSubscoresConfig(taskSlug);
+      if (!columnDefs) {
+        logger.warn(
+          { userId, administrationId, taskId, taskSlug },
+          'Task has no subscore columns in its scoring config; returning 400',
+        );
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, administrationId, taskId, taskSlug },
+        });
+      }
+      // Non-null: getSubscoresConfig(taskSlug) was confirmed non-null directly above.
+      const publicColumns = getPublicSubscoreColumns(taskSlug)!;
+      const columnsByKey = new Map(columnDefs.map((c) => [c.key, c]));
+      const taskVariantIds = orderedVariants.map((v) => v.taskVariantId);
+
+      // 4. Validate + resolve sort. Static user fields use the existing
+      //    STUDENT_SCORES_SORT_COLUMNS map; `subscores.<key>` is validated
+      //    against the config and translated to a `run_scores.name`.
+      let staticSortColumn: Column | undefined;
+      let subscoreSort: TaskSubscoreNumericSort | null = null;
+
+      if (SUBSCORE_FIELD_PATTERN.test(sortBy)) {
+        const subscoreKey = sortBy.slice('subscores.'.length);
+        const numericField = getNumericFieldForSubscore(taskSlug, subscoreKey);
+        if (!columnsByKey.has(subscoreKey) || numericField === null) {
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.BAD_REQUEST,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: { userId, taskId, taskSlug, subscoreKey, sortBy },
+          });
+        }
+        subscoreSort = {
+          scoreName: numericField.scoreName,
+          ...(numericField.scoreDomain ? { scoreDomain: numericField.scoreDomain } : {}),
+        };
+      } else {
+        // The contract restricts sortBy to TASK_SUBSCORES_SORT_FIELDS, which
+        // excludes `user.schoolName` — the sortable user fields here are exactly
+        // the keys of STUDENT_SCORES_SORT_COLUMNS, so the lookup always resolves.
+        const key = sortBy as Exclude<StudentScoresSortField, 'user.schoolName'>;
+        staticSortColumn = STUDENT_SCORES_SORT_COLUMNS[key];
+      }
+
+      // 5. Validate + resolve filters. Subscore filters require numeric
+      //    operators; user-level filters compile to SQL via the shared
+      //    STUDENT_SCORES_USER_FILTER_FIELDS map.
+      const userLevelFilters: ParsedFilter[] = [];
+      const subscoreNumericFilters: TaskSubscoreNumericFilter[] = [];
+      const numericOperators = new Set<TaskSubscoreNumericFilter['operator']>(['gte', 'lte', 'eq', 'neq']);
+
+      for (const f of filter) {
+        if (SUBSCORE_FIELD_PATTERN.test(f.field)) {
+          const subscoreKey = f.field.slice('subscores.'.length);
+          if (!columnsByKey.has(subscoreKey)) {
+            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+              statusCode: StatusCodes.BAD_REQUEST,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, taskId, taskSlug, subscoreKey },
+            });
+          }
+          const numericField = getNumericFieldForSubscore(taskSlug, subscoreKey);
+          if (!numericField) {
+            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+              statusCode: StatusCodes.BAD_REQUEST,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, taskId, taskSlug, subscoreKey, reason: 'column-has-no-numeric-form' },
+            });
+          }
+          if (!numericOperators.has(f.operator as TaskSubscoreNumericFilter['operator'])) {
+            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+              statusCode: StatusCodes.BAD_REQUEST,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, taskId, taskSlug, subscoreKey, operator: f.operator },
+            });
+          }
+          const value = Number(f.value);
+          if (Number.isNaN(value)) {
+            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+              statusCode: StatusCodes.BAD_REQUEST,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, taskId, taskSlug, subscoreKey, value: f.value },
+            });
+          }
+          subscoreNumericFilters.push({
+            scoreName: numericField.scoreName,
+            ...(numericField.scoreDomain ? { scoreDomain: numericField.scoreDomain } : {}),
+            operator: f.operator as TaskSubscoreNumericFilter['operator'],
+            value,
+          });
+          continue;
+        }
+        userLevelFilters.push(f);
+      }
+
+      const filterCondition =
+        userLevelFilters.length > 0
+          ? buildFilterConditions(userLevelFilters, STUDENT_SCORES_USER_FILTER_FIELDS, {
+              gradeAwareFields: GRADE_AWARE_FIELDS,
+            })
+          : undefined;
+
+      // 6. Repository call.
+      const sortDirectionEnum = sortOrder === 'desc' ? SortOrder.DESC : SortOrder.ASC;
+      const result = await reportRepository.getTaskSubscoreStudents(
+        administrationId,
+        { scopeType, scopeId },
+        adminWindow,
+        taskVariantIds,
+        {
+          page,
+          perPage,
+          sortColumn: staticSortColumn,
+          sortDirection: sortDirectionEnum,
+        },
+        filterCondition,
+        subscoreSort,
+        subscoreNumericFilters,
+      );
+
+      // 7. Resolve school names for district scope (not auto-populated by the
+      //    repo). Constrain to schools under the requested district so a
+      //    cross-district enrollment can't surface a foreign school's name.
+      let schoolNamesByUser: Map<string, string> | null = null;
+      if (scopeType === 'district' && result.items.length > 0) {
+        const userIds = result.items.map((row) => row.userId);
+        schoolNamesByUser = await reportRepository.getSchoolNamesForUsers(userIds, scopeId);
+      }
+
+      // 8. Per-row assembly via the config-driven value formatter.
+      const items: ServiceTaskSubscoreRow[] = result.items.map((row) => {
+        // Multi-variant dedup: choose the first variant (by orderIndex) the
+        // student has any score rows for, grabbing both the flat and the
+        // domain-indexed score maps for that variant (PA columns look up the
+        // domain map; distinct-name tasks use the flat map).
+        let scoreMap = new Map<string, string>();
+        let domainScoreMap = new Map<string, Map<string, string>>();
+        for (const v of orderedVariants) {
+          const flat = row.scores.get(v.taskVariantId);
+          const domain = row.domainScores.get(v.taskVariantId);
+          if ((flat && flat.size > 0) || (domain && domain.size > 0)) {
+            if (flat) scoreMap = flat;
+            if (domain) domainScoreMap = domain;
+            break;
+          }
+        }
+
+        // PA-only precomputation for the `paSkillsToWorkOn` column.
+        let paSkillsToWorkOn: string[] | null = null;
+        if (taskSlug === 'pa') {
+          const paSubscores = extractSubscoresFromScoreMap(scoreMap, taskSlug, domainScoreMap);
+          paSkillsToWorkOn = computePaSkillsToWorkOn(taskSlug, paSubscores);
+        }
+
+        const subscores: Record<string, ServiceTaskSubscoreValue> = {};
+        for (const column of columnDefs) {
+          subscores[column.key] = formatTaskSubscoreColumnValue({ column, scoreMap, domainScoreMap, paSkillsToWorkOn });
+        }
+
+        return {
+          user: {
+            userId: row.userId,
+            assessmentPid: row.assessmentPid,
+            username: row.username,
+            email: row.email,
+            firstName: row.nameFirst,
+            lastName: row.nameLast,
+            grade: row.grade,
+            ...(scopeType === 'district' ? { schoolName: schoolNamesByUser?.get(row.userId) ?? null } : {}),
+          },
+          subscores,
+        };
+      });
+
+      const taskMetadata: ServiceTaskMetadata = {
+        taskId: primaryVariant.taskId,
+        taskSlug: primaryVariant.taskSlug,
+        taskName: primaryVariant.taskName,
+        orderIndex: primaryVariant.orderIndex,
+      };
+
+      const subscoreColumns: ServiceTaskSubscoreColumn[] = publicColumns;
+
+      return {
+        task: taskMetadata,
+        subscoreColumns,
+        items,
+        totalItems: result.totalItems,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, taskId, scopeType, scopeId } },
+        'Failed to list task subscores',
+      );
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId, taskId, scopeType, scopeId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     listProgressStudents,
     getProgressOverview,
@@ -1595,6 +1891,7 @@ export function ReportService({
     listStudentScores,
     getIndividualStudentReport,
     getGuardianStudentReport,
+    listTaskSubscores,
   };
 }
 
@@ -2976,36 +3273,45 @@ export function extractSubscoresFromScoreMap(
   if (!config) return null;
 
   const out: Record<string, ServiceSubscoreEntry> = {};
-  for (const [responseKey, fields] of Object.entries(config)) {
-    // When the subscore config declares a domain and a domain-indexed map is
-    // available, use the domain map for lookup — this prevents collisions when
-    // multiple subtasks share the same generic score name (FSM/LSM/DEL each
-    // have "numCorrect"). Fall back to the flat score map for configs without
-    // a domain declaration (all other tasks).
-    const lookup: Map<string, string> | undefined =
-      fields.domain && domainScoreMap ? domainScoreMap.get(fields.domain) : scoreMap;
+  for (const column of config) {
+    // Only itemLevel columns that are part of the per-subtask breakdown carry a
+    // correct/attempted pair. Aggregate columns (subskill:false, e.g. a task
+    // "Total") and non-itemLevel columns (number / stringPassthrough /
+    // paSkillsToWorkOn) are task-subscores-table-only and skipped here.
+    if (column.kind !== 'itemLevel' || column.subskill === false) continue;
 
-    const correctRaw = lookup?.get(fields.correctName);
-    const attemptedRaw = lookup?.get(fields.attemptedName);
+    // When the column declares a domain and a domain-indexed map is available,
+    // look up via the domain map — this prevents collisions when subtasks share
+    // a generic score name (PA's FSM/LSM/DEL each emit "numCorrect"). Tasks with
+    // distinct per-skill names fall back to the flat score map.
+    const lookup: Map<string, string> | undefined =
+      column.domain && domainScoreMap ? domainScoreMap.get(column.domain) : scoreMap;
+
+    const correctRaw = lookup?.get(column.correctName);
+    const attemptedRaw = lookup?.get(column.attemptedName);
     const correct = parseScoreValue(correctRaw);
     const attempted = parseScoreValue(attemptedRaw);
 
     let percentCorrect: number | null = null;
-    if (fields.percentCorrectName) {
-      const pct = parseScoreValue(lookup?.get(fields.percentCorrectName));
+    if (column.percentCorrectName) {
+      const pct = parseScoreValue(lookup?.get(column.percentCorrectName));
       if (pct !== null) percentCorrect = Math.round(pct * 10) / 10;
     }
     if (percentCorrect === null && correct !== null && attempted !== null && attempted > 0) {
       percentCorrect = Math.round((correct / attempted) * 1000) / 10;
     }
 
-    out[responseKey] = {
+    out[column.key] = {
       correct: correct === null ? null : Math.round(correct),
       attempted: attempted === null ? null : Math.round(attempted),
       percentCorrect,
     };
   }
-  return out;
+  // Tasks whose subscores block declares no per-subtask itemLevel columns (e.g.
+  // letter / fluency / roam-alpaca, which only have task-subscores-table
+  // columns) produce no breakdown — return null so the individual-student-report
+  // omits `subscores`, exactly as it did before those tasks gained a block.
+  return Object.keys(out).length > 0 ? out : null;
 }
 
 /**
