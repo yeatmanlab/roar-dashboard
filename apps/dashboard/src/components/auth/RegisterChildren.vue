@@ -8,105 +8,19 @@
       >
         <div class="flex flex-column justify-content-between align-items-center">
           <div class="text-2xl font-bold text-gray-600">Student #{{ outerIndex + 1 }}</div>
-          <section v-if="!student.orgName" class="form-section">
+          <section class="form-section">
             <div class="p-input-icon-right">
-              <div class="flex gap-2 justify-content-between">
-                <label for="activationCode">Activation code <span class="required">*</span></label>
-              </div>
-
-              <!-- Show dropdown if parent has invitation codes -->
-              <div v-if="invitationCodes.length > 0 && !student.useManualCode" class="flex gap-2 mb-2 flex-column">
-                <PvSelect
-                  v-model="student.activationCode"
-                  :options="invitationCodes"
-                  placeholder="Select an invitation code"
-                  data-cy="invitation-code-dropdown"
-                  class="w-full"
-                />
-                <div class="flex gap-2">
-                  <PvButton
-                    class="flex-1 text-sm text-white bg-primary hover:bg-red-900"
-                    label="Validate"
-                    :disabled="!student.activationCode"
-                    @click="validateCode(student.activationCode, outerIndex)"
-                  />
-                  <PvButton
-                    class="flex-1 text-sm"
-                    label="Enter Manually"
-                    severity="secondary"
-                    outlined
-                    @click="student.useManualCode = true"
-                  />
-                </div>
-              </div>
-
-              <!-- Manual entry (shown if no codes or user chooses manual) -->
-              <PvInputGroup v-else-if="!student.noActivationCode" data-cy="activation-code-group">
-                <PvInputText
-                  v-model="student.activationCode"
-                  name="activationCode"
-                  data-cy="activation-code-input"
-                  placeholder="Enter activation code"
-                  :class="{
-                    'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
-                  }"
-                  aria-describedby="activation-code-error"
-                  :disabled="student.noActivationCode"
-                />
-                <PvButton
-                  class="w-4 text-sm text-white bg-primary hover:bg-red-900"
-                  label="Validate"
-                  @click="validateCode(student.activationCode, outerIndex)"
-                />
-              </PvInputGroup>
-              <PvButton
-                v-if="invitationCodes.length > 0 && student.useManualCode"
-                class="mt-2 text-sm"
-                label="Use Saved Code"
-                severity="secondary"
-                outlined
-                size="small"
-                @click="
-                  student.useManualCode = false;
-                  student.activationCode = '';
-                "
+              <label for="activationCode">Activation code <span class="required">*</span></label>
+              <!-- Plain text entry. The activation code is validated by the backend
+                   on submit (422 for an invalid or expired code). -->
+              <PvInputText
+                v-model="student.activationCode"
+                name="activationCode"
+                data-cy="activation-code-input"
+                placeholder="Enter activation code"
+                class="w-full"
+                aria-describedby="activation-code-error"
               />
-            </div>
-            <span
-              v-if="
-                v$.students.$each.$response.$data[outerIndex].noActivationCode &&
-                v$.students.$each.$response.$data[outerIndex].activationCode.$invalid &&
-                submitted
-              "
-            >
-              <span
-                v-for="(error, innerIndex) in v$.students.$each.$response.$errors[outerIndex].activationCode"
-                :key="`error-${outerIndex}-${innerIndex}`"
-              >
-                <small class="p-error">{{ error.$message.replace('Value', 'Activation Code') }}</small>
-              </span>
-            </span>
-          </section>
-          <section v-else>
-            <div class="flex my-2 justify-content-between align-items-center">
-              <div class="gap-2 flex-column">
-                <div class="text-xs font-light text-gray-500 uppercase">Registering under</div>
-                <div class="flex gap-2 p-2 bg-gray-200 rounded">
-                  <div class="text-sm font-bold text-gray-600" data-cy="child-registration__org-name">
-                    {{ student.orgName }}
-                  </div>
-                </div>
-                <div>
-                  <PvButton
-                    class="py-2 text-white border-none bg-primary border-round hover:surface-300 hover:text-black-alpha-90 text-md"
-                    icon="pi pi-replay ml-2"
-                    icon-pos="right"
-                    severity="secondary"
-                    label="Enter another code"
-                    @click="codeNotRight(outerIndex)"
-                  />
-                </div>
-              </div>
             </div>
           </section>
         </div>
@@ -375,10 +289,8 @@
               id="accept-register"
               v-model="student.accept"
               binary
-              :disabled="showConsent[outerIndex]"
               :class="[{ 'p-invalid': student.accept.$invalid && submitted }]"
               pt:input:data-testid="checkbox__input"
-              @change="getConsent(outerIndex)"
             />
             <label for="accept" :class="{ 'p-error': student.accept.$invalid && submitted }"
               >I agree to the terms and conditions<span class="required">*</span></label
@@ -388,12 +300,6 @@
             You must agree to the terms and conditions
           </small>
         </ChallengeV3>
-        <ConsentModal
-          v-if="showConsent[outerIndex]"
-          :consent-text="consentText"
-          consent-type="consent"
-          :on-confirm="() => handleConsentAccept(outerIndex)"
-        />
       </div>
     </form>
     <div class="form-section-button2">
@@ -444,72 +350,27 @@ import PvDatePicker from 'primevue/datepicker';
 import PvCheckbox from 'primevue/checkbox';
 import PvDialog from 'primevue/dialog';
 import PvSelect from 'primevue/select';
-import PvInputGroup from 'primevue/inputgroup';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
-import ConsentModal from '../ConsentModal.vue';
-import { fetchDocById } from '@/helpers/query/utils';
 import { useVuelidate } from '@vuelidate/core';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
-import _capitalize from 'lodash/capitalize';
 import { DEFAULT_ACTIVATION_CODE } from '@/constants/activation';
 import PvAutoComplete from 'primevue/autocomplete';
 import { ChallengeV3 } from 'vue-recaptcha';
 
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 const dialogMessage = ref('');
 
 const today = new Date();
 today.setFullYear(today.getFullYear() - 2);
 const maxDoB = ref(today);
-const orgName = ref('');
-const consentText = ref('');
-const activationCodeRef = ref('');
 
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
   code: { type: String, default: null },
   submitting: { type: Boolean, default: false },
-  invitationCodes: { type: Array, default: () => [] },
 });
 
 const isDialogVisible = ref(false);
 const submitted = ref(false);
-
-const showConsent = ref([false]);
-const isCaptchaverified = ref(null);
-
-async function handleConsentAccept(outerIndex) {
-  state.students[outerIndex].accept = true;
-}
-
-function handleCaptcha() {
-  isCaptchaverified.value = response.value;
-}
-
-async function handleCheckCaptcha() {
-  await new Promise((resolve) => {
-    // Simulate a delay to ensure the reCAPTCHA value is updated
-    setTimeout(() => {
-      resolve();
-      handleCaptcha();
-    }, 500); // You might adjust the delay time if needed
-  });
-}
-
-async function getConsent(outerIndex) {
-  try {
-    const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
-    consentText.value = consentDoc.text;
-    showConsent.value[outerIndex] = true;
-    handleCheckCaptcha();
-  } catch (error) {
-    console.error('Failed to fetch consent form: ', error);
-    throw new Error('Could not fetch consent form');
-  }
-}
 
 const showErrorDialog = () => {
   isDialogVisible.value = true;
@@ -519,14 +380,13 @@ const closeErrorDialog = () => {
   isDialogVisible.value = false;
 };
 
-const noActivationCodeRef = ref(false);
 const yearOnlyCheckRef = ref(false);
 
 const emit = defineEmits(['submit']);
 const state = reactive({
   students: [
     {
-      activationCode: activationCodeRef.value || DEFAULT_ACTIVATION_CODE,
+      activationCode: DEFAULT_ACTIVATION_CODE,
       studentUsername: '',
       password: '',
       confirmPassword: '',
@@ -542,11 +402,8 @@ const state = reactive({
       race: [],
       hispanicEthnicity: '',
       homeLanguage: [],
-      noActivationCode: noActivationCodeRef.value,
       yearOnlyCheck: yearOnlyCheckRef.value,
-      orgName: '',
       accept: false,
-      useManualCode: false, // Toggle between dropdown and manual entry
     },
   ],
 });
@@ -570,9 +427,7 @@ const rules = {
       race: {},
       hispanicEthnicity: {},
       homeLanguage: {},
-      noActivationCode: {},
       yearOnlyCheck: {},
-      orgName: {},
       accept: { sameAs: sameAs(true) },
     }),
   },
@@ -598,32 +453,22 @@ function addStudent() {
     race: [],
     hispanicEthnicity: '',
     homeLanguage: [],
-    noActivationCode: noActivationCodeRef.value,
     yearOnlyCheck: yearOnlyCheckRef.value,
-    orgName: '',
     accept: false,
   });
-  showConsent.value.push(false);
-  if (props.code) {
-    validateCode(props.code, state.students.length - 1);
-  }
 }
 
 onMounted(async () => {
+  // Deep-link support: prefill the activation code when one is provided. The
+  // backend validates it on submit (422 for an invalid/expired code).
   if (props.code) {
-    validateCode(props.code);
+    state.students[0].activationCode = props.code;
   }
 });
-
-function codeNotRight(index) {
-  state.students[index].orgName = '';
-  state.students[index].noActivationCode = false;
-}
 
 function deleteStudentForm(student) {
   if (state.students.length > 1) {
     state.students.splice(student, 1); // Remove the student at the specified index
-    showConsent.value.splice(student, 1);
   } else {
     dialogMessage.value = 'At least one student is required.';
     showErrorDialog();
@@ -649,93 +494,19 @@ const handleFormSubmit = async (isFormValid) => {
     return;
   }
 
-  const validationPromises = toRaw(state).students.map(async (student, index) => {
-    try {
-      await validateCode(student.activationCode, index);
-      return true; // Code is valid if no error thrown
-    } catch {
-      // Code validation failed
-      return false;
-    }
+  // The backend validates the activation code and email uniqueness on submit
+  // (POST /v1/families/:familyId/users → 422 for an invalid/expired code, 409
+  // for a duplicate email). The former firekit `isUsernameAvailable` precheck
+  // and the Firestore activation-code lookup are gone; the parent view surfaces
+  // any backend error as a toast.
+  const computedStudents = toRaw(state).students.map((student) => {
+    const { studentUsername, ...studentData } = student;
+    return {
+      studentUsername: `${studentUsername}@roar-auth.com`,
+      ...studentData,
+    };
   });
-
-  const validationResults = await Promise.all(validationPromises);
-
-  if (validationResults.includes(false)) {
-    submitted.value = false;
-    return;
-  }
-
-  if (await validateRoarUsername()) {
-    // format username as an email
-    const computedStudents = toRaw(state).students.map((student) => {
-      const { studentUsername, ...studentData } = student;
-      return {
-        studentUsername: `${studentUsername}@roar-auth.com`,
-        ...studentData,
-      };
-    });
-    emit('submit', computedStudents);
-  }
-};
-
-const validateCode = async (studentCode, outerIndex = 0) => {
-  // @TODO: Add proper error handling.
-  if (!studentCode || studentCode === '') {
-    throw new Error('Activation code is required');
-  }
-
-  try {
-    const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true);
-    // If two months have elapsed since creation, we should invalidate the code as expired
-    if (activationCode.dateExpired) {
-      const dateExpired = new Date(activationCode.dateExpired);
-      const today = new Date();
-      if (dateExpired < today) {
-        dialogMessage.value = 'The code has expired. Please enter a valid code.';
-        showErrorDialog();
-        submitted.value = false;
-        throw new Error('Activation code has expired');
-      }
-    }
-    // if no dateExpired, fallback to dateCreated to check for validity
-    else if (activationCode.dateCreated) {
-      const dateCreated = new Date(activationCode.dateCreated);
-      const twoMonthsAgo = new Date();
-      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-      if (dateCreated < twoMonthsAgo) {
-        dialogMessage.value = 'The code has expired. Please enter a valid code.';
-        showErrorDialog();
-        submitted.value = false;
-        throw new Error('Activation code has expired');
-      }
-    }
-    if (activationCode.orgId) {
-      state.students[outerIndex].orgName = `${_capitalize(activationCode.orgType)} - ${
-        activationCode.orgName ?? activationCode.orgId
-      }`;
-      state.students[outerIndex].activationCode = studentCode;
-      orgName.value = `${_capitalize(activationCode.orgType)} - ${activationCode.orgName ?? activationCode.orgId}`;
-    }
-  } catch (error) {
-    if (error?.message === 'Activation code has expired') {
-      submitted.value = false;
-      throw error;
-    }
-
-    console.error('Failed to validate activation code', error);
-
-    if (!state.students[outerIndex].noActivationCode || props.code) {
-      dialogMessage.value = `The code ${studentCode} does not belong to any organization. Please enter a valid code.`;
-    } else {
-      dialogMessage.value = 'The code does not belong to any organization. Please enter a valid code.';
-    }
-
-    showErrorDialog();
-
-    submitted.value = false;
-    throw error;
-  }
+  emit('submit', computedStudents);
 };
 
 const searchRaces = (event) => {
@@ -848,19 +619,6 @@ const languages = [
 ];
 
 const languageOptions = ref([...languages]);
-
-const validateRoarUsername = async () => {
-  for (const student of state.students) {
-    const validUserName = await roarfirekit.value.isUsernameAvailable(student.studentUsername);
-    if (!validUserName) {
-      dialogMessage.value = 'Username: ' + student.studentUsername + ' is already in use';
-      showErrorDialog();
-      submitted.value = false;
-      return false;
-    }
-  }
-  return true;
-};
 </script>
 
 <style scoped>
