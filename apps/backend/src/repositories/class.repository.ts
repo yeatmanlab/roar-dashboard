@@ -16,7 +16,9 @@ import type { PaginatedResult } from './base.repository';
 import { LtreeRepository } from './ltree.repository';
 import {
   ENROLLED_USERS_SORT_COLUMNS,
+  buildEnrolledUserSelection,
   getEnrolledUsersFilterConditions,
+  mapEnrolledUserRow,
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
@@ -174,7 +176,7 @@ export class ClassRepository extends LtreeRepository<Class, typeof classes> {
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
-      .select({ user: users, role: userClasses.role })
+      .select({ ...buildEnrolledUserSelection(options.embedDemographics ?? false), role: userClasses.role })
       .from(userClasses)
       .innerJoin(users, eq(users.id, userClasses.userId))
       .innerJoin(classes, eq(classes.id, userClasses.classId))
@@ -184,7 +186,7 @@ export class ClassRepository extends LtreeRepository<Class, typeof classes> {
       .offset(offset);
 
     return {
-      items: dataResult.map((row) => ({ ...row.user, roles: [row.role] })),
+      items: dataResult.map((row) => mapEnrolledUserRow(row, [row.role])),
       totalItems,
     };
   }

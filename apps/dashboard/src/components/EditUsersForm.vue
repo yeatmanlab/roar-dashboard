@@ -116,6 +116,13 @@
           :options="binaryDropdownOptions"
         />
       </div>
+      <div class="form-field">
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Home Language</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
+          {{ userData?.studentData?.home_language ?? 'None' }}
+        </div>
+        <PvInputText v-else v-model="localUserData.studentData.home_language" />
+      </div>
     </div>
   </div>
   <div
@@ -244,6 +251,7 @@ const localUserData = ref({
     ell_status: false,
     frl_status: null,
     iep_status: false,
+    home_language: '',
   },
   dataInitialized: false,
 });
@@ -271,6 +279,7 @@ const setupUserData = () => {
       ell_status: String(props.userData?.studentData?.ell_status) === 'true',
       frl_status: props.userData?.studentData?.frl_status || null,
       iep_status: String(props.userData?.studentData?.iep_status) === 'true',
+      home_language: props.userData?.studentData?.home_language || '',
     },
     userType: localUserType.value,
     dataInitialized: true,
