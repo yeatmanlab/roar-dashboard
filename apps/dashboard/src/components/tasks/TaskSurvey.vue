@@ -154,10 +154,8 @@ async function startTask(selectedAdmin) {
   }
 }
 
-async function handleCompleteSurvey() {
+function handleCompleteSurvey() {
   try {
-    const { selectedAdmin } = storeToRefs(gameStore);
-    await authStore.completeAssessment(selectedAdmin.value.id, props.taskId, props.launchId);
     gameStore.requireHomeRefresh();
     if (props.launchId) {
       router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
