@@ -183,5 +183,49 @@ describe('subscore columns (config-driven)', () => {
       expect(formatTaskSubscoreColumnValue({ column: col, scoreMap: new Map(), paSkillsToWorkOn: [] })).toBeNull();
       expect(formatTaskSubscoreColumnValue({ column: col, scoreMap: new Map(), paSkillsToWorkOn: null })).toBeNull();
     });
+
+    it('stringPassthrough with a domain reads from the domain map (letter subScore)', () => {
+      const col: SubscoreColumn = {
+        kind: 'stringPassthrough',
+        key: 'lowerCase',
+        label: 'Lower Case',
+        name: 'subScore',
+        domain: 'LowercaseNames',
+      };
+      const domainScoreMap = new Map([
+        ['LowercaseNames', new Map([['subScore', '22']])],
+        ['UppercaseNames', new Map([['subScore', '24']])],
+      ]);
+      // Flat map has a colliding subScore from another domain; the domain map wins.
+      const scoreMap = new Map([['subScore', '24']]);
+      expect(formatTaskSubscoreColumnValue({ column: col, scoreMap, domainScoreMap })).toBe('22');
+    });
+
+    it('letterToWorkOn merges its domain-indexed source lists (or null when all empty)', () => {
+      const col: SubscoreColumn = {
+        kind: 'letterToWorkOn',
+        key: 'lettersToWorkOn',
+        label: 'Letters To Work On',
+        sources: [
+          { name: 'upperIncorrect', domain: 'UppercaseNames' },
+          { name: 'lowerIncorrect', domain: 'LowercaseNames' },
+        ],
+      };
+      const domainScoreMap = new Map([
+        ['UppercaseNames', new Map([['upperIncorrect', 'Z']])],
+        ['LowercaseNames', new Map([['lowerIncorrect', 'q, x']])],
+      ]);
+      expect(formatTaskSubscoreColumnValue({ column: col, scoreMap: new Map(), domainScoreMap })).toBe('Z, q, x');
+      // Missing one source: surface only the present one.
+      expect(
+        formatTaskSubscoreColumnValue({
+          column: col,
+          scoreMap: new Map(),
+          domainScoreMap: new Map([['LowercaseNames', new Map([['lowerIncorrect', 'q']])]]),
+        }),
+      ).toBe('q');
+      // All sources absent → null.
+      expect(formatTaskSubscoreColumnValue({ column: col, scoreMap: new Map(), domainScoreMap: new Map() })).toBeNull();
+    });
   });
 });

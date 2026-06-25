@@ -372,20 +372,38 @@ export function formatTaskSubscoreColumnValue(args: {
       return `${correctRaw ?? '0'}/${attemptedRaw ?? '0'}`;
     }
     case 'number': {
-      const raw = scoreMap.get(column.name);
+      const lookup: Map<string, string> | undefined =
+        column.domain && domainScoreMap ? domainScoreMap.get(column.domain) : scoreMap;
+      const raw = lookup?.get(column.name);
       if (raw === undefined) return null;
       const numeric = Number(raw);
       if (Number.isNaN(numeric)) return null;
       return column.round ? Math.round(numeric) : numeric;
     }
     case 'stringPassthrough': {
-      const raw = scoreMap.get(column.name);
+      const lookup: Map<string, string> | undefined =
+        column.domain && domainScoreMap ? domainScoreMap.get(column.domain) : scoreMap;
+      const raw = lookup?.get(column.name);
       if (raw === undefined) return null;
       return raw;
     }
     case 'paSkillsToWorkOn': {
       if (!paSkillsToWorkOn || paSkillsToWorkOn.length === 0) return null;
       return paSkillsToWorkOn.join(', ');
+    }
+    case 'letterToWorkOn': {
+      // Merge several domain-indexed comma-joined lists into one (e.g. letter's
+      // upperIncorrect + lowerIncorrect). Each source value is already a
+      // comma-joined list; concatenate the non-empty ones in declared order.
+      const parts: string[] = [];
+      for (const source of column.sources) {
+        const lookup: Map<string, string> | undefined =
+          source.domain && domainScoreMap ? domainScoreMap.get(source.domain) : scoreMap;
+        const raw = lookup?.get(source.name);
+        if (raw) parts.push(raw);
+      }
+      if (parts.length === 0) return null;
+      return parts.join(', ');
     }
   }
 }

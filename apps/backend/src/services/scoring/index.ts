@@ -27,5 +27,6 @@ export type {
   NumberSubscoreColumn,
   StringPassthroughSubscoreColumn,
   PaSkillsToWorkOnSubscoreColumn,
+  LetterToWorkOnSubscoreColumn,
 } from './scoring.config-schema';
 export type { SupportLevel, ScoringInput, RawScoreThreshold, ScoreFieldResolution } from './scoring.types';

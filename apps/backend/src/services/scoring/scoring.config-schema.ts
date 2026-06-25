@@ -164,6 +164,14 @@ const subscoreColumnBaseFields = {
   label: z.string(),
   /** Flags a best-guess column for an assessment not yet migrated into assessment-schema. */
   provisional: z.boolean().optional(),
+  /**
+   * `run_scores.domain` key for this column's value, when the task emits the
+   * score under a per-subtask domain (PA: numCorrect under FSM/LSM/DEL; letter:
+   * subScore under LowercaseNames/UppercaseNames/Phonemes). Disambiguates
+   * generic names shared across domains; tasks with globally-distinct names
+   * (phonics) omit it and use a flat lookup.
+   */
+  domain: z.string().optional(),
 };
 
 const ItemLevelSubscoreColumnSchema = z.object({
@@ -172,14 +180,6 @@ const ItemLevelSubscoreColumnSchema = z.object({
   correctName: z.string(),
   attemptedName: z.string(),
   percentCorrectName: z.string().optional(),
-  /**
-   * Uppercase domain key matching `run_scores.domain` for this subscore (e.g.
-   * FSM, LSM, DEL, composite). Only set for tasks that emit GENERIC score names
-   * under per-subtask domains (PA: numCorrect/numAttempted/percentCorrect under
-   * FSM/LSM/DEL). When set, lookups go through the domain-indexed score map;
-   * tasks with distinct per-skill names (phonics, etc.) omit it.
-   */
-  domain: z.string().optional(),
   /** Whether this column is part of the per-subtask sub-skill breakdown (default true). */
   subskill: z.boolean().optional().default(true),
 });
@@ -202,11 +202,31 @@ const PaSkillsToWorkOnSubscoreColumnSchema = z.object({
   ...subscoreColumnBaseFields,
 });
 
+/**
+ * A computed column that merges several domain-indexed string fields into one
+ * comma-separated list — e.g. letter's "Letters To Work On" = `upperIncorrect`
+ * (UppercaseNames) + `lowerIncorrect` (LowercaseNames). Each source value is
+ * itself a comma-joined list; non-empty sources are concatenated in order.
+ */
+const LetterToWorkOnSubscoreColumnSchema = z.object({
+  kind: z.literal('letterToWorkOn'),
+  ...subscoreColumnBaseFields,
+  sources: z
+    .array(
+      z.object({
+        name: z.string(),
+        domain: z.string().optional(),
+      }),
+    )
+    .min(1),
+});
+
 const SubscoreColumnSchema = z.discriminatedUnion('kind', [
   ItemLevelSubscoreColumnSchema,
   NumberSubscoreColumnSchema,
   StringPassthroughSubscoreColumnSchema,
   PaSkillsToWorkOnSubscoreColumnSchema,
+  LetterToWorkOnSubscoreColumnSchema,
 ]);
 
 /**
@@ -245,3 +265,4 @@ export type ItemLevelSubscoreColumn = z.infer<typeof ItemLevelSubscoreColumnSche
 export type NumberSubscoreColumn = z.infer<typeof NumberSubscoreColumnSchema>;
 export type StringPassthroughSubscoreColumn = z.infer<typeof StringPassthroughSubscoreColumnSchema>;
 export type PaSkillsToWorkOnSubscoreColumn = z.infer<typeof PaSkillsToWorkOnSubscoreColumnSchema>;
+export type LetterToWorkOnSubscoreColumn = z.infer<typeof LetterToWorkOnSubscoreColumnSchema>;
