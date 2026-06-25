@@ -201,7 +201,8 @@ export const UsersContract = c.router(
       strictStatusCodes: true,
       summary: "List an administration's required agreements with signed status for a user",
       description:
-        "Returns the administration's required agreements (consent, assent, terms of service), each " +
+        "Returns the administration's required agreements (consent or assent, based on the user's age; " +
+        'terms of service are excluded), each ' +
         'annotated with whether the specified user has already signed it (any current version, cross-locale). ' +
         'Lets the consent gate decide what the specified user must sign before assessments. ' +
         'Use ?locale=<bcp47> to select the current version returned per agreement (defaults to en-US). ' +
