@@ -1,4 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
+import { EnrolledUsersEmbedOption } from '@roar-platform/api-contract';
 import type { PaginatedResult } from '@roar-platform/api-contract';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -207,6 +208,7 @@ export function ClassService({
         },
         ...(options.role && { role: options.role }),
         ...(options.grade && { grade: options.grade }),
+        embedDemographics: options.embed?.includes(EnrolledUsersEmbedOption.DEMOGRAPHICS) ?? false,
       };
 
       // FGA already verified permission — use unrestricted query for all authorized users
