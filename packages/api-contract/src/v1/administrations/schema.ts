@@ -73,6 +73,19 @@ export type AdministrationTaskProgress = z.infer<typeof AdministrationTaskProgre
  *
  * `progress` is attached only when `?embed=progress` is requested (which
  * implies `tasks`).
+ *
+ * `optional` and `assigned` are attached alongside `progress` (i.e. when
+ * `?embed=progress` is requested on the user-scoped paths — `list` and
+ * `GET /users/:userId/administrations`) and describe the assignment state for
+ * the TARGET user (the in-context user, or the user named in the URL),
+ * evaluated against the task variant's `assigned_if`/`optional_if` conditions
+ * and that user's demographics:
+ * - `assigned`: whether the task is assigned to the target user (a task with no
+ *   `assigned_if` condition is assigned to everyone). This is purely
+ *   informational — `assigned: false` does NOT remove the task from the
+ *   embedded list; the full task list is always returned.
+ * - `optional`: whether an assigned task is optional for the target user (a task
+ *   with no `optional_if` condition is required, i.e. `optional: false`).
  */
 export const AdministrationTaskSchema = z.object({
   taskId: z.string().uuid(),
@@ -81,6 +94,8 @@ export const AdministrationTaskSchema = z.object({
   variantName: z.string().nullable(),
   orderIndex: z.number().int(),
   progress: AdministrationTaskProgressSchema.optional(),
+  optional: z.boolean().optional(),
+  assigned: z.boolean().optional(),
 });
 
 export type AdministrationTask = z.infer<typeof AdministrationTaskSchema>;
