@@ -33,9 +33,10 @@ const email = faker.internet.email({ firstName, provider: 'roar-auth.com' });
 const testingPinia = createTestingPinia();
 const authStore = useAuthStore();
 
-authStore.roarfirekit = {
-  restConfig: vi.fn().mockReturnValue(true),
-};
+// The component gates `init()` on `authStore.isAuthReady` (onMounted) and on
+// `state.accessToken` (the `$subscribe` callback). A truthy access token makes
+// the `isAuthReady` getter return true so `init()` runs and `initialized` flips.
+authStore.accessToken = 'mock-access-token';
 
 const defaultUserData = {
   name: {

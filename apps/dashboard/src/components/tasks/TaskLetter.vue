@@ -32,7 +32,7 @@ const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+const { isFirekitInit } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -45,7 +45,7 @@ const handlePopState = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
 const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
@@ -69,7 +69,7 @@ onMounted(async () => {
     console.error('An error occurred while importing the game module.', error);
   }
 
-  if (roarfirekit.value.restConfig?.()) init();
+  if (authStore.isAuthReady) init();
 });
 
 // Declare interval at component scope

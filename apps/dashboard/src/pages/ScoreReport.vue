@@ -400,7 +400,6 @@
 
 <script setup>
 import { computed, ref, onMounted, toValue, watch } from 'vue';
-import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -477,7 +476,6 @@ let TaskReport, DistributionChartOverview;
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -2052,13 +2050,13 @@ const refresh = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) refresh();
+  if (state.accessToken) refresh();
 });
 
 onMounted(async () => {
   TaskReport = (await import('@/components/reports/tasks/TaskReport.vue')).default;
   DistributionChartOverview = (await import('@/components/reports/DistributionChartOverview.vue')).default;
-  if (roarfirekit.value.restConfig?.()) refresh();
+  if (authStore.isAuthReady) refresh();
 });
 </script>
 

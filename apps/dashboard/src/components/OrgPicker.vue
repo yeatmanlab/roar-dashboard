@@ -89,7 +89,6 @@
 
 <script setup>
 import { reactive, ref, computed, onMounted, watch } from 'vue';
-import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
@@ -112,7 +111,6 @@ import useUserType from '@/composables/useUserType';
 
 const initialized = ref(false);
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
@@ -289,11 +287,11 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
 onMounted(() => {
-  if (roarfirekit.value.restConfig?.()) init();
+  if (authStore.isAuthReady) init();
 });
 
 watch(allDistricts, (newValue) => {
