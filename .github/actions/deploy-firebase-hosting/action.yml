@@ -44,10 +44,19 @@ runs:
   using: composite
   steps:
     # Authenticate with GCP using Workload Identity Federation.
-    # token_format: "access_token" is critical — it requests a pre-obtained OAuth
-    # access token that we can pass directly to the Firebase CLI, bypassing the
-    # gaxios STS exchange that fails under Node 22+ (undici@6.x "Premature close"
-    # when exchanging WIF credentials with sts.googleapis.com).
+    #
+    # We set create_credentials_file: false and export_environment_variables: false to
+    # prevent google-github-actions/auth from writing a WIF credentials JSON file and
+    # exporting GOOGLE_APPLICATION_CREDENTIALS. If those are present, google-auth-library
+    # (bundled inside firebase-tools) reads GOOGLE_APPLICATION_CREDENTIALS first during
+    # Application Default Credential resolution and attempts an STS token exchange via
+    # gaxios — which fails on Node 22+ with "Premature close" due to stricter keep-alive
+    # behaviour in undici@6.x.
+    #
+    # token_format: "access_token" is required to obtain a pre-exchanged OAuth access
+    # token. We pass this token directly to the Firebase CLI via GOOGLE_OAUTH_ACCESS_TOKEN
+    # in each deploy step's env block. The CLI checks that env var before falling back
+    # to Application Default Credentials, so no STS exchange is ever attempted.
     - name: Authenticate with GCP
       id: gcp-auth
       uses: google-github-actions/auth@v2
@@ -55,7 +64,8 @@ runs:
         project_id: ${{ inputs.firebase-project-id }}
         workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
         service_account: ${{ inputs.gcp-service-account-id }}
-        create_credentials_file: true
+        create_credentials_file: false
+        export_environment_variables: false
         token_format: "access_token"
         access_token_scopes: "email,openid,https://www.googleapis.com/auth/cloudplatformprojects.readonly,https://www.googleapis.com/auth/firebase,https://www.googleapis.com/auth/cloud-platform"
 
@@ -94,9 +104,13 @@ runs:
     # Credentials. By setting GOOGLE_OAUTH_ACCESS_TOKEN in each deploy step's env block (using
     # the pre-obtained access token from google-github-actions/auth), the CLI uses that token
     # directly and never triggers the STS exchange.
+    #
+    # Pinned to 15.21.0 — firebase-tools 15.22.x introduced a WIF auth regression that causes
+    # the CLI to attempt its own STS exchange even when GOOGLE_OAUTH_ACCESS_TOKEN is set. Remove
+    # the pin once a firebase-tools release fixes this regression.
     - name: Install firebase-tools
       shell: bash
-      run: npm install -g firebase-tools@latest
+      run: npm install -g firebase-tools@15.21.0
 
     # Deploy application to ephemeral preview channel.
     # Note: Due to a bug in the FirebaseExtended/action-hosting-deploy action, it is not possible to use a conditional
@@ -124,12 +138,21 @@ runs:
 
         # Deploy with --json so we can reliably parse the channel URL from structured output.
         # The JSON result shape is: { "status": "success", "result": { "<site>": { "url": "https://..." } } }
+        # Use set +e so we can capture exit code and always print the output before failing.
+        set +e
         RESULT=$(firebase hosting:channel:deploy "$CHANNEL_ID" \
           --project "$PROJECT_ID" \
           --expires "$EXPIRES" \
           $ONLY_FLAG \
-          --json)
+          --json 2>&1)
+        FIREBASE_EXIT=$?
+        set -e
+
         echo "$RESULT"
+
+        if [ "$FIREBASE_EXIT" -ne 0 ]; then
+          exit "$FIREBASE_EXIT"
+        fi
 
         CHANNEL_URL=$(echo "$RESULT" | jq -r 'first(.result[]?.url) // ""' 2>/dev/null || echo "")
         echo "deployment-url=$CHANNEL_URL" >> $GITHUB_OUTPUT
