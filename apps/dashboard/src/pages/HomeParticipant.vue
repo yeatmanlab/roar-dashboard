@@ -195,17 +195,22 @@ const {
   enabled: initialized,
 });
 
-// Resolve the student's ROAR (Postgres) user ID from the backend `/me` endpoint,
-// the same way the Task players do. This is the identity the new
-// `GET /users/:userId/administrations` endpoint expects — NOT the Firebase
+// Resolve the participant's ROAR (Postgres) user ID — the identity the
+// `GET /users/:userId/administrations` endpoint expects, NOT the Firebase
 // `roarUid`.
 //
-// NOTE: In proxy-launch mode (`props.launchId` set), `me.id` is the launching
-// user's ID, not the participant's. Resolving the participant's UUID from the
-// launch record is not yet implemented (mirrors the documented limitation in
-// the Task players). The standard student homepage path is unaffected.
+// In proxy-launch mode (`props.launchId` set — e.g. a parent launching a
+// child from StudentCardSimple), `launchId` IS the participant's ROAR user
+// UUID, so it is the participant identity. On the self path (`launchId`
+// null) we fall back to the launching user's own `/me` ID. This drives the
+// per-user administrations query, the consent-gate agreements query, and
+// consent recording below.
+//
+// Reading another user's administrations and agreements relies on the backend
+// guardian-read authorization (`can_read_child`); without it the parent-scoped
+// reads return 403.
 const { data: me } = useMeQuery({ enabled: initialized });
-const userId = computed(() => me.value?.id);
+const userId = computed(() => props.launchId ?? me.value?.id);
 
 const {
   isLoading: isLoadingAssignments,
