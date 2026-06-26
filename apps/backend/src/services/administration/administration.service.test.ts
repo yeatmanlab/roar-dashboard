@@ -3107,6 +3107,48 @@ describe('AdministrationService', () => {
       expect(result.totalItems).toBe(2);
     });
 
+    it('returns the target child administrations for an authorized guardian (can_read_child), bypassing the requester intersection', async () => {
+      // Proxy-launch: a parent with `can_read_child` on the child's family lists the
+      // child's administrations. The parent holds no administration-level access of
+      // their own, so the admin/teacher intersection would be empty — the guardian
+      // path returns the child's full accessible set instead.
+      const child = UserFactory.build({ id: 'child-1', rosteringEnded: null });
+      mockUserRepository.getById.mockResolvedValue(child);
+
+      const childAdmins = AdministrationFactory.buildList(2);
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(
+        childAdmins.map((a) => `administration:${a.id}`),
+      );
+      mockUserRepository.getUserEntityMemberships.mockResolvedValue([{ entityType: 'family', entityId: 'family-1' }]);
+      mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
+      mockAdministrationRepository.getByIds.mockResolvedValue({ items: childAdmins, totalItems: 2 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministrations({ userId: 'parent-1', isSuperAdmin: false }, 'child-1', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      });
+
+      // Guardianship is checked via `can_read_child` on the child's family.
+      expect(mockAuthorizationService.hasAnyPermission).toHaveBeenCalledWith('parent-1', 'can_read_child', [
+        'family:family-1',
+      ]);
+      // Only the target's accessible-objects lookup runs — no requester intersection.
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledTimes(1);
+      expect(mockAdministrationRepository.getByIds).toHaveBeenCalledWith(
+        childAdmins.map((a) => a.id),
+        expect.objectContaining({ page: 1, perPage: 25 }),
+      );
+      expect(result.items).toHaveLength(2);
+    });
+
     it('throws 404 when a rostering-ended user requests their own administrations (#1742 defense-in-depth)', async () => {
       // The auth guard (#1735) blocks rostering-ended users end-to-end, but
       // the service-layer check runs BEFORE the `requesterUserId === userId`
@@ -5295,6 +5337,47 @@ describe('AdministrationService', () => {
       const unsignedItem = result.items.find((i) => i.agreement.id === 'agreement-unsigned');
       expect(signedItem!.signed).toBe(true);
       expect(unsignedItem!.signed).toBe(false);
+    });
+
+    it('allows an authorized guardian (can_read_child) to read the target child agreements', async () => {
+      // Proxy-launch consent gate: a parent with `can_read_child` on the child's
+      // family reads the child's per-administration agreements. The guardian has no
+      // administration-level `can_read`, so the guardian path must be accepted in
+      // place of the admin/teacher fallback.
+      const child = UserFactory.build({ id: 'child-1', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      mockUserRepository.getById.mockResolvedValue(child);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+      mockUserRepository.getUserEntityMemberships.mockResolvedValue([{ entityType: 'family', entityId: 'family-1' }]);
+      mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
+      mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+        items: [buildAgreementItem('agreement-1')],
+        totalItems: 1,
+      });
+      mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set());
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      const result = await service.listUserAdministrationAgreements(
+        { userId: 'parent-1', isSuperAdmin: false },
+        'child-1',
+        'admin-123',
+        defaultOptions,
+      );
+
+      // Guardianship is checked via `can_read_child` on the child's family.
+      expect(mockAuthorizationService.hasAnyPermission).toHaveBeenCalledWith('parent-1', 'can_read_child', [
+        'family:family-1',
+      ]);
+      expect(result.totalItems).toBe(1);
     });
 
     it('allows a self-read (requester === target) with a single requirePermission call', async () => {
