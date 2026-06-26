@@ -54,6 +54,38 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/**
+ * Load environment variables from the backend's dotenv file.
+ *
+ * The SDK integration tests need database URLs and emulator hosts that live
+ * in the backend's `.env.test` (CI) or `.env` (local dev). Rather than
+ * duplicating these in the CI workflow YAML, we read them from the same
+ * source the backend uses.
+ */
+function loadBackendEnv(): void {
+  const backendDir = path.resolve(__dirname, '../../apps/backend');
+  const candidates = [
+    process.env.DOTENV_CONFIG_PATH,
+    path.join(backendDir, '.env.test'),
+    path.join(backendDir, '.env'),
+  ].filter(Boolean) as string[];
+
+  for (const envPath of candidates) {
+    if (existsSync(envPath)) {
+      const content = readFileSync(envPath, 'utf-8');
+      for (const line of content.split('\n')) {
+        const match = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
+        if (match && !process.env[match[1]!]) {
+          process.env[match[1]!] = match[2]!;
+        }
+      }
+      break;
+    }
+  }
+}
+
+loadBackendEnv();
+
 const BACKEND_PORT = process.env.BACKEND_PORT || '4001';
 const BACKEND_START_TIMEOUT = 30000; // 30 seconds
 const BACKEND_BUILD_TIMEOUT = 60000; // 60 seconds for build
@@ -227,12 +259,6 @@ async function waitForBackendHealth(port: string, maxAttempts = 30): Promise<voi
  * @returns Promise that resolves when the test server is ready
  */
 export default async function globalSetup() {
-  // Skip backend startup when integration tests are not requested
-  if (process.env.RUN_INTEGRATION_TESTS !== 'true') {
-    console.log('[SDK Integration Tests] Skipping global setup (RUN_INTEGRATION_TESTS not set)');
-    return;
-  }
-
   // Validate required environment variables
   const required = ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'] as const;
   for (const key of required) {

@@ -22,12 +22,10 @@
  *   - Users with different roles and enrollments
  *
  * RUNNING INTEGRATION TESTS:
- * - These tests are skipped by default locally (no RUN_INTEGRATION_TESTS env var)
- * - They require external services (PostgreSQL, OpenFGA) to be running
- * - In CI, they run automatically with RUN_INTEGRATION_TESTS=true
- * - To run locally: RUN_INTEGRATION_TESTS=true npm run test -w packages/assessment-sdk
- * - Or: RUN_INTEGRATION_TESTS=true npm run test:integration -w packages/assessment-sdk
- *   (the test:integration script requires the env var to register the integration project)
+ * - Run via `npm run test:integration -w packages/assessment-sdk`
+ * - They require external services (PostgreSQL, OpenFGA, Firebase Auth emulator)
+ * - In CI, they run as part of `npm run test` (the integration vitest project
+ *   handles global setup/teardown automatically)
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -41,16 +39,11 @@ import {
 import type { RoarApi } from './roar-api';
 import { PA_SCORE_NAMES, PA_SCORE_DOMAINS } from '@roar-platform/assessment-schema/roar-pa';
 
-describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration)', () => {
+describe('Assessment SDK (integration)', () => {
   let api: RoarApi;
   let taskVariantId: string;
 
   beforeAll(async () => {
-    // Guard: Vitest still runs beforeAll hooks for skipped suites, so bail early
-    if (!process.env.RUN_INTEGRATION_TESTS) {
-      return;
-    }
-
     const sdk = initTestSdk();
     api = sdk.api;
 
