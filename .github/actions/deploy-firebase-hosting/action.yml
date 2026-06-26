@@ -58,10 +58,15 @@ runs:
     # Retrieve GCP credentials
     # Note: This is currently necessary as firebaseextended/action-hosting-deploy does not support currently support
     # automatic GCP authentication using google-github-actions/auth action.
+    # Note: GOOGLE_OAUTH_ACCESS_TOKEN is exported so firebase-tools uses the pre-obtained OAuth2 access token directly,
+    # bypassing the WIF credential exchange via sts.googleapis.com. That exchange fails under Node 24 (the GitHub
+    # Actions default as of June 16, 2026) due to a gaxios/TLS incompatibility. The token is already masked by
+    # google-github-actions/auth via core.setSecret() and will not appear in logs.
     - name: Retrieve GCP credentials
       shell: bash
       run: |
         echo "GCP_HOSTING_SERVICE_ACCOUNT_KEY=$(cat "${{ steps.gcp-auth.outputs.credentials_file_path }}" | tr -d '\n')" >> $GITHUB_ENV
+        echo "GOOGLE_OAUTH_ACCESS_TOKEN=${{ steps.gcp-auth.outputs.access_token }}" >> $GITHUB_ENV
 
     # Prepare deployment
     # Note: As the project relies on two simultaneous Firebase projects and the configs are stored in the /firebase
@@ -99,8 +104,6 @@ runs:
         target: "${{ inputs.firebase-hosting-site }}"
         expires: "${{ inputs.expires }}"
         entryPoint: ./app
-        # TODO: Unpin once firebase-tools 15.22.x WIF auth regression is resolved
-        firebaseToolsVersion: "15.21.0"
 
     - name: Deploy application
       if: ${{ inputs.firebase-channel == 'default' }}
@@ -111,8 +114,6 @@ runs:
         channelId: "live"
         target: "${{ inputs.firebase-hosting-site }}"
         entryPoint: ./app
-        # TODO: Unpin once firebase-tools 15.22.x WIF auth regression is resolved
-        firebaseToolsVersion: "15.21.0"
 
     # Output deployment URL
     - name: Output deployment URL
