@@ -85,6 +85,15 @@ runs:
         fi
         cd app && pwd && ls -la
 
+    # Temporary workaround: pin Node.js 20 so firebase-tools uses Node 20 when
+    # calling sts.googleapis.com. Node 24 (default since June 16 2026) triggers
+    # a "Premature close" error in gaxios inside google-auth-library. Removing
+    # this step once google-auth-library ships a Node 24–compatible STS client.
+    - name: Set up Node.js 20 for firebase-tools
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
     # Deploy application
     # Note: Due to a bug in the FirebaseExtended/action-hosting-deploy action, it is not possible to use a conditional
     # expression on the channelId parameter. As a workaround, we use two separate steps to deploy the application.
