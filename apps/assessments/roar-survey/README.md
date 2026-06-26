@@ -1,6 +1,6 @@
-# ROAR Survey App 
+# ROAR Survey App
 
-Rapid Online Assessment of Reading (ROAR) Survey App for students. To load a specific survey, a survey param is required. 
+Rapid Online Assessment of Reading (ROAR) Survey App for students. To load a specific survey, a survey param is required.
 
 ## Links
 

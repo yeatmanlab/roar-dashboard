@@ -1,65 +1,72 @@
 import { createApp } from 'vue';
 import './styles/standalone.css';
 import App from './App.vue';
-
-import { RoarAppkit, initializeFirebaseProject } from '@bdelab/roar-firekit';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import { roarConfig } from '../serve/firebaseConfig';
+import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
+import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
+import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import { getBucketUrl } from './constants/bucketBaseUrl';
-
-export const surveyModelRef = { value: null };
-export let firekit = null;
+import 'regenerator-runtime/runtime';
 
 async function initAndMountApp() {
   const urlParams = new URLSearchParams(window.location.search);
   const surveyFile = urlParams.get('survey') ?? 'survey';
   const taskIdParam = urlParams.get('taskId');
-  const assessmentPid = urlParams.get('assessmentPid');
+  const taskVersion = urlParams.get('taskVersion') ?? '1.0';
+  const taskId = taskIdParam ? `roar-survey-${taskIdParam}` : 'roar-survey';
 
-  if (surveyFile) {
-    document.title = `ROAR - Survey ${surveyFile}`;
+  if (surveyFile) document.title = `ROAR - Survey ${surveyFile}`;
+
+  let surveyJson = null;
+  try {
+    const response = await fetch(`${getBucketUrl()}${surveyFile}.json`);
+    if (!response.ok) throw new Error(`Survey fetch failed: ${response.statusText}`);
+    surveyJson = await response.json();
+  } catch (err) {
+    console.error('Error fetching survey:', err);
   }
 
-  const bucketUrl = getBucketUrl();
-  const surveyUrl = `${bucketUrl}${surveyFile}.json`;
+  const firebaseConfig = await getFirebaseConfig();
+  const firebaseApp = initializeApp(firebaseConfig);
+  const auth = getAuth(firebaseApp);
+
+  if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+    connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, {
+      disableWarnings: true,
+    });
+  }
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const authCallbacks = { getToken: () => user.getIdToken() };
+
+        const { participantId, variantId } = await bootstrapAnonymousSession(
+          { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
+          { taskId },
+        );
+
+        initFirekitCompat(
+          { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks, participant: { participantId } },
+          { variantId, taskVersion, isAnonymous: true },
+        );
+
+        createApp(App, { surveyData: surveyJson }).mount('#app');
+      } catch (err) {
+        console.error('Error initializing survey app:', err);
+        createApp(App, { surveyData: surveyJson }).mount('#app');
+      }
+    }
+  });
 
   try {
-    const response = await fetch(surveyUrl);
-    if (!response.ok) throw new Error(`Survey fetch failed: ${response.statusText}`);
-    const surveyJson = await response.json();
-    surveyModelRef.value = surveyJson;
-
-    const appKit = await initializeFirebaseProject(roarConfig.firebaseConfig, 'assessmentApp', 'none');
-    const taskId = taskIdParam ? `roar-survey-${taskIdParam}` : 'roar-survey';
-
-    await signInAnonymously(appKit.auth);
-
-    await new Promise((resolve) => {
-      onAuthStateChanged(appKit.auth, (user) => {
-        if (user) {
-          firekit = new RoarAppkit({
-            firebaseProject: appKit,
-            taskInfo: {
-              taskId,
-              variantParams: { survey: surveyFile },
-            },
-            userInfo: {
-              assessmentPid,
-              assessmentUid: user.uid,
-              userMetadata: { districtId: '' },
-            },
-          });
-
-          firekit.startRun();
-          resolve();
-        }
-      });
-    });
-    createApp(App, { surveyData: surveyModelRef.value }).mount('#app');
+    await signInAnonymously(auth);
   } catch (err) {
-    console.error('Error initializing survey app:', err);
-    surveyModelRef.value = null;
-    createApp(App).mount('#app');
+    console.error('Failed to sign in anonymously:', err);
+    // Mount the app without survey data so the user sees an error state
+    // rather than a blank page.
+    createApp(App, { surveyData: null }).mount('#app');
   }
 }
 

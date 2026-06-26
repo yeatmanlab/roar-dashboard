@@ -17,3 +17,6 @@ apps/assessments/roar-letter/ @yeatmanlab/roar-maintainers @AnyaWMa
 
 # roar-multichoice assessment
 apps/assessments/roar-multichoice/ @yeatmanlab/roar-maintainers @tonyamurray
+
+# roar-survey assessment
+apps/assessments/roar-survey/ @yeatmanlab/roar-maintainers

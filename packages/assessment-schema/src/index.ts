@@ -8,4 +8,5 @@ export * as swr from './roar-swr/index.js';
 export * as sre from './roar-sre/index.js';
 export * as letter from './roar-letter/index.js';
 export * as multichoice from './roar-multichoice/index.js';
+export * as survey from './roar-survey/index.js';
 export * from './firebase-emulator.js';
