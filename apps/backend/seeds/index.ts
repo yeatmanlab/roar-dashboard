@@ -130,7 +130,20 @@ function writeCypressFixtureFile(seededUsers?: SeededEmulatorUser[]): void {
     }),
   );
 
-  fs.writeFileSync(CYPRESS_FIXTURE_FILE, JSON.stringify({ users }, null, 2));
+  // Expose a ready-made progress-report scenario so e2e specs don't have to
+  // rediscover seeded IDs through the API.
+  const progress = {
+    schoolA: {
+      administrationId: DEV_IDS.administrationSchoolA,
+      scopeType: 'school' as const,
+      scopeId: DEV_IDS.schoolA,
+      adminUserKey: 'schoolAAdmin' as const,
+      completedUserId: DEV_IDS.schoolAStudent,
+      startedUserId: DEV_IDS.classAStudent,
+    },
+  };
+
+  fs.writeFileSync(CYPRESS_FIXTURE_FILE, JSON.stringify({ users, progress }, null, 2));
   logger.info(
     { fixtureFile: CYPRESS_FIXTURE_FILE, userCount: DEV_FIXTURE_USER_KEYS.length },
     'Cypress fixture written',

@@ -79,14 +79,14 @@
         <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
         <Transition name="fade" mode="out-in">
           <GameTabs
-            v-if="showOptionalAssessments && userData"
+            v-if="canShowAssessments && showOptionalAssessments && userData"
             :games="optionalAssessments"
             :sequential="isSequential"
             :user-data="userData"
             :launch-id="launchId"
           />
           <GameTabs
-            v-else-if="requiredAssessments && userData"
+            v-else-if="canShowAssessments && requiredAssessments && userData"
             :games="requiredAssessments"
             :sequential="isSequential"
             :user-data="userData"
@@ -106,40 +106,44 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, watchEffect, computed } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import _filter from 'lodash/filter';
-import _get from 'lodash/get';
-import _find from 'lodash/find';
-import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { storeToRefs } from 'pinia';
+import { useQueryClient } from '@tanstack/vue-query';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
 import PvSelect from 'primevue/select';
 import PvToggleSwitch from 'primevue/toggleswitch';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import useMeQuery from '@/composables/queries/useMeQuery';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
-import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
+import useUserAdministrationsQuery from '@/composables/queries/useUserAdministrationsQuery';
+import useUserAdministrationAgreementsQuery from '@/composables/queries/useUserAdministrationAgreementsQuery';
+import useAgreementVersionContentQuery from '@/composables/queries/useAgreementVersionContentQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
-import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
+import useRecordUserAgreementMutation from '@/composables/mutations/useRecordUserAgreementMutation';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import { AppMessageState, MESSAGE_STATE_TYPES } from '@/components/AppMessageState';
 import AppSpinner from '@/components/AppSpinner.vue';
-import useUserType from '@/composables/useUserType';
-import { highestAdminOrgIntersection } from '@/helpers/query/assignments';
-import { checkConsentRenewalDate } from '@/helpers/checkConsentRenewalDate';
-import { findTaskByIdOrSlug, filterTasksByIdOrSlug } from '@/helpers/taskIdentifiers';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { mapAdministrationTasksToGames } from '@/helpers/participantGames';
+import { resolveConsentRequirement, CONSENT_REQUIREMENT_STATUS } from '@/helpers/resolveConsentRequirement';
+import { USER_ADMINISTRATION_AGREEMENTS_QUERY_KEY } from '@/constants/queryKeys';
 
 const showConsent = ref(false);
-const consentVersion = ref('');
 const confirmText = ref('');
 const consentType = ref('');
-const consentParams = ref({});
+
+// The agreement + current version the gate is currently asking the student to
+// sign. Both must refer to the SAME version the gate checked: the content query
+// fetches this version's text, and the record mutation records acceptance of
+// this exact version.
+const consentAgreementId = ref(null);
+const consentVersionId = ref(null);
 
 const props = defineProps({
   launchId: {
@@ -149,7 +153,8 @@ const props = defineProps({
   },
 });
 
-const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
+const queryClient = useQueryClient();
+const { mutateAsync: recordUserAgreement } = useRecordUserAgreementMutation();
 const { mutate: signOut } = useSignOutMutation();
 
 let unsubscribe;
@@ -190,74 +195,84 @@ const {
   enabled: initialized,
 });
 
-const adminOrgIntersection = computed(() => {
-  return highestAdminOrgIntersection(userData.value, authStore?.userClaims?.claims?.adminOrgs);
-});
-const orgType = ref(null);
-const orgIds = ref(null);
-
-watch(
-  adminOrgIntersection,
-  (newOrgIntersection) => {
-    orgType.value = newOrgIntersection?.orgType;
-    orgIds.value = newOrgIntersection?.orgIds;
-  },
-  { immediate: true },
-);
-
-const isOrgIntersectionReady = ref(false);
-
-const userAssignmentsQueryEnabled = computed(() => {
-  return isOrgIntersectionReady.value && initialized.value;
-});
-
-const { data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-const { isSuperAdmin } = useUserType(userClaims);
-
-watchEffect(() => {
-  // If user is superadmin, or is a non-externally launched participant we won't need to compute the orgIntersection
-  if (isSuperAdmin.value || !props.launchId) {
-    isOrgIntersectionReady.value = true;
-  } else {
-    isOrgIntersectionReady.value = !!orgType.value && !!orgIds.value;
-  }
-});
+// Resolve the student's ROAR (Postgres) user ID from the backend `/me` endpoint,
+// the same way the Task players do. This is the identity the new
+// `GET /users/:userId/administrations` endpoint expects — NOT the Firebase
+// `roarUid`.
+//
+// NOTE: In proxy-launch mode (`props.launchId` set), `me.id` is the launching
+// user's ID, not the participant's. Resolving the participant's UUID from the
+// launch record is not yet implemented (mirrors the documented limitation in
+// the Task players). The standard student homepage path is unaffected.
+const { data: me } = useMeQuery({ enabled: initialized });
+const userId = computed(() => me.value?.id);
 
 const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
   data: userAssignments,
-} = useUserAssignmentsQuery(
-  {
-    enabled: userAssignmentsQueryEnabled,
-  },
-  props.launchId,
-  !isSuperAdmin.value ? orgType : null,
-  !isSuperAdmin.value ? orgIds : null,
-);
+} = useUserAdministrationsQuery(userId, {
+  enabled: initialized,
+});
 
 const sortedUserAdministrations = computed(() => {
   return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
-const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
-const tasksQueryEnabled = computed(() => !isLoadingAssignments.value && !_isEmpty(taskIds.value));
+// The selected administration's required consent/assent agreements, annotated
+// with this student's server-computed signed status. This is the signal that
+// drives the consent gate fully off the backend: which document the
+// administration requires (if any) and whether the student has signed the
+// current version both come from
+// `GET /users/:userId/administrations/:administrationId/agreements`. There is no
+// firekit `getLegalDoc`, no `userData.legal` read, no agreement-name→Firestore
+// mapping, and no client-side renewal-date logic.
+const selectedAdminId = computed(() => selectedAdmin.value?.id);
 
+const { data: administrationAgreements, isSuccess: isAgreementsSuccess } = useUserAdministrationAgreementsQuery(
+  userId,
+  selectedAdminId,
+  {
+    enabled: initialized,
+  },
+);
+
+// The agreements requirement is "resolved" only when the query has succeeded for
+// the currently selected administration. While it is loading or errored we must
+// treat consent as UNRESOLVED and block the student rather than proceeding as if
+// no consent were required. `isSuccess` already excludes the error state (the two
+// are mutually exclusive in TanStack Query), so checking it alone is sufficient.
+const isAgreementsResolved = computed(() => isAgreementsSuccess.value);
+
+// The consent/assent document text for the gate. Fetched reactively for the
+// agreement + current version the gate selected (`consentAgreementId` /
+// `consentVersionId`), so the modal renders the exact version's content that the
+// student will be recorded as accepting. The query is internally gated on both
+// IDs being present, so it stays idle until `checkConsent()` selects an
+// agreement to show.
+const { data: consentContent, isError: isConsentContentError } = useAgreementVersionContentQuery(
+  consentAgreementId,
+  consentVersionId,
+);
+
+// Tracks whether the consent gate has been evaluated to a definitive outcome
+// (either "not required" or "required + decision made") for the current
+// selection. It starts false and is only set true once `checkConsent()` reaches
+// a resolved branch, so the game list stays gated until the consent requirement
+// is known. Reset to false whenever the selected administration changes.
+const isConsentResolved = ref(false);
+
+// The task catalog supplies presentational fields (name, description, image,
+// tutorial video, external/URL config) keyed by the task's UUID `id` or `slug`.
+// The administration tasks carry the per-student `optional`/`assigned`/`progress`
+// state, so we only need the catalog for display data.
 const {
   isLoading: isLoadingTasks,
   isFetching: isFetchingTasks,
   data: tasks,
 } = useTasksQuery({
-  enabled: tasksQueryEnabled,
+  enabled: initialized,
 });
-
-// The tasks contract has no `?ids=` filter, so filter the full catalog
-// client-side. Legacy `assessment.taskId` values correspond to the new
-// contract's `slug`, so match on either `id` (UUID) or `slug`.
-const userTasks = computed(() => filterTasksByIdOrSlug(tasks.value, taskIds.value));
 
 const isLoading = computed(() => {
   return isLoadingUserData.value || isLoadingAssignments.value || isLoadingTasks.value;
@@ -272,14 +287,54 @@ const hasAssignments = computed(() => {
   return assessments.value.length > 0;
 });
 
-async function checkConsent() {
-  const dob = new Date(userData.value?.studentData?.dob);
-  const grade = userData.value?.studentData?.grade;
-  const currentDate = new Date();
-  const age = currentDate.getFullYear() - dob.getFullYear();
-  const legal = selectedAdmin.value?.legal;
+/**
+ * Evaluate, and apply, the consent/assent gate for the selected administration.
+ *
+ * The requirement AND the student's signed status both come from the backend
+ * (`useUserAdministrationAgreementsQuery`): each required agreement carries a
+ * server-computed `signed` flag that already encodes "signed the current
+ * version" (annual re-consent / version bumps are handled server-side). The gate
+ * selects the age-appropriate agreement (`consent` vs `assent`), ignores `tos`,
+ * and shows the modal when the chosen agreement is unsigned.
+ *
+ * When the gate must show, it points the version-content query at the SAME
+ * agreement + current version it checked (`consentAgreementId` /
+ * `consentVersionId`); the content watcher opens the modal once the text loads.
+ * Acceptance is recorded against that same version (see `updateConsent`).
+ *
+ * Compliance behavior:
+ * - While the agreements query is unresolved (loading/errored), consent is
+ *   UNRESOLVED: `isConsentResolved` stays false so the game list remains gated.
+ *   We never fall through to "no consent needed" with an unknown requirement.
+ * - The gate SHOWS whenever the student has not signed the current version and
+ *   is old enough — regardless of the now-absent amount/expectedTime fields.
+ */
+function checkConsent() {
+  // Close the gate while consent is being (re-)checked so the game list is never
+  // visible mid-evaluation. Clear any pending content fetch so a stale
+  // agreement's text can't open the modal. Re-opened only on a resolved branch.
+  isConsentResolved.value = false;
+  consentAgreementId.value = null;
+  consentVersionId.value = null;
 
-  if (!legal?.consent) {
+  // Until the agreements requirement resolves, leave the student gated.
+  if (!isAgreementsResolved.value) {
+    return;
+  }
+
+  const decision = resolveConsentRequirement({
+    agreements: administrationAgreements.value,
+    agreementsResolved: isAgreementsResolved.value,
+    userData: userData.value,
+  });
+
+  // Requirement still unknown → keep the student gated rather than skipping.
+  if (decision.status === CONSENT_REQUIREMENT_STATUS.UNRESOLVED) {
+    isConsentResolved.value = false;
+    return;
+  }
+
+  if (decision.status === CONSENT_REQUIREMENT_STATUS.NOT_REQUIRED) {
     // Always show consent form for this test student when running Cypress tests
     // @TODO: Remove this once we update the E2E tests to handle the consent form without persisting state. This would
     // improve the test relability as enforcing the below condition defeats parts of the test purpose.
@@ -288,107 +343,91 @@ async function checkConsent() {
       confirmText.value = 'This is a test student. Please do not accept this form.';
       showConsent.value = true;
     }
+    isConsentResolved.value = true;
     return;
   }
 
-  const isAdult = age >= 18;
-  const isSeniorGrade = grade >= 12;
-  const isOlder = isAdult || isSeniorGrade;
+  // decision.status === REQUIRED
+  consentType.value = decision.consentType;
 
-  let docTypeKey = isOlder ? 'consent' : 'assent';
-
-  if (typeof legal[docTypeKey] === 'string' && legal[docTypeKey].toLowerCase() === 'no consent') {
+  if (decision.shouldShow) {
+    // Stay gated: point the content query at the agreement + current version the
+    // gate checked, but do NOT mark consent resolved here. The content watcher
+    // opens the modal AND marks consent resolved together once the text loads.
+    // Resolving here would briefly expose the game list before the modal renders
+    // (a fail-open window for an unsigned required consent).
+    isConsentResolved.value = false;
+    consentAgreementId.value = decision.agreementId;
+    consentVersionId.value = decision.versionId;
     return;
   }
 
-  let docType = legal[docTypeKey][0]?.type.toLowerCase();
-  let docAmount = legal?.amount;
-  let docExpectedTime = legal?.expectedTime;
-
-  consentType.value = docType;
-
-  const consentStatus = userData.value?.legal?.[consentType.value];
-  const consentDoc = await authStore.getLegalDoc(docType);
-  consentVersion.value = consentDoc.version;
-
-  if (consentStatus?.[consentDoc.version]) {
-    const hasUpdatedConsent = checkConsentRenewalDate(consentStatus?.[consentDoc.version]);
-    // Show the consent form if the latest document was signed before August 1st.
-    if (!hasUpdatedConsent) {
-      if (docAmount !== '' || docExpectedTime !== '') {
-        confirmText.value = consentDoc.text;
-        showConsent.value = true;
-        return;
-      }
-    }
-  } else if (age > 7 || grade > 1) {
-    confirmText.value = consentDoc.text;
-    showConsent.value = true;
-    return;
-  }
+  // Required but already signed → resolved, no modal.
+  isConsentResolved.value = true;
 }
+
+// Open the consent modal once the selected agreement's version content has
+// loaded. Kept reactive (rather than awaited inline) so the modal text always
+// reflects the agreement currently selected by `checkConsent()`. If the content
+// query errors, the gate stays closed and the game list remains withheld
+// (`isConsentResolved` is reset below) — failing safe rather than showing an
+// empty modal or silently letting the student through.
+watch([consentContent, isConsentContentError, consentAgreementId], ([content, hasError, agreementId]) => {
+  if (!agreementId) return;
+
+  if (hasError) {
+    // Could not fetch the document text → block. Re-gate and keep the modal shut
+    // rather than presenting the student with an un-signable consent form.
+    isConsentResolved.value = false;
+    showConsent.value = false;
+    return;
+  }
+
+  if (content?.content) {
+    confirmText.value = content.content;
+    showConsent.value = true;
+    // Now safe to mark resolved: the hard modal is up, so the game list stays
+    // withheld (`canShowAssessments` requires `!showConsent`). This is the only
+    // place the shouldShow path resolves — never before the modal renders.
+    isConsentResolved.value = true;
+  }
+});
 
 async function updateConsent() {
-  consentParams.value = {
-    amount: selectedAdmin.value?.legal.amount,
-    expectedTime: selectedAdmin.value?.legal.expectedTime,
-    dateSigned: new Date(),
-  };
+  // Record acceptance of the EXACT version the gate checked, then invalidate the
+  // agreements query so the server re-computes `signed` (now true) and the next
+  // `checkConsent()` run closes the modal. The gate only clears after a real
+  // signature is recorded.
+  if (!userId.value || !consentAgreementId.value || !consentVersionId.value) return;
 
-  await updateConsentStatus({
-    consentType,
-    consentVersion,
-    consentParams,
+  await recordUserAgreement({
+    userId: userId.value,
+    agreementVersionId: consentVersionId.value,
   });
+
+  await queryClient.invalidateQueries({ queryKey: [USER_ADMINISTRATION_AGREEMENTS_QUERY_KEY] });
 }
 
-const toggleShowOptionalAssessments = async () => {
-  await checkConsent();
+const toggleShowOptionalAssessments = () => {
+  // Re-gate immediately on selection change. `checkConsent()` resets the gate to
+  // "unresolved" against the (possibly stale) current agreements; the agreements
+  // watcher below re-runs it once the newly-selected administration's agreements
+  // resolve, so the student is never treated as consent-free across the switch.
+  checkConsent();
   showOptionalAssessments.value = null;
 };
 
-// Assessments to populate the game tabs.
-// Generated based on the current selected administration Id
+// Games to populate the game tabs, derived from the selected administration's tasks.
+//
+// The backend computes `optional`, `assigned`, and `progress` for the target
+// student and attaches them to each task, so the homepage maps them straight
+// through (see mapAdministrationTasksToGames) — there is no client-side
+// condition evaluation or cross-assignment merge. Tasks with `assigned: false`
+// are in the administration but not assigned to this student, so they are
+// filtered out and don't appear on the homepage.
 const assessments = computed(() => {
-  if (!isFetching.value && selectedAdmin.value && (userTasks.value ?? []).length > 0) {
-    const fetchedAssessments = _without(
-      selectedAdmin.value.assessments.map((assessment) => {
-        // Get the matching assessment from userAssignments
-        const matchingAssignment = _find(userAssignments.value, { id: selectedAdmin.value.id });
-        const matchingAssessments = matchingAssignment?.assessments ?? [];
-        const matchingAssessment = _find(matchingAssessments, { taskId: assessment.taskId });
-
-        // If no matching assessments were found, then this assessment is not assigned to the user.
-        // It is in the administration but the user does not meet the conditional requirements for assignment.
-        // Return undefined, which will be filtered out using lodash _without above.
-        if (!matchingAssessment) return undefined;
-        const optionalAssessment = _find(matchingAssessments, { taskId: assessment.taskId, optional: true });
-        const matchedTask = findTaskByIdOrSlug(userTasks.value, assessment.taskId);
-        const combinedAssessment = {
-          ...matchingAssessment,
-          ...optionalAssessment,
-          ...assessment,
-          taskData: {
-            ...matchedTask,
-            // GameTabs consumes the legacy `external` / `taskURL` / `meta` fields, which aren't first-class on
-            // the new contract shape — Firestore-era extras live inside the task's `taskConfig` jsonb. Map them
-            // out defensively: `taskConfig` is free-form JSON, so tasks whose config lacks these keys (or isn't
-            // an object) fall back to a non-external rendering instead of breaking the assessment list. The
-            // mapping can go away once GameTabs reads `taskConfig` directly.
-            external: matchedTask?.taskConfig?.external ?? false,
-            taskURL: matchedTask?.taskConfig?.taskURL,
-            meta: matchedTask?.taskConfig?.meta,
-            variantURL: assessment?.params?.variantURL,
-          },
-        };
-        return combinedAssessment;
-      }),
-      undefined,
-    );
-
-    return fetchedAssessments;
-  }
-  return [];
+  if (isFetching.value || !selectedAdmin.value) return [];
+  return mapAdministrationTasksToGames(selectedAdmin.value, tasks.value);
 });
 
 const requiredAssessments = computed(() => {
@@ -399,16 +438,16 @@ const optionalAssessments = computed(() => {
   return _filter(assessments.value, (assessment) => assessment.optional);
 });
 
-// Grab the sequential key from the current administration's data object
+// Hard gate for the assessment list: the student may only reach the games once
+// the consent requirement has resolved AND no consent/assent form is pending.
+// While the agreements query is loading/errored (`isConsentResolved` false) or
+// the consent modal is showing, the game list is withheld so the student cannot
+// start an assessment without satisfying consent. Fail toward withholding.
+const canShowAssessments = computed(() => isConsentResolved.value && !showConsent.value);
+
+// Tasks must be completed sequentially when the administration is ordered.
 const isSequential = computed(() => {
-  return (
-    _get(
-      _find(userAssignments.value, (administration) => {
-        return administration.id === selectedAdmin.value.id;
-      }),
-      'sequential',
-    ) ?? true
-  );
+  return selectedAdmin.value?.isOrdered ?? true;
 });
 
 // Total games completed from the current list of assessments
@@ -430,26 +469,18 @@ const studentInfo = computed(() => {
 
 watch(
   [userData, selectedAdmin, userAssignments],
-  async ([newUserData, isSelectedAdminChanged]) => {
+  async () => {
     // If the assignments are still loading, abort.
     if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value?.length) return;
-
-    // If the selected admin changed, ensure consent was given before proceeding.
-    if (!_isEmpty(newUserData) && isSelectedAdminChanged) {
-      showConsent.value = false;
-      await checkConsent();
-    }
-
-    const selectedAdminId = selectedAdmin.value?.id;
 
     const allAdminIds = userAssignments.value?.map((administration) => administration.id) ?? [];
 
     // Verify that we have a selected administration and it is in the list of all assigned administrations.
-    if (selectedAdminId && allAdminIds.includes(selectedAdminId)) {
+    if (selectedAdminId.value && allAdminIds.includes(selectedAdminId.value)) {
       // Ensure that the selected administration is a fresh instance of the administration. Whilst this seems redundant,
       // this is apparently relevant in the case that the game store does not flush properly.
       selectedAdmin.value = sortedUserAdministrations.value.find(
-        (administration) => administration.id === selectedAdminId,
+        (administration) => administration.id === selectedAdminId.value,
       );
 
       return;
@@ -457,6 +488,36 @@ watch(
 
     // Otherwise, choose the first sorted administration if there is no selected administration.
     selectedAdmin.value = sortedUserAdministrations.value[0];
+  },
+  { immediate: true },
+);
+
+// Consent gate evaluation. Kept separate from the administration-selection
+// bookkeeping above because the consent requirement depends on the
+// per-administration agreements query, which refetches whenever the selected
+// administration changes. Re-running here whenever the agreements (re)resolve
+// guarantees the student is never treated as consent-free during the window
+// between selecting an administration and its agreements loading.
+watch(
+  [userData, selectedAdminId, administrationAgreements, isAgreementsResolved],
+  ([newUserData]) => {
+    // Nothing to gate until we have a user and a selected administration. Abort
+    // before touching the gate so a transition to "no administration" can't leave
+    // it half-reset.
+    if (_isEmpty(newUserData) || !selectedAdminId.value) return;
+
+    // Re-derive the gate from scratch on every relevant change — an administration
+    // switch OR an agreements refetch for the SAME administration. This is what
+    // clears the modal after the student accepts: `updateConsent()` records the
+    // signature and invalidates the agreements query, which refetches
+    // `administrationAgreements` (now `signed: true`) and re-runs this watcher;
+    // `checkConsent()` then sees it signed and leaves the modal shut. `checkConsent()`
+    // resets `isConsentResolved` to false synchronously at its start and re-opens
+    // the modal only if consent is still required, so no separate per-id pre-reset
+    // is needed — and skipping the call on an unchanged id would break that
+    // post-accept clearing.
+    showConsent.value = false;
+    checkConsent();
   },
   { immediate: true },
 );

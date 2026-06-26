@@ -42,7 +42,9 @@ export const AdministrationsContract = c.router(
       description:
         'Returns a paginated list of administrations the authenticated user has access to. ' +
         'Use ?status=active|past|upcoming to filter by date status. ' +
-        'Use ?embed=stats to include assignment stats. Use ?embed=tasks to include task variants.',
+        'Use ?embed=stats to include assignment stats. Use ?embed=tasks to include task variants. ' +
+        "Use ?embed=progress to attach the authenticated user's per-task run state " +
+        '(startedOn, completedOn, allowRetake) to each task; this implies tasks.',
     },
     create: {
       method: 'POST',

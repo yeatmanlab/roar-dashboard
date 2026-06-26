@@ -32,6 +32,7 @@
     "db:seed:roar-swr": "tsx seeds/roar-swr.seed.ts",
     "db:seed:roar-sre": "tsx seeds/roar-sre.seed.ts",
     "db:seed:roar-letter": "tsx seeds/roar-letter.seed.ts",
+    "db:seed:roar-multichoice": "tsx seeds/roar-multichoice.seed.ts",
     "dev:seed": "tsx ./seeds/index.ts",
     "dev:reset": "npm run db:migrate && npm run dev:seed"
   },

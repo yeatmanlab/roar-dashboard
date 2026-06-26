@@ -183,7 +183,6 @@
 </template>
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
-import { storeToRefs } from 'pinia';
 import { useQueryClient } from '@tanstack/vue-query';
 import { useVuelidate } from '@vuelidate/core';
 import { required, sameAs, minLength } from '@vuelidate/validators';
@@ -209,10 +208,6 @@ const { userCan, Permissions } = usePermissions();
 const authStore = useAuthStore();
 const queryClient = useQueryClient();
 
-// `roarfirekit` is retained solely for the `restConfig` readiness gate in
-// `init()` / `onMounted` below (the deferred AU chain). All profile and password
-// writes now go through the typed API via `useUpdateUserMutation`.
-const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 const toast = useToast();
 
@@ -491,11 +486,11 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
 onMounted(() => {
-  if (roarfirekit.value.restConfig?.()) init();
+  if (authStore.isAuthReady) init();
   isModalEnabled.value = false;
 });
 </script>

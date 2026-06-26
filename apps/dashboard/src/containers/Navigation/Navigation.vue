@@ -11,19 +11,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { getSidebarActions } from '@/router/sidebarActions';
-import { isEmulatorAuthReady } from '@/helpers/isDashboardReady';
 import NavBar from '@/components/NavBar';
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 
 const initialized = ref(false);
 
@@ -35,7 +32,7 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.() || isEmulatorAuthReady(state)) init();
+  if (state.accessToken) init();
 });
 
 const { mutate: signOut } = useSignOutMutation();
@@ -176,6 +173,6 @@ const menuItems = computed(() => {
 });
 
 onMounted(() => {
-  if (roarfirekit?.value?.restConfig?.() || isEmulatorAuthReady(authStore)) init();
+  if (authStore.isAuthReady) init();
 });
 </script>

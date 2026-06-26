@@ -30,7 +30,7 @@ const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+const { isFirekitInit } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -43,7 +43,7 @@ const handlePopState = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
 const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
@@ -67,7 +67,7 @@ onMounted(async () => {
     console.error('An error occurred while importing the game module.', error);
   }
 
-  if (roarfirekit.value.restConfig?.()) init();
+  if (authStore.isAuthReady) init();
 });
 
 // Declare interval at component scope
@@ -119,13 +119,7 @@ async function startTask(selectedAdmin) {
 
     const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title');
 
-    await roarApp.run().then(async (taskStatus) => {
-      // Handle any post-game actions.
-      // Only complete assessment if task succeeded (not aborted due to audio issues, etc.)
-      if (taskStatus && taskStatus === 'success') {
-        await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
-      }
-
+    await roarApp.run().then(() => {
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
       if (props.launchId) {

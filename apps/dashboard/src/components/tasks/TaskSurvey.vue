@@ -37,7 +37,7 @@ const router = useRouter();
 const taskStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+const { isFirekitInit } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -51,7 +51,7 @@ const handlePopState = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
 const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
@@ -69,7 +69,7 @@ window.addEventListener(
 );
 
 onMounted(async () => {
-  if (roarfirekit.value.restConfig?.()) init();
+  if (authStore.isAuthReady) init();
 });
 
 // Declare interval at component scope
@@ -115,10 +115,8 @@ async function startTask(selectedAdmin) {
   }
 }
 
-async function handleCompleteSurvey() {
+function handleCompleteSurvey() {
   try {
-    const { selectedAdmin } = storeToRefs(gameStore);
-    await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
     gameStore.requireHomeRefresh();
     // if session is externally launched, return instead fo participant home
     if (props.launchId) {

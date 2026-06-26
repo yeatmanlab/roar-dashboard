@@ -1,4 +1,3 @@
-[
 <template>
   <div class="text-2xl font-bold text-gray-600">
     <div v-if="isLoading" class="flex items-center w-full text-center flex-column justify-content-center">
@@ -86,11 +85,7 @@
         data-cy="enrollment-modal"
         pt:header:data-testid="dialog__header"
       >
-        <RegisterChildren
-          :submitting="isSubmitting"
-          :invitation-codes="invitationCodes"
-          @submit="handleStudentEnrollment"
-        />
+        <RegisterChildren :submitting="isSubmitting" @submit="handleStudentEnrollment" />
       </PvDialog>
     </div>
   </div>
@@ -104,16 +99,15 @@ import PvMessage from 'primevue/message';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
 import RegisterChildren from '@/components/auth/RegisterChildren.vue';
-import { useAuthStore } from '@/store/auth';
+import { StatusCodes } from 'http-status-codes';
 import { useToast } from 'primevue/usetoast';
-import { useQueryClient } from '@tanstack/vue-query';
-import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
+import useAddFamilyChildren from '@/containers/HomeParent/composables/useAddFamilyChildren';
 
 defineOptions({
   name: 'HomeParentStudentView',
 });
 
-defineProps({
+const props = defineProps({
   isLoading: {
     type: Boolean,
     required: true,
@@ -121,6 +115,10 @@ defineProps({
   parentRegistrationComplete: {
     type: Boolean,
     required: true,
+  },
+  familyId: {
+    type: String,
+    default: null,
   },
   childrenUids: {
     type: Array,
@@ -131,116 +129,41 @@ defineProps({
     required: true,
   },
   orgId: {
+    // Receives `null` from the parent while `/me` resolves the family id (same as
+    // `familyId`); the section that consumes it only renders once a family exists.
     type: String,
-    required: true,
+    default: null,
   },
   registrationError: {
     type: Error,
     required: false,
     default: null,
   },
-  invitationCodes: {
-    type: Array,
-    default: () => [],
-  },
 });
 
 const isEnrollmentModalVisible = ref(false);
-const isSubmitting = ref(false);
 const toast = useToast();
-const queryClient = useQueryClient();
-const authStore = useAuthStore();
-const consentName = ref('consent-behavioral-eye-tracking');
 const emit = defineEmits(['refresh-registration']);
+
+// Add-children runs entirely against the typed backend API (`POST
+// /v1/families/:familyId/users`). The legacy firekit `addStudentsToFamily` path
+// — caretaker profile payload, behavioral-consent recording, and the Firestore
+// family write — is gone. Consent is intentionally NOT recorded at child
+// creation; each child's per-administration consent/assent is handled post-auth
+// by the per-administration consent gate.
+const { submit: addChildren, isSubmitting } = useAddFamilyChildren();
 
 function showEnrollmentModal() {
   isEnrollmentModalVisible.value = true;
 }
 
-async function handleStudentEnrollment(studentData) {
-  isSubmitting.value = true;
-
+async function handleStudentEnrollment(students) {
   try {
-    // Ensure roarfirekit is initialized
-    if (!authStore.initialized) {
-      await authStore.initFirekit();
-    }
-    // Get current user's data for family association
-    const parentEmail = authStore.email;
-
-    // Format caretaker data according to CreateParentInput interface
-    const careTakerData = {
-      name: {
-        first: authStore.userData.firstName,
-        last: authStore.userData.lastName,
-      },
-      legal: {
-        consentType: 'family_enrollment',
-        consentVersion: '1.0',
-        amount: '0',
-        expectedTime: '5 minutes',
-        isSignedWithAdobe: false,
-        dateSigned: new Date().toISOString(),
-      },
-    };
-
-    // Format student data to match RegisterFamilyUsers structure
-    if (!Array.isArray(studentData)) {
-      console.error('studentData is not an array:', studentData);
-      throw new Error('studentData must be an array');
-    }
-
-    const formattedStudentData = studentData.map((student) => {
-      // Extract email from studentUsername if it's already in email format
-      const studentEmail = student.studentUsername.includes('@')
-        ? student.studentUsername
-        : `${student.studentUsername}@roar-auth.com`;
-
-      return {
-        email: studentEmail,
-        password: student.password,
-        userData: {
-          name: {
-            first: student.firstName || '',
-            middle: student.middleName || '',
-            last: student.lastName || '',
-          },
-          activationCode: student.activationCode,
-          grade: student.grade,
-          dob: student.dob,
-          gender: student.gender,
-          ell_status: student.ell,
-          iep_status: student.IEPStatus,
-          frl_status: student.freeReducedLunch,
-          race: student.race || [],
-          hispanic_ethnicity: student.hispanicEthnicity,
-          home_language: student.homeLanguage || [],
-          accept: student.accept,
-        },
-      };
-    });
-
-    // Fetch the consent document to get its version
-    const consentDoc = await authStore.getLegalDoc(consentName.value);
-    const consentData = {
-      version: consentDoc.currentCommit,
-      name: consentName.value,
-    };
-
-    if (!Array.isArray(formattedStudentData)) {
-      throw new Error('formattedStudentData must be an array');
-    }
-
-    await authStore.addStudentsToFamily(
-      parentEmail, // careTakerEmail
-      careTakerData,
-      formattedStudentData, // properly formatted students array
-      consentData, // proper consent data
-      false, // isTestData
-    );
+    await addChildren({ familyId: props.familyId, students });
 
     isEnrollmentModalVisible.value = false;
-    isSubmitting.value = false;
+    // The mutation invalidates the family-users / families queries; the parent
+    // page also refetches on this event so the new child card appears.
     emit('refresh-registration');
 
     toast.add({
@@ -249,18 +172,23 @@ async function handleStudentEnrollment(studentData) {
       detail: 'Student successfully enrolled',
       life: 3000,
     });
-    // Invalidate queries to refresh data without full page reload
-    queryClient.invalidateQueries({ queryKey: [USER_DATA_QUERY_KEY] });
   } catch (error) {
+    // The mapper and mutation throw structured errors carrying `.status`. Map the
+    // two common, actionable failures to specific messages; keep the modal open so
+    // the caretaker can correct and retry.
     console.error('Error enrolling student:', error);
+    let detail = 'Failed to enroll student(s). Please try again.';
+    if (error?.status === StatusCodes.CONFLICT) {
+      detail = 'A child with that username/email is already registered.';
+    } else if (error?.status === StatusCodes.UNPROCESSABLE_ENTITY) {
+      detail = 'The activation code is invalid or expired, or this family has reached its size limit.';
+    }
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Failed to enroll student(s). Please try again.',
+      detail,
       life: 3000,
     });
-    isSubmitting.value = false;
-    // Don't close modal on error so user can see the error and retry
   }
 }
 </script>

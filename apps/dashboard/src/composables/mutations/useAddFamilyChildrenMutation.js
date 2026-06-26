@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { StatusCodes } from 'http-status-codes';
 import { getRoarApiClient } from '@/clients/roar-api';
 import { FAMILY_ADD_CHILDREN_MUTATION_KEY } from '@/constants/mutationKeys';
-import { FAMILIES_QUERY_KEY, USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
+import { FAMILIES_QUERY_KEY, FAMILY_USERS_QUERY_KEY, USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
 
 /**
  * Add-family-children mutation.
@@ -48,11 +48,13 @@ const useAddFamilyChildrenMutation = () => {
       throw error;
     },
     onSuccess: () => {
-      // The parent dashboard still derives its children list from the legacy
-      // user-data query; invalidate it (and the families query) so the newly
-      // added children surface once that view is refetched.
-      queryClient.invalidateQueries({ queryKey: [USER_DATA_QUERY_KEY] });
+      // Refresh the parent dashboard's children list — now sourced from
+      // `GET /v1/families/:familyId/users` — and the families query so the newly
+      // added children surface once those views refetch. The legacy Firestore
+      // user-data query is invalidated too while both transports coexist.
+      queryClient.invalidateQueries({ queryKey: [FAMILY_USERS_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [FAMILIES_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [USER_DATA_QUERY_KEY] });
     },
   });
 };

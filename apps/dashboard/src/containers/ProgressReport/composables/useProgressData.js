@@ -2,82 +2,71 @@ import { computed } from 'vue';
 import { PROGRESS_STATUS } from '../constants/progressReportConstants';
 
 /**
+ * Maps a backend 7-level `ProgressStatus` to the report's display PROGRESS_STATUS.
+ *
+ * The progress (assigned → started → completed) and requirement (required vs
+ * optional) axes are orthogonal in the API. The Progress Report renders a single
+ * tag per task and — preserving the legacy behavior — surfaces the OPTIONAL state
+ * ahead of progress: any optional task shows "Optional" regardless of whether a
+ * run exists. Required tasks show their progress state.
+ *
+ * @param {string} status – one of the six visible ProgressStatus values.
+ * @returns {object} the matching PROGRESS_STATUS descriptor.
+ */
+function mapProgressStatus(status) {
+  if (status?.endsWith('-optional')) return PROGRESS_STATUS.OPTIONAL;
+  if (status?.startsWith('completed')) return PROGRESS_STATUS.COMPLETED;
+  if (status?.startsWith('started')) return PROGRESS_STATUS.STARTED;
+  return PROGRESS_STATUS.ASSIGNED;
+}
+
+/**
  * Progress Report Data Composable
  *
- * Transforms raw assignment data into structured table rows with progress information.
+ * Transforms per-student progress rows from the ROAR backend
+ * (`GET /administrations/:id/reports/progress/students`, via
+ * `useAdministrationProgressQuery`) into table rows for the RoarDataTable.
  *
- * @param {import('vue').Ref} assignmentData - Raw assignment data from the API
- * @param {import('vue').ComputedRef} schoolNameDictionary - Dictionary mapping school IDs to names
- * @returns {Object} Computed progress data
+ * Progress is keyed by task UUID; each entry carries the display descriptor
+ * (value/icon/severity/tag) plus a `tags` string consumed by the table's
+ * tag-based column filter. `schoolName` is provided directly by the API
+ * (populated for district scope only), so no school dictionary is needed.
+ *
+ * @param {import('vue').Ref} students – Student progress rows from useAdministrationProgressQuery.
+ * @returns {Object} `{ computedProgressData }`
  */
-export function useProgressData(assignmentData, schoolNameDictionary) {
+export function useProgressData(students) {
   const computedProgressData = computed(() => {
-    if (!assignmentData.value) return [];
+    if (!students.value) return [];
 
-    const assignmentTableDataAcc = [];
-
-    for (const { assignment, user } of assignmentData.value) {
-      const grade = String(assignment.userData?.grade);
-
-      // Compute schoolName
-      let schoolName = '';
-      const schoolId = user?.schools?.current[0];
-      if (schoolId) {
-        schoolName = schoolNameDictionary.value[schoolId];
+    return students.value.map(({ user, progress }) => {
+      const currRowProgress = {};
+      for (const taskId of Object.keys(progress ?? {})) {
+        const descriptor = mapProgressStatus(progress[taskId]?.status);
+        currRowProgress[taskId] = {
+          ...descriptor,
+          tags: ` ${descriptor.tag} `,
+        };
       }
 
-      const currRow = {
+      return {
         user: {
           username: user.username,
           email: user.email,
           userId: user.userId,
-          firstName: user.name?.first,
-          lastName: user.name?.last,
-          grade: grade,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          grade: user.grade,
           assessmentPid: user.assessmentPid,
-          schoolName: schoolName,
+          schoolName: user.schoolName,
         },
         routeParams: {
           userId: user.userId,
         },
-        launchTooltip: `View assessment portal for ${user.name?.first ?? user.username ?? 'user'}`,
+        launchTooltip: `View assessment portal for ${user.firstName ?? user.username ?? 'user'}`,
+        progress: currRowProgress,
       };
-
-      const currRowProgress = {};
-      for (const assessment of assignment.assessments) {
-        let progressFilterTags = '';
-        const taskId = assessment.taskId;
-
-        if (assessment?.optional) {
-          currRowProgress[taskId] = {
-            ...PROGRESS_STATUS.OPTIONAL,
-          };
-          progressFilterTags += ` ${PROGRESS_STATUS.OPTIONAL.tag} `;
-        } else if (assessment?.completedOn !== undefined) {
-          currRowProgress[taskId] = {
-            ...PROGRESS_STATUS.COMPLETED,
-          };
-          progressFilterTags += ` ${PROGRESS_STATUS.COMPLETED.tag} `;
-        } else if (assessment?.startedOn !== undefined) {
-          currRowProgress[taskId] = {
-            ...PROGRESS_STATUS.STARTED,
-          };
-          progressFilterTags += ` ${PROGRESS_STATUS.STARTED.tag} `;
-        } else {
-          currRowProgress[taskId] = {
-            ...PROGRESS_STATUS.ASSIGNED,
-          };
-          progressFilterTags += ` ${PROGRESS_STATUS.ASSIGNED.tag} `;
-        }
-        currRowProgress[taskId].tags = progressFilterTags;
-
-        // Update progress for current row with computed object
-        currRow.progress = currRowProgress;
-      }
-      assignmentTableDataAcc.push(currRow);
-    }
-
-    return assignmentTableDataAcc;
+    });
   });
 
   return {

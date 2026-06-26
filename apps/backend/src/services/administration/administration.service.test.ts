@@ -10,6 +10,7 @@ import { AgreementFactory } from '../../test-support/factories/agreement.factory
 import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
 import { RunFactory } from '../../test-support/factories/run.factory';
 import { ApiError } from '../../errors/api-error';
+import type { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { FgaRelation, FgaType } from '../authorization/fga-constants';
@@ -19,11 +20,14 @@ import type {
   TreeNode,
 } from '../../repositories/administration.repository';
 import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
+import type { Condition } from '../../types/condition';
+import { Operator } from '../../types/condition';
 import {
   createMockAdministrationRepository,
   createMockAdministrationTaskVariantRepository,
   createMockReportRepository,
   createMockRunRepository,
+  createMockTaskRepository,
   createMockUserRepository,
   createMockDistrictRepository,
   createMockSchoolRepository,
@@ -44,6 +48,7 @@ describe('AdministrationService', () => {
   let mockReportRepository: ReturnType<typeof createMockReportRepository>;
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
   let mockRunRepository: ReturnType<typeof createMockRunRepository>;
+  let mockTaskRepository: ReturnType<typeof createMockTaskRepository>;
   let mockTaskService: ReturnType<typeof createMockTaskService>;
   let mockAuthorizationService: MockAuthorizationService;
 
@@ -54,6 +59,7 @@ describe('AdministrationService', () => {
     mockReportRepository = createMockReportRepository();
     mockUserRepository = createMockUserRepository();
     mockRunRepository = createMockRunRepository();
+    mockTaskRepository = createMockTaskRepository();
     mockTaskService = createMockTaskService();
     mockAuthorizationService = createMockAuthorizationService();
   });
@@ -662,13 +668,39 @@ describe('AdministrationService', () => {
           [
             'admin-1',
             [
-              { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
-              { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
+              {
+                taskId: 'task-1',
+                taskName: 'SWR',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+              {
+                taskId: 'task-2',
+                taskName: 'PA',
+                variantId: 'variant-2',
+                variantName: null,
+                orderIndex: 1,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
             ],
           ],
           [
             'admin-2',
-            [{ taskId: 'task-3', taskName: 'SRE', variantId: 'variant-3', variantName: 'Variant C', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-3',
+                taskName: 'SRE',
+                variantId: 'variant-3',
+                variantName: 'Variant C',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]);
         mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
@@ -708,7 +740,17 @@ describe('AdministrationService', () => {
         const tasksMap = new Map([
           [
             'admin-1',
-            [{ taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'SWR',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]);
         mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
@@ -778,7 +820,17 @@ describe('AdministrationService', () => {
         const tasksMap = new Map([
           [
             'admin-1',
-            [{ taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'SWR',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]);
 
@@ -802,6 +854,489 @@ describe('AdministrationService', () => {
         expect(result.items[0]!.tasks).toEqual([
           { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
         ]);
+      });
+    });
+
+    describe('embed=progress', () => {
+      // Fixed timestamps so ISO assertions are deterministic.
+      const STARTED_AT = new Date('2025-09-03T14:01:00.000Z');
+      const COMPLETED_AT = new Date('2025-09-03T14:20:00.000Z');
+
+      /**
+       * Builds a single super-admin administration ('admin-1') with one task
+       * ('task-1' / 'variant-1') to exercise the per-task progress attachment.
+       *
+       * Also stubs the dependencies the per-student pass now needs on the
+       * self-read path: the in-context user lookup and the eligibility
+       * evaluator. The tasks carry null conditions (assigned to all, required)
+       * so these progress-focused tests aren't affected by assignment state.
+       */
+      function arrangeSingleTaskAdmin() {
+        const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
+        mockAdministrationRepository.listAll.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+
+        const tasksMap = new Map([
+          [
+            'admin-1',
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'SWR',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
+          ],
+        ]);
+        mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
+
+        // The self-read path resolves the in-context user (authContext.userId) before
+        // enrichment. Echo the requested id so the resolved user mirrors the caller —
+        // this is what drives the per-student canonical-runs lookup, so the test must
+        // not pin it to a fixed id that diverges from the requester.
+        mockUserRepository.getById.mockImplementation(({ id }) => Promise.resolve(UserFactory.build({ id })));
+        // Null conditions → assigned to all, required.
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
+      }
+
+      function buildService() {
+        return AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+          runRepository: mockRunRepository,
+          taskRepository: mockTaskRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+          authorizationService: mockAuthorizationService,
+        });
+      }
+
+      it('allowRetake=true when the canonical run is unreliable and the task is not excluded', async () => {
+        arrangeSingleTaskAdmin();
+        // Canonical run exists, unreliable.
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([
+          {
+            administrationId: 'admin-1',
+            taskVariantId: 'variant-1',
+            taskId: 'task-1',
+            createdAt: STARTED_AT,
+            completedAt: COMPLETED_AT,
+            reliableRun: false,
+          },
+        ]);
+        // No excluded tasks resolve to 'task-1'.
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.progress).toEqual({
+          startedOn: STARTED_AT.toISOString(),
+          completedOn: COMPLETED_AT.toISOString(),
+          allowRetake: true,
+        });
+      });
+
+      it('allowRetake=false when the canonical run is reliable', async () => {
+        arrangeSingleTaskAdmin();
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([
+          {
+            administrationId: 'admin-1',
+            taskVariantId: 'variant-1',
+            taskId: 'task-1',
+            createdAt: STARTED_AT,
+            completedAt: COMPLETED_AT,
+            reliableRun: true,
+          },
+        ]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.progress!.allowRetake).toBe(false);
+      });
+
+      it('allowRetake=false for an excluded task even when the canonical run is unreliable', async () => {
+        arrangeSingleTaskAdmin();
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([
+          {
+            administrationId: 'admin-1',
+            taskVariantId: 'variant-1',
+            taskId: 'task-1',
+            createdAt: STARTED_AT,
+            completedAt: null,
+            reliableRun: false,
+          },
+        ]);
+        // The exclusion resolver returns 'task-1' as an excluded task id.
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue(['task-1']);
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.progress!.allowRetake).toBe(false);
+      });
+
+      it('startedOn/completedOn are null and allowRetake=false when the user has no run', async () => {
+        arrangeSingleTaskAdmin();
+        // No canonical runs for this user.
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.progress).toEqual({
+          startedOn: null,
+          completedOn: null,
+          allowRetake: false,
+        });
+      });
+
+      it('startedOn/completedOn reflect the canonical run createdAt/completedAt ISO strings', async () => {
+        arrangeSingleTaskAdmin();
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([
+          {
+            administrationId: 'admin-1',
+            taskVariantId: 'variant-1',
+            taskId: 'task-1',
+            createdAt: STARTED_AT,
+            completedAt: null, // started but not completed
+            reliableRun: true,
+          },
+        ]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.progress!.startedOn).toBe(STARTED_AT.toISOString());
+        expect(result.items[0]!.tasks![0]!.progress!.completedOn).toBeNull();
+      });
+
+      it('resolves tasks (and progress) even when only progress is requested without tasks', async () => {
+        arrangeSingleTaskAdmin();
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([
+          {
+            administrationId: 'admin-1',
+            taskVariantId: 'variant-1',
+            taskId: 'task-1',
+            createdAt: STARTED_AT,
+            completedAt: COMPLETED_AT,
+            reliableRun: false,
+          },
+        ]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          // Note: 'tasks' intentionally omitted — progress implies tasks.
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['progress'] },
+        );
+
+        // Tasks must be resolved despite not being explicitly requested.
+        expect(mockAdministrationTaskVariantRepository.getByAdministrationIds).toHaveBeenCalledWith(['admin-1']);
+        expect(result.items[0]!.tasks).toHaveLength(1);
+        expect(result.items[0]!.tasks![0]!.progress!.allowRetake).toBe(true);
+      });
+
+      it('fetches canonical runs in a single bulk call (no N+1) across multiple administrations', async () => {
+        // Two administrations, each with one task.
+        const mockAdmins = [
+          AdministrationFactory.build({ id: 'admin-1' }),
+          AdministrationFactory.build({ id: 'admin-2' }),
+        ];
+        mockAdministrationRepository.listAll.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
+
+        const tasksMap = new Map([
+          [
+            'admin-1',
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'SWR',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
+          ],
+          [
+            'admin-2',
+            [
+              {
+                taskId: 'task-2',
+                taskName: 'PA',
+                variantId: 'variant-2',
+                variantName: 'Variant B',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
+          ],
+        ]);
+        mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+        // Self-read enrichment resolves the in-context user first; without this stub
+        // the per-student pass is skipped and no canonical-runs query is issued.
+        mockUserRepository.getById.mockImplementation(({ id }) => Promise.resolve(UserFactory.build({ id })));
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
+
+        await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        // Exactly one bulk runs query for the whole page, with both admin ids.
+        expect(mockRunRepository.getUserCanonicalRunsForAdministrations).toHaveBeenCalledTimes(1);
+        expect(mockRunRepository.getUserCanonicalRunsForAdministrations).toHaveBeenCalledWith('student-123', [
+          'admin-1',
+          'admin-2',
+        ]);
+        // Exclusion resolution is also a single bulk call.
+        expect(mockTaskRepository.getIdsBySlugs).toHaveBeenCalledTimes(1);
+      });
+
+      it('self-read (list) resolves progress for the requester (authContext.userId)', async () => {
+        arrangeSingleTaskAdmin();
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        await buildService().list(
+          { userId: 'requester-self', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        // Canonical runs must be resolved for the requesting user.
+        expect(mockRunRepository.getUserCanonicalRunsForAdministrations).toHaveBeenCalledWith('requester-self', [
+          'admin-1',
+        ]);
+      });
+
+      it('throws ApiError when the canonical runs query fails', async () => {
+        arrangeSingleTaskAdmin();
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockRejectedValue(new Error('db down'));
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+
+        await expect(
+          buildService().list(
+            { userId: 'student-123', isSuperAdmin: true },
+            { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+          ),
+        ).rejects.toThrow('Failed to fetch administration progress');
+      });
+
+      it('throws ApiError when the excluded-task slug query fails', async () => {
+        arrangeSingleTaskAdmin();
+        // Canonical runs resolve so execution reaches the slug-resolution branch.
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
+        mockTaskRepository.getIdsBySlugs.mockRejectedValue(new Error('db down'));
+
+        await expect(
+          buildService().list(
+            { userId: 'student-123', isSuperAdmin: true },
+            { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+          ),
+        ).rejects.toThrow('Failed to fetch administration progress');
+      });
+    });
+
+    describe('per-student optional/assigned (tasks embed)', () => {
+      const ASSIGNED_GRADE_5: Condition = { field: 'studentData.grade', op: Operator.EQUAL, value: '5' };
+      const OPTIONAL_GRADE_3: Condition = { field: 'studentData.grade', op: Operator.EQUAL, value: '3' };
+
+      /**
+       * Arrange a single super-admin administration with one task whose variant
+       * carries the given assignment/optionality conditions. `progress` always
+       * resolves (no runs) so these tests focus purely on optional/assigned.
+       *
+       * @param conditionsAssignment - assigned_if condition on the task variant
+       * @param conditionsRequirements - optional_if condition on the task variant
+       */
+      function arrangeTaskWithConditions(
+        conditionsAssignment: Condition | null,
+        conditionsRequirements: Condition | null,
+      ) {
+        mockAdministrationRepository.listAll.mockResolvedValue({
+          items: [AdministrationFactory.build({ id: 'admin-1' })],
+          totalItems: 1,
+        });
+        mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(
+          new Map([
+            [
+              'admin-1',
+              [
+                {
+                  taskId: 'task-1',
+                  taskName: 'SWR',
+                  variantId: 'variant-1',
+                  variantName: 'Variant A',
+                  orderIndex: 0,
+                  conditionsAssignment,
+                  conditionsRequirements,
+                },
+              ],
+            ],
+          ]),
+        );
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+      }
+
+      function buildService() {
+        return AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+          runRepository: mockRunRepository,
+          taskRepository: mockTaskRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+          authorizationService: mockAuthorizationService,
+        });
+      }
+
+      it('(a) assigned=true when conditionsAssignment is null (assigned to all)', async () => {
+        arrangeTaskWithConditions(null, null);
+        // Use the REAL evaluator semantics for null conditions.
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
+        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: 'student-123', grade: '5' }));
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          // optional/assigned attach alongside progress on the user-scoped path.
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.assigned).toBe(true);
+        // Null assignment condition passed straight through to the evaluator.
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'student-123' }),
+          null,
+          null,
+        );
+      });
+
+      it('(b) assigned=false when the target user fails the assigned_if condition', async () => {
+        arrangeTaskWithConditions(ASSIGNED_GRADE_5, null);
+        // Grade-3 user fails an assigned_if of grade EQUAL 5.
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: false, isOptional: false });
+        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: 'student-123', grade: '3' }));
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        // The task is NOT filtered out — it is still present, just flagged.
+        expect(result.items[0]!.tasks).toHaveLength(1);
+        expect(result.items[0]!.tasks![0]!.assigned).toBe(false);
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'student-123' }),
+          ASSIGNED_GRADE_5,
+          null,
+        );
+      });
+
+      it('(c) optional=false on an assigned task when conditionsRequirements is null (required)', async () => {
+        arrangeTaskWithConditions(null, null);
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
+        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: 'student-123', grade: '5' }));
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.assigned).toBe(true);
+        expect(result.items[0]!.tasks![0]!.optional).toBe(false);
+      });
+
+      it('(d) optional=true when the target user matches the optional_if condition', async () => {
+        arrangeTaskWithConditions(null, OPTIONAL_GRADE_3);
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: true });
+        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: 'student-123', grade: '3' }));
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks![0]!.optional).toBe(true);
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'student-123' }),
+          null,
+          OPTIONAL_GRADE_3,
+        );
+      });
+
+      it('(e) evaluates the self-read user (list) — the requester drives the conditions', async () => {
+        arrangeTaskWithConditions(ASSIGNED_GRADE_5, null);
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
+        const selfUser = UserFactory.build({ id: 'self-reader', grade: '5' });
+        mockUserRepository.getById.mockResolvedValue(selfUser);
+
+        await buildService().list(
+          { userId: 'self-reader', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        // The in-context (self) user is fetched and passed to the evaluator.
+        expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'self-reader' });
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledWith(selfUser, ASSIGNED_GRADE_5, null);
+      });
+
+      it('(f) does not leak the internal conditions* fields in the output tasks', async () => {
+        arrangeTaskWithConditions(ASSIGNED_GRADE_5, OPTIONAL_GRADE_3);
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: true });
+        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: 'student-123', grade: '3' }));
+
+        const result = await buildService().list(
+          { userId: 'student-123', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        const task = result.items[0]!.tasks![0]!;
+        expect(task).not.toHaveProperty('conditionsAssignment');
+        expect(task).not.toHaveProperty('conditionsRequirements');
+        // The intended fields are present.
+        expect(task).toHaveProperty('assigned', true);
+        expect(task).toHaveProperty('optional', true);
+      });
+
+      it('skips per-student enrichment gracefully when the in-context user is not found', async () => {
+        arrangeTaskWithConditions(null, null);
+        // The self-read user lookup returns null — enrichment is skipped, tasks
+        // are still returned without progress/optional/assigned.
+        mockUserRepository.getById.mockResolvedValue(null);
+
+        const result = await buildService().list(
+          { userId: 'missing-user', isSuperAdmin: true },
+          { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks', 'progress'] },
+        );
+
+        expect(result.items[0]!.tasks).toHaveLength(1);
+        expect(result.items[0]!.tasks![0]!.assigned).toBeUndefined();
+        expect(result.items[0]!.tasks![0]!.optional).toBeUndefined();
+        expect(result.items[0]!.tasks![0]!.progress).toBeUndefined();
+        expect(mockTaskService.evaluateTaskVariantEligibility).not.toHaveBeenCalled();
       });
     });
   });
@@ -2818,7 +3353,17 @@ describe('AdministrationService', () => {
         new Map([
           [
             mockAdmin.id,
-            [{ taskId: 'task-1', taskName: 'Task 1', variantId: 'variant-1', variantName: 'Variant 1', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'Task 1',
+                variantId: 'variant-1',
+                variantName: 'Variant 1',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]),
       );
@@ -2863,7 +3408,17 @@ describe('AdministrationService', () => {
         new Map([
           [
             mockAdmin.id,
-            [{ taskId: 'task-1', taskName: 'Task 1', variantId: 'variant-1', variantName: 'Variant 1', orderIndex: 0 }],
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'Task 1',
+                variantId: 'variant-1',
+                variantName: 'Variant 1',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
           ],
         ]),
       );
@@ -2944,6 +3499,81 @@ describe('AdministrationService', () => {
         statusCode: 500,
         message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    describe('embed=progress (supervisory path)', () => {
+      it('resolves progress for the TARGET user, not the requester', async () => {
+        // Non-self path: a super-admin requester reads a different target user's
+        // administrations. The in-context user for progress is the TARGET.
+        const targetUserId = 'target-user-123';
+        const mockAdmins = [AdministrationFactory.build({ id: 'admin-1' })];
+        const mockUser = UserFactory.build({ id: targetUserId });
+
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['administration:admin-1']);
+        mockAdministrationRepository.getByIds.mockResolvedValue({ items: mockAdmins, totalItems: 1 });
+
+        const tasksMap = new Map([
+          [
+            'admin-1',
+            [
+              {
+                taskId: 'task-1',
+                taskName: 'SWR',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
+          ],
+        ]);
+        mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
+        mockRunRepository.getUserCanonicalRunsForAdministrations.mockResolvedValue([
+          {
+            administrationId: 'admin-1',
+            taskVariantId: 'variant-1',
+            taskId: 'task-1',
+            createdAt: new Date('2025-09-03T14:01:00.000Z'),
+            completedAt: null,
+            reliableRun: false,
+          },
+        ]);
+        mockTaskRepository.getIdsBySlugs.mockResolvedValue([]);
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+          userRepository: mockUserRepository,
+          runRepository: mockRunRepository,
+          taskRepository: mockTaskRepository,
+          taskService: mockTaskService,
+          authorizationService: mockAuthorizationService,
+        });
+
+        const result = await service.getUserAdministrations(
+          { userId: 'super-admin', isSuperAdmin: true },
+          targetUserId,
+          {
+            page: 1,
+            perPage: 25,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            embed: ['tasks', 'progress'],
+          },
+        );
+
+        // Canonical runs resolved for the TARGET, not the requester.
+        expect(mockRunRepository.getUserCanonicalRunsForAdministrations).toHaveBeenCalledTimes(1);
+        expect(mockRunRepository.getUserCanonicalRunsForAdministrations).toHaveBeenCalledWith(targetUserId, [
+          'admin-1',
+        ]);
+        expect(result.items[0]!.tasks![0]!.progress!.allowRetake).toBe(true);
+        // Eligibility evaluated for the TARGET user's demographics, not the requester.
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledWith(mockUser, null, null);
       });
     });
   });
@@ -4541,6 +5171,511 @@ describe('AdministrationService', () => {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
+
+  describe('listUserAdministrationAgreements', () => {
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'name' as const,
+      sortOrder: 'asc' as const,
+      locale: 'en-US',
+    };
+
+    /**
+     * Build an agreement-with-version item in the repository's
+     * `{ agreement, currentVersion }` shape for a given agreement id.
+     *
+     * The agreement type defaults to `assent` so items survive the target-user
+     * age filter for the default (dob/grade null → minor) user these tests use.
+     * Tests that assert age behavior pass an explicit type.
+     */
+    const buildAgreementItem = (agreementId: string, agreementType: AgreementType = 'assent') => {
+      const agreement = AgreementFactory.build({ id: agreementId, agreementType });
+      const currentVersion = AgreementVersionFactory.build({ agreementId });
+      return { agreement, currentVersion };
+    };
+
+    it('annotates each agreement with the target user signed status', async () => {
+      const mockUser = UserFactory.build({ id: 'user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+        items: [buildAgreementItem('agreement-signed'), buildAgreementItem('agreement-unsigned')],
+        totalItems: 2,
+      });
+      // Target user has signed only the first agreement
+      mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set(['agreement-signed']));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      const result = await service.listUserAdministrationAgreements(
+        { userId: 'user-123', isSuperAdmin: false },
+        'user-123',
+        'admin-123',
+        defaultOptions,
+      );
+
+      // signed flags reflect the signed set; the bulk query receives every agreement id
+      expect(mockAgreementRepo.getSignedAgreementIds).toHaveBeenCalledTimes(1);
+      expect(mockAgreementRepo.getSignedAgreementIds).toHaveBeenCalledWith('user-123', [
+        'agreement-signed',
+        'agreement-unsigned',
+      ]);
+      expect(result.totalItems).toBe(2);
+      const signedItem = result.items.find((i) => i.agreement.id === 'agreement-signed');
+      const unsignedItem = result.items.find((i) => i.agreement.id === 'agreement-unsigned');
+      expect(signedItem!.signed).toBe(true);
+      expect(unsignedItem!.signed).toBe(false);
+    });
+
+    it('allows a self-read (requester === target) with a single requirePermission call', async () => {
+      const mockUser = UserFactory.build({ id: 'user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+      mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+        items: [buildAgreementItem('agreement-1')],
+        totalItems: 1,
+      });
+      mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set());
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      const result = await service.listUserAdministrationAgreements(
+        { userId: 'user-123', isSuperAdmin: false },
+        'user-123',
+        'admin-123',
+        defaultOptions,
+      );
+
+      // Only the target-access check runs; the cross-user check is skipped for self-reads.
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledTimes(1);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(result.items[0]!.signed).toBe(false);
+    });
+
+    it('allows supervisory access when the requester also has access to the administration', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+      mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+        items: [buildAgreementItem('agreement-1')],
+        totalItems: 1,
+      });
+      mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set(['agreement-1']));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      const result = await service.listUserAdministrationAgreements(
+        { userId: 'requester-456', isSuperAdmin: false },
+        'target-user-123',
+        'admin-123',
+        defaultOptions,
+      );
+
+      // Two checks: target user access, then requester (cross-user) access.
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledTimes(2);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'target-user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'requester-456',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(result.items[0]!.signed).toBe(true);
+    });
+
+    it('throws forbidden when the requester has no shared access to the administration', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      // Target user passes; requester is denied.
+      mockAuthorizationService.requirePermission.mockResolvedValueOnce(undefined).mockRejectedValueOnce(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      await expect(
+        service.listUserAdministrationAgreements(
+          { userId: 'requester-456', isSuperAdmin: false },
+          'target-user-123',
+          'admin-123',
+          defaultOptions,
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      // No signed lookup should happen when authorization fails.
+      expect(mockAgreementRepo.getSignedAgreementIds).not.toHaveBeenCalled();
+    });
+
+    it('throws not-found when the target user does not exist', async () => {
+      mockUserRepository.getById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.listUserAdministrationAgreements(
+          { userId: 'requester-456', isSuperAdmin: false },
+          'non-existent-user',
+          'admin-123',
+          defaultOptions,
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(mockAdministrationRepository.getById).not.toHaveBeenCalled();
+    });
+
+    it('throws not-found when the administration does not exist', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.listUserAdministrationAgreements(
+          { userId: 'requester-456', isSuperAdmin: false },
+          'target-user-123',
+          'non-existent-admin',
+          defaultOptions,
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('throws not-found (as forbidden translated upstream) when the target user lacks administration access', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      // verifyAdministrationAccess denies the TARGET user.
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.listUserAdministrationAgreements(
+          { userId: 'requester-456', isSuperAdmin: false },
+          'target-user-123',
+          'admin-123',
+          defaultOptions,
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'target-user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+    });
+
+    it('throws not-found when the target user is rostering-ended', async () => {
+      const rosteringEndedUser = UserFactory.build({
+        id: 'target-user-123',
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      mockUserRepository.getById.mockResolvedValue(rosteringEndedUser);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.listUserAdministrationAgreements(
+          { userId: 'requester-456', isSuperAdmin: false },
+          'target-user-123',
+          'admin-123',
+          defaultOptions,
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      // Rostering-ended target is rejected before any administration lookup.
+      expect(mockAdministrationRepository.getById).not.toHaveBeenCalled();
+    });
+
+    it('super admin reads another user without a cross-user check', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+        items: [buildAgreementItem('agreement-1')],
+        totalItems: 1,
+      });
+      mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set(['agreement-1']));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      const result = await service.listUserAdministrationAgreements(
+        { userId: 'super-admin', isSuperAdmin: true },
+        'target-user-123',
+        'admin-123',
+        defaultOptions,
+      );
+
+      // verifyAdministrationAccess still runs the target-user FGA check; the
+      // requester super-admin bypass skips the second (cross-user) check.
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledTimes(1);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'target-user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(result.items[0]!.signed).toBe(true);
+    });
+
+    describe('agreement type filtering by target user age', () => {
+      // The administration always carries one of each agreement type; the
+      // assertions verify only the type appropriate to the TARGET user's age
+      // survives, mirroring the listAgreements student-filtering block.
+      const buildAllAgreementTypes = () => [
+        buildAgreementItem('agreement-tos', 'tos'),
+        buildAgreementItem('agreement-assent', 'assent'),
+        buildAgreementItem('agreement-consent', 'consent'),
+      ];
+
+      it('shows only assent (excludes consent and TOS) for a minor target', async () => {
+        // dob 10 years ago → under majority age → minor.
+        const tenYearsAgo = new Date();
+        tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+        const dobString = tenYearsAgo.toISOString().split('T')[0]!;
+        const minorTarget = UserFactory.build({ id: 'minor-123', dob: dobString, grade: null, isSuperAdmin: false });
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockAgreementRepo = createMockAgreementRepository();
+
+        mockUserRepository.getById.mockResolvedValue(minorTarget);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: buildAllAgreementTypes(),
+          totalItems: 3,
+        });
+        mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set());
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+          agreementRepository: mockAgreementRepo,
+        });
+
+        const result = await service.listUserAdministrationAgreements(
+          { userId: 'minor-123', isSuperAdmin: false },
+          'minor-123',
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.id).toBe('agreement-assent');
+        expect(result.items[0]!.agreement.agreementType).toBe('assent');
+        expect(result.totalItems).toBe(1);
+        // Only the surviving (assent) agreement is looked up for signed status.
+        expect(mockAgreementRepo.getSignedAgreementIds).toHaveBeenCalledWith('minor-123', ['agreement-assent']);
+      });
+
+      it('shows only consent (excludes assent and TOS) for an adult target', async () => {
+        // dob 20 years ago → over majority age → adult.
+        const twentyYearsAgo = new Date();
+        twentyYearsAgo.setFullYear(twentyYearsAgo.getFullYear() - 20);
+        const dobString = twentyYearsAgo.toISOString().split('T')[0]!;
+        const adultTarget = UserFactory.build({ id: 'adult-123', dob: dobString, grade: null, isSuperAdmin: false });
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockAgreementRepo = createMockAgreementRepository();
+
+        mockUserRepository.getById.mockResolvedValue(adultTarget);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: buildAllAgreementTypes(),
+          totalItems: 3,
+        });
+        // Adult has signed their consent agreement.
+        mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set(['agreement-consent']));
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+          agreementRepository: mockAgreementRepo,
+        });
+
+        const result = await service.listUserAdministrationAgreements(
+          { userId: 'adult-123', isSuperAdmin: false },
+          'adult-123',
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.id).toBe('agreement-consent');
+        expect(result.items[0]!.agreement.agreementType).toBe('consent');
+        // Signed annotation flows through after filtering.
+        expect(result.items[0]!.signed).toBe(true);
+        expect(result.totalItems).toBe(1);
+        expect(mockAgreementRepo.getSignedAgreementIds).toHaveBeenCalledWith('adult-123', ['agreement-consent']);
+      });
+
+      it('treats a target with unknown age (no dob/grade) as a minor → assent only', async () => {
+        // dob and grade null → isMajorityAge returns null → conservatively a minor.
+        const unknownAgeTarget = UserFactory.build({ id: 'unknown-123', dob: null, grade: null, isSuperAdmin: false });
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockAgreementRepo = createMockAgreementRepository();
+
+        mockUserRepository.getById.mockResolvedValue(unknownAgeTarget);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: buildAllAgreementTypes(),
+          totalItems: 3,
+        });
+        mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set());
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+          agreementRepository: mockAgreementRepo,
+        });
+
+        const result = await service.listUserAdministrationAgreements(
+          { userId: 'unknown-123', isSuperAdmin: false },
+          'unknown-123',
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.agreementType).toBe('assent');
+      });
+
+      it('estimates the target age from grade when dob is absent (grade 13 = adult → consent)', async () => {
+        // Grade 13 maps to age 18 (adult) in the conservative grade-to-age table.
+        const gradeAdultTarget = UserFactory.build({
+          id: 'grade-adult-123',
+          dob: null,
+          grade: '13',
+          isSuperAdmin: false,
+        });
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockAgreementRepo = createMockAgreementRepository();
+
+        mockUserRepository.getById.mockResolvedValue(gradeAdultTarget);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: buildAllAgreementTypes(),
+          totalItems: 3,
+        });
+        mockAgreementRepo.getSignedAgreementIds.mockResolvedValue(new Set());
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+          agreementRepository: mockAgreementRepo,
+        });
+
+        const result = await service.listUserAdministrationAgreements(
+          { userId: 'grade-adult-123', isSuperAdmin: false },
+          'grade-adult-123',
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.agreementType).toBe('consent');
       });
     });
   });

@@ -42,7 +42,7 @@ import EditUsersForm from '../EditUsersForm.vue';
 // +----------------+
 const authStore = useAuthStore();
 const toast = useToast();
-const { roarfirekit, roarUid } = storeToRefs(authStore);
+const { roarUid } = storeToRefs(authStore);
 const localUserData = ref({});
 const isEditMode = ref(false);
 const isSubmitting = ref(false);
@@ -61,19 +61,19 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
 onMounted(() => {
-  if (roarfirekit.value.restConfig?.()) init();
+  if (authStore.isAuthReady) init();
 });
 
 // +---------+
 // | Queries |
 // +---------+
-// Reads the current user from the API (`GET /v1/users/:id`). The `restConfig`
-// readiness gate (above) still drives `initialized`; the query additionally
-// self-gates on the access token, so it won't fire before auth is ready.
+// Reads the current user from the API (`GET /v1/users/:id`). The readiness gate
+// (above) drives `initialized`; the query additionally self-gates on the access
+// token, so it won't fire before auth is ready.
 const { data: userData } = useUserProfileQuery(roarUid, {
   enabled: initialized,
 });

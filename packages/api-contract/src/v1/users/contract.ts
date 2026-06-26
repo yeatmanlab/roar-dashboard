@@ -14,6 +14,8 @@ import {
   AdministrationsListQuerySchema,
   AdministrationsListResponseSchema,
   AdministrationBaseSchema,
+  AdministrationAgreementsListQuerySchema,
+  UserAdministrationAgreementsListResponseSchema,
 } from '../administrations/schema';
 import { GuardianStudentReportContract } from './reports/scores/index';
 
@@ -158,6 +160,8 @@ export const UsersContract = c.router(
         'Returns a paginated list of administrations the requester and specified user have access to. ' +
         'Use ?status=active|past|upcoming to filter by date status. ' +
         'Use ?embed=stats to include assignment stats. Use ?embed=tasks to include task variants. ' +
+        "Use ?embed=progress to attach the specified user's per-task run state " +
+        '(startedOn, completedOn, allowRetake) to each task; this implies tasks. ' +
         'Returns 403 if the requester does not have access to any administrations for the specified user. ' +
         'Returns 404 if the specified user does not exist.',
     },
@@ -181,6 +185,32 @@ export const UsersContract = c.router(
         'Returns a specific administration for the specified user. ' +
         'Returns 403 if the requester does not have access to the administration for the specified user. ' +
         'Returns 404 if the specified user or administration does not exist.',
+    },
+    listUserAdministrationAgreements: {
+      method: 'GET',
+      path: '/:userId/administrations/:administrationId/agreements',
+      pathParams: z.object({
+        userId: z.string().uuid(),
+        administrationId: z.string().uuid(),
+      }),
+      query: AdministrationAgreementsListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(UserAdministrationAgreementsListResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: "List an administration's required agreements with signed status for a user",
+      description:
+        "Returns the administration's required agreements (consent or assent, based on the user's age; " +
+        'terms of service are excluded), each ' +
+        'annotated with whether the specified user has already signed it (any current version, cross-locale). ' +
+        'Lets the consent gate decide what the specified user must sign before assessments. ' +
+        'Use ?locale=<bcp47> to select the current version returned per agreement (defaults to en-US). ' +
+        'Returns 403 if the requester does not have access to the administration for the specified user. ' +
+        'Returns 404 if the specified user or administration does not exist, or the specified user lacks access to it.',
     },
     // Nest guardian / longitudinal score report sub-router under /users
     scoreReports: GuardianStudentReportContract,

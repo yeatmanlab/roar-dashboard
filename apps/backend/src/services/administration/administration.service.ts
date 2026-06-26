@@ -3,6 +3,7 @@ import type {
   AdministrationStats,
   AdministrationEmbedOptionType,
   AdministrationStatus,
+  AdministrationTaskProgress,
   AdministrationTaskVariantSortFieldType,
   AdministrationAgreementSortFieldType,
   TreeEmbedOptionType,
@@ -12,7 +13,7 @@ import type {
 } from '@roar-platform/api-contract';
 import { AdministrationEmbedOption, TreeEmbedOption } from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
-import type { Administration } from '../../db/schema';
+import type { Administration, User } from '../../db/schema';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
@@ -40,13 +41,18 @@ import type {
   UpdateAdministrationInput,
 } from '../../repositories/administration.repository';
 import { AdministrationRepository } from '../../repositories/administration.repository';
-import type { AdministrationTask } from '../../repositories/administration-task-variant.repository';
+import type {
+  AdministrationTask,
+  AdministrationTaskWithConditions,
+} from '../../repositories/administration-task-variant.repository';
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
 import { ReportRepository, toReportAdminWindow } from '../../repositories/report.repository';
 import type { ReportScope } from '../../repositories/report.repository';
 import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { RunRepository } from '../../repositories/run.repository';
+import { TaskRepository } from '../../repositories/task.repository';
+import { TASKS_EXCLUDED_FROM_RETAKE } from '../../constants/tasks-excluded-from-retake';
 import { TaskService } from '../task/task.service';
 import { DistrictRepository } from '../../repositories/district.repository';
 import { SchoolRepository } from '../../repositories/school.repository';
@@ -59,11 +65,39 @@ import { isMajorityAge } from '../../utils/is-majority-age.util';
 import { verifyEntitiesExist, rejectRosteringEndedTarget } from '../utils/validations.utils';
 
 /**
+ * Administration task enriched with the in-context / target user's per-task
+ * state.
+ *
+ * Extends the repository's catalog-level `AdministrationTask` with the optional
+ * per-student fields that are attached only on the user-scoped paths:
+ * - `progress`: canonical run state (retake eligibility), attached when
+ *   `?embed=progress` is requested.
+ * - `optional`/`assigned`: assignment-condition state for the target user,
+ *   attached alongside `progress` in the same per-student pass.
+ *
+ * Keeping these shapes in the service layer (rather than on the repository
+ * type) preserves the layer boundary — the repository stays a pure catalog
+ * read. The internal `conditions*` fields used to derive `optional`/`assigned`
+ * are intentionally NOT part of this (response-facing) type; they live on
+ * `AdministrationTaskInternal` and are stripped before the response is built.
+ */
+export interface AdministrationTaskWithProgress extends AdministrationTask {
+  progress?: AdministrationTaskProgress;
+  optional?: boolean;
+  assigned?: boolean;
+}
+
+/**
  * Administration with optional embedded data.
+ *
+ * The `tasks` embed exposes only the response-facing `AdministrationTaskWithProgress`
+ * shape — the internal assignment `conditions*` selected by the repository are
+ * never attached here, so they cannot leak through the service return regardless
+ * of which embeds were requested.
  */
 export interface AdministrationWithEmbeds extends Administration {
   stats?: AdministrationStats;
-  tasks?: AdministrationTask[];
+  tasks?: AdministrationTaskWithProgress[];
 }
 
 /**
@@ -105,6 +139,15 @@ export interface ListAgreementsOptions {
 }
 
 /**
+ * An administration agreement annotated with whether the target user has
+ * already signed it (any current version, cross-locale). Returned by
+ * {@link listUserAdministrationAgreements} to drive the per-user consent gate.
+ */
+export interface AgreementWithSignedStatus extends AgreementWithVersion {
+  signed: boolean;
+}
+
+/**
  * Options for the tree endpoint.
  */
 export interface GetTreeOptions {
@@ -143,6 +186,7 @@ export function AdministrationService({
   userRepository = new UserRepository(),
   authorizationService = AuthorizationService(),
   runRepository = new RunRepository(),
+  taskRepository = new TaskRepository(),
   taskService = TaskService(),
   districtRepository = new DistrictRepository(),
   schoolRepository = new SchoolRepository(),
@@ -155,6 +199,7 @@ export function AdministrationService({
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
   reportRepository?: ReportRepository;
   runRepository?: RunRepository;
+  taskRepository?: TaskRepository;
   userRepository?: UserRepository;
   taskService?: ReturnType<typeof TaskService>;
   authorizationService?: ReturnType<typeof AuthorizationService>;
@@ -254,15 +299,20 @@ export function AdministrationService({
   /**
    * Fetch tasks for administrations.
    *
+   * Returns the conditions-bearing task shape: each task carries its raw
+   * `conditionsAssignment`/`conditionsRequirements` so the per-student pass can
+   * evaluate `optional`/`assigned`. Those internal fields are stripped before
+   * the response is built (see {@link attachPerStudentTaskState}).
+   *
    * @param administrationIds - IDs of administrations to fetch tasks for
    * @param userId - User ID for error context
-   * @returns Map of administration ID to tasks array
+   * @returns Map of administration ID to tasks array (with internal conditions)
    * @throws {ApiError} If query fails
    */
   async function fetchTasksEmbed(
     administrationIds: string[],
     userId: string,
-  ): Promise<Map<string, AdministrationTask[]>> {
+  ): Promise<Map<string, AdministrationTaskWithConditions[]>> {
     try {
       return await administrationTaskVariantRepository.getByAdministrationIds(administrationIds);
     } catch (err) {
@@ -272,6 +322,136 @@ export function AdministrationService({
         context: { userId, administrationIds, embed: 'tasks' },
         cause: err,
       });
+    }
+  }
+
+  /**
+   * Map a repository task (which carries the internal assignment `conditions*`)
+   * to the response-facing task shape, dropping the conditions entirely.
+   *
+   * This is the single boundary where conditions are discarded — by building the
+   * response objects clean from the start, the `conditions*` never live on
+   * anything attached to `AdministrationWithEmbeds.tasks`, regardless of which
+   * embeds were requested.
+   *
+   * @param task - A conditions-bearing task from the repository
+   * @returns The response task (no `conditions*`)
+   */
+  function toResponseTask(task: AdministrationTaskWithConditions): AdministrationTaskWithProgress {
+    return {
+      taskId: task.taskId,
+      taskName: task.taskName,
+      variantId: task.variantId,
+      variantName: task.variantName,
+      orderIndex: task.orderIndex,
+    };
+  }
+
+  /**
+   * Attach the target user's per-task state — `progress` (retake eligibility),
+   * `optional`, and `assigned` — to each task in the already-resolved `tasks`
+   * embed.
+   *
+   * NOTE: `optional` and `assigned` ride the progress pass — they are populated
+   * only when `?embed=progress` is requested (both call sites gate on
+   * `shouldEmbedProgress`). Callers that need the assignment flags must request
+   * `embed=progress`; `embed=tasks` alone returns the bare task list.
+   *
+   * Mutates `items[].tasks[]` in place (setting `progress`/`optional`/`assigned`).
+   * The assignment `conditions*` are read from `tasksByAdminId` (the source map
+   * the repository returned) — they are never present on the response tasks
+   * themselves, so nothing needs to be stripped here.
+   *
+   * For each task:
+   * - `progress`: the target user's canonical (best) run is matched by
+   *   `(administrationId, variantId)` and used to compute:
+   *   - `startedOn`   = canonical run's `createdAt` (ISO) or null
+   *   - `completedOn` = canonical run's `completedAt` (ISO) or null
+   *   - `allowRetake` = a canonical run exists AND it is not reliable AND the
+   *     task implements validity checking (its `taskId` is not in the excluded set)
+   * - `assigned` / `optional`: derived from the task variant's `assigned_if` /
+   *   `optional_if` conditions evaluated against the target user's demographics
+   *   via `TaskService.evaluateTaskVariantEligibility` (the single source of
+   *   truth for condition evaluation — not re-implemented here). A null
+   *   `assigned_if` means assigned to everyone; a null `optional_if` means
+   *   required. `assigned: false` does NOT remove the task — the full task list
+   *   is always returned; the flag is informational only.
+   *
+   * The two run-state queries are single bulk round-trips (no N+1): one for the
+   * user's canonical runs across all administrations on the page, and one to
+   * resolve the excluded task slugs to task UUIDs. Condition evaluation is a
+   * pure in-memory function called once per task (no I/O).
+   *
+   * @param items - Administrations with their `tasks` embed already attached (clean)
+   * @param tasksByAdminId - The conditions-bearing source tasks keyed by administration ID
+   * @param targetUser - The user whose run state and demographics drive the fields
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if either bulk run-state query fails
+   */
+  async function attachPerStudentTaskState(
+    items: AdministrationWithEmbeds[],
+    tasksByAdminId: Map<string, AdministrationTaskWithConditions[]>,
+    targetUser: User,
+  ): Promise<void> {
+    const targetUserId = targetUser.id;
+    const administrationIds = items.map((item) => item.id);
+
+    // Bulk fetch the target user's canonical runs across the whole page.
+    const canonicalRuns = await runRepository
+      .getUserCanonicalRunsForAdministrations(targetUserId, administrationIds)
+      .catch((err) => {
+        throw new ApiError('Failed to fetch administration progress', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: targetUserId, administrationIds, embed: 'progress' },
+          cause: err,
+        });
+      });
+
+    // Key by `${administrationId}:${taskVariantId}` for O(1) per-task lookup.
+    const runsByKey = new Map<string, (typeof canonicalRuns)[number]>();
+    for (const run of canonicalRuns) {
+      runsByKey.set(`${run.administrationId}:${run.taskVariantId}`, run);
+    }
+
+    // Resolve excluded task slugs to task UUIDs once (bulk).
+    const excludedTaskIds = new Set(
+      await taskRepository.getIdsBySlugs([...TASKS_EXCLUDED_FROM_RETAKE]).catch((err) => {
+        throw new ApiError('Failed to fetch administration progress', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: targetUserId, administrationIds, embed: 'progress' },
+          cause: err,
+        });
+      }),
+    );
+
+    for (const item of items) {
+      // Look up the conditions for this administration's tasks by variantId so
+      // the assignment evaluation can read them without re-querying.
+      const conditionsByVariantId = new Map<string, AdministrationTaskWithConditions>();
+      for (const sourceTask of tasksByAdminId.get(item.id) ?? []) {
+        conditionsByVariantId.set(sourceTask.variantId, sourceTask);
+      }
+
+      for (const task of item.tasks ?? []) {
+        const run = runsByKey.get(`${item.id}:${task.variantId}`);
+        task.progress = {
+          startedOn: run?.createdAt?.toISOString() ?? null,
+          completedOn: run?.completedAt?.toISOString() ?? null,
+          allowRetake: !!run && run.reliableRun === false && !excludedTaskIds.has(task.taskId),
+        };
+
+        // Per-student assignment state. Reuse the shared evaluator rather than
+        // re-deriving the assigned_if/optional_if semantics here.
+        const source = conditionsByVariantId.get(task.variantId);
+        const { isAssigned, isOptional } = taskService.evaluateTaskVariantEligibility(
+          targetUser,
+          source?.conditionsAssignment ?? null,
+          source?.conditionsRequirements ?? null,
+        );
+        task.assigned = isAssigned;
+        task.optional = isOptional;
+      }
     }
   }
 
@@ -345,7 +525,10 @@ export function AdministrationService({
 
       const administrationIds = result.items.map((admin) => admin.id);
       const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
-      const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
+      // `progress` enriches the per-task objects, so it implies `tasks` — resolve
+      // tasks whenever either is requested.
+      const shouldEmbedProgress = embedOptions.includes(AdministrationEmbedOption.PROGRESS);
+      const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS) || shouldEmbedProgress;
 
       // Fetch embed data (throws on failure)
       const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, userId) : null;
@@ -360,11 +543,29 @@ export function AdministrationService({
         }
 
         if (tasksMap) {
-          adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
+          // Map to the clean response shape so the internal conditions never
+          // ride along on the embedded tasks.
+          adminWithEmbeds.tasks = (tasksMap.get(admin.id) ?? []).map(toResponseTask);
         }
 
         return adminWithEmbeds;
       });
+
+      // Self-read path: the in-context user is the requester. Attach their
+      // per-task run state and assignment flags after tasks have been resolved.
+      // Fetch the requester once (the same user drives both progress and the
+      // assigned_if/optional_if evaluation). If the user can't be found, skip
+      // enrichment gracefully — the tasks are still returned, just without
+      // progress/optional/assigned. In practice `list()` callers are
+      // authenticated, so the user should exist.
+      if (shouldEmbedProgress && tasksMap) {
+        const targetUser = await userRepository.getById({ id: userId });
+        if (targetUser) {
+          await attachPerStudentTaskState(itemsWithEmbeds, tasksMap, targetUser);
+        } else {
+          logger.warn({ userId }, 'In-context user not found while attaching per-student task state; skipping');
+        }
+      }
 
       return {
         items: itemsWithEmbeds,
@@ -851,6 +1052,11 @@ export function AdministrationService({
       rejectRosteringEndedTarget(targetUser, { requesterUserId, targetUserId: userId }, 'User-administration list');
 
       if (requesterUserId === userId) {
+        // Self-read: delegate to list(), which owns the requester-scoped embed pass.
+        // NOTE: list() re-fetches this same user (by authContext.userId) for per-student
+        // enrichment. The re-fetch is deliberate — `targetUser` above exists only to gate
+        // the 404 / rostering-ended boundary, and list() is also reachable directly. Keep
+        // them independent rather than threading `targetUser` through to save one lookup.
         return list(authContext, options);
       }
 
@@ -917,7 +1123,10 @@ export function AdministrationService({
 
       const administrationIds = result.items.map((admin) => admin.id);
       const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
-      const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
+      // `progress` enriches the per-task objects, so it implies `tasks` — resolve
+      // tasks whenever either is requested.
+      const shouldEmbedProgress = embedOptions.includes(AdministrationEmbedOption.PROGRESS);
+      const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS) || shouldEmbedProgress;
 
       // Fetch embed data (throws on failure)
       const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, requesterUserId) : null;
@@ -932,11 +1141,21 @@ export function AdministrationService({
         }
 
         if (tasksMap) {
-          adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
+          // Map to the clean response shape so the internal conditions never
+          // ride along on the embedded tasks.
+          adminWithEmbeds.tasks = (tasksMap.get(admin.id) ?? []).map(toResponseTask);
         }
 
         return adminWithEmbeds;
       });
+
+      // Supervisory path: the in-context user is the TARGET (path) user, so
+      // attach the TARGET user's per-task run state and assignment flags — not
+      // the requester's. `targetUser` was resolved at the top of this function;
+      // the self-read case already returned early via `list()` above.
+      if (shouldEmbedProgress && tasksMap) {
+        await attachPerStudentTaskState(itemsWithEmbeds, tasksMap, targetUser);
+      }
 
       return {
         items: itemsWithEmbeds,
@@ -1221,6 +1440,150 @@ export function AdministrationService({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, administrationId },
+      });
+    }
+  }
+
+  /**
+   * List an administration's required agreements for a specific user, annotated
+   * with whether that user has already signed each one.
+   *
+   * Powers the per-user consent gate: every required agreement is returned with
+   * a `signed` flag so the caller can decide what the target user must sign
+   * before assessments. Signed detection is cross-locale — signing any current
+   * version of an agreement marks it signed (see
+   * {@link AgreementRepository.getSignedAgreementIds}).
+   *
+   * Authorization mirrors {@link getUserAdministration} exactly:
+   * - The target user must exist (404 otherwise) and not be rostering-ended
+   *   (symmetric 404 otherwise).
+   * - The administration must exist (404 otherwise) and the TARGET user must
+   *   have access to it (403 otherwise) — verified via {@link verifyAdministrationAccess}
+   *   with the target user's context.
+   * - Super admins and self-reads (requester === target) are then allowed; any
+   *   other requester must additionally hold `can_read` on the administration.
+   * Existence is always checked before access (404 before 403).
+   *
+   * @param authContext - Requesting user's auth context
+   * @param userId - The target user whose signed status to report
+   * @param administrationId - The administration whose required agreements to list
+   * @param options - Pagination, sorting, and locale options
+   * @returns Paginated agreements, each with a `signed` flag for the target user
+   * @throws {ApiError} NOT_FOUND if the target user or administration doesn't exist,
+   *   the target user is rostering-ended, or the target user lacks administration access
+   * @throws {ApiError} FORBIDDEN if the requester lacks access to the administration
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if a database operation fails
+   */
+  async function listUserAdministrationAgreements(
+    authContext: AuthContext,
+    userId: string,
+    administrationId: string,
+    options: ListAgreementsOptions,
+  ): Promise<PaginatedResult<AgreementWithSignedStatus>> {
+    const { userId: requesterUserId, isSuperAdmin } = authContext;
+
+    try {
+      const targetUser = await userRepository.getById({ id: userId });
+
+      if (!targetUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId },
+        });
+      }
+
+      // Rostering-ended target → symmetric 404 (#1742).
+      rejectRosteringEndedTarget(
+        targetUser,
+        { requesterUserId, targetUserId: userId, administrationId },
+        'Per-user administration agreements lookup',
+      );
+
+      // Verify the administration exists (404) and the TARGET user has access to
+      // it (403) — checked with the target user's context, exactly as
+      // getUserAdministration does.
+      await verifyAdministrationAccess({ userId, isSuperAdmin: targetUser.isSuperAdmin }, administrationId);
+
+      // Super admins and self-reads bypass the cross-user access check.
+      if (!isSuperAdmin && requesterUserId !== userId) {
+        // Separate log to track cross-user access attempts
+        logger.warn(
+          { requesterUserId, userId, administrationId },
+          'Requester attempting cross-user administration agreements access',
+        );
+        await authorizationService.requirePermission(
+          requesterUserId,
+          FgaRelation.CAN_READ,
+          `${FgaType.ADMINISTRATION}:${administrationId}`,
+        );
+      }
+
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        locale: options.locale,
+      };
+
+      // Fetch the administration's required agreements, then resolve the target
+      // user's signed set in a single bulk query (no per-agreement lookup).
+      const result = await administrationRepository.getAgreementsByAdministrationId(administrationId, queryParams);
+
+      // Filter the administration's agreements to the ones the TARGET user is
+      // age-appropriately required to sign, mirroring listAgreements (see the
+      // student-filtering block above). The signed status this endpoint reports
+      // only makes sense for the agreements the target actually needs, so the
+      // age gate applies regardless of who is asking.
+      //
+      // Determine if the target user is of majority age (18+).
+      // null means age cannot be determined - conservatively treat as minor.
+      const isOfMajorityAge = isMajorityAge({ dob: targetUser.dob, grade: targetUser.grade });
+      const isAdult = isOfMajorityAge === true;
+
+      // Filter agreements based on the target user's age:
+      // - assent: shown only to minors (isAdult === false)
+      // - consent: shown only to adults (isAdult === true)
+      // - tos: never shown (institutional terms, not a per-user consent)
+      // TODO: Pagination is broken here - filtering happens after DB pagination,
+      // so totalItems/page counts are incorrect. Fix by moving filter to repository layer.
+      const filteredItems = result.items.filter((item) => {
+        switch (item.agreement.agreementType) {
+          case AgreementType.ASSENT:
+            return !isAdult;
+          case AgreementType.CONSENT:
+            return isAdult;
+          default:
+            return false; // TOS and unknown types are never per-user agreements
+        }
+      });
+
+      const agreementIds = filteredItems.map((item) => item.agreement.id);
+      const signedIds = await agreementRepository.getSignedAgreementIds(userId, agreementIds);
+
+      return {
+        items: filteredItems.map((item) => ({
+          ...item,
+          signed: signedIds.has(item.agreement.id),
+        })),
+        totalItems: filteredItems.length,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { requesterUserId, userId, administrationId, options } },
+        'Failed to list user administration agreements',
+      );
+
+      throw new ApiError('Failed to retrieve user administration agreements', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
       });
     }
   }
@@ -1899,6 +2262,7 @@ export function AdministrationService({
     getTree,
     create,
     getUserAdministration,
+    listUserAdministrationAgreements,
     update,
   };
 }

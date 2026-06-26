@@ -292,7 +292,7 @@ export default defineConfig(({ mode }) => {
                 roam: ['@bdelab/roam-apps'],
                 firekit: ['@bdelab/roar-firekit'],
                 letter: ['@roar-platform/roar-letter'],
-                multichoice: ['@bdelab/roar-multichoice'],
+                multichoice: ['@roar-platform/roar-multichoice'],
                 sre: ['@roar-platform/roar-sre'],
                 swr: ['@roar-platform/roar-swr'],
                 utils: ['@bdelab/roar-utils'],

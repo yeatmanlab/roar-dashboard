@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as CoreDbSchema from '../db/schema/core';
 import type { Column, SQL } from 'drizzle-orm';
-import { eq, and, or, ilike, asc, desc, count, sql } from 'drizzle-orm';
+import { eq, and, or, ilike, asc, desc, count, inArray, sql } from 'drizzle-orm';
 import type { Task } from '../db/schema';
 import { tasks } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
@@ -78,6 +78,31 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
     });
 
     return results[0] ?? null;
+  }
+
+  /**
+   * Resolve a set of task slugs to their task UUIDs.
+   *
+   * Matching is case-insensitive: `lower(slug)` is compared against the
+   * lowercased input slugs, backed by `tasks_slug_lower_idx`. Slugs that don't
+   * correspond to an existing task are simply omitted from the result.
+   *
+   * @param slugs - Task slugs to resolve (e.g. `roar-anb`, `egma-math`)
+   * @returns Array of task UUIDs whose slug matches the input; empty when input is empty
+   */
+  async getIdsBySlugs(slugs: string[]): Promise<string[]> {
+    if (slugs.length === 0) {
+      return [];
+    }
+
+    const lowerSlugs = slugs.map((slug) => slug.toLowerCase());
+
+    const rows = await this.db
+      .select({ id: tasks.id })
+      .from(tasks)
+      .where(inArray(sql`lower(${tasks.slug})`, lowerSlugs));
+
+    return rows.map((row) => row.id);
   }
 
   /**
