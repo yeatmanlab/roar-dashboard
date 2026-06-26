@@ -213,6 +213,23 @@ const {
   enabled: computed(() => initialized.value && Boolean(userId.value)),
 });
 
+// Resolve the participant's ROAR (Postgres) user ID — the identity the
+// `GET /users/:userId/administrations` endpoint expects, NOT the Firebase
+// `roarUid`.
+//
+// In proxy-launch mode (`props.launchId` set — e.g. a parent launching a
+// child from StudentCardSimple), `launchId` IS the participant's ROAR user
+// UUID, so it is the participant identity. On the self path (`launchId`
+// null) we fall back to the launching user's own `/me` ID. This drives the
+// per-user administrations query, the consent-gate agreements query, and
+// consent recording below.
+//
+// Reading another user's administrations and agreements relies on the backend
+// guardian-read authorization (`can_read_child`); without it the parent-scoped
+// reads return 403.
+const { data: me } = useMeQuery({ enabled: initialized });
+const userId = computed(() => props.launchId ?? me.value?.id);
+
 const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,

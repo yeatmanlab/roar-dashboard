@@ -122,8 +122,8 @@ async function startTask(selectedAdmin) {
     // administrations in parallel to resolve the correct administrationId and variantId.
     //
     // authStore.roarUid is a Firestore UID, not a Postgres UUID. GET /me resolves the
-    // Postgres UUID for the currently authenticated user (self-launch path).
-    // TODO: resolve the participant's Postgres UUID for the proxy-launch path (launchId set).
+    // Postgres UUID for the currently authenticated user (self-launch path); the
+    // proxy-launch path uses props.launchId directly (see below).
     //
     // NOTE: Until the dashboard migrates its administration queries to the new REST API,
     // selectedAdmin.value.id is a Firestore document ID and will not match any administration
@@ -143,16 +143,12 @@ async function startTask(selectedAdmin) {
       throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
     }
 
-    // Proxy-launch path (launchId set) requires resolving the participant's Postgres UUID from
-    // the launch record — props.launchId is an assignment/launch ID, not a user ID. Passing it
-    // as participantId would silently create runs under the wrong ID. Fail loudly until this
-    // is properly implemented (see TODO above).
-    if (props.launchId) {
-      throw new Error(
-        'Proxy-launch path is not yet supported for Letter. Resolve the participant Postgres UUID before enabling this path.',
-      );
-    }
-    const participantId = meRes.body.data.id;
+    // Proxy-launch path: `props.launchId` is the participant's ROAR (Postgres) user UUID
+    // (set by StudentCardSimple when a parent launches a child), so it is the participant
+    // identity directly. On the self path (`launchId` null) we use the launching user's own
+    // `/me` ID. Run creation targets this participant via POST /v1/user/:userId/runs, which
+    // the backend authorizes with `can_create_run_for_child` (proxy) or self.
+    const participantId = props.launchId ?? meRes.body.data.id;
 
     // Fetch the participant's administrations from the ROAR POSTGRES backend.
     const adminsRes = await roarApiClient.users.listUserAdministrations({
