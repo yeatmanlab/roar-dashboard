@@ -1620,50 +1620,68 @@ export const taskInfoById = {
       'appropriately.',
   },
   cva: {
-    header: 'ROAR-CVA',
+    header: '`ROAR - Written Vocabulary',
     color: '#52627E',
     subheader: 'CVA Assessment',
     desc:
-      'ROAR-CVA assesses a student’s ability to comprehend and analyze visual information. ' +
-      'This assessment evaluates skills such as interpreting graphs, charts, and diagrams, ' +
-      'as well as understanding visual representations of data. The student’s score will range ' +
-      'between {{RAW_SCORE_RANGE}} and can be viewed by selecting "Raw Score" on the table above. ' +
-      'Students in the pink category may need additional support in visual comprehension skills, ' +
-      'while those in the yellow category are developing their abilities and may benefit from further practice. ' +
-      'Students in the green category demonstrate strong visual comprehension skills.',
+      'Written Vocabulary evaluates a student’s knowledge of academic vocabulary through their ability to identify words with similar ' +
+      'meanings in context. Vocabulary knowledge is a critical component of reading comprehension, as students must understand the ' +
+      'meanings of individual words to make sense of increasingly complex texts. This assessment measures a student’s ability to ' +
+      'identify synonyms of words based on their meaning within a sentence, providing insight into their vocabulary knowledge. The ' +
+      'student’s score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting "Raw Score" on the table above. ' +
+      'Students in the pink category need support in developing academic vocabulary and understanding word meanings. Limited ' +
+      'vocabulary knowledge may make it more difficult for these students to comprehend grade-level texts and learn new academic ' +
+      'content. Students in the yellow category are continuing to develop their academic vocabulary and may benefit from additional ' +
+      'exposure to rich language and explicit vocabulary instruction. Students in the green category demonstrate vocabulary ' +
+      'knowledge that is likely sufficient to support comprehension of grade-level texts and continued growth in reading and learning.',
   },
   morphology: {
-    header: 'ROAR-Morphology',
+    header: 'ROAR - Morphology',
     color: '#52627E',
     subheader: 'Morphology Assessment',
     desc:
-      'ROAR-Morphology evaluates a student’s understanding of word structure and the ability to analyze and manipulate morphemes, the smallest units of meaning in language. ' +
-      'This assessment measures skills such as identifying prefixes, suffixes, and root words, which are essential for vocabulary development and reading comprehension. ' +
-      'The student’s score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting "Raw Score" on the table above. ' +
-      'Students in the pink category may require additional support in morphological analysis, while those in the yellow category are developing their abilities. ' +
-      'Students in the green category demonstrate strong morphological awareness.',
+      'Morphology measures a student’s ability to use morphological information, such as prefixes and suffixes, to signal the meaning ' +
+      'and grammatical function of words in a sentence. Morphological awareness supports reading comprehension by helping students to ' +
+      'build vocabulary through decoding and understand complex words. This assessment provides insight into the student’s understanding ' +
+      'of word structure and vocabulary. The student’s score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting ' +
+      '"Raw Score" on the table above. Students in the pink category need support in developing morphological awareness and understanding ' +
+      'how word parts contribute to meaning. Difficulties in this area may make it more challenging to understand unfamiliar vocabulary ' +
+      'and comprehend complex texts. Students in the yellow category are continuing to develop their understanding of morphological ' +
+      'structures and may benefit from additional practice with word formation and word meanings. Students in the green category demonstrate ' +
+      'morphological knowledge that is likely sufficient to support vocabulary growth, reading comprehension, and learning from complex text.',
   },
   'roar-inference': {
-    header: 'ROAR-Inference',
+    header: 'ROAR - Inference',
     color: '#52627E',
     subheader: 'Inference Assessment',
     desc:
-      'ROAR-Inference evaluates a student’s ability to make logical inferences based on given information. ' +
-      'This assessment measures critical thinking and reasoning skills, which are essential for understanding complex texts. ' +
-      'The student’s score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting "Raw Score" on the table above. ' +
-      'Students in the pink category may require additional support in inference skills, while those in the yellow category are developing their abilities. ' +
-      'Students in the green category demonstrate strong inference-making skills.',
+      'Inference evaluates a student’s ability to make meaning beyond information that is explicitly stated in a text. The ability to ' +
+      'make inferences is an important component of reading comprehension, as readers must integrate statements in a passage with their ' +
+      'background knowledge to understand implied ideas, relationships, and intentions. This assessment measures a student’s ability to ' +
+      'answer questions that require inference-making based on short written passages, providing insight into their ability to make ' +
+      'connections between sentences within a text and between the text and their background knowledge. The student’s score will range ' +
+      "between {{RAW_SCORE_RANGE}} and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need " +
+      'support in developing inferential comprehension skills. Difficulties in this area may make it challenging to understand implied ' +
+      'meanings, connect ideas across a text, and fully comprehend grade-level reading materials. Students in the yellow category are ' +
+      'continuing to develop their ability to draw inferences from text and may benefit from additional practice identifying textual ' +
+      'evidence and using it to support conclusions. Students in the green category demonstrate inferential comprehension skills that ' +
+      'are likely sufficient to support successful understanding of grade-level texts and continued growth in reading comprehension.',
   },
   trog: {
-    header: 'ROAR-TROG',
+    header: 'ROAR - Syntax',
     color: '#52627E',
     subheader: 'TROG Assessment',
     desc:
-      'ROAR-TROG assesses a student’s understanding of grammatical structures and their ability to comprehend sentences. ' +
-      'This assessment evaluates skills such as identifying sentence components, understanding syntax, and interpreting meaning from sentence context. ' +
-      'The student’s score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting "Raw Score" on the table above. ' +
-      'Students in the pink category may require additional support in grammar and sentence comprehension, while those in the yellow category are developing their abilities. ' +
-      'Students in the green category demonstrate strong grammatical understanding.',
+      'Syntax evaluates a student’s understanding of English sentence structure and how grammatical relationships contribute to meaning. ' +
+      'Syntactic knowledge supports reading comprehension by helping students interpret how word order, phrases, and clauses work together ' +
+      'to convey ideas within a sentence. This assessment measures a student’s ability to use syntactic structures to understand meaning ' +
+      'in context, providing insight into their comprehension of English language structures. The student’s score will range between ' +
+      "{{RAW_SCORE_RANGE}} and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in " +
+      'developing syntactic knowledge and understanding how sentence structure contributes to meaning. Difficulties in this area may make ' +
+      'it more challenging to comprehend complex texts, follow multi-clause sentences, and interpret relationships between ideas. Students ' +
+      'in the yellow category are continuing to develop their understanding of English syntax and may benefit from additional exposure to ' +
+      'and practice with increasingly complex sentence structures. Students in the green category demonstrate syntactic knowledge that is ' +
+      'likely sufficient to support comprehension of grade-level texts and continued growth in reading and academic learning.',
   },
 };
 
