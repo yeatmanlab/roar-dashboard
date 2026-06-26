@@ -99,6 +99,8 @@ runs:
         target: "${{ inputs.firebase-hosting-site }}"
         expires: "${{ inputs.expires }}"
         entryPoint: ./app
+        # TODO: Unpin once firebase-tools 15.22.x WIF auth regression is resolved
+        firebaseToolsVersion: "15.21.0"
 
     - name: Deploy application
       if: ${{ inputs.firebase-channel == 'default' }}
@@ -109,6 +111,8 @@ runs:
         channelId: "live"
         target: "${{ inputs.firebase-hosting-site }}"
         entryPoint: ./app
+        # TODO: Unpin once firebase-tools 15.22.x WIF auth regression is resolved
+        firebaseToolsVersion: "15.21.0"
 
     # Output deployment URL
     - name: Output deployment URL
