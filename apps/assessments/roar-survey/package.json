@@ -1,0 +1,44 @@
+{
+  "name": "@roar-platform/roar-survey",
+  "version": "0.2.2",
+  "main": "./lib/roar-survey.umd.js",
+  "module": "./lib/roar-survey.es.js",
+  "type": "module",
+  "files": [
+    "lib"
+  ],
+  "exports": {
+    ".": {
+      "import": "./lib/roar-survey.es.js",
+      "require": "./lib/roar-survey.umd.js"
+    },
+    "./lib/*.css": {
+      "import": "./lib/*.css",
+      "require": "./lib/*.css"
+    }
+  },
+  "peerDependencies": {
+    "vue": "^3.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --mode lib",
+    "build:staging": "vite build --mode staging",
+    "build:production": "vite build --mode production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeatmanlab/roar-survey-app.git"
+  },
+  "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
+  "dependencies": {
+    "@bdelab/roar-firekit": "^9.8.0",
+    "regenerator-runtime": "^0.14.1",
+    "survey-core": "^2.0.8",
+    "survey-vue3-ui": "^2.0.8"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.3",
+    "vite": "^6.3.5"
+  }
+}
