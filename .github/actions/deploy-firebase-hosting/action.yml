@@ -85,10 +85,14 @@ runs:
         fi
         cd app && pwd && ls -la
 
-    # Temporary workaround: pin Node.js 22 so firebase-tools uses Node 22 when
-    # calling sts.googleapis.com. Node 24 (default since June 16 2026) triggers
-    # a "Premature close" error in gaxios inside google-auth-library. Removing
-    # this step once google-auth-library ships a Node 24–compatible STS client.
+    # Temporary workaround: force Node.js 22 (Active LTS until April 2027) so
+    # firebase-tools does not inherit the Node 24 default introduced on GitHub
+    # Actions runners on June 16, 2026. Node 24's undici-based native fetch
+    # triggers a "Premature close" error in gaxios inside google-auth-library
+    # when exchanging WIF credentials with sts.googleapis.com. Node 22's fetch
+    # does not have this issue.
+    # TODO: Remove this step once google-auth-library ships a Node 24-compatible
+    # STS client (track: https://github.com/googleapis/google-auth-library-nodejs).
     - name: Set up Node.js 22 for firebase-tools
       uses: actions/setup-node@v4
       with:
@@ -97,6 +101,9 @@ runs:
     # Deploy application
     # Note: Due to a bug in the FirebaseExtended/action-hosting-deploy action, it is not possible to use a conditional
     # expression on the channelId parameter. As a workaround, we use two separate steps to deploy the application.
+    # Note: firebaseToolsVersion is pinned to 15.21.0 because firebase-tools 15.22.x introduced a regression where
+    # the gaxios dependency fails to exchange WIF credentials via sts.googleapis.com on Node 22+. 15.21.0 is the
+    # last known-good version. Remove the pin once the upstream fix is confirmed in a later firebase-tools release.
     - name: Deploy application to ephemeral environment
       if: ${{ inputs.firebase-channel == 'preview' }}
       uses: FirebaseExtended/action-hosting-deploy@v0.11.0
@@ -108,6 +115,7 @@ runs:
         target: "${{ inputs.firebase-hosting-site }}"
         expires: "${{ inputs.expires }}"
         entryPoint: ./app
+        firebaseToolsVersion: "15.21.0"
 
     - name: Deploy application
       if: ${{ inputs.firebase-channel == 'default' }}
@@ -118,6 +126,7 @@ runs:
         channelId: "live"
         target: "${{ inputs.firebase-hosting-site }}"
         entryPoint: ./app
+        firebaseToolsVersion: "15.21.0"
 
     # Output deployment URL
     - name: Output deployment URL
