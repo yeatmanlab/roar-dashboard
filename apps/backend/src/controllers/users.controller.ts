@@ -1,5 +1,6 @@
 import type { AuthContext } from '../types/auth-context';
 import type { User } from '../db/schema';
+import type { UserMembershipDetail } from '../repositories/user.repository';
 import type {
   UserResponse,
   CreateUserRequestBody,
@@ -9,6 +10,7 @@ import type {
   AdministrationsListQuery,
   AdministrationAgreementsListQuery,
   UserAdministrationAgreement,
+  UserMembershipResponse,
 } from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { UserService } from '../services/user';
@@ -81,6 +83,44 @@ function toUserAdministrationAgreement(item: AgreementWithSignedStatus): UserAdm
   return {
     ...toAgreementItem(item),
     signed: item.signed,
+  };
+}
+
+/**
+ * Map a service-layer membership into the API response shape.
+ *
+ * `UserMembershipDetail` is a discriminated union on `entityType`, so the branches
+ * narrow `role` (org/class roles vs. family roles) and surface the parent
+ * `schoolId` / `districtId` only on class memberships.
+ *
+ * @param membership - Service result for a single active membership
+ * @returns The API-formatted membership
+ */
+function toUserMembershipResponse(membership: UserMembershipDetail): UserMembershipResponse {
+  if (membership.entityType === 'class') {
+    // Parent IDs are present on full-access reads (self / super admin / guardian) and
+    // omitted on the scoped supervisory path — include them only when provided.
+    return {
+      entityType: 'class',
+      entityId: membership.entityId,
+      role: membership.role,
+      ...(membership.schoolId !== undefined ? { schoolId: membership.schoolId } : {}),
+      ...(membership.districtId !== undefined ? { districtId: membership.districtId } : {}),
+    };
+  }
+
+  if (membership.entityType === 'family') {
+    return {
+      entityType: 'family',
+      entityId: membership.entityId,
+      role: membership.role,
+    };
+  }
+
+  return {
+    entityType: membership.entityType,
+    entityId: membership.entityId,
+    role: membership.role,
   };
 }
 
@@ -363,6 +403,39 @@ export const UsersController = {
         return toErrorResponse(error, [
           StatusCodes.NOT_FOUND,
           StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List a user's active entity memberships, scoped to the requester's access.
+   *
+   * Delegates authorization and row scoping to UserService; transforms the
+   * service result into the unpaginated API response.
+   *
+   * @param authContext - Requesting user's authentication context.
+   * @param userId - UUID of the user whose memberships to list.
+   */
+  listUserMemberships: async (authContext: AuthContext, userId: string) => {
+    try {
+      const memberships = await userService.listUserMemberships(authContext, userId);
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items: memberships.map(toUserMembershipResponse),
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
