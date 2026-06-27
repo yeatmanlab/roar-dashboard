@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapAdministrationTasksToGames } from './participantGames';
+import { mapAdministrationTasksToGames, gameNeedsOrgMemberships } from './participantGames';
 
 const TASK_SWR = {
   id: '00000000-0000-0000-0000-000000000001',
@@ -25,6 +25,38 @@ const makeTask = (overrides = {}) => ({
   optional: false,
   progress: { startedOn: null, completedOn: null, allowRetake: false },
   ...overrides,
+});
+
+describe('gameNeedsOrgMemberships', () => {
+  const externalGame = (taskId, urlField = 'taskURL') => ({
+    taskId,
+    taskData: { [urlField]: 'https://example.com/launch' },
+  });
+
+  it('returns true for a generic external task (taskURL)', () => {
+    expect(gameNeedsOrgMemberships(externalGame('swr'))).toBe(true);
+  });
+
+  it('returns true for a generic external task (variantURL)', () => {
+    expect(gameNeedsOrgMemberships(externalGame('swr', 'variantURL'))).toBe(true);
+  });
+
+  it('returns false for a qualtrics external task (needs only assessmentPid)', () => {
+    expect(gameNeedsOrgMemberships(externalGame('survey-qualtrics'))).toBe(false);
+  });
+
+  it('returns false for a mefs external task (needs only age, derived from dob)', () => {
+    expect(gameNeedsOrgMemberships(externalGame('mefs'))).toBe(false);
+  });
+
+  it('returns false for an internal task with no external URL', () => {
+    expect(gameNeedsOrgMemberships({ taskId: 'swr', taskData: {} })).toBe(false);
+  });
+
+  it('returns false for a nullish or shapeless game', () => {
+    expect(gameNeedsOrgMemberships(undefined)).toBe(false);
+    expect(gameNeedsOrgMemberships({})).toBe(false);
+  });
 });
 
 describe('mapAdministrationTasksToGames', () => {
