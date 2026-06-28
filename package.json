@@ -7,7 +7,6 @@
   "version": "3.26.0",
   "scripts": {
     "dev": "turbo run dev --filter=!./apps/assessments/*",
-    "dev:setup": "docker compose up -d --wait",
     "dev:seed": "cd apps/backend && npm run dev:seed",
     "dev:reset": "cd apps/backend && npm run dev:reset",
     "dev:setup:certs": "setup-certs",

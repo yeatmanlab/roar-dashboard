@@ -300,9 +300,9 @@ such as task/variant management as a super admin — bring up the whole stack wi
 one command, mirroring the CI end-to-end job:
 
 ```bash
-npm run dev:setup   # Start Postgres, OpenFGA, and the Firebase Auth emulator via Docker
-npm run dev:seed    # Run database migrations and seed fixture data
-npm run dev         # Start the dashboard (and backend via turbo)
+docker compose up -d --wait   # Start Postgres, OpenFGA, and the Firebase Auth emulator
+npm run dev:seed              # Run database migrations and seed fixture data
+npm run dev                   # Start the dashboard (and backend via turbo)
 ```
 
 **Prerequisites:** Docker and the usual local state — the `env-configs`
@@ -310,7 +310,7 @@ submodule, `apps/dashboard/env-configs/.env.keys`, and TLS certs
 (`npm run dev:setup:certs`). The Firebase Auth emulator runs inside a Docker
 container, so Java and firebase-tools are not required on the host. If you
 already run Postgres on `5432`, pick a free port:
-`ROAR_PG_PORT=5433 npm run dev:setup`.
+`ROAR_PG_PORT=5433 docker compose up -d --wait`.
 
 **Signing in:** the seed script prints the seeded logins on startup (also
 written to `/tmp/roar-cypress-fixture.json`). Sign in at https://localhost:5173
