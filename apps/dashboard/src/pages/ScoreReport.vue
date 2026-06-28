@@ -538,6 +538,7 @@ const scoreOverviewBySlug = computed(() =>
   Object.fromEntries((scoreOverviewData.value?.tasks ?? []).map((task) => [task.taskSlug, task.supportLevels])),
 );
 
+<<<<<<< HEAD
 // Server-computed distribution facets per task (support-level + score bins, faceted by
 // grade and school) — the source for the per-task TaskReport distribution charts at ALL
 // scopes. This replaces both the client-side facet binning (non-district) and the Firestore
@@ -563,6 +564,8 @@ const taskUuidBySlug = computed(() => {
   return map;
 });
 
+=======
+>>>>>>> 2542919d3 (Wire the score-report overview charts to the backend overview endpoint)
 const getScoringVersions = computed(() => {
   if (!administrationData.value?.assessments) return {};
   const scoringVersions = Object.fromEntries(
