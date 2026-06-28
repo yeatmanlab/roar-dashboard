@@ -12,8 +12,8 @@
  * - `5xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` — groups, classes
  * - `6xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` — agreements
  *
- * This file is consumed by `seeds/index.ts`, not by the integration test
- * suite. Integration tests continue to use `baseFixture` with random IDs.
+ * Consumed by the seed script (`seeds/index.ts`), not by the integration
+ * test suite. Integration tests use `baseFixture` with random IDs.
  */
 import type { BaseFixture } from '../src/test-support/fixtures/base.fixture';
 import { OrgType } from '../src/enums/org-type.enum';

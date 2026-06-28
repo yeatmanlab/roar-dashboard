@@ -34,7 +34,7 @@ import {
   type SeedableEmulatorUser,
   type SeededEmulatorUser,
 } from '../src/test-support/firebase-emulator';
-import { seedDevFixture, DEV_IDS, DEV_USERS, DEV_FIXTURE_USER_KEYS, DEV_PASSWORD } from '../tooling';
+import { seedDevFixture, DEV_IDS, DEV_USERS, DEV_FIXTURE_USER_KEYS, DEV_PASSWORD } from './fixture';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

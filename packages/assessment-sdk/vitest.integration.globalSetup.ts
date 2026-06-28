@@ -218,8 +218,7 @@ export default async function globalSetup() {
   const serverBin = path.join(backendDir, 'dist', 'server.js');
   if (!existsSync(serverBin)) {
     throw new Error(
-      `[sdk-integration] Backend not built (${serverBin} not found).\n` +
-        'Run: npm run build -w apps/backend',
+      `[sdk-integration] Backend not built (${serverBin} not found).\n` + 'Run: npm run build -w apps/backend',
     );
   }
 
@@ -236,8 +235,7 @@ export default async function globalSetup() {
       .filter(Boolean)
       .join(', ');
     throw new Error(
-      `[sdk-integration] Unreachable services: ${down}.\n` +
-        'Start infrastructure with: docker compose up -d --wait',
+      `[sdk-integration] Unreachable services: ${down}.\n` + 'Start infrastructure with: docker compose up -d --wait',
     );
   }
 
