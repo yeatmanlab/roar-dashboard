@@ -37,6 +37,7 @@
             :student-first-name="studentFirstName"
             :student-grade="studentGrade"
             :task-data="taskData"
+            :report-tasks="isParentPath ? null : reportData?.tasks"
             :tasks-dictionary="tasksDictionary"
             :longitudinal-data="longitudinalData"
             :current-assignment-id="administrationId"
@@ -69,6 +70,7 @@
             :student-first-name="studentFirstName"
             :student-grade="studentGrade"
             :task-data="taskData"
+            :report-tasks="isParentPath ? null : reportData?.tasks"
             :tasks-dictionary="tasksDictionary"
             :longitudinal-data="longitudinalData"
             :expanded="expanded"
@@ -97,6 +99,7 @@ import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
 import useUserLongitudinalRunsQuery from '@/composables/queries/useUserLongitudinalRunsQuery';
+import useAdministrationIndividualScoreReportQuery from '@/composables/queries/useAdministrationIndividualScoreReportQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import usePagedPreview from '@/composables/usePagedPreview';
 import PdfExportService from '@/services/PdfExport.service';
@@ -112,6 +115,7 @@ import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { formatListArray } from '@/helpers/formatListArray';
 import { getStudentExternalId } from '@/helpers/getStudentExternalId';
 import { STUDENT_SCORE_REPORT_TASK_IDS } from '@/constants/studentScoreReportTasks';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 const props = defineProps({
   administrationId: { type: String, required: true },
@@ -125,6 +129,10 @@ const route = useRoute();
 
 const isPrintMode = computed(() => route.query.print !== undefined);
 
+// The parent/guardian path navigates with orgType 'family' and stays on the legacy
+// data path this PR; the administrator path (org scopes) uses the backend report endpoint.
+const isParentPath = computed(() => props.orgType === SINGULAR_ORG_TYPES.FAMILIES);
+
 const expanded = ref(false);
 const exportLoading = ref(false);
 
@@ -134,6 +142,7 @@ const isLoading = computed(
     isLoadingStudentData.value ||
     isLoadingTasksDictionary.value ||
     isLoadingTaskData.value ||
+    isLoadingReport.value ||
     isLoadingAdministrationData.value ||
     isLoadingLongitudinalData.value,
 );
@@ -150,19 +159,43 @@ const { data: administrationData, isLoading: isLoadingAdministrationData } = use
   },
 );
 
-const { data: taskData, isLoading: isLoadingTaskData } = useUserRunPageQuery(
+const { data: legacyTaskData, isLoading: isLoadingTaskData } = useUserRunPageQuery(
   props.userId,
   props.administrationId,
   props.orgType,
   props.orgId,
-  { enabled: initialized },
+  { enabled: computed(() => initialized.value && isParentPath.value) },
 );
+
+// Administrator path: server-computed individual report (scores, support level, tags,
+// subscores, per-task historical scores) — replaces the Firestore run-page + longitudinal
+// queries for org scopes.
+const { data: reportData, isLoading: isLoadingReport } = useAdministrationIndividualScoreReportQuery(
+  props.administrationId,
+  props.userId,
+  props.orgType,
+  props.orgId,
+  { enabled: computed(() => initialized.value && !isParentPath.value) },
+);
+
+// Unified task data for the container's summary/distribution computeds. Admin path maps
+// the backend tasks to the minimal { taskId(slug), scores } shape those computeds read
+// (scores present only when completed); parent path uses the legacy run data.
+const taskData = computed(() => {
+  if (!isParentPath.value) {
+    return (reportData.value?.tasks ?? []).map((task) => ({
+      taskId: task.taskSlug,
+      scores: task.completed ? task.scores : undefined,
+    }));
+  }
+  return legacyTaskData.value;
+});
 
 const { data: longitudinalData, isLoading: isLoadingLongitudinalData } = useUserLongitudinalRunsQuery(
   props.userId,
   props.orgType,
   props.orgId,
-  { enabled: initialized, select: (data) => data },
+  { enabled: computed(() => initialized.value && isParentPath.value), select: (data) => data },
 );
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({
