@@ -26,6 +26,15 @@ const props = defineProps({
     required: false,
     default: undefined,
   },
+  // Backend-aggregated support-level counts from the score-overview endpoint,
+  // shaped `{ needsExtraSupport: { count }, developingSkill: { count }, achievedSkill: { count } }`.
+  // When provided, it is the chart's data source and `runs` is ignored — this is
+  // the server-computed replacement for the client-side `runs` aggregation.
+  supportLevelCounts: {
+    type: Object,
+    required: false,
+    default: undefined,
+  },
   orgType: {
     type: String,
     required: true,
@@ -59,6 +68,32 @@ const BACKEND_SUPPORT_LEVEL_LABELS = {
   developingSkill: 'Developing Skill',
   achievedSkill: 'Achieved Skill',
 };
+
+const supportLevelsOverview = computed(() => {
+  // Preferred path: server-aggregated counts from the score-overview endpoint.
+  if (props.supportLevelCounts) {
+    return Object.entries(BACKEND_SUPPORT_LEVEL_LABELS).map(([key, category]) => ({
+      category,
+      value: props.supportLevelCounts[key]?.count ?? 0,
+    }));
+  }
+  // Legacy Firestore paths (district aggregate object / per-run array). Guard
+  // first so an absent `runs` can't throw in the district branch below.
+  if (!props.runs) return [];
+  if (props.orgType === 'district') {
+    return Object.entries(props.runs)
+      .filter(([support_level]) => MATCHING_SUPPORT_LEVELS[support_level] != undefined)
+      .map(([support_level, total]) => ({ category: MATCHING_SUPPORT_LEVELS[support_level], value: total.total }));
+  }
+  let values = {};
+  for (const { scores } of props.runs) {
+    const support_level = scores.support_level;
+    if (support_level in values) {
+      values[support_level] += 1;
+    } else {
+      values[support_level] = 1;
+    }
+  }
 
 const supportLevelsOverview = computed(() => {
   // Server-aggregated counts from the score-overview endpoint, shaped
@@ -130,7 +165,7 @@ const draw = async () => {
 };
 
 watch(
-  [() => overviewDistributionChart.value, () => props.supportLevelCounts],
+  [() => overviewDistributionChart.value, () => props.runs, () => props.supportLevelCounts, () => props.orgType],
   () => {
     if (props.taskId !== 'letter') {
       draw();

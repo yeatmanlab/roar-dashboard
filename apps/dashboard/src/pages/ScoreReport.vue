@@ -430,7 +430,6 @@ import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useAdministrationScoreOverviewQuery from '@/composables/queries/useAdministrationScoreOverviewQuery';
-import useAdministrationScoreStudentsQuery from '@/composables/queries/useAdministrationScoreStudentsQuery';
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
@@ -529,7 +528,7 @@ const {
 // from the Firestore `useAdministrationAssignmentsQuery` / `useDistrictSupportCategoriesQuery`,
 // which also feed the table + subscore tables. They're unified onto the backend in the final
 // score-report cleanup PR once those components are migrated.
-const { data: scoreOverviewData, isLoading: isLoadingScoreOverview } = useAdministrationScoreOverviewQuery(
+const { data: scoreOverviewData } = useAdministrationScoreOverviewQuery(
   props.administrationId,
   props.orgType,
   props.orgId,
