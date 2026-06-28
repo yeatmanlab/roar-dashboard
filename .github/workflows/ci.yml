@@ -178,7 +178,6 @@ jobs:
           CYPRESS_ROAR_API_BASE_URL: http://127.0.0.1:4000
         with:
           install: false
-          build: false
           start: npm run preview -- --host
           tag: ${{ github.event_name }},e2e,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}
@@ -235,7 +234,6 @@ jobs:
         with:
           component: true
           install: false
-          build: false
           start: npm run preview -- --host
           tag: ${{ github.event_name }},component,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}
