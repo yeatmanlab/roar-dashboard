@@ -6,10 +6,7 @@ import { defineConfig } from 'vitest/config';
 // @ts-expect-error - vitest/vite mode parameter type mismatch
 export default defineConfig(({ mode }) => {
   const resolvedMode = mode || 'test';
-  const backendDir = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '../../apps/backend',
-  );
+  const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../apps/backend');
 
   // Load env vars from the backend's .env.test/.env — the SDK integration
   // tests need CORE_DATABASE_URL, ASSESSMENT_DATABASE_URL, FGA_API_URL, etc.

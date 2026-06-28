@@ -91,11 +91,7 @@ function readFgaEnv(backendDir: string): { FGA_STORE_ID: string; FGA_MODEL_ID: s
  * @param port - Port the backend is listening on
  * @param maxAttempts - Maximum number of poll attempts (1 second apart)
  */
-async function waitForBackendHealth(
-  proc: ChildProcess,
-  port: string,
-  maxAttempts = 30,
-): Promise<void> {
+async function waitForBackendHealth(proc: ChildProcess, port: string, maxAttempts = 30): Promise<void> {
   const healthUrl = `http://localhost:${port}/health/startup`;
 
   // Race health polling against early process exit
@@ -107,10 +103,7 @@ async function waitForBackendHealth(
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      const response = await Promise.race([
-        fetch(healthUrl, { signal: AbortSignal.timeout(5000) }),
-        earlyExit,
-      ]);
+      const response = await Promise.race([fetch(healthUrl, { signal: AbortSignal.timeout(5000) }), earlyExit]);
       if (response.ok) {
         console.log(`[sdk-integration] Backend is healthy at ${healthUrl}`);
         return;
@@ -186,10 +179,7 @@ async function killProcess(proc: ChildProcess): Promise<void> {
   if (!graceful) {
     console.warn('[sdk-integration] Backend did not exit after SIGTERM, sending SIGKILL');
     proc.kill('SIGKILL');
-    await Promise.race([
-      closed,
-      new Promise<void>((resolve) => setTimeout(resolve, 2000)),
-    ]);
+    await Promise.race([closed, new Promise<void>((resolve) => setTimeout(resolve, 2000))]);
   }
 
   console.log(`[sdk-integration] Backend process terminated (pid ${proc.pid})`);
