@@ -26,6 +26,15 @@ const props = defineProps({
     required: false,
     default: undefined,
   },
+  // Backend-aggregated support-level counts from the score-overview endpoint,
+  // shaped `{ needsExtraSupport: { count }, developingSkill: { count }, achievedSkill: { count } }`.
+  // When provided, it is the chart's data source and `runs` is ignored — this is
+  // the server-computed replacement for the client-side `runs` aggregation.
+  supportLevelCounts: {
+    type: Object,
+    required: false,
+    default: undefined,
+  },
   orgType: {
     type: String,
     required: true,
