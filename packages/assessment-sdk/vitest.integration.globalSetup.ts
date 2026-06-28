@@ -5,9 +5,8 @@
  * the backend server and waits for it to be healthy. Env vars are loaded in
  * vitest.config.ts via loadEnv() — this file only overrides what must differ.
  *
- * When infrastructure is unavailable, the setup skips gracefully and provides
- * `integrationReady: false` so test files can skip themselves instead of
- * crashing the entire test run.
+ * When infrastructure is unavailable, the setup throws so the integration
+ * test project fails immediately with a clear error message.
  *
  * Vitest expects globalSetup to return a teardown function (not a named export).
  * The teardown kills the spawned backend process and deletes the FGA store.
@@ -21,8 +20,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ChildProcess } from 'node:child_process';
-import type { TestProject } from 'vitest/node';
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const BACKEND_PORT = process.env.BACKEND_PORT || '4001';
@@ -206,28 +203,24 @@ async function deleteFgaStore(fgaApiUrl: string, storeId: string): Promise<void>
   }
 }
 
-export default async function globalSetup({ provide }: TestProject) {
+export default async function globalSetup() {
   const required = ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'] as const;
   const missing = required.filter((key) => !process.env[key]);
   if (missing.length > 0) {
-    console.warn(
-      `[sdk-integration] Skipping — missing env vars: ${missing.join(', ')}.\n` +
-        'Integration tests will be skipped. Start infrastructure or use: npm run test:unit',
+    throw new Error(
+      `[sdk-integration] Missing env vars: ${missing.join(', ')}.\n` +
+        'Start infrastructure with: docker compose up -d --wait',
     );
-    provide('integrationReady', false);
-    return;
   }
 
   const backendDir = path.resolve(__dirname, '../../apps/backend');
 
   const serverBin = path.join(backendDir, 'dist', 'server.js');
   if (!existsSync(serverBin)) {
-    console.warn(
-      `[sdk-integration] Skipping — backend not built (${serverBin} not found).\n` +
+    throw new Error(
+      `[sdk-integration] Backend not built (${serverBin} not found).\n` +
         'Run: npm run build -w apps/backend',
     );
-    provide('integrationReady', false);
-    return;
   }
 
   // Probe required services before running the slow seed script
@@ -242,37 +235,24 @@ export default async function globalSetup({ provide }: TestProject) {
     const down = [!fgaUp && `OpenFGA (${fgaUrl})`, !emulatorUp && `Auth emulator (${emulatorHost})`]
       .filter(Boolean)
       .join(', ');
-    console.warn(
-      `[sdk-integration] Skipping — unreachable services: ${down}.\n` +
-        'Integration tests will be skipped. Start infrastructure or use: npm run test:unit',
+    throw new Error(
+      `[sdk-integration] Unreachable services: ${down}.\n` +
+        'Start infrastructure with: docker compose up -d --wait',
     );
-    provide('integrationReady', false);
-    return;
   }
 
   // Check for stale backend process before seeding
   if (await isPortInUse(BACKEND_PORT)) {
-    console.warn(
-      `[sdk-integration] Skipping — port ${BACKEND_PORT} is already in use.\n` +
+    throw new Error(
+      `[sdk-integration] Port ${BACKEND_PORT} is already in use.\n` +
         'A stale backend process may be running. Kill it with: lsof -ti :' +
         BACKEND_PORT +
         ' | xargs kill',
     );
-    provide('integrationReady', false);
-    return;
   }
 
   // 1. Seed databases, FGA, Auth emulator, and write fixture files
-  try {
-    runSeedScript(backendDir);
-  } catch (error) {
-    console.warn(
-      `[sdk-integration] Skipping — seed script failed.\n` +
-        `${error instanceof Error ? error.message : String(error)}`,
-    );
-    provide('integrationReady', false);
-    return;
-  }
+  runSeedScript(backendDir);
 
   // 2. Read FGA store/model IDs written by the seed script
   const fgaEnv = readFgaEnv(backendDir);
@@ -308,8 +288,6 @@ export default async function globalSetup({ provide }: TestProject) {
     backendProcess.kill('SIGKILL');
     throw error;
   }
-
-  provide('integrationReady', true);
 
   // Return the teardown function — Vitest calls this after all tests complete.
   // Uses closure variables instead of globalThis so there's no stale-reference risk.

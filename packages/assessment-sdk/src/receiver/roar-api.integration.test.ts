@@ -28,7 +28,7 @@
  *   handles global setup/teardown automatically)
  */
 
-import { describe, it, expect, beforeAll, inject } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import {
   initTestSdk,
   getBaseFixtureData,
@@ -39,9 +39,7 @@ import {
 import type { RoarApi } from './roar-api';
 import { PA_SCORE_NAMES, PA_SCORE_DOMAINS } from '@roar-platform/assessment-schema/roar-pa';
 
-const integrationReady = inject('integrationReady');
-
-describe.skipIf(!integrationReady)('Assessment SDK (integration)', () => {
+describe('Assessment SDK (integration)', () => {
   let api: RoarApi;
   let taskVariantId: string;
 
