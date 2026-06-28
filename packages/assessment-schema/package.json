@@ -36,6 +36,11 @@
       "types": "./dist/roar-multichoice/index.d.ts",
       "import": "./dist/roar-multichoice/index.js",
       "default": "./dist/roar-multichoice/index.js"
+    },
+    "./roar-survey": {
+      "types": "./dist/roar-survey/index.d.ts",
+      "import": "./dist/roar-survey/index.js",
+      "default": "./dist/roar-survey/index.js"
     }
   },
   "main": "./dist/index.js",

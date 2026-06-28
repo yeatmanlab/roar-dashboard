@@ -67,9 +67,17 @@ if ! curl -sfk "https://localhost:4000/health/live" >/dev/null 2>&1; then
   exit 1
 fi
 
+# Vite-based assessments (e.g. roar-survey) have no webpack.config.cjs.
+# Use vite for those; webpack for everything else.
+if [[ -f "$ASSESSMENT_DIR/webpack.config.cjs" ]]; then
+  ASSESSMENT_SERVER_CMD="cd $ASSESSMENT_DIR && FIREBASE_AUTH_EMULATOR_HOST=$EMULATOR_HOST npx webpack serve --open --mode development --env dbmode=development"
+else
+  ASSESSMENT_SERVER_CMD="cd $ASSESSMENT_DIR && FIREBASE_AUTH_EMULATOR_HOST=$EMULATOR_HOST npx vite --mode development"
+fi
+
 npx concurrently \
   --kill-others-on-fail \
   --names emulator,assessment \
   --prefix-colors cyan,green \
   "npx firebase emulators:start --only auth --project $EMULATOR_PROJECT_ID --config $FIREBASE_CONFIG" \
-  "for i in \$(seq 1 60); do curl -s http://localhost:9099/ >/dev/null 2>&1 && break; [ \"\$i\" = \"60\" ] && exit 1; sleep 1; done && cd $ASSESSMENT_DIR && FIREBASE_AUTH_EMULATOR_HOST=$EMULATOR_HOST npx webpack serve --open --mode development --env dbmode=development"
+  "for i in \$(seq 1 60); do curl -s http://localhost:9099/ >/dev/null 2>&1 && break; [ \"\$i\" = \"60\" ] && exit 1; sleep 1; done && $ASSESSMENT_SERVER_CMD"
