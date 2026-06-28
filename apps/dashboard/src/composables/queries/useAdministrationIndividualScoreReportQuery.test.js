@@ -104,9 +104,12 @@ describe('useAdministrationIndividualScoreReportQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
+<<<<<<< HEAD
     mockGetIndividualStudentReport.mockReset();
     mockGetIndividualStudentReport.mockResolvedValue(okResult());
 
+=======
+>>>>>>> f8301fc0b (Wire the individual student report (administrator path) to the backend endpoint)
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
     const result = await queryFn();
 
