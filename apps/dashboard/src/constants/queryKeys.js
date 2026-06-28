@@ -10,6 +10,7 @@ export const ADMINISTRATION_SCORE_STUDENTS_QUERY_KEY = 'administration-score-stu
 export const ADMINISTRATION_SCORE_FACETS_QUERY_KEY = 'administration-score-facets';
 export const ADMINISTRATION_TASK_SUBSCORES_QUERY_KEY = 'administration-task-subscores';
 export const ADMINISTRATION_INDIVIDUAL_REPORT_QUERY_KEY = 'administration-individual-report';
+export const USER_GUARDIAN_REPORT_QUERY_KEY = 'user-guardian-report';
 export const ADMINISTRATION_ASSIGNEES_QUERY_KEY = 'administration-assignees';
 export const ADMINISTRATION_TASK_VARIANTS_QUERY_KEY = 'administration-task-variants';
 export const ADMINISTRATION_AGREEMENTS_QUERY_KEY = 'administration-agreements';

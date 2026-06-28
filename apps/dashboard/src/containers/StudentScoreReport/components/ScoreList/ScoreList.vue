@@ -66,9 +66,9 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  // Administrator path: backend-computed report tasks. When present, the card data
-  // comes from the backend (retiring client scoring); the parent path leaves this
-  // null and stays on the legacy `taskData` pipeline until its own migration.
+  // Backend-computed report tasks, supplied for both the administrator and parent paths;
+  // when present the card data comes from the backend (retiring client scoring). The legacy
+  // `taskData` pipeline below is now dead and is removed in the score-report cleanup PR.
   reportTasks: {
     type: Array,
     required: false,
