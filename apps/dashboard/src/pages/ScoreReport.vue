@@ -58,11 +58,7 @@
                   <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
                     <div class="distribution-overview-wrapper">
                       <DistributionChartOverview
-                        :runs="
-                          props.orgType === 'district'
-                            ? aggregatedDistrictSupportCategories[taskId]
-                            : computeAssignmentAndRunData.runsByTaskId[taskId]
-                        "
+                        :support-level-counts="scoreOverviewBySlug[taskId]"
                         :initialized="initialized"
                         :task-id="taskId"
                         :org-type="props.orgType"
@@ -427,6 +423,7 @@ import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useAdministrationScoreOverviewQuery from '@/composables/queries/useAdministrationScoreOverviewQuery';
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
@@ -515,6 +512,25 @@ const {
 } = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId, {
   enabled: computed(() => initialized.value && props.orgType === 'district'),
 });
+
+// Server-computed support-level distributions per task: the source of the "at a glance"
+// chart VALUES, scoped to this org/class/group. Keyed by task slug to match the slug-based
+// `sortedAndFilteredTaskIds` the template iterates.
+//
+// NOTE (incremental): only the chart values move to the backend here. Which tasks show a
+// chart (`sortedAndFilteredTaskIds`) and the district loading / empty-state still derive
+// from the Firestore `useAdministrationAssignmentsQuery` / `useDistrictSupportCategoriesQuery`,
+// which also feed the table + subscore tables. They're unified onto the backend in the final
+// score-report cleanup PR once those components are migrated.
+const { data: scoreOverviewData } = useAdministrationScoreOverviewQuery(
+  props.administrationId,
+  props.orgType,
+  props.orgId,
+  { enabled: initialized },
+);
+const scoreOverviewBySlug = computed(() =>
+  Object.fromEntries((scoreOverviewData.value?.tasks ?? []).map((task) => [task.taskSlug, task.supportLevels])),
+);
 
 const getScoringVersions = computed(() => {
   if (!administrationData.value?.assessments) return {};
