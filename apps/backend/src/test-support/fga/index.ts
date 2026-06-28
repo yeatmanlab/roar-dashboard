@@ -13,8 +13,11 @@ import { transformer } from '@openfga/syntax-transformer';
 import fs from 'node:fs';
 import path from 'node:path';
 import { FgaClient } from '../../clients/fga.client';
+import { createChildLogger } from '../../logger';
 import { AuthorizationModule } from '../../services/system/authorization/authorization.module';
 import { MONOREPO_ROOT } from '../paths';
+
+const logger = createChildLogger({}, { msgPrefix: '[fga-test] ' });
 
 /** Cached parsed model JSON — read once, reused for every store reset. */
 let cachedModelJson: Omit<AuthorizationModel, 'id'> | null = null;
@@ -103,8 +106,7 @@ export async function syncFgaTuplesFromPostgres(): Promise<void> {
 }
 
 /**
- * Delete a specific FGA store by ID. Best-effort — silently ignores failures
- * (e.g., store already deleted or OpenFGA not reachable).
+ * Delete a specific FGA store by ID. Best-effort — logs failures but does not throw.
  *
  * @param storeId - The store ID to delete
  */
@@ -113,15 +115,16 @@ export async function deleteFgaStore(storeId: string): Promise<void> {
   const client = new OpenFgaClient({ apiUrl });
   try {
     await client.deleteStore({ storeId });
-  } catch {
-    // Best effort — store may already be gone or OpenFGA may not be reachable
+  } catch (err) {
+    logger.warn({ err, storeId }, 'Failed to delete FGA store (may already be gone)');
   }
 }
 
 /**
  * Clean up all FGA stores created during the test run.
  *
- * Called in `vitest.integration.globalTeardown.ts`. Best-effort — failures are ignored.
+ * Called in `vitest.integration.globalTeardown.ts`. Best-effort — logs
+ * failures but does not throw so the test run still exits cleanly.
  */
 export async function cleanupFgaTestStores(): Promise<void> {
   const apiUrl = process.env.FGA_API_URL;
@@ -131,8 +134,8 @@ export async function cleanupFgaTestStores(): Promise<void> {
   for (const storeId of createdStoreIds) {
     try {
       await client.deleteStore({ storeId });
-    } catch {
-      // Best effort cleanup — don't fail the test run
+    } catch (err) {
+      logger.warn({ err, storeId }, 'Failed to clean up FGA store');
     }
   }
 }
