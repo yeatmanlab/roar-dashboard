@@ -12,7 +12,9 @@
  * directly. See `.ai/rules/frontend-e2e-testing-pattern.md`.
  */
 import { FirebaseAuthClient } from '../clients/firebase-auth.clients';
-import { logger } from '../logger';
+import { createChildLogger } from '../logger';
+
+const logger = createChildLogger({}, { msgPrefix: '[firebase-emulator] ' });
 
 /**
  * Shared password for every emulator-seeded user.
@@ -73,16 +75,16 @@ const EXISTING_USER_ERROR_CODES = new Set(['auth/uid-already-exists', 'auth/emai
 export async function clearFirebaseAuthEmulator(projectId: string): Promise<void> {
   const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
   if (!emulatorHost) {
-    throw new Error('[clearFirebaseAuthEmulator] refusing to clear: FIREBASE_AUTH_EMULATOR_HOST is not set');
+    throw new Error('Refusing to clear: FIREBASE_AUTH_EMULATOR_HOST is not set');
   }
 
   const url = `http://${emulatorHost}/emulator/v1/projects/${projectId}/accounts`;
   const res = await fetch(url, { method: 'DELETE' });
   if (!res.ok) {
-    throw new Error(`[clearFirebaseAuthEmulator] DELETE ${url} returned ${String(res.status)}`);
+    throw new Error(`DELETE ${url} returned ${String(res.status)}`);
   }
 
-  logger.info('[clearFirebaseAuthEmulator] All emulator users deleted');
+  logger.info('All emulator users deleted');
 }
 
 /**
@@ -98,7 +100,7 @@ export async function clearFirebaseAuthEmulator(projectId: string): Promise<void
  */
 export async function seedFirebaseAuthEmulator(users: SeedableEmulatorUser[]): Promise<SeededEmulatorUser[]> {
   if (!process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-    throw new Error('[seedFirebaseAuthEmulator] refusing to seed: FIREBASE_AUTH_EMULATOR_HOST is not set');
+    throw new Error('Refusing to seed: FIREBASE_AUTH_EMULATOR_HOST is not set');
   }
 
   // Clear existing users so updated emails/passwords are always applied
@@ -135,7 +137,7 @@ export async function seedFirebaseAuthEmulator(users: SeedableEmulatorUser[]): P
     seeded.push({ authId: user.authId, email, password });
   }
 
-  logger.info({ created, skipped, total: users.length }, '[seedFirebaseAuthEmulator] Emulator seed complete');
+  logger.info({ created, skipped, total: users.length }, 'Emulator seed complete');
 
   return seeded;
 }
