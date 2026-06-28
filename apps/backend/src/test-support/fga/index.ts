@@ -71,7 +71,7 @@ async function createStoreWithModel(apiUrl: string, storeName: string): Promise<
  * Creates the first store, deploys the model, and sets env vars.
  */
 export async function initializeFgaTestStore(): Promise<void> {
-  const apiUrl = process.env.FGA_API_URL || 'http://localhost:8080';
+  const apiUrl = process.env.FGA_API_URL || 'http://localhost:4010';
   process.env.FGA_API_URL = apiUrl;
 
   await createStoreWithModel(apiUrl, `test-global-${Date.now()}`);
@@ -109,7 +109,7 @@ export async function syncFgaTuplesFromPostgres(): Promise<void> {
  * @param storeId - The store ID to delete
  */
 export async function deleteFgaStore(storeId: string): Promise<void> {
-  const apiUrl = process.env.FGA_API_URL || 'http://localhost:8080';
+  const apiUrl = process.env.FGA_API_URL || 'http://localhost:4010';
   const client = new OpenFgaClient({ apiUrl });
   try {
     await client.deleteStore({ storeId });

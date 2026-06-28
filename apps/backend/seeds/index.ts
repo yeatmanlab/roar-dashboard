@@ -211,7 +211,7 @@ async function main(): Promise<void> {
 
     // FGA: delete the previous store (if any) and create a fresh one.
     if (!process.env.FGA_API_URL) {
-      process.env.FGA_API_URL = 'http://localhost:8080';
+      process.env.FGA_API_URL = 'http://localhost:4010';
     }
 
     if (process.env.FGA_STORE_ID) {

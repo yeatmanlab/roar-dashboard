@@ -20,7 +20,7 @@ import { logger } from '../logger';
  * instance that attaches Google identity tokens to every request.
  *
  * Required environment variables:
- * - `FGA_API_URL` — OpenFGA server URL (e.g., `http://localhost:8080`)
+ * - `FGA_API_URL` — OpenFGA server URL (e.g., `http://localhost:4010`)
  * - `FGA_STORE_ID` — Store ID from `fga store create`
  * - `FGA_MODEL_ID` — Authorization model ID from `fga store create`
  *
