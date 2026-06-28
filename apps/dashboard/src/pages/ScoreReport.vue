@@ -321,7 +321,9 @@
           <div class="text-sm font-light text-gray-600 uppercase">Loading Task Reports</div>
         </div>
         <template v-if="!isLoadingAssignments && !isLoadingTasksDictionary && !isLoadingDistrictSupportCategories">
-          <PvTabs v-model:value="activeTabIndex">
+          <!-- lazy: only the active tab's TaskReport mounts, so subscore tables fetch on demand
+               (one cached request per opened tab) instead of all firing on report open. -->
+          <PvTabs v-model:value="activeTabIndex" lazy>
             <PvTabList>
               <PvTab v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="i" class="text-base">
                 {{ tasksDictionary[taskId]?.nameSimple ?? taskId }}
@@ -333,11 +335,11 @@
                 <div :id="'tab-view-' + taskId">
                   <TaskReport
                     v-if="taskId"
-                    :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
                     :task-id="taskId"
                     :initialized="initialized"
                     :administration-id="administrationId"
                     :facets="facetsByTask[taskId]"
+                    :task-uuid="taskUuidBySlug[taskId]"
                     :org-type="orgType"
                     :org-id="orgId"
                     :org-info="orgData"
@@ -550,6 +552,16 @@ const { data: scoreFacetsData } = useAdministrationScoreFacetsQuery(
 const facetsByTask = computed(() =>
   Object.fromEntries((scoreFacetsData.value?.tasks ?? []).map((task) => [task.taskSlug, task])),
 );
+
+// Slug → task UUID, from the backend report task metadata. The subscores endpoint
+// is keyed by UUID; the report iterates tasks by slug. Merged from the facets and
+// students responses so every scored task resolves regardless of which loaded first.
+const taskUuidBySlug = computed(() => {
+  const map = {};
+  for (const task of scoreFacetsData.value?.tasks ?? []) map[task.taskSlug] = task.taskId;
+  for (const task of studentScoresData.value?.tasks ?? []) map[task.taskSlug] = task.taskId;
+  return map;
+});
 
 const getScoringVersions = computed(() => {
   if (!administrationData.value?.assessments) return {};
