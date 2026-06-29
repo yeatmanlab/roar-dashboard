@@ -1,0 +1,33 @@
+@use '../abstracts' as *;
+
+.arrow-key-border {
+  max-width: 100% !important;
+  pointer-events: none;
+  svg {
+    width: min(6vw, 6vh);
+    height: min(6vw, 6vh);
+  }
+}
+
+.lev-progress-bar {
+  position: absolute;
+  top: $progress_bar_pos;
+  right: $progress_bar_pos;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: $progress_bar_width;
+  height: $progress_bar_height;
+  background-color: $bg-white-80;
+  border-radius: $progress_bar_height / 2;
+  overflow: hidden;
+
+  .progress-fill {
+    height: 100%;
+    background-color: $bg-button-primary;
+    border-radius: $progress_bar_height / 2;
+    width: 0%;
+  }
+}
