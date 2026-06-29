@@ -35,6 +35,52 @@ describe('useReportCardData', () => {
     expect(card.percentileScore.supportColor).toBe(SCORE_SUPPORT_LEVEL_COLORS.ABOVE);
   });
 
+  it("uses the backend display descriptor for the displayed score's value, label, and range", () => {
+    // Display resolves to the same grade-3 slot (percentile) but supplies the value/label/range,
+    // overriding the client-derived ones (scores.percentile 50, default max 99).
+    const task = makeTask({
+      display: { scoreType: 'percentile', value: 55, label: 'Percentile', range: { min: 0, max: 100 } },
+    });
+    const [card] = cards([task], '3');
+    expect(card.scoreToDisplay).toBe('percentileScore');
+    expect(card.percentileScore.value).toBe(55);
+    expect(card.percentileScore.name).toBe('scoreReports.percentileScore');
+    expect(card.percentileScore).toMatchObject({ min: 0, max: 100 });
+    // The breakdown row for the displayed type stays in sync with the dial.
+    const percentileRow = card.scoresArray.find((row) => row[0] === 'scoreReports.percentileScore');
+    expect(percentileRow).toEqual(['scoreReports.percentileScore', 55, 0, 100]);
+  });
+
+  it('maps a percentCorrect display onto the percentile slot, with the label and % suffix', () => {
+    const task = makeTask({
+      taskSlug: 'letter',
+      scores: { rawScore: 20, percentile: 85, standardScore: null },
+      display: { scoreType: 'percentCorrect', value: 85, label: 'Percent Correct', range: { min: 0, max: 100 } },
+    });
+    const { computedTaskData, scoreValueTemplate } = useReportCardData({
+      reportTasks: [task],
+      studentGrade: '1',
+      taskScoringVersions: {},
+      t,
+    });
+    const [card] = computedTaskData.value;
+    expect(card.scoreToDisplay).toBe('percentileScore');
+    expect(card.percentileScore.value).toBe(85);
+    expect(card.percentileScore.name).toBe('scoreReports.percentCorrect');
+    expect(card.percentileScore.max).toBe(100);
+    expect(scoreValueTemplate.value(card)).toBe('85%');
+  });
+
+  it('renders a null primary value when display.value is null, keeping the default range', () => {
+    const task = makeTask({
+      display: { scoreType: 'percentile', value: null, label: 'Percentile', range: null },
+    });
+    const [card] = cards([task], '3');
+    expect(card.percentileScore.value).toBeNull();
+    // display.range null → keep the client default (max 99), not undefined.
+    expect(card.percentileScore.max).toBe(99);
+  });
+
   it('surfaces the standard score for grade >= 6', () => {
     const [card] = cards([makeTask()], '8');
     expect(card.scoreToDisplay).toBe('standardScore');

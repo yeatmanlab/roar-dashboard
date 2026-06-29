@@ -50,6 +50,22 @@ export function useReportCardData(params) {
     needsExtraSupport: SCORE_SUPPORT_LEVEL_COLORS.BELOW,
   };
 
+  // The backend `display` descriptor's score type maps to a card score key; its stable
+  // label maps to the localized name. ('percentCorrect' is shown in the percentile slot,
+  // matching how the cards present percent-correct tasks.)
+  const DISPLAY_TYPE_TO_CARD_KEY = {
+    percentile: SCORE_TYPES.PERCENTILE_SCORE,
+    standardScore: SCORE_TYPES.STANDARD_SCORE,
+    rawScore: SCORE_TYPES.RAW_SCORE,
+    percentCorrect: SCORE_TYPES.PERCENTILE_SCORE,
+  };
+  const DISPLAY_LABEL_I18N = {
+    Percentile: 'scoreReports.percentileScore',
+    'Standard Score': 'scoreReports.standardScore',
+    'Raw Score': 'scoreReports.rawScore',
+    'Percent Correct': 'scoreReports.percentCorrect',
+  };
+
   // Which score type the card surfaces (mirrors ScoreReport.service.getScoreToDisplay).
   const getScoreToDisplay = (slug, grade) => {
     if (rawOnlyTasks.includes(slug)) return SCORE_TYPES.RAW_SCORE;
@@ -127,6 +143,32 @@ export function useReportCardData(params) {
       );
     }
 
+    // Primary display: when the backend supplies a `display` descriptor it owns the displayed
+    // score's value, label, and range — retiring the client getScoreToDisplay / getRawScoreRange
+    // / useSpanishNorms logic for it. For the authored tasks `display.scoreType` resolves to the
+    // same slot the grade/version rule already picks (percentCorrect → percentile slot; normed →
+    // percentile/standard by grade), so this mainly moves the label + range to the backend.
+    // Mutated in place *before* the breakdown rows below, so the displayed-type breakdown row
+    // reads the same value/range as the dial. Falls back to the client derivation when `display`
+    // is absent (not-yet-authored tasks, or before the backend ships).
+    // NOTE: getTaskDescription still derives its prose from grade + scoringVersion, which agrees
+    // with `display` by construction; sourcing the description from `display` too is a follow-up.
+    let scoreToDisplay = getScoreToDisplay(slug, grade);
+    if (task.display) {
+      const cardKey = DISPLAY_TYPE_TO_CARD_KEY[task.display.scoreType] ?? scoreToDisplay;
+      const card = scoresForTask[cardKey];
+      if (card) {
+        card.value = round(task.display.value);
+        const labelKey = DISPLAY_LABEL_I18N[task.display.label];
+        if (labelKey) card.name = t(labelKey);
+        if (task.display.range) {
+          card.min = task.display.range.min;
+          card.max = task.display.range.max;
+        }
+      }
+      scoreToDisplay = cardKey;
+    }
+
     // Score-breakdown rows: standard, percentile (grade < 6 only), raw — the order the
     // legacy createScoresArray sorts to. Letter/PA granular rows are a known gap.
     const scoresArray = [
@@ -158,7 +200,7 @@ export function useReportCardData(params) {
 
     return {
       taskId: slug,
-      scoreToDisplay: getScoreToDisplay(slug, grade),
+      scoreToDisplay,
       ...scoresForTask,
       tags: buildTags(task.optional, task.reliable, task.engagementFlags),
       scores: task.scores,
