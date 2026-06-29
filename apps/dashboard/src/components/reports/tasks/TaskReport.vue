@@ -144,7 +144,15 @@ const minGradeByRuns = computed(() => {
 const hasSchoolFacets = computed(() => (props.facets?.supportLevelBySchool?.length ?? 0) > 0);
 
 const taskDesc = computed(() => {
-  return replaceScoreRange(taskInfoById[props.taskId]?.desc, props.taskId, props.taskScoringVersions[props.taskId]);
+  // The backend supplies the resolved support threshold on the per-task facet; pass it through
+  // so the {{SUPPORT_RANGE}} substitution paints the backend value. `replaceScoreRange` falls
+  // back to the scoringVersion rule when it's absent (older backend, or facet not yet loaded).
+  return replaceScoreRange(
+    taskInfoById[props.taskId]?.desc,
+    props.taskId,
+    props.taskScoringVersions[props.taskId],
+    props.facets?.supportThreshold,
+  );
 });
 </script>
 
