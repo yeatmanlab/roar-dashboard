@@ -87,6 +87,7 @@
   },
   {
     "variantName": "vocab-school-4AFC-short",
+    "_doc": "vocab params are task-specific: numTrialsTotal, recruitment, story, userMode, and consent are read directly by taskConfig.vocab.setConfig, not by setSharedConfig. This is expected — tasks with non-standard param shapes handle them in their own setConfig.",
     "params": {
       "audioFeedback": "binary",
       "consent": true,

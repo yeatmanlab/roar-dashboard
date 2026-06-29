@@ -51,6 +51,10 @@ export const DEFAULT_LAYOUT_CONFIG: LayoutConfigType = {
   disableOkButton: false,
 };
 
+// Default corpus per task (camelCase task name). Used when variantParams.corpus is absent.
+// NOTE: hostileAttribution and childSurvey are not yet seeded in the ROAR backend
+// (no task or variant records exist). Selecting either task via ?task= or ?variantId=
+// will fail at the backend lookup step until seeds/roar-levante-tasks.seed.ts is extended.
 const defaultCorpus: Record<string, string> = {
   egmaMath: 'math-item-bank',
   matrixReasoning: 'matrix-reasoning-item-bank',

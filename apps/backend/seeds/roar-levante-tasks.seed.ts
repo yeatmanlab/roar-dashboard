@@ -187,7 +187,7 @@ async function seedTask(taskId: string): Promise<{ id: string }> {
       nameTechnical: meta.nameTechnical,
       taskConfig: {},
     })
-    .onConflictDoNothing()
+    .onConflictDoNothing({ target: tasks.slug })
     .returning();
 
   const task = inserted ?? (await db.query.tasks.findFirst({ where: eq(tasks.slug, taskId) }));

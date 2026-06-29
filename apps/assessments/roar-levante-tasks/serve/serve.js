@@ -22,6 +22,11 @@ const birthYear = urlParams.get('birthyear');
 const birthMonth = urlParams.get('birthmonth');
 const age = urlParams.get('age') === null ? null : parseInt(urlParams.get('age'), 10);
 
+// Optional language override. variantParams.language is authoritative for production;
+// this allows standalone/dev users to test a specific locale without creating a new variant.
+// setSharedConfig spreads userParams after variantParams, so this wins when present.
+const languageOverride = urlParams.get('lng');
+
 // Task selection: variantId wins; otherwise taskId resolves to the first published variant for that task.
 const taskId = urlParams.get('task') ?? 'egma-math';
 
@@ -70,6 +75,7 @@ onAuthStateChanged(auth, async (user) => {
         birthMonth,
         birthYear,
         age,
+        ...(languageOverride ? { language: languageOverride } : {}),
       };
 
       // eslint-disable-next-line no-undef
