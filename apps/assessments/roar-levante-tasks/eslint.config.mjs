@@ -4,7 +4,6 @@ import cypress from 'eslint-plugin-cypress/flat';
 import globals from 'globals';
 
 export default [
-  { ignores: ['serve/serve.js'] }, // serve.js migration to assessment-sdk is deferred to PR 2
   ...base,
 
   // TypeScript files — parser and recommended rules
