@@ -4,6 +4,7 @@ import cypress from 'eslint-plugin-cypress/flat';
 import globals from 'globals';
 
 export default [
+  { ignores: ['serve/serve.js'] },
   ...base,
 
   // TypeScript files — parser and recommended rules

@@ -23,7 +23,7 @@
   "type": "module",
   "roar": {
     "hosting": {
-      "staging": "roar-levante-monorepo-staging",
+      "staging": "roar-levante-monorepo-abc",
       "production": "roar-levante-monorepo"
     }
   },
@@ -39,11 +39,12 @@
     "stop": "bash ../../../scripts/assessment-env-down.sh",
     "restart": "npm run stop && npm run start",
     "rebuild": "bash ../../../scripts/assessment-env-build.sh",
-    "test": "vitest --run",
+    "test": "vitest run",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write --log-level=warn",
     "format:check": "prettier . --check",
+    "check-types": "tsc --noEmit",
     "cypress:open": "cypress open"
   },
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
