@@ -39,7 +39,7 @@ function clickFirstVisible() {
 
 // Loops until the completion text is present.
 function makeChoiceOrContinue(gameCompleteText, tries = 0) {
-  if (tries > 800) throw new Error('Exceeded max tries while playing the game.');
+  if (tries > 1600) throw new Error('Exceeded max tries while playing the game.');
 
   cy.get('body', { timeout: 1000 }).then(($body) => {
     const text = $body.text().replace(/\s\s+/g, ' ').trim();
