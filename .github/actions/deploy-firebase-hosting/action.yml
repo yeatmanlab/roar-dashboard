@@ -43,10 +43,18 @@ inputs:
 runs:
   using: composite
   steps:
+    # Ensure firebase-tools runs under the project's Node version instead of
+    # the runner's system default (which may lag behind and hit bugs like the
+    # keep-alive socket issue in Node 24.17.0 — nodejs/node#63989).
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+
     # Authenticate with GCP using Workload Identity Federation
     - name: Authenticate with GCP
       id: gcp-auth
-      uses: google-github-actions/auth@v2
+      uses: google-github-actions/auth@v3
       with:
         project_id: ${{ inputs.firebase-project-id }}
         workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
@@ -90,7 +98,7 @@ runs:
     # expression on the channelId parameter. As a workaround, we use two separate steps to deploy the application.
     - name: Deploy application to ephemeral environment
       if: ${{ inputs.firebase-channel == 'preview' }}
-      uses: FirebaseExtended/action-hosting-deploy@v0.9.0
+      uses: FirebaseExtended/action-hosting-deploy@v0.11.0
       id: firebase-deploy
       with:
         firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
@@ -102,7 +110,7 @@ runs:
 
     - name: Deploy application
       if: ${{ inputs.firebase-channel == 'default' }}
-      uses: FirebaseExtended/action-hosting-deploy@v0.9.0
+      uses: FirebaseExtended/action-hosting-deploy@v0.11.0
       with:
         firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
         projectId: "${{ inputs.firebase-project-id }}"
