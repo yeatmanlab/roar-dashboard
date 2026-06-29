@@ -730,6 +730,25 @@ describe('reports', () => {
       expect(sreDesc).not.toMatch(/{{.*}}/);
       expect(sreDesc).toMatch(/80%/);
     });
+
+    it('prefers the backend support threshold over the scoring-version rule', () => {
+      // swr version 6 resolves to 75% via the legacy rule, but the backend value wins.
+      const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 6, 80);
+      expect(swrDesc).not.toMatch(/{{.*}}/);
+      expect(swrDesc).toMatch(/80%/);
+      expect(swrDesc).not.toMatch(/75%/);
+
+      // sre version 4 resolves to 80% via the legacy rule, but the backend value wins.
+      const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 4, 75);
+      expect(sreDesc).toMatch(/75%/);
+      expect(sreDesc).not.toMatch(/80%/);
+    });
+
+    it('falls back to the scoring-version rule when no backend threshold is supplied', () => {
+      const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 7, null);
+      expect(swrDesc).not.toMatch(/{{.*}}/);
+      expect(swrDesc).toMatch(/80%/);
+    });
   });
 
   describe('getDialColor', () => {
