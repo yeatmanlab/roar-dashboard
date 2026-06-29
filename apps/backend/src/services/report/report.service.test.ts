@@ -2137,6 +2137,24 @@ describe('ReportService', () => {
         expect(task.scoreBinsByGrade).toEqual([]);
         expect(task.scoreBinsBySchool).toEqual([]);
       }
+      // Support threshold is task-config metadata (the developing-cutoff complement),
+      // so the zero-student empty facet still carries it. sre at version 0 → 75.
+      expect(result.tasks.find((t) => t.taskSlug === 'sre')!.supportThreshold).toBe(75);
+    });
+
+    it('populates per-task supportThreshold from the resolved scoring version', async () => {
+      setupDefaultFacetsMocks();
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const bySlug = Object.fromEntries(result.tasks.map((t) => [t.taskSlug, t.supportThreshold]));
+      // percentile-then-rawscore tasks at version 0 → 100 - developing(25) = 75.
+      expect(bySlug.swr).toBe(75);
+      expect(bySlug.sre).toBe(75);
+      expect(bySlug.pa).toBe(75);
+      // vocab has no percentile-then-rawscore classification → null.
+      expect(bySlug.vocab).toBeNull();
     });
 
     it('returns computedAt as a parseable ISO datetime', async () => {
