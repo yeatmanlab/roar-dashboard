@@ -114,3 +114,14 @@ export const FOUNDATIONAL_COMPOSITE_NORM_SCORE_NAMES = {
   standardScore: SCORE_NAME.STANDARD_SCORE,
   roarScore: SCORE_NAME.ROAR_SCORE,
 } as const;
+
+/**
+ * Minimum scoring versions required for each subtest to be included in the foundational composite.
+ * Subtests below these versions are skipped during composite calculation.
+ */
+export const FOUNDATIONAL_COMPOSITE_MIN_VERSIONS: Record<FoundationalCompositeSlug, number> = {
+  [FOUNDATIONAL_COMPOSITE_SLUG.SWR]: 7,
+  [FOUNDATIONAL_COMPOSITE_SLUG.SRE]: 5,
+  [FOUNDATIONAL_COMPOSITE_SLUG.PA]: 5,
+  [FOUNDATIONAL_COMPOSITE_SLUG.LETTER]: 1,
+} as const;

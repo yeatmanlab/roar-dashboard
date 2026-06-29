@@ -19,6 +19,7 @@ import {
   SRE_TRANSFORMED_FLOOR,
   FOUNDATIONAL_COMPOSITE_NORMING_ENABLED,
   FOUNDATIONAL_COMPOSITE_KEYING,
+  FOUNDATIONAL_COMPOSITE_MIN_VERSIONS,
 } from '../../constants/foundational-composite';
 import type { FoundationalCompositeSlug } from '../../constants/foundational-composite';
 import { loadCompositeNormTable } from './composite-norm-table';
@@ -121,10 +122,36 @@ function formatCompositeValue(value: number): string {
 }
 
 /**
+ * Determine which domain to read thetaEstimate from for a given subtest.
+ * SWR reads from `composite` (the shared/foundational IRT scale);
+ * all other subtests read from `composite_foundational`.
+ */
+function getDomainForSlug(slug: FoundationalCompositeSlug): string {
+  if (slug === FOUNDATIONAL_COMPOSITE_SLUG.SWR) {
+    return SCORE_DOMAIN.COMPOSITE;
+  }
+  return SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL;
+}
+
+/**
+ * Check if a subtest's scoring version meets the minimum requirement for inclusion
+ * in the foundational composite.
+ */
+function meetsVersionRequirement(slug: FoundationalCompositeSlug, scoringVersion: number | null): boolean {
+  if (scoringVersion === null) {
+    return false;
+  }
+  const minVersion = FOUNDATIONAL_COMPOSITE_MIN_VERSIONS[slug];
+  return scoringVersion >= minVersion;
+}
+
+/**
  * Group the flat score rows (one reporting run per taskId) into the composite inputs,
- * routing each subtest by its slug: LPW subtests contribute their `composite_foundational`
- * theta pair; Sentence contributes its `composite_foundational` `thetaEstimate` (its SE is
- * ignored — Sentence feeds the Stage-2 blend, not the inverse-variance LPW).
+ * routing each subtest by its slug: LPW subtests contribute their theta pair (from the
+ * appropriate domain: SWR from `composite`, others from `composite_foundational`);
+ * Sentence contributes its `composite_foundational` `thetaEstimate` (its SE is ignored —
+ * Sentence feeds the Stage-2 blend, not the inverse-variance LPW).
+ * Subtests are skipped if their scoringVersion does not meet the minimum requirement.
  */
 function assembleInputs(
   rows: CompositeInputScoreRow[],
@@ -151,6 +178,13 @@ function assembleInputs(
       continue;
     }
 
+    // Check scoringVersion requirement for this subtest
+    const scoringVersion = parseScoreValue(scores.get(`${getDomainForSlug(slug)}|scoringVersion`));
+    const scoringVersionAsInt = scoringVersion !== null ? Math.floor(scoringVersion) : null;
+    if (!meetsVersionRequirement(slug, scoringVersionAsInt)) {
+      continue;
+    }
+
     if (slug === FOUNDATIONAL_COMPOSITE_SLUG.SRE) {
       sreTransformed = parseScoreValue(
         scores.get(`${SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL}|${SCORE_NAME.THETA_ESTIMATE}`),
@@ -158,10 +192,9 @@ function assembleInputs(
       continue;
     }
 
-    const thetaEstimate = parseScoreValue(
-      scores.get(`${SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL}|${SCORE_NAME.THETA_ESTIMATE}`),
-    );
-    const thetaSE = parseScoreValue(scores.get(`${SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL}|${SCORE_NAME.THETA_SE}`));
+    const domain = getDomainForSlug(slug);
+    const thetaEstimate = parseScoreValue(scores.get(`${domain}|${SCORE_NAME.THETA_ESTIMATE}`));
+    const thetaSE = parseScoreValue(scores.get(`${domain}|${SCORE_NAME.THETA_SE}`));
     if (thetaEstimate !== null && thetaSE !== null) {
       lpw.push({ thetaEstimate, thetaSE });
     }
