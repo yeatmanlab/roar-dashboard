@@ -289,6 +289,7 @@ export default defineConfig(({ mode }) => {
                 sre: ['@roar-platform/roar-sre'],
                 survey: ['@roar-platform/roar-survey'],
                 swr: ['@roar-platform/roar-swr'],
+                levante: ['@roar-platform/roar-levante-tasks'],
                 utils: ['@bdelab/roar-utils'],
                 vocab: ['@bdelab/roar-vocab'],
                 ran: ['@bdelab/roav-ran'],
