@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "lib": ["es2019", "dom", "dom.iterable"],
+    "module": "CommonJS",
+    "outDir": "lib/ts",
+    "strict": true,
+    "target": "es2019",
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*", "serve/**/*", "types/**/*"]
+}

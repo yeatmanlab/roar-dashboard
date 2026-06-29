@@ -1,0 +1,57 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      additional_notes:
+        description: 'Additional release notes (optional)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag checkout
+        run: |
+          if [ "${{ github.ref_type }}" != "tag" ]; then
+            echo "::error::This workflow must be run from a tag checkout. Current ref type: ${{ github.ref_type }}"
+            exit 1
+          fi
+          echo "Tag checkout verified: ${{ github.ref_name }}"
+
+      - name: Generate changelog
+        id: generate_changelog
+        if: github.ref_type == 'tag'
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 ${{ github.ref_name }}^ 2>/dev/null || echo "")
+          if [ -z "$PREVIOUS_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"* %s (%h)" ${{ github.ref_name }})
+          else
+            CHANGELOG=$(git log --pretty=format:"* %s (%h)" $PREVIOUS_TAG..${{ github.ref_name }})
+          fi
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: github.ref_type == 'tag'
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: |
+            ${{ github.event.inputs.additional_notes }}
+
+            ## Changeset
+            ${{ steps.generate_changelog.outputs.changelog }}
+          draft: false
+          prerelease: false

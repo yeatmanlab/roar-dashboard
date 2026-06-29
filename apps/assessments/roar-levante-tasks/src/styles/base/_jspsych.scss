@@ -1,0 +1,39 @@
+@use '../abstracts' as *;
+
+.jspsych-display-element {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden; // disable scrolling
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  touch-action: manipulation;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+  color: #0f3cac;
+  background-color: $bg-workspace-base;
+  background-image: url('https://storage.googleapis.com/tasks-shared/levante-background.png');
+  background-size: cover;
+
+  .jspsych-content-wrapper {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .jspsych-content {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2vw;
+    }
+  }
+}

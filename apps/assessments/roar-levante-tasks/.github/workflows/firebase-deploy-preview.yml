@@ -1,0 +1,40 @@
+name: Firebase Deploy to Preview
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ci-preview-tests-${{ github.ref }}-1
+  cancel-in-progress: true
+
+jobs:
+  build_and_preview:
+    if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies and build
+        run: npm ci && npm run build:dev
+
+      - name: Deploy preview app
+        uses: ./.github/actions/deploy
+        id: deployment
+        with:
+          firebase-channel: preview
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ASSESSMENT }}
+          gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ASSESSMENT }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_APP_SERVICE_ACCOUNT_ID_ASSESSMENT }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

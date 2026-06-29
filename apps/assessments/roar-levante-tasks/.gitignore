@@ -1,0 +1,32 @@
+# macOS
+*.DS_Store
+**/.DS_Store
+
+# Dependencies
+node_modules/
+
+# Build output
+lib/
+dist/
+
+# Test coverage
+coverage/
+test-results/
+
+# Local env
+.env
+.env.test
+.env.sentry-build-plugin
+
+# Firebase
+.firebase/
+firebase/
+
+# IDE
+.idea/
+.idea
+
+# R artifacts
+**/.Rhistory
+**/.Rproj.user
+**/.ipynb_checkpoints

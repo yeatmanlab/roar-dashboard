@@ -1,0 +1,111 @@
+name: Publish, Release, and Deploy
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
+
+permissions:
+  id-token: write # Required for OIDC
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+
+        # npm@v11.5.0+ is required for OIDC support
+        # node@v22.0.0+
+      - name: Upgrade npm for OIDC support
+        run: npm install -g npm@latest
+
+      - name: Install and Build 🔧
+        run: |
+          npm ci
+          npm run package
+
+      - name: Check for uncommitted changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git diff --quiet && git diff --staged --quiet || git commit -am "Commit uncommitted changes [skip ci]"
+
+      - name: Push tag
+        run: |
+          git push origin main --follow-tags
+
+      - name: Publish 🚀
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" =~ -[a-zA-Z] ]]; then
+            TAG=$(echo $VERSION | sed -n 's/.*-\([a-zA-Z]*\).*/\1/p')
+            echo "Publishing prerelease: $VERSION with tag $TAG"
+            npm publish --access public --tag $TAG
+          else
+            echo "Publishing stable release: $VERSION"
+            npm publish --access public
+          fi
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+  deploy_to_production:
+    needs: build
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+
+      - run: 'npm ci && npm run build:prod'
+
+      - name: Deploy prod app
+        uses: ./.github/actions/deploy
+        id: deployment
+        with:
+          firebase-channel: default
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ASSESSMENT }}
+          gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ASSESSMENT }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_APP_SERVICE_ACCOUNT_ID_ASSESSMENT }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          target: production
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const issue = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: "Combined workflow failed",
+              body: `The workflow failed on [${context.sha.substring(0, 7)}](${context.payload.repository.html_url}/commit/${context.sha}). Please check it.`,
+            };
+            github.rest.issues.create(issue);
