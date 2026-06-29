@@ -53,6 +53,7 @@
     "@rollup/plugin-typescript": "^12.1.4",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
+    "firebase": "^10.13.2",
     "rollup": "^4.48.1",
     "rollup-plugin-esbuild": "^6.1.1",
     "rollup-plugin-node-externals": "^8.1.0",
