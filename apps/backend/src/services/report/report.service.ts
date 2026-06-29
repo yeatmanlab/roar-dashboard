@@ -93,6 +93,7 @@ import {
   getNumericFieldForSubscore,
   formatTaskSubscoreColumnValue,
   getSupportLevel,
+  getScoreDisplay,
   parseScoreValue,
   resolveScoreFieldNames,
   PA_SKILL_THRESHOLD,
@@ -3093,15 +3094,28 @@ function assembleStudentScoreRow(
       // Eligibility for the optional flag (independent of completion)
       const eligibility = evaluateAcrossVariants(row, variants, evaluateEligibility);
 
-      scores[taskId] = {
+      // Display from the same rounded scores the response carries, so the
+      // descriptor's value matches the cell. Absent for tasks with no display config.
+      const entryScores = {
         rawScore: roundScoreOrNull(rawScore),
         percentile: roundScoreOrNull(percentile),
         standardScore: roundScoreOrNull(standardScore),
+      };
+      const display = getScoreDisplay({
+        taskSlug: scored.variant.taskSlug,
+        gradeLevel,
+        scoringVersion,
+        scores: entryScores,
+      });
+
+      scores[taskId] = {
+        ...entryScores,
         supportLevel,
         reliable: scored.runMeta.reliable,
         engagementFlags: scored.runMeta.engagementFlags,
         optional: eligibility.isOptional,
         completed: true,
+        ...(display ? { display } : {}),
       };
     } else {
       // No completed run on any variant — evaluate condition across variants
@@ -3475,6 +3489,15 @@ function buildBaseAssessedTaskEntry(
   const subscores = extractSubscoresFromScoreMap(scoreMap, scoredVariant.taskSlug, domainScoreMap);
   const skillsToWorkOn = computePaSkillsToWorkOn(scoredVariant.taskSlug, subscores);
 
+  // Primary display descriptor (which score to surface + value/label/range),
+  // computed from the task's scoring config. Absent for tasks with no display config.
+  const display = getScoreDisplay({
+    taskSlug: scoredVariant.taskSlug,
+    gradeLevel,
+    scoringVersion,
+    scores,
+  });
+
   const entry: ServiceStudentReportTaskBase = {
     ...taskMeta,
     scores,
@@ -3487,6 +3510,7 @@ function buildBaseAssessedTaskEntry(
   };
   if (subscores) entry.subscores = subscores;
   if (skillsToWorkOn) entry.skillsToWorkOn = skillsToWorkOn;
+  if (display) entry.display = display;
 
   return { entry, gradeLevel };
 }
