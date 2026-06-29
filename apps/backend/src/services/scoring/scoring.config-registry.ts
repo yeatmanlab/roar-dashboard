@@ -15,6 +15,8 @@ import roamAlpacaConfig from './configs/roam-alpaca.json';
 import fluencyConfig from './configs/fluency.json';
 import morphologyConfig from './configs/morphology.json';
 import cvaConfig from './configs/cva.json';
+import trogConfig from './configs/trog';
+import roarInferenceConfig from './configs/roar-inference';
 
 const RAW_CONFIGS = [
   swrConfig,
@@ -31,6 +33,8 @@ const RAW_CONFIGS = [
   fluencyConfig,
   morphologyConfig,
   cvaConfig,
+  trogConfig,
+  roarInferenceConfig,
 ];
 
 /**

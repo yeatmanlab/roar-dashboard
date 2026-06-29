@@ -34,9 +34,7 @@ const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// eslint-disable-next-line no-undef
 if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-  // eslint-disable-next-line no-undef
   connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
 }
 
