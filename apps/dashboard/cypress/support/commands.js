@@ -75,17 +75,41 @@ Cypress.Commands.add('performCleverOAuth', (schoolName, username, password) => {
     ({ schoolName, username, password }) => {
       cy.on('uncaught:exception', () => false);
 
-      cy.get('a.AuthMethodCard--card[aria-label="Password"]').click();
+      cy.get('a.AuthMethodCard--card[aria-label="Password"]').should('be.visible').click();
 
       cy.get('[role="combobox"]').find('input[aria-autocomplete="list"]').type(schoolName);
-      cy.get('ul > li').contains(schoolName).should('be.visible').click();
-      cy.get('a.AuthMethodCard--card[aria-label="Password"]').click();
 
-      cy.get('input#username').type(username);
-      // cy.contains('button[type="submit"]', 'Next').should('be.visible').click();
-      cy.get('input#password').type(password, { log: false });
-      cy.wait(1000); // Delay to simulate user input, as Clever SSO is sensitive to rapid input.
-      cy.contains('button[type="submit"]', 'Log in').should('be.visible').click();
+      cy.get('ul > li').contains(schoolName).should('be.visible').click();
+
+      cy.get('a.AuthMethodCard--card[aria-label="Password"]').should('be.visible').click();
+
+      cy.get('input#username').should('be.visible').type(username);
+
+      cy.get('body').then(($body) => {
+        const passwordIsVisible = $body.find('input#password:visible').length > 0;
+
+        if (passwordIsVisible) {
+          // VERSION 2:
+          // username + password are on the same screen, then Log in.
+          cy.get('input#password').should('be.visible').type(password, { log: false });
+
+          cy.wait(1000); // Clever SSO is sensitive to rapid input.
+
+          cy.contains('button[type="submit"]', /^Log in$|^Login$/)
+            .should('be.visible')
+            .click();
+        } else {
+          // VERSION 1:
+          // username -> Next -> password -> Next.
+          cy.contains('button[type="submit"]', 'Next').should('be.visible').click();
+
+          cy.get('input#password').should('be.visible').type(password, { log: false });
+
+          cy.wait(1000); // Clever SSO is sensitive to rapid input.
+
+          cy.contains('button[type="submit"]', 'Next').should('be.visible').click();
+        }
+      });
     },
   );
 
