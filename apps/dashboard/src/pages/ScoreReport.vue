@@ -1452,6 +1452,30 @@ const backendScoresByUser = computed(() => {
   return byUser;
 });
 
+// Per-task backend display score type (uniform per administration — taken from any student's
+// display descriptor). Lets the table decide swr-es normed-vs-percent-correct from the backend
+// instead of scoringVersion. Empty until the students response (carrying `display`) loads.
+const displayScoreTypeBySlug = computed(() => {
+  const map = {};
+  for (const userScores of Object.values(backendScoresByUser.value)) {
+    for (const [slug, entry] of Object.entries(userScores)) {
+      if (map[slug] === undefined && entry?.display?.scoreType) {
+        map[slug] = entry.display.scoreType;
+      }
+    }
+  }
+  return map;
+});
+
+// swr-es is normed when the backend surfaces a normed display score (not percent-correct);
+// falls back to the scoring version when the backend display isn't available yet.
+const isSwrEsNormed = (taskId) => {
+  if (taskId !== 'swr-es') return false;
+  const displayType = displayScoreTypeBySlug.value['swr-es'];
+  if (displayType) return displayType !== 'percentCorrect';
+  return getScoringVersions.value['swr-es'] >= 1;
+};
+
 /**
  * Overlay the backend per-student core scores onto the client-computed table rows.
  *
@@ -2082,8 +2106,7 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.percentile`;
     } else if (
       viewMode.value === 'standard' &&
-      (!tasksToDisplayPercentCorrect.includes(taskId) ||
-        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
+      (!tasksToDisplayPercentCorrect.includes(taskId) || isSwrEsNormed(taskId)) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
@@ -2091,8 +2114,7 @@ const scoreReportColumns = computed(() => {
     } else if (
       viewMode.value === 'raw' &&
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      (!tasksToDisplayPercentCorrect.includes(taskId) ||
-        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
+      (!tasksToDisplayPercentCorrect.includes(taskId) || isSwrEsNormed(taskId)) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
