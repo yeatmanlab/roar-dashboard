@@ -80,7 +80,7 @@ function handleKeyboardPracticeBtn(
     // jspysch disables the buttons for some reason, so re-enable them
     setTimeout(() => enableBtns(practiceBtns), 500);
 
-    let incorrectPracticeResponses = taskStore().incorrectPracticeResponses;
+    const incorrectPracticeResponses = taskStore().incorrectPracticeResponses;
     incorrectPracticeResponses.push(choice);
     taskStore('incorrectPracticeResponses', incorrectPracticeResponses);
   }

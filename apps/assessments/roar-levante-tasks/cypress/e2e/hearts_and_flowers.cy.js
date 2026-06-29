@@ -167,17 +167,18 @@ function pickAnswer(isV2 = false) {
       const pos = leftStim.length ? 0 : 1;
 
       // get stimulus image itself and then click button based on src and pos
-      const stim = cy.get('[alt="heart or flower"]');
-      stim.invoke('attr', 'src').then((src) => {
-        if (isV2) {
-          // press the correct arrow key
-          const index = getCorrectButtonIdx(src, pos);
-          cy.realPress(index === 0 ? 'ArrowLeft' : 'ArrowRight');
-        } else {
-          // click the correct button
-          cy.get('.secondary--green').eq(getCorrectButtonIdx(src, pos)).realClick();
-        }
-      });
+      cy.get('[alt="heart or flower"]')
+        .invoke('attr', 'src')
+        .then((src) => {
+          if (isV2) {
+            // press the correct arrow key
+            const index = getCorrectButtonIdx(src, pos);
+            cy.realPress(index === 0 ? 'ArrowLeft' : 'ArrowRight');
+          } else {
+            // click the correct button
+            cy.get('.secondary--green').eq(getCorrectButtonIdx(src, pos)).realClick();
+          }
+        });
     }
   });
 

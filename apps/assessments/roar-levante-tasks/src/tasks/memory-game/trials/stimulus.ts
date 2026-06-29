@@ -1,4 +1,5 @@
-import jsPsychCorsiBlocks from '@jspsych-contrib/plugin-corsi-blocks';
+// Patched build vendored to avoid npm-hoisting issues in the monorepo.
+import jsPsychCorsiBlocks from '../../../vendor/plugin-corsi-blocks/index.js';
 import { createGrid, generateRandomSequence, enableBlock, disableBlock } from '../helpers/grid';
 import { jsPsych } from '../../taskSetup';
 import _isEqual from 'lodash/isEqual';

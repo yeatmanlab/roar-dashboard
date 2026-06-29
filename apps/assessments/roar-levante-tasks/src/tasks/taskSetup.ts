@@ -56,7 +56,7 @@ export const initializeClowder = async (config: Record<string, any>) => {
     seenCatItemsCount[corpusToSelectFrom] = 0;
   }
 
-  const { csvUrl } = CLOWDER_IRT_HYPERPARAMS[task]?.[scoringVersion];
+  const { csvUrl } = CLOWDER_IRT_HYPERPARAMS[task]?.[scoringVersion] ?? {};
 
   if (!csvUrl) {
     throw new Error('IRT hyperparameters CSV URL is not found');
@@ -148,7 +148,6 @@ export const setNextStimulus = ({ ignorePreviousItem = false, additionalItemsToR
     randomlySelectUnvalidated: false,
   });
 
-  // eslint-disable-next-line eqeqeq
   if (nextStimulus == undefined) {
     // store2 considered undefined values as no change, so we need to use null
     taskStore('nextStimulus', null);

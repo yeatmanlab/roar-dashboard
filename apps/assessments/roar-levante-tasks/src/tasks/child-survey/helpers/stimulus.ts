@@ -148,7 +148,7 @@ export const surveyItem = ({
 
       if (itemLayoutConfig.isStaggered) {
         // Handle the staggered buttons
-        let audioKeys: string[] = [
+        const audioKeys: string[] = [
           'child-survey-response1',
           'child-survey-response2',
           'child-survey-response3',

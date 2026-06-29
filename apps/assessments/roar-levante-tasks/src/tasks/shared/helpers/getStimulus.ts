@@ -10,9 +10,8 @@ import { checkEndTaskEarly, getActiveTaskElapsedMs } from './appTimer';
 // corpusType is the name of the subTask's corpus within corpusLetterAll[]
 
 export const getStimulus = (corpusType: string, blockNumber?: number, storyGroup?: number, randomize = false) => {
-  let corpus, itemSuggestion;
-
-  corpus = taskStore().corpora;
+  const corpus = taskStore().corpora;
+  let itemSuggestion;
 
   if (blockNumber != null) {
     // if block number is specified, get next item from only the indicated block of the corpus

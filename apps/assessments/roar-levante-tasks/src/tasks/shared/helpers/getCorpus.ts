@@ -67,7 +67,7 @@ function writeItem(row: ParsedRowType) {
 }
 
 function containsLettersOrSlash(str: string) {
-  return /[a-zA-Z\/]/.test(str);
+  return /[a-zA-Z/]/.test(str);
 }
 
 const transformCSV = (csvInput: ParsedRowType[], sequentialStimulus: boolean, task: string) => {
@@ -135,7 +135,7 @@ const transformCSV = (csvInput: ParsedRowType[], sequentialStimulus: boolean, ta
       newRow.requiredSelections = parseInt(row.required_selections);
     }
 
-    let currentTrialType = newRow.trialType;
+    const currentTrialType = newRow.trialType;
     if (currentTrialType !== currTrialTypeBlock) {
       currTrialTypeBlock = currentTrialType;
       currPracticeAmount = 0;

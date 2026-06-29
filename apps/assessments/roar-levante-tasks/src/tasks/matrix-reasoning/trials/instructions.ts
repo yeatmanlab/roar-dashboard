@@ -10,10 +10,12 @@ import {
   camelize,
   addPracticeButtonListeners,
   disableOkButton,
+  displaceAnimation,
+  enableAllButtons,
+  popAnimation,
 } from '../../shared/helpers';
 import { isTouchScreen, jsPsych } from '../../taskSetup';
 import { taskStore } from '../../../taskStore';
-import { displaceAnimation, enableAllButtons, popAnimation } from '../../shared/helpers';
 import { pulseOkButton } from '../../shared/helpers/pulseOkButton';
 
 let startTime: number;

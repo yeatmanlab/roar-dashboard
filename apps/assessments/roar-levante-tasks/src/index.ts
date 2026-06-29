@@ -14,8 +14,7 @@ import {
 import './styles/index.scss';
 import taskConfig from './tasks/taskConfig';
 import { RoarAppkit } from '@bdelab/roar-firekit';
-import { setTaskStore } from './taskStore';
-import { taskStore } from './taskStore';
+import { setTaskStore, taskStore } from './taskStore';
 import { InitPageSetup, Logger } from './utils';
 // @ts-ignore: Need to keep sentry as .js file to use new function-based API
 import { initSentry } from './sentry.js';

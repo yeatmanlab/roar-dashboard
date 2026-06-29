@@ -68,7 +68,7 @@ export class ScoringHandler {
       const grade = getGrade(this.userMetadata?.grade);
 
       // Unable to parse grade
-      // eslint-disable-next-line eqeqeq
+
       if (grade == undefined) return;
 
       this.ageForScore = 66 + Number(grade) * 12;
@@ -145,7 +145,6 @@ export class ScoringHandler {
         scoringVersion: this.scoringVersion,
       };
 
-      // eslint-disable-next-line eqeqeq
       if (thetaEstimate != undefined) {
         const rounded = Number(thetaEstimate.toFixed(1));
 

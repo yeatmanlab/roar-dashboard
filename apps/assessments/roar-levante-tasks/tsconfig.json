@@ -1,11 +1,12 @@
 {
+  "extends": "@roar-platform/typescript-config/library.json",
   "compilerOptions": {
-    "lib": ["es2019", "dom", "dom.iterable"],
-    "module": "CommonJS",
-    "outDir": "lib/ts",
-    "strict": true,
-    "target": "es2019",
-    "esModuleInterop": true
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    // TODO: enable these strict flags incrementally as the LEVANTE TypeScript is cleaned up
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false
   },
   "include": ["src/**/*", "serve/**/*", "types/**/*"]
 }

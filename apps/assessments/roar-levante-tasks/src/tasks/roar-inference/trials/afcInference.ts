@@ -76,7 +76,7 @@ function getPrompt(layoutConfigMap: Record<string, LayoutConfigTypeInference>) {
   const stim = taskStore().nextStimulus;
   const t = taskStore().translations;
 
-  let itemLayoutConfig = layoutConfigMap?.[stim.itemId];
+  const itemLayoutConfig = layoutConfigMap?.[stim.itemId];
 
   if (itemLayoutConfig) {
     const {
@@ -354,7 +354,7 @@ export const afcStimulusInference = ({
     response_allowed_while_playing: responseAllowed,
     data: () => {
       const stim = taskStore().nextStimulus;
-      let isPracticeTrial = stim.assessmentStage === 'practice_response';
+      const isPracticeTrial = stim.assessmentStage === 'practice_response';
       return {
         // not camelCase because firekit
         save_trial: true,

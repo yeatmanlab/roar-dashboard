@@ -1,7 +1,6 @@
 import store from 'store2';
-import { stringToBoolean } from '../tasks/shared/helpers';
+import { stringToBoolean, isEnglish } from '../tasks/shared/helpers';
 import { InputCapability } from '../utils/detectInput';
-import { isEnglish } from '../tasks/shared/helpers';
 
 /**
  * @typedef {Object} TaskStore

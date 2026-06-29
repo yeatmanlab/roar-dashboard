@@ -90,7 +90,7 @@ export const slider = (
     },
     stimulus: () => {
       const stim = trial || taskStore().nextStimulus;
-      let t = taskStore().translations;
+      const t = taskStore().translations;
 
       const isSlider = stim.trialType === 'Number Line Slider';
       return `
@@ -278,11 +278,10 @@ export const slider = (
       }
 
       if (isPractice) {
-        let feedbackHandler;
         const answer = stim.answer.toString();
         const choices = layoutConfigMap?.[stim.itemId].response.values;
 
-        feedbackHandler = addPracticeButtonListeners(answer, isTouchScreen, choices);
+        addPracticeButtonListeners(answer, isTouchScreen, choices);
       }
     },
     on_finish: (data: any) => {
@@ -324,8 +323,8 @@ export const slider = (
       const responseType = stimulus.trialType.includes('Slider')
         ? 'slider'
         : stimulus.trialType.includes('4afc')
-        ? 'button'
-        : 'slider-button';
+          ? 'button'
+          : 'slider-button';
       const answer = stimulus.answer;
 
       jsPsych.data.addDataToLastTrial({

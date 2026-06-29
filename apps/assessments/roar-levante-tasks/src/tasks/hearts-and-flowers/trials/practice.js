@@ -1,6 +1,6 @@
 import jsPsychHtmlMultiResponse from '@jspsych-contrib/plugin-html-multi-response';
 import { mediaAssets } from '../../..';
-import { isTouchScreen } from '../../taskSetup';
+import { isTouchScreen, jsPsych } from '../../taskSetup';
 import { StimulusType, StimulusSideType, InputKey, getCorrectInputSide, getStimulusLayout } from '../helpers/utils';
 import {
   addExperimenterButtons,
@@ -11,7 +11,6 @@ import {
   getParticipantUtilityButtonsHtml,
   addKeyHelpers,
 } from '../../shared/helpers';
-import { jsPsych } from '../../taskSetup';
 import { taskStore } from '../../../taskStore';
 import { setupHafMultiResponseTouchRouting } from '../helpers/touchResponseRouting';
 

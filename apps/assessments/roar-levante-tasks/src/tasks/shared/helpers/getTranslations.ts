@@ -4,7 +4,7 @@ import Papa from 'papaparse';
 
 import 'regenerator-runtime/runtime';
 
-let translations: Record<string, string> = {};
+const translations: Record<string, string> = {};
 
 function parseTranslations(translationData: Record<string, string>[]) {
   for (const [key, value] of Object.entries(translationData)) {

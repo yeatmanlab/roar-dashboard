@@ -183,7 +183,7 @@ export const createScaleTheta = (hyperparams: {
   [key: string]: IrtHyperparams;
 }): ((thetaRaw: number, thetaSERaw: number, cat?: string) => ClowderThetaEstimates) => {
   return (thetaRaw: number, thetaSERaw: number, cat?: string): ClowderThetaEstimates => {
-    let catKey = !hyperparams[cat as string] ? 'composite' : cat;
+    const catKey = !hyperparams[cat as string] ? 'composite' : cat;
     const { transformationScale, transformationShift } = hyperparams[catKey as string];
     const thetaScaled = thetaRaw * transformationScale + transformationShift;
     const thetaSEScaled = thetaSERaw * Math.abs(transformationScale);

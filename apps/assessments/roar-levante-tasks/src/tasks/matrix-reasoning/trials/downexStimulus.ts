@@ -29,7 +29,7 @@ export const downexStimulus = (
     type: jsPsychHtmlMultiResponse,
     data: () => {
       const stim = trial || taskStore().nextStimulus;
-      let isPracticeTrial = stim.assessmentStage === 'practice_response';
+      const isPracticeTrial = stim.assessmentStage === 'practice_response';
       return {
         // not camelCase because firekit
         save_trial: true,

@@ -1,7 +1,6 @@
 import _shuffle from 'lodash/shuffle';
 import { taskStore } from '../../../taskStore';
-import { cat } from '../../taskSetup';
-import { jsPsych } from '../../taskSetup';
+import { cat, jsPsych } from '../../taskSetup';
 
 // separates trials from corpus into blocks depending on for heavy/light instructions and CAT
 export function prepareCorpus(
@@ -14,7 +13,6 @@ export function prepareCorpus(
   // limit random starting items so that their difficulty is less than 0
   const maxTrialDifficulty = 0;
   const cat: boolean = taskStore().runCat;
-  let corpora;
 
   let heavyInstructionPracticeTrials: StimulusType[] = [];
   let downexTestTrials: StimulusType[] = [];
@@ -76,7 +74,7 @@ export function prepareCorpus(
 
   const downexCatCorpus: StimulusType[] = downexTestTrials.filter((trial) => !downexUnnormedTrials.includes(trial));
 
-  corpora = {
+  const corpora = {
     ipHeavy: corpusParts.ipHeavy, // downex instruction/practice trials
     ipLight: corpusParts.ipLight, // older kid instruction/practice
     start: startItems, // 5 random items to be used in starting block (all under a certain max difficulty)

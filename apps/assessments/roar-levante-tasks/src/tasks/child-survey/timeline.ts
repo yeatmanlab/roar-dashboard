@@ -13,7 +13,7 @@ export default function buildChildSurveyTimeline(config: Record<string, any>, me
 
   const timeline = [preloadTrials, initialTimeline];
 
-  let corpus: StimulusType[] = taskStore().corpora.stimulus;
+  const corpus: StimulusType[] = taskStore().corpora.stimulus;
   const translations: Record<string, string> = taskStore().translations;
   const validationErrorMap: Record<string, string> = {};
 

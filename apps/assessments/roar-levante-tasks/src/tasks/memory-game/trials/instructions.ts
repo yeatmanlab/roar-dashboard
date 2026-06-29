@@ -101,13 +101,13 @@ const instructions = instructionData.map((data) => {
                               </video>
                             `
                               : taskStore().story || data.image !== 'catAvatar'
-                              ? `
+                                ? `
                                 <img
                                   src=${mediaAssets.images[data.image as string]}
                                   alt="Image not loading ${mediaSrc}. Please continue the task."
                                 />
                               `
-                              : ''
+                                : ''
                           }
                         </div>                    
                     </div>`;

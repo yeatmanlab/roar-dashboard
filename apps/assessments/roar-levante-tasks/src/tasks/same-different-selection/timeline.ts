@@ -1,8 +1,7 @@
 // setup
 import 'regenerator-runtime/runtime';
-import { jsPsych } from '../taskSetup';
+import { jsPsych, initializeCat } from '../taskSetup';
 import { initTrialSaving, initTimeline, createPreloadTrials, batchMediaAssets } from '../shared/helpers';
-import { initializeCat } from '../taskSetup';
 // trials
 import { dataQualityScreen } from '../shared/trials/dataQuality';
 import {

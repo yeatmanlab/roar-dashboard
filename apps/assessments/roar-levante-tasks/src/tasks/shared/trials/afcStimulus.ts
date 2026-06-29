@@ -233,7 +233,7 @@ function doOnLoad(
     // Handle the staggered buttons
     const buttonContainer = document.getElementById('jspsych-html-multi-response-btngroup') as HTMLDivElement;
     const imgButtons = Array.from(buttonContainer.children as HTMLCollectionOf<HTMLButtonElement>);
-    let audioKeys: string[] = [];
+    const audioKeys: string[] = [];
     for (let i = 0; i < imgButtons.length; i++) {
       const img = imgButtons[i].children[0].getElementsByTagName('img')[0];
       const audioKey = camelize(img?.alt ?? '');
@@ -269,8 +269,7 @@ function doOnLoad(
     const choices = layoutConfigMap?.[stim.itemId].response.values;
 
     if (taskStore().task === 'trog') {
-      let feedbackHandler;
-      feedbackHandler = addKeyboardListeners(stim, isTouchScreen, layoutConfigMap?.[stim.itemId]);
+      const feedbackHandler = addKeyboardListeners(stim, isTouchScreen, layoutConfigMap?.[stim.itemId]);
 
       if (feedbackHandler !== undefined) {
         keyboardFeedbackHandler = feedbackHandler;
@@ -530,7 +529,7 @@ export const afcStimulusTemplate = (
     response_allowed_while_playing: responseAllowed,
     data: () => {
       const stim = trial || taskStore().nextStimulus;
-      let isPracticeTrial = stim.assessmentStage === 'practice_response';
+      const isPracticeTrial = stim.assessmentStage === 'practice_response';
       return {
         // not camelCase because firekit
         save_trial: true,

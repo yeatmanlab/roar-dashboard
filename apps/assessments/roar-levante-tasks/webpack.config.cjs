@@ -3,7 +3,9 @@ const webpack = require('webpack');
 const { merge } = require('webpack-merge');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
-// @TODO import dotenv.config
+const dotenv = require('dotenv');
+dotenv.config();
+
 const commonConfig = {
   optimization: {
     moduleIds: 'deterministic',
@@ -13,12 +15,8 @@ const commonConfig = {
         vendor: {
           test: /[\\/]node_modules[\\/]/,
           name(module) {
-            // get the name. E.g. node_modules/packageName/not/this/part.js
-            // or node_modules/packageName
-            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
-
-            // npm package names are URL-safe, but some servers don't like @ symbols
-            return `npm.${packageName.replace('@', '')}`;
+            const packageName = module.request?.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1];
+            return packageName ? `npm.${packageName.replace('@', '')}` : 'vendor';
           },
           chunks: 'all',
         },
@@ -114,7 +112,7 @@ const webConfig = merge(commonConfig, {
   devtool: 'source-map',
   plugins: [
     new HtmlWebpackPlugin({
-      title: 'Rapid Online Assessment of Reading - Core Tasks',
+      title: 'ROAR — Levante Core Tasks',
     }),
     sentryWebpackPlugin({
       org: 'roar-89588e380',
@@ -141,17 +139,25 @@ const developmentConfig = merge(webConfig, {
     client: {
       overlay: false,
     },
+    proxy: [
+      {
+        context: ['/v1'],
+        target: process.env.BACKEND_URL ?? 'https://localhost:4000',
+        secure: false,
+        changeOrigin: true,
+      },
+    ],
   },
 });
 
 module.exports = async (env, args) => {
-  const roarDb = env.dbmode === 'production' ? 'production' : 'development';
+  const roarDB = env.dbmode;
 
   const envDependentConfig = {
     plugins: [
-      new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
-        ROAR_DB: JSON.stringify(roarDb),
+        ROAR_DB: JSON.stringify(roarDB),
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || '/v1'),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
@@ -159,9 +165,17 @@ module.exports = async (env, args) => {
     ],
   };
 
+  const devFirebaseConfig = {
+    plugins: [
+      new webpack.EnvironmentPlugin({
+        FIREBASE_AUTH_EMULATOR_HOST: '',
+      }),
+    ],
+  };
+
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig);
+      return merge(developmentConfig, envDependentConfig, devFirebaseConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:
