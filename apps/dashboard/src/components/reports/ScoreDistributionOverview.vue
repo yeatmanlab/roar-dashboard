@@ -4,8 +4,13 @@
       <div class="chart-section-header font-bold">Foundational Literacy Skills</div>
 
       <div v-for="taskId of taskIds" :key="taskId" class="chart-row">
-        <div class="chart-label text-lg text-gray-600">
-          <span class="whitespace-nowrap">{{ tasksDictionary?.[taskId]?.publicName ?? taskId }}</span>
+        <div class="chart-label text-gray-600">
+          <span class="whitespace-nowrap text-lg font-bold">{{
+            tasksDictionary?.[taskId]?.technicalName ?? taskId
+          }}</span>
+          <span v-if="tasksDictionary?.[taskId]?.publicName" class="text-sm font-light uppercase">
+            ({{ tasksDictionary?.[taskId]?.publicName }})</span
+          >
         </div>
         <PvChart
           type="bar"
@@ -128,6 +133,7 @@ const supportLevelCountsByTaskId = computed(() => {
 .chart-label {
   /* Adjust for whitespace in chart */
   margin-top: -0.25rem;
+  max-width: 400px;
 }
 
 .chart-item {
@@ -151,12 +157,6 @@ const supportLevelCountsByTaskId = computed(() => {
   cursor: pointer;
 }
 
-@media (max-width: 1200px) {
-  .chart-label {
-    max-width: 300px;
-  }
-}
-
 @media (max-width: 768px) {
   .chart-grid {
     grid-template-columns: 1fr;
@@ -166,11 +166,6 @@ const supportLevelCountsByTaskId = computed(() => {
   .chart-row {
     grid-template-columns: 1fr;
     row-gap: 0.25rem;
-  }
-
-  .chart-label {
-    max-width: none;
-    margin-top: 0;
   }
 
   .info-icon,
