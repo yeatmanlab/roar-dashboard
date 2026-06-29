@@ -1453,8 +1453,9 @@ const backendScoresByUser = computed(() => {
 });
 
 // Per-task backend display score type (uniform per administration — taken from any student's
-// display descriptor). Lets the table decide swr-es normed-vs-percent-correct from the backend
-// instead of scoringVersion. Empty until the students response (carrying `display`) loads.
+// display descriptor). Lets the table and CSV export decide swr-es/sre-es normed-vs-percent-correct
+// from the backend instead of scoringVersion. Empty until the students response (carrying `display`)
+// loads.
 const displayScoreTypeBySlug = computed(() => {
   const map = {};
   for (const userScores of Object.values(backendScoresByUser.value)) {
@@ -1467,13 +1468,16 @@ const displayScoreTypeBySlug = computed(() => {
   return map;
 });
 
-// swr-es is normed when the backend surfaces a normed display score (not percent-correct);
-// falls back to the scoring version when the backend display isn't available yet.
-const isSwrEsNormed = (taskId) => {
-  if (taskId !== 'swr-es') return false;
-  const displayType = displayScoreTypeBySlug.value['swr-es'];
+// swr-es and sre-es are normed when the backend surfaces a normed display score (not
+// percent-correct); falls back to the scoring version when the backend display isn't available
+// yet. Every other task is never Spanish-normed, so the percent-correct tasks that always stay
+// percent-correct (letter, phonics, …) keep their column/export branch regardless of version.
+const SPANISH_NORMED_TASKS = ['swr-es', 'sre-es'];
+const isSpanishNormed = (taskId) => {
+  if (!SPANISH_NORMED_TASKS.includes(taskId)) return false;
+  const displayType = displayScoreTypeBySlug.value[taskId];
   if (displayType) return displayType !== 'percentCorrect';
-  return getScoringVersions.value['swr-es'] >= 1;
+  return getScoringVersions.value[taskId] >= 1;
 };
 
 /**
@@ -1604,17 +1608,11 @@ const createExportData = ({ rows, includeProgress = false }) => {
       const taskName = tasksDictionary.value[taskId]?.nameSimple ?? taskId;
 
       // Add task-specific score information
-      if (
-        tasksToDisplayPercentCorrect.includes(taskId) &&
-        !(taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)
-      ) {
+      if (tasksToDisplayPercentCorrect.includes(taskId) && !isSpanishNormed(taskId)) {
         tableRow[`${taskName} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-      } else if (
-        tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-        !(getScoringVersions.value[taskId] >= 1)
-      ) {
+      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && !isSpanishNormed(taskId)) {
         tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
@@ -2106,7 +2104,7 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.percentile`;
     } else if (
       viewMode.value === 'standard' &&
-      (!tasksToDisplayPercentCorrect.includes(taskId) || isSwrEsNormed(taskId)) &&
+      (!tasksToDisplayPercentCorrect.includes(taskId) || isSpanishNormed(taskId)) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
@@ -2114,7 +2112,7 @@ const scoreReportColumns = computed(() => {
     } else if (
       viewMode.value === 'raw' &&
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      (!tasksToDisplayPercentCorrect.includes(taskId) || isSwrEsNormed(taskId)) &&
+      (!tasksToDisplayPercentCorrect.includes(taskId) || isSpanishNormed(taskId)) &&
       !tasksToDisplayTotalCorrect.includes(taskId) &&
       !tasksToDisplayGradeEstimate.includes(taskId)
     ) {
