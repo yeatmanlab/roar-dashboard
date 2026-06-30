@@ -1,0 +1,37 @@
+/**
+ * Input for UploadFile command.
+ * 
+ * @property administrationId - The administration ID. Used as part of the bucket path.
+ * @property filename - The name of the file to upload
+ * @property fileOrBlob - The file or blob to upload
+ * @property runId - The run ID. Used as part of the bucket path.
+ * @property taskId - The task ID. Used as part of the bucket path.
+ * @property assessmentPid - The assessment PID. Used as part of the bucket path. (optional, otherwise set to participant)
+ * @property customMetadata - Custom metadata to attach to the file (optional)
+ */
+export interface UploadFileInput {
+  administrationId: string;
+  filename: string;
+  fileOrBlob: File | Blob;
+  runId: string;
+  taskId: string;
+  assessmentPid?: string;
+  customMetadata?: Record<string, any>;
+}
+
+/**
+ * Input for GenerateFilePath function.
+ * 
+ * @property administrationId - The administration ID. Used as part of the bucket path.
+ * @property filename - The name of the file to upload
+ * @property runId - The run ID. Used as part of the bucket path.
+ * @property taskId - The task ID. Used as part of the bucket path.
+ * @property assessmentPid - The assessment PID. Used as part of the bucket path. (optional, otherwise set to participant)
+ */
+export interface GenerateFilePathInput {
+  administrationId: string;
+  filename: string;
+  runId: string;
+  taskId: string;
+  assessmentPid?: string;
+}
