@@ -133,6 +133,10 @@ export const setSharedConfig = async (
       }
     },
     updateEngagementFlags,
+    // In the old roarfirekit, updateUser wrote assessmentPid and userMetadata to
+    // the user document. In the SDK, this data flows through startRun instead.
+    // No-op here to keep call sites in baseTimeline.ts unchanged.
+    updateUser: async (_userUpdateData: Record<string, unknown>) => {},
     updateTaskParams: async () => {},
   };
 
