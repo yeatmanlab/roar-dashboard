@@ -1,9 +1,20 @@
 import { getFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { toLevanteScoreEntries } from '@roar-platform/assessment-schema/roar-levante-tasks';
+import { AssessmentStage } from '@roar-platform/assessment-schema';
 import { taskStore } from '../taskStore';
 
-/** Tasks with normed GCS lookup scoring. */
-const NORMED_TASKS = new Set(['trog', 'roar-inference']);
+/**
+ * Maps every SDK assessmentStage value to the two-bucket keys ('practice' / 'test')
+ * that ScoringHandler expects in rawScores. The SDK emits separate stages for
+ * stimulus display ('practice', 'test') and response collection ('practice_response',
+ * 'test_response'); both should accumulate into the same bucket.
+ */
+const STAGE_TO_SCORING_KEY = {
+  [AssessmentStage.PRACTICE]: AssessmentStage.PRACTICE,
+  [`${AssessmentStage.PRACTICE}_response`]: AssessmentStage.PRACTICE,
+  [AssessmentStage.TEST]: AssessmentStage.TEST,
+  [`${AssessmentStage.TEST}_response`]: AssessmentStage.TEST,
+};
 
 /**
  * Wires the LEVANTE score computation pipeline into the Firekit facade.
@@ -14,8 +25,10 @@ const NORMED_TASKS = new Set(['trog', 'roar-inference']);
  * - `_getRawScores` — returns the accumulated counts and injects current CAT
  *   theta estimates from taskStore so ScoringHandler.getNormedScores can perform
  *   the GCS lookup (trog and roar-inference only).
- * - `_getScoreAdapter` — returns toLevanteScoreEntries for normed tasks, or a
- *   no-op for unnormed tasks (no scoring config yet; follow-on PR).
+ * - `_getScoreAdapter` — always returns toLevanteScoreEntries, which emits
+ *   entries for whichever LEVANTE_SCORE_NAMES fields are present in the
+ *   computed scores (normed fields for trog/roar-inference; count-based fields
+ *   for all other tasks).
  *
  * The scoreCallback in trialSaving.ts (which reads taskStore().irtEstimates and
  * delegates to ScoringHandler) is already the computedScoreCallback passed to
@@ -39,16 +52,20 @@ export function wireScoreAdapter() {
   const accumulator = {};
 
   facade._accumulateRawScore = (subtask, stage, correct) => {
+    // ScoringHandler expects 'practice' and 'test' as the stage keys. The SDK emits
+    // four distinct stages; collapse them into the two scoring buckets via the map.
+    const normalizedStage = STAGE_TO_SCORING_KEY[stage] ?? stage;
+
     if (!accumulator[subtask]) accumulator[subtask] = {};
-    if (!accumulator[subtask][stage]) {
-      accumulator[subtask][stage] = { numCorrect: 0, numIncorrect: 0, numAttempted: 0 };
+    if (!accumulator[subtask][normalizedStage]) {
+      accumulator[subtask][normalizedStage] = { numCorrect: 0, numIncorrect: 0, numAttempted: 0 };
     }
     if (correct === 1) {
-      accumulator[subtask][stage].numCorrect++;
+      accumulator[subtask][normalizedStage].numCorrect++;
     } else {
-      accumulator[subtask][stage].numIncorrect++;
+      accumulator[subtask][normalizedStage].numIncorrect++;
     }
-    accumulator[subtask][stage].numAttempted++;
+    accumulator[subtask][normalizedStage].numAttempted++;
   };
 
   facade._getRawScores = () => {
@@ -74,9 +91,5 @@ export function wireScoreAdapter() {
     return rawScores;
   };
 
-  facade._getScoreAdapter = () => {
-    const task = taskStore().task;
-    if (!NORMED_TASKS.has(task)) return () => [];
-    return toLevanteScoreEntries;
-  };
+  facade._getScoreAdapter = () => toLevanteScoreEntries;
 }

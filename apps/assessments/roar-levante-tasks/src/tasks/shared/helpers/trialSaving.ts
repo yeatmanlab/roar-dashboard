@@ -68,7 +68,7 @@ export const initTrialSaving = (config: Record<string, any>) => {
     scoreCallback = async (rawScores: Record<string, any>) => {
       scoringHandler!.totalCorrect = taskStore().totalCorrect;
       scoringHandler!.irtEstimates = taskStore().irtEstimates;
-      return await scoringHandler!.computedScoreCallback(rawScores);
+      return scoringHandler!.computedScoreCallback(rawScores);
     };
   }
 
@@ -78,7 +78,11 @@ export const initTrialSaving = (config: Record<string, any>) => {
     // Some corpora embed instruction items alongside test items with assessmentStage: 'instructions';
     // the SDK rejects this stage value, so guard centrally here.
     const assessmentStageValue = data.assessment_stage ?? data.assessmentStage;
-    if (data.save_trial && assessmentStageValue !== 'instructions') {
+    // Skip instruction-stage items: the SDK rejects them, and they carry no
+    // response data. Some corpora use 'instruction' (trog) and others use
+    // 'instructions' (plural), so both are excluded.
+    const isInstructionStage = assessmentStageValue === 'instruction' || assessmentStageValue === 'instructions';
+    if (data.save_trial && !isInstructionStage) {
       // save_trial is a flag that indicates whether the trial should
       // be saved to Firestore. No point in writing it to the db.
       // creating a deep copy to prevent modifying of original data

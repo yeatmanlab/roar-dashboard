@@ -239,6 +239,20 @@ export class ScoringHandler {
     const isNormed =
       Object.keys(NORMED_TASK_CONFIG).includes(this.task) && this.scoringVersion && this.scoringVersion > 0;
 
-    return isNormed ? await this.getNormedScores(rawScores) : this.getUnnormedScores(rawScores);
+    if (!isNormed) return this.getUnnormedScores(rawScores);
+
+    const normedScores = await this.getNormedScores(rawScores);
+    const unnormedScores = this.getUnnormedScores(rawScores);
+
+    // Merge count-based scores into the normed composite domain so both
+    // IRT/normed scores and raw counts appear in run_scores for every task.
+    // Normed fields take precedence when there is a key collision.
+    return {
+      ...normedScores,
+      composite: {
+        ...unnormedScores.composite,
+        ...normedScores.composite,
+      },
+    };
   };
 }

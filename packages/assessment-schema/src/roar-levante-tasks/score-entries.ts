@@ -6,12 +6,12 @@ import { LEVANTE_SCORE_NAMES, LEVANTE_RAW_SCORE_NAMES } from './score-names.js';
 import type { LevanteScoreName } from './score-names.js';
 
 /**
- * Score entry shape for LEVANTE normed task scores written to run_scores.
- * Covers trog and roar-inference; other LEVANTE tasks are unnormed and do not
- * produce ScoreEntry records yet (follow-on PR).
+ * Score entry shape for LEVANTE task scores written to run_scores.
  *
  * - type=RAW: native-scale IRT estimates (thetaEstimateRaw, thetaSERaw)
- * - type=COMPUTED: shared-scale IRT, normed scores, and scoringVersion
+ * - type=COMPUTED: all other scores (normed: thetaEstimate, roarScore, percentile,
+ *   standardScore, scoringVersion; unnormed: totalCorrect, totalNumAttempted,
+ *   totalPercentCorrect)
  *
  * Compile-time assertion below ensures this stays assignable to the api-contract shape.
  */
@@ -26,17 +26,23 @@ export interface LevanteScoreEntry {
 export type _TypeCheck = LevanteScoreEntry extends ScoreEntryConstraint ? true : false;
 
 /**
- * Converts LEVANTE normed computed scores to a flat array of ScoreEntry objects
+ * Converts LEVANTE computed scores to a flat array of ScoreEntry objects
  * suitable for the backend run_scores table.
  *
- * Iterates all LEVANTE_SCORE_NAMES and emits an entry for each field present
- * and non-null in the composite domain. Score type is assigned per name:
- * - ScoreType.RAW for thetaEstimateRaw and thetaSERaw (native-scale IRT values)
- * - ScoreType.COMPUTED for all other scores (shared-scale IRT, normed scores)
+ * Handles both normed tasks (trog, roar-inference) and unnormed tasks
+ * (egma-math, matrix-reasoning, etc.) — iterates all LEVANTE_SCORE_NAMES
+ * and emits an entry for each field that is present and non-null in the
+ * composite domain. Fields absent from the computed object are skipped, so
+ * normed tasks produce IRT/normed entries and unnormed tasks produce
+ * totalCorrect/totalNumAttempted/totalPercentCorrect entries from the same
+ * function.
  *
- * All entries carry assessmentStage: TEST because normed scoring only applies to
- * test-phase trials. Returns [] when computed is null/undefined or the composite
- * domain is absent.
+ * Score type is assigned per name:
+ * - ScoreType.RAW for thetaEstimateRaw and thetaSERaw (native-scale IRT values)
+ * - ScoreType.COMPUTED for all other scores
+ *
+ * All entries carry assessmentStage: TEST. Returns [] when computed is
+ * null/undefined or the composite domain is absent.
  *
  * @param computed - Nested computed scores from ScoringHandler.computedScoreCallback, or null
  * @returns Array of ScoreEntry objects ready for backend upsert

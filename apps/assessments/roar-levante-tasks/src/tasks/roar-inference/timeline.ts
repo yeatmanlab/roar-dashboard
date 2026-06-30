@@ -65,6 +65,9 @@ export default async function buildRoarInferenceTimeline(config: Record<string, 
 
     const testBlock = {
       timeline: [afcStimulusInference({ ...trialConfig, validityEvaluator: roarInferenceValidityEvaluator })],
+      // Guard against a null stimulus on entry — mirrors the practiceBlock pattern in trog.
+      // Without this, jsPsych runs the trial and crashes when data() reads nextStimulus.
+      conditional_function: () => taskStore().nextStimulus != undefined,
       loop_function: () => {
         const additionalItemsToRemove = clowder.remainingItems.filter(
           (item: any) => item.itemId === taskStore().nextStimulus?.itemId,
