@@ -74,15 +74,15 @@ export const initTrialSaving = (config: Record<string, any>) => {
 
   // @ts-ignore
   jsPsych.opts.on_data_update = extend(jsPsych.opts.on_data_update, (data) => {
-    // Instruction-stage items carry no response data and are not written.
-    // Some corpora embed instruction items alongside test items with assessmentStage: 'instructions';
-    // the SDK rejects this stage value, so guard centrally here.
+    // Only write trials with an assessment stage the SDK accepts. Corpora may embed
+    // instruction items (assessmentStage: 'instructions' or 'instruction') alongside
+    // test items — the SDK rejects both. Use a positive allowlist so any unrecognised
+    // stage value is silently skipped rather than causing a runtime error.
+    // Also skip writes after finishRun() has been called at 80% completion — the SDK
+    // clears the runId at that point, and any further writeTrial calls would throw.
+    const WRITABLE_STAGES = new Set(['practice', 'practice_response', 'test', 'test_response']);
     const assessmentStageValue = data.assessment_stage ?? data.assessmentStage;
-    // Skip instruction-stage items: the SDK rejects them, and they carry no
-    // response data. Some corpora use 'instruction' (trog) and others use
-    // 'instructions' (plural), so both are excluded.
-    const isInstructionStage = assessmentStageValue === 'instruction' || assessmentStageValue === 'instructions';
-    if (data.save_trial && !isInstructionStage) {
+    if (data.save_trial && WRITABLE_STAGES.has(assessmentStageValue) && !config?.firekit?.run?.completed) {
       // save_trial is a flag that indicates whether the trial should
       // be saved to Firestore. No point in writing it to the db.
       // creating a deep copy to prevent modifying of original data
