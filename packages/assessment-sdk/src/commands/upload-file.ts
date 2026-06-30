@@ -1,5 +1,5 @@
 import type { Command } from '../command/command';
-import type { UploadFileInput } from '../types/upload-file';
+import type { UploadFileInput, GenerateFilePathInput } from '../types/upload-file';
 import type { RoarApi } from '../receiver/roar-api'
 import type { FirebaseStorage } from 'firebase/storage';
 
@@ -68,7 +68,7 @@ export class UploadFileCommand implements Command {
    * @param {string} [assessmentPid] - Optional assessmentPid. Prioritizes assigned assessmentPid and defaults to assessmentUid
    * @returns Standardized file path for recordings
    */
-  private generateFilePath({ filename, administrationId , runId, taskId, assessmentPid }: { filename: string; assessmentPid?: string; runId: string; taskId: string; administrationId: string }) {
+  private generateFilePath({ filename, administrationId , runId, taskId, assessmentPid }: GenerateFilePathInput) {
     const pid = (assessmentPid && assessmentPid.length > 0) ? assessmentPid : this.participantId;
 
     this.validateFileExtension(filename);
