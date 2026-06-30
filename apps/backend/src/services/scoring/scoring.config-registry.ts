@@ -17,6 +17,7 @@ import morphologyConfig from './configs/morphology.json';
 import cvaConfig from './configs/cva.json';
 import trogConfig from './configs/trog';
 import roarInferenceConfig from './configs/roar-inference';
+import levanteProvisionalConfig from './configs/levante-provisional';
 
 const RAW_CONFIGS = [
   swrConfig,
@@ -35,6 +36,7 @@ const RAW_CONFIGS = [
   cvaConfig,
   trogConfig,
   roarInferenceConfig,
+  levanteProvisionalConfig,
 ];
 
 /**

@@ -1,8 +1,7 @@
 /**
  * Canonical task IDs for the ROAR LEVANTE normed tasks.
- * Only trog and roar-inference have backend scoring configurations today.
- * Task IDs for all 12 levante tasks will be added in a follow-on PR once
- * the full assessment-schema migration is complete.
+ * These tasks write IRT-based scores (theta, roarScore, standardScore, percentile)
+ * via GCS lookup tables.
  */
 export const LEVANTE_NORMED_TASK_IDS = {
   TROG: 'trog',
@@ -10,6 +9,22 @@ export const LEVANTE_NORMED_TASK_IDS = {
 } as const;
 
 export type LevanteNormedTaskId = (typeof LEVANTE_NORMED_TASK_IDS)[keyof typeof LEVANTE_NORMED_TASK_IDS];
+
+/**
+ * Canonical task IDs for LEVANTE tasks with provisional scoring configs.
+ * These tasks write raw count-based scores (totalCorrect, totalNumAttempted,
+ * totalPercentCorrect) only. Normed scoring is deferred pending psychometrics.
+ */
+export const LEVANTE_PROVISIONAL_TASK_IDS = {
+  EGMA_MATH: 'egma-math',
+  MATRIX_REASONING: 'matrix-reasoning',
+  MENTAL_ROTATION: 'mental-rotation',
+  SAME_DIFFERENT_SELECTION: 'same-different-selection',
+  THEORY_OF_MIND: 'theory-of-mind',
+} as const;
+
+export type LevanteProvisionalTaskId =
+  (typeof LEVANTE_PROVISIONAL_TASK_IDS)[keyof typeof LEVANTE_PROVISIONAL_TASK_IDS];
 
 /**
  * Scoring versions correspond to the GCS lookup table generation used to
