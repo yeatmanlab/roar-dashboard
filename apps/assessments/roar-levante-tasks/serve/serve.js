@@ -27,6 +27,11 @@ const age = urlParams.get('age') === null ? null : parseInt(urlParams.get('age')
 // setSharedConfig spreads userParams after variantParams, so this wins when present.
 const languageOverride = urlParams.get('lng');
 
+// Optional version override. Allows dev/test callers to force a specific task version
+// (e.g. ?version=1 or ?version=2) without creating a separate variant in the database.
+// variantParams.version is authoritative in production; this URL param wins when present.
+const versionOverride = urlParams.get('version');
+
 // Task selection: variantId wins; otherwise taskId resolves to the first published variant for that task.
 const taskId = urlParams.get('task') ?? 'egma-math';
 
@@ -74,6 +79,7 @@ onAuthStateChanged(auth, async (user) => {
         birthYear,
         age,
         ...(languageOverride ? { language: languageOverride } : {}),
+        ...(versionOverride !== null ? { version: Number(versionOverride) } : {}),
       };
 
       // eslint-disable-next-line no-undef
