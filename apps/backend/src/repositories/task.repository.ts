@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { Column, SQL } from 'drizzle-orm';
+import type { SQL, AnyColumn } from 'drizzle-orm';
 import { eq, and, or, ilike, asc, desc, count, inArray, sql } from 'drizzle-orm';
 import type { Task } from '../db/schema';
 import { tasks } from '../db/schema';
@@ -15,7 +15,7 @@ import { escapeLikePattern } from '../utils/escape-like-pattern.util';
  * Explicit mapping from API sort field names to task table columns.
  * This ensures only valid columns are used for sorting, even if API validation is bypassed.
  */
-const TASK_SORT_COLUMNS: Record<TaskSortFieldType, Column> = {
+const TASK_SORT_COLUMNS: Record<TaskSortFieldType, AnyColumn | SQL> = {
   createdAt: tasks.createdAt,
   updatedAt: tasks.updatedAt,
   name: tasks.name,
