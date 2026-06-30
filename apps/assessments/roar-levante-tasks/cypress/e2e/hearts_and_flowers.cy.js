@@ -1,4 +1,5 @@
-const hearts_and_flowers_url = 'http://localhost:8000/?task=hearts-and-flowers';
+// Explicit version=1 prevents the backend from resolving the default v2 variant for this task.
+const hearts_and_flowers_url = 'http://localhost:8000/?task=hearts-and-flowers&version=1';
 const hearts_and_flowers_v2_url = 'http://localhost:8000/?task=hearts-and-flowers&version=2';
 
 // keep track of game phase (true means it has started)
