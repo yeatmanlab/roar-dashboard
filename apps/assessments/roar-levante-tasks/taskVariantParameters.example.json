@@ -1,0 +1,240 @@
+[
+  {
+    "variantName": "heartsAndFlowers-storyOptionGradeBased",
+    "params": {
+      "cat": false,
+      "corpus": "null",
+      "keyHelpers": true,
+      "language": "en",
+      "maxIncorrect": 100,
+      "maxTime": 8,
+      "numberOfPracticeTrials": 2,
+      "numberOfTrials": 20,
+      "sequentialPractice": true,
+      "sequentialStimulus": true,
+      "skipInstructions": true,
+      "stimulusBlocks": 3,
+      "storyOption": "grade-based",
+      "taskName": "hearts-and-flowers"
+    }
+  },
+  {
+    "variantName": "memoryGame-storyOptionGradeBased",
+    "params": {
+      "cat": false,
+      "corpus": "null",
+      "keyHelpers": true,
+      "language": "en",
+      "maxIncorrect": 3,
+      "maxTime": 15,
+      "numberOfPracticeTrials": 2,
+      "numberOfTrials": 20,
+      "sequentialPractice": true,
+      "sequentialStimulus": true,
+      "skipInstructions": true,
+      "stimulusBlocks": 3,
+      "storyOption": "grade-based",
+      "taskName": "memory-game"
+    }
+  },
+  {
+    "variantName": "roar-syntax-01-15-1015",
+    "params": {
+      "age": null,
+      "buttonLayout": "diamond",
+      "cat": false,
+      "corpus": "roar-syntax-item-2024-08-29-v2",
+      "inferenceNumStories": null,
+      "keyHelpers": true,
+      "language": "en",
+      "maxIncorrect": 103,
+      "maxTime": 5,
+      "numOfPracticeTrials": 2,
+      "numberOfTrials": 100,
+      "semThreshold": 0.5,
+      "sequentialPractice": true,
+      "sequentialStimulus": false,
+      "skipInstructions": true,
+      "stimulusBlocks": 3,
+      "storeItemId": true,
+      "taskName": "trog"
+    }
+  },
+  {
+    "variantName": "inference-school-2025-04-01-10min-1perstory-v7",
+    "params": {
+      "buttonLayout": "default",
+      "cat": false,
+      "corpus": "inference-pilot2-2025-04-01v6",
+      "heavyInstructions": false,
+      "inferenceNumStories": 33,
+      "keyHelpers": false,
+      "language": "en",
+      "maxIncorrect": 33,
+      "maxTime": 10,
+      "numOfPracticeTrials": 2,
+      "numberOfTrials": 300,
+      "semThreshold": 0,
+      "sequentialPractice": true,
+      "sequentialStimulus": false,
+      "skipInstructions": true,
+      "startingTheta": 0,
+      "stimulusBlocks": 1,
+      "storeItemId": false,
+      "storyOption": "",
+      "taskName": "roar-inference"
+    }
+  },
+  {
+    "variantName": "vocab-school-4AFC-short",
+    "_doc": "vocab params are task-specific: numTrialsTotal, recruitment, story, userMode, and consent are read directly by taskConfig.vocab.setConfig, not by setSharedConfig. This is expected — tasks with non-standard param shapes handle them in their own setConfig.",
+    "params": {
+      "audioFeedback": "binary",
+      "consent": true,
+      "numTrialsTotal": 48,
+      "recruitment": "school",
+      "skipInstructions": true,
+      "story": true,
+      "taskName": "vocab",
+      "userMode": "4AFC"
+    }
+  },
+  {
+    "variantName": "Egma-Math-Default",
+    "params": {
+      "buttonLayout": "default",
+      "cat": false,
+      "corpus": "math-item-bank",
+      "debug": false,
+      "demoMode": false,
+      "experimenterButtons": false,
+      "heavyInstructions": false,
+      "inferenceNumStories": 33,
+      "keyHelpers": false,
+      "language": "en-US",
+      "maxIncorrect": 3,
+      "maxTime": 100,
+      "numOfPracticeTrials": 2,
+      "numberOfStories": 3,
+      "numberOfTrials": 300,
+      "randomSeed": null,
+      "scoringVersion": 0,
+      "semThreshold": 0,
+      "sequentialPractice": true,
+      "sequentialStimulus": true,
+      "skipInstructions": true,
+      "startingTheta": 0,
+      "stimulusBlocks": 1,
+      "storeItemId": false,
+      "storyOption": "",
+      "taskName": "egma-math",
+      "version": 1
+    }
+  },
+  {
+    "variantName": "Matrix-Reasoning-Default",
+    "params": {
+      "age": null,
+      "buttonLayout": "default",
+      "corpus": "null",
+      "keyHelpers": false,
+      "language": "en",
+      "maxIncorrect": 3,
+      "maxTime": 100,
+      "numOfPracticeTrials": 2,
+      "numberOfTrials": 300,
+      "sequentialPractice": true,
+      "sequentialStimulus": true,
+      "skipInstructions": true,
+      "stimulusBlocks": 3,
+      "storeItemId": false,
+      "taskName": "matrix-reasoning"
+    }
+  },
+  {
+    "variantName": "Mental-Rotation-Default",
+    "params": {
+      "age": null,
+      "buttonLayout": "default",
+      "cat": false,
+      "corpus": "mental-rotation-item-bank",
+      "inferenceNumStories": null,
+      "keyHelpers": false,
+      "language": "en",
+      "maxIncorrect": 3,
+      "maxTime": 100,
+      "numOfPracticeTrials": 2,
+      "numberOfTrials": 300,
+      "semThreshold": 0.5,
+      "sequentialPractice": true,
+      "sequentialStimulus": true,
+      "skipInstructions": true,
+      "stimulusBlocks": 3,
+      "storeItemId": false,
+      "taskName": "mental-rotation"
+    }
+  },
+  {
+    "variantName": "Same-Different-Selection-Default",
+    "params": {
+      "age": null,
+      "buttonLayout": "default",
+      "corpus": "same-different-selection-item-bank",
+      "keyHelpers": true,
+      "language": "en",
+      "numOfPracticeTrials": 2,
+      "numberOfTrials": 20,
+      "sequentialPractice": true,
+      "sequentialStimulus": true,
+      "skipInstructions": true,
+      "stimulusBlocks": 3,
+      "taskName": "same-different-selection"
+    }
+  },
+  {
+    "variantName": "Theory-of-Mind-Default",
+    "params": {
+      "age": null,
+      "buttonLayout": "default",
+      "cat": false,
+      "corpus": "theory-of-mind-item-bank",
+      "inferenceNumStories": null,
+      "keyHelpers": false,
+      "language": "en",
+      "maxIncorrect": 3,
+      "maxTime": 100,
+      "numOfPracticeTrials": 2,
+      "numberOfTrials": 300,
+      "semThreshold": 0.5,
+      "sequentialPractice": true,
+      "sequentialStimulus": true,
+      "skipInstructions": true,
+      "stimulusBlocks": 3,
+      "storeItemId": false,
+      "taskName": "theory-of-mind"
+    }
+  },
+  {
+    "variantName": "intro-default",
+    "params": {
+      "age": null,
+      "buttonLayout": "default",
+      "cat": false,
+      "corpus": null,
+      "inferenceNumStories": null,
+      "keyHelpers": false,
+      "language": "en",
+      "maxIncorrect": 3,
+      "maxTime": 100,
+      "numOfPracticeTrials": 2,
+      "numberOfTrials": 300,
+      "semThreshold": 0.5,
+      "sequentialPractice": true,
+      "sequentialStimulus": true,
+      "skipInstructions": true,
+      "stimulusBlocks": 3,
+      "storeItemId": false,
+      "taskName": "intro"
+    }
+  }
+]

@@ -9,11 +9,10 @@ import {
   filterMedia,
   getRoarMediaAssets,
   getRoarTranslations,
-  isRoarApp,
 } from './tasks/shared/helpers';
 import './styles/index.scss';
 import taskConfig from './tasks/taskConfig';
-import { RoarAppkit } from '@bdelab/roar-firekit';
+import { startRun } from '@roar-platform/assessment-sdk/compat/firekit';
 import { setTaskStore, taskStore } from './taskStore';
 import { InitPageSetup, Logger } from './utils';
 // @ts-ignore: Need to keep sentry as .js file to use new function-based API
@@ -32,18 +31,18 @@ let sharedVisualAssets: MediaAssetsType;
 export class TaskLauncher {
   gameParams: GameParamsType;
   userParams: UserParamsType;
-  firekit: RoarAppkit;
+  isDev: boolean;
   logger?: LevanteLogger;
-  constructor(firekit: RoarAppkit, gameParams: GameParamsType, userParams: UserParamsType, logger?: LevanteLogger) {
+  constructor(gameParams: GameParamsType, userParams: UserParamsType, isDev = false, logger?: LevanteLogger) {
     this.gameParams = gameParams;
     this.userParams = userParams;
-    this.firekit = firekit;
+    this.isDev = isDev;
     Logger.setInstance(logger, gameParams, userParams);
   }
 
   async init() {
     initSentry();
-    await this.firekit.startRun();
+    await startRun();
 
     const { taskName } = this.gameParams;
     let { language } = this.gameParams;
@@ -62,8 +61,8 @@ export class TaskLauncher {
     const { setConfig, getCorpus, buildTaskTimeline, getTranslations } =
       taskConfig[dashToCamelCase(taskName) as keyof typeof taskConfig];
 
-    const isDev = this.firekit.firebaseProject?.firebaseApp?.options?.projectId === 'gse-roar-assessment-dev';
-    const useRoarHfBucket = isRoarApp(this.firekit) && taskName === 'hearts-and-flowers';
+    const isDev = this.isDev;
+    const useRoarHfBucket = taskName === 'hearts-and-flowers';
 
     let taskVisualBucket, sharedVisualBucket, languageAudioBucket, sharedAudioBucket;
     if (taskName !== 'roar-inference' && taskName !== 'trog') {
@@ -92,7 +91,7 @@ export class TaskLauncher {
       throw new Error('Error fetching media assets: ' + error);
     }
 
-    const config = await setConfig(this.firekit, this.gameParams, this.userParams);
+    const config = await setConfig(this.gameParams, this.userParams);
 
     setTaskStore(config);
 
@@ -146,6 +145,6 @@ export class TaskLauncher {
     taskStore('pageSetup', pageSetup);
 
     pageSetup.init();
-    await isTaskFinished(() => this.firekit?.run?.completed === true && taskStore().taskComplete);
+    await isTaskFinished(() => taskStore().taskComplete);
   }
 }

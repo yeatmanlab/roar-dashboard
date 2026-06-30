@@ -74,7 +74,11 @@ export const initTrialSaving = (config: Record<string, any>) => {
 
   // @ts-ignore
   jsPsych.opts.on_data_update = extend(jsPsych.opts.on_data_update, (data) => {
-    if (data.save_trial) {
+    // Instruction-stage items carry no response data and are not written.
+    // Some corpora embed instruction items alongside test items with assessmentStage: 'instructions';
+    // the SDK rejects this stage value, so guard centrally here.
+    const assessmentStageValue = data.assessment_stage ?? data.assessmentStage;
+    if (data.save_trial && assessmentStageValue !== 'instructions') {
       // save_trial is a flag that indicates whether the trial should
       // be saved to Firestore. No point in writing it to the db.
       // creating a deep copy to prevent modifying of original data

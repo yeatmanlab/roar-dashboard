@@ -5,32 +5,31 @@
     <AppSpinner />
   </div>
 </template>
-
 <script setup>
-import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
+import { onMounted, watch, ref, computed, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
+import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import { getRoarApiClient } from '@/clients/roar-api';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../../../package-lock.json';
+import { version } from '@roar-platform/roar-levante-tasks/package.json';
 
 const props = defineProps({
   taskId: { type: String, default: 'egma-math' },
   launchId: { type: String, default: null },
 });
 
-let levanteTaskLauncher;
+let TaskLauncher;
 
-const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roar-levante-tasks'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit } = storeToRefs(authStore);
+const { isAuthReady } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -46,8 +45,10 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.accessToken) init();
 });
 
+// launchId path throws immediately in startTask (proxy-launch not yet supported),
+// so skip the query entirely when launchId is set to avoid a pointless loading delay.
 const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
-  enabled: initialized,
+  enabled: computed(() => initialized.value && !props.launchId),
 });
 
 // The following code intercepts the back button and instead forces a refresh.
@@ -62,8 +63,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    let module = await import('@bdelab/roar-levante-tasks');
-    levanteTaskLauncher = module.TaskLauncher;
+    TaskLauncher = (await import('@roar-platform/roar-levante-tasks')).TaskLauncher;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -80,9 +80,9 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isFirekitInit, isLoadingUserData],
-  async ([newFirekitInitValue, newLoadingUserData]) => {
-    if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
+  [isAuthReady, isLoadingUserData],
+  async ([newIsAuthReady, newLoadingUserData]) => {
+    if (newIsAuthReady && !newLoadingUserData && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
@@ -104,8 +104,6 @@ async function startTask(selectedAdmin) {
       }
     }, 100);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
-
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
 
@@ -115,14 +113,84 @@ async function startTask(selectedAdmin) {
       birthYear: userDateObj.getFullYear(),
     };
 
-    const gameParams = { ...appKit._taskInfo.variantParams };
+    const roarApiClient = getRoarApiClient();
 
-    const levanteTask = new levanteTaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    const [taskRes, meRes] = await Promise.all([
+      roarApiClient.tasks.get({ params: { taskId: props.taskId } }),
+      roarApiClient.me.get(),
+    ]);
 
-    await levanteTask.run().then(() => {
-      // Navigate to home, but first set the refresh flag to true.
+    if (taskRes.status !== 200) {
+      throw new Error(`Levante task "${props.taskId}" not found in the ROAR backend (status ${taskRes.status}).`);
+    }
+    if (meRes.status !== 200) {
+      throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
+    }
+
+    // Proxy-launch path (launchId set) requires resolving the participant's Postgres UUID from
+    // the launch record — props.launchId is an assignment/launch ID, not a user ID. Passing it
+    // as participantId would silently create runs under the wrong ID. Fail loudly until this
+    // is properly implemented.
+    if (props.launchId) {
+      throw new Error(
+        'Proxy-launch path is not yet supported for Levante tasks. Resolve the participant Postgres UUID before enabling this path.',
+      );
+    }
+    const participantId = meRes.body.data.id;
+
+    const adminsRes = await roarApiClient.users.listUserAdministrations({
+      params: { userId: participantId },
+      query: { embed: 'tasks', perPage: 50 },
+    });
+
+    if (adminsRes.status !== 200) {
+      throw new Error(`Failed to fetch administrations from the ROAR backend (status ${adminsRes.status}).`);
+    }
+
+    const levanteTaskUuid = taskRes.body.data.id;
+    const backendAdmins = adminsRes.body.data.items;
+
+    const matchedAdmin =
+      backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
+      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === levanteTaskUuid));
+
+    if (!matchedAdmin) {
+      throw new Error(`No administration containing the "${props.taskId}" task found in the ROAR backend.`);
+    }
+
+    const levanteTaskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === levanteTaskUuid);
+    if (!levanteTaskVariant) {
+      throw new Error(`No task variant for "${props.taskId}" found in the matched administration.`);
+    }
+
+    initFirekitCompat(
+      {
+        baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
+        auth: {
+          getToken: () => Promise.resolve(authStore.accessToken),
+          refreshToken: () => authStore.forceIdTokenRefresh(),
+        },
+        participant: { participantId },
+      },
+      {
+        variantId: levanteTaskVariant.variantId,
+        taskVersion: version,
+        administrationId: matchedAdmin.id,
+        isAnonymous: false,
+      },
+    );
+
+    const { variantParams } = await getVariantById(levanteTaskVariant.variantId);
+
+    const roarApp = new TaskLauncher(variantParams, userParams, false);
+
+    await roarApp.run().then(() => {
       gameStore.requireHomeRefresh();
-      router.push({ name: 'Home' });
+      if (props.launchId) {
+        router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
+      } else {
+        router.push({ name: 'Home' });
+      }
     });
   } catch (error) {
     console.error('An error occurred while starting the task:', error);
@@ -132,10 +200,7 @@ async function startTask(selectedAdmin) {
   }
 }
 </script>
-
 <style>
-@import '@bdelab/roar-levante-tasks/lib/resources/core-tasks.css';
-
 .game-target {
   position: absolute;
   top: 0;
@@ -143,6 +208,7 @@ async function startTask(selectedAdmin) {
   width: 100%;
   height: 100%;
 }
+
 .game-target:focus {
   outline: none;
 }
