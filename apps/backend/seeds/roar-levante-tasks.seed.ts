@@ -29,14 +29,14 @@ import { tasks, taskVariants, taskVariantParameters } from '../src/db/schema/cor
 
 const TASK_META: Record<string, { name: string; nameSimple: string; nameTechnical: string }> = {
   trog: {
-    name: 'TROG (Syntax)',
-    nameSimple: 'TROG',
-    nameTechnical: 'Test for Reception of Grammar — ROAR Edition',
+    name: 'Words and Pictures Game',
+    nameSimple: 'Syntax',
+    nameTechnical: 'Syntax',
   },
   'roar-inference': {
-    name: 'ROAR Inference',
+    name: 'ROAR - Inference',
     nameSimple: 'Inference',
-    nameTechnical: 'Rapid Online Assessment of Reading — Inference',
+    nameTechnical: 'Inference',
   },
   'egma-math': {
     name: 'EGMA Math',
