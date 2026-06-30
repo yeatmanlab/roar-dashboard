@@ -27,10 +27,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ScoreCardScreen as ScoreCard } from './ScoreCard';
-import { useScoreListData } from './useScoreListData';
 import { useReportCardData } from './useReportCardData';
 
 const props = defineProps({
@@ -42,18 +40,9 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  taskData: {
-    type: Object,
-    required: true,
-  },
   tasksDictionary: {
     type: Object,
     required: true,
-  },
-  longitudinalData: {
-    type: Object,
-    required: false,
-    default: () => ({}),
   },
   expanded: {
     type: Boolean,
@@ -66,9 +55,8 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  // Backend-computed report tasks, supplied for both the administrator and parent paths;
-  // when present the card data comes from the backend (retiring client scoring). The legacy
-  // `taskData` pipeline below is now dead and is removed in the score-report cleanup PR.
+  // Backend-computed report tasks for both the administrator and parent paths; the card
+  // data comes from the backend (client scoring retired).
   reportTasks: {
     type: Array,
     required: false,
@@ -78,13 +66,6 @@ const props = defineProps({
 
 const { t } = useI18n();
 
-const legacy = useScoreListData({
-  studentGrade: props.studentGrade,
-  taskData: props.taskData,
-  longitudinalData: props.longitudinalData,
-  taskScoringVersions: props.taskScoringVersions,
-  t,
-});
 const backend = useReportCardData({
   reportTasks: () => props.reportTasks,
   studentGrade: props.studentGrade,
@@ -92,16 +73,10 @@ const backend = useReportCardData({
   t,
 });
 
-const useBackend = computed(() => Array.isArray(props.reportTasks));
-const computedTaskData = computed(() =>
-  useBackend.value ? backend.computedTaskData.value : legacy.computedTaskData.value,
-);
-const scoreValueTemplate = (task) =>
-  useBackend.value ? backend.scoreValueTemplate.value(task) : legacy.scoreValueTemplate.value(task);
-const getTaskDescription = (task) =>
-  useBackend.value ? backend.getTaskDescription.value(task) : legacy.getTaskDescription.value(task);
-const getTaskScoresArray = (task) =>
-  useBackend.value ? backend.getTaskScoresArray.value(task) : legacy.getTaskScoresArray.value(task);
+const { computedTaskData } = backend;
+const scoreValueTemplate = (task) => backend.scoreValueTemplate.value(task);
+const getTaskDescription = (task) => backend.getTaskDescription.value(task);
+const getTaskScoresArray = (task) => backend.getTaskScoresArray.value(task);
 </script>
 
 <style scoped>
