@@ -115,10 +115,14 @@ const COMPOSITE_VALUE_DECIMALS = 6;
 
 /**
  * Format a computed composite for storage: round to a fixed precision and drop trailing
- * zeros (e.g. `1.7196000000000002` -> `"1.7196"`, `1.5` -> `"1.5"`).
+ * zeros (e.g. `1.7196000000000002` -> `"1.7196"`, `1.5` -> `"1.5"`, `2` -> `"2.0"`).
+ * Preserves at least one decimal place to maintain consistency across all composite values.
  */
 function formatCompositeValue(value: number): string {
-  return String(Number(value.toFixed(COMPOSITE_VALUE_DECIMALS)));
+  const fixed = value.toFixed(COMPOSITE_VALUE_DECIMALS);
+  const trimmed = String(Number(fixed));
+  // Ensure at least one decimal place
+  return trimmed.includes('.') ? trimmed : `${trimmed}.0`;
 }
 
 /**

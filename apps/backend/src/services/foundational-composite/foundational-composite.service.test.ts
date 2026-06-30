@@ -318,10 +318,11 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
         thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.0'),
         thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5'),
         thetaRow(TASK_ID.pa, 'scoringVersion', '5'),
-        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_ESTIMATE, '2.0'),
-        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_ESTIMATE, '2.0', SCORE_DOMAIN.COMPOSITE),
+        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_SE, '0.5', SCORE_DOMAIN.COMPOSITE),
         thetaRow(TASK_ID.swr, 'scoringVersion', '7', SCORE_DOMAIN.COMPOSITE),
         sreRow('1.0'),
+        thetaRow(TASK_ID.sre, 'scoringVersion', '5'),
       ],
       reportingTaskIds: [TASK_ID.pa, TASK_ID.swr, TASK_ID.sre],
     });
