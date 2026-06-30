@@ -111,6 +111,45 @@ describe('toLevanteScoreEntries', () => {
         assessmentStage: 'test',
       });
     });
+
+    it('emits totalCorrect as type=raw (direct trial count measurement)', () => {
+      const computed = { composite: { totalCorrect: 8 } };
+      const entries = toLevanteScoreEntries(computed);
+
+      expect(entries).toContainEqual({
+        type: 'raw',
+        domain: LEVANTE_SCORE_DOMAINS.COMPOSITE,
+        name: LEVANTE_SCORE_NAMES.TOTAL_CORRECT,
+        value: '8',
+        assessmentStage: 'test',
+      });
+    });
+
+    it('emits totalNumAttempted as type=raw (direct trial count measurement)', () => {
+      const computed = { composite: { totalNumAttempted: 10 } };
+      const entries = toLevanteScoreEntries(computed);
+
+      expect(entries).toContainEqual({
+        type: 'raw',
+        domain: LEVANTE_SCORE_DOMAINS.COMPOSITE,
+        name: LEVANTE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED,
+        value: '10',
+        assessmentStage: 'test',
+      });
+    });
+
+    it('emits totalPercentCorrect as type=computed (derived from division)', () => {
+      const computed = { composite: { totalPercentCorrect: 80 } };
+      const entries = toLevanteScoreEntries(computed);
+
+      expect(entries).toContainEqual({
+        type: 'computed',
+        domain: LEVANTE_SCORE_DOMAINS.COMPOSITE,
+        name: LEVANTE_SCORE_NAMES.TOTAL_PERCENT_CORRECT,
+        value: '80',
+        assessmentStage: 'test',
+      });
+    });
   });
 
   describe('assessmentStage', () => {
@@ -188,6 +227,61 @@ describe('toLevanteScoreEntries', () => {
 
       const percentile = entries.find((e: LevanteScoreEntry) => e.name === LEVANTE_SCORE_NAMES.PERCENTILE);
       expect(percentile).toMatchObject({ type: 'computed', value: '75' });
+    });
+  });
+
+  describe('unnormed task output', () => {
+    it('emits only count-based scores for an unnormed task', () => {
+      const computed = {
+        composite: { totalCorrect: 12, totalNumAttempted: 15, totalPercentCorrect: 80 },
+      };
+      const entries = toLevanteScoreEntries(computed);
+
+      // 2 raw (totalCorrect, totalNumAttempted) + 1 computed (totalPercentCorrect) = 3 entries
+      expect(entries).toHaveLength(3);
+      expect(entries).toContainEqual({
+        type: 'raw',
+        domain: LEVANTE_SCORE_DOMAINS.COMPOSITE,
+        name: LEVANTE_SCORE_NAMES.TOTAL_CORRECT,
+        value: '12',
+        assessmentStage: 'test',
+      });
+      expect(entries).toContainEqual({
+        type: 'raw',
+        domain: LEVANTE_SCORE_DOMAINS.COMPOSITE,
+        name: LEVANTE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED,
+        value: '15',
+        assessmentStage: 'test',
+      });
+      expect(entries).toContainEqual({
+        type: 'computed',
+        domain: LEVANTE_SCORE_DOMAINS.COMPOSITE,
+        name: LEVANTE_SCORE_NAMES.TOTAL_PERCENT_CORRECT,
+        value: '80',
+        assessmentStage: 'test',
+      });
+      expect(entries).not.toContainEqual(expect.objectContaining({ name: LEVANTE_SCORE_NAMES.ROAR_SCORE }));
+      expect(entries).not.toContainEqual(expect.objectContaining({ name: LEVANTE_SCORE_NAMES.PERCENTILE }));
+      expect(entries).not.toContainEqual(expect.objectContaining({ name: LEVANTE_SCORE_NAMES.THETA_ESTIMATE }));
+    });
+  });
+
+  describe('strict mode', () => {
+    it('does not throw on recognized domain keys', () => {
+      const computed = { composite: { percentile: 75 } };
+      expect(() => toLevanteScoreEntries(computed, { strict: true })).not.toThrow();
+    });
+
+    it('throws on unrecognized domain keys when strict=true', () => {
+      const computed = { composite: { percentile: 75 }, unknownDomain: { someScore: 1 } };
+      expect(() => toLevanteScoreEntries(computed, { strict: true })).toThrow(
+        /Unrecognized score domains in LEVANTE computed scores: unknownDomain/,
+      );
+    });
+
+    it('does not throw on unrecognized domain keys when strict=false (default)', () => {
+      const computed = { composite: { percentile: 75 }, unknownDomain: { someScore: 1 } };
+      expect(() => toLevanteScoreEntries(computed)).not.toThrow();
     });
   });
 });

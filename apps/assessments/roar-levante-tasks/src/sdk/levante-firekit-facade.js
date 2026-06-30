@@ -81,7 +81,12 @@ export function wireScoreAdapter() {
 
     // Inject current theta estimates into the test data so ScoringHandler.getNormedScores
     // can find the thetaEstimate needed for the GCS lookup table (trog, roar-inference).
-    // irtEstimates keys are CAT names (e.g. 'composite'); values are IrtEstimate objects.
+    // irtEstimates keys are CAT names (e.g. 'composite'); values are IrtEstimate objects
+    // (src/tasks/shared/helpers/irtEstimates.ts). The IrtEstimate interface guarantees the
+    // spread produces exactly the keys that LEVANTE_SCORE_NAMES.THETA_ESTIMATE_RAW and
+    // THETA_SE_RAW expect ('thetaEstimateRaw', 'thetaSERaw'). If the CAT runtime ever
+    // changes the key names in IrtEstimate, these fields will silently disappear from
+    // run_scores — a TypeScript type error in irtEstimates.ts would be the signal.
     const irtEstimates = taskStore().irtEstimates;
     for (const [cat, estimate] of Object.entries(irtEstimates ?? {})) {
       if (!rawScores[cat]) rawScores[cat] = {};

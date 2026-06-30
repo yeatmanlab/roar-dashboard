@@ -13,9 +13,11 @@ export { LEVANTE_SCORE_DOMAINS } from './domains.js';
  * totalCorrect, totalNumAttempted, totalPercentCorrect.
  *
  * Raw entries (type=raw): thetaEstimateRaw, thetaSERaw — native-scale IRT
- * values written before the shared-scale transform is applied.
+ * values written before the shared-scale transform is applied; totalCorrect
+ * and totalNumAttempted — direct per-trial measurements.
  *
- * Computed entries (type=computed): all other fields.
+ * Computed entries (type=computed): all other fields, including
+ * totalPercentCorrect (derived from a division).
  */
 export const LEVANTE_SCORE_NAMES = {
   // CAT ability estimates — shared constants reused across ROAR IRT assessments
@@ -33,16 +35,20 @@ export const LEVANTE_SCORE_NAMES = {
   // Unnormed count-based scores (all tasks without a GCS lookup table)
   TOTAL_CORRECT: 'totalCorrect',
   TOTAL_NUM_ATTEMPTED: 'totalNumAttempted',
-  PERCENT_CORRECT: 'totalPercentCorrect',
+  TOTAL_PERCENT_CORRECT: 'totalPercentCorrect',
 } as const;
 
 export type LevanteScoreName = (typeof LEVANTE_SCORE_NAMES)[keyof typeof LEVANTE_SCORE_NAMES];
 
 /**
- * Score names that map to type='raw' entries — native-scale IRT estimates
- * captured directly from the CAT algorithm before scaling.
+ * Score names that map to type='raw' entries — direct measurements captured
+ * without derivation: native-scale IRT estimates from the CAT algorithm, and
+ * trial counts (totalCorrect, totalNumAttempted) written per-trial.
+ * Matches the convention in roar-letter and roar-multichoice.
  */
 export const LEVANTE_RAW_SCORE_NAMES = new Set<LevanteScoreName>([
   LEVANTE_SCORE_NAMES.THETA_ESTIMATE_RAW,
   LEVANTE_SCORE_NAMES.THETA_SE_RAW,
+  LEVANTE_SCORE_NAMES.TOTAL_CORRECT,
+  LEVANTE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED,
 ]);
