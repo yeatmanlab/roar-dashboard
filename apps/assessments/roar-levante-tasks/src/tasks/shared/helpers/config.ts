@@ -4,13 +4,16 @@ import _isNull from 'lodash/isNull';
 import _isUndefined from 'lodash/isUndefined';
 import _toNumber from 'lodash/toNumber';
 import i18next from 'i18next';
-import { isRoarApp } from './isRoarApp';
 import { camelize } from './camelize';
-import { RoarAppkit } from '@bdelab/roar-firekit';
 import { TaskStoreDataType } from '../../../taskStore';
 import { getAge } from './getAge';
 import { parseNumberParam } from './parseParam';
 import { CLOWDER_CONFIG } from './clowderSetup';
+import {
+  writeTrial,
+  finishRun as sdkFinishRun,
+  updateEngagementFlags,
+} from '@roar-platform/assessment-sdk/compat/firekit';
 
 export const DEFAULT_LAYOUT_CONFIG: LayoutConfigType = {
   playAudioOnLoad: true,
@@ -48,6 +51,10 @@ export const DEFAULT_LAYOUT_CONFIG: LayoutConfigType = {
   disableOkButton: false,
 };
 
+// Default corpus per task (camelCase task name). Used when variantParams.corpus is absent.
+// NOTE: hostileAttribution and childSurvey are not yet seeded in the ROAR backend
+// (no task or variant records exist). Selecting either task via ?task= or ?variantId=
+// will fail at the backend lookup step until seeds/roar-levante-tasks.seed.ts is extended.
 const defaultCorpus: Record<string, string> = {
   egmaMath: 'math-item-bank',
   matrixReasoning: 'matrix-reasoning-item-bank',
@@ -63,7 +70,6 @@ const defaultCorpus: Record<string, string> = {
 };
 
 export const setSharedConfig = async (
-  firekit: RoarAppkit,
   gameParams: GameParamsType,
   userParams: UserParamsType,
 ): Promise<TaskStoreDataType> => {
@@ -109,12 +115,33 @@ export const setSharedConfig = async (
 
   const numScoringVersion = Number(scoringVersion);
 
+  // SDK-backed firekit shim — keeps existing call sites in trialSaving.ts,
+  // recordCompletion.ts, and taskReliability.ts unchanged.
+  let _runFinished = false;
+  const firekitShim = {
+    run: {
+      started: true,
+      get completed() {
+        return _runFinished;
+      },
+    },
+    writeTrial,
+    finishRun: async (metadata?: Record<string, unknown>) => {
+      if (!_runFinished) {
+        _runFinished = true;
+        await sdkFinishRun(metadata);
+      }
+    },
+    updateEngagementFlags,
+    updateTaskParams: async () => {},
+  };
+
   const config = {
     userMetadata: { ...userMetadata, grade, age: Number(age) || getAge(Number(birthMonth), Number(birthYear)) },
     audioFeedback: audioFeedback || 'neutral',
     skipInstructions: !!skipInstructions, // Not used in any task
     startTime: new Date(),
-    firekit,
+    firekit: firekitShim,
     sequentialPractice: sequentialPractice ?? true,
     sequentialStimulus: sequentialStimulus ?? true,
     // name of the csv files in the storage bucket
@@ -129,7 +156,7 @@ export const setSharedConfig = async (
     language: language ?? i18next.language,
     maxTime: Number(maxTime) || 100,
     storeItemId: !!storeItemId,
-    isRoarApp: isRoarApp(firekit),
+    isRoarApp: true,
 
     cat: !!cat, // defaults to false
     heavyInstructions: !!heavyInstructions,
@@ -155,12 +182,6 @@ export const setSharedConfig = async (
   if (!config.corpus) {
     config.corpus = defaultCorpus[camelize(taskName)];
   }
-
-  const updatedGameParams = Object.fromEntries(
-    Object.entries(gameParams).map(([key, value]) => [key, config[key as keyof typeof config] ?? value]),
-  );
-
-  await config.firekit.updateTaskParams(updatedGameParams);
 
   return config;
 };
