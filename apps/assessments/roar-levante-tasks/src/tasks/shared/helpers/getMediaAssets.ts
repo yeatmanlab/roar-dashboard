@@ -53,7 +53,7 @@ export async function getMediaAssets(
     }
   }
 
-  data.items.forEach((item) => {
+  (data.items ?? []).forEach((item) => {
     if (isLanguageAndDeviceValid(item.name, language, taskName) && isWhitelisted(item.name, whitelist)) {
       const contentType = item.contentType;
       const id = item.name;
@@ -129,7 +129,7 @@ export async function getRoarMediaAssets(
   const response = await fetch(url);
   const data: ResponseDataType = await response.json();
 
-  data.items.forEach((item) => {
+  (data.items ?? []).forEach((item) => {
     if (isRoarLanguageAndDeviceValid(item.name, language, device) && isRoarWhitelisted(item.name, whitelist)) {
       const contentType = item.contentType;
       const id = item.name;

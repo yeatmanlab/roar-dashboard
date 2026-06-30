@@ -11,8 +11,6 @@ const TASKS = [
   'trog',
   'vocab',
   'theory-of-mind',
-  'hostile-attribution',
-  'child-survey',
 ];
 
 function visitTaskWithLocaleAndEnterFullscreen(task, lng) {

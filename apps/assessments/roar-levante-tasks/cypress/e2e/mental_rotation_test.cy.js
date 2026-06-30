@@ -1,4 +1,4 @@
-import { testAfc } from './helpers.cy.js';
+import { testAfc } from './helpers.js';
 
 const mental_rotation_url = 'http://localhost:8000/?task=mental-rotation';
 
