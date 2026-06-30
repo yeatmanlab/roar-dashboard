@@ -1,7 +1,7 @@
 {
   "name": "@roar-platform/roar-levante-tasks",
   "description": "LEVANTE core tasks — multi-task assessment battery for the ROAR platform",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "exports": {
