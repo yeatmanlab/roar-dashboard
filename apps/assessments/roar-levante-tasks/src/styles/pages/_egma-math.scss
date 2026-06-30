@@ -1,0 +1,113 @@
+#jspsych-html-slider-response-wrapper {
+  width: min(800px, 95%);
+  max-height: 95%;
+  margin: 0 !important;
+}
+
+.jspsych-html-slider-response-container {
+  width: 100% !important;
+}
+
+#jspsych-html-slider-response-response {
+  width: 100%;
+}
+
+#jspsych-html-slider-response-stimulus {
+  text-align: center;
+  margin-bottom: 5rem;
+}
+
+#slider-btn-container {
+  margin-top: 10vh;
+  display: flex;
+  justify-content: space-around;
+}
+
+.number-line-4afc-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 16px;
+  border: 1px solid #bdc1c3;
+}
+
+/* Track: webkit browsers */
+.number-line-4afc-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* Track: Mozilla Firefox */
+.number-line-4afc-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* Thumb: webkit */
+.number-line-4afc-slider::-webkit-slider-thumb {
+  /* removing default appearance */
+  -webkit-appearance: none;
+  appearance: none;
+  /* creating a custom design */
+  margin-top: -3px;
+  height: 15px;
+  width: 15px;
+  background-color: #275bdd;
+  border-radius: 50%;
+}
+
+/* Thumb: Firefox */
+.number-line-4afc-slider::-moz-range-thumb {
+  /* removing default appearance */
+  -webkit-appearance: none;
+  appearance: none;
+  height: 15px;
+  width: 15px;
+  background-color: #275bdd;
+  border-radius: 50%;
+}
+
+// create separate class for number line with buttons that hides thumb
+.number-line-buttons {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 16px;
+  border: 1px solid #bdc1c3;
+}
+
+/* Track: webkit browsers */
+.number-line-buttons::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* Track: Mozilla Firefox */
+.number-line-buttons::-moz-range-track {
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* Thumb: webkit */
+.number-line-buttons::-webkit-slider-thumb {
+  /* removing default appearance */
+  -webkit-appearance: none;
+  appearance: none;
+  /* creating a custom design */
+  margin-top: -3px;
+  height: 0px; // thumb should not be visible
+  width: 15px;
+  background-color: #275bdd;
+  border-radius: 50%;
+}
+
+/* Thumb: Firefox */
+.number-line-buttons::-moz-range-thumb {
+  /* removing default appearance */
+  -webkit-appearance: none;
+  appearance: none;
+  height: 0px;
+  width: 15px;
+  background-color: #275bdd;
+  border-radius: 50%;
+}
