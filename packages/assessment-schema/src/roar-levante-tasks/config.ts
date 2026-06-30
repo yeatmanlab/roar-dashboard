@@ -23,8 +23,7 @@ export const LEVANTE_PROVISIONAL_TASK_IDS = {
   THEORY_OF_MIND: 'theory-of-mind',
 } as const;
 
-export type LevanteProvisionalTaskId =
-  (typeof LEVANTE_PROVISIONAL_TASK_IDS)[keyof typeof LEVANTE_PROVISIONAL_TASK_IDS];
+export type LevanteProvisionalTaskId = (typeof LEVANTE_PROVISIONAL_TASK_IDS)[keyof typeof LEVANTE_PROVISIONAL_TASK_IDS];
 
 /**
  * Scoring versions correspond to the GCS lookup table generation used to
