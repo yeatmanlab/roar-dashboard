@@ -1,6 +1,6 @@
-import type { NodePgDatabase, SQL } from 'drizzle-orm/node-postgres';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { Column } from 'drizzle-orm';
+import type { Column, SQL } from 'drizzle-orm';
 import { eq, and, or, ilike, asc, desc, count, inArray, sql } from 'drizzle-orm';
 import type { Task } from '../db/schema';
 import { tasks } from '../db/schema';

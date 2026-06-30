@@ -8,11 +8,17 @@ import {
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import type { MockRunRepository, MockRunScoresRepository, MockTaskRepository } from '../../test-support/repositories';
+import type {
+  MockRunRepository,
+  MockRunScoresRepository,
+  MockTaskRepository,
+  MockUserRepository,
+} from '../../test-support/repositories';
 import {
   createMockRunRepository,
   createMockRunScoresRepository,
   createMockTaskRepository,
+  createMockUserRepository,
 } from '../../test-support/repositories';
 import { TaskFactory } from '../../test-support/factories/task.factory';
 import type { CompositeInputScoreRow } from '../../repositories/run.repository';
@@ -161,6 +167,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
   let runRepository: MockRunRepository;
   let runScoresRepository: MockRunScoresRepository;
   let taskRepository: MockTaskRepository;
+  let userRepository: MockUserRepository;
   let service: ReturnType<typeof FoundationalCompositeService>;
 
   beforeEach(() => {
@@ -169,6 +176,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
     runRepository = createMockRunRepository();
     runScoresRepository = createMockRunScoresRepository();
     taskRepository = createMockTaskRepository();
+    userRepository = createMockUserRepository();
 
     taskRepository.getBySlug.mockImplementation(async (slug: string) => {
       const id = slugToId.get(slug);
@@ -177,7 +185,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
     runRepository.findOrCreateCompositeRun.mockResolvedValue({ id: COMPOSITE_RUN_ID });
     runScoresRepository.upsertMany.mockResolvedValue([{ id: 'score-id' }]);
 
-    service = FoundationalCompositeService({ runRepository, runScoresRepository, taskRepository });
+    service = FoundationalCompositeService({ runRepository, runScoresRepository, taskRepository, userRepository });
   });
 
   const thetaRow = (
@@ -240,7 +248,11 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
     // full upserted row can be asserted by exact equality below.
     runRepository.getReportingRunScoresForComposite.mockResolvedValue({
       latestCompletedAt: null,
-      rows: [thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.5'), thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5')],
+      rows: [
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.5'),
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.pa, 'scoringVersion', '5'),
+      ],
       reportingTaskIds: [TASK_ID.pa],
     });
 
@@ -279,7 +291,9 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
       rows: [
         thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.5'),
         thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.pa, 'scoringVersion', '5'),
         thetaRow(TASK_ID.letter, SCORE_NAME.THETA_ESTIMATE, '3.0'), // no thetaSE row for Letter
+        thetaRow(TASK_ID.letter, 'scoringVersion', '1'),
       ],
       reportingTaskIds: [TASK_ID.pa, TASK_ID.letter],
     });
@@ -303,8 +317,10 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
       rows: [
         thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.0'),
         thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.pa, 'scoringVersion', '5'),
         thetaRow(TASK_ID.swr, SCORE_NAME.THETA_ESTIMATE, '2.0'),
         thetaRow(TASK_ID.swr, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.swr, 'scoringVersion', '7', SCORE_DOMAIN.COMPOSITE),
         sreRow('1.0'),
       ],
       reportingTaskIds: [TASK_ID.pa, TASK_ID.swr, TASK_ID.sre],
@@ -340,6 +356,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
       rows: [
         thetaRow(TASK_ID.letter, SCORE_NAME.THETA_ESTIMATE, '-5'),
         thetaRow(TASK_ID.letter, SCORE_NAME.THETA_SE, '0.3'),
+        thetaRow(TASK_ID.letter, 'scoringVersion', '1'),
         sreRow('1.0'),
       ],
       reportingTaskIds: [TASK_ID.letter, TASK_ID.sre],
@@ -359,7 +376,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
   it('uses the Sentence score alone when only Sentence was taken', async () => {
     runRepository.getReportingRunScoresForComposite.mockResolvedValue({
       latestCompletedAt: null,
-      rows: [sreRow('2.5')],
+      rows: [sreRow('2.5'), thetaRow(TASK_ID.sre, 'scoringVersion', '5')],
       reportingTaskIds: [TASK_ID.sre],
     });
 
@@ -378,7 +395,11 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
     // PA present; SRE has a reporting run but emitted NO composite_foundational thetaEstimate row.
     runRepository.getReportingRunScoresForComposite.mockResolvedValue({
       latestCompletedAt: null,
-      rows: [thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.5'), thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5')],
+      rows: [
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.5'),
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.pa, 'scoringVersion', '5'),
+      ],
       reportingTaskIds: [TASK_ID.pa, TASK_ID.sre],
     });
 
