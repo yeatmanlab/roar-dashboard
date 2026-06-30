@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { Column, SQL } from 'drizzle-orm';
+import type { SQL, AnyColumn } from 'drizzle-orm';
 import { eq, and, or, ilike, asc, desc, count, inArray, sql } from 'drizzle-orm';
 import type { Task } from '../db/schema';
 import { tasks } from '../db/schema';
@@ -23,7 +23,7 @@ import { escapeLikePattern } from '../utils/escape-like-pattern.util';
  * ordering the dashboard expects and keeps the integration test (which
  * compares JS `.toLowerCase()`) in agreement with the database.
  */
-const TASK_SORT_COLUMNS: Record<TaskSortFieldType, Column | SQL> = {
+const TASK_SORT_COLUMNS: Record<TaskSortFieldType, AnyColumn | SQL> = {
   createdAt: tasks.createdAt,
   updatedAt: tasks.updatedAt,
   name: sql`LOWER(${tasks.name})`,
