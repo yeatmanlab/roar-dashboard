@@ -165,14 +165,14 @@ const init = () => {
 };
 
 const authStore = useAuthStore();
-const { roarfirekit, showOptionalAssessments } = storeToRefs(authStore);
+const { showOptionalAssessments } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
 onMounted(async () => {
-  if (roarfirekit.value.restConfig?.()) {
+  if (authStore.isAuthReady) {
     init();
   }
 });

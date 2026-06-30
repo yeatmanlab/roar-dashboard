@@ -52,7 +52,8 @@ export const useAuthStore = () => {
        * backend-scoped queries need: they authenticate off the Bearer token. The
        * token is only set after firekit's admin auth is initialized, so a truthy
        * value implies the app is fully ready. Works identically in deployed and
-       * emulator builds, so it also subsumes `isEmulatorAuthReady`.
+       * emulator builds, so it also covers the emulator-only readiness fallback
+       * the now-removed `isDashboardReady` helper used to provide.
        */
       isAuthReady: (state) => {
         return Boolean(state.accessToken);
