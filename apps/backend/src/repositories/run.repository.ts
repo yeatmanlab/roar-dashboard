@@ -221,6 +221,8 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
     }
 
     // 2. The relevant composite input scores for exactly those winning runs.
+    // Fetch from both COMPOSITE_FOUNDATIONAL (PA, Letter, SRE) and COMPOSITE (SWR) domains,
+    // including theta pairs and scoringVersion for version gating.
     const scoreRows = await db
       .select({
         runId: runScores.runId,
@@ -233,8 +235,8 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
         and(
           inArray(runScores.runId, runIds),
           eq(runScores.type, SCORE_TYPE.COMPUTED),
-          eq(runScores.domain, SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL),
-          inArray(runScores.name, [SCORE_NAME.THETA_ESTIMATE, SCORE_NAME.THETA_SE]),
+          inArray(runScores.domain, [SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL, SCORE_DOMAIN.COMPOSITE]),
+          inArray(runScores.name, [SCORE_NAME.THETA_ESTIMATE, SCORE_NAME.THETA_SE, 'scoringVersion']),
         ),
       );
 
