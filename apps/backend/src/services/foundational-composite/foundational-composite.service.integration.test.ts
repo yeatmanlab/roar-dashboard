@@ -49,12 +49,17 @@ describe('FoundationalCompositeService (integration)', () => {
     service = FoundationalCompositeService({ runRepository, runScoresRepository, taskRepository });
   });
 
-  /** Seeds a `(computed, composite_foundational)` theta pair (estimate + SE) on a run. */
-  async function seedTheta(runId: string, thetaEstimate: string, thetaSE: string) {
+  /** Seeds a theta pair (estimate + SE) on a run, defaulting to composite_foundational domain. */
+  async function seedTheta(
+    runId: string,
+    thetaEstimate: string,
+    thetaSE: string,
+    domain: string = SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+  ) {
     await RunScoreFactory.create({
       runId,
       type: SCORE_TYPE.COMPUTED,
-      domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+      domain,
       name: SCORE_NAME.THETA_ESTIMATE,
       value: thetaEstimate,
       assessmentStage: null,
@@ -63,7 +68,7 @@ describe('FoundationalCompositeService (integration)', () => {
     await RunScoreFactory.create({
       runId,
       type: SCORE_TYPE.COMPUTED,
-      domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+      domain,
       name: SCORE_NAME.THETA_SE,
       value: thetaSE,
       assessmentStage: null,
@@ -183,13 +188,13 @@ describe('FoundationalCompositeService (integration)', () => {
       categoryScore: null,
     });
     const swrRun = await RunFactory.create({ userId, administrationId, taskId: SWR_TASK_ID, useForReporting: true });
-    await seedTheta(swrRun.id, '2.0', '0.5');
+    await seedTheta(swrRun.id, '2.0', '0.5', SCORE_DOMAIN.COMPOSITE);
     await RunScoreFactory.create({
       runId: swrRun.id,
       type: SCORE_TYPE.COMPUTED,
-      domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+      domain: SCORE_DOMAIN.COMPOSITE,
       name: 'scoringVersion',
-      value: '5',
+      value: '7',
       assessmentStage: null,
       categoryScore: null,
     });
