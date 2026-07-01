@@ -193,7 +193,7 @@ export async function aggregateSupportCategories(
     .from(userClasses)
     .innerJoin(classes, eq(userClasses.classId, classes.id))
     .innerJoin(orgs, eq(classes.schoolId, orgs.id))
-    .where(inArray(userClasses.userId, userIds));
+    .where(and(inArray(userClasses.userId, userIds), isNull(userClasses.enrollmentEnd)));
 
   const userSchoolsMap = new Map<string, Array<{ id: string; name: string }>>();
   for (const row of userSchoolsData) {
