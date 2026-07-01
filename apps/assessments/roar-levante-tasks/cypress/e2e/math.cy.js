@@ -1,4 +1,4 @@
-import { testAfc } from './helpers.cy.js';
+import { testAfc } from './helpers.js';
 
 const math_url = 'http://localhost:8000/?task=egma-math';
 

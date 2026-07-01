@@ -62,14 +62,15 @@ function handleMathSlider() {
 }
 
 function taskLoop(correctFlag, buttonClass) {
-  // wait for fixation cross to go away
-  cy.get('.lev-stimulus-container', { timeout: 60000 }).should('exist');
+  // wait for fixation cross / asset preload to complete — asset-heavy tasks (matrix-reasoning,
+  // trog) can take >60s to preload a batch; use 120s to avoid flaky timeouts in CI.
+  cy.get('.lev-stimulus-container', { timeout: 120000 }).should('exist');
 
   handleMathSlider();
   selectAnswers(correctFlag, buttonClass);
   instructions();
 
-  cy.get('.lev-stimulus-container', { timeout: 60000 })
+  cy.get('.lev-stimulus-container', { timeout: 120000 })
     .should('not.exist')
     .then(() => {
       if (taskCompleted) {

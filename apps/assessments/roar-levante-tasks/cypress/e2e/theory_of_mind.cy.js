@@ -1,4 +1,4 @@
-import { testAfc } from './helpers.cy.js';
+import { testAfc } from './helpers.js';
 
 const TOM_url = 'http://localhost:8000/?task=theory-of-mind';
 
