@@ -6534,5 +6534,96 @@ describe('AdministrationService', () => {
         );
       });
     });
+
+    describe('aggregateSupportCategories', () => {
+      const testAdminId = 'admin-456';
+
+      it('should throw NOT_FOUND when administration does not exist', async () => {
+        mockAdministrationRepository.getById.mockResolvedValue(null);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          districtRepository: createMockDistrictRepository(),
+          schoolRepository: createMockSchoolRepository(),
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          service.aggregateSupportCategories(regularUserAuthContext, testAdminId, 'district-123'),
+        ).rejects.toThrow(ApiError);
+      });
+
+      it('should allow super admin without FGA access check', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: testAdminId });
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+
+        // Mock the aggregation service
+        vi.doMock('../aggregation', () => ({
+          aggregateSupportCategories: vi.fn().mockResolvedValue({ 'task-1': { achievedSkill: { total: 5 } } }),
+        }));
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          districtRepository: createMockDistrictRepository(),
+          schoolRepository: createMockSchoolRepository(),
+          authorizationService: mockAuthorizationService,
+        });
+
+        const result = await service.aggregateSupportCategories(superAdminAuthContext, testAdminId, 'district-123');
+
+        // Super admin should succeed without FGA call
+        expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+        expect(result === null || typeof result === 'object').toBe(true);
+      });
+
+      it('should verify access via FGA for non-super-admin', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: testAdminId });
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+
+        // Mock the aggregation service
+        vi.doMock('../aggregation', () => ({
+          aggregateSupportCategories: vi.fn().mockResolvedValue(null),
+        }));
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          districtRepository: createMockDistrictRepository(),
+          schoolRepository: createMockSchoolRepository(),
+          authorizationService: mockAuthorizationService,
+        });
+
+        await service.aggregateSupportCategories(regularUserAuthContext, testAdminId, 'district-123');
+
+        // Non-super-admin should call FGA
+        expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+          regularUserAuthContext.userId,
+          expect.any(String), // FGA relation
+          `administration:${testAdminId}`,
+        );
+      });
+
+      it('should throw FORBIDDEN when user lacks FGA permission', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: testAdminId });
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.requirePermission.mockRejectedValue(
+          new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+          }),
+        );
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          districtRepository: createMockDistrictRepository(),
+          schoolRepository: createMockSchoolRepository(),
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          service.aggregateSupportCategories(regularUserAuthContext, testAdminId, 'district-123'),
+        ).rejects.toThrow(ApiError);
+      });
+    });
   });
 });

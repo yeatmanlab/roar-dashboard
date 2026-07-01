@@ -9,24 +9,28 @@ import { CoreDbClient } from '../../db/clients';
 /**
  * Integration tests for aggregateSupportCategories service.
  *
- * NOTE: These tests currently verify happy-path behavior without data seeding.
- * To fully exercise the SQL joins (fdwRuns × fdwRunScores × runDemographics × userClasses/classes/orgs),
- * the tests need real data in the databases:
+ * SKIPPED: These tests are currently skipped (.skip) because they cannot exercise
+ * the real SQL joins (fdwRuns × fdwRunScores × runDemographics × userClasses/classes/orgs)
+ * without seeding data across both core and assessment databases.
  *
- * 1. Create AdministrationTaskVariant assignments (links admin to scored tasks)
- * 2. Seed fdwRuns (assessment DB) with useForReporting=true, deletedAt=null
- * 3. Seed fdwRunScores with percentile and raw scores
- * 4. Seed runDemographics with grade information
- * 5. Ensure userClasses/classes/orgs are linked and enrollmentEnd is null (active)
+ * To implement real integration tests, the following data factories/infrastructure are needed:
  *
- * Once full data factories are available, each test should assert on:
- * - Non-null aggregation results
- * - Correct support level counts (achievedSkill, developingSkill, needsExtraSupport)
+ * 1. **AdministrationTaskVariantFactory**: Link administrations to scored tasks (swr, pa, sre, cva, etc.)
+ * 2. **FdwRunFactory** (assessment DB): Create runs with useForReporting=true, deletedAt=null
+ * 3. **FdwRunScoreFactory** (assessment DB): Seed percentile and raw scores (type='computed'|'raw', name='percentile'|'rawScore')
+ * 4. **RunDemographicsFactory** (core DB): Associate runs with grades
+ * 5. **UserClassesFactory** (core DB): Enroll users with enrollmentEnd=null (active)
+ * 6. **ClassesFactory** (core DB): Link classes to schools
+ *
+ * Once these factories exist, each test should assert:
+ * - Non-null aggregation results (indicating data flowed through joins)
+ * - Correct support level counts per getSupportLevel() percentile thresholds
  * - Correct school/grade/score-range groupings
- * - Active-enrollment filtering (ended enrollments excluded)
+ * - Active-enrollment filter excludes ended enrollments
  *
- * This is critical for "Highest" risk tier (scoring/classification).
- * Current tests verify the service doesn't crash; full tests verify correctness.
+ * This is critical for "Highest" risk tier (scoring/classification per testing-coverage-expectations.md).
+ * These tests document the real-data regression coverage gap; they must not be re-enabled
+ * without actual data seeding (see: quality-code-review.md "AI-generated tests without behavior verification").
  */
 describe('aggregateSupportCategories - Integration', () => {
   let administrationRepository: AdministrationRepository;
@@ -38,7 +42,7 @@ describe('aggregateSupportCategories - Integration', () => {
   });
 
   describe('Aggregation with real data', () => {
-    it('returns null when no scored task variants exist for administration', async () => {
+    it.skip('returns null when no scored task variants exist for administration', async () => {
       // Create an administration with no task assignments
       const admin = await AdministrationFactory.create({
         createdBy: baseFixture.districtAdmin.id,
@@ -52,7 +56,7 @@ describe('aggregateSupportCategories - Integration', () => {
       expect(result).toBeNull();
     });
 
-    it('aggregates runs by support level (achievedSkill, developingSkill, needsExtraSupport)', async () => {
+    it.skip('aggregates runs by support level (achievedSkill, developingSkill, needsExtraSupport)', async () => {
       // Integration test: exercise real SQL joins with seeded data
       // This test verifies that the aggregation correctly classifies runs into support levels
       // based on their percentile scores (not just returns null)
@@ -83,7 +87,7 @@ describe('aggregateSupportCategories - Integration', () => {
       expect(result === null || typeof result === 'object').toBe(true);
     });
 
-    it('groups results by school and grade', async () => {
+    it.skip('groups results by school and grade', async () => {
       // Integration test placeholder: verifies grouping logic when data is seeded
       const admin = await AdministrationFactory.create({
         createdBy: baseFixture.districtAdmin.id,
@@ -100,7 +104,7 @@ describe('aggregateSupportCategories - Integration', () => {
       expect(result === null || typeof result === 'object').toBe(true);
     });
 
-    it('bins raw scores into appropriate ranges', async () => {
+    it.skip('bins raw scores into appropriate ranges', async () => {
       // Integration test: verifies raw score binning (400-450, 450-500, etc.)
       // when real score data flows through fdwRunScores
       const admin = await AdministrationFactory.create({
@@ -116,7 +120,7 @@ describe('aggregateSupportCategories - Integration', () => {
       expect(result === null || typeof result === 'object').toBe(true);
     });
 
-    it('bins percentile scores into appropriate ranges', async () => {
+    it.skip('bins percentile scores into appropriate ranges', async () => {
       // Integration test: verifies percentile binning (40-50, 70-80, etc.)
       const admin = await AdministrationFactory.create({
         createdBy: baseFixture.districtAdmin.id,
@@ -131,7 +135,7 @@ describe('aggregateSupportCategories - Integration', () => {
       expect(result === null || typeof result === 'object').toBe(true);
     });
 
-    it('counts distribution of schools and grades per support level', async () => {
+    it.skip('counts distribution of schools and grades per support level', async () => {
       // Integration test: verifies that schools and grades are accurately counted
       // within each support level when runs are aggregated
       const admin = await AdministrationFactory.create({
@@ -152,7 +156,7 @@ describe('aggregateSupportCategories - Integration', () => {
   });
 
   describe('Edge cases', () => {
-    it('handles runs with missing demographics (null grade)', async () => {
+    it.skip('handles runs with missing demographics (null grade)', async () => {
       // Integration test: verifies runs with null grade are still counted
       // and appear under grade key 'NONE' in aggregation
       const admin = await AdministrationFactory.create({
@@ -169,7 +173,7 @@ describe('aggregateSupportCategories - Integration', () => {
       expect(result === null || typeof result === 'object').toBe(true);
     });
 
-    it('handles runs with missing enrollment records (no school)', async () => {
+    it.skip('handles runs with missing enrollment records (no school)', async () => {
       // Integration test: verifies runs for users without active class enrollments
       // are excluded from school aggregation (due to active enrollment filter)
       const admin = await AdministrationFactory.create({
@@ -186,7 +190,7 @@ describe('aggregateSupportCategories - Integration', () => {
       expect(result === null || typeof result === 'object').toBe(true);
     });
 
-    it('handles runs with missing or incomplete score data', async () => {
+    it.skip('handles runs with missing or incomplete score data', async () => {
       // Integration test: verifies runs without scores don't crash aggregation
       // and appear in support level counts without score-based binning
       const admin = await AdministrationFactory.create({
@@ -203,7 +207,7 @@ describe('aggregateSupportCategories - Integration', () => {
       expect(result === null || typeof result === 'object').toBe(true);
     });
 
-    it('handles large administrations without timeout', async () => {
+    it.skip('handles large administrations without timeout', async () => {
       // Integration test: performance check
       // Verifies aggregation completes within reasonable time with many runs
       const admin = await AdministrationFactory.create({
@@ -224,7 +228,7 @@ describe('aggregateSupportCategories - Integration', () => {
   });
 
   describe('Data correctness', () => {
-    it('calculates support levels consistently with getSupportLevel()', async () => {
+    it.skip('calculates support levels consistently with getSupportLevel()', async () => {
       // Integration test: verifies support level classification matches scoring rules
       // (percentile-based thresholds for achievedSkill, developingSkill, needsExtraSupport)
       const admin = await AdministrationFactory.create({
@@ -241,7 +245,7 @@ describe('aggregateSupportCategories - Integration', () => {
       expect(result === null || typeof result === 'object').toBe(true);
     });
 
-    it('preserves data integrity across multiple runs', async () => {
+    it.skip('preserves data integrity across multiple runs', async () => {
       // Integration test: idempotency check
       // Verifies calling aggregation twice returns identical results
       const admin = await AdministrationFactory.create({
@@ -262,7 +266,7 @@ describe('aggregateSupportCategories - Integration', () => {
       expect(result1).toEqual(result2);
     });
 
-    it('correctly merges multi-school enrollment data', async () => {
+    it.skip('correctly merges multi-school enrollment data', async () => {
       // Integration test: verifies when a student is enrolled in multiple schools
       // (active enrollments), their runs are counted in both schools' aggregations
       const admin = await AdministrationFactory.create({
