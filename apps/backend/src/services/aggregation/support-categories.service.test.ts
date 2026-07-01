@@ -36,7 +36,7 @@ describe('aggregateSupportCategories', () => {
 
       await expect(
         aggregateSupportCategories({
-          assignmentId: 'admin-123',
+          administrationId: 'admin-123',
           districtId: 'district-456',
         }),
       ).rejects.toThrow(ApiError);
@@ -69,7 +69,7 @@ describe('aggregateSupportCategories', () => {
       );
 
       const result = await aggregateSupportCategories({
-        assignmentId: 'admin-123',
+        administrationId: 'admin-123',
         districtId: 'district-456',
       });
 
@@ -175,7 +175,7 @@ describe('aggregateSupportCategories', () => {
       mockCoreDb.innerJoin.mockReturnValue(mockCoreDb);
 
       const result = await aggregateSupportCategories({
-        assignmentId: 'admin-123',
+        administrationId: 'admin-123',
         districtId: 'district-456',
       });
 
@@ -274,7 +274,7 @@ describe('aggregateSupportCategories', () => {
       });
 
       const result = await aggregateSupportCategories({
-        assignmentId: 'admin-123',
+        administrationId: 'admin-123',
         districtId: 'district-456',
       });
 
@@ -366,7 +366,7 @@ describe('aggregateSupportCategories', () => {
       mockCoreDb.innerJoin.mockReturnValue(mockCoreDb);
 
       const result = await aggregateSupportCategories({
-        assignmentId: 'admin-123',
+        administrationId: 'admin-123',
         districtId: 'district-456',
       });
 
@@ -465,7 +465,7 @@ describe('aggregateSupportCategories', () => {
       });
 
       const result = await aggregateSupportCategories({
-        assignmentId: 'admin-123',
+        administrationId: 'admin-123',
         districtId: 'district-456',
       });
 

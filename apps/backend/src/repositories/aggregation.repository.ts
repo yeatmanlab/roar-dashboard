@@ -9,6 +9,12 @@ import { userClasses } from '../db/schema/core/user-classes';
 import { classes } from '../db/schema/core/classes';
 import { orgs } from '../db/schema/core/orgs';
 
+export const ScoreType = {
+  COMPUTED: 'computed',
+  RAW: 'raw',
+} as const;
+export type ScoreType = (typeof ScoreType)[keyof typeof ScoreType];
+
 interface RunRecord {
   id: string;
   userId: string;
@@ -71,9 +77,23 @@ export class AggregationRepository {
       { percentile: number | null; rawScore: number | null; scoringVersion: number | null }
     >();
 
+    // Initialize all runs with null values
+    for (const runId of runIds) {
+      scoresByRunId.set(runId, { percentile: null, rawScore: null, scoringVersion: null });
+    }
+
+    // Parse score records
     for (const score of scoresData) {
-      if (!scoresByRunId.has(score.runId)) {
-        scoresByRunId.set(score.runId, { percentile: null, rawScore: null, scoringVersion: null });
+      const existingScores = scoresByRunId.get(score.runId);
+      if (!existingScores) continue;
+
+      const parsedValue = parseFloat(score.value);
+      if (Number.isNaN(parsedValue)) continue;
+
+      if ((score.type as ScoreType) === ScoreType.COMPUTED && score.name === 'percentile') {
+        existingScores.percentile = parsedValue;
+      } else if ((score.type as ScoreType) === ScoreType.RAW && score.name === 'rawScore') {
+        existingScores.rawScore = parsedValue;
       }
     }
 

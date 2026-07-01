@@ -52,7 +52,7 @@ describe('aggregateSupportCategories - Integration', () => {
       });
 
       const result = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 
@@ -82,7 +82,7 @@ describe('aggregateSupportCategories - Integration', () => {
 
       // For now, verify the service handles the happy path without errors
       const result = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 
@@ -97,7 +97,7 @@ describe('aggregateSupportCategories - Integration', () => {
       });
 
       const result = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 
@@ -115,7 +115,7 @@ describe('aggregateSupportCategories - Integration', () => {
       });
 
       const result = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 
@@ -130,7 +130,7 @@ describe('aggregateSupportCategories - Integration', () => {
       });
 
       const result = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 
@@ -146,7 +146,7 @@ describe('aggregateSupportCategories - Integration', () => {
       });
 
       const result = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 
@@ -167,7 +167,7 @@ describe('aggregateSupportCategories - Integration', () => {
       });
 
       const result = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 
@@ -184,7 +184,7 @@ describe('aggregateSupportCategories - Integration', () => {
       });
 
       const result = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 
@@ -201,7 +201,7 @@ describe('aggregateSupportCategories - Integration', () => {
       });
 
       const result = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 
@@ -220,7 +220,7 @@ describe('aggregateSupportCategories - Integration', () => {
       // Test with timeout expectation (should not hang even with 1000+ runs)
       const result = await Promise.race([
         aggregateSupportCategories({
-          assignmentId: admin.id,
+          administrationId: admin.id,
           districtId: baseFixture.district.id,
         }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000)),
@@ -239,7 +239,7 @@ describe('aggregateSupportCategories - Integration', () => {
       });
 
       const result = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 
@@ -256,12 +256,12 @@ describe('aggregateSupportCategories - Integration', () => {
       });
 
       const result1 = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 
       const result2 = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 
@@ -277,7 +277,7 @@ describe('aggregateSupportCategories - Integration', () => {
       });
 
       const result = await aggregateSupportCategories({
-        assignmentId: admin.id,
+        administrationId: admin.id,
         districtId: baseFixture.district.id,
       });
 

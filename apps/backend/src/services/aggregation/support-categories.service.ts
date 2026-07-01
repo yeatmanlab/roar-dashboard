@@ -8,6 +8,12 @@ import { AdministrationTaskVariantRepository } from '../../repositories/administ
 import { AggregationRepository } from '../../repositories/aggregation.repository';
 import { getSupportLevel } from '../scoring/scoring.service';
 
+export const ScoreType = {
+  COMPUTED: 'computed',
+  RAW: 'raw',
+} as const;
+export type ScoreType = (typeof ScoreType)[keyof typeof ScoreType];
+
 const SCORED_TASK_IDS = [
   'swr',
   'pa',
@@ -60,31 +66,31 @@ export function AggregationService({
   aggregationRepository?: AggregationRepository;
 } = {}) {
   async function aggregateSupportCategories(params: {
-    assignmentId: string;
+    administrationId: string;
     districtId: string;
   }): Promise<AggregatedSupportCategories | null> {
-    const { assignmentId, districtId } = params;
+    const { administrationId, districtId } = params;
 
     // Verify administration exists
-    const administration = await administrationRepository.getById({ id: assignmentId });
+    const administration = await administrationRepository.getById({ id: administrationId });
     if (!administration) {
       throw new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        context: { assignmentId, districtId },
+        context: { administrationId, districtId },
       });
     }
 
     // Get scored tasks for this administration
-    const taskMap = await administrationTaskVariantRepository.getByAdministrationIds([assignmentId]);
-    const taskVariants = taskMap.get(assignmentId) ?? [];
+    const taskMap = await administrationTaskVariantRepository.getByAdministrationIds([administrationId]);
+    const taskVariants = taskMap.get(administrationId) ?? [];
 
     const scoredTasks = taskVariants.filter((tv) =>
       SCORED_TASK_IDS.includes(tv.taskSlug as (typeof SCORED_TASK_IDS)[number]),
     );
 
     if (scoredTasks.length === 0) {
-      logger.info({ assignmentId, districtId }, 'No scored tasks found for administration');
+      logger.info({ administrationId, districtId }, 'No scored tasks found for administration');
       return null;
     }
 
@@ -93,10 +99,10 @@ export function AggregationService({
     const variantIds = scoredTasks.map((t) => t.variantId);
 
     // Fetch all best runs for these task variants
-    const runs = await aggregationRepository.getBestRunsForVariants(assignmentId, variantIds);
+    const runs = await aggregationRepository.getBestRunsForVariants(administrationId, variantIds);
 
     if (runs.length === 0) {
-      logger.info({ assignmentId, districtId }, 'No best runs found for scored tasks');
+      logger.info({ administrationId, districtId }, 'No best runs found for scored tasks');
       return null;
     }
 
@@ -224,7 +230,7 @@ export function AggregationService({
 
     logger.info(
       {
-        administrationId: assignmentId,
+        administrationId,
         districtId,
         runCount: enrichedRuns.length,
         taskCount: scoredTasks.length,

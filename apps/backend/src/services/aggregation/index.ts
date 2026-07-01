@@ -3,4 +3,4 @@ export { AggregationService, type AggregatedSupportCategories, type SupportLevel
 import { AggregationService } from './support-categories.service';
 
 const aggregationService = AggregationService();
-export const { aggregateSupportCategories } = aggregationService;
+export const aggregateSupportCategories = aggregationService.aggregateSupportCategories;

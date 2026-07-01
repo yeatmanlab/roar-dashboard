@@ -2273,7 +2273,7 @@ export function AdministrationService({
 
       // Delegate to the aggregation service
       const { aggregateSupportCategories } = await import('../aggregation');
-      return aggregateSupportCategories({ assignmentId: administrationId, districtId });
+      return aggregateSupportCategories({ administrationId, districtId });
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
