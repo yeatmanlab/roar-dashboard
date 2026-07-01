@@ -1,3 +1,6 @@
+import { getApp } from 'firebase/app';
+import { getStorage } from 'firebase/storage';
+import type { FirebaseStorage } from 'firebase/storage';
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums/sdk-error-code.enum';
@@ -77,6 +80,7 @@ export class FirekitFacade {
   #runId: string | undefined;
   #taskInfo: CompatTaskInfo | undefined;
   #interactionBuffer: AddInteractionInput[] = [];
+  #storageBucket: FirebaseStorage | undefined;
 
   private constructor() {}
 
@@ -92,6 +96,7 @@ export class FirekitFacade {
     this.#runId = undefined;
     this.#taskInfo = undefined;
     this.#interactionBuffer = [];
+    this.#storageBucket = undefined;
   }
 
   /**
@@ -121,6 +126,12 @@ export class FirekitFacade {
     this.#api = new RoarApi(ctx);
     this.#invoker = new Invoker(ctx);
     this.#taskInfo = taskInfo;
+
+    if (!process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+      // Only initialize storage bucket in non-emulator environments
+      const bucketName = `gs://roar-admin-recordings-${getApp().options.projectId === 'roar-admin' ? 'prod' : 'staging'}`;
+      this.#storageBucket = getStorage(getApp(), bucketName);
+    }
   }
 
   /**
@@ -172,6 +183,14 @@ export class FirekitFacade {
    */
   static _resetInstance(): void {
     FirekitFacade.#instance = undefined;
+  }
+
+  /**
+   * Internal getter for the storage bucket.
+   * @internal
+   */
+  _getStorageBucket(): FirebaseStorage | undefined {
+    return this.#storageBucket;
   }
 
   /**
@@ -866,4 +885,8 @@ export function makeLazyComputedCallback<T extends { computedScoreCallback: (raw
     if (!instance) instance = new ScoresClass();
     return instance.computedScoreCallback(rawScores);
   };
+}
+
+export function uploadFile() {
+  
 }
