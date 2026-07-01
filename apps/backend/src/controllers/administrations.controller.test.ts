@@ -2618,4 +2618,11 @@ describe('AdministrationsController', () => {
       ).rejects.toThrow('unexpected');
     });
   });
+
+  describe('aggregateSupportCategories', () => {
+    it.todo('should call service with auth context and IDs');
+    it.todo('should return 200 with aggregated support categories');
+    it.todo('should return 404 when administration not found');
+    it.todo('should return 500 on service error');
+  });
 });

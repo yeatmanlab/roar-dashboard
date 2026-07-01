@@ -63,9 +63,13 @@ interface RunWithDemographics {
  * Aggregates support category counts and distributions across schools and grades
  * for multiple assessment tasks within a district administration.
  *
- * @param params - Input parameters with assignmentId and districtId
+ * Note: `districtId` is accepted as a query parameter for logging/audit context only.
+ * The aggregation itself is scoped to the administration (assignmentId), which may span
+ * multiple districts. For per-district filtering, use the administration's org assignments.
+ *
+ * @param params - Input parameters with assignmentId and districtId (for logging context)
  * @param dependencies - Injected dependencies (optional, uses defaults)
- * @returns Aggregated support categories by task
+ * @returns Aggregated support categories by task keyed by taskId (UUID)
  * @throws {ApiError} NOT_FOUND if administration doesn't exist
  */
 export async function aggregateSupportCategories(
@@ -222,10 +226,10 @@ export async function aggregateSupportCategories(
     };
   });
 
-  // Initialize aggregation structure
-  const aggregated: AggregatedSupportCategories = {};
+  // Initialize aggregation structure by taskSlug (for correct lookup below)
+  const aggregatedBySlug: Record<string, TaskCounts> = {};
   for (const task of scoredTasks) {
-    aggregated[task.taskId] = {
+    aggregatedBySlug[task.taskSlug] = {
       achievedSkill: { schools: {}, grades: {}, total: 0 },
       developingSkill: { schools: {}, grades: {}, total: 0 },
       needsExtraSupport: { schools: {}, grades: {}, total: 0 },
@@ -242,7 +246,7 @@ export async function aggregateSupportCategories(
 
   // Process each run and aggregate
   for (const enrichedRun of enrichedRuns) {
-    const taskCounts = aggregated[enrichedRun.taskSlug];
+    const taskCounts = aggregatedBySlug[enrichedRun.taskSlug];
     if (!taskCounts) continue;
 
     // Classify run by support level
@@ -312,6 +316,12 @@ export async function aggregateSupportCategories(
     `Aggregated support categories for ${enrichedRuns.length} runs across ${scoredTasks.length} tasks`,
   );
 
+  // Remap keys from taskSlug back to taskId for API response
+  const aggregated: AggregatedSupportCategories = {};
+  for (const task of scoredTasks) {
+    aggregated[task.taskId] = aggregatedBySlug[task.taskSlug]!;
+  }
+
   return aggregated;
 }
 
@@ -323,6 +333,11 @@ function getPercentileRange(percentile: number): string {
 }
 
 function getRawScoreRange(taskSlug: string, rawScore: number): string | null {
+  // Raw score ranges are defined here for aggregation/reporting purposes.
+  // These bins are separate from the scoring configs (which define how scores are
+  // computed), and are used specifically for support category reporting breakdowns.
+  // If these ranges need to change, update them here and consider whether to add
+  // them to the scoring config registry for consistency.
   const ranges: Record<string, number[]> = {
     swr: [400, 450, 500, 550, 600, 650, 700],
     pa: [40, 45, 50, 55, 60, 65, 70],

@@ -1,10 +1,10 @@
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
+import { StatusCodes } from 'http-status-codes';
+import { getRoarApiClient } from '@/clients/roar-api';
 
 /**
  * Get aggregated support categories for an administration via the ts-rest backend API.
  *
- * Prefer using useAdministrationSupportCategoriesQuery composable over calling this directly.
+ * Prefer using useDistrictSupportCategoriesQuery composable over calling this directly.
  *
  * @param {String} administrationId - The administration UUID
  * @param {String} districtId - The district UUID
@@ -13,7 +13,7 @@ import { storeToRefs } from 'pinia';
  * @example
  * ```javascript
  * // Recommended: Use the query composable
- * const { data } = useAdministrationSupportCategoriesQuery(administrationId, districtId);
+ * const { data } = useDistrictSupportCategoriesQuery(districtId, administrationId);
  *
  * // Or use this helper directly for simple async/await
  * const aggregated = await getAdministrationSupportCategories(adminId, districtId);
@@ -21,23 +21,19 @@ import { storeToRefs } from 'pinia';
  * ```
  */
 export const getAdministrationSupportCategories = async (administrationId, districtId) => {
-  const authStore = useAuthStore();
-  const { accessToken } = storeToRefs(authStore);
+  const client = getRoarApiClient();
 
-  if (!accessToken.value) {
-    throw new Error('User is not authenticated');
-  }
-
-  const response = await fetch(`/v1/administrations/${administrationId}/support-categories?districtId=${districtId}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken.value}`,
-    },
+  const result = await client.administrations.aggregateSupportCategories({
+    params: { id: administrationId },
+    query: { districtId },
   });
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch support categories: ${response.statusText}`);
+  if (result.status !== StatusCodes.OK) {
+    const error = new Error(`Failed to fetch support categories with status ${result.status}`);
+    error.status = result.status;
+    error.body = result.body;
+    throw error;
   }
 
-  const json = await response.json();
-  return json.data;
+  return result.body.data;
 };

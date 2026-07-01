@@ -69,5 +69,9 @@ describe('aggregateSupportCategories', () => {
 
       expect(result).toBeNull();
     });
+
+    it.todo('aggregates runs by support level (achievedSkill, developingSkill, needsExtraSupport)');
+    it.todo('groups aggregated runs by school and grade');
+    it.todo('bins raw and percentile scores into correct ranges');
   });
 });
