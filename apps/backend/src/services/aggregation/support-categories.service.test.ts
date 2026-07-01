@@ -4,7 +4,10 @@ import { aggregateSupportCategories } from './support-categories.service';
 import type { Administration } from '../../db/schema';
 import { ApiError } from '../../errors/api-error';
 import { AdministrationRepository } from '../../repositories/administration.repository';
+import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
 import { createMockAdministrationRepository } from '../../test-support/repositories';
+
+vi.mock('../../repositories/administration-task-variant.repository');
 
 describe('aggregateSupportCategories', () => {
   let mockAdministrationRepository: MockedObject<AdministrationRepository>;
@@ -12,6 +15,13 @@ describe('aggregateSupportCategories', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAdministrationRepository = createMockAdministrationRepository();
+    // Mock AdministrationTaskVariantRepository to return empty tasks
+    vi.mocked(AdministrationTaskVariantRepository).mockImplementation(
+      () =>
+        ({
+          getByAdministrationIds: vi.fn().mockResolvedValue(new Map()),
+        }) as unknown as AdministrationTaskVariantRepository,
+    );
   });
 
   describe('Error handling', () => {
@@ -28,7 +38,7 @@ describe('aggregateSupportCategories', () => {
   });
 
   describe('Data aggregation', () => {
-    it('returns empty object when implementation is stubbed', async () => {
+    it('returns null when no scored tasks are found', async () => {
       const mockAdmin: Partial<Administration> = {
         id: 'admin-123',
         name: 'Test Admin',
@@ -44,12 +54,20 @@ describe('aggregateSupportCategories', () => {
 
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin as Administration);
 
+      // Mock the task variant repository to return empty task list
+      vi.mocked(AdministrationTaskVariantRepository).mockImplementation(
+        () =>
+          ({
+            getByAdministrationIds: vi.fn().mockResolvedValue(new Map()),
+          }) as unknown as AdministrationTaskVariantRepository,
+      );
+
       const result = await aggregateSupportCategories(
         { assignmentId: 'admin-123', districtId: 'district-456' },
         { administrationRepository: mockAdministrationRepository },
       );
 
-      expect(result).toEqual({});
+      expect(result).toBeNull();
     });
   });
 });

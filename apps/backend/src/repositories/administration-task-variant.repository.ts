@@ -10,6 +10,7 @@ import type { Condition } from '../types/condition';
  */
 export interface AdministrationTask {
   taskId: string;
+  taskSlug: string;
   taskName: string;
   variantId: string;
   variantName: string | null;
@@ -62,6 +63,7 @@ export class AdministrationTaskVariantRepository {
       .select({
         administrationId: administrationTaskVariants.administrationId,
         taskId: taskVariants.taskId,
+        taskSlug: tasks.slug,
         taskName: tasks.name,
         variantId: administrationTaskVariants.taskVariantId,
         variantName: taskVariants.name,
@@ -81,6 +83,7 @@ export class AdministrationTaskVariantRepository {
       const adminTasks = result.get(row.administrationId) ?? [];
       adminTasks.push({
         taskId: row.taskId,
+        taskSlug: row.taskSlug,
         taskName: row.taskName,
         variantId: row.variantId,
         variantName: row.variantName,

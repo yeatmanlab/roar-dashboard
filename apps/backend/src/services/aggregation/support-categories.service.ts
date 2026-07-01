@@ -98,7 +98,7 @@ export async function aggregateSupportCategories(
   const taskVariants = taskMap.get(assignmentId) ?? [];
 
   const scoredTasks = taskVariants.filter((tv) =>
-    SCORED_TASK_IDS.includes(tv.taskId as (typeof SCORED_TASK_IDS)[number]),
+    SCORED_TASK_IDS.includes(tv.taskSlug as (typeof SCORED_TASK_IDS)[number]),
   );
 
   if (scoredTasks.length === 0) {
@@ -107,7 +107,7 @@ export async function aggregateSupportCategories(
   }
 
   // Map task variant ID → task slug for lookup later
-  const taskSlugByVariantId = new Map(scoredTasks.map((t) => [t.variantId, t.taskId]));
+  const taskSlugByVariantId = new Map(scoredTasks.map((t) => [t.variantId, t.taskSlug]));
   const variantIds = scoredTasks.map((t) => t.variantId);
 
   // Fetch all best runs for these task variants

@@ -340,6 +340,7 @@ export function AdministrationService({
   function toResponseTask(task: AdministrationTaskWithConditions): AdministrationTaskWithProgress {
     return {
       taskId: task.taskId,
+      taskSlug: task.taskSlug,
       taskName: task.taskName,
       variantId: task.variantId,
       variantName: task.variantName,

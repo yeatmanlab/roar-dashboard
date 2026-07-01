@@ -330,8 +330,22 @@ describe('AdministrationsController', () => {
         id: 'admin-1',
         name: 'Test Admin',
         tasks: [
-          { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
-          { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
+          {
+            taskId: 'task-1',
+            taskSlug: 'swr',
+            taskName: 'SWR',
+            variantId: 'variant-1',
+            variantName: 'Variant A',
+            orderIndex: 0,
+          },
+          {
+            taskId: 'task-2',
+            taskSlug: 'pa',
+            taskName: 'PA',
+            variantId: 'variant-2',
+            variantName: null,
+            orderIndex: 1,
+          },
         ],
       });
       mockList.mockResolvedValue({
@@ -358,8 +372,15 @@ describe('AdministrationsController', () => {
       });
       const data = expectOkResponse(result);
       expect(data.items[0]!.tasks).toEqual([
-        { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
-        { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
+        {
+          taskId: 'task-1',
+          taskSlug: 'swr',
+          taskName: 'SWR',
+          variantId: 'variant-1',
+          variantName: 'Variant A',
+          orderIndex: 0,
+        },
+        { taskId: 'task-2', taskSlug: 'pa', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
       ]);
     });
 

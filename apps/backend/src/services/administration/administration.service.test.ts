@@ -3815,7 +3815,6 @@ describe('AdministrationService', () => {
         {
           taskId: 'task-1',
           taskVariantId: 'tv-1',
-          taskSlug: 'swr',
           taskName: 'SWR',
           orderIndex: 0,
           conditionsAssignment: null,
@@ -3930,7 +3929,6 @@ describe('AdministrationService', () => {
         {
           taskId: 'task-1',
           taskVariantId: 'tv-1',
-          taskSlug: 'swr',
           taskName: 'SWR',
           orderIndex: 0,
           conditionsAssignment: null,

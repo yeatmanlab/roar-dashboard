@@ -140,14 +140,16 @@ describe('administration.transform', () => {
       const admin = AdministrationWithEmbedsFactory.build({
         tasks: [
           {
-            taskId: 'task-1',
+            taskId: '00000000-0000-0000-0000-000000000001',
+            taskSlug: 'task-1',
             taskName: 'Task One',
             variantId: 'variant-1',
             variantName: 'Variant One',
             orderIndex: 0,
           },
           {
-            taskId: 'task-2',
+            taskId: '00000000-0000-0000-0000-000000000002',
+            taskSlug: 'task-2',
             taskName: 'Task Two',
             variantId: 'variant-2',
             variantName: null,
@@ -160,14 +162,16 @@ describe('administration.transform', () => {
 
       expect(result.tasks).toHaveLength(2);
       expect(result.tasks![0]).toEqual({
-        taskId: 'task-1',
+        taskId: '00000000-0000-0000-0000-000000000001',
+        taskSlug: 'task-1',
         taskName: 'Task One',
         variantId: 'variant-1',
         variantName: 'Variant One',
         orderIndex: 0,
       });
       expect(result.tasks![1]).toEqual({
-        taskId: 'task-2',
+        taskId: '00000000-0000-0000-0000-000000000002',
+        taskSlug: 'task-2',
         taskName: 'Task Two',
         variantId: 'variant-2',
         variantName: null,
@@ -184,7 +188,8 @@ describe('administration.transform', () => {
         },
         tasks: [
           {
-            taskId: 'task-1',
+            taskId: '00000000-0000-0000-0000-000000000001',
+            taskSlug: 'task-1',
             taskName: 'Task One',
             variantId: 'variant-1',
             variantName: 'Variant One',
@@ -236,21 +241,24 @@ describe('administration.transform', () => {
       const admin = AdministrationWithEmbedsFactory.build({
         tasks: [
           {
-            taskId: 'task-3',
+            taskId: '00000000-0000-0000-0000-000000000003',
+            taskSlug: 'task-3',
             taskName: 'Task Three',
             variantId: 'variant-3',
             variantName: 'Variant Three',
             orderIndex: 2,
           },
           {
-            taskId: 'task-1',
+            taskId: '00000000-0000-0000-0000-000000000001',
+            taskSlug: 'task-1',
             taskName: 'Task One',
             variantId: 'variant-1',
             variantName: 'Variant One',
             orderIndex: 0,
           },
           {
-            taskId: 'task-2',
+            taskId: '00000000-0000-0000-0000-000000000002',
+            taskSlug: 'task-2',
             taskName: 'Task Two',
             variantId: 'variant-2',
             variantName: 'Variant Two',
@@ -270,7 +278,8 @@ describe('administration.transform', () => {
       const admin = AdministrationWithEmbedsFactory.build({
         tasks: [
           {
-            taskId: 'task-1',
+            taskId: '00000000-0000-0000-0000-000000000001',
+            taskSlug: 'task-1',
             taskName: 'Task One',
             variantId: 'variant-1',
             variantName: null,
@@ -288,7 +297,8 @@ describe('administration.transform', () => {
       const admin = AdministrationWithEmbedsFactory.build({
         tasks: [
           {
-            taskId: 'task-1',
+            taskId: '00000000-0000-0000-0000-000000000001',
+            taskSlug: 'task-1',
             taskName: 'Task One',
             variantId: 'variant-1',
             variantName: 'Variant One',
@@ -315,7 +325,8 @@ describe('administration.transform', () => {
       const admin = AdministrationWithEmbedsFactory.build({
         tasks: [
           {
-            taskId: 'task-1',
+            taskId: '00000000-0000-0000-0000-000000000001',
+            taskSlug: 'task-1',
             taskName: 'Task One',
             variantId: 'variant-1',
             variantName: 'Variant One',
@@ -333,7 +344,8 @@ describe('administration.transform', () => {
       const admin = AdministrationWithEmbedsFactory.build({
         tasks: [
           {
-            taskId: 'task-1',
+            taskId: '00000000-0000-0000-0000-000000000001',
+            taskSlug: 'task-1',
             taskName: 'Task One',
             variantId: 'variant-1',
             variantName: 'Variant One',
@@ -354,7 +366,8 @@ describe('administration.transform', () => {
       const admin = AdministrationWithEmbedsFactory.build({
         tasks: [
           {
-            taskId: 'task-1',
+            taskId: '00000000-0000-0000-0000-000000000001',
+            taskSlug: 'task-1',
             taskName: 'Task One',
             variantId: 'variant-1',
             variantName: 'Variant One',
