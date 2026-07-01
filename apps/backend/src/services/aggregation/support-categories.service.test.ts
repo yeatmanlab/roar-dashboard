@@ -168,10 +168,9 @@ describe('aggregateSupportCategories', () => {
       mockCoreDb.where.mockReturnValue(mockCoreDb);
       mockCoreDb.innerJoin.mockReturnValue(mockCoreDb);
 
-      // @ts-expect-error - mocking Drizzle query builder for tests
       const result = await aggregateSupportCategories(
         { assignmentId: 'admin-123', districtId: 'district-456' },
-        { administrationRepository: mockAdministrationRepository, coreDb: mockCoreDb },
+        { administrationRepository: mockAdministrationRepository, coreDb: mockCoreDb as never },
       );
 
       expect(result).not.toBeNull();
@@ -268,10 +267,9 @@ describe('aggregateSupportCategories', () => {
         return Promise.resolve();
       });
 
-      // @ts-expect-error - mocking Drizzle query builder for tests
       const result = await aggregateSupportCategories(
         { assignmentId: 'admin-123', districtId: 'district-456' },
-        { administrationRepository: mockAdministrationRepository, coreDb: mockCoreDb },
+        { administrationRepository: mockAdministrationRepository, coreDb: mockCoreDb as never },
       );
 
       expect(result).not.toBeNull();
@@ -361,10 +359,9 @@ describe('aggregateSupportCategories', () => {
       mockCoreDb.where.mockReturnValue(mockCoreDb);
       mockCoreDb.innerJoin.mockReturnValue(mockCoreDb);
 
-      // @ts-expect-error - mocking Drizzle query builder for tests
       const result = await aggregateSupportCategories(
         { assignmentId: 'admin-123', districtId: 'district-456' },
-        { administrationRepository: mockAdministrationRepository, coreDb: mockCoreDb },
+        { administrationRepository: mockAdministrationRepository, coreDb: mockCoreDb as never },
       );
 
       expect(result).not.toBeNull();
@@ -461,10 +458,9 @@ describe('aggregateSupportCategories', () => {
         return Promise.resolve();
       });
 
-      // @ts-expect-error - mocking Drizzle query builder for tests
       const result = await aggregateSupportCategories(
         { assignmentId: 'admin-123', districtId: 'district-456' },
-        { administrationRepository: mockAdministrationRepository, coreDb: mockCoreDb },
+        { administrationRepository: mockAdministrationRepository, coreDb: mockCoreDb as never },
       );
 
       expect(result).not.toBeNull();
