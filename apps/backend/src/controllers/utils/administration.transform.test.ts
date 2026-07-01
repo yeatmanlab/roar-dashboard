@@ -206,7 +206,7 @@ describe('administration.transform', () => {
         completed: 20,
       });
       expect(result.tasks).toHaveLength(1);
-      expect(result.tasks![0]!.taskId).toBe('task-1');
+      expect(result.tasks![0]!.taskId).toBe('00000000-0000-0000-0000-000000000001');
     });
 
     it('handles stats with zero values', () => {

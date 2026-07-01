@@ -89,6 +89,7 @@ export type AdministrationTaskProgress = z.infer<typeof AdministrationTaskProgre
  */
 export const AdministrationTaskSchema = z.object({
   taskId: z.string().uuid(),
+  taskSlug: z.string(),
   taskName: z.string(),
   variantId: z.string().uuid(),
   variantName: z.string().nullable(),

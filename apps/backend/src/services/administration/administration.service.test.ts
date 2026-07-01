@@ -670,6 +670,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'swr',
                 taskName: 'SWR',
                 variantId: 'variant-1',
                 variantName: 'Variant A',
@@ -679,6 +680,7 @@ describe('AdministrationService', () => {
               },
               {
                 taskId: 'task-2',
+                taskSlug: 'pa',
                 taskName: 'PA',
                 variantId: 'variant-2',
                 variantName: null,
@@ -693,6 +695,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-3',
+                taskSlug: 'sre',
                 taskName: 'SRE',
                 variantId: 'variant-3',
                 variantName: 'Variant C',
@@ -721,11 +724,32 @@ describe('AdministrationService', () => {
           'admin-2',
         ]);
         expect(result.items[0]!.tasks).toEqual([
-          { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
-          { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
+          {
+            taskId: 'task-1',
+            taskSlug: 'swr',
+            taskName: 'SWR',
+            variantId: 'variant-1',
+            variantName: 'Variant A',
+            orderIndex: 0,
+          },
+          {
+            taskId: 'task-2',
+            taskSlug: 'pa',
+            taskName: 'PA',
+            variantId: 'variant-2',
+            variantName: null,
+            orderIndex: 1,
+          },
         ]);
         expect(result.items[1]!.tasks).toEqual([
-          { taskId: 'task-3', taskName: 'SRE', variantId: 'variant-3', variantName: 'Variant C', orderIndex: 0 },
+          {
+            taskId: 'task-3',
+            taskSlug: 'sre',
+            taskName: 'SRE',
+            variantId: 'variant-3',
+            variantName: 'Variant C',
+            orderIndex: 0,
+          },
         ]);
       });
 
@@ -743,6 +767,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'swr',
                 taskName: 'SWR',
                 variantId: 'variant-1',
                 variantName: 'Variant A',
@@ -823,6 +848,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'swr',
                 taskName: 'SWR',
                 variantId: 'variant-1',
                 variantName: 'Variant A',
@@ -852,7 +878,14 @@ describe('AdministrationService', () => {
 
         expect(result.items[0]!.stats).toEqual({ assigned: 25, started: 10, completed: 5 });
         expect(result.items[0]!.tasks).toEqual([
-          { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
+          {
+            taskId: 'task-1',
+            taskSlug: 'swr',
+            taskName: 'SWR',
+            variantId: 'variant-1',
+            variantName: 'Variant A',
+            orderIndex: 0,
+          },
         ]);
       });
     });
@@ -881,6 +914,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'swr',
                 taskName: 'SWR',
                 variantId: 'variant-1',
                 variantName: 'Variant A',
@@ -1068,6 +1102,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'swr',
                 taskName: 'SWR',
                 variantId: 'variant-1',
                 variantName: 'Variant A',
@@ -1082,6 +1117,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-2',
+                taskSlug: 'pa',
                 taskName: 'PA',
                 variantId: 'variant-2',
                 variantName: 'Variant B',
@@ -1186,6 +1222,7 @@ describe('AdministrationService', () => {
               [
                 {
                   taskId: 'task-1',
+                  taskSlug: 'swr',
                   taskName: 'SWR',
                   variantId: 'variant-1',
                   variantName: 'Variant A',
@@ -3356,6 +3393,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'task',
                 taskName: 'Task 1',
                 variantId: 'variant-1',
                 variantName: 'Variant 1',
@@ -3384,7 +3422,14 @@ describe('AdministrationService', () => {
       expect(mockAdministrationTaskVariantRepository.getByAdministrationIds).toHaveBeenCalledWith([mockAdmin.id]);
       expect(result.items[0]).toHaveProperty('tasks');
       expect(result.items[0]!.tasks).toEqual([
-        { taskId: 'task-1', taskName: 'Task 1', variantId: 'variant-1', variantName: 'Variant 1', orderIndex: 0 },
+        {
+          taskId: 'task-1',
+          taskSlug: 'task',
+          taskName: 'Task 1',
+          variantId: 'variant-1',
+          variantName: 'Variant 1',
+          orderIndex: 0,
+        },
       ]);
     });
 
@@ -3411,6 +3456,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'task',
                 taskName: 'Task 1',
                 variantId: 'variant-1',
                 variantName: 'Variant 1',
@@ -3441,7 +3487,14 @@ describe('AdministrationService', () => {
       expect(result.items[0]).toHaveProperty('tasks');
       expect(result.items[0]!.stats).toEqual({ assigned: 10, started: 5, completed: 3 });
       expect(result.items[0]!.tasks).toEqual([
-        { taskId: 'task-1', taskName: 'Task 1', variantId: 'variant-1', variantName: 'Variant 1', orderIndex: 0 },
+        {
+          taskId: 'task-1',
+          taskSlug: 'task',
+          taskName: 'Task 1',
+          variantId: 'variant-1',
+          variantName: 'Variant 1',
+          orderIndex: 0,
+        },
       ]);
     });
 
@@ -3520,6 +3573,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'swr',
                 taskName: 'SWR',
                 variantId: 'variant-1',
                 variantName: 'Variant A',
@@ -3814,6 +3868,7 @@ describe('AdministrationService', () => {
       mockReportRepository.getTaskMetadata.mockResolvedValue([
         {
           taskId: 'task-1',
+          taskSlug: 'swr',
           taskVariantId: 'tv-1',
           taskName: 'SWR',
           orderIndex: 0,
@@ -3928,6 +3983,7 @@ describe('AdministrationService', () => {
       mockReportRepository.getTaskMetadata.mockResolvedValue([
         {
           taskId: 'task-1',
+          taskSlug: 'swr',
           taskVariantId: 'tv-1',
           taskName: 'SWR',
           orderIndex: 0,
