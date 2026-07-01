@@ -27,6 +27,7 @@ export interface UploadFileInput {
  * @property filename - The name of the file to upload
  * @property runId - The run ID. Used as part of the bucket path.
  * @property taskId - The task ID. Used as part of the bucket path.
+ * @property participantId - The participant ID. Used as part of the bucket path.
  * @property assessmentPid - The assessment PID. Used as part of the bucket path. (optional, otherwise set to participant)
  */
 export interface GenerateFilePathInput {
@@ -34,6 +35,7 @@ export interface GenerateFilePathInput {
   filename: string;
   runId: string;
   taskId: string;
+  participantId: string;
   assessmentPid?: string;
 }
 
