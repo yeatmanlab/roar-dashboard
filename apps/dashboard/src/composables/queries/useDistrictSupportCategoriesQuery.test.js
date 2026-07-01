@@ -5,6 +5,12 @@ import { withSetup } from '@/test-support/withSetup.js';
 import { getRoarApiClient } from '@/clients/roar-api';
 import useDistrictSupportCategoriesQuery from './useDistrictSupportCategoriesQuery';
 
+const mockUseAuthStore = vi.fn(() => ({ accessToken: 'test-token' }));
+
+vi.mock('@/store/auth', () => ({
+  useAuthStore: () => mockUseAuthStore(),
+}));
+
 vi.mock('@/clients/roar-api');
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
