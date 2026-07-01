@@ -1,5 +1,5 @@
 import { describe, it, beforeAll, expect } from 'vitest';
-import { aggregateSupportCategories } from './support-categories.service';
+import { AggregationService } from './support-categories.service';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import { baseFixture } from '../../test-support/fixtures';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
@@ -34,11 +34,14 @@ import { CoreDbClient } from '../../db/clients';
  */
 describe('aggregateSupportCategories - Integration', () => {
   let administrationRepository: AdministrationRepository;
+  let aggregateSupportCategories: ReturnType<typeof AggregationService>['aggregateSupportCategories'];
 
   beforeAll(async () => {
     // Ensure database is initialized for integration tests
     await baseFixture;
     administrationRepository = new AdministrationRepository(CoreDbClient);
+    const service = AggregationService({ administrationRepository });
+    aggregateSupportCategories = service.aggregateSupportCategories;
   });
 
   describe('Aggregation with real data', () => {
@@ -48,10 +51,10 @@ describe('aggregateSupportCategories - Integration', () => {
         createdBy: baseFixture.districtAdmin.id,
       });
 
-      const result = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
       expect(result).toBeNull();
     });
@@ -78,10 +81,10 @@ describe('aggregateSupportCategories - Integration', () => {
       // infrastructure is available.
 
       // For now, verify the service handles the happy path without errors
-      const result = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
       // Result will be null if no task variants assigned (expected in this stub)
       expect(result === null || typeof result === 'object').toBe(true);
@@ -93,10 +96,10 @@ describe('aggregateSupportCategories - Integration', () => {
         createdBy: baseFixture.districtAdmin.id,
       });
 
-      const result = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
       // When proper data is seeded, assert result structure includes:
       // result[taskId].achievedSkill.schools[schoolId] = { name, count }
@@ -111,10 +114,10 @@ describe('aggregateSupportCategories - Integration', () => {
         createdBy: baseFixture.districtAdmin.id,
       });
 
-      const result = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
       // When seeded, verify: result[taskId].raw['400-450'].total > 0
       expect(result === null || typeof result === 'object').toBe(true);
@@ -126,10 +129,10 @@ describe('aggregateSupportCategories - Integration', () => {
         createdBy: baseFixture.districtAdmin.id,
       });
 
-      const result = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
       // When seeded, verify: result[taskId].percentile['70-80'].total > 0
       expect(result === null || typeof result === 'object').toBe(true);
@@ -142,10 +145,10 @@ describe('aggregateSupportCategories - Integration', () => {
         createdBy: baseFixture.districtAdmin.id,
       });
 
-      const result = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
       // When seeded, verify structure:
       // result[taskId][supportLevel].schools has all unique schools
@@ -163,10 +166,10 @@ describe('aggregateSupportCategories - Integration', () => {
         createdBy: baseFixture.districtAdmin.id,
       });
 
-      const result = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
       // When seeded with null-grade runs, verify:
       // result[taskId][supportLevel].grades['NONE'] is populated
@@ -180,10 +183,10 @@ describe('aggregateSupportCategories - Integration', () => {
         createdBy: baseFixture.districtAdmin.id,
       });
 
-      const result = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
       // When seeded with unenrolled users:
       // Their runs should not appear in school counts (active enrollment filter)
@@ -197,10 +200,10 @@ describe('aggregateSupportCategories - Integration', () => {
         createdBy: baseFixture.districtAdmin.id,
       });
 
-      const result = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
       // When seeded with score-less runs:
       // result should still be non-null and contain counts
@@ -216,10 +219,10 @@ describe('aggregateSupportCategories - Integration', () => {
 
       // Test with timeout expectation (should not hang even with 1000+ runs)
       const result = await Promise.race([
-        aggregateSupportCategories(
-          { assignmentId: admin.id, districtId: baseFixture.district.id },
-          { administrationRepository },
-        ),
+        aggregateSupportCategories({
+          assignmentId: admin.id,
+          districtId: baseFixture.district.id,
+        }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000)),
       ]);
 
@@ -235,10 +238,10 @@ describe('aggregateSupportCategories - Integration', () => {
         createdBy: baseFixture.districtAdmin.id,
       });
 
-      const result = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
       // When seeded with known scores, verify support level counts align
       // with expected percentile thresholds from getSupportLevel()
@@ -252,15 +255,15 @@ describe('aggregateSupportCategories - Integration', () => {
         createdBy: baseFixture.districtAdmin.id,
       });
 
-      const result1 = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result1 = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
-      const result2 = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result2 = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
       // Results must be identical (no mutations, consistent SQL)
       expect(result1).toEqual(result2);
@@ -273,10 +276,10 @@ describe('aggregateSupportCategories - Integration', () => {
         createdBy: baseFixture.districtAdmin.id,
       });
 
-      const result = await aggregateSupportCategories(
-        { assignmentId: admin.id, districtId: baseFixture.district.id },
-        { administrationRepository },
-      );
+      const result = await aggregateSupportCategories({
+        assignmentId: admin.id,
+        districtId: baseFixture.district.id,
+      });
 
       // When seeded with users in multiple active class enrollments:
       // A run should be counted once per school (not deduplicated)

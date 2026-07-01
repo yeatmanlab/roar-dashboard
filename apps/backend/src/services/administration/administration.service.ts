@@ -2272,8 +2272,8 @@ export function AdministrationService({
       await verifyAdministrationAccess(authContext, administrationId);
 
       // Delegate to the aggregation service
-      const { aggregateSupportCategories: aggregate } = await import('../aggregation');
-      return aggregate({ assignmentId: administrationId, districtId }, { administrationRepository });
+      const { aggregateSupportCategories } = await import('../aggregation');
+      return aggregateSupportCategories({ assignmentId: administrationId, districtId });
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
