@@ -205,51 +205,37 @@ describe('aggregateSupportCategories', () => {
           }) as unknown as AdministrationTaskVariantRepository,
       );
 
-      // Mock coreDb with simplified setup
-      const mockCoreDb = {
-        select: vi.fn().mockReturnThis(),
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        innerJoin: vi.fn().mockReturnThis(),
-        then: vi.fn(),
-      };
+      // Mock aggregation repository methods
+      const mockAggregationRepo = createMockAggregationRepository();
+      mockAggregationRepo.getBestRunsForVariants.mockResolvedValue([
+        { id: 'run-1', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
+        { id: 'run-2', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
+        { id: 'run-3', userId: 'user-2', taskVariantId: 'variant-1', administrationId: 'admin-123' },
+      ]);
+      mockAggregationRepo.getDemographicsByRunIds.mockResolvedValue(
+        new Map([
+          ['run-1', '2'],
+          ['run-2', '2'],
+          ['run-3', '3'],
+        ]),
+      );
+      mockAggregationRepo.getScoresByRunIds.mockResolvedValue(
+        new Map([
+          ['run-1', { percentile: 80, rawScore: null, scoringVersion: 1 }],
+          ['run-2', { percentile: 85, rawScore: null, scoringVersion: 1 }],
+          ['run-3', { percentile: 70, rawScore: null, scoringVersion: 1 }],
+        ]),
+      );
+      mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue([
+        { userId: 'user-1', schoolId: 'school-1', schoolName: 'School A' },
+        { userId: 'user-2', schoolId: 'school-2', schoolName: 'School B' },
+      ]);
+      vi.mocked(AggregationRepository).mockImplementation(() => mockAggregationRepo);
 
-      let callCount = 0;
-      mockCoreDb.then.mockImplementation(function (onResolve: (value: unknown) => void) {
-        callCount++;
-        if (callCount === 1) {
-          // fdwRuns
-          onResolve([
-            { id: 'run-1', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
-            { id: 'run-2', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
-            { id: 'run-3', userId: 'user-2', taskVariantId: 'variant-1', administrationId: 'admin-123' },
-          ]);
-        } else if (callCount === 2) {
-          // runDemographics
-          onResolve([
-            { runId: 'run-1', grade: '2' },
-            { runId: 'run-2', grade: '2' },
-            { runId: 'run-3', grade: '3' },
-          ]);
-        } else if (callCount === 3) {
-          // fdwRunScores
-          onResolve([
-            { runId: 'run-1', type: 'computed', name: 'percentile', value: '80' },
-            { runId: 'run-2', type: 'computed', name: 'percentile', value: '85' },
-            { runId: 'run-3', type: 'computed', name: 'percentile', value: '70' },
-          ]);
-        } else if (callCount === 4) {
-          // userClasses
-          onResolve([
-            { userId: 'user-1', schoolId: 'school-1', schoolName: 'School A' },
-            { userId: 'user-1', schoolId: 'school-1', schoolName: 'School A' },
-            { userId: 'user-2', schoolId: 'school-2', schoolName: 'School B' },
-          ]);
-        }
-        return Promise.resolve();
+      const service = AggregationService({
+        administrationRepository: mockAdministrationRepository,
       });
-
-      const result = await aggregateSupportCategories({
+      const result = await service.aggregateSupportCategories({
         administrationId: 'admin-123',
         districtId: 'district-456',
       });
@@ -268,7 +254,7 @@ describe('aggregateSupportCategories', () => {
       expect(taskCounts.achievedSkill.schools['school-2']!.count).toBe(1);
     });
 
-    it.skip('excludes historical enrollments (enrollmentEnd is set)', async () => {
+    it('excludes historical enrollments (enrollmentEnd is set)', async () => {
       const mockAdmin: Partial<Administration> = {
         id: 'admin-123',
         name: 'Test Admin',
@@ -309,39 +295,24 @@ describe('aggregateSupportCategories', () => {
           }) as unknown as AdministrationTaskVariantRepository,
       );
 
-      const mockCoreDb = {
-        select: vi.fn().mockReturnThis(),
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        innerJoin: vi.fn().mockReturnThis(),
-        then: vi.fn(),
-      };
+      const mockAggregationRepo = createMockAggregationRepository();
+      mockAggregationRepo.getBestRunsForVariants.mockResolvedValue([
+        { id: 'run-1', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
+      ]);
+      mockAggregationRepo.getDemographicsByRunIds.mockResolvedValue(new Map([['run-1', '2']]));
+      mockAggregationRepo.getScoresByRunIds.mockResolvedValue(
+        new Map([['run-1', { percentile: 75, rawScore: null, scoringVersion: 1 }]]),
+      );
+      // Only active enrollment (enrollmentEnd is null) is returned by the repository
+      mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue([
+        { userId: 'user-1', schoolId: 'school-1', schoolName: 'School A (Active)' },
+      ]);
+      vi.mocked(AggregationRepository).mockImplementation(() => mockAggregationRepo);
 
-      let callCount = 0;
-      mockCoreDb.then.mockImplementation(function (onResolve: (value: unknown) => void) {
-        callCount++;
-        if (callCount === 1) {
-          // fdwRuns
-          onResolve([{ id: 'run-1', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' }]);
-        } else if (callCount === 2) {
-          // runDemographics
-          onResolve([{ runId: 'run-1', grade: '2' }]);
-        } else if (callCount === 3) {
-          // fdwRunScores
-          onResolve([{ runId: 'run-1', type: 'computed', name: 'percentile', value: '75' }]);
-        } else if (callCount === 4) {
-          // userClasses - only active enrollment (enrollmentEnd is null) should be returned
-          // The query should filter to isNull(userClasses.enrollmentEnd)
-          onResolve([{ userId: 'user-1', schoolId: 'school-1', schoolName: 'School A (Active)' }]);
-        }
-        return Promise.resolve();
+      const service = AggregationService({
+        administrationRepository: mockAdministrationRepository,
       });
-
-      mockCoreDb.from.mockReturnValue(mockCoreDb);
-      mockCoreDb.where.mockReturnValue(mockCoreDb);
-      mockCoreDb.innerJoin.mockReturnValue(mockCoreDb);
-
-      const result = await aggregateSupportCategories({
+      const result = await service.aggregateSupportCategories({
         administrationId: 'admin-123',
         districtId: 'district-456',
       });
@@ -354,7 +325,7 @@ describe('aggregateSupportCategories', () => {
       expect(taskCounts.achievedSkill.total).toBe(1);
     });
 
-    it.skip('bins raw and percentile scores into correct ranges', async () => {
+    it('bins raw and percentile scores into correct ranges', async () => {
       const mockAdmin: Partial<Administration> = {
         id: 'admin-123',
         name: 'Test Admin',
@@ -396,51 +367,33 @@ describe('aggregateSupportCategories', () => {
           }) as unknown as AdministrationTaskVariantRepository,
       );
 
-      // Mock coreDb
-      const mockCoreDb = {
-        select: vi.fn().mockReturnThis(),
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        innerJoin: vi.fn().mockReturnThis(),
-        then: vi.fn(),
-      };
+      const mockAggregationRepo = createMockAggregationRepository();
+      mockAggregationRepo.getBestRunsForVariants.mockResolvedValue([
+        { id: 'run-1', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
+        { id: 'run-2', userId: 'user-2', taskVariantId: 'variant-1', administrationId: 'admin-123' },
+      ]);
+      mockAggregationRepo.getDemographicsByRunIds.mockResolvedValue(
+        new Map([
+          ['run-1', '2'],
+          ['run-2', '3'],
+        ]),
+      );
+      mockAggregationRepo.getScoresByRunIds.mockResolvedValue(
+        new Map([
+          ['run-1', { percentile: 45, rawScore: 475, scoringVersion: 1 }],
+          ['run-2', { percentile: 75, rawScore: 625, scoringVersion: 1 }],
+        ]),
+      );
+      mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue([
+        { userId: 'user-1', schoolId: 'school-1', schoolName: 'School A' },
+        { userId: 'user-2', schoolId: 'school-1', schoolName: 'School A' },
+      ]);
+      vi.mocked(AggregationRepository).mockImplementation(() => mockAggregationRepo);
 
-      let callCount = 0;
-      mockCoreDb.then.mockImplementation(function (onResolve: (value: unknown) => void) {
-        callCount++;
-        if (callCount === 1) {
-          // fdwRuns
-          onResolve([
-            { id: 'run-1', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
-            { id: 'run-2', userId: 'user-2', taskVariantId: 'variant-1', administrationId: 'admin-123' },
-          ]);
-        } else if (callCount === 2) {
-          // runDemographics
-          onResolve([
-            { runId: 'run-1', grade: '2' },
-            { runId: 'run-2', grade: '3' },
-          ]);
-        } else if (callCount === 3) {
-          // fdwRunScores - with specific score ranges
-          onResolve([
-            // Run 1: percentile 45 (should bin to 40-50), raw score 475 (should bin to 450-500)
-            { runId: 'run-1', type: 'computed', name: 'percentile', value: '45' },
-            { runId: 'run-1', type: 'raw', name: 'rawScore', value: '475' },
-            // Run 2: percentile 75 (should bin to 70-80), raw score 625 (should bin to 600-650)
-            { runId: 'run-2', type: 'computed', name: 'percentile', value: '75' },
-            { runId: 'run-2', type: 'raw', name: 'rawScore', value: '625' },
-          ]);
-        } else if (callCount === 4) {
-          // userClasses
-          onResolve([
-            { userId: 'user-1', schoolId: 'school-1', schoolName: 'School A' },
-            { userId: 'user-2', schoolId: 'school-1', schoolName: 'School A' },
-          ]);
-        }
-        return Promise.resolve();
+      const service = AggregationService({
+        administrationRepository: mockAdministrationRepository,
       });
-
-      const result = await aggregateSupportCategories({
+      const result = await service.aggregateSupportCategories({
         administrationId: 'admin-123',
         districtId: 'district-456',
       });
