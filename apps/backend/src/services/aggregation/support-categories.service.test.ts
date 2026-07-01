@@ -1,19 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { MockedObject } from 'vitest';
 import { aggregateSupportCategories } from './support-categories.service';
 import type { Administration } from '../../db/schema';
 import { ApiError } from '../../errors/api-error';
-
-// Mock repositories
-const createMockAdministrationRepository = () => ({
-  getById: vi.fn(),
-});
+import { AdministrationRepository } from '../../repositories/administration.repository';
+import { createMockAdministrationRepository } from '../../test-support/repositories';
 
 describe('aggregateSupportCategories', () => {
-  let mockAdministrationRepository: ReturnType<typeof createMockAdministrationRepository>;
+  let mockAdministrationRepository: MockedObject<AdministrationRepository>;
 
   beforeEach(() => {
-    mockAdministrationRepository = createMockAdministrationRepository();
     vi.clearAllMocks();
+    mockAdministrationRepository = createMockAdministrationRepository();
   });
 
   describe('Error handling', () => {
@@ -34,13 +32,17 @@ describe('aggregateSupportCategories', () => {
       const mockAdmin: Partial<Administration> = {
         id: 'admin-123',
         name: 'Test Admin',
+        namePublic: 'Test Admin Public',
+        description: 'Test administration',
         dateStart: new Date(),
         dateEnd: new Date(),
+        isOrdered: false,
         createdAt: new Date(),
         updatedAt: new Date(),
+        createdBy: 'creator-id',
       };
 
-      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin as Administration);
 
       const result = await aggregateSupportCategories(
         { assignmentId: 'admin-123', districtId: 'district-456' },
