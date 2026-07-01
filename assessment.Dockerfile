@@ -29,6 +29,7 @@ COPY apps/backend/package.json                    apps/backend/
 COPY packages/api-contract/package.json           packages/api-contract/
 COPY packages/assessment-schema/package.json      packages/assessment-schema/
 COPY packages/assessment-sdk/package.json         packages/assessment-sdk/
+COPY packages/scoring-tables/package.json         packages/scoring-tables/
 COPY packages/authz/package.json                  packages/authz/
 COPY packages/config-eslint/package.json          packages/config-eslint/
 COPY packages/config-prettier/package.json        packages/config-prettier/
@@ -39,13 +40,14 @@ RUN npm ci --ignore-scripts
 # Copy source for packages that must be built.
 # Layer order: packages with fewer transitive deps first so cache busts are narrow.
 COPY packages/config-typescript/  packages/config-typescript/
+COPY packages/scoring-tables/     packages/scoring-tables/
 COPY packages/assessment-schema/  packages/assessment-schema/
 COPY packages/api-contract/       packages/api-contract/
 COPY apps/backend/                apps/backend/
 COPY turbo.json                   ./
 
-# turbo resolves build order automatically (assessment-schema and api-contract
-# before the backend).
+# turbo resolves build order automatically (scoring-tables, assessment-schema and
+# api-contract before the backend).
 RUN turbo build --filter=roar-backend
 
 # ──────────────────────────────────────────────────────────────────────────────

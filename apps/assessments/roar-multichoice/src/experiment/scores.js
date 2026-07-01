@@ -3,6 +3,7 @@ import _omit from 'lodash/omit';
 import store from 'store2';
 import * as Papa from 'papaparse';
 import { getGrade } from '@bdelab/roar-utils';
+import { selectNormRow, clampToRange } from '@roar-platform/scoring-tables';
 import { clowder, scaleTheta } from './experimentSetup';
 import { clampPositive } from './helperFunctions';
 
@@ -28,11 +29,7 @@ function getClampedAgeForScore() {
     ageInMonths = 66 + grade * 12;
   }
 
-  let clampedAge = ageInMonths;
-  if (ageInMonths < ageMin) clampedAge = ageMin;
-  if (ageInMonths > ageMax) clampedAge = ageMax;
-
-  return clampedAge;
+  return clampToRange(ageInMonths, { min: ageMin, max: ageMax });
 }
 
 export class RoarScores {
@@ -216,12 +213,13 @@ export class RoarScores {
       // 1. scaleTheta() output matches the CSV's scale
       // 2. CSV thetaEstimate values are rounded to 0.1 granularity
       if (thetaEstimate !== undefined && thetaEstimate !== null) {
-        const roundedTheta = Number(thetaEstimate.toFixed(1));
-        myRow = this.lookupTable.find(
-          (row) =>
-            Number(row.ageMonths) === Number(this.ageForScore) &&
-            Number(Number(row.thetaEstimate).toFixed(1)) === roundedTheta,
-        );
+        myRow = selectNormRow(this.lookupTable, {
+          keyColumn: 'ageMonths',
+          keyValue: this.ageForScore,
+          scoreColumn: 'thetaEstimate',
+          scoreValue: thetaEstimate,
+          matchMode: 'theta',
+        });
       }
 
       if (myRow !== undefined) {

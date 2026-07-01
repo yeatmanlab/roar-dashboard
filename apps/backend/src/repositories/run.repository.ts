@@ -52,10 +52,15 @@ export interface CompositeInputScoreRow {
  * `reportingTaskIds` — the requested tasks that have a `use_for_reporting` run at all
  * (regardless of whether it produced composite scores). The latter lets callers tell
  * "subtest not taken" apart from "subtest taken but produced no usable score".
+ *
+ * `latestCompletedAt` is the most recent `completed_at` across the contributing reporting
+ * runs (null if none have completed). Norming uses it as the composite's "date of the latest
+ * assessment" reference age (see the foundational-composite service).
  */
 export interface CompositeGatherResult {
   rows: CompositeInputScoreRow[];
   reportingTaskIds: string[];
+  latestCompletedAt: Date | null;
 }
 
 /**
@@ -159,7 +164,8 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
    * @param params.administrationId - The administration partition
    * @param params.taskIds - The foundational subtest task IDs to gather
    * @param params.transaction - Optional transaction context (the `writeTrial` tx)
-   * @returns `rows` (input score rows tagged with their run's `taskId`) and `reportingTaskIds`
+   * @returns `rows` (input score rows tagged with their run's `taskId`), `reportingTaskIds`, and
+   *   `latestCompletedAt` (most recent `completed_at` across the contributing reporting runs)
    */
   async getReportingRunScoresForComposite(params: {
     userId: string;
@@ -169,7 +175,7 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
   }): Promise<CompositeGatherResult> {
     const { userId, administrationId, taskIds, transaction } = params;
     if (taskIds.length === 0) {
-      return { rows: [], reportingTaskIds: [] };
+      return { rows: [], reportingTaskIds: [], latestCompletedAt: null };
     }
     const db = transaction ?? this.db;
 
@@ -177,7 +183,7 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
     //    deterministic tiebreak — chosen from the runs themselves (not gated by the score
     //    join) so the canonical newest reporting run is always the one used.
     const reportingRuns = await db
-      .select({ taskId: runs.taskId, runId: runs.id })
+      .select({ taskId: runs.taskId, runId: runs.id, completedAt: runs.completedAt })
       .from(runs)
       .where(
         and(
@@ -191,16 +197,22 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
       .orderBy(desc(runs.createdAt), desc(runs.id));
 
     const runIdByTaskId = new Map<string, string>();
+    // Track the winning run's completion time per task so we can take the latest across the
+    // contributing reporting runs (the composite's "date of the latest assessment" reference).
+    let latestCompletedAt: Date | null = null;
     for (const run of reportingRuns) {
       if (!runIdByTaskId.has(run.taskId)) {
         runIdByTaskId.set(run.taskId, run.runId);
+        if (run.completedAt !== null && (latestCompletedAt === null || run.completedAt > latestCompletedAt)) {
+          latestCompletedAt = run.completedAt;
+        }
       }
     }
 
     const reportingTaskIds = [...runIdByTaskId.keys()];
     const runIds = [...runIdByTaskId.values()];
     if (runIds.length === 0) {
-      return { rows: [], reportingTaskIds };
+      return { rows: [], reportingTaskIds, latestCompletedAt };
     }
 
     const taskIdByRunId = new Map<string, string>();
@@ -209,6 +221,8 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
     }
 
     // 2. The relevant composite input scores for exactly those winning runs.
+    // Fetch from both COMPOSITE_FOUNDATIONAL (PA, Letter, SRE) and COMPOSITE (SWR) domains,
+    // including theta pairs and scoringVersion for version gating.
     const scoreRows = await db
       .select({
         runId: runScores.runId,
@@ -221,8 +235,8 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
         and(
           inArray(runScores.runId, runIds),
           eq(runScores.type, SCORE_TYPE.COMPUTED),
-          eq(runScores.domain, SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL),
-          inArray(runScores.name, [SCORE_NAME.THETA_ESTIMATE, SCORE_NAME.THETA_SE]),
+          inArray(runScores.domain, [SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL, SCORE_DOMAIN.COMPOSITE]),
+          inArray(runScores.name, [SCORE_NAME.THETA_ESTIMATE, SCORE_NAME.THETA_SE, 'scoringVersion']),
         ),
       );
 
@@ -234,7 +248,7 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
       value: row.value,
     }));
 
-    return { rows, reportingTaskIds };
+    return { rows, reportingTaskIds, latestCompletedAt };
   }
 
   /**
