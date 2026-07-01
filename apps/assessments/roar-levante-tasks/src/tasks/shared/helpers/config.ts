@@ -52,9 +52,6 @@ export const DEFAULT_LAYOUT_CONFIG: LayoutConfigType = {
 };
 
 // Default corpus per task (camelCase task name). Used when variantParams.corpus is absent.
-// NOTE: hostileAttribution and childSurvey are not yet seeded in the ROAR backend
-// (no task or variant records exist). Selecting either task via ?task= or ?variantId=
-// will fail at the backend lookup step until seeds/roar-levante-tasks.seed.ts is extended.
 const defaultCorpus: Record<string, string> = {
   egmaMath: 'math-item-bank',
   matrixReasoning: 'matrix-reasoning-item-bank',
@@ -133,6 +130,10 @@ export const setSharedConfig = async (
       }
     },
     updateEngagementFlags,
+    // In the old roarfirekit, updateUser wrote assessmentPid and userMetadata to
+    // the user document. In the SDK, this data flows through startRun instead.
+    // No-op here to keep call sites in baseTimeline.ts unchanged.
+    updateUser: async (_userUpdateData: Record<string, unknown>) => {},
     updateTaskParams: async () => {},
   };
 

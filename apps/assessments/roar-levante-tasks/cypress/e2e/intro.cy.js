@@ -1,4 +1,4 @@
-import { instructions } from './helpers.cy.js';
+import { instructions } from './helpers.js';
 
 const intro_url = 'http://localhost:8000/?task=intro';
 

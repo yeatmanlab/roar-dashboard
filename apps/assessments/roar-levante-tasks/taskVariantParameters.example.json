@@ -91,6 +91,7 @@
     "params": {
       "audioFeedback": "binary",
       "consent": true,
+      "language": "en",
       "numTrialsTotal": 48,
       "recruitment": "school",
       "skipInstructions": true,
@@ -136,7 +137,7 @@
     "params": {
       "age": null,
       "buttonLayout": "default",
-      "corpus": "null",
+      "corpus": null,
       "keyHelpers": false,
       "language": "en",
       "maxIncorrect": 3,

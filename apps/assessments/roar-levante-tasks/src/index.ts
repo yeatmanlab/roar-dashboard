@@ -46,6 +46,10 @@ export class TaskLauncher {
 
     const { taskName } = this.gameParams;
     let { language } = this.gameParams;
+    // Default to English when no language is supplied by the variant params.
+    if (!language) {
+      language = 'en';
+    }
     taskStore('language', language);
 
     // Levante handling

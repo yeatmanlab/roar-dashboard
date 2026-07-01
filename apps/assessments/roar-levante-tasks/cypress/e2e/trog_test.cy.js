@@ -1,4 +1,4 @@
-import { testAfc } from './helpers.cy.js';
+import { testAfc } from './helpers.js';
 
 const trog_url = 'http://localhost:8000/?task=trog';
 describe('test trog', () => {
