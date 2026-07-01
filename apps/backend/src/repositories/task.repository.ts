@@ -14,20 +14,12 @@ import { escapeLikePattern } from '../utils/escape-like-pattern.util';
 /**
  * Explicit mapping from API sort field names to task table columns.
  * This ensures only valid columns are used for sorting, even if API validation is bypassed.
- *
- * `name` and `slug` sort case-insensitively. Postgres 18 ships with the
- * builtin C.UTF-8 locale by default, which sorts text bytewise — uppercase
- * letters precede lowercase ones (`'Z' < 'a'`). Earlier versions used
- * libc `en_US.utf8`, which sorted case-insensitively at the primary level.
- * Wrapping the text columns in `LOWER(...)` restores the human-friendly
- * ordering the dashboard expects and keeps the integration test (which
- * compares JS `.toLowerCase()`) in agreement with the database.
  */
 const TASK_SORT_COLUMNS: Record<TaskSortFieldType, AnyColumn | SQL> = {
   createdAt: tasks.createdAt,
   updatedAt: tasks.updatedAt,
-  name: sql`LOWER(${tasks.name})`,
-  slug: sql`LOWER(${tasks.slug})`,
+  name: tasks.name,
+  slug: tasks.slug,
 };
 
 /**

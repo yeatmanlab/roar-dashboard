@@ -3,6 +3,7 @@ import _omit from 'lodash/omit';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
+import { selectNormRow, clampToRange } from '@roar-platform/scoring-tables';
 import { SWR_TASK_IDS } from '@roar-platform/assessment-schema/roar-swr';
 
 export class RoarScores {
@@ -38,9 +39,7 @@ export class RoarScores {
       const ageMin = 72;
       const ageMax = 216;
 
-      this.ageForScore = ageInMonths;
-      if (ageInMonths < ageMin) this.ageForScore = ageMin;
-      if (ageInMonths > ageMax) this.ageForScore = ageMax;
+      this.ageForScore = clampToRange(ageInMonths, { min: ageMin, max: ageMax });
 
       // If grade is over 6, grab the grade specific table for Spr_percentile
       Papa.parse(this.tableURL, {
@@ -162,14 +161,15 @@ export class RoarScores {
       };
 
       if (score != undefined) {
-        const rounded = Number(score.toFixed(1));
         const { ageForScore } = this;
 
-        const myRow = this.lookupTable.find(
-          (row) =>
-            Number(Number(row.ageMonths).toFixed(1)) === ageForScore &&
-            Number(Number(row.thetaEstimate).toFixed(1)) === rounded,
-        );
+        const myRow = selectNormRow(this.lookupTable, {
+          keyColumn: 'ageMonths',
+          keyValue: ageForScore,
+          scoreColumn: 'thetaEstimate',
+          scoreValue: score,
+          matchMode: 'theta',
+        });
 
         if (myRow !== undefined) {
           const { ageMonths, thetaEstimate, ...normedScores } = myRow;
