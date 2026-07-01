@@ -7,6 +7,10 @@ import { AdministrationRepository } from '../../repositories/administration.repo
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
 import { AggregationRepository } from '../../repositories/aggregation.repository';
 import { getSupportLevel } from '../scoring/scoring.service';
+import { SWR_TASK_IDS } from '@roar-platform/assessment-schema/roar-swr';
+import { SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
+import { PA_TASK_ID } from '@roar-platform/assessment-schema/roar-pa';
+import { MORPHOLOGY_TASK_ID, CVA_TASK_ID } from '@roar-platform/assessment-schema/roar-multichoice';
 
 export const ScoreType = {
   COMPUTED: 'computed',
@@ -15,15 +19,15 @@ export const ScoreType = {
 export type ScoreType = (typeof ScoreType)[keyof typeof ScoreType];
 
 const SCORED_TASK_IDS = [
-  'swr',
-  'pa',
-  'sre',
-  'cva',
-  'morphology',
+  SWR_TASK_IDS.EN,
+  SWR_TASK_IDS.ES,
+  SRE_TASK_IDS.EN,
+  SRE_TASK_IDS.ES,
+  PA_TASK_ID,
+  CVA_TASK_ID,
+  MORPHOLOGY_TASK_ID,
   'trog',
   'roar-inference',
-  'swr-es',
-  'sre-es',
 ] as const;
 
 export type SupportLevel = 'achievedSkill' | 'developingSkill' | 'needsExtraSupport';
