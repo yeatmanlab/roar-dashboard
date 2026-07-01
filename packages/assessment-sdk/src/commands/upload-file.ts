@@ -1,16 +1,24 @@
-import type { Command } from '../command/command';
-import type { UploadFileInput, GenerateFilePathInput } from '../types/upload-file';
-import type { RoarApi } from '../receiver/roar-api'
+import { ref, uploadBytesResumable } from 'firebase/storage';
 import type { FirebaseStorage } from 'firebase/storage';
+import type { Command } from '../command/command';
+import { SDKError } from '../errors/sdk-error';
+import { UploadStatusEnum } from '../types/upload-file';
+import type { UploadFileInput, GenerateFilePathInput, UploadFileOutput } from '../types/upload-file';
 
-export class UploadFileCommand implements Command {
+/**
+ * Command for uploading a file to Firebase Storage. 
+ * Allowed file types: .webm, .mp4, .wav, .ogg, .mkv, .mp3.
+ * 
+ * @param participantId - The participant ID.
+ * @param storageBucket - The Firebase storage bucket.
+ */
+export class UploadFileCommand implements Command<UploadFileInput, UploadFileOutput> {
   readonly name = 'upload-file';
   readonly idempotent = false;
 
   constructor(
-    private api: RoarApi,
     private participantId: string,
-    private storageBucket: FirebaseStorage
+    private storageBucket?: FirebaseStorage
   ) {}
   
   private readonly ALLOWED_EXTENSIONS = new Set(['.webm', '.mp4', '.wav', '.ogg', '.mkv', '.mp3']);
@@ -27,7 +35,7 @@ export class UploadFileCommand implements Command {
   const ext = dotIndex > 0 ? base.slice(dotIndex).toLowerCase() : '';
 
     if (!ext || !this.ALLOWED_EXTENSIONS.has(ext)) {
-      throw new Error(`Unsupported file type: "${ext || 'none'}". Allowed: ${Array.from(this.ALLOWED_EXTENSIONS).join(', ')}`);
+      throw new SDKError(`Unsupported file type: "${ext || 'none'}". Allowed: ${Array.from(this.ALLOWED_EXTENSIONS).join(', ')}`);
     }
   }
 
@@ -76,10 +84,29 @@ export class UploadFileCommand implements Command {
     return [taskId, this.participantId, pid, administrationId, runId, filename].map((segment) => this.sanitizeInput(segment)).join('/');
   }
 
-    
-  async execute(input: UploadFileInput): Promise<string> {
+  /**
+   * Generates a file path and creates an upload task for a file.
+   * 
+   * @param input - The input parameters for the command.
+   * @param input.filename - The file name
+   * @param input.fileOrBlob - The file or blob to upload
+   * @param input.administrationId - The administration ID
+   * @param input.runId - The run ID
+   * @param input.taskId - The task ID
+   * @param input.assessmentPid - Optional assessmentPid. Prioritizes assigned assessmentPid and defaults to assessmentUid
+   * @returns A promise that resolves to the upload file output.
+   */
+  async execute(input: UploadFileInput): Promise<UploadFileOutput> {
     const { filename, fileOrBlob, ...extraMetadata } = input;
     const filePath = this.generateFilePath({ filename, ...extraMetadata });
-    return '';
+
+    const storageRef = ref(this.storageBucket, filePath);
+    
+    return {
+      task: () => uploadBytesResumable(storageRef, fileOrBlob),
+      status: UploadStatusEnum.PENDING,
+      filename,
+      storagePath: storageRef.toString(),
+    };
   }
 }

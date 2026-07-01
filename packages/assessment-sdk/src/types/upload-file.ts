@@ -1,3 +1,4 @@
+import type { UploadTask } from 'firebase/storage'
 /**
  * Input for UploadFile command.
  * 
@@ -34,4 +35,31 @@ export interface GenerateFilePathInput {
   runId: string;
   taskId: string;
   assessmentPid?: string;
+}
+
+/**
+ * Enum for upload statuses. Used for queue management.
+ */
+export const UploadStatusEnum = {
+  PENDING: 'pending',
+  UPLOADING: 'uploading',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+} as const;
+
+export type UploadStatus = typeof UploadStatusEnum[keyof typeof UploadStatusEnum];
+
+/**
+ * Represents the output of an upload file command.
+ * 
+ * @property task - The upload task function that calls uploadBytesResumable.
+ * @property status - The status of the upload
+ * @property filename - The name of the file to upload
+ * @property storagePath - Firebase storage path of the file, including bucket name.
+ */
+export type UploadFileOutput = {
+  task: () => UploadTask;
+  status: UploadStatus;
+  filename: string;
+  storagePath: string;
 }
