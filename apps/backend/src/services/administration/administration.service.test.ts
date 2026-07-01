@@ -36,7 +36,11 @@ import {
   createMockTaskVariantRepository,
   createMockAgreementRepository,
 } from '../../test-support/repositories';
-import { createMockAuthorizationService, createMockTaskService } from '../../test-support/services';
+import {
+  createMockAuthorizationService,
+  createMockTaskService,
+  createMockAggregationService,
+} from '../../test-support/services';
 import type { MockAuthorizationService } from '../../test-support/services';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { ClassFactory } from '../../test-support/factories/class.factory';
@@ -6557,16 +6561,23 @@ describe('AdministrationService', () => {
         const mockAdmin = AdministrationFactory.build({ id: testAdminId });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
 
-        // Mock the aggregation service
-        vi.doMock('../aggregation', () => ({
-          aggregateSupportCategories: vi.fn().mockResolvedValue({ 'task-1': { achievedSkill: { total: 5 } } }),
-        }));
+        const mockAggregationService = createMockAggregationService();
+        mockAggregationService.aggregateSupportCategories.mockResolvedValue({
+          'task-1': {
+            achievedSkill: { schools: {}, grades: {}, total: 5 },
+            developingSkill: { schools: {}, grades: {}, total: 0 },
+            needsExtraSupport: { schools: {}, grades: {}, total: 0 },
+            raw: {},
+            percentile: {},
+          },
+        });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           districtRepository: createMockDistrictRepository(),
           schoolRepository: createMockSchoolRepository(),
           authorizationService: mockAuthorizationService,
+          aggregationService: mockAggregationService,
         });
 
         const result = await service.aggregateSupportCategories(superAdminAuthContext, testAdminId, 'district-123');
@@ -6581,16 +6592,15 @@ describe('AdministrationService', () => {
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
         mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
 
-        // Mock the aggregation service
-        vi.doMock('../aggregation', () => ({
-          aggregateSupportCategories: vi.fn().mockResolvedValue(null),
-        }));
+        const mockAggregationService = createMockAggregationService();
+        mockAggregationService.aggregateSupportCategories.mockResolvedValue(null);
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           districtRepository: createMockDistrictRepository(),
           schoolRepository: createMockSchoolRepository(),
           authorizationService: mockAuthorizationService,
+          aggregationService: mockAggregationService,
         });
 
         await service.aggregateSupportCategories(regularUserAuthContext, testAdminId, 'district-123');

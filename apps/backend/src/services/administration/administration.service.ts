@@ -48,6 +48,7 @@ import type {
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
 import { ReportRepository, toReportAdminWindow } from '../../repositories/report.repository';
 import type { ReportScope } from '../../repositories/report.repository';
+import { AggregationService } from '../aggregation';
 import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { RunRepository } from '../../repositories/run.repository';
@@ -185,6 +186,7 @@ export function AdministrationService({
   reportRepository = new ReportRepository(),
   userRepository = new UserRepository(),
   authorizationService = AuthorizationService(),
+  aggregationService = AggregationService(),
   runRepository = new RunRepository(),
   taskRepository = new TaskRepository(),
   taskService = TaskService(),
@@ -203,6 +205,7 @@ export function AdministrationService({
   userRepository?: UserRepository;
   taskService?: ReturnType<typeof TaskService>;
   authorizationService?: ReturnType<typeof AuthorizationService>;
+  aggregationService?: ReturnType<typeof AggregationService>;
   districtRepository?: DistrictRepository;
   schoolRepository?: SchoolRepository;
   classRepository?: ClassRepository;
@@ -2272,8 +2275,7 @@ export function AdministrationService({
       await verifyAdministrationAccess(authContext, administrationId);
 
       // Delegate to the aggregation service
-      const { aggregateSupportCategories } = await import('../aggregation');
-      return aggregateSupportCategories({ administrationId, districtId });
+      return aggregationService.aggregateSupportCategories({ administrationId, districtId });
     } catch (error) {
       if (error instanceof ApiError) throw error;
 

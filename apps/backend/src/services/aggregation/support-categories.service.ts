@@ -12,12 +12,6 @@ import { SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
 import { PA_TASK_ID } from '@roar-platform/assessment-schema/roar-pa';
 import { MORPHOLOGY_TASK_ID, CVA_TASK_ID } from '@roar-platform/assessment-schema/roar-multichoice';
 
-export const ScoreType = {
-  COMPUTED: 'computed',
-  RAW: 'raw',
-} as const;
-export type ScoreType = (typeof ScoreType)[keyof typeof ScoreType];
-
 const SCORED_TASK_IDS = [
   SWR_TASK_IDS.EN,
   SWR_TASK_IDS.ES,

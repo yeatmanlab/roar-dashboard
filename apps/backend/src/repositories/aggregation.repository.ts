@@ -8,12 +8,7 @@ import { runDemographics } from '../db/schema/core/run-demographics';
 import { userClasses } from '../db/schema/core/user-classes';
 import { classes } from '../db/schema/core/classes';
 import { orgs } from '../db/schema/core/orgs';
-
-export const ScoreType = {
-  COMPUTED: 'computed',
-  RAW: 'raw',
-} as const;
-export type ScoreType = (typeof ScoreType)[keyof typeof ScoreType];
+import { ScoreType } from '../enums/score-type.enum';
 
 interface RunRecord {
   id: string;
