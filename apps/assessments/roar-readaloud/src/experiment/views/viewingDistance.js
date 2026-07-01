@@ -72,7 +72,7 @@ function onResultsFaceMesh(results) {
       canvasCtx.closePath();
 
       // Set the fill style and fill the path
-      canvasCtx.fillStyle = "rgba(0, 0, 0, 1.0)"; // Semi-transparent grey
+      canvasCtx.fillStyle = 'rgba(0, 0, 0, 1.0)'; // Semi-transparent grey
       canvasCtx.fill();
     }
   }
@@ -99,9 +99,7 @@ function onResultsFaceMesh(results) {
 var progress = 0;
 function updateUI() {
   const expectedDistance = 50; // Replace with your actual expected distance
-  const absoluteDifference = Math.abs(
-    current_viewingDistance - expectedDistance,
-  );
+  const absoluteDifference = Math.abs(current_viewingDistance - expectedDistance);
 
   // Update the viewing distance display
   // viewingDistanceElement.innerText = `Cur. Viewing Distance: ${current_viewingDistance} cm`;

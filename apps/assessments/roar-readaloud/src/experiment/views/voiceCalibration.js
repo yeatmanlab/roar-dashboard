@@ -19,10 +19,8 @@ export function generateGridCoordinates(deviceConfig) {
     // Convert centimeters to pixels
     const cellWidthCM = gridWidthCM / numCols;
     const cellHeightCM = gridHeightCM / numRows;
-    cellWidthPX =
-      cellWidthCM * (deviceConfig.screenWidthPX / deviceConfig.screenWidth);
-    cellHeightPX =
-      cellHeightCM * (deviceConfig.screenHeightPX / deviceConfig.screenHeight);
+    cellWidthPX = cellWidthCM * (deviceConfig.screenWidthPX / deviceConfig.screenWidth);
+    cellHeightPX = cellHeightCM * (deviceConfig.screenHeightPX / deviceConfig.screenHeight);
   } else {
     // Fallback to using 80% of screen width and calculate height to maintain aspect ratio
     const totalGridWidthPX = deviceConfig.screenWidthPX * 0.8; // 80% of screen width
@@ -57,10 +55,7 @@ export function generateGridCoordinates(deviceConfig) {
   // Shuffle the cellCoordinates array using Fisher-Yates algorithm
   for (let i = cellCoordinates.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [cellCoordinates[i], cellCoordinates[j]] = [
-      cellCoordinates[j],
-      cellCoordinates[i],
-    ];
+    [cellCoordinates[i], cellCoordinates[j]] = [cellCoordinates[j], cellCoordinates[i]];
   }
 
   return cellCoordinates;
@@ -185,10 +180,10 @@ export async function giveAccess() {
       return Promise.resolve(camera_stream); // Resolve the promise with the stream
     } else {
       // If stream is not active, throw an error
-      throw new Error("Camera stream is not active");
+      throw new Error('Camera stream is not active');
     }
   } catch (error) {
-    console.error("Error accessing media devices:", error);
+    console.error('Error accessing media devices:', error);
     return Promise.reject(error); // Reject the promise if there is an error
   }
 }
@@ -204,14 +199,13 @@ export function updateCountdown(callbackFunction) {
   countdown--;
 
   if (countdown === 0) {
-    document.getElementById("instruction").style.display = "none";
-    if (typeof callbackFunction === "function") {
+    document.getElementById('instruction').style.display = 'none';
+    if (typeof callbackFunction === 'function') {
       callbackFunction();
       countdown = 4;
     }
   } else {
-    document.getElementById("instruction").innerHTML =
-      "<h1>" + countdown + "</h1>";
+    document.getElementById('instruction').innerHTML = '<h1>' + countdown + '</h1>';
     setTimeout(function () {
       updateCountdown(callbackFunction);
     }, 1000);

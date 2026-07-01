@@ -1,15 +1,15 @@
-import store from "store2";
-import { initConfig } from "./config/config";
-import "./styles/task.scss";
-import { consentView } from "./views/consentView";
-import { configureDeviceView } from "./views/configureDeviceView";
-import { headCalibrationView } from "./views/headCalibrationView";
-import { calibrateMicrophoneView } from "./views/calibrateMicrophoneView.js";
+import store from 'store2';
+import { initConfig } from './config/config';
+import './styles/task.scss';
+import { consentView } from './views/consentView';
+import { configureDeviceView } from './views/configureDeviceView';
+import { headCalibrationView } from './views/headCalibrationView';
+import { calibrateMicrophoneView } from './views/calibrateMicrophoneView.js';
 
-import { menuView } from "./views/menuView";
-import { TestView } from "./views/TestView";
-import { storyView } from "./views/storyView.js";
-import { initSentry } from "../sentry";
+import { menuView } from './views/menuView';
+import { TestView } from './views/TestView';
+import { storyView } from './views/storyView.js';
+import { initSentry } from '../sentry';
 // import "./css/game_v4.css";
 // import jsPsychFullScreen from "@jspsych/plugin-fullscreen";
 // import jsPsychCallFunction from "@jspsych/plugin-call-function";
@@ -26,7 +26,6 @@ import { initSentry } from "../sentry";
 const isTaskFinished = (conditionFunction) => {
   const poll = (resolve) => {
     if (conditionFunction()) resolve();
-    // eslint-disable-next-line no-unused-vars
     else setTimeout((_) => poll(resolve), 400);
   };
 
@@ -53,19 +52,14 @@ class ReadAloudTask {
     }
 
     await this.firekit.startRun();
-    const config = await initConfig(
-      this.firekit,
-      this.gameParams,
-      this.userParams,
-      this.displayElement,
-    );
+    const config = await initConfig(this.firekit, this.gameParams, this.userParams, this.displayElement);
 
-    store.session.set("config", config);
+    store.session.set('config', config);
 
     await configureDeviceView(config);
     await calibrateMicrophoneView();
     if (config.story) {
-      await storyView("Introduction", config);
+      await storyView('Introduction', config);
     }
     if (this.gameParams.bViewingDistancePage) {
       await headCalibrationView(config);
@@ -73,28 +67,26 @@ class ReadAloudTask {
 
     let testComplete = false;
     if (config.story) {
-      await storyView("Calibration", config);
+      await storyView('Calibration', config);
     }
 
     do {
-      await menuView(
-        `https://storage.googleapis.com/roav-readaloud/en/shared/${this.gameParams.testConfigFile}.json`,
-      );
+      await menuView(`https://storage.googleapis.com/roav-readaloud/en/shared/${this.gameParams.testConfigFile}.json`);
       if (config.story) {
-        await storyView("Practice", config);
+        await storyView('Practice', config);
       }
-      await TestView("Practice", config);
+      await TestView('Practice', config);
 
       if (config.story) {
-        await storyView("Test", config);
+        await storyView('Test', config);
       }
-      await TestView("Test", config);
+      await TestView('Test', config);
       // await jsPsych.run(testTimeline);
-      testComplete = sessionStorage.getItem("testComplete") === "true";
+      testComplete = sessionStorage.getItem('testComplete') === 'true';
     } while (!testComplete);
 
     if (config.story) {
-      await storyView("Ending", config);
+      await storyView('Ending', config);
     }
 
     config.firekit.finishRun();

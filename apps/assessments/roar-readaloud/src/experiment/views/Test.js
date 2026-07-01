@@ -1,10 +1,10 @@
-import store from "store2";
+import store from 'store2';
 var testConfig;
 let _config;
 
 function checkTestConfig() {
   // Try to get testConfig from the session
-  testConfig = store.session.get("testConfig");
+  testConfig = store.session.get('testConfig');
 
   // Check if testConfig and its stimulus property exist
   if (testConfig && testConfig.stimulus) {
@@ -49,10 +49,10 @@ export async function giveAccess() {
       return Promise.resolve(camera_stream); // Resolve the promise with the stream
     } else {
       // If stream is not active, throw an error
-      throw new Error("Camera stream is not active");
+      throw new Error('Camera stream is not active');
     }
   } catch (error) {
-    console.error("Error accessing media devices:", error);
+    console.error('Error accessing media devices:', error);
     return Promise.reject(error); // Reject the promise if there is an error
   }
 }
@@ -62,7 +62,7 @@ export async function giveAccess_audioonly() {
     // Set media constraints based on whether audio only or audio + video is requested
     const mediaConstraints = { audio: true }; // Only request audio
 
-    console.log("mediaConstraints", mediaConstraints);
+    console.log('mediaConstraints', mediaConstraints);
     // Request the user's media based on the constraints
     const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
     // Assign the camera stream to a global variable
@@ -84,10 +84,10 @@ export async function giveAccess_audioonly() {
       return Promise.resolve(camera_stream); // Resolve the promise with the stream
     } else {
       // If stream is not active, throw an error
-      throw new Error("Camera stream is not active");
+      throw new Error('Camera stream is not active');
     }
   } catch (error) {
-    console.error("Error accessing media devices:", error);
+    console.error('Error accessing media devices:', error);
     return Promise.reject(error); // Reject the promise if there is an error
   }
 }
@@ -107,15 +107,14 @@ export async function startTest() {
 export var countdown = 4;
 export function updateCountdown(callbackFunction) {
   countdown--;
-  console.log("countdown", countdown);
+  console.log('countdown', countdown);
   if (countdown == 0) {
-    document.getElementById("instruction").style.display = "none";
-    document.getElementById("grid-container").style.opacity = "0";
+    document.getElementById('instruction').style.display = 'none';
+    document.getElementById('grid-container').style.opacity = '0';
     callbackFunction();
     countdown = 4;
   } else {
-    document.getElementById("instruction").innerHTML =
-      "<h1>" + countdown + "</h1>";
+    document.getElementById('instruction').innerHTML = '<h1>' + countdown + '</h1>';
     setTimeout(function () {
       updateCountdown(callbackFunction);
     }, 1000);
@@ -153,34 +152,34 @@ export function stimulusTemplate(
   horizontalSpacing_deg = 0.58,
 ) {
   // Assuming there is a container div with id 'container'
-  const container = document.createElement("div");
-  container.style.position = "relative";
-  container.style.width = "100%";
-  container.style.height = "100%";
-  container.style.transform = "translate(-50%, -50%)";
-  container.innerHTML = ""; // Clear previous contents
+  const container = document.createElement('div');
+  container.style.position = 'relative';
+  container.style.width = '100%';
+  container.style.height = '100%';
+  container.style.transform = 'translate(-50%, -50%)';
+  container.innerHTML = ''; // Clear previous contents
 
-  const borderContainer = document.createElement("div");
-  borderContainer.style.position = "relative";
-  borderContainer.style.width = "100%";
-  borderContainer.style.height = "100%";
-  borderContainer.style.transform = "translate(-50%, -50%)";
-  borderContainer.innerHTML = ""; // Clear previous contents
+  const borderContainer = document.createElement('div');
+  borderContainer.style.position = 'relative';
+  borderContainer.style.width = '100%';
+  borderContainer.style.height = '100%';
+  borderContainer.style.transform = 'translate(-50%, -50%)';
+  borderContainer.innerHTML = ''; // Clear previous contents
 
   // Helper function to create and position elements
   function createStimulus(id, content, x, y, containerType) {
-    const elem = document.createElement("div");
+    const elem = document.createElement('div');
     elem.id = id;
     // elem.innerHTML = `<img src="${testConfig.dir}/${content}" style="width: 100%; height: 100%;">`;
     elem.innerHTML = content;
-    elem.style.position = "absolute";
-    elem.style.transform = "translate(-50%, -50%)";
-    elem.style.width = stimulusSize.toString() + "px";
-    elem.style.fontSize = "5vh";
-    elem.style.height = "auto";
+    elem.style.position = 'absolute';
+    elem.style.transform = 'translate(-50%, -50%)';
+    elem.style.width = stimulusSize.toString() + 'px';
+    elem.style.fontSize = '5vh';
+    elem.style.height = 'auto';
     elem.style.left = `${x}px`;
     elem.style.top = `${y}px`;
-    if (containerType === "container") {
+    if (containerType === 'container') {
       container.appendChild(elem);
     } else {
       borderContainer.appendChild(elem);
@@ -189,13 +188,7 @@ export function stimulusTemplate(
 
   const offsetX = horizontalSpacing_deg * PixelsPerDegree; // arbitrary spacing horizontally
 
-  createStimulus(
-    "pos1",
-    stim1,
-    container.offsetWidth / 2,
-    container.offsetHeight / 2,
-    "container",
-  );
+  createStimulus('pos1', stim1, container.offsetWidth / 2, container.offsetHeight / 2, 'container');
 
   return {
     container: container,
@@ -213,7 +206,7 @@ export function get_PixelsPerDegree(distanceCM, screenWidthPX, screenWidthCM) {
 export function get_stimulusSize(size_logmar, multiple, PixelsPerDegree) {
   var size_arcmin = logmar_to_arcmin(size_logmar) * multiple;
   var size_deg = arcmin_to_deg(size_arcmin);
-  console.log("degSize", size_deg);
+  console.log('degSize', size_deg);
   var size_px = size_deg * PixelsPerDegree;
   return size_px;
 }
@@ -231,39 +224,30 @@ export function arcmin_to_deg(value) {
   return value / 60;
 }
 
-export function get_lowestSpacingDeg(
-  stimulusSizePX,
-  PixelsPerDegree,
-  minSpacingMultiple,
-) {
+export function get_lowestSpacingDeg(stimulusSizePX, PixelsPerDegree, minSpacingMultiple) {
   var lowestSpacing_px = minSpacingMultiple * stimulusSizePX;
   var lowestSpacing_deg = lowestSpacing_px * (1 / PixelsPerDegree);
   return lowestSpacing_deg;
 }
 
 export function createOptions() {
-  const container = document.getElementById("container_options");
-  const row1 = document.getElementById("row1");
-  const row2 = document.getElementById("row2");
+  const container = document.getElementById('container_options');
+  const row1 = document.getElementById('row1');
+  const row2 = document.getElementById('row2');
 
-  container.addEventListener("click", function (event) {
+  container.addEventListener('click', function (event) {
     // Check if a button was clicked
-    if (event.target.tagName === "BUTTON") {
+    if (event.target.tagName === 'BUTTON') {
       const clickedButton = event.target;
       // Get the background image URL
-      const backgroundImageUrl = clickedButton.style.backgroundImage
-        .replace('url("', "")
-        .replace('")', "");
+      const backgroundImageUrl = clickedButton.style.backgroundImage.replace('url("', '').replace('")', '');
 
       // Extract just the filename without the ".svg" extension
-      const filename = backgroundImageUrl.split("/").pop();
+      const filename = backgroundImageUrl.split('/').pop();
       // Call a function with the extracted filename
 
       console.log(filename, tempAnswers[pos], pos, tempAnswers);
-      console.log(
-        "Calling recordAnswer with filename in Test.js createOptions:",
-        filename,
-      );
+      console.log('Calling recordAnswer with filename in Test.js createOptions:', filename);
       recordAnswer(filename);
 
       init_newTrial();
@@ -272,15 +256,15 @@ export function createOptions() {
 
   // Populate rows with buttons and images
   for (let i = 0; i < answers.length; i++) {
-    const button = document.createElement("button");
+    const button = document.createElement('button');
     const imageUrl = `${testConfig.dir}/${answers[i]}`;
-    button.style.width = "75px";
-    button.style.height = "75px";
-    button.style.margin = "5px";
+    button.style.width = '75px';
+    button.style.height = '75px';
+    button.style.margin = '5px';
     button.style.backgroundImage = `url(${imageUrl})`;
-    button.style.backgroundSize = "contain";
-    button.style.backgroundPosition = "center center";
-    button.style.border = "none"; // Remove button border
+    button.style.backgroundSize = 'contain';
+    button.style.backgroundPosition = 'center center';
+    button.style.border = 'none'; // Remove button border
 
     if (i < 10) {
       row1.appendChild(button);
@@ -300,11 +284,7 @@ export function shuffleStimulus() {
     shuffledStim = shuffled.reverse();
 
     // Check if the type is "Practice" and reverse the practice stimuli instead
-    if (
-      type === "Practice" &&
-      testConfig.practiceStim &&
-      testConfig.practiceStim.length > 0
-    ) {
+    if (type === 'Practice' && testConfig.practiceStim && testConfig.practiceStim.length > 0) {
       shuffledStim = testConfig.practiceStim.reverse();
     }
   } else {
@@ -327,21 +307,14 @@ export function shuffle(array) {
 }
 
 export async function nextArrow() {
-  PeripheralStim.style.opacity = "0.0";
-  BorderStim.style.opacity = "1.0";
-  container_options.style.opacity = "1";
+  PeripheralStim.style.opacity = '0.0';
+  BorderStim.style.opacity = '1.0';
+  container_options.style.opacity = '1';
   await stopRecording();
   //aryaman recordAnswer, make some other div visible to tell them, start next trial
-  const dir = condition.direction == 1 ? "L" : "R";
+  const dir = condition.direction == 1 ? 'L' : 'R';
   const timestamp = new Date().getTime();
-  _videoURL =
-    "Phonics_" +
-    tempAnswers +
-    "_" +
-    timestamp +
-    "_" +
-    store.session.get("id") +
-    ".webm";
+  _videoURL = 'Phonics_' + tempAnswers + '_' + timestamp + '_' + store.session.get('id') + '.webm';
 
   const uploadUrl = await saveRecordings({
     filename: _videoURL,
@@ -354,8 +327,8 @@ export async function nextArrow() {
 export async function responseBar() {
   // fixationStim.style.visibility = "hidden";
   // PeripheralStim.style.visibility = "hidden";
-  PeripheralStim.style.opacity = "0.0";
-  BorderStim.style.opacity = "1.0";
+  PeripheralStim.style.opacity = '0.0';
+  BorderStim.style.opacity = '1.0';
 
   // if (eyeMoved & (count_eyeMoved < 15)) {
   //   // your eye moved
@@ -365,30 +338,30 @@ export async function responseBar() {
   //     "fixationBreak",
   //   );
   // } else {
-  container_options.style.opacity = "1";
+  container_options.style.opacity = '1';
   // init_newTrial()
 
   await stopRecording();
   //aryaman recordAnswer, make some other div visible to tell them, start next trial
-  const dir = condition.direction == 1 ? "L" : "R";
+  const dir = condition.direction == 1 ? 'L' : 'R';
   const timestamp = new Date().getTime();
   _videoURL =
-    "Phonics_" +
-    tempAnswers[0].replace(".svg", "") +
-    "_" +
+    'Phonics_' +
+    tempAnswers[0].replace('.svg', '') +
+    '_' +
     pos +
-    "_" +
+    '_' +
     timestamp +
-    "_" +
-    store.session.get("id") +
-    ".webm";
+    '_' +
+    store.session.get('id') +
+    '.webm';
   const uploadUrl = await saveRecordings({
     filename: _videoURL,
     config: _config,
   }); // Save the recorded audio and
   if (eyeMoved) {
     setTimeout(function () {
-      recordAnswer("", eyeMoved, uploadUrl);
+      recordAnswer('', eyeMoved, uploadUrl);
       init_newTrial();
     }, 5000); // Delay in milliseconds (1000 ms = 1 second)
   }
@@ -397,11 +370,10 @@ export async function responseBar() {
 export function initLayout() {
   var centerPos = deviceConfig.screenWidthPX / 2;
   var leftPos = deviceConfig.screenWidthPX / 2 - eccentricity * PixelsPerDegree;
-  var rightPos =
-    deviceConfig.screenWidthPX / 2 + eccentricity * PixelsPerDegree;
-  fixationStim.style.height = "4vh";
-  fixationStim.style.width = "auto";
-  PeripheralStim.style.left = centerPos.toString() + "px";
+  var rightPos = deviceConfig.screenWidthPX / 2 + eccentricity * PixelsPerDegree;
+  fixationStim.style.height = '4vh';
+  fixationStim.style.width = 'auto';
+  PeripheralStim.style.left = centerPos.toString() + 'px';
 }
 
 export function setConfig(config) {

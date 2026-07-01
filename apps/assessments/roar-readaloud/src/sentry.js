@@ -1,15 +1,9 @@
-import * as Sentry from "@sentry/browser";
-import {
-  captureConsoleIntegration,
-  contextLinesIntegration,
-  extraErrorDataIntegration,
-} from "@sentry/integrations";
+import * as Sentry from '@sentry/browser';
+import { captureConsoleIntegration, contextLinesIntegration, extraErrorDataIntegration } from '@sentry/integrations';
 
-const game = "roar-readaloud";
-const gameShortened = "roar-readaloud";
-const regexRoarApp = new RegExp(
-  `^https:\\/\\/${game}--pr\\d+-\\w+\\.web\\.app\\/`,
-);
+const game = 'roar-readaloud';
+const gameShortened = 'roar-readaloud';
+const regexRoarApp = new RegExp(`^https:\\/\\/${game}--pr\\d+-\\w+\\.web\\.app\\/`);
 const regexRoarStaging = new RegExp(
   `^https:\\/\\/roar-staging\\.web\\.app\\/game\\/${gameShortened}|https:\\/\\/roar-staging--pr\\d+-\\w+\\.web\\.app\\/`,
 );
@@ -17,7 +11,7 @@ const regexRoarStaging = new RegExp(
 export function initSentry() {
   Sentry.init({
     // Change dsn to the one for the app
-    dsn: "https://0480622dba433ba513c1b291786d7313@o4505913837420544.ingest.us.sentry.io/4507420137422848",
+    dsn: 'https://0480622dba433ba513c1b291786d7313@o4505913837420544.ingest.us.sentry.io/4507420137422848',
     integrations: [
       Sentry.replayIntegration({
         maskAllText: true,
@@ -25,7 +19,7 @@ export function initSentry() {
       }),
       Sentry.browserTracingIntegration(),
       captureConsoleIntegration({
-        levels: ["error"],
+        levels: ['error'],
       }),
       contextLinesIntegration(),
       extraErrorDataIntegration(),
@@ -37,7 +31,7 @@ export function initSentry() {
       regexRoarApp,
       regexRoarStaging,
       `https://roar.education/game/${gameShortened}`,
-      "localhost",
+      'localhost',
     ],
     // Session Replay
     replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.

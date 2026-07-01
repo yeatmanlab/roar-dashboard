@@ -20,14 +20,13 @@ export function updateCountdown(callbackFunction) {
   countdown--;
 
   if (countdown === 0) {
-    document.getElementById("instruction").style.display = "none";
-    if (typeof callbackFunction === "function") {
+    document.getElementById('instruction').style.display = 'none';
+    if (typeof callbackFunction === 'function') {
       callbackFunction();
       countdown = 4;
     }
   } else {
-    document.getElementById("instruction").innerHTML =
-      "<h1>" + countdown + "</h1>";
+    document.getElementById('instruction').innerHTML = '<h1>' + countdown + '</h1>';
     setTimeout(function () {
       updateCountdown(callbackFunction);
     }, 1000);
@@ -49,7 +48,7 @@ export async function giveAccess(audio = false) {
     if (inputVideo) {
       inputVideo.srcObject = stream;
       inputVideo.play();
-      inputVideo.addEventListener("loadedmetadata", function () {
+      inputVideo.addEventListener('loadedmetadata', function () {
         orig_img_width = inputVideo.videoWidth;
         orig_img_height = inputVideo.videoHeight;
         if (headCanvas) {
@@ -67,10 +66,10 @@ export async function giveAccess(audio = false) {
     };
 
     videoRecorder.onstop = async () => {
-      console.log("Recording stopped, blob created");
+      console.log('Recording stopped, blob created');
     };
   } catch (error) {
-    console.error("Error accessing media devices:", error);
+    console.error('Error accessing media devices:', error);
   }
 }
 
@@ -78,17 +77,17 @@ export async function giveAccess(audio = false) {
 export async function startRecording() {
   videoChunks = []; // Clear previous video chunks
   // audioRecorder.start();
-  if (videoRecorder && typeof videoRecorder.stop === "function") {
+  if (videoRecorder && typeof videoRecorder.stop === 'function') {
     videoRecorder.stop();
   }
-  if (videoRecorder && typeof videoRecorder.start === "function") {
+  if (videoRecorder && typeof videoRecorder.start === 'function') {
     videoRecorder.start();
   }
 }
 
 // Function to stop audio and video recording
 export async function stopRecording() {
-  if (videoRecorder && typeof videoRecorder.stop === "function") {
+  if (videoRecorder && typeof videoRecorder.stop === 'function') {
     videoRecorder.stop();
   }
 }
@@ -100,18 +99,14 @@ export async function saveRecordings({ filename, config, metadata = {} }) {
     videoRecorder.stop();
   });
 
-  const deviceConfig = store.session.get("deviceConfig") ?? defaultDeviceConfig;
-  const mimeType = deviceConfig.storeVideo ? "video/webm" : "audio/webm";
-  const mediaType = deviceConfig.storeVideo ? "video" : "audio";
+  const deviceConfig = store.session.get('deviceConfig') ?? defaultDeviceConfig;
+  const mimeType = deviceConfig.storeVideo ? 'video/webm' : 'audio/webm';
+  const mediaType = deviceConfig.storeVideo ? 'video' : 'audio';
 
   const mediaBlob = new Blob(videoChunks, { type: mimeType });
 
   if (mediaBlob.size > 0) {
-    console.log(
-      `${mediaType} recorded successfully. Size:`,
-      mediaBlob.size,
-      "bytes",
-    );
+    console.log(`${mediaType} recorded successfully. Size:`, mediaBlob.size, 'bytes');
   } else {
     console.error(`No ${mediaType} data recorded.`);
     return null;
@@ -120,12 +115,12 @@ export async function saveRecordings({ filename, config, metadata = {} }) {
   try {
     return await config.firekit.uploadFileOrBlobToStorage({
       filename: filename,
-      assessmentPid: store.session.get("id"),
+      assessmentPid: store.session.get('id'),
       fileOrBlob: mediaBlob,
       customMetadata: metadata,
     });
   } catch (error) {
-    console.error("Error getting video upload URL:", error);
+    console.error('Error getting video upload URL:', error);
     return null;
   }
 }

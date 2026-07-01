@@ -1,12 +1,12 @@
-import store from "store2";
-import calibrateMicrophone_page from "./calibrateMicrophone.html";
+import store from 'store2';
+import calibrateMicrophone_page from './calibrateMicrophone.html';
 
 window.store = store;
 
 export async function calibrateMicrophoneView() {
   const calibrateMicrophone_html = calibrateMicrophone_page;
   // Create a div and set its innerHTML to the loaded HTML content
-  const page = document.createElement("div");
+  const page = document.createElement('div');
   page.innerHTML = calibrateMicrophone_html;
 
   // Append the confirmation page to the body or a specific element
@@ -20,25 +20,25 @@ export async function calibrateMicrophoneView() {
     const backgroundNoise = await getBackgroundNoiseLevel();
 
     // Save background noise level to store
-    const deviceConfig = store.session.get("deviceConfig") || {};
+    const deviceConfig = store.session.get('deviceConfig') || {};
     deviceConfig.backgroundNoise = backgroundNoise;
-    store.session.set("deviceConfig", deviceConfig);
+    store.session.set('deviceConfig', deviceConfig);
 
-    console.log("Background noise level obtained:", backgroundNoise);
+    console.log('Background noise level obtained:', backgroundNoise);
 
     // Wait for the user's response to the prompt
     const userResponse = await promptUserForCalibrationConfirmation(page);
 
-    if (userResponse === "confirm") {
-      console.log("User confirmed calibration.");
+    if (userResponse === 'confirm') {
+      console.log('User confirmed calibration.');
       page.remove(); // Proceed to the next step
-    } else if (userResponse === "redo") {
-      console.log("User chose to redo calibration.");
+    } else if (userResponse === 'redo') {
+      console.log('User chose to redo calibration.');
       page.remove(); // Remove the current page
       await calibrateMicrophoneView(); // Restart calibration
     }
   } catch (err) {
-    console.error("Error during calibration:", err);
+    console.error('Error during calibration:', err);
     page.innerHTML = `<p>Failed to calibrate the microphone. Please try again.</p>`;
   }
 
@@ -103,7 +103,7 @@ async function getBackgroundNoiseLevel(durationInSeconds = 5) {
       // Start capturing sound levels
       captureSoundLevel();
     } catch (err) {
-      console.error("Error accessing the microphone:", err);
+      console.error('Error accessing the microphone:', err);
       reject(err); // Reject the promise if there's an error
     }
   });
@@ -113,7 +113,7 @@ async function getBackgroundNoiseLevel(durationInSeconds = 5) {
 function promptUserForCalibrationConfirmation(page) {
   return new Promise((resolve) => {
     // Create the prompt with Yes and No buttons
-    const promptDiv = document.createElement("div");
+    const promptDiv = document.createElement('div');
     promptDiv.innerHTML = `
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -132,16 +132,16 @@ function promptUserForCalibrationConfirmation(page) {
     `;
     // page.remove()
     // page.innerHTML = promptDiv
-    page.innerHTML = "";
+    page.innerHTML = '';
     page.appendChild(promptDiv);
 
     // Add event listeners to resolve the promise based on user input
-    document.getElementById("confirmButton").addEventListener("click", () => {
-      resolve("confirm");
+    document.getElementById('confirmButton').addEventListener('click', () => {
+      resolve('confirm');
     });
 
-    document.getElementById("redoButton").addEventListener("click", () => {
-      resolve("redo");
+    document.getElementById('redoButton').addEventListener('click', () => {
+      resolve('redo');
     });
   });
 }
@@ -158,9 +158,7 @@ function unloadExternalScripts(src) {
     if (propDesc && propDesc.configurable) {
       delete window[key];
     } else {
-      console.log(
-        `Cannot remove ${key} from window; it may be non-configurable.`,
-      );
+      console.log(`Cannot remove ${key} from window; it may be non-configurable.`);
     }
   });
 }
@@ -168,13 +166,13 @@ function unloadExternalScripts(src) {
 function cleanup(src) {
   unloadExternalScripts(src);
   // Remove dynamically added script elements from the head
-  const dynamicScripts = document.querySelectorAll("script[data-dynamic]");
+  const dynamicScripts = document.querySelectorAll('script[data-dynamic]');
   dynamicScripts.forEach((script) => script.parentNode.removeChild(script));
 }
 
 async function loadHeadingScripts(element) {
   // Extract and load external scripts within the specified element
-  const scripts = element.getElementsByTagName("script");
+  const scripts = element.getElementsByTagName('script');
   for (let i = 0; i < scripts.length; i++) {
     const script = scripts[i];
     if (script.src) {
@@ -185,9 +183,9 @@ async function loadHeadingScripts(element) {
 
 function executeInlineScripts(element) {
   // Extract and execute inline scripts within the specified element
-  const scripts = element.getElementsByTagName("script");
+  const scripts = element.getElementsByTagName('script');
   for (let i = 0; i < scripts.length; i++) {
-    const script = document.createElement("script");
+    const script = document.createElement('script');
     script.text = scripts[i].text;
     document.head.appendChild(script).parentNode.removeChild(script);
   }
@@ -195,7 +193,7 @@ function executeInlineScripts(element) {
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
+    const script = document.createElement('script');
     script.src = src;
     script.onload = resolve;
     script.onerror = reject;

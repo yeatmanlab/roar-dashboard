@@ -1,29 +1,28 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { Roarr as log } from "roarr";
+import { Roarr as log } from 'roarr';
 
 const getLogLevel = (level) => {
   let prettyLevel;
   switch (level) {
     case 10:
-      prettyLevel = "TRACE";
+      prettyLevel = 'TRACE';
       break;
     case 20:
-      prettyLevel = "DEBUG";
+      prettyLevel = 'DEBUG';
       break;
     case 30:
-      prettyLevel = "INFO";
+      prettyLevel = 'INFO';
       break;
     case 40:
-      prettyLevel = "WARN";
+      prettyLevel = 'WARN';
       break;
     case 50:
-      prettyLevel = "ERROR";
+      prettyLevel = 'ERROR';
       break;
     case 60:
-      prettyLevel = "FATAL";
+      prettyLevel = 'FATAL';
       break;
     default:
-      prettyLevel = "LOG";
+      prettyLevel = 'LOG';
   }
 
   return `[ROAR:${prettyLevel}]`;
@@ -34,10 +33,9 @@ globalThis.ROARR.write = (message) => {
 
   if (payload.context.logLevel >= 30) {
     const logLevel = getLogLevel(payload.context.logLevel);
-    // eslint-disable-next-line no-console
+
     console.log(`${logLevel} ${payload.message}`);
   }
 };
 
-// eslint-disable-next-line import/prefer-default-export
 export { log };

@@ -61,8 +61,7 @@ h1 {
   margin-left: 10%;
   text-align: center;
   padding-inline: 10px;
-  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-    "sans-serif";
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
   font-weight: semi-bold;
   font-size: 5vh;
   color: rgba(76, 101, 139, 1);
@@ -70,8 +69,7 @@ h1 {
 
 h2 {
   text-align: center;
-  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-    "sans-serif";
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
   font-style: normal;
   font-weight: regular;
   font-size: 4vh;
@@ -80,8 +78,7 @@ h2 {
 
 h3 {
   text-align: center;
-  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-    "sans-serif";
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
   font-style: normal;
   font-weight: regular;
   font-size: 3vh;
@@ -92,8 +89,7 @@ p,
 .jspsych-survey-text-preamble {
   text-align: center;
   vertical-align: middle;
-  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-    "sans-serif";
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
   font-style: normal;
   font-weight: normal;
   font-size: 3vh;
@@ -155,8 +151,7 @@ p,
 }
 
 .feedback {
-  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-    "sans-serif";
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
   text-align: center;
   font-style: normal;
   font-weight: bold;
@@ -309,8 +304,7 @@ p,
   text-align: center;
   vertical-align: middle;
   padding: 2vh;
-  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-    "sans-serif";
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
   font-style: normal;
   font-weight: bold;
   font-size: 3vh;
@@ -424,8 +418,7 @@ p,
 }
 #jspsych-progressbar-container span {
   font-size: 14px;
-  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-    "sans-serif";
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
   padding-right: 14px;
 }
 #jspsych-progressbar-outer {
@@ -528,8 +521,7 @@ p,
   margin: 4vh 1vh 1vh 1vh;
   font-size: 4vh;
   font-weight: bold;
-  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-    "sans-serif";
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
   cursor: pointer;
   line-height: 1.4;
   text-align: center;

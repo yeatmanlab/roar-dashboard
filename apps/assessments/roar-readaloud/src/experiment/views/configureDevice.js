@@ -2,24 +2,22 @@
 // export var deviceConfigs = {};
 // Function to update dropdown options based on device configuration
 export function updateDropdownOptions() {
-  const dropdown = document.getElementById("deviceList");
-  const collapsableCards = document.getElementById(
-    "findDevice-collapsableCards",
-  );
+  const dropdown = document.getElementById('deviceList');
+  const collapsableCards = document.getElementById('findDevice-collapsableCards');
 
   if (dropdown) {
-    dropdown.innerHTML = ""; // Clear existing options
+    dropdown.innerHTML = ''; // Clear existing options
 
     // Add a blank option as the first option
-    const blankOption = document.createElement("option");
-    blankOption.value = "";
-    blankOption.text = ""; // or you can add a placeholder text like "Select a device"
+    const blankOption = document.createElement('option');
+    blankOption.value = '';
+    blankOption.text = ''; // or you can add a placeholder text like "Select a device"
     dropdown.add(blankOption);
     // Add options based on deviceConfig
     const deviceNames = Object.keys(deviceConfigs);
 
     deviceNames.forEach((deviceName) => {
-      const option = document.createElement("option");
+      const option = document.createElement('option');
       option.value = deviceName;
       option.text = deviceName.charAt(0).toUpperCase() + deviceName.slice(1); // Capitalize first letter
       dropdown.add(option);
@@ -35,13 +33,13 @@ export function updateDropdownOptions() {
 
       // Hide the collapsable cards element
       if (collapsableCards) {
-        collapsableCards.style.display = "none";
+        collapsableCards.style.display = 'none';
         updateCardNumbers();
       }
     } else {
       // Show the collapsable cards element if more than one option exists
       if (collapsableCards) {
-        collapsableCards.style.display = "block";
+        collapsableCards.style.display = 'block';
       }
     }
   }
@@ -57,12 +55,12 @@ export async function updateDeviceConfigFromJSON(jsonUrl) {
     // Update dropdown options
     updateDropdownOptions();
   } catch (error) {
-    console.error("Error fetching or parsing JSON:", error);
+    console.error('Error fetching or parsing JSON:', error);
   }
 }
 
 export function handleDevice(config) {
-  console.log("You selected a " + config.deviceName);
+  console.log('You selected a ' + config.deviceName);
 
   screenHeight = config.screenHeight;
   screenWidth = config.screenWidth;
@@ -79,7 +77,7 @@ export function handleDevice(config) {
   heightInput_textbox.value = webcamHeight;
   heightInput_textbox.disabled = HeightWebcamEntered;
 
-  if (config.hasOwnProperty("normalizedFocalLength")) {
+  if (config.hasOwnProperty('normalizedFocalLength')) {
     // normalizedFocalLength exists
     normalizedFocalLength = config.normalizedFocalLength;
   }
@@ -91,19 +89,16 @@ export function handleDevice(config) {
 
 export function updateCardNumbers() {
   // Select all elements with the class 'card-title'
-  var cards = document.querySelectorAll(".card-title");
+  var cards = document.querySelectorAll('.card-title');
   var visibleCardIndex = 1;
 
   cards.forEach(function (card) {
     // Only update the numbering for visible cards
     if (
-      card.parentElement.parentElement.style.display !== "none" &&
+      card.parentElement.parentElement.style.display !== 'none' &&
       card.parentElement.parentElement.offsetParent !== null
     ) {
-      card.textContent = card.textContent.replace(
-        /\(\d+\)/,
-        "(" + visibleCardIndex + ")",
-      );
+      card.textContent = card.textContent.replace(/\(\d+\)/, '(' + visibleCardIndex + ')');
       visibleCardIndex++;
     }
   });
@@ -114,12 +109,12 @@ export function collapseCards(collapse = true) {
   console.log(cards); // Useful for debugging, consider removing in production
 
   cards.forEach((card) => {
-    if (collapse === "Toggle") {
+    if (collapse === 'Toggle') {
       // Toggle the display based on the current state
-      card.style.display = card.style.display === "none" ? "" : "none";
+      card.style.display = card.style.display === 'none' ? '' : 'none';
     } else {
       // Set the display based on the collapse parameter (true or false)
-      card.style.display = collapse ? "none" : "";
+      card.style.display = collapse ? 'none' : '';
     }
   });
 
@@ -132,14 +127,14 @@ export function collapseCamera(collapse = true) {
 
   cards.forEach((card) => {
     // Set the display based on the collapse parameter (true or false)
-    card.style.display = collapse ? "none" : "";
+    card.style.display = collapse ? 'none' : '';
   });
 
   updateCardNumbers(); // Ensure card numbers are updated after changes in visibility
 }
 
 export function inputParticipantName(participant) {
-  const idInput = document.getElementById("idInput");
+  const idInput = document.getElementById('idInput');
 
   if (idInput) {
     idInput.value = participant; // Change placeholder

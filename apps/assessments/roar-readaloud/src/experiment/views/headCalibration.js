@@ -1,9 +1,4 @@
-import {
-  FaceMesh,
-  FACEMESH_LEFT_IRIS,
-  FACEMESH_RIGHT_IRIS,
-  FACEMESH_FACE_OVAL,
-} from "@mediapipe/face_mesh";
+import { FaceMesh, FACEMESH_LEFT_IRIS, FACEMESH_RIGHT_IRIS, FACEMESH_FACE_OVAL } from '@mediapipe/face_mesh';
 
 export async function giveAccess() {
   try {
@@ -24,7 +19,7 @@ export async function giveAccess() {
 
       // Set the canvas dimensions to match the video stream
       // Listen for the 'loadedmetadata' event to ensure video metadata is available
-      inputVideo.addEventListener("loadedmetadata", function () {
+      inputVideo.addEventListener('loadedmetadata', function () {
         // Set the canvas dimensions to match the video stream
         if (frameCanvas) {
           const { width, height } = {
@@ -36,10 +31,10 @@ export async function giveAccess() {
         }
       });
     } else {
-      console.error("inputVideo element not found.");
+      console.error('inputVideo element not found.');
     }
   } catch (error) {
-    console.error("Error accessing media devices:", error);
+    console.error('Error accessing media devices:', error);
   }
 }
 
@@ -49,14 +44,14 @@ export async function processFrames() {
     try {
       await faceMesh.send({ image: inputVideo });
     } catch (error) {
-      console.error("Error sending frame to FaceMesh:", error);
+      console.error('Error sending frame to FaceMesh:', error);
     }
 
     if (continueProcessing) {
       requestAnimationFrame(processFrames);
     }
   } else {
-    console.error("inputVideo element not found.");
+    console.error('inputVideo element not found.');
   }
 }
 
@@ -132,7 +127,7 @@ export function onResultsFaceMesh(results) {
       canvasCtx.closePath();
 
       // Set the fill style and fill the path
-      canvasCtx.fillStyle = "rgba(13, 110, 253, 0.5)"; // Semi-transparent blue
+      canvasCtx.fillStyle = 'rgba(13, 110, 253, 0.5)'; // Semi-transparent blue
       canvasCtx.fill();
     }
   }

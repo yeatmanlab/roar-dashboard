@@ -1,12 +1,7 @@
-import ndarray from "ndarray";
-import ops from "ndarray-ops";
-import Worker from "web-worker";
-import {
-  FaceMesh,
-  FACEMESH_LEFT_IRIS,
-  FACEMESH_RIGHT_IRIS,
-  FACEMESH_FACE_OVAL,
-} from "@mediapipe/face_mesh";
+import ndarray from 'ndarray';
+import ops from 'ndarray-ops';
+import Worker from 'web-worker';
+import { FaceMesh, FACEMESH_LEFT_IRIS, FACEMESH_RIGHT_IRIS, FACEMESH_FACE_OVAL } from '@mediapipe/face_mesh';
 
 export const faceMesh = new FaceMesh({
   locateFile: (file) => {
@@ -46,8 +41,8 @@ faceMesh.setOptions({
 faceMesh.onResults(onResultsFaceMesh);
 
 export var _pageCompleted = false;
-export var myWorker = new Worker(new URL("./worker.js", import.meta.url), {
-  type: "module",
+export var myWorker = new Worker(new URL('./worker.js', import.meta.url), {
+  type: 'module',
 });
 
 export async function giveAccess() {
@@ -63,7 +58,7 @@ export async function giveAccess() {
     });
 
     inputVideo.srcObject = stream;
-    inputVideo.addEventListener("loadedmetadata", () => {
+    inputVideo.addEventListener('loadedmetadata', () => {
       orig_img_width = inputVideo.videoWidth;
       orig_img_height = inputVideo.videoHeight;
     });
@@ -78,10 +73,10 @@ export async function giveAccess() {
       }
     };
     videoRecorder.onstop = async () => {
-      console.log("Recording stopped, blob created");
+      console.log('Recording stopped, blob created');
     };
   } catch (error) {
-    console.error("Error accessing media devices:", error);
+    console.error('Error accessing media devices:', error);
   }
 }
 
@@ -96,14 +91,13 @@ export function updateCountdown(callbackFunction) {
   countdown--;
 
   if (countdown === 0) {
-    document.getElementById("instruction").style.display = "none";
-    if (typeof callbackFunction === "function") {
+    document.getElementById('instruction').style.display = 'none';
+    if (typeof callbackFunction === 'function') {
       callbackFunction();
       countdown = 4;
     }
   } else {
-    document.getElementById("instruction").innerHTML =
-      "<h1>" + countdown + "</h1>";
+    document.getElementById('instruction').innerHTML = '<h1>' + countdown + '</h1>';
     setTimeout(function () {
       updateCountdown(callbackFunction);
     }, 1000);
@@ -124,37 +118,20 @@ export function openFullscreen() {
 
 export function preprocess(data, width, height) {
   const dataFromImage = ndarray(new Float32Array(data), [width, height, 4]);
-  const dataProcessed = ndarray(new Float32Array(width * height * 3), [
-    1,
-    3,
-    height,
-    width,
-  ]);
+  const dataProcessed = ndarray(new Float32Array(width * height * 3), [1, 3, height, width]);
 
   // Normalize 0-255 to 0 - 1
   ops.divseq(dataFromImage, 255.0);
   // Realign imageData from [224*224*4] to the correct dimension [1*3*224*224].
-  ops.assign(
-    dataProcessed.pick(0, 0, null, null),
-    dataFromImage.pick(null, null, 2),
-  );
-  ops.assign(
-    dataProcessed.pick(0, 1, null, null),
-    dataFromImage.pick(null, null, 1),
-  );
-  ops.assign(
-    dataProcessed.pick(0, 2, null, null),
-    dataFromImage.pick(null, null, 0),
-  );
+  ops.assign(dataProcessed.pick(0, 0, null, null), dataFromImage.pick(null, null, 2));
+  ops.assign(dataProcessed.pick(0, 1, null, null), dataFromImage.pick(null, null, 1));
+  ops.assign(dataProcessed.pick(0, 2, null, null), dataFromImage.pick(null, null, 0));
   return new Float32Array(dataProcessed.data);
 }
 
 export function preprocess_kps(data, width, height) {
   const dataFromImage = ndarray(new Float32Array(data), [data.length]);
-  const dataProcessed = ndarray(new Float32Array(data.length), [
-    1,
-    data.length,
-  ]);
+  const dataProcessed = ndarray(new Float32Array(data.length), [1, data.length]);
   ops.assign(dataProcessed.pick(0, null), dataFromImage);
 
   return new Float32Array(dataProcessed.data);
