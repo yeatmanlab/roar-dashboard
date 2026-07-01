@@ -170,6 +170,79 @@ describe('RoarScores.computedScoreCallback', () => {
     // exactly what this regression test exists to catch.
     expect(result.composite.numCorrect).toBe(9);
   });
+
+  it('adaptive scoring: looks up normed scores by age + scaled theta on the 0.1 grid', async () => {
+    setSession({
+      config: {
+        scoringVersion: PA_SCORING_VERSION.V5_ADAPTIVE,
+        taskId: PA_TASK_ID,
+        userMetadata: { grade: '2', ageMonths: 96 },
+      },
+      // scaled 1.46 rounds to 1.5 → matches the lookup row below.
+      thetas: { fsm: 0.5, lsm: 0.3, scaled: 1.46, composite: 0.6, composite_foundational: -1.1 },
+      thetaSEs: { fsm: 0.2, lsm: 0.18, scaled: 0.15, composite: 0.16, composite_foundational: 0.3 },
+    });
+    vi.mocked(getGrade).mockReturnValue(2);
+
+    const scores = new RoarScores();
+    scores.tableLoaded = true; // short-circuit initTable; supply the table directly
+    scores.ageForScore = 96;
+    scores.lookupTable = [{ ageMonths: 96, thetaEstimate: 1.5, percentile: 70, standardScore: 110, roarScore: 480 }];
+
+    const result = await scores.computedScoreCallback({
+      fsm: { test: { numCorrect: 8, numAttempted: 10 } },
+      lsm: { test: { numCorrect: 5, numAttempted: 8 } },
+    });
+
+    // Adaptive re-inserts the row's roarScore; percentile/standardScore merge in too.
+    expect(result.composite).toMatchObject({ percentile: 70, standardScore: 110, roarScore: 480 });
+  });
+
+  it('fixed scoring, grade >= 6: looks up normed scores by grade + exact total correct', async () => {
+    setSession({
+      config: {
+        scoringVersion: PA_SCORING_VERSION.V3_FIXED,
+        taskId: PA_TASK_ID,
+        userMetadata: { grade: '7', ageMonths: 150 },
+      },
+    });
+    vi.mocked(getGrade).mockReturnValue(7); // grade >= 6 → lookup by grade + totalScore
+
+    const scores = new RoarScores();
+    scores.tableLoaded = true;
+    scores.ageForScore = 144; // unused on the grade>=6 branch
+    scores.lookupTable = [{ grade: 7, roarScore: 14, percentile: 88, standardScore: 118 }];
+
+    const result = await scores.computedScoreCallback({
+      fsm: { test: { numCorrect: 8, numAttempted: 10 } }, // roarScore 8
+      lsm: { test: { numCorrect: 6, numAttempted: 10 } }, // roarScore 6 → total 14
+    });
+
+    expect(result.composite).toMatchObject({ percentile: 88, standardScore: 118 });
+  });
+
+  it('fixed scoring, grade < 6: looks up normed scores by age + exact total correct', async () => {
+    setSession({
+      config: {
+        scoringVersion: PA_SCORING_VERSION.V3_FIXED,
+        taskId: PA_TASK_ID,
+        userMetadata: { grade: '3', ageMonths: 102 },
+      },
+    });
+    vi.mocked(getGrade).mockReturnValue(3); // grade < 6 → lookup by ageForScore + totalScore
+
+    const scores = new RoarScores();
+    scores.tableLoaded = true;
+    scores.ageForScore = 102;
+    scores.lookupTable = [{ ageMonths: 102, roarScore: 14, percentile: 66, standardScore: 106 }];
+
+    const result = await scores.computedScoreCallback({
+      fsm: { test: { numCorrect: 8, numAttempted: 10 } }, // roarScore 8
+      lsm: { test: { numCorrect: 6, numAttempted: 10 } }, // roarScore 6 → total 14
+    });
+
+    expect(result.composite).toMatchObject({ percentile: 66, standardScore: 106 });
+  });
 });
 
 // --- initTable race-condition handling (commit 09ce3f7c) ---------------------
