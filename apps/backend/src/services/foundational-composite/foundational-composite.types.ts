@@ -38,6 +38,12 @@ export interface RecomputeFoundationalCompositeParams {
   administrationId: string;
   /** The `task_id` of the run whose trial write triggered the recompute. */
   triggeringTaskId: string;
+  /**
+   * Server timestamp of the trial that triggered the recompute. Used as the norming reference
+   * date for the in-progress case (no contributing run has completed yet); the composite's
+   * "date of the latest assessment" is `max(latest reporting-run completedAt, triggeredAt)`.
+   */
+  triggeredAt: Date;
   /** The assessment-DB transaction the recompute must run in (the `writeTrial` tx). */
   transaction: import('../../repositories/interfaces/base.repository.interface').Transaction;
 }
