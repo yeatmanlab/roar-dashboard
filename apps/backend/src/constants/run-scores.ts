@@ -66,6 +66,11 @@ export const SCORE_NAME = {
   THETA_SE: 'thetaSE', // computed composite_foundational input
   THETA_SE_RAW: 'thetaSERaw', // raw composite SE — best-run recompute ranks on this
   NUM_ATTEMPTED: 'numAttempted',
+  // Normed composite scores resolved from the lookup table (computed, composite_foundational).
+  // Names mirror the columns the assessments already write for their per-task norms.
+  PERCENTILE: 'percentile',
+  STANDARD_SCORE: 'standardScore',
+  ROAR_SCORE: 'roarScore',
 } as const;
 
 export type ScoreNameValue = (typeof SCORE_NAME)[keyof typeof SCORE_NAME];

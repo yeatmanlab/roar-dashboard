@@ -7,6 +7,7 @@ import { RunRepository } from '../../repositories/run.repository';
 import type { CompositeInputScoreRow } from '../../repositories/run.repository';
 import { RunScoresRepository } from '../../repositories/run-scores.repository';
 import { TaskRepository } from '../../repositories/task.repository';
+import { UserRepository } from '../../repositories/user.repository';
 import type { NewRunScore } from '../../db/schema';
 import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
 import { SCORE_TYPE, SCORE_DOMAIN, SCORE_NAME } from '../../constants/run-scores';
@@ -16,8 +17,13 @@ import {
   LPW_COMPOSITE_WEIGHT,
   SRE_TRANSFORMED_WEIGHT,
   SRE_TRANSFORMED_FLOOR,
+  FOUNDATIONAL_COMPOSITE_NORMING_ENABLED,
+  FOUNDATIONAL_COMPOSITE_KEYING,
+  FOUNDATIONAL_COMPOSITE_MIN_VERSIONS,
 } from '../../constants/foundational-composite';
 import type { FoundationalCompositeSlug } from '../../constants/foundational-composite';
+import { loadCompositeNormTable } from './composite-norm-table';
+import { buildCompositeNormScoreRows, resolveCompositeDemographics } from './composite-norming';
 import type {
   FoundationalCompositeInputs,
   RecomputeFoundationalCompositeParams,
@@ -109,17 +115,47 @@ const COMPOSITE_VALUE_DECIMALS = 6;
 
 /**
  * Format a computed composite for storage: round to a fixed precision and drop trailing
- * zeros (e.g. `1.7196000000000002` -> `"1.7196"`, `1.5` -> `"1.5"`).
+ * zeros (e.g. `1.7196000000000002` -> `"1.7196"`, `1.5` -> `"1.5"`, `2` -> `"2.0"`).
+ * Preserves at least one decimal place to maintain consistency across all composite values.
  */
 function formatCompositeValue(value: number): string {
-  return String(Number(value.toFixed(COMPOSITE_VALUE_DECIMALS)));
+  const fixed = value.toFixed(COMPOSITE_VALUE_DECIMALS);
+  const trimmed = String(Number(fixed));
+  // Ensure at least one decimal place
+  return trimmed.includes('.') ? trimmed : `${trimmed}.0`;
+}
+
+/**
+ * Determine which domain to read thetaEstimate from for a given subtest.
+ * SWR reads from `composite` (the shared/foundational IRT scale);
+ * all other subtests read from `composite_foundational`.
+ */
+function getDomainForSlug(slug: FoundationalCompositeSlug): string {
+  if (slug === FOUNDATIONAL_COMPOSITE_SLUG.SWR) {
+    return SCORE_DOMAIN.COMPOSITE;
+  }
+  return SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL;
+}
+
+/**
+ * Check if a subtest's scoring version meets the minimum requirement for inclusion
+ * in the foundational composite.
+ */
+function meetsVersionRequirement(slug: FoundationalCompositeSlug, scoringVersion: number | null): boolean {
+  if (scoringVersion === null) {
+    return false;
+  }
+  const minVersion = FOUNDATIONAL_COMPOSITE_MIN_VERSIONS[slug];
+  return scoringVersion >= minVersion;
 }
 
 /**
  * Group the flat score rows (one reporting run per taskId) into the composite inputs,
- * routing each subtest by its slug: LPW subtests contribute their `composite_foundational`
- * theta pair; Sentence contributes its `composite_foundational` `thetaEstimate` (its SE is
- * ignored — Sentence feeds the Stage-2 blend, not the inverse-variance LPW).
+ * routing each subtest by its slug: LPW subtests contribute their theta pair (from the
+ * appropriate domain: SWR from `composite`, others from `composite_foundational`);
+ * Sentence contributes its `composite_foundational` `thetaEstimate` (its SE is ignored —
+ * Sentence feeds the Stage-2 blend, not the inverse-variance LPW).
+ * Subtests are skipped if their scoringVersion does not meet the minimum requirement.
  */
 function assembleInputs(
   rows: CompositeInputScoreRow[],
@@ -146,6 +182,13 @@ function assembleInputs(
       continue;
     }
 
+    // Check scoringVersion requirement for this subtest
+    const scoringVersion = parseScoreValue(scores.get(`${getDomainForSlug(slug)}|scoringVersion`));
+    const scoringVersionAsInt = scoringVersion !== null ? Math.floor(scoringVersion) : null;
+    if (!meetsVersionRequirement(slug, scoringVersionAsInt)) {
+      continue;
+    }
+
     if (slug === FOUNDATIONAL_COMPOSITE_SLUG.SRE) {
       sreTransformed = parseScoreValue(
         scores.get(`${SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL}|${SCORE_NAME.THETA_ESTIMATE}`),
@@ -153,10 +196,9 @@ function assembleInputs(
       continue;
     }
 
-    const thetaEstimate = parseScoreValue(
-      scores.get(`${SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL}|${SCORE_NAME.THETA_ESTIMATE}`),
-    );
-    const thetaSE = parseScoreValue(scores.get(`${SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL}|${SCORE_NAME.THETA_SE}`));
+    const domain = getDomainForSlug(slug);
+    const thetaEstimate = parseScoreValue(scores.get(`${domain}|${SCORE_NAME.THETA_ESTIMATE}`));
+    const thetaSE = parseScoreValue(scores.get(`${domain}|${SCORE_NAME.THETA_SE}`));
     if (thetaEstimate !== null && thetaSE !== null) {
       lpw.push({ thetaEstimate, thetaSE });
     }
@@ -186,10 +228,12 @@ export function FoundationalCompositeService({
   runRepository = new RunRepository(),
   runScoresRepository = new RunScoresRepository(),
   taskRepository = new TaskRepository(),
+  userRepository = new UserRepository(),
 }: {
   runRepository?: RunRepository;
   runScoresRepository?: RunScoresRepository;
   taskRepository?: TaskRepository;
+  userRepository?: UserRepository;
 } = {}) {
   // Closure-scoped memo of resolved foundational slug -> taskId. Task slugs are immutable,
   // so a resolved id is cached for the lifetime of the service instance. Unresolved slugs
@@ -227,6 +271,52 @@ export function FoundationalCompositeService({
   }
 
   /**
+   * Resolve the composite's normed score rows (percentile / standard score / …) from the lookup
+   * table. Best-effort: any failure — missing user, unavailable/unpublished table, parse error —
+   * is logged and yields an empty array so the caller still writes the composite `thetaEstimate`.
+   * Returns `[]` (and does no work) when norming is disabled by the feature gate.
+   *
+   * Demographics come from the core-DB user record (a non-transactional read; the assessment-DB
+   * write stays in `transaction`), with the participant's age resolved as of `referenceDate`
+   * (the composite's "date of the latest assessment"). The table load is cached after the first
+   * call, so only the first trial per process pays the fetch.
+   */
+  async function resolveCompositeNormRows(
+    userId: string,
+    administrationId: string,
+    compositeRunId: string,
+    composite: number,
+    referenceDate: Date,
+  ): Promise<NewRunScore[]> {
+    if (!FOUNDATIONAL_COMPOSITE_NORMING_ENABLED) {
+      return [];
+    }
+    try {
+      const user = await userRepository.getById({ id: userId });
+      if (!user) {
+        return [];
+      }
+      const tableRows = await loadCompositeNormTable();
+      if (!tableRows) {
+        return [];
+      }
+      return buildCompositeNormScoreRows({
+        runId: compositeRunId,
+        composite,
+        demographics: resolveCompositeDemographics(user, referenceDate),
+        tableRows,
+        keying: FOUNDATIONAL_COMPOSITE_KEYING,
+      });
+    } catch (error) {
+      logger.warn(
+        { err: error, context: { userId, administrationId, compositeRunId } },
+        'Foundational-composite norming failed; writing composite theta only',
+      );
+      return [];
+    }
+  }
+
+  /**
    * Recompute and persist the foundational composite for the run's student/administration.
    *
    * No-op when: the administration is the anonymous sentinel, the triggering run's task is
@@ -237,7 +327,7 @@ export function FoundationalCompositeService({
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database work fails
    */
   async function recomputeForRun(params: RecomputeFoundationalCompositeParams): Promise<void> {
-    const { userId, administrationId, triggeringTaskId, transaction } = params;
+    const { userId, administrationId, triggeringTaskId, triggeredAt, transaction } = params;
 
     // Anonymous runs have no real administration context to aggregate over.
     if (administrationId === ANONYMOUS_RUN_ADMINISTRATION_ID) {
@@ -273,7 +363,7 @@ export function FoundationalCompositeService({
         transaction,
       });
 
-      const { rows, reportingTaskIds } = await runRepository.getReportingRunScoresForComposite({
+      const { rows, reportingTaskIds, latestCompletedAt } = await runRepository.getReportingRunScoresForComposite({
         userId,
         administrationId,
         taskIds,
@@ -316,7 +406,7 @@ export function FoundationalCompositeService({
         transaction,
       });
 
-      const scoreRow: NewRunScore = {
+      const thetaRow: NewRunScore = {
         runId: compositeRun.id,
         type: SCORE_TYPE.COMPUTED,
         domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
@@ -326,8 +416,27 @@ export function FoundationalCompositeService({
         categoryScore: null,
       };
 
+      // Norming reference age = the user's age at the "date of the latest assessment": the most
+      // recent contributing reporting-run completion, or this trial's timestamp when nothing has
+      // completed yet (scoring runs per-trial, including mid-assessment). DECISION (flagged for
+      // the scoring team): which age to use when it changes across a multi-assessment composite is
+      // a research question; the default here is the latest assessment's date.
+      const referenceDate =
+        latestCompletedAt !== null && latestCompletedAt > triggeredAt ? latestCompletedAt : triggeredAt;
+
+      // Resolve normed scores (percentile / standard score / …) from the lookup table and write
+      // them alongside the theta in one atomic upsert. Best-effort + gated: when norming is
+      // disabled or the table is unavailable this is `[]`, so only the theta is written.
+      const normRows = await resolveCompositeNormRows(
+        userId,
+        administrationId,
+        compositeRun.id,
+        composite,
+        referenceDate,
+      );
+
       await runScoresRepository.upsertMany({
-        data: [scoreRow],
+        data: [thetaRow, ...normRows],
         transaction,
       });
     } catch (error) {

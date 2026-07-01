@@ -6,11 +6,19 @@ import {
   computeFoundationalComposite,
 } from './foundational-composite.service';
 import { ApiError } from '../../errors/api-error';
-import type { MockRunRepository, MockRunScoresRepository, MockTaskRepository } from '../../test-support/repositories';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import type {
+  MockRunRepository,
+  MockRunScoresRepository,
+  MockTaskRepository,
+  MockUserRepository,
+} from '../../test-support/repositories';
 import {
   createMockRunRepository,
   createMockRunScoresRepository,
   createMockTaskRepository,
+  createMockUserRepository,
 } from '../../test-support/repositories';
 import { TaskFactory } from '../../test-support/factories/task.factory';
 import type { CompositeInputScoreRow } from '../../repositories/run.repository';
@@ -152,10 +160,14 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
   // A labelled test double for the assessment transaction (no real DB in unit tests).
   // recomputeForRun requires a transaction, so every call passes this.
   const tx = { __brand: 'tx' } as unknown as Transaction;
+  // Fixed trigger timestamp; norming is gated off in these tests so its only role is to satisfy
+  // the required param.
+  const TRIGGERED_AT = new Date('2026-01-15T00:00:00Z');
 
   let runRepository: MockRunRepository;
   let runScoresRepository: MockRunScoresRepository;
   let taskRepository: MockTaskRepository;
+  let userRepository: MockUserRepository;
   let service: ReturnType<typeof FoundationalCompositeService>;
 
   beforeEach(() => {
@@ -164,6 +176,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
     runRepository = createMockRunRepository();
     runScoresRepository = createMockRunScoresRepository();
     taskRepository = createMockTaskRepository();
+    userRepository = createMockUserRepository();
 
     taskRepository.getBySlug.mockImplementation(async (slug: string) => {
       const id = slugToId.get(slug);
@@ -172,13 +185,18 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
     runRepository.findOrCreateCompositeRun.mockResolvedValue({ id: COMPOSITE_RUN_ID });
     runScoresRepository.upsertMany.mockResolvedValue([{ id: 'score-id' }]);
 
-    service = FoundationalCompositeService({ runRepository, runScoresRepository, taskRepository });
+    service = FoundationalCompositeService({ runRepository, runScoresRepository, taskRepository, userRepository });
   });
 
-  const thetaRow = (taskId: string, name: string, value: string): CompositeInputScoreRow => ({
+  const thetaRow = (
+    taskId: string,
+    name: string,
+    value: string,
+    domain: string = SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+  ): CompositeInputScoreRow => ({
     taskId,
     runId: `run-${taskId}`,
-    domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+    domain,
     name,
     value,
   });
@@ -199,6 +217,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
       userId: USER_ID,
       administrationId: ANONYMOUS_RUN_ADMINISTRATION_ID,
       triggeringTaskId: TASK_ID.pa,
+      triggeredAt: TRIGGERED_AT,
       transaction: tx,
     });
 
@@ -214,6 +233,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
       userId: USER_ID,
       administrationId: ADMIN_ID,
       triggeringTaskId: 'task-some-other-assessment',
+      triggeredAt: TRIGGERED_AT,
       transaction: tx,
     });
 
@@ -227,7 +247,12 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
     // SE = 0.5 → weight 4 → single-subtest LPW is exactly 1.5 (no float residue), so the
     // full upserted row can be asserted by exact equality below.
     runRepository.getReportingRunScoresForComposite.mockResolvedValue({
-      rows: [thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.5'), thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5')],
+      latestCompletedAt: null,
+      rows: [
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.5'),
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.pa, 'scoringVersion', '5'),
+      ],
       reportingTaskIds: [TASK_ID.pa],
     });
 
@@ -235,6 +260,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
       userId: USER_ID,
       administrationId: ADMIN_ID,
       triggeringTaskId: TASK_ID.pa,
+      triggeredAt: TRIGGERED_AT,
       transaction: tx,
     });
 
@@ -256,15 +282,47 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
     ]);
   });
 
+  it('ignores a subtest whose thetaSE score is missing (undefined value parses to null)', async () => {
+    // PA has a full theta pair; Letter has a thetaEstimate but NO thetaSE row, so parseScoreValue
+    // sees `undefined` for Letter's SE and Letter is dropped from the LPW average. The composite
+    // is therefore PA's 1.5, not pulled toward Letter's 3.0.
+    runRepository.getReportingRunScoresForComposite.mockResolvedValue({
+      latestCompletedAt: null,
+      rows: [
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.5'),
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.pa, 'scoringVersion', '5'),
+        thetaRow(TASK_ID.letter, SCORE_NAME.THETA_ESTIMATE, '3.0'), // no thetaSE row for Letter
+        thetaRow(TASK_ID.letter, 'scoringVersion', '1'),
+      ],
+      reportingTaskIds: [TASK_ID.pa, TASK_ID.letter],
+    });
+
+    await service.recomputeForRun({
+      userId: USER_ID,
+      administrationId: ADMIN_ID,
+      triggeringTaskId: TASK_ID.pa,
+      triggeredAt: TRIGGERED_AT,
+      transaction: tx,
+    });
+
+    const upsertArg = runScoresRepository.upsertMany.mock.calls[0]![0];
+    expect(upsertArg.data[0]!.value).toBe('1.5');
+  });
+
   it('blends LPW and Sentence and forwards the transaction', async () => {
     // LPW = (1*4 + 2*4)/8 = 1.5 ; final = 0.514*1.5 + 0.486*1.0 = 1.257
     runRepository.getReportingRunScoresForComposite.mockResolvedValue({
+      latestCompletedAt: null,
       rows: [
         thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.0'),
         thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5'),
-        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_ESTIMATE, '2.0'),
-        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.pa, 'scoringVersion', '5'),
+        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_ESTIMATE, '2.0', SCORE_DOMAIN.COMPOSITE),
+        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_SE, '0.5', SCORE_DOMAIN.COMPOSITE),
+        thetaRow(TASK_ID.swr, 'scoringVersion', '7', SCORE_DOMAIN.COMPOSITE),
         sreRow('1.0'),
+        thetaRow(TASK_ID.sre, 'scoringVersion', '5'),
       ],
       reportingTaskIds: [TASK_ID.pa, TASK_ID.swr, TASK_ID.sre],
     });
@@ -273,6 +331,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
       userId: USER_ID,
       administrationId: ADMIN_ID,
       triggeringTaskId: TASK_ID.swr,
+      triggeredAt: TRIGGERED_AT,
       transaction: tx,
     });
 
@@ -294,9 +353,11 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
 
   it('falls back to LPW when LPW is below the floor', async () => {
     runRepository.getReportingRunScoresForComposite.mockResolvedValue({
+      latestCompletedAt: null,
       rows: [
         thetaRow(TASK_ID.letter, SCORE_NAME.THETA_ESTIMATE, '-5'),
         thetaRow(TASK_ID.letter, SCORE_NAME.THETA_SE, '0.3'),
+        thetaRow(TASK_ID.letter, 'scoringVersion', '1'),
         sreRow('1.0'),
       ],
       reportingTaskIds: [TASK_ID.letter, TASK_ID.sre],
@@ -306,6 +367,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
       userId: USER_ID,
       administrationId: ADMIN_ID,
       triggeringTaskId: TASK_ID.letter,
+      triggeredAt: TRIGGERED_AT,
       transaction: tx,
     });
 
@@ -314,7 +376,8 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
 
   it('uses the Sentence score alone when only Sentence was taken', async () => {
     runRepository.getReportingRunScoresForComposite.mockResolvedValue({
-      rows: [sreRow('2.5')],
+      latestCompletedAt: null,
+      rows: [sreRow('2.5'), thetaRow(TASK_ID.sre, 'scoringVersion', '5')],
       reportingTaskIds: [TASK_ID.sre],
     });
 
@@ -322,6 +385,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
       userId: USER_ID,
       administrationId: ADMIN_ID,
       triggeringTaskId: TASK_ID.sre,
+      triggeredAt: TRIGGERED_AT,
       transaction: tx,
     });
 
@@ -331,7 +395,12 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
   it('warns (and falls back to LPW-only) when a Sentence reporting run produced no transformed score', async () => {
     // PA present; SRE has a reporting run but emitted NO composite_foundational thetaEstimate row.
     runRepository.getReportingRunScoresForComposite.mockResolvedValue({
-      rows: [thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.5'), thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5')],
+      latestCompletedAt: null,
+      rows: [
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.5'),
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.pa, 'scoringVersion', '5'),
+      ],
       reportingTaskIds: [TASK_ID.pa, TASK_ID.sre],
     });
 
@@ -339,6 +408,7 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
       userId: USER_ID,
       administrationId: ADMIN_ID,
       triggeringTaskId: TASK_ID.sre,
+      triggeredAt: TRIGGERED_AT,
       transaction: tx,
     });
 
@@ -352,12 +422,17 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
   });
 
   it('writes nothing when there are no usable inputs', async () => {
-    runRepository.getReportingRunScoresForComposite.mockResolvedValue({ rows: [], reportingTaskIds: [] });
+    runRepository.getReportingRunScoresForComposite.mockResolvedValue({
+      rows: [],
+      reportingTaskIds: [],
+      latestCompletedAt: null,
+    });
 
     await service.recomputeForRun({
       userId: USER_ID,
       administrationId: ADMIN_ID,
       triggeringTaskId: TASK_ID.pa,
+      triggeredAt: TRIGGERED_AT,
       transaction: tx,
     });
 
@@ -365,15 +440,169 @@ describe('FoundationalCompositeService.recomputeForRun', () => {
     expect(runScoresRepository.upsertMany).not.toHaveBeenCalled();
   });
 
+  it('reads SWR from composite domain instead of composite_foundational', async () => {
+    // SWR writes to both composite and composite_foundational, but the service should read
+    // from composite domain specifically for SWR.
+    runRepository.getReportingRunScoresForComposite.mockResolvedValue({
+      latestCompletedAt: null,
+      rows: [
+        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_ESTIMATE, '2.0', SCORE_DOMAIN.COMPOSITE),
+        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_SE, '0.5', SCORE_DOMAIN.COMPOSITE),
+        thetaRow(TASK_ID.swr, 'scoringVersion', '7', SCORE_DOMAIN.COMPOSITE),
+      ],
+      reportingTaskIds: [TASK_ID.swr],
+    });
+
+    await service.recomputeForRun({
+      userId: USER_ID,
+      administrationId: ADMIN_ID,
+      triggeringTaskId: TASK_ID.swr,
+      triggeredAt: TRIGGERED_AT,
+      transaction: tx,
+    });
+
+    const upsertArg = runScoresRepository.upsertMany.mock.calls[0]![0];
+    expect(upsertArg.data[0]!.value).toBe('2.0');
+  });
+
+  it('skips SWR if scoringVersion is below 7', async () => {
+    runRepository.getReportingRunScoresForComposite.mockResolvedValue({
+      latestCompletedAt: null,
+      rows: [
+        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_ESTIMATE, '2.0', SCORE_DOMAIN.COMPOSITE),
+        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_SE, '0.5', SCORE_DOMAIN.COMPOSITE),
+        thetaRow(TASK_ID.swr, 'scoringVersion', '6', SCORE_DOMAIN.COMPOSITE),
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.5'),
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.pa, 'scoringVersion', '5', SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL),
+      ],
+      reportingTaskIds: [TASK_ID.swr, TASK_ID.pa],
+    });
+
+    await service.recomputeForRun({
+      userId: USER_ID,
+      administrationId: ADMIN_ID,
+      triggeringTaskId: TASK_ID.swr,
+      triggeredAt: TRIGGERED_AT,
+      transaction: tx,
+    });
+
+    // SWR is skipped (version 6 < 7), so composite should only include PA (1.5)
+    const upsertArg = runScoresRepository.upsertMany.mock.calls[0]![0];
+    expect(upsertArg.data[0]!.value).toBe('1.5');
+  });
+
+  it('skips PA if scoringVersion is below 5', async () => {
+    runRepository.getReportingRunScoresForComposite.mockResolvedValue({
+      latestCompletedAt: null,
+      rows: [
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_ESTIMATE, '1.5'),
+        thetaRow(TASK_ID.pa, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.pa, 'scoringVersion', '4', SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL),
+        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_ESTIMATE, '2.0', SCORE_DOMAIN.COMPOSITE),
+        thetaRow(TASK_ID.swr, SCORE_NAME.THETA_SE, '0.5', SCORE_DOMAIN.COMPOSITE),
+        thetaRow(TASK_ID.swr, 'scoringVersion', '7', SCORE_DOMAIN.COMPOSITE),
+      ],
+      reportingTaskIds: [TASK_ID.pa, TASK_ID.swr],
+    });
+
+    await service.recomputeForRun({
+      userId: USER_ID,
+      administrationId: ADMIN_ID,
+      triggeringTaskId: TASK_ID.pa,
+      triggeredAt: TRIGGERED_AT,
+      transaction: tx,
+    });
+
+    // PA is skipped (version 4 < 5), so composite should only include SWR (2.0)
+    const upsertArg = runScoresRepository.upsertMany.mock.calls[0]![0];
+    expect(upsertArg.data[0]!.value).toBe('2.0');
+  });
+
+  it('skips SRE if scoringVersion is below 5', async () => {
+    runRepository.getReportingRunScoresForComposite.mockResolvedValue({
+      latestCompletedAt: null,
+      rows: [
+        thetaRow(TASK_ID.letter, SCORE_NAME.THETA_ESTIMATE, '1.5'),
+        thetaRow(TASK_ID.letter, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.letter, 'scoringVersion', '1', SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL),
+        sreRow('1.0'), // SRE without version (or version < 5)
+      ],
+      reportingTaskIds: [TASK_ID.letter, TASK_ID.sre],
+    });
+
+    await service.recomputeForRun({
+      userId: USER_ID,
+      administrationId: ADMIN_ID,
+      triggeringTaskId: TASK_ID.letter,
+      triggeredAt: TRIGGERED_AT,
+      transaction: tx,
+    });
+
+    // Letter is included (version 1 >= 1), but SRE is skipped, so composite is LPW-only (1.5)
+    const upsertArg = runScoresRepository.upsertMany.mock.calls[0]![0];
+    expect(upsertArg.data[0]!.value).toBe('1.5');
+  });
+
+  it('includes Letter if it has any scoringVersion (>= 1)', async () => {
+    runRepository.getReportingRunScoresForComposite.mockResolvedValue({
+      latestCompletedAt: null,
+      rows: [
+        thetaRow(TASK_ID.letter, SCORE_NAME.THETA_ESTIMATE, '1.5'),
+        thetaRow(TASK_ID.letter, SCORE_NAME.THETA_SE, '0.5'),
+        thetaRow(TASK_ID.letter, 'scoringVersion', '1', SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL),
+      ],
+      reportingTaskIds: [TASK_ID.letter],
+    });
+
+    await service.recomputeForRun({
+      userId: USER_ID,
+      administrationId: ADMIN_ID,
+      triggeringTaskId: TASK_ID.letter,
+      triggeredAt: TRIGGERED_AT,
+      transaction: tx,
+    });
+
+    const upsertArg = runScoresRepository.upsertMany.mock.calls[0]![0];
+    expect(upsertArg.data[0]!.value).toBe('1.5');
+  });
+
   it('wraps unexpected repository errors in a 500 ApiError', async () => {
     runRepository.getReportingRunScoresForComposite.mockRejectedValue(new Error('db down'));
 
     const error: unknown = await service
-      .recomputeForRun({ userId: USER_ID, administrationId: ADMIN_ID, triggeringTaskId: TASK_ID.pa, transaction: tx })
+      .recomputeForRun({
+        userId: USER_ID,
+        administrationId: ADMIN_ID,
+        triggeringTaskId: TASK_ID.pa,
+        triggeredAt: TRIGGERED_AT,
+        transaction: tx,
+      })
       .then(() => null)
       .catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(ApiError);
     expect((error as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+  });
+
+  it('re-throws an ApiError from the repository unchanged (not wrapped in a 500)', async () => {
+    const apiError = new ApiError(ApiErrorMessage.FORBIDDEN, {
+      statusCode: StatusCodes.FORBIDDEN,
+      code: ApiErrorCode.AUTH_FORBIDDEN,
+    });
+    runRepository.lockCompositeForUpdate.mockRejectedValue(apiError);
+
+    const error: unknown = await service
+      .recomputeForRun({
+        userId: USER_ID,
+        administrationId: ADMIN_ID,
+        triggeringTaskId: TASK_ID.pa,
+        triggeredAt: TRIGGERED_AT,
+        transaction: tx,
+      })
+      .then(() => null)
+      .catch((e: unknown) => e);
+
+    expect(error).toBe(apiError); // same instance — the `instanceof ApiError` branch re-throws as-is
   });
 });

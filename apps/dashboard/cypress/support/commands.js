@@ -79,11 +79,13 @@ Cypress.Commands.add('performCleverOAuth', (schoolName, username, password) => {
 
       cy.get('[role="combobox"]').find('input[aria-autocomplete="list"]').type(schoolName);
       cy.get('ul > li').contains(schoolName).should('be.visible').click();
+      cy.get('a.AuthMethodCard--card[aria-label="Password"]').click();
 
       cy.get('input#username').type(username);
+      // cy.contains('button[type="submit"]', 'Next').should('be.visible').click();
       cy.get('input#password').type(password, { log: false });
       cy.wait(1000); // Delay to simulate user input, as Clever SSO is sensitive to rapid input.
-      cy.get('button#UsernamePasswordForm--loginButton').click();
+      cy.contains('button[type="submit"]', 'Log in').should('be.visible').click();
     },
   );
 
