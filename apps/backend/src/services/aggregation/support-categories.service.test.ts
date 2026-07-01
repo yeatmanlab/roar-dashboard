@@ -5,9 +5,11 @@ import type { Administration } from '../../db/schema';
 import { ApiError } from '../../errors/api-error';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
-import { createMockAdministrationRepository } from '../../test-support/repositories';
+import { AggregationRepository } from '../../repositories/aggregation.repository';
+import { createMockAdministrationRepository, createMockAggregationRepository } from '../../test-support/repositories';
 
 vi.mock('../../repositories/administration-task-variant.repository');
+vi.mock('../../repositories/aggregation.repository');
 
 describe('aggregateSupportCategories', () => {
   let mockAdministrationRepository: MockedObject<AdministrationRepository>;
@@ -23,6 +25,8 @@ describe('aggregateSupportCategories', () => {
           getByAdministrationIds: vi.fn().mockResolvedValue(new Map()),
         }) as unknown as AdministrationTaskVariantRepository,
     );
+    // Mock AggregationRepository to return empty results by default
+    vi.mocked(AggregationRepository).mockImplementation(() => createMockAggregationRepository());
     // Create service instance with mocked repositories
     const service = AggregationService({
       administrationRepository: mockAdministrationRepository,
@@ -76,7 +80,7 @@ describe('aggregateSupportCategories', () => {
       expect(result).toBeNull();
     });
 
-    it.skip('aggregates runs by support level (achievedSkill, developingSkill, needsExtraSupport)', async () => {
+    it('aggregates runs by support level (achievedSkill, developingSkill, needsExtraSupport)', async () => {
       const mockAdmin: Partial<Administration> = {
         id: 'admin-123',
         name: 'Test Admin',
@@ -118,76 +122,48 @@ describe('aggregateSupportCategories', () => {
           }) as unknown as AdministrationTaskVariantRepository,
       );
 
-      // Mock coreDb with separate query methods
-      const mockCoreDb = {
-        select: vi.fn(),
-        from: vi.fn(),
-        where: vi.fn(),
-        innerJoin: vi.fn(),
-      };
+      // Mock aggregation repository methods
+      const mockAggregationRepo = createMockAggregationRepository();
+      mockAggregationRepo.getBestRunsForVariants.mockResolvedValue([
+        { id: 'run-1', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
+        { id: 'run-2', userId: 'user-2', taskVariantId: 'variant-1', administrationId: 'admin-123' },
+      ]);
+      mockAggregationRepo.getDemographicsByRunIds.mockResolvedValue(
+        new Map([
+          ['run-1', '2'],
+          ['run-2', '3'],
+        ]),
+      );
+      mockAggregationRepo.getScoresByRunIds.mockResolvedValue(
+        new Map([
+          ['run-1', { percentile: 75, rawScore: 650, scoringVersion: 1 }],
+          ['run-2', { percentile: 45, rawScore: 500, scoringVersion: 1 }],
+        ]),
+      );
+      mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue([
+        { userId: 'user-1', schoolId: 'school-1', schoolName: 'School A' },
+        { userId: 'user-2', schoolId: 'school-1', schoolName: 'School A' },
+      ]);
+      vi.mocked(AggregationRepository).mockImplementation(() => mockAggregationRepo);
 
-      // Setup query chains - each query type returns a different array
-      const createChain = (data: unknown) => ({
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        innerJoin: vi.fn().mockReturnThis(),
-        then: vi.fn((resolve) => {
-          resolve(data);
-          return Promise.resolve();
-        }),
+      const service = AggregationService({
+        administrationRepository: mockAdministrationRepository,
       });
-
-      // Track which query is being executed
-      let queryIndex = 0;
-      mockCoreDb.select.mockImplementation(() => {
-        const queries = [
-          // fdwRuns
-          [
-            { id: 'run-1', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
-            { id: 'run-2', userId: 'user-2', taskVariantId: 'variant-1', administrationId: 'admin-123' },
-          ],
-          // runDemographics
-          [
-            { runId: 'run-1', grade: '2' },
-            { runId: 'run-2', grade: '3' },
-          ],
-          // fdwRunScores
-          [
-            { runId: 'run-1', type: 'computed', name: 'percentile', value: '75' },
-            { runId: 'run-1', type: 'raw', name: 'rawScore', value: '650' },
-            { runId: 'run-2', type: 'computed', name: 'percentile', value: '45' },
-            { runId: 'run-2', type: 'raw', name: 'rawScore', value: '500' },
-          ],
-          // userClasses
-          [
-            { userId: 'user-1', schoolId: 'school-1', schoolName: 'School A' },
-            { userId: 'user-2', schoolId: 'school-1', schoolName: 'School A' },
-          ],
-        ];
-
-        const data = queries[queryIndex];
-        queryIndex++;
-        return createChain(data);
-      });
-
-      mockCoreDb.from.mockReturnValue(mockCoreDb);
-      mockCoreDb.where.mockReturnValue(mockCoreDb);
-      mockCoreDb.innerJoin.mockReturnValue(mockCoreDb);
-
-      const result = await aggregateSupportCategories({
+      const result = await service.aggregateSupportCategories({
         administrationId: 'admin-123',
         districtId: 'district-456',
       });
 
       expect(result).not.toBeNull();
       expect(result!['task-swr-uuid']).toBeDefined();
-      // Run 1 with percentile 75 should be achievedSkill
-      expect(result!['task-swr-uuid']!.achievedSkill.total).toBeGreaterThan(0);
-      // Run 2 with percentile 45 should be developingSkill
-      expect(result!['task-swr-uuid']!.developingSkill.total).toBeGreaterThan(0);
-    }, 10000);
+      // Run 1 with percentile 75 (above 70) should be achievedSkill
+      expect(result!['task-swr-uuid']!.achievedSkill.total).toBe(1);
+      // Run 2 with percentile 45 (40-50 range) should be developingSkill
+      expect(result!['task-swr-uuid']!.developingSkill.total).toBe(1);
+      expect(result!['task-swr-uuid']!.needsExtraSupport.total).toBe(0);
+    });
 
-    it.skip('groups aggregated runs by school and grade', async () => {
+    it('groups aggregated runs by school and grade', async () => {
       const mockAdmin: Partial<Administration> = {
         id: 'admin-123',
         name: 'Test Admin',
