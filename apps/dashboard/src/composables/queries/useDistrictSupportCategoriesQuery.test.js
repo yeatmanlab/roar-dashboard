@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
-import { getDistrictSupportCategories } from '@/helpers/query/scores';
+import { getAdministrationSupportCategories } from '@/helpers/query/scores';
 import useDistrictSupportCategoriesQuery from './useDistrictSupportCategoriesQuery';
 
 vi.mock('@/helpers/query/utils', () => ({
@@ -19,7 +19,7 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
 });
 
 vi.mock('@/helpers/query/scores', () => ({
-  getDistrictSupportCategories: vi.fn().mockImplementation(() => {}),
+  getAdministrationSupportCategories: vi.fn().mockImplementation(() => {}),
 }));
 
 describe('useDistrictSupportCategoriesQuery', () => {
@@ -51,7 +51,7 @@ describe('useDistrictSupportCategoriesQuery', () => {
       }),
     });
 
-    expect(getDistrictSupportCategories).toHaveBeenCalledWith(districtId, assignmentId);
+    expect(getAdministrationSupportCategories).toHaveBeenCalledWith(assignmentId, districtId);
   });
 
   it('should allow the query to be disabled via the passed query options', () => {
@@ -73,7 +73,7 @@ describe('useDistrictSupportCategoriesQuery', () => {
       }),
     });
 
-    expect(getDistrictSupportCategories).not.toHaveBeenCalled();
+    expect(getAdministrationSupportCategories).not.toHaveBeenCalled();
   });
 
   it('should not fetch data if district or assignment ID is not available', async () => {
@@ -95,12 +95,12 @@ describe('useDistrictSupportCategoriesQuery', () => {
       }),
     });
 
-    expect(getDistrictSupportCategories).not.toHaveBeenCalled();
+    expect(getAdministrationSupportCategories).not.toHaveBeenCalled();
 
     assignmentId.value = nanoid();
     await nextTick();
 
-    expect(getDistrictSupportCategories).toHaveBeenCalledWith(districtId, assignmentId);
+    expect(getAdministrationSupportCategories).toHaveBeenCalledWith(assignmentId, districtId);
   });
 
   it('should not let queryOptions override the internally computed value', async () => {
@@ -122,6 +122,6 @@ describe('useDistrictSupportCategoriesQuery', () => {
       }),
     });
 
-    expect(getDistrictSupportCategories).not.toHaveBeenCalled();
+    expect(getAdministrationSupportCategories).not.toHaveBeenCalled();
   });
 });

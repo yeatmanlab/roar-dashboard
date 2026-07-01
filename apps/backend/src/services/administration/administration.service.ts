@@ -2250,6 +2250,46 @@ export function AdministrationService({
     }
   }
 
+  /**
+   * Aggregate support categories for an administration.
+   *
+   * Aggregates support category counts across schools and grades for all scored tasks
+   * in a district administration. Requires read access to the administration.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration ID
+   * @param districtId - The district ID (for context)
+   * @returns Aggregated support categories or null if no data
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access
+   */
+  async function aggregateSupportCategories(authContext: AuthContext, administrationId: string, districtId: string) {
+    const { userId } = authContext;
+
+    try {
+      // Verify user has access to the administration
+      await verifyAdministrationAccess(authContext, administrationId);
+
+      // Delegate to the aggregation service
+      const { aggregateSupportCategories: aggregate } = await import('../aggregation');
+      return aggregate({ assignmentId: administrationId, districtId }, { administrationRepository, schoolRepository });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, districtId } },
+        'Failed to aggregate support categories',
+      );
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId, districtId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     verifyAdministrationAccess,
     list,
@@ -2264,5 +2304,6 @@ export function AdministrationService({
     getUserAdministration,
     listUserAdministrationAgreements,
     update,
+    aggregateSupportCategories,
   };
 }

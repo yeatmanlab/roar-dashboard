@@ -5,31 +5,39 @@ import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getRoarApiClient } from '@/clients/roar-api';
 import { useAuthStore } from '@/store/auth';
 import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
-import { DISTRICT_SUPPORT_CATEGORIES_QUERY_KEY } from '@/constants/queryKeys';
+import { ADMINISTRATION_SUPPORT_CATEGORIES_QUERY_KEY } from '@/constants/queryKeys';
 
 const MAX_RETRIES = 3;
 
 /**
- * District Support Categories query.
+ * Administration support categories query.
  *
  * Fetches aggregated support category counts and distributions across schools and grades
- * for all scored tasks in a district administration from the ts-rest backend API.
+ * for all scored tasks in a district administration from
+ * `GET /administrations/:id/support-categories?districtId=:districtId`.
  *
- * @param {String} districtId - The district UUID
- * @param {String} administrationId - The administration UUID
- * @param {QueryOptions|undefined} queryOptions - Optional TanStack query options
- * @returns {UseQueryResult} The TanStack query result
+ * Returns a map of taskId → TaskCounts containing:
+ * - Support levels: achievedSkill, developingSkill, needsExtraSupport
+ * - Score ranges: raw and percentile breakdowns
+ * - Hierarchical counts: by school, grade, and total
+ *
+ * Supports scored tasks: swr, pa, sre, cva, morphology, trog, roar-inference, swr-es, sre-es.
+ *
+ * @param {import('vue').MaybeRefOrGetter<string>} administrationId - The administration UUID.
+ * @param {import('vue').MaybeRefOrGetter<string>} districtId - The district UUID.
+ * @param {QueryOptions|undefined} queryOptions - Optional TanStack query options.
+ * @returns {UseQueryResult} The TanStack query result resolving to aggregated support categories.
  */
-const useDistrictSupportCategoriesQuery = (districtId, administrationId, queryOptions = undefined) => {
+const useAdministrationSupportCategoriesQuery = (administrationId, districtId, queryOptions = undefined) => {
   const authStore = useAuthStore();
   const conditions = [
     () => Boolean(authStore.accessToken),
-    () => Boolean(toValue(districtId)) && Boolean(toValue(administrationId)),
+    () => Boolean(toValue(administrationId)) && Boolean(toValue(districtId)),
   ];
   const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
-    queryKey: [DISTRICT_SUPPORT_CATEGORIES_QUERY_KEY, districtId, administrationId],
+    queryKey: [ADMINISTRATION_SUPPORT_CATEGORIES_QUERY_KEY, administrationId, districtId],
     queryFn: async () => {
       const client = getRoarApiClient();
       const result = await client.administrations.aggregateSupportCategories({
@@ -57,4 +65,4 @@ const useDistrictSupportCategoriesQuery = (districtId, administrationId, queryOp
   });
 };
 
-export default useDistrictSupportCategoriesQuery;
+export default useAdministrationSupportCategoriesQuery;
