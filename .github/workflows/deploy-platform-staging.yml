@@ -28,6 +28,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       image-version: ${{ steps.docker-build.outputs.image-version }}
+      image-digest: ${{ steps.docker-build.outputs.image-digest }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -82,23 +83,38 @@ jobs:
     name: Deploy backend
     needs: [build-backend, migrate-db]
     runs-on: ubuntu-latest
-    environment: platform:staging
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Deploy to Cloud Run
-        uses: ./.github/actions/deploy-cloud-run
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
         with:
-          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
-          region: ${{ secrets.GCP_BACKEND_REGION }}
-          project-id: ${{ secrets.GCP_PROJECT_ID }}
-          artifact-registry-repo: ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}
-          cloud-run-service: ${{ secrets.GCP_CLOUD_RUN_SERVICE_NAME }}
-          image-name: roar-backend
-          image-tag: ${{ needs.build-backend.outputs.image-version }}
+          app-id: ${{ secrets.GH_IAC_DEPLOYER_APP_ID }}
+          private-key: ${{ secrets.GH_IAC_DEPLOYER_PRIVATE_KEY }}
+          owner: yeatmanlab
+          repositories: roar-iac
+
+      - name: Validate image digest format
+        run: |
+          DIGEST="${{ needs.build-backend.outputs.image-digest }}"
+          if [[ ! "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "::error::Invalid image digest: ${DIGEST}"
+            exit 1
+          fi
+          echo "Digest validated: ${DIGEST}"
+
+      - name: Dispatch deploy to roar-iac
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: yeatmanlab/roar-iac
+          event-type: deploy-backend-api
+          client-payload: >-
+            {
+              "image_digest": "${{ needs.build-backend.outputs.image-digest }}",
+              "source_ref": "${{ github.sha }}",
+              "target": "staging"
+            }
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Deploy frontend

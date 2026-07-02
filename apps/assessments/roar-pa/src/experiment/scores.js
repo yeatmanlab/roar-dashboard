@@ -4,6 +4,7 @@ import _reduce from 'lodash/reduce';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
+import { selectNormRow } from '@roar-platform/scoring-tables';
 import { COMPOSITE_DOMAIN, pa } from '@roar-platform/assessment-schema';
 
 const { PA_TASK_ID, PA_SCORE_KIND, PA_SCORE_TABLE_URL, PA_SCORING_VERSION, PA_COMPOSITE_FOUNDATIONAL } = pa;
@@ -262,19 +263,32 @@ export class RoarScores {
       let myRow;
 
       if (this.isAdaptiveScoring()) {
-        const thetaEstimate = store.session.get('thetas').scaled;
-        const roundedTheta = Number(thetaEstimate.toFixed(1));
-        myRow = this.lookupTable.find(
-          (row) =>
-            Number(row.ageMonths) === Number(this.ageForScore) &&
-            Number(Number(row.thetaEstimate).toFixed(1)) === roundedTheta,
-        );
+        // Adaptive: match the age row whose thetaEstimate equals the scaled theta on the 0.1 grid.
+        myRow = selectNormRow(this.lookupTable, {
+          keyColumn: 'ageMonths',
+          keyValue: Number(this.ageForScore),
+          scoreColumn: 'thetaEstimate',
+          scoreValue: store.session.get('thetas').scaled,
+          matchMode: 'theta',
+        });
       } else if (grade < 6) {
-        myRow = this.lookupTable.find(
-          (row) => Number(row.ageMonths) === Number(this.ageForScore) && row.roarScore === totalScore,
-        );
+        // Fixed, younger grades: match by age + exact total correct (roarScore).
+        myRow = selectNormRow(this.lookupTable, {
+          keyColumn: 'ageMonths',
+          keyValue: Number(this.ageForScore),
+          scoreColumn: 'roarScore',
+          scoreValue: totalScore,
+          matchMode: 'exact',
+        });
       } else {
-        myRow = this.lookupTable.find((row) => Number(row.grade) === grade && row.roarScore === totalScore);
+        // Fixed, grade >= 6: match by grade + exact total correct (roarScore).
+        myRow = selectNormRow(this.lookupTable, {
+          keyColumn: 'grade',
+          keyValue: grade,
+          scoreColumn: 'roarScore',
+          scoreValue: totalScore,
+          matchMode: 'exact',
+        });
       }
 
       if (myRow !== undefined) {

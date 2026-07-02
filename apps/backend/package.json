@@ -35,13 +35,15 @@
     "db:seed:roar-sre": "tsx seeds/roar-sre.seed.ts",
     "db:seed:roar-letter": "tsx seeds/roar-letter.seed.ts",
     "db:seed:roar-multichoice": "tsx seeds/roar-multichoice.seed.ts",
-    "db:seed:roar-survey": "tsx seeds/roar-survey.seed.ts"
+    "db:seed:roar-survey": "tsx seeds/roar-survey.seed.ts",
+    "db:seed:roar-levante-tasks": "tsx seeds/roar-levante-tasks.seed.ts"
   },
   "dependencies": {
     "@google-cloud/cloud-sql-connector": "^1.4.3",
     "@openfga/sdk": "^0.9.3",
     "@roar-platform/api-contract": "^0.1.0",
     "@roar-platform/assessment-schema": "^0.1.0",
+    "@roar-platform/scoring-tables": "^0.1.0",
     "@ts-rest/core": "^3.52.1",
     "@ts-rest/express": "^3.52.1",
     "axios": "^1.15.2",
@@ -55,6 +57,7 @@
     "helmet": "^8.2.0",
     "http-errors": "^2.0.0",
     "http-status-codes": "^2.3.0",
+    "papaparse": "^5.4.1",
     "pg": "^8.16.3",
     "pino": "^10.1.0",
     "pino-pretty": "^13.1.3",
@@ -72,6 +75,7 @@
     "@rollup/plugin-run": "^3.1.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/papaparse": "^5.3.16",
     "@types/pg": "^8.15.5",
     "@types/supertest": "^6.0.2",
     "@vitest/coverage-v8": "^3.2.4",

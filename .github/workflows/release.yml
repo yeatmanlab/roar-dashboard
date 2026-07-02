@@ -76,7 +76,13 @@ jobs:
             packages/assessment-schema
             packages/api-contract
             packages/assessment-sdk
+            apps/assessments/roar-letter
+            apps/assessments/roar-levante-tasks
+            apps/assessments/roar-multichoice
             apps/assessments/roar-pa
+            apps/assessments/roar-sre
+            apps/assessments/roar-survey
+            apps/assessments/roar-swr
           )
 
           deployed=()

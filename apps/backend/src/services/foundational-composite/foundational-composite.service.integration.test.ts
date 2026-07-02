@@ -49,12 +49,17 @@ describe('FoundationalCompositeService (integration)', () => {
     service = FoundationalCompositeService({ runRepository, runScoresRepository, taskRepository });
   });
 
-  /** Seeds a `(computed, composite_foundational)` theta pair (estimate + SE) on a run. */
-  async function seedTheta(runId: string, thetaEstimate: string, thetaSE: string) {
+  /** Seeds a theta pair (estimate + SE) on a run, defaulting to composite_foundational domain. */
+  async function seedTheta(
+    runId: string,
+    thetaEstimate: string,
+    thetaSE: string,
+    domain: string = SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+  ) {
     await RunScoreFactory.create({
       runId,
       type: SCORE_TYPE.COMPUTED,
-      domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+      domain,
       name: SCORE_NAME.THETA_ESTIMATE,
       value: thetaEstimate,
       assessmentStage: null,
@@ -63,7 +68,7 @@ describe('FoundationalCompositeService (integration)', () => {
     await RunScoreFactory.create({
       runId,
       type: SCORE_TYPE.COMPUTED,
-      domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+      domain,
       name: SCORE_NAME.THETA_SE,
       value: thetaSE,
       assessmentStage: null,
@@ -116,12 +121,27 @@ describe('FoundationalCompositeService (integration)', () => {
       assessmentStage: null,
       categoryScore: null,
     });
+    await RunScoreFactory.create({
+      runId: paRun.id,
+      type: SCORE_TYPE.COMPUTED,
+      domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+      name: 'scoringVersion',
+      value: '5',
+      assessmentStage: null,
+      categoryScore: null,
+    });
 
     // Run the recompute twice, each inside its own transaction.
     for (let i = 0; i < 2; i++) {
       await runRepository.runTransaction({
         fn: async (tx) => {
-          await service.recomputeForRun({ userId, administrationId, triggeringTaskId: PA_TASK_ID, transaction: tx });
+          await service.recomputeForRun({
+            userId,
+            administrationId,
+            triggeringTaskId: PA_TASK_ID,
+            triggeredAt: new Date(),
+            transaction: tx,
+          });
         },
       });
     }
@@ -158,12 +178,36 @@ describe('FoundationalCompositeService (integration)', () => {
     // result of 1.5 proves SWR's composite_foundational scores were incorporated.
     const paRun = await RunFactory.create({ userId, administrationId, taskId: PA_TASK_ID, useForReporting: true });
     await seedTheta(paRun.id, '1.0', '0.5');
+    await RunScoreFactory.create({
+      runId: paRun.id,
+      type: SCORE_TYPE.COMPUTED,
+      domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+      name: 'scoringVersion',
+      value: '5',
+      assessmentStage: null,
+      categoryScore: null,
+    });
     const swrRun = await RunFactory.create({ userId, administrationId, taskId: SWR_TASK_ID, useForReporting: true });
-    await seedTheta(swrRun.id, '2.0', '0.5');
+    await seedTheta(swrRun.id, '2.0', '0.5', SCORE_DOMAIN.COMPOSITE);
+    await RunScoreFactory.create({
+      runId: swrRun.id,
+      type: SCORE_TYPE.COMPUTED,
+      domain: SCORE_DOMAIN.COMPOSITE,
+      name: 'scoringVersion',
+      value: '7',
+      assessmentStage: null,
+      categoryScore: null,
+    });
 
     await runRepository.runTransaction({
       fn: async (tx) => {
-        await service.recomputeForRun({ userId, administrationId, triggeringTaskId: SWR_TASK_ID, transaction: tx });
+        await service.recomputeForRun({
+          userId,
+          administrationId,
+          triggeringTaskId: SWR_TASK_ID,
+          triggeredAt: new Date(),
+          transaction: tx,
+        });
       },
     });
 

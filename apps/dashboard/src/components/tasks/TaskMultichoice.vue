@@ -6,7 +6,7 @@
   </div>
 </template>
 <script setup>
-import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
+import { onMounted, watch, ref, computed, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
@@ -36,7 +36,7 @@ const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit } = storeToRefs(authStore);
+const { isAuthReady } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -52,8 +52,10 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.accessToken) init();
 });
 
+// launchId path throws immediately in startTask (proxy-launch not yet supported),
+// so skip the query entirely when launchId is set to avoid a pointless loading delay.
 const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
-  enabled: initialized,
+  enabled: computed(() => initialized.value && !props.launchId),
 });
 
 // The following code intercepts the back button and instead forces a refresh.
@@ -85,9 +87,9 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isFirekitInit, isLoadingUserData],
-  async ([newFirekitInitValue, newLoadingUserData]) => {
-    if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
+  [isAuthReady, isLoadingUserData],
+  async ([newIsAuthReady, newLoadingUserData]) => {
+    if (newIsAuthReady && !newLoadingUserData && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);

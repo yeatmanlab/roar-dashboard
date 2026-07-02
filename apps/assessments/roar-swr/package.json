@@ -25,7 +25,7 @@
   "roar": {
     "hosting": {
       "staging": "roar-word-monorepo-abc",
-      "production": "roard-word-monorepo"
+      "production": "roar-word-monorepo"
     }
   },
   "scripts": {
@@ -36,7 +36,7 @@
     "dev": "bash ../../../scripts/dev-platform.sh",
     "dev:ci": "npx webpack serve --mode development --env dbmode=development",
     "start": "bash ../../../scripts/assessment-env-up.sh",
-    "update": "npm --prefix ../../../packages/assessment-schema run build && npm --prefix ../../../packages/assessment-sdk run build",
+    "update": "npm --prefix ../../../packages/scoring-tables run build && npm --prefix ../../../packages/assessment-schema run build && npm --prefix ../../../packages/assessment-sdk run build",
     "stop": "bash ../../../scripts/assessment-env-down.sh",
     "restart": "npm run stop && npm run start",
     "rebuild": "bash ../../../scripts/assessment-env-build.sh",
@@ -51,6 +51,7 @@
   "dependencies": {
     "@roar-platform/assessment-schema": "^0.1.0",
     "@roar-platform/assessment-sdk": "^0.1.0",
+    "@roar-platform/scoring-tables": "^0.1.0",
     "ajv": "^8.17.1",
     "ajv-errors": "^3.0.0",
     "@bdelab/jscat": "^5.2.3",
