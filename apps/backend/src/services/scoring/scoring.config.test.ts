@@ -13,6 +13,9 @@ import roamAlpacaConfig from './configs/roam-alpaca.json';
 import fluencyConfig from './configs/fluency.json';
 import morphologyConfig from './configs/morphology.json';
 import cvaConfig from './configs/cva.json';
+import trogConfig from './configs/trog';
+import roarInferenceConfig from './configs/roar-inference';
+import levanteProvisionalConfig from './configs/levante-provisional';
 
 const ALL_RAW_CONFIGS = [
   { name: 'swr', config: swrConfig },
@@ -26,6 +29,9 @@ const ALL_RAW_CONFIGS = [
   { name: 'fluency', config: fluencyConfig },
   { name: 'morphology', config: morphologyConfig },
   { name: 'cva', config: cvaConfig },
+  { name: 'trog', config: trogConfig },
+  { name: 'roar-inference', config: roarInferenceConfig },
+  { name: 'levante-provisional', config: levanteProvisionalConfig },
 ];
 
 describe('scoring config validation', () => {
@@ -61,6 +67,13 @@ describe('scoring config validation', () => {
       'fluency-calf-es',
       'morphology',
       'cva',
+      'trog',
+      'roar-inference',
+      'egma-math',
+      'matrix-reasoning',
+      'mental-rotation',
+      'same-different-selection',
+      'theory-of-mind',
     ];
     const registered = getRegisteredSlugs();
     for (const slug of expected) {

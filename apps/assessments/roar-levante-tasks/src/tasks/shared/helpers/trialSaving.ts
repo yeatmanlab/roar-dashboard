@@ -68,7 +68,7 @@ export const initTrialSaving = (config: Record<string, any>) => {
     scoreCallback = async (rawScores: Record<string, any>) => {
       scoringHandler!.totalCorrect = taskStore().totalCorrect;
       scoringHandler!.irtEstimates = taskStore().irtEstimates;
-      return await scoringHandler!.computedScoreCallback(rawScores);
+      return scoringHandler!.computedScoreCallback(rawScores);
     };
   }
 
