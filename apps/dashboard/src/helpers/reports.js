@@ -366,7 +366,7 @@ export const includedValidityFlags = {
  *  Tasks to Display Graphs
  *  A list of tasks who, when included in a score report, will generate breakdown graphs.
  */
-export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
+export const tasksToDisplayGraphs = ['swr', 'sre', 'pa', 'morphology', 'cva', 'trog', 'roar-inference'];
 
 /*
  *  Raw Only Tasks

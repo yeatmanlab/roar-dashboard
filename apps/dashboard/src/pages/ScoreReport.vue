@@ -2030,19 +2030,37 @@ const sortedTaskIds = computed(() => {
 });
 
 const sortedAndFilteredTaskIds = computed(() => {
+  const tasksRequiringScoringVersion = ['morphology', 'cva', 'trog', 'roar-inference'];
   return sortedTaskIds.value?.filter((taskId) => {
-    return tasksToDisplayGraphs.includes(taskId);
+    if (!tasksToDisplayGraphs.includes(taskId)) return false;
+    if (tasksRequiringScoringVersion.includes(taskId)) {
+      return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
+    }
+    return true;
   });
 });
 
 const sortedAndFilteredSubscoreTaskIds = computed(() => {
+  const tasksRequiringScoringVersion = ['morphology', 'cva', 'trog', 'roar-inference'];
+
   if (props.orgType === 'district') {
     return sortedTaskIds.value?.filter((taskId) => {
-      return tasksToDisplayGraphs.includes(taskId);
+      if (!tasksToDisplayGraphs.includes(taskId)) return false;
+      if (tasksRequiringScoringVersion.includes(taskId)) {
+        return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
+      }
+      return true;
     });
   }
   const availableTaskIds = Object.keys(computeAssignmentAndRunData.value?.runsByTaskId);
-  return availableTaskIds.sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
+  return availableTaskIds
+    .filter((taskId) => {
+      if (tasksRequiringScoringVersion.includes(taskId)) {
+        return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
+      }
+      return true;
+    })
+    .sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
 });
 
 let unsubscribe;

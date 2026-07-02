@@ -123,50 +123,6 @@
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
-    <SubscoreTable
-      v-if="taskId === 'cva' && !isLoadingTasksDictionary"
-      task-id="cva"
-      :task-name="tasksDictionary['cva']?.publicName"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-      :computed-table-data="computedTableData"
-    />
-    <SubscoreTable
-      v-if="taskId === 'morphology' && !isLoadingTasksDictionary"
-      task-id="morphology"
-      :task-name="tasksDictionary['morphology']?.publicName"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-      :computed-table-data="computedTableData"
-    />
-    <SubscoreTable
-      v-if="taskId === 'trog' && !isLoadingTasksDictionary"
-      task-id="trog"
-      :task-name="tasksDictionary['trog']?.publicName"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-      :computed-table-data="computedTableData"
-    />
-    <SubscoreTable
-      v-if="taskId === 'roar-inference' && !isLoadingTasksDictionary"
-      task-id="roar-inference"
-      :task-name="tasksDictionary['roar-inference']?.publicName"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-      :computed-table-data="computedTableData"
-    />
   </div>
 </template>
 <script setup>
