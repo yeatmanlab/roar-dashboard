@@ -193,6 +193,11 @@ export function RunEventService({
     await verifyUserAccess(authContext, targetUserId);
     const run = await assertRunOwnedByUser(runId, targetUserId);
 
+    // Server timestamp for this trial write — the norming reference age for the in-progress
+    // composite case (the student is completing this trial now). Captured once here so the same
+    // value flows through the whole transaction.
+    const triggeredAt = new Date();
+
     const runTrialFields: Record<string, unknown> = {};
     const metadata: Record<string, unknown> = {};
 
@@ -265,11 +270,13 @@ export function RunEventService({
           // Last step of the transaction so the composite sees this trial's score writes
           // and the fresh use_for_reporting flags. No-ops unless the triggering run is a
           // foundational subtest (pa/swr/letter/sre); anonymous runs short-circuit inside
-          // the service.
+          // the service. `triggeredAt` is this trial's server timestamp — the norming
+          // reference age for the in-progress case (see RecomputeFoundationalCompositeParams).
           await foundationalCompositeService.recomputeForRun({
             userId: run.userId,
             administrationId: run.administrationId,
             triggeringTaskId: run.taskId,
+            triggeredAt,
             transaction: tx,
           });
         },

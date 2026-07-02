@@ -41,6 +41,9 @@ outputs:
   image-tags:
     description: "All fully-qualified image tags that were pushed."
     value: ${{ steps.export-meta.outputs.tags }}
+  image-digest:
+    description: "The sha256 digest of the pushed image (e.g., sha256:abc123...)."
+    value: ${{ steps.export-digest.outputs.digest }}
 
 runs:
   using: composite
@@ -80,6 +83,7 @@ runs:
       uses: docker/setup-buildx-action@v3
 
     - name: Build and push Docker image
+      id: build-push
       uses: docker/build-push-action@v5
       with:
         context: ${{ inputs.context || '.' }}
@@ -87,3 +91,8 @@ runs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Export image digest
+      id: export-digest
+      shell: bash
+      run: echo "digest=${{ steps.build-push.outputs.digest }}" >> "$GITHUB_OUTPUT"

@@ -4,6 +4,7 @@ import _toPairs from 'lodash/toPairs';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
+import { selectNormRow, clampToRange } from '@roar-platform/scoring-tables';
 import {
   COMPOSITE_DOMAIN,
   COMPOSITE_FOUNDATIONAL_DOMAIN,
@@ -38,11 +39,10 @@ const getGradeAndAgeForScoring = (scoringVersion = SRE_SCORING_VERSION.V3) => {
   const ageMin = 72;
   const ageMax = scoringVersion === SRE_SCORING_VERSION.V3 && taskId === SRE_TASK_IDS.EN ? 180 : 216;
 
-  if (ageMonths < ageMin) ageMonths = ageMin;
-  if (ageMonths > ageMax) ageMonths = ageMax;
+  ageMonths = clampToRange(ageMonths, { min: ageMin, max: ageMax });
   // Clamp grade to [1, 12] for v3 SRE if < 1 or > 12. Otherwise, leave it unchanged.
   if (grade != undefined && taskId === SRE_TASK_IDS.EN && scoringVersion === SRE_SCORING_VERSION.V3)
-    grade = Math.min(12, Math.max(1, grade));
+    grade = clampToRange(grade, { min: 1, max: 12 });
 
   return {
     ageMonths,
@@ -539,7 +539,13 @@ export class RoarScores {
       // Clamp to 0 for the normed lookup — the table starts at 0.
       // The actual (possibly negative) compositeScore is still stored as sreScore above.
       const lookupScore = Math.max(compositeScore ?? 0, 0);
-      const myRow = this.lookupTable.find((row) => row.sreScore === lookupScore);
+      // The table is pre-filtered to the participant's grade/age while parsing, so the row is
+      // selected by sreScore alone (exact match — raw counts, not theta).
+      const myRow = selectNormRow(this.lookupTable, {
+        scoreColumn: 'sreScore',
+        scoreValue: lookupScore,
+        matchMode: 'exact',
+      });
 
       if (myRow !== undefined) {
         // And add columns in the lookup table except for the grade and sreScore.

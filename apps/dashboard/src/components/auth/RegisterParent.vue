@@ -191,7 +191,6 @@ import { computed, reactive, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { APP_ROUTES } from '@/constants/routes';
 import { ChallengeV3 } from 'vue-recaptcha';
-import { storeToRefs } from 'pinia';
 import { required, sameAs, minLength } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import PvButton from 'primevue/button';
@@ -199,10 +198,7 @@ import PvCheckbox from 'primevue/checkbox';
 import PvDialog from 'primevue/dialog';
 import PvInputText from 'primevue/inputtext';
 import PvPassword from 'primevue/password';
-import { useAuthStore } from '@/store/auth';
 
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 const isCaptchaverified = ref(null);
 const dialogMessage = ref('');
 
@@ -272,19 +268,10 @@ const handleFormSubmit = (isFormValid) => {
     showErrorDialog();
     return;
   }
-  validateRoarEmail();
-};
-
-const validateRoarEmail = async () => {
-  const validEmail = await roarfirekit.value.isEmailAvailable(state.ParentEmail);
-  if (!validEmail) {
-    dialogMessage.value = 'This email address is already in use.';
-    showErrorDialog();
-    submitted.value = false;
-    return;
-  } else {
-    emit('submit', state);
-  }
+  // Email uniqueness is validated by the backend on submit: POST /v1/families
+  // returns 409 for an email already in use, which the parent page surfaces as
+  // an error dialog. The firekit `isEmailAvailable` precheck is redundant.
+  emit('submit', state);
 };
 
 function handleCaptcha() {
