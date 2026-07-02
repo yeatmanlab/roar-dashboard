@@ -60,7 +60,7 @@ export type UploadStatus = typeof UploadStatusEnum[keyof typeof UploadStatusEnum
  * @property storagePath - Firebase storage path of the file, including bucket name.
  */
 export type UploadFileOutput = {
-  task: () => UploadTask;
+  task?: () => UploadTask;
   status: UploadStatus;
   filename: string;
   storagePath: string;

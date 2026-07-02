@@ -4,3 +4,4 @@ export * from './finish-run.command';
 export * from './write-trial.command';
 export * from './update-engagement-flags.command';
 export * from './get-variant-id.command';
+export * from './upload-file.command';
