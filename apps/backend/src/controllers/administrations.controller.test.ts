@@ -60,6 +60,7 @@ describe('AdministrationsController', () => {
   const mockListStudentScores = vi.fn();
   const mockGetIndividualStudentReport = vi.fn();
   const mockListTaskSubscores = vi.fn();
+  const mockAggregateSupportCategories = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -80,6 +81,7 @@ describe('AdministrationsController', () => {
       getUserAdministration: mockGetUserAdministration,
       listUserAdministrationAgreements: vi.fn(),
       update: mockUpdate,
+      aggregateSupportCategories: mockAggregateSupportCategories,
     });
 
     vi.mocked(ReportService).mockReturnValue({
@@ -328,8 +330,22 @@ describe('AdministrationsController', () => {
         id: 'admin-1',
         name: 'Test Admin',
         tasks: [
-          { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
-          { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
+          {
+            taskId: 'task-1',
+            taskSlug: 'swr',
+            taskName: 'SWR',
+            variantId: 'variant-1',
+            variantName: 'Variant A',
+            orderIndex: 0,
+          },
+          {
+            taskId: 'task-2',
+            taskSlug: 'pa',
+            taskName: 'PA',
+            variantId: 'variant-2',
+            variantName: null,
+            orderIndex: 1,
+          },
         ],
       });
       mockList.mockResolvedValue({
@@ -356,8 +372,15 @@ describe('AdministrationsController', () => {
       });
       const data = expectOkResponse(result);
       expect(data.items[0]!.tasks).toEqual([
-        { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
-        { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
+        {
+          taskId: 'task-1',
+          taskSlug: 'swr',
+          taskName: 'SWR',
+          variantId: 'variant-1',
+          variantName: 'Variant A',
+          orderIndex: 0,
+        },
+        { taskId: 'task-2', taskSlug: 'pa', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
       ]);
     });
 
@@ -2593,6 +2616,88 @@ describe('AdministrationsController', () => {
       await expect(
         Controller.listTaskSubscores(mockAuthContext, testAdminId, testTaskId, subscoresQuery),
       ).rejects.toThrow('unexpected');
+    });
+  });
+
+  describe('aggregateSupportCategories', () => {
+    const administrationId = 'admin-123';
+    const districtId = 'district-456';
+    const query = { districtId };
+
+    it('should call service with auth context and IDs', async () => {
+      mockAggregateSupportCategories.mockResolvedValue(null);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await Controller.aggregateSupportCategories(mockAuthContext, administrationId, query);
+
+      expect(mockAggregateSupportCategories).toHaveBeenCalledWith(mockAuthContext, administrationId, districtId);
+    });
+
+    it('should return 200 with aggregated support categories', async () => {
+      const mockResult = {
+        'task-swr-uuid': {
+          achievedSkill: { total: 10, schools: {}, grades: {}, raw: {}, percentile: {} },
+          developingSkill: { total: 5, schools: {}, grades: {}, raw: {}, percentile: {} },
+          needsExtraSupport: { total: 2, schools: {}, grades: {}, raw: {}, percentile: {} },
+          raw: { '400-450': { total: 2, schools: {}, grades: {} } },
+          percentile: { '40-50': { total: 2, schools: {}, grades: {} } },
+        },
+      };
+
+      mockAggregateSupportCategories.mockResolvedValue(mockResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.aggregateSupportCategories(mockAuthContext, administrationId, query);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      const data = expectOkResponse(result);
+      expect(data).toEqual(mockResult);
+    });
+
+    it('should return empty object when result is null', async () => {
+      mockAggregateSupportCategories.mockResolvedValue(null);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.aggregateSupportCategories(mockAuthContext, administrationId, query);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      const data = expectOkResponse(result);
+      expect(data).toEqual({});
+    });
+
+    it('should return 404 when administration not found', async () => {
+      const notFoundError = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      mockAggregateSupportCategories.mockRejectedValue(notFoundError);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.aggregateSupportCategories(mockAuthContext, administrationId, query);
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      expect(result.body).toHaveProperty('error');
+    });
+
+    it('should return 500 on service error', async () => {
+      const serverError = new ApiError('Failed to retrieve administration data', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+
+      mockAggregateSupportCategories.mockRejectedValue(serverError);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.aggregateSupportCategories(mockAuthContext, administrationId, query);
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(result.body).toHaveProperty('error');
     });
   });
 });

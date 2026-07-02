@@ -15,6 +15,7 @@ import {
   CreateAdministrationResponseSchema,
   UpdateAdministrationRequestSchema,
   UpdateAdministrationResponseSchema,
+  AggregatedSupportCategoriesSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import { ProgressReportsContract } from './reports/progress/index';
@@ -227,6 +228,30 @@ export const AdministrationsContract = c.router(
         'At least one org, class, or group must remain assigned. ' +
         'Returns 422 for validation errors, 409 if the new name conflicts with another administration, ' +
         '403 if the user lacks permission, 404 if the administration does not exist.',
+    },
+    aggregateSupportCategories: {
+      method: 'GET',
+      path: '/:id/support-categories',
+      pathParams: z.object({ id: z.string().uuid() }),
+      query: z.object({
+        districtId: z.string().uuid(),
+      }),
+      responses: {
+        200: SuccessEnvelopeSchema(AggregatedSupportCategoriesSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Aggregate support categories for an administration',
+      description:
+        'Aggregates support category counts and distributions across schools and grades for all scored tasks ' +
+        'in a district administration. Returns counts for achievedSkill, developingSkill, and needsExtraSupport, ' +
+        'broken down by school, grade, and score range (raw and percentile). Supports scored tasks: ' +
+        'swr, pa, sre, cva, morphology, trog, roar-inference, swr-es, sre-es. ' +
+        'Returns 403 if the user lacks permission to access the administration. ' +
+        'Returns 404 if the administration does not exist.',
     },
     // Nest report sub-routers under /administrations
     progressReports: ProgressReportsContract,

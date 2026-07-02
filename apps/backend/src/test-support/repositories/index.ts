@@ -32,3 +32,4 @@ export { createMockGroupRepository, MockGroupRepository } from './group.reposito
 export { createMockFamilyRepository, MockFamilyRepository } from './family.repository';
 export { createMockInvitationCodeRepository, MockInvitationCodeRepository } from './invitation-code.repository';
 export { createMockReportRepository, MockReportRepository } from './report.repository';
+export { createMockAggregationRepository, MockAggregationRepository } from './aggregation.repository';

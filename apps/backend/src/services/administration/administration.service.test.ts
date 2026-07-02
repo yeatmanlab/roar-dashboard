@@ -36,7 +36,11 @@ import {
   createMockTaskVariantRepository,
   createMockAgreementRepository,
 } from '../../test-support/repositories';
-import { createMockAuthorizationService, createMockTaskService } from '../../test-support/services';
+import {
+  createMockAuthorizationService,
+  createMockTaskService,
+  createMockAggregationService,
+} from '../../test-support/services';
 import type { MockAuthorizationService } from '../../test-support/services';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { ClassFactory } from '../../test-support/factories/class.factory';
@@ -670,6 +674,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'swr',
                 taskName: 'SWR',
                 variantId: 'variant-1',
                 variantName: 'Variant A',
@@ -679,6 +684,7 @@ describe('AdministrationService', () => {
               },
               {
                 taskId: 'task-2',
+                taskSlug: 'pa',
                 taskName: 'PA',
                 variantId: 'variant-2',
                 variantName: null,
@@ -693,6 +699,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-3',
+                taskSlug: 'sre',
                 taskName: 'SRE',
                 variantId: 'variant-3',
                 variantName: 'Variant C',
@@ -721,11 +728,32 @@ describe('AdministrationService', () => {
           'admin-2',
         ]);
         expect(result.items[0]!.tasks).toEqual([
-          { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
-          { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
+          {
+            taskId: 'task-1',
+            taskSlug: 'swr',
+            taskName: 'SWR',
+            variantId: 'variant-1',
+            variantName: 'Variant A',
+            orderIndex: 0,
+          },
+          {
+            taskId: 'task-2',
+            taskSlug: 'pa',
+            taskName: 'PA',
+            variantId: 'variant-2',
+            variantName: null,
+            orderIndex: 1,
+          },
         ]);
         expect(result.items[1]!.tasks).toEqual([
-          { taskId: 'task-3', taskName: 'SRE', variantId: 'variant-3', variantName: 'Variant C', orderIndex: 0 },
+          {
+            taskId: 'task-3',
+            taskSlug: 'sre',
+            taskName: 'SRE',
+            variantId: 'variant-3',
+            variantName: 'Variant C',
+            orderIndex: 0,
+          },
         ]);
       });
 
@@ -743,6 +771,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'swr',
                 taskName: 'SWR',
                 variantId: 'variant-1',
                 variantName: 'Variant A',
@@ -823,6 +852,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'swr',
                 taskName: 'SWR',
                 variantId: 'variant-1',
                 variantName: 'Variant A',
@@ -852,7 +882,14 @@ describe('AdministrationService', () => {
 
         expect(result.items[0]!.stats).toEqual({ assigned: 25, started: 10, completed: 5 });
         expect(result.items[0]!.tasks).toEqual([
-          { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
+          {
+            taskId: 'task-1',
+            taskSlug: 'swr',
+            taskName: 'SWR',
+            variantId: 'variant-1',
+            variantName: 'Variant A',
+            orderIndex: 0,
+          },
         ]);
       });
     });
@@ -881,6 +918,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'swr',
                 taskName: 'SWR',
                 variantId: 'variant-1',
                 variantName: 'Variant A',
@@ -1068,6 +1106,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'swr',
                 taskName: 'SWR',
                 variantId: 'variant-1',
                 variantName: 'Variant A',
@@ -1082,6 +1121,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-2',
+                taskSlug: 'pa',
                 taskName: 'PA',
                 variantId: 'variant-2',
                 variantName: 'Variant B',
@@ -1186,6 +1226,7 @@ describe('AdministrationService', () => {
               [
                 {
                   taskId: 'task-1',
+                  taskSlug: 'swr',
                   taskName: 'SWR',
                   variantId: 'variant-1',
                   variantName: 'Variant A',
@@ -3356,6 +3397,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'task',
                 taskName: 'Task 1',
                 variantId: 'variant-1',
                 variantName: 'Variant 1',
@@ -3384,7 +3426,14 @@ describe('AdministrationService', () => {
       expect(mockAdministrationTaskVariantRepository.getByAdministrationIds).toHaveBeenCalledWith([mockAdmin.id]);
       expect(result.items[0]).toHaveProperty('tasks');
       expect(result.items[0]!.tasks).toEqual([
-        { taskId: 'task-1', taskName: 'Task 1', variantId: 'variant-1', variantName: 'Variant 1', orderIndex: 0 },
+        {
+          taskId: 'task-1',
+          taskSlug: 'task',
+          taskName: 'Task 1',
+          variantId: 'variant-1',
+          variantName: 'Variant 1',
+          orderIndex: 0,
+        },
       ]);
     });
 
@@ -3411,6 +3460,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'task',
                 taskName: 'Task 1',
                 variantId: 'variant-1',
                 variantName: 'Variant 1',
@@ -3441,7 +3491,14 @@ describe('AdministrationService', () => {
       expect(result.items[0]).toHaveProperty('tasks');
       expect(result.items[0]!.stats).toEqual({ assigned: 10, started: 5, completed: 3 });
       expect(result.items[0]!.tasks).toEqual([
-        { taskId: 'task-1', taskName: 'Task 1', variantId: 'variant-1', variantName: 'Variant 1', orderIndex: 0 },
+        {
+          taskId: 'task-1',
+          taskSlug: 'task',
+          taskName: 'Task 1',
+          variantId: 'variant-1',
+          variantName: 'Variant 1',
+          orderIndex: 0,
+        },
       ]);
     });
 
@@ -3520,6 +3577,7 @@ describe('AdministrationService', () => {
             [
               {
                 taskId: 'task-1',
+                taskSlug: 'swr',
                 taskName: 'SWR',
                 variantId: 'variant-1',
                 variantName: 'Variant A',
@@ -3814,8 +3872,8 @@ describe('AdministrationService', () => {
       mockReportRepository.getTaskMetadata.mockResolvedValue([
         {
           taskId: 'task-1',
-          taskVariantId: 'tv-1',
           taskSlug: 'swr',
+          taskVariantId: 'tv-1',
           taskName: 'SWR',
           orderIndex: 0,
           conditionsAssignment: null,
@@ -3929,8 +3987,8 @@ describe('AdministrationService', () => {
       mockReportRepository.getTaskMetadata.mockResolvedValue([
         {
           taskId: 'task-1',
-          taskVariantId: 'tv-1',
           taskSlug: 'swr',
+          taskVariantId: 'tv-1',
           taskName: 'SWR',
           orderIndex: 0,
           conditionsAssignment: null,
@@ -6478,6 +6536,103 @@ describe('AdministrationService', () => {
             }),
           ]),
         );
+      });
+    });
+
+    describe('aggregateSupportCategories', () => {
+      const testAdminId = 'admin-456';
+
+      it('should throw NOT_FOUND when administration does not exist', async () => {
+        mockAdministrationRepository.getById.mockResolvedValue(null);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          districtRepository: createMockDistrictRepository(),
+          schoolRepository: createMockSchoolRepository(),
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          service.aggregateSupportCategories(regularUserAuthContext, testAdminId, 'district-123'),
+        ).rejects.toThrow(ApiError);
+      });
+
+      it('should allow super admin without FGA access check', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: testAdminId });
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+
+        const mockAggregationService = createMockAggregationService();
+        mockAggregationService.aggregateSupportCategories.mockResolvedValue({
+          'task-1': {
+            achievedSkill: { schools: {}, grades: {}, total: 5 },
+            developingSkill: { schools: {}, grades: {}, total: 0 },
+            needsExtraSupport: { schools: {}, grades: {}, total: 0 },
+            raw: {},
+            percentile: {},
+          },
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          districtRepository: createMockDistrictRepository(),
+          schoolRepository: createMockSchoolRepository(),
+          authorizationService: mockAuthorizationService,
+          aggregationService: mockAggregationService,
+        });
+
+        const result = await service.aggregateSupportCategories(superAdminAuthContext, testAdminId, 'district-123');
+
+        // Super admin should succeed without FGA call
+        expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+        expect(result === null || typeof result === 'object').toBe(true);
+      });
+
+      it('should verify access via FGA for non-super-admin', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: testAdminId });
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+
+        const mockAggregationService = createMockAggregationService();
+        mockAggregationService.aggregateSupportCategories.mockResolvedValue(null);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          districtRepository: createMockDistrictRepository(),
+          schoolRepository: createMockSchoolRepository(),
+          authorizationService: mockAuthorizationService,
+          aggregationService: mockAggregationService,
+        });
+
+        await service.aggregateSupportCategories(regularUserAuthContext, testAdminId, 'district-123');
+
+        // Non-super-admin should call FGA
+        expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+          regularUserAuthContext.userId,
+          expect.any(String), // FGA relation
+          `administration:${testAdminId}`,
+        );
+      });
+
+      it('should throw FORBIDDEN when user lacks FGA permission', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: testAdminId });
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.requirePermission.mockRejectedValue(
+          new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+          }),
+        );
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          districtRepository: createMockDistrictRepository(),
+          schoolRepository: createMockSchoolRepository(),
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          service.aggregateSupportCategories(regularUserAuthContext, testAdminId, 'district-123'),
+        ).rejects.toThrow(ApiError);
       });
     });
   });
