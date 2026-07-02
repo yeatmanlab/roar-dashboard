@@ -4,6 +4,8 @@ import _omit from 'lodash/omit';
 //@ts-ignore
 import { getGrade } from '@bdelab/roar-utils';
 import type { IrtEstimate } from './irtEstimates';
+import { LEVANTE_NORMED_TASK_IDS, LEVANTE_SCORE_TABLE_URL } from '@roar-platform/assessment-schema/roar-levante-tasks';
+import type { LevanteNormedTaskId, LevanteScoringVersion } from '@roar-platform/assessment-schema/roar-levante-tasks';
 
 interface LookupRow {
   ageMonths: number;
@@ -13,27 +15,14 @@ interface LookupRow {
   percentile: string;
 }
 
-type NormedTask = 'trog' | 'roar-inference';
-
 interface UserMetadata {
   age?: number | string;
   grade?: number | string;
   [key: string]: any;
 }
 
-const NORMED_TASK_CONFIG: Record<NormedTask, { bucket: string; csv: string }> = {
-  trog: {
-    bucket: 'roar-syntax',
-    csv: 'trog',
-  },
-  'roar-inference': {
-    bucket: 'roar-inference',
-    csv: 'inference',
-  },
-};
-
 export class ScoringHandler {
-  task: NormedTask;
+  task: LevanteNormedTaskId;
 
   // unnormed scores
   totalCorrect: number;
@@ -48,7 +37,7 @@ export class ScoringHandler {
   irtEstimates: Record<string, IrtEstimate> | null;
   userMetadata: UserMetadata;
 
-  constructor(task: NormedTask, scoringVersion: number | undefined, userMetadata: UserMetadata) {
+  constructor(task: LevanteNormedTaskId, scoringVersion: number | undefined, userMetadata: UserMetadata) {
     this.task = task;
     this.totalCorrect = 0;
     this.lookupTable = [];
@@ -81,8 +70,8 @@ export class ScoringHandler {
   };
 
   async initTable(): Promise<LookupRow[]> {
-    const { bucket, csv } = NORMED_TASK_CONFIG[this.task as NormedTask];
-    const tableURL = `https://storage.googleapis.com/${bucket}/scores/${csv}_lookup_v${this.scoringVersion}.csv`;
+    // scoringVersion is guarded to be > 0 before initTable is called
+    const tableURL = LEVANTE_SCORE_TABLE_URL(this.task, this.scoringVersion as LevanteScoringVersion);
 
     return new Promise((resolve, reject) => {
       Papa.parse(tableURL, {
@@ -237,8 +226,24 @@ export class ScoringHandler {
   computedScoreCallback = async (rawScores: Record<string, any>) => {
     // Normed scores if scoringVersion > 0
     const isNormed =
-      Object.keys(NORMED_TASK_CONFIG).includes(this.task) && this.scoringVersion && this.scoringVersion > 0;
+      (Object.values(LEVANTE_NORMED_TASK_IDS) as string[]).includes(this.task) &&
+      this.scoringVersion &&
+      this.scoringVersion > 0;
 
-    return isNormed ? await this.getNormedScores(rawScores) : this.getUnnormedScores(rawScores);
+    if (!isNormed) return this.getUnnormedScores(rawScores);
+
+    const normedScores = await this.getNormedScores(rawScores);
+    const unnormedScores = this.getUnnormedScores(rawScores);
+
+    // Merge count-based scores into the normed composite domain so both
+    // IRT/normed scores and raw counts appear in run_scores for every task.
+    // Normed fields take precedence when there is a key collision.
+    return {
+      ...normedScores,
+      composite: {
+        ...unnormedScores.composite,
+        ...normedScores.composite,
+      },
+    };
   };
 }
