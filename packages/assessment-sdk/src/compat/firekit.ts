@@ -1,5 +1,5 @@
 import { getApp } from 'firebase/app';
-import { getStorage } from 'firebase/storage';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import type { FirebaseStorage } from 'firebase/storage';
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
@@ -44,6 +44,55 @@ type CompatTaskInfo = {
   administrationId?: string;
   isAnonymous?: boolean;
 };
+
+/**
+ * Firebase Storage emulator port. Must match `apps/assessments/shared/firebase.json`
+ * (`emulators.storage.port`). The Emulator UI that surfaces uploaded recordings runs
+ * separately on :9000 (:4000 is the ROAR backend).
+ */
+const STORAGE_EMULATOR_PORT = 9199;
+
+/**
+ * Firebase project id for the production admin recordings project. Anything else
+ * (e.g. `gse-roar-admin-staging`) resolves to the staging bucket.
+ */
+const ADMIN_RECORDINGS_PROD_PROJECT_ID = 'gse-roar-admin';
+
+/** `connectStorageEmulator` may be called at most once per storage instance. */
+let storageEmulatorConnected = false;
+
+/**
+ * Resolves the Firebase Storage bucket for recording uploads.
+ *
+ * - **Dev (Auth emulator running):** returns the default app's storage connected to the
+ *   local Storage emulator, so recordings land in the emulator (viewable in the Emulator
+ *   UI on :9000) instead of a real cloud bucket. The emulator host is derived from
+ *   `FIREBASE_AUTH_EMULATOR_HOST` (same host, storage port), reusing the signal every
+ *   assessment already injects — no new build-time env var required.
+ * - **Prod / staging:** returns the admin recordings bucket for the resolved environment
+ *   (`gse-roar-admin` → prod, otherwise staging).
+ *
+ * Resolved lazily (at first upload) rather than at facade init so that consumers which
+ * never upload — and test environments with no Firebase app — never call `getApp()`.
+ *
+ * @returns The Firebase Storage instance recordings are written to
+ */
+function resolveStorageBucket(): FirebaseStorage {
+  const authEmulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
+
+  if (authEmulatorHost) {
+    const storage = getStorage(getApp());
+    if (!storageEmulatorConnected) {
+      const host = authEmulatorHost.split(':')[0] || '127.0.0.1';
+      connectStorageEmulator(storage, host, STORAGE_EMULATOR_PORT);
+      storageEmulatorConnected = true;
+    }
+    return storage;
+  }
+
+  const env = getApp().options.projectId === ADMIN_RECORDINGS_PROD_PROJECT_ID ? 'prod' : 'staging';
+  return getStorage(getApp(), `gs://roar-admin-recordings-${env}`);
+}
 
 /**
  * Test-only function to reset the Firekit compat singleton state.
@@ -129,12 +178,8 @@ export class FirekitFacade {
     this.#api = new RoarApi(ctx);
     this.#invoker = new Invoker(ctx);
     this.#taskInfo = taskInfo;
-
-    if (!process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-      // Only initialize storage bucket in non-emulator environments
-      const bucketName = `gs://roar-admin-recordings-${getApp().options.projectId === 'roar-admin' ? 'prod' : 'staging'}`;
-      this.#storageBucket = getStorage(getApp(), bucketName);
-    }
+    // Storage is resolved lazily at first upload (see `_getStorageBucket`), not here —
+    // `initialize()` must not touch Firebase so consumers/tests without an app can init.
   }
 
   /**
@@ -189,10 +234,13 @@ export class FirekitFacade {
   }
 
   /**
-   * Internal getter for the storage bucket.
+   * Lazily resolves and memoizes the storage bucket for recording uploads.
+   * Resolution is deferred to the first call (upload time) so `initialize()` stays
+   * Firebase-free. See {@link resolveStorageBucket} for the dev/prod/staging routing.
    * @internal
    */
-  _getStorageBucket(): FirebaseStorage | undefined {
+  _getStorageBucket(): FirebaseStorage {
+    this.#storageBucket ??= resolveStorageBucket();
     return this.#storageBucket;
   }
 
@@ -890,7 +938,19 @@ export function makeLazyComputedCallback<T extends { computedScoreCallback: (raw
   };
 }
 
-export async function uploadFile({fileOrBlob, filename, taskId, assessmentPid, customMetadata}: {fileOrBlob: File | Blob; filename: string; taskId: string; assessmentPid?: string; customMetadata?: Record<string, unknown>}): Promise<string> {
+export async function uploadFile({
+  fileOrBlob,
+  filename,
+  taskId,
+  assessmentPid,
+  customMetadata,
+}: {
+  fileOrBlob: File | Blob;
+  filename: string;
+  taskId: string;
+  assessmentPid?: string;
+  customMetadata?: Record<string, unknown>;
+}): Promise<string> {
   const facade = getFirekitCompat();
   const invoker = facade.getInvoker();
   const ctx = facade.getContext();
@@ -907,20 +967,12 @@ export async function uploadFile({fileOrBlob, filename, taskId, assessmentPid, c
     runId,
     administrationId,
     assessmentPid,
-    customMetadata
+    customMetadata,
   };
 
-  // Maybe throw error if administrationId is undefined for staging/prod
-
-  if (!storageBucket) {
-    if (!process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-      // Prod/staging — bucket should always be initialized
-      throw new SDKError('uploadFile requires a storage bucket to be initialized but none was found in non-emulator environments.');
-    }
-    // Emulator/test — fall back to local
-    ctx.logger?.warn?.('[firekit.uploadFile] No storage bucket — saving file locally.');
-  }
-
+  // _getStorageBucket() resolves the bucket lazily: the local Storage emulator in dev,
+  // the admin recordings bucket in prod/staging. It throws (via getApp) if no Firebase
+  // app exists, which is the correct failure mode for an upload with nothing to write to.
   const cmd = new UploadFileCommand(ctx.participant.participantId, storageBucket);
   return invoker.run(cmd, input);
 }
