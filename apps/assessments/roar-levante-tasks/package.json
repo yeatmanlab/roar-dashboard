@@ -23,8 +23,8 @@
   "type": "module",
   "roar": {
     "hosting": {
-      "staging": "roar-levante-monorepo-abc",
-      "production": "roar-levante-monorepo"
+      "staging": "roar-levante-tasks-monorepo-abc",
+      "production": "roar-levante-tasks-monorepo"
     }
   },
   "scripts": {
