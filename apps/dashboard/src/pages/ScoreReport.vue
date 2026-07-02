@@ -2044,13 +2044,26 @@ const sortedAndFilteredSubscoreTaskIds = computed(() => {
   const tasksRequiringScoringVersion = ['morphology', 'cva', 'trog', 'roar-inference'];
 
   if (props.orgType === 'district') {
-    return sortedTaskIds.value?.filter((taskId) => {
-      if (!tasksToDisplayGraphs.includes(taskId)) return false;
-      if (tasksRequiringScoringVersion.includes(taskId)) {
-        return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
-      }
-      return true;
-    });
+    const districtTasks =
+      sortedTaskIds.value?.filter((taskId) => {
+        if (!tasksToDisplayGraphs.includes(taskId)) return false;
+        if (tasksRequiringScoringVersion.includes(taskId)) {
+          return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
+        }
+        return true;
+      }) || [];
+
+    // Also include assigned tasks with scoring versions >= 1 that may not be in aggregated categories
+    const assignedTaskIds = administrationData.value?.assessments?.map((a) => a.taskId) || [];
+    const additionalTasks = assignedTaskIds.filter(
+      (taskId) =>
+        tasksRequiringScoringVersion.includes(taskId) &&
+        getScoringVersions.value[taskId] &&
+        getScoringVersions.value[taskId] >= 1 &&
+        !districtTasks.includes(taskId),
+    );
+
+    return [...districtTasks, ...additionalTasks].sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
   }
   const availableTaskIds = Object.keys(computeAssignmentAndRunData.value?.runsByTaskId);
   return availableTaskIds
