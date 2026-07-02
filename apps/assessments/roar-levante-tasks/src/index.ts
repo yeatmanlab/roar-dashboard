@@ -13,6 +13,8 @@ import {
 import './styles/index.scss';
 import taskConfig from './tasks/taskConfig';
 import { startRun } from '@roar-platform/assessment-sdk/compat/firekit';
+// @ts-ignore: facade is a plain JS file without type declarations
+import { wireScoreAdapter } from './sdk/levante-firekit-facade.js';
 import { setTaskStore, taskStore } from './taskStore';
 import { InitPageSetup, Logger } from './utils';
 // @ts-ignore: Need to keep sentry as .js file to use new function-based API
@@ -42,6 +44,7 @@ export class TaskLauncher {
 
   async init() {
     initSentry();
+    wireScoreAdapter();
     await startRun();
 
     const { taskName } = this.gameParams;

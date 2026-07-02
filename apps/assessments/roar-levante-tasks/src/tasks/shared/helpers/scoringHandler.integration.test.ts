@@ -1,5 +1,6 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { ScoringHandler } from './scoringHandler.js';
+import { toLevanteScoreEntries, LEVANTE_SCORE_NAMES } from '@roar-platform/assessment-schema/roar-levante-tasks';
 import fs from 'fs';
 import path from 'node:path';
 import papaparse from 'papaparse';
@@ -357,5 +358,84 @@ describe('ScoringHandler Integration Tests', () => {
     expect(result2.composite.roarScore).toBe(567);
     expect(result2.composite.standardScore).toBe(128);
     expect(result2.composite.percentile).toBe(97);
+  });
+
+  // ── normed + unnormed score merge ─────────────────────────────────────────
+
+  test('should merge normed IRT scores with raw counts for a normed task', async () => {
+    // Verifies that computedScoreCallback merges both getNormedScores and
+    // getUnnormedScores into a single composite object, so run_scores receives
+    // both IRT/normed fields and count fields for trog/roar-inference.
+    const handler = new ScoringHandler('trog', 1, { age: 72 });
+    handler.totalCorrect = 12;
+
+    const result = await handler.computedScoreCallback({
+      composite: { test: { thetaEstimate: 1.0, numAttempted: 15, numCorrect: 12 } },
+    });
+
+    // Normed IRT fields (trog_lookup_v1.csv: ageMonths=72, thetaEstimate=1.0)
+    expect(result.composite.thetaEstimate).toBe(1.0);
+    expect(result.composite.roarScore).toBe(567);
+    expect(result.composite.standardScore).toBe(128);
+    expect(result.composite.percentile).toBe(97);
+    expect(result.composite.scoringVersion).toBe(1);
+
+    // Count fields merged alongside — normed fields take precedence on collision
+    expect(result.composite.totalCorrect).toBe(12);
+    expect(result.composite.totalNumAttempted).toBe(15);
+    expect(result.composite.totalPercentCorrect).toBe(80);
+  });
+
+  // ── toLevanteScoreEntries integration ─────────────────────────────────────
+
+  test('toLevanteScoreEntries emits both IRT and count entries for a normed task', async () => {
+    const handler = new ScoringHandler('trog', 1, { age: 72 });
+    handler.totalCorrect = 12;
+
+    const computed = await handler.computedScoreCallback({
+      composite: { test: { thetaEstimate: 1.0, numAttempted: 15 } },
+    });
+
+    const entries = toLevanteScoreEntries(computed, { strict: true });
+
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: LEVANTE_SCORE_NAMES.THETA_ESTIMATE, type: 'computed' }),
+    );
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: LEVANTE_SCORE_NAMES.ROAR_SCORE, type: 'computed', value: '567' }),
+    );
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: LEVANTE_SCORE_NAMES.TOTAL_CORRECT, type: 'raw', value: '12' }),
+    );
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: LEVANTE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED, type: 'raw', value: '15' }),
+    );
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: LEVANTE_SCORE_NAMES.TOTAL_PERCENT_CORRECT, type: 'computed', value: '80' }),
+    );
+  });
+
+  test('toLevanteScoreEntries emits only count entries for an unnormed task', async () => {
+    const handler = new ScoringHandler('roar-inference', 0, { age: 108 });
+    handler.totalCorrect = 7;
+
+    const computed = await handler.computedScoreCallback({
+      composite: { test: { numAttempted: 10 } },
+    });
+
+    const entries = toLevanteScoreEntries(computed, { strict: true });
+
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: LEVANTE_SCORE_NAMES.TOTAL_CORRECT, type: 'raw', value: '7' }),
+    );
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: LEVANTE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED, type: 'raw', value: '10' }),
+    );
+    expect(entries).toContainEqual(
+      expect.objectContaining({ name: LEVANTE_SCORE_NAMES.TOTAL_PERCENT_CORRECT, type: 'computed', value: '70' }),
+    );
+    expect(entries).not.toContainEqual(expect.objectContaining({ name: LEVANTE_SCORE_NAMES.ROAR_SCORE }));
+    expect(entries).not.toContainEqual(expect.objectContaining({ name: LEVANTE_SCORE_NAMES.PERCENTILE }));
+    expect(papaParseSpy).not.toHaveBeenCalled();
   });
 });
