@@ -35,6 +35,8 @@ import { WriteTrialCommand } from '../commands/write-trial.command';
 import { UpdateRunEngagementFlagsCommand } from '../commands/update-engagement-flags.command';
 import { GetTaskVariantCommand } from '../commands/get-variant-id.command';
 import { GetVariantByIdCommand } from '../commands/get-variant-by-id.command';
+import { UploadFileCommand } from '../commands/upload-file.command';
+import type { UploadFileOutput } from '../types/upload-file';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -81,6 +83,7 @@ export class FirekitFacade {
   #taskInfo: CompatTaskInfo | undefined;
   #interactionBuffer: AddInteractionInput[] = [];
   #storageBucket: FirebaseStorage | undefined;
+  #uploadQueue: Promise<UploadFileOutput>[] = [];
 
   private constructor() {}
 
@@ -887,6 +890,37 @@ export function makeLazyComputedCallback<T extends { computedScoreCallback: (raw
   };
 }
 
-export function uploadFile() {
-  
+export async function uploadFile({fileOrBlob, filename, taskId, assessmentPid, customMetadata}: {fileOrBlob: File | Blob; filename: string; taskId: string; assessmentPid?: string; customMetadata?: Record<string, unknown>}): Promise<string> {
+  const facade = getFirekitCompat();
+  const invoker = facade.getInvoker();
+  const ctx = facade.getContext();
+  const storageBucket = facade._getStorageBucket();
+  const taskInfo = facade._getTaskInfo();
+  const runId = facade._getRunId();
+
+  const administrationId = taskInfo?.isAnonymous ? 'test-administration' : taskInfo?.administrationId;
+
+  const input = {
+    filename,
+    fileOrBlob,
+    taskId,
+    runId,
+    administrationId,
+    assessmentPid,
+    customMetadata
+  };
+
+  // Maybe throw error if administrationId is undefined for staging/prod
+
+  if (!storageBucket) {
+    if (!process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+      // Prod/staging — bucket should always be initialized
+      throw new SDKError('uploadFile requires a storage bucket to be initialized but none was found in non-emulator environments.');
+    }
+    // Emulator/test — fall back to local
+    ctx.logger?.warn?.('[firekit.uploadFile] No storage bucket — saving file locally.');
+  }
+
+  const cmd = new UploadFileCommand(ctx.participant.participantId, storageBucket);
+  return invoker.run(cmd, input);
 }
