@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedObject } from 'vitest';
-import { AggregationService } from './support-categories.service';
+import { AggregationService } from './aggregation.service';
 import type { Administration } from '../../db/schema';
 import { ApiError } from '../../errors/api-error';
 import { AdministrationRepository } from '../../repositories/administration.repository';

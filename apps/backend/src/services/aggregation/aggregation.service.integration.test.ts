@@ -1,5 +1,5 @@
 import { describe, it, beforeAll, expect } from 'vitest';
-import { AggregationService } from './support-categories.service';
+import { AggregationService } from './aggregation.service';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import { baseFixture } from '../../test-support/fixtures';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';

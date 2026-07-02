@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import type { MockedObject } from 'vitest';
-import type { AggregationService } from '../../services/aggregation';
+import type { AggregationService } from '../../services/aggregation/aggregation.service';
 
 /**
  * Mock Aggregation Service

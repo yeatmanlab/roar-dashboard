@@ -48,7 +48,7 @@ import type {
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
 import { ReportRepository, toReportAdminWindow } from '../../repositories/report.repository';
 import type { ReportScope } from '../../repositories/report.repository';
-import { AggregationService } from '../aggregation';
+import { AggregationService } from '../aggregation/aggregation.service';
 import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { RunRepository } from '../../repositories/run.repository';

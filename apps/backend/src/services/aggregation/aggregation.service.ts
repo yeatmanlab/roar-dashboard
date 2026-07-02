@@ -54,6 +54,15 @@ interface RunWithDemographics {
   scoringVersion: number | null;
 }
 
+/**
+ * AggregationService
+ *
+ * Provides business logic for aggregation operations related to reporting.
+ * Follows the factory pattern with dependency injection.
+ *
+ * @param params - Configuration object containing repository instances (optional)
+ * @returns AggregationService - An object with aggregation service methods.
+ */
 export function AggregationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
