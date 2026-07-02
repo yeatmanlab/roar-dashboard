@@ -56,6 +56,11 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id }, body }) => AdministrationsController.update(user!, id, body),
     },
+    aggregateSupportCategories: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { id }, query }) =>
+        AdministrationsController.aggregateSupportCategories(user!, id, query),
+    },
     progressReports: {
       getStudentProgress: {
         // @ts-expect-error - ts-rest middleware type incompatibility with Express

@@ -9,6 +9,7 @@ export const ADMINISTRATION_ASSIGNEES_QUERY_KEY = 'administration-assignees';
 export const ADMINISTRATION_TASK_VARIANTS_QUERY_KEY = 'administration-task-variants';
 export const ADMINISTRATION_AGREEMENTS_QUERY_KEY = 'administration-agreements';
 export const ADMINISTRATION_TREE_QUERY_KEY = 'administration-tree';
+export const ADMINISTRATION_SUPPORT_CATEGORIES_QUERY_KEY = 'administration-support-categories';
 export const CLASSES_QUERY_KEY = 'classes';
 export const DISTRICTS_QUERY_KEY = 'districts';
 export const DISTRICTS_LIST_QUERY_KEY = 'districts-list';

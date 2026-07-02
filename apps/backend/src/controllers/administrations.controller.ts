@@ -784,4 +784,44 @@ export const AdministrationsController = {
       throw error;
     }
   },
+
+  /**
+   * Aggregate support categories for an administration.
+   *
+   * Returns aggregated support category counts and distributions across schools and grades
+   * for all scored tasks in a district administration.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters with districtId
+   */
+  aggregateSupportCategories: async (
+    authContext: AuthContext,
+    administrationId: string,
+    query: { districtId: string },
+  ) => {
+    try {
+      const result = await administrationService.aggregateSupportCategories(
+        authContext,
+        administrationId,
+        query.districtId,
+      );
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: result ?? {},
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
 };
