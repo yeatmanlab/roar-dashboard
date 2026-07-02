@@ -15,9 +15,11 @@ const validateFileExtension = (filename: string): void => {
   const ext = dotIndex > 0 ? base.slice(dotIndex).toLowerCase() : '';
 
   if (!ext || !ALLOWED_EXTENSIONS.has(ext)) {
-    throw new SDKError(`Unsupported file type: "${ext || 'none'}". Allowed: ${Array.from(ALLOWED_EXTENSIONS).join(', ')}`);
+    throw new SDKError(
+      `Unsupported file type: "${ext || 'none'}". Allowed: ${Array.from(ALLOWED_EXTENSIONS).join(', ')}`,
+    );
   }
-}
+};
 
 /**
  * Sanitizes input string by removing forbidden characters and truncating to 1024 bytes.
@@ -57,10 +59,19 @@ const sanitizeInput = (input: string): string => {
  * @param {string} [assessmentPid] - Optional assessmentPid. Prioritizes assigned assessmentPid and defaults to assessmentUid
  * @returns Standardized file path for recordings
  */
-export default function generateFilePath({ filename, administrationId, runId, taskId, participantId, assessmentPid }: GenerateFilePathInput) {
-  const pid = (assessmentPid && assessmentPid.length > 0) ? assessmentPid : participantId;
+export default function generateFilePath({
+  filename,
+  administrationId,
+  runId,
+  taskId,
+  participantId,
+  assessmentPid,
+}: GenerateFilePathInput) {
+  const pid = assessmentPid && assessmentPid.length > 0 ? assessmentPid : participantId;
 
   validateFileExtension(filename);
 
-  return [taskId, participantId, pid, administrationId, runId, filename].map((segment) => sanitizeInput(segment)).join('/');
+  return [taskId, participantId, pid, administrationId, runId, filename]
+    .map((segment) => sanitizeInput(segment))
+    .join('/');
 }

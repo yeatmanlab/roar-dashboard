@@ -36,7 +36,6 @@ import { UpdateRunEngagementFlagsCommand } from '../commands/update-engagement-f
 import { GetTaskVariantCommand } from '../commands/get-variant-id.command';
 import { GetVariantByIdCommand } from '../commands/get-variant-by-id.command';
 import { UploadFileCommand } from '../commands/upload-file.command';
-import type { UploadFileOutput } from '../types/upload-file';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -132,7 +131,6 @@ export class FirekitFacade {
   #taskInfo: CompatTaskInfo | undefined;
   #interactionBuffer: AddInteractionInput[] = [];
   #storageBucket: FirebaseStorage | undefined;
-  #uploadQueue: Promise<UploadFileOutput>[] = [];
 
   private constructor() {}
 
@@ -957,8 +955,19 @@ export async function uploadFile({
   const storageBucket = facade._getStorageBucket();
   const taskInfo = facade._getTaskInfo();
   const runId = facade._getRunId();
+  if (!runId) {
+    throw new SDKError('appkit.uploadFile requires an active run. Call appkit.startRun() first.', {
+      code: SdkErrorCode.UPLOAD_FILE_FAILED,
+    });
+  }
 
+  // Anonymous runs aren't tied to an administration; use a sentinel segment for the path.
   const administrationId = taskInfo?.isAnonymous ? 'test-administration' : taskInfo?.administrationId;
+  if (!administrationId) {
+    throw new SDKError('appkit.uploadFile requires an administrationId for non-anonymous runs.', {
+      code: SdkErrorCode.UPLOAD_FILE_FAILED,
+    });
+  }
 
   const input = {
     filename,
@@ -966,13 +975,18 @@ export async function uploadFile({
     taskId,
     runId,
     administrationId,
-    assessmentPid,
-    customMetadata,
+    ...(assessmentPid !== undefined ? { assessmentPid } : {}),
+    ...(customMetadata !== undefined ? { customMetadata } : {}),
   };
 
-  // _getStorageBucket() resolves the bucket lazily: the local Storage emulator in dev,
-  // the admin recordings bucket in prod/staging. It throws (via getApp) if no Firebase
-  // app exists, which is the correct failure mode for an upload with nothing to write to.
+  // _getStorageBucket() resolves the bucket lazily: the local Storage emulator in dev, the
+  // admin recordings bucket in prod/staging (it throws via getApp if no Firebase app exists).
   const cmd = new UploadFileCommand(ctx.participant.participantId, storageBucket);
-  return invoker.run(cmd, input);
+  const output = await invoker.run(cmd, input);
+
+  // Kick off the resumable upload (fire-and-forget, mirroring legacy firekit's upload queue).
+  // The storage path is known immediately and is what the caller persists on the trial.
+  output.task?.();
+
+  return output.storagePath;
 }

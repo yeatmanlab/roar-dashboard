@@ -1,4 +1,4 @@
-import type { UploadTask } from 'firebase/storage'
+import type { UploadTask } from 'firebase/storage';
 /**
  * Input for UploadFile command.
  *
@@ -17,7 +17,7 @@ export interface UploadFileInput {
   runId: string;
   administrationId: string;
   assessmentPid?: string;
-  customMetadata?: Record<string, any>;
+  customMetadata?: Record<string, unknown>;
 }
 
 /**
@@ -49,7 +49,7 @@ export const UploadStatusEnum = {
   FAILED: 'failed',
 } as const;
 
-export type UploadStatus = typeof UploadStatusEnum[keyof typeof UploadStatusEnum];
+export type UploadStatus = (typeof UploadStatusEnum)[keyof typeof UploadStatusEnum];
 
 /**
  * Represents the output of an upload file command.
@@ -63,4 +63,4 @@ export type UploadFileOutput = {
   status: UploadStatus;
   filename: string;
   storagePath: string;
-}
+};

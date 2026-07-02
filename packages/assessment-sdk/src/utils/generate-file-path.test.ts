@@ -34,12 +34,9 @@ describe('generateFilePath', () => {
   });
 
   describe('allowed file extensions', () => {
-    it.each(['.webm', '.mp4', '.wav', '.ogg', '.mkv', '.mp3'])(
-      'accepts %s extension',
-      (ext) => {
-        expect(() => generateFilePath({ ...BASE_INPUT, filename: `recording${ext}` })).not.toThrow();
-      },
-    );
+    it.each(['.webm', '.mp4', '.wav', '.ogg', '.mkv', '.mp3'])('accepts %s extension', (ext) => {
+      expect(() => generateFilePath({ ...BASE_INPUT, filename: `recording${ext}` })).not.toThrow();
+    });
 
     it('accepts extension case-insensitively', () => {
       expect(() => generateFilePath({ ...BASE_INPUT, filename: 'recording.WEBM' })).not.toThrow();
