@@ -53,13 +53,13 @@ export type UploadStatus = (typeof UploadStatusEnum)[keyof typeof UploadStatusEn
 
 /**
  * Represents the output of an upload file command.
- * @property task - Optional upload task function that calls uploadBytesResumable. Absent for local saves.
+ * @property task - Starts the resumable upload when called (wraps uploadBytesResumable).
  * @property status - The status of the upload
  * @property filename - The name of the file to upload
- * @property storagePath - Storage path of the file. Firebase storage path including bucket name, or local file path.
+ * @property storagePath - Firebase storage path of the file, including the bucket name.
  */
 export type UploadFileOutput = {
-  task?: () => UploadTask;
+  task: () => UploadTask;
   status: UploadStatus;
   filename: string;
   storagePath: string;

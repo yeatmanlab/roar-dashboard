@@ -986,7 +986,7 @@ export async function uploadFile({
 
   // Kick off the resumable upload (fire-and-forget, mirroring legacy firekit's upload queue).
   // The storage path is known immediately and is what the caller persists on the trial.
-  output.task?.();
+  output.task();
 
   return output.storagePath;
 }
