@@ -10,3 +10,4 @@ export {
   createMockFoundationalCompositeService,
   type MockFoundationalCompositeService,
 } from './foundational-composite.service';
+export { createMockAggregationService, type MockAggregationService } from './aggregation.service';

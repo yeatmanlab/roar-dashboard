@@ -47,6 +47,7 @@ export function transformAdministration(admin: AdministrationWithEmbeds): Contra
   if (admin.tasks) {
     result.tasks = admin.tasks.map((task) => ({
       taskId: task.taskId,
+      taskSlug: task.taskSlug,
       taskName: task.taskName,
       variantId: task.variantId,
       variantName: task.variantName,

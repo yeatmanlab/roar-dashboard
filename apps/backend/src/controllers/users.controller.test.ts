@@ -983,6 +983,7 @@ describe('UsersController', () => {
         tasks: [
           {
             taskId: 'task-1',
+            taskSlug: 'swr',
             taskName: 'Task One',
             variantId: 'variant-1',
             variantName: 'Variant One',
@@ -1008,6 +1009,7 @@ describe('UsersController', () => {
       expect(data.items[0]!.tasks).toHaveLength(1);
       expect(data.items[0]!.tasks![0]).toMatchObject({
         taskId: 'task-1',
+        taskSlug: 'swr',
         taskName: 'Task One',
         variantId: 'variant-1',
         variantName: 'Variant One',

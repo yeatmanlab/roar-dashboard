@@ -89,6 +89,7 @@ export type AdministrationTaskProgress = z.infer<typeof AdministrationTaskProgre
  */
 export const AdministrationTaskSchema = z.object({
   taskId: z.string().uuid(),
+  taskSlug: z.string(),
   taskName: z.string(),
   variantId: z.string().uuid(),
   variantName: z.string().nullable(),
@@ -745,3 +746,45 @@ export const UpdateAdministrationResponseSchema = z.object({
 });
 
 export type UpdateAdministrationResponse = z.infer<typeof UpdateAdministrationResponseSchema>;
+
+/**
+ * School counts with grade breakdown for support category aggregation.
+ */
+export const SchoolGradeCountsSchema = z.object({
+  schools: z.record(
+    z.object({
+      name: z.string(),
+      count: z.number().int().min(0),
+    }),
+  ),
+  grades: z.record(z.number().int().min(0)),
+  total: z.number().int().min(0),
+});
+
+export type SchoolGradeCounts = z.infer<typeof SchoolGradeCountsSchema>;
+
+/**
+ * Aggregated counts for a single task's support categories and score ranges.
+ */
+export const TaskCountsSchema = z.object({
+  achievedSkill: SchoolGradeCountsSchema,
+  developingSkill: SchoolGradeCountsSchema,
+  needsExtraSupport: SchoolGradeCountsSchema,
+  raw: z.record(SchoolGradeCountsSchema),
+  percentile: z.record(SchoolGradeCountsSchema),
+});
+
+export type TaskCounts = z.infer<typeof TaskCountsSchema>;
+
+/**
+ * Response schema for GET /administrations/:id/support-categories.
+ *
+ * Aggregates support category counts (achievedSkill, developingSkill, needsExtraSupport)
+ * and score ranges (raw and percentile) across all best runs for scored tasks
+ * (swr, pa, sre, cva, morphology, trog, roar-inference, swr-es, sre-es).
+ *
+ * Returns a map of taskId → TaskCounts for efficient client-side access.
+ */
+export const AggregatedSupportCategoriesSchema = z.record(z.string().uuid(), TaskCountsSchema);
+
+export type AggregatedSupportCategories = z.infer<typeof AggregatedSupportCategoriesSchema>;
