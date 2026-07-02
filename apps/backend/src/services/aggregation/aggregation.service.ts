@@ -11,6 +11,7 @@ import { SWR_TASK_IDS } from '@roar-platform/assessment-schema/roar-swr';
 import { SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
 import { PA_TASK_ID } from '@roar-platform/assessment-schema/roar-pa';
 import { MORPHOLOGY_TASK_ID, CVA_TASK_ID } from '@roar-platform/assessment-schema/roar-multichoice';
+import { LEVANTE_NORMED_TASK_IDS } from '@roar-platform/assessment-schema/roar-levante-tasks';
 
 const SCORED_TASK_IDS = [
   SWR_TASK_IDS.EN,
@@ -20,8 +21,8 @@ const SCORED_TASK_IDS = [
   PA_TASK_ID,
   CVA_TASK_ID,
   MORPHOLOGY_TASK_ID,
-  'trog',
-  'roar-inference',
+  LEVANTE_NORMED_TASK_IDS.TROG,
+  LEVANTE_NORMED_TASK_IDS.ROAR_INFERENCE,
 ] as const;
 
 export type SupportLevel = 'achievedSkill' | 'developingSkill' | 'needsExtraSupport';

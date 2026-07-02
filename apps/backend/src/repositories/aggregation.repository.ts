@@ -27,7 +27,6 @@ interface UserSchoolRecord {
  * Aggregation Repository
  *
  * Provides data access methods for data aggregation services upstream.
- * Extends BaseRepository for standard CRUD operations.
  */
 export class AggregationRepository {
   constructor(private readonly coreDb: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {}
