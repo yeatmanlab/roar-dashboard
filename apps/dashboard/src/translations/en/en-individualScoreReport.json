@@ -14,6 +14,8 @@
     "completedTasks": "This report includes scores for the following assessments:",
     "roarSummary": "The Rapid Online Assessment of Reading (ROAR) assesses students across a range of foundational reading skills.",
     "summary": "In this report, you will find {firstName}’s scoring at the time of testing, as well as ways you can support {firstName} in their path to reading fluency and comprehension!",
+    "longitudinalNote": "The scores in the longitudinal charts represent runs using compatible scoring versions. If there are runs not shown here, their scoring versions are not directly comparable. See our {link} for details.",
+    "longitudinalLink": "Technical Manual",
     "taskTabHeader": "Understanding the Scores",
     "taskIntro": "The ROAR assessments return these kinds of scores:",
     "standardScore": "Standard Score",

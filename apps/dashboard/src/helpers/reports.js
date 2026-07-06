@@ -392,8 +392,19 @@ export const excludeFromScoringTasks = [
   ...LEVANTE_TASK_IDS_NO_SCORES,
 ];
 
-// TODO: Add newly normed tasks after fixing exported data
-export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence', 'Palabra', 'Frase'];
+export const includeReliabilityFlagsOnExport = [
+  'Word',
+  'Letter',
+  'Phoneme',
+  'Sentence',
+  'Palabra',
+  'Frase',
+  'Syntax',
+  'Inference',
+  'Morphology',
+  'Letter',
+  'Written Vocab',
+];
 
 /*
  *  Tasks to Display Percent Correct
