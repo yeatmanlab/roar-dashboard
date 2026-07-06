@@ -569,7 +569,9 @@ const handleExportToPdf = async () => {
   // Add At a Glance Charts and report header to the PDF
   const atAGlanceCharts = document.getElementById('at-a-glance-charts');
   if (atAGlanceCharts !== null) {
+    atAGlanceCharts.classList.add('pdf-export-mode');
     yCounter = await addElementToPdf(atAGlanceCharts, doc, yCounter);
+    atAGlanceCharts.classList.remove('pdf-export-mode');
   }
 
   // Initialize to first tab
