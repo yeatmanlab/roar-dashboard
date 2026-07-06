@@ -356,7 +356,8 @@ export class FirekitFacade {
       'state_changed',
       undefined,
       (error) => {
-        console.error(`Upload error: ${nextTask.filename} [${error?.code}]`);
+        const logger = this._getLogger();
+        logger?.warn({ err: error }, `Upload failed: ${nextTask.filename}`);
         nextTask.status = UploadStatusEnum.FAILED;
         const idx = this.#uploadQueue.indexOf(nextTask);
         if (idx !== -1) this.#uploadQueue.splice(idx, 1);
