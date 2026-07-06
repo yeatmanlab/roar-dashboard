@@ -113,8 +113,8 @@
                     v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
                     class="text-center text-sm font-bold px-4"
                   >
-                    In this district-level report, visualizations are available for foundational ROAR assessments (Word,
-                    Sentence, and Phoneme) to give you clear, reliable insights on these foundational skills.
+                    Visualizations are only available for foundational reading and comprehension assessments. If
+                    visualizations are not showing, your students were not assigned any of these assessments.
                   </p>
                   <p class="text-center align-items-center text-sm font-bold px-4">
                     View school-level or classroom-level reports to see student-level data and information about other
@@ -130,8 +130,8 @@
               <p class="text-center text-sm font-bold px-4">
                 {{
                   assignedNormedTaskIds.length === 0
-                    ? 'In this district-level report, visualizations are only available for foundational ROAR assessments (Word, Sentence, and Phoneme). None of these are currently assigned within your district.'
-                    : 'Visualizations will appear once students complete Word, Sentence, and/or Phoneme assessments.'
+                    ? 'Visualizations are only available for foundational reading and comprehension assessments. If visualizations are not showing, your students were not assigned any of these assessments.'
+                    : 'Visualizations will appear once students complete our foundational or comprehension assessments.'
                 }}
               </p>
               <p class="text-center align-items-center text-sm font-bold px-4">
@@ -833,8 +833,12 @@ const isEmptyDistrictSupportCategories = computed(() => {
 });
 
 const assignedTaskIds = computed(() => administrationData.value?.assessments?.map((task) => task.taskId));
-// Currently do not want to show swr-es and sre-es pi charts
-const assignedNormedTaskIds = computed(() => assignedTaskIds.value.filter((id) => ['swr', 'sre', 'pa'].includes(id)));
+
+const assignedNormedTaskIds = computed(() =>
+  assignedTaskIds.value.filter((id) =>
+    ['swr', 'sre', 'pa', 'letter', 'cva', 'morphology', 'roar-inference', 'trog', 'swr-es', 'sre-es'].includes(id),
+  ),
+);
 
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
