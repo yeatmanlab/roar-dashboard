@@ -22,8 +22,9 @@
           v-if="descriptionsByTaskId[taskId]"
           v-tooltip.top="`${descriptionsByTaskId[taskId].header}${descriptionsByTaskId[taskId].description}`"
           class="pi pi-info-circle info-icon h-full pt-1"
+          data-html2canvas-ignore="true"
         />
-        <span v-else class="info-icon-placeholder" />
+        <span v-else class="info-icon-placeholder" data-html2canvas-ignore="true" />
         <div v-if="descriptionsByTaskId[taskId]" class="chart-description text-sm text-gray-500">
           {{ descriptionsByTaskId[taskId].header }}{{ descriptionsByTaskId[taskId].description }}
         </div>
@@ -176,5 +177,17 @@ const supportLevelCountsByTaskId = computed(() => {
   .chart-description {
     display: block;
   }
+}
+</style>
+
+<style>
+.pdf-export-mode .chart-description {
+  display: block !important;
+  grid-column: 1 / -1;
+}
+
+.pdf-export-mode .info-icon,
+.pdf-export-mode .info-icon-placeholder {
+  display: none !important;
 }
 </style>
