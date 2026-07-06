@@ -1,6 +1,6 @@
 import { getApp } from 'firebase/app';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
-import type { FirebaseStorage } from 'firebase/storage';
+import type { FirebaseStorage, StorageError } from 'firebase/storage';
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums/sdk-error-code.enum';
@@ -355,9 +355,8 @@ export class FirekitFacade {
     activeTask.on(
       'state_changed',
       undefined,
-      (error) => {
-        const logger = this._getLogger();
-        logger?.warn({ err: error }, `Upload failed: ${nextTask.filename}`);
+      (error: StorageError) => {
+        this._getLogger()?.warn({ err: error }, `Upload failed: ${nextTask.filename}`);
         nextTask.status = UploadStatusEnum.FAILED;
         const idx = this.#uploadQueue.indexOf(nextTask);
         if (idx !== -1) this.#uploadQueue.splice(idx, 1);
