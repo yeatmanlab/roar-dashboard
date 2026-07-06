@@ -40,7 +40,7 @@ export class UploadFileCommand implements Command<UploadFileInput, UploadFileOut
     const storageRef = ref(this.storageBucket, filePath);
 
     return {
-      task: () => uploadBytesResumable(storageRef, fileOrBlob),
+      upload: () => uploadBytesResumable(storageRef, fileOrBlob),
       status: UploadStatusEnum.PENDING,
       filename,
       storagePath: storageRef.toString(),

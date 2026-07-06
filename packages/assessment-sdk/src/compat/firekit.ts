@@ -36,6 +36,8 @@ import { UpdateRunEngagementFlagsCommand } from '../commands/update-engagement-f
 import { GetTaskVariantCommand } from '../commands/get-variant-id.command';
 import { GetVariantByIdCommand } from '../commands/get-variant-by-id.command';
 import { UploadFileCommand } from '../commands/upload-file.command';
+import type { UploadFileOutput } from '../types/upload-file';
+import { UploadStatusEnum } from '../types/upload-file';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -131,6 +133,7 @@ export class FirekitFacade {
   #taskInfo: CompatTaskInfo | undefined;
   #interactionBuffer: AddInteractionInput[] = [];
   #storageBucket: FirebaseStorage | undefined;
+  #uploadQueue: UploadFileOutput[] = [];
 
   private constructor() {}
 
@@ -327,6 +330,45 @@ export class FirekitFacade {
    */
   _getLogger() {
     return this.#ctx?.logger;
+  }
+
+  /**
+   * Add to upload queue
+   */
+
+  _addUploadToQueue(task: UploadFileOutput) {
+    this.#uploadQueue.push(task);
+    this.processUploadQueue();
+  }
+
+  processUploadQueue() {
+    const totalUploadingTasks = this.#uploadQueue.filter((task) => task.status === UploadStatusEnum.UPLOADING).length;
+    if (totalUploadingTasks >= 3) return;
+    const nextTask = this.#uploadQueue.find((task) => task.status === UploadStatusEnum.PENDING);
+    
+    if (!nextTask) return;
+
+    nextTask.status = UploadStatusEnum.UPLOADING;
+
+    const activeTask = nextTask.upload();
+
+    activeTask.on(
+      'state_changed',
+      undefined,
+      (error) => {
+        console.error(`Upload error: ${nextTask.filename} [${error?.code}]`);
+        nextTask.status = UploadStatusEnum.FAILED;
+        const idx = this.#uploadQueue.indexOf(nextTask);
+        if (idx !== -1) this.#uploadQueue.splice(idx, 1);
+        this.processUploadQueue();
+      },
+      () => {
+        nextTask.status = UploadStatusEnum.COMPLETED;
+        const idx = this.#uploadQueue.indexOf(nextTask);
+        if (idx !== -1) this.#uploadQueue.splice(idx, 1);
+        this.processUploadQueue();
+      },
+    );
   }
 }
 
@@ -984,9 +1026,9 @@ export async function uploadFile({
   const cmd = new UploadFileCommand(ctx.participant.participantId, storageBucket);
   const output = await invoker.run(cmd, input);
 
-  // Kick off the resumable upload (fire-and-forget, mirroring legacy firekit's upload queue).
+  // Add to queue which kicks off the resumable upload process (fire-and-forget)
   // The storage path is known immediately and is what the caller persists on the trial.
-  output.task();
+  facade._addUploadToQueue(output);
 
   return output.storagePath;
 }
