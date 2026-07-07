@@ -241,12 +241,12 @@ export class FirekitFacade {
    * @internal
    */
   _getStorageBucket(): FirebaseStorage {
-  try {
+    try {
       this.#storageBucket ??= resolveStorageBucket();
     } catch (err) {
       throw new SDKError('appkit.uploadFile requires an initialized Firebase app.', {
         code: SdkErrorCode.UPLOAD_FILE_FAILED,
-        cause: err,
+        cause: err instanceof Error ? err : undefined,
       });
     }
     return this.#storageBucket;
@@ -1004,7 +1004,7 @@ export async function uploadFile({
   const storageBucket = facade._getStorageBucket();
   const taskInfo = facade._getTaskInfo();
   const runId = facade._getRunId();
-  let sanitizedCustomMetadata = { ...customMetadata };
+  let sanitizedCustomMetadata: Record<string, string> | undefined = { ...customMetadata };
 
   if (!runId) {
     throw new SDKError('appkit.uploadFile requires an active run. Call appkit.startRun() first.', {
@@ -1040,7 +1040,7 @@ export async function uploadFile({
     runId,
     administrationId,
     ...(assessmentPid !== undefined ? { assessmentPid } : {}),
-    ...(customMetadata !== undefined ? { customMetadata: sanitizedCustomMetadata } : {}),
+    ...(customMetadata !== undefined && sanitizedCustomMetadata ? { customMetadata: sanitizedCustomMetadata } : {}),
   };
 
   // _getStorageBucket() resolves the bucket lazily: the local Storage emulator in dev, the

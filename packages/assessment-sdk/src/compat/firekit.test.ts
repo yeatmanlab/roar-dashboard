@@ -1569,6 +1569,13 @@ describe('firekit compat', () => {
           expect.any(Blob),
           undefined,
         );
+        // Specifically verify that { customMetadata: undefined } was not passed —
+        // the sanitizedCustomMetadata guard prevents the key from leaking through
+        expect(uploadBytesResumable).not.toHaveBeenCalledWith(
+          expect.anything(),
+          expect.any(Blob),
+          { customMetadata: undefined },
+        );
       });
 
       it('adds the upload task to the queue', async () => {
