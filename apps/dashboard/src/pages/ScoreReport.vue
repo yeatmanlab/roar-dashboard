@@ -2034,7 +2034,7 @@ const sortedTaskIds = computed(() => {
 });
 
 const sortedAndFilteredTaskIds = computed(() => {
-  const tasksRequiringScoringVersion = ['morphology', 'cva', 'trog', 'roar-inference'];
+  const tasksRequiringScoringVersion = ['letter', 'morphology', 'cva', 'trog', 'roar-inference'];
   return sortedTaskIds.value?.filter((taskId) => {
     if (!tasksToDisplayGraphs.includes(taskId)) return false;
     if (tasksRequiringScoringVersion.includes(taskId)) {
@@ -2045,7 +2045,7 @@ const sortedAndFilteredTaskIds = computed(() => {
 });
 
 const sortedAndFilteredSubscoreTaskIds = computed(() => {
-  const tasksRequiringScoringVersion = ['morphology', 'cva', 'trog', 'roar-inference'];
+  const tasksRequiringScoringVersion = ['letter', 'morphology', 'cva', 'trog', 'roar-inference'];
 
   if (props.orgType === 'district') {
     const districtTasks =

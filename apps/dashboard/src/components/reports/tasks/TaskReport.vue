@@ -58,7 +58,12 @@
       :computed-table-data="computedTableData"
     />
     <SubscoreTable
-      v-if="taskId === 'letter' && !isLoadingTasksDictionary"
+      v-if="
+        taskId === 'letter' &&
+        !isLoadingTasksDictionary &&
+        taskScoringVersions[taskId] &&
+        taskScoringVersions[taskId] >= 1
+      "
       task-id="letter"
       :task-name="tasksDictionary['letter']?.publicName"
       :administration-id="administrationId"
