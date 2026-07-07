@@ -4,6 +4,7 @@
     "'self'",
     "'unsafe-inline'",
     "'unsafe-eval'",
+    "https://cdn.jsdelivr.net",
     "https://*.googleapis.com",
     "https://*.googletagmanager.com",
     "https://apis.google.com",
@@ -18,7 +19,7 @@
   "style-src": [
     "'self'",
     "'unsafe-inline'",
-    "https://cdn.jsdelivr.net/npm/katex@0.16.8/",
+    "https://cdn.jsdelivr.net",
     "https://fonts.googleapis.com",
     "https://googletagmanager.com",
     "https://tagmanager.google.com"
@@ -29,6 +30,7 @@
     "https://*.google-analytics.com",
     "https://*.googletagmanager.com",
     "https://googletagmanager.com",
+    "https://eyetrackingdata.blob.core.windows.net",
     "https://raw.githubusercontent.com/yeatmanlab/",
     "https://ssl.gstatic.com",
     "https://storage.googleapis.com/road-dashboard/",
@@ -59,6 +61,7 @@
     "https://www.gstatic.com"
   ],
   "media-src": [
+    "https://eyetrackingdata.blob.core.windows.net",
     "https://storage.googleapis.com/road-dashboard/",
     "https://storage.googleapis.com/roam-apps/",
     "https://storage.googleapis.com/roar-ak/",
@@ -88,6 +91,8 @@
   "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
   "connect-src": [
     "'self'",
+    "https://cdn.jsdelivr.net",
+    "https://eyetrackingdata.blob.core.windows.net",
     "https://*.analytics.google.com",
     "https://*.google-analytics.com",
     "https://*.googleapis.com",
