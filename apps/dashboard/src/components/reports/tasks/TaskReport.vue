@@ -178,6 +178,7 @@ const props = defineProps({
 });
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
+console.log('tasksDictionary', tasksDictionary);
 
 const facetMode = ref({ name: 'Grade', key: 'grade' });
 const facetModes = [
