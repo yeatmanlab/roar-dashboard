@@ -11,8 +11,6 @@ type ReadaloudTaskEntry = {
 /**
  * Canonical task entry for read-aloud. Read-aloud is a single English task, so there is
  * exactly one entry; the backend seed creates one task (plus its variants) from it.
- *
- * NOTE: the display names below are placeholders — confirm the official task names.
  */
 export const READALOUD_TASK = {
   taskId: READALOUD_TASK_ID,
