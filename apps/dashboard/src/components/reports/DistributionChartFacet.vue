@@ -120,9 +120,13 @@ const getBinSize = (scoreMode, taskId) => {
   if (scoreMode === 'Percentile') {
     return 10;
   } else if (scoreMode === 'Raw Score') {
-    if (taskId === 'pa') return props.taskScoringVersions[taskId] >= 4 ? 40 : 5;
-    else if (taskId === 'sre') return 10;
+    if (taskId === 'pa') return props.taskScoringVersions[taskId] >= 4 ? 70 : 5;
+    else if (taskId === 'sre') return props.taskScoringVersions[taskId] >= 5 ? 65 : 10;
     else if (taskId === 'swr') return 50;
+    else if (taskId === 'cva') return 45;
+    else if (taskId === 'trog') return 75;
+    else if (taskId === 'roar-inference') return 50;
+    else if (taskId === 'morphology') return 45;
   }
   return 10;
 };
@@ -132,8 +136,12 @@ const getRangeLow = (scoreMode, taskId) => {
     return 0;
   } else if (scoreMode === 'Raw Score') {
     if (taskId === 'pa') return props.taskScoringVersions[taskId] >= 4 ? 40 : 0;
-    else if (taskId === 'sre') return 0;
+    else if (taskId === 'sre') return props.taskScoringVersions[taskId] >= 5 ? 300 : 0;
     else if (taskId === 'swr') return 100;
+    else if (taskId === 'cva') return 287;
+    else if (taskId === 'trog') return 53;
+    else if (taskId === 'roar-inference') return 300;
+    else if (taskId === 'morphology') return 280;
   }
   return 0;
 };
@@ -143,8 +151,12 @@ const getRangeHigh = (scoreMode, taskId) => {
     return 100;
   } else if (scoreMode === 'Raw Score') {
     if (taskId === 'pa') return props.taskScoringVersions[taskId] >= 4 ? 733 : 57;
-    else if (taskId === 'sre') return 130;
+    else if (taskId === 'sre') return props.taskScoringVersions[taskId] >= 5 ? 967 : 130;
     else if (taskId === 'swr') return 900;
+    else if (taskId === 'cva') return 753;
+    else if (taskId === 'trog') return 800;
+    else if (taskId === 'roar-inference') return 793;
+    else if (taskId === 'morphology') return 720;
   }
   return 100;
 };
