@@ -241,7 +241,14 @@ export class FirekitFacade {
    * @internal
    */
   _getStorageBucket(): FirebaseStorage {
-    this.#storageBucket ??= resolveStorageBucket();
+  try {
+      this.#storageBucket ??= resolveStorageBucket();
+    } catch (err) {
+      throw new SDKError('appkit.uploadFile requires an initialized Firebase app.', {
+        code: SdkErrorCode.UPLOAD_FILE_FAILED,
+        cause: err,
+      });
+    }
     return this.#storageBucket;
   }
 
