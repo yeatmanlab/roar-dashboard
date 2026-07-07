@@ -323,6 +323,25 @@ export const descriptionsByTaskId = {
     header: 'Sentence Reading Efficiency',
     description: ' assesses reading fluency at the sentence level.',
   },
+  morphology: {
+    header: 'Morphology',
+    description:
+      ' measures morphological awareness - through their knowledge of how prefixes and suffixes affect the meaning and function of words in a sentence.',
+  },
+  cva: {
+    header: 'Written Vocabulary',
+    description: ' measures synonym knowledge in the context of a sentence.',
+  },
+  trog: {
+    header: 'Syntax',
+    description:
+      ' measures receptive comprehension of English syntax - how word order, phrases, and clauses contribute to meaning.',
+  },
+  'roar-inference': {
+    header: 'Inference',
+    description:
+      ' measures the ability to draw conclusions and make meaning beyond explicitly stated information in a paragraph.',
+  },
 };
 
 const pageWidth = 190; // Set page width for calculations
