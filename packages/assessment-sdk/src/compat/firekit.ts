@@ -340,19 +340,32 @@ export class FirekitFacade {
   }
 
   /**
-   * Add to upload queue
+   * Adds an upload task to the queue and immediately attempts to process it.
+   * @internal
+   * @param task - The upload task output to enqueue
    */
-
   _addUploadToQueue(task: UploadFileOutput) {
     this.#uploadQueue.push(task);
-    this.processUploadQueue();
+    this._processUploadQueue();
   }
 
-  processUploadQueue() {
+  /**
+   * Processes the upload queue by starting the next pending upload if the concurrency limit
+   * (3 simultaneous uploads) has not been reached.
+   *
+   * On completion, removes the task from the queue and recurses to start the next pending upload.
+   * On failure, logs a warning, removes the task, and recurses to continue draining the queue.
+   *
+   * Called automatically by `_addUploadToQueue` and after each upload completes or fails.
+   * Safe to call manually (e.g. in tests) — it is a no-op when the queue is empty or the
+   * concurrency limit is already reached.
+   * @internal
+   */
+  _processUploadQueue() {
     const totalUploadingTasks = this.#uploadQueue.filter((task) => task.status === UploadStatusEnum.UPLOADING).length;
     if (totalUploadingTasks >= 3) return;
     const nextTask = this.#uploadQueue.find((task) => task.status === UploadStatusEnum.PENDING);
-    
+
     if (!nextTask) return;
 
     nextTask.status = UploadStatusEnum.UPLOADING;
@@ -367,13 +380,13 @@ export class FirekitFacade {
         nextTask.status = UploadStatusEnum.FAILED;
         const idx = this.#uploadQueue.indexOf(nextTask);
         if (idx !== -1) this.#uploadQueue.splice(idx, 1);
-        this.processUploadQueue();
+        this._processUploadQueue();
       },
       () => {
         nextTask.status = UploadStatusEnum.COMPLETED;
         const idx = this.#uploadQueue.indexOf(nextTask);
         if (idx !== -1) this.#uploadQueue.splice(idx, 1);
-        this.processUploadQueue();
+        this._processUploadQueue();
       },
     );
   }
@@ -1022,9 +1035,7 @@ export async function uploadFile({
 
   if (customMetadata) {
     if (typeof customMetadata !== 'object') {
-      facade._getLogger()?.warn(
-        'appkit.uploadFile: customMetadata is not an object and will be omitted.'
-      );
+      facade._getLogger()?.warn('appkit.uploadFile: customMetadata is not an object and will be omitted.');
       sanitizedCustomMetadata = undefined;
     } else {
       sanitizedCustomMetadata = Object.fromEntries(

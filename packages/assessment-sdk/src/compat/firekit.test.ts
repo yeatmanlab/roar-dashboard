@@ -1251,7 +1251,7 @@ describe('firekit compat', () => {
     });
   });
 
-  describe('FirekitFacade.processUploadQueue', () => {
+  describe('FirekitFacade._processUploadQueue', () => {
     /**
      * Creates a mock UploadFileOutput whose upload task captures the state_changed
      * callbacks so tests can trigger success and error paths directly.
@@ -1407,9 +1407,7 @@ describe('firekit compat', () => {
     });
 
     it('does not start more than 3 concurrent uploads', () => {
-      const outputs = Array.from({ length: 5 }, (_, i) =>
-        createMockUploadOutput(`file-${i}.webm`),
-      );
+      const outputs = Array.from({ length: 5 }, (_, i) => createMockUploadOutput(`file-${i}.webm`));
       const facade = getFirekitCompat();
 
       outputs.forEach(({ output }) => facade._addUploadToQueue(output));
@@ -1422,30 +1420,26 @@ describe('firekit compat', () => {
     });
 
     it('does not start a new upload when called while already at the concurrency limit', () => {
-      const tasks = Array.from({ length: 3 }, (_, i) =>
-        createMockUploadOutput(`file-${i}.webm`),
-      );
+      const tasks = Array.from({ length: 3 }, (_, i) => createMockUploadOutput(`file-${i}.webm`));
       const extra = createMockUploadOutput('extra.webm');
       const facade = getFirekitCompat();
 
       tasks.forEach(({ output }) => facade._addUploadToQueue(output));
       facade._addUploadToQueue(extra.output);
 
-      // Calling processUploadQueue again while 3 are uploading should not start extra
-      facade.processUploadQueue();
+      // Calling _processUploadQueue again while 3 are uploading should not start extra
+      facade._processUploadQueue();
 
       expect(extra.output.upload).not.toHaveBeenCalled();
     });
 
     it('is a no-op when the queue is empty', () => {
       const facade = getFirekitCompat();
-      expect(() => facade.processUploadQueue()).not.toThrow();
+      expect(() => facade._processUploadQueue()).not.toThrow();
     });
 
     it('fully drains the queue as tasks complete in sequence', () => {
-      const tasks = Array.from({ length: 5 }, (_, i) =>
-        createMockUploadOutput(`file-${i}.webm`),
-      );
+      const tasks = Array.from({ length: 5 }, (_, i) => createMockUploadOutput(`file-${i}.webm`));
       const facade = getFirekitCompat();
 
       tasks.forEach(({ output }) => facade._addUploadToQueue(output));
@@ -1461,17 +1455,14 @@ describe('firekit compat', () => {
     });
 
     it('processes pending tasks after a mix of completions and errors', () => {
-
-      const tasks = Array.from({ length: 5 }, (_, i) =>
-        createMockUploadOutput(`file-${i}.webm`),
-      );
+      const tasks = Array.from({ length: 5 }, (_, i) => createMockUploadOutput(`file-${i}.webm`));
       const facade = getFirekitCompat();
 
       tasks.forEach(({ output }) => facade._addUploadToQueue(output));
 
       // tasks 0–2 uploading, tasks 3–4 pending
       tasks[0]!.triggerError({ code: 'storage/unknown' }); // freed slot → starts task 3
-      tasks[1]!.triggerComplete();                          // freed slot → starts task 4
+      tasks[1]!.triggerComplete(); // freed slot → starts task 4
       tasks[2]!.triggerComplete();
       tasks[3]!.triggerComplete();
       tasks[4]!.triggerComplete();
@@ -1504,11 +1495,7 @@ describe('firekit compat', () => {
         });
 
         expect(storagePath).toBe('gs://mock-bucket/path/to/file.webm');
-        expect(uploadBytesResumable).toHaveBeenCalledWith(
-          expect.anything(),
-          expect.any(Blob),
-          undefined,
-        );
+        expect(uploadBytesResumable).toHaveBeenCalledWith(expect.anything(), expect.any(Blob), undefined);
       });
 
       it('passes string-valued customMetadata through unchanged', async () => {
@@ -1519,11 +1506,9 @@ describe('firekit compat', () => {
           customMetadata: { key: 'value', label: 'test-label' },
         });
 
-        expect(uploadBytesResumable).toHaveBeenCalledWith(
-          expect.anything(),
-          expect.any(Blob),
-          { customMetadata: { key: 'value', label: 'test-label' } },
-        );
+        expect(uploadBytesResumable).toHaveBeenCalledWith(expect.anything(), expect.any(Blob), {
+          customMetadata: { key: 'value', label: 'test-label' },
+        });
       });
 
       it('stringifies non-string customMetadata values', async () => {
@@ -1535,18 +1520,14 @@ describe('firekit compat', () => {
           customMetadata: { strVal: 'hello', numVal: 42, boolVal: true, objVal: { nested: 'obj' } },
         });
 
-        expect(uploadBytesResumable).toHaveBeenCalledWith(
-          expect.anything(),
-          expect.any(Blob),
-          {
-            customMetadata: {
-              strVal: 'hello',
-              numVal: '42',
-              boolVal: 'true',
-              objVal: '{"nested":"obj"}',
-            },
+        expect(uploadBytesResumable).toHaveBeenCalledWith(expect.anything(), expect.any(Blob), {
+          customMetadata: {
+            strVal: 'hello',
+            numVal: '42',
+            boolVal: 'true',
+            objVal: '{"nested":"obj"}',
           },
-        );
+        });
       });
 
       it('warns and omits customMetadata when it is not a plain object', async () => {
@@ -1561,21 +1542,13 @@ describe('firekit compat', () => {
           customMetadata: 'not-an-object',
         });
 
-        expect(logger?.warn).toHaveBeenCalledWith(
-          expect.stringContaining('customMetadata is not an object'),
-        );
-        expect(uploadBytesResumable).toHaveBeenCalledWith(
-          expect.anything(),
-          expect.any(Blob),
-          undefined,
-        );
+        expect(logger?.warn).toHaveBeenCalledWith(expect.stringContaining('customMetadata is not an object'));
+        expect(uploadBytesResumable).toHaveBeenCalledWith(expect.anything(), expect.any(Blob), undefined);
         // Specifically verify that { customMetadata: undefined } was not passed —
         // the sanitizedCustomMetadata guard prevents the key from leaking through
-        expect(uploadBytesResumable).not.toHaveBeenCalledWith(
-          expect.anything(),
-          expect.any(Blob),
-          { customMetadata: undefined },
-        );
+        expect(uploadBytesResumable).not.toHaveBeenCalledWith(expect.anything(), expect.any(Blob), {
+          customMetadata: undefined,
+        });
       });
 
       it('adds the upload task to the queue', async () => {
@@ -1666,22 +1639,18 @@ describe('firekit compat', () => {
 
       getFirekitCompat()._getStorageBucket();
 
-      expect(getStorage).toHaveBeenCalledWith(
-        expect.anything(),
-        'gs://roar-admin-recordings-prod',
-      );
+      expect(getStorage).toHaveBeenCalledWith(expect.anything(), 'gs://roar-admin-recordings-prod');
     });
 
     it('uses the staging recordings bucket when projectId is not gse-roar-admin', () => {
-      vi.mocked(getApp).mockReturnValue({ options: { projectId: 'gse-roar-admin-staging' } } as ReturnType<typeof getApp>);
+      vi.mocked(getApp).mockReturnValue({ options: { projectId: 'gse-roar-admin-staging' } } as ReturnType<
+        typeof getApp
+      >);
       initializeFirekit('run-staging-test');
 
       getFirekitCompat()._getStorageBucket();
 
-      expect(getStorage).toHaveBeenCalledWith(
-        expect.anything(),
-        'gs://roar-admin-recordings-staging',
-      );
+      expect(getStorage).toHaveBeenCalledWith(expect.anything(), 'gs://roar-admin-recordings-staging');
     });
   });
 });

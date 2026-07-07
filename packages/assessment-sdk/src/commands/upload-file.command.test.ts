@@ -45,7 +45,9 @@ describe('UploadFileCommand', () => {
     mockUploadTask = {} as UploadTask;
 
     mockStorageRef = {
-      toString: vi.fn().mockReturnValue('gs://my-bucket/task-abc/participant-123/participant-123/admin-ghi/run-def/recording.webm'),
+      toString: vi
+        .fn()
+        .mockReturnValue('gs://my-bucket/task-abc/participant-123/participant-123/admin-ghi/run-def/recording.webm'),
     } as unknown as StorageReference;
 
     mockRef.mockReturnValue(mockStorageRef);
