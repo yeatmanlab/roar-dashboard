@@ -1,4 +1,5 @@
 import store from 'store2';
+import { writeReadaloudTrial } from '../helperFunctions';
 import test_page from './Test.html';
 import loadingScreen_page from './loadingScreen.html';
 import * as initJS from './Test.js';
@@ -23,7 +24,7 @@ export async function TestView(type, config) {
   TestPage.style.width = '100%';
   TestPage.style.height = '100%';
 
-  const viewingDistance = config.firekit.task.variantParams.viewingDistance;
+  const viewingDistance = config.variantParams.viewingDistance;
   var cat = new Cat({
     method: 'MLE',
     itemSelect: 'MFI',
@@ -72,7 +73,7 @@ export async function TestView(type, config) {
           correct: 1,
         };
 
-        config.firekit.writeTrial(results);
+        writeReadaloudTrial(results);
 
         unloadExternalScripts(initJS);
         unloadExternalScripts(videoCaptureJS);

@@ -1,101 +1,77 @@
-import { RoarAppkit, initializeFirebaseProject } from '@bdelab/roar-firekit';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
+import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
+import { READALOUD_TASK_ID } from '@roar-platform/assessment-schema/roar-readaloud';
 import ReadAloudTask from '../src/experiment/index';
-// eslint-disable-next-line import/no-unresolved -- PR2 (SDK wiring) replaces this with the shared Firebase config; the local firebaseConfig.js was deleted as a sensitive file in PR1.
-import { firebaseConfig } from './firebaseConfig';
-import { stringToBoolean } from '../src/experiment/helperFunctions';
+import { getFirebaseConfig } from '../../shared/firebaseConfig';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
 const queryString = new URL(window.location).search;
 const urlParams = new URLSearchParams(queryString);
-const taskName = urlParams.get('taskName') ?? 'roar-readaloud';
-const viewType = urlParams.get('viewType') ?? 'detailed';
+
+// Participant / session. The variant carries all game params — serve.js no longer parses
+// them from the URL; it resolves the variant and hands its params to the task.
 const assessmentPid = urlParams.get('participant') ?? '';
-const viewingDistance = parseInt(urlParams.get('viewingDistance') ?? '50');
+const variantId = urlParams.get('variantId');
+const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 
-const deviceConfigFile = urlParams.get('deviceConfigFile') ?? 'devices_default';
-const bViewingDistancePage = stringToBoolean(urlParams.get('bViewingDistancePage'), false);
-const calibrationType = urlParams.get('calibrationType') ?? 'short';
-const bEyeTracking = stringToBoolean(urlParams.get('bEyeTracking'), true);
-const storeVideo = stringToBoolean(urlParams.get('storeVideo'), true);
-const testConfigFile = urlParams.get('testConfigFile') ?? 'phonicsA_tests';
+// Demographics / lab identifiers — threaded through as run metadata (see startRun).
+const labId = urlParams.get('labId');
+const grade = urlParams.get('grade') ? parseInt(urlParams.get('grade'), 10) : null;
+const birthYear = urlParams.get('birthyear') ? parseInt(urlParams.get('birthyear'), 10) : null;
+const birthMonth = urlParams.get('birthmonth') ? parseInt(urlParams.get('birthmonth'), 10) : null;
+const age = urlParams.get('age') ? parseFloat(urlParams.get('age')) : null;
+const ageMonths = urlParams.get('agemonths') ? parseFloat(urlParams.get('agemonths')) : null;
 
-const visibleEyeTracking = stringToBoolean(urlParams.get('visibleEyeTracking'), false);
-const practiceCorpus = urlParams.get('practiceCorpus');
-const stimulusCorpus = urlParams.get('stimulusCorpus');
-const storyCorpus = urlParams.get('storyCorpus');
-const buttonLayout = urlParams.get('buttonLayout');
-const numOfPracticeTrials =
-  urlParams.get('practiceTrials') === null ? null : parseInt(urlParams.get('practiceTrials'), 10);
-const numberOfTrials = urlParams.get('trials') === null ? null : parseInt(urlParams.get('trials'), 10);
-const stimulusBlocks = urlParams.get('blocks') === null ? null : parseInt(urlParams.get('blocks'), 10);
-// Boolean parameters
-const consent = stringToBoolean(urlParams.get('consent'), false);
-const keyHelpers = stringToBoolean(urlParams.get('keyHelpers'), true);
-const story = stringToBoolean(urlParams.get('story'), false);
-const skipInstructions = stringToBoolean(urlParams.get('skip'), true);
-const sequentialPractice = stringToBoolean(urlParams.get('sequentialPractice'), true);
-const sequentialStimulus = stringToBoolean(urlParams.get('sequentialStimulus'), true);
+const firebaseConfig = await getFirebaseConfig();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-// @ts-ignore
-const appKit = await initializeFirebaseProject(firebaseConfig, 'assessmentApp', 'none');
+if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+  connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
+}
 
-const taskId = 'roar-readaloud';
-
-// const taskId =
-// language === "en" ? "roar-readaloud" : `${"roar-readaloud"}-${language}`;
-
-onAuthStateChanged(appKit.auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (user) {
-    const userInfo = {
-      assessmentUid: user.uid,
-      assessmentPid: assessmentPid,
-      userMetadata: {},
-    };
+    try {
+      const authCallbacks = { getToken: () => user.getIdToken() };
 
-    const userParams = {};
+      // Provision the anonymous ROAR user (and resolve a variant) via the SDK.
+      // The variantId URL param wins; otherwise it falls back to the first published variant.
+      const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
+        // eslint-disable-next-line no-undef
+        { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
+        { ...(variantId ? { variantId } : {}), taskId: READALOUD_TASK_ID },
+      );
 
-    const gameParams = {
-      consent,
-      taskName,
-      viewType,
-      viewingDistance,
-      storeVideo,
-      deviceConfigFile,
-      testConfigFile,
-      bEyeTracking,
-      bViewingDistancePage,
-      calibrationType,
-      visibleEyeTracking,
-      skipInstructions,
-      practiceCorpus,
-      stimulusCorpus,
-      sequentialPractice,
-      sequentialStimulus,
-      buttonLayout,
-      numOfPracticeTrials,
-      numberOfTrials,
-      story,
-      storyCorpus,
-      stimulusBlocks,
-      keyHelpers,
-    };
+      const ctx = {
+        // eslint-disable-next-line no-undef
+        baseUrl: ROAR_API_BASE_URL,
+        auth: authCallbacks,
+        participant: { participantId },
+      };
 
-    const taskInfo = {
-      taskId: taskId,
-      variantParams: gameParams,
-    };
+      initFirekitCompat(ctx, {
+        variantId: resolvedVariantId,
+        taskVersion,
+        isAnonymous: true,
+      });
 
-    const firekit = new RoarAppkit({
-      firebaseProject: appKit,
-      taskInfo,
-      userInfo,
-    });
+      const { variantParams } = await getVariantById(resolvedVariantId);
 
-    const app = new ReadAloudTask(firekit, gameParams, userParams);
-    app.run();
+      const userParams = { assessmentPid, labId, grade, birthMonth, birthYear, age, ageMonths };
+
+      const task = new ReadAloudTask(variantParams, userParams, {
+        assessmentPid,
+        assessmentUid: user.uid,
+      });
+      task.run();
+    } catch (err) {
+      console.error('[roar-readaloud] Failed to initialize assessment:', err);
+    }
   }
 });
 
-await signInAnonymously(appKit.auth);
+await signInAnonymously(auth);

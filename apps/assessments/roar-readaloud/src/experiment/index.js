@@ -1,5 +1,7 @@
 import store from 'store2';
 import { initConfig } from './config/config';
+import { startRun, finishRun } from '@roar-platform/assessment-sdk/compat/firekit';
+import { READALOUD_TEST_CONFIG_URL } from '@roar-platform/assessment-schema/roar-readaloud';
 import './styles/task.scss';
 import { consentView } from './views/consentView';
 import { configureDeviceView } from './views/configureDeviceView';
@@ -23,21 +25,13 @@ import { initSentry } from '../sentry';
 // import { svgName, corpora } from "./corpus";
 // import { makeRoarTrial } from "./utils";
 
-const isTaskFinished = (conditionFunction) => {
-  const poll = (resolve) => {
-    if (conditionFunction()) resolve();
-    else setTimeout((_) => poll(resolve), 400);
-  };
-
-  return new Promise(poll);
-};
-
 class ReadAloudTask {
-  constructor(firekit, gameParams, userParams, displayElement) {
+  constructor(gameParams, userParams, session = {}) {
     this.gameParams = gameParams;
     this.userParams = userParams;
-    this.firekit = firekit;
-    this.displayElement = displayElement;
+    this.assessmentPid = session.assessmentPid ?? '';
+    this.assessmentUid = session.assessmentUid ?? '';
+    this.displayElement = session.displayElement ?? null;
     this.jsPsych = null;
   }
 
@@ -51,8 +45,12 @@ class ReadAloudTask {
       await consentView();
     }
 
-    await this.firekit.startRun();
-    const config = await initConfig(this.firekit, this.gameParams, this.userParams, this.displayElement);
+    await startRun(this.userParams ?? {});
+    const config = await initConfig(this.gameParams, this.userParams, {
+      assessmentPid: this.assessmentPid,
+      assessmentUid: this.assessmentUid,
+      displayElement: this.displayElement,
+    });
 
     store.session.set('config', config);
 
@@ -71,7 +69,7 @@ class ReadAloudTask {
     }
 
     do {
-      await menuView(`https://storage.googleapis.com/roav-readaloud/en/shared/${this.gameParams.testConfigFile}.json`);
+      await menuView(READALOUD_TEST_CONFIG_URL(this.gameParams.testConfigFile));
       if (config.story) {
         await storyView('Practice', config);
       }
@@ -89,8 +87,7 @@ class ReadAloudTask {
       await storyView('Ending', config);
     }
 
-    config.firekit.finishRun();
-    await isTaskFinished(() => this.firekit.run.completed === true);
+    await finishRun();
   }
 }
 
