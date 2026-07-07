@@ -106,7 +106,8 @@ describe('generateFilePath', () => {
       expect(segments[0]!.length).toBe(1024);
     });
 
-    it('throws when a segment is empty after sanitization', () => {
+    it('throws SDKError when a segment is empty after sanitization', () => {
+      expect(() => generateFilePath({ ...BASE_INPUT, taskId: '???' })).toThrow(SDKError);
       expect(() => generateFilePath({ ...BASE_INPUT, taskId: '???' })).toThrow(
         'Input must be at least 1 character long after sanitization.',
       );

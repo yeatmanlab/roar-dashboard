@@ -43,7 +43,7 @@ const sanitizeInput = (input: string): string => {
   }
 
   if (sanitized.length === 0) {
-    throw new Error('Input must be at least 1 character long after sanitization.');
+    throw new SDKError('Input must be at least 1 character long after sanitization.');
   }
 
   return sanitized;
