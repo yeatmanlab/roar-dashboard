@@ -111,7 +111,7 @@ describe('UploadFileCommand', () => {
 
     const uploadTask = result.upload();
 
-    expect(mockUploadBytesResumable).toHaveBeenCalledWith(mockStorageRef, baseInput.fileOrBlob);
+    expect(mockUploadBytesResumable).toHaveBeenCalledWith(mockStorageRef, baseInput.fileOrBlob, undefined);
     expect(uploadTask).toBe(mockUploadTask);
   });
 

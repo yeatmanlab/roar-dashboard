@@ -996,7 +996,7 @@ export async function uploadFile({
   filename: string;
   taskId: string;
   assessmentPid?: string;
-  customMetadata?: Record<string, unknown>;
+  customMetadata?: Record<string, string>;
 }): Promise<string> {
   const facade = getFirekitCompat();
   const invoker = facade.getInvoker();
@@ -1004,6 +1004,8 @@ export async function uploadFile({
   const storageBucket = facade._getStorageBucket();
   const taskInfo = facade._getTaskInfo();
   const runId = facade._getRunId();
+  let sanitizedCustomMetadata = { ...customMetadata };
+
   if (!runId) {
     throw new SDKError('appkit.uploadFile requires an active run. Call appkit.startRun() first.', {
       code: SdkErrorCode.UPLOAD_FILE_FAILED,
@@ -1018,6 +1020,19 @@ export async function uploadFile({
     });
   }
 
+  if (customMetadata) {
+    if (typeof customMetadata !== 'object') {
+      facade._getLogger()?.warn(
+        'appkit.uploadFile: customMetadata is not an object and will be omitted.'
+      );
+      sanitizedCustomMetadata = undefined;
+    } else {
+      sanitizedCustomMetadata = Object.fromEntries(
+        Object.entries(customMetadata).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)]),
+      );
+    }
+  }
+
   const input = {
     filename,
     fileOrBlob,
@@ -1025,7 +1040,7 @@ export async function uploadFile({
     runId,
     administrationId,
     ...(assessmentPid !== undefined ? { assessmentPid } : {}),
-    ...(customMetadata !== undefined ? { customMetadata } : {}),
+    ...(customMetadata !== undefined ? { customMetadata: sanitizedCustomMetadata } : {}),
   };
 
   // _getStorageBucket() resolves the bucket lazily: the local Storage emulator in dev, the

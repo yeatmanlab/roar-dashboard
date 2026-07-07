@@ -17,7 +17,7 @@ export interface UploadFileInput {
   runId: string;
   administrationId: string;
   assessmentPid?: string;
-  customMetadata?: Record<string, unknown>;
+  customMetadata?: Record<string, string>;
 }
 
 /**

@@ -31,16 +31,17 @@ export class UploadFileCommand implements Command<UploadFileInput, UploadFileOut
    * @param input.runId - The run ID
    * @param input.taskId - The task ID
    * @param input.assessmentPid - Optional assessmentPid. Prioritizes assigned assessmentPid and defaults to assessmentUid
+   * @param input.customMetadata - Optional custom metadata to attach to the file.
    * @returns A promise that resolves to the upload file output.
    */
   async execute(input: UploadFileInput): Promise<UploadFileOutput> {
-    const { filename, fileOrBlob, ...extraMetadata } = input;
+    const { filename, fileOrBlob, customMetadata, ...extraMetadata } = input;
     const filePath = generateFilePath({ filename, participantId: this.participantId, ...extraMetadata });
 
     const storageRef = ref(this.storageBucket, filePath);
 
     return {
-      upload: () => uploadBytesResumable(storageRef, fileOrBlob),
+      upload: () => uploadBytesResumable(storageRef, fileOrBlob, customMetadata ? { customMetadata } : undefined),
       status: UploadStatusEnum.PENDING,
       filename,
       storagePath: storageRef.toString(),

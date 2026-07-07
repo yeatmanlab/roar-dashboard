@@ -8,11 +8,26 @@ import {
   addInteraction,
   updateUser,
   writeTrial,
+  uploadFile,
   getVariantParamsById,
   initFirekitCompat,
   getFirekitCompat,
   _resetFirekitCompat,
 } from './firekit';
+import { uploadBytesResumable, getStorage, connectStorageEmulator } from 'firebase/storage';
+import type { FirebaseStorage } from 'firebase/storage';
+import { getApp } from 'firebase/app';
+
+vi.mock('firebase/storage', () => ({
+  ref: vi.fn().mockReturnValue({ toString: () => 'gs://mock-bucket/path/to/file.webm' }),
+  uploadBytesResumable: vi.fn().mockReturnValue({ on: vi.fn() }),
+  getStorage: vi.fn().mockReturnValue({ _mockStorage: true }),
+  connectStorageEmulator: vi.fn(),
+}));
+
+vi.mock('firebase/app', () => ({
+  getApp: vi.fn().mockReturnValue({ options: { projectId: 'gse-roar-admin-staging' } }),
+}));
 import { SDKError } from '../errors/sdk-error';
 import type { AddInteractionInput, UpdateUserInput, TrialData, RawScores, ComputedScores } from '../types';
 import type { CommandContext } from '../command/command';
@@ -1446,6 +1461,7 @@ describe('firekit compat', () => {
     });
 
     it('processes pending tasks after a mix of completions and errors', () => {
+
       const tasks = Array.from({ length: 5 }, (_, i) =>
         createMockUploadOutput(`file-${i}.webm`),
       );
@@ -1465,6 +1481,200 @@ describe('firekit compat', () => {
       expect(tasks[2]!.output.status).toBe(UploadStatusEnum.COMPLETED);
       expect(tasks[3]!.output.status).toBe(UploadStatusEnum.COMPLETED);
       expect(tasks[4]!.output.status).toBe(UploadStatusEnum.COMPLETED);
+    });
+  });
+
+  describe('uploadFile', () => {
+    afterEach(() => {
+      _resetFirekitCompat();
+    });
+
+    describe('with active anonymous run', () => {
+      beforeEach(async () => {
+        vi.clearAllMocks();
+        await initializeFirekitAndStartRun('run-upload-file-test');
+        vi.spyOn(getFirekitCompat(), '_getStorageBucket').mockReturnValue({} as FirebaseStorage);
+      });
+
+      it('succeeds when customMetadata is undefined', async () => {
+        const storagePath = await uploadFile({
+          fileOrBlob: new Blob(['test']),
+          filename: 'test.webm',
+          taskId: 'task-123',
+        });
+
+        expect(storagePath).toBe('gs://mock-bucket/path/to/file.webm');
+        expect(uploadBytesResumable).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.any(Blob),
+          undefined,
+        );
+      });
+
+      it('passes string-valued customMetadata through unchanged', async () => {
+        await uploadFile({
+          fileOrBlob: new Blob(['test']),
+          filename: 'test.webm',
+          taskId: 'task-123',
+          customMetadata: { key: 'value', label: 'test-label' },
+        });
+
+        expect(uploadBytesResumable).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.any(Blob),
+          { customMetadata: { key: 'value', label: 'test-label' } },
+        );
+      });
+
+      it('stringifies non-string customMetadata values', async () => {
+        await uploadFile({
+          fileOrBlob: new Blob(['test']),
+          filename: 'test.webm',
+          taskId: 'task-123',
+          // @ts-expect-error testing runtime behavior with non-string values
+          customMetadata: { strVal: 'hello', numVal: 42, boolVal: true, objVal: { nested: 'obj' } },
+        });
+
+        expect(uploadBytesResumable).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.any(Blob),
+          {
+            customMetadata: {
+              strVal: 'hello',
+              numVal: '42',
+              boolVal: 'true',
+              objVal: '{"nested":"obj"}',
+            },
+          },
+        );
+      });
+
+      it('warns and omits customMetadata when it is not a plain object', async () => {
+        const facade = getFirekitCompat();
+        const logger = facade._getLogger();
+
+        await uploadFile({
+          fileOrBlob: new Blob(['test']),
+          filename: 'test.webm',
+          taskId: 'task-123',
+          // @ts-expect-error testing runtime behavior with non-object value
+          customMetadata: 'not-an-object',
+        });
+
+        expect(logger?.warn).toHaveBeenCalledWith(
+          expect.stringContaining('customMetadata is not an object'),
+        );
+        expect(uploadBytesResumable).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.any(Blob),
+          undefined,
+        );
+      });
+
+      it('adds the upload task to the queue', async () => {
+        const facade = getFirekitCompat();
+        const addToQueueSpy = vi.spyOn(facade, '_addUploadToQueue');
+
+        await uploadFile({
+          fileOrBlob: new Blob(['test']),
+          filename: 'test.webm',
+          taskId: 'task-123',
+        });
+
+        expect(addToQueueSpy).toHaveBeenCalledTimes(1);
+        expect(addToQueueSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ filename: 'test.webm', storagePath: 'gs://mock-bucket/path/to/file.webm' }),
+        );
+      });
+    });
+
+    it('throws SDKError when called without an active run', async () => {
+      vi.clearAllMocks();
+      initializeFirekit('run-upload-file-test');
+      vi.spyOn(getFirekitCompat(), '_getStorageBucket').mockReturnValue({} as FirebaseStorage);
+
+      await expect(
+        uploadFile({ fileOrBlob: new Blob(['test']), filename: 'test.webm', taskId: 'task-123' }),
+      ).rejects.toThrow('appkit.uploadFile requires an active run');
+    });
+
+    it('throws SDKError for non-anonymous run without administrationId', async () => {
+      vi.clearAllMocks();
+      const { mockContext } = initializeFirekit('run-no-admin', { isAnonymous: false });
+      vi.spyOn(getFirekitCompat(), '_getStorageBucket').mockReturnValue({} as FirebaseStorage);
+
+      // Bypass startRun (which would also reject) and set the runId directly
+      getFirekitCompat()._setRunId('fake-run-id');
+      void mockContext;
+
+      await expect(
+        uploadFile({ fileOrBlob: new Blob(['test']), filename: 'test.webm', taskId: 'task-123' }),
+      ).rejects.toThrow('appkit.uploadFile requires an administrationId');
+    });
+  });
+
+  describe('_getStorageBucket / resolveStorageBucket', () => {
+    afterEach(() => {
+      vi.clearAllMocks();
+      vi.unstubAllEnvs();
+      _resetFirekitCompat();
+    });
+
+    it('memoizes the storage bucket — getStorage is called only once per facade instance', () => {
+      initializeFirekit('run-memo-test');
+      const facade = getFirekitCompat();
+
+      facade._getStorageBucket();
+      facade._getStorageBucket();
+
+      expect(getStorage).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses getStorage(getApp()) and connects to the emulator when FIREBASE_AUTH_EMULATOR_HOST is set', () => {
+      vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
+      initializeFirekit('run-emulator-test');
+
+      getFirekitCompat()._getStorageBucket();
+
+      // No second argument — should use the default app storage, not a named bucket
+      expect(getStorage).toHaveBeenCalledWith(expect.objectContaining({ options: expect.anything() }));
+      expect(connectStorageEmulator).toHaveBeenCalledWith(expect.anything(), '127.0.0.1', 9199);
+    });
+
+    it('does not reconnect the emulator after a facade reset', () => {
+      // storageEmulatorConnected is module-level, so it persists across facade resets.
+      // The emulator test above already triggered the connection; after reset it should not reconnect.
+      vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
+      _resetFirekitCompat();
+      initializeFirekit('run-emulator-reset-test');
+
+      getFirekitCompat()._getStorageBucket();
+
+      expect(connectStorageEmulator).not.toHaveBeenCalled();
+    });
+
+    it('uses the prod recordings bucket when projectId is gse-roar-admin', () => {
+      vi.mocked(getApp).mockReturnValue({ options: { projectId: 'gse-roar-admin' } } as ReturnType<typeof getApp>);
+      initializeFirekit('run-prod-test');
+
+      getFirekitCompat()._getStorageBucket();
+
+      expect(getStorage).toHaveBeenCalledWith(
+        expect.anything(),
+        'gs://roar-admin-recordings-prod',
+      );
+    });
+
+    it('uses the staging recordings bucket when projectId is not gse-roar-admin', () => {
+      vi.mocked(getApp).mockReturnValue({ options: { projectId: 'gse-roar-admin-staging' } } as ReturnType<typeof getApp>);
+      initializeFirekit('run-staging-test');
+
+      getFirekitCompat()._getStorageBucket();
+
+      expect(getStorage).toHaveBeenCalledWith(
+        expect.anything(),
+        'gs://roar-admin-recordings-staging',
+      );
     });
   });
 });
