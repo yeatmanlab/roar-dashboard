@@ -45,7 +45,9 @@ export class TaskLauncher {
   async init() {
     initSentry();
     wireScoreAdapter();
-    await startRun();
+    // Pass userParams (demographics / lab identifiers from serve.js) as run metadata,
+    // matching the other assessments.
+    await startRun(this.userParams);
 
     const { taskName } = this.gameParams;
     let { language } = this.gameParams;
