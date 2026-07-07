@@ -1,3 +1,6 @@
+import { getApp } from 'firebase/app';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import type { FirebaseStorage, StorageError } from 'firebase/storage';
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums/sdk-error-code.enum';
@@ -32,6 +35,9 @@ import { WriteTrialCommand } from '../commands/write-trial.command';
 import { UpdateRunEngagementFlagsCommand } from '../commands/update-engagement-flags.command';
 import { GetTaskVariantCommand } from '../commands/get-variant-id.command';
 import { GetVariantByIdCommand } from '../commands/get-variant-by-id.command';
+import { UploadFileCommand } from '../commands/upload-file.command';
+import type { UploadFileOutput } from '../types/upload-file';
+import { UploadStatusEnum } from '../types/upload-file';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -39,6 +45,55 @@ type CompatTaskInfo = {
   administrationId?: string;
   isAnonymous?: boolean;
 };
+
+/**
+ * Firebase Storage emulator port. Must match `apps/assessments/shared/firebase.json`
+ * (`emulators.storage.port`). The Emulator UI that surfaces uploaded recordings runs
+ * separately on :9000 (:4000 is the ROAR backend).
+ */
+const STORAGE_EMULATOR_PORT = 9199;
+
+/**
+ * Firebase project id for the production admin recordings project. Anything else
+ * (e.g. `gse-roar-admin-staging`) resolves to the staging bucket.
+ */
+const ADMIN_RECORDINGS_PROD_PROJECT_ID = 'gse-roar-admin';
+
+/** `connectStorageEmulator` may be called at most once per storage instance. */
+let storageEmulatorConnected = false;
+
+/**
+ * Resolves the Firebase Storage bucket for recording uploads.
+ *
+ * - **Dev (Auth emulator running):** returns the default app's storage connected to the
+ *   local Storage emulator, so recordings land in the emulator (viewable in the Emulator
+ *   UI on :9000) instead of a real cloud bucket. The emulator host is derived from
+ *   `FIREBASE_AUTH_EMULATOR_HOST` (same host, storage port), reusing the signal every
+ *   assessment already injects — no new build-time env var required.
+ * - **Prod / staging:** returns the admin recordings bucket for the resolved environment
+ *   (`gse-roar-admin` → prod, otherwise staging).
+ *
+ * Resolved lazily (at first upload) rather than at facade init so that consumers which
+ * never upload — and test environments with no Firebase app — never call `getApp()`.
+ *
+ * @returns The Firebase Storage instance recordings are written to
+ */
+function resolveStorageBucket(): FirebaseStorage {
+  const authEmulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
+
+  if (authEmulatorHost) {
+    const storage = getStorage(getApp());
+    if (!storageEmulatorConnected) {
+      const host = authEmulatorHost.split(':')[0] || '127.0.0.1';
+      connectStorageEmulator(storage, host, STORAGE_EMULATOR_PORT);
+      storageEmulatorConnected = true;
+    }
+    return storage;
+  }
+
+  const env = getApp().options.projectId === ADMIN_RECORDINGS_PROD_PROJECT_ID ? 'prod' : 'staging';
+  return getStorage(getApp(), `gs://roar-admin-recordings-${env}`);
+}
 
 /**
  * Test-only function to reset the Firekit compat singleton state.
@@ -77,6 +132,8 @@ export class FirekitFacade {
   #runId: string | undefined;
   #taskInfo: CompatTaskInfo | undefined;
   #interactionBuffer: AddInteractionInput[] = [];
+  #storageBucket: FirebaseStorage | undefined;
+  #uploadQueue: UploadFileOutput[] = [];
 
   private constructor() {}
 
@@ -92,6 +149,7 @@ export class FirekitFacade {
     this.#runId = undefined;
     this.#taskInfo = undefined;
     this.#interactionBuffer = [];
+    this.#storageBucket = undefined;
   }
 
   /**
@@ -121,6 +179,8 @@ export class FirekitFacade {
     this.#api = new RoarApi(ctx);
     this.#invoker = new Invoker(ctx);
     this.#taskInfo = taskInfo;
+    // Storage is resolved lazily at first upload (see `_getStorageBucket`), not here —
+    // `initialize()` must not touch Firebase so consumers/tests without an app can init.
   }
 
   /**
@@ -172,6 +232,24 @@ export class FirekitFacade {
    */
   static _resetInstance(): void {
     FirekitFacade.#instance = undefined;
+  }
+
+  /**
+   * Lazily resolves and memoizes the storage bucket for recording uploads.
+   * Resolution is deferred to the first call (upload time) so `initialize()` stays
+   * Firebase-free. See {@link resolveStorageBucket} for the dev/prod/staging routing.
+   * @internal
+   */
+  _getStorageBucket(): FirebaseStorage {
+    try {
+      this.#storageBucket ??= resolveStorageBucket();
+    } catch (err) {
+      throw new SDKError('appkit.uploadFile requires an initialized Firebase app.', {
+        code: SdkErrorCode.UPLOAD_FILE_FAILED,
+        ...(err instanceof Error ? { cause: err } : {}),
+      });
+    }
+    return this.#storageBucket;
   }
 
   /**
@@ -259,6 +337,58 @@ export class FirekitFacade {
    */
   _getLogger() {
     return this.#ctx?.logger;
+  }
+
+  /**
+   * Adds an upload task to the queue and immediately attempts to process it.
+   * @internal
+   * @param task - The upload task output to enqueue
+   */
+  _addUploadToQueue(task: UploadFileOutput) {
+    this.#uploadQueue.push(task);
+    this._processUploadQueue();
+  }
+
+  /**
+   * Processes the upload queue by starting the next pending upload if the concurrency limit
+   * (3 simultaneous uploads) has not been reached.
+   *
+   * On completion, removes the task from the queue and recurses to start the next pending upload.
+   * On failure, logs a warning, removes the task, and recurses to continue draining the queue.
+   *
+   * Called automatically by `_addUploadToQueue` and after each upload completes or fails.
+   * Safe to call manually (e.g. in tests) — it is a no-op when the queue is empty or the
+   * concurrency limit is already reached.
+   * @internal
+   */
+  _processUploadQueue() {
+    const totalUploadingTasks = this.#uploadQueue.filter((task) => task.status === UploadStatusEnum.UPLOADING).length;
+    if (totalUploadingTasks >= 3) return;
+    const nextTask = this.#uploadQueue.find((task) => task.status === UploadStatusEnum.PENDING);
+
+    if (!nextTask) return;
+
+    nextTask.status = UploadStatusEnum.UPLOADING;
+
+    const activeTask = nextTask.upload();
+
+    activeTask.on(
+      'state_changed',
+      undefined,
+      (error: StorageError) => {
+        this._getLogger()?.warn({ err: error }, `Upload failed: ${nextTask.filename}`);
+        nextTask.status = UploadStatusEnum.FAILED;
+        const idx = this.#uploadQueue.indexOf(nextTask);
+        if (idx !== -1) this.#uploadQueue.splice(idx, 1);
+        this._processUploadQueue();
+      },
+      () => {
+        nextTask.status = UploadStatusEnum.COMPLETED;
+        const idx = this.#uploadQueue.indexOf(nextTask);
+        if (idx !== -1) this.#uploadQueue.splice(idx, 1);
+        this._processUploadQueue();
+      },
+    );
   }
 }
 
@@ -866,4 +996,72 @@ export function makeLazyComputedCallback<T extends { computedScoreCallback: (raw
     if (!instance) instance = new ScoresClass();
     return instance.computedScoreCallback(rawScores);
   };
+}
+
+export async function uploadFile({
+  fileOrBlob,
+  filename,
+  taskId,
+  assessmentPid,
+  customMetadata,
+}: {
+  fileOrBlob: File | Blob;
+  filename: string;
+  taskId: string;
+  assessmentPid?: string;
+  customMetadata?: Record<string, string>;
+}): Promise<string> {
+  const facade = getFirekitCompat();
+  const invoker = facade.getInvoker();
+  const ctx = facade.getContext();
+  const storageBucket = facade._getStorageBucket();
+  const taskInfo = facade._getTaskInfo();
+  const runId = facade._getRunId();
+  let sanitizedCustomMetadata: Record<string, string> | undefined = { ...customMetadata };
+
+  if (!runId) {
+    throw new SDKError('appkit.uploadFile requires an active run. Call appkit.startRun() first.', {
+      code: SdkErrorCode.UPLOAD_FILE_FAILED,
+    });
+  }
+
+  // Anonymous runs aren't tied to an administration; use a sentinel segment for the path.
+  const administrationId = taskInfo?.isAnonymous ? 'test-administration' : taskInfo?.administrationId;
+  if (!administrationId) {
+    throw new SDKError('appkit.uploadFile requires an administrationId for non-anonymous runs.', {
+      code: SdkErrorCode.UPLOAD_FILE_FAILED,
+    });
+  }
+
+  if (customMetadata) {
+    if (typeof customMetadata !== 'object') {
+      facade._getLogger()?.warn('appkit.uploadFile: customMetadata is not an object and will be omitted.');
+      sanitizedCustomMetadata = undefined;
+    } else {
+      sanitizedCustomMetadata = Object.fromEntries(
+        Object.entries(customMetadata).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)]),
+      );
+    }
+  }
+
+  const input = {
+    filename,
+    fileOrBlob,
+    taskId,
+    runId,
+    administrationId,
+    ...(assessmentPid !== undefined ? { assessmentPid } : {}),
+    ...(customMetadata !== undefined && sanitizedCustomMetadata ? { customMetadata: sanitizedCustomMetadata } : {}),
+  };
+
+  // _getStorageBucket() resolves the bucket lazily: the local Storage emulator in dev, the
+  // admin recordings bucket in prod/staging (it throws via getApp if no Firebase app exists).
+  const cmd = new UploadFileCommand(ctx.participant.participantId, storageBucket);
+  const output = await invoker.run(cmd, input);
+
+  // Add to queue which kicks off the resumable upload process (fire-and-forget)
+  // The storage path is known immediately and is what the caller persists on the trial.
+  facade._addUploadToQueue(output);
+
+  return output.storagePath;
 }

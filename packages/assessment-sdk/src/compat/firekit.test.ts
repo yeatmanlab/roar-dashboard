@@ -8,15 +8,32 @@ import {
   addInteraction,
   updateUser,
   writeTrial,
+  uploadFile,
   getVariantParamsById,
   initFirekitCompat,
   getFirekitCompat,
   _resetFirekitCompat,
 } from './firekit';
+import { uploadBytesResumable, getStorage, connectStorageEmulator } from 'firebase/storage';
+import type { FirebaseStorage } from 'firebase/storage';
+import { getApp } from 'firebase/app';
+
+vi.mock('firebase/storage', () => ({
+  ref: vi.fn().mockReturnValue({ toString: () => 'gs://mock-bucket/path/to/file.webm' }),
+  uploadBytesResumable: vi.fn().mockReturnValue({ on: vi.fn() }),
+  getStorage: vi.fn().mockReturnValue({ _mockStorage: true }),
+  connectStorageEmulator: vi.fn(),
+}));
+
+vi.mock('firebase/app', () => ({
+  getApp: vi.fn().mockReturnValue({ options: { projectId: 'gse-roar-admin-staging' } }),
+}));
 import { SDKError } from '../errors/sdk-error';
 import type { AddInteractionInput, UpdateUserInput, TrialData, RawScores, ComputedScores } from '../types';
 import type { CommandContext } from '../command/command';
 import { RUN_EVENT_STATUS_OK } from '../types';
+import { UploadStatusEnum } from '../types/upload-file';
+import type { UploadFileOutput } from '../types/upload-file';
 
 /**
  * Helper to create a mock CommandContext for testing.
@@ -24,6 +41,15 @@ import { RUN_EVENT_STATUS_OK } from '../types';
  *
  * @returns A CommandContext configured for testing with localhost baseUrl and participantId
  */
+function createMockLogger() {
+  return {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  };
+}
+
 function createMockContext(fetchImpl?: typeof fetch): CommandContext {
   return {
     baseUrl: 'http://localhost:3000',
@@ -33,6 +59,7 @@ function createMockContext(fetchImpl?: typeof fetch): CommandContext {
     participant: {
       participantId: 'participant-123',
     },
+    logger: createMockLogger(),
     ...(fetchImpl ? { fetchImpl } : {}),
   };
 }
@@ -1221,6 +1248,409 @@ describe('firekit compat', () => {
       });
 
       await expect(getVariantParamsById('task-123', 'variant-456')).rejects.toThrow(SDKError);
+    });
+  });
+
+  describe('FirekitFacade._processUploadQueue', () => {
+    /**
+     * Creates a mock UploadFileOutput whose upload task captures the state_changed
+     * callbacks so tests can trigger success and error paths directly.
+     */
+    function createMockUploadOutput(filename: string): {
+      output: UploadFileOutput;
+      mockUploadTask: { on: ReturnType<typeof vi.fn> };
+      triggerComplete: () => void;
+      triggerError: (error?: { code?: string }) => void;
+    } {
+      let errorCb: ((error: { code?: string }) => void) | undefined;
+      let completeCb: (() => void) | undefined;
+
+      const mockUploadTask = {
+        on: vi.fn((_event: string, _next: unknown, error: unknown, complete: unknown) => {
+          errorCb = error as typeof errorCb;
+          completeCb = complete as typeof completeCb;
+          return vi.fn(); // unsubscribe
+        }),
+      };
+
+      const output: UploadFileOutput = {
+        upload: vi.fn().mockReturnValue(mockUploadTask),
+        status: UploadStatusEnum.PENDING,
+        filename,
+        storagePath: `gs://bucket/${filename}`,
+      };
+
+      return {
+        output,
+        mockUploadTask,
+        triggerComplete: () => completeCb?.(),
+        triggerError: (error?: { code?: string }) => errorCb?.(error ?? { code: 'storage/unknown' }),
+      };
+    }
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      initializeFirekit('run-upload-test');
+    });
+
+    afterEach(() => {
+      _resetFirekitCompat();
+    });
+
+    it('sets status to UPLOADING and calls upload() when a task is added', () => {
+      const { output } = createMockUploadOutput('audio.webm');
+      const facade = getFirekitCompat();
+
+      facade._addUploadToQueue(output);
+
+      expect(output.upload).toHaveBeenCalledTimes(1);
+      expect(output.status).toBe(UploadStatusEnum.UPLOADING);
+    });
+
+    it('registers a state_changed listener on the active upload task', () => {
+      const { output, mockUploadTask } = createMockUploadOutput('audio.webm');
+      const facade = getFirekitCompat();
+
+      facade._addUploadToQueue(output);
+
+      expect(mockUploadTask.on).toHaveBeenCalledWith(
+        'state_changed',
+        undefined,
+        expect.any(Function),
+        expect.any(Function),
+      );
+    });
+
+    it('sets status to COMPLETED and removes task from queue on success', () => {
+      const { output, triggerComplete } = createMockUploadOutput('audio.webm');
+      const facade = getFirekitCompat();
+
+      facade._addUploadToQueue(output);
+      triggerComplete();
+
+      expect(output.status).toBe(UploadStatusEnum.COMPLETED);
+    });
+
+    it('starts the next PENDING task after a task completes', () => {
+      const first = createMockUploadOutput('first.webm');
+      const second = createMockUploadOutput('second.webm');
+      const third = createMockUploadOutput('third.webm');
+      const fourth = createMockUploadOutput('fourth.webm');
+      const facade = getFirekitCompat();
+
+      facade._addUploadToQueue(first.output);
+      facade._addUploadToQueue(second.output);
+      facade._addUploadToQueue(third.output);
+      facade._addUploadToQueue(fourth.output);
+
+      // Concurrency limit reached — fourth is still pending
+      expect(fourth.output.upload).not.toHaveBeenCalled();
+
+      first.triggerComplete();
+
+      expect(fourth.output.upload).toHaveBeenCalledTimes(1);
+      expect(fourth.output.status).toBe(UploadStatusEnum.UPLOADING);
+    });
+
+    it('sets status to FAILED on error', () => {
+      const { output, triggerError } = createMockUploadOutput('audio.webm');
+      const facade = getFirekitCompat();
+
+      facade._addUploadToQueue(output);
+      triggerError({ code: 'storage/unauthorized' });
+
+      expect(output.status).toBe(UploadStatusEnum.FAILED);
+    });
+
+    it('removes the failed task from the queue and starts the next PENDING task', () => {
+      const first = createMockUploadOutput('first.webm');
+      const second = createMockUploadOutput('second.webm');
+      const third = createMockUploadOutput('third.webm');
+      const fourth = createMockUploadOutput('fourth.webm');
+      const facade = getFirekitCompat();
+
+      facade._addUploadToQueue(first.output);
+      facade._addUploadToQueue(second.output);
+      facade._addUploadToQueue(third.output);
+      facade._addUploadToQueue(fourth.output);
+
+      expect(fourth.output.upload).not.toHaveBeenCalled();
+
+      first.triggerError({ code: 'storage/unknown' });
+
+      expect(fourth.output.upload).toHaveBeenCalledTimes(1);
+      expect(fourth.output.status).toBe(UploadStatusEnum.UPLOADING);
+    });
+
+    it('logs filename to logger.warn on failure', () => {
+      const { output, triggerError } = createMockUploadOutput('audio.webm');
+      const facade = getFirekitCompat();
+      const logger = facade._getLogger();
+
+      facade._addUploadToQueue(output);
+      triggerError({ code: 'storage/unauthorized' });
+
+      expect(logger?.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.objectContaining({ code: 'storage/unauthorized' }) }),
+        expect.stringContaining('audio.webm'),
+      );
+    });
+
+    it('handles an error with no code without throwing', () => {
+      const { output, triggerError } = createMockUploadOutput('audio.webm');
+      const facade = getFirekitCompat();
+
+      facade._addUploadToQueue(output);
+
+      expect(() => triggerError({})).not.toThrow();
+      expect(output.status).toBe(UploadStatusEnum.FAILED);
+    });
+
+    it('does not start more than 3 concurrent uploads', () => {
+      const outputs = Array.from({ length: 5 }, (_, i) => createMockUploadOutput(`file-${i}.webm`));
+      const facade = getFirekitCompat();
+
+      outputs.forEach(({ output }) => facade._addUploadToQueue(output));
+
+      const uploadingCount = outputs.filter(({ output }) => output.status === UploadStatusEnum.UPLOADING).length;
+      const pendingCount = outputs.filter(({ output }) => output.status === UploadStatusEnum.PENDING).length;
+
+      expect(uploadingCount).toBe(3);
+      expect(pendingCount).toBe(2);
+    });
+
+    it('does not start a new upload when called while already at the concurrency limit', () => {
+      const tasks = Array.from({ length: 3 }, (_, i) => createMockUploadOutput(`file-${i}.webm`));
+      const extra = createMockUploadOutput('extra.webm');
+      const facade = getFirekitCompat();
+
+      tasks.forEach(({ output }) => facade._addUploadToQueue(output));
+      facade._addUploadToQueue(extra.output);
+
+      // Calling _processUploadQueue again while 3 are uploading should not start extra
+      facade._processUploadQueue();
+
+      expect(extra.output.upload).not.toHaveBeenCalled();
+    });
+
+    it('is a no-op when the queue is empty', () => {
+      const facade = getFirekitCompat();
+      expect(() => facade._processUploadQueue()).not.toThrow();
+    });
+
+    it('fully drains the queue as tasks complete in sequence', () => {
+      const tasks = Array.from({ length: 5 }, (_, i) => createMockUploadOutput(`file-${i}.webm`));
+      const facade = getFirekitCompat();
+
+      tasks.forEach(({ output }) => facade._addUploadToQueue(output));
+
+      // tasks 0–2 uploading, tasks 3–4 pending
+      tasks[0]!.triggerComplete(); // frees a slot → starts task 3
+      tasks[1]!.triggerComplete(); // frees a slot → starts task 4
+      tasks[2]!.triggerComplete();
+      tasks[3]!.triggerComplete();
+      tasks[4]!.triggerComplete();
+
+      expect(tasks.every(({ output }) => output.status === UploadStatusEnum.COMPLETED)).toBe(true);
+    });
+
+    it('processes pending tasks after a mix of completions and errors', () => {
+      const tasks = Array.from({ length: 5 }, (_, i) => createMockUploadOutput(`file-${i}.webm`));
+      const facade = getFirekitCompat();
+
+      tasks.forEach(({ output }) => facade._addUploadToQueue(output));
+
+      // tasks 0–2 uploading, tasks 3–4 pending
+      tasks[0]!.triggerError({ code: 'storage/unknown' }); // freed slot → starts task 3
+      tasks[1]!.triggerComplete(); // freed slot → starts task 4
+      tasks[2]!.triggerComplete();
+      tasks[3]!.triggerComplete();
+      tasks[4]!.triggerComplete();
+
+      expect(tasks[0]!.output.status).toBe(UploadStatusEnum.FAILED);
+      expect(tasks[1]!.output.status).toBe(UploadStatusEnum.COMPLETED);
+      expect(tasks[2]!.output.status).toBe(UploadStatusEnum.COMPLETED);
+      expect(tasks[3]!.output.status).toBe(UploadStatusEnum.COMPLETED);
+      expect(tasks[4]!.output.status).toBe(UploadStatusEnum.COMPLETED);
+    });
+  });
+
+  describe('uploadFile', () => {
+    afterEach(() => {
+      _resetFirekitCompat();
+    });
+
+    describe('with active anonymous run', () => {
+      beforeEach(async () => {
+        vi.clearAllMocks();
+        await initializeFirekitAndStartRun('run-upload-file-test');
+        vi.spyOn(getFirekitCompat(), '_getStorageBucket').mockReturnValue({} as FirebaseStorage);
+      });
+
+      it('succeeds when customMetadata is undefined', async () => {
+        const storagePath = await uploadFile({
+          fileOrBlob: new Blob(['test']),
+          filename: 'test.webm',
+          taskId: 'task-123',
+        });
+
+        expect(storagePath).toBe('gs://mock-bucket/path/to/file.webm');
+        expect(uploadBytesResumable).toHaveBeenCalledWith(expect.anything(), expect.any(Blob), undefined);
+      });
+
+      it('passes string-valued customMetadata through unchanged', async () => {
+        await uploadFile({
+          fileOrBlob: new Blob(['test']),
+          filename: 'test.webm',
+          taskId: 'task-123',
+          customMetadata: { key: 'value', label: 'test-label' },
+        });
+
+        expect(uploadBytesResumable).toHaveBeenCalledWith(expect.anything(), expect.any(Blob), {
+          customMetadata: { key: 'value', label: 'test-label' },
+        });
+      });
+
+      it('stringifies non-string customMetadata values', async () => {
+        await uploadFile({
+          fileOrBlob: new Blob(['test']),
+          filename: 'test.webm',
+          taskId: 'task-123',
+          // @ts-expect-error testing runtime behavior with non-string values
+          customMetadata: { strVal: 'hello', numVal: 42, boolVal: true, objVal: { nested: 'obj' } },
+        });
+
+        expect(uploadBytesResumable).toHaveBeenCalledWith(expect.anything(), expect.any(Blob), {
+          customMetadata: {
+            strVal: 'hello',
+            numVal: '42',
+            boolVal: 'true',
+            objVal: '{"nested":"obj"}',
+          },
+        });
+      });
+
+      it('warns and omits customMetadata when it is not a plain object', async () => {
+        const facade = getFirekitCompat();
+        const logger = facade._getLogger();
+
+        await uploadFile({
+          fileOrBlob: new Blob(['test']),
+          filename: 'test.webm',
+          taskId: 'task-123',
+          // @ts-expect-error testing runtime behavior with non-object value
+          customMetadata: 'not-an-object',
+        });
+
+        expect(logger?.warn).toHaveBeenCalledWith(expect.stringContaining('customMetadata is not an object'));
+        expect(uploadBytesResumable).toHaveBeenCalledWith(expect.anything(), expect.any(Blob), undefined);
+        // Specifically verify that { customMetadata: undefined } was not passed —
+        // the sanitizedCustomMetadata guard prevents the key from leaking through
+        expect(uploadBytesResumable).not.toHaveBeenCalledWith(expect.anything(), expect.any(Blob), {
+          customMetadata: undefined,
+        });
+      });
+
+      it('adds the upload task to the queue', async () => {
+        const facade = getFirekitCompat();
+        const addToQueueSpy = vi.spyOn(facade, '_addUploadToQueue');
+
+        await uploadFile({
+          fileOrBlob: new Blob(['test']),
+          filename: 'test.webm',
+          taskId: 'task-123',
+        });
+
+        expect(addToQueueSpy).toHaveBeenCalledTimes(1);
+        expect(addToQueueSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ filename: 'test.webm', storagePath: 'gs://mock-bucket/path/to/file.webm' }),
+        );
+      });
+    });
+
+    it('throws SDKError when called without an active run', async () => {
+      vi.clearAllMocks();
+      initializeFirekit('run-upload-file-test');
+      vi.spyOn(getFirekitCompat(), '_getStorageBucket').mockReturnValue({} as FirebaseStorage);
+
+      await expect(
+        uploadFile({ fileOrBlob: new Blob(['test']), filename: 'test.webm', taskId: 'task-123' }),
+      ).rejects.toThrow('appkit.uploadFile requires an active run');
+    });
+
+    it('throws SDKError for non-anonymous run without administrationId', async () => {
+      vi.clearAllMocks();
+      const { mockContext } = initializeFirekit('run-no-admin', { isAnonymous: false });
+      vi.spyOn(getFirekitCompat(), '_getStorageBucket').mockReturnValue({} as FirebaseStorage);
+
+      // Bypass startRun (which would also reject) and set the runId directly
+      getFirekitCompat()._setRunId('fake-run-id');
+      void mockContext;
+
+      await expect(
+        uploadFile({ fileOrBlob: new Blob(['test']), filename: 'test.webm', taskId: 'task-123' }),
+      ).rejects.toThrow('appkit.uploadFile requires an administrationId');
+    });
+  });
+
+  describe('_getStorageBucket / resolveStorageBucket', () => {
+    afterEach(() => {
+      vi.clearAllMocks();
+      vi.unstubAllEnvs();
+      _resetFirekitCompat();
+    });
+
+    it('memoizes the storage bucket — getStorage is called only once per facade instance', () => {
+      initializeFirekit('run-memo-test');
+      const facade = getFirekitCompat();
+
+      facade._getStorageBucket();
+      facade._getStorageBucket();
+
+      expect(getStorage).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses getStorage(getApp()) and connects to the emulator when FIREBASE_AUTH_EMULATOR_HOST is set', () => {
+      vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
+      initializeFirekit('run-emulator-test');
+
+      getFirekitCompat()._getStorageBucket();
+
+      // No second argument — should use the default app storage, not a named bucket
+      expect(getStorage).toHaveBeenCalledWith(expect.objectContaining({ options: expect.anything() }));
+      expect(connectStorageEmulator).toHaveBeenCalledWith(expect.anything(), '127.0.0.1', 9199);
+    });
+
+    it('does not reconnect the emulator after a facade reset', () => {
+      // storageEmulatorConnected is module-level, so it persists across facade resets.
+      // The emulator test above already triggered the connection; after reset it should not reconnect.
+      vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
+      _resetFirekitCompat();
+      initializeFirekit('run-emulator-reset-test');
+
+      getFirekitCompat()._getStorageBucket();
+
+      expect(connectStorageEmulator).not.toHaveBeenCalled();
+    });
+
+    it('uses the prod recordings bucket when projectId is gse-roar-admin', () => {
+      vi.mocked(getApp).mockReturnValue({ options: { projectId: 'gse-roar-admin' } } as ReturnType<typeof getApp>);
+      initializeFirekit('run-prod-test');
+
+      getFirekitCompat()._getStorageBucket();
+
+      expect(getStorage).toHaveBeenCalledWith(expect.anything(), 'gs://roar-admin-recordings-prod');
+    });
+
+    it('uses the staging recordings bucket when projectId is not gse-roar-admin', () => {
+      vi.mocked(getApp).mockReturnValue({ options: { projectId: 'gse-roar-admin-staging' } } as ReturnType<
+        typeof getApp
+      >);
+      initializeFirekit('run-staging-test');
+
+      getFirekitCompat()._getStorageBucket();
+
+      expect(getStorage).toHaveBeenCalledWith(expect.anything(), 'gs://roar-admin-recordings-staging');
     });
   });
 });
