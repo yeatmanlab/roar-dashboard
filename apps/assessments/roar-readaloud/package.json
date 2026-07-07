@@ -43,6 +43,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write --log-level=warn",
     "format:check": "prettier . --check",
+    "test": "vitest --run --passWithNoTests",
     "cypress:open": "cypress open"
   },
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
@@ -125,6 +126,7 @@
     "sass-loader": "^13.3.2",
     "stream-browserify": "^3.0.0",
     "style-loader": "^3.3.1",
+    "vitest": "^3.2.4",
     "webpack": "^5.74.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1",

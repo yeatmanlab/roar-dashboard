@@ -118,12 +118,13 @@ export async function saveRecordings({ filename, config, metadata = {} }) {
 /**
  * Uploads a recording to storage and returns its gs:// storage path (or null).
  *
- * TODO(#1955): wire to the assessment-sdk `uploadFile()` compat method once #1955 merges
- * into this branch. That method resolves the storage bucket (emulator in dev, admin bucket
- * in staging/prod), fires the resumable upload, and returns the storage path — so this seam
+ * TODO: wire to the assessment-sdk `uploadFile()` compat method — deferred to the follow-up
+ * readaloud upload-SDK PR to keep this migration PR scoped and firekit-free. `uploadFile()`
+ * already exists in the SDK (it resolves the storage bucket — emulator in dev, admin bucket
+ * in staging/prod — fires the resumable upload, and returns the storage path); there this seam
  * becomes `return uploadFile({ filename, fileOrBlob, taskId: READALOUD_TASK_ID, ... })`.
- * Until then it is a no-op, so the migration stays firekit-free and trials complete without
- * uploads (null matches the pre-existing on-error return the caller already handles).
+ * Until then it is a no-op, so trials complete without uploads (null matches the pre-existing
+ * on-error return the caller already handles).
  *
  * @param {{ filename: string, fileOrBlob: Blob, customMetadata?: object, config?: object }} recording
  * @returns {Promise<string|null>}
