@@ -128,7 +128,10 @@ const webConfig = merge(commonConfig, {
     new CopyWebpackPlugin({
       patterns: [
         {
-          from: 'node_modules/onnxruntime-web/dist/*.wasm',
+          // onnxruntime-web is hoisted to the monorepo root node_modules, so resolve its
+          // dist dir rather than assuming a local install. (Its package.json isn't exposed
+          // via `exports`, so resolve the main entry and take its directory.)
+          from: path.join(path.dirname(require.resolve('onnxruntime-web')), '*.wasm'),
           to: '[name][ext]',
         },
         {
