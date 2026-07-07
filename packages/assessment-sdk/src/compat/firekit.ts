@@ -246,7 +246,7 @@ export class FirekitFacade {
     } catch (err) {
       throw new SDKError('appkit.uploadFile requires an initialized Firebase app.', {
         code: SdkErrorCode.UPLOAD_FILE_FAILED,
-        cause: err instanceof Error ? err : undefined,
+        ...(err instanceof Error ? { cause: err } : {}),
       });
     }
     return this.#storageBucket;
