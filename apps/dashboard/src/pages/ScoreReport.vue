@@ -77,8 +77,8 @@
                   v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
                   class="text-center text-sm font-bold px-4"
                 >
-                  In this district-level report, visualizations are available for foundational ROAR assessments (Word,
-                  Sentence, and Phoneme) to give you clear, reliable insights on these foundational skills.
+                  In this district-level report, visualizations are available for foundational and comprehension ROAR
+                  assessments to give you clear, reliable insights on these foundational skills.
                 </p>
                 <p class="text-center align-items-center text-sm font-bold px-4">
                   View school-level or classroom-level reports to see student-level data and information about other
