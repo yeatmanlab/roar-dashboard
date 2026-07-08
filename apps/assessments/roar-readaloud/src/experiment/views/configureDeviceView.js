@@ -1,4 +1,5 @@
 import store from 'store2';
+import { READALOUD_DEVICE_CONFIG_URL } from '@roar-platform/assessment-schema/roar-readaloud';
 import configureDevice_page from './configureDevice.html';
 import loadingScreen_page from './loadingScreen.html';
 import * as initJS from './configureDevice';
@@ -15,25 +16,23 @@ async function loadExternalScripts(src) {
 }
 
 function DOMloaded(config) {
-  if (config.firekit.task.variantParams.deviceConfigFile !== '') {
+  if (config.variantParams.deviceConfigFile !== '') {
     collapseCards('Toggle');
   }
 
-  if (config.firekit.task.variantParams.bEyeTracking == false) {
+  if (config.variantParams.bEyeTracking == false) {
     collapseCamera();
   }
 
-  console.log('config.firekit.user.assessmentPid', config.firekit.user.assessmentPid);
-
-  if (config.firekit.user.assessmentPid !== '') {
-    inputParticipantName(config.firekit.user.assessmentPid);
+  if (config.assessmentPid !== '') {
+    inputParticipantName(config.assessmentPid);
   }
 
   const voiceover = document.getElementById('voiceover'); // TO DO: Doesn't have enough time to load? Only plays if the consent screen shows up first
   voiceover.src = `https://eyetrackingdata.blob.core.windows.net/public/Audios/deviceConfig.mp3`;
 
-  if (config.firekit.task.variantParams.deviceConfigFile !== '') {
-    const jsonUrl = `https://eyetrackingdata.blob.core.windows.net/public/config/${config.firekit.task.variantParams.deviceConfigFile}.json`;
+  if (config.variantParams.deviceConfigFile !== '') {
+    const jsonUrl = READALOUD_DEVICE_CONFIG_URL(config.variantParams.deviceConfigFile);
     updateDeviceConfigFromJSON(jsonUrl);
   }
 
@@ -119,13 +118,9 @@ export async function configureDeviceView(config) {
           // const id = `${assessmentUid}_`;
           // + (idInput_textbox.value.trim() ? idInput_textbox.value : makeid(10));
           var id =
-            store.session.get('config').firekit.user.assessmentUid +
+            store.session.get('config').assessmentUid +
             '_' +
             (idInput_textbox.value.trim() ? idInput_textbox.value : makeid(10));
-
-          if (id !== config.firekit.user.assessmentPid) {
-            config.firekit.updateUser({ assessmentPid: id });
-          }
 
           openFullscreen();
 
@@ -139,8 +134,8 @@ export async function configureDeviceView(config) {
             normalizedFocalLength: parseFloat(normalizedFocalLength),
             deviceInfo: getDeviceInfo(),
             webcamInfo: webcamInfo,
-            bEyeTracking: config.firekit.task.variantParams.bEyeTracking,
-            storeVideo: config.firekit.task.variantParams.storeVideo,
+            bEyeTracking: config.variantParams.bEyeTracking,
+            storeVideo: config.variantParams.storeVideo,
             backgroundNoise: 0,
           });
 

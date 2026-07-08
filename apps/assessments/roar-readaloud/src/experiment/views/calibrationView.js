@@ -1,4 +1,5 @@
 import store from 'store2';
+import { writeReadaloudTrial } from '../helperFunctions';
 import calibration_page from './calibration.html';
 import calibration_page_short from './calibration_short.html';
 import loadingScreen_page from './loadingScreen.html';
@@ -16,7 +17,7 @@ export async function calibrationView(config) {
 
   window.myWorker = myWorker;
   var html = calibration_page;
-  if (config.firekit.task.variantParams.calibrationType === 'short') {
+  if (config.variantParams.calibrationType === 'short') {
     html = calibration_page_short;
   }
   const eyetrackingVars_page = document.createElement('div');
@@ -76,7 +77,7 @@ export async function calibrationView(config) {
           uploadUrl: uploadUrl,
         };
 
-        config.firekit.writeTrial(results);
+        writeReadaloudTrial(results);
 
         unloadExternalScripts(videoCaptureJS);
         unloadExternalScripts(headeyetrackingJS);
@@ -184,7 +185,7 @@ async function DOMloaded(config) {
   var img = document.getElementById('calibrationImage');
   img.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/eyecalibration.gif`;
 
-  if (config.firekit.task.variantParams.calibrationType === 'short') {
+  if (config.variantParams.calibrationType === 'short') {
     img.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/eyecalibration_short.gif`;
   }
 

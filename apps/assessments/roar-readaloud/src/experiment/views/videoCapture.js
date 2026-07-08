@@ -112,15 +112,24 @@ export async function saveRecordings({ filename, config, metadata = {} }) {
     return null;
   }
 
-  try {
-    return await config.firekit.uploadFileOrBlobToStorage({
-      filename: filename,
-      assessmentPid: store.session.get('id'),
-      fileOrBlob: mediaBlob,
-      customMetadata: metadata,
-    });
-  } catch (error) {
-    console.error('Error getting video upload URL:', error);
-    return null;
-  }
+  return uploadRecording({ filename, fileOrBlob: mediaBlob, customMetadata: metadata, config });
+}
+
+/**
+ * Uploads a recording to storage and returns its gs:// storage path (or null).
+ *
+ * TODO: wire to the assessment-sdk `uploadFile()` compat method — deferred to the follow-up
+ * readaloud upload-SDK PR to keep this migration PR scoped and firekit-free. `uploadFile()`
+ * already exists in the SDK (it resolves the storage bucket — emulator in dev, admin bucket
+ * in staging/prod — fires the resumable upload, and returns the storage path); there this seam
+ * becomes `return uploadFile({ filename, fileOrBlob, taskId: READALOUD_TASK_ID, ... })`.
+ * Until then it is a no-op, so trials complete without uploads (null matches the pre-existing
+ * on-error return the caller already handles).
+ *
+ * @param {{ filename: string, fileOrBlob: Blob, customMetadata?: object, config?: object }} recording
+ * @returns {Promise<string|null>}
+ */
+async function uploadRecording(recording) {
+  void recording;
+  return null;
 }

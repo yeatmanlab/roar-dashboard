@@ -1,4 +1,5 @@
 import store from 'store2';
+import { writeReadaloudTrial } from '../helperFunctions';
 import crowding_page from './crowding.html';
 import loadingScreen_page from './loadingScreen.html';
 import eyetrackingVars from './eyetrackingVars.html';
@@ -16,10 +17,10 @@ export async function crowdingView(type, config) {
   window.myWorker = myWorker;
 
   // Load the existing HTML page
-  const viewingDistance = config.firekit.task.variantParams.viewingDistance;
-  const quest = config.firekit.task.variantParams.quest;
+  const viewingDistance = config.variantParams.viewingDistance;
+  const quest = config.variantParams.quest;
   window.quest = quest;
-  const visibleEyeTracking = config.firekit.task.variantParams.visibleEyeTracking;
+  const visibleEyeTracking = config.variantParams.visibleEyeTracking;
   let html = crowding_page;
   const eyetrackingVars_page = document.createElement('div');
 
@@ -76,7 +77,7 @@ export async function crowdingView(type, config) {
           correct: 1,
         };
 
-        config.firekit.writeTrial(results);
+        writeReadaloudTrial(results);
 
         unloadExternalScripts(initJS);
         unloadExternalScripts(videoCaptureJS);
