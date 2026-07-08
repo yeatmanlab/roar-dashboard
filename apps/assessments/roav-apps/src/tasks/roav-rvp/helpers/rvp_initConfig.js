@@ -14,8 +14,9 @@ import i18next from 'i18next'; // for language info
 import { ModeGame } from '../../shared/helpers/namingHelpers';
 import { NAME_CORPUS_DEF } from '../../shared/helpers/loadCorpus';
 import { NAME_CONFIG_BLOCK_DEF, NAME_CONFIG_STIM_DEF } from './rvp_loadCorpus';
+import { createFirekitShim } from '../../shared/helpers/firekitShim';
 
-export const rvp_initConfig = async (firekit, gameParams, userParams) => {
+export const rvp_initConfig = async (gameParams, userParams) => {
   const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
 
   const selectModeGame = (modeGameIn, userMetadataIn) => {
@@ -61,7 +62,7 @@ export const rvp_initConfig = async (firekit, gameParams, userParams) => {
     pid: assessmentPid,
     userMetadata: userMetadataCombined,
     startTime: new Date(),
-    firekit,
+    firekit: createFirekitShim(),
     taskName: taskName,
     corpusName: corpusName || NAME_CORPUS_DEF,
     modeGame: modeGame || 'all',

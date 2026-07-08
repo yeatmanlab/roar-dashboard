@@ -21,10 +21,9 @@ export default defineConfig({
     assetFileNames: '[name][extname]',
     sourcemap: true,
   },
-  // Workspace deps, auth, and Sentry are externalized — the consuming host provides them.
-  // roar-firekit is still referenced by serve.js in this migration step and is replaced by
-  // the assessment SDK in the sdk-wiring PR; externalizing it keeps it out of the lib bundle.
-  external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@bdelab\/roar-firekit(\/.*)?$/, /^@sentry\//],
+  // Workspace deps, auth, and Sentry are externalized — the consuming host (dashboard)
+  // provides them, keeping duplicate copies out of the lib bundle.
+  external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@roar-platform\/assessment-schema(\/.*)?$/, /^@sentry\//],
   plugins: [
     postcss({
       inject: true,

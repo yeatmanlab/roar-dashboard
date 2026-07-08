@@ -46,6 +46,11 @@
       "types": "./dist/roar-levante-tasks/index.d.ts",
       "import": "./dist/roar-levante-tasks/index.js",
       "default": "./dist/roar-levante-tasks/index.js"
+    },
+    "./roav-apps": {
+      "types": "./dist/roav-apps/index.d.ts",
+      "import": "./dist/roav-apps/index.js",
+      "default": "./dist/roav-apps/index.js"
     }
   },
   "main": "./dist/index.js",

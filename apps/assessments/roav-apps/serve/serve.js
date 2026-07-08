@@ -1,115 +1,92 @@
-import { RoarAppkit, initializeFirebaseProject } from '@bdelab/roar-firekit'; // firekit functions
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'; // firebase authorization
-import i18next from 'i18next';
+import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
+import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { TaskLauncher } from '../src';
-// eslint-disable-next-line import/no-unresolved -- PR3 (SDK wiring) replaces this with the shared Firebase config; the local firebaseConfig.js was deleted as a sensitive file in PR1.
-import { roarConfig } from './firebaseConfig'; // firebase configuration details
-
+import { getFirebaseConfig } from '../../shared/firebaseConfig.js';
 // Import necessary for async in the top level of the experiment script
-import 'regenerator-runtime/runtime'; // for async
+import 'regenerator-runtime/runtime';
 
-// const convertStrToBool = (str) => (str ? str === "true" : str);
-const convertStrToNumber = (str) => {
-  if (str === null || str === undefined || str.trim() === '') return null;
-  const num = Number(str);
-  return Number.isFinite(num) ? num : null;
-};
+const queryString = new URL(window.location).search;
+const urlParams = new URLSearchParams(queryString);
 
-const queryString = new URL(window.location).search; // returns a dictionary with various parameters of the URL or the "query string"
-const urlParams = new URLSearchParams(queryString); // restructures the dictionary for accessing the key-value pairs
-const taskName = urlParams.get('task') ?? 'roav-rvp';
-const corpusName = urlParams.get('corpusName');
-const recruitment = urlParams.get('recruitment');
-// const audio = convertStrToBool(urlParams.get("audio"));
+// Task selection: variantId wins; otherwise taskId resolves to the first published variant.
+const taskId = urlParams.get('task') ?? 'roav-rvp';
+const variantId = urlParams.get('variantId');
+const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 
+// Participant / demographics
 const assessmentPid = urlParams.get('PROLIFIC_PID') || urlParams.get('participant');
+const grade = urlParams.get('grade');
 const birthYear = urlParams.get('birthyear');
 const birthMonth = urlParams.get('birthmonth');
 const age = urlParams.get('age');
 const ageMonths = urlParams.get('agemonths');
-const grade = urlParams.get('grade');
 
-const modeSeq = urlParams.get('modeSeq'); // "fixed" | "random" - sequence of trials                    // "random" or "fixed" - sequence of studies
+// Game params (corpusName, modeGame, modeSeq, dotlife, nameConfigStim, nameConfigBlock,
+// recruitment, …) come exclusively from the seeded task-variant parameters — the run is
+// linked to a variantId, so its params must match the variant. To run different params,
+// seed another variant (taskVariantParameters.json) and select it with ?variantId. Only the
+// dev locale override stays on the URL; roav-apps ships en/es/it.
+const languageOverride = urlParams.get('lng');
 
-const modeGame = urlParams.get('modeGame'); // "game" | "stand" | "all"
+const firebaseConfig = await getFirebaseConfig();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-// Specific to ROAV-MP
-const dotlife = convertStrToNumber(urlParams.get('dotlife'));
-
-const nameConfigStim = urlParams.get('nameConfigStim');
-const nameConfigBlock = urlParams.get('nameConfigBlock');
-
-const { language } = i18next;
-
-// This function is part of bde-lab firekit package, it requires the firebase configuration details, name, authPersistence
-// @ts-ignore
-const appKit = await initializeFirebaseProject(roarConfig.firebaseConfig, 'assessmentApp', 'none');
-
-let taskId = taskName;
-if (language !== 'en') {
-  taskId = `${taskId}-${language}`;
+if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+  connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
 }
 
-onAuthStateChanged(appKit.auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (user) {
-    const userInfo = {
-      assessmentPid,
-      assessmentUid: user.uid,
-      userMetadata: {
-        districtId: '',
-      },
-    };
+    try {
+      const authCallbacks = { getToken: () => user.getIdToken() };
 
-    const userParams = {
-      assessmentPid,
-      grade,
-      birthMonth,
-      birthYear,
-      age,
-      ageMonths,
-      // group,
-    };
+      // Provision the anonymous ROAR user and resolve a variant via the SDK.
+      // variantId wins; otherwise falls back to the first published variant for taskId.
+      const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
+        { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
+        { ...(variantId ? { variantId } : {}), taskId },
+      );
 
-    let gameParams = {
-      taskName,
-      corpusName,
-      modeGame,
-      recruitment,
-      // audio,
-      // consent
-    };
-
-    if (taskName === 'roav-mp') {
-      gameParams = {
-        ...gameParams,
-        modeSeq,
-        dotlife,
+      const ctx = {
+        baseUrl: ROAR_API_BASE_URL,
+        auth: authCallbacks,
+        participant: { participantId },
       };
-    } else if (taskName === 'roav-rvp') {
-      gameParams = {
-        ...gameParams,
-        nameConfigStim,
-        nameConfigBlock,
+
+      initFirekitCompat(ctx, {
+        variantId: resolvedVariantId,
+        taskVersion,
+        isAnonymous: true,
+      });
+
+      const { variantParams } = await getVariantById(resolvedVariantId);
+
+      // Game params come entirely from the seeded variant — the run is linked to its
+      // variantId, so what was presented must match what the variant declares.
+      const gameParams = { ...variantParams };
+
+      // User/participant params come from the launch URL. The dev locale override is a
+      // per-participant concern and is layered here; it wins over any variant `language`
+      // because initConfig merges userParams after gameParams.
+      const userParams = {
+        assessmentPid,
+        grade,
+        birthMonth,
+        birthYear,
+        age,
+        ageMonths,
+        ...(languageOverride ? { language: languageOverride } : {}),
       };
+
+      const task = new TaskLauncher(gameParams, userParams);
+      task.run();
+    } catch (err) {
+      console.error('[roav-apps] Failed to initialize assessment:', err);
     }
-
-    const taskInfo = {
-      taskId: taskId,
-      variantParams: gameParams,
-    };
-
-    // generates a new roarApp class based on the roar firestore API
-    const firekit = new RoarAppkit({
-      firebaseProject: appKit,
-      taskInfo,
-      userInfo,
-    });
-
-    const task = new TaskLauncher(firekit, gameParams, userParams);
-    task.run();
   }
 });
 
-// signs in the user based on the firebase credentials
-// Ensures that data can be written to firebase
-await signInAnonymously(appKit.auth);
+await signInAnonymously(auth);

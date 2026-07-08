@@ -139,6 +139,15 @@ const developmentConfig = merge(webConfig, {
     client: {
       overlay: false,
     },
+    // Proxy the SDK's API calls (ROAR_API_BASE_URL defaults to '/v1') to the local backend.
+    proxy: [
+      {
+        context: ['/v1'],
+        target: process.env.BACKEND_URL ?? 'https://localhost:4000',
+        secure: false,
+        changeOrigin: true,
+      },
+    ],
   },
 });
 
@@ -150,6 +159,7 @@ module.exports = async (env, args) => {
       new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || '/v1'),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
@@ -157,9 +167,20 @@ module.exports = async (env, args) => {
     ],
   };
 
+  // Development only: surface the Auth emulator host to the browser bundle so
+  // getFirebaseConfig() connects to the emulator instead of fetching /__/firebase/init.json
+  // (which 404s outside Firebase Hosting). Empty default → production fetch path when unset.
+  const devFirebaseConfig = {
+    plugins: [
+      new webpack.EnvironmentPlugin({
+        FIREBASE_AUTH_EMULATOR_HOST: '',
+      }),
+    ],
+  };
+
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig);
+      return merge(developmentConfig, envDependentConfig, devFirebaseConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:

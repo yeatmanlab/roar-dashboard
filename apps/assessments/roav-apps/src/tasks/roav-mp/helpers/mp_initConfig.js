@@ -6,9 +6,10 @@ import i18next from 'i18next'; // for language info
 import { ModeGame, ModeSeq } from '../../shared/helpers/namingHelpers';
 import { DOT_LIFE_DEFAULT } from '../trials/mp_rdk';
 import { NAME_CORPUS_DEF } from '../../shared/helpers/loadCorpus';
+import { createFirekitShim } from '../../shared/helpers/firekitShim';
 
 // gets the variables required for the task
-export const mp_initConfig = async (firekit, gameParams, userParams) => {
+export const mp_initConfig = async (gameParams, userParams) => {
   const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
 
   const selectModeGame = (modeGameIn, userMetadataIn) => {
@@ -59,7 +60,7 @@ export const mp_initConfig = async (firekit, gameParams, userParams) => {
     pid: assessmentPid,
     userMetadata: userMetadataCombined,
     startTime: new Date(),
-    firekit,
+    firekit: createFirekitShim(),
     taskName: taskName,
     corpusName: corpusName || NAME_CORPUS_DEF,
     modeGame: modeGame || 'all',
