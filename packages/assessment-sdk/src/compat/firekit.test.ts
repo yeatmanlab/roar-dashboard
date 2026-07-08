@@ -9,6 +9,7 @@ import {
   updateUser,
   writeTrial,
   uploadFile,
+  flushUploads,
   getVariantParamsById,
   initFirekitCompat,
   getFirekitCompat,
@@ -1251,7 +1252,7 @@ describe('firekit compat', () => {
     });
   });
 
-  describe('FirekitFacade._processUploadQueue', () => {
+  describe('FirekitFacade upload queue and flushUploads', () => {
     /**
      * Creates a mock UploadFileOutput whose upload task captures the state_changed
      * callbacks so tests can trigger success and error paths directly.
@@ -1472,6 +1473,45 @@ describe('firekit compat', () => {
       expect(tasks[2]!.output.status).toBe(UploadStatusEnum.COMPLETED);
       expect(tasks[3]!.output.status).toBe(UploadStatusEnum.COMPLETED);
       expect(tasks[4]!.output.status).toBe(UploadStatusEnum.COMPLETED);
+    });
+
+    it('flushUploads resolves once every outstanding upload settles (completions and failures)', async () => {
+      const first = createMockUploadOutput('first.webm');
+      const second = createMockUploadOutput('second.webm');
+      const facade = getFirekitCompat();
+
+      facade._addUploadToQueue(first.output);
+      facade._addUploadToQueue(second.output);
+
+      const flushed = flushUploads();
+      let settled = false;
+      void flushed.then(() => {
+        settled = true;
+      });
+
+      // Still pending while uploads are in flight.
+      await Promise.resolve();
+      expect(settled).toBe(false);
+
+      first.triggerComplete();
+      second.triggerError({ code: 'storage/unknown' }); // a failed upload still counts as settled
+
+      await expect(flushed).resolves.toBeUndefined();
+      expect(settled).toBe(true);
+    });
+
+    it('flushUploads resolves immediately when no uploads are outstanding', async () => {
+      await expect(flushUploads()).resolves.toBeUndefined();
+    });
+
+    it('flushUploads resolves via the timeout when an upload never settles', async () => {
+      const { output } = createMockUploadOutput('stuck.webm');
+      const facade = getFirekitCompat();
+
+      facade._addUploadToQueue(output);
+
+      // The upload never triggers complete/error; flush resolves via the short timeout instead.
+      await expect(flushUploads(10)).resolves.toBeUndefined();
     });
   });
 

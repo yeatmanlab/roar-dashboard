@@ -155,6 +155,16 @@ const developmentConfig = merge(webConfig, {
     client: {
       overlay: false,
     },
+    // Proxy the ts-rest backend so the SDK client's `/v1` calls (e.g. anonymous sign-in)
+    // reach the backend on :4000 rather than 404ing against the dev server.
+    proxy: [
+      {
+        context: ['/v1'],
+        target: process.env.BACKEND_URL ?? 'http://localhost:4000',
+        secure: false,
+        changeOrigin: true,
+      },
+    ],
     // headers: {
     //   'Cross-Origin-Opener-Policy': 'same-origin',
     //   'Cross-Origin-Embedder-Policy': 'require-corp'
@@ -165,14 +175,26 @@ const developmentConfig = merge(webConfig, {
 module.exports = async (env, args) => {
   const roarDB = env.dbmode ?? 'development';
 
+  const devFirebaseConfig =
+    roarDB === 'development'
+      ? {
+          FIREBASE_AUTH_EMULATOR_HOST: JSON.stringify(process.env.FIREBASE_AUTH_EMULATOR_HOST ?? ''),
+        }
+      : {};
+
   const envDependentConfig = {
     plugins: [
       new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL ?? '/v1'),
+        ...devFirebaseConfig,
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
+      }),
+      new webpack.EnvironmentPlugin({
+        FIREBASE_AUTH_EMULATOR_HOST: '',
       }),
     ],
   };
