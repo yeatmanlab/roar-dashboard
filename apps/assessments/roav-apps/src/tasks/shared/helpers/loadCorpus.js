@@ -8,8 +8,7 @@ import { SESSION_KEYS as SK } from './sessionKeys';
 
 export const NAME_CORPUS_DEF = 'corpus-def';
 
-const isUnsafeMergeKey = (key) =>
-  key === '__proto__' || key === 'constructor' || key === 'prototype';
+const isUnsafeMergeKey = (key) => key === '__proto__' || key === 'constructor' || key === 'prototype';
 
 export function downloadJSON(url) {
   return new Promise((resolve, reject) => {
