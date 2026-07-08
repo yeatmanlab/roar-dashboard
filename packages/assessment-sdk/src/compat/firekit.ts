@@ -105,6 +105,13 @@ export function _resetFirekitCompat(): void {
 }
 
 /**
+ * Default best-effort timeout (ms) for {@link FirekitFacade.flushUploads}. Once it elapses,
+ * flushUploads resolves even if uploads are still in flight — stragglers keep uploading in the
+ * background so a slow upload never blocks run-finish or page-unload indefinitely.
+ */
+const DEFAULT_FLUSH_TIMEOUT_MS = 30_000;
+
+/**
  * FirekitFacade provides backward compatibility with legacy Firekit-based assessments.
  *
  * This is a Singleton pattern implementation that allows existing assessments
@@ -134,6 +141,9 @@ export class FirekitFacade {
   #interactionBuffer: AddInteractionInput[] = [];
   #storageBucket: FirebaseStorage | undefined;
   #uploadQueue: UploadFileOutput[] = [];
+  // Settle tracking for flushUploads(): a resolver + promise per in-flight upload task,
+  // populated on enqueue and resolved when the task completes or fails.
+  #pendingUploads = new Map<UploadFileOutput, { promise: Promise<void>; resolve: () => void }>();
 
   private constructor() {}
 
@@ -345,6 +355,13 @@ export class FirekitFacade {
    * @param task - The upload task output to enqueue
    */
   _addUploadToQueue(task: UploadFileOutput) {
+    // Track a settle promise so flushUploads() can await this upload draining (success or failure).
+    let resolve!: () => void;
+    const promise = new Promise<void>((res) => {
+      resolve = res;
+    });
+    this.#pendingUploads.set(task, { promise, resolve });
+
     this.#uploadQueue.push(task);
     this._processUploadQueue();
   }
@@ -380,15 +397,55 @@ export class FirekitFacade {
         nextTask.status = UploadStatusEnum.FAILED;
         const idx = this.#uploadQueue.indexOf(nextTask);
         if (idx !== -1) this.#uploadQueue.splice(idx, 1);
+        this._settleUpload(nextTask);
         this._processUploadQueue();
       },
       () => {
         nextTask.status = UploadStatusEnum.COMPLETED;
         const idx = this.#uploadQueue.indexOf(nextTask);
         if (idx !== -1) this.#uploadQueue.splice(idx, 1);
+        this._settleUpload(nextTask);
         this._processUploadQueue();
       },
     );
+  }
+
+  /**
+   * Resolves the settle promise tracked for a finished upload task (completed or failed) so
+   * flushUploads() can observe the queue draining. No-op if the task isn't tracked.
+   * @internal
+   */
+  private _settleUpload(task: UploadFileOutput): void {
+    const pending = this.#pendingUploads.get(task);
+    if (pending) {
+      this.#pendingUploads.delete(task);
+      pending.resolve();
+    }
+  }
+
+  /**
+   * Waits for all currently-outstanding uploads (queued or in flight) to settle — complete or
+   * fail — so a caller can drain the fire-and-forget upload queue before finishing a run or
+   * unloading the page. Best-effort: resolves after `timeoutMs` even if uploads are still in
+   * flight, so a slow upload never blocks indefinitely (stragglers keep uploading in the
+   * background). Resolves immediately when nothing is outstanding.
+   *
+   * @param timeoutMs - Max time to wait before resolving regardless (default 30s)
+   */
+  async flushUploads(timeoutMs: number = DEFAULT_FLUSH_TIMEOUT_MS): Promise<void> {
+    if (this.#pendingUploads.size === 0) return;
+
+    // Snapshot the outstanding settles; uploads enqueued after this call aren't awaited.
+    const drained = Promise.allSettled([...this.#pendingUploads.values()].map((pending) => pending.promise));
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timedOut = new Promise<void>((resolve) => {
+      timer = setTimeout(resolve, timeoutMs);
+    });
+    try {
+      await Promise.race([drained, timedOut]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   }
 }
 
@@ -1064,4 +1121,16 @@ export async function uploadFile({
   facade._addUploadToQueue(output);
 
   return output.storagePath;
+}
+
+/**
+ * Waits for outstanding uploads to settle before resolving — see {@link FirekitFacade.flushUploads}.
+ * Call before finishRun()/page-unload so fire-and-forget recordings aren't dropped. Requires an
+ * initialized facade (like the other compat calls); resolves immediately if nothing is queued.
+ *
+ * @param timeoutMs - Max time to wait before resolving regardless (default 30s)
+ */
+export async function flushUploads(timeoutMs?: number): Promise<void> {
+  const facade = getFirekitCompat();
+  await facade.flushUploads(timeoutMs);
 }

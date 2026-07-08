@@ -1,4 +1,5 @@
 import store from 'store2';
+import { writeReadaloudTrial } from '../helperFunctions';
 import headCalibration_page from './headCalibration.html';
 import loadingScreen_page from './loadingScreen.html';
 import eyetrackingVars from './eyetrackingVars.html';
@@ -14,7 +15,7 @@ export async function headCalibrationView(config) {
 
   window.myWorker = myWorker;
 
-  const viewingDistance = config.firekit.task.variantParams.viewingDistance;
+  const viewingDistance = config.variantParams.viewingDistance;
   const html = headCalibration_page;
   const loadingHtml = loadingScreen_page;
 
@@ -66,7 +67,7 @@ export async function headCalibrationView(config) {
           uploadUrl: uploadUrl,
         };
 
-        config.firekit.writeTrial(results);
+        writeReadaloudTrial(results);
 
         unloadExternalScripts(videoCaptureJS);
         unloadExternalScripts(headeyetrackingJS);
@@ -105,7 +106,6 @@ async function upload(viewingDistance, config) {
   try {
     return await saveRecordings({
       filename,
-      config,
     });
   } catch (error) {
     console.error('Error in saveRecordings:', error);

@@ -16,7 +16,7 @@ name: roar-assessment
 #
 # Service dependency order:
 #   assessment-db (healthy) → assessment-db-migrate (completed)
-#                           → firebase-auth-emulator (healthy)
+#                           → firebase-emulator (healthy)
 #                           → backend (healthy)
 #                           → assessment dev server (on host)
 #
@@ -96,8 +96,8 @@ services:
   # (auth) and upload recordings to the Storage emulator on 127.0.0.1:9199, viewable in the
   # Emulator UI on :9000.
   # ────────────────────────────────────────────────────────────────────────────
-  firebase-auth-emulator:
-    container_name: firebase-auth-emulator
+  firebase-emulator:
+    container_name: firebase-emulator
     build:
       context: .
       dockerfile: assessment.Dockerfile
@@ -151,7 +151,7 @@ services:
       # Canonical project identifier for emulated Firebase projects
       # Should match FIREBASE_EMULATOR_PROJECT_ID constant in @assessment-schema/src/firebase-emulator.ts
       GOOGLE_CLOUD_PROJECT: demo-roar
-      FIREBASE_AUTH_EMULATOR_HOST: firebase-auth-emulator:9099
+      FIREBASE_AUTH_EMULATOR_HOST: firebase-emulator:9099
       # The webpack dev server proxies /v1 to the backend so CORS never applies
       # in this environment. This value just satisfies the production boot check
       # (ALLOWED_ORIGINS must be set when NODE_ENV=production).
@@ -167,7 +167,7 @@ services:
     depends_on:
       assessment-db-migrate:
         condition: service_completed_successfully
-      firebase-auth-emulator:
+      firebase-emulator:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:4000/health/live"]
