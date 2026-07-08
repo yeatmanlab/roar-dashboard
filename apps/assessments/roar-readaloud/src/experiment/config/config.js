@@ -30,7 +30,7 @@ const initStore = () => {
   store.session.set('initialized', true);
 };
 
-export const initConfig = async (firekit, gameParams, userParams, displayElement) => {
+export const initConfig = async (gameParams, userParams, session = {}) => {
   const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
 
   const {
@@ -59,8 +59,13 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
     audioFeedback: audioFeedback || 'neutral',
     skipInstructions: skipInstructions ?? true,
     startTime: new Date(),
-    firekit,
-    displayElement: displayElement || null,
+    // Raw variant params — views read config.variantParams.* (was config.firekit.task.variantParams.*).
+    variantParams: gameParams,
+    // Injected client-side identifiers — were config.firekit.user.* (assessmentPid is the lab
+    // participant-name string from the URL, not the ROAR participantId).
+    assessmentPid: session.assessmentPid ?? '',
+    assessmentUid: session.assessmentUid ?? '',
+    displayElement: session.displayElement ?? null,
     // name of the csv files in the storage bucket
     practiceCorpus: practiceCorpus ?? 'math-item-bank-practice-pz',
     stimulusCorpus: stimulusCorpus ?? 'math-item-bank-pz',
@@ -75,19 +80,6 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
     story: story ?? false,
     keyHelpers: keyHelpers ?? true,
   };
-
-  const updatedGameParams = Object.fromEntries(
-    Object.entries(gameParams).map(([key, value]) => [key, config[key] ?? value]),
-  );
-
-  await config.firekit.updateTaskParams(updatedGameParams);
-
-  if (config.pid !== null) {
-    await config.firekit.updateUser({
-      assessmentPid: config.pid,
-      ...userMetadata,
-    });
-  }
 
   return config;
 };

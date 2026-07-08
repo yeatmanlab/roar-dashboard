@@ -2,7 +2,7 @@
 
 A local developer environment for running and querying ROAR assessments against a real PostgreSQL database.
 
-> **This guide covers the PA assessment.** Each assessment in the monorepo has its own directory (e.g. `apps/assessments/roar-pa/`) with its own scripts. The Firebase Auth emulator, backend, and PostgreSQL databases are shared across all assessments; only the assessment dev server and its port differ.
+> **This guide covers the PA assessment.** Each assessment in the monorepo has its own directory (e.g. `apps/assessments/roar-pa/`) with its own scripts. The Firebase emulator (Auth + Storage + UI), backend, and PostgreSQL databases are shared across all assessments; only the assessment dev server itself differs — they all currently run on the same port (http://localhost:8000).
 
 ## Scripts quick reference
 
@@ -22,10 +22,14 @@ The other scripts in `package.json` (`build`, `build:staging`, `build:production
 
 | Process | URL |
 |---------|-----|
-| Firebase Auth emulator | http://localhost:9099 |
+| Firebase emulator — Auth | http://localhost:9099 |
+| Firebase emulator — Storage (recording uploads) | http://localhost:9199 |
+| Firebase emulator — UI (browse recordings) | http://localhost:9000 |
 | ROAR backend (HTTP) | http://localhost:4000 |
 | PA assessment dev server | http://localhost:8000 |
 | PostgreSQL | localhost:5432 |
+
+The Firebase emulator runs Auth and Storage together (one container) with the Emulator UI on :9000. Storage only matters for assessments that record audio/video (e.g. Read Aloud) — see [Viewing recordings](#viewing-recordings-audiovideo-assessments).
 
 Two databases are created: `roar_core` (users, tasks, runs) and `roar_assessment` (trials, scores).
 
@@ -221,6 +225,30 @@ pgcli postgres://postgres@localhost:5432/roar_core
 
 **PgAdmin** (full desktop GUI):
 Download from https://www.pgadmin.org. Create a new server with host `localhost`, port `5432`, username `postgres`, and leave the password blank.
+
+---
+
+## Viewing recordings (audio/video assessments)
+
+Assessments that capture audio or video — e.g. Read Aloud (`roar-readaloud`) — upload their recordings through the assessment SDK to the local **Firebase Storage emulator**, so dev needs no cloud credentials and touches no real bucket. The blobs are browsable in the **Emulator UI** — nothing extra to install.
+
+**Open the Emulator UI:** http://localhost:9000 → **Storage** tab.
+
+The Storage tab lists the emulated `demo-roar.appspot.com` bucket (created on the first upload) and lets you browse and download the uploaded blobs. Recordings are written under a deterministic path:
+
+```
+{taskId}/{participantId}/{assessmentPid}/{administrationId}/{runId}/{filename}
+```
+
+For an anonymous dev run of Read Aloud that looks like:
+
+```
+roar-readaloud/<participantId>/<pid>/test-administration/<runId>/<filename>
+```
+
+Each recording's storage path is also written onto its **trial row**, so the two line up: the `gs://…` reference stored in `app.run_trials` (see [Querying your data](#querying-your-data) → `roar_assessment`) matches the blob's path in the Storage tab.
+
+**Lifetime.** The Storage emulator keeps recordings in memory — there is no import/export configured. They survive **Ctrl+C** (which stops only the dev server; the emulator container keeps running), but are cleared when the emulator container restarts (`npm restart`) or when you tear the environment down with `npm stop`.
 
 ---
 

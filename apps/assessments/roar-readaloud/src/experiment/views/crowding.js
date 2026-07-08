@@ -69,7 +69,6 @@ export async function responseBar() {
     tempAnswers[0].replace('.svg', '') + '_' + dir + '_' + timestamp + '_' + store.session.get('id') + '.webm';
   const uploadUrl = await saveRecordings({
     filename: _videoURL,
-    config: _config,
   }); // Save the recorded audio and
   if (eyeMoved) {
     setTimeout(function () {
