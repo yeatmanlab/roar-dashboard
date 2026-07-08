@@ -318,7 +318,6 @@ export async function nextArrow() {
 
   const uploadUrl = await saveRecordings({
     filename: _videoURL,
-    config: _config,
   }); // Save the recorded audio and
   recordAnswer(_videoURL, uploadUrl);
   init_newTrial();
@@ -357,7 +356,6 @@ export async function responseBar() {
     '.webm';
   const uploadUrl = await saveRecordings({
     filename: _videoURL,
-    config: _config,
   }); // Save the recorded audio and
   if (eyeMoved) {
     setTimeout(function () {

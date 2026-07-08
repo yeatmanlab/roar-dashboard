@@ -139,7 +139,6 @@ async function upload(estimatedDistance, config) {
   try {
     return await saveRecordings({
       filename,
-      config,
     });
   } catch (error) {
     console.error('Error in saveRecordings:', error);

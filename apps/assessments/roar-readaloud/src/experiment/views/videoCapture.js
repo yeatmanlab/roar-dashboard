@@ -1,3 +1,7 @@
+import store from 'store2';
+import { uploadFile } from '@roar-platform/assessment-sdk/compat/firekit';
+import { READALOUD_TASK_ID } from '@roar-platform/assessment-schema/roar-readaloud';
+
 export var orig_img_width;
 export var orig_img_height;
 
@@ -93,7 +97,7 @@ export async function stopRecording() {
 }
 
 // Function to save recorded audio and video data
-export async function saveRecordings({ filename, config, metadata = {} }) {
+export async function saveRecordings({ filename, metadata = {} }) {
   await new Promise((resolve) => {
     videoRecorder.onstop = resolve;
     videoRecorder.stop();
@@ -112,24 +116,37 @@ export async function saveRecordings({ filename, config, metadata = {} }) {
     return null;
   }
 
-  return uploadRecording({ filename, fileOrBlob: mediaBlob, customMetadata: metadata, config });
+  return uploadRecording({ filename, fileOrBlob: mediaBlob, customMetadata: metadata });
 }
 
 /**
- * Uploads a recording to storage and returns its gs:// storage path (or null).
+ * Uploads a recording via the assessment-sdk `uploadFile()` compat method and returns its
+ * gs:// storage path, or null on failure.
  *
- * TODO: wire to the assessment-sdk `uploadFile()` compat method — deferred to the follow-up
- * readaloud upload-SDK PR to keep this migration PR scoped and firekit-free. `uploadFile()`
- * already exists in the SDK (it resolves the storage bucket — emulator in dev, admin bucket
- * in staging/prod — fires the resumable upload, and returns the storage path); there this seam
- * becomes `return uploadFile({ filename, fileOrBlob, taskId: READALOUD_TASK_ID, ... })`.
- * Until then it is a no-op, so trials complete without uploads (null matches the pre-existing
- * on-error return the caller already handles).
+ * `uploadFile` resolves the storage bucket (the local Storage emulator in dev, the admin
+ * recordings bucket in staging/prod), enqueues the resumable upload, and returns the storage
+ * path immediately at enqueue — it sources runId/administrationId/participantId from the SDK
+ * facade. We forward the session `id` as `assessmentPid` (the `<assessmentUid>_<participant>`
+ * value configureDeviceView stores) so recordings keep the legacy storage-path convention
+ * (`{taskId}/{participantId}/{assessmentPid}/…`) that downstream tooling expects, instead of
+ * `pid` falling back to a duplicated participantId. A failed upload must not abort the
+ * assessment, so the error is swallowed and null is returned (the caller's `recordAnswer`
+ * already tolerates a null path, matching the legacy on-error behavior).
  *
- * @param {{ filename: string, fileOrBlob: Blob, customMetadata?: object, config?: object }} recording
+ * @param {{ filename: string, fileOrBlob: Blob, customMetadata?: Record<string, string> }} recording
  * @returns {Promise<string|null>}
  */
-async function uploadRecording(recording) {
-  void recording;
-  return null;
+async function uploadRecording({ filename, fileOrBlob, customMetadata }) {
+  try {
+    return await uploadFile({
+      filename,
+      fileOrBlob,
+      taskId: READALOUD_TASK_ID,
+      assessmentPid: store.session.get('id'),
+      customMetadata,
+    });
+  } catch (err) {
+    console.error('[roar-readaloud] recording upload failed:', err);
+    return null; // trial continues; recordAnswer tolerates a null path
+  }
 }

@@ -1,6 +1,6 @@
 import store from 'store2';
 import { initConfig } from './config/config';
-import { startRun, finishRun } from '@roar-platform/assessment-sdk/compat/firekit';
+import { startRun, finishRun, flushUploads } from '@roar-platform/assessment-sdk/compat/firekit';
 import { READALOUD_TEST_CONFIG_URL } from '@roar-platform/assessment-schema/roar-readaloud';
 import './styles/task.scss';
 import { consentView } from './views/consentView';
@@ -87,6 +87,9 @@ class ReadAloudTask {
       await storyView('Ending', config);
     }
 
+    // Drain the fire-and-forget recording uploads before marking the run complete, so the
+    // final phase's recordings aren't dropped when the page navigates away after finishRun().
+    await flushUploads();
     await finishRun();
   }
 }
