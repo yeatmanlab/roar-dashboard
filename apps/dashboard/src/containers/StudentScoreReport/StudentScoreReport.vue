@@ -200,7 +200,7 @@ const studentLastName = computed(() => getStudentDisplayName(studentData).lastNa
 const studentGrade = computed(() => toValue(studentData)?.studentData?.grade);
 const getScoringVersions = computed(() => {
   const scoringVersions = Object.fromEntries(
-    administrationData.value?.assessments.map((assessment) => [
+    administrationData.value?.assessment?.map((assessment) => [
       assessment.taskId,
       assessment?.params?.scoringVersion ?? null,
     ]),
@@ -231,8 +231,7 @@ const isDistributionChartEnabled = computed(() => {
     // Must have scores and be a normed task
     if (!task.scores || !normedTaskIds.includes(task.taskId)) return false;
 
-    // Spanish tasks require a non-null scoring version
-    if (task.taskId === 'sre-es' || task.taskId === 'swr-es') {
+    if (previouslyUnnormedTasks.includes(task.taskId)) {
       return getScoringVersions.value[task.taskId] >= 1;
     }
 
