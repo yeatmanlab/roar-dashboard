@@ -101,7 +101,7 @@ const metaparamsRvpDef = {
   durationResp: RVP.DURATION_RESP_TEST_MAX,
   durationWarnTimeout: 3000,
 
-  distViewCm: 100, // 50
+  vdCm: 100, // 50
   widthScreenCm: 30, // 30 cm is ~ 13.6 in; chromebooks are 11.6 or 13.3 in (?)
   widthScreenPx: undefined, // important: keep undefined, important for correct composing // 1920
 
@@ -160,7 +160,7 @@ const metaparamsToParams = (metaparams) => {
     case UnitSize.DEG:
       params.distStim = degToPxFromWidth(
         params._distStim,
-        params.distViewCm,
+        params.vdCm,
         params.widthScreenCm,
         params.widthScreenPx,
       );
@@ -176,7 +176,7 @@ const metaparamsToParams = (metaparams) => {
     case UnitSize.DEG:
       params.sizeStim = degToPxFromWidth(
         params._sizeStim,
-        params.distViewCm,
+        params.vdCm,
         params.widthScreenCm,
         params.widthScreenPx,
       );
@@ -193,13 +193,13 @@ const metaparamsToParams = (metaparams) => {
     case UnitSize.DEG:
       params.sizeMarkFix = degToPxFromWidth(
         params._sizeMarkFix,
-        params.distViewCm,
+        params.vdCm,
         params.widthScreenCm,
         params.widthScreenPx,
       );
       params.widthStrokeMarkFix = degToPxFromWidth(
         params._widthStrokeMarkFix,
-        params.distViewCm,
+        params.vdCm,
         params.widthScreenCm,
         params.widthScreenPx,
       );
@@ -218,19 +218,19 @@ const metaparamsToParams = (metaparams) => {
     case UnitSize.DEG:
       params.lengthMarkTarg = degToPxFromWidth(
         params._lengthMarkTarg,
-        params.distViewCm,
+        params.vdCm,
         params.widthScreenCm,
         params.widthScreenPx,
       );
       params.widthStrokeMarkTarg = degToPxFromWidth(
         params._widthStrokeMarkTarg,
-        params.distViewCm,
+        params.vdCm,
         params.widthScreenCm,
         params.widthScreenPx,
       );
       params.distMarkTargStim = degToPxFromWidth(
         params._distMarkTargStim,
-        params.distViewCm,
+        params.vdCm,
         params.widthScreenCm,
         params.widthScreenPx,
       );

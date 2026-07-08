@@ -101,7 +101,7 @@ const paramsCreateBlockRvpDef = {
   arrMetaparams: undefined,
   nameBlock: undefined,
 
-  resetLocal: true,
+  resetBlock: true,
   resetGlobal: false,
 };
 

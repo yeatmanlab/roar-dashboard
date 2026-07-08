@@ -127,21 +127,80 @@
 
 .roav-rvp-animation-stim-targ {
   @extend .roav-animation-pulse-scale-small;
-  // outline: 2px solid $roav-yellow;
-  // box-shadow: 0 0 2px 1px $roav-yellow;
-  // background: rgba(0, 179, 255, 0.173)
 }
 
 .roav-rvp-animation-mark-targ {
   @extend .roav-animation-pulse-scale-medium;
-  //outline: 2px solid $roav-yellow;
-  // box-shadow: 0 0 2px 1px $roav-yellow;
 }
 
 .roav-rvp-animation-button-resp {
-  @extend .roav-animation-pulse-outline; // .roav-animation-glow-strong;
+  @extend .roav-animation-pulse-outline;
   outline: 2px solid $roav-yellow;
-  // rgb(255, 200, 12)
-  // box-shadow: 0 0 2px 1px $roav-yellow;
-  // background: rgba(255, 198, 12, 0.29)
+}
+
+// ************************************************
+// ROAV-CR
+// ************************************************
+
+.roav-cr-animation-mark-fix {
+  @extend .roav-animation-rotate;
+}
+
+.roav-cr-animation-stim-targ {
+  @extend .roav-animation-pulse-scale-small;
+}
+
+.roav-cr-animation-mark-targ {
+  @extend .roav-animation-pulse-scale-medium;
+}
+
+.roav-cr-animation-stim-targ-outline {
+  animation: roav-keyframes-pulse-scale-small 2s ease-in-out infinite;
+  outline: 4px solid $roav-yellow;
+  outline-offset: 10px;
+}
+
+.roav-cr-animation-button-resp {
+  @extend .roav-animation-pulse-outline;
+  outline: 2px solid $roav-yellow;
+}
+
+@keyframes roav-keyframes-pulse-outline-same {
+  0%,
+  100% {
+    outline: 4px solid $roav-clr-same;
+  }
+  50% {
+    outline: 8px solid $roav-clr-same;
+  }
+}
+
+@keyframes roav-keyframes-pulse-outline-diff {
+  0%,
+  100% {
+    outline: 4px solid $roav-clr-diff;
+  }
+  50% {
+    outline: 8px solid $roav-clr-diff;
+  }
+}
+
+.roav-cr-animation-button-resp-same {
+  animation: roav-keyframes-pulse-outline-same 2s ease-in-out infinite;
+}
+
+.roav-cr-animation-button-resp-diff {
+  animation: roav-keyframes-pulse-outline-diff 2s ease-in-out infinite;
+}
+
+.roav-cr-animation-stim-targ-outline-same {
+  animation: roav-keyframes-pulse-scale-small 2s ease-in-out infinite;
+  outline: 4px solid $roav-clr-same;
+  outline-offset: 10px;
+}
+
+.roav-cr-animation-stim-targ-outline-diff {
+  animation: roav-keyframes-pulse-scale-small 2s ease-in-out infinite;
+  outline: 4px solid $roav-clr-diff;
+  outline-offset: 10px;
 }

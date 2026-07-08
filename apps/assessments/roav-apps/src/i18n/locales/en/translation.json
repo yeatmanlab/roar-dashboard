@@ -12,6 +12,148 @@
     "prompt": "Switch to landscape view",
     "label-button": "GO"
   },
+  "et": {
+    "video-enable": {
+      "def": {
+        "all": {
+          "text1": "Please allow access to the <b>video camera</b>.",
+          "text2": "",
+          "text-button": "{{text-only}}OK"
+        }
+      }
+    },
+    "video-confirm": {
+      "def": {
+        "all": {
+          "text1": "",
+          "text2": "If camera is working and you can see yourself, press {{btn-start}}YES{{btn-end}}.",
+          "text3": "Otherwise, press {{btn-start}}NO{{btn-end}}.",
+          "text-button-yes": "{{text-only}}YES",
+          "text-button-no": "{{text-only}}NO"
+        }
+      }
+    },
+    "vd-calibr": {
+      "def": {
+        "no-glasses": {
+          "all": {
+            "text1": "",
+            "text2": "If you are wearing <b>glasses</b>, please take them <b>off</b>.",
+            "text3": "You will be able to put them back on in a minute.",
+            "text-button": "{{text-only}}DONE"
+          }
+        },
+        "measure-vd": {
+          "all": {
+            "text1": "Position your eyes <b>50 CENTIMETERS</b> from the screen.",
+            "text2": "Then look straight ahead and keep still.",
+            "text3": "Press the button below without moving your head.",
+            "text-button": "{{text-only}}DONE"
+          }
+        },
+        "center": {
+          "all": {
+            "text1": "Center your head without moving it closer or farther.",
+            "text2": "Then keep still and press the button.",
+            "text3": "",
+            "text-button": "{{text-only}}DONE"
+          }
+        },
+        "calibrate": {
+          "all": {
+            "text1": "Look straight ahead.",
+            "text2": "Keep very still for a moment!",
+            "text3": "",
+            "text-button": ""
+          }
+        },
+        "finish": {
+          "all": {
+            "text1": "Thank you!",
+            "text2": "You can move your head again and put your glasses back on.",
+            "text3": "",
+            "text-button": "{{text-only}}NEXT"
+          }
+        }
+      }
+    },
+    "instruction-tech": {
+      "video-not-enabled-ok-to-continue": {
+        "all": {
+          "text1": "There seems to be a problem with camera access.",
+          "text2": "If you would like to retry, please check the settings on your device and restart the app.",
+          "text3": "Otherwise, it is OK to continue without video access.",
+          "text4": "",
+          "text-extra": "@TODO: image no camera",
+          "text-button": "{{text-only}}NEXT"
+        }
+      },
+      "vd-calibr-intro": {
+        "all": {
+          "text1": "Now we will set up the <b>viewing distance</b>.",
+          "text2": "",
+          "text3": "",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "{{text-only}}NEXT"
+        }
+      }
+    }
+  },
+  "shared": {
+    "screen-measure-width": {
+      "def": {
+        "all": {
+          "text1": "Measure the <b>width</b> of your screen in <b>CENTIMETERS</b>",
+          "text2": "Then select the closest value below",
+          "text3": "",
+          "text-button": "{{text-only}}NEXT"
+        }
+      }
+    },
+    "instruction-tech": {
+      "setup-start": {
+        "all": {
+          "text1": "{{text-only}}<h2>SETUP</h2><hr>",
+          "text2": "Let us start with a short setup",
+          "text3": "This part should be completed by an adult",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "{{text-only}}NEXT"
+        }
+      },
+      "setup-ruler": {
+        "all": {
+          "text1": "You will need a <b>ruler</b> to complete the setup",
+          "text2": "",
+          "text3": "",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "{{text-only}}NEXT"
+        }
+      },
+      "setup-end": {
+        "all": {
+          "text1": "<h2>SETUP COMPLETED</h2><hr>",
+          "text2": "You will be prompted to start the student assessment on the next page",
+          "text3": "",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "{{text-only}}NEXT"
+        }
+      },
+      "setup-start-assessment": {
+        "all": {
+          "text1": "{{text-only}}<h2>STUDENT ASSESSMENT</h2><hr>",
+          "text2": "Press the button below when the student is ready to take the assessment",
+          "text3": "",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "{{text-only}}START"
+        }
+      }
+    }
+  },
   "roav-rvp": {
     "general": {
       "stand": {
@@ -758,6 +900,570 @@
           "text2": "",
           "text3": "If the bees are flying to the <b>flowers</b>, press the <b>flower</b> button or the <b>right arrow</b>.",
           "text4": "If they are flying to the <b>beehives</b>, press the <b>beehive</b> button or the <b>left arrow</b>. {{pause-long}}"
+        }
+      }
+    }
+  },
+  "roav-cr": {
+    "general": {
+      "stand": {
+        "label-button-next": "NEXT"
+      },
+      "game": {
+        "label-button-next": ""
+      }
+    },
+    "et-calibr": {
+      "practice": {
+        "instr-pre": {
+          "game": {
+            "text": "@@@instr-pre-game"
+          },
+          "stand": {
+            "text": "Keep your head very still"
+          }
+        },
+        "calibr": {
+          "game": {
+            "text": "@@@calibr-game"
+          },
+          "stand": {
+            "text": "Follow the dot with your eyes as it moves"
+          }
+        }
+      },
+      "calibr": {
+        "instr-pre": {
+          "stand": {
+            "text": "Get ready! Three! Two! One!"
+          }
+        },
+        "calibr": {
+          "stand": {
+            "text": ""
+          }
+        }
+      }
+    },
+    "feedback-av": {
+      "def": {
+        "correct": {
+          "stand": {
+            "text1": "This is correct!",
+            "text2": "Awesome!",
+            "text3": ""
+          },
+          "game": {
+            "text1": "This is correct!",
+            "text2": "Awesome!",
+            "text3": ""
+          }
+        },
+        "incorrect": {
+          "stand": {
+            "text1": "Not quite right!",
+            "text2": "You will get it next time!",
+            "text3": ""
+          },
+          "game": {
+            "text1": "Almost, but not quite!",
+            "text2": "You will get it next time!",
+            "text3": ""
+          }
+        }
+      }
+    },
+    "instruction": {
+      "intro": {
+        "game": {
+          "text1": "@@@Welcome!",
+          "text2": "@@@I am Luna the space cat.",
+          "text3": "@@@Ready to play a fun game?",
+          "text4": "@@@Press the <b>spaceship</b> to start!"
+        },
+        "stand": {
+          "text1": "Welcome!",
+          "text2": "In this activity, small pictures will appear briefly on the screen.",
+          "text3": "You will be asked to perform several tasks.",
+          "text4": "Press {{btn-start}}NEXT{{btn-end}} to begin."
+        }
+      },
+      "et-calibr-before-practice": {
+        "game": {
+          "text1": "@@@",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Follow the dots",
+          "text2": "You will see a moving dot.",
+          "text3": "Keep your head very still and follow the dot with your eyes.",
+          "text4": "Let us try it."
+        }
+      },
+      "et-calibr-before-calibr": {
+        "game": {
+          "text1": "",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Awesome!",
+          "text2": "Now let us do it one more time.",
+          "text3": "Remember to keep your head very still and follow the dot with your eyes only.",
+          "text4": ""
+        }
+      },
+      "et-calibr-after-calibr": {
+        "stand": {
+          "text1": "Excellent!",
+          "text2": "Time for the next task.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "let-us-try": {
+        "stand": {
+          "text1": "Well done!",
+          "text2": "Let us try it again!",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "let-us-practice": {
+        "stand": {
+          "text1": "Great job!",
+          "text2": "Let us practice!",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "keep-going": {
+        "stand": {
+          "text1": "Keep going!",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "faster-look-ahead-noflank-0": {
+        "stand": {
+          "text1": "Going faster now!",
+          "text2": "Keep your eyes at the mark in the middle.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "faster-look-ahead-noflank-1": {
+        "stand": {
+          "text1": "Pictures will appear faster now!",
+          "text2": "Keep looking straight ahead.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "faster-look-ahead-0": {
+        "stand": {
+          "text1": "Going even faster!",
+          "text2": "The middle pictures will be hard to see.",
+          "text3": "Keep looking straight ahead and do your best.",
+          "text4": ""
+        }
+      },
+      "faster-look-ahead-1": {
+        "stand": {
+          "text1": "Going even faster!",
+          "text2": "Middle pictures will be hard to see.",
+          "text3": "Keep looking straight at the cross mark and do your best.",
+          "text4": ""
+        }
+      },
+      "between-noflank-main-0": {
+        "stand": {
+          "text1": "Great job!",
+          "text2": "Ready for the next task?",
+          "text3": "Press {{btn-start}}NEXT{{btn-end}} to continue.",
+          "text4": ""
+        }
+      },
+      "between-noflank-main-1": {
+        "stand": {
+          "text1": "Awesome work!",
+          "text2": "Just one more task to go.",
+          "text3": "Press {{btn-start}}NEXT{{btn-end}} to continue.",
+          "text4": ""
+        }
+      },
+      "take-best-guess-0": {
+        "stand": {
+          "text1": "Nicely done!",
+          "text2": "Spotting pictures can get really hard, but do not worry.",
+          "text3": "Just take your best guess!",
+          "text4": "Press {{btn-start}}NEXT{{btn-end}} to go on."
+        }
+      },
+      "take-best-guess-1": {
+        "stand": {
+          "text1": "You are doing great!",
+          "text2": "It is OK if it is hard to see the pictures.",
+          "text3": "Just take your best guess if unsure.",
+          "text4": "Press {{btn-start}}NEXT{{btn-end}} to go on."
+        }
+      },
+      "break-0": {
+        "stand": {
+          "text1": "You are doing great!",
+          "text2": "Take a short break if you like and press {{btn-start}}NEXT{{btn-end}} to go on.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "break-1": {
+        "stand": {
+          "text1": "Awesome job!",
+          "text2": "Take a short break if you like and press {{btn-start}}NEXT{{btn-end}} to continue.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "end-screen": {
+        "stand": {
+          "text1": "Great job!",
+          "text2": "You are all done!",
+          "text3": "Thank you so much for completing our activity.",
+          "text4": "Press {{btn-start}}NEXT{{btn-end}} to save your work and exit."
+        }
+      },
+      "shape-ident-noflank-intro": {
+        "stand": {
+          "text1": "Match the picture!",
+          "text2": "Notice the picture that flashes on the screen.",
+          "text3": "Then press a matching button.",
+          "text4": "Here is how the task will work."
+        }
+      },
+      "shape-ident-intro": {
+        "stand": {
+          "text1": "Match the picture in the middle!",
+          "text2": "Notice the picture in the middle of a group.",
+          "text3": "Then press a matching button.",
+          "text4": "Let us see how it works."
+        }
+      },
+      "shape-compare-lr-noflank-intro": {
+        "stand": {
+          "text1": "Compare the pictures!",
+          "text2": "You will see two pictures, one on the left and one on the right.",
+          "text3": "Decide whether they are the same or different.",
+          "text4": "Here is how it works."
+        }
+      },
+      "shape-compare-lr-intro": {
+        "stand": {
+          "text1": "Compare the middle pictures!",
+          "text2": "You will see two groups of pictures, one on the left and one on the right.",
+          "text3": "Notice the middle picture in each group and compare them.",
+          "text4": "Let us see how it works."
+        }
+      }
+    },
+    "instruction-tech": {
+      "def": {
+        "all": {
+          "text1": "",
+          "text2": "",
+          "text3": "",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "NEXT"
+        }
+      },
+      "@eval-welcome": {
+        "all": {
+          "text1": "Welcome to the <b>crowding playground</b>!",
+          "text2": "The test should take about <b>5 minutes</b>",
+          "text3": "Please complete a survey at the end",
+          "text4": "",
+          "text-extra": "The current UI and instructions are for the playground only <br> and are not intended for the in-class assessment",
+          "text-button": "NEXT"
+        }
+      },
+      "@eval-setup-ruler": {
+        "all": {
+          "text1": "Let us start with a short setup",
+          "text2": "You will need a <b>ruler</b> to measure your screen",
+          "text3": "",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "NEXT"
+        }
+      },
+      "@eval-test-structure": {
+        "all": {
+          "text1": "You will now complete <b>4 crowding tasks</b>",
+          "text2": "Each task starts with <b>slow practice trials</b>,<br> followed by <b>fast test trials</b>",
+          "text3": "You will have a limited time to respond",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "NEXT"
+        }
+      },
+      "@eval-keep-fixation": {
+        "all": {
+          "text1": "Please <b>keep your gaze</b> on the <b>fixation cross</b> <br> or on the symbol in the center of the screen",
+          "text2": "",
+          "text3": "",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "NEXT"
+        }
+      },
+      "@eval-slow-trials": {
+        "all": {
+          "text1": "<b>Slow Trials</b>",
+          "text2": "",
+          "text3": "",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "GO"
+        }
+      },
+      "@eval-fast-trials": {
+        "all": {
+          "text1": "<b>Fast Trials</b>",
+          "text2": "",
+          "text3": "",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "GO"
+        }
+      },
+      "@eval-task-shape-ident": {
+        "all": {
+          "text1": "<b>TASK 1</b>",
+          "text2": "Identify the <b>middle symbol</b> in the cluster",
+          "text3": "Respond by pressing the <b>on-screen buttons</b>",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "START"
+        }
+      },
+      "@eval-task-shape-compare-ref": {
+        "all": {
+          "text1": "<b>TASK 2</b>",
+          "text2": "Look at the <b>symbol in the center</b> and the <b>symbol on the side</b>",
+          "text3": "Decide whether they are the <b>same or not</b>",
+          "text4": "Respond by pressing the <b>on-screen buttons</b> <br> or the <b>up and down arrows</b> on your keyboard",
+          "text-extra": "",
+          "text-button": "START"
+        }
+      },
+      "@eval-task-shape-compare-lr": {
+        "all": {
+          "text1": "<b>TASK 3</b>",
+          "text2": "Look at the <b>middle symbols</b> on both sides",
+          "text3": "Decide whether they are the <b>same or not</b>",
+          "text4": "Respond by pressing the <b>on-screen buttons</b> <br> or the <b>up and down arrows</b> on your keyboard",
+          "text-extra": "",
+          "text-button": "START"
+        }
+      },
+      "@eval-task-orient-ident": {
+        "all": {
+          "text1": "<b>TASK 4</b>",
+          "text2": "Decide <b>which direction</b> the rocket is flying",
+          "text3": "Respond by pressing the <b>on-screen buttons</b> <br> or the <b>arrow keys</b> on your keyboard",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "START"
+        }
+      },
+      "@unused-eval-task-orient-compare-ref": {
+        "all": {
+          "text1": "<b>TASK 4</b>",
+          "text2": "Look at the <b>rocket in the center</b> and the <b>rocket on the side</b>",
+          "text3": "Decide whether they are flying in the <b>same direction or not</b>",
+          "text4": "Respond by pressing the <b>on-screen buttons</b> <br> or the <b>up and down arrows</b> on your keyboard",
+          "text-extra": "",
+          "text-button": "START"
+        }
+      },
+      "@eval-take-survey": {
+        "all": {
+          "text1": "You completed all the crowding tasks!",
+          "text2": "Please take a short <b>survey</b>",
+          "text3": "",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "START"
+        }
+      },
+      "@eval-end-screen": {
+        "all": {
+          "text1": "<b>You are all done!</b>",
+          "text2": "Thank you so much for helping us evaluate different crowding setups!",
+          "text3": "",
+          "text4": "",
+          "text-extra": "",
+          "text-button": "FINISH"
+        }
+      }
+    },
+    "cr": {
+      "try-instr-demo-shape-ident": {
+        "fix": {
+          "game": { "text": "Fixation - game. This is a fixation trial" },
+          "stand": { "text": "Fixation - standard. This is a fixation trial" }
+        },
+        "stim": {
+          "game": { "text": "Stimuli - game. This is a stimuli trial" },
+          "stand": { "text": "Stimuli - standard. This is a stimuli trial" }
+        },
+        "resp": {
+          "game": { "text": "Response - game. This is a response trial" },
+          "stand": { "text": "Response - standard. This is a response trial" }
+        }
+      },
+      "shape-ident-noflank-demo": {
+        "fix": {
+          "stand": {
+            "text": "Look straight at the cross mark. A picture will appear on the side, but keep looking straight ahead."
+          }
+        },
+        "stim": {
+          "stand": { "text": "The picture looks like a butterfly." }
+        },
+        "resp": {
+          "stand": { "text": "So press the butterfly button!" }
+        }
+      },
+      "shape-ident-noflank-practice-av": {
+        "fix": {
+          "stand": { "text": "Look straight ahead." }
+        },
+        "stim": {
+          "stand": { "text": "" }
+        },
+        "resp": {
+          "stand": {
+            "text": "Did you see the picture? Press the button that matches what you saw."
+          }
+        }
+      },
+      "shape-ident-demo": {
+        "fix": {
+          "stand": {
+            "text": "Look straight at the cross mark. A group of pictures will appear on the side, but keep looking straight ahead."
+          }
+        },
+        "stim": {
+          "stand": {
+            "text": "Pay attention to the middle picture. It looks like a car."
+          }
+        },
+        "resp": {
+          "stand": { "text": "So press the car button!" }
+        }
+      },
+      "shape-ident-practice-av": {
+        "fix": {
+          "stand": { "text": "Look straight ahead." }
+        },
+        "stim": {
+          "stand": { "text": "" }
+        },
+        "resp": {
+          "stand": {
+            "text": "Have you noticed the picture in the middle of the group? Press the button that matches that picture."
+          }
+        }
+      },
+      "shape-compare-lr-noflank-demo-same": {
+        "fix": {
+          "stand": {
+            "text": "Look at the cross mark. Two pictures will appear, one on the left, and one on the right, but keep looking straight ahead."
+          }
+        },
+        "stim": {
+          "stand": {
+            "text": "The pictures are the same, they both look like a butterfly."
+          }
+        },
+        "resp": {
+          "stand": {
+            "text": "Press the SAME button, or up arrow on your keyboard."
+          }
+        }
+      },
+      "shape-compare-lr-noflank-demo-diff": {
+        "fix": { "stand": { "text": "Keep looking at the cross mark." } },
+        "stim": {
+          "stand": {
+            "text": "This time, the left picture looks like a duck and the right picture looks like a tree. They are different."
+          }
+        },
+        "resp": {
+          "stand": {
+            "text": "Press the DIFFERENT button, or the down arrow on your keyboard."
+          }
+        }
+      },
+      "shape-compare-lr-noflank-practice-av": {
+        "fix": {
+          "stand": { "text": "Look straight ahead." }
+        },
+        "stim": {
+          "stand": { "text": "" }
+        },
+        "resp": {
+          "stand": {
+            "text": "Have you noticed the pictures on the left and right? Press the SAME button or up arrow if they were the same. Press the DIFFERENT button or down arrow if they were different."
+          }
+        }
+      },
+      "shape-compare-lr-demo-same": {
+        "fix": {
+          "stand": {
+            "text": "Look straight ahead. Two groups of pictures will appear, one on the left, and one on the right, but keep looking at the cross mark."
+          }
+        },
+        "stim": {
+          "stand": {
+            "text": "Pay attention to the middle picture in each group. Both middle pictures look like a tree. They are the same."
+          }
+        },
+        "resp": {
+          "stand": {
+            "text": "Press the SAME button, or up arrow on your keyboard."
+          }
+        }
+      },
+      "shape-compare-lr-demo-diff": {
+        "fix": { "stand": { "text": "Keep looking ahead." } },
+        "stim": {
+          "stand": {
+            "text": "This time, the middle picture on the left looks like a heart, and the middle picture on the right looks like a car. They are different."
+          }
+        },
+        "resp": {
+          "stand": {
+            "text": "Press the DIFFERENT button, or the down arrow on your keyboard."
+          }
+        }
+      },
+      "shape-compare-lr-practice-av": {
+        "fix": {
+          "stand": { "text": "Look straight ahead." }
+        },
+        "stim": {
+          "stand": { "text": "" }
+        },
+        "resp": {
+          "stand": {
+            "text": "Have you noticed the middle pictures on the left and right? Press the SAME button or up arrow if they were the same. Press the DIFFERENT button or down arrow if they were different."
+          }
         }
       }
     }

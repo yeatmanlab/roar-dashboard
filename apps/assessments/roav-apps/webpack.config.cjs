@@ -80,6 +80,18 @@ const commonConfig = {
         ],
       },
       {
+        test: /\.onnx$/,
+        use: [
+          {
+            loader: "file-loader",
+            options: {
+              name: "[name].[ext]",
+              outputPath: "et",
+            },
+          },
+        ],
+      },
+      {
         test: /\.csv$/,
         use: [
           {
