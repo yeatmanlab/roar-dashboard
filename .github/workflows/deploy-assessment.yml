@@ -108,6 +108,13 @@ jobs:
     if: ${{ inputs.run-cypress }}
     needs: [deploy]
     runs-on: ubuntu-latest
+    # Pin the browser/OS via a container so every machine in the parallel run reports identical
+    # environment parameters (osName/osVersion/browserVersion) to Cypress Cloud. Bare
+    # ubuntu-latest runners drift the Chrome version across machines as GitHub updates them
+    # (e.g. 149 vs 150), which makes Cypress refuse to group them ("we do not parallelize tests
+    # across different environments"). Same pinned image as the e2e-tests job in ci.yml.
+    container:
+      image: cypress/browsers:node-20.18.0-chrome-130.0.6723.69-1-ff-131.0.3-edge-130.0.2849.52-1
     timeout-minutes: 60
     strategy:
       fail-fast: false
