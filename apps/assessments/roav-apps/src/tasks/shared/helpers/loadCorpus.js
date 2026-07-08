@@ -8,6 +8,8 @@ import { SESSION_KEYS as SK } from './sessionKeys';
 
 export const NAME_CORPUS_DEF = 'corpus-def';
 
+const isUnsafeMergeKey = (key) => key === '__proto__' || key === 'constructor' || key === 'prototype';
+
 export function downloadJSON(url) {
   return new Promise((resolve, reject) => {
     fetch(url)
@@ -42,6 +44,8 @@ export const addInPlaceJSON = (base, ext) => {
 
   if (base && typeof base === 'object' && ext && typeof ext === 'object') {
     Object.keys(ext).forEach((key) => {
+      if (isUnsafeMergeKey(key)) return;
+
       const b = base[key];
       const e = ext[key];
 
@@ -50,7 +54,13 @@ export const addInPlaceJSON = (base, ext) => {
         const eArr = Array.isArray(e) ? e : [];
         // eslint-disable-next-line no-param-reassign
         base[key] = [...new Set([...bArr, ...eArr])];
-      } else if (b && typeof b === 'object' && e && typeof e === 'object') {
+      } else if (
+        Object.prototype.hasOwnProperty.call(base, key) &&
+        b &&
+        typeof b === 'object' &&
+        e &&
+        typeof e === 'object'
+      ) {
         addInPlaceJSON(b, e);
       } else if (b == null) {
         // eslint-disable-next-line no-param-reassign
