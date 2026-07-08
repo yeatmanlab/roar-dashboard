@@ -385,7 +385,7 @@ export const includedValidityFlags = {
  *  Tasks to Display Graphs
  *  A list of tasks who, when included in a score report, will generate breakdown graphs.
  */
-export const tasksToDisplayGraphs = ['swr', 'sre', 'pa', 'morphology', 'cva', 'trog', 'roar-inference'];
+export const tasksToDisplayGraphs = ['swr', 'sre', 'pa', 'letter', 'morphology', 'cva', 'trog', 'roar-inference'];
 
 /*
  *  Raw Only Tasks
@@ -1233,8 +1233,8 @@ export const getRawScoreThreshold = (taskId, scoringVersion = null) => {
   } else if (taskId === 'sre') {
     if (scoringVersion >= 5) {
       return {
-        above: 483.5,
-        some: 420,
+        above: 487,
+        some: 427,
       };
     } else if (scoringVersion >= 4) {
       return {
@@ -1256,8 +1256,8 @@ export const getRawScoreThreshold = (taskId, scoringVersion = null) => {
   } else if (taskId === 'pa') {
     if (scoringVersion >= 4) {
       return {
-        above: 475.5,
-        some: 416.5,
+        above: 480,
+        some: 420,
       };
     }
     return {
@@ -1275,27 +1275,27 @@ export const getRawScoreThreshold = (taskId, scoringVersion = null) => {
     if (scoringVersion >= 1) {
       return {
         above: 527,
-        some: 463.5,
+        some: 467,
       };
     }
   } else if (taskId === 'cva') {
     if (scoringVersion >= 1) {
       return {
         above: 520,
-        some: 443.5,
+        some: 447,
       };
     }
   } else if (taskId === 'roar-inference') {
     if (scoringVersion >= 1) {
       return {
-        above: 530.5,
-        some: 467,
+        above: 533,
+        some: 473,
       };
     }
   } else if (taskId === 'trog') {
     if (scoringVersion >= 1) {
       return {
-        above: 543.5,
+        above: 540,
         some: 487,
       };
     }
