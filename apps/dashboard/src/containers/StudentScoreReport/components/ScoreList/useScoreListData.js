@@ -57,7 +57,7 @@ export function useScoreListData(params) {
             const scores = Object.fromEntries(
               Object.entries(processedScores)
                 .filter(([, value]) => value !== undefined)
-                .map(([key, value]) => [key, Math.round(Number(value))]),
+                .map(([key, value]) => [key, key === 'scoringVersion' ? value : Math.round(Number(value))]), // Allow scoringVersion = null
             );
 
             return {
