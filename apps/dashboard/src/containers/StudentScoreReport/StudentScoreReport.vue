@@ -200,7 +200,7 @@ const studentLastName = computed(() => getStudentDisplayName(studentData).lastNa
 const studentGrade = computed(() => toValue(studentData)?.studentData?.grade);
 const getScoringVersions = computed(() => {
   const scoringVersions = Object.fromEntries(
-    administrationData.value?.assessment?.map((assessment) => [
+    administrationData.value?.assessments?.map((assessment) => [
       assessment.taskId,
       assessment?.params?.scoringVersion ?? null,
     ]),
