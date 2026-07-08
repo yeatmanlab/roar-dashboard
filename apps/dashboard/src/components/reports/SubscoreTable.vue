@@ -2,32 +2,27 @@
   <h2 class="header-text">{{ _toUpper(taskName) }} SCORE TABLE</h2>
   <RoarDataTable
     :columns="columns"
-    :data="computedTableData"
+    :data="students"
     :page-limit="pageLimit"
+    :loading="isLoading"
     :allow-filtering="false"
     @export-all="exportAll"
     @export-selected="exportSelected"
   />
 </template>
 <script setup>
-import { computed, ref, onMounted } from 'vue';
-import _get from 'lodash/get';
+import { computed, ref } from 'vue';
 import _kebabCase from 'lodash/kebabCase';
-import _set from 'lodash/set';
 import _toUpper from 'lodash/toUpper';
 import { exportCsv } from '@/helpers/query/utils';
-import { useAuthStore } from '@/store/auth';
 import RoarDataTable from '@/components/RoarDataTable';
-import {
-  roamAlpacaSubskills,
-  roamAlpacaSubskillHeaders,
-  roamFluencySubskillHeaders,
-  roamFluencyTasks,
-} from '@/helpers/reports';
+import useAdministrationTaskSubscoresQuery from '@/composables/queries/useAdministrationTaskSubscoresQuery';
 
 const props = defineProps({
   administrationId: { type: String, default: '' },
-  computedTableData: { type: Array, default: () => [] },
+  // Task UUID — the subscores endpoint is keyed by UUID (not the slug). Resolved
+  // upstream from the report's task metadata; null until that loads.
+  taskUuid: { type: String, default: '' },
   taskId: { type: String, required: true },
   taskName: { type: String, required: true },
   orgType: { type: String, default: '' },
@@ -36,286 +31,79 @@ const props = defineProps({
   orgName: { type: String, default: '' },
 });
 
-const authStore = useAuthStore();
-
-const initialized = ref(false);
-
 const pageLimit = ref(10);
 
+// The server computes the per-task subscore breakdown and declares its columns,
+// so the table renders from `subscoreColumns` instead of hard-coding column lists
+// per task slug. Gating (token + ids) lives in the composable.
+const { data: subscoreData, isLoading } = useAdministrationTaskSubscoresQuery(
+  computed(() => props.administrationId),
+  computed(() => props.taskUuid),
+  computed(() => props.orgType),
+  computed(() => props.orgId),
+);
+
+const students = computed(() => subscoreData.value?.students ?? []);
+const subscoreColumns = computed(() => subscoreData.value?.subscoreColumns ?? []);
+
 const columns = computed(() => {
+  const rows = students.value;
   const tableColumns = [];
-  if (props.computedTableData.find((assignment) => assignment.user?.username)) {
-    tableColumns.push({
-      field: 'user.username',
-      header: 'Username',
-      dataType: 'text',
-      pinned: true,
-      sort: true,
-      filter: true,
-    });
+  if (rows.find((row) => row.user?.username)) {
+    tableColumns.push({ field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true });
   }
-  if (props.computedTableData.find((assignment) => assignment.user?.email)) {
-    tableColumns.push({
-      field: 'user.email',
-      header: 'Email',
-      dataType: 'text',
-      pinned: true,
-      sort: true,
-      filter: true,
-    });
+  if (rows.find((row) => row.user?.email)) {
+    tableColumns.push({ field: 'user.email', header: 'Email', dataType: 'text', pinned: true, sort: true });
   }
-  if (props.computedTableData.find((assignment) => assignment.user?.firstName)) {
-    tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true });
+  if (rows.find((row) => row.user?.firstName)) {
+    tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true });
   }
-  if (props.computedTableData.find((assignment) => assignment.user?.lastName)) {
-    tableColumns.push({ field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true, filter: true });
+  if (rows.find((row) => row.user?.lastName)) {
+    tableColumns.push({ field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true });
   }
-  tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true });
-
+  tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true });
   if (props.orgType === 'district') {
-    tableColumns.push({
-      field: 'user.schoolName',
-      header: 'School',
-      dataType: 'text',
-      sort: true,
-      filter: true,
-    });
+    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: true });
   }
-  if (props.taskId === 'letter' || props.taskId === 'letter-en-ca') {
-    tableColumns.push(
-      { field: `scores.${props.taskId}.lowerCaseScore`, header: 'Lower Case', dataType: 'text', sort: false },
-      { field: `scores.${props.taskId}.upperCaseScore`, header: 'Upper Case', dataType: 'text', sort: false },
-      { field: `scores.${props.taskId}.phonemeScore`, header: 'Letter Sounds', dataType: 'text', sort: false },
-      { field: `scores.${props.taskId}.totalScore`, header: 'Total', dataType: 'text', sort: false },
-      { field: `scores.${props.taskId}.incorrectLetters`, header: 'Letters To Work On', dataType: 'text', sort: false },
-      { field: `scores.${props.taskId}.incorrectPhonemes`, header: 'Sounds To Work On', dataType: 'text', sort: false },
-    );
-  }
-  if (props.taskId === 'pa') {
-    tableColumns.push(
-      { field: 'scores.pa.firstSound', header: 'First Sound', dataType: 'text', sort: false },
-      { field: 'scores.pa.lastSound', header: 'Last Sound', dataType: 'text', sort: false },
-      { field: 'scores.pa.deletion', header: 'Deletion', dataType: 'text', sort: false },
-      { field: 'scores.pa.total', header: 'Total', dataType: 'text', sort: false },
-      { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text', sort: false },
-    );
-  }
-  if (roamFluencyTasks.includes(props.taskId)) {
-    tableColumns.push(
-      { field: `scores.${props.taskId}.fr.rawScore`, header: 'Free Response', dataType: 'text', sort: false },
-      { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
-    );
-  }
-  if (props.taskId === 'phonics') {
-    const subcategories = [
-      { field: 'cvc', header: 'CVC' },
-      { field: 'digraph', header: 'Digraph' },
-      { field: 'initial_blend', header: 'Initial Blend' },
-      { field: 'tri_blend', header: 'Triple Blend' },
-      { field: 'final_blend', header: 'Final Blend' },
-      { field: 'r_controlled', header: 'R-Controlled' },
-      { field: 'r_cluster', header: 'R-Cluster' },
-      { field: 'silent_e', header: 'Silent E' },
-      { field: 'vowel_team', header: 'Vowel Team' },
-    ];
 
-    // Add columns for each subcategory
-    subcategories.forEach(({ field, header }) => {
-      tableColumns.push({
-        field: `scores.${props.taskId}.composite.subscores.${field}`,
-        header: header,
-        dataType: 'text',
-        sort: true,
-        tooltip: false,
-        body: (row) => {
-          return _get(row, `scores.${props.taskId}.composite.subscores.${field}`) || '0/0';
-        },
-      });
-    });
-
-    // Add total percentage
-    tableColumns.push({
-      field: `scores.${props.taskId}.composite.totalPercentCorrect`,
-      header: 'Total % Correct',
-      dataType: 'number',
-      sort: true,
-      tooltip: false,
-      body: (row) => {
-        const totalPercent = _get(row, `scores.${props.taskId}.composite.totalPercentCorrect`);
-        return typeof totalPercent === 'number' ? `${Math.round(totalPercent)}%` : '0%';
-      },
-    });
-
-    // Hide skills to work on
-    // tableColumns.push({
-    //   field: `scores.${props.taskId}.skillsToWorkOn`,
-    //   header: 'Skills To Work On',
-    //   dataType: 'text',
-    //   sort: false,
-    //   tooltip: false,
-    // });
-  }
-  if (props.taskId === 'roam-alpaca') {
-    const gradeEstimate = `scores.${props.taskId}.gradeEstimate`;
-    tableColumns.push({
-      field: `scores.${props.taskId}.composite.roarScore`,
-      header: 'Raw Score',
-      dataType: 'text',
-      tagColor: `scores.${props.taskId}.composite.tagColor`,
-      sort: false,
-    });
-    Object.entries(roamAlpacaSubskills).forEach(([subskillId, subskill]) => {
-      tableColumns.push({
-        field: `scores.${props.taskId}.${subskillId}.percentCorrect`,
-        header: subskill,
-        dataType: 'text',
-        sort: false,
-        tagColor: `scores.${props.taskId}.${subskillId}.tagColor`,
-        ...(gradeEstimate && { gradeEstimate }),
-      });
-    });
-    tableColumns.push({
-      field: `scores.${props.taskId}.composite.incorrectSkills`,
-      header: 'Skills To Work On',
-      dataType: 'text',
-      sort: false,
-    });
+  // One column per server-declared subscore; values are looked up by key from each
+  // row's `subscores` map. Sort is disabled because cells mix display strings
+  // ("15/19", comma lists) and numbers.
+  for (const column of subscoreColumns.value) {
+    tableColumns.push({ field: `subscores.${column.key}`, header: column.label, dataType: 'text', sort: false });
   }
   return tableColumns;
 });
 
-const exportSelected = (selectedRows) => {
-  const computedExportData = selectedRows.map(({ user, scores }) => {
-    let tableRow = {
-      Username: _get(user, 'username'),
-      First: _get(user, 'firstName'),
-      Last: _get(user, 'lastName'),
-      Grade: _get(user, 'grade'),
+// Build CSV rows from the same server data: student identity columns + one column
+// per declared subscore (keyed by label).
+const buildExportRows = (rows) =>
+  rows.map(({ user, subscores }) => {
+    const tableRow = {
+      Username: user?.username,
+      First: user?.firstName,
+      Last: user?.lastName,
+      Grade: user?.grade,
     };
-    if (props.taskId === 'letter' || props.taskId === 'letter-en-ca') {
-      _set(tableRow, 'Lower Case', _get(scores, `${props.taskId}.lowerCaseScore`));
-      _set(tableRow, 'Upper Case', _get(scores, `${props.taskId}.upperCaseScore`));
-      _set(tableRow, 'Letter Sounds', _get(scores, `${props.taskId}.phonemeScore`));
-      _set(tableRow, 'Total', _get(scores, `${props.taskId}.totalScore`));
-      _set(tableRow, 'Letters To Work On', _get(scores, `${props.taskId}.incorrectLetters`));
-      _set(tableRow, 'Sounds To Work On', _get(scores, `${props.taskId}.incorrectPhonemes`));
+    if (props.orgType === 'district') {
+      tableRow.School = user?.schoolName;
     }
-    if (props.taskId === 'pa') {
-      _set(tableRow, 'First Sound', _get(scores, 'pa.firstSound'));
-      _set(tableRow, 'Last Sound', _get(scores, 'pa.lastSound'));
-      _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'));
-      _set(tableRow, 'Total', _get(scores, 'pa.total'));
-      _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
-    }
-    if (roamFluencyTasks.includes(props.taskId)) {
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
-      });
-
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
-      });
-    }
-    if (props.taskId === 'phonics') {
-      const subcategories = [
-        'cvc',
-        'digraph',
-        'initial_blend',
-        'tri_blend',
-        'final_blend',
-        'r_controlled',
-        'r_cluster',
-        'silent_e',
-        'vowel_team',
-      ];
-      subcategories.forEach((category) => {
-        const subscore = _get(scores, `${props.taskId}.composite.subscores.${category}`);
-        _set(
-          tableRow,
-          `${category} (Correct/Attempted)`,
-          subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0',
-        );
-      });
-      _set(tableRow, 'Total % Correct', _get(scores, `${props.taskId}.composite.totalPercentCorrect`));
-      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.skillsToWorkOn`));
-    }
-    if (props.taskId === 'roam-alpaca') {
-      _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
-      _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
-      Object.entries(roamAlpacaSubskills).forEach(([subskillId, subskill]) => {
-        Object.entries(roamAlpacaSubskillHeaders).forEach(([property, propertyHeader]) => {
-          _set(tableRow, `${subskill} - ${propertyHeader}`, _get(scores, `${props.taskId}.${subskillId}.${property}`));
-        });
-      });
-      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.composite.incorrectSkills`));
+    for (const column of subscoreColumns.value) {
+      tableRow[column.label] = subscores?.[column.key] ?? '';
     }
     return tableRow;
   });
-  exportCsv(computedExportData, `roar-scores-${_kebabCase(props.taskId)}-selected.csv`);
-  return;
+
+const exportSelected = (selectedRows) => {
+  exportCsv(buildExportRows(selectedRows), `roar-scores-${_kebabCase(props.taskId)}-selected.csv`);
 };
 
-const exportAll = async () => {
-  const computedExportData = props.computedTableData.map(({ user, scores }) => {
-    let tableRow = {
-      Username: _get(user, 'username'),
-      First: _get(user, 'firstName'),
-      Last: _get(user, 'lastName'),
-      Grade: _get(user, 'grade'),
-    };
-    if (props.taskId === 'letter' || props.taskId === 'letter-en-ca') {
-      _set(tableRow, 'Lower Case', _get(scores, `${props.taskId}.lowerCaseScore`));
-      _set(tableRow, 'Upper Case', _get(scores, `${props.taskId}.upperCaseScore`));
-      _set(tableRow, 'Letter Sounds', _get(scores, `${props.taskId}.phonemeScore`));
-      _set(tableRow, 'Total', _get(scores, `${props.taskId}.totalScore`));
-      _set(tableRow, 'Letters To Work On', _get(scores, `${props.taskId}.incorrectLetters`));
-      _set(tableRow, 'Sounds To Work On', _get(scores, `${props.taskId}.incorrectPhonemes`));
-    } else if (props.taskId === 'pa') {
-      _set(tableRow, 'First Sound', _get(scores, 'pa.firstSound'));
-      _set(tableRow, 'Last Sound', _get(scores, 'pa.lastSound'));
-      _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'));
-      _set(tableRow, 'Total', _get(scores, 'pa.total'));
-      _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
-    } else if (roamFluencyTasks.includes(props.taskId)) {
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
-      });
-
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
-      });
-    } else if (props.taskId === 'roam-alpaca') {
-      _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
-      _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
-      Object.entries(roamAlpacaSubskills).forEach(([subskillId, subskill]) => {
-        Object.entries(roamAlpacaSubskillHeaders).forEach(([property, propertyHeader]) => {
-          _set(tableRow, `${subskill} - ${propertyHeader}`, _get(scores, `${props.taskId}.${subskillId}.${property}`));
-        });
-      });
-      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.composite.incorrectSkills`));
-    }
-    return tableRow;
-  });
+const exportAll = () => {
   exportCsv(
-    computedExportData,
+    buildExportRows(students.value),
     `roar-scores-${_kebabCase(props.taskId)}-${_kebabCase(props.administrationName)}-${_kebabCase(props.orgName)}.csv`,
   );
-  return;
 };
-
-let unsubscribe;
-const refresh = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) refresh();
-});
-
-onMounted(async () => {
-  if (authStore.isAuthReady) refresh();
-});
 </script>
 <style>
 .header-text {
