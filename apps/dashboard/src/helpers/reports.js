@@ -1195,7 +1195,7 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
     if (
       (fieldType === 'percentile' || fieldType === 'standardScore') &&
       typeof scoreValue === 'string' &&
-      scoreValue.match(/[<>]/).length > 0
+      /[<>]/.test(scoreValue)
     ) {
       scoreValue = parseFloat(scoreValue.replace(/[<>]/g, ''));
     }
