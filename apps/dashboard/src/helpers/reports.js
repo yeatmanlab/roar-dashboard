@@ -312,16 +312,35 @@ export function getExtendedDescription(taskId) {
 export const descriptionsByTaskId = {
   // "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
   pa: {
-    header: 'ROAR-Phonological Awareness',
+    header: 'Phonological Awareness',
     description: ' measures the ability to hear and manipulate the individual sounds within words.',
   },
   swr: {
-    header: 'ROAR-Single Word Recognition',
+    header: 'Single Word Recognition',
     description: ' assesses decoding skills at the word level.',
   },
   sre: {
-    header: 'ROAR-Sentence Reading Efficiency',
+    header: 'Sentence Reading Efficiency',
     description: ' assesses reading fluency at the sentence level.',
+  },
+  morphology: {
+    header: 'Morphology',
+    description:
+      ' measures morphological awareness - through their knowledge of how prefixes and suffixes affect the meaning and function of words in a sentence.',
+  },
+  cva: {
+    header: 'Written Vocabulary',
+    description: ' measures synonym knowledge in the context of a sentence.',
+  },
+  trog: {
+    header: 'Syntax',
+    description:
+      ' measures receptive comprehension of English syntax - how word order, phrases, and clauses contribute to meaning.',
+  },
+  'roar-inference': {
+    header: 'Inference',
+    description:
+      ' measures the ability to draw conclusions and make meaning beyond explicitly stated information in a paragraph.',
   },
 };
 
@@ -366,7 +385,7 @@ export const includedValidityFlags = {
  *  Tasks to Display Graphs
  *  A list of tasks who, when included in a score report, will generate breakdown graphs.
  */
-export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
+export const tasksToDisplayGraphs = ['swr', 'sre', 'pa', 'letter', 'morphology', 'cva', 'trog', 'roar-inference'];
 
 /*
  *  Raw Only Tasks
@@ -1641,6 +1660,70 @@ export const taskInfoById = {
       'grade level based on their performance. These insights can be used to gauge both ' +
       'student-level and classroom-wide competencies so that instruction can be customized ' +
       'appropriately.',
+  },
+  cva: {
+    header: '`ROAR - Written Vocabulary',
+    color: '#52627E',
+    subheader: 'CVA Assessment',
+    desc:
+      'Written Vocabulary evaluates a student’s knowledge of academic vocabulary through their ability to identify words with similar ' +
+      'meanings in context. Vocabulary knowledge is a critical component of reading comprehension, as students must understand the ' +
+      'meanings of individual words to make sense of increasingly complex texts. This assessment measures a student’s ability to ' +
+      'identify synonyms of words based on their meaning within a sentence, providing insight into their vocabulary knowledge. The ' +
+      'student’s score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting "Raw Score" on the table above. ' +
+      'Students in the pink category need support in developing academic vocabulary and understanding word meanings. Limited ' +
+      'vocabulary knowledge may make it more difficult for these students to comprehend grade-level texts and learn new academic ' +
+      'content. Students in the yellow category are continuing to develop their academic vocabulary and may benefit from additional ' +
+      'exposure to rich language and explicit vocabulary instruction. Students in the green category demonstrate vocabulary ' +
+      'knowledge that is likely sufficient to support comprehension of grade-level texts and continued growth in reading and learning.',
+  },
+  morphology: {
+    header: 'ROAR - Morphology',
+    color: '#52627E',
+    subheader: 'Morphology Assessment',
+    desc:
+      'Morphology measures a student’s ability to use morphological information, such as prefixes and suffixes, to signal the meaning ' +
+      'and grammatical function of words in a sentence. Morphological awareness supports reading comprehension by helping students to ' +
+      'build vocabulary through decoding and understand complex words. This assessment provides insight into the student’s understanding ' +
+      'of word structure and vocabulary. The student’s score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting ' +
+      '"Raw Score" on the table above. Students in the pink category need support in developing morphological awareness and understanding ' +
+      'how word parts contribute to meaning. Difficulties in this area may make it more challenging to understand unfamiliar vocabulary ' +
+      'and comprehend complex texts. Students in the yellow category are continuing to develop their understanding of morphological ' +
+      'structures and may benefit from additional practice with word formation and word meanings. Students in the green category demonstrate ' +
+      'morphological knowledge that is likely sufficient to support vocabulary growth, reading comprehension, and learning from complex text.',
+  },
+  'roar-inference': {
+    header: 'ROAR - Inference',
+    color: '#52627E',
+    subheader: 'Inference Assessment',
+    desc:
+      'Inference evaluates a student’s ability to make meaning beyond information that is explicitly stated in a text. The ability to ' +
+      'make inferences is an important component of reading comprehension, as readers must integrate statements in a passage with their ' +
+      'background knowledge to understand implied ideas, relationships, and intentions. This assessment measures a student’s ability to ' +
+      'answer questions that require inference-making based on short written passages, providing insight into their ability to make ' +
+      'connections between sentences within a text and between the text and their background knowledge. The student’s score will range ' +
+      "between {{RAW_SCORE_RANGE}} and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need " +
+      'support in developing inferential comprehension skills. Difficulties in this area may make it challenging to understand implied ' +
+      'meanings, connect ideas across a text, and fully comprehend grade-level reading materials. Students in the yellow category are ' +
+      'continuing to develop their ability to draw inferences from text and may benefit from additional practice identifying textual ' +
+      'evidence and using it to support conclusions. Students in the green category demonstrate inferential comprehension skills that ' +
+      'are likely sufficient to support successful understanding of grade-level texts and continued growth in reading comprehension.',
+  },
+  trog: {
+    header: 'ROAR - Syntax',
+    color: '#52627E',
+    subheader: 'TROG Assessment',
+    desc:
+      'Syntax evaluates a student’s understanding of English sentence structure and how grammatical relationships contribute to meaning. ' +
+      'Syntactic knowledge supports reading comprehension by helping students interpret how word order, phrases, and clauses work together ' +
+      'to convey ideas within a sentence. This assessment measures a student’s ability to use syntactic structures to understand meaning ' +
+      'in context, providing insight into their comprehension of English language structures. The student’s score will range between ' +
+      "{{RAW_SCORE_RANGE}} and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in " +
+      'developing syntactic knowledge and understanding how sentence structure contributes to meaning. Difficulties in this area may make ' +
+      'it more challenging to comprehend complex texts, follow multi-clause sentences, and interpret relationships between ideas. Students ' +
+      'in the yellow category are continuing to develop their understanding of English syntax and may benefit from additional exposure to ' +
+      'and practice with increasingly complex sentence structures. Students in the green category demonstrate syntactic knowledge that is ' +
+      'likely sufficient to support comprehension of grade-level texts and continued growth in reading and academic learning.',
   },
 };
 

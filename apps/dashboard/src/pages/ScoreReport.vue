@@ -51,76 +51,39 @@
               v-if="
                 !isLoadingAssignments && !isLoadingDistrictSupportCategories && sortedAndFilteredTaskIds?.length > 0
               "
-              class="py-3 mb-2 text-left bg-gray-100"
+              class="py-3 mb-2 text-left"
             >
-              <div class="overview-wrapper">
-                <div class="chart-wrapper">
-                  <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
-                    <div class="distribution-overview-wrapper">
-                      <DistributionChartOverview
-                        :runs="
-                          props.orgType === 'district'
-                            ? aggregatedDistrictSupportCategories[taskId]
-                            : computeAssignmentAndRunData.runsByTaskId[taskId]
-                        "
-                        :initialized="initialized"
-                        :task-id="taskId"
-                        :org-type="props.orgType"
-                        :org-id="props.orgId"
-                        :administration-id="props.administrationId"
-                      />
-                      <div className="task-description mt-3">
-                        <span class="font-bold">
-                          {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
-                        </span>
-                        <span class="font-light">
-                          {{
-                            descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : ''
-                          }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ScoreDistributionOverview
+                :task-ids="sortedAndFilteredTaskIds"
+                :runs-by-task-id="
+                  props.orgType === 'district'
+                    ? aggregatedDistrictSupportCategories
+                    : computeAssignmentAndRunData.runsByTaskId
+                "
+                :org-type="props.orgType"
+                :tasks-dictionary="tasksDictionary"
+              />
+              <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
               <div
-                v-if="!isLoadingAssignments && sortedAndFilteredTaskIds?.length > 0"
-                class="flex rounded legend-container flex-column align-items-center"
+                v-if="
+                  !isLoadingAssignments &&
+                  sortedAndFilteredTaskIds?.length > 0 &&
+                  !isEmptyDistrictSupportCategories &&
+                  props.orgType === 'district'
+                "
+                class="flex rounded flex-column align-items-center mt-3"
               >
-                <div class="flex align-items-center">
-                  <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
-                    <div>
-                      <div>Needs Extra Support</div>
-                    </div>
-                  </div>
-                  <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.SOME};`" />
-                    <div>
-                      <div>Developing Skill</div>
-                    </div>
-                  </div>
-                  <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ABOVE};`" />
-                    <div>
-                      <div>Achieved Skill</div>
-                    </div>
-                  </div>
-                </div>
-                <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
-                <div v-if="!isEmptyDistrictSupportCategories && props.orgType === 'district'">
-                  <p
-                    v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
-                    class="text-center text-sm font-bold px-4"
-                  >
-                    In this district-level report, visualizations are available for foundational ROAR assessments (Word,
-                    Sentence, and Phoneme) to give you clear, reliable insights on these foundational skills.
-                  </p>
-                  <p class="text-center align-items-center text-sm font-bold px-4">
-                    View school-level or classroom-level reports to see student-level data and information about other
-                    assessments.
-                  </p>
-                </div>
+                <p
+                  v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
+                  class="text-center text-sm font-bold px-4"
+                >
+                  In this district-level report, visualizations are available for foundational and comprehension
+                  assessments to give you clear, reliable insights on these skills.
+                </p>
+                <p class="text-center align-items-center text-sm font-bold px-4">
+                  View school-level or classroom-level reports to see student-level data and information about other
+                  assessments.
+                </p>
               </div>
             </div>
             <div
@@ -130,8 +93,8 @@
               <p class="text-center text-sm font-bold px-4">
                 {{
                   assignedNormedTaskIds.length === 0
-                    ? 'In this district-level report, visualizations are only available for foundational ROAR assessments (Word, Sentence, and Phoneme). None of these are currently assigned within your district.'
-                    : 'Visualizations will appear once students complete Word, Sentence, and/or Phoneme assessments.'
+                    ? 'Visualizations are only available for foundational reading and comprehension assessments. If visualizations are not showing, your students were not assigned any of these assessments.'
+                    : 'Visualizations will appear once students complete our foundational or comprehension assessments.'
                 }}
               </p>
               <p class="text-center align-items-center text-sm font-bold px-4">
@@ -440,7 +403,6 @@ import { getTitle } from '@/helpers/query/administrations';
 import {
   taskDisplayNames,
   taskInfoById,
-  descriptionsByTaskId,
   getSupportLevel,
   tasksToDisplayGraphs,
   rawOnlyTasks,
@@ -473,9 +435,10 @@ import _startCase from 'lodash/startCase';
 import AppDialog from '@/components/Dialog/Dialog.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { getStudentExternalId } from '@/helpers/getStudentExternalId';
+import ScoreDistributionOverview from '@/components/reports/ScoreDistributionOverview.vue';
 const { userCan, Permissions } = usePermissions();
 
-let TaskReport, DistributionChartOverview;
+let TaskReport;
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -608,7 +571,9 @@ const handleExportToPdf = async () => {
   // Add At a Glance Charts and report header to the PDF
   const atAGlanceCharts = document.getElementById('at-a-glance-charts');
   if (atAGlanceCharts !== null) {
+    atAGlanceCharts.classList.add('pdf-export-mode');
     yCounter = await addElementToPdf(atAGlanceCharts, doc, yCounter);
+    atAGlanceCharts.classList.remove('pdf-export-mode');
   }
 
   // Initialize to first tab
@@ -833,8 +798,12 @@ const isEmptyDistrictSupportCategories = computed(() => {
 });
 
 const assignedTaskIds = computed(() => administrationData.value?.assessments?.map((task) => task.taskId));
-// Currently do not want to show swr-es and sre-es pi charts
-const assignedNormedTaskIds = computed(() => assignedTaskIds.value.filter((id) => ['swr', 'sre', 'pa'].includes(id)));
+
+const assignedNormedTaskIds = computed(() =>
+  assignedTaskIds.value.filter((id) =>
+    ['swr', 'sre', 'pa', 'letter', 'cva', 'morphology', 'roar-inference', 'trog', 'swr-es', 'sre-es'].includes(id),
+  ),
+);
 
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
@@ -2030,19 +1999,50 @@ const sortedTaskIds = computed(() => {
 });
 
 const sortedAndFilteredTaskIds = computed(() => {
+  const tasksRequiringScoringVersion = ['letter', 'morphology', 'cva', 'trog', 'roar-inference'];
   return sortedTaskIds.value?.filter((taskId) => {
-    return tasksToDisplayGraphs.includes(taskId);
+    if (!tasksToDisplayGraphs.includes(taskId)) return false;
+    if (tasksRequiringScoringVersion.includes(taskId)) {
+      return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
+    }
+    return true;
   });
 });
 
 const sortedAndFilteredSubscoreTaskIds = computed(() => {
+  const tasksRequiringScoringVersion = ['letter', 'morphology', 'cva', 'trog', 'roar-inference'];
+
   if (props.orgType === 'district') {
-    return sortedTaskIds.value?.filter((taskId) => {
-      return tasksToDisplayGraphs.includes(taskId);
-    });
+    const districtTasks =
+      sortedTaskIds.value?.filter((taskId) => {
+        if (!tasksToDisplayGraphs.includes(taskId)) return false;
+        if (tasksRequiringScoringVersion.includes(taskId)) {
+          return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
+        }
+        return true;
+      }) || [];
+
+    // Also include assigned tasks with scoring versions >= 1 that may not be in aggregated categories
+    const assignedTaskIds = administrationData.value?.assessments?.map((a) => a.taskId) || [];
+    const additionalTasks = assignedTaskIds.filter(
+      (taskId) =>
+        tasksRequiringScoringVersion.includes(taskId) &&
+        getScoringVersions.value[taskId] &&
+        getScoringVersions.value[taskId] >= 1 &&
+        !districtTasks.includes(taskId),
+    );
+
+    return [...districtTasks, ...additionalTasks].sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
   }
   const availableTaskIds = Object.keys(computeAssignmentAndRunData.value?.runsByTaskId);
-  return availableTaskIds.sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
+  return availableTaskIds
+    .filter((taskId) => {
+      if (tasksRequiringScoringVersion.includes(taskId)) {
+        return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
+      }
+      return true;
+    })
+    .sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
 });
 
 let unsubscribe;
@@ -2060,7 +2060,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(async () => {
   TaskReport = (await import('@/components/reports/tasks/TaskReport.vue')).default;
-  DistributionChartOverview = (await import('@/components/reports/DistributionChartOverview.vue')).default;
   if (roarfirekit.value.restConfig?.()) refresh();
 });
 </script>
