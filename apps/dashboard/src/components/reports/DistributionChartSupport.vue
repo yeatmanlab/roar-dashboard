@@ -43,9 +43,12 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  runs: {
-    type: Array,
-    required: true,
+  facets: {
+    // Per-task facet aggregation from `getScoreFacets` (supportLevelByGrade /
+    // supportLevelBySchool). Null while the query is loading.
+    type: Object,
+    required: false,
+    default: null,
   },
   facetMode: {
     type: Object,
@@ -56,95 +59,30 @@ const props = defineProps({
   },
 });
 
-const districtGradeSupportBreakdown = computed(() => {
-  // For district-level aggregation: { above/some/below: { grades: { "1": n, ... } } }
-  if (props.orgType === 'district') {
-    const supportLevelIndexMap = { below: 0, some: 1, above: 2 }; // matches chart order
-    const gradeMap = new Map(); // key = grade
+// Leading-zero trim matches the prior client behavior (e.g. "01" → "1").
+const trimGrade = (grade) => String(grade ?? '').replace(/^0+(?=\D|\d)/, '');
 
-    ['below', 'some', 'above'].forEach((level) => {
-      const grades = props?.runs?.[level]?.grades ?? {};
-      Object.entries(grades).forEach(([grade, count]) => {
-        // Trim grades of leading zeros
-        const trimmedGrade = grade.replace(/^0+(?=\D|\d)/, '');
-        if (!gradeMap.has(trimmedGrade)) {
-          gradeMap.set(trimmedGrade, { category: trimmedGrade, support_levels: [0, 0, 0], totalStudents: 0 });
-        }
-        const row = gradeMap.get(trimmedGrade);
-        row.support_levels[supportLevelIndexMap[level]] += count;
-        row.totalStudents += count;
-      });
-    });
-
-    return Array.from(gradeMap.values());
-  }
-
-  // For school- or class-level aggregation
-  const gradeCounts = [];
-  for (const run of props.runs) {
-    const rawGrade = run?.user?.grade;
-    // Trim grades of leading zeros
-    const trimmedGrade = rawGrade.replace(/^0+(?=\D|\d)/, '');
-    let gradeCounter = gradeCounts.find((g) => g.category === trimmedGrade);
-    if (!gradeCounter) {
-      gradeCounter = { category: trimmedGrade, support_levels: [0, 0, 0], totalStudents: 0 };
-      gradeCounts.push(gradeCounter);
-    }
-
-    const supportLevel = run?.scores?.support_level;
-    if (supportLevel === 'Needs Extra Support') gradeCounter.support_levels[0]++;
-    else if (supportLevel === 'Developing Skill') gradeCounter.support_levels[1]++;
-    else if (supportLevel === 'Achieved Skill') gradeCounter.support_levels[2]++;
-    else continue; // skip null or undefined support levels
-
-    gradeCounter.totalStudents++;
-  }
-  return gradeCounts;
+// Map a backend support-level facet entry to the chart's intermediate shape.
+// `totalStudents` is the sum of the three classified levels — the Percent-mode
+// denominator — and intentionally excludes optional/null levels, matching the
+// prior client aggregation (which only counted runs with a classified level).
+const toBreakdownRow = (category, entry) => ({
+  category,
+  support_levels: [entry.needsExtraSupport.count, entry.developingSkill.count, entry.achievedSkill.count],
+  totalStudents: entry.needsExtraSupport.count + entry.developingSkill.count + entry.achievedSkill.count,
 });
 
-const districtSchoolSupportBreakdown = computed(() => {
-  // For district-level aggregation: { above/some/below: { schools: { name: n, ... } } }
-  if (props.orgType === 'district') {
-    const supportLevelIndexMap = { below: 0, some: 1, above: 2 };
-    const schoolMap = new Map(); // key = school name
+const gradeSupportBreakdown = computed(() =>
+  (props.facets?.supportLevelByGrade ?? []).map((entry) => toBreakdownRow(trimGrade(entry.grade), entry)),
+);
 
-    ['below', 'some', 'above'].forEach((level) => {
-      const schools = props?.runs?.[level]?.schools ?? {};
-      Object.values(schools).forEach(({ name, count }) => {
-        const key = name ?? 'Unknown school';
-        if (!schoolMap.has(key)) {
-          schoolMap.set(key, { category: key, support_levels: [0, 0, 0], totalStudents: 0 });
-        }
-        const row = schoolMap.get(key);
-        row.support_levels[supportLevelIndexMap[level]] += count;
-        row.totalStudents += count;
-      });
-    });
-
-    return Array.from(schoolMap.values());
-  }
-
-  // For non-district orgs (class, school, group, etc.)
-  const schoolCounts = [];
-  for (const run of props.runs) {
-    const schoolName = run?.user?.schoolName ?? 'Unknown school';
-    let schoolCounter = schoolCounts.find((s) => s.category === schoolName);
-    if (!schoolCounter) {
-      schoolCounter = { category: schoolName, support_levels: [0, 0, 0], totalStudents: 0 };
-      schoolCounts.push(schoolCounter);
-    }
-
-    const supportLevel = run?.scores?.support_level;
-    if (supportLevel === 'Needs Extra Support') schoolCounter.support_levels[0]++;
-    else if (supportLevel === 'Developing Skill') schoolCounter.support_levels[1]++;
-    else if (supportLevel === 'Achieved Skill') schoolCounter.support_levels[2]++;
-    else return; // skip null or undefined support levels
-
-    schoolCounter.totalStudents++;
-  }
-
-  return schoolCounts;
-});
+// Empty at non-district scope — the backend returns empty school arrays there
+// (the school-facet toggle is district-only).
+const schoolSupportBreakdown = computed(() =>
+  (props.facets?.supportLevelBySchool ?? []).map((entry) =>
+    toBreakdownRow(entry.schoolName ?? 'Unknown school', entry),
+  ),
+);
 
 const xMode = ref({ name: 'Percent' });
 const xModes = [{ name: 'Percent' }, { name: 'Count' }];
@@ -180,8 +118,8 @@ function returnValueByIndex(index, xMode, grade) {
 }
 
 const returnSupportLevelValues = computed(() => {
-  const gradeCounts = districtGradeSupportBreakdown.value;
-  const schoolCounts = districtSchoolSupportBreakdown.value;
+  const gradeCounts = gradeSupportBreakdown.value;
+  const schoolCounts = schoolSupportBreakdown.value;
   const counts = props.facetMode.name === 'Grade' ? gradeCounts : schoolCounts;
   const values = [];
 
@@ -324,7 +262,7 @@ const draw = async () => {
 };
 
 watch(
-  [() => distributionBySupport.value, () => props.facetMode, () => props.runs],
+  [() => distributionBySupport.value, () => props.facetMode, () => props.facets],
   () => {
     draw();
   },
