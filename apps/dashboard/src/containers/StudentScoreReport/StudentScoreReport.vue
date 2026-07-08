@@ -36,9 +36,8 @@
           <ScoreListPrint
             :student-first-name="studentFirstName"
             :student-grade="studentGrade"
-            :task-data="taskData"
+            :report-tasks="reportTasks"
             :tasks-dictionary="tasksDictionary"
-            :longitudinal-data="longitudinalData"
             :current-assignment-id="administrationId"
             :task-scoring-versions="getScoringVersions"
           />
@@ -68,9 +67,8 @@
           <ScoreListScreen
             :student-first-name="studentFirstName"
             :student-grade="studentGrade"
-            :task-data="taskData"
+            :report-tasks="reportTasks"
             :tasks-dictionary="tasksDictionary"
-            :longitudinal-data="longitudinalData"
             :expanded="expanded"
             :task-scoring-versions="getScoringVersions"
             :current-assignment-id="administrationId"
@@ -95,8 +93,8 @@ import { useAuthStore } from '@/store/auth';
 import { useI18n } from 'vue-i18n';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
-import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
-import useUserLongitudinalRunsQuery from '@/composables/queries/useUserLongitudinalRunsQuery';
+import useAdministrationIndividualScoreReportQuery from '@/composables/queries/useAdministrationIndividualScoreReportQuery';
+import useGuardianStudentReportQuery from '@/composables/queries/useGuardianStudentReportQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import usePagedPreview from '@/composables/usePagedPreview';
 import PdfExportService from '@/services/PdfExport.service';
@@ -112,6 +110,7 @@ import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { formatListArray } from '@/helpers/formatListArray';
 import { getStudentExternalId } from '@/helpers/getStudentExternalId';
 import { STUDENT_SCORE_REPORT_TASK_IDS } from '@/constants/studentScoreReportTasks';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 const props = defineProps({
   administrationId: { type: String, required: true },
@@ -125,6 +124,11 @@ const route = useRoute();
 
 const isPrintMode = computed(() => route.query.print !== undefined);
 
+// Two routes into this container use different backend endpoints: the parent/guardian path
+// (orgType 'family') uses the longitudinal guardian report; the administrator path (org
+// scopes) uses the administration-scoped individual report.
+const isParentPath = computed(() => props.orgType === SINGULAR_ORG_TYPES.FAMILIES);
+
 const expanded = ref(false);
 const exportLoading = ref(false);
 
@@ -133,9 +137,9 @@ const isLoading = computed(
   () =>
     isLoadingStudentData.value ||
     isLoadingTasksDictionary.value ||
-    isLoadingTaskData.value ||
-    isLoadingAdministrationData.value ||
-    isLoadingLongitudinalData.value,
+    isLoadingReport.value ||
+    isLoadingGuardian.value ||
+    isLoadingAdministrationData.value,
 );
 
 const { data: studentData, isLoading: isLoadingStudentData } = useUserDataQuery(props.userId, {
@@ -150,19 +154,44 @@ const { data: administrationData, isLoading: isLoadingAdministrationData } = use
   },
 );
 
-const { data: taskData, isLoading: isLoadingTaskData } = useUserRunPageQuery(
-  props.userId,
+// Administrator path: administration-scoped individual report (scores, support level, tags,
+// subscores, per-task historical scores).
+const { data: reportData, isLoading: isLoadingReport } = useAdministrationIndividualScoreReportQuery(
   props.administrationId,
+  props.userId,
   props.orgType,
   props.orgId,
-  { enabled: initialized },
+  { enabled: computed(() => initialized.value && !isParentPath.value) },
 );
 
-const { data: longitudinalData, isLoading: isLoadingLongitudinalData } = useUserLongitudinalRunsQuery(
-  props.userId,
-  props.orgType,
-  props.orgId,
-  { enabled: initialized, select: (data) => data },
+// Parent/guardian path: longitudinal report across all administrations.
+const { data: guardianData, isLoading: isLoadingGuardian } = useGuardianStudentReportQuery(props.userId, {
+  enabled: computed(() => initialized.value && isParentPath.value),
+});
+
+// The guardian report returns every administration plus a top-level longitudinalScores map.
+// Pick the administration being viewed and attach its per-task historical scores so the
+// guardian tasks match the admin report's per-task shape (which carries historicalScores).
+const guardianReportTasks = computed(() => {
+  const data = guardianData.value;
+  if (!data) return [];
+  const administration = data.administrations.find((entry) => entry.administrationId === props.administrationId);
+  if (!administration) return [];
+  return administration.tasks.map((task) => ({
+    ...task,
+    historicalScores: data.longitudinalScores?.[task.taskSlug] ?? [],
+  }));
+});
+
+// Both paths feed the score cards from the backend; the score list builds its cards from
+// these report tasks (see useReportCardData).
+const reportTasks = computed(() => (isParentPath.value ? guardianReportTasks.value : (reportData.value?.tasks ?? [])));
+
+// Minimal { taskId(slug), scores } shape the container's summary/distribution computeds and
+// the empty-state read, derived from the same backend report tasks (scores present only when
+// completed — the distribution/empty-state consumers key off score presence).
+const taskData = computed(() =>
+  reportTasks.value.map((task) => ({ taskId: task.taskSlug, scores: task.completed ? task.scores : undefined })),
 );
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({

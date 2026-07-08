@@ -46,8 +46,8 @@ vi.mock('./ScoreCard', () => ({
 }));
 
 // Mock the composable - needs to return computed refs or objects that behave like them
-vi.mock('./useScoreListData', () => ({
-  useScoreListData: vi.fn(() => {
+vi.mock('./useReportCardData', () => ({
+  useReportCardData: vi.fn(() => {
     const mockTask = {
       taskId: 'swr',
       scoreToDisplay: 'percentileScore',
@@ -99,26 +99,20 @@ describe('ScoreList.vue', () => {
   const defaultProps = {
     studentFirstName: 'John',
     studentGrade: '3',
-    taskData: {
-      swr: {
+    reportTasks: [
+      {
         taskId: 'swr',
-        scores: {
-          composite: {
-            rawScore: 50,
-            percentileScore: 75,
-            standardScore: 105,
-          },
-        },
+        taskSlug: 'swr',
+        scores: { rawScore: 50, percentile: 75, standardScore: 105 },
         optional: false,
         reliable: true,
       },
-    },
+    ],
     tasksDictionary: {
       swr: {
         nameSimple: 'Single Word Reading',
       },
     },
-    longitudinalData: {},
     expanded: false,
   };
 
