@@ -17,6 +17,7 @@ export default [
         ...globals.browser,
         process: 'readonly',
         ROAR_DB: 'readonly',
+        ROAR_API_BASE_URL: 'readonly',
       },
     },
     // Upstream carries airbnb-era eslint-disable comments for rules the monorepo config
