@@ -1290,6 +1290,7 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 150,
     };
+    //// PA v4 was skipped in production; v5 uses this range
   } else if (taskId.includes('pa')) {
     if (scoringVersion >= 4) {
       return {
