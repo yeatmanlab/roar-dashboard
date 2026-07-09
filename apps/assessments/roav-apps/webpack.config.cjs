@@ -2,6 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 const { merge } = require('webpack-merge');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
 const dotenv = require('dotenv');
 dotenv.config();
@@ -80,18 +81,6 @@ const commonConfig = {
         ],
       },
       {
-        test: /\.onnx$/,
-        use: [
-          {
-            loader: "file-loader",
-            options: {
-              name: "[name].[ext]",
-              outputPath: "et",
-            },
-          },
-        ],
-      },
-      {
         test: /\.csv$/,
         use: [
           {
@@ -135,6 +124,22 @@ const webConfig = merge(commonConfig, {
       errorHandler: (err) => {
         console.warn(err);
       },
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          // onnxruntime-web is hoisted to the monorepo root node_modules, so resolve its
+          // dist dir rather than assuming a local install. (Its package.json isn't exposed
+          // via `exports`, so resolve the main entry and take its directory.)
+          from: path.join(path.dirname(require.resolve('onnxruntime-web')), '*.wasm'),
+          to: '[name][ext]',
+        },
+        {
+          // et_worker.js loads the model from the absolute path `/et/eyetracking_google.onnx`.
+          from: 'src/tasks/et/eyetracking_google.onnx',
+          to: 'et/eyetracking_google.onnx',
+        },
+      ],
     }),
   ],
 });

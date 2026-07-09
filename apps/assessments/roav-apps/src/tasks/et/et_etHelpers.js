@@ -13,7 +13,8 @@ import {
   // collectCoordinates,
 } from "./et_etModelHelpers";
 import { jsPsych } from "../shared/helpers/taskSetup";
-import "./eyetracking_google.onnx";
+// The eyetracking_google.onnx model is emitted by the build's copy step and fetched at
+// runtime by et_worker.js — not imported here (rollup can't parse a raw .onnx module).
 import {
   fm_def_beforeSendToFm,
   fm_def_fillStateOnResultsFm,

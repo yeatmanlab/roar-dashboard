@@ -12,9 +12,10 @@ import {
   NAME_CONFIG_ET_DEF,
   SUBVAR_DEF,
 } from "./cr_loadCorpus";
+import { createFirekitShim } from "../../shared/helpers/firekitShim";
 // import { makePid } from "../../shared/trials/userDataHelpers";
 
-export const cr_initConfig = async (firekit, gameParams, userParams) => {
+export const cr_initConfig = async (gameParams, userParams) => {
   const cleanParams = _omitBy(
     _omitBy({ ...gameParams, ...userParams }, _isNull),
     _isUndefined,
@@ -76,7 +77,7 @@ export const cr_initConfig = async (firekit, gameParams, userParams) => {
     pid: assessmentPid, // `eval${makePid(6)}$`, // TODO: should be assessmentPid, // || "cr-eval", "cr-playground" - this is the way to skip PID with "pilot"      // TODO: temporary!!! REMOVE
     userMetadata: userMetadataCombined,
     startTime: new Date(),
-    firekit,
+    firekit: createFirekitShim({ taskId: taskName }),
     taskName: taskName,
     corpusName: corpusName || NAME_CORPUS_DEF,
     modeGame: modeGame || "all",

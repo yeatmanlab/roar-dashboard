@@ -2,7 +2,9 @@
  * @fileoverview Web Worker for ONNX model inference.
  * @module onnxWorker
  */
-import "./eyetracking_google.onnx";
+// The model is emitted to `dist/et/eyetracking_google.onnx` by the build's copy step
+// (rollup-plugin-copy / CopyWebpackPlugin) and fetched at runtime from the absolute path
+// below — not imported here, so both bundlers can process this worker identically.
 import { Tensor, InferenceSession, env } from "onnxruntime-web";
 
 /** @type {InferenceSession} The ONNX inference session */
