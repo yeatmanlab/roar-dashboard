@@ -1396,30 +1396,6 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 100,
     };
-  } else if (taskId.includes('roar-inference')) {
-    // TODO: Delete one of the if statements
-    if (scoringVersion >= 1) {
-      return {
-        min: 300,
-        max: 793,
-      };
-    }
-    return {
-      min: 300,
-      max: 793,
-    };
-  } else if (taskId.includes('trog')) {
-    if (scoringVersion >= 1) {
-      return {
-        min: 53,
-        max: 800,
-      };
-    }
-    // TODO: Delete after developing normed task cards
-    return {
-      min: 53,
-      max: 800,
-    };
   }
   return null;
 };
