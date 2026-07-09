@@ -56,6 +56,11 @@
       "types": "./dist/roav-apps/index.d.ts",
       "import": "./dist/roav-apps/index.js",
       "default": "./dist/roav-apps/index.js"
+    },
+    "./roav-ran": {
+      "types": "./dist/roav-ran/index.d.ts",
+      "import": "./dist/roav-ran/index.js",
+      "default": "./dist/roav-ran/index.js"
     }
   },
   "main": "./dist/index.js",

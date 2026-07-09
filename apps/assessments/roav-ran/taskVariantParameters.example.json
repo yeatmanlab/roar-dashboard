@@ -1,0 +1,69 @@
+[
+  {
+    "variantName": "ran-audio-recording",
+    "params": {
+      "bEyeTracking": true,
+      "buttonLayout": "default",
+      "calibrationType": "short",
+      "consent": false,
+      "deviceConfigFile": "devices_howard",
+      "keyHelpers": true,
+      "numOfPracticeTrials": 2,
+      "numberOfTrials": 10,
+      "practiceCorpus": "math-item-bank-practice-pz",
+      "sequentialPractice": true,
+      "sequentialStimulus": true,
+      "skipInstructions": true,
+      "stimulusBlocks": 3,
+      "stimulusCorpus": "math-item-bank-pz",
+      "storeAudio": true,
+      "storeVideo": false,
+      "story": true,
+      "storyCorpus": null,
+      "storyOption": null,
+      "taskName": "ran",
+      "testConfigFile": "tests",
+      "viewType": "simple"
+    }
+  },
+  {
+    "variantName": "ran-audio-feedback",
+    "params": {
+      "audioFeedback": "neutral",
+      "bEyeTracking": true,
+      "buttonLayout": "default",
+      "calibrationType": "short",
+      "deviceConfigFile": "devices_howard",
+      "keyHelpers": true,
+      "numOfPracticeTrials": 2,
+      "numberOfTrials": 10,
+      "practiceCorpus": "math-item-bank-practice-pz",
+      "sequentialPractice": true,
+      "sequentialStimulus": true,
+      "skipInstructions": true,
+      "stimulusBlocks": 3,
+      "stimulusCorpus": "math-item-bank-pz",
+      "storeVideo": false,
+      "story": true,
+      "storyCorpus": "",
+      "taskName": "ran",
+      "testConfigFile": "tests",
+      "viewType": "simple"
+    }
+  },
+  {
+    "variantName": "symbol-search-default",
+    "params": {
+      "audioFeedback": "neutral",
+      "buttonLayout": "default",
+      "keyHelpers": true,
+      "numOfPracticeTrials": 2,
+      "numberOfTrials": 10,
+      "sequentialPractice": true,
+      "sequentialStimulus": true,
+      "skipInstructions": true,
+      "stimulusBlocks": 3,
+      "taskName": "symbolSearch"
+    }
+  }
+]
