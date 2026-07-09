@@ -1,18 +1,15 @@
-import jsPsychCallFunction from "@jspsych/plugin-call-function";
-import { t_feedbackAudioVisual } from "../../shared/trials/feedbackAudioVisual";
-import { sessionGet, sessionSet } from "../../shared/helpers/sessionHelpers";
-import { CR_SESSION_KEYS as SK } from "../helpers/cr_sessionKeys";
-import { TAG_REQ_DEF } from "../../shared/helpers/namingHelpers";
+import jsPsychCallFunction from '@jspsych/plugin-call-function';
+import { t_feedbackAudioVisual } from '../../shared/trials/feedbackAudioVisual';
+import { sessionGet, sessionSet } from '../../shared/helpers/sessionHelpers';
+import { CR_SESSION_KEYS as SK } from '../helpers/cr_sessionKeys';
+import { TAG_REQ_DEF } from '../../shared/helpers/namingHelpers';
 // import {
 //   createArrIndsRepeat,
 //   shuffleArr,
 // } from "../../shared/helpers/orderHelpers";
-import { wrapAsJsPsychTrial } from "../../shared/helpers/jspsychHelpers";
-import { t_cr, TypeSame, TypeSide, TypeTask } from "./cr_trial";
-import {
-  createArrIndsRepeat,
-  shuffleArr,
-} from "../../shared/helpers/orderHelpers";
+import { wrapAsJsPsychTrial } from '../../shared/helpers/jspsychHelpers';
+import { t_cr, TypeSame, TypeSide, TypeTask } from './cr_trial';
+import { createArrIndsRepeat, shuffleArr } from '../../shared/helpers/orderHelpers';
 
 const paramsSetParamsBlockCrDef = {
   metaparams: {},
@@ -77,9 +74,7 @@ const calcArrSide = (numTrial) => {
   const numRepeat = Math.floor(numTrial / 2);
   let arrInd = createArrIndsRepeat(numRepeat, 1);
   arrInd = shuffleArr(arrInd);
-  const arrSide = arrInd.map((ind) =>
-    ind === 0 ? TypeSide.LEFT : TypeSide.RIGHT,
-  );
+  const arrSide = arrInd.map((ind) => (ind === 0 ? TypeSide.LEFT : TypeSide.RIGHT));
   return arrSide;
 };
 
@@ -89,9 +84,7 @@ const calcArrSame = (numTrial) => {
   const numRepeat = Math.floor(numTrial / 2);
   let arrInd = createArrIndsRepeat(numRepeat, 1);
   arrInd = shuffleArr(arrInd);
-  const arrSame = arrInd.map((ind) =>
-    ind === 0 ? TypeSame.SAME : TypeSame.DIFF,
-  );
+  const arrSame = arrInd.map((ind) => (ind === 0 ? TypeSame.SAME : TypeSame.DIFF));
   return arrSame;
 };
 
@@ -160,9 +153,7 @@ export const t_createBlockCr = (paramsIn) => {
         const arrIndSide = calcArrIndSide(params.numTrial, params.numStim);
         if (arrIndSide.length !== params.numTrial) {
           // eslint-disable-next-line no-console
-          console.log(
-            `numTrial = ${params.numTrial} arrIndSide = ${arrIndSide.length}`,
-          );
+          console.log(`numTrial = ${params.numTrial} arrIndSide = ${arrIndSide.length}`);
         } else {
           for (let iTrial = 0; iTrial < params.numTrial; iTrial += 1) {
             arrMetaparams.push({
@@ -176,9 +167,7 @@ export const t_createBlockCr = (paramsIn) => {
         const arrSide = calcArrSide(params.numTrial);
         if (arrSide.length !== params.numTrial) {
           // eslint-disable-next-line no-console
-          console.log(
-            `numTrial = ${params.numTrial} arrSide = ${arrSide.length}`,
-          );
+          console.log(`numTrial = ${params.numTrial} arrSide = ${arrSide.length}`);
         } else {
           for (let iTrial = 0; iTrial < params.numTrial; iTrial += 1) {
             arrMetaparams.push({
@@ -192,9 +181,7 @@ export const t_createBlockCr = (paramsIn) => {
         const arrIndPair = calcArrIndPair(params.numTrial, params.numStim);
         if (arrIndPair.length !== params.numTrial) {
           // eslint-disable-next-line no-console
-          console.log(
-            `numTrial = ${params.numTrial} arrIndPairs = ${arrIndPair.length}`,
-          );
+          console.log(`numTrial = ${params.numTrial} arrIndPairs = ${arrIndPair.length}`);
         } else {
           for (let iTrial = 0; iTrial < params.numTrial; iTrial += 1) {
             const indTargL = arrIndPair[iTrial][0];
@@ -211,9 +198,7 @@ export const t_createBlockCr = (paramsIn) => {
         const arrSame = calcArrSame(params.numTrial);
         if (arrSame.length !== params.numTrial) {
           // eslint-disable-next-line no-console
-          console.log(
-            `numTrial = ${params.numTrial} arrSame = ${arrSame.length}`,
-          );
+          console.log(`numTrial = ${params.numTrial} arrSame = ${arrSame.length}`);
         } else {
           for (let iTrial = 0; iTrial < params.numTrial; iTrial += 1) {
             arrMetaparams.push({
@@ -257,9 +242,7 @@ export const t_createBlockCr = (paramsIn) => {
       ),
     );
     if (params.playFeedbackAv) {
-      arrTrials.push(
-        t_feedbackAudioVisual(params.paramsFeedbackAv, params.tagReqFeedbackAv),
-      );
+      arrTrials.push(t_feedbackAudioVisual(params.paramsFeedbackAv, params.tagReqFeedbackAv));
     }
   }
 
