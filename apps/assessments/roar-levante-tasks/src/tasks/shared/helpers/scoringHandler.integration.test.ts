@@ -1,4 +1,4 @@
-import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, test, expect, beforeEach, afterEach, type MockInstance } from 'vitest';
 import { ScoringHandler } from './scoringHandler.js';
 import { toLevanteScoreEntries, LEVANTE_SCORE_NAMES } from '@roar-platform/assessment-schema/roar-levante-tasks';
 import fs from 'fs';
@@ -26,7 +26,10 @@ const getCsvContent = (input: string) => {
  * V1 - ageMonths - 84-180 (csv contains 84-88, 180)
  */
 describe('ScoringHandler Integration Tests', () => {
-  let papaParseSpy: ReturnType<typeof vi.spyOn>;
+  // papaparse.parse is heavily overloaded (one overload returns a Duplex stream), so the
+  // precise spy type rejects the loose `(input, config) => void` mock below. MockInstance<any>
+  // matches the vitest-3 API while keeping the mock implementation flexible.
+  let papaParseSpy: MockInstance<any>;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
   const originalParse = papaparse.parse;
 

@@ -1,0 +1,24 @@
+[
+  {
+    "variantName": "roav-mp-grade-based",
+    "params": {
+      "corpusName": "corpus-def",
+      "dotlife": 200,
+      "modeGame": "all",
+      "modeSeq": "fixed",
+      "recruitment": "school",
+      "taskName": "roav-mp"
+    }
+  },
+  {
+    "variantName": "roav-rvp-mode-all-school",
+    "params": {
+      "corpusName": "corpus-def",
+      "modeGame": "all",
+      "nameConfigBlock": "config-block-def",
+      "nameConfigStim": "config-stim-def",
+      "recruitment": "school",
+      "taskName": "roav-rvp"
+    }
+  }
+]
