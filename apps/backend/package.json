@@ -37,7 +37,8 @@
     "db:seed:roar-multichoice": "tsx seeds/roar-multichoice.seed.ts",
     "db:seed:roar-survey": "tsx seeds/roar-survey.seed.ts",
     "db:seed:roar-levante-tasks": "tsx seeds/roar-levante-tasks.seed.ts",
-    "db:seed:roar-readaloud": "tsx seeds/roar-readaloud.seed.ts"
+    "db:seed:roar-readaloud": "tsx seeds/roar-readaloud.seed.ts",
+    "db:seed:roav-apps": "tsx seeds/roav-apps.seed.ts"
   },
   "dependencies": {
     "@google-cloud/cloud-sql-connector": "^1.4.3",
