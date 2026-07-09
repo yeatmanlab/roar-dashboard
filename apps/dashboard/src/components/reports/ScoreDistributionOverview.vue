@@ -1,9 +1,10 @@
 <template>
-  <div class="flex flex-wrap gap-3 p-5 bg-gray-100 rounded flex-column align-items-around">
+  <div class="flex gap-3 p-5 bg-gray-100 rounded flex-column align-items-around" style="width: 100%">
+    <!-- Foundational Literacy Skills Section -->
     <div class="chart-grid">
       <div class="chart-section-header font-bold">Foundational Literacy Skills</div>
 
-      <div v-for="taskId of taskIds" :key="taskId" class="chart-row">
+      <div v-for="taskId of foundationalTaskIds" :key="taskId" class="chart-row">
         <div class="chart-label text-gray-600">
           <span class="whitespace-nowrap text-lg font-bold">{{
             tasksDictionary?.[taskId]?.technicalName ?? taskId
@@ -13,9 +14,91 @@
           >
         </div>
         <PvChart
+          v-if="!isChartEmpty(supportLevelCountsByTaskId[taskId])"
           type="bar"
           :data="setDistributionChartData(supportLevelCountsByTaskId[taskId])"
           :options="setDistributionChartOptions(supportLevelCountsByTaskId[taskId])"
+          class="h-2rem chart-item"
+        />
+        <PvChart
+          v-else
+          type="bar"
+          :data="getGrayChartData()"
+          :options="getGrayChartOptions()"
+          class="h-2rem chart-item"
+        />
+        <span
+          v-if="descriptionsByTaskId[taskId]"
+          v-tooltip.top="`${descriptionsByTaskId[taskId].header}${descriptionsByTaskId[taskId].description}`"
+          class="pi pi-info-circle info-icon h-full pt-1"
+          data-html2canvas-ignore="true"
+        />
+        <span v-else class="info-icon-placeholder" data-html2canvas-ignore="true" />
+        <div v-if="descriptionsByTaskId[taskId]" class="chart-description text-sm text-gray-500">
+          {{ descriptionsByTaskId[taskId].header }}{{ descriptionsByTaskId[taskId].description }}
+        </div>
+      </div>
+
+      <div v-if="orgType === 'district' && compositeFoundational" class="chart-row">
+        <div class="chart-label text-gray-600">
+          <span class="whitespace-nowrap text-lg font-bold">Foundational Skills Composite</span>
+          <!-- <span class="text-sm font-light uppercase"> (Composite Score)</span> -->
+        </div>
+        <PvChart
+          v-if="!isChartEmpty(compositeFoundational)"
+          type="bar"
+          :data="setDistributionChartData(compositeFoundational)"
+          :options="setDistributionChartOptions(compositeFoundational)"
+          class="h-2rem chart-item"
+        />
+        <PvChart
+          v-else
+          type="bar"
+          :data="getGrayChartData()"
+          :options="getGrayChartOptions()"
+          class="h-2rem chart-item"
+        />
+        <span
+          v-tooltip.top="
+            'The Foundational Skills Composite reflects overall performance on foundational reading skills, including phonological awareness, letter knowledge, word reading, and sentence reading.'
+          "
+          class="pi pi-info-circle info-icon h-full pt-1"
+          data-html2canvas-ignore="true"
+        />
+        <div class="chart-description text-sm text-gray-500">
+          The Foundational Skills Composite reflects overall performance on foundational reading skills, including
+          phonological awareness, letter knowledge, word reading, and sentence reading.
+        </div>
+      </div>
+    </div>
+
+    <hr v-if="comprehensionTaskIds.length > 0" class="divider" />
+
+    <!-- Comprehension Skills Section -->
+    <div v-if="comprehensionTaskIds.length > 0" class="chart-grid">
+      <div class="chart-section-header font-bold">Comprehension Skills</div>
+
+      <div v-for="taskId of comprehensionTaskIds" :key="taskId" class="chart-row">
+        <div class="chart-label text-gray-600">
+          <span class="whitespace-nowrap text-lg font-bold">{{
+            tasksDictionary?.[taskId]?.technicalName ?? taskId
+          }}</span>
+          <span v-if="tasksDictionary?.[taskId]?.publicName" class="text-sm font-light uppercase">
+            ({{ tasksDictionary?.[taskId]?.publicName }})</span
+          >
+        </div>
+        <PvChart
+          v-if="!isChartEmpty(supportLevelCountsByTaskId[taskId])"
+          type="bar"
+          :data="setDistributionChartData(supportLevelCountsByTaskId[taskId])"
+          :options="setDistributionChartOptions(supportLevelCountsByTaskId[taskId])"
+          class="h-2rem chart-item"
+        />
+        <PvChart
+          v-else
+          type="bar"
+          :data="getGrayChartData()"
+          :options="getGrayChartOptions()"
           class="h-2rem chart-item"
         />
         <span
@@ -78,6 +161,27 @@ const props = defineProps({
   },
 });
 
+const foundationalTaskIds = computed(() => {
+  const foundational = ['swr', 'sre', 'pa', 'letter', 'letter-en-ca'];
+  return props.taskIds.filter((id) => foundational.includes(id));
+});
+
+const comprehensionTaskIds = computed(() => {
+  const comprehension = ['morphology', 'cva', 'trog', 'roar-inference', 'vocab'];
+  return props.taskIds.filter((id) => comprehension.includes(id));
+});
+
+const compositeFoundational = computed(() => {
+  if (props.orgType !== 'district') return null;
+  const composite = props.runsByTaskId?.['compositeFoundational'];
+  if (!composite) return null;
+  return {
+    below: composite.below?.total ?? 0,
+    some: composite.some?.total ?? 0,
+    above: composite.above?.total ?? 0,
+  };
+});
+
 const supportLevelCountsByTaskId = computed(() => {
   const result = {};
   for (const taskId of props.taskIds) {
@@ -106,15 +210,53 @@ const supportLevelCountsByTaskId = computed(() => {
   }
   return result;
 });
+
+const isChartEmpty = (chartData) => {
+  return !chartData || (chartData.below === 0 && chartData.some === 0 && chartData.above === 0);
+};
+
+const getGrayChartData = () => {
+  return {
+    labels: [''],
+    datasets: [
+      {
+        label: 'No Data',
+        data: [1],
+        backgroundColor: '#dadee6',
+        borderRadius: 6,
+        borderSkipped: false,
+      },
+    ],
+  };
+};
+
+const getGrayChartOptions = () => {
+  const baseOptions = setDistributionChartOptions({ below: 1, some: 0, above: 0 });
+  return {
+    ...baseOptions,
+    plugins: {
+      ...baseOptions.plugins,
+      legend: { display: false },
+      tooltip: {
+        enabled: true,
+        callbacks: {
+          label: () => 'No data yet',
+        },
+      },
+    },
+  };
+};
 </script>
 
 <style scoped>
 .chart-grid {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 25rem 1fr auto;
   row-gap: 0.5rem;
   column-gap: 0.75rem;
   align-items: center;
+  min-width: 100%;
+  width: 100%;
 }
 
 .chart-row {
@@ -122,6 +264,7 @@ const supportLevelCountsByTaskId = computed(() => {
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
   align-items: center;
+  height: 2rem;
 }
 
 .chart-section-header {
@@ -139,6 +282,20 @@ const supportLevelCountsByTaskId = computed(() => {
 
 .chart-item {
   min-width: 0;
+  height: 2rem !important;
+  max-height: 2rem !important;
+  border-radius: 0.25rem;
+}
+
+.chart-item-large {
+  height: 3rem !important;
+}
+
+.divider {
+  grid-column: 1 / -1;
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 1px solid #d1d5db;
 }
 
 .chart-description {

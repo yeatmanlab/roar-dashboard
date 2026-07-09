@@ -57,7 +57,7 @@
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
     />
-    <SubscoreTable
+    <!-- <SubscoreTable
       v-if="
         taskId === 'letter' &&
         !isLoadingTasksDictionary &&
@@ -72,8 +72,8 @@
       :administration-name="administrationInfo.name ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
-    />
-    <SubscoreTable
+    /> -->
+    <!-- <SubscoreTable
       v-if="taskId === 'letter-en-ca' && !isLoadingTasksDictionary"
       task-id="letter-en-ca"
       :task-name="tasksDictionary['letter-en-ca']?.publicName"
@@ -83,7 +83,7 @@
       :administration-name="administrationInfo.name ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
-    />
+    /> -->
     <SubscoreTable
       v-if="taskId === 'pa' && !isLoadingTasksDictionary"
       task-id="pa"

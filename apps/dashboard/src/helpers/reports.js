@@ -1396,7 +1396,7 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 100,
     };
-  } 
+  }
   return null;
 };
 
