@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: RAN.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: RAN.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @fileoverview module to support RANView.js
+ * @module RAN
+ */
+
+/**
+ * Number of rows in the grid.
+ * @type {number}
+ */
+export var numRows = 4;
+
+/**
+ * Number of columns in the grid.
+ * @type {number}
+ */
+export var numCols = 9;
+
+/**
+ * Default width of the screen in centimeters.
+ * @type {number}
+ */
+export var gridWidthCM = 24.75;
+
+/**
+ * Default height of the screen in centimeters.
+ * @type {number}
+ */
+export var gridHeightCM = 13;
+
+/**
+ * Generates grid coordinates based on device configuration.
+ * @param {Object} deviceConfig - Device configuration object.
+ * @returns {Array&lt;Object>} Array of cell coordinates and dimensions.
+ */
+export function generateGridCoordinates(deviceConfig) {
+  let cellWidthPX, cellHeightPX, gridWidthPX, gridHeightPX;
+  console.log(
+    deviceConfig.screenWidth,
+    deviceConfig.screenHeight,
+    deviceConfig.screenWidthPX,
+    deviceConfig.screenHeightPX,
+  );
+  if (deviceConfig.screenWidth > 0 &amp;&amp; deviceConfig.screenHeight > 0) {
+    // Convert centimeters to pixels
+    const cellWidthCM = gridWidthCM / numCols;
+    const cellHeightCM = gridHeightCM / numRows;
+    cellWidthPX =
+      cellWidthCM * (deviceConfig.screenWidthPX / deviceConfig.screenWidth);
+    cellHeightPX =
+      cellHeightCM * (deviceConfig.screenHeightPX / deviceConfig.screenHeight);
+  } else {
+    // Fallback to using 80% of screen width and calculate height to maintain aspect ratio
+    const totalGridWidthPX = deviceConfig.screenWidthPX * 0.8; // 80% of screen width
+    const totalGridHeightPX = deviceConfig.screenHeightPX * 0.8;
+    cellWidthPX = totalGridWidthPX / numCols;
+    cellHeightPX = totalGridHeightPX / numRows;
+  }
+
+  // Calculate the total width and height of the grid in pixels
+  gridWidthPX = cellWidthPX * numCols;
+  gridHeightPX = cellHeightPX * numRows;
+
+  // Calculate the starting point (top-left corner) of the grid to center it on the screen
+  const startX = (deviceConfig.screenWidthPX - gridWidthPX) / 2;
+  const startY = (deviceConfig.screenHeightPX - gridHeightPX) / 2;
+
+  // Generate and store the coordinates of the center of each cell
+  const cellCoordinates = [];
+  for (let row = 0; row &lt; numRows; row++) {
+    for (let col = 0; col &lt; numCols; col++) {
+      const centerX = startX + col * cellWidthPX + cellWidthPX / 2;
+      const centerY = startY + row * cellHeightPX + cellHeightPX / 2;
+
+      cellCoordinates.push({
+        x: centerX,
+        y: centerY,
+        width: cellWidthPX,
+        height: cellHeightPX,
+      });
+    }
+  }
+  return cellCoordinates;
+}
+
+/**
+ * Generates a shuffled order of stimuli for the test.
+ * @param {Object} testConfig - Test configuration object.
+ * @returns {Array&lt;string>} Shuffled array of stimulus names.
+ */
+export function generateStimulusOrder(testConfig) {
+  const totalGrid = numRows * numCols;
+  const images = testConfig.stimulus.slice(); // Create a copy of the array to avoid modifying the original
+
+  // Calculate the number of sets needed
+  const numSets = Math.ceil(totalGrid / images.length);
+
+  // Create an array to hold the shuffled images
+  const shuffledImages = [];
+
+  // Append shuffled copies of images to create sets
+  for (let i = 0; i &lt; numSets; i++) {
+    // Shuffle the images array
+    const shuffled = images.sort(() => Math.random() - 0.5);
+    shuffledImages.push(...shuffled);
+  }
+
+  // Replace duplicate adjacent elements
+  for (let i = 1; i &lt; shuffledImages.length; i++) {
+    if (shuffledImages[i] === shuffledImages[i - 1]) {
+      // Replace with the letter before it
+      const hold = shuffledImages[i];
+      shuffledImages[i] = shuffledImages[i + 1];
+      shuffledImages[i + 1] = hold;
+    }
+  }
+
+  return shuffledImages.slice(0, totalGrid);
+}
+
+/**
+ * Populates the grid with stimuli images.
+ * @param {Array&lt;Object>} coordinates - Array of cell coordinates.
+ * @param {Array&lt;string>} shuffledImages - Array of shuffled stimulus names.
+ * @param {Object} testConfig - Test configuration object.
+ */
+export function populateGrid(coordinates, shuffledImages, testConfig) {
+  const gridContainer = document.getElementById("grid-container"); // replace 'grid-container' with the actual ID of your container
+  const totalGrid = numRows * numCols;
+  for (let i = 0; i &lt; totalGrid; i++) {
+    if (type === "Practice") {
+      if (i &lt; numCols || i >= numCols * 2) {
+        continue; // This skips the iteration when i is less than numCols or greater than numCols * 2
+      }
+    }
+
+    const cell = document.createElement("div");
+    const { x, y, width, height } = coordinates[i];
+    cell.style.width = `${width}px`;
+    cell.style.height = `${height}px`;
+    cell.style.left = `${x}px`; // Adjust for half of the cell width
+    cell.style.top = `${y}px`; // Adjust for half of the cell height
+    cell.style.position = "absolute"; // Ensure the position is set to absolute
+    cell.style.transform = "translate(-50%, -50%)"; // Center the content within the element
+    cell.style.display = "flex"; // Set display to flex to use flexbox properties
+    cell.style.justifyContent = "center"; // Center horizontally
+    cell.style.alignItems = "center"; // Center vertically
+
+    const randomStimulus = shuffledImages[i];
+    const stim = document.createElement("img");
+    stim.src = `${testConfig["dir"]}/${randomStimulus}`;
+    stim.style.width = "50%"; // Make the image fill the cell
+    stim.style.height = "auto"; // Maintain aspect ratio
+    // stim.style.height = '75%';
+
+    cell.appendChild(stim);
+    gridContainer.appendChild(cell);
+    const stimPosition = stim.getBoundingClientRect();
+    stimPosition.x = stimPosition.x + stimPosition.width / 2;
+    stimPosition.y = stimPosition.y + stimPosition.height / 2;
+    const gridCoordinatesObject = {
+      x: parseFloat(cell.style.left),
+      y: parseFloat(cell.style.top),
+      width: parseFloat(cell.style.width),
+      height: parseFloat(cell.style.height),
+      stim_x: stimPosition.x,
+      stim_y: stimPosition.y,
+      stim_width: stimPosition.width,
+      stim_height: stimPosition.height,
+    };
+
+    _gridCoordinates.push(gridCoordinatesObject);
+    _shuffledImages.push(randomStimulus.slice(0, -4));
+  }
+}
+
+/**
+ * Requests access to audio-only media stream.
+ * @returns {Promise&lt;MediaStream>} Promise resolving to the audio stream.
+ */
+export async function giveAccess_audioonly() {
+  try {
+    // Set media constraints based on whether audio only or audio + video is requested
+    const mediaConstraints = { audio: true }; // Only request audio
+
+    console.log("mediaConstraints", mediaConstraints);
+    // Request the user's media based on the constraints
+    const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+    // Assign the camera stream to a global variable
+    camera_stream = stream;
+
+    // Check if the stream is active
+    if (camera_stream &amp;&amp; camera_stream.active) {
+      // Additional setup such as disabling buttons or initializing recorders
+      // document.getElementById("giveAccessButton").disabled = true;
+      videoChunks = [];
+      videoRecorder = new MediaRecorder(camera_stream);
+      videoRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          videoChunks.push(event.data);
+        }
+      };
+
+      // videoRecorder and other setups can be initialized here
+      return Promise.resolve(camera_stream); // Resolve the promise with the stream
+    } else {
+      // If stream is not active, throw an error
+      throw new Error("Camera stream is not active");
+    }
+  } catch (error) {
+    console.error("Error accessing media devices:", error);
+    return Promise.reject(error); // Reject the promise if there is an error
+  }
+}
+
+/**
+ * Starts the test, including eye tracking if enabled.
+ * @param {boolean} bEyeTracking - Whether to enable eye tracking.
+ */
+export async function startTest(bEyeTracking) {
+  if (bEyeTracking) {
+    await runInference();
+  }
+
+  openFullscreen();
+  startRecording();
+  populateGrid(gridCoordinates, shuffledImages, testConfig);
+  updateCountdown();
+  // Enable the button after a 3-second delay
+  setTimeout(function () {
+    document.getElementById("finishButton").disabled = false;
+  }, 5000);
+}
+
+
+/**
+ * Saves recorded audio and video data.
+ * @param {string} filename - Name of the file to save.
+ * @param {string} parentDir - Parent directory for the file.
+ * @param {Object} deviceConfig - Device configuration object.
+ * @param {string} [mimeType="video/webm"] - MIME type of the recording.
+ */
+export async function saveRecordings(
+  filename,
+  parentDir,
+  deviceConfig,
+  mimeType = "video/webm",
+) {
+
+  await new Promise((resolve) => {
+    videoRecorder.onstop = resolve;
+    videoRecorder.stop();
+  });
+
+  if (deviceConfig.storeAudio &amp;&amp; deviceConfig.storeVideo) {
+    mimeType = "video/webm"; // Record video and audio
+  } else if (deviceConfig.storeAudio) {
+    mimeType = "audio/webm"; // Record only audio
+  }
+  const videoBlob = new Blob(videoChunks, { type: mimeType });
+
+
+  // Check if video recording is successful
+  if (videoBlob.size > 0) {
+    console.log("Video recorded successfully. Size:", videoBlob.size, "bytes");
+  } else {
+    console.error("No video data recorded.");
+    return;
+  }
+  try {
+    if (deviceConfig.storeAudio &amp;&amp; deviceConfig.storeVideo) {
+      mimeType = "video/webm"; // Record video and audio
+    } else if (deviceConfig.storeAudio) {
+      mimeType = "audio/webm"; // Record only audio
+    }
+    console.log("mimeType", mimeType);
+    const videoUploadUrl = await getUploadUrl(filename, mimeType, parentDir);
+    // Now that you have the upload URL, you can proceed with uploading the video
+    await uploadFile(videoBlob, videoUploadUrl);
+  } catch (error) {
+    console.error("Error getting video upload URL:", error);
+  }
+}
+
+/**
+ * Gets the upload URL for a file.
+ * @param {string} fileName - Name of the file to upload.
+ * @param {string} mimeType - MIME type of the file.
+ * @param {string} parentDir - Parent directory for the file.
+ * @returns {Promise&lt;string>} The upload URL.
+ */
+export async function getUploadUrl(fileName, mimeType, parentDir) {
+  try {
+    const response = await fetch(
+      `https://us-central1-webapp-af756.cloudfunctions.net/getUploadUrlFunction?fileName=${fileName}&amp;mimeType=${mimeType}&amp;parentDir=${parentDir}`,
+    );
+    // const response = await fetch(`http://127.0.0.1:5001/webapp-af756/us-central1/getUploadUrlFunction?fileName=${fileName}&amp;mimeType=${mimeType}&amp;parentDir=${parentDir}`);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch upload URL");
+    }
+
+    const result = await response.json();
+    return result.result; // Assuming your Cloud Function response structure has a 'result' field
+  } catch (error) {
+    console.error("Error fetching upload URL:", error);
+    throw error;
+  }
+}
+
+/**
+ * Uploads a file to the specified URL.
+ * @param {Blob} file - The file to upload.
+ * @param {string} uploadUrl - The URL to upload to.
+ */
+export async function uploadFile(file, uploadUrl) {
+  try {
+    const response = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": file.type,
+        "Content-Length": file.size,
+      },
+      body: file,
+    });
+
+    if (!response.ok) {
+      throw new Error("Upload failed: " + response.statusText);
+    }
+
+    console.log("Upload complete:", await response.text());
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
+
+/**
+ * Countdown value for the test start.
+ * @type {number}
+ */
+export var countdown = 4;
+
+/**
+ * Updates the countdown and executes a callback when it reaches zero.
+ * @param {Function} [callbackFunction] - Function to call when countdown reaches zero.
+ */
+export function updateCountdown(callbackFunction) {
+  countdown--;
+
+  if (countdown == 0) {
+    document.getElementById("instruction").style.display = "none";
+    document.getElementById("grid-container").style.visibility = "visible";
+    countdown = 4;
+    trialRunnning = true;
+  } else {
+    document.getElementById("instruction").innerHTML =
+      "&lt;h1>" + countdown + "&lt;/h1>";
+    setTimeout(function () {
+      updateCountdown(callbackFunction);
+    }, 1000);
+  }
+}
+
+
+export function openFullscreen() {
+  if (desktop.requestFullscreen) {
+    desktop.requestFullscreen();
+  } else if (desktop.webkitRequestFullscreen) {
+    /* Safari */
+    desktop.webkitRequestFullscreen();
+  } else if (desktop.msRequestFullscreen) {
+    /* IE11 */
+    desktop.msRequestFullscreen();
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Calibration.html">Calibration</a></li><li><a href="module-RAN.html">RAN</a></li><li><a href="module-configureDevice.html">configureDevice</a></li><li><a href="module-consentView.html">consentView</a></li><li><a href="module-deviceInformation.html">deviceInformation</a></li><li><a href="module-headeyetracking.html">headeyetracking</a></li><li><a href="module-menuView.html">menuView</a></li><li><a href="module-preloadView.html">preloadView</a></li><li><a href="module-storyView.html">storyView</a></li><li><a href="module-videoCapture.html">videoCapture</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_pageCompleted">_pageCompleted</a></li><li><a href="global.html#countdown">countdown</a></li><li><a href="global.html#myWorker">myWorker</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Mon Mar 03 2025 22:29:12 GMT-0800 (Pacific Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

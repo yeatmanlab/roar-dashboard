@@ -1,0 +1,388 @@
+{
+  "en": {
+    "loading": "Loading...",
+    "positiveFeedbackSrc": "https://storage.googleapis.com/roar-swr/shared/coin.mp3",
+    "negativeFeedbackSrc": "https://storage.googleapis.com/roar-swr/shared/fail.mp3",
+    "enterFullScreenView": {
+      "prompt": "Switching to full screen mode.",
+      "buttonText": "Go"
+    },
+    "progressBar": "Time",
+    "infoSlideView": {
+      "welcome": {
+        "desktop" : {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolWelcomeHeader.mp3",
+            "text": "Welcome! In this activity you will match the symbol."
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/desktop/audio/symbolWelcomeFooter.mp3",
+            "text": "Let's get started! Click the yellow button to continue."
+          },
+          "showButton": true,
+          "skippable": true
+        },
+        "mobile": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolWelcomeHeader.mp3",
+            "text": "Welcome! In this activity you will match the symbol."
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/mobile/audio/symbolWelcomeFooter.mp3",
+            "text": "Let's get started! Press the yellow button to continue."
+          },
+          "showButton": true,
+          "skippable": true         
+        }
+      },
+      "practiceIntro": {
+        "desktop": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolPracticeIntroHeader.mp3",
+            "text": "Let's try it out!"
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/desktop/audio/symbolPracticeIntroFooter.mp3",
+            "text": "Click the yellow button to practice."
+          },
+          "showButton": true,
+          "skippable": true
+        },
+        "mobile": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolPracticeIntroHeader.mp3",
+            "text": "Let's try it out!"
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/mobile/audio/symbolPracticeIntroFooter.mp3",
+            "text": "Press the yellow button to practice."
+          },
+          "showButton": true,
+         "skippable": true
+
+        }
+      }
+    },
+    "instructionSlideView": {
+      "desktop": {
+        "header": {
+          "audioSrc1": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolInstructionHeader1.mp3",
+          "audioSrc2": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolInstructionHeader2.mp3",
+          "text1": "You will see a symbol.",
+          "text2": "Your task is to find the <b>matching</b> symbol as fast as you can."
+        },
+        "footer": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/desktop/audio/symbolInstructionFooter.mp3",
+          "text": "Click the matching symbol to continue."
+        }
+      },
+      "mobile": {
+        "header": {
+          "audioSrc1": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolInstructionHeader1.mp3",
+          "audioSrc2": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolInstructionHeader2.mp3",
+          "text1": "You will see a symbol.",
+          "text2": "Your task is to find the <b>matching</b> symbol as fast as you can."
+        },
+        "footer": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/mobile/audio/symbolInstructionFooter.mp3",
+          "text": "Press the matching symbol to continue."
+        }
+      }
+    },
+    "symbolPracticeView": {
+      "correct": {
+        "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolPracticeCorrect.mp3",
+        "text": "That's right!"
+      },
+      "incorrect1": {
+        "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolPracticeIncorrect_1.mp3",
+        "text": "Remember, you have to select the <b>exact same symbol</b> to move on."
+      },
+      "incorrect2": {
+        "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolPracticeIncorrect_2.mp3",
+        "text": "Try Again! That symbol doesn't match."
+      },
+      "incorrect3": {
+        "desktop": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/desktop/audio/symbolPracticeIncorrect_3.mp3",
+          "text": "That's not quite right. Click the matching symbol."
+        },
+        "mobile": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/mobile/audio/symbolPracticeIncorrect_3.mp3",
+          "text": "That's not quite right. Press the matching symbol."
+        }
+      }
+    },
+    "infoSlideLongView": {
+      "preTasks": [
+        {
+          "desktop": {
+            "header": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolPreTask0Header.mp3",
+              "text1": "Great job! You're ready to match symbols.",
+              "text2": "Remember, you need to find the matching symbol to keep going. You have <u><b>2 minutes</b></u>, so try to go as fast as you can!"
+            },
+            "footer": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/en/desktop/audio/symbolPreTask0Footer.mp3",
+              "text": "Click the yellow button to start."
+            }
+          },
+          "mobile": {
+            "header": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolPreTask0Header.mp3",
+              "text1": "Great job! You're ready to match symbols.",
+              "text2": "Remember, you need to find the matching symbol to keep going. You have <u><b>2 minutes</b></u>, so try to go as fast as you can!"
+            },
+            "footer": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/en/mobile/audio/symbolPreTask0Footer.mp3",
+              "text": "Press the yellow button to start."
+            }
+          },
+          "skippable": false
+        },
+        {
+          "desktop": {
+            "header": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolPreTask1Header.mp3",
+              "text1": "You're doing great!",
+              "text2": "Try to go faster now, match as many symbols as you can!"
+            },
+            "footer": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/en/desktop/audio/symbolPreTask1Footer.mp3",
+              "text": "Click the yellow button to continue."
+            }
+          },
+          "mobile": {
+            "header": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolPreTask1Header.mp3",
+              "text1": "You're doing great!",
+              "text2": "Try to go faster now, match as many symbols as you can!"
+            },
+            "footer": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/en/mobile/audio/symbolPreTask1Footer.mp3",
+              "text": "Press the yellow button to continue."
+            }
+          },
+          "skippable": false
+        }
+      ],
+      "assessmentEnd": {
+        "desktop": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolEndHeader.mp3",
+            "text1": "Great work! You matched so many symbols!"
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/desktop/audio/symbolEndFooter.mp3",
+            "text": "Click the yellow button to exit."
+          },
+          "skippable": true
+        },
+        "mobile": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolEndHeader.mp3",
+            "text1": "Great work! You matched so many symbols!"
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/mobile/audio/symbolEndFooter.mp3",
+            "text": "Press the yellow button to exit."
+          },
+          "skippable": true
+        }
+      }
+    }
+  },
+  "pt": {
+    "loading": "Carregando...",
+    "positiveFeedbackSrc": "https://storage.googleapis.com/roar-swr/shared/coin.mp3",
+    "negativeFeedbackSrc": "https://storage.googleapis.com/roar-swr/shared/fail.mp3",
+    "enterFullScreenView": {
+      "prompt": "Alterando para o modo de tela cheia.",
+      "buttonText": "Ir"
+    },
+    "progressBar": "Tempo",
+    "infoSlideView": {
+      "welcome": {
+        "desktop" : {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolWelcomeHeader.mp3",
+            "text": "Bem-vindo! Nesta atividade, você irá encontrar símbolos iguais."
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/pt/desktop/audio/symbolWelcomeFooter.mp3",
+            "text": "Vamos começar! Clique no botão amarelo para continuar."
+          },
+          "showButton": true,
+          "skippable": true
+        },
+        "mobile": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolWelcomeHeader.mp3",
+            "text": "Bem-vindo! Nesta atividade, você irá encontrar símbolos iguais."
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/pt/mobile/audio/symbolWelcomeFooter.mp3",
+            "text": "Vamos começar! Pressione o botão amarelo para continuar."
+          },
+          "showButton": true,
+          "skippable": true         
+        }
+      },
+      "practiceIntro": {
+        "desktop": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolPracticeIntroHeader.mp3",
+            "text": "Vamos praticar!"
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/pt/desktop/audio/symbolPracticeIntroFooter.mp3",
+            "text": "Clique no botão amarelo para praticar."
+          },
+          "showButton": true,
+          "skippable": true
+        },
+        "mobile": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolPracticeIntroHeader.mp3",
+            "text": "Vamos praticar!"
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/pt/mobile/audio/symbolPracticeIntroFooter.mp3",
+            "text": "Pressione o botão amarelo para praticar."
+          },
+          "showButton": true,
+         "skippable": true
+
+        }
+      }
+    },
+    "instructionSlideView": {
+      "desktop": {
+        "header": {
+          "audioSrc1": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolInstructionHeader1.mp3",
+          "audioSrc2": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolInstructionHeader2.mp3",
+          "text1": "Você verá um símbolo.",
+          "text2": "Sua tarefa é <b>encontrar</b> o símbolo igual o mais rápido possível."
+        },
+        "footer": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/pt/desktop/audio/symbolInstructionFooter.mp3",
+          "text": "Clique no símbolo correto para continuar."
+        }
+      },
+      "mobile": {
+        "header": {
+          "audioSrc1": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolInstructionHeader1.mp3",
+          "audioSrc2": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolInstructionHeader2.mp3",
+          "text1": "Você verá um símbolo.",
+          "text2": "Sua tarefa é <b>encontrar</b> o símbolo igual o mais rápido possível."
+        },
+        "footer": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/pt/mobile/audio/symbolInstructionFooter.mp3",
+          "text": "Pressione o símbolo correto para continuar."
+        }
+      }
+    },
+    "symbolPracticeView": {
+      "correct": {
+        "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolPracticeCorrect.mp3",
+        "text": "Isso mesmo!"
+      },
+      "incorrect1": {
+        "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolPracticeIncorrect_1.mp3",
+        "text": "Lembre-se: você precisa escolher o símbolo igual para continuar."
+      },
+      "incorrect2": {
+        "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolPracticeIncorrect_2.mp3",
+        "text": "Tente novamente! Esse símbolo não está correto."
+      },
+      "incorrect3": {
+        "desktop": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/pt/desktop/audio/symbolPracticeIncorrect_3.mp3",
+          "text": "Essa resposta não está correta. Clique no símbolo correto."
+        },
+        "mobile": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/pt/mobile/audio/symbolPracticeIncorrect_3.mp3",
+          "text": "Essa resposta não está correta. Pressione o símbolo correto."
+        }
+      }
+    },
+    "infoSlideLongView": {
+      "preTasks": [
+        {
+          "desktop": {
+            "header": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolPreTask0Header.mp3",
+              "text1": "Ótimo trabalho! Você está pronto para encontrar os símbolos iguais.",
+              "text2": "Lembre-se: você precisa escolher o símbolo igual para continuar. Você terá <u><b>2 minutos</b></u>, então tente ser o mais rápido que puder!"
+            },
+            "footer": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/pt/desktop/audio/symbolPreTask0Footer.mp3",
+              "text": "Clique no botão amarelo para começar."
+            }
+          },
+          "mobile": {
+            "header": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolPreTask0Header.mp3",
+              "text1": "Ótimo trabalho! Você está pronto para encontrar os símbolos iguais.",
+              "text2": "Lembre-se: você precisa escolher o símbolo igual para continuar. Você terá <u><b>2 minutos</b></u>, então tente ser o mais rápido que puder!"
+            },
+            "footer": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/pt/mobile/audio/symbolPreTask0Footer.mp3",
+              "text": "Pressione o botão amarelo para começar."
+            }
+          },
+          "skippable": false
+        },
+        {
+          "desktop": {
+            "header": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolPreTask1Header.mp3",
+              "text1": "Você está indo muito bem!",
+              "text2": "Tente ir mais rápido agora, encontre o máximo de símbolos que conseguir!"
+            },
+            "footer": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/pt/desktop/audio/symbolPreTask1Footer.mp3",
+              "text": "Clique no botão amarelo para continuar."
+            }
+          },
+          "mobile": {
+            "header": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolPreTask1Header.mp3",
+              "text1": "Você está indo muito bem!",
+              "text2": "Tente ir mais rápido agora, encontre o máximo de símbolos que conseguir!"
+            },
+            "footer": {
+              "audioSrc": "https://storage.googleapis.com/roav-ran/pt/mobile/audio/symbolPreTask1Footer.mp3",
+              "text": "Pressione o botão amarelo para continuar."
+            }
+          },
+          "skippable": false
+        }
+      ],
+      "assessmentEnd": {
+        "desktop": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolEndHeader.mp3",
+            "text1": "Excelente trabalho! Você encontrou muitos símbolos iguais!"
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/pt/desktop/audio/symbolEndFooter.mp3",
+            "text": "Clique no botão amarelo para sair."
+          },
+          "skippable": true
+        },
+        "mobile": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolEndHeader.mp3",
+            "text1": "Excelente trabalho! Você encontrou muitos símbolos iguais!"
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/pt/mobile/audio/symbolEndFooter.mp3",
+            "text": "Pressione o botão amarelo para sair."
+          },
+          "skippable": true
+        }
+      }
+    }
+  }
+}

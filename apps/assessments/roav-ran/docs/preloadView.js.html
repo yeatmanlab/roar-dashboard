@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: preloadView.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: preloadView.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @fileoverview module to support preloadView.js
+ * @module preloadView
+ */
+
+import store from "store2";
+import loadingScreen_page from "./loadingScreen.html";
+import i18next from "i18next";
+
+// Assign store and i18next to window object
+window.store = store;
+window.i18next = i18next;
+
+/**
+ * Displays the preload view and handles asset preloading.
+ * @async
+ * @function preloadView
+ * @param {Config} config - Configuration object for preloading.
+ * @returns {Promise&lt;void>} A promise that resolves when all assets are preloaded.
+ */
+export async function preloadView(config) {
+  const loadingHtml = loadingScreen_page;
+  const page = document.createElement("div");
+
+  page.innerHTML = loadingHtml;
+  document.body.appendChild(page);
+
+  var list = [];
+  if (config.story) {
+    list = [
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/squareAddition_white.png",
+      "./views/eyetracking_google.onnx",
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/${i18next.language}/calibration.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/eyecalibration.gif`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/eyecalibration_short.gif`,
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/parent-help-icon.png",
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/webcamCentered.jpg",
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/webcamPosition.PNG",
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/badlighting.jpg",
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/glassesReflection.jpg",
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/goodPosition.jpg",
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/${i18next.language}/deviceConfig.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/deviceConfig.mp3`,
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/squareAddition.png",
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/${i18next.language}/headCalibration.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/astronaut-girl-default.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/space-ship-control.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/intro.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/astronaut-girl-panicked.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/space-ship-control.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/intro2.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/astronaut-girl-unsure.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/space-ship-control.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/intro3.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/astronaut-girl-confused.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/space-ship-control.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/letterStoryCalibration.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/numberStoryCalibration.mp3`,
+
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/letterCalibration.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/letterPractice.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/letterTest.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/numberCalibration.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/numberPractice.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/numberTest.mp3`,
+
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/letter-practice-reading-order.gif`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/letter-test-reading-order.gif`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/number-practice-reading-order.gif`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/number-test-reading-order.gif`,
+
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/astronaut-girl-smile.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/space-ship-control.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/letterStoryPractice.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/numberStoryPractice.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/astronaut-girl-smile.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/purple-planet.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/letterStoryTest.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/numberStoryTest.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/astronaut-girl-happy.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/orange-planet.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/end.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/astronaut-girl-bye.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/orange-planet.png`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/end2.mp3`,
+
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/squareAddition_white.png",
+      "https://cdn.jsdelivr.net/npm/onnxjs/dist/onnx.min.js",
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css",
+      "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_simd_wasm_bin.wasm",
+      "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_packed_assets.data",
+      "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_simd_wasm_bin.js",
+    ];
+  } else {
+    list = [
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/squareAddition_white.png",
+      "./views/eyetracking_google.onnx",
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/${i18next.language}/calibration.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/eyecalibration.gif`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/eyecalibration_short.gif`,
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/parent-help-icon.png",
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/webcamCentered.jpg",
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/webcamPosition.PNG",
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/badlighting.jpg",
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/glassesReflection.jpg",
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/goodPosition.jpg",
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/${i18next.language}/deviceConfig.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/deviceConfig.mp3`,
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/squareAddition.png",
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/${i18next.language}/headCalibration.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/letterStoryCalibration.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/numberStoryCalibration.mp3`,
+
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/letterCalibration.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/letterPractice.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/letterTest.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/numberCalibration.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/numberPractice.mp3`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Audios/numberTest.mp3`,
+
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/letter-practice-reading-order.gif`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/letter-test-reading-order.gif`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/number-practice-reading-order.gif`,
+      `https://eyetrackingdata.blob.core.windows.net/public/Images/number-test-reading-order.gif`,
+
+      "https://eyetrackingdata.blob.core.windows.net/public/Images/squareAddition_white.png",
+      "https://cdn.jsdelivr.net/npm/onnxjs/dist/onnx.min.js",
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css",
+      "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_simd_wasm_bin.wasm",
+      "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_packed_assets.data",
+      "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_simd_wasm_bin.js",
+    ];
+  }
+  // Preload each asset
+  await preloadAssets(list, page);
+  console.log("All assets preloaded.");
+}
+
+/**
+ * Preloads a list of assets.
+ * @function preloadAssets
+ * @param {string[]} assets - An array of asset URLs to preload.
+ * @param {HTMLElement} page - The page element to remove after preloading.
+ * @returns {Promise&lt;void>} A promise that resolves when all assets are preloaded.
+ */
+function preloadAssets(assets, page) {
+  return new Promise((resolve, reject) => {
+    let loadedCount = 0;
+
+    assets.forEach((assetUrl) => {
+      const assetType = getAssetType(assetUrl);
+      console.log(assetType);
+      switch (assetType) {
+        case "fetch":
+          // For ONNX and other types, use fetch
+          fetch(assetUrl)
+            .then((response) => {
+              if (response.ok) onAssetLoaded();
+              else onAssetError();
+            })
+            .catch(onAssetError);
+          break;
+
+        default:
+          console.error("Unknown asset type:", assetUrl);
+          onAssetError();
+      }
+
+      function onAssetLoaded() {
+        loadedCount++;
+        console.log(assets.length, loadedCount);
+        if (loadedCount == assets.length) {
+          page.remove(); // Remove the page
+          resolve(); // All assets loaded
+        }
+      }
+
+      function onAssetError(err) {
+        console.error("Error loading asset:", assetUrl, err);
+        reject(err); // Reject if any asset fails to load
+      }
+    });
+  });
+}
+
+/**
+ * Determines the type of asset based on its URL.
+ * @function getAssetType
+ * @param {string} url - The URL of the asset.
+ * @returns {string} The type of the asset (currently always returns "fetch").
+ */
+function getAssetType(url) {
+  return "fetch"; // Fallback for fetchable assets
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Calibration.html">Calibration</a></li><li><a href="module-RAN.html">RAN</a></li><li><a href="module-configureDevice.html">configureDevice</a></li><li><a href="module-consentView.html">consentView</a></li><li><a href="module-deviceInformation.html">deviceInformation</a></li><li><a href="module-headeyetracking.html">headeyetracking</a></li><li><a href="module-menuView.html">menuView</a></li><li><a href="module-preloadView.html">preloadView</a></li><li><a href="module-storyView.html">storyView</a></li><li><a href="module-videoCapture.html">videoCapture</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_pageCompleted">_pageCompleted</a></li><li><a href="global.html#countdown">countdown</a></li><li><a href="global.html#myWorker">myWorker</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Mon Mar 03 2025 22:29:12 GMT-0800 (Pacific Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

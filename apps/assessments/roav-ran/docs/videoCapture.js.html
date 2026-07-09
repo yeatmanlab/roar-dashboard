@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: videoCapture.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: videoCapture.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @fileoverview
+ * This module provides utilities for video capture, recording, and uploading.
+ * It includes functions for fullscreen mode, countdown, camera access,
+ * video recording, and file uploading to a cloud storage service.
+ * 
+ * @module videoCapture
+ */
+
+/** @type {number} Original image width */
+export var orig_img_width;
+/** @type {number} Original image height */
+export var orig_img_height;
+
+var desktop = document.documentElement;
+
+/**
+ * Opens the browser in fullscreen mode.
+ * @function
+ */
+export function openFullscreen() {
+  if (desktop.requestFullscreen) {
+    desktop.requestFullscreen();
+  } else if (desktop.webkitRequestFullscreen) {
+    /* Safari */
+    desktop.webkitRequestFullscreen();
+  } else if (desktop.msRequestFullscreen) {
+    /* IE11 */
+    desktop.msRequestFullscreen();
+  }
+}
+
+/** @type {number} Countdown value */
+export var countdown = 4;
+
+/**
+ * Updates the countdown and executes a callback when it reaches zero.
+ * @function
+ * @param {Function} callbackFunction - Function to call when countdown reaches zero.
+ */
+export function updateCountdown(callbackFunction) {
+  countdown--;
+
+  if (countdown === 0) {
+    document.getElementById("instruction").style.display = "none";
+    if (typeof callbackFunction === "function") {
+      callbackFunction();
+      countdown = 4;
+    }
+  } else {
+    document.getElementById("instruction").innerHTML =
+      "&lt;h1>" + countdown + "&lt;/h1>";
+    setTimeout(function () {
+      updateCountdown(callbackFunction);
+    }, 1000);
+  }
+}
+
+/**
+ * Requests access to the user's camera and optionally microphone.
+ * @async
+ * @function
+ * @param {boolean} [audio=false] - Whether to request audio access.
+ * @returns {Promise&lt;void>}
+ */
+export async function giveAccess() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 60, max: 60 },
+      },
+      audio: true,
+    });
+
+    // Assign the camera stream to the inputVideo element
+    if (inputVideo) {
+      inputVideo.srcObject = stream;
+      inputVideo.muted = true; // Mute the video element to prevent audio playback
+      inputVideo.play();
+      inputVideo.addEventListener("loadedmetadata", function () {
+        orig_img_width = inputVideo.videoWidth;
+        orig_img_height = inputVideo.videoHeight;
+        if (headCanvas) {
+          headCanvas.width = orig_img_width;
+          headCanvas.height = orig_img_height;
+        }
+      });
+    }
+
+    // Create video+audio recorder
+    videoRecorder = new MediaRecorder(stream, {
+      mimeType: "video/webm",
+    });
+    videoRecorder.ondataavailable = (event) => {
+      console.log("Video chunk size:", event.data.size);
+      if (event.data.size > 0) {
+        videoChunks.push(event.data);
+      }
+    };
+
+    // If audio is enabled, create a separate audio-only recorder
+    // Create a new MediaStream with only the audio track
+    const audioStream = new MediaStream(stream.getAudioTracks());
+
+    audioRecorder = new MediaRecorder(audioStream, {
+      mimeType: "audio/webm",
+    });
+    audioRecorder.ondataavailable = (event) => {
+      console.log("Audio chunk size:", event.data.size);
+
+      if (event.data.size > 0) {
+        audioChunks.push(event.data);
+      }
+    };
+
+    // Modify the stop handler
+    videoRecorder.onstop = async () => {
+      console.log("Video recording stopped, blob created");
+    };
+
+    audioRecorder.onstop = async () => {
+      console.log("Audio recording stopped, blob created");
+    };
+  } catch (error) {
+    console.error("Error accessing media devices:", error);
+  }
+}
+
+/**
+ * Starts video recording.
+ * @async
+ * @function
+ * @returns {Promise&lt;void>}
+ */
+export async function startRecording() {
+  videoChunks = []; // Clear previous video chunks
+  audioChunks = [];
+  // audioRecorder.start();
+  videoRecorder.stop();
+  videoRecorder.start();
+  audioRecorder.stop();
+  audioRecorder.start();
+}
+
+
+/**
+ * Stops video recording.
+ * @async
+ * @function
+ * @returns {Promise&lt;void>}
+ */
+export async function stopRecording() {
+  audioRecorder.stop();
+  videoRecorder.stop();
+}
+
+/**
+ * Saves the recorded video.
+ * @async
+ * @function
+ * @param {string} filename - Name of the file to save.
+ * @param {string} parentDir - Parent directory for the file.
+ * @param {string} [mimeType="video/webm"] - MIME type of the video.
+ * @returns {Promise&lt;void>}
+ */
+export async function saveRecordings(
+  filename,
+  parentDir,
+  deviceConfig,
+  mimeType = "video/webm",
+) {
+  await new Promise((resolve) => {
+    videoRecorder.onstop = resolve;
+    videoRecorder.stop();
+  });
+
+  var videoBlob = 0;
+  console.log("video", videoChunks);
+  console.log("audio", audioChunks);
+  console.log(
+    "deviceConfigVideoAudio",
+    deviceConfig.storeAudio,
+    deviceConfig.storeVideo,
+  );
+  if (deviceConfig.storeAudio &amp;&amp; deviceConfig.storeVideo) {
+    mimeType = "video/webm"; // Record video and audio
+    videoBlob = new Blob(videoChunks, { type: mimeType });
+  } else if (deviceConfig.storeAudio) {
+    mimeType = "audio/webm"; // Record only audio
+    videoBlob = new Blob(audioChunks, { type: mimeType });
+  }
+
+  // const videoBlob = new Blob(videoChunks, { type: mimeType });
+
+  if (videoBlob.size > 0) {
+    console.log("Video recorded successfully. Size:", videoBlob.size, "bytes");
+  } else {
+    console.error("No video data recorded.");
+    return;
+  }
+
+  try {
+    var deviceConfig = store.session.get("deviceConfig") ?? defaultDeviceConfig;
+    // Adjust mimeType based on the device configuration
+    if (deviceConfig.storeAudio &amp;&amp; deviceConfig.storeVideo) {
+      mimeType = "video/webm"; // Record video and audio
+    } else if (deviceConfig.storeAudio) {
+      mimeType = "audio/webm"; // Record only audio
+    }
+    const videoUploadUrl = await getUploadUrl(filename, mimeType, parentDir);
+    // Now that you have the upload URL, you can proceed with uploading the video
+    await uploadFile(videoBlob, videoUploadUrl);
+  } catch (error) {
+    console.error("Error getting video upload URL:", error);
+  }
+}
+
+/**
+ * Gets the upload URL for a file.
+ * @async
+ * @function
+ * @param {string} fileName - Name of the file to upload.
+ * @param {string} mimeType - MIME type of the file.
+ * @param {string} parentDir - Parent directory for the file.
+ * @returns {Promise&lt;string>} The upload URL.
+ */
+export async function getUploadUrl(fileName, mimeType, parentDir) {
+  try {
+    const response = await fetch(
+      `https://us-central1-webapp-af756.cloudfunctions.net/getUploadUrlFunction?fileName=${fileName}&amp;mimeType=${mimeType}&amp;parentDir=${parentDir}`,
+    );
+    // const response = await fetch(`http://127.0.0.1:5001/webapp-af756/us-central1/getUploadUrlFunction?fileName=${fileName}&amp;mimeType=${mimeType}&amp;parentDir=${parentDir}`);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch upload URL");
+    }
+
+    const result = await response.json();
+    return result.result; // Assuming your Cloud Function response structure has a 'result' field
+  } catch (error) {
+    console.error("Error fetching upload URL:", error);
+    throw error;
+  }
+}
+
+
+export async function uploadFile(file, uploadUrl) {
+  try {
+    const response = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": file.type,
+        "Content-Length": file.size,
+      },
+      body: file,
+    });
+
+    if (!response.ok) {
+      // Extract more details from the response
+      const errorDetails = await response.text();
+      throw new Error(
+        `Upload failed: ${response.status} ${response.statusText}\n` +
+          `Response headers: ${JSON.stringify(response.headers)}\n` +
+          `Response body: ${errorDetails}`,
+      );
+    }
+
+    console.log("Upload complete:", await response.text());
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Calibration.html">Calibration</a></li><li><a href="module-RAN.html">RAN</a></li><li><a href="module-configureDevice.html">configureDevice</a></li><li><a href="module-consentView.html">consentView</a></li><li><a href="module-deviceInformation.html">deviceInformation</a></li><li><a href="module-headeyetracking.html">headeyetracking</a></li><li><a href="module-menuView.html">menuView</a></li><li><a href="module-preloadView.html">preloadView</a></li><li><a href="module-storyView.html">storyView</a></li><li><a href="module-videoCapture.html">videoCapture</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_pageCompleted">_pageCompleted</a></li><li><a href="global.html#countdown">countdown</a></li><li><a href="global.html#myWorker">myWorker</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Mon Mar 03 2025 22:29:12 GMT-0800 (Pacific Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

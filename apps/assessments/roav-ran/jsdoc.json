@@ -1,0 +1,16 @@
+{
+  "source": {
+    "include": ["./src/experiment/views"],
+    "includePattern": ".+\\.js$",
+    "excludePattern": "(node_modules/|docs)"
+  },
+  "opts": {
+    "recurse": true,
+    "destination": "./docs"
+  },
+  "plugins": [],
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "en":{
+    "loading": "Loading...",
+    "subtestOrder": ["Letters", "Numbers"],
+    "infoSlideView": {
+      "welcome": {
+        "header": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/welcomeHeader.mp3",
+          "text": "Welcome to Letters and Numbers"
+        },
+        "footer": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/welcomeFooter.mp3",
+          "text": "Let's get started! Click the yellow button to continue."
+        },
+        "showButton": true
+      },
+      "calibrationIntro": {
+        "header": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/calibrationIntroHeader.mp3",
+          "text": "You will see blue circles show up on the screen. Look at them until they pop!"
+        },
+        "footer": {
+          "text": "Click the yellow button to continue."
+        },
+        "showButton": true
+      },
+      "calibrationEnd": {
+        "header": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/calibrationEndHeader.mp3",
+          "text": "Great job! Today, you are going to help me \n read some letters and numbers."
+        },
+        "footer": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/calibrationEndFooter.mp3",
+          "text": "Let's start with letters! Click the yellow button to continue."
+        },
+        "showButton": true
+      },
+      "guidedPracticeLetters": {
+        "header": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/guidedPracticeLetters.mp3",
+          "text": "Now let's try to do more than one letter at a time!"
+        },
+        "footer": {
+          "text": "Click the yellow button to continue."
+        },
+        "showButton": true
+      },
+      "guidedPracticeNumbers": {
+        "header": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/guidedPracticeNumbers.mp3",
+          "text": "Nice Job!\n Now, we are going to read some numbers."
+        },
+        "footer": {
+          "text": "Click the yellow button to continue."
+        },
+        "showButton": true
+      },
+      "assessmentEnd": {
+        "header": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/assessmentEndHeader.mp3",
+          "text": "You did an amazing job reading\nletters and numbers today!"
+        },
+        "footer": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/assessmentEndFooter.mp3",
+          "text": "You are all done with this game!"
+        },
+        "showButton": true
+      }
+    },
+    "micFailView": {
+      "header": {
+        "text": "Uh-Oh! I can't hear you.<br />Please exit the game and try again later.",
+        "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/micFailViewHeader.mp3"
+      },
+      "footer": {
+        "text": "Click the yellow button to exit.",
+        "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/micFailViewFooter.mp3"
+      }
+    },
+    "instructionView": {
+      "maxFeedbackRetries": 3,
+      "letterB": {
+        "header": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/letterBHeader.mp3",
+          "text": "The name of the letter is B. Can you say B?"
+        },
+        "footer": {
+          "text": "Click the yellow button to continue."
+        }
+      },
+      "letterD": {
+        "header": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/letterDHeader.mp3",
+          "text": "Awesome! Can you tell me the name of this letter?"
+        },
+        "footer": {
+          "text": "Click the yellow button to continue."
+        }
+      },
+      "feedback": {
+        "header": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/feedbackHeader.mp3",
+          "text": "I can't hear you. Can you say it again?"
+        },
+        "footer": {
+          "text": "Click the yellow button to continue."
+        }
+      }
+    },
+    "practiceView": {
+      "letter": {
+        "ranType": "Letters",
+        "header": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/letterHeader.mp3",
+          "text": "Watch me say these letter names first!"
+        },
+        "header2": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/letterHeader2.mp3",
+          "text": "Your turn! Start from the left and read each one as fast as you can."
+        },
+        "stimuli": {
+          "audioSrcs": [
+            "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/M.mp3",
+            "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/A.mp3",
+            "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/Z.mp3",
+            "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/X.mp3",
+            "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/Z.mp3",
+            "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/F.mp3"
+          ],
+          "images": ["M.svg", "A.svg", "Z.svg", "X.svg", "Z.svg", "F.svg"]
+        },
+        "footer": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/clickDoneButton.mp3",
+          "text": "Click the yellow button when you are done."
+        }
+      },
+      "number": {
+        "ranType": "Numbers",
+        "header": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/numberHeader.mp3",
+          "text": "Watch me say these numbers first!"
+        },
+        "header2": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/numberHeader2.mp3",
+          "text": "Your turn! Start from the left and read each one as fast as you can."
+        },
+        "stimuli": {
+          "audioSrcs": [
+            "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/one.mp3",
+            "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/four.mp3",
+            "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/three.mp3",
+            "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/five.mp3",
+            "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/nine.mp3",
+            "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/two.mp3"
+          ],
+          "images": [
+            "one.svg",
+            "four.svg",
+            "three.svg",
+            "five.svg",
+            "nine.svg",
+            "two.svg"
+          ]
+        },
+        "footer": {
+          "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/clickDoneButton.mp3",
+          "text": "Click the yellow button when you are done."
+        }
+      }
+    },
+    "ranView": {
+      "letter": {
+        "practiceIntro": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/practiceIntroHeader.mp3",
+            "text": "Great job! Now let's practice."
+          },
+          "subtitle": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/letterPracticeIntroSubtitle.mp3",
+            "text": "Remember to read the letters as fast as you can."
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/clickDoneButton.mp3",
+            "text": "Click the yellow button when you are done."
+          }
+        },
+        "testIntro": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/letterTestIntroHeader.mp3",
+            "text": "Perfect!\n Let's try saying more letter names!"
+          },
+          "subtitle": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/testIntroSubtitle.mp3",
+            "text": "Remember to read as fast as you can."
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/clickDoneButton.mp3",
+            "text": "Click the yellow button when you are done."
+          }
+        }
+      },
+      "number": {
+        "practiceIntro": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/practiceIntroHeader.mp3",
+            "text": "Great job!\nNow let's practice."
+          },
+          "subtitle": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/numberPracticeIntroSubtitle.mp3",
+            "text": "Remember to read the numbers as fast as you can!"
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/clickDoneButton.mp3",
+            "text": "Click the yellow button when you are done."
+          }
+        },
+        "testIntro": {
+          "header": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/numberTestIntroHeader.mp3",
+            "text": "Perfect!\nLet's try saying more numbers!"
+          },
+          "subtitle": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/testIntroSubtitle.mp3",
+            "text": "Remember to read as fast as you can."
+          },
+          "footer": {
+            "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/clickDoneButton.mp3",
+            "text": "Click the yellow button when you are done."
+          }
+        }
+      }
+    }
+  }
+}

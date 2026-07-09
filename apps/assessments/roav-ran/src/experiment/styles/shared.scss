@@ -1,0 +1,169 @@
+:root {
+  --go-button: url("https://storage.googleapis.com/roav-ran/shared/assets/go_button_small.webp");
+}
+
+.lion-char {
+  position: absolute;
+  top: 40%;
+  height: 40%;
+  width: auto;
+}
+
+.lion-char-instructions {
+  @extend .lion-char;
+  height: 35%;
+  left: 3%;
+}
+
+.lion-char-practice-intro {
+  @extend .lion-char;
+  height: 35%;
+  right: 3%;
+}
+
+.static-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.next-button {
+  position: absolute;
+  bottom: 1rem;
+  right: 3%;
+  border: none;
+  border-radius: 50%;
+  height: 7.5rem;
+  width: 7.5rem;
+  background-image: var(--go-button);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: transparent;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+// Temporary solution for finish button logic in RAN.html
+.finish-button {
+  @extend .next-button;
+
+  &:disabled {
+    display: none;
+  }
+}
+
+.next-text {
+  position: relative;
+  max-width: 75%;
+  bottom: 3rem;
+  margin-bottom: 0rem;
+  font-size: clamp(1.25rem, 2.5vw, 2rem);
+  text-align: center;
+}
+
+.header {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.6;
+  color: #111;
+}
+
+.header--center {
+  @extend .header;
+  position: relative;
+  top: 8rem;
+  max-width: 80%;
+}
+
+@mixin header-container($top) {
+  position: relative;
+  top: $top;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80%;
+  gap: 0.5rem;
+}
+
+.header-container--practice-intro {
+  @include header-container(3rem);
+}
+
+.header-container--ran {
+  @include header-container(6rem);
+}
+
+.subtitle {
+  text-align: center;
+  font-size: clamp(1.5rem, 2.5vw, 2.5rem);
+  color: #222;
+}
+
+.subtitle--practice-intro {
+  @extend .subtitle;
+  display: none;
+}
+
+.speech-bubble {
+  position: relative;
+  top: 3rem;
+  width: max-content;
+  max-width: 80%;
+  background-color: rgb(232, 218, 205);
+  border-radius: 36px;
+  padding: 2rem 3rem;
+  text-align: center;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.4;
+}
+
+/**
+ * NOTE:
+ * Adjust header position for mobile portrait mode
+ * If testing on dev tools on computer, clicking 'Select element to inspect' will cause the header
+ * to revert to its original position since any-pointer becomes fine
+ * This is not a bug
+ */
+@media screen and (orientation: portrait) and (any-pointer: coarse) {
+  .header--center {
+    top: 10rem;
+  }
+}
+
+/**
+ * NOTE:
+ * Accounts portrait mode up to 12.9/13-inch iPad (1024px x 1366px)
+ * While allowing style to apply to browsers up to 834px browser width on computers
+ */
+@media screen and (max-width: 834px),
+  screen and (any-pointer: coarse) and (max-width: 1024px) {
+  .lion-char-instructions {
+    height: auto;
+    width: 29%;
+    left: 0%;
+  }
+
+  .lion-char-practice-intro {
+    height: auto;
+    width: 29%;
+    top: 60%;
+  }
+
+  .speech-bubble {
+    top: 4rem;
+  }
+}
+
+@media screen and (max-width: 567px) {
+  .speech-bubble {
+    padding: 1rem 2rem;
+  }
+}
