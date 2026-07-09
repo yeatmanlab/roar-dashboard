@@ -10,7 +10,7 @@
     "progressBar": "Time",
     "infoSlideView": {
       "welcome": {
-        "desktop" : {
+        "desktop": {
           "header": {
             "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/symbolWelcomeHeader.mp3",
             "text": "Welcome! In this activity you will match the symbol."
@@ -32,7 +32,7 @@
             "text": "Let's get started! Press the yellow button to continue."
           },
           "showButton": true,
-          "skippable": true         
+          "skippable": true
         }
       },
       "practiceIntro": {
@@ -58,8 +58,7 @@
             "text": "Press the yellow button to practice."
           },
           "showButton": true,
-         "skippable": true
-
+          "skippable": true
         }
       }
     },
@@ -203,7 +202,7 @@
     "progressBar": "Tempo",
     "infoSlideView": {
       "welcome": {
-        "desktop" : {
+        "desktop": {
           "header": {
             "audioSrc": "https://storage.googleapis.com/roav-ran/pt/shared/audio/symbolWelcomeHeader.mp3",
             "text": "Bem-vindo! Nesta atividade, você irá encontrar símbolos iguais."
@@ -225,7 +224,7 @@
             "text": "Vamos começar! Pressione o botão amarelo para continuar."
           },
           "showButton": true,
-          "skippable": true         
+          "skippable": true
         }
       },
       "practiceIntro": {
@@ -251,8 +250,7 @@
             "text": "Pressione o botão amarelo para praticar."
           },
           "showButton": true,
-         "skippable": true
-
+          "skippable": true
         }
       }
     },

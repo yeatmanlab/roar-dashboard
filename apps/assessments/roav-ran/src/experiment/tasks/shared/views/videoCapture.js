@@ -48,14 +48,13 @@ export function updateCountdown(callbackFunction) {
   countdown--;
 
   if (countdown === 0) {
-    document.getElementById("instruction").style.display = "none";
-    if (typeof callbackFunction === "function") {
+    document.getElementById('instruction').style.display = 'none';
+    if (typeof callbackFunction === 'function') {
       callbackFunction();
       countdown = 4;
     }
   } else {
-    document.getElementById("instruction").innerHTML =
-      "<h1>" + countdown + "</h1>";
+    document.getElementById('instruction').innerHTML = '<h1>' + countdown + '</h1>';
     setTimeout(function () {
       updateCountdown(callbackFunction);
     }, 1000);
@@ -70,14 +69,9 @@ export function updateCountdown(callbackFunction) {
  */
 function getSupportedMimeType(type) {
   const types =
-    type === "video"
-      ? [
-          "video/webm;codecs=vp9,opus",
-          "video/webm;codecs=vp8,opus",
-          "video/webm",
-          "video/mp4",
-        ]
-      : ["audio/webm;codecs=opus", "audio/webm", "audio/ogg", "audio/mp4"];
+    type === 'video'
+      ? ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4']
+      : ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg', 'audio/mp4'];
 
   for (const mimeType of types) {
     if (MediaRecorder.isTypeSupported(mimeType)) {
@@ -137,7 +131,7 @@ export async function giveAccess(bEyeTracking = false, storeVideo = false) {
       inputVideo.srcObject = stream;
       inputVideo.muted = true; // Mute the video element to prevent audio playback
       inputVideo.play();
-      inputVideo.addEventListener("loadedmetadata", function () {
+      inputVideo.addEventListener('loadedmetadata', function () {
         orig_img_width = inputVideo.videoWidth;
         orig_img_height = inputVideo.videoHeight;
         if (headCanvas) {
@@ -149,7 +143,7 @@ export async function giveAccess(bEyeTracking = false, storeVideo = false) {
 
     return { success: true };
   } catch (error) {
-    console.error("Error accessing media devices:", error);
+    console.error('Error accessing media devices:', error);
     throw error; // Re-throw so caller can handle
   }
 }
@@ -162,28 +156,24 @@ export async function giveAccess(bEyeTracking = false, storeVideo = false) {
  */
 function parseMetadata(metadata) {
   const numberWords = {
-    one: "1",
-    two: "2",
-    three: "3",
-    four: "4",
-    five: "5",
-    six: "6",
-    seven: "7",
-    eight: "8",
-    nine: "9",
+    one: '1',
+    two: '2',
+    three: '3',
+    four: '4',
+    five: '5',
+    six: '6',
+    seven: '7',
+    eight: '8',
+    nine: '9',
   };
 
   const parsedMetadata = { ...metadata };
 
   if (Array.isArray(parsedMetadata.stimulus)) {
-    parsedMetadata.stimulus = parsedMetadata.stimulus.reduce(
-      (accumulator, currentValue) => {
-        const converted =
-          numberWords[currentValue.toLowerCase()] || currentValue;
-        return accumulator + converted;
-      },
-      "",
-    );
+    parsedMetadata.stimulus = parsedMetadata.stimulus.reduce((accumulator, currentValue) => {
+      const converted = numberWords[currentValue.toLowerCase()] || currentValue;
+      return accumulator + converted;
+    }, '');
   }
 
   return { stimImages: parsedMetadata.stimulus, ...parsedMetadata };
@@ -199,7 +189,7 @@ export async function startRecording() {
   mediaChunks = []; // Clear previous media chunks
 
   // Stop existing recorder if running
-  if (mediaRecorder && mediaRecorder.state === "recording") {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
   }
 
@@ -211,9 +201,9 @@ export async function startRecording() {
     if (recordingParams.storeVideo) {
       // Scenario 3: Record and upload video (with audio if available)
       recordStream = mediaStream;
-      mimeType = getSupportedMimeType("video");
+      mimeType = getSupportedMimeType('video');
       if (!mimeType) {
-        throw new Error("No supported video MIME type found for MediaRecorder");
+        throw new Error('No supported video MIME type found for MediaRecorder');
       }
     } else {
       // Scenarios 1 & 2: Record and upload audio only
@@ -221,19 +211,17 @@ export async function startRecording() {
       const audioTracks = mediaStream.getAudioTracks();
       if (audioTracks.length > 0) {
         recordStream = new MediaStream(audioTracks);
-        mimeType = getSupportedMimeType("audio");
+        mimeType = getSupportedMimeType('audio');
         if (!mimeType) {
-          throw new Error(
-            "No supported audio MIME type found for MediaRecorder",
-          );
+          throw new Error('No supported audio MIME type found for MediaRecorder');
         }
       } else {
-        console.error("No audio tracks available for recording");
+        console.error('No audio tracks available for recording');
         return;
       }
     }
   } catch (error) {
-    console.error("Error setting up recording stream:", error);
+    console.error('Error setting up recording stream:', error);
     return;
   }
 
@@ -248,14 +236,14 @@ export async function startRecording() {
   // console.log('mediaRecorder:', mediaRecorder);
 
   mediaRecorder.ondataavailable = (event) => {
-    console.log("Media chunk size:", event.data.size);
+    console.log('Media chunk size:', event.data.size);
     if (event.data.size > 0) {
       mediaChunks.push(event.data);
     }
   };
 
   mediaRecorder.onstop = async () => {
-    console.log("Recording stopped, blob created");
+    console.log('Recording stopped, blob created');
   };
 
   mediaRecorder.start();
@@ -272,7 +260,7 @@ export async function stopRecording() {
   // This ensures all data chunks are collected
   try {
     await new Promise((resolve) => {
-      if (mediaRecorder && mediaRecorder.state === "recording") {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.onstop = resolve;
         mediaRecorder.stop();
       } else {
@@ -280,7 +268,7 @@ export async function stopRecording() {
       }
     });
   } catch (error) {
-    console.error("Error stopping media recorder:", error);
+    console.error('Error stopping media recorder:', error);
   }
 }
 
@@ -294,12 +282,7 @@ export async function stopRecording() {
  * @param {Object} metadata - Metadata object.
  * @returns {string} - upload URL
  */
-export async function saveRecordings({
-  filename,
-  deviceConfig,
-  config,
-  metadata,
-}) {
+export async function saveRecordings({ filename, deviceConfig, config, metadata }) {
   // Recorder should already be stopped by stopRecording()
   // Data chunks should be available now
 
@@ -313,17 +296,17 @@ export async function saveRecordings({
   // Determine MIME type based on what was actually recorded
   let mimeType;
   if (deviceConfig.storeVideo) {
-    mimeType = "video/webm";
+    mimeType = 'video/webm';
   } else {
-    mimeType = "audio/webm";
+    mimeType = 'audio/webm';
   }
 
   const mediaBlob = new Blob(mediaChunks, { type: mimeType });
 
   if (mediaBlob.size > 0) {
-    console.log("Media recorded successfully. Size:", mediaBlob.size, "bytes");
+    console.log('Media recorded successfully. Size:', mediaBlob.size, 'bytes');
   } else {
-    console.error("No media data recorded.");
+    console.error('No media data recorded.');
     return null;
   }
 
@@ -332,12 +315,12 @@ export async function saveRecordings({
 
     return await config.firekit.uploadFileOrBlobToStorage({
       filename: filename,
-      assessmentPid: store.session.get("id"),
+      assessmentPid: store.session.get('id'),
       fileOrBlob: mediaBlob,
       customMetadata: parseMetadata(metadata),
     });
   } catch (error) {
-    console.error("Error uploading media:", error);
+    console.error('Error uploading media:', error);
     return null;
   }
 }
@@ -352,7 +335,7 @@ export function stopMediaStreams() {
   }
 
   // Also clear any streams on video elements
-  const inputVideo = document.getElementsByClassName("inputVideo")[0];
+  const inputVideo = document.getElementsByClassName('inputVideo')[0];
   if (inputVideo) {
     if (inputVideo.srcObject) {
       const tracks = inputVideo.srcObject.getTracks();
@@ -363,7 +346,7 @@ export function stopMediaStreams() {
     }
   }
 
-  if (window.mediaRecorder && window.mediaRecorder.state !== "inactive") {
+  if (window.mediaRecorder && window.mediaRecorder.state !== 'inactive') {
     window.mediaRecorder.stop();
     window.mediaRecorder = null;
   }

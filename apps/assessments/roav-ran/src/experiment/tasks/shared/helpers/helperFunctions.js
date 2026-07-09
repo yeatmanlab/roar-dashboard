@@ -2,7 +2,7 @@ export function stringToBoolean(str, defaultValue = false) {
   if (str === null || str === undefined) {
     return defaultValue;
   }
-  return str.trim().toLowerCase() === "true";
+  return str.trim().toLowerCase() === 'true';
 }
 
 /**
@@ -11,8 +11,8 @@ export function stringToBoolean(str, defaultValue = false) {
  * @returns {boolean} The boolean value
  */
 export function checkBoolean(value) {
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     return stringToBoolean(value);
   }
-  return typeof value === "boolean" ? value : false;
+  return typeof value === 'boolean' ? value : false;
 }

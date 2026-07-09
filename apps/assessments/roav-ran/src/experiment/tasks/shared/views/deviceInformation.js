@@ -39,13 +39,13 @@ export function getDeviceInfo() {
     userAgent: navigatorInfo.userAgent,
     platform: navigatorInfo.platform,
     language: navigatorInfo.language,
-    deviceMemory: navigatorInfo.deviceMemory || "Not available", // Requires secure context (HTTPS)
+    deviceMemory: navigatorInfo.deviceMemory || 'Not available', // Requires secure context (HTTPS)
     hardwareConcurrency: navigatorInfo.hardwareConcurrency,
     maxTouchPoints: navigatorInfo.maxTouchPoints,
     cookiesEnabled: navigatorInfo.cookieEnabled,
     webDriver: navigatorInfo.webdriver,
     onlineStatus: navigatorInfo.onLine,
-    gpu: "Not available",
+    gpu: 'Not available',
   };
 
   // Screen information
@@ -54,20 +54,16 @@ export function getDeviceInfo() {
     height: screenInfo.height,
     colorDepth: screenInfo.colorDepth,
     pixelDepth: screenInfo.pixelDepth,
-    retinaDisplay: window.matchMedia("(-webkit-min-device-pixel-ratio: 2)")
-      .matches,
-    landscapeOrientation: window.matchMedia("(orientation: landscape)").matches,
+    retinaDisplay: window.matchMedia('(-webkit-min-device-pixel-ratio: 2)').matches,
+    landscapeOrientation: window.matchMedia('(orientation: landscape)').matches,
   };
 
   // GPU information using WebGL (limited details due to security)
-  const canvas = document.createElement("canvas");
-  const gl =
-    canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+  const canvas = document.createElement('canvas');
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
   if (gl) {
-    const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-    deviceDetails.gpu = debugInfo
-      ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
-      : "Not available";
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    deviceDetails.gpu = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'Not available';
   }
 
   // Combine all gathered information into a single object

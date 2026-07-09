@@ -41,7 +41,7 @@ export function generateGridCoordinates(deviceConfig) {
   let totalGridWidthPX = screenWidthPx * 0.8; // 80% of screen width
   let totalGridHeightPX = screenHeightPx * 0.8;
 
-  if (type === "Practice") {
+  if (type === 'Practice') {
     totalGridWidthPX = screenWidthPx * 0.4; // 50% of screen width for practice
     totalGridHeightPX = screenHeightPx * 0.6;
   }
@@ -135,10 +135,10 @@ export function generatePracticeStimuli(testConfig) {
  * @param {Object} testConfig - Test configuration object.
  */
 export function populateGrid(coordinates, shuffledImages, testConfig) {
-  const gridContainer = document.getElementById("grid-container"); // replace 'grid-container' with the actual ID of your container
-  gridContainer.innerHTML = "";
+  const gridContainer = document.getElementById('grid-container'); // replace 'grid-container' with the actual ID of your container
+  gridContainer.innerHTML = '';
 
-  if (type === "Practice") {
+  if (type === 'Practice') {
     numCols = 3;
     numRows = 3;
     // Use the same per-cell size as the test grid (gridWidthCM/10 × gridHeightCM/5)
@@ -158,23 +158,23 @@ export function populateGrid(coordinates, shuffledImages, testConfig) {
   const totalGrid = numRows * numCols;
 
   for (let i = 0; i < totalGrid; i++) {
-    const cell = document.createElement("div");
+    const cell = document.createElement('div');
     const { x, y, width, height } = coordinates[i];
     cell.style.width = `${width}px`;
     cell.style.height = `${height}px`;
     cell.style.left = `${x}px`; // Adjust for half of the cell width
     cell.style.top = `${y}px`; // Adjust for half of the cell height
-    cell.style.position = "absolute"; // Ensure the position is set to absolute
-    cell.style.transform = "translate(-50%, -50%)"; // Center the content within the element
-    cell.style.display = "flex"; // Set display to flex to use flexbox properties
-    cell.style.justifyContent = "center"; // Center horizontally
-    cell.style.alignItems = "center"; // Center vertically
+    cell.style.position = 'absolute'; // Ensure the position is set to absolute
+    cell.style.transform = 'translate(-50%, -50%)'; // Center the content within the element
+    cell.style.display = 'flex'; // Set display to flex to use flexbox properties
+    cell.style.justifyContent = 'center'; // Center horizontally
+    cell.style.alignItems = 'center'; // Center vertically
 
     const randomStimulus = shuffledImages[i];
-    const stim = document.createElement("img");
+    const stim = document.createElement('img');
     stim.src = `${testConfig.dir}/${randomStimulus}`;
-    stim.style.width = "50%"; // Make the image fill the cell
-    stim.style.height = "auto"; // Maintain aspect ratio
+    stim.style.width = '50%'; // Make the image fill the cell
+    stim.style.height = 'auto'; // Maintain aspect ratio
     // stim.style.height = '75%';
 
     cell.appendChild(stim);
@@ -209,10 +209,7 @@ export async function startTest(bEyeTracking) {
       continueProcessing = true;
       runInference();
     } catch (error) {
-      console.warn(
-        "Eye tracking inference failed, continuing without eye tracking:",
-        error,
-      );
+      console.warn('Eye tracking inference failed, continuing without eye tracking:', error);
       continueProcessing = false;
     }
   }
@@ -223,7 +220,7 @@ export async function startTest(bEyeTracking) {
   updateCountdown();
   // Enable the button after a 3-second delay
   setTimeout(function () {
-    document.querySelector(".finish-button").disabled = false;
+    document.querySelector('.finish-button').disabled = false;
   }, 5000);
 }
 
@@ -234,11 +231,7 @@ export async function startTest(bEyeTracking) {
 export async function waitForVideoReady() {
   return new Promise((resolve) => {
     const checkVideo = () => {
-      if (
-        inputVideo &&
-        inputVideo.videoWidth > 0 &&
-        inputVideo.videoHeight > 0
-      ) {
+      if (inputVideo && inputVideo.videoWidth > 0 && inputVideo.videoHeight > 0) {
         resolve();
       } else {
         setTimeout(checkVideo, 100);
@@ -262,13 +255,12 @@ export function updateCountdown(callbackFunction) {
   countdown--;
 
   if (countdown == 0) {
-    document.getElementById("instruction").style.display = "none";
-    document.getElementById("grid-container").style.visibility = "visible";
+    document.getElementById('instruction').style.display = 'none';
+    document.getElementById('grid-container').style.visibility = 'visible';
     countdown = 4;
     trialRunnning = true;
   } else {
-    document.getElementById("instruction").innerHTML =
-      "<h1>" + countdown + "</h1>";
+    document.getElementById('instruction').innerHTML = '<h1>' + countdown + '</h1>';
     setTimeout(function () {
       updateCountdown(callbackFunction);
     }, 1000);

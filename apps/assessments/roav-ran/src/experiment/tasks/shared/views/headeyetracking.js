@@ -15,8 +15,8 @@
  * @module headeyetracking
  */
 
-import ndarray from "ndarray";
-import ops from "ndarray-ops";
+import ndarray from 'ndarray';
+import ops from 'ndarray-ops';
 
 /**
  * Landmark indices representing the left iris in FaceMesh.
@@ -184,26 +184,11 @@ export function onResultsFaceMesh(results) {
       collectCoordinates(landmarks, [130, 27, 243, 23], leftEyeCoor);
       collectCoordinates(landmarks, [463, 257, 359, 253], rightEyeCoor);
 
-      if (typeof canvasContour !== "undefined" && canvasContour) {
-        var path1 = drawContour(
-          canvasContour,
-          headCtx,
-          width,
-          height,
-          "rgba(13, 110, 253, 1.0)",
-          3,
-          "transparent",
-        );
+      if (typeof canvasContour !== 'undefined' && canvasContour) {
+        var path1 = drawContour(canvasContour, headCtx, width, height, 'rgba(13, 110, 253, 1.0)', 3, 'transparent');
         fixedContour = path1;
       }
-      var path2 = drawFaceOval(
-        FACEMESH_FACE_OVAL,
-        landmarks,
-        headCtx,
-        width,
-        height,
-        headCoor,
-      );
+      var path2 = drawFaceOval(FACEMESH_FACE_OVAL, landmarks, headCtx, width, height, headCoor);
       movingContour = path2;
     });
   }
@@ -211,20 +196,8 @@ export function onResultsFaceMesh(results) {
   headCtx.restore();
 
   if (normalizedFocalLength > 0) {
-    const leftdZ = calculateDepth(
-      width,
-      height,
-      11.7,
-      irisLeftMaxX - irisLeftMinX,
-      normalizedFocalLength,
-    );
-    const rightdZ = calculateDepth(
-      width,
-      height,
-      11.7,
-      irisRightMaxX - irisRightMinX,
-      normalizedFocalLength,
-    );
+    const leftdZ = calculateDepth(width, height, 11.7, irisLeftMaxX - irisLeftMinX, normalizedFocalLength);
+    const rightdZ = calculateDepth(width, height, 11.7, irisRightMaxX - irisRightMinX, normalizedFocalLength);
     const dZ = ((leftdZ + rightdZ) / 2).toFixed(0);
     current_viewingDistance = dZ;
   }
@@ -281,22 +254,14 @@ function collectCoordinates(landmarks, indices, coordinates) {
  * @param {string} fillStyle - The fill color.
  * @returns {Array<Array<number>>} - The transformed path points.
  */
-function drawContour(
-  points,
-  ctx,
-  width,
-  height,
-  strokeStyle,
-  lineWidth,
-  fillStyle,
-) {
+function drawContour(points, ctx, width, height, strokeStyle, lineWidth, fillStyle) {
   if (!points) return;
   const path1 = [];
   const path = points.map((point) => [point[0] * width, point[1] * height]);
   ctx.beginPath();
   path.forEach(([x, y], index) => {
     path1.push([x, y]);
-    ctx[index === 0 ? "moveTo" : "lineTo"](x, y);
+    ctx[index === 0 ? 'moveTo' : 'lineTo'](x, y);
   });
   ctx.closePath();
   ctx.strokeStyle = strokeStyle;
@@ -327,10 +292,10 @@ function drawFaceOval(ovalIndices, landmarks, ctx, width, height, coordinates) {
   ctx.beginPath();
   path.forEach(([x, y], i) => {
     path2.push([x, y]);
-    ctx[i === 0 ? "moveTo" : "lineTo"](x, y);
+    ctx[i === 0 ? 'moveTo' : 'lineTo'](x, y);
   });
   ctx.closePath();
-  ctx.fillStyle = "rgba(13, 110, 253, 1.0)"; // Semi-transparent blue
+  ctx.fillStyle = 'rgba(13, 110, 253, 1.0)'; // Semi-transparent blue
 
   // ctx.fillStyle = "rgba(0, 0, 0, 1.0)";
   ctx.fill();
@@ -347,13 +312,7 @@ function drawFaceOval(ovalIndices, landmarks, ctx, width, height, coordinates) {
  * @param {number} normalizedFocalLength - Normalized focal length factor.
  * @returns {number} The calculated depth.
  */
-function calculateDepth(
-  imageWidth,
-  imageHeight,
-  dX,
-  dWidth,
-  normalizedFocalLength,
-) {
+function calculateDepth(imageWidth, imageHeight, dX, dWidth, normalizedFocalLength) {
   const fx = Math.min(imageWidth, imageHeight) * normalizedFocalLength;
   return (fx * (dX / dWidth)) / 10.0;
 }
@@ -400,48 +359,48 @@ export function calculateHeadMetrics(headCoor) {
  * @param {boolean} [showGaze=false] - Whether to show gaze overlay.
  */
 export function initEyeTracking(showEyes = false, showGaze = false) {
-  blueCircle = window.document.createElement("div");
-  blueCircle.setAttribute("id", "blueCircle");
-  blueCircle.style.position = "absolute";
-  blueCircle.style.width = "20px";
-  blueCircle.style.height = "20px";
-  blueCircle.style.backgroundColor = "blue";
-  blueCircle.style.borderRadius = "50%";
-  blueCircle.style.transform = "translate(-50%, -50%)";
-  blueCircle.style.display = "none"; // Hide the canvas initially
+  blueCircle = window.document.createElement('div');
+  blueCircle.setAttribute('id', 'blueCircle');
+  blueCircle.style.position = 'absolute';
+  blueCircle.style.width = '20px';
+  blueCircle.style.height = '20px';
+  blueCircle.style.backgroundColor = 'blue';
+  blueCircle.style.borderRadius = '50%';
+  blueCircle.style.transform = 'translate(-50%, -50%)';
+  blueCircle.style.display = 'none'; // Hide the canvas initially
   document.body.appendChild(blueCircle);
 
-  const leftEye = document.createElement("canvas");
-  leftEye.setAttribute("id", "leftEye");
-  leftEye.setAttribute("width", "128");
-  leftEye.setAttribute("height", "128");
-  leftEye.style.position = "absolute"; // Positioning it absolutely
-  leftEye.style.top = "0"; // Top of the viewport
-  leftEye.style.left = "0"; // Left of the viewport
-  leftEye.style.display = "none"; // Hide the canvas initially
+  const leftEye = document.createElement('canvas');
+  leftEye.setAttribute('id', 'leftEye');
+  leftEye.setAttribute('width', '128');
+  leftEye.setAttribute('height', '128');
+  leftEye.style.position = 'absolute'; // Positioning it absolutely
+  leftEye.style.top = '0'; // Top of the viewport
+  leftEye.style.left = '0'; // Left of the viewport
+  leftEye.style.display = 'none'; // Hide the canvas initially
   document.body.appendChild(leftEye);
 
-  const rightEye = document.createElement("canvas");
-  rightEye.setAttribute("id", "rightEye");
-  rightEye.setAttribute("width", "128");
-  rightEye.setAttribute("height", "128");
-  rightEye.style.position = "absolute"; // Positioning it absolutely
-  rightEye.style.top = "0"; // Top of the viewport
-  rightEye.style.left = "128px"; // Immediately to the right of the leftEye
-  rightEye.style.display = "none"; // Hide the canvas initially
+  const rightEye = document.createElement('canvas');
+  rightEye.setAttribute('id', 'rightEye');
+  rightEye.setAttribute('width', '128');
+  rightEye.setAttribute('height', '128');
+  rightEye.style.position = 'absolute'; // Positioning it absolutely
+  rightEye.style.top = '0'; // Top of the viewport
+  rightEye.style.left = '128px'; // Immediately to the right of the leftEye
+  rightEye.style.display = 'none'; // Hide the canvas initially
   document.body.appendChild(rightEye);
 
   // If verbose is true, set all canvas displays to block (visible)
   if (showEyes) {
-    leftEye.style.display = "block";
-    rightEye.style.display = "block";
+    leftEye.style.display = 'block';
+    rightEye.style.display = 'block';
   }
   if (showGaze) {
-    blueCircle.style.display = "block";
+    blueCircle.style.display = 'block';
   }
 
-  leftEyectx = leftEye.getContext("2d", { willReadFrequently: true });
-  rightEyectx = rightEye.getContext("2d", { willReadFrequently: true });
+  leftEyectx = leftEye.getContext('2d', { willReadFrequently: true });
+  rightEyectx = rightEye.getContext('2d', { willReadFrequently: true });
 }
 
 /**
@@ -454,28 +413,14 @@ export function initEyeTracking(showEyes = false, showGaze = false) {
  */
 export function preprocess(data, width, height) {
   const dataFromImage = ndarray(new Float32Array(data), [width, height, 4]);
-  const dataProcessed = ndarray(new Float32Array(width * height * 3), [
-    1,
-    3,
-    height,
-    width,
-  ]);
+  const dataProcessed = ndarray(new Float32Array(width * height * 3), [1, 3, height, width]);
 
   // Normalize 0-255 to 0 - 1
   ops.divseq(dataFromImage, 255.0);
   // Realign imageData from [224*224*4] to the correct dimension [1*3*224*224].
-  ops.assign(
-    dataProcessed.pick(0, 0, null, null),
-    dataFromImage.pick(null, null, 2),
-  );
-  ops.assign(
-    dataProcessed.pick(0, 1, null, null),
-    dataFromImage.pick(null, null, 1),
-  );
-  ops.assign(
-    dataProcessed.pick(0, 2, null, null),
-    dataFromImage.pick(null, null, 0),
-  );
+  ops.assign(dataProcessed.pick(0, 0, null, null), dataFromImage.pick(null, null, 2));
+  ops.assign(dataProcessed.pick(0, 1, null, null), dataFromImage.pick(null, null, 1));
+  ops.assign(dataProcessed.pick(0, 2, null, null), dataFromImage.pick(null, null, 0));
   return new Float32Array(dataProcessed.data);
 }
 
@@ -489,10 +434,7 @@ export function preprocess(data, width, height) {
  */
 export function preprocess_kps(data, width, height) {
   const dataFromImage = ndarray(new Float32Array(data), [data.length]);
-  const dataProcessed = ndarray(new Float32Array(data.length), [
-    1,
-    data.length,
-  ]);
+  const dataProcessed = ndarray(new Float32Array(data.length), [1, data.length]);
   ops.assign(dataProcessed.pick(0, null), dataFromImage);
 
   return new Float32Array(dataProcessed.data);
@@ -595,8 +537,7 @@ function isPointInsidePolygon(point, polygon) {
     const yi = polygon[i][1];
     const xj = polygon[j][0];
     const yj = polygon[j][1];
-    const intersect =
-      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
     if (intersect) inside = !inside;
   }
   return inside;

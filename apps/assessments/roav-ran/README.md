@@ -14,11 +14,11 @@ To run this task, specify `taskName=symbol-search` in the query string parameter
 
 ### Symbol Search
 
-The Symbol Search assessment is a 2 minute timed test for measuring processing speed based off of the WISC-V Symbol Search task. The stimulus is a pseudo letter (aka symbol) that is presented on the left side of the screen. The choices are a set of 7 pseudo letters that are presented in a row to the right side of the stimulus. Participants scan the choices until they find the stimulus letter or "matching symbol". Participants are instructed to complete as many trials as they can within the 2 minute time period. 
+The Symbol Search assessment is a 2 minute timed test for measuring processing speed based off of the WISC-V Symbol Search task. The stimulus is a pseudo letter (aka symbol) that is presented on the left side of the screen. The choices are a set of 7 pseudo letters that are presented in a row to the right side of the stimulus. Participants scan the choices until they find the stimulus letter or "matching symbol". Participants are instructed to complete as many trials as they can within the 2 minute time period.
 
 The set of 7 letters are fixed and were selected to be visually distinguishable. Target positions are randomly sampled to be approximately uniform. The choices are randomly shuffled for each trial. A pool of items are randomly generated at runtime and it is controlled that consecutive trials do not have the same target position or target letter. The task is split into two 1-minute blocks. There is no difference between the two blocks. For each block a pool of 100 items are generated.
 
-To run this task, specify `taskName=symbol-search` in the query string parameters or in the variant configuration. 
+To run this task, specify `taskName=symbol-search` in the query string parameters or in the variant configuration.
 
 ## Structure
 
@@ -31,12 +31,12 @@ Each view is a separate JavaScript file located in the `views` folder. These vie
 ##### Instruction View
 
 - **File:** `src/experiment/tasks/RAN/views/instructionView.js`
-- **Description:** Provides the user with scaffolded instructions on how to complete the RAN assessment. This stage presents a single letter and instructs the user to say the letter name (not the sound) before having the user complete two practice letters. 
+- **Description:** Provides the user with scaffolded instructions on how to complete the RAN assessment. This stage presents a single letter and instructs the user to say the letter name (not the sound) before having the user complete two practice letters.
 
 ##### Practice Intro View
 
 - **File:** `src/experiment/tasks/RAN/views/practiceIntroView.js`
-- **Description:** Present an additional practice phase where the lion reads each stimulus in the 2x3 grid one at a time, playing the corresponding audio file. The user is then prompted to practice with the 2x3 grid before the view transitions to the full practice phase showing the 3x3 practice grid. 
+- **Description:** Present an additional practice phase where the lion reads each stimulus in the 2x3 grid one at a time, playing the corresponding audio file. The user is then prompted to practice with the 2x3 grid before the view transitions to the full practice phase showing the 3x3 practice grid.
 
 ##### RAN View
 
@@ -68,7 +68,7 @@ Each view is a separate JavaScript file located in the `views` folder. These vie
 ##### Instruction Slide View
 
 - **File:** `src/experiment/tasks/symbolSearch/views/instructionSlideView.js`
-- **Description:** Instructions designed for the symbol search task. In this view, the left side stimulus appears first on the screen, then the choices appear on the right, and then the participant is prompted to click the matching symbol. An audio tone plays as feedback for correct and incorrect clicks. The page completes only when the matching symbol has been clicked.  
+- **Description:** Instructions designed for the symbol search task. In this view, the left side stimulus appears first on the screen, then the choices appear on the right, and then the participant is prompted to click the matching symbol. An audio tone plays as feedback for correct and incorrect clicks. The page completes only when the matching symbol has been clicked.
 
 ##### Symbol Practice View
 
@@ -95,7 +95,7 @@ Each view is a separate JavaScript file located in the `views` folder. These vie
 ##### Info Slide View
 
 - **File:** `src/experiment/tasks/shared/views/infoSlideView.js`
-- **Description:**: Displays various instructions and task descriptions, along with optional audio playback. The content of these views can be customized by passing a `JSON` object while initializing the view. 
+- **Description:**: Displays various instructions and task descriptions, along with optional audio playback. The content of these views can be customized by passing a `JSON` object while initializing the view.
 
 ##### Calibration View
 
@@ -143,4 +143,4 @@ There are a few pertinent files related to handling eye-tracking functionality. 
 ### Eye Tracking Variables
 
 - **File:** `eyetrackingVars.html`
-- **Description:** Initializes global variables needed to run the eye tracking model, such as `leftEyeCoordinates` and `rightEyeCoordinates`, which store the model's predictions. It also initializes FaceMesh (a Google product) to track the face and crop the eyes before passing them into the eye-tracking model. This file also initializes a web worker that handles inference on the video frames by passing it through the YOLO eye-tracking model saved in the file `eyetracking_google.onnx`. 
+- **Description:** Initializes global variables needed to run the eye tracking model, such as `leftEyeCoordinates` and `rightEyeCoordinates`, which store the model's predictions. It also initializes FaceMesh (a Google product) to track the face and crop the eyes before passing them into the eye-tracking model. This file also initializes a web worker that handles inference on the video frames by passing it through the YOLO eye-tracking model saved in the file `eyetracking_google.onnx`.

@@ -3,15 +3,15 @@
  * @module preloadView
  */
 
-import loadingScreen_page from "./loadingScreen.html";
-import i18next from "i18next";
+import loadingScreen_page from './loadingScreen.html';
+import i18next from 'i18next';
 
 function extractAudioUrls(obj) {
-  if (typeof obj !== "object" || obj === null) return [];
+  if (typeof obj !== 'object' || obj === null) return [];
   const urls = [];
   for (const [key, val] of Object.entries(obj)) {
-    if (key === "audioSrc" && typeof val === "string") urls.push(val);
-    else if (key === "audioSrcs" && Array.isArray(val)) urls.push(...val);
+    if (key === 'audioSrc' && typeof val === 'string') urls.push(val);
+    else if (key === 'audioSrcs' && Array.isArray(val)) urls.push(...val);
     else urls.push(...extractAudioUrls(val));
   }
   return urls;
@@ -32,33 +32,30 @@ export async function preloadView(config, audioMapping, imageAssets) {
   window._preloadedImages = new Map();
 
   const loadingHtml = loadingScreen_page;
-  const page = document.createElement("div");
+  const page = document.createElement('div');
 
   page.innerHTML = loadingHtml;
   document.body.appendChild(page);
 
   //add loading text
-  document.getElementById("loading-text").innerHTML = audioMapping.loading;
+  document.getElementById('loading-text').innerHTML = audioMapping.loading;
 
   const baseAssets = [
-    "tasks/shared/eyetracking_google.onnx",
-    "https://cdn.jsdelivr.net/npm/onnxjs/dist/onnx.min.js",
-    "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css",
-    "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_simd_wasm_bin.wasm",
-    "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_packed_assets.data",
-    "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_simd_wasm_bin.js",
+    'tasks/shared/eyetracking_google.onnx',
+    'https://cdn.jsdelivr.net/npm/onnxjs/dist/onnx.min.js',
+    'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css',
+    'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_simd_wasm_bin.wasm',
+    'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_packed_assets.data',
+    'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_simd_wasm_bin.js',
   ];
-
 
   const audioAssets = [...new Set(extractAudioUrls(audioMapping))];
-  const list = [
-    ...new Set([...baseAssets, ...audioAssets, ...imageAssets])
-  ];
+  const list = [...new Set([...baseAssets, ...audioAssets, ...imageAssets])];
 
   // Preload each asset
   await preloadAssets(list, page);
 
-  console.log("All assets preloaded.");
+  console.log('All assets preloaded.');
 }
 
 /**
@@ -76,7 +73,7 @@ function preloadAssets(assets, page) {
       const assetType = getAssetType(assetUrl);
 
       switch (assetType) {
-        case "audio":
+        case 'audio':
           fetch(assetUrl)
             .then((response) => {
               if (!response.ok) {
@@ -86,17 +83,13 @@ function preloadAssets(assets, page) {
               return response.blob();
             })
             .then((blob) => {
-              if (blob)
-                window._preloadedAudioURLs.set(
-                  assetUrl,
-                  URL.createObjectURL(blob),
-                );
+              if (blob) window._preloadedAudioURLs.set(assetUrl, URL.createObjectURL(blob));
               onAssetLoaded();
             })
             .catch(onAssetError);
           break;
 
-        case "image":
+        case 'image':
           fetch(assetUrl)
             .then((response) => {
               if (!response.ok) {
@@ -123,7 +116,7 @@ function preloadAssets(assets, page) {
             .catch(onAssetError);
           break;
 
-        case "fetch":
+        case 'fetch':
           fetch(assetUrl)
             .then((response) => {
               if (response.ok) onAssetLoaded();
@@ -133,7 +126,7 @@ function preloadAssets(assets, page) {
           break;
 
         default:
-          console.error("Unknown asset type:", assetUrl);
+          console.error('Unknown asset type:', assetUrl);
           onAssetError();
       }
 
@@ -146,7 +139,7 @@ function preloadAssets(assets, page) {
       }
 
       function onAssetError(err) {
-        console.error("Error loading asset:", assetUrl, err);
+        console.error('Error loading asset:', assetUrl, err);
         reject(err); // Reject if any asset fails to load
       }
     });
@@ -160,7 +153,7 @@ function preloadAssets(assets, page) {
  * @returns {string} The type of the asset (currently always returns "fetch").
  */
 function getAssetType(url) {
-  if (url.match(/\.mp3(\?|$)/i)) return "audio";
-  if (url.match(/\.(png|jpe?g|svg|webp|gif|bmp|ico)(\?|$)/i)) return "image";
-  return "fetch";
+  if (url.match(/\.mp3(\?|$)/i)) return 'audio';
+  if (url.match(/\.(png|jpe?g|svg|webp|gif|bmp|ico)(\?|$)/i)) return 'image';
+  return 'fetch';
 }

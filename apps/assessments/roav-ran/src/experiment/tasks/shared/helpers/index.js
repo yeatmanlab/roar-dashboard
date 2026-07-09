@@ -1,3 +1,2 @@
-export * from "./audioUnlock.js";
-export { checkBoolean, stringToBoolean } from "./helperFunctions.js";
-
+export * from './audioUnlock.js';
+export { checkBoolean, stringToBoolean } from './helperFunctions.js';

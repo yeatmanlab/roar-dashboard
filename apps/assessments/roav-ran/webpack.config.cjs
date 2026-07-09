@@ -1,16 +1,16 @@
-const path = require("path");
-const webpack = require("webpack");
-const { merge } = require("webpack-merge");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
-const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
-const dotenv = require("dotenv");
+const path = require('path');
+const webpack = require('webpack');
+const { merge } = require('webpack-merge');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
+const dotenv = require('dotenv');
 dotenv.config();
 
 const commonConfig = {
   optimization: {
-    moduleIds: "deterministic",
-    runtimeChunk: "single",
+    moduleIds: 'deterministic',
+    runtimeChunk: 'single',
     splitChunks: {
       cacheGroups: {
         vendor: {
@@ -18,28 +18,26 @@ const commonConfig = {
           name(module) {
             // get the name. E.g. node_modules/packageName/not/this/part.js
             // or node_modules/packageName
-            const packageName = module.context.match(
-              /[\\/]node_modules[\\/](.*?)([\\/]|$)/,
-            )[1];
+            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
 
             // npm package names are URL-safe, but some servers don't like @ symbols
-            return `npm.${packageName.replace("@", "")}`;
+            return `npm.${packageName.replace('@', '')}`;
           },
-          chunks: "all",
+          chunks: 'all',
         },
       },
     },
   },
   resolve: {
     fallback: {
-      path: require.resolve("path-browserify"),
+      path: require.resolve('path-browserify'),
     },
   },
   module: {
     rules: [
       {
         test: /\.html$/i,
-        loader: "html-loader",
+        loader: 'html-loader',
       },
       {
         test: /\.m?js/,
@@ -49,23 +47,23 @@ const commonConfig = {
       },
       {
         test: /\.scss$/i,
-        use: ["style-loader", "css-loader", "sass-loader"],
+        use: ['style-loader', 'css-loader', 'sass-loader'],
       },
       {
         test: /\.(png|svg|jpg|jpeg|gif)$/i,
-        type: "asset/resource",
+        type: 'asset/resource',
         generator: {
-          filename: "img/[name].[ext]",
+          filename: 'img/[name].[ext]',
         },
       },
       {
         test: /\.mp3$/,
         use: [
           {
-            loader: "file-loader",
+            loader: 'file-loader',
             options: {
-              name: "[path][name].[ext]",
-              outputPath: "audio",
+              name: '[path][name].[ext]',
+              outputPath: 'audio',
             },
           },
         ],
@@ -74,10 +72,10 @@ const commonConfig = {
         test: /\.mp4$/,
         use: [
           {
-            loader: "file-loader",
+            loader: 'file-loader',
             options: {
-              name: "[name].[ext]",
-              outputPath: "video",
+              name: '[name].[ext]',
+              outputPath: 'video',
             },
           },
         ],
@@ -86,7 +84,7 @@ const commonConfig = {
         test: /\.csv$/,
         use: [
           {
-            loader: "csv-loader",
+            loader: 'csv-loader',
             options: {
               header: true,
               dynamicTyping: true,
@@ -104,23 +102,23 @@ const commonConfig = {
 
 const webConfig = merge(commonConfig, {
   entry: {
-    index: path.resolve(__dirname, "serve", "serve.js"),
+    index: path.resolve(__dirname, 'serve', 'serve.js'),
   },
   output: {
-    filename: "[name].[contenthash].bundle.js",
-    path: path.resolve(__dirname, "dist"),
+    filename: '[name].[contenthash].bundle.js',
+    path: path.resolve(__dirname, 'dist'),
     clean: {
       keep: /\.git/,
     },
   },
-  devtool: "source-map",
+  devtool: 'source-map',
   plugins: [
     new HtmlWebpackPlugin({
-      title: "Rapid Online Assessment of Reading - RAN",
+      title: 'Rapid Online Assessment of Reading - RAN',
     }),
     sentryWebpackPlugin({
-      org: "roar-89588e380",
-      project: "ran",
+      org: 'roar-89588e380',
+      project: 'ran',
       authToken: process.env.SENTRY_AUTH_TOKEN,
       debug: true,
       errorHandler: (err) => {
@@ -133,15 +131,12 @@ const webConfig = merge(commonConfig, {
           // require.resolve resolves to dist/ort.node.min.js; dirname gives us dist/
           // NOTE: onnxruntime-web must be installed (run `npm ci`) before this config is evaluated.
           // If the package is missing, require.resolve throws MODULE_NOT_FOUND at config load time.
-          from: path.join(
-            path.dirname(require.resolve('onnxruntime-web')),
-            '*.wasm'
-          ),
-          to: "[name][ext]",
+          from: path.join(path.dirname(require.resolve('onnxruntime-web')), '*.wasm'),
+          to: '[name][ext]',
         },
         {
-          from: "src/experiment/tasks/shared/eyetracking_google.onnx",
-          to: "tasks/shared/eyetracking_google.onnx",
+          from: 'src/experiment/tasks/shared/eyetracking_google.onnx',
+          to: 'tasks/shared/eyetracking_google.onnx',
         },
       ],
     }),
@@ -149,14 +144,14 @@ const webConfig = merge(commonConfig, {
 });
 
 const productionConfig = merge(webConfig, {
-  mode: "production",
+  mode: 'production',
 });
 
 const developmentConfig = merge(webConfig, {
-  mode: "development",
+  mode: 'development',
   devServer: {
     port: 8000,
-    static: "./dist",
+    static: './dist',
     client: {
       overlay: false,
     },
@@ -164,7 +159,7 @@ const developmentConfig = merge(webConfig, {
 });
 
 module.exports = async (env, args) => {
-  const roarDB = env.dbmode ?? "development";
+  const roarDB = env.dbmode ?? 'development';
 
   const envDependentConfig = {
     plugins: [
@@ -173,17 +168,17 @@ module.exports = async (env, args) => {
         ROAR_DB: JSON.stringify(roarDB),
       }),
       new webpack.ProvidePlugin({
-        process: "process/browser",
+        process: 'process/browser',
       }),
     ],
   };
 
   switch (args.mode) {
-    case "development":
+    case 'development':
       return merge(developmentConfig, envDependentConfig);
-    case "production":
+    case 'production':
       return merge(productionConfig, envDependentConfig);
     default:
-      throw new Error("No matching configuration was found!");
+      throw new Error('No matching configuration was found!');
   }
 };

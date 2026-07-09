@@ -1,10 +1,10 @@
-import store from "store2";
-import ran_page from "./RAN.html";
-import loadingScreen_page from "../../shared/views/loadingScreen.html";
-import * as initJS from "./RAN.js";
-import eyetrackingVars from "../../shared/views/eyetrackingVars.html";
-import * as headeyetrackingJS from "../../shared/views/headeyetracking.js";
-import * as videoCaptureJS from "../../shared/views/videoCapture.js";
+import store from 'store2';
+import ran_page from './RAN.html';
+import loadingScreen_page from '../../shared/views/loadingScreen.html';
+import * as initJS from './RAN.js';
+import eyetrackingVars from '../../shared/views/eyetrackingVars.html';
+import * as headeyetrackingJS from '../../shared/views/headeyetracking.js';
+import * as videoCaptureJS from '../../shared/views/videoCapture.js';
 import {
   loadScriptsFromElement,
   executeInlineScripts,
@@ -12,31 +12,31 @@ import {
   removeModuleFromWindow,
   cleanupDynamicScripts,
   resetStyles,
-} from "../../shared/views/viewUtils.js";
-import { resumeAudioContext, whenRunning } from "../../shared/helpers/audioUnlock.js";
+} from '../../shared/views/viewUtils.js';
+import { resumeAudioContext, whenRunning } from '../../shared/helpers/audioUnlock.js';
 
 export async function RANView(type, config, textConfig = {}) {
   // Load the existing HTML page
   // const response = await fetch("https://eyetrackingdata.blob.core.windows.net/public/views/RAN.html");
-  var myWorker = new Worker(new URL("../../shared/views/worker.js", import.meta.url), {
-    type: "module",
+  var myWorker = new Worker(new URL('../../shared/views/worker.js', import.meta.url), {
+    type: 'module',
   });
 
   window.myWorker = myWorker;
-  const eyetrackingVars_page = document.createElement("div");
+  const eyetrackingVars_page = document.createElement('div');
   eyetrackingVars_page.innerHTML = eyetrackingVars;
 
   let confirmationHtml = ran_page;
 
   // Create a div and set its innerHTML to the loaded HTML content
-  const RANPage = document.createElement("div");
+  const RANPage = document.createElement('div');
   // Set the div to cover the entire page
-  RANPage.style.position = "fixed";
-  RANPage.style.top = "0";
-  RANPage.style.left = "0";
-  RANPage.style.width = "100%";
-  RANPage.style.height = "100%";
-  window.deviceConfig = store.session.get("deviceConfig");
+  RANPage.style.position = 'fixed';
+  RANPage.style.top = '0';
+  RANPage.style.left = '0';
+  RANPage.style.width = '100%';
+  RANPage.style.height = '100%';
+  window.deviceConfig = store.session.get('deviceConfig');
   const { bEyeTracking, storeVideo } = window.deviceConfig;
 
   assignModuleToWindow(initJS);
@@ -63,9 +63,9 @@ export async function RANView(type, config, textConfig = {}) {
 
   await new Promise((resolve) => {
     document.body.addEventListener(
-      "click",
+      'click',
       async function (event) {
-        if (event.target.classList.contains("finish-button")) {
+        if (event.target.classList.contains('finish-button')) {
           resumeAudioContext();
           window.continueProcessing = false;
 
@@ -91,14 +91,13 @@ export async function RANView(type, config, textConfig = {}) {
 }
 
 async function endTrial(config, metadata, type) {
-  console.log("Test Finished");
+  console.log('Test Finished');
   await stopRecording(); // Stop recording when stimulus is clicked
 
   let objectURL = null;
   const timestamp = new Date().getTime();
 
-  const filename =
-    "RAN" + "_" + testConfig["testname"] + "_" + timestamp + ".webm";
+  const filename = 'RAN' + '_' + testConfig['testname'] + '_' + timestamp + '.webm';
 
   try {
     // The Cloud Function filters on customMetadata.type === 'Test' (case-sensitive).
@@ -111,11 +110,11 @@ async function endTrial(config, metadata, type) {
       metadata: uploadMetadata,
     });
   } catch (error) {
-    console.error("Error in saveRecordings:", error);
+    console.error('Error in saveRecordings:', error);
   }
 
   const results = {
-    assessment_type: testConfig["testname"],
+    assessment_type: testConfig['testname'],
     assessment_stage: type,
     stimulusPosition: _gridCoordinates,
     stimulus: metadata.stimulus,
@@ -138,23 +137,17 @@ async function DOMloaded(type, bEyeTracking, storeVideo, textConfig) {
 
   await giveAccess(bEyeTracking, storeVideo);
 
-  document.querySelector(".header").innerHTML = (
-    textConfig.header.text ?? ""
-  ).replace(/\n/g, "<br>");
-  document.querySelector(".subtitle").innerHTML = (
-    textConfig.subtitle.text ?? ""
-  ).replace(/\n/g, "<br>");
-  const nextText = document.querySelector(".next-text");
-  nextText.textContent = textConfig.footer.text ?? "";
-  nextText.style.bottom = "3rem";
+  document.querySelector('.header').innerHTML = (textConfig.header.text ?? '').replace(/\n/g, '<br>');
+  document.querySelector('.subtitle').innerHTML = (textConfig.subtitle.text ?? '').replace(/\n/g, '<br>');
+  const nextText = document.querySelector('.next-text');
+  nextText.textContent = textConfig.footer.text ?? '';
+  nextText.style.bottom = '3rem';
 
-  var voiceover = document.getElementById("voiceover");
+  var voiceover = document.getElementById('voiceover');
 
-  var audioQueue = [
-    textConfig.header?.audioSrc,
-    textConfig.subtitle?.audioSrc,
-    textConfig.footer?.audioSrc,
-  ].filter(Boolean);
+  var audioQueue = [textConfig.header?.audioSrc, textConfig.subtitle?.audioSrc, textConfig.footer?.audioSrc].filter(
+    Boolean,
+  );
 
   function playNext(queue) {
     if (queue.length === 0) return;
@@ -162,7 +155,7 @@ async function DOMloaded(type, bEyeTracking, storeVideo, textConfig) {
     voiceover.src = window._preloadedAudioURLs?.get(src) ?? src;
     if (rest.length > 0) {
       voiceover.addEventListener(
-        "ended",
+        'ended',
         function () {
           playNext(rest);
         },
@@ -172,11 +165,7 @@ async function DOMloaded(type, bEyeTracking, storeVideo, textConfig) {
     voiceover.play().catch(function (err) {
       // Same race condition as infoSlide: yield to macrotask queue so any
       // interrupted→running statechange cycle completes before retrying.
-      console.warn(
-        "[RANView] play() rejected:",
-        err && err.name,
-        "— retrying after yield",
-      );
+      console.warn('[RANView] play() rejected:', err && err.name, '— retrying after yield');
       setTimeout(function () {
         whenRunning().then(function () {
           voiceover.play().catch(function () {});
@@ -190,7 +179,7 @@ async function DOMloaded(type, bEyeTracking, storeVideo, textConfig) {
       playNext(audioQueue);
     });
   } else {
-    voiceover.src = "";
+    voiceover.src = '';
   }
 }
 
@@ -198,7 +187,7 @@ function cleanup(src) {
   removeModuleFromWindow(src);
 
   // Remove event listeners from buttons by replacing them with clones
-  const buttons = document.querySelectorAll("button");
+  const buttons = document.querySelectorAll('button');
   buttons.forEach((button) => {
     if (button.parentNode) {
       const clone = button.cloneNode(true);

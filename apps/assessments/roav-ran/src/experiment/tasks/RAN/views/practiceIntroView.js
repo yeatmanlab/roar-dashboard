@@ -3,18 +3,9 @@
  * @module practiceIntroView
  */
 
-import practice_intro_page from "./practiceIntro.html";
-import {
-  loadScriptsFromElement,
-  executeInlineScripts,
-  cleanupDynamicScripts,
-} from "../../shared/views/viewUtils.js";
-import {
-  giveAccess,
-  startRecording,
-  stopRecording,
-  saveRecordings,
-} from "../../shared/views/videoCapture.js";
+import practice_intro_page from './practiceIntro.html';
+import { loadScriptsFromElement, executeInlineScripts, cleanupDynamicScripts } from '../../shared/views/viewUtils.js';
+import { giveAccess, startRecording, stopRecording, saveRecordings } from '../../shared/views/videoCapture.js';
 
 /**
  * Displays a practice intro view with a sequential stimulus demo followed by a "Your turn!" prompt.
@@ -38,7 +29,7 @@ export async function practiceIntroView(practiceConfig, config) {
 
   const practiceIntroHtml = practice_intro_page;
 
-  const practiceIntroPage = document.createElement("div");
+  const practiceIntroPage = document.createElement('div');
   practiceIntroPage.innerHTML = practiceIntroHtml;
 
   window.practiceIntroConfig = practiceConfig;
@@ -50,20 +41,20 @@ export async function practiceIntroView(practiceConfig, config) {
     await stopRecording();
     const timestamp = new Date().getTime();
     const ranType = window.practiceIntroConfig.assets.ranType;
-    const filename = "RAN_practice_" + ranType + "_" + timestamp + ".webm";
+    const filename = 'RAN_practice_' + ranType + '_' + timestamp + '.webm';
 
     try {
       let objectURL = await saveRecordings({
         filename,
         deviceConfig: window.deviceConfig,
         config,
-        metadata: { stimulus: "practice" },
+        metadata: { stimulus: 'practice' },
       });
       // console.log("Saving Practice Recording to:", objectURL);
     } catch (error) {
-      console.error("Error saving practice recording:", error);
+      console.error('Error saving practice recording:', error);
     }
-    document.dispatchEvent(new Event("pageComplete"));
+    document.dispatchEvent(new Event('pageComplete'));
   };
 
   document.body.appendChild(practiceIntroPage);
@@ -73,7 +64,7 @@ export async function practiceIntroView(practiceConfig, config) {
 
   await new Promise((resolve) => {
     document.addEventListener(
-      "pageComplete",
+      'pageComplete',
       () => {
         practiceIntroPage.remove();
         cleanup();

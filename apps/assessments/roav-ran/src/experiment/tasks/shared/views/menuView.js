@@ -3,12 +3,8 @@
  * @module menuView
  */
 
-import menu_page from "./menu.html";
-import {
-  loadScriptsFromElement,
-  executeInlineScripts,
-  cleanupDynamicScripts,
-} from "./viewUtils.js";
+import menu_page from './menu.html';
+import { loadScriptsFromElement, executeInlineScripts, cleanupDynamicScripts } from './viewUtils.js';
 
 /**
  * Displays the menu view and handles user interaction.
@@ -25,7 +21,7 @@ export async function menuView(tests_url) {
   const menuHtml = menu_page;
 
   // Create a div and set its innerHTML to the loaded HTML content
-  const menuPage = document.createElement("div");
+  const menuPage = document.createElement('div');
   menuPage.innerHTML = menuHtml;
 
   // Append the confirmation page to the body or a specific element
@@ -38,14 +34,14 @@ export async function menuView(tests_url) {
   // Wait for the user to click the "Start Experiment" button
   await new Promise((resolve) => {
     function handleClick(event) {
-      if (event.target.id.startsWith("button_")) {
-        console.log("Button clicked:", event.target.id);
-        document.body.removeEventListener("click", handleClick);
+      if (event.target.id.startsWith('button_')) {
+        console.log('Button clicked:', event.target.id);
+        document.body.removeEventListener('click', handleClick);
         cleanupDynamicScripts(); // Cleanup added scripts
         menuPage.remove(); // Remove the confirmation page
         resolve();
       }
     }
-    document.body.addEventListener("click", handleClick);
+    document.body.addEventListener('click', handleClick);
   });
 }

@@ -1,7 +1,7 @@
 let _ctx = null;
 
 export function getAudioContextState() {
-  return _ctx ? _ctx.state : "not created";
+  return _ctx ? _ctx.state : 'not created';
 }
 
 export function unlockAudio() {
@@ -30,8 +30,8 @@ export function unlockAudio() {
 
     // Belt-and-suspenders: if the context is ever suspended or interrupted (iOS
     // fires 'interrupted' when the audio session is taken over), resume it.
-    _ctx.addEventListener("statechange", () => {
-      if (_ctx.state === "suspended" || _ctx.state === "interrupted") {
+    _ctx.addEventListener('statechange', () => {
+      if (_ctx.state === 'suspended' || _ctx.state === 'interrupted') {
         _ctx.resume().catch(() => {});
       }
     });
@@ -48,7 +48,7 @@ export function unlockAudio() {
 // that resolves once the context is in the 'running' state (or immediately
 // if it already is).
 export function resumeAudioContext() {
-  if (!_ctx || _ctx.state === "running") return Promise.resolve();
+  if (!_ctx || _ctx.state === 'running') return Promise.resolve();
   return _ctx.resume().catch(() => {});
 }
 
@@ -57,15 +57,15 @@ export function resumeAudioContext() {
 // iOS audio session interruption to finish before resolving, preventing the
 // race where play() is called while the context is momentarily 'interrupted'.
 export function whenRunning() {
-  if (!_ctx || _ctx.state === "running") return Promise.resolve();
+  if (!_ctx || _ctx.state === 'running') return Promise.resolve();
   return new Promise((resolve) => {
     function handler() {
-      if (_ctx.state === "running") {
-        _ctx.removeEventListener("statechange", handler);
+      if (_ctx.state === 'running') {
+        _ctx.removeEventListener('statechange', handler);
         resolve();
       }
     }
-    _ctx.addEventListener("statechange", handler);
+    _ctx.addEventListener('statechange', handler);
     _ctx.resume().catch(() => {});
   });
 }

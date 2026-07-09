@@ -3,13 +3,9 @@
  * @module infoSlideView
  */
 
-import info_slide_page from "./infoSlide.html";
-import {
-  loadScriptsFromElement,
-  executeInlineScripts,
-  cleanupDynamicScripts,
-} from "./viewUtils.js";
-import { isPortrait, isMobile } from "../helpers/detectDevice.js";
+import info_slide_page from './infoSlide.html';
+import { loadScriptsFromElement, executeInlineScripts, cleanupDynamicScripts } from './viewUtils.js';
+import { isPortrait, isMobile } from '../helpers/detectDevice.js';
 
 /**
  * Displays a sequence of informational/transition slides with a lion mascot.
@@ -25,7 +21,7 @@ export async function infoSlideView(slides, config) {
   if (!Array.isArray(slides)) slides = [slides];
   const infoSlideHtml = info_slide_page;
 
-  const infoSlidePage = document.createElement("div");
+  const infoSlidePage = document.createElement('div');
   infoSlidePage.innerHTML = infoSlideHtml;
 
   document.body.appendChild(infoSlidePage);
@@ -41,7 +37,7 @@ export async function infoSlideView(slides, config) {
 
   await new Promise((resolve) => {
     document.addEventListener(
-      "pageComplete",
+      'pageComplete',
       () => {
         infoSlidePage.remove();
         cleanup();

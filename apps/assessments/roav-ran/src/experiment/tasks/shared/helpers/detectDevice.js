@@ -1,13 +1,13 @@
 export function isMobile() {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return false;
   }
   const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
   const isTablet =
     /iPad|iPod/i.test(navigator.userAgent) ||
-    navigator.platform === "iPad" ||
-    navigator.userAgentData?.platform === "iPad" ||
-    ((navigator.userAgent.match(/Mac/) || navigator.platform === "MacIntel") &&
+    navigator.platform === 'iPad' ||
+    navigator.userAgentData?.platform === 'iPad' ||
+    ((navigator.userAgent.match(/Mac/) || navigator.platform === 'MacIntel') &&
       navigator.maxTouchPoints &&
       navigator.maxTouchPoints > 0);
 

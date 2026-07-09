@@ -3,12 +3,8 @@
  * @module micFailView
  */
 
-import mic_fail_page from "./micFail.html";
-import {
-  loadScriptsFromElement,
-  executeInlineScripts,
-  cleanupDynamicScripts,
-} from "../../shared/views/viewUtils.js";
+import mic_fail_page from './micFail.html';
+import { loadScriptsFromElement, executeInlineScripts, cleanupDynamicScripts } from '../../shared/views/viewUtils.js';
 
 /**
  * Displays an ending slide informing the user the app is closing due to mic failure.
@@ -19,7 +15,7 @@ import {
  * @returns {Promise<void>} A promise that resolves when the user clicks the continue button.
  */
 export async function micFailView(slide, config) {
-  const micFailPage = document.createElement("div");
+  const micFailPage = document.createElement('div');
   micFailPage.innerHTML = mic_fail_page;
 
   document.body.appendChild(micFailPage);
@@ -32,7 +28,7 @@ export async function micFailView(slide, config) {
 
   await new Promise((resolve) => {
     document.addEventListener(
-      "pageComplete",
+      'pageComplete',
       () => {
         micFailPage.remove();
         cleanup();

@@ -1,4 +1,4 @@
-import "./shared.scss";
-import "./task.scss";
+import './shared.scss';
+import './task.scss';
 
 export default {};

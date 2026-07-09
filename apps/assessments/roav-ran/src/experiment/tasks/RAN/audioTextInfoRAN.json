@@ -1,5 +1,5 @@
 {
-  "en":{
+  "en": {
     "loading": "Loading...",
     "subtestOrder": ["Letters", "Numbers"],
     "infoSlideView": {
@@ -153,14 +153,7 @@
             "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/nine.mp3",
             "https://storage.googleapis.com/roav-ran/en/shared/audio/stimuli/two.mp3"
           ],
-          "images": [
-            "one.svg",
-            "four.svg",
-            "three.svg",
-            "five.svg",
-            "nine.svg",
-            "two.svg"
-          ]
+          "images": ["one.svg", "four.svg", "three.svg", "five.svg", "nine.svg", "two.svg"]
         },
         "footer": {
           "audioSrc": "https://storage.googleapis.com/roav-ran/en/shared/audio/clickDoneButton.mp3",

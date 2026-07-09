@@ -1,5 +1,5 @@
 :root {
-  --go-button: url("https://storage.googleapis.com/roav-ran/shared/assets/go_button_small.webp");
+  --go-button: url('https://storage.googleapis.com/roav-ran/shared/assets/go_button_small.webp');
 }
 
 .lion-char {
@@ -143,8 +143,7 @@
  * Accounts portrait mode up to 12.9/13-inch iPad (1024px x 1366px)
  * While allowing style to apply to browsers up to 834px browser width on computers
  */
-@media screen and (max-width: 834px),
-  screen and (any-pointer: coarse) and (max-width: 1024px) {
+@media screen and (max-width: 834px), screen and (any-pointer: coarse) and (max-width: 1024px) {
   .lion-char-instructions {
     height: auto;
     width: 29%;

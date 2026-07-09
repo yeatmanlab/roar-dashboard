@@ -3,12 +3,8 @@
  * @module instructionView
  */
 
-import instruction_page from "./instruction.html";
-import {
-  loadScriptsFromElement,
-  executeInlineScripts,
-  cleanupDynamicScripts,
-} from "../../shared/views/viewUtils.js";
+import instruction_page from './instruction.html';
+import { loadScriptsFromElement, executeInlineScripts, cleanupDynamicScripts } from '../../shared/views/viewUtils.js';
 
 /**
  * Displays an instruction/practice feedback view and handles user interaction.
@@ -21,7 +17,7 @@ import {
 export async function instructionView(stage, config) {
   const instructionHtml = instruction_page;
 
-  const instructionPage = document.createElement("div");
+  const instructionPage = document.createElement('div');
   instructionPage.innerHTML = instructionHtml;
 
   document.body.appendChild(instructionPage);
@@ -35,7 +31,7 @@ export async function instructionView(stage, config) {
 
   return new Promise((resolve) => {
     document.addEventListener(
-      "pageComplete",
+      'pageComplete',
       () => {
         instructionPage.remove();
         cleanup();
@@ -45,7 +41,7 @@ export async function instructionView(stage, config) {
     );
 
     document.addEventListener(
-      "instructionMicFailed",
+      'instructionMicFailed',
       () => {
         instructionPage.remove();
         cleanup();

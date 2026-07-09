@@ -1,13 +1,13 @@
-import store from "store2";
-import calibration_page from "./calibration.html";
-import calibration_page_short from "./calibration_short.html";
-import loadingScreen_page from "./loadingScreen.html";
-import eyetrackingVars from "./eyetrackingVars.html";
-import * as headeyetrackingJS from "./headeyetracking.js";
-import * as videoCaptureJS from "./videoCapture.js";
-import { PolynomialRegression } from "ml-regression-polynomial";
-import i18next from "i18next";
-import { checkBoolean } from "../helpers/helperFunctions.js";
+import store from 'store2';
+import calibration_page from './calibration.html';
+import calibration_page_short from './calibration_short.html';
+import loadingScreen_page from './loadingScreen.html';
+import eyetrackingVars from './eyetrackingVars.html';
+import * as headeyetrackingJS from './headeyetracking.js';
+import * as videoCaptureJS from './videoCapture.js';
+import { PolynomialRegression } from 'ml-regression-polynomial';
+import i18next from 'i18next';
+import { checkBoolean } from '../helpers/helperFunctions.js';
 import {
   loadScriptsFromElement,
   executeInlineScripts,
@@ -16,27 +16,27 @@ import {
   cleanupDynamicScripts,
   resetStyles,
   setLanguage,
-} from "./viewUtils.js";
+} from './viewUtils.js';
 
 export async function calibrationView(config) {
-  var myWorker = new Worker(new URL("./worker.js", import.meta.url), {
-    type: "module",
+  var myWorker = new Worker(new URL('./worker.js', import.meta.url), {
+    type: 'module',
   });
 
   window.myWorker = myWorker;
   var html = calibration_page;
-  if (config.firekit.task.variantParams.calibrationType === "short") {
+  if (config.firekit.task.variantParams.calibrationType === 'short') {
     html = calibration_page_short;
   }
-  const eyetrackingVars_page = document.createElement("div");
+  const eyetrackingVars_page = document.createElement('div');
   eyetrackingVars_page.innerHTML = eyetrackingVars;
 
-  const page = document.createElement("div");
-  page.style.position = "fixed";
-  page.style.top = "0";
-  page.style.left = "0";
-  page.style.width = "100%";
-  page.style.height = "100%";
+  const page = document.createElement('div');
+  page.style.position = 'fixed';
+  page.style.top = '0';
+  page.style.left = '0';
+  page.style.width = '100%';
+  page.style.height = '100%';
 
   assignModuleToWindow(videoCaptureJS);
   assignModuleToWindow(headeyetrackingJS);
@@ -59,44 +59,29 @@ export async function calibrationView(config) {
   // Wait for the user to click the "Start Experiment" button
   await new Promise((resolve) => {
     document.addEventListener(
-      "pageComplete",
+      'pageComplete',
       async () => {
         page.innerHTML = loadingHtml;
         resetStyles(page);
-        var _eyeCoordinates_cal = _eyeCoordinates.filter(
-          (_, index) => _calibrationData[index] == 1,
-        );
-        var _gridCoordinates_cal = _gridCoordinates.filter(
-          (_, index) => _calibrationData[index] == 1,
-        );
+        var _eyeCoordinates_cal = _eyeCoordinates.filter((_, index) => _calibrationData[index] == 1);
+        var _gridCoordinates_cal = _gridCoordinates.filter((_, index) => _calibrationData[index] == 1);
 
         let regressors = null;
         let calibrationSuccessful = false;
 
         // Check if we have sufficient calibration data
-        if (
-          _eyeCoordinates_cal.length >= 2 &&
-          _gridCoordinates_cal.length >= 2
-        ) {
+        if (_eyeCoordinates_cal.length >= 2 && _gridCoordinates_cal.length >= 2) {
           try {
-            regressors = get_Regressors(
-              _eyeCoordinates_cal,
-              _gridCoordinates_cal,
-            ); // Get regression coefficients
+            regressors = get_Regressors(_eyeCoordinates_cal, _gridCoordinates_cal); // Get regression coefficients
             storeRegressorsInSession(regressors);
             calibrationSuccessful = true;
           } catch (error) {
-            console.warn(
-              "Calibration failed due to insufficient or invalid data:",
-              error,
-            );
-            console.warn("Proceeding without eye tracking calibration.");
+            console.warn('Calibration failed due to insufficient or invalid data:', error);
+            console.warn('Proceeding without eye tracking calibration.');
           }
         } else {
-          console.warn(
-            "Insufficient calibration data collected. Face detection may have failed.",
-          );
-          console.warn("Proceeding without eye tracking calibration.");
+          console.warn('Insufficient calibration data collected. Face detection may have failed.');
+          console.warn('Proceeding without eye tracking calibration.');
         }
         await endCalibration(config, regressors, 50);
         videoCaptureJS.stopMediaStreams();
@@ -134,24 +119,18 @@ function get_Regressors(eyeCoordinates, gridCoordinates) {
 }
 
 function storeRegressorsInSession(regressors) {
-  store.session.set("x_coef", regressors.x_regressor[1]);
-  store.session.set("x_intercept", regressors.x_regressor[0]);
-  store.session.set("y_coef", regressors.y_regressor[1]);
-  store.session.set("y_intercept", regressors.y_regressor[0]);
+  store.session.set('x_coef', regressors.x_regressor[1]);
+  store.session.set('x_intercept', regressors.x_regressor[0]);
+  store.session.set('y_coef', regressors.y_regressor[1]);
+  store.session.set('y_intercept', regressors.y_regressor[0]);
 }
 
 async function endCalibration(config, regressors, estimatedDistance) {
-  console.log("Test Finished");
+  console.log('Test Finished');
   const timestamp = new Date().getTime();
   await stopRecording(); // Stop recording when stimulus is clicked
 
-  var filename =
-    "RAN_eyeCalibration" +
-    "_" +
-    estimatedDistance.toString() +
-    "_" +
-    timestamp +
-    ".webm";
+  var filename = 'RAN_eyeCalibration' + '_' + estimatedDistance.toString() + '_' + timestamp + '.webm';
 
   try {
     let objectURL = null;
@@ -167,8 +146,8 @@ async function endCalibration(config, regressors, estimatedDistance) {
     }
 
     const results = {
-      assessment_type: "MEP",
-      assessment_stage: "eyeCalibration",
+      assessment_type: 'MEP',
+      assessment_stage: 'eyeCalibration',
       recordedVideo: filename,
       distance: estimatedDistance,
       regressors: regressors,
@@ -177,27 +156,27 @@ async function endCalibration(config, regressors, estimatedDistance) {
       calibrationData: _calibrationData,
       uploadURL: objectURL,
       _timeData: _timeData,
-      parentDir: store.session.get("id"),
-      deviceConfig: store.session.get("deviceConfig"),
-      participantConfig: store.session.get("participantConfig"),
+      parentDir: store.session.get('id'),
+      deviceConfig: store.session.get('deviceConfig'),
+      participantConfig: store.session.get('participantConfig'),
       correct: 1,
     };
 
     config.firekit.writeTrial(results);
   } catch (error) {
-    console.error("Error in saveRecordings:", error);
+    console.error('Error in saveRecordings:', error);
   }
 }
 
 async function DOMloaded(config) {
   initEyeTracking(false);
   try {
-    const deviceConfig = store.session.get("deviceConfig");
+    const deviceConfig = store.session.get('deviceConfig');
     const bEyeTracking = deviceConfig.bEyeTracking;
     const storeVideo = deviceConfig.storeVideo;
     await giveAccess(bEyeTracking, storeVideo);
   } catch (error) {
-    console.error("Camera access failed:", error);
+    console.error('Camera access failed:', error);
   }
   startTest();
 }

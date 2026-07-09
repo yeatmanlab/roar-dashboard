@@ -1,15 +1,10 @@
-import countdown_page from "./countDown.html";
-import { 
-  cleanupDynamicScripts,
- } from "../../shared/views/viewUtils.js";
-import { 
-    initPageDiv
-} from "../helpers/viewHelpers.js";
-
+import countdown_page from './countDown.html';
+import { cleanupDynamicScripts } from '../../shared/views/viewUtils.js';
+import { initPageDiv } from '../helpers/viewHelpers.js';
 
 export async function countDownView() {
   const countDownPage = initPageDiv(countdown_page);
-  
+
   // append the html to the document
   document.body.appendChild(countDownPage);
 
@@ -19,7 +14,7 @@ export async function countDownView() {
 
   await new Promise((resolve) => {
     document.addEventListener(
-      "pageComplete",
+      'pageComplete',
       () => {
         countDownPage.remove();
         cleanupDynamicScripts();
@@ -30,15 +25,13 @@ export async function countDownView() {
   });
 }
 
-
 function updateCountdown(countdown) {
   countdown--;
 
   if (countdown === 0) {
     document.dispatchEvent(new Event('pageComplete'));
   } else {
-    document.getElementById("instruction").innerHTML =
-      "<h1>" + countdown + "</h1>";
+    document.getElementById('instruction').innerHTML = '<h1>' + countdown + '</h1>';
     setTimeout(function () {
       updateCountdown(countdown);
     }, 1000);

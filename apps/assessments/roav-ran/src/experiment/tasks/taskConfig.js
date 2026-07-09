@@ -1,10 +1,10 @@
-import RANTask from "./RAN/task.js";
-import { initConfig as initConfigRAN } from "./RAN/helpers/initConfigRAN.js";
-import assetsRAN from "./RAN/audioTextInfoRAN.json";
-import symbolSearchTask from "./symbolSearch/task.js";
-import { initConfig as initConfigSymbol} from "./symbolSearch/helpers/initConfigSymbol.js";
-import assetsSymbol from "./symbolSearch/audioTextInfoSymbol.json"
-import { imageAssetsSymbol } from "./symbolSearch/imageAssets.js"
+import RANTask from './RAN/task.js';
+import { initConfig as initConfigRAN } from './RAN/helpers/initConfigRAN.js';
+import assetsRAN from './RAN/audioTextInfoRAN.json';
+import symbolSearchTask from './symbolSearch/task.js';
+import { initConfig as initConfigSymbol } from './symbolSearch/helpers/initConfigSymbol.js';
+import assetsSymbol from './symbolSearch/audioTextInfoSymbol.json';
+import { imageAssetsSymbol } from './symbolSearch/imageAssets.js';
 
 export default {
   ran: {
@@ -17,6 +17,6 @@ export default {
     initConfig: initConfigSymbol,
     buildTaskViews: symbolSearchTask,
     audioMapping: assetsSymbol,
-    imageAssets: imageAssetsSymbol
+    imageAssets: imageAssetsSymbol,
   },
 };

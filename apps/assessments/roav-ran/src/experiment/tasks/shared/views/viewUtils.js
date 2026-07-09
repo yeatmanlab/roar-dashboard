@@ -22,10 +22,10 @@ export function loadScript(src) {
   }
 
   const promise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
+    const script = document.createElement('script');
     script.src = absoluteSrc;
     // Mark as dynamic so cleanupDynamicScripts() can remove it.
-    script.dataset.dynamic = "true";
+    script.dataset.dynamic = 'true';
     script.onload = () => {
       resolve();
     };
@@ -47,7 +47,7 @@ export function loadScript(src) {
  * @returns {Promise<void>} Resolves when all external scripts are loaded.
  */
 export async function loadScriptsFromElement(element) {
-  const scripts = element.getElementsByTagName("script");
+  const scripts = element.getElementsByTagName('script');
   for (let i = 0; i < scripts.length; i++) {
     const script = scripts[i];
     if (script.src) {
@@ -61,9 +61,9 @@ export async function loadScriptsFromElement(element) {
  * @param {HTMLElement} element - The parent element containing inline script tags.
  */
 export function executeInlineScripts(element) {
-  const scripts = element.getElementsByTagName("script");
+  const scripts = element.getElementsByTagName('script');
   for (let i = 0; i < scripts.length; i++) {
-    const script = document.createElement("script");
+    const script = document.createElement('script');
     script.text = scripts[i].text;
     document.head.appendChild(script).parentNode.removeChild(script);
   }
@@ -89,9 +89,7 @@ export function removeModuleFromWindow(src) {
     if (propDesc && propDesc.configurable) {
       delete window[key];
     } else {
-      console.log(
-        `Cannot remove ${key} from window; it may be non-configurable.`,
-      );
+      console.log(`Cannot remove ${key} from window; it may be non-configurable.`);
     }
   });
 }
@@ -103,7 +101,7 @@ export function removeModuleFromWindow(src) {
  *   If omitted, all dynamic scripts are removed.
  */
 export function cleanupDynamicScripts(filter) {
-  const dynamicScripts = document.querySelectorAll("script[data-dynamic]");
+  const dynamicScripts = document.querySelectorAll('script[data-dynamic]');
   dynamicScripts.forEach((script) => {
     if (!filter || filter(script)) {
       script.parentNode.removeChild(script);
@@ -116,11 +114,11 @@ export function cleanupDynamicScripts(filter) {
  * @param {HTMLElement} element - The element whose styles should be reset.
  */
 export function resetStyles(element) {
-  element.style.position = "";
-  element.style.top = "";
-  element.style.left = "";
-  element.style.width = "";
-  element.style.height = "";
+  element.style.position = '';
+  element.style.top = '';
+  element.style.left = '';
+  element.style.width = '';
+  element.style.height = '';
 }
 
 /**
@@ -134,9 +132,7 @@ export function setLanguage(translations) {
     // It does not cover edge cases like keys starting with a digit or empty
     // strings. This is acceptable because translation keys are expected to be
     // simple alphanumeric identifiers (e.g. "title", "btn-next").
-    const escapedKey = CSS.escape
-      ? CSS.escape(key)
-      : key.replace(/([^\w-])/g, "\\$1");
+    const escapedKey = CSS.escape ? CSS.escape(key) : key.replace(/([^\w-])/g, '\\$1');
     const element = document.querySelector(`[data-alt-id="${escapedKey}"]`);
     if (element) {
       element.textContent = translations[key];

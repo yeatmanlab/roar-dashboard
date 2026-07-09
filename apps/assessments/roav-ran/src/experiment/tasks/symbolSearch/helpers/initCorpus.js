@@ -1,7 +1,7 @@
-import { stimulusArray } from "../stimulusInfo";
-import store from "store2";
-import itemsPractice from "../practice.csv";
-import { imageAssetsDir } from "../imageAssets";
+import { stimulusArray } from '../stimulusInfo';
+import store from 'store2';
+import itemsPractice from '../practice.csv';
+import { imageAssetsDir } from '../imageAssets';
 
 //randomly shuffle array, chooses random index for each element and swaps
 const shuffle = (array) => {
@@ -18,11 +18,11 @@ const shuffle = (array) => {
 };
 
 /**
- * This function generates the target positions for a given number of trials. 
+ * This function generates the target positions for a given number of trials.
  * The possible set of target positions = [0, 1, 2, ... numPositions-1]
- * 
+ *
  * Until the required number of target positions are generated:
- * 1. Randomly shuffle the possible set of target positions. 
+ * 1. Randomly shuffle the possible set of target positions.
  * 2. Appends this set of shuffled positions to the final set of target positions, only if the first target in the new sequence is not equal to the last target of the previous sequence. This is to prevent target positions from repeating across consecutive trials.
  *
  * This logic allows an approximately uniform distribution of all target positions, without random sampling issues which may appear as a result of small number of trials. Since some students may not be able to do many trials within the given time.
@@ -32,7 +32,7 @@ const shuffle = (array) => {
  * @returns {number[]} Array of target positions
  */
 function generateTargetSeq(numTrials, numPositions) {
-  // possible set of target positions  
+  // possible set of target positions
   const base = Array.from({ length: numPositions }, (_, i) => i);
 
   const sequence = [];
@@ -58,82 +58,79 @@ function generateTargetSeq(numTrials, numPositions) {
 /**
  * This function randomly generates trials and assigns the required parameters for each trial.
  * For each trial the choices are shuffled such that the target image is not equal on consecutive trials.
- * 
+ *
  * @param {number} numTrials - Number of trials to be generated
  * @returns {Object[]} Array containing trials
  */
-const generateTrials = (numTrials) =>{
-    let corpus = [];
-    let prevTarget = null;
+const generateTrials = (numTrials) => {
+  let corpus = [];
+  let prevTarget = null;
 
-    //generate target sequence
-    let targetSeq = generateTargetSeq(numTrials, stimulusArray.length);
-    for(let i=0; i<numTrials; i++){
-        let shuffledStimulus;
-        let targetIdx;
-        let target;
+  //generate target sequence
+  let targetSeq = generateTargetSeq(numTrials, stimulusArray.length);
+  for (let i = 0; i < numTrials; i++) {
+    let shuffledStimulus;
+    let targetIdx;
+    let target;
 
-        do {
-            //randomise stimulus array
-            shuffledStimulus = shuffle(stimulusArray);
-            targetIdx = targetSeq[i];
-            target = shuffledStimulus[targetIdx];
+    do {
+      //randomise stimulus array
+      shuffledStimulus = shuffle(stimulusArray);
+      targetIdx = targetSeq[i];
+      target = shuffledStimulus[targetIdx];
+    } while (prevTarget !== null && target === prevTarget);
 
-        } while (prevTarget !== null && target === prevTarget);
+    prevTarget = target;
 
-        prevTarget = target;
-
-        let trial = {
-            choices: shuffledStimulus,
-            correctResponseNum: targetIdx,
-            target: target,
-            distractors: shuffledStimulus.filter(item => item !== target),
-            dir: imageAssetsDir
-        }
-        corpus.push(trial)
-    }
-    return(corpus);
-}
+    let trial = {
+      choices: shuffledStimulus,
+      correctResponseNum: targetIdx,
+      target: target,
+      distractors: shuffledStimulus.filter((item) => item !== target),
+      dir: imageAssetsDir,
+    };
+    corpus.push(trial);
+  }
+  return corpus;
+};
 
 // generate the corpus
 export const fetchAndParseCorpus = async (config) => {
+  let instruction = [];
+  let practice = [];
+  let test = [];
 
-    let instruction = []
-    let practice = []
-    let test = []
-
-    //get practice and instruction trials
-    if (!itemsPractice || itemsPractice.length === 0) {
-        console.error("No practice items loaded - check data source");
-        throw new Error("Practice items are required but missing");
-    } else {
-        for (let  i = 0; i < itemsPractice.length; i++) {
-            const newRow = {
-                choices: itemsPractice[i].choices.split(", "),
-                correctResponseNum: parseInt(itemsPractice[i].correctResponseNum),
-                dir: itemsPractice[i].dir,
-                distractors: itemsPractice[i].distractors.split(", "),
-                target: itemsPractice[i].target,
-            };
-            if(itemsPractice[i].type === "instruction"){
-                instruction.push(newRow)
-            } else {
-                practice.push(newRow)
-            }
-        }
+  //get practice and instruction trials
+  if (!itemsPractice || itemsPractice.length === 0) {
+    console.error('No practice items loaded - check data source');
+    throw new Error('Practice items are required but missing');
+  } else {
+    for (let i = 0; i < itemsPractice.length; i++) {
+      const newRow = {
+        choices: itemsPractice[i].choices.split(', '),
+        correctResponseNum: parseInt(itemsPractice[i].correctResponseNum),
+        dir: itemsPractice[i].dir,
+        distractors: itemsPractice[i].distractors.split(', '),
+        target: itemsPractice[i].target,
+      };
+      if (itemsPractice[i].type === 'instruction') {
+        instruction.push(newRow);
+      } else {
+        practice.push(newRow);
+      }
     }
+  }
 
-    for(let i=0; i<store.session.get("numBlocks"); i++){
-        test.push(generateTrials(config.numberOfTrials));
-    }
-    
+  for (let i = 0; i < store.session.get('numBlocks'); i++) {
+    test.push(generateTrials(config.numberOfTrials));
+  }
 
-    let corpusAll = {
-        instruction: instruction,
-        practice: practice,
-        stimulus: test
-    }
-    store.session.set("corpusAll", corpusAll);
-    
-    return(corpusAll);
-}
+  let corpusAll = {
+    instruction: instruction,
+    practice: practice,
+    stimulus: test,
+  };
+  store.session.set('corpusAll', corpusAll);
+
+  return corpusAll;
+};

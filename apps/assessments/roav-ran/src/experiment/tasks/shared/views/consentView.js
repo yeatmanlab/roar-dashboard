@@ -3,13 +3,9 @@
  * @module consentView
  */
 
-import consent_page from "./consent.html";
-import {
-  loadScriptsFromElement,
-  executeInlineScripts,
-  cleanupDynamicScripts,
-} from "./viewUtils.js";
-import { unlockAudio } from "../helpers/audioUnlock.js";
+import consent_page from './consent.html';
+import { loadScriptsFromElement, executeInlineScripts, cleanupDynamicScripts } from './viewUtils.js';
+import { unlockAudio } from '../helpers/audioUnlock.js';
 
 /**
  * Displays the consent view by injecting the consent page into the DOM.
@@ -23,7 +19,7 @@ export async function consentView() {
   const consentHtml = consent_page;
 
   // Create a div and set its innerHTML to the loaded HTML content
-  const consentPage = document.createElement("div");
+  const consentPage = document.createElement('div');
   consentPage.innerHTML = consentHtml;
 
   // Append the confirmation page to the body or a specific element
@@ -35,9 +31,9 @@ export async function consentView() {
 
   // Wait for the user to click the "Start Experiment" button
   await new Promise((resolve) => {
-    const confirmButton = document.getElementById("confirmButton");
+    const confirmButton = document.getElementById('confirmButton');
     if (confirmButton) {
-      confirmButton.addEventListener("click", () => {
+      confirmButton.addEventListener('click', () => {
         unlockAudio();
         cleanupDynamicScripts(); // Cleanup added scripts
         consentPage.remove(); // Remove the confirmation page

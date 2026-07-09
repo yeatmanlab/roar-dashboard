@@ -1,21 +1,18 @@
 @font-face {
   font-family: primerRegular;
-  src: url(https://storage.googleapis.com/roar-ak/font/primer_print.ttf)
-    format("truetype");
+  src: url(https://storage.googleapis.com/roar-ak/font/primer_print.ttf) format('truetype');
 }
 
 @font-face {
   font-family: primerBold;
-  src: url(https://storage.googleapis.com/roar-ak/font/primer_print_bold.ttf)
-    format("truetype");
+  src: url(https://storage.googleapis.com/roar-ak/font/primer_print_bold.ttf) format('truetype');
 }
 
 .jspsych-display-element {
   height: 100%;
   width: 100%;
   margin: 0;
-  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-    "sans-serif";
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
   touch-action: manipulation;
   -webkit-touch-callout: none; /* iOS Safari */
   -webkit-user-select: none; /* Safari */
@@ -101,10 +98,7 @@
       // 4 x 1
       .column-layout {
         display: grid;
-        grid-template-columns: repeat(
-          auto-fit,
-          minmax(300px, 1fr)
-        ); /* two columns of equal width */
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* two columns of equal width */
         gap: 2rem;
         place-items: center;
 
@@ -150,10 +144,7 @@
 
       .triple-layout {
         display: grid;
-        grid-template-columns: repeat(
-          3,
-          1fr
-        ); /* three columns of equal width */
+        grid-template-columns: repeat(3, 1fr); /* three columns of equal width */
         grid-template-rows: auto; /* rows sized according to content */
         gap: 2rem;
 
@@ -191,10 +182,7 @@
 
       .diamond-layout {
         display: grid;
-        grid-template-columns: repeat(
-          3,
-          1fr
-        ); /* three columns of equal width */
+        grid-template-columns: repeat(3, 1fr); /* three columns of equal width */
         grid-template-rows: auto auto auto; /* three rows, size according to content */
         gap: 2rem;
 
