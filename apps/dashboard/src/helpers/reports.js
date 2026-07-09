@@ -1195,7 +1195,7 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
     if (
       (fieldType === 'percentile' || fieldType === 'standardScore') &&
       typeof scoreValue === 'string' &&
-      scoreValue.match(/[<>]/).length > 0
+      /[<>]/.test(scoreValue)
     ) {
       scoreValue = parseFloat(scoreValue.replace(/[<>]/g, ''));
     }
@@ -1325,6 +1325,7 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 150,
     };
+    //// PA v4 was skipped in production; v5 uses this range
   } else if (taskId.includes('pa')) {
     if (scoringVersion >= 4) {
       return {
@@ -1394,6 +1395,30 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
     return {
       min: 0,
       max: 100,
+    };
+  } else if (taskId.includes('roar-inference')) {
+    // TODO: Delete one of the if statements
+    if (scoringVersion >= 1) {
+      return {
+        min: 300,
+        max: 793,
+      };
+    }
+    return {
+      min: 300,
+      max: 793,
+    };
+  } else if (taskId.includes('trog')) {
+    if (scoringVersion >= 1) {
+      return {
+        min: 53,
+        max: 800,
+      };
+    }
+    // TODO: Delete after developing normed task cards
+    return {
+      min: 53,
+      max: 800,
     };
   }
   return null;

@@ -658,7 +658,7 @@ describe('reports', () => {
       });
 
       it('should return updated range for pa with scoringVersion >= 4', () => {
-        const result = getRawScoreRange('pa', 4);
+        const result = getRawScoreRange('pa', 5);
         expect(result).toEqual({
           min: 40,
           max: 733,
