@@ -20,8 +20,7 @@ $text-red: rgba(222, 69, 69, 1);
   overflow: hidden;
   margin: 0;
   text-align: center;
-  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-    "sans-serif";
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
   touch-action: manipulation;
   -webkit-touch-callout: none; /* iOS Safari */
   -webkit-user-select: none; /* Safari */
@@ -72,8 +71,7 @@ $text-red: rgba(222, 69, 69, 1);
         width: 8vw;
         //width:min-content;
         //min-width: 5vw;
-        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-          Arial, "sans-serif";
+        font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
         font-size: 6vh;
         margin: 0;
       }
@@ -85,8 +83,7 @@ $text-red: rgba(222, 69, 69, 1);
         border: 1px solid darkgray;
         padding-top: 1vh;
         padding-bottom: 1vh;
-        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-          Arial, "sans-serif";
+        font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
         font-size: 6vh;
         height: 8vh;
         width: 10vw;
@@ -111,8 +108,7 @@ $text-red: rgba(222, 69, 69, 1);
         /*padding-right: 12%;*/
         //padding-bottom: 5vh;
 
-        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-          Arial, "sans-serif";
+        font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
         font-size: 6vh;
         margin: 0;
         text-align: center; /* To ensure the text is centered if it wraps to more than one line */
@@ -163,8 +159,7 @@ $text-red: rgba(222, 69, 69, 1);
         }
 
         .button-text-left {
-          font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-            Arial, "sans-serif";
+          font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
           //position: absolute;
           //top: 50%;
           //left: 50%;
@@ -173,8 +168,7 @@ $text-red: rgba(222, 69, 69, 1);
         }
 
         .button-text-right {
-          font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-            Arial, "sans-serif";
+          font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
           //position: absolute;
           //top: 50%;
           //left: 50%;
@@ -238,8 +232,7 @@ $text-red: rgba(222, 69, 69, 1);
 
       //simple-keyboard font
       .hg-theme-default {
-        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-          Arial, sans-serif;
+        font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, sans-serif;
       }
 
       //simple-keyboard button css
@@ -288,8 +281,7 @@ $text-red: rgba(222, 69, 69, 1);
           }
 
           button {
-            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-              Arial, sans-serif;
+            font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, sans-serif;
             width: 100%;
             //font-size: clamp(1.5rem, 3.5vw, 5vh); // responsive font sizing
             font-size: 5vh;
@@ -399,8 +391,7 @@ $text-red: rgba(222, 69, 69, 1);
           max-width: 100%;
 
           button {
-            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-              Arial, "sans-serif";
+            font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
             width: 100%;
             min-width: 10vw;
             height: 100%;
@@ -467,8 +458,7 @@ $text-red: rgba(222, 69, 69, 1);
           max-width: 100%;
 
           button {
-            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-              Arial, "sans-serif";
+            font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
             width: 100%;
             height: 100%;
             font-size: 5vh;
@@ -522,8 +512,7 @@ $text-red: rgba(222, 69, 69, 1);
           max-width: 100%;
 
           button {
-            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-              Arial, "sans-serif";
+            font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
             width: 100%;
             height: 100%;
             font-size: 5vh;
@@ -573,8 +562,7 @@ $text-red: rgba(222, 69, 69, 1);
           min-width: 15vw; // prevent buttons from getting too small
 
           button {
-            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-              Arial, sans-serif;
+            font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, sans-serif;
             width: 100%;
             font-size: 7vh;
             padding: 2rem 2rem;
@@ -740,8 +728,7 @@ $text-red: rgba(222, 69, 69, 1);
           //width: 10vw;
           //min-width:10vw;
           //max-width: max-content;
-          font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-            Arial, "sans-serif";
+          font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
           font-size: 5vh;
           margin-top: auto;
           margin-bottom: auto;
@@ -755,8 +742,7 @@ $text-red: rgba(222, 69, 69, 1);
           border: 1px solid darkgray;
           padding-top: 1vh;
           padding-bottom: 1vh;
-          font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-            Arial, "sans-serif";
+          font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
           font-size: 5vh;
           height: 7vh;
           margin-top: auto;
@@ -952,8 +938,7 @@ $text-red: rgba(222, 69, 69, 1);
 
       /*styling if katex is used*/
       .katex {
-        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-          Arial, "sans-serif";
+        font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
         font-size: 5vh;
       }
 
@@ -1097,8 +1082,7 @@ $text-red: rgba(222, 69, 69, 1);
             padding-top: 1vh;
             padding-bottom: 1vh;
             width: 10vw;
-            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-              Arial, "sans-serif";
+            font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
             font-size: 4vh;
             margin-top: 2vh;
             text-align: center;
@@ -1127,8 +1111,7 @@ $text-red: rgba(222, 69, 69, 1);
             border: 1px solid darkgray;
             padding-top: 1vh;
             padding-bottom: 1vh;
-            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-              Arial, "sans-serif";
+            font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
             font-size: 3.5vh;
             height: 5.5vh;
             //margin-top: auto;
@@ -1276,8 +1259,7 @@ $text-red: rgba(222, 69, 69, 1);
               padding-top: 1vh;
               padding-bottom: 1vh;
               width: 10vw;
-              font-family: "Source Sans Pro", Gotham, "Helvetica Neue",
-                Helvetica, Arial, "sans-serif";
+              font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
               font-size: 4vh;
               margin-top: 2vh;
               text-align: center;
@@ -1342,8 +1324,7 @@ $text-red: rgba(222, 69, 69, 1);
         transform: translateX(
           -50%
         ); /* this will calculate what 50% of the element width is and will move it across the X-axis. The negative value ensures it moves to the left. Need to do this because of jspsych survey form*/
-        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-          Arial, "sans-serif";
+        font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
         font-size: 6vh;
       }
 
@@ -1374,8 +1355,7 @@ $text-red: rgba(222, 69, 69, 1);
       .equation-feedback.stacked {
         display: inline-block;
         left: 50%;
-        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
-          Arial, "sans-serif";
+        font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
         font-size: 6vh;
       }
 
@@ -1584,8 +1564,7 @@ $text-red: rgba(222, 69, 69, 1);
     display: flex;
     text-align: center;
     justify-content: center;
-    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-      "sans-serif";
+    font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
     font-size: 30px;
   }
 
@@ -1593,8 +1572,7 @@ $text-red: rgba(222, 69, 69, 1);
     display: flex;
     text-align: center;
     justify-content: center;
-    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-      "sans-serif";
+    font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
     font-size: 40px;
   }
 

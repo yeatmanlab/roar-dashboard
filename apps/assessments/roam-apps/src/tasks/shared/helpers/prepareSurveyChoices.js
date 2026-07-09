@@ -1,5 +1,5 @@
-import { randomInteger } from "./randomInteger";
-import { shuffle } from "./shuffleArray";
+import { randomInteger } from './randomInteger';
+import { shuffle } from './shuffleArray';
 
 export const prepareSurveyChoices = (target, distractors) => {
   // randomly select a location for the correct answer

@@ -1,4 +1,4 @@
-import jsPsychPreload from "@jspsych/plugin-preload";
+import jsPsychPreload from '@jspsych/plugin-preload';
 
 // TODO: Handle shared files when using blocks.
 export function createPreloadTrials(categorizedObjects, blocks = []) {
@@ -13,7 +13,7 @@ export function createPreloadTrials(categorizedObjects, blocks = []) {
 
   // Helper function to check if URL contains a block name as an exact folder name
   const containsBlock = (url, block) => {
-    const urlParts = new URL(url).pathname.split("/");
+    const urlParts = new URL(url).pathname.split('/');
     return urlParts.some((part) => part === block);
   };
 
@@ -43,10 +43,10 @@ export function createPreloadTrials(categorizedObjects, blocks = []) {
 function createJsPsychPreloadObject() {
   return {
     type: jsPsychPreload,
-    message: "The experiment is loading",
+    message: 'The experiment is loading',
     show_progress_bar: true,
     continue_after_error: false,
-    error_message: "",
+    error_message: '',
     show_detailed_errors: true,
     max_load_time: null,
     on_error: null,

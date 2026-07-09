@@ -17,10 +17,7 @@
         "keyboard-backspace.gif",
         "navigation-instruction.mp3"
       ],
-      "shared": [
-        "practice-fluency-incorrect.mp3",
-        "instructions-fluency-correct.mp3"
-      ]
+      "shared": ["practice-fluency-incorrect.mp3", "instructions-fluency-correct.mp3"]
     },
     "shared": [
       "tiger.gif",

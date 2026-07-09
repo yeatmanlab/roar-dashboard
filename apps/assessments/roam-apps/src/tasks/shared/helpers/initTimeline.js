@@ -1,14 +1,12 @@
-import store from "store2";
-import { enterFullscreen, getUserDataTimeline } from "../trials";
-import jsPsychCallFunction from "@jspsych/plugin-call-function";
+import store from 'store2';
+import { enterFullscreen, getUserDataTimeline } from '../trials';
+import jsPsychCallFunction from '@jspsych/plugin-call-function';
 
 //randomly generates a 16 character string as the pid
 const makePid = () => {
-  let text = "";
-  const possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 16; i += 1)
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  let text = '';
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 16; i += 1) text += possible.charAt(Math.floor(Math.random() * possible.length));
   return text;
 };
 
@@ -28,7 +26,7 @@ export const initTimeline = (configMain) => {
     timeline: initialTimeline,
     on_timeline_finish: async () => {
       // eslint-disable-next-line no-param-reassign
-      const config = store.session.get("config");
+      const config = store.session.get('config');
       config.pid = config.pid || makePid();
       await configMain.firekit.updateUser({
         assessmentPid: config.pid,

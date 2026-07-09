@@ -1,14 +1,10 @@
-import Papa from "papaparse"; //parsing csv file in browser
-import store from "store2";
+import Papa from 'papaparse'; //parsing csv file in browser
+import store from 'store2';
 
 //call the function for transforming item list
 export function downloadLocalCSV(data, itemBank) {
   return new Promise((resolve, reject) => {
-    itemBank["items"] = transformItemsCSV(
-      data,
-      itemBank["difficultyIdx"],
-      itemBank["start"],
-    );
+    itemBank['items'] = transformItemsCSV(data, itemBank['difficultyIdx'], itemBank['start']);
     resolve(data);
   });
 }
@@ -19,12 +15,7 @@ export function downloadCSVBins(urls, key, itemBank, transformFn) {
       download: true,
       header: true,
       complete: function (results) {
-        itemBank["items"] = transformFn(
-          results.data,
-          itemBank["difficultyIdx"],
-          itemBank["start"],
-          itemBank["verInc"],
-        );
+        itemBank['items'] = transformFn(results.data, itemBank['difficultyIdx'], itemBank['start'], itemBank['verInc']);
         resolve(results.data);
       },
       error: function (error) {
@@ -134,26 +125,12 @@ export const transformItemsFluency = (csvInput, difficultyIdx, start) => {
 
   // Helper function to extract distractor list
   const getDistractorList = (row) => {
-    return Array.from(
-      { length: 5 },
-      (_, j) => row[`distractor_${j + 1}`],
-    ).filter(Boolean);
+    return Array.from({ length: 5 }, (_, j) => row[`distractor_${j + 1}`]).filter(Boolean);
   };
 
   // Transform CSV input
   const newRows = csvInput.map((row, i) => {
-    const {
-      ID,
-      number_a,
-      number_b,
-      operator,
-      difficulty,
-      target,
-      Target,
-      answer,
-      Answer,
-      skill,
-    } = row;
+    const { ID, number_a, number_b, operator, difficulty, target, Target, answer, Answer, skill } = row;
 
     const newRow = {
       itemID: ID,
@@ -162,18 +139,18 @@ export const transformItemsFluency = (csvInput, difficultyIdx, start) => {
       operator,
       target: target || Target || answer || Answer,
       difficulty,
-      skill: skill ? skill.toString() : "",
+      skill: skill ? skill.toString() : '',
     };
 
-    newRow.skill = newRow.skill ? newRow.skill.split(", ") : [];
+    newRow.skill = newRow.skill ? newRow.skill.split(', ') : [];
 
     // Extract distractor list
     newRow.distractor_list = getDistractorList(row);
 
     // Add CAT corpus-specific columns if in CAT mode
-    if (store.session.get("config").userMode === "adaptive") {
-      ["sum", "minus", "mult", "div", "total"].forEach((op) => {
-        ["a", "b", "c", "d"].forEach((suffix) => {
+    if (store.session.get('config').userMode === 'adaptive') {
+      ['sum', 'minus', 'mult', 'div', 'total'].forEach((op) => {
+        ['a', 'b', 'c', 'd'].forEach((suffix) => {
           newRow[`${op}.${suffix}`] = row[`${op}.${suffix}`];
         });
       });
@@ -197,11 +174,7 @@ export const transformFluencyPractice = (csvInput) => {
       operand1: parseInt(csvInput[i].number_a),
       operand2: parseInt(csvInput[i].number_b),
       operator: csvInput[i].operator,
-      target:
-        csvInput[i].target ||
-        csvInput[i].Target ||
-        csvInput[i].answer ||
-        csvInput[i].Answer,
+      target: csvInput[i].target || csvInput[i].Target || csvInput[i].answer || csvInput[i].Answer,
       difficulty: csvInput[i].difficulty,
       audio: csvInput[i].audio,
     };
@@ -209,11 +182,11 @@ export const transformFluencyPractice = (csvInput) => {
     //get the distractor list
     let distractor_list = [];
     for (var j = 1; j < 6; j++) {
-      if (csvInput[i]["distractor_" + j]) {
-        distractor_list.push(csvInput[i]["distractor_" + j]);
+      if (csvInput[i]['distractor_' + j]) {
+        distractor_list.push(csvInput[i]['distractor_' + j]);
       }
     }
-    newRow["distractor_list"] = distractor_list;
+    newRow['distractor_list'] = distractor_list;
 
     //convert latex string to markup
     //newRow["item"] = katex.renderToString(newRow.item_raw, {
@@ -225,29 +198,13 @@ export const transformFluencyPractice = (csvInput) => {
 };
 
 //extract number line items
-export const transformItemsNumLine = (
-  csvInput,
-  difficultyIdx,
-  start,
-  verInc,
-) => {
+export const transformItemsNumLine = (csvInput, difficultyIdx, start, verInc) => {
   const difficultyTracker = createBinTracker(difficultyIdx, start);
   const versionTracker = createVersionTracker(verInc);
 
   // Transform CSV input
   const newRows = csvInput.map((row, i) => {
-    const {
-      ID,
-      block,
-      difficulty,
-      problem_ID,
-      version,
-      lower,
-      upper,
-      item,
-      target,
-      slider_step,
-    } = row;
+    const { ID, block, difficulty, problem_ID, version, lower, upper, item, target, slider_step } = row;
 
     const newRow = {
       itemID: ID,
@@ -264,11 +221,7 @@ export const transformItemsNumLine = (
 
     difficultyTracker.process(newRow.difficulty, i);
     //keep track of number of versions
-    versionTracker.process(
-      newRow.difficulty,
-      newRow.problem_ID,
-      newRow.version,
-    );
+    versionTracker.process(newRow.difficulty, newRow.problem_ID, newRow.version);
 
     return newRow;
   });
@@ -285,16 +238,7 @@ export const transformItemsSymComp = (csvInput, difficultyIdx, start) => {
 
   // Transform CSV input
   const newRows = csvInput.map((row, i) => {
-    const {
-      ID,
-      number_l,
-      number_r,
-      target,
-      target_pos,
-      difficulty,
-      bin_description,
-      distance,
-    } = row;
+    const { ID, number_l, number_r, target, target_pos, difficulty, bin_description, distance } = row;
 
     const newRow = {
       itemID: parseInt(ID),
@@ -332,10 +276,7 @@ export const createBinTracker = (difficultyIdx, start) => {
     process(difficulty, i) {
       if (prevDifficulty === null || difficulty !== prevDifficulty) {
         if (prevDifficulty !== null) {
-          difficultyIdx[prevDifficulty] = Array.from(
-            { length: counter },
-            (_, idx) => idx,
-          );
+          difficultyIdx[prevDifficulty] = Array.from({ length: counter }, (_, idx) => idx);
         }
 
         start[difficulty] = i;
@@ -348,10 +289,7 @@ export const createBinTracker = (difficultyIdx, start) => {
 
     finalize() {
       if (prevDifficulty !== null) {
-        difficultyIdx[prevDifficulty] = Array.from(
-          { length: counter },
-          (_, idx) => idx,
-        );
+        difficultyIdx[prevDifficulty] = Array.from({ length: counter }, (_, idx) => idx);
       }
     },
   };

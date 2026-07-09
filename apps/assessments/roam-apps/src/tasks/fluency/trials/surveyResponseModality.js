@@ -1,11 +1,10 @@
-import jsPsychSurveyHtmlForm from "@jspsych/plugin-survey-html-form"; //set of inputs
-import store from "store2"; //storing session data
-import { getAgeData } from "@bdelab/roar-utils";
+import jsPsychSurveyHtmlForm from '@jspsych/plugin-survey-html-form'; //set of inputs
+import store from 'store2'; //storing session data
+import { getAgeData } from '@bdelab/roar-utils';
 
 const survey_responseModality = {
   type: jsPsychSurveyHtmlForm,
-  preamble: () =>
-    `<div><h1>Thank you for completing this study! Please share a little more information with us.</h3>`,
+  preamble: () => `<div><h1>Thank you for completing this study! Please share a little more information with us.</h3>`,
   html: () => `
     <div className="item">
     <span htmlFor="instructions" class = "survey_form_text">How old are you? (Please type a number)</span>
@@ -57,32 +56,32 @@ const survey_responseModality = {
     <br>`,
   autocomplete: true,
   on_start: () => {
-    document.body.style.cursor = "auto";
+    document.body.style.cursor = 'auto';
   },
   on_load: () => {
-    document.getElementById("jspsych-survey-html-form-next").value = "Finish";
+    document.getElementById('jspsych-survey-html-form-next').value = 'Finish';
   },
   on_finish: (data) => {
     const tmpMetadata = {};
     Object.keys(data.response).forEach((field) => {
-      if (data.response[field] === "") {
+      if (data.response[field] === '') {
         tmpMetadata[field] = null;
-      } else if (field === "retake" || field === "ell") {
+      } else if (field === 'retake' || field === 'ell') {
         tmpMetadata[field] = parseInt(data.response[field], 10);
       } else {
         tmpMetadata[field] = data.response[field];
       }
     });
-    tmpMetadata.labId = store.session.get("config").labId;
+    tmpMetadata.labId = store.session.get('config').labId;
 
-    const config = store.session.get("config");
+    const config = store.session.get('config');
     const ageData = getAgeData(null, null, tmpMetadata.age);
     config.userMetadata = {
       ...config.userMetadata,
       ...tmpMetadata,
       ...ageData,
     };
-    store.session.set("config", config);
+    store.session.set('config', config);
   },
 };
 
@@ -91,7 +90,7 @@ export const surveyTimeline = (configMain) => {
     timeline: [survey_responseModality],
     on_timeline_finish: async () => {
       // eslint-disable-next-line no-param-reassign
-      const config = store.session.get("config");
+      const config = store.session.get('config');
       await configMain.firekit.updateUser({
         assessmentPid: config.pid,
         labId: config.labId,

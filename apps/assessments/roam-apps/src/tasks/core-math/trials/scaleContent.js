@@ -1,4 +1,4 @@
-import _round from "lodash/round";
+import _round from 'lodash/round';
 
 // Function to get real content height (including overflowing children)
 const getOuterContentHeight = (wrapper) => {
@@ -17,13 +17,13 @@ const getOuterContentHeight = (wrapper) => {
 
 const ensureScaleInner = (host) => {
   if (!host) return null;
-  let inner = host.querySelector(":scope > .jspsych-scale-inner");
+  let inner = host.querySelector(':scope > .jspsych-scale-inner');
   if (inner) return inner;
 
-  inner = document.createElement("div");
-  inner.className = "jspsych-scale-inner";
-  inner.style.display = "inline-block";
-  inner.style.transformOrigin = "top center";
+  inner = document.createElement('div');
+  inner.className = 'jspsych-scale-inner';
+  inner.style.display = 'inline-block';
+  inner.style.transformOrigin = 'top center';
 
   while (host.firstChild) {
     inner.appendChild(host.firstChild);
@@ -33,7 +33,7 @@ const ensureScaleInner = (host) => {
 };
 
 export const scaleJsPsychContentToFit = () => {
-  const host = document.getElementById("jspsych-content");
+  const host = document.getElementById('jspsych-content');
   if (!host) return;
 
   // create an inner element for jspsych-content, it will wrap the prompt and btn-group
@@ -41,8 +41,8 @@ export const scaleJsPsychContentToFit = () => {
   if (!target) return;
 
   // Reset scaling before measurement
-  target.style.transform = "";
-  target.style.transformOrigin = "";
+  target.style.transform = '';
+  target.style.transformOrigin = '';
   let el = target.getBoundingClientRect();
 
   let contentHeight = el.bottom;
@@ -52,9 +52,9 @@ export const scaleJsPsychContentToFit = () => {
   if (contentHeight > availableHeight) {
     let scaleFactor = _round(availableHeight / contentHeight, 2);
     target.style.transform = `scale(${scaleFactor})`;
-    target.style.transformOrigin = "top center";
+    target.style.transformOrigin = 'top center';
 
-    let timer = document.getElementById("canvas-timer");
+    let timer = document.getElementById('canvas-timer');
     if (timer) {
       let left = 2 * Math.round(window.innerWidth * 0.01);
       let top = 2 * Math.round(window.innerHeight * 0.01);
@@ -65,7 +65,7 @@ export const scaleJsPsychContentToFit = () => {
       timer.style.top = `${topShift}px`;
     }
 
-    let replayBtn = document.getElementById("replay");
+    let replayBtn = document.getElementById('replay');
     if (replayBtn) {
       let right = 2 * Math.round(window.innerWidth * 0.48);
       let top = 2 * Math.round(window.innerHeight * 0.02);
@@ -80,13 +80,13 @@ export const scaleJsPsychContentToFit = () => {
 
 //scale content to fit above the keyboard
 export const scaleContentToFitMobile = () => {
-  let jspsychContent = document.getElementById("jspsych-content");
+  let jspsychContent = document.getElementById('jspsych-content');
   let containerHeight = jspsychContent.offsetHeight;
-  let reservedHeight = document.getElementById("simple-keyboard").offsetHeight;
+  let reservedHeight = document.getElementById('simple-keyboard').offsetHeight;
   let availableHeight = containerHeight - reservedHeight;
-  let content = document.getElementById("contentWrapper");
+  let content = document.getElementById('contentWrapper');
 
-  content.style.transform = "";
+  content.style.transform = '';
   let contentHeight = getOuterContentHeight(content);
 
   if (contentHeight > availableHeight) {

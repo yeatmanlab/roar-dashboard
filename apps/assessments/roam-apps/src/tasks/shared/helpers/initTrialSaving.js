@@ -1,8 +1,8 @@
-import { jsPsych } from "../../taskSetup";
-import taskConfig from "../../taskConfig";
-import { camelize } from "@bdelab/roar-utils";
-import { cloneDeep } from "lodash";
-import { computedScoreCallback } from "./scores";
+import { jsPsych } from '../../taskSetup';
+import taskConfig from '../../taskConfig';
+import { camelize } from '@bdelab/roar-utils';
+import { cloneDeep } from 'lodash';
+import { computedScoreCallback } from './scores';
 
 //modifies jspsych functions to update status and write data to firestore, adds event listener for errors, sets session data
 export const initTrialSaving = (config) => {

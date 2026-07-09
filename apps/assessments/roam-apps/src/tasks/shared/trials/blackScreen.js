@@ -1,6 +1,6 @@
-import jsPsychAudioKeyboardResponse from "@jspsych/plugin-audio-keyboard-response";
-import { mediaAssets } from "../../..";
-import store from "store2"; //storing session data
+import jsPsychAudioKeyboardResponse from '@jspsych/plugin-audio-keyboard-response';
+import { mediaAssets } from '../../..';
+import store from 'store2'; //storing session data
 
 const blackScreen = {
   type: jsPsychAudioKeyboardResponse,
@@ -16,7 +16,7 @@ const blackScreen = {
 export const ifTimeoutFlash = {
   timeline: [blackScreen],
   conditional_function: () => {
-    if (store.session.get("timeOut")) {
+    if (store.session.get('timeOut')) {
       return true;
     }
     return false;

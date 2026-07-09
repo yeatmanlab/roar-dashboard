@@ -1,6 +1,6 @@
-import store from "store2";
-import { Cat } from "@bdelab/jscat";
-import _round from "lodash/round";
+import store from 'store2';
+import { Cat } from '@bdelab/jscat';
+import _round from 'lodash/round';
 
 export const initGradeEstimate = (gradeEstimateObject, subtask) => {
   gradeEstimateObject[subtask] = {
@@ -15,21 +15,13 @@ export const initGradeEstimate = (gradeEstimateObject, subtask) => {
   };
 };
 
-export const updateGradeEstimateObject = (
-  gradeEstimateObject,
-  subtask,
-  zetaGrade,
-  correct,
-  grade,
-) => {
+export const updateGradeEstimateObject = (gradeEstimateObject, subtask, zetaGrade, correct, grade) => {
   if (!gradeEstimateObject.hasOwnProperty(subtask)) {
     //initialise the grade estimate object for the sub task
     initGradeEstimate(gradeEstimateObject, subtask);
   }
-  gradeEstimateObject[subtask].totalCorrect =
-    gradeEstimateObject[subtask].totalCorrect + correct;
-  gradeEstimateObject[subtask].totalAttempted =
-    gradeEstimateObject[subtask].totalAttempted + 1;
+  gradeEstimateObject[subtask].totalCorrect = gradeEstimateObject[subtask].totalCorrect + correct;
+  gradeEstimateObject[subtask].totalAttempted = gradeEstimateObject[subtask].totalAttempted + 1;
   gradeEstimateObject[subtask].zeta.push(zetaGrade);
   gradeEstimateObject[subtask].response.push(correct);
   if (gradeEstimateObject[subtask].minGrade > grade) {
@@ -42,10 +34,10 @@ export const updateGradeEstimateObject = (
 
 const getGradeEstimate = (minGrade, maxGrade, zeta, response) => {
   const cat = new Cat({
-    method: "EAP",
+    method: 'EAP',
     minTheta: minGrade - 1,
     maxTheta: maxGrade + 1,
-    priorDist: "unif",
+    priorDist: 'unif',
     priorPar: [minGrade - 1, maxGrade + 1],
   });
   cat.updateAbilityEstimate(zeta, response);
@@ -58,22 +50,19 @@ const getSupportCategory = (gradeScore, grade, totalCorrect) => {
   if (totalCorrect === 0) {
     //no green support category
     if (gradeScore >= grade - 2 - window) {
-      supportCategory = "Developing Skill";
+      supportCategory = 'Developing Skill';
     } else if (gradeScore < grade - 2 - window) {
-      supportCategory = "Needs Extra Support";
+      supportCategory = 'Needs Extra Support';
     } else {
       supportCategory = null;
     }
   } else {
     if (gradeScore >= grade - window) {
-      supportCategory = "Achieved Skill";
-    } else if (
-      gradeScore < grade - window &&
-      gradeScore >= grade - 2 - window
-    ) {
-      supportCategory = "Developing Skill";
+      supportCategory = 'Achieved Skill';
+    } else if (gradeScore < grade - window && gradeScore >= grade - 2 - window) {
+      supportCategory = 'Developing Skill';
     } else if (gradeScore < grade - 2 - window) {
-      supportCategory = "Needs Extra Support";
+      supportCategory = 'Needs Extra Support';
     } else {
       supportCategory = null;
     }
@@ -83,8 +72,8 @@ const getSupportCategory = (gradeScore, grade, totalCorrect) => {
 };
 
 const getSupportComposite = (gradeScore, subtask, totalCorrect) => {
-  let grade = store.session.get("cc_grade");
-  let maxGrade = store.session.get("subSkillRange")[subtask].maxGrade;
+  let grade = store.session.get('cc_grade');
+  let maxGrade = store.session.get('subSkillRange')[subtask].maxGrade;
 
   //if the student's grade is more than the max grade level for the subskill then color based on the max grade
   if (grade > maxGrade) {
@@ -95,7 +84,7 @@ const getSupportComposite = (gradeScore, subtask, totalCorrect) => {
 };
 
 export const computeAllGradeEstimates = () => {
-  let gradeEstimateObject = store.session.get("gradeEstimateObject");
+  let gradeEstimateObject = store.session.get('gradeEstimateObject');
 
   //compute the cat grade estimate and level color
   Object.keys(gradeEstimateObject).forEach((key) => {
@@ -111,5 +100,5 @@ export const computeAllGradeEstimates = () => {
       gradeEstimateObject[key].totalCorrect,
     );
   });
-  store.session.set("gradeEstimateObject", gradeEstimateObject);
+  store.session.set('gradeEstimateObject', gradeEstimateObject);
 };

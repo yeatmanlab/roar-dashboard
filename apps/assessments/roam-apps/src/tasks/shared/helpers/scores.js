@@ -1,9 +1,9 @@
-import _mapValues from "lodash/mapValues";
-import _reduce from "lodash/reduce";
-import _omit from "lodash/omit";
-import store from "store2";
-import _round from "lodash/round";
-import omit from "lodash/omit";
+import _mapValues from 'lodash/mapValues';
+import _reduce from 'lodash/reduce';
+import _omit from 'lodash/omit';
+import store from 'store2';
+import _round from 'lodash/round';
+import omit from 'lodash/omit';
 
 /**
  * This function calculates computed scores given raw scores for each subtask.
@@ -38,20 +38,20 @@ import omit from "lodash/omit";
 export const computedScoreCallback = (rawScores) => {
   // This returns an object with the same top-level keys as the input raw scores
   // But the values are the number of correct trials, not including practice trials.
-  const taskName = store.session.get("config").taskName;
-  const responseMode = store.session.get("config").responseMode;
+  const taskName = store.session.get('config').taskName;
+  const responseMode = store.session.get('config').responseMode;
   const calculateRawScore = (numCorrect, numIncorrect, subtask) => {
     if (
-      (subtask === "FC" && taskName === "fluency-arf") ||
-      subtask === "rtControl_2afc" ||
-      (subtask !== "symbolicComp" && responseMode === "2afc")
+      (subtask === 'FC' && taskName === 'fluency-arf') ||
+      subtask === 'rtControl_2afc' ||
+      (subtask !== 'symbolicComp' && responseMode === '2afc')
     ) {
       //for 2AFC, score = correct-incorrect
       return Math.max(0, numCorrect - numIncorrect);
     } else if (
-      (subtask === "FC" && taskName === "fluency-calf") ||
-      subtask === "rtControl_6afc" ||
-      responseMode === "6afc"
+      (subtask === 'FC' && taskName === 'fluency-calf') ||
+      subtask === 'rtControl_6afc' ||
+      responseMode === '6afc'
     ) {
       //for 6AFC, score = correct-0.2*incorrect
       return Math.max(0, _round(numCorrect - 0.2 * numIncorrect, 2));
@@ -62,37 +62,37 @@ export const computedScoreCallback = (rawScores) => {
   };
 
   const getNumAttempted = (subtask, rawAttempted) => {
-    if (store.session.get("responseModality")) {
+    if (store.session.get('responseModality')) {
       //response modality version of ARF and CALF
-      if (subtask === "FC") {
-        return store.session.get("trialNumTotalAFC");
-      } else if (subtask === "FR") {
-        return store.session.get("trialNumTotalProduction");
-      } else if (subtask === "rtControl_2afc") {
-        return store.session.get("trialNumTotalControl2afc");
-      } else if (subtask === "rtControl_6afc") {
-        return store.session.get("trialNumTotalControl6afc");
+      if (subtask === 'FC') {
+        return store.session.get('trialNumTotalAFC');
+      } else if (subtask === 'FR') {
+        return store.session.get('trialNumTotalProduction');
+      } else if (subtask === 'rtControl_2afc') {
+        return store.session.get('trialNumTotalControl2afc');
+      } else if (subtask === 'rtControl_6afc') {
+        return store.session.get('trialNumTotalControl6afc');
       } else {
-        return store.session.get("trialNumTotalControlProduction");
+        return store.session.get('trialNumTotalControlProduction');
       }
-    } else if (store.session.get("magpiPilot") && taskName === "fluency-arf") {
-      if (subtask !== "composite") {
+    } else if (store.session.get('magpiPilot') && taskName === 'fluency-arf') {
+      if (subtask !== 'composite') {
         return rawAttempted;
       } else {
-        return store.session.get("trialNumTotal");
+        return store.session.get('trialNumTotal');
       }
-    } else if (taskName === "roam-alpaca" && subtask !== "composite") {
-      if (subtask === "numberLine") {
+    } else if (taskName === 'roam-alpaca' && subtask !== 'composite') {
+      if (subtask === 'numberLine') {
         return rawAttempted;
       }
       //Alpaca subtasks total attempted
-      return store.session.get("gradeEstimateObject")[subtask].totalAttempted;
-    } else if (taskName !== "roam-alpaca" && subtask !== "composite") {
+      return store.session.get('gradeEstimateObject')[subtask].totalAttempted;
+    } else if (taskName !== 'roam-alpaca' && subtask !== 'composite') {
       //ARF or CALF standard versions
       return rawAttempted; // just use the raw score
     } else {
       //any of the math tasks, composite variable
-      return store.session.get("trialNumTotal");
+      return store.session.get('trialNumTotal');
     }
   };
 
@@ -101,7 +101,7 @@ export const computedScoreCallback = (rawScores) => {
   };
 
   const getSkillsToWorkOn = () => {
-    let skillScores = store.session.get("skillScores");
+    let skillScores = store.session.get('skillScores');
     let skillsWork = [];
 
     for (let key in skillScores) {
@@ -117,17 +117,17 @@ export const computedScoreCallback = (rawScores) => {
     let rawScore = 0;
     let numCorrect = 0;
     let numIncorrect = 0;
-    if (subtaskScores.hasOwnProperty("test")) {
+    if (subtaskScores.hasOwnProperty('test')) {
       numCorrect = subtaskScores.test.numCorrect;
       numIncorrect = subtaskScores.test.numIncorrect;
       numAttempted = getNumAttempted(subtask, subtaskScores.test.numAttempted);
       rawScore = calculateRawScore(numCorrect, numIncorrect, subtask);
     }
 
-    if (subtask !== "composite") {
+    if (subtask !== 'composite') {
       let subPercentCorrect = numAttempted != 0 ? numCorrect / numAttempted : 0;
-      if (taskName === "roam-alpaca") {
-        if (subtask === "numberLine") {
+      if (taskName === 'roam-alpaca') {
+        if (subtask === 'numberLine') {
           return {
             numCorrect: numCorrect,
             numIncorrect: numIncorrect,
@@ -138,13 +138,9 @@ export const computedScoreCallback = (rawScores) => {
           //Alpaca subtasks
           let gradeScore = null;
           let supportCategory = null;
-          if (
-            store.session.get("gradeEstimateObject").hasOwnProperty(subtask)
-          ) {
-            gradeScore = store.session.get("gradeEstimateObject")[subtask]
-              .gradeScore;
-            supportCategory = store.session.get("gradeEstimateObject")[subtask]
-              .supportCategory;
+          if (store.session.get('gradeEstimateObject').hasOwnProperty(subtask)) {
+            gradeScore = store.session.get('gradeEstimateObject')[subtask].gradeScore;
+            supportCategory = store.session.get('gradeEstimateObject')[subtask].supportCategory;
           }
 
           return {
@@ -159,10 +155,7 @@ export const computedScoreCallback = (rawScores) => {
         }
       } else {
         //ARF and CALF subtasks
-        if (
-          store.session.get("responseModality") ||
-          subtask === "symbolicComp"
-        ) {
+        if (store.session.get('responseModality') || subtask === 'symbolicComp') {
           return {
             numCorrect: numCorrect,
             numIncorrect: numIncorrect,
@@ -171,10 +164,8 @@ export const computedScoreCallback = (rawScores) => {
           };
         } else {
           let assessedSkills = null;
-          if (store.session.get("assessedSkills").hasOwnProperty(subtask)) {
-            assessedSkills = store.session
-              .get("assessedSkills")
-              [subtask].join(", ");
+          if (store.session.get('assessedSkills').hasOwnProperty(subtask)) {
+            assessedSkills = store.session.get('assessedSkills')[subtask].join(', ');
           }
 
           return {
@@ -199,61 +190,40 @@ export const computedScoreCallback = (rawScores) => {
   });
 
   let totalScore, totalNumAttempted;
-  let omitList = ["composite"];
-  if (store.session.get("responseModality")) {
-    omitList = [
-      "composite",
-      "rtControl_6afc",
-      "rtControl_2afc",
-      "rtControl_production",
-    ];
-  } else if (store.session.get("magpiPilot") && taskName === "fluency-arf") {
-    omitList = ["composite", "symbolicComp"];
-  } else if (store.session.get("magpiPilot") && taskName === "roam-alpaca") {
-    omitList = ["composite", "numberLine"];
+  let omitList = ['composite'];
+  if (store.session.get('responseModality')) {
+    omitList = ['composite', 'rtControl_6afc', 'rtControl_2afc', 'rtControl_production'];
+  } else if (store.session.get('magpiPilot') && taskName === 'fluency-arf') {
+    omitList = ['composite', 'symbolicComp'];
+  } else if (store.session.get('magpiPilot') && taskName === 'roam-alpaca') {
+    omitList = ['composite', 'numberLine'];
   }
   if (Object.keys(computedScores).length > 1) {
-    if (store.session.get("responseModality")) {
+    if (store.session.get('responseModality')) {
       //for response modality composite
-      totalScore = computedScores.hasOwnProperty("FR")
-        ? computedScores.FR.rawScore
-        : 0;
-    } else if (
-      (taskName === "fluency-arf" || taskName === "fluency-calf") &&
-      responseMode.includes("afc")
-    ) {
+      totalScore = computedScores.hasOwnProperty('FR') ? computedScores.FR.rawScore : 0;
+    } else if ((taskName === 'fluency-arf' || taskName === 'fluency-calf') && responseMode.includes('afc')) {
       //do nothing
     } else {
-      totalScore = _reduce(
-        _omit(computedScores, omitList),
-        (sum, score) => sum + score.rawScore,
-        0,
-      );
+      totalScore = _reduce(_omit(computedScores, omitList), (sum, score) => sum + score.rawScore, 0);
     }
 
-    totalNumAttempted = _reduce(
-      _omit(computedScores, omitList),
-      (sum, score) => sum + score.numAttempted,
-      0,
-    );
+    totalNumAttempted = _reduce(_omit(computedScores, omitList), (sum, score) => sum + score.numAttempted, 0);
   } else {
     totalScore = computedScores.composite.rawScore;
     totalNumAttempted = computedScores.composite.numAttempted;
   }
 
-  if (taskName === "roam-alpaca") {
-    let thetaScoreRaw = store.session.get("thetaEstimateRaw");
-    let thetaScore = store.session.get("thetaEstimate");
+  if (taskName === 'roam-alpaca') {
+    let thetaScoreRaw = store.session.get('thetaEstimateRaw');
+    let thetaScore = store.session.get('thetaEstimate');
     let gradeScore = null;
     let supportCategory = null;
     let totalCorrect = 0;
-    if (store.session.get("gradeEstimateObject").hasOwnProperty("composite")) {
-      gradeScore = store.session.get("gradeEstimateObject").composite
-        .gradeScore;
-      supportCategory = store.session.get("gradeEstimateObject").composite
-        .supportCategory;
-      totalCorrect = store.session.get("gradeEstimateObject").composite
-        .totalCorrect;
+    if (store.session.get('gradeEstimateObject').hasOwnProperty('composite')) {
+      gradeScore = store.session.get('gradeEstimateObject').composite.gradeScore;
+      supportCategory = store.session.get('gradeEstimateObject').composite.supportCategory;
+      totalCorrect = store.session.get('gradeEstimateObject').composite.totalCorrect;
     }
 
     //calculated from the IRT theta estimate according to https://roar.stanford.edu/technical/intro-swr.html#sec-swr-scoring
@@ -262,7 +232,7 @@ export const computedScoreCallback = (rawScores) => {
     //get the incorrect item skills below grade level
     let incorrectSkills = getSkillsToWorkOn();
     if (incorrectSkills.length > 0) {
-      incorrectSkills = incorrectSkills.join(", ");
+      incorrectSkills = incorrectSkills.join(', ');
     }
 
     computedScores.composite = {
@@ -278,49 +248,44 @@ export const computedScoreCallback = (rawScores) => {
       incorrectSkills: incorrectSkills,
     };
   } else {
-    if (store.session.get("responseModality")) {
+    if (store.session.get('responseModality')) {
       computedScores.composite = {
-        numCorrect: store.session.get("totalCorrect"),
-        numIncorrect: totalNumAttempted - store.session.get("totalCorrect"),
+        numCorrect: store.session.get('totalCorrect'),
+        numIncorrect: totalNumAttempted - store.session.get('totalCorrect'),
         numAttempted: totalNumAttempted,
         rawScore: totalScore,
       };
     } else {
-      let incorrectSkills = store.session.get("incorrectSkills");
-      let assessedSkills = store.session.get("assessedSkills");
+      let incorrectSkills = store.session.get('incorrectSkills');
+      let assessedSkills = store.session.get('assessedSkills');
 
-      let totalCorrect = store.session.get("totalCorrect");
+      let totalCorrect = store.session.get('totalCorrect');
       //calculate total score based on the actual total correct score
-      totalScore = calculateRawScore(
-        totalCorrect,
-        totalNumAttempted - totalCorrect,
-        "composite",
-      );
+      totalScore = calculateRawScore(totalCorrect, totalNumAttempted - totalCorrect, 'composite');
 
-      let subPercentCorrect =
-        totalNumAttempted != 0 ? totalCorrect / totalNumAttempted : 0;
+      let subPercentCorrect = totalNumAttempted != 0 ? totalCorrect / totalNumAttempted : 0;
 
-      let worstFacts = store.session.get("worstFacts");
+      let worstFacts = store.session.get('worstFacts');
       for (let i = 0; i < worstFacts.length; i++) {
-        if (assessedSkills["multiplication"].includes(worstFacts[i])) {
-          if (!incorrectSkills.hasOwnProperty("multiplication")) {
-            incorrectSkills["multiplication"] = [];
+        if (assessedSkills['multiplication'].includes(worstFacts[i])) {
+          if (!incorrectSkills.hasOwnProperty('multiplication')) {
+            incorrectSkills['multiplication'] = [];
           }
-          incorrectSkills["multiplication"].push(worstFacts[i]);
+          incorrectSkills['multiplication'].push(worstFacts[i]);
         }
 
-        if (assessedSkills.hasOwnProperty("division")) {
-          if (assessedSkills["division"].includes(worstFacts[i])) {
-            if (!incorrectSkills.hasOwnProperty("division")) {
-              incorrectSkills["division"] = [];
+        if (assessedSkills.hasOwnProperty('division')) {
+          if (assessedSkills['division'].includes(worstFacts[i])) {
+            if (!incorrectSkills.hasOwnProperty('division')) {
+              incorrectSkills['division'] = [];
             }
-            incorrectSkills["division"].push(worstFacts[i]);
+            incorrectSkills['division'].push(worstFacts[i]);
           }
         }
       }
 
       Object.keys(incorrectSkills).forEach((key) => {
-        incorrectSkills[key] = incorrectSkills[key].join(", ");
+        incorrectSkills[key] = incorrectSkills[key].join(', ');
       });
 
       computedScores.composite = {
@@ -365,7 +330,5 @@ export const computedScoreCallback = (rawScores) => {
 // eslint-disable-next-line no-unused-vars
 export const normedScoreCallback = (computedScores, demographic_data) => {
   // TODO: Add table lookup after norms have been collected and established.
-  return Object.fromEntries(
-    Object.entries(computedScores).map(([key, val]) => [key, val]),
-  );
+  return Object.fromEntries(Object.entries(computedScores).map(([key, val]) => [key, val]));
 };

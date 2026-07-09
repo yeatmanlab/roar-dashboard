@@ -3,22 +3,22 @@ Initialises the i18next module for language translation. Includes a json file un
 as well as full screen, progress bar text. Also exports the task instructions and break text in a struct (multichoiceCorpus).
 */
 
-import i18next from "i18next"; //package for translating languages
-import LanguageDetector from "i18next-browser-languagedetector"; //detect user language in the browser
-import enTranslations from "./locales/en/translation.json"; //load local json as array, contains text for buttons, full screen, progress bar
-import esTranslations from "./locales/es/translation.json"; //load local json as array
-import itTranslations from "./locales/it/translation.json"; //load local json as array
-import ptTranslations from "./locales/pt/translation.json"; //load local json as array
+import i18next from 'i18next'; //package for translating languages
+import LanguageDetector from 'i18next-browser-languagedetector'; //detect user language in the browser
+import enTranslations from './locales/en/translation.json'; //load local json as array, contains text for buttons, full screen, progress bar
+import esTranslations from './locales/es/translation.json'; //load local json as array
+import itTranslations from './locales/it/translation.json'; //load local json as array
+import ptTranslations from './locales/pt/translation.json'; //load local json as array
 
 //get browser language
 const languageDetector = new LanguageDetector();
 
 //add an option
 languageDetector.addDetector({
-  name: "defaultToEnglish",
+  name: 'defaultToEnglish',
   // eslint-disable-next-line no-unused-vars
   lookup(_options) {
-    return "en";
+    return 'en';
   },
 });
 
@@ -33,10 +33,10 @@ i18next
   .init({
     debug: false,
     // which langauage codes to use. Ex. if 'en-US' detected, will use 'en'
-    load: "languageOnly",
-    fallbackLng: "en",
+    load: 'languageOnly',
+    fallbackLng: 'en',
     detection: {
-      order: ["defaultToEnglish", "querystring"],
+      order: ['defaultToEnglish', 'querystring'],
     },
     resources: {
       en: {

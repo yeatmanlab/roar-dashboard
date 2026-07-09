@@ -1,14 +1,14 @@
-import "regenerator-runtime/runtime"; //async function
+import 'regenerator-runtime/runtime'; //async function
 // setup
-import { initTrialSaving, initTimeline } from "../shared/helpers";
-import { jsPsych } from "../taskSetup"; //initialised jspsych object
-import { ValidityEvaluator, createEvaluateValidity } from "@bdelab/roar-utils"; // for validity
-import { exitFullscreen } from "../shared/trials"; //jspsych object for exiting full screen
-import { preloadTrials } from "../..";
-import { navigationInstruction } from "../shared/trials/navigation";
-import { symCompBlock } from "./trials/symCompBlock"; // Import the number comparison block
-import { numberLineOuterLoop } from "./trials/numberLineBlock";
-import store from "store2";
+import { initTrialSaving, initTimeline } from '../shared/helpers';
+import { jsPsych } from '../taskSetup'; //initialised jspsych object
+import { ValidityEvaluator, createEvaluateValidity } from '@bdelab/roar-utils'; // for validity
+import { exitFullscreen } from '../shared/trials'; //jspsych object for exiting full screen
+import { preloadTrials } from '../..';
+import { navigationInstruction } from '../shared/trials/navigation';
+import { symCompBlock } from './trials/symCompBlock'; // Import the number comparison block
+import { numberLineOuterLoop } from './trials/numberLineBlock';
+import store from 'store2';
 
 // eslint-disable-next-line import/no-mutable-exports
 export let validityEvaluator;
@@ -27,7 +27,7 @@ export default function buildTimeline(config) {
     responseTimeLowThreshold: 250,
     accuracyThreshold: 0.6,
     minResponsesRequired: 3,
-    includedReliabilityFlags: ["responseTimeTooFast"],
+    includedReliabilityFlags: ['responseTimeTooFast'],
   });
 
   const handleEngagementFlags = (flags, reliable) => {
@@ -49,9 +49,9 @@ export default function buildTimeline(config) {
   // navigation instruction
   //timeline.push(navigationInstruction);
 
-  timeline.push(symCompBlock("symbolicComp", "test_response"));
+  timeline.push(symCompBlock('symbolicComp', 'test_response'));
 
-  timeline.push(numberLineOuterLoop("numberLine", "test_response"));
+  timeline.push(numberLineOuterLoop('numberLine', 'test_response'));
 
   timeline.push(exitFullscreen);
 

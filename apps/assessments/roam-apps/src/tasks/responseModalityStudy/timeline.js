@@ -2,19 +2,19 @@
 Defines and orders the full timeline.
 */
 
-import "regenerator-runtime/runtime"; //async function
-import store from "store2"; //storing session data
+import 'regenerator-runtime/runtime'; //async function
+import store from 'store2'; //storing session data
 // setup
-import { initTrialSaving, initTimeline } from "../shared/helpers";
-import { jsPsych } from "../taskSetup"; //initialised jspsych object
-import { preloadTrials } from "../..";
-import { responseTimeBlock } from "./trials/responseTimeBlock";
-import { intro } from "./trials/introduction";
-import { instructions } from "./trials/instructions";
-import { endScreen } from "./trials/endScreen";
-import { exitFullscreen } from "../shared/trials";
-import { navigationInstruction } from "../shared/trials/navigation";
-import { practice } from "./trials/practice";
+import { initTrialSaving, initTimeline } from '../shared/helpers';
+import { jsPsych } from '../taskSetup'; //initialised jspsych object
+import { preloadTrials } from '../..';
+import { responseTimeBlock } from './trials/responseTimeBlock';
+import { intro } from './trials/introduction';
+import { instructions } from './trials/instructions';
+import { endScreen } from './trials/endScreen';
+import { exitFullscreen } from '../shared/trials';
+import { navigationInstruction } from '../shared/trials/navigation';
+import { practice } from './trials/practice';
 
 //calls the initializatin functions, builds the timeline
 export default function buildResponseModalityTimeline(config) {
@@ -35,11 +35,9 @@ export default function buildResponseModalityTimeline(config) {
   timeline.push(instructions);
 
   // add the response time block, randomise the order of 2afc, 6afc, and production.
-  let blockOrder = store.session.get("blockOrder").stimulus;
+  let blockOrder = store.session.get('blockOrder').stimulus;
   for (let i = 0; i < blockOrder.length; i++) {
-    timeline.push(
-      responseTimeBlock("stimulus", blockOrder[i], i, "test_response"),
-    );
+    timeline.push(responseTimeBlock('stimulus', blockOrder[i], i, 'test_response'));
   }
 
   timeline.push(endScreen); // End Task

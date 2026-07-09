@@ -1,11 +1,11 @@
-import "regenerator-runtime/runtime"; //async function
-import store from "store2";
-import { getGrade } from "@bdelab/roar-utils";
+import 'regenerator-runtime/runtime'; //async function
+import store from 'store2';
+import { getGrade } from '@bdelab/roar-utils';
 //import itemsAll from "../../../../items-symComp-all.csv"
 //import itemsOrder from "../../../../items-symComp-order.csv"
 //import itemsAll from "../../../../items-numberLine-all.csv"
-import katex from "katex"; //convert latex to markup
-import "katex/dist/katex.min.css"; //katex css
+import katex from 'katex'; //convert latex to markup
+import 'katex/dist/katex.min.css'; //katex css
 //import { version } from "process";
 import {
   generateItemIdx,
@@ -14,14 +14,14 @@ import {
   assignItems,
   getItemFromBank,
   getItemFromBankKatex,
-} from "../../shared/helpers/parseHelpers";
+} from '../../shared/helpers/parseHelpers';
 import {
   downloadCSVBins,
   downloadCSV,
   transformItemsSymComp,
   transformItemsNumLine,
   transformOrderMagpi,
-} from "../../shared/helpers/downloadCSV";
+} from '../../shared/helpers/downloadCSV';
 
 export const getCorpusSymComp = async () => {
   let itemBank = {
@@ -48,26 +48,16 @@ export const getCorpusSymComp = async () => {
   async function fetchData() {
     //get items array
     try {
-      await downloadCSVBins(
-        corpusLocation["symbolic"],
-        "stimulus",
-        itemBank,
-        transformItemsSymComp,
-      );
+      await downloadCSVBins(corpusLocation['symbolic'], 'stimulus', itemBank, transformItemsSymComp);
     } catch (error) {
-      console.error("Error:", error);
+      console.error('Error:', error);
     }
 
     //for (var key in urls["order"]) {
     try {
-      await downloadCSV(
-        symCompOrder["block0"],
-        "block0",
-        stimulusArray,
-        transformOrderMagpi,
-      );
+      await downloadCSV(symCompOrder['block0'], 'block0', stimulusArray, transformOrderMagpi);
     } catch (error) {
-      console.error("Error:", error);
+      console.error('Error:', error);
     }
     //}
   }
@@ -84,21 +74,16 @@ export const getCorpusSymComp = async () => {
     current_item.correctResponseNum = 1 - current_item.correctResponseNum;
     current_item.number_l = current_item.choices[0];
     current_item.number_r = current_item.choices[1];
-    current_item.bin_description = "";
-    current_item.difficulty = "";
+    current_item.bin_description = '';
+    current_item.difficulty = '';
     current_item.itemID = i + 1;
-    practiceArray["practice"].push(current_item);
+    practiceArray['practice'].push(current_item);
   }
 
   generateItemIdx(itemBank, stimulusArray, getIdxList);
 
   //get the item values from item bank
-  let finalStimulusArray = assignItems(
-    1,
-    stimulusArray,
-    itemBank,
-    getItemFromBank,
-  );
+  let finalStimulusArray = assignItems(1, stimulusArray, itemBank, getItemFromBank);
 
   //set trial data to a struct, set name for later referencing
   let corpusAll = {
@@ -133,40 +118,30 @@ export const getCorpusNumLine = async () => {
     },
   };
 
-  let grade = getGrade(store.session.get("config").userMetadata.grade);
-  store.session.set("grade", grade);
+  let grade = getGrade(store.session.get('config').userMetadata.grade);
+  store.session.set('grade', grade);
 
   let numberLineOrder = corpusLocation.numberLine.order;
 
   // default is K2 version
   if (grade < 3 || grade === undefined) {
-    store.session.set("isK2", true);
+    store.session.set('isK2', true);
     numberLineOrder = corpusLocation.numberLine.orderK2;
   }
 
   //pass csv paths into the parsing function and set the number of trials in session data
   async function fetchData() {
     try {
-      await downloadCSVBins(
-        corpusLocation.numberLine,
-        "stimulus",
-        itemBank,
-        transformItemsNumLine,
-      );
+      await downloadCSVBins(corpusLocation.numberLine, 'stimulus', itemBank, transformItemsNumLine);
     } catch (error) {
-      console.error("Error:", error);
+      console.error('Error:', error);
     }
 
     for (var key in numberLineOrder) {
       try {
-        await downloadCSV(
-          numberLineOrder[key],
-          key,
-          stimulusArray,
-          transformOrderMagpi,
-        );
+        await downloadCSV(numberLineOrder[key], key, stimulusArray, transformOrderMagpi);
       } catch (error) {
-        console.error("Error:", error);
+        console.error('Error:', error);
       }
     }
   }
@@ -189,14 +164,14 @@ export const getCorpusNumLine = async () => {
     stimulus: finalStimulusArray,
     practice: [],
   };
-  let exampleFrac = katex.renderToString("\\frac{1}{2}", {
+  let exampleFrac = katex.renderToString('\\frac{1}{2}', {
     throwOnError: false,
   });
-  store.session.set("exampleFrac", exampleFrac);
-  let demoFrac = katex.renderToString("1\\frac{1}{2}", {
+  store.session.set('exampleFrac', exampleFrac);
+  let demoFrac = katex.renderToString('1\\frac{1}{2}', {
     throwOnError: false,
   });
-  store.session.set("demoFrac", demoFrac);
+  store.session.set('demoFrac', demoFrac);
 
   return corpusAll;
 };
@@ -210,5 +185,5 @@ export const fetchAndParseCorpusMagpi = async (task, assets) => {
     symbolicComp: corpusSC,
   };
 
-  store.session.set("corpusAll", corpusAll);
+  store.session.set('corpusAll', corpusAll);
 };

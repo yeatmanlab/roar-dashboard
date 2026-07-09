@@ -2,13 +2,13 @@ import {
   numberMainTimerDesktop,
   practiceFeedbackIncorrectDesktop,
   practiceFeedbackCorrectDesktop,
-} from "./trialProductionDesktop";
+} from './trialProductionDesktop';
 import {
   numberMainTimerMobile,
   practiceFeedbackIncorrectMobile,
   practiceFeedbackCorrectMobile,
-} from "./trialProductionMobile";
-import { isMobile } from "../helpers";
+} from './trialProductionMobile';
+import { isMobile } from '../helpers';
 
 export const numberMainTimer = (corpusName, assessment_stage_val) => {
   let timelineObj = [numberMainTimerDesktop(corpusName, assessment_stage_val)];
@@ -23,14 +23,10 @@ export const numberMainTimer = (corpusName, assessment_stage_val) => {
 };
 
 export const practiceFeedbackIncorrect = (corpusName, assessment_stage_val) => {
-  let timelineObj = [
-    practiceFeedbackIncorrectDesktop(corpusName, assessment_stage_val),
-  ];
+  let timelineObj = [practiceFeedbackIncorrectDesktop(corpusName, assessment_stage_val)];
 
   if (isMobile) {
-    timelineObj = [
-      practiceFeedbackIncorrectMobile(corpusName, assessment_stage_val),
-    ];
+    timelineObj = [practiceFeedbackIncorrectMobile(corpusName, assessment_stage_val)];
   }
 
   return {

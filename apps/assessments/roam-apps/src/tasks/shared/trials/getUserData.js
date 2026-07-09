@@ -2,29 +2,29 @@
 Defines forms for getting consent, lab id, pid, and survey.
 */
 
-import jsPsychSurveyText from "@jspsych/plugin-survey-text"; //questions with free response text fields
-import jsPsychSurveyHtmlForm from "@jspsych/plugin-survey-html-form"; //set of inputs
-import jsPsychSurveyMultiSelect from "@jspsych/plugin-survey-multi-select"; //questions with multiple select response fields
-import store from "store2"; //storing session data
-import { getAgeData } from "@bdelab/roar-utils";
+import jsPsychSurveyText from '@jspsych/plugin-survey-text'; //questions with free response text fields
+import jsPsychSurveyHtmlForm from '@jspsych/plugin-survey-html-form'; //set of inputs
+import jsPsychSurveyMultiSelect from '@jspsych/plugin-survey-multi-select'; //questions with multiple select response fields
+import store from 'store2'; //storing session data
+import { getAgeData } from '@bdelab/roar-utils';
 
 //enter lab id in a textbox
 const getLabId = {
   type: jsPsychSurveyText,
   questions: [
     {
-      prompt: "Lab ID:",
-      name: "labId",
+      prompt: 'Lab ID:',
+      name: 'labId',
       required: true,
     },
   ],
   on_load: () => {
-    document.getElementById("input-0").style.fontSize = "3vh";
+    document.getElementById('input-0').style.fontSize = '3vh';
   },
   on_finish: (data) => {
-    const config = store.session.get("config");
+    const config = store.session.get('config');
     config.labId = data.response.labId;
-    store.session.set("config", config); //can find config definition in config.js, this is stored as session data
+    store.session.set('config', config); //can find config definition in config.js, this is stored as session data
   },
 };
 
@@ -32,8 +32,7 @@ const getLabId = {
 const ifGetLabId = {
   timeline: [getLabId],
   conditional_function: () =>
-    !store.session.get("config").labId &&
-    store.session.get("config").recruitment === "otherLabs",
+    !store.session.get('config').labId && store.session.get('config').recruitment === 'otherLabs',
 };
 
 //get the pid in a textbox
@@ -41,18 +40,18 @@ const getPid = {
   type: jsPsychSurveyText,
   questions: [
     {
-      prompt: "Participant ID:",
-      name: "pid",
+      prompt: 'Participant ID:',
+      name: 'pid',
       required: true,
     },
   ],
   on_load: () => {
-    document.getElementById("input-0").style.fontSize = "3vh";
+    document.getElementById('input-0').style.fontSize = '3vh';
   },
   on_finish: (data) => {
-    let config = store.session.get("config");
+    let config = store.session.get('config');
     config.pid = data.response.pid;
-    store.session.set("config", config);
+    store.session.set('config', config);
   },
 };
 
@@ -60,8 +59,7 @@ const getPid = {
 const ifGetPid = {
   timeline: [getPid],
   conditional_function: () =>
-    !store.session.get("config").pid &&
-    store.session.get("config").recruitment === "otherLabs",
+    !store.session.get('config').pid && store.session.get('config').recruitment === 'otherLabs',
 };
 
 // //defines the consent form
@@ -190,8 +188,8 @@ const consent_form = {
         `<b>I agree to participate in this research. Participation in this research is voluntary, and I can stop at any time without penalty. I feel that I understand what I am getting into, and I know I am free to discontinue the experiment with no consequence to myself and/or my child.</b>`,
       ],
       required: true,
-      required_message: "You must check the box to continue",
-      name: "Agree",
+      required_message: 'You must check the box to continue',
+      name: 'Agree',
     },
   ],
 };
@@ -202,9 +200,9 @@ const ifConsentForm = {
   timeline: [consent_form],
   conditional_function: () =>
     Boolean(
-      (store.session.get("config").recruitment === "otherLabs" ||
-        store.session.get("config").recruitment === "prolific") &&
-        store.session.get("config").consent,
+      (store.session.get('config').recruitment === 'otherLabs' ||
+        store.session.get('config').recruitment === 'prolific') &&
+      store.session.get('config').consent,
     ),
 };
 
@@ -268,24 +266,24 @@ const survey_pid = {
   on_finish: (data) => {
     const tmpMetadata = {};
     Object.keys(data.response).forEach((field) => {
-      if (data.response[field] === "") {
+      if (data.response[field] === '') {
         tmpMetadata[field] = null;
-      } else if (field === "retake" || field === "ell") {
+      } else if (field === 'retake' || field === 'ell') {
         tmpMetadata[field] = parseInt(data.response[field], 10);
       } else {
         tmpMetadata[field] = data.response[field];
       }
     });
-    tmpMetadata.labId = store.session.get("config").labId;
+    tmpMetadata.labId = store.session.get('config').labId;
 
-    const config = store.session.get("config");
+    const config = store.session.get('config');
     const ageData = getAgeData(null, null, tmpMetadata.age);
     config.userMetadata = {
       ...config.userMetadata,
       ...tmpMetadata,
       ...ageData,
     };
-    store.session.set("config", config);
+    store.session.set('config', config);
   },
 };
 
@@ -294,17 +292,12 @@ const ifGetSurvey = {
   timeline: [survey_pid],
   conditional_function: () =>
     Boolean(
-      (store.session.get("config").recruitment === "otherLabs" ||
-        store.session.get("config").recruitment === "prolific") &&
-        store.session.get("config").consent &&
-        store.session.get("config").taskName !== "response-modality-study",
+      (store.session.get('config').recruitment === 'otherLabs' ||
+        store.session.get('config').recruitment === 'prolific') &&
+      store.session.get('config').consent &&
+      store.session.get('config').taskName !== 'response-modality-study',
     ),
 };
 
 //timeline for getting information from user
-export const getUserDataTimeline = [
-  ifGetLabId,
-  ifGetPid,
-  ifConsentForm,
-  ifGetSurvey,
-];
+export const getUserDataTimeline = [ifGetLabId, ifGetPid, ifConsentForm, ifGetSurvey];

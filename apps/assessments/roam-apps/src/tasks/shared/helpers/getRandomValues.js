@@ -1,4 +1,4 @@
-import { shuffle } from "./shuffleArray";
+import { shuffle } from './shuffleArray';
 //gets n random values from array
 export const getRandomValues = (arr, n) => {
   arr = shuffle(arr);

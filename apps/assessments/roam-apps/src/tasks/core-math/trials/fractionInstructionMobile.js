@@ -1,11 +1,11 @@
-import jsPsychHtmlKeyboardResponse from "@jspsych/plugin-html-keyboard-response";
-import jsPsychAudioMultiResponse from "@jspsych-contrib/plugin-audio-multi-response";
-import { mediaAssets } from "../../..";
-import { jsPsych } from "../../taskSetup";
-import i18next from "i18next";
-import store from "store2";
-import { SimpleKeyboard } from "simple-keyboard";
-import { isMobile } from "./trialHelpers";
+import jsPsychHtmlKeyboardResponse from '@jspsych/plugin-html-keyboard-response';
+import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
+import { mediaAssets } from '../../..';
+import { jsPsych } from '../../taskSetup';
+import i18next from 'i18next';
+import store from 'store2';
+import { SimpleKeyboard } from 'simple-keyboard';
+import { isMobile } from './trialHelpers';
 //import "simple-keyboard/build/css/index.css";
 
 let rt = [];
@@ -19,10 +19,10 @@ let source;
 const storeKeyRT = (keyName) => {
   const endTime = performance.now();
   const response_time = Math.round(endTime - startTime);
-  if (keyName === "{enter}") {
-    key.push("Enter");
-  } else if (keyName === "{bksp}") {
-    key.push("Backspace");
+  if (keyName === '{enter}') {
+    key.push('Enter');
+  } else if (keyName === '{bksp}') {
+    key.push('Backspace');
   } else {
     key.push(keyName);
   }
@@ -34,7 +34,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
   return {
     type: jsPsychHtmlKeyboardResponse,
     stimulus: () => {
-      let currentItem = store.session.get("nextStimulus");
+      let currentItem = store.session.get('nextStimulus');
       //let questionHTML = `<p>` + currentItem.item + `</p>`;
       let responseHTML = ``;
       //questionHTML = `<div class="question-box">` + questionHTML + `</div>`;
@@ -76,7 +76,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
                         <div class="instruction-boxes fade-in-1" style="flex-basis: 60%;" id="panel1">
                             <p class="instructions-text">` +
         currentItem.item +
-        `<br><br>${i18next.t("instructions.core-math.text21")}
+        `<br><br>${i18next.t('instructions.core-math.text21')}
                             </p>
                         </div>
                         <div class="textbox-response" id="panel2">
@@ -104,64 +104,53 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
       startTime = performance.now(); //get initial time
     },
     on_load: () => {
-      let responseFormat = store.session.get("nextStimulus").response_format;
+      let responseFormat = store.session.get('nextStimulus').response_format;
       let currentIdx = 0;
-      let currentInput = document.getElementById("question_input_key_0");
-      currentInput.classList.add("focused");
+      let currentInput = document.getElementById('question_input_key_0');
+      currentInput.classList.add('focused');
 
-      let elements = document.getElementsByClassName("katex");
+      let elements = document.getElementsByClassName('katex');
       // Loop through the elements and change the font size
       for (let i = 0; i < elements.length; i++) {
-        elements[i].style.fontSize = "3.5vh";
+        elements[i].style.fontSize = '3.5vh';
       }
 
-      const decimalKey = store.session.get("decimalKey");
+      const decimalKey = store.session.get('decimalKey');
 
       const keyboard = new SimpleKeyboard({
         layout: {
-          default: [
-            "1 2 3 4 5 6 7 8 9 0",
-            `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`,
-          ],
+          default: ['1 2 3 4 5 6 7 8 9 0', `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`],
         },
         display: {
-          "{bksp}": `${i18next.t(
-            "terms.delete",
-          )} <span class="big-symbol">\u232B</span>`,
-          "{enter}": `${i18next.t(
-            "terms.submit",
-          )} <span class="big-symbol">\u2713</span>`,
-          "{empty}": " ", // Prevents rendering key value
+          '{bksp}': `${i18next.t('terms.delete')} <span class="big-symbol">\u232B</span>`,
+          '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
+          '{empty}': ' ', // Prevents rendering key value
         },
         onChange: (input) => onChange(input),
         onKeyPress: (button) => onKeyPress(button),
       });
 
-      document.querySelectorAll(".response-box-mobile").forEach((el) => {
-        el.addEventListener("click", () => {
-          if (currentInput) currentInput.classList.remove("focused");
+      document.querySelectorAll('.response-box-mobile').forEach((el) => {
+        el.addEventListener('click', () => {
+          if (currentInput) currentInput.classList.remove('focused');
           currentInput = el;
-          currentInput.classList.add("focused");
-          currentIdx = [
-            ...document.querySelectorAll(".response-box-mobile"),
-          ].indexOf(currentInput);
+          currentInput.classList.add('focused');
+          currentIdx = [...document.querySelectorAll('.response-box-mobile')].indexOf(currentInput);
         });
       });
 
       function onChange(input) {
         if (currentIdx >= 0) {
-          textboxVal[currentIdx] = document.getElementById(
-            "question_input_key_" + currentIdx,
-          ).textContent;
+          textboxVal[currentIdx] = document.getElementById('question_input_key_' + currentIdx).textContent;
         }
       }
 
       function onKeyPress(button) {
         if (!currentInput) return;
         storeKeyRT(button);
-        if (button === "{bksp}") {
+        if (button === '{bksp}') {
           currentInput.textContent = currentInput.textContent.slice(0, -1);
-        } else if (button === "{enter}") {
+        } else if (button === '{enter}') {
           jsPsych.finishTrial();
         } else {
           currentInput.textContent += button;
@@ -177,9 +166,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         const jsPsychAudioCtx = jsPsych.pluginAPI.audioContext();
 
         // Returns a promise of the AudioBuffer of the preloaded file path.
-        const audioBuffer = await jsPsych.pluginAPI.getAudioBuffer(
-          mediaAssets.audio.coreMathFractionInstruction,
-        );
+        const audioBuffer = await jsPsych.pluginAPI.getAudioBuffer(mediaAssets.audio.coreMathFractionInstruction);
 
         source = jsPsychAudioCtx.createBufferSource();
         source.buffer = audioBuffer;
@@ -195,7 +182,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
       }
 
       let save_trial = true;
-      const stimulus = store.session.get("nextStimulus");
+      const stimulus = store.session.get('nextStimulus');
       let response_val = [];
       let correctCount = 0;
 
@@ -204,11 +191,11 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         let target = Number(stimulus.target[i]);
         if (textboxVal.hasOwnProperty(i)) {
           response = Number(textboxVal[i]);
-          if (textboxVal[i] === null || textboxVal[i] === "") {
-            response = "";
+          if (textboxVal[i] === null || textboxVal[i] === '') {
+            response = '';
           }
         } else {
-          response = "";
+          response = '';
         }
         response_val.push(response);
         if (response === target) {
@@ -218,19 +205,19 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
 
       let correct = correctCount === stimulus.target.length ? 1 : 0;
 
-      store.session.set("dataCorrect", correct);
+      store.session.set('dataCorrect', correct);
 
-      if (corpusName === "stimulus") {
-        store.session.set("previousItem", stimulus);
-        store.session.set("previousAnswer", store.session.get("dataCorrect"));
+      if (corpusName === 'stimulus') {
+        store.session.set('previousItem', stimulus);
+        store.session.set('previousAnswer', store.session.get('dataCorrect'));
       }
 
       jsPsych.data.addDataToLastTrial({
         save_trial: save_trial,
-        pid: store.session.get("config").pid,
-        corpus_name: "fractionInstruction",
-        trial_num_total: store.session.get("indexTrackingPractice") + 1,
-        trial_num_block: store.session.get("indexTrackingPractice") + 1,
+        pid: store.session.get('config').pid,
+        corpus_name: 'fractionInstruction',
+        trial_num_total: store.session.get('indexTrackingPractice') + 1,
+        trial_num_block: store.session.get('indexTrackingPractice') + 1,
         item_id: stimulus.itemID,
         problem_id: null,
         problem_version: null,
@@ -240,7 +227,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         correct_response_num: null,
         choice_index: null,
         response: response_val,
-        correct: store.session.get("dataCorrect"),
+        correct: store.session.get('dataCorrect'),
         item: stimulus.item_raw,
         target: stimulus.target,
         response_key_list: key,
@@ -248,7 +235,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
         is_mobile: isMobile,
       });
-      store.session.set("fractionInstructionDone", true);
+      store.session.set('fractionInstructionDone', true);
     },
   };
 };
@@ -257,7 +244,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
   return {
     type: jsPsychHtmlKeyboardResponse,
     stimulus: () => {
-      let currentItem = store.session.get("nextStimulus");
+      let currentItem = store.session.get('nextStimulus');
       //let questionHTML = `<p>` + currentItem.item + `</p>`;
       let responseHTML = ``;
       //questionHTML = `<div class="question-box">` + questionHTML + `</div>`;
@@ -299,7 +286,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
                         <div class="instruction-boxes fade-in-1" style="flex-basis: 60%;" id="panel1">
                             <p class="instructions-text">` +
         currentItem.item +
-        `<br><br>${i18next.t("instructions.core-math.text21")}
+        `<br><br>${i18next.t('instructions.core-math.text21')}
                             </p>
                         </div>
                         <div class="textbox-response" id="panel2">
@@ -307,7 +294,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         responseHTML +
         `<p class="fraction-feedback">
                                 <span class="red">
-                                ${i18next.t("instructions.fluency.text12")}
+                                ${i18next.t('instructions.fluency.text12')}
                                 </span>
                             </p>
                             </div>
@@ -332,64 +319,53 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       startTime = performance.now(); //get initial time
     },
     on_load: () => {
-      let responseFormat = store.session.get("nextStimulus").response_format;
+      let responseFormat = store.session.get('nextStimulus').response_format;
       let currentIdx = 0;
-      let currentInput = document.getElementById("question_input_key_0");
-      currentInput.classList.add("focused");
+      let currentInput = document.getElementById('question_input_key_0');
+      currentInput.classList.add('focused');
 
-      let elements = document.getElementsByClassName("katex");
+      let elements = document.getElementsByClassName('katex');
       // Loop through the elements and change the font size
       for (let i = 0; i < elements.length; i++) {
-        elements[i].style.fontSize = "3.5vh";
+        elements[i].style.fontSize = '3.5vh';
       }
 
-      const decimalKey = store.session.get("decimalKey");
+      const decimalKey = store.session.get('decimalKey');
 
       const keyboard = new SimpleKeyboard({
         layout: {
-          default: [
-            "1 2 3 4 5 6 7 8 9 0",
-            `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`,
-          ],
+          default: ['1 2 3 4 5 6 7 8 9 0', `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`],
         },
         display: {
-          "{bksp}": `${i18next.t(
-            "terms.delete",
-          )} <span class="big-symbol">\u232B</span>`,
-          "{enter}": `${i18next.t(
-            "terms.submit",
-          )} <span class="big-symbol">\u2713</span>`,
-          "{empty}": " ", // Prevents rendering key value
+          '{bksp}': `${i18next.t('terms.delete')} <span class="big-symbol">\u232B</span>`,
+          '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
+          '{empty}': ' ', // Prevents rendering key value
         },
         onChange: (input) => onChange(input),
         onKeyPress: (button) => onKeyPress(button),
       });
 
-      document.querySelectorAll(".response-box-mobile").forEach((el) => {
-        el.addEventListener("click", () => {
-          if (currentInput) currentInput.classList.remove("focused");
+      document.querySelectorAll('.response-box-mobile').forEach((el) => {
+        el.addEventListener('click', () => {
+          if (currentInput) currentInput.classList.remove('focused');
           currentInput = el;
-          currentInput.classList.add("focused");
-          currentIdx = [
-            ...document.querySelectorAll(".response-box-mobile"),
-          ].indexOf(currentInput);
+          currentInput.classList.add('focused');
+          currentIdx = [...document.querySelectorAll('.response-box-mobile')].indexOf(currentInput);
         });
       });
 
       function onChange(input) {
         if (currentIdx >= 0) {
-          textboxVal[currentIdx] = document.getElementById(
-            "question_input_key_" + currentIdx,
-          ).textContent;
+          textboxVal[currentIdx] = document.getElementById('question_input_key_' + currentIdx).textContent;
         }
       }
 
       function onKeyPress(button) {
         if (!currentInput) return;
         storeKeyRT(button);
-        if (button === "{bksp}") {
+        if (button === '{bksp}') {
           currentInput.textContent = currentInput.textContent.slice(0, -1);
-        } else if (button === "{enter}") {
+        } else if (button === '{enter}') {
           jsPsych.finishTrial();
         } else {
           currentInput.textContent += button;
@@ -405,9 +381,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         const jsPsychAudioCtx = jsPsych.pluginAPI.audioContext();
 
         // Returns a promise of the AudioBuffer of the preloaded file path.
-        const audioBuffer = await jsPsych.pluginAPI.getAudioBuffer(
-          mediaAssets.audio.coreMathFeedbackIncorrect,
-        );
+        const audioBuffer = await jsPsych.pluginAPI.getAudioBuffer(mediaAssets.audio.coreMathFeedbackIncorrect);
 
         source = jsPsychAudioCtx.createBufferSource();
         source.buffer = audioBuffer;
@@ -423,7 +397,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       }
 
       let save_trial = true;
-      const stimulus = store.session.get("nextStimulus");
+      const stimulus = store.session.get('nextStimulus');
       let response_val = [];
       let correctCount = 0;
 
@@ -432,11 +406,11 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         let target = Number(stimulus.target[i]);
         if (textboxVal.hasOwnProperty(i)) {
           response = Number(textboxVal[i]);
-          if (textboxVal[i] === null || textboxVal[i] === "") {
-            response = "";
+          if (textboxVal[i] === null || textboxVal[i] === '') {
+            response = '';
           }
         } else {
-          response = "";
+          response = '';
         }
         response_val.push(response);
         if (response === target) {
@@ -446,21 +420,21 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
 
       let correct = correctCount === stimulus.target.length ? 1 : 0;
 
-      store.session.set("dataCorrect", correct);
+      store.session.set('dataCorrect', correct);
 
-      if (corpusName === "stimulus") {
-        store.session.set("previousItem", stimulus);
-        store.session.set("previousAnswer", store.session.get("dataCorrect"));
+      if (corpusName === 'stimulus') {
+        store.session.set('previousItem', stimulus);
+        store.session.set('previousAnswer', store.session.get('dataCorrect'));
       }
 
-      store.session.transact("indexTrackingPractice", (oldVal) => oldVal + 1);
+      store.session.transact('indexTrackingPractice', (oldVal) => oldVal + 1);
 
       jsPsych.data.addDataToLastTrial({
         save_trial: save_trial,
-        pid: store.session.get("config").pid,
-        corpus_name: "fractionInstruction",
-        trial_num_total: store.session.get("indexTrackingPractice") + 1,
-        trial_num_block: store.session.get("indexTrackingPractice") + 1,
+        pid: store.session.get('config').pid,
+        corpus_name: 'fractionInstruction',
+        trial_num_total: store.session.get('indexTrackingPractice') + 1,
+        trial_num_block: store.session.get('indexTrackingPractice') + 1,
         item_id: stimulus.itemID,
         problem_id: null,
         problem_version: null,
@@ -470,7 +444,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         correct_response_num: null,
         choice_index: null,
         response: response_val,
-        correct: store.session.get("dataCorrect"),
+        correct: store.session.get('dataCorrect'),
         item: stimulus.item_raw,
         target: stimulus.target,
         response_key_list: key,
@@ -488,7 +462,7 @@ const feedbackCorrect = {
     return mediaAssets.audio.coreMathFeedbackCorrect;
   },
   prompt: () => {
-    let currentItem = store.session.get("nextStimulus");
+    let currentItem = store.session.get('nextStimulus');
     //let questionHTML = `<p>` + currentItem.item + `</p>`;
     let responseHTML = ``;
     //questionHTML = `<div class="question-box">` + questionHTML + `</div>`;
@@ -530,7 +504,7 @@ const feedbackCorrect = {
                         <div class="instruction-boxes fade-in-1" style="flex-basis: 60%;" id="panel1">
                             <p class="instructions-text">` +
       currentItem.item +
-      `<br><br>${i18next.t("instructions.core-math.text21")}
+      `<br><br>${i18next.t('instructions.core-math.text21')}
                             </p>
                         </div>
                         <div class="textbox-response" id="panel2">
@@ -538,7 +512,7 @@ const feedbackCorrect = {
       responseHTML +
       `<p class="fraction-feedback">
                                 <span class="green">
-                                ${i18next.t("instructions.fluency.text10")}
+                                ${i18next.t('instructions.fluency.text10')}
                                 </span>
                             </p>
                             </div>
@@ -552,33 +526,26 @@ const feedbackCorrect = {
     );
   },
   keyboard_choices: () => [],
-  button_choices: () => [""],
+  button_choices: () => [''],
   response_ends_trial: true,
   trial_ends_after_audio: true,
   on_load: () => {
-    let elements = document.getElementsByClassName("katex");
+    let elements = document.getElementsByClassName('katex');
     // Loop through the elements and change the font size
     for (let i = 0; i < elements.length; i++) {
-      elements[i].style.fontSize = "3.5vh";
+      elements[i].style.fontSize = '3.5vh';
     }
 
-    const decimalKey = store.session.get("decimalKey");
+    const decimalKey = store.session.get('decimalKey');
 
     const keyboard = new SimpleKeyboard({
       layout: {
-        default: [
-          "1 2 3 4 5 6 7 8 9 0",
-          `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`,
-        ],
+        default: ['1 2 3 4 5 6 7 8 9 0', `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`],
       },
       display: {
-        "{bksp}": `${i18next.t(
-          "terms.delete",
-        )} <span class="big-symbol">\u232B</span>`,
-        "{enter}": `${i18next.t(
-          "terms.submit",
-        )} <span class="big-symbol">\u2713</span>`,
-        "{empty}": " ", // Prevents rendering key value
+        '{bksp}': `${i18next.t('terms.delete')} <span class="big-symbol">\u232B</span>`,
+        '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
+        '{empty}': ' ', // Prevents rendering key value
       },
     });
   },
@@ -587,7 +554,7 @@ const feedbackCorrect = {
 const ifCorrect = {
   timeline: [feedbackCorrect],
   conditional_function: () => {
-    if (store.session.get("dataCorrect") === 1) {
+    if (store.session.get('dataCorrect') === 1) {
       return true;
     }
     return false;
@@ -598,7 +565,7 @@ const ifIncorrect = (corpusName, assessment_stage_val) => {
   return {
     timeline: [feedbackIncorrect(corpusName, assessment_stage_val)],
     conditional_function: () => {
-      if (store.session.get("dataCorrect") === 1) {
+      if (store.session.get('dataCorrect') === 1) {
         return false;
       }
       return true;

@@ -1,11 +1,11 @@
-import jsPsychHtmlButtonResponse from "@jspsych/plugin-html-button-response";
-import store from "store2";
-import { mediaAssets } from "../../..";
-import { startTimer } from "../../core-math/helpers/updateCountDown";
-import { jsPsych } from "../../taskSetup";
-import _round from "lodash/round";
-import i18next from "i18next";
-import { isMobile } from "../../fluency/helpers";
+import jsPsychHtmlButtonResponse from '@jspsych/plugin-html-button-response';
+import store from 'store2';
+import { mediaAssets } from '../../..';
+import { startTimer } from '../../core-math/helpers/updateCountDown';
+import { jsPsych } from '../../taskSetup';
+import _round from 'lodash/round';
+import i18next from 'i18next';
+import { isMobile } from '../../fluency/helpers';
 
 let source = null;
 export async function playAudio(audioFile, onEnded = null) {
@@ -13,9 +13,7 @@ export async function playAudio(audioFile, onEnded = null) {
 
   const jsPsychAudioCtx = jsPsych.pluginAPI.audioContext();
 
-  const audioBuffer = await jsPsych.pluginAPI.getAudioBuffer(
-    mediaAssets.audio[audioFile],
-  );
+  const audioBuffer = await jsPsych.pluginAPI.getAudioBuffer(mediaAssets.audio[audioFile]);
 
   source = jsPsychAudioCtx.createBufferSource();
   source.buffer = audioBuffer;
@@ -52,15 +50,7 @@ export function setMarkerFromValue(value, step, minValue, maxValue, marker) {
   marker.style.left = `${percent * 100}%`;
 }
 
-export function initializeNumberLine({
-  line,
-  marker,
-  minValue,
-  maxValue,
-  step,
-  onChange,
-  onFirstInteraction,
-}) {
+export function initializeNumberLine({ line, marker, minValue, maxValue, step, onChange, onFirstInteraction }) {
   let dragging = false;
   let hasInteracted = false;
 
@@ -92,30 +82,30 @@ export function initializeNumberLine({
     onChange?.(value);
   }
 
-  line.addEventListener("pointerdown", (e) => {
+  line.addEventListener('pointerdown', (e) => {
     moveMarker(e.clientX);
   });
 
-  marker.addEventListener("pointerdown", (e) => {
+  marker.addEventListener('pointerdown', (e) => {
     dragging = true;
-    marker.classList.add("dragging");
+    marker.classList.add('dragging');
     marker.setPointerCapture(e.pointerId);
     e.stopPropagation();
   });
 
-  marker.addEventListener("pointermove", (e) => {
+  marker.addEventListener('pointermove', (e) => {
     if (!dragging) return;
     moveMarker(e.clientX);
   });
 
-  marker.addEventListener("pointerup", () => {
+  marker.addEventListener('pointerup', () => {
     dragging = false;
-    marker.classList.remove("dragging");
+    marker.classList.remove('dragging');
   });
 
-  marker.addEventListener("pointercancel", () => {
+  marker.addEventListener('pointercancel', () => {
     dragging = false;
-    marker.classList.remove("dragging");
+    marker.classList.remove('dragging');
   });
 
   setMarkerFromValue(minValue, step, minValue, maxValue, marker);
@@ -136,7 +126,7 @@ export const numberLineSlider = (assessment_stage_val) => {
       return (
         `<canvas id="canvas-timer" width="${diameter}" height="${diameter}" class="canvas-timer"></canvas>
                 <div class="number-line-item">` +
-        store.session.get("nextStimulus").itemKatex +
+        store.session.get('nextStimulus').itemKatex +
         `</div>
                 
                 <div class="number-line-container">
@@ -147,34 +137,32 @@ export const numberLineSlider = (assessment_stage_val) => {
                         <div class="marker" id="marker"></div>
 
                         <div class="label left">` +
-        store.session.get("nextStimulus").lower +
+        store.session.get('nextStimulus').lower +
         `</div>
                         <div class="label right">` +
-        store.session.get("nextStimulus").upper +
+        store.session.get('nextStimulus').upper +
         `</div>
                     </div>
                 </div>
-                <div class="number-line-item-below hidden">${i18next.t(
-                  "warning-number-line",
-                )}</div>`
+                <div class="number-line-item-below hidden">${i18next.t('warning-number-line')}</div>`
       );
     },
-    choices: [""],
+    choices: [''],
     button_html: `<img class="go-button" id="go-button-id" src=${mediaAssets.images.goButtonRectangleYellow} alt="button"/>`,
     response_ends_trial: false,
     on_start: () => {
-      if (store.session.get("config").userMode === "default") {
+      if (store.session.get('config').userMode === 'default') {
         const timerId = setTimeout(() => {
-          store.session.set("timeOut", true);
+          store.session.set('timeOut', true);
           jsPsych.finishTrial({ response: currentValue });
-        }, store.session.get("numberLineTimeLimit"));
-        store.session.set("timerId", timerId);
+        }, store.session.get('numberLineTimeLimit'));
+        store.session.set('timerId', timerId);
       }
     },
     on_load: () => {
-      const currentItem = store.session.get("nextStimulus");
-      const line = document.getElementById("line");
-      const marker = document.getElementById("marker");
+      const currentItem = store.session.get('nextStimulus');
+      const line = document.getElementById('line');
+      const marker = document.getElementById('marker');
       const minValue = currentItem.lower;
       const maxValue = currentItem.upper;
       currentValue = minValue;
@@ -194,60 +182,56 @@ export const numberLineSlider = (assessment_stage_val) => {
         },
       });
 
-      const warning = document.querySelector(".number-line-item-below");
-      const continueBtn = document.getElementById(
-        "jspsych-html-button-response-button-0",
-      );
+      const warning = document.querySelector('.number-line-item-below');
+      const continueBtn = document.getElementById('jspsych-html-button-response-button-0');
 
       handleContinueClick = (e) => {
         if (!markerMoved) {
-          warning.classList.remove("hidden");
-          playAudio("numLineMoveFeedback");
+          warning.classList.remove('hidden');
+          playAudio('numLineMoveFeedback');
           return;
         }
 
         jsPsych.finishTrial({ response: currentValue });
       };
 
-      continueBtn.addEventListener("click", handleContinueClick);
+      continueBtn.addEventListener('click', handleContinueClick);
 
-      if (store.session.get("config").userMode === "default") {
+      if (store.session.get('config').userMode === 'default') {
         // set timeout for showing the countdown
-        let countdownTime = store.session.get("numberLineCountdownTime");
+        let countdownTime = store.session.get('numberLineCountdownTime');
         const timerIdCountdown = setTimeout(() => {
           startTimer(countdownTime);
-        }, store.session.get("numberLineCountdownAppears"));
-        store.session.set("timerIdCountdown", timerIdCountdown);
+        }, store.session.get('numberLineCountdownAppears'));
+        store.session.set('timerIdCountdown', timerIdCountdown);
       }
     },
     on_finish: (data) => {
       stopAudio();
 
-      clearInterval(store.session.get("intervalId"));
-      clearTimeout(store.session.get("timerId"));
-      clearTimeout(store.session.get("timerIdCountdown"));
+      clearInterval(store.session.get('intervalId'));
+      clearTimeout(store.session.get('timerId'));
+      clearTimeout(store.session.get('timerIdCountdown'));
 
-      const continueBtn = document.getElementById(
-        "jspsych-html-button-response-button-0",
-      );
+      const continueBtn = document.getElementById('jspsych-html-button-response-button-0');
 
       if (continueBtn) {
-        continueBtn.removeEventListener("click", handleContinueClick);
+        continueBtn.removeEventListener('click', handleContinueClick);
       }
 
-      const stimulus = store.session.get("nextStimulus");
+      const stimulus = store.session.get('nextStimulus');
       //round to prevent precision errors
       let absDifference = _round(Math.abs(data.response - stimulus.target), 3);
       let perError = _round((absDifference / stimulus.upper) * 100, 2);
 
-      let subCorpusName = store.session.get("subCorpusName");
+      let subCorpusName = store.session.get('subCorpusName');
       jsPsych.data.addDataToLastTrial({
-        subtask: "numberLine",
+        subtask: 'numberLine',
         save_trial: true,
-        time_out: store.session.get("timeOut"),
-        pid: store.session.get("config").pid,
+        time_out: store.session.get('timeOut'),
+        pid: store.session.get('config').pid,
         corpus_name: subCorpusName,
-        trial_num_block: store.session.get("indexTracking") + 1,
+        trial_num_block: store.session.get('indexTracking') + 1,
         item_id: stimulus.itemID,
         problem_id: stimulus.problem_ID,
         problem_version: stimulus.version,
