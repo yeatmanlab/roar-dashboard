@@ -1,0 +1,1957 @@
+/* CSS Document */
+/* Importing styling for katex library */
+//@import url("https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css");
+//@import "~katex/dist/katex.min.css";
+/* Importing styling for simple keyboard*/
+//@import "~simple-keyboard/build/css/index.css"; //Works locally but doesn't build with dashboard
+//@import "node_modules/katex/dist/katex.min.css"; //Error
+/* Importing styling for simple keyboard*/
+//@import "node_modules/simple-keyboard/build/css/index.css"; //Error
+
+$text-yellow: rgba(255, 202, 97, 1);
+$btn-bg: rgba(76, 101, 139, 1);
+$btn-border: rgb(65, 91, 127);
+$text-red: rgba(222, 69, 69, 1);
+
+/* main body class, all pages have this class in the body */
+.jspsych-display-element {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  margin: 0;
+  text-align: center;
+  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
+    "sans-serif";
+  touch-action: manipulation;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+                                supported by Chrome, Edge, Opera and Firefox */
+
+  /* all jspsych content has a division with this class */
+  .jspsych-content-wrapper {
+    height: 100%;
+    width: 100%;
+
+    /* this will be a nested division within the content wrapper */
+    .jspsych-content {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+      /* fullscreen text */
+      #fullScreen {
+        width: 80vw;
+        text-align: center;
+        color: rgba(76, 101, 139, 1);
+        font-size: 1.7rem;
+      }
+
+      /* fullscreen button properties */
+      #jspsych-fullscreen-btn {
+        width: 17vw;
+        height: 10vh;
+        background-color: rgba(76, 101, 139, 1);
+        color: white;
+        border-radius: 1rem;
+        border: 0rem;
+        font-size: 3vw;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .item-textbox {
+        padding-top: 1vh;
+        padding-bottom: 1vh;
+        width: 8vw;
+        //width:min-content;
+        //min-width: 5vw;
+        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+          Arial, "sans-serif";
+        font-size: 6vh;
+        margin: 0;
+      }
+
+      .item-textbox-mobile {
+        display: flex;
+        align-items: center;
+        background-color: white;
+        border: 1px solid darkgray;
+        padding-top: 1vh;
+        padding-bottom: 1vh;
+        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+          Arial, "sans-serif";
+        font-size: 6vh;
+        height: 8vh;
+        width: 10vw;
+        margin-top: auto;
+        margin-bottom: auto;
+        box-sizing: border-box;
+      }
+
+      .item-textbox-mobile.focused {
+        border: 2px solid #007bff;
+        outline: none;
+      }
+
+      /*styling for horizontal problems*/
+      .item-stimulus {
+        display: flex;
+        justify-content: center;
+        align-items: center; /* For vertical centering */
+
+        /* Assuming you want this item to take the full height and width of its container to ensure centering: */
+        /*padding-left: 12%;*/
+        /*padding-right: 12%;*/
+        //padding-bottom: 5vh;
+
+        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+          Arial, "sans-serif";
+        font-size: 6vh;
+        margin: 0;
+        text-align: center; /* To ensure the text is centered if it wraps to more than one line */
+
+        .spacing {
+          padding-left: 20px;
+        }
+
+        .spacing-below {
+          margin-bottom: 5vh;
+        }
+      }
+
+      //this only applies to the swipe plugin
+      button.responded {
+        box-shadow:
+          0 0 10px gray,
+          0 0 20px gray;
+        color: black;
+      }
+
+      .item-swipe-btn.left {
+        margin-left: 3vw;
+        margin-right: 3vw;
+        margin-top: 5vh;
+      }
+
+      .item-swipe-btn.right {
+        margin-left: 3vw;
+        margin-right: 3vw;
+        margin-top: 5vh;
+      }
+
+      .item-swipe-btn {
+        //border: none;
+        cursor: pointer;
+        appearance: none;
+        //background-color: white;
+        position: relative;
+        text-align: center;
+        padding-left: 2vh;
+        padding-right: 2vh;
+        border-radius: 1vh;
+        color: black;
+
+        img {
+          height: 10vh;
+        }
+
+        .button-text-left {
+          font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+            Arial, "sans-serif";
+          //position: absolute;
+          //top: 50%;
+          //left: 50%;
+          //transform: translate(0%, -50%);
+          font-size: 5vh;
+        }
+
+        .button-text-right {
+          font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+            Arial, "sans-serif";
+          //position: absolute;
+          //top: 50%;
+          //left: 50%;
+          //transform: translate(-100%, -50%);
+          font-size: 5vh;
+        }
+        .arrow {
+          border: solid black;
+          border-width: 0 9px 9px 0;
+          display: inline-block;
+          padding: 9px;
+        }
+
+        .right {
+          transform: rotate(-45deg);
+          -webkit-transform: rotate(-45deg);
+        }
+
+        .left {
+          transform: rotate(135deg);
+          -webkit-transform: rotate(135deg);
+        }
+      }
+
+      //simple-keyboard empty space
+      .hg-button-empty {
+        background-color: #ececec;
+        pointer-events: none;
+        cursor: default;
+        border: none !important;
+        box-shadow: none !important;
+      }
+
+      //simple-keyboard delete key
+      .hg-button-bksp {
+        background-color: #d55e00;
+        color: white;
+        font-weight: bold;
+        width: 18vw;
+
+        .big-symbol {
+          transform: scale(1.5); /* Increase size of the symbol */
+          display: inline-block; /* Make sure it scales properly */
+          //vertical-align: middle;  /* Align it to the middle of the text */
+        }
+      }
+
+      //simple-keyboard enter key
+      .hg-button-enter {
+        background-color: #009e73;
+        color: white;
+        font-weight: bold;
+        width: 18vw;
+
+        .big-symbol {
+          transform: scale(1.3); /* Increase size of the symbol */
+          display: inline-block; /* Make sure it scales properly */
+          //vertical-align: middle;  /* Align it to the middle of the text */
+        }
+      }
+
+      //simple-keyboard font
+      .hg-theme-default {
+        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+          Arial, sans-serif;
+      }
+
+      //simple-keyboard button css
+      .hg-button {
+        font-size: 5vh;
+        padding-top: 1vh;
+        padding-bottom: 1vh;
+        height: auto; /* Let height adjust */
+        margin: 0.5vh;
+      }
+
+      //fixes keyboard at the bottom of the screen
+      .simple-keyboard {
+        position: fixed;
+        bottom: 1.5vh; /* 10px margin from bottom */
+        left: 0;
+        height: 20vh;
+        width: 100%;
+        z-index: 9999;
+      }
+
+      //1 row of buttons
+      .nafc-btn-layout {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 5vh;
+        gap: 1rem;
+        max-width: 100vw; // prevent overflow
+        padding: 0 1rem;
+
+        @media (pointer: coarse) {
+          gap: 0.5rem;
+        }
+
+        div {
+          box-sizing: border-box;
+          //margin: 0;
+          //padding: 0;
+          //min-width: calc(10%);
+          //flex: 1 1 20%;             // grow/shrink with a base width
+          //max-width: 200px;          // prevent buttons from getting too big
+          min-width: 10vw; // prevent buttons from getting too small
+          @media (pointer: coarse) {
+            min-width: 13vw;
+          }
+
+          button {
+            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+              Arial, sans-serif;
+            width: 100%;
+            //font-size: clamp(1.5rem, 3.5vw, 5vh); // responsive font sizing
+            font-size: 5vh;
+            padding: 1rem 1rem;
+            color: black;
+            border: 1px solid black;
+            border-radius: 0.5rem;
+            line-height: 1.5;
+            cursor: pointer;
+          }
+
+          @media only screen and (max-width: 1200px) {
+            button {
+              font-size: 4vw;
+            }
+          }
+
+          button:active {
+            background-color: #ffffff;
+            //transform: scale(0.9); /* Shrink slightly */
+            //box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add subtle shadow effect */
+            box-shadow:
+              0 0 10px gray,
+              0 0 20px gray;
+            //color: black;
+          }
+
+          img:active {
+            /*box-shadow:
+              0 0 10px gray,
+              0 0 20px gray;*/
+            transform: scale(0.9); /* Shrink image slightly */
+            //box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Add shadow effect */
+            opacity: 0.8;
+          }
+        }
+
+        .glowingButton {
+          opacity: 1;
+          animation: glowing 1300ms infinite;
+          //border: 5px solid rgb(70, 207, 79, 1);
+
+          .disabled {
+            cursor: none;
+            pointer-events: none;
+          }
+        }
+        @keyframes glowing {
+          0% {
+            background-color: #2ba805;
+            border: 5px solid #2ba805;
+            box-shadow: 0 0 5px #2ba805;
+            border-radius: 0.5rem;
+          }
+          50% {
+            background-color: #49e819;
+            border: 5px solid #49e819;
+            box-shadow: 0 0 20px #49e819;
+            border-radius: 0.5rem;
+          }
+          100% {
+            background-color: #2ba805;
+            border: 5px solid #2ba805;
+            box-shadow: 0 0 5px #2ba805;
+            border-radius: 0.5rem;
+          }
+        }
+
+        .disabled-btn-practice {
+          cursor: not-allowed; /* Indicate that the button is not interactive */
+          pointer-events: none; /* Prevent all click and hover interactions */
+          opacity: 0.6;
+        }
+
+        .disabled-btn-color {
+          cursor: not-allowed; /* Indicate that the button is not interactive */
+          pointer-events: none; /* Prevent all click and hover interactions */
+        }
+
+        .disabled-btn {
+          min-width: calc(15%);
+
+          button {
+            cursor: none;
+            pointer-events: none;
+          }
+          .correct-btn {
+            border: 5px solid rgb(70, 207, 79, 1);
+          }
+        }
+      }
+
+      // 3 x 2 layout of buttons
+      .grid-layout {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* two columns of equal width */
+        grid-template-rows: repeat(2, auto); /* two rows of equal height */
+        gap: 3rem;
+        margin-top: 5vh;
+        max-width: 100vw;
+        padding: 0 1rem;
+
+        div {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          max-width: 100%;
+
+          button {
+            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+              Arial, "sans-serif";
+            width: 100%;
+            min-width: 10vw;
+            height: 100%;
+            font-size: 5vh;
+            padding: 1rem 1rem;
+            color: black;
+            border: 1px solid black;
+            border-radius: 0.5rem;
+            line-height: 1.5;
+            cursor: pointer;
+          }
+
+          @media only screen and (max-width: 1200px) {
+            button {
+              font-size: 3.5vw;
+            }
+          }
+
+          button:active {
+            background-color: #ffffff;
+            //transform: scale(0.9); /* Shrink slightly */
+            //box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add subtle shadow effect */
+            box-shadow:
+              0 0 10px gray,
+              0 0 20px gray;
+            //color: black;
+          }
+
+          img:active {
+            /*box-shadow:
+              0 0 10px gray,
+              0 0 20px gray;*/
+            //color: black;
+            transform: scale(0.9); /* Shrink image slightly */
+            //box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Add shadow effect */
+            opacity: 0.8;
+          }
+        }
+        .disabled-btn-practice {
+          cursor: not-allowed; /* Indicate that the button is not interactive */
+          pointer-events: none; /* Prevent all click and hover interactions */
+          opacity: 0.6;
+        }
+        .disabled-btn-color {
+          cursor: not-allowed; /* Indicate that the button is not interactive */
+          pointer-events: none; /* Prevent all click and hover interactions */
+        }
+      }
+
+      //2x3 buttons
+      .grid-layout-long {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* two columns of equal width */
+        grid-template-rows: repeat(3, auto); /* two rows of equal height */
+        gap: 3rem;
+        margin-top: 5vh;
+        max-width: 100vw;
+        padding: 0 1rem;
+
+        div {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          max-width: 100%;
+
+          button {
+            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+              Arial, "sans-serif";
+            width: 100%;
+            height: 100%;
+            font-size: 5vh;
+            padding: 1rem 1rem;
+            color: black;
+            border: 1px solid black;
+            border-radius: 0.5rem;
+            line-height: 1.5;
+            cursor: pointer;
+            white-space: nowrap; /* Prevents wrapping */
+          }
+
+          @media only screen and (max-width: 1200px) {
+            button {
+              font-size: 3.5vw;
+            }
+          }
+
+          button:active {
+            background-color: #ffffff;
+            //transform: scale(0.9); /* Shrink slightly */
+            //box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add subtle shadow effect */
+            box-shadow:
+              0 0 10px gray,
+              0 0 20px gray;
+            //color: black;
+          }
+        }
+        .disabled-btn-practice {
+          cursor: not-allowed; /* Indicate that the button is not interactive */
+          pointer-events: none; /* Prevent all click and hover interactions */
+          opacity: 0.6;
+        }
+      }
+
+      //2x3 buttons
+      .grid-layout-long-compact {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* two columns of equal width */
+        grid-template-rows: repeat(3, auto); /* two rows of equal height */
+        gap: 1rem;
+        margin-top: 5vh;
+        max-width: 100vw;
+        padding: 0 1rem;
+        transform: scale(0.9);
+
+        div {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          max-width: 100%;
+
+          button {
+            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+              Arial, "sans-serif";
+            width: 100%;
+            height: 100%;
+            font-size: 5vh;
+            padding: 1rem 1rem;
+            color: black;
+            border: 1px solid black;
+            border-radius: 0.5rem;
+            line-height: 1.5;
+            cursor: pointer;
+            white-space: nowrap; /* Prevents wrapping */
+          }
+
+          @media only screen and (max-width: 1200px) {
+            button {
+              font-size: 3.5vw;
+            }
+          }
+
+          button:active {
+            background-color: #ffffff;
+            //transform: scale(0.9); /* Shrink slightly */
+            //box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add subtle shadow effect */
+            box-shadow:
+              0 0 10px gray,
+              0 0 20px gray;
+            //color: black;
+          }
+        }
+        .disabled-btn-practice {
+          cursor: not-allowed; /* Indicate that the button is not interactive */
+          pointer-events: none; /* Prevent all click and hover interactions */
+          opacity: 0.6;
+        }
+      }
+
+      .num-comp-btn-layout {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        //margin-top: 5vh;
+        gap: 1rem;
+        max-width: 100vw; // prevent overflow
+        padding: 0 1rem;
+
+        div {
+          box-sizing: border-box;
+          min-width: 15vw; // prevent buttons from getting too small
+
+          button {
+            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+              Arial, sans-serif;
+            width: 100%;
+            font-size: 7vh;
+            padding: 2rem 2rem;
+            color: black;
+            border: 0.1rem solid black;
+            border-radius: 0.5rem;
+            line-height: 1.5;
+            cursor: pointer;
+          }
+
+          @media only screen and (max-width: 1200px) {
+            button {
+              font-size: 4.5vw;
+            }
+          }
+        }
+
+        .glowingButton button {
+          opacity: 1;
+          animation: glowing 1300ms infinite;
+
+          .disabled {
+            cursor: none;
+            pointer-events: none;
+          }
+        }
+        @keyframes glowing {
+          0% {
+            border: 5px solid #2ba805;
+            box-shadow: 0 0 5px #2ba805;
+            border-radius: 0.5rem;
+          }
+          50% {
+            border: 5px solid #49e819;
+            box-shadow: 0 0 20px #49e819;
+            border-radius: 0.5rem;
+          }
+          100% {
+            border: 5px solid #2ba805;
+            box-shadow: 0 0 5px #2ba805;
+            border-radius: 0.5rem;
+          }
+        }
+
+        .disabled-btn-practice {
+          cursor: not-allowed; /* Indicate that the button is not interactive */
+          pointer-events: none; /* Prevent all click and hover interactions */
+          opacity: 0.6;
+        }
+
+        .disabled-btn-color {
+          cursor: not-allowed; /* Indicate that the button is not interactive */
+          pointer-events: none; /* Prevent all click and hover interactions */
+        }
+
+        .disabled-btn {
+          min-width: calc(15%);
+
+          button {
+            cursor: none;
+            pointer-events: none;
+          }
+          .correct-btn {
+            border: 5px solid rgb(70, 207, 79, 1);
+          }
+        }
+      }
+
+      .duck-layout {
+        display: flex;
+        min-width: 100%;
+        justify-content: center;
+        align-items: center;
+        //margin-top: 5vh;
+        margin: 5vh 10% 0px;
+        gap: 1rem;
+
+        .pointer-parent {
+          position: relative;
+        }
+
+        .pointer-child {
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translate(-50%, -0%);
+          display: inline-flex; /* Centers text within the circle */
+          align-items: center;
+          justify-content: center;
+          width: 80%;
+          height: 5vh;
+          background-color: #f5ba31; /* Circle background color */
+          color: black; /* Text color */
+          border-radius: 50%; /* Makes the shape circular */
+          border: 2px solid #b46520; /* Border color*/
+          font-size: 3.5vh; /* Font size for the number */
+          font-weight: bold; /* Makes the number bold */
+        }
+
+        div {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+          //min-width: calc(10%);
+
+          img {
+            //height: 15vh;
+            width: 100%;
+            height: auto;
+          }
+        }
+        .disabled-btn-color {
+          cursor: not-allowed; /* Indicate that the button is not interactive */
+          pointer-events: none; /* Prevent all click and hover interactions */
+        }
+      }
+
+      //overall container
+      .containerMobile {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 97vh;
+      }
+
+      // for mobile devices, to accomodate the on-screen keyboard
+      .item-stimulus-simple-keyboard {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* vertical center */
+        justify-content: center; /* horizontal center */
+        height: 74vh;
+      }
+
+      .item-stimulus-long {
+        overflow-wrap: break-word;
+        max-width: 80vw;
+        width: 100%;
+        margin: 0 auto;
+
+        .question-box {
+          //border: 6px solid rgba(229, 218, 191, 1);
+          margin-bottom: 5vh;
+          //margin: 0vh 10% 0px;
+          text-align: center;
+          p {
+            font-size: 5vh;
+            line-height: 1.5;
+          }
+
+          img {
+            max-width: 100%;
+            width: auto;
+            //height: auto;
+            display: block;
+            margin: 0 auto; // center the image
+          }
+        }
+
+        .response-box {
+          padding-top: 1vh;
+          padding-bottom: 1vh;
+          //width: 10vw;
+          //min-width:10vw;
+          //max-width: max-content;
+          font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+            Arial, "sans-serif";
+          font-size: 5vh;
+          margin-top: auto;
+          margin-bottom: auto;
+        }
+
+        .response-box-mobile {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: white;
+          border: 1px solid darkgray;
+          padding-top: 1vh;
+          padding-bottom: 1vh;
+          font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+            Arial, "sans-serif";
+          font-size: 5vh;
+          height: 7vh;
+          margin-top: auto;
+          margin-bottom: auto;
+          box-sizing: border-box;
+        }
+
+        .response-box-mobile.focused {
+          border: 2px solid #007bff;
+          outline: none;
+        }
+
+        .fraction-mobile {
+          display: flex;
+          flex-direction: column;
+          align-items: center; /* <-- center child elements horizontally */
+        }
+
+        hr {
+          width: 7vw;
+          text-align: center;
+          border: 1px solid black;
+        }
+
+        .response-horizontal {
+          display: flex;
+          justify-content: center;
+
+          p {
+            text-align: center;
+            padding: 1vh;
+            font-size: 5vh;
+
+            .fraction-instruction {
+              padding-left: 5vw;
+              display: flex;
+              align-items: center;
+            }
+          }
+
+          .fraction-practice {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding-right: 5vw;
+
+            .fraction-practice-textbox {
+              font-size: 3.5vh;
+              height: 5.5vh;
+              text-align: center;
+              box-sizing: border-box;
+              padding: 0;
+              margin: 0;
+            }
+          }
+        }
+
+        .warning-text {
+          font-size: 2.5vh;
+          color: $text-red;
+          text-align: center;
+          visibility: hidden;
+        }
+      }
+
+      .image-pointer-parent {
+        position: relative;
+      }
+
+      .image-pointer-child {
+        position: absolute;
+        font-size: 3.5vh;
+        top: -5vh;
+        left: 4vw;
+      }
+
+      #replay {
+        position: absolute;
+        top: 2vh;
+        right: 2vw;
+        width: 8vw;
+        cursor: pointer;
+      }
+
+      .number-line {
+        position: relative;
+        width: 85vw;
+        height: auto;
+        border-top: 2px solid black; /* Draw the line */
+        margin: 5vh auto;
+
+        .label {
+          position: absolute;
+          top: 3vh;
+          font-size: 3.5vh;
+          //width: 20px;
+          left: -1.5vh; /* Adjust the label position relative to the button */
+        }
+
+        .limit-div {
+          position: absolute;
+          top: -1vw;
+          height: 2vw;
+          border-left: 2px solid black;
+        }
+
+        .point-btn {
+          position: absolute;
+          width: 1.5rem;
+          height: 1.5rem;
+          background-color: black;
+          border-radius: 50%;
+          border: none;
+          cursor: pointer;
+          top: -0.75rem; /* Vertically center the buttons on the line */
+        }
+
+        .point-btn:focus {
+          outline: none; /* Remove focus outline for better visuals */
+        }
+
+        .disabled-btn-color {
+          cursor: not-allowed; /* Indicate that the button is not interactive */
+          pointer-events: none; /* Prevent all click and hover interactions */
+        }
+      }
+
+      .giveN-container {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        margin-top: 10vh;
+
+        .source-container {
+          width: 20vw;
+          height: 20vw;
+          margin-right: 5vw;
+          position: relative;
+          display: inline-block;
+        }
+
+        .source {
+          width: 5vw;
+          cursor: grab;
+          position: absolute;
+        }
+
+        /*
+        //originally allows dropping anywhere on image
+        .dropzone-container {
+          position: relative;
+          width: 30vw;
+          margin-left: 5vw;
+          margin-bottom: 5vh;
+        }
+
+        .dropzone {
+          width: 100%;
+        }
+        */
+
+        //allows dropping only inside an oval cutout rather than whole image
+        .dropzone-container {
+          position: relative;
+          width: 30vw;
+          height: 22vw;
+          margin-left: 5vw;
+        }
+
+        .dropzone-container-image {
+          width: 100%;
+          height: 100%;
+        }
+
+        .dropzone {
+          position: absolute;
+          top: 1vw;
+          left: 2vw;
+          width: 26vw;
+          height: 16vw;
+          //background-color: rgba(255, 255, 255, 0.7);
+          border-radius: 50%;
+        }
+      }
+
+      .canvas-timer {
+        position: fixed;
+        top: 1vh;
+        left: 1vw;
+        visibility: hidden;
+      }
+
+      /*styling if katex is used*/
+      .katex {
+        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+          Arial, "sans-serif";
+        font-size: 5vh;
+      }
+
+      h2 {
+        text-align: center;
+        // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+        font-style: normal;
+        font-weight: regular;
+        font-size: 5vh;
+        color: $btn-bg;
+      }
+
+      h3 {
+        text-align: center;
+        // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+        font-style: normal;
+        font-weight: regular;
+        font-size: 4vh;
+        color: $btn-bg;
+        z-index: 1;
+      }
+
+      h4 {
+        text-align: center;
+        // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+        font-style: normal;
+        font-weight: bold;
+        font-size: 3vh;
+        color: black;
+        z-index: 1;
+      }
+
+      .column-flex {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .row {
+        display: flex;
+
+        .instruction-boxes {
+          margin-top: 2%;
+          margin-bottom: 2%;
+          padding: 3vh 2vh 3vh 2vh;
+          border: 6px solid rgba(229, 218, 191, 1);
+          border-radius: 10px;
+          margin-right: 2%;
+          margin-left: 2%;
+          background-color: #ffffff;
+          flex-basis: 100%;
+
+          p {
+            text-align: center;
+            font-size: 2.3vh;
+            text-align: center;
+            vertical-align: middle;
+            // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+            font-style: normal;
+            font-weight: normal;
+            color: rgba(0, 0, 0, 1);
+            line-height: 1.5;
+            z-index: 1;
+          }
+
+          ol {
+            font-size: 2.5vh;
+            text-align: left;
+            line-height: 1.5;
+          }
+
+          .instructions-text {
+            font-size: 2.5vh;
+          }
+
+          img {
+            width: 90%;
+          }
+
+          .box-title {
+            text-align: center;
+            font-style: normal;
+            font-weight: bold;
+            font-size: 3vh;
+            color: $btn-bg;
+            z-index: 3;
+            margin-top: 3vh;
+            margin-bottom: 3vh;
+          }
+
+          .text-image {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+
+          .clipart {
+            width: auto;
+            height: 15vh;
+            padding: 2vh;
+          }
+
+          .icon {
+            width: 6vw;
+            float: right;
+          }
+
+          .canvas-timer-instr {
+            float: left;
+          }
+        }
+
+        .no-box {
+          margin-top: 2%;
+          margin-bottom: 2%;
+          //padding: 3vh 2vh 3vh 2vh;
+          margin-right: 2%;
+          //margin-left: 2%;
+          flex-basis: 100%;
+
+          p {
+            text-align: center;
+            font-size: 2.5vh;
+            text-align: center;
+            vertical-align: middle;
+            // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+            font-style: normal;
+            font-weight: normal;
+            color: rgba(0, 0, 0, 1);
+            line-height: 1.5;
+            z-index: 1;
+          }
+
+          ol {
+            font-size: 2.5vh;
+            text-align: left;
+            line-height: 1.5;
+          }
+
+          .textbox {
+            padding-top: 1vh;
+            padding-bottom: 1vh;
+            width: 10vw;
+            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+              Arial, "sans-serif";
+            font-size: 4vh;
+            margin-top: 2vh;
+            text-align: center;
+          }
+        }
+
+        .textbox-response {
+          display: flex;
+          flex-direction: column;
+          justify-content: center; /* vertical centering */
+          align-items: center; /* horizontal centering */
+          margin-top: 2%;
+          margin-bottom: 2%;
+          //padding: 3vh 2vh 3vh 2vh;
+          margin-right: 2%;
+
+          .instructions-text {
+            font-size: 2.5vh;
+          }
+
+          .response-box-mobile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            border: 1px solid darkgray;
+            padding-top: 1vh;
+            padding-bottom: 1vh;
+            font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+              Arial, "sans-serif";
+            font-size: 3.5vh;
+            height: 5.5vh;
+            //margin-top: auto;
+            //margin-bottom: auto;
+            box-sizing: border-box;
+          }
+
+          .response-box-mobile.focused {
+            border: 2px solid #007bff;
+            outline: none;
+          }
+
+          .feedback {
+            // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+            text-align: center;
+            font-style: normal;
+            //font-weight: bold;
+            font-size: 2.5vh;
+            line-height: 2.5vh;
+            color: rgba(0, 0, 0, 1);
+          }
+        }
+
+        .single-box {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          border: 6px solid rgba(229, 218, 191, 1);
+          border-radius: 10px;
+          background-color: #ffffff;
+          width: 60vw;
+
+          p {
+            font-size: 3vh;
+            //line-height: 1.5;
+            max-width: 60vw;
+            // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+            font-style: normal;
+            font-weight: normal;
+            color: rgba(0, 0, 0, 1);
+            z-index: 1;
+          }
+
+          img {
+            //width: 60%;
+            height: 40vh;
+            padding-top: 3vh;
+          }
+        }
+
+        .hidden {
+          visibility: hidden; /* Adjust the duration and easing as needed */
+        }
+
+        .fade-in-1 {
+          animation: fadeIn 1s;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+      }
+
+      .instructions-kids {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgb(250, 246, 236);
+
+        .title {
+          position: fixed;
+          top: 0vh;
+        }
+
+        .instructions-container {
+          width: 80%;
+          justify-content: center;
+          align-items: start;
+          display: flex;
+          padding-top: 8vh;
+
+          .fade-in-1 {
+            animation: fadeIn 1s;
+          }
+
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+            }
+            to {
+              opacity: 1;
+            }
+          }
+
+          .gif-container {
+            background-color: #ffffff;
+            border: 0.8vh solid rgba(229, 218, 191, 1);
+            border-radius: 10px;
+            padding-left: 1.5vw;
+            padding-right: 1.5vw;
+            padding-top: 2vh;
+            padding-bottom: 2vh;
+            width: 55%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            img {
+              width: 85%;
+            }
+
+            .instructions-text {
+              font-size: 2.5vh;
+              //font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+              color: rgba(0, 0, 0, 1);
+              line-height: 4vh;
+            }
+          }
+
+          .practice-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 35%;
+            padding-left: 1.5vw;
+            padding-right: 1.5vw;
+            padding-top: 2.8vh;
+            padding-bottom: 2vh;
+
+            .textbox {
+              padding-top: 1vh;
+              padding-bottom: 1vh;
+              width: 10vw;
+              font-family: "Source Sans Pro", Gotham, "Helvetica Neue",
+                Helvetica, Arial, "sans-serif";
+              font-size: 4vh;
+              margin-top: 2vh;
+              text-align: center;
+            }
+
+            .practice-text {
+              font-size: 2.5vh;
+              // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+              color: rgba(0, 0, 0, 1);
+              line-height: 4vh;
+            }
+          }
+        }
+      }
+
+      .practice-feedback {
+        //position: fixed;
+        //bottom: 10vh;
+        width: 85%;
+      }
+
+      .feedback {
+        // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+        text-align: center;
+        font-style: normal;
+        //font-weight: bold;
+        font-size: 3vh;
+        line-height: 3vh;
+        color: rgba(0, 0, 0, 1);
+        //width: 60%;
+        line-height: 4vh;
+      }
+
+      .fraction-feedback {
+        text-align: center;
+        font-style: normal;
+        font-size: 3vh;
+        line-height: 3vh;
+        color: rgba(0, 0, 0, 1);
+        line-height: 4vh;
+        width: 60vw;
+        display: inline-block;
+      }
+
+      .intro-text {
+        text-align: center;
+        vertical-align: middle;
+        // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+        font-style: normal;
+        font-weight: normal;
+        font-size: 3vh;
+        color: rgba(0, 0, 0, 1);
+        z-index: 1;
+        width: 80vw;
+      }
+
+      /*styling for vertical problems*/
+      .equation.stacked {
+        display: inline-block;
+        position: relative;
+        left: 50%;
+        transform: translateX(
+          -50%
+        ); /* this will calculate what 50% of the element width is and will move it across the X-axis. The negative value ensures it moves to the left. Need to do this because of jspsych survey form*/
+        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+          Arial, "sans-serif";
+        font-size: 6vh;
+      }
+
+      .equation.stacked .number {
+        display: block;
+        margin-left: 1em; /* space for the operator */
+        text-align: right;
+      }
+
+      .equation.stacked .textbox {
+        display: block;
+        //margin-left: 1em; /* space for the operator */
+        text-align: right;
+      }
+
+      .equation.stacked .operator {
+        float: left;
+      }
+
+      .equation.stacked .equals {
+        display: block;
+        height: 0;
+        border-bottom: solid 1px black;
+        overflow: hidden;
+        margin-bottom: 2vw;
+      }
+
+      .equation-feedback.stacked {
+        display: inline-block;
+        left: 50%;
+        font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica,
+          Arial, "sans-serif";
+        font-size: 6vh;
+      }
+
+      .equation-feedback.stacked .number {
+        display: block;
+        margin-left: 1em; /* space for the operator */
+        text-align: right;
+      }
+
+      .equation-feedback.stacked .textbox {
+        display: block;
+        //margin-left: 1em; /* space for the operator */
+        text-align: right;
+      }
+
+      .equation-feedback.stacked .operator {
+        float: left;
+      }
+
+      .equation-feedback.stacked .equals {
+        display: block;
+        height: 0;
+        border-bottom: solid 1px black;
+        overflow: hidden;
+        margin-bottom: 2vw;
+      }
+    }
+  }
+
+  .blackBG {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(125, 125, 125);
+  }
+
+  .imageBG {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .jspsych-content-modified {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(250, 246, 236);
+
+    .instructions-bg {
+      background-color: rgb(250, 246, 236);
+    }
+
+    .title {
+      position: fixed;
+      top: 0vh;
+    }
+
+    .instructions-text {
+      font-size: 3vh;
+      max-width: 80vw;
+      line-height: 1.5;
+    }
+
+    .img-border {
+      border: 6px solid rgba(229, 218, 191, 1);
+      border-radius: 10px;
+      width: 60%;
+    }
+
+    .class-container {
+      width: 100%;
+      position: absolute;
+      margin: auto;
+      display: block;
+
+      #classroom-bg {
+        position: fixed; /* or absolute, depending on your needs */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1; /* This ensures the image stays behind other content */
+        object-fit: cover;
+      }
+    }
+  }
+
+  .roar-lion {
+    width: 40%;
+  }
+
+  .tiger-gif-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+
+    .speechbubble {
+      padding: 3vh 2vh 3vh 2vh;
+      margin-right: 2%;
+      margin-left: 2%;
+      width: 60%;
+      //height: 40%;
+      background-color: rgba(246, 241, 230, 1);
+      border: 6px solid rgba(229, 218, 191, 1);
+      border-radius: 10px;
+
+      .header {
+        text-align: center;
+        // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+        font-style: normal;
+        font-weight: regular;
+        font-size: 4vh;
+        color: $btn-bg;
+        z-index: 1;
+        padding-bottom: 4vh;
+      }
+
+      .text-image {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .text {
+        text-align: center;
+        vertical-align: middle;
+        // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+        font-size: 3vh;
+        color: rgba(0, 0, 0, 1);
+        line-height: 4vh;
+      }
+
+      .clipart {
+        //width: 12vw;
+        //width: auto;
+        height: 30vh;
+        padding: 2vh;
+      }
+      .clipart-paper {
+        width: auto;
+        height: 15vh;
+        padding: 2vh;
+      }
+    }
+
+    .roam-tiger {
+      width: 20%;
+      //height: 40%;
+    }
+  }
+
+  .hide-submit {
+    visibility: hidden;
+  }
+
+  .text-block {
+    position: relative;
+    bottom: 5vh;
+    //bottom: 15px;
+    //top: 15px;
+    background-color: rgba(246, 241, 230, 1);
+    padding-left: 25px;
+    padding-right: 25px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    border: 6px solid rgba(229, 218, 191, 1);
+    border-radius: 10px;
+  }
+
+  .stimulus_div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .device-instructions {
+    max-width: 2vw;
+    width: 60%;
+    height: auto;
+    padding: 3%;
+  }
+
+  .mid-centered-text {
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
+      "sans-serif";
+    font-size: 30px;
+  }
+
+  .mid-centered-header {
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
+      "sans-serif";
+    font-size: 40px;
+  }
+
+  .go-button {
+    position: fixed;
+    bottom: 2vh;
+    width: 12vw;
+    height: auto;
+    //height: 20vh;
+    right: 5vw;
+    z-index: 999;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .go-button.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .go-button-hidden {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .key-button {
+    left: 0;
+    right: 0;
+    background-color: $btn-bg;
+    text-align: center;
+    //vertical-align: middle;
+    padding: 2vh;
+    font-style: normal;
+    font-weight: bold;
+    font-size: 3vh;
+    color: white;
+    position: fixed;
+    display: block;
+    bottom: 0;
+    border: 0;
+    z-index: 1;
+  }
+
+  .orange {
+    color: rgba(219, 97, 69, 1);
+  }
+
+  .red {
+    color: $text-red;
+  }
+
+  .green {
+    color: rgb(70, 207, 79, 1);
+  }
+
+  .yellow {
+    color: $text-yellow;
+  }
+
+  .gray {
+    color: rgb(125, 125, 125);
+  }
+
+  .red-btn-mobile {
+    color: #d55e00;
+  }
+
+  .green-btn-mobile {
+    color: #009e73;
+  }
+
+  .consent-form-title {
+    margin-right: 10%;
+    margin-left: 10%;
+    font-size: 3vh;
+    text-align: center;
+  }
+
+  .consent-form-text {
+    margin: 3%;
+    text-align: left;
+    font-size: 1.7vh;
+
+    table {
+      td {
+        vertical-align: top;
+      }
+    }
+  }
+
+  .consent-form-table {
+    border: 1px solid;
+    border-collapse: collapse;
+    font-size: 1.7vh;
+    margin-left: auto;
+    margin-right: auto;
+    width: 80%;
+    opacity: 0.5;
+
+    .dashed-border {
+      border: 2px dashed $text-red;
+    }
+
+    td {
+      border: 1px solid;
+      padding: 5px;
+
+      .center-text {
+        display: block;
+        text-align: center;
+      }
+
+      .red-text {
+        color: $text-red;
+      }
+    }
+  }
+
+  .scrollable-consent-form {
+    max-height: 60vh; /* Adjust the height according to your design */
+    border: #555 solid 2px;
+    max-width: 80vw;
+    overflow-y: auto;
+  }
+
+  /*.consent_form_body {
+    padding-top: 4vh;
+    display: block;
+  }
+
+  // for the consent form
+  .consent_form_title {
+    text-align: center;
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    font-style: normal;
+    font-weight: normal;
+    font-size: 20px;
+    color: rgba(0, 0, 0, 1);
+  }
+
+  .consent_form_text {
+    text-align: left;
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    font-style: normal;
+    font-weight: normal;
+    color: rgba(0, 0, 0, 1);
+    margin-left: 4vh;
+    margin-right: 4vh;
+  }*/
+
+  .survey_form_text {
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    text-align: center;
+    font-size: 3vh;
+  }
+
+  .jspsych-survey-multi-select-question {
+    max-width: 80vw;
+    margin: 0;
+  }
+
+  .jspsych-survey-multi-select-option {
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    font-size: 1.7vh;
+    text-align: center;
+    max-width: 80vw;
+  }
+
+  .number-line-container {
+    position: absolute !important;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80vw;
+    max-width: 1000px;
+  }
+
+  /* Line */
+  .number-line-element {
+    position: relative;
+    height: clamp(9px, 1.5vw, 15px);
+    background: gray;
+    touch-action: none;
+  }
+
+  /* End ticks */
+  .tick {
+    position: absolute;
+    width: clamp(9px, 1.5vw, 15px);
+    height: clamp(60px, 7vh, 70px);
+    background: gray;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .tick.left {
+    left: 0;
+    transform: translate(-50%, -50%);
+  }
+
+  .tick.right {
+    right: 0;
+    transform: translate(50%, -50%);
+  }
+
+  /* Labels */
+  .label {
+    font-size: clamp(24px, 4vh, 40px);
+    display: inline-block;
+    margin-top: clamp(25px, 3vh, 30px);
+    position: absolute;
+    top: 100%;
+    transform: translateX(-50%);
+  }
+
+  .label.left {
+    left: 0;
+  }
+
+  .label.right {
+    left: 100%;
+  }
+
+  /* Marker */
+  .marker {
+    position: absolute;
+    width: clamp(30px, 3.5vw, 44px);
+    height: clamp(30px, 3.5vw, 44px);
+    background: black;
+    border-radius: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .marker-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .marker.dragging {
+    cursor: grabbing;
+  }
+
+  .pulse-twice {
+    animation: pulseTwice 1s ease-in-out 2;
+  }
+
+  .pulse-infinite {
+    animation: pulseTwice 1s ease-in-out infinite;
+  }
+
+  @keyframes pulseTwice {
+    0% {
+      transform: translate(-50%, -50%) scale(1);
+      box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.8);
+    }
+
+    50% {
+      transform: translate(-50%, -50%) scale(1.6);
+      box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0.6);
+    }
+
+    100% {
+      transform: translate(-50%, -50%) scale(1);
+      box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+    }
+  }
+
+  .number-line-item {
+    position: absolute;
+    top: calc(50% - 25vh); /* adjust this */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80vw;
+    max-width: 80%;
+    text-align: center;
+    font-size: clamp(24px, 4vh, 40px);
+    line-height: 1.5;
+
+    overflow-wrap: break-word;
+  }
+
+  .number-line-item-below {
+    position: absolute;
+    bottom: calc(50% - 25vh); /* adjust this */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80vw;
+    max-width: 80%;
+    text-align: center;
+    font-size: clamp(24px, 4vh, 40px);
+    line-height: 1.4;
+
+    overflow-wrap: break-word;
+  }
+
+  .number-line-item-below.hidden {
+    visibility: hidden;
+  }
+
+  .number-line-item .katex,
+  .number-line-item .katex-display {
+    font-size: clamp(30px, 6vh, 48px) !important;
+  }
+
+  .jspsych-btn {
+    display: inline-block;
+    //padding: 1vh 2vh;
+    margin: 1vh;
+    font-size: 4vh;
+    font-weight: bold;
+    // font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+    cursor: pointer;
+    line-height: 1.4;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    background-image: none;
+    border: 1vh solid transparent;
+    border-radius: 1vh;
+    color: $text-yellow;
+    background-color: $btn-bg;
+    border-color: $btn-border;
+  }
+
+  #jspsych-progressbar-container {
+    color: #555;
+    border-bottom: 1px solid #dedede;
+    background-color: #f9f9f9;
+    //margin-bottom: 1em;
+    text-align: center;
+    padding: 8px 0px;
+    width: 100%;
+    line-height: 1em;
+
+    span {
+      font-size: 14px;
+      padding-right: 14px;
+    }
+
+    #jspsych-progressbar-outer {
+      background-color: #eee;
+      width: 50%;
+      margin: auto;
+      height: 14px;
+      display: inline-block;
+      vertical-align: middle;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+
+      #jspsych-progressbar-inner {
+        background-color: #aaa;
+        width: 0%;
+        height: 100%;
+      }
+    }
+  }
+}

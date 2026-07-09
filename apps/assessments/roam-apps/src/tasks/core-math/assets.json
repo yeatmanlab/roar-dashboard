@@ -1,0 +1,37 @@
+{
+  "default": {
+    "languageSpecific": {
+      "device": [
+        "keyboard-fraction.gif",
+        "keyboard-example.gif",
+        "core-math-speaker.gif",
+        "core-math-response.mp3",
+        "navigation-instruction.mp3",
+        "core-math-fraction-instruction.mp3",
+        "core-math-keyboard-instruction.mp3",
+        "core-math-feedback-incorrect.mp3"
+      ],
+      "shared": [
+        "core-math-pencil-paper.mp3",
+        "core-math-speaker.mp3",
+        "core-math-time.mp3",
+        "core-math-feedback-correct.mp3"
+      ]
+    },
+    "shared": [
+      "nullAudio.mp3",
+      "neutral-sound-cut.mp3",
+      "goButtonRectangle.png",
+      "goButtonRectangleYellow.png",
+      "apple.png",
+      "basket.png",
+      "duck.png",
+      "icon-speaker.webp",
+      "paper-and-pencil.png",
+      "paper-pencil-green.png",
+      "paper-and-pencil-calculator-horizontal.png",
+      "core-math-no-shadow.png",
+      "core-math-intro.png"
+    ]
+  }
+}

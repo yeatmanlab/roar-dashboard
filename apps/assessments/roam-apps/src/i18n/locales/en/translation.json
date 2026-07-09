@@ -1,0 +1,299 @@
+{
+  "loading": "This experiment is loading...",
+  "progressBar": "Progress Complete",
+  "preloadTrial": {
+    "messageText": "Please wait while the experiment loads. This may take a few minutes."
+  },
+  "fullScreenTrial": {
+    "prompt": "Switching to full screen mode.",
+    "buttonText": "Go"
+  },
+  "navigation": {
+    "continueButtonText": "Press <span class='yellow'>ANY KEY</span> to {{action}}.",
+    "continueButtonTextClick": "Click <span class='yellow'>{{input}}</span> to {{action}}.",
+    "text1": "To go through the activity, use the arrows that appear on the screen.",
+    "text2": "{{mode}} the arrow to begin.",
+    "text3": "Click",
+    "text4": "Tap"
+  },
+  "intro": {
+    "fluency-arf": {
+      "YeatmanLab": "Welcome!",
+      "numberLab": "Welcome to the ARF activity!",
+      "text1": "In this activity, you will be doing math problems. You will start with addition and subtraction.",
+      "text2": "Solve these problems in your head WITHOUT using pencil or paper."
+    },
+    "fluency-calf": {
+      "YeatmanLab": "Welcome!",
+      "numberLab": "Welcome to the CalF acitivity!",
+      "text1": "In this activity, you will be doing math problems. You will start with addition and subtraction.",
+      "text2": "Some of the numbers are large, so take a moment to grab a <u><b>pencil and paper</b></u> in order to get started."
+    },
+    "core-math": {
+      "text1": "Welcome to this math activity!",
+      "text2": "In this activity, you will solve different kinds of math problems.",
+      "text3": "You may see problems that are new to you. Do your best and try to answer as many problems as you can.",
+      "K2": {
+        "text1": "Welcome!",
+        "text2": "I'm Ally the Alpaca. Can you help me get back home?",
+        "text3": "My house is at the top of a mountain. To get up the mountain we need to solve some math problems."
+      }
+    }
+  },
+  "instructions": {
+    "text1": "Instructions",
+    "fluency": {
+      "text2": "Use the number keys <u><b>at the top of your keyboard</b></u> to type in your answer.",
+      "text3": "Let's try it out, press any number key on your keyboard.",
+      "text4": "Press \"Enter\" or \"Return\" to save your answer and go to the next problem.",
+      "text5": "Please try pressing \"Enter\" or \"Return\".",
+      "text6": "If you want to change your answer before submitting, press \"Backspace\" or \"Delete\" to undo what you typed.",
+      "text7": "Let's try pressing \"Backspace\" or \"Delete\".",
+      "text8": "If the answer has two digits, like 10, then first type 1 and then 0 to make the number 10.",
+      "text9": "Let's try it! Type the number 10 into the textbox and then press \"Enter\" or \"Return\" to submit your answer.",
+      "text10": "That's right!",
+      "text11": "That's not the correct key. Please try again.",
+      "text12": "That's not quite right. Please try again.",
+      "text13": "Keep in mind",
+      "text14": "If you don't know the answer, you can skip the problem by pressing \"Enter\" or \"Return\".",
+      "text15": "Let's do some for practice!",
+      "fluency-arf": "Remember to solve these problems in your head WITHOUT using pencil or paper.",
+      "fluency-calf-YeatmanLab": "Remember to have pencil and paper ready to help you solve the problems.",
+      "fluency-calf-numberLab": "Remember to have pencil and paper ready to help you solve the problems. Please do NOT use a calculator.",
+      "text16": "Press <span class='yellow'>ANY KEY</span> to begin the practice problems.",
+      "text17": "If you don't know the answer, you can skip the problem by pressing the <span class='green-btn-mobile'><b>\"Submit\"</b></span> button.",
+      "text18": "You will see <b>two</b> options.",
+      "text19": "You will see <b>six</b> options.",
+      "text20": "Use the mouse to select your answer.",
+      "text21": "Use your finger to select your answer."
+    },
+    "core-math": {
+      "text2": "Use {{mode}} to answer problems.",
+      "mouse": "the mouse",
+      "finger": "your finger",
+      "text3": "Use the number keys <u><b>at the top of your keyboard</b></u>.",
+      "text4": "Press \"Enter\" or \"Return\" to save your answer and go to the next problem.",
+      "text5": "If you want to change your answer before submitting, press \"Backspace\" or \"Delete\" to undo what you typed.",
+      "text6": "If you need to hear the question again, press the speaker icon at the top of your screen.",
+      "text7": "Time!",
+      "text8": "If you are working on one problem for a while, you may see a time warning in the corner of your screen.",
+      "text9": "When time is up, you will hear a sound and get a new problem.",
+      "text10-YeatmanLab": "Keep pencil and paper ready in case you need them.",
+      "text10-numberLab": "Keep pencil and paper ready in case you need them. Please do NOT use a calculator.",
+      "text11": "Ally will take some breaks along the way. If you need a break, you can take one when Ally stops to rest.",
+      "text12": "There will be breaks during the activity. During the breaks, you can take as much time as you need.",
+      "text13": "Press the arrow when you're ready to begin.",
+      "text14": "Let's try it! Type the number 10 into the textbox and then press \"Enter\" or \"Return\" to submit your answer.",
+      "text15": "Use the arrow keys or mouse to switch between response boxes. Press \"Enter\" or \"Return\", or click the arrow when you're finished and ready to continue.",
+      "text16": "That's not quite right. If you're stuck, look at the image for help.",
+      "text17": "Use the keyboard that is shown on the screen to type in your answer.",
+      "text18": "Press the <span class='green-btn-mobile'><b>\"Submit\"</b></span> button to save your answer and go to the next problem.",
+      "text19": "If you want to change your answer before submitting, press the <span class='red-btn-mobile'><b>\"Delete\"</b></span> button.",
+      "text20": "Let's try it! Type the number 10 into the textbox and then press the <span class='green-btn-mobile'><b>\"Submit\"</b></span> button.",
+      "text21": "You can switch to the other response box by tapping on it. Press the <span class='green-btn-mobile'><b>\"Submit\"</b></span> button when you're finished and ready to continue."
+    }
+  },
+  "practice": {
+    "feedbackCorrect": "That's right!",
+    "feedbackCorrect2": "Press \"Enter\" or \"Return\" to continue.",
+    "feedbackCorrect3": "Select the arrow to continue.",
+    "feedbackIncorrect": "You answered {{answer}}.",
+    "feedbackIncorrect1": "That's not quite right.",
+    "feedbackIncorrect2": "Please try again.",
+    "feedbackIncorrect3": "The correct answer is <b>{{target}}</b>.",
+    "feedbackIncorrect4": "Please type <b>{{target}}</b> into the textbox and then press \"Enter\" or \"Return\" to continue.",
+    "feedbackIncorrect5": "Please select <b>{{target}}</b>.",
+    "feedbackIncorrect6": "Please type <b>{{target}}</b> into the textbox and then press the <span class='green-btn-mobile'><b>\"Submit\"</b></span> button."
+  },
+  "postPractice": {
+    "text1": "Great work!",
+    "text2": "During the activity, remember to:",
+    "text3": "Pay close attention to the <u><b>sign changes</b></u>.",
+    "text4": "You can skip if you're not sure by pressing \"Enter\" or \"Return\".",
+    "text5": "Let's begin!",
+    "fluency-arf": "You are now ready to solve problems on your own.",
+    "fluency-calf-YeatmanLab": "You are now ready to solve problems on your own. If you haven't gotten a pencil and paper yet, take this moment to grab them.",
+    "fluency-calf-numberLab": "You are now ready to solve problems on your own. If you haven't gotten a pencil and paper yet, take this moment to grab them. Please do NOT use a calculator.",
+    "text6": "You will have <u><b>{{time}} minutes</b></u> to answer as many as you can.",
+    "text7": "Work as fast as you can, and try not to make mistakes.",
+    "text8": "Good luck!",
+    "text9": "Press <span class='yellow'>ANY KEY</span> to begin.",
+    "text10": "If you're not sure that's okay, just try your best!",
+    "text11": "You will have <u><b>30 seconds</b></u> to answer as many as you can.",
+    "text12": "You can skip if you're not sure by pressing the <span class='green-btn-mobile'><b>\"Submit\"</b></span> button."
+  },
+  "warning": "WARNING: One of the response boxes is empty. Press \"Enter\"/\"Return\" or click the arrow if you wish to submit this response.",
+  "warning-mobile": "WARNING: One of the response boxes is empty. Press \"Submit\" if you wish to submit this response.",
+  "warning-number-line": "You need to move the marker! Take your best guess!",
+  "responseModalityStudy": {
+    "intro": {
+      "text1": "Welcome to the math fluency activity!",
+      "text2": "In this activity, you will be doing math problems involving addition, subtraction, multiplication, and division.",
+      "text3": "Activity {{number}}",
+      "text4": "For this activity, you will be using the <b>{{mode}}</b>.",
+      "text5": "mouse",
+      "text6": "keyboard",
+      "text7": "In this activity, you will be doing math problems. You will solve the first set of problems by {{mode}}.",
+      "text8": "In this activity, you will be doing math problems.",
+      "text9": "typing your answers on the keyboard",
+      "text10": "clicking on your answer with the mouse",
+      "text11": "tapping your answer with your finger"
+    },
+    "instructions": {
+      "text1": "Instructions",
+      "text2": "You will answer problems in <u>three</u> different ways.",
+      "text3": "Before we solve any math problems, let's practice each way of answering!",
+      "text4": "Choices will appear below the math problem. Use the mouse to select your answer.",
+      "text5": "You will have <b><u>{{time}} minutes</u></b> to answer as many problems as you can.<br><br>Work as fast as you can, and try not to make mistakes.<br><br>Good luck!",
+      "text6": "We're first going to practice with the keyboard.",
+      "text7": "We're first going to practice {{mode}} when there are two choices.",
+      "text8": "We're first going to practice {{mode}} when there are six choices.",
+      "text9": "clicking with the mouse",
+      "text10": "tapping with your finger"
+    },
+    "practice": {
+      "text1": "Instructions",
+      "text2": "Use your {{mode}} the button that matches the number.",
+      "text3": "mouse to click",
+      "text4": "finger to tap",
+      "text5": "A number will be shown on the screen. Use the keyboard to type that number into the textbox.",
+      "text6": "You will have <b><u>30 seconds</u></b> to answer as many as you can. Work as fast as you can, and try not to make mistakes. {{continue}}",
+      "text7": "A number will be shown on the screen. Type that number into the textbox using the number keys <u><b>at the top of your keyboard</b></u>.",
+      "text8": "Press \"Enter\" or \"Return\" to save your answer and go to the next practice item.",
+      "text9": "Click the arrow to begin.",
+      "text10": "Tap the arrow to begin.",
+      "text11": "Let's practice with the keyboard!",
+      "text12": "Let's practice {{mode}} with {{type}} choices!",
+      "text13": "two",
+      "text14": "six",
+      "text15": "clicking",
+      "text16": "tapping"
+    },
+    "endScreen": {
+      "text1": "We will now start the math activities. You will be doing four activities, one after the other.<br><br>If you haven't gotten a pencil and paper yet, take this moment to grab them. Please do NOT use a calculator.",
+      "text2": "You are done with the first activity. You will now start the second activity.",
+      "text3": "You are done with the second activity. You will now start the third activity.",
+      "text4": "You are done with the third activity. You will now start the last activity.",
+      "text5": "Great job!",
+      "text6": "Let's now solve some math problems.",
+      "text7": "For the first set of problems, {{mode}}.",
+      "text8": "Great work!",
+      "text9": "You are all done with the first set of problems. For the second set of problems, {{mode}}.",
+      "text10": "use the keyboard to type your answers",
+      "text11": "use the mouse to click on your answers",
+      "text12": "use your finger to tap on your answers"
+    }
+  },
+  "magpiPilot": {
+    "symbolicComp": {
+      "intro": {
+        "text1": "Welcome!",
+        "text2": "In this activity, you will be doing math problems.",
+        "text3": "But first, let's play a quick numbers game!",
+        "text4": "You did great on that numbers game!",
+        "text5": "Let's do some math problems now. You will start with addition and subtraction.",
+        "text6": "Solve these problems in your head WITHOUT using pencil or paper."
+      },
+      "instructions": {
+        "text1": "You will see two numbers. You task is to choose the <u><b>greater</b></u> number.",
+        "text1K": "You will see two numbers. Your task is to choose the <u><b>bigger</b></u> number.",
+        "text2": "Press the arrow to practice!"
+      },
+      "practice": {
+        "correct": "That's right!<br>{{target}} is greater than {{distractor}}.",
+        "correctK": "That's right!<br>{{target}} is bigger than {{distractor}}.",
+        "incorrect": "The correct answer is <b>{{target}}</b>.<br>{{target}} is greater than {{distractor}}. Click the <b>{{target}}</b>.",
+        "incorrectK": "The correct answer is <b>{{target}}</b>.<br>{{target}} is bigger than {{distractor}}. Click the <b>{{target}}</b>."
+      },
+      "postPractice": {
+        "text1": "Let's do it for real now.",
+        "text2": "Try your best and go as fast as you can!",
+        "text3": "You have 1 minute and 30 seconds.",
+        "text4": "Remember to select the <u><b>greater</b></u> number.",
+        "text4K": "Remember to select the <u><b>bigger</b></u> number."
+      }
+    },
+    "numberLine": {
+      "transition": {
+        "K2-text1": "Almost there!",
+        "K2-text2": "But there are some big rocks in the way.",
+        "K2-text3": "To climb over the rocks, you need to help Ally <b>put numbers</b> on a <b>number line</b>.<br><br>Press the arrow to practice!",
+        "K2-text4": "You're ready!",
+        "K2-text5": "You'll see a number that Ally needs to put on the line. Move the marker to where you think the number should go.<br><br>Then, <b>press the arrow</b> to keep going.",
+        "K2-text6": "Let's help Ally put numbers on this number line.",
+        "text1": "Great job!",
+        "text2": "Now we're going to do some questions with number lines.",
+        "text3": "Your task is to decide where on the number line some numbers are.",
+        "text4": "Press the arrow to continue.",
+        "text5": "Let's begin!",
+        "text6": "You'll see a number. Move the marker to where you think the number should go.<br><br>Then, <b>press the arrow</b> to save your answer and go to the next question.",
+        "text7": "Great!",
+        "text8": "Let's mark some fractions on this number line.",
+        "text9": "Press the arrow to start!"
+      },
+      "feedback": {
+        "text1": "That's right!",
+        "text2": "Good try!",
+        "text3": "The {{number}} is here.",
+        "text4": "Click the marker!"
+      },
+      "text1": "This is a number line that goes from 0 to {{number}}.",
+      "text2": "Great job! Now the number line goes from <b>0 to {{number}}</b>.",
+      "text3": "The black dot is called a <b>marker</b>. Right now the <b>marker</b> is at 0.",
+      "text4": "Right now the marker is at 0.",
+      "text5": "The marker is at 0.",
+      "text6": "Try to move the marker to {{number}}.",
+      "text7": "Click and drag the marker to move it. You can also click on the line.",
+      "text8": "Press the arrow when you're done!",
+      "text9": "On this number line, 1 is here.",
+      "text10": "{{number}} is here."
+    }
+  },
+  "gameBreak": {
+    "core-math": {
+      "break0": {
+        "K2-text1": "Nice work!",
+        "K2-text2": "Ally is taking a break to eat some apples. Press the arrow when you're read to keep going.",
+        "text1": "Nice work!"
+      },
+      "break1": {
+        "K2-text1": "Awesome job!",
+        "K2-text2": "You've crossed the valley and started climbing the mountain. Let Ally have a little break, then press the arrow to keep going.",
+        "text1": "You're doing great!"
+      },
+      "break2": {
+        "K2-text1": "Phew!",
+        "K2-text2": "Ally is getting tired. Take a break if you need one, then press the arrow to keep going.",
+        "text1": "Awesome job!"
+      },
+      "break3": {
+        "K2-text1": "So close!",
+        "K2-text2": "You're almost at the top of the mountain. Take a little break, then press the arrow to keep going.",
+        "text1": "Nice work!"
+      },
+      "text1": "Take a break if you need one.",
+      "text2": "Press the arrow when you're ready to continue."
+    },
+    "endScreen": {
+      "text1": "You are all done.",
+      "text2": "Thank you so much for completing our activity.",
+      "text3": "Press <span class='yellow'>ANY KEY</span> to save your work and exit.",
+      "text4": "Great job!",
+      "text5": "You made it!",
+      "text6": "Thank you so much for helping Ally get back home.",
+      "text7": "Press the arrow to save your work and exit."
+    }
+  },
+  "terms": {
+    "anyKey": "ANY KEY",
+    "continue": "continue",
+    "here": "HERE",
+    "begin": "begin",
+    "delete": "Delete",
+    "submit": "Submit",
+    "simplifiedFraction": "simpli",
+    "mathFact": "fact",
+    "problem2x": "\\text{or}",
+    "mathProblem": "Math Problem"
+  }
+}
