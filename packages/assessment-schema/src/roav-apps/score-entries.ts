@@ -53,7 +53,9 @@ const KNOWN_STAGE_KEYS = new Set<string>(Object.values(ROAV_APPS_STAGE_KEYS));
  *
  * @param computed - Domain-keyed, stage-nested computed scores from the callback, or null
  * @param options.strict - If true, throw on an unrecognized top-level domain or nested stage
- *   key. Use in CI/tests to catch a callback emitting a shape the adapter doesn't handle.
+ *   key. Use in CI/tests to catch a callback emitting a shape the adapter doesn't handle. When
+ *   false (default), entries are emitted only for the canonical domain(s) — an unrecognized
+ *   top-level key is ignored, never written through to run_scores.domain.
  * @returns Array of ScoreEntry objects ready for backend upsert
  * @throws {Error} If strict=true and an unrecognized domain or stage key is encountered
  */
@@ -63,14 +65,25 @@ export function toRoavAppsScoreEntries(
 ): RoavAppsScoreEntry[] {
   if (!computed) return [];
 
+  // In strict mode, reject unexpected top-level domains up front — catches a callback emitting
+  // a shape the adapter doesn't handle (CI/tests).
+  if (strict) {
+    const unrecognized = Object.keys(computed).filter((key) => !KNOWN_DOMAINS.has(key));
+    if (unrecognized.length > 0) {
+      throw new Error(
+        `Unrecognized roav-apps score domain(s): ${unrecognized.join(', ')}. Expected: ${[...KNOWN_DOMAINS].join(', ')}.`,
+      );
+    }
+  }
+
   const entries: RoavAppsScoreEntry[] = [];
 
-  for (const [domain, stages] of Object.entries(computed)) {
+  // Iterate the canonical domain constants and look up computed[domain] — never the callback's
+  // raw keys — so run_scores.domain is always a known value even in non-strict mode (a typo'd
+  // or unexpected top-level key is skipped rather than written through).
+  for (const domain of Object.values(ROAV_APPS_SCORE_DOMAINS)) {
+    const stages = computed[domain];
     if (!stages || typeof stages !== 'object') continue;
-
-    if (strict && !KNOWN_DOMAINS.has(domain)) {
-      throw new Error(`Unrecognized roav-apps score domain: "${domain}". Expected: ${[...KNOWN_DOMAINS].join(', ')}.`);
-    }
 
     for (const [stageKey, scores] of Object.entries(stages)) {
       if (!scores || typeof scores !== 'object') continue;
