@@ -206,6 +206,16 @@ export const taskDisplayNames = {
     extendedName: 'Inference',
     order: 17,
   },
+  // Temporarily duplicate. computedTaskAcc in ScoringService returns roar-inference
+  // Unsure what deleting roarInference will break
+  'roar-inference': {
+    name: 'Inference',
+    publicName: 'ROAR - Inference',
+    studentFacingName: 'Inference',
+    extendedTitle: 'ROAR - Inference',
+    extendedName: 'Inference',
+    order: 17,
+  },
   comp: {
     name: 'Comprehension',
     publicName: 'ROAR - Comprehension',
@@ -376,6 +386,7 @@ export const excludeFromScoringTasks = [
   ...LEVANTE_TASK_IDS_NO_SCORES,
 ];
 
+// TODO: Add newly normed tasks after fixing exported data
 export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence', 'Palabra', 'Frase'];
 
 /*
@@ -600,12 +611,19 @@ export function getPaSkillsToWorkOn(scores) {
   return skills;
 }
 
+export const previouslyUnnormedTasks = ['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'roar-inference', 'trog'];
+
 export const updatedNormVersions = {
   swr: 7,
   'swr-es': 1,
   sre: 4,
   'sre-es': 1,
   pa: 4,
+  letter: 1,
+  morphology: 1,
+  cva: 1,
+  'roar-inference': 1,
+  trog: 1, // syntax
 };
 
 function getOrdinalSuffix(n) {
@@ -718,8 +736,12 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     };
   }
 
+  /**
+   * scoringVersion >= 1 returns normed scores for the following tasks in tasksToDisplayPercentCorrect: letter, swr-es, morphology, cva, roar-inference
+   */
   if (
-    ((tasksToDisplayPercentCorrect.includes(taskId) && !(taskId === 'swr-es' && scoringVersion >= 1)) ||
+    ((tasksToDisplayPercentCorrect.includes(taskId) &&
+      !(previouslyUnnormedTasks.includes(taskId) && scoringVersion >= 1)) ||
       tasksToDisplayTotalCorrect.includes(taskId)) &&
     tasksToDisplayGradeEstimate.includes(taskId) &&
     rawScore !== undefined
@@ -731,11 +753,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   }
   // Try percentile-based scoring for grades < 6
   if (percentile !== null && percentile !== undefined && gradeLevel < 6) {
-    const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
-    const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
-    const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
-    const isUpdatedSwrEs = taskId === 'swr-es' && scoringVersion >= 1;
-    const useUpdatedNorms = isUpdatedSwr || isUpdatedSwrEs || isUpdatedSre || isUpdatedSreEs;
+    const useUpdatedNorms = updatedNormVersions[taskId] && scoringVersion >= updatedNormVersions[taskId];
     const [achievedCutOff, developingCutOff] = useUpdatedNorms ? [40, 20] : [50, 25];
     if (percentile >= achievedCutOff) {
       support_level = 'Achieved Skill';
@@ -890,8 +908,8 @@ const SCORE_FIELD_MAPPINGS = {
       legacy: (gradeLevel) => (gradeLevel < 6 ? 'tosrecSS' : 'sprStandardScore'),
     },
     rawScore: {
-      new: 'sreScore',
-      legacy: 'sreScore',
+      new: 'roarScore',
+      legacy: 'sreScore', // scoringVersion < 5
     },
   },
   'sre-es': {
@@ -913,23 +931,23 @@ const SCORE_FIELD_MAPPINGS = {
   },
   letter: {
     percentile: {
-      new: 'totalPercentCorrect',
+      new: 'percentile',
       legacy: 'totalPercentCorrect',
     },
     percentileDisplay: {
-      new: 'totalPercentCorrect',
+      new: 'percentile',
       legacy: 'totalPercentCorrect',
     },
     standardScore: {
-      new: undefined,
+      new: 'standardScore',
       legacy: undefined,
     },
     standardScoreDisplay: {
-      new: undefined,
+      new: 'standardScore',
       legacy: undefined,
     },
     rawScore: {
-      new: 'totalCorrect',
+      new: 'roarScore',
       legacy: 'totalCorrect',
     },
   },
@@ -999,6 +1017,94 @@ const SCORE_FIELD_MAPPINGS = {
       legacy: 'totalCorrect',
     },
   },
+  morphology: {
+    percentile: {
+      new: 'percentile',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'percentile',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: 'standardScore',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScoreDisplay: {
+      new: 'standardScore',
+      legacy: 'totalPercentCorrect',
+    },
+    rawScore: {
+      new: 'roarScore',
+      legacy: 'totalCorrect',
+    },
+  },
+  cva: {
+    percentile: {
+      new: 'percentile',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'percentile',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: 'standardScore',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScoreDisplay: {
+      new: 'standardScore',
+      legacy: 'totalPercentCorrect',
+    },
+    rawScore: {
+      new: 'roarScore',
+      legacy: 'totalCorrect',
+    },
+  },
+  'roar-inference': {
+    percentile: {
+      new: 'percentile',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'percentile',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: 'standardScore',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScoreDisplay: {
+      new: 'standardScore',
+      legacy: 'totalPercentCorrect',
+    },
+    rawScore: {
+      new: 'roarScore',
+      legacy: 'totalCorrect',
+    },
+  },
+  trog: {
+    percentile: {
+      new: 'percentile',
+      legacy: 'totalPercentCorrect',
+    },
+    percentileDisplay: {
+      new: 'percentile',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScore: {
+      new: 'standardScore',
+      legacy: 'totalPercentCorrect',
+    },
+    standardScoreDisplay: {
+      new: 'standardScore',
+      legacy: 'totalPercentCorrect',
+    },
+    rawScore: {
+      new: 'roarScore',
+      legacy: 'totalCorrect',
+    },
+  },
 };
 
 /**
@@ -1054,7 +1160,7 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
     if (
       (fieldType === 'percentile' || fieldType === 'standardScore') &&
       typeof scoreValue === 'string' &&
-      scoreValue.match(/[<>]/).length > 0
+      /[<>]/.test(scoreValue)
     ) {
       scoreValue = parseFloat(scoreValue.replace(/[<>]/g, ''));
     }
@@ -1070,7 +1176,7 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
   return undefined;
 }
 
-export const getRawScoreThreshold = (taskId, scoringVersion) => {
+export const getRawScoreThreshold = (taskId, scoringVersion = null) => {
   if (taskId === 'swr') {
     if (scoringVersion >= 7) {
       return {
@@ -1090,7 +1196,12 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
       };
     }
   } else if (taskId === 'sre') {
-    if (scoringVersion >= 4) {
+    if (scoringVersion >= 5) {
+      return {
+        above: 483.5,
+        some: 420,
+      };
+    } else if (scoringVersion >= 4) {
       return {
         above: 41,
         some: 23,
@@ -1108,21 +1219,68 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
       };
     }
   } else if (taskId === 'pa') {
+    if (scoringVersion >= 4) {
+      return {
+        above: 475.5,
+        some: 416.5,
+      };
+    }
     return {
       above: 55,
       some: 45,
     };
+  } else if (taskId === 'letter') {
+    if (scoringVersion >= 1) {
+      return {
+        above: 95,
+        some: 95,
+      };
+    }
+  } else if (taskId === 'morphology') {
+    if (scoringVersion >= 1) {
+      return {
+        above: 527,
+        some: 463.5,
+      };
+    }
+  } else if (taskId === 'cva') {
+    if (scoringVersion >= 1) {
+      return {
+        above: 520,
+        some: 443.5,
+      };
+    }
+  } else if (taskId === 'roar-inference') {
+    if (scoringVersion >= 1) {
+      return {
+        above: 530.5,
+        some: 467,
+      };
+    }
+  } else if (taskId === 'trog') {
+    if (scoringVersion >= 1) {
+      return {
+        above: 543.5,
+        some: 487,
+      };
+    }
   }
   return { above: null, some: null };
 };
 
-export const getRawScoreRange = (taskId) => {
+export const getRawScoreRange = (taskId, scoringVersion = null) => {
   if (taskId.includes('swr')) {
     return {
       min: 100,
       max: 900,
     };
   } else if (taskId.includes('letter')) {
+    if (scoringVersion >= 1) {
+      return {
+        min: 0,
+        max: 100,
+      };
+    }
     return {
       min: 0,
       max: 90,
@@ -1132,25 +1290,75 @@ export const getRawScoreRange = (taskId) => {
       min: 0,
       max: 150,
     };
+    //// PA v4 was skipped in production; v5 uses this range
   } else if (taskId.includes('pa')) {
+    if (scoringVersion >= 4) {
+      return {
+        min: 40,
+        max: 733,
+      };
+    }
     return {
       min: 0,
       max: 57,
     };
   } else if (taskId.includes('sre')) {
+    if (scoringVersion >= 5) {
+      return {
+        min: 300,
+        max: 967,
+      };
+    }
     return {
       min: 0,
       max: 130,
     };
   } else if (taskId.includes('morphology')) {
+    if (scoringVersion >= 1) {
+      return {
+        min: 280,
+        max: 720,
+      };
+    }
     return {
       min: 0,
       max: 130,
     };
   } else if (taskId.includes('cva')) {
+    // TODO: Delete one of the if statements after
+    if (scoringVersion >= 1) {
+      return {
+        min: 287,
+        max: 753,
+      };
+    }
     return {
       min: 0,
       max: 130,
+    };
+  } else if (taskId.includes('roar-inference')) {
+    // TODO: Delete one of the if statements
+    if (scoringVersion >= 1) {
+      return {
+        min: 300,
+        max: 793,
+      };
+    }
+    return {
+      min: 300,
+      max: 793,
+    };
+  } else if (taskId.includes('trog')) {
+    if (scoringVersion >= 1) {
+      return {
+        min: 53,
+        max: 800,
+      };
+    }
+    // TODO: Delete after developing normed task cards
+    return {
+      min: 53,
+      max: 800,
     };
   }
   return null;
@@ -1168,15 +1376,15 @@ export const getRawScoreRange = (taskId) => {
  * - All applicable tasks meet thresholds → v2 chart
  * - All below thresholds → v1 chart
  * - Mixed → no-cutoffs chart
- * - Special case: For Spanish tasks 'swr-es' and 'sre-es', versions < 1 are considered "unnormed" and should be excluded.
+ * - Special case: For certain tasks, versions < 1 are considered "unnormed" and should be excluded.
  * - grade >= 6 → secondary chart only
  */
 export const getDistributionChartPath = (grade, taskScoringVersions, language = 'en') => {
   const tasks = Object.entries(taskScoringVersions);
-  // Filter to only tasks that have updated norms and exclude unnormed Spanish tasks (version < 1)
+  // Filter to only tasks that have updated norms and exclude unnormed tasks (version < 1)
   // isDistributionChartEnabled ensures there are in-progress/completed normed tasks
   const applicableTasks = tasks.filter(
-    ([taskId, version]) => taskId in updatedNormVersions && !(['swr-es', 'sre-es'].includes(taskId) && version < 1),
+    ([taskId, version]) => taskId in updatedNormVersions && !(previouslyUnnormedTasks.includes(taskId) && version < 1),
   );
 
   const pickPath = (baseKey) => {
@@ -1242,11 +1450,25 @@ export const taskInfoById = {
     color: '#E97A49',
     header: 'ROAR-WORD',
     subheader: 'Single Word Recognition',
-    desc: `ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between ${
-      getRawScoreRange('swr').min
-    }-${
-      getRawScoreRange('swr').max
-    } and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below {{SUPPORT_RANGE}} of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.`,
+    desc:
+      "ROAR - Word evaluates a student's ability to quickly and automatically " +
+      'recognize individual words. To read fluently, students must master ' +
+      'fundamental skills of decoding and automaticity. This test measures a ' +
+      "student's ability to detect real and made-up words, which can then " +
+      "translate to a student's reading levels and need for support. The " +
+      "student's score will range between {{RAW_SCORE_RANGE}} and can be " +
+      "viewed by selecting 'Raw Score' on the table above. Students in the " +
+      'pink category need support in word-level decoding. For these students, ' +
+      'decoding difficulties are likely the bottleneck for growth in reading ' +
+      'fluency and comprehension. Students in grades K-5 in the pink category ' +
+      'have word-level decoding skills below {{SUPPORT_RANGE}} of their peers, ' +
+      'nationally. Students in grades 6-12 in the pink category have word-level ' +
+      'decoding skills below a third-grade level. Students in the yellow ' +
+      'category are still developing their decoding skills and will likely ' +
+      'benefit from further practice and/or support in foundational reading ' +
+      'skills. Students in the green category demonstrate that word-level ' +
+      'decoding is not holding them back from developing fluency and ' +
+      'comprehension of connected text.',
     definitions: [
       {
         header: 'WHAT IS DECODING',
@@ -1269,7 +1491,7 @@ export const taskInfoById = {
       'achieving reading fluency. Without support for their foundational reading ' +
       'abilities, students may struggle to catch up in overall reading proficiency. ' +
       "The student's score will range between " +
-      `${getRawScoreRange('pa').min}-${getRawScoreRange('pa').max} and can be ` +
+      `{{RAW_SCORE_RANGE}} and can be ` +
       "viewed by selecting 'Raw Score' on the table above.",
     definitions: [
       {
@@ -1295,7 +1517,7 @@ export const taskInfoById = {
       'improve their overall reading ability. This assessment is helpful for ' +
       'identifying students who may struggle with reading comprehension due to ' +
       'difficulties with decoding words accurately or reading slowly and with effort.' +
-      ` The student's score will range between ${getRawScoreRange('sre').min}-${getRawScoreRange('sre').max} ` +
+      ` The student's score will range between {{RAW_SCORE_RANGE}} ` +
       "and can be viewed by selecting 'Raw Score' on the table above. " +
       'Students in the pink category need support in sentence-reading ' +
       'efficiency to support growth in reading comprehension. Students in grades ' +
@@ -1410,16 +1632,17 @@ export const taskInfoById = {
 export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   if (!desc) return '';
 
+  let editedDesc = desc;
   // Only process desc field if it contains placeholders
-  if (desc.includes('{{RANGE}}')) {
+  if (desc.includes('{{RAW_SCORE_RANGE}}')) {
     const range = getRawScoreRange(taskId, scoringVersion);
-    return desc.replace('{{RANGE}}', `${range?.min}-${range?.max}`);
+    editedDesc = editedDesc.replace('{{RAW_SCORE_RANGE}}', `${range?.min}-${range?.max}`);
   }
 
   if (desc.includes('{{SUPPORT_RANGE}}')) {
     const useUpdatedNorms = (taskId === 'sre' && scoringVersion >= 4) || (taskId === 'swr' && scoringVersion >= 7);
-    return desc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
+    editedDesc = editedDesc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
   }
 
-  return desc;
+  return editedDesc;
 };

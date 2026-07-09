@@ -640,6 +640,40 @@ describe('reports', () => {
       });
     });
 
+    describe('scoring version changes', () => {
+      it('should return updated range for letter with scoringVersion >= 1', () => {
+        const result = getRawScoreRange('letter', 1);
+        expect(result).toEqual({
+          min: 0,
+          max: 100,
+        });
+      });
+
+      it('should return legacy range for letter with scoringVersion < 1', () => {
+        const result = getRawScoreRange('letter', 0);
+        expect(result).toEqual({
+          min: 0,
+          max: 90,
+        });
+      });
+
+      it('should return updated range for pa with scoringVersion >= 4', () => {
+        const result = getRawScoreRange('pa', 5);
+        expect(result).toEqual({
+          min: 40,
+          max: 733,
+        });
+      });
+
+      it('should return updated range for sre with scoringVersion >= 5', () => {
+        const result = getRawScoreRange('sre', 5);
+        expect(result).toEqual({
+          min: 300,
+          max: 967,
+        });
+      });
+    });
+
     it('should return null for unknown task', () => {
       const result = getRawScoreRange('unknown');
       expect(result).toBeNull();
@@ -713,22 +747,75 @@ describe('reports', () => {
       expect(replaceScoreRange(alpacaDesc, 'roam-alpaca', 5)).toBe(alpacaDesc);
     });
 
-    it('should return original cutoff for swr if scoring version is not 7', () => {
-      const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 6);
-      expect(swrDesc).not.toMatch(/{{.*}}/);
-      expect(swrDesc).toMatch(/75%/);
+    describe('swr (minimum scoringVersion: 6)', () => {
+      it('should replace RAW_SCORE_RANGE with 100-900 for any scoring version', () => {
+        const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 6);
+        expect(swrDesc).not.toMatch(/{{.*}}/);
+        expect(swrDesc).toMatch(/100-900/);
+      });
+
+      it('should use 75% cutoff for swr at scoring version 6 (minimum)', () => {
+        const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 6);
+        expect(swrDesc).not.toMatch(/{{.*}}/);
+        expect(swrDesc).toMatch(/75%/);
+      });
+
+      it('should use 80% cutoff for swr at scoring version 7', () => {
+        const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 7);
+        expect(swrDesc).not.toMatch(/{{.*}}/);
+        expect(swrDesc).toMatch(/80%/);
+      });
     });
 
-    it('should return new cutoff for swr if scoring version is 7', () => {
-      const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 7);
-      expect(swrDesc).not.toMatch(/{{.*}}/);
-      expect(swrDesc).toMatch(/80%/);
+    describe('sre (minimum scoringVersion: 3)', () => {
+      it('should replace RAW_SCORE_RANGE with 0-130 at scoring version 3 (minimum)', () => {
+        const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 3);
+        expect(sreDesc).not.toMatch(/{{RAW_SCORE_RANGE}}/);
+        expect(sreDesc).toMatch(/0-130/);
+      });
+
+      it('should replace RAW_SCORE_RANGE with 0-130 at scoring version 4', () => {
+        const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 4);
+        expect(sreDesc).not.toMatch(/{{RAW_SCORE_RANGE}}/);
+        expect(sreDesc).toMatch(/0-130/);
+      });
+
+      it('should replace RAW_SCORE_RANGE with 300-967 at scoring version 5', () => {
+        const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 5);
+        expect(sreDesc).not.toMatch(/{{RAW_SCORE_RANGE}}/);
+        expect(sreDesc).toMatch(/300-967/);
+      });
+
+      it('should use 75% cutoff for sre at scoring version 3 (minimum)', () => {
+        const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 3);
+        expect(sreDesc).not.toMatch(/{{SUPPORT_RANGE}}/);
+        expect(sreDesc).toMatch(/75%/);
+      });
+
+      it('should use 80% cutoff for sre at scoring version 4', () => {
+        const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 4);
+        expect(sreDesc).not.toMatch(/{{SUPPORT_RANGE}}/);
+        expect(sreDesc).toMatch(/80%/);
+      });
+
+      it('should replace both placeholders with no remaining templates', () => {
+        const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 3);
+        expect(sreDesc).not.toMatch(/{{.*}}/);
+      });
     });
 
-    it('should return new cutoff for sre if scoring version is 4', () => {
-      const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 4);
-      expect(sreDesc).not.toMatch(/{{.*}}/);
-      expect(sreDesc).toMatch(/80%/);
+    describe('pa (minimum scoringVersion: 3)', () => {
+      it('should replace RAW_SCORE_RANGE with 0-57 at scoring version 3 (minimum)', () => {
+        const paDesc = replaceScoreRange(taskInfoById['pa']?.desc, 'pa', 3);
+        expect(paDesc).not.toMatch(/{{.*}}/);
+        expect(paDesc).toMatch(/0-57/);
+      });
+
+      it('should replace RAW_SCORE_RANGE with 40-733 at scoring version 4', () => {
+        const paDesc = replaceScoreRange(taskInfoById['pa']?.desc, 'pa', 4);
+        expect(paDesc).not.toMatch(/{{.*}}/);
+        expect(paDesc).toMatch(/40-733/);
+      });
     });
   });
 

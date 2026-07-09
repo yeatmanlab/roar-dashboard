@@ -51,12 +51,13 @@ export function useScoreListData(params) {
               rawScore: getScoreValue(composite, task.taskId, gradeLevel, 'rawScore'),
               percentileScore: getScoreValue(composite, task.taskId, gradeLevel, 'percentile'),
               standardScore: getScoreValue(composite, task.taskId, gradeLevel, 'standardScore'),
+              scoringVersion: composite?.scoringVersion ?? null,
             };
 
             const scores = Object.fromEntries(
               Object.entries(processedScores)
                 .filter(([, value]) => value !== undefined)
-                .map(([key, value]) => [key, Math.round(Number(value))]),
+                .map(([key, value]) => [key, key === 'scoringVersion' ? value : Math.round(Number(value))]), // Allow scoringVersion = null
             );
 
             return {

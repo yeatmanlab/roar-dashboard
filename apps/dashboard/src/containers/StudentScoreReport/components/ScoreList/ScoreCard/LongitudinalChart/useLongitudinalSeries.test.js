@@ -164,14 +164,14 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10, percentile: 50 } }],
         studentGrade: 5,
         taskId: 'swr',
-        taskScoringVersion: 7,
+        taskScoringVersion: 6,
       };
 
       const { series } = useLongitudinalSeries(props);
 
       series.value;
 
-      expect(getDialColor).toHaveBeenCalledWith(5, 50, 10, 'swr', null, 7);
+      expect(getDialColor).toHaveBeenCalledWith(5, 50, 10, 'swr', null, 6);
     });
   });
 
@@ -326,6 +326,353 @@ describe('useLongitudinalSeries', () => {
       const { series } = useLongitudinalSeries(props);
 
       expect(series.value[0].x).toBeInstanceOf(Date);
+    });
+  });
+
+  describe('scoringVersion filtering (swr min: 6, sre min: 3, pa min: 3)', () => {
+    it('should include only runs matching the current scoringVersion', () => {
+      const props = {
+        longitudinalData: [
+          { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: 6 } },
+          { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 6 } },
+          { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 7 } },
+        ],
+        studentGrade: 3,
+        taskId: 'test-task',
+        taskScoringVersion: 6,
+      };
+
+      const { series } = useLongitudinalSeries(props);
+
+      // Only runs with scoringVersion 6 (matching current) should be included
+      expect(series.value).toHaveLength(2);
+      expect(series.value[0].y).toBe(10);
+      expect(series.value[1].y).toBe(20);
+    });
+
+    it('should exclude runs whose scoringVersion differs from the current version', () => {
+      const props = {
+        longitudinalData: [
+          { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: 7 } },
+          { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 8 } },
+          { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 6 } },
+        ],
+        studentGrade: 3,
+        taskId: 'test-task',
+        taskScoringVersion: 6,
+      };
+
+      const { series } = useLongitudinalSeries(props);
+
+      // Only version 6 is included; versions 7 and 8 are excluded
+      expect(series.value).toHaveLength(1);
+      expect(series.value[0].y).toBe(30);
+    });
+
+    // swr: minimum scoringVersion is 6. Legacy runs (undefined scoringVersion) pre-date
+    // norm tracking and should be included when the current version is exactly 6.
+    // No scoringVersion below 6 exists for swr.
+    describe('swr (minimum scoringVersion: 6)', () => {
+      it('should include legacy runs (undefined scoringVersion) when current version is 6', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 7 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 6 } },
+          ],
+          studentGrade: 3,
+          taskId: 'swr',
+          taskScoringVersion: 6,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // version 6 (current) and undefined (legacy) are included; version 7 is excluded
+        expect(series.value).toHaveLength(2);
+        expect(series.value[0].y).toBe(10); // legacy run
+        expect(series.value[1].y).toBe(30); // version 6
+      });
+
+      it('should not include legacy runs when current version is above 6', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 7 } },
+          ],
+          studentGrade: 3,
+          taskId: 'swr',
+          taskScoringVersion: 7,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // Only version 7 (current) is included; undefined is excluded (not the min version)
+        expect(series.value).toHaveLength(1);
+        expect(series.value[0].y).toBe(20);
+      });
+
+      it('should not duplicate legacy runs when current version is 6', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 7 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 6 } },
+          ],
+          studentGrade: 3,
+          taskId: 'swr',
+          taskScoringVersion: 6,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // The undefined-scoringVersion entry should appear exactly once
+        const legacyRuns = series.value.filter((e) => e.y === 10);
+        expect(legacyRuns).toHaveLength(1);
+      });
+    });
+
+    // sre: minimum scoringVersion is 3. Legacy runs (undefined scoringVersion) pre-date
+    // norm tracking and should be included when the current version is exactly 3.
+    // No scoringVersion below 3 exists for sre.
+    describe('sre (minimum scoringVersion: 3)', () => {
+      it('should include legacy runs (undefined scoringVersion) when current version is 3', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 4 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 3 } },
+          ],
+          studentGrade: 3,
+          taskId: 'sre',
+          taskScoringVersion: 3,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // version 3 (current) and undefined (legacy) are included; version 4 is excluded
+        expect(series.value).toHaveLength(2);
+        expect(series.value[0].y).toBe(10); // legacy run
+        expect(series.value[1].y).toBe(30); // version 3
+      });
+
+      it('should not include legacy runs when current version is above 3', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 4 } },
+          ],
+          studentGrade: 3,
+          taskId: 'sre',
+          taskScoringVersion: 4,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // Only version 4 (current) is included; undefined is excluded (not the min version)
+        expect(series.value).toHaveLength(1);
+        expect(series.value[0].y).toBe(20);
+      });
+
+      it('should not duplicate legacy runs when current version is 3', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 4 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 3 } },
+          ],
+          studentGrade: 3,
+          taskId: 'sre',
+          taskScoringVersion: 3,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        const legacyRuns = series.value.filter((e) => e.y === 10);
+        expect(legacyRuns).toHaveLength(1);
+      });
+    });
+
+    // pa: minimum scoringVersion is 3. Legacy runs (undefined scoringVersion) pre-date
+    // norm tracking and should be included when the current version is exactly 3.
+    // No scoringVersion below 3 exists for pa.
+    describe('pa (minimum scoringVersion: 3)', () => {
+      it('should include legacy runs (undefined scoringVersion) when current version is 3', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 4 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 3 } },
+          ],
+          studentGrade: 3,
+          taskId: 'pa',
+          taskScoringVersion: 3,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // version 3 (current) and undefined (legacy) are included; version 4 is excluded
+        expect(series.value).toHaveLength(2);
+        expect(series.value[0].y).toBe(10); // legacy run
+        expect(series.value[1].y).toBe(30); // version 3
+      });
+
+      it('should not include legacy runs when current version is above 3', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 4 } },
+          ],
+          studentGrade: 3,
+          taskId: 'pa',
+          taskScoringVersion: 4,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // Only version 4 (current) is included; undefined is excluded (not the min version)
+        expect(series.value).toHaveLength(1);
+        expect(series.value[0].y).toBe(20);
+      });
+
+      it('should not duplicate legacy runs when current version is 3', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 4 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 3 } },
+          ],
+          studentGrade: 3,
+          taskId: 'pa',
+          taskScoringVersion: 3,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        const legacyRuns = series.value.filter((e) => e.y === 10);
+        expect(legacyRuns).toHaveLength(1);
+      });
+    });
+
+    it('should maintain sort order by date after scoringVersion filtering', () => {
+      const props = {
+        longitudinalData: [
+          { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 7 } },
+          { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+          { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 6 } },
+        ],
+        studentGrade: 3,
+        taskId: 'swr',
+        taskScoringVersion: 6,
+      };
+
+      const { series } = useLongitudinalSeries(props);
+
+      // version 6 (current) and undefined (legacy) are kept, sorted ascending by date
+      expect(series.value).toHaveLength(2);
+      expect(series.value[0].y).toBe(10); // 2024-01-01 undefined
+      expect(series.value[1].y).toBe(20); // 2024-02-01 version 6
+    });
+
+    describe('when taskScoringVersion is undefined', () => {
+      it('should include undefined and min normed version runs for swr', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 6 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 7 } },
+          ],
+          studentGrade: 3,
+          taskId: 'swr',
+          taskScoringVersion: undefined,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // Should include undefined (legacy) and version 6 (min normed), but not version 7
+        expect(series.value).toHaveLength(2);
+        expect(series.value[0].y).toBe(10); // undefined
+        expect(series.value[1].y).toBe(20); // version 6
+      });
+
+      it('should include undefined and min normed version runs for sre', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 3 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 4 } },
+          ],
+          studentGrade: 3,
+          taskId: 'sre',
+          taskScoringVersion: undefined,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // Should include undefined (legacy) and version 3 (min normed), but not version 4
+        expect(series.value).toHaveLength(2);
+        expect(series.value[0].y).toBe(10); // undefined
+        expect(series.value[1].y).toBe(20); // version 3
+      });
+
+      it('should include undefined and min normed version runs for pa', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 3 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 4 } },
+          ],
+          studentGrade: 3,
+          taskId: 'pa',
+          taskScoringVersion: undefined,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // Should include undefined (legacy) and version 3 (min normed), but not version 4
+        expect(series.value).toHaveLength(2);
+        expect(series.value[0].y).toBe(10); // undefined
+        expect(series.value[1].y).toBe(20); // version 3
+      });
+
+      it('should not duplicate undefined runs when taskScoringVersion is undefined', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: undefined } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 6 } },
+          ],
+          studentGrade: 3,
+          taskId: 'swr',
+          taskScoringVersion: undefined,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // Should have 3 entries: 2 undefined + 1 version 6, with no duplicates
+        expect(series.value).toHaveLength(3);
+        expect(series.value[0].y).toBe(10);
+        expect(series.value[1].y).toBe(20);
+        expect(series.value[2].y).toBe(30);
+      });
+
+      it('should only include undefined runs for tasks not in minNormedVersions when taskScoringVersion is undefined', () => {
+        const props = {
+          longitudinalData: [
+            { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: undefined } },
+            { date: '2024-02-01', scores: { rawScore: 20, scoringVersion: 1 } },
+            { date: '2024-03-01', scores: { rawScore: 30, scoringVersion: 2 } },
+          ],
+          studentGrade: 3,
+          taskId: 'other-task',
+          taskScoringVersion: undefined,
+        };
+
+        const { series } = useLongitudinalSeries(props);
+
+        // For tasks not in minNormedVersions, only undefined runs should be included
+        expect(series.value).toHaveLength(1);
+        expect(series.value[0].y).toBe(10);
+      });
     });
   });
 });
