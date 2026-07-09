@@ -1,0 +1,83 @@
+/*
+Defines the main task class.
+1. Sets the input variables
+2. Starts the ROAR firekit run function
+3. Gets task variables,loads corpus (csv files with questions), builds timeline, initializes jspsych and runs timeline.
+4. Imports css styles.
+*/
+
+/* eslint-disable import/extensions */
+import store from "store2"; //cross browser local storage
+import { isTaskFinished } from "./tasks/shared/helpers";
+import { camelize } from "@bdelab/roar-utils";
+import "./styles/game.scss"; //getting all the css styles
+import { initSentry } from "./sentry";
+import taskConfig from "./tasks/taskConfig";
+import { generateAssetObject, createPreloadTrials } from "@bdelab/roar-utils";
+import { checkAudio } from "./tasks/shared/helpers";
+import i18next from "i18next";
+import { clearStore } from "./tasks/shared/helpers";
+
+export let mediaAssets;
+export let preloadTrials;
+export class TaskLauncher {
+  constructor(firekit, gameParams, userParams, displayElement) {
+    this.gameParams = gameParams;
+    this.userParams = userParams;
+    this.firekit = firekit;
+    this.displayElement = displayElement;
+  }
+
+  async init() {
+    //Start the ROAR run. Push the task and run info to Firestore.
+    //Call this method before starting the jsPsych experiment.
+    initSentry();
+    await this.firekit.startRun();
+
+    const { taskName, language } = this.gameParams;
+
+    const {
+      initConfig,
+      initStore,
+      loadCorpus,
+      buildTaskTimeline,
+      bucketURI,
+      assets,
+    } = taskConfig[camelize(taskName)];
+
+    //cleans the parameters and sets other variables (time, number of trials, corpus name)
+    const config = await initConfig(
+      this.firekit,
+      this.gameParams,
+      this.userParams,
+      this.displayElement,
+    );
+    //store this data in the browser
+    store.session.set("config", config);
+
+    //initStore();
+
+    await loadCorpus(taskName, assets);
+    mediaAssets = generateAssetObject(assets, bucketURI, i18next.language);
+    preloadTrials = createPreloadTrials(
+      assets,
+      bucketURI,
+      i18next.language,
+    ).default;
+    preloadTrials.message = i18next.t("loading");
+
+    checkAudio(config, mediaAssets);
+    //building timeline
+    return buildTaskTimeline(config);
+  }
+
+  async run() {
+    const { jsPsych, timeline } = await this.init();
+    jsPsych.opts.show_progress_bar =
+      this.gameParams.taskName === "roam-alpaca" ? false : true;
+    jsPsych.run(timeline);
+    await isTaskFinished(() => this.firekit.run.completed === true);
+  }
+}
+
+export default TaskLauncher;

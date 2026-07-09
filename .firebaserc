@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "gse-roar-assessment"
+  },
+  "targets": {
+    "gse-roar-assessment": {
+      "hosting": {
+        "production": [
+          "roam-apps"
+        ],
+        "staging": [
+          "roam-apps-staging"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

@@ -1,0 +1,38 @@
+{
+  "default": {
+    "languageSpecific": {
+      "device": [
+        "instructions-fluency-practice.mp3",
+        "instructions-fluency-backspace.mp3",
+        "instructions-fluency-enter.mp3",
+        "instructions-fluency-example.mp3",
+        "instructions-fluency-incorrect.mp3",
+        "instructions-fluency-numbers.mp3",
+        "instructions-fluency-skip.mp3",
+        "instructions-2afc.gif",
+        "core-math-response.gif",
+        "keyboard-numbers.gif",
+        "keyboard-enter.gif",
+        "keyboard-example.gif",
+        "keyboard-backspace.gif",
+        "navigation-instruction.mp3"
+      ],
+      "shared": [
+        "practice-fluency-incorrect.mp3",
+        "instructions-fluency-correct.mp3"
+      ]
+    },
+    "shared": [
+      "tiger.gif",
+      "fluency-arf-display.png",
+      "fluency-calf-display.png",
+      "nullAudio.mp3",
+      "neutral-sound-cut.mp3",
+      "goButtonRectangleYellow.png",
+      "paper-and-pencil.png",
+      "paper-and-pencil-calculator-vertical.png",
+      "paper-pencil-red.png",
+      "paper-pencil-green.png"
+    ]
+  }
+}
