@@ -1,0 +1,765 @@
+{
+  "enter-full-screen": {
+    "prompt": "Alternar para o modo de tela cheia",
+    "label-button": "IR"
+  },
+  "enter-landscape": {
+    "prompt": "Altere para a visualização em modo paisagem",
+    "label-button": "IR"
+  },
+  "roav-rvp": {
+    "general": {
+      "stand": {
+        "label-button-next": "PRÓXIMO"
+      },
+      "game": {
+        "label-button-next": ""
+      }
+    },
+    "instruction": {
+      "intro": {
+        "game": {
+          "text1": "Bem-vindo!",
+          "text2": "Eu sou Luna, a gata espacial.",
+          "text3": "Pronto para jogar um jogo divertido?",
+          "text4": "Clique na <b>nave espacial</b> para começar!"
+        },
+        "stand": {
+          "text1": "Bem-vindo!",
+          "text2": "Nesta atividade, pequenas imagens aparecerão brevemente na tela.",
+          "text3": "Em seguida, pressione o botão que corresponde ao que você viu.",
+          "text4": "Pressione {{btn-start}}PRÓXIMO{{btn-end}} para começar."
+        }
+      },
+      "instr-task-1": {
+        "game": {
+          "text1": "Olhe para as estrelas.",
+          "text2": "Elas fazem desenhos que parecem flores e carros!",
+          "text3": "",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Vamos começar!",
+          "text2": "Veja como a tarefa vai funcionar.{{pause-medium}}",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "instr-task-2": {
+        "game": {
+          "text1": "Me ajude a fazer um mapa do céu!",
+          "text2": "Então poderei encontrar o caminho de volta para a Terra e visitar você.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "instr-after-demo-1": {
+        "game": {
+          "text1": "Muito bem!",
+          "text2": "Adicionamos a primeira peça ao nosso mapa!",
+          "text3": "Continue!",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Muito bem!",
+          "text2": "Continue!",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "practice-before-practice-av": {
+        "game": {
+          "text1": "Ótimo trabalho!",
+          "text2": "Agora vamos voar mais rápido.",
+          "text3": "A cada vez, me diga o que estava <b>acima da linha azul</b>.",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Ótimo trabalho!",
+          "text2": "As imagens agora vão piscar mais rápido.",
+          "text3": "A cada vez, pressione o botão com a imagem que estava <b>acima da linha azul</b>.",
+          "text4": ""
+        }
+      },
+      "practice-before-practice": {
+        "game": {
+          "text1": "Continue!",
+          "text2": "Pronto para voar ainda mais rápido?",
+          "text3": "Continue me dizendo o que adicionar ao nosso mapa.",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Pronto para ir ainda mais rápido?",
+          "text2": "Continue mostrando o que estava <b>acima da linha azul</b>.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "practice-after-practice": {
+        "game": {
+          "text1": "Excelente trabalho!",
+          "text2": "Nós pousamos em nosso primeiro planeta!",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "instr-take-best-guess": {
+        "game": {
+          "text1": "Faça o seu melhor",
+          "text2": "Encontrar estrelas pode ser muito difícil, mas não se preocupe.",
+          "text3": "Dê o seu melhor palpite!",
+          "text4": "Clique na <b>nave espacial</b> para jogar."
+        },
+        "stand": {
+          "text1": "Excelente trabalho!",
+          "text2": "Identificar imagens pode ser muito difícil, mas não se preocupe.",
+          "text3": "Dê o seu melhor palpite!",
+          "text4": "Pressione {{btn-start}}PRÓXIMO{{btn-end}} para continuar."
+        }
+      },
+      "test-keep-going": {
+        "game": {
+          "text1": "Bom trabalho!",
+          "text2": "O mapa está se preenchendo!",
+          "text3": "Continue! {{pause-medium}}",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Bom trabalho!",
+          "text2": "Continue! {{pause-medium}}",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "test-keep-going-half": {
+        "game": {
+          "text1": "Você está indo muito bem!",
+          "text2": "Continue! {{pause-medium}}",
+          "text3": "",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Você está indo muito bem!",
+          "text2": "Continue! {{pause-medium}}",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "test-keep-going-last": {
+        "game": {
+          "text1": "Bom trabalho!",
+          "text2": "O mapa está quase pronto!",
+          "text3": "Continue! {{pause-medium}}",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Bom trabalho!",
+          "text2": "Você está quase terminando!",
+          "text3": "Continue! {{pause-medium}}",
+          "text4": ""
+        }
+      },
+      "test-warn-fast": {
+        "game": {
+          "text1": "Voando mais rápido agora!",
+          "text2": "Vai ser difícil ver as estrelas.",
+          "text3": "Não tem problema chutar se você não tiver certeza, apenas tente dar o seu melhor. {{pause-medium}}",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Agora estou indo mais rápido!",
+          "text2": "Vai ser difícil ver as imagens.",
+          "text3": "Não tem problema chutar se você não tiver certeza, apenas tente dar o seu melhor. {{pause-medium}}",
+          "text4": ""
+        }
+      },
+      "test-warn-fast-short": {
+        "game": {
+          "text1": "Voando mais rápido agora! {{pause-medium}}",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Agora estou indo mais rápido! {{pause-medium}}",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "test-break-after-block-1": {
+        "game": {
+          "text1": "Excelente trabalho!",
+          "text2": "Pousamos em outro planeta!",
+          "text3": "As estrelas parecem diferentes aqui.",
+          "text4": "Se quiser, descanse um pouco e pressione a <b>nave espacial</b> para continuar jogando."
+        },
+        "stand": {
+          "text1": "Excelente trabalho!",
+          "text2": "Você já percorreu metade do caminho.",
+          "text3": "Descanse por um momento, se quiser, e pressione {{btn-start}}PRÓXIMO{{btn-end}} para continuar.",
+          "text4": ""
+        }
+      },
+      "test-instr-before-block-2": {
+        "stand": {
+          "text1": "Prepare-se!",
+          "text2": "As imagens ficarão diferentes agora, mas sua tarefa permanece a mesma.",
+          "text3": "Continue mostrando o que estava <b>acima da linha azul</b>.",
+          "text4": ""
+        }
+      },
+      "end-screen": {
+        "game": {
+          "text1": "Você conseguiu!",
+          "text2": "Você me mostrou o caminho para a Terra!",
+          "text3": "Agora posso te visitar.",
+          "text4": "Pressione a <b>nave espacial</b> para terminar o jogo."
+        },
+        "stand": {
+          "text1": "Ótimo trabalho!",
+          "text2": "Você terminou!",
+          "text3": "Muito obrigada por concluir nossa atividade.",
+          "text4": "Pressione {{btn-start}}PRÓXIMO{{btn-end}} para salvar seu trabalho e sair."
+        }
+      }
+    },
+    "feedback-av": {
+      "def": {
+        "correct": {
+          "stand": {
+            "text1": "Isso mesmo!",
+            "text2": "Muito bem!",
+            "text3": ""
+          },
+          "game": {
+            "text1": "Isso mesmo!",
+            "text2": "Muito bem!",
+            "text3": ""
+          }
+        },
+        "incorrect": {
+          "stand": {
+            "text1": "Não é bem isso!",
+            "text2": "Você vai conseguir na próxima vez!",
+            "text3": ""
+          },
+          "game": {
+            "text1": "Quase, mas não exatamente!",
+            "text2": "Você vai conseguir na próxima vez!",
+            "text3": ""
+          }
+        }
+      }
+    },
+    "rvp": {
+      "instr-demo-1-start": {
+        "mark-fix": {
+          "game": {
+            "text": "Esta é a cabine da minha nave espacial. Olhe diretamente para o sinal para que possamos manter o curso. As estrelas aparecerão na tela."
+          },
+          "stand": {
+            "text": "Olhe diretamente para o sinal. As imagens aparecerão na tela."
+          }
+        }
+      },
+      "instr-demo-1-pos-0": {
+        "stim": {
+          "game": { "text": "Aqui estão! Parece uma árvore à esquerda" },
+          "stand": { "text": "Aqui estão! Parece uma árvore à esquerda" }
+        }
+      },
+      "instr-demo-1-pos-1": {
+        "stim": {
+          "game": { "text": "e uma flor à direita." },
+          "stand": { "text": "e uma flor à direita." }
+        }
+      },
+      "instr-demo-1-end": {
+        "stim": {
+          "game": {
+            "text": "Tente se lembrar do que você vê! As estrelas aparecem por um instante enquanto passamos rapidamente. Quando elas desaparecerem, a linha mostrará o que precisamos para o mapa."
+          },
+          "stand": {
+            "text": "Tente se lembrar do que você vê! As imagens aparecem por apenas um instante. Quando desaparecerem, uma linha aparecerá embaixo de um dos pontos."
+          }
+        },
+        "mark-targ": {
+          "game": {
+            "text": "Você se lembra do que estava acima da linha? {{pause-long}}"
+          },
+          "stand": {
+            "text": "Você se lembra do que estava acima da linha? {{pause-long}}"
+          }
+        },
+        "resp": {
+          "game": {
+            "text": "Parecia uma flor, então aperte o botão da flor."
+          },
+          "stand": {
+            "text": "Parecia uma flor, então aperte o botão da flor."
+          }
+        }
+      },
+
+      "instr-demo-2-start": {
+        "mark-fix": {
+          "game": { "text": "Olhe em frente." },
+          "stand": { "text": "Olhe em frente." }
+        },
+        "stim": {
+          "game": {
+            "text": "Lembre-se do que você vê. Desta vez, há quatro imagens. Elas se parecem com"
+          },
+          "stand": {
+            "text": "Lembre-se do que você vê. Desta vez, há quatro imagens. Elas se parecem com"
+          }
+        }
+      },
+      "instr-demo-2-pos-0": {
+        "stim": {
+          "game": { "text": "um coelho" },
+          "stand": { "text": "um coelho" }
+        }
+      },
+      "instr-demo-2-pos-1": {
+        "stim": {
+          "game": { "text": "um carro" },
+          "stand": { "text": "um carro" }
+        }
+      },
+      "instr-demo-2-pos-2": {
+        "stim": {
+          "game": { "text": "uma borboleta" },
+          "stand": { "text": "uma borboleta" }
+        }
+      },
+      "instr-demo-2-pos-3": {
+        "stim": {
+          "game": { "text": "e um pato" },
+          "stand": { "text": "e um pato" }
+        }
+      },
+      "instr-demo-2-end": {
+        "mark-targ": {
+          "game": {
+            "text": "Você se lembra do que estava acima da linha azul?{{pause-long}}"
+          },
+          "stand": {
+            "text": "Você se lembra do que estava acima da linha azul?{{pause-long}}"
+          }
+        },
+        "resp": {
+          "game": {
+            "text": "Parecia um coelho, então aperte o botão do coelho."
+          },
+          "stand": {
+            "text": "Parecia um coelho, então aperte o botão do coelho."
+          }
+        }
+      },
+      "practice-av": {
+        "mark-fix": {
+          "game": { "text": "Olhe com atenção!" },
+          "stand": { "text": "Olhe com atenção!" }
+        },
+        "resp": {
+          "game": {
+            "text": "Pressione a imagem que estava acima da linha azul."
+          },
+          "stand": {
+            "text": "Pressione a imagem que estava acima da linha azul."
+          }
+        }
+      }
+    }
+  },
+  "roav-mp": {
+    "general": {
+      "stand": {
+        "label-button-next": "PRÓXIMO"
+      },
+      "game": {
+        "label-button-next": ""
+      }
+    },
+    "instruction": {
+      "intro": {
+        "stand": {
+          "text1": "Bem-vindo!",
+          "text2": "Nesta atividade, você observará pontos em movimento.",
+          "text3": "Você vai dizer se eles se movem para a <b>esquerda</b> ou para a <b>direita</b>.",
+          "text4": "Pressione {{btn-start}}PRÓXIMO{{btn-end}} ou a <b>barra de espaço</b> para começar."
+        },
+        "game": {
+          "text1": "Bem-vindo!",
+          "text2": "Eu sou Mel, a abelha.",
+          "text3": "Pronto para jogar um jogo divertido?",
+          "text4": "Pressione os <b>binóculos</b> para iniciar!"
+        }
+      },
+      "navigation-spacebar": {
+        "stand": {
+          "text1": "",
+          "text2": "Você pode usar a <b>barra de espaço do seu teclado</b> em vez do botão {{btn-start}}PRÓXIMO{{btn-end}}.",
+          "text3": "Pressione a <b>barra de espaço</b> ou {{btn-start}}PRÓXIMO{{btn-end}} para continuar.",
+          "text4": ""
+        }
+      },
+      "instr-task": {
+        "game": {
+          "text1": "Eu preciso da sua ajuda!",
+          "text2": "Meus amigos saíram voando e eu não consegui acompanhá-los.",
+          "text3": "Você pode me ajudar a descobrir por <b>qual caminho</b> eles foram?",
+          "text4": ""
+        }
+      },
+      "instr-input-arrows": {
+        "stand": {
+          "text1": "{{text-only}}Use o teclado para responder.",
+          "text2": "Você usará as <b>teclas de seta do seu teclado</b> para indicar a direção do movimento.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "instr-ready-to-watch-right": {
+        "stand": {
+          "text1": "Vamos começar!",
+          "text2": "Você está prestes a ver pontos em movimento.",
+          "text3": "Decida se o movimento é predominantemente para a <b>esquerda</b> ou para a <b>direita</b>.",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Vamos começar!",
+          "text2": "Minhas amigas abelhas estão prestes a passar voando!",
+          "text3": "Elas voarão em direção às <b>flores</b> ou às <b>colmeias</b>?",
+          "text4": "Pressione os <b>binóculos</b> para vê-las partir."
+        }
+      },
+      "alt-instr-ready-to-watch-right": {
+        "stand": {
+          "text1": "Vamos começar!",
+          "text2": "Você está prestes a ver pontos em movimento.",
+          "text3": "Decida se o movimento é predominantemente para a <b>esquerda</b> ou para a <b>direita</b>.{{pause-medium}}",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Vamos começar!",
+          "text2": "Minhas amigas abelhas estão prestes a passar voando!",
+          "text3": "Elas voarão em direção às <b>flores</b> ou às <b>colmeias</b>?{{pause-medium}}",
+          "text4": ""
+        }
+      },
+      "instr-response-right": {
+        "stand": {
+          "text1": "Muito bem!",
+          "text2": "Observe os pontos se moverem novamente.",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Muito bem!",
+          "text2": "Pressione os <b>binóculos</b> para ver as abelhas voando novamente.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "alt-instr-response-right": {
+        "stand": {
+          "text1": "Muito bem!",
+          "text2": "Observe os pontos se moverem novamente.{{pause-medium}}",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Muito bem!",
+          "text2": "Prepare-se para ver as abelhas voando novamente.{{pause-medium}}",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "practice-ready-to-watch-feedback": {
+        "stand": {
+          "text1": "Continue!",
+          "text2": "A cada vez, observe atentamente e determine a direção principal do movimento.",
+          "text3": "Em seguida, pressione a seta para a <b>esquerda</b> ou para a <b>direita</b>.{{pause-medium}}",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Continue!",
+          "text2": "Meus amigos vão continuar dando voltas por aí!",
+          "text3": "A cada vez, observe atentamente e mostre-me para que lado eles voam.{{pause-medium}}",
+          "text4": ""
+        }
+      },
+      "practice-ready-to-watch-no-feedback": {
+        "stand": {
+          "text1": "Agora tente você mesmo{{pause-medium}}",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Bom trabalho!",
+          "text2": "Agora vou parar de falar e me concentrar em voar!",
+          "text3": "Continue me dizendo qual caminho seguir.{{pause-medium}}",
+          "text4": ""
+        }
+      },
+      "practice-reward-after-no-feedback": {
+        "game": {
+          "text1": "Excelente trabalho!",
+          "text2": "Nós enchemos o favo com mel dourado!",
+          "text3": "Se enchermos mais um, terei mel suficiente para todo o inverno!",
+          "text4": ""
+        }
+      },
+      "instr-take-best-guess": {
+        "stand": {
+          "text1": "Dê o seu melhor",
+          "text2": "Se às vezes parecer difícil, não se preocupe!",
+          "text3": "Dê o seu melhor palpite!",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Dê o seu melhor",
+          "text2": "Se às vezes parecer difícil, não se preocupe!",
+          "text3": "Dê o seu melhor palpite!",
+          "text4": "Pressione os <b>binóculos</b> para jogar!"
+        }
+      },
+      "test-break-after-block-1": {
+        "stand": {
+          "text1": "Excelente trabalho!",
+          "text2": "Faça uma pequena pausa, se quiser, e pressione {{btn-start}}PRÓXIMO{{btn-end}} para continuar.",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Excelente trabalho!",
+          "text2": "O segundo favo de mel está se enchendo!",
+          "text3": "Faça uma pequena pausa, se quiser, e pressione os <b>binóculos</b> para continuar jogando.",
+          "text4": ""
+        }
+      },
+      "test-break-after-block-2": {
+        "stand": {
+          "text1": "Muito bem!",
+          "text2": "Você está quase lá!",
+          "text3": "Se quiser, descanse um pouco e clique em {{btn-start}}PRÓXIMO{{btn-end}} para continuar.",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Muito bem!",
+          "text2": "O favo de mel está quase cheio!",
+          "text3": "Se quiser, descanse um pouco e pressione os <b>binóculos</b> para continuar.",
+          "text4": ""
+        }
+      },
+      "end-screen": {
+        "stand": {
+          "text1": "Ótimo trabalho!",
+          "text2": "Você terminou!",
+          "text3": "Muito obrigada por concluir nossa atividade.",
+          "text4": "Pressione {{btn-start}}PRÓXIMO{{btn-end}} para salvar seu trabalho e sair."
+        },
+        "game": {
+          "text1": "Você conseguiu!",
+          "text2": "Olha só a quantidade de mel que temos agora!",
+          "text3": "Graças a você, estou pronta para o inverno!",
+          "text4": "Pressione os <b>binóculos</b> para terminar o jogo."
+        }
+      },
+      "reminder": {
+        "stand": {
+          "text1": "Observe com atenção!",
+          "text2": "Lembre-se de pressionar a <b>seta para a esquerda</b> para mover para a <b>esquerda</b> e a <b>seta para a direita</b> para mover para a <b>direita</b>. ",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Observe com atenção!",
+          "text2": "Lembre-se de me indicar a direção que devo seguir pressionando os <b>botões</b> ou as <b>setas</b>!",
+          "text3": "",
+          "text4": ""
+        }
+      }
+    },
+    "feedback-av": {
+      "def": {
+        "correct": {
+          "stand": {
+            "text1": "Isso mesmo!",
+            "text2": "",
+            "text3": ""
+          },
+          "game": {
+            "text1": "Isso mesmo!",
+            "text2": "Muito bem!",
+            "text3": ""
+          }
+        },
+        "incorrect": {
+          "stand": {
+            "text1": "Não é bem isso!",
+            "text2": "",
+            "text3": ""
+          },
+          "game": {
+            "text1": "Quase, mas não exatamente!",
+            "text2": "Você vai conseguir na próxima vez!",
+            "text3": ""
+          }
+        }
+      }
+    },
+
+    "rdk": {
+      "instr-demo-right": {
+        "stand": {
+          "text1": "",
+          "text2": "Os pontos estão se movendo principalmente para a <b>direita</b>, então pressione a <b>seta para a direita</b>!",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "As abelhas estão voando em direção às <b>flores</b>, então pressione o botão da <b>flor</b> ou a <b>seta para a direita</b> no seu teclado!",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        }
+      },
+
+      "instr-demo-left": {
+        "stand": {
+          "text1": "",
+          "text2": "Os pontos estão se movendo principalmente para a <b>esquerda</b>, então pressione a <b>seta para a esquerda</b>!",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "As abelhas estão voando para as <b>colmeias</b>, então pressione o botão da <b>colmeia</b> ou a <b>seta para a esquerda</b> no seu teclado!",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        }
+      },
+
+      "practice-feedback": {
+        "stand": {
+          "text1": "",
+          "text2": "Pressione a <b>seta para a esquerda</b> para mover para a <b>esquerda</b> e a <b>seta para a direita</b> para mover para a <b>direita</b>.",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "",
+          "text2": "",
+          "text3": "Se as abelhas estiverem voando em direção às <b>flores</b>, pressione o botão da <b>flor</b> ou a <b>seta para a direita</b>.",
+          "text4": "Se estiverem voando em direção às <b>colmeias</b>, pressione o botão da <b>colmeia</b> ou a <b>seta para a esquerda</b>. {{pause-long}}"
+        }
+      }
+    },
+
+    "instruction-input-lr": {
+      "instr-physical-keyboard": {
+        "stand": {
+          "text1": "",
+          "text2": "Does your device have a <b>physical</b> keyboard?",
+          "text3": "",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-right": {
+        "stand": {
+          "text1": "{{text-only}}Press the right arrow key",
+          "text2": "Find the <b>right arrow key</b> on your <b>keyboard</b>.",
+          "text3": "Press it to continue.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-right-incorrect-1": {
+        "stand": {
+          "text1": "Not quite correct",
+          "text2": "Try again.",
+          "text3": "Press the <b>right arrow key</b> on your <b>keyboard</b>.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-right-incorrect-2": {
+        "stand": {
+          "text1": "Still not quite correct",
+          "text2": "That is okay.",
+          "text3": "Press <b>any key</b> to continue.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-right-correct": {
+        "stand": {
+          "text1": "Isso mesmo!",
+          "text2": "Press <b>any key</b> to continue.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-left": {
+        "stand": {
+          "text1": "{{text-only}}Press the left arrow key",
+          "text2": "Now find the <b>left arrow key</b> on your <b>keyboard</b>.",
+          "text3": "Press it to continue.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-left-incorrect-1": {
+        "stand": {
+          "text1": "Not quite correct",
+          "text2": "Try again.",
+          "text3": "Press the <b>left arrow key</b> on your <b>keyboard</b>.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-left-correct": {
+        "stand": {
+          "text1": "Isso mesmo!",
+          "text2": "Press <b>any key</b> to continue. ",
+          "text3": "",
+          "text4": ""
+        }
+      },
+
+      "instr-input-buttons": {
+        "stand": {
+          "text1": "{{text-only}}Use buttons to answer",
+          "text2": "You will use the <b>on-screen buttons</b> to indicate the direction of motion.",
+          "text3": "Press the <b>left</b> or <b>right</b> button to continue.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-all": {
+        "stand": {
+          "text1": "{{text-only}}Como responder",
+          "text2": "Para indicar a direção do movimento, use as <b>setas do teclado ou na tela</b>.",
+          "text3": "Pressione a seta para a <b>esquerda</b> ou para a <b>direita</b> para continuar.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-buttons-fallback": {
+        "stand": {
+          "text1": "{{text-only}}Use on-screen buttons",
+          "text2": "You can use the <b>on-screen buttons</b> instead of the keyboard.",
+          "text3": "Press the <b>left</b> or <b>right</b> button to continue.",
+          "text4": ""
+        }
+      }
+    }
+  }
+}
