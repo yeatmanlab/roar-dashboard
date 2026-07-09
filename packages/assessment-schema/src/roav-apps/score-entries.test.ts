@@ -127,5 +127,17 @@ describe('toRoavAppsScoreEntries', () => {
     it('does not throw on unrecognized keys when strict is off', () => {
       expect(() => toRoavAppsScoreEntries({ [COMPOSITE]: { warmup: { numAttempted: 1 } } })).not.toThrow();
     });
+
+    it('ignores an unrecognized top-level domain when strict is off (never emits it)', () => {
+      const entries = toRoavAppsScoreEntries({
+        bogus: { test: { numAttempted: 99 } },
+        [COMPOSITE]: { test: { numCorrect: 5 } },
+      });
+
+      // Only the canonical composite domain is emitted; the bogus key is skipped entirely and
+      // never reaches run_scores.domain.
+      expect(entries).toHaveLength(1);
+      expect(entries[0]).toMatchObject({ domain: 'composite', name: NUM_CORRECT, value: '5' });
+    });
   });
 });
