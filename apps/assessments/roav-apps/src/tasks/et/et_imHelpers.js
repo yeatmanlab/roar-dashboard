@@ -1,6 +1,6 @@
-import jsPsychAudioButtonResponse from "@jspsych/plugin-audio-button-response";
+import jsPsychAudioButtonResponse from '@jspsych/plugin-audio-button-response';
 // import store from "store2";
-import { mediaAssets } from "../shared/helpers/mediaAssets";
+import { mediaAssets } from '../shared/helpers/mediaAssets';
 
 /*
 import {
@@ -9,7 +9,7 @@ import {
   FACEMESH_RIGHT_EYE
 } from "@mediapipe/face_mesh";
 */
-import { state } from "./et_state";
+import { state } from './et_state';
 import {
   // FM_CONT_IRIS_L,
   // FM_CONT_IRIS_R,
@@ -27,14 +27,14 @@ import {
   fm_indsToCoords,
   // fm_calcCentroid,
   // fm_drawPoint,
-} from "./et_fmHelpers";
+} from './et_fmHelpers';
 
 import {
   et_videoInit,
   et_videoPause,
   et_videoStart,
   // et_videoStop,
-} from "./et_videoHelpers";
+} from './et_videoHelpers';
 
 // TODO: temporary for saving images
 export const arrSrcEyeCrop = [];
@@ -43,22 +43,12 @@ let cntEyeCropSave = 0;
 let recordEyeCrop = false;
 
 const imgToSrcEyeCrop = (image, xMinCrop, yMinCrop, widthCrop, heightCrop) => {
-  const eyeCropCanvas = document.createElement("canvas");
-  const eyeCropCtx = eyeCropCanvas.getContext("2d");
+  const eyeCropCanvas = document.createElement('canvas');
+  const eyeCropCtx = eyeCropCanvas.getContext('2d');
   eyeCropCanvas.width = widthCrop;
   eyeCropCanvas.height = heightCrop;
-  eyeCropCtx.drawImage(
-    image,
-    xMinCrop,
-    yMinCrop,
-    widthCrop,
-    heightCrop,
-    0,
-    0,
-    widthCrop,
-    heightCrop,
-  );
-  const srcEyeCrop = eyeCropCanvas.toDataURL("image/png");
+  eyeCropCtx.drawImage(image, xMinCrop, yMinCrop, widthCrop, heightCrop, 0, 0, widthCrop, heightCrop);
+  const srcEyeCrop = eyeCropCanvas.toDataURL('image/png');
   return srcEyeCrop;
 };
 
@@ -70,7 +60,7 @@ export async function saveArrSrcEyeCrop() {
         create: true,
       });
       const writable = await handleFile.createWritable();
-      const base64 = src.split(",")[1];
+      const base64 = src.split(',')[1];
       const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
       await writable.write(bytes);
       await writable.close();
@@ -79,8 +69,8 @@ export async function saveArrSrcEyeCrop() {
 }
 
 export function im_eye_onResultsFaceMesh(results) {
-  const canvasEyeL = document.getElementById("id-canvas-eye-left");
-  const canvasEyeR = document.getElementById("id-canvas-eye-right");
+  const canvasEyeL = document.getElementById('id-canvas-eye-left');
+  const canvasEyeR = document.getElementById('id-canvas-eye-right');
   if (!canvasEyeL || !canvasEyeR) {
     return;
   }
@@ -104,7 +94,7 @@ export function im_eye_onResultsFaceMesh(results) {
     const widthEyeL = xMaxEyeL - xMinEyeL;
     const heightEyeL = yMaxEyeL - yMinEyeL;
 
-    const ctx = canvasEyeL.getContext("2d");
+    const ctx = canvasEyeL.getContext('2d');
     ctx.clearRect(0, 0, canvasEyeL.width, canvasEyeL.height);
     ctx.drawImage(
       results.image,
@@ -136,7 +126,7 @@ const paramsImEyeDef = {
   // TODO:  should not be here -- those are (requested) sized of camera image -
   //        should be saved to config when camera starts
   heightCanvas: 50, // %vh  // TODO: should be in styles, not here
-  leftright: "right",
+  leftright: 'right',
 };
 
 export const t_et_imEye = (paramsIn = {} /* viewingDistance */) => {
@@ -174,42 +164,35 @@ export const t_et_imEye = (paramsIn = {} /* viewingDistance */) => {
         </div>
         `;
     },
-    choices: ["NEXT"],
+    choices: ['NEXT'],
     on_load: () => {
       // state.canvasWork = document.getElementById("id-cr-head-canvas");
       const toggleStripes = () => {
-        const elStripeL = document.getElementById("id-stripe-left");
-        const elSrtipeR = document.getElementById("id-stripe-right");
-        const elStripeC = document.getElementById("id-stripe-center");
-        const vis =
-          elStripeL?.style.visibility === "hidden" ? "visible" : "hidden";
+        const elStripeL = document.getElementById('id-stripe-left');
+        const elSrtipeR = document.getElementById('id-stripe-right');
+        const elStripeC = document.getElementById('id-stripe-center');
+        const vis = elStripeL?.style.visibility === 'hidden' ? 'visible' : 'hidden';
         if (elStripeL) elStripeL.style.visibility = vis;
         if (elSrtipeR) elSrtipeR.style.visibility = vis;
         if (elStripeC) elStripeC.style.visibility = vis;
       };
 
-      document
-        .getElementById("id-btn-stripes")
-        .addEventListener("click", () => {
-          toggleStripes();
-        });
+      document.getElementById('id-btn-stripes').addEventListener('click', () => {
+        toggleStripes();
+      });
 
-      document
-        .getElementById("id-btn-save")
-        .addEventListener("click", async () => {
-          recordEyeCrop = false;
-          await saveArrSrcEyeCrop();
-          cntEyeCropSave = 0;
-          arrSrcEyeCrop.length = 0;
-        });
+      document.getElementById('id-btn-save').addEventListener('click', async () => {
+        recordEyeCrop = false;
+        await saveArrSrcEyeCrop();
+        cntEyeCropSave = 0;
+        arrSrcEyeCrop.length = 0;
+      });
 
-      document
-        .getElementById("id-btn-record-start")
-        .addEventListener("click", () => {
-          cntEyeCropSave = 0;
-          arrSrcEyeCrop.length = 0;
-          recordEyeCrop = true;
-        });
+      document.getElementById('id-btn-record-start').addEventListener('click', () => {
+        cntEyeCropSave = 0;
+        arrSrcEyeCrop.length = 0;
+        recordEyeCrop = true;
+      });
 
       et_videoInit();
       et_videoStart();

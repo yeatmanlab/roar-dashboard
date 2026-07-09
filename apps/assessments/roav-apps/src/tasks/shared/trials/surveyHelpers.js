@@ -1,21 +1,21 @@
-import jsPsychSurveyHtmlForm from "@jspsych/plugin-survey-html-form";
-import { mediaAssets } from "../helpers/mediaAssets";
-import { jsPsych } from "../helpers/taskSetup";
-import { sessionGet } from "../helpers/sessionHelpers";
-import { AssessmentStage } from "../helpers/namingHelpers";
-import { SESSION_KEYS as SK } from "../helpers/sessionKeys";
+import jsPsychSurveyHtmlForm from '@jspsych/plugin-survey-html-form';
+import { mediaAssets } from '../helpers/mediaAssets';
+import { jsPsych } from '../helpers/taskSetup';
+import { sessionGet } from '../helpers/sessionHelpers';
+import { AssessmentStage } from '../helpers/namingHelpers';
+import { SESSION_KEYS as SK } from '../helpers/sessionKeys';
 
 const paramsSurveyRatingRadioDef = {
-  title: "",
-  subtitle: "",
-  nameSurvey: "",
+  title: '',
+  subtitle: '',
+  nameSurvey: '',
   titlesCol: null, // []
   titlesRow: null, // []
   namesRow: null, // []
   keysImgRow: null, // []
   widthColFirst: 15, // in REM
   widthCol: 5, // in REM
-  textBtn: "NEXT",
+  textBtn: 'NEXT',
 };
 
 export const t_surveyRatingRadio = (paramsIn) => {
@@ -28,14 +28,14 @@ export const t_surveyRatingRadio = (paramsIn) => {
         <p class="shared-tech-text-medium-neutral">${params.subtitle}<p>
     `,
     html: () => {
-      let headers = "";
+      let headers = '';
       for (let iCol = 0; iCol < params.titlesCol.length; iCol += 1) {
         headers += `<th>${params.titlesCol[iCol]}</th>`;
       }
 
-      let rows = "";
+      let rows = '';
       for (let iRow = 0; iRow < params.namesRow.length; iRow += 1) {
-        let cols = "";
+        let cols = '';
         for (let iCol = 0; iCol < params.titlesCol.length; iCol += 1) {
           cols += `<td><input type="radio" 
             name="${params.namesRow[iRow]}" 
@@ -46,9 +46,7 @@ export const t_surveyRatingRadio = (paramsIn) => {
         if (params.keysImgRow) {
           rows += `
           <tr><td>
-            <img src="${
-              mediaAssets.images[params.keysImgRow[iRow]]
-            }" class="cr-survey-img">
+            <img src="${mediaAssets.images[params.keysImgRow[iRow]]}" class="cr-survey-img">
           </td>${cols}</tr>`;
         } else if (params.titlesRow) {
           rows += `<tr><td>${params.titlesRow[iRow]}</td>${cols}</tr>`;
@@ -78,18 +76,17 @@ export const t_surveyRatingRadio = (paramsIn) => {
           class="shared-tech-button-small">
         `;
     },
-    button_label: "",
+    button_label: '',
     on_load: () => {
-      document.querySelector("#jspsych-survey-html-form-next").style.display =
-        "none";
+      document.querySelector('#jspsych-survey-html-form-next').style.display = 'none';
     },
     on_finish: (data) => {
       jsPsych.data.addDataToLastTrial({
         save_trial: true,
         assessment_stage: AssessmentStage.DATA,
         correct: true,
-        type_trial: "survey-rating-radio",
-        id_trial: "survey-rating-radio",
+        type_trial: 'survey-rating-radio',
+        id_trial: 'survey-rating-radio',
         pid: sessionGet(SK.CONFIG).pid,
         name_survey: params.nameSurvey,
         resp: data.response,
@@ -99,11 +96,11 @@ export const t_surveyRatingRadio = (paramsIn) => {
 };
 
 const paramsSurveyTextDef = {
-  title: "",
-  subtitle: "",
-  nameSurvey: "",
-  textPlaceholder: "Type here...",
-  textBtn: "NEXT",
+  title: '',
+  subtitle: '',
+  nameSurvey: '',
+  textPlaceholder: 'Type here...',
+  textBtn: 'NEXT',
 };
 
 export const t_surveyText = (paramsIn) => {
@@ -134,18 +131,17 @@ export const t_surveyText = (paramsIn) => {
         value="${params.textBtn}" 
         class="shared-tech-button-small">
     `,
-    button_label: "",
+    button_label: '',
     on_load: () => {
-      document.querySelector("#jspsych-survey-html-form-next").style.display =
-        "none";
+      document.querySelector('#jspsych-survey-html-form-next').style.display = 'none';
     },
     on_finish: (data) => {
       jsPsych.data.addDataToLastTrial({
         save_trial: true,
         assessment_stage: AssessmentStage.DATA,
         correct: true,
-        type_trial: "survey-text",
-        id_trial: "survey-text",
+        type_trial: 'survey-text',
+        id_trial: 'survey-text',
         pid: sessionGet(SK.CONFIG).pid,
         name_survey: params.nameSurvey,
         resp: data.response,

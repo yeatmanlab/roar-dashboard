@@ -1,4 +1,4 @@
-@use "vars" as *;
+@use 'vars' as *;
 
 // --- video card
 
@@ -9,8 +9,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial,
-    sans-serif;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, sans-serif;
   margin-top: -5vh;
 }
 

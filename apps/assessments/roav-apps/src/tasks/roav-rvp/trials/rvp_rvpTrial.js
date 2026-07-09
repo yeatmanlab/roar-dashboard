@@ -158,12 +158,7 @@ const metaparamsToParams = (metaparams) => {
       params.distStim = params._distStim;
       break;
     case UnitSize.DEG:
-      params.distStim = degToPxFromWidth(
-        params._distStim,
-        params.vdCm,
-        params.widthScreenCm,
-        params.widthScreenPx,
-      );
+      params.distStim = degToPxFromWidth(params._distStim, params.vdCm, params.widthScreenCm, params.widthScreenPx);
       break;
     default:
       params.distStim = undefined;
@@ -174,12 +169,7 @@ const metaparamsToParams = (metaparams) => {
       params.sizeStim = params._sizeStim;
       break;
     case UnitSize.DEG:
-      params.sizeStim = degToPxFromWidth(
-        params._sizeStim,
-        params.vdCm,
-        params.widthScreenCm,
-        params.widthScreenPx,
-      );
+      params.sizeStim = degToPxFromWidth(params._sizeStim, params.vdCm, params.widthScreenCm, params.widthScreenPx);
       break;
     default:
       params.sizeStim = undefined;

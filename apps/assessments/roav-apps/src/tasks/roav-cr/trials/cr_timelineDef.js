@@ -1,59 +1,34 @@
 // TODO: temporary - begin
-import jsPsychHtmlButtonResponse from "@jspsych/plugin-html-button-response";
+import jsPsychHtmlButtonResponse from '@jspsych/plugin-html-button-response';
 // TODO: temporary - end
-import jsPsychCallFunction from "@jspsych/plugin-call-function";
-import { mapTrials } from "../../shared/trials/mapTrials";
-import { cr_mapTrials } from "./cr_mapTrials";
-import { sessionGet, sessionSet } from "../../shared/helpers/sessionHelpers";
-import { CR_SESSION_KEYS as SK } from "../helpers/cr_sessionKeys";
-import { CR } from "../helpers/cr_constants";
-import {
-  AssessmentStage,
-  NameTask,
-  TypeSize,
-  ModeGame,
-} from "../../shared/helpers/namingHelpers";
-import { t_instructionTech } from "../../shared/trials/instructionTech";
-import { t_cr, TypeSame, TypeSide, TypeTask } from "./cr_trial";
-import { t_createBlockCr, t_setParamsBlockCr } from "./cr_block";
-import {
-  t_surveyRatingRadio,
-  t_surveyText,
-} from "../../shared/trials/surveyHelpers";
-import { et_mapTrials } from "../../et/et_mapTrials";
-import { t_et_videoConfirm, t_et_videoEnable } from "../../et/et_videoHelpers";
-import { t_et_fmInit } from "../../et/et_fmHelpers";
-import { t_et_collectDataDeviceScreenWebcam } from "../../et/et_deviceHelpers";
-import { t_et_vdCalibr, t_et_htCalibrPlayground } from "../../et/et_htHelpers";
-import { DURATIONS, SCREEN } from "../../shared/helpers/constants";
-import {
-  et_TypeSaveSnapshots,
-  state,
-  t_et_stateFallbackDef,
-  t_et_stateSave,
-} from "../../et/et_state";
-import { t_screenMeasureWidth } from "../../shared/trials/screenCalibrateHelpers";
-import {
-  t_et_etTest,
-  t_et_etCalibr,
-  t_et_etWorkerPreload,
-  t_et_etWorkerStopFull,
-} from "../../et/et_etHelpers";
-import { t_et_imEye } from "../../et/et_imHelpers";
-import {
-  t_enterFullscreen,
-  t_enterLandscape,
-  t_installTouchGuards,
-} from "../../shared/trials/screenHelpers";
-import { t_setAllowModeInputAll } from "../../shared/trials/inputModeHelpers";
-import { t_instructionGeneral } from "../../shared/trials/instructionGeneral";
-import { t_collectDataMonitor } from "../../shared/trials/collectDataMonitor";
-import { t_crCreateQuest } from "../helpers/cr_questHelpers";
-import {
-  t_initSummary,
-  t_plotSummary,
-} from "../../shared/trials/summaryHelpers";
-import { t_saveConfigAll } from "../helpers/cr_crHelpers";
+import jsPsychCallFunction from '@jspsych/plugin-call-function';
+import { mapTrials } from '../../shared/trials/mapTrials';
+import { cr_mapTrials } from './cr_mapTrials';
+import { sessionGet, sessionSet } from '../../shared/helpers/sessionHelpers';
+import { CR_SESSION_KEYS as SK } from '../helpers/cr_sessionKeys';
+import { CR } from '../helpers/cr_constants';
+import { AssessmentStage, NameTask, TypeSize, ModeGame } from '../../shared/helpers/namingHelpers';
+import { t_instructionTech } from '../../shared/trials/instructionTech';
+import { t_cr, TypeSame, TypeSide, TypeTask } from './cr_trial';
+import { t_createBlockCr, t_setParamsBlockCr } from './cr_block';
+import { t_surveyRatingRadio, t_surveyText } from '../../shared/trials/surveyHelpers';
+import { et_mapTrials } from '../../et/et_mapTrials';
+import { t_et_videoConfirm, t_et_videoEnable } from '../../et/et_videoHelpers';
+import { t_et_fmInit } from '../../et/et_fmHelpers';
+import { t_et_collectDataDeviceScreenWebcam } from '../../et/et_deviceHelpers';
+import { t_et_vdCalibr, t_et_htCalibrPlayground } from '../../et/et_htHelpers';
+import { DURATIONS, SCREEN } from '../../shared/helpers/constants';
+import { et_TypeSaveSnapshots, state, t_et_stateFallbackDef, t_et_stateSave } from '../../et/et_state';
+import { t_screenMeasureWidth } from '../../shared/trials/screenCalibrateHelpers';
+import { t_et_etTest, t_et_etCalibr, t_et_etWorkerPreload, t_et_etWorkerStopFull } from '../../et/et_etHelpers';
+import { t_et_imEye } from '../../et/et_imHelpers';
+import { t_enterFullscreen, t_enterLandscape, t_installTouchGuards } from '../../shared/trials/screenHelpers';
+import { t_setAllowModeInputAll } from '../../shared/trials/inputModeHelpers';
+import { t_instructionGeneral } from '../../shared/trials/instructionGeneral';
+import { t_collectDataMonitor } from '../../shared/trials/collectDataMonitor';
+import { t_crCreateQuest } from '../helpers/cr_questHelpers';
+import { t_initSummary, t_plotSummary } from '../../shared/trials/summaryHelpers';
+import { t_saveConfigAll } from '../helpers/cr_crHelpers';
 
 // TODO: see whether I need those maps at all or is it an over-engineering?
 const tr = { ...mapTrials, ...cr_mapTrials, ...et_mapTrials };
@@ -76,14 +51,7 @@ const durationStimSlow = 2000; // 2000
 export const t_timelineDef = () => {
   // TODO: this is super important for eye-tracking to work - see where to put it
   const config = sessionGet(SK.CONFIG);
-  const {
-    videoEnable,
-    videoRecord,
-    screenCalibrate,
-    vdCalibrate,
-    etCalibrate,
-    etEnable,
-  } = config;
+  const { videoEnable, videoRecord, screenCalibrate, vdCalibrate, etCalibrate, etEnable } = config;
   sessionSet(SK.VIDEO_ENABLE, videoEnable);
   sessionSet(SK.VIDEO_RECORD, videoRecord);
   sessionSet(SK.SCREEN_CALIBRATE, screenCalibrate);
@@ -91,21 +59,16 @@ export const t_timelineDef = () => {
   sessionSet(SK.ET_CALIBRATE, etCalibrate);
   sessionSet(SK.ET_ENABLE, etEnable);
 
-  const createMetaparamsDemoCustom = (
-    typeTask,
-    flagNoflank,
-    typeSame,
-    namesStim,
-  ) => {
+  const createMetaparamsDemoCustom = (typeTask, flagNoflank, typeSame, namesStim) => {
     if (typeTask === TypeTask.SHAPE_IDENT) {
       if (flagNoflank) {
         return {
-          indTarg: namesStim.indexOf("butterfly"),
+          indTarg: namesStim.indexOf('butterfly'),
           _sideTarg: TypeSide.RIGHT,
         };
       }
       return {
-        indTarg: namesStim.indexOf("car"),
+        indTarg: namesStim.indexOf('car'),
         _sideTarg: TypeSide.LEFT,
       };
     }
@@ -113,16 +76,16 @@ export const t_timelineDef = () => {
       if (flagNoflank) {
         if (typeSame === TypeSame.DIFF) {
           return {
-            indTargL: namesStim.indexOf("duck"),
-            indTargR: namesStim.indexOf("tree"),
+            indTargL: namesStim.indexOf('duck'),
+            indTargR: namesStim.indexOf('tree'),
             _sideTarg: TypeSide.BOTH,
             _same: TypeSame.DIFF,
           };
         }
         if (typeSame === TypeSame.SAME) {
           return {
-            indTargL: namesStim.indexOf("butterfly"),
-            indTargR: namesStim.indexOf("butterfly"),
+            indTargL: namesStim.indexOf('butterfly'),
+            indTargR: namesStim.indexOf('butterfly'),
             _sideTarg: TypeSide.BOTH,
             _same: TypeSame.SAME,
           };
@@ -131,16 +94,16 @@ export const t_timelineDef = () => {
         // eslint-disable-next-line no-lonely-if
         if (typeSame === TypeSame.DIFF) {
           return {
-            indTargL: namesStim.indexOf("heart"),
-            indTargR: namesStim.indexOf("car"),
+            indTargL: namesStim.indexOf('heart'),
+            indTargR: namesStim.indexOf('car'),
             _sideTarg: TypeSide.BOTH,
             _same: TypeSame.DIFF,
           };
         }
         if (typeSame === TypeSame.SAME) {
           return {
-            indTargL: namesStim.indexOf("tree"),
-            indTargR: namesStim.indexOf("tree"),
+            indTargL: namesStim.indexOf('tree'),
+            indTargR: namesStim.indexOf('tree'),
             _sideTarg: TypeSide.BOTH,
             _same: TypeSame.SAME,
           };
@@ -168,12 +131,7 @@ export const t_timelineDef = () => {
       if (flagNoflank) {
         return [{ _same: TypeSame.DIFF }, { _same: TypeSame.SAME }];
       }
-      return [
-        { _same: TypeSame.SAME },
-        { _same: TypeSame.DIFF },
-        { _same: TypeSame.DIFF },
-        { _same: TypeSame.SAME },
-      ];
+      return [{ _same: TypeSame.SAME }, { _same: TypeSame.DIFF }, { _same: TypeSame.DIFF }, { _same: TypeSame.SAME }];
     }
     if (flagNoflank) {
       return [{}, {}];
@@ -197,12 +155,7 @@ export const t_timelineDef = () => {
       if (flagNoflank) {
         return [{ _same: TypeSame.SAME }, { _same: TypeSame.DIFF }];
       }
-      return [
-        { _same: TypeSame.SAME },
-        { _same: TypeSame.DIFF },
-        { _same: TypeSame.DIFF },
-        { _same: TypeSame.SAME },
-      ];
+      return [{ _same: TypeSame.SAME }, { _same: TypeSame.DIFF }, { _same: TypeSame.DIFF }, { _same: TypeSame.SAME }];
     }
     if (flagNoflank) {
       return [{}, {}];
@@ -256,12 +209,7 @@ export const t_timelineDef = () => {
         // ===================================================
 
         if (typeTask === TypeTask.SHAPE_IDENT) {
-          const metaparamsDemo = createMetaparamsDemoCustom(
-            typeTask,
-            true,
-            TypeSame.SAME,
-            metaparamsPart.namesStim,
-          );
+          const metaparamsDemo = createMetaparamsDemoCustom(typeTask, true, TypeSame.SAME, metaparamsPart.namesStim);
           timelinePart.push(
             t_cr(
               {
@@ -349,10 +297,7 @@ export const t_timelineDef = () => {
           }),
         );
 
-        const arrMetaparamsPracticeAv = createArrMetaparamsPracticeAvCustom(
-          typeTask,
-          true,
-        );
+        const arrMetaparamsPracticeAv = createArrMetaparamsPracticeAvCustom(typeTask, true);
         timelinePart.push(
           t_createBlockCr({
             playFeedbackAv: true,
@@ -385,10 +330,7 @@ export const t_timelineDef = () => {
           }),
         );
 
-        const arrMetaparamsPractice = createArrMetaparamsPracticeCustom(
-          typeTask,
-          true,
-        );
+        const arrMetaparamsPractice = createArrMetaparamsPracticeCustom(typeTask, true);
         timelinePart.push(
           t_createBlockCr({
             arrMetaparams: arrMetaparamsPractice,
@@ -428,9 +370,7 @@ export const t_timelineDef = () => {
         }),
       );
 
-      timelinePart.push(
-        t_instructionGeneral({}, `between-noflank-main-${iPartAux}`),
-      );
+      timelinePart.push(t_instructionGeneral({}, `between-noflank-main-${iPartAux}`));
     }
 
     // ===================================================
@@ -467,12 +407,7 @@ export const t_timelineDef = () => {
       // ===================================================
 
       if (typeTask === TypeTask.SHAPE_IDENT) {
-        const metaparamsDemo = createMetaparamsDemoCustom(
-          typeTask,
-          false,
-          TypeSame.SAME,
-          metaparamsPart.namesStim,
-        );
+        const metaparamsDemo = createMetaparamsDemoCustom(typeTask, false, TypeSame.SAME, metaparamsPart.namesStim);
         timelinePart.push(
           t_cr(
             {
@@ -488,18 +423,8 @@ export const t_timelineDef = () => {
           ),
         );
       } else if (typeTask === TypeTask.SHAPE_COMPARE_LR) {
-        const metaparamsDemoSame = createMetaparamsDemoCustom(
-          typeTask,
-          false,
-          TypeSame.SAME,
-          metaparamsPart.namesStim,
-        );
-        const metaparamsDemoDiff = createMetaparamsDemoCustom(
-          typeTask,
-          false,
-          TypeSame.DIFF,
-          metaparamsPart.namesStim,
-        );
+        const metaparamsDemoSame = createMetaparamsDemoCustom(typeTask, false, TypeSame.SAME, metaparamsPart.namesStim);
+        const metaparamsDemoDiff = createMetaparamsDemoCustom(typeTask, false, TypeSame.DIFF, metaparamsPart.namesStim);
         timelinePart.push(
           t_cr(
             {
@@ -560,10 +485,7 @@ export const t_timelineDef = () => {
         }),
       );
 
-      const arrMetaparamsPracticeAv = createArrMetaparamsPracticeAvCustom(
-        typeTask,
-        false,
-      );
+      const arrMetaparamsPracticeAv = createArrMetaparamsPracticeAvCustom(typeTask, false);
       timelinePart.push(
         t_createBlockCr({
           playFeedbackAv: true,
@@ -601,10 +523,7 @@ export const t_timelineDef = () => {
         }),
       );
 
-      const arrMetaparamsPractice = createArrMetaparamsPracticeCustom(
-        typeTask,
-        false,
-      );
+      const arrMetaparamsPractice = createArrMetaparamsPracticeCustom(typeTask, false);
       timelinePart.push(
         t_createBlockCr({
           arrMetaparams: arrMetaparamsPractice,
@@ -642,7 +561,7 @@ export const t_timelineDef = () => {
       timelinePart.push(
         t_initSummary({
           title: `Bouma's coefficient: ${paramsPart.tagParams}`,
-          labelY: "coefficient",
+          labelY: 'coefficient',
         }),
       );
     }
@@ -670,10 +589,9 @@ export const t_timelineDef = () => {
   timeline.push(t_installTouchGuards());
   timeline.push(t_setAllowModeInputAll(true));
 
-  const runSetup =
-    sessionGet(SK.SCREEN_CALIBRATE) || sessionGet(SK.VIDEO_ENABLE);
+  const runSetup = sessionGet(SK.SCREEN_CALIBRATE) || sessionGet(SK.VIDEO_ENABLE);
   // const runSetup = false; // TODO: temp, should be as in the line above
-  timeline.push(t_collectDataMonitor(runSetup ? { keyImgBg: "" } : {}));
+  timeline.push(t_collectDataMonitor(runSetup ? { keyImgBg: '' } : {}));
 
   if (includeProto) {
     if (runSetup) {
@@ -682,22 +600,20 @@ export const t_timelineDef = () => {
           {
             tagNameTask: NameTask.SHARED,
           },
-          "setup-start",
+          'setup-start',
         ),
       );
 
-      const needRuler =
-        sessionGet(SK.SCREEN_CALIBRATE) ||
-        (sessionGet(SK.VIDEO_ENABLE) && sessionGet(SK.VD_CALIBRATE));
+      const needRuler = sessionGet(SK.SCREEN_CALIBRATE) || (sessionGet(SK.VIDEO_ENABLE) && sessionGet(SK.VD_CALIBRATE));
 
       if (needRuler) {
         timeline.push(
           t_instructionTech(
             {
               tagNameTask: NameTask.SHARED,
-              keyImg: "sharedTechIconRulerAll",
+              keyImg: 'sharedTechIconRulerAll',
             },
-            "setup-ruler",
+            'setup-ruler',
           ),
         );
       }
@@ -717,7 +633,7 @@ export const t_timelineDef = () => {
               {
                 tagNameTask: NameTask.ET,
               },
-              "video-not-enabled-ok-to-continue",
+              'video-not-enabled-ok-to-continue',
             ),
           ],
           conditional_function: () => !sessionGet(SK.VIDEO_ENABLED),
@@ -735,8 +651,7 @@ export const t_timelineDef = () => {
       // @new - begin
       timeline.push({
         timeline: [t_et_etWorkerPreload()],
-        conditional_function: () =>
-          sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.ET_ENABLE),
+        conditional_function: () => sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.ET_ENABLE),
       });
       // @new - end
 
@@ -751,7 +666,7 @@ export const t_timelineDef = () => {
                 tagNameTask: NameTask.ET,
                 modeGameSkipResponse: ModeGame.ALL,
               },
-              "vd-calibr-intro",
+              'vd-calibr-intro',
             ),
           ],
           conditional_function: () => sessionGet(SK.VIDEO_ENABLED),
@@ -763,15 +678,8 @@ export const t_timelineDef = () => {
       timeline.push(t_et_htCalibrPlayground());
 
       // TODO: - make skip response
-      timeline.push(
-        t_instructionTech({ tagNameTask: NameTask.SHARED }, "setup-end"),
-      );
-      timeline.push(
-        t_instructionTech(
-          { tagNameTask: NameTask.SHARED },
-          "setup-start-assessment",
-        ),
-      );
+      timeline.push(t_instructionTech({ tagNameTask: NameTask.SHARED }, 'setup-end'));
+      timeline.push(t_instructionTech({ tagNameTask: NameTask.SHARED }, 'setup-start-assessment'));
     }
 
     // fallback for setting screen size - CONFIG
@@ -790,7 +698,7 @@ export const t_timelineDef = () => {
     timeline.push(t_et_stateFallbackDef());
     timeline.push(
       t_et_stateSave({
-        idTrialSaveOrFn: "calibr-screen-vd-final",
+        idTrialSaveOrFn: 'calibr-screen-vd-final',
         saveCal: true,
         typeSaveSnapshots: et_TypeSaveSnapshots.NONE,
         requestUpload: false,
@@ -806,10 +714,7 @@ export const t_timelineDef = () => {
     timeline.push({
       type: jsPsychCallFunction,
       func: () => {
-        runEtCalibr =
-          sessionGet(SK.VIDEO_ENABLED) &&
-          sessionGet(SK.ET_ENABLE) &&
-          sessionGet(SK.ET_CALIBRATE);
+        runEtCalibr = sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.ET_ENABLE) && sessionGet(SK.ET_CALIBRATE);
       },
     });
 
@@ -819,7 +724,7 @@ export const t_timelineDef = () => {
           animateBtn: true,
           durationTrial: DURATIONS.WAIT_FOR_RESPONSE,
         },
-        "intro",
+        'intro',
       ),
     );
 
@@ -836,7 +741,7 @@ export const t_timelineDef = () => {
           {
             durationTrial: DURATIONS.WAIT_FOR_RESPONSE, // TODO: temporary!!!
           },
-          "et-calibr-before-practice",
+          'et-calibr-before-practice',
         ),
 
         t_et_etCalibr(
@@ -845,14 +750,14 @@ export const t_timelineDef = () => {
             locsFix: locsFixCalibr,
             // srcMarkFix: sessionGet(SK.MAP_STIM)?.find(s => s.name === 'rocket')?.src
           },
-          "practice",
+          'practice',
         ),
         t_instructionGeneral(
           {
             durationTrial: DURATIONS.WAIT_FOR_RESPONSE, // TODO: temporary!!!
             animateBtn: true, // TODO: decide whether we want a button at all OR skip
           },
-          "et-calibr-before-calibr",
+          'et-calibr-before-calibr',
         ),
         t_et_etCalibr(
           {
@@ -860,14 +765,14 @@ export const t_timelineDef = () => {
             locsFix: locsFixCalibr,
             // srcMarkFix: sessionGet(SK.MAP_STIM)?.find(s => s.name === 'rocket')?.src
           },
-          "calibr",
+          'calibr',
         ),
         t_instructionGeneral(
           {
             modeGameSkipResponse: ModeGame.ALL,
             durationTrial: DURATIONS.WAIT_FOR_RESPONSE, // TODO: temporary!!!
           },
-          "et-calibr-after-calibr",
+          'et-calibr-after-calibr',
         ),
       ],
       conditional_function: () => runEtCalibr,
@@ -876,7 +781,7 @@ export const t_timelineDef = () => {
     timeline.push(t_et_stateFallbackDef());
     timeline.push(
       t_et_stateSave({
-        idTrialSaveOrFn: "calibr-all-final",
+        idTrialSaveOrFn: 'calibr-all-final',
         saveCal: true,
         typeSaveSnapshots: et_TypeSaveSnapshots.NONE,
         requestUpload: false,
@@ -908,15 +813,10 @@ export const t_timelineDef = () => {
       const paramsPart = arrParamsPart[iPart];
       // TODO: temp
       // alert(JSON.stringify(paramsPart, null,2));
-      const metaparamsPart =
-        configBlock.mapMetaparamsBlock[paramsPart.tagParams];
+      const metaparamsPart = configBlock.mapMetaparamsBlock[paramsPart.tagParams];
       // TODO: temp
       // alert(JSON.stringify(metaparamsPart, null, 2));
-      const timelinePart = createTimelinePart(
-        iPart,
-        paramsPart,
-        metaparamsPart,
-      );
+      const timelinePart = createTimelinePart(iPart, paramsPart, metaparamsPart);
       timeline.push({ timeline: timelinePart });
 
       if (iPart < numPart - 1) {
@@ -977,14 +877,14 @@ export const t_timelineDef = () => {
         metaparams: {
           typeTask: TypeTask.SHAPE_IDENT,
           // TODO: keep in this exact order in config!
-          namesStim: ["duck", "heart", "butterfly", "tree", "car"], // "rocket" instead of "tree" ???
+          namesStim: ['duck', 'heart', 'butterfly', 'tree', 'car'], // "rocket" instead of "tree" ???
           _sameFlank: true,
-          _nameFlank: "cloud",
+          _nameFlank: 'cloud',
           durationFix: CR.DURATION_MARK_FIX_PRACTICE_AV,
           durationStim: CR.DURATION_STIM_PRACTICE_AV,
         },
         info: {
-          nameBlock: "block-instr-shape-ident",
+          nameBlock: 'block-instr-shape-ident',
           stageAssessment: AssessmentStage.INSTRUCTION,
           evaluateValidity: false,
           playAudio: true,
@@ -1005,7 +905,7 @@ export const t_timelineDef = () => {
             disableBtnsRespNonTarg: true,
           },
         },
-        "try-instr-demo-shape-ident",
+        'try-instr-demo-shape-ident',
       ),
     );
 
@@ -1017,10 +917,10 @@ export const t_timelineDef = () => {
     timeline.push(
       t_instructionGeneral(
         {
-          text1: "TASK: shape ident SOA",
+          text1: 'TASK: shape ident SOA',
           durationTrial: DURATIONS.WAIT_FOR_RESPONSE, // TODO: temporary!!!
         },
-        "intro-shape-ident-soa",
+        'intro-shape-ident-soa',
       ),
     );
 
@@ -1031,15 +931,15 @@ export const t_timelineDef = () => {
         metaparams: {
           typeTask: TypeTask.SHAPE_IDENT,
           // TODO: keep in this exact order in config!
-          namesStim: ["duck", "heart", "butterfly", "tree", "car"], // "rocket" instead of "tree" ???
+          namesStim: ['duck', 'heart', 'butterfly', 'tree', 'car'], // "rocket" instead of "tree" ???
           _sameFlank: true,
-          _nameFlank: "cloud",
+          _nameFlank: 'cloud',
           durationFix: CR.DURATION_MARK_FIX_PRACTICE_AV,
           durationStim: CR.DURATION_STIM_PRACTICE_AV,
           durationTargPre: -3000,
         },
         info: {
-          nameBlock: "block-instr-shape-ident-soa",
+          nameBlock: 'block-instr-shape-ident-soa',
           stageAssessment: AssessmentStage.INSTRUCTION,
           evaluateValidity: false,
           playAudio: true,
@@ -1057,7 +957,7 @@ export const t_timelineDef = () => {
             disableBtnsRespNonTarg: true,
           },
         },
-        "try-instr-demo-shape-ident-soa",
+        'try-instr-demo-shape-ident-soa',
       ),
     );
 
@@ -1068,10 +968,10 @@ export const t_timelineDef = () => {
     timeline.push(
       t_instructionGeneral(
         {
-          text1: "TASK: shape compare LR",
+          text1: 'TASK: shape compare LR',
           durationTrial: DURATIONS.WAIT_FOR_RESPONSE, // TODO: temporary!!!
         },
-        "intro-shape-compare-lr",
+        'intro-shape-compare-lr',
       ),
     );
 
@@ -1081,15 +981,15 @@ export const t_timelineDef = () => {
       t_setParamsBlockCr({
         metaparams: {
           typeTask: TypeTask.SHAPE_COMPARE_LR,
-          namesStim: ["duck", "heart", "butterfly", "tree", "car"], // "rocket" instead of "tree" ???
+          namesStim: ['duck', 'heart', 'butterfly', 'tree', 'car'], // "rocket" instead of "tree" ???
           _sameFlank: true,
-          _nameFlank: "cloud",
+          _nameFlank: 'cloud',
           durationFix: CR.DURATION_MARK_FIX_PRACTICE_AV,
           durationStim: CR.DURATION_STIM_PRACTICE_AV,
           // durationTargPre: -3000,
         },
         info: {
-          nameBlock: "block-instr-shape-compare-lr",
+          nameBlock: 'block-instr-shape-compare-lr',
           stageAssessment: AssessmentStage.INSTRUCTION,
           evaluateValidity: false,
           playAudio: true,
@@ -1112,7 +1012,7 @@ export const t_timelineDef = () => {
             disableBtnsRespNonTarg: true,
           },
         },
-        "try-instr-demo-shape-compare-lr-same",
+        'try-instr-demo-shape-compare-lr-same',
       ),
     );
 
@@ -1128,7 +1028,7 @@ export const t_timelineDef = () => {
             disableBtnsRespNonTarg: true,
           },
         },
-        "try-instr-demo-shape-compare-lr-diff",
+        'try-instr-demo-shape-compare-lr-diff',
       ),
     );
 
@@ -1139,10 +1039,10 @@ export const t_timelineDef = () => {
     timeline.push(
       t_instructionGeneral(
         {
-          text1: "TASK: shape compare LR",
+          text1: 'TASK: shape compare LR',
           durationTrial: DURATIONS.WAIT_FOR_RESPONSE, // TODO: temporary!!!
         },
-        "intro-shape-compare-lr-soa",
+        'intro-shape-compare-lr-soa',
       ),
     );
   }
@@ -1156,7 +1056,7 @@ export const t_timelineDef = () => {
   if (includePlaygroundEt) {
     timeline.push(
       t_instructionTech({
-        text1: "<h2>EYE-TRACKING PLAYGROUND</h2><hr>",
+        text1: '<h2>EYE-TRACKING PLAYGROUND</h2><hr>',
       }),
     );
 
@@ -1168,9 +1068,8 @@ export const t_timelineDef = () => {
     timeline.push(tr.t_enterFullscreen(true));
     timeline.push({
       type: jsPsychHtmlButtonResponse,
-      choices: ["OK"],
-      stimulus: () =>
-        `<h2>Head and Distance Tracking Playground</h2><br><br><br>`,
+      choices: ['OK'],
+      stimulus: () => `<h2>Head and Distance Tracking Playground</h2><br><br><br>`,
     });
 
     timeline.push({
@@ -1182,22 +1081,20 @@ export const t_timelineDef = () => {
 
     timeline.push({
       type: jsPsychHtmlButtonResponse,
-      choices: ["OK"],
-      stimulus: () =>
-        `<h2>Eye Tracking Calibration Playground</h2><br><br><br>`,
+      choices: ['OK'],
+      stimulus: () => `<h2>Eye Tracking Calibration Playground</h2><br><br><br>`,
     });
 
     // timeline.push(t_et_etCalibrPlayground());
     timeline.push(
       t_et_etCalibr({
-        srcMarkFix: sessionGet(SK.MAP_STIM)?.find((s) => s.name === "rocket")
-          ?.src,
+        srcMarkFix: sessionGet(SK.MAP_STIM)?.find((s) => s.name === 'rocket')?.src,
       }),
     );
 
     timeline.push({
       type: jsPsychHtmlButtonResponse,
-      choices: ["OK"],
+      choices: ['OK'],
       stimulus: () => `<h2>Eye Tracking Testing Playground</h2><br><br><br>`,
     });
 
@@ -1206,7 +1103,7 @@ export const t_timelineDef = () => {
 
     timeline.push({
       type: jsPsychHtmlButtonResponse,
-      choices: ["OK"],
+      choices: ['OK'],
       stimulus: () => `<h2>Eye Model Playground</h2><br><br><br>`,
     });
 
@@ -1216,19 +1113,17 @@ export const t_timelineDef = () => {
   if (includePlaygroundCr) {
     timeline.push({
       type: jsPsychHtmlButtonResponse,
-      choices: ["OK"],
+      choices: ['OK'],
       stimulus: () => `<h2>Crowding Playground</h2><br><br><br>`,
     });
 
-    timeline.push(
-      tr.t_initSummary({ title: "Bouma's coefficient", labelY: "coefficient" }),
-    );
+    timeline.push(tr.t_initSummary({ title: "Bouma's coefficient", labelY: 'coefficient' }));
     timeline.push(tr.t_crParams());
 
     timeline.push({
       type: jsPsychHtmlButtonResponse,
-      stimulus: "<h1>Slow trials</h1>",
-      choices: ["OK"],
+      stimulus: '<h1>Slow trials</h1>',
+      choices: ['OK'],
     });
 
     for (let i = 0; i < numTrialBlockSlow; i += 1) {
@@ -1247,8 +1142,8 @@ export const t_timelineDef = () => {
 
     timeline.push({
       type: jsPsychHtmlButtonResponse,
-      stimulus: "<h1>Fast trials</h1>",
-      choices: ["OK"],
+      stimulus: '<h1>Fast trials</h1>',
+      choices: ['OK'],
     });
 
     timeline.push(tr.t_crCreateQuest());
@@ -1278,29 +1173,29 @@ export const t_timelineDef = () => {
 
   if (includeEvalTask) {
     // TODO: register in map trials
-    timeline.push(t_instructionTech({}, "@eval-welcome"));
+    timeline.push(t_instructionTech({}, '@eval-welcome'));
 
     timeline.push(
       t_instructionTech(
         {
-          keyImg: "sharedTechIconRulerAll",
+          keyImg: 'sharedTechIconRulerAll',
         },
-        "@eval-setup-ruler",
+        '@eval-setup-ruler',
       ),
     );
 
     timeline.push(t_screenMeasureWidth({}));
 
-    timeline.push(t_instructionTech({}, "@eval-test-structure"));
+    timeline.push(t_instructionTech({}, '@eval-test-structure'));
 
     timeline.push(
       t_instructionTech(
         {
-          keyImg: "taskFixationAll",
+          keyImg: 'taskFixationAll',
           typeSizeImg: TypeSize.LARGE,
           borderImg: true,
         },
-        "@eval-keep-fixation",
+        '@eval-keep-fixation',
       ),
     );
 
@@ -1311,15 +1206,15 @@ export const t_timelineDef = () => {
     timeline.push(
       t_instructionTech(
         {
-          keyImg: "taskShapeIdentSameFlankAll",
+          keyImg: 'taskShapeIdentSameFlankAll',
           typeSizeImg: TypeSize.LARGE,
           borderImg: true,
         },
-        "@eval-task-shape-ident",
+        '@eval-task-shape-ident',
       ),
     );
 
-    timeline.push(t_instructionTech({}, "@eval-slow-trials"));
+    timeline.push(t_instructionTech({}, '@eval-slow-trials'));
 
     // const metaparamsShapeIdent = {
     //   typeTask: TypeTask.SHAPE_IDENT,
@@ -1328,9 +1223,9 @@ export const t_timelineDef = () => {
 
     const metaparamsShapeIdent = {
       typeTask: TypeTask.SHAPE_IDENT,
-      namesStim: ["butterfly", "car", "duck", "heart", "rocket"],
+      namesStim: ['butterfly', 'car', 'duck', 'heart', 'rocket'],
       _sameFlank: true,
-      _nameFlank: "cloud",
+      _nameFlank: 'cloud',
     };
 
     timeline.push(
@@ -1342,7 +1237,7 @@ export const t_timelineDef = () => {
         },
         info: {
           stageAssessment: AssessmentStage.PRACTICE,
-          nameBlock: "shape-ident-practice",
+          nameBlock: 'shape-ident-practice',
         },
       }),
     );
@@ -1352,14 +1247,14 @@ export const t_timelineDef = () => {
       }),
     );
 
-    timeline.push(t_instructionTech({}, "@eval-fast-trials"));
+    timeline.push(t_instructionTech({}, '@eval-fast-trials'));
 
     timeline.push(
       t_setParamsBlockCr({
         metaparams: metaparamsShapeIdent,
         info: {
           stageAssessment: AssessmentStage.TEST,
-          nameBlock: "shape-ident-test",
+          nameBlock: 'shape-ident-test',
         },
       }),
     );
@@ -1370,7 +1265,7 @@ export const t_timelineDef = () => {
       timeline.push(
         tr.t_initSummary({
           title: "Bouma's coefficient",
-          labelY: "coefficient",
+          labelY: 'coefficient',
         }),
       );
     }
@@ -1392,21 +1287,21 @@ export const t_timelineDef = () => {
     timeline.push(
       t_instructionTech(
         {
-          keyImg: "taskShapeCompareRefSameFlankAll",
+          keyImg: 'taskShapeCompareRefSameFlankAll',
           typeSizeImg: TypeSize.LARGE,
           borderImg: true,
         },
-        "@eval-task-shape-compare-ref",
+        '@eval-task-shape-compare-ref',
       ),
     );
 
-    timeline.push(t_instructionTech({}, "@eval-slow-trials"));
+    timeline.push(t_instructionTech({}, '@eval-slow-trials'));
 
     const metaparamsShapeCompareRef = {
       typeTask: TypeTask.SHAPE_COMPARE_REF,
-      namesStim: ["butterfly", "car", "duck", "heart", "rocket"],
+      namesStim: ['butterfly', 'car', 'duck', 'heart', 'rocket'],
       _sameFlank: true,
-      _nameFlank: "cloud",
+      _nameFlank: 'cloud',
     };
 
     timeline.push(
@@ -1418,7 +1313,7 @@ export const t_timelineDef = () => {
         },
         info: {
           stageAssessment: AssessmentStage.PRACTICE,
-          nameBlock: "shape-compare-ref-practice",
+          nameBlock: 'shape-compare-ref-practice',
         },
       }),
     );
@@ -1428,14 +1323,14 @@ export const t_timelineDef = () => {
       }),
     );
 
-    timeline.push(t_instructionTech({}, "@eval-fast-trials"));
+    timeline.push(t_instructionTech({}, '@eval-fast-trials'));
 
     timeline.push(
       t_setParamsBlockCr({
         metaparams: metaparamsShapeCompareRef,
         info: {
           stageAssessment: AssessmentStage.TEST,
-          nameBlock: "shape-compare-ref-test",
+          nameBlock: 'shape-compare-ref-test',
         },
       }),
     );
@@ -1446,7 +1341,7 @@ export const t_timelineDef = () => {
       timeline.push(
         tr.t_initSummary({
           title: "Bouma's coefficient",
-          labelY: "coefficient",
+          labelY: 'coefficient',
         }),
       );
     }
@@ -1468,20 +1363,20 @@ export const t_timelineDef = () => {
     timeline.push(
       t_instructionTech(
         {
-          keyImg: "taskShapeCompareLrSameFlankAll",
+          keyImg: 'taskShapeCompareLrSameFlankAll',
           typeSizeImg: TypeSize.LARGE,
           borderImg: true,
         },
-        "@eval-task-shape-compare-lr",
+        '@eval-task-shape-compare-lr',
       ),
     );
 
-    timeline.push(t_instructionTech({}, "@eval-slow-trials"));
+    timeline.push(t_instructionTech({}, '@eval-slow-trials'));
 
     const metaparamsShapeCompareLr = {
       typeTask: TypeTask.SHAPE_COMPARE_LR,
-      namesStim: ["butterfly", "car", "duck", "heart", "rocket"],
-      _nameFlank: "cloud",
+      namesStim: ['butterfly', 'car', 'duck', 'heart', 'rocket'],
+      _nameFlank: 'cloud',
       _sameFlank: true,
       // showFlankHor: false,
     };
@@ -1495,7 +1390,7 @@ export const t_timelineDef = () => {
         },
         info: {
           stageAssessment: AssessmentStage.PRACTICE,
-          nameBlock: "shape-compare-lr-practice",
+          nameBlock: 'shape-compare-lr-practice',
         },
       }),
     );
@@ -1505,14 +1400,14 @@ export const t_timelineDef = () => {
       }),
     );
 
-    timeline.push(t_instructionTech({}, "@eval-fast-trials"));
+    timeline.push(t_instructionTech({}, '@eval-fast-trials'));
 
     timeline.push(
       t_setParamsBlockCr({
         metaparams: metaparamsShapeCompareLr,
         info: {
           stageAssessment: AssessmentStage.TEST,
-          nameBlock: "shape-compare-lr-test",
+          nameBlock: 'shape-compare-lr-test',
         },
       }),
     );
@@ -1523,7 +1418,7 @@ export const t_timelineDef = () => {
       timeline.push(
         tr.t_initSummary({
           title: "Bouma's coefficient",
-          labelY: "coefficient",
+          labelY: 'coefficient',
         }),
       );
     }
@@ -1545,19 +1440,19 @@ export const t_timelineDef = () => {
     timeline.push(
       t_instructionTech(
         {
-          keyImg: "taskOrientIdentAll",
+          keyImg: 'taskOrientIdentAll',
           typeSizeImg: TypeSize.LARGE,
           borderImg: true,
         },
-        "@eval-task-orient-ident",
+        '@eval-task-orient-ident',
       ),
     );
 
-    timeline.push(t_instructionTech({}, "@eval-slow-trials"));
+    timeline.push(t_instructionTech({}, '@eval-slow-trials'));
 
     const metaparamsOrientIdent = {
       typeTask: TypeTask.ORIENT_IDENT,
-      namesStim: ["rocket", "cloud"],
+      namesStim: ['rocket', 'cloud'],
     };
 
     timeline.push(
@@ -1569,7 +1464,7 @@ export const t_timelineDef = () => {
         },
         info: {
           stageAssessment: AssessmentStage.PRACTICE,
-          nameBlock: "orient-ident-practice",
+          nameBlock: 'orient-ident-practice',
         },
       }),
     );
@@ -1580,14 +1475,14 @@ export const t_timelineDef = () => {
       }),
     );
 
-    timeline.push(t_instructionTech({}, "@eval-fast-trials"));
+    timeline.push(t_instructionTech({}, '@eval-fast-trials'));
 
     timeline.push(
       t_setParamsBlockCr({
         metaparams: metaparamsOrientIdent,
         info: {
           stageAssessment: AssessmentStage.TEST,
-          nameBlock: "orient-ident-test",
+          nameBlock: 'orient-ident-test',
         },
       }),
     );
@@ -1598,7 +1493,7 @@ export const t_timelineDef = () => {
       timeline.push(
         tr.t_initSummary({
           title: "Bouma's coefficient",
-          labelY: "coefficient",
+          labelY: 'coefficient',
         }),
       );
     }
@@ -1848,37 +1743,31 @@ export const t_timelineDef = () => {
     // SURVEY
     // =====================================================
 
-    timeline.push(t_instructionTech({}, "@eval-take-survey"));
+    timeline.push(t_instructionTech({}, '@eval-take-survey'));
 
     const paramsSurvey = {
-      titlesCol: ["Very easy", "Easy", "Medium", "Hard", "Very hard"],
-      namesRow: [
-        "shape-ident",
-        "shape-compare-ref",
-        "shape-compare-lr",
-        "orient-ident",
-      ],
+      titlesCol: ['Very easy', 'Easy', 'Medium', 'Hard', 'Very hard'],
+      namesRow: ['shape-ident', 'shape-compare-ref', 'shape-compare-lr', 'orient-ident'],
       keysImgRow: [
-        "taskShapeIdentSameFlankAll",
-        "taskShapeCompareRefSameFlankAll",
-        "taskShapeCompareLrSameFlankAll",
-        "taskOrientIdentAll",
+        'taskShapeIdentSameFlankAll',
+        'taskShapeCompareRefSameFlankAll',
+        'taskShapeCompareLrSameFlankAll',
+        'taskOrientIdentAll',
       ], // []
     };
 
     const paramsSurveyDifficult = {
       ...paramsSurvey,
-      title: "How easy was each task?",
-      subtitle: "Consider your level of frustration",
-      nameSurvey: "survey-difficult",
+      title: 'How easy was each task?',
+      subtitle: 'Consider your level of frustration',
+      nameSurvey: 'survey-difficult',
     };
 
     const paramsSurveyAwkward = {
       ...paramsSurvey,
-      title:
-        "How easy was it to map your answer to the response buttons or keys?",
-      subtitle: "Consider the cognitive or motor effort required",
-      nameSurvey: "survey-awkward",
+      title: 'How easy was it to map your answer to the response buttons or keys?',
+      subtitle: 'Consider the cognitive or motor effort required',
+      nameSurvey: 'survey-awkward',
     };
 
     timeline.push(t_surveyRatingRadio(paramsSurveyDifficult));
@@ -1886,13 +1775,13 @@ export const t_timelineDef = () => {
     timeline.push(t_surveyRatingRadio(paramsSurveyAwkward));
 
     const paramsSurveyText = {
-      title: "Please share any additional comments",
-      nameSurvey: "survey-comments",
+      title: 'Please share any additional comments',
+      nameSurvey: 'survey-comments',
     };
 
     timeline.push(t_surveyText(paramsSurveyText));
 
-    timeline.push(t_instructionTech({}, "@eval-end-screen"));
+    timeline.push(t_instructionTech({}, '@eval-end-screen'));
   }
 
   timeline.push(tr.t_exitFullscreen());

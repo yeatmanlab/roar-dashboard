@@ -1,5 +1,5 @@
 /**
- * Seed script for ROAV Apps (roav-mp, roav-rvp) tasks and variants.
+ * Seed script for ROAV Apps (roav-mp, roav-rvp, roav-cr) tasks and variants.
  *
  * Reads variant definitions from the file at TASK_VARIANT_PARAMETERS_FILE (required).
  * The file is a JSON array where each entry has a variantName and a params object whose
@@ -26,8 +26,8 @@ import { roavApps } from '@roar-platform/assessment-schema';
 import * as CoreDbSchema from '../src/db/schema/core';
 import { tasks, taskVariants, taskVariantParameters } from '../src/db/schema/core';
 
-const { ROAV_MP_TASK_ID, ROAV_RVP_TASK_ID } = roavApps;
-type RoavAppsTaskId = typeof ROAV_MP_TASK_ID | typeof ROAV_RVP_TASK_ID;
+const { ROAV_MP_TASK_ID, ROAV_RVP_TASK_ID, ROAV_CR_TASK_ID } = roavApps;
+type RoavAppsTaskId = typeof ROAV_MP_TASK_ID | typeof ROAV_RVP_TASK_ID | typeof ROAV_CR_TASK_ID;
 
 // ─── Task metadata ────────────────────────────────────────────────────────────
 
@@ -41,6 +41,11 @@ const TASK_META = {
     name: 'Rapid Visual Processing',
     nameSimple: 'RVP',
     nameTechnical: 'Rapid Online Assessment of Vision — Rapid Visual Processing',
+  },
+  [ROAV_CR_TASK_ID]: {
+    name: 'Crowding',
+    nameSimple: 'Crowding',
+    nameTechnical: 'Rapid Online Assessment of Vision — Crowding',
   },
 } as const satisfies Record<RoavAppsTaskId, { name: string; nameSimple: string; nameTechnical: string }>;
 

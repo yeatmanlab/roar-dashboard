@@ -1,23 +1,16 @@
 /* eslint-disable no-underscore-dangle */
-import jsPsychCallFunction from "@jspsych/plugin-call-function";
-import { ET_SESSION_KEYS as SK } from "./et_sessionKeys";
-import { AssessmentStage } from "../shared/helpers/namingHelpers";
-import { sessionGet } from "../shared/helpers/sessionHelpers";
-import { jsPsych } from "../shared/helpers/taskSetup";
-import { CALIBR_ET_DEF, CALIBR_VD_DEF } from "./et_constants";
+import jsPsychCallFunction from '@jspsych/plugin-call-function';
+import { ET_SESSION_KEYS as SK } from './et_sessionKeys';
+import { AssessmentStage } from '../shared/helpers/namingHelpers';
+import { sessionGet } from '../shared/helpers/sessionHelpers';
+import { jsPsych } from '../shared/helpers/taskSetup';
+import { CALIBR_ET_DEF, CALIBR_VD_DEF } from './et_constants';
 
 // TODO:
 // SUPER IMPORTANT: figure out when we are saving ---
 // we might not be runnign ET at all, only FM to estimate distance
 
-const KEYS_SNAPSHOT_MIN = [
-  "vdCur",
-  "timeStartFm",
-  "xyTargFm",
-  "xyModel",
-  "xyPred",
-  "xyPredPx",
-];
+const KEYS_SNAPSHOT_MIN = ['vdCur', 'timeStartFm', 'xyTargFm', 'xyModel', 'xyPred', 'xyPredPx'];
 
 export const et_paramsSnapsotDef = {
   saveLandmarks: false,
@@ -226,18 +219,10 @@ export const et_stateSnapshot = (paramsIn = {}) => {
     // imgScaledEyeR: params.saveImgScaledEye ? state.canvasScaledEyeR?.getContext('2d').getImageData(0, 0, state.canvasScaledEyeR.width, state.canvasScaledEyeR.height) ?? null : null,
 
     // with compression, but takes very LONG time
-    imgNativeEyeL: params.saveImgNativeEye
-      ? state.canvasNativeEyeL?.toDataURL("image/png") ?? null
-      : null,
-    imgNativeEyeR: params.saveImgNativeEye
-      ? state.canvasNativeEyeR?.toDataURL("image/png") ?? null
-      : null,
-    imgScaledEyeL: params.saveImgScaledEye
-      ? state.canvasScaledEyeL?.toDataURL("image/png") ?? null
-      : null,
-    imgScaledEyeR: params.saveImgScaledEye
-      ? state.canvasScaledEyeR?.toDataURL("image/png") ?? null
-      : null,
+    imgNativeEyeL: params.saveImgNativeEye ? (state.canvasNativeEyeL?.toDataURL('image/png') ?? null) : null,
+    imgNativeEyeR: params.saveImgNativeEye ? (state.canvasNativeEyeR?.toDataURL('image/png') ?? null) : null,
+    imgScaledEyeL: params.saveImgScaledEye ? (state.canvasScaledEyeL?.toDataURL('image/png') ?? null) : null,
+    imgScaledEyeR: params.saveImgScaledEye ? (state.canvasScaledEyeR?.toDataURL('image/png') ?? null) : null,
   };
   return snapshot;
 };
@@ -246,9 +231,7 @@ export const et_stateSnapshotsToMin = (snapshots) => {
   if (!snapshots) {
     return null;
   }
-  const snapshotsMin = snapshots.map((s) =>
-    Object.fromEntries(KEYS_SNAPSHOT_MIN.map((k) => [k, s[k]])),
-  );
+  const snapshotsMin = snapshots.map((s) => Object.fromEntries(KEYS_SNAPSHOT_MIN.map((k) => [k, s[k]])));
   return snapshotsMin;
 };
 
@@ -337,9 +320,9 @@ export const et_stateSnapshotsToMinArrays = (snapshots) => {
 // TODO: update all of that
 
 export const et_TypeSaveSnapshots = {
-  NONE: "none",
-  MIN: "min",
-  FULL: "full",
+  NONE: 'none',
+  MIN: 'min',
+  FULL: 'full',
 };
 
 export const et_stateInfoSave = (saveCal, typeSaveSnapshots) => {
@@ -374,20 +357,17 @@ export const t_et_stateSave = (paramsIn) => {
   let idTrialSave = null;
   let infoSave = null;
   let url = null;
-  const tagTrial = "et-state-save";
+  const tagTrial = 'et-state-save';
   return {
     type: jsPsychCallFunction,
     async: true,
     func: async (done) => {
-      idTrialSave =
-        typeof params.idTrialSaveOrFn === "function"
-          ? params.idTrialSaveOrFn()
-          : params.idTrialSaveOrFn;
+      idTrialSave = typeof params.idTrialSaveOrFn === 'function' ? params.idTrialSaveOrFn() : params.idTrialSaveOrFn;
       infoSave = et_stateInfoSave(params.saveCal, params.typeSaveSnapshots);
 
       if (params.requestUpload) {
         const blob = new Blob([JSON.stringify(infoSave)], {
-          type: "application/json",
+          type: 'application/json',
         });
         try {
           url = await state.firekit.uploadFileOrBlobToStorage({
@@ -398,7 +378,7 @@ export const t_et_stateSave = (paramsIn) => {
           });
         } catch (e) {
           // eslint-disable-next-line no-console
-          console.error("ET: error uploading state:", e);
+          console.error('ET: error uploading state:', e);
         }
       }
       done();
@@ -408,9 +388,9 @@ export const t_et_stateSave = (paramsIn) => {
       const debugSave = false;
       if (debugSave) {
         const blob = new Blob([JSON.stringify(infoSave)], {
-          type: "application/json",
+          type: 'application/json',
         });
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = `${idTrialSave}.json`;
         a.click();

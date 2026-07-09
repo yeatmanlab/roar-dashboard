@@ -5,7 +5,7 @@
 // The model is emitted to `dist/et/eyetracking_google.onnx` by the build's copy step
 // (rollup-plugin-copy / CopyWebpackPlugin) and fetched at runtime from the absolute path
 // below — not imported here, so both bundlers can process this worker identically.
-import { Tensor, InferenceSession, env } from "onnxruntime-web";
+import { Tensor, InferenceSession, env } from 'onnxruntime-web';
 
 /** @type {InferenceSession} The ONNX inference session */
 let myOnnxSession;
@@ -31,9 +31,9 @@ async function loadModel() {
     },
   );
   */
-  myOnnxSession = await InferenceSession.create("/et/eyetracking_google.onnx", {
-    executionProviders: ["wasm"],
-    graphOptimizationLevel: "all",
+  myOnnxSession = await InferenceSession.create('/et/eyetracking_google.onnx', {
+    executionProviders: ['wasm'],
+    graphOptimizationLevel: 'all',
   });
 }
 
@@ -41,11 +41,11 @@ async function loadModel() {
 loadModel()
   .then(() => {
     // eslint-disable-next-line no-console
-    console.log("Model loaded successfully");
+    console.log('Model loaded successfully');
   })
   .catch((err) => {
     // eslint-disable-next-line no-console
-    console.error("Failed to load model:", err);
+    console.error('Failed to load model:', err);
   });
 
 /**
@@ -65,9 +65,9 @@ onmessage = async function (e) {
       await loadModel();
     }
 
-    const input1 = new Tensor("float32", e.data.input1.data, [1, 3, 128, 128]);
-    const input2 = new Tensor("float32", e.data.input2.data, [1, 3, 128, 128]);
-    const kpsTensor = new Tensor("float32", e.data.kpsTensor.data, [1, 8]);
+    const input1 = new Tensor('float32', e.data.input1.data, [1, 3, 128, 128]);
+    const input2 = new Tensor('float32', e.data.input2.data, [1, 3, 128, 128]);
+    const kpsTensor = new Tensor('float32', e.data.kpsTensor.data, [1, 8]);
 
     const result = await myOnnxSession.run({
       input1: input1,
@@ -77,7 +77,7 @@ onmessage = async function (e) {
     postMessage(result);
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error("[Worker]: Error processing message", error);
+    console.error('[Worker]: Error processing message', error);
     // Consider posting back an error message or error code as needed
     postMessage({ error: error.message });
   }

@@ -1,24 +1,21 @@
-import jsPsychCallFunction from "@jspsych/plugin-call-function";
-import jsPsychHtmlButtonResponse from "@jspsych/plugin-html-button-response";
-import { PolynomialRegression } from "ml-regression-polynomial";
-import jsPsychAudioMultiResponse from "@jspsych-contrib/plugin-audio-multi-response";
-import { mediaAssets } from "../shared/helpers/mediaAssets";
-import { ET_SESSION_KEYS as SK } from "./et_sessionKeys";
-import { ET } from "./et_constants";
+import jsPsychCallFunction from '@jspsych/plugin-call-function';
+import jsPsychHtmlButtonResponse from '@jspsych/plugin-html-button-response';
+import { PolynomialRegression } from 'ml-regression-polynomial';
+import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
+import { mediaAssets } from '../shared/helpers/mediaAssets';
+import { ET_SESSION_KEYS as SK } from './et_sessionKeys';
+import { ET } from './et_constants';
 import {
   model_prepareInput,
   model_xyModel,
   model_xyModelToPred,
   model_xyPredToPredPx,
   // collectCoordinates,
-} from "./et_etModelHelpers";
-import { jsPsych } from "../shared/helpers/taskSetup";
+} from './et_etModelHelpers';
+import { jsPsych } from '../shared/helpers/taskSetup';
 // The eyetracking_google.onnx model is emitted by the build's copy step and fetched at
 // runtime by et_worker.js — not imported here (rollup can't parse a raw .onnx module).
-import {
-  fm_def_beforeSendToFm,
-  fm_def_fillStateOnResultsFm,
-} from "./et_fmHelpers";
+import { fm_def_beforeSendToFm, fm_def_fillStateOnResultsFm } from './et_fmHelpers';
 import {
   et_paramsSnapsotDef,
   et_stateResetOngoing,
@@ -26,7 +23,7 @@ import {
   et_TypeSaveSnapshots,
   state,
   t_et_stateSave,
-} from "./et_state";
+} from './et_state';
 import {
   et_videoInit,
   et_videoPause,
@@ -36,14 +33,10 @@ import {
   et_videoValid,
   t_et_videoRecordStart,
   // et_videoStop,
-} from "./et_videoHelpers";
-import { ht_def_fillStateOnResultsFm } from "./et_htHelpers";
-import {
-  fillTextKeyValuesDef,
-  TAG_REQ_DEF,
-  TypeKey,
-} from "../shared/helpers/namingHelpers";
-import { sessionGet } from "../shared/helpers/sessionHelpers";
+} from './et_videoHelpers';
+import { ht_def_fillStateOnResultsFm } from './et_htHelpers';
+import { fillTextKeyValuesDef, TAG_REQ_DEF, TypeKey } from '../shared/helpers/namingHelpers';
+import { sessionGet } from '../shared/helpers/sessionHelpers';
 
 // WARNINGS:
 // - ET calibration - should calibrate from resFm.image (FM) not from video that might have advanced (crops according to face mesh but image from video)
@@ -52,19 +45,19 @@ import { sessionGet } from "../shared/helpers/sessionHelpers";
 // - gap (burst) is recorded in inference?
 
 export const et_TypeDecor = {
-  NONE: "none",
-  STRIPES_LR: "stripes-lr",
+  NONE: 'none',
+  STRIPES_LR: 'stripes-lr',
 };
 
 export const et_TypeModel = {
-  NONE: "none",
-  AT_CROPS_BBS: "at-crops-bbs",
+  NONE: 'none',
+  AT_CROPS_BBS: 'at-crops-bbs',
 };
 
 export const et_paramsDecorDef = {
   typeDecor: et_TypeDecor.STRIPES_LR,
   widthStripe: 5, // % of window width // TODO: maybe should be on % of screen width?
-  clrStripe: "#0000ff",
+  clrStripe: '#0000ff',
 };
 
 export const et_paramsLayoutDef = {
@@ -81,16 +74,16 @@ export function et_etCreateDecor(paramsDecorIn) {
     ...paramsDecorIn,
   };
   if (paramsDecor.typeDecor === et_TypeDecor.STRIPES_LR) {
-    const elStripeL = document.createElement("div");
-    elStripeL.id = "id-et-stripe-l";
-    elStripeL.className = "et-stripe-l";
+    const elStripeL = document.createElement('div');
+    elStripeL.id = 'id-et-stripe-l';
+    elStripeL.className = 'et-stripe-l';
     elStripeL.style.width = `${paramsDecor.widthStripe}vw`;
     elStripeL.style.background = paramsDecor.clrStripe;
     document.body.appendChild(elStripeL);
 
-    const elStripeR = document.createElement("div");
-    elStripeR.id = "id-et-stripe-r";
-    elStripeR.className = "et-stripe-r";
+    const elStripeR = document.createElement('div');
+    elStripeR.id = 'id-et-stripe-r';
+    elStripeR.className = 'et-stripe-r';
     elStripeR.style.width = `${paramsDecor.widthStripe}vw`;
     elStripeR.style.background = paramsDecor.clrStripe;
     document.body.appendChild(elStripeR);
@@ -106,39 +99,39 @@ export function et_etCreateLayout(paramsIn) {
 
   if (params.showGaze) {
     if (!state.elMarkGaze) {
-      const elMarkGaze = document.createElement("div");
-      elMarkGaze.id = "id-et-mark-gaze";
-      elMarkGaze.className = "et-mark-gaze";
+      const elMarkGaze = document.createElement('div');
+      elMarkGaze.id = 'id-et-mark-gaze';
+      elMarkGaze.className = 'et-mark-gaze';
       document.body.appendChild(elMarkGaze);
       state.elMarkGaze = elMarkGaze;
     }
-    state.elMarkGaze.style.display = params.showGaze ? "block" : "none";
+    state.elMarkGaze.style.display = params.showGaze ? 'block' : 'none';
   } else {
     state.elMarkGaze = null;
   }
 
   if (!state.canvasNativeEyeL) {
-    state.canvasNativeEyeL = document.createElement("canvas");
-    state.canvasNativeEyeL.id = "id-et-canvas-native-eye-l";
-    state.canvasNativeEyeL.className = "et-canvas-eye";
+    state.canvasNativeEyeL = document.createElement('canvas');
+    state.canvasNativeEyeL.id = 'id-et-canvas-native-eye-l';
+    state.canvasNativeEyeL.className = 'et-canvas-eye';
   }
 
   if (!state.canvasScaledEyeL) {
-    state.canvasScaledEyeL = document.createElement("canvas");
-    state.canvasScaledEyeL.id = "id-et-canvas-scaled-eye-l";
-    state.canvasScaledEyeL.className = "et-canvas-eye";
+    state.canvasScaledEyeL = document.createElement('canvas');
+    state.canvasScaledEyeL.id = 'id-et-canvas-scaled-eye-l';
+    state.canvasScaledEyeL.className = 'et-canvas-eye';
   }
 
   if (!state.canvasNativeEyeR) {
-    state.canvasNativeEyeR = document.createElement("canvas");
-    state.canvasNativeEyeR.id = "id-et-canvas-native-eye-r";
-    state.canvasNativeEyeR.className = "et-canvas-eye";
+    state.canvasNativeEyeR = document.createElement('canvas');
+    state.canvasNativeEyeR.id = 'id-et-canvas-native-eye-r';
+    state.canvasNativeEyeR.className = 'et-canvas-eye';
   }
 
   if (!state.canvasScaledEyeR) {
-    state.canvasScaledEyeR = document.createElement("canvas");
-    state.canvasScaledEyeR.id = "id-et-canvas-scaled-eye-r";
-    state.canvasScaledEyeR.className = "et-canvas-eye";
+    state.canvasScaledEyeR = document.createElement('canvas');
+    state.canvasScaledEyeR.id = 'id-et-canvas-scaled-eye-r';
+    state.canvasScaledEyeR.className = 'et-canvas-eye';
   }
   // TODO: check 100000000 times about mirroring
   // TODO: temporary, it should not be here --- canvases have IDS can be positioned wheever by a caller
@@ -151,25 +144,25 @@ export function et_etCreateLayout(paramsIn) {
     const sizeCanvas = ET.ET.SIZE_IMG_EYE_MODEL;
     state.canvasScaledEyeL.style.top = 0;
     state.canvasScaledEyeL.style.left = 0;
-    state.canvasScaledEyeL.style.transform = "scaleX(-1)";
+    state.canvasScaledEyeL.style.transform = 'scaleX(-1)';
 
     state.canvasScaledEyeR.style.top = 0;
     state.canvasScaledEyeR.style.left = `${sizeCanvas}px`;
-    state.canvasScaledEyeR.style.transform = "scaleX(-1)";
+    state.canvasScaledEyeR.style.transform = 'scaleX(-1)';
 
     state.canvasNativeEyeL.style.top = `${sizeCanvas}px`;
     state.canvasNativeEyeL.style.left = 0;
-    state.canvasNativeEyeL.style.transform = "scaleX(-1)";
+    state.canvasNativeEyeL.style.transform = 'scaleX(-1)';
 
     state.canvasNativeEyeR.style.top = `${sizeCanvas}px`;
     state.canvasNativeEyeR.style.left = `${sizeCanvas}px`;
-    state.canvasNativeEyeR.style.transform = "scaleX(-1)";
+    state.canvasNativeEyeR.style.transform = 'scaleX(-1)';
   }
 }
 
 export const et_etRemoveDecor = () => {
-  document.getElementById("id-et-stripe-l")?.remove();
-  document.getElementById("id-et-stripe-r")?.remove();
+  document.getElementById('id-et-stripe-l')?.remove();
+  document.getElementById('id-et-stripe-r')?.remove();
 };
 
 export const et_etRemoveLayout = () => {
@@ -241,7 +234,7 @@ async function et_etRunIteration() {
   } else {
     try {
       if (!state.coordsEyeL || !state.coordsEyeR) {
-        throw new Error("ET: no face detected");
+        throw new Error('ET: no face detected');
       }
       const inputModel = model_prepareInput();
       state.workerONNX.postMessage(inputModel);
@@ -268,19 +261,16 @@ export const et_etInit = (
     state.workerONNX = null;
   } else {
     if (!state.workerONNX) {
-      state.workerONNX = new Worker(
-        new URL("./et_worker.js", import.meta.url),
-        {
-          type: "module",
-        },
-      );
+      state.workerONNX = new Worker(new URL('./et_worker.js', import.meta.url), {
+        type: 'module',
+      });
     }
     // state.workerONNX.onmessage = async (e) => {
     state.workerONNX.onmessage = (e) => {
       // @@NEW - removed async
       if (e.data.error) {
         // eslint-disable-next-line no-console
-        console.error("ET: error from worker:", e.data.error);
+        console.error('ET: error from worker:', e.data.error);
       } else {
         onResultsModel(e.data);
       }
@@ -315,8 +305,8 @@ export const et_etStart = () => {
 // @new - begin
 export const et_etWorkerPreload = () => {
   if (!state.workerONNX) {
-    state.workerONNX = new Worker(new URL("./et_worker.js", import.meta.url), {
-      type: "module",
+    state.workerONNX = new Worker(new URL('./et_worker.js', import.meta.url), {
+      type: 'module',
     });
     state.workerONNX.onmessage = () => {};
   }
@@ -482,22 +472,22 @@ export const t_et_etWorkerStopFull = () => ({
 //
 // AAAAAAAAAAAAA
 
-const tagTrialEtCalibr = "et-calibr";
+const tagTrialEtCalibr = 'et-calibr';
 
 // TODO: why is it 65????????? (and not 75)? why is (50, 50) commented out
 export const et_paramsCalibrDef = (tagReq = TAG_REQ_DEF) => ({
   tagReq: tagReq,
   showLog: true, // TODO: should be false
   playAudio: false,
-  keyAudioInstrPre: [tagTrialEtCalibr, tagReq, "instr-pre"],
-  keyAudioCalibr: [tagTrialEtCalibr, tagReq, "calibr"],
+  keyAudioInstrPre: [tagTrialEtCalibr, tagReq, 'instr-pre'],
+  keyAudioCalibr: [tagTrialEtCalibr, tagReq, 'calibr'],
   srcMarkFix: null,
   sizeMarkFix: 25, // this is in pixels - sub-optimal, but OK at least for now
-  classAnimFix: "et-calibr-animation-rotate",
+  classAnimFix: 'et-calibr-animation-rotate',
   showBurstGap: true,
-  classAnimGap: "", // placeholder - should take precedence over burst
+  classAnimGap: '', // placeholder - should take precedence over burst
   playAudioGap: true,
-  keyAudioGap: "sharedAudioChimeAll", // TODO: play audio at the end
+  keyAudioGap: 'sharedAudioChimeAll', // TODO: play audio at the end
   // TODO: why on earth is it 65 in Y and not 75
   locsFix: [
     { x: 25, y: 25 },
@@ -517,14 +507,14 @@ export const et_paramsCalibrDef = (tagReq = TAG_REQ_DEF) => ({
 });
 
 const et_htmlMarkFix = (srcMarkFix, widthMarkFix) => {
-  let classMarkFix = "et-mark-fix ";
+  let classMarkFix = 'et-mark-fix ';
   if (!srcMarkFix) {
-    classMarkFix += "et-mark-fix-def";
+    classMarkFix += 'et-mark-fix-def';
   }
   const styleMarkFix = `width:${widthMarkFix}px`;
-  const idMarkFix = "id-et-mark-fix";
+  const idMarkFix = 'id-et-mark-fix';
 
-  let html = "";
+  let html = '';
   if (srcMarkFix) {
     html = `<img src="${srcMarkFix}" 
       id="${idMarkFix}" 
@@ -543,26 +533,17 @@ const et_htmlMarkFix = (srcMarkFix, widthMarkFix) => {
 
 function et_createBurstEffect(x, y, sizeMarkFix, sizeBurst, durBurst) {
   const numShape = 8;
-  const container = document.createElement("div");
+  const container = document.createElement('div');
   document.body.appendChild(container);
 
   for (let iShape = 0; iShape < numShape; iShape += 1) {
-    const elBurst = document.createElement("div");
-    elBurst.classList.add(
-      "et-calibr-burst-circle",
-      "et-calibr-animation-burst",
-    );
+    const elBurst = document.createElement('div');
+    elBurst.classList.add('et-calibr-burst-circle', 'et-calibr-animation-burst');
     elBurst.style.animationDuration = `${durBurst}ms`;
     elBurst.style.left = `${x - sizeMarkFix / 2}px`;
     elBurst.style.top = `${y - sizeMarkFix / 2}px`;
-    elBurst.style.setProperty(
-      "--dx",
-      `${Math.cos((iShape / numShape) * Math.PI * 2) * sizeBurst}px`,
-    );
-    elBurst.style.setProperty(
-      "--dy",
-      `${Math.sin((iShape / numShape) * Math.PI * 2) * sizeBurst}px`,
-    );
+    elBurst.style.setProperty('--dx', `${Math.cos((iShape / numShape) * Math.PI * 2) * sizeBurst}px`);
+    elBurst.style.setProperty('--dy', `${Math.sin((iShape / numShape) * Math.PI * 2) * sizeBurst}px`);
     container.appendChild(elBurst);
   }
 
@@ -574,7 +555,7 @@ const et_applyCalibr = (arrPred, arrTarg) => {
   // alert(arrPred.length);
   if (arrPred.length < 2) {
     // eslint-disable-next-line no-console
-    console.warn("ET: not enough calibration samples:", arrPred.length);
+    console.warn('ET: not enough calibration samples:', arrPred.length);
     return;
   }
   const xxPred = arrPred.map((val) => val.x);
@@ -630,7 +611,7 @@ export const t_et_etCalibr = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
   const runMarkFixCalibr = (xLoc, yLoc) => {
     elMarkFix.style.left = `${xLoc}%`;
     elMarkFix.style.top = `${yLoc}%`;
-    elMarkFix.style.visibility = "visible";
+    elMarkFix.style.visibility = 'visible';
     if (params.classAnimGap) {
       elMarkFix.classList.remove(params.classAnimGap);
     }
@@ -654,16 +635,10 @@ export const t_et_etCalibr = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
       }
       if (params.showBurstGap) {
         setTimeout(() => {
-          elMarkFix.style.visibility = "hidden";
+          elMarkFix.style.visibility = 'hidden';
           const xPx = (xLoc / 100) * window.innerWidth;
           const yPx = (yLoc / 100) * window.innerHeight;
-          et_createBurstEffect(
-            xPx,
-            yPx,
-            params.sizeMarkFix,
-            2 * params.sizeMarkFix,
-            params.durGap,
-          );
+          et_createBurstEffect(xPx, yPx, params.sizeMarkFix, 2 * params.sizeMarkFix, params.durGap);
         }, params.durFix);
       } else if (params.classAnimGap) {
         setTimeout(() => {
@@ -687,27 +662,23 @@ export const t_et_etCalibr = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
   // conditional on audio not being null
   const trialInstrPre = {
     type: jsPsychAudioMultiResponse,
-    stimulus: () =>
-      mediaAssets.audio[params.keyAudioInstrPre] ??
-      mediaAssets.audio.sharedNullAudioAll,
-    prompt: () => "",
+    stimulus: () => mediaAssets.audio[params.keyAudioInstrPre] ?? mediaAssets.audio.sharedNullAudioAll,
+    prompt: () => '',
     on_load: () => et_etCreateDecor(params.paramsDecor),
     on_finish: () => et_etRemoveDecor(),
     keyboard_choices: () => [],
     button_choices: () => [],
-    button_html: () => "",
+    button_html: () => '',
     trial_ends_after_audio: () => true,
   };
 
   const trialCalibrate = {
     type: jsPsychAudioMultiResponse,
-    stimulus: () =>
-      mediaAssets.audio[params.keyAudioCalibr] ??
-      mediaAssets.audio.sharedNullAudioAll,
+    stimulus: () => mediaAssets.audio[params.keyAudioCalibr] ?? mediaAssets.audio.sharedNullAudioAll,
     prompt: () => htmlLayout(),
     keyboard_choices: () => [TypeKey.DUMMY],
     button_choices: () => [],
-    button_html: () => "",
+    button_html: () => '',
     trial_ends_after_audio: () => false,
     on_load: () => {
       const configEt = sessionGet(SK.CONFIG_ET);
@@ -729,22 +700,16 @@ export const t_et_etCalibr = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
       et_videoInit();
       et_videoStart();
 
-      elMarkFix = document.getElementById("id-et-mark-fix");
+      elMarkFix = document.getElementById('id-et-mark-fix');
 
       const moveMarkFix = (iLoc) => {
         const xLoc = params.locsFix[iLoc].x;
         const yLoc = params.locsFix[iLoc].y;
         runMarkFixCalibr(xLoc, yLoc);
         if (iLoc < params.locsFix.length - 1) {
-          setTimeout(
-            () => moveMarkFix(iLoc + 1),
-            params.durFix + params.durGap,
-          );
+          setTimeout(() => moveMarkFix(iLoc + 1), params.durFix + params.durGap);
         } else {
-          setTimeout(
-            () => jsPsych.pluginAPI.pressKey(TypeKey.DUMMY),
-            params.durFix + params.durGap,
-          );
+          setTimeout(() => jsPsych.pluginAPI.pressKey(TypeKey.DUMMY), params.durFix + params.durGap);
         }
       };
       moveMarkFix(0);
@@ -769,7 +734,7 @@ export const t_et_etCalibr = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
   const trialShowLog = () => ({
     type: jsPsychHtmlButtonResponse,
     stimulus: () => `<pre>${JSON.stringify(state.cal.et, null, 2)}</pre>`,
-    choices: ["OK"],
+    choices: ['OK'],
   });
 
   return {
@@ -780,8 +745,7 @@ export const t_et_etCalibr = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
       },
       {
         timeline: [trialInstrPre],
-        conditional_function: () =>
-          mediaAssets.audio[params.keyAudioInstrPre] !== null,
+        conditional_function: () => mediaAssets.audio[params.keyAudioInstrPre] !== null,
       },
       t_et_videoRecordStart(),
       trialCalibrate,
@@ -797,8 +761,7 @@ export const t_et_etCalibr = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
       },
       t_et_videoRecordSave(tagTrialEtCalibr),
     ],
-    conditional_function: () =>
-      sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.ET_CALIBRATE),
+    conditional_function: () => sessionGet(SK.VIDEO_ENABLED) && sessionGet(SK.ET_CALIBRATE),
   };
 };
 
@@ -812,23 +775,23 @@ export const t_et_etCalibr = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
 //  TEST
 // ===========================================================
 
-const tagTrialEtTest = "et-test";
+const tagTrialEtTest = 'et-test';
 
 // TODO: why is it 65????????? (and not 75)? why is (50, 50) commented out
 export const et_paramsTestDef = (tagReq = TAG_REQ_DEF) => ({
   tagReq: tagReq,
   showLog: true, // TODO: should be false
-  keyAudioTest: [tagTrialEtTest, tagReq, ""],
+  keyAudioTest: [tagTrialEtTest, tagReq, ''],
   srcMarkFix: null,
   sizeMarkFix: 25, // this is in pixels - sub-optimal, but OK at least for now
-  classAnimFix: "et-calibr-animation-rotate",
+  classAnimFix: 'et-calibr-animation-rotate',
   showBurstGap: true,
-  classAnimGap: "", // placeholder - should take precedence over burst
+  classAnimGap: '', // placeholder - should take precedence over burst
   playAudioGap: true,
-  keyAudioGap: "sharedAudioChimeAll",
+  keyAudioGap: 'sharedAudioChimeAll',
   // textBtnTest: [tagTrialEtTest, tagReq, "text-button-test"],
-  textBtnTest: "TEST",
-  textBtnNext: "NEXT",
+  textBtnTest: 'TEST',
+  textBtnNext: 'NEXT',
   locsFix: [
     { x: 25, y: 25 },
     { x: 50, y: 50 },
@@ -863,7 +826,7 @@ export const t_et_etTest = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
   };
 
   const htmlLayout = () => {
-    const strVisLog = `visibility: ${params.showLog ? "visible" : "hidden"}`;
+    const strVisLog = `visibility: ${params.showLog ? 'visible' : 'hidden'}`;
     const htmlMarkFix = et_htmlMarkFix(params.srcMarkFix, params.sizeMarkFix);
     const html = `
       <div id="id-log" style="${strVisLog}" class="roav-card-log"></div>
@@ -883,7 +846,7 @@ export const t_et_etTest = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
   const runMarkFixTest = (xLoc, yLoc) => {
     elMarkFix.style.left = `${xLoc}%`;
     elMarkFix.style.top = `${yLoc}%`;
-    elMarkFix.style.visibility = "visible";
+    elMarkFix.style.visibility = 'visible';
     if (params.classAnimGap) {
       elMarkFix.classList.remove(params.classAnimGap);
     }
@@ -899,16 +862,10 @@ export const t_et_etTest = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
       }
       if (params.showBurstGap) {
         setTimeout(() => {
-          elMarkFix.style.visibility = "hidden";
+          elMarkFix.style.visibility = 'hidden';
           const xPx = (xLoc / 100) * window.innerWidth;
           const yPx = (yLoc / 100) * window.innerHeight;
-          et_createBurstEffect(
-            xPx,
-            yPx,
-            params.sizeMarkFix,
-            2 * params.sizeMarkFix,
-            params.durGap,
-          );
+          et_createBurstEffect(xPx, yPx, params.sizeMarkFix, 2 * params.sizeMarkFix, params.durGap);
         }, params.durFix);
       } else if (params.classAnimGap) {
         setTimeout(() => {
@@ -921,13 +878,11 @@ export const t_et_etTest = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
 
   const trialTest = {
     type: jsPsychAudioMultiResponse,
-    stimulus: () =>
-      mediaAssets.audio[params.keyAudioTest] ??
-      mediaAssets.audio.sharedNullAudioAll,
+    stimulus: () => mediaAssets.audio[params.keyAudioTest] ?? mediaAssets.audio.sharedNullAudioAll,
     prompt: () => htmlLayout(),
     keyboard_choices: () => [TypeKey.DUMMY],
     button_choices: () => [],
-    button_html: () => "",
+    button_html: () => '',
     trial_ends_after_audio: () => false,
     on_load: () => {
       et_stateResetSnapshots();
@@ -949,10 +904,10 @@ export const t_et_etTest = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
       et_videoInit();
       et_videoStart();
 
-      const elLog = document.getElementById("id-log");
+      const elLog = document.getElementById('id-log');
       elLog.innerHTML = `<pre>${JSON.stringify(state.cal.et, null, 2)}</pre>`;
 
-      elMarkFix = document.getElementById("id-et-mark-fix");
+      elMarkFix = document.getElementById('id-et-mark-fix');
 
       const callbackOnBtnTestPress = () => {
         const moveMarkFix = (iLoc) => {
@@ -960,22 +915,17 @@ export const t_et_etTest = (paramsIn = {}, tagReq = TAG_REQ_DEF) => {
           const yLoc = params.locsFix[iLoc].y;
           runMarkFixTest(xLoc, yLoc);
           if (iLoc < params.locsFix.length - 1) {
-            setTimeout(
-              () => moveMarkFix(iLoc + 1),
-              params.durFix + params.durGap,
-            );
+            setTimeout(() => moveMarkFix(iLoc + 1), params.durFix + params.durGap);
           }
         };
         moveMarkFix(0);
       };
 
-      const btnTest = document.getElementById("id-button-test");
-      btnTest.addEventListener("click", callbackOnBtnTestPress);
+      const btnTest = document.getElementById('id-button-test');
+      btnTest.addEventListener('click', callbackOnBtnTestPress);
 
-      const btnNext = document.getElementById("id-button-next");
-      btnNext.addEventListener("click", () =>
-        jsPsych.pluginAPI.pressKey(TypeKey.DUMMY),
-      );
+      const btnNext = document.getElementById('id-button-next');
+      btnNext.addEventListener('click', () => jsPsych.pluginAPI.pressKey(TypeKey.DUMMY));
 
       et_etStart();
       // TODO: make sure that I can coordinate between timestamps

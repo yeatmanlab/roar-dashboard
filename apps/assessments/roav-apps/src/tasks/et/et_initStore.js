@@ -1,5 +1,5 @@
-import { sessionSet } from "../shared/helpers/sessionHelpers";
-import { ET_SESSION_KEYS as SK } from "./et_sessionKeys";
+import { sessionSet } from '../shared/helpers/sessionHelpers';
+import { ET_SESSION_KEYS as SK } from './et_sessionKeys';
 
 // TODO: figure out what should be here - see et_sessionKeys
 export const et_clearStoreOnTimelineStart = () => {

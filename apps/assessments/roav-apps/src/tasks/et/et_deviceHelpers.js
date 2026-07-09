@@ -1,13 +1,13 @@
-import jsPsychCallFunction from "@jspsych/plugin-call-function";
-import { state } from "./et_state";
-import { ET_SESSION_KEYS as SK } from "./et_sessionKeys";
-import { AssessmentStage } from "../shared/helpers/namingHelpers";
-import { sessionGet } from "../shared/helpers/sessionHelpers";
-import { jsPsych } from "../shared/helpers/taskSetup";
+import jsPsychCallFunction from '@jspsych/plugin-call-function';
+import { state } from './et_state';
+import { ET_SESSION_KEYS as SK } from './et_sessionKeys';
+import { AssessmentStage } from '../shared/helpers/namingHelpers';
+import { sessionGet } from '../shared/helpers/sessionHelpers';
+import { jsPsych } from '../shared/helpers/taskSetup';
 
 export function collectDataDeviceScreenWebcam() {
   const { navigator, screen } = window;
-  const strUnknown = "unknown";
+  const strUnknown = 'unknown';
 
   // === infoDevice
   const infoDevice = {
@@ -23,14 +23,11 @@ export function collectDataDeviceScreenWebcam() {
     gpu: strUnknown,
   };
   // --- infoDevice.gpu
-  const canvas = document.createElement("canvas");
-  const gl =
-    canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+  const canvas = document.createElement('canvas');
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
   if (gl) {
-    const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-    infoDevice.gpu = debugInfo
-      ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
-      : strUnknown;
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    infoDevice.gpu = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : strUnknown;
   }
 
   // === infoScreen
@@ -39,9 +36,8 @@ export function collectDataDeviceScreenWebcam() {
     height: screen.height,
     colorDepth: screen.colorDepth,
     pixelDepth: screen.pixelDepth,
-    retinaDisplay: window.matchMedia("(-webkit-min-device-pixel-ratio: 2)")
-      .matches,
-    landscapeOrientation: window.matchMedia("(orientation: landscape)").matches,
+    retinaDisplay: window.matchMedia('(-webkit-min-device-pixel-ratio: 2)').matches,
+    landscapeOrientation: window.matchMedia('(orientation: landscape)').matches,
   };
 
   // === infoWebcam
@@ -67,7 +63,7 @@ export function collectDataDeviceScreenWebcam() {
 // IMPORTANT: should run AFTER CAMERA is ENABLED to collect camera info
 export const t_et_collectDataDeviceScreenWebcam = () => {
   let info = null;
-  const tagTrial = "et-collect-data-device-screen-webcam";
+  const tagTrial = 'et-collect-data-device-screen-webcam';
   return {
     type: jsPsychCallFunction,
     func: () => {

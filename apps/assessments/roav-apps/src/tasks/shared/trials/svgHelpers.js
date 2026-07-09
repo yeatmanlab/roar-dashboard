@@ -1,5 +1,4 @@
-export const svgStrToSrc = (svg) =>
-  `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+export const svgStrToSrc = (svg) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 
 export const htmlImgSvgPositioned = (
   show,
@@ -12,9 +11,9 @@ export const htmlImgSvgPositioned = (
   nameClass = undefined,
 ) => {
   if (!show) {
-    return "";
+    return '';
   }
-  const htmlClass = nameClass ? `class="${nameClass}"` : "";
+  const htmlClass = nameClass ? `class="${nameClass}"` : '';
   return `
     <img
       src="${src}"
@@ -28,7 +27,7 @@ export const htmlImgSvgPositioned = (
         display:block;
         transform: translate(-50%, -50%) rotate(${degRot}deg);
         transform-origin: 50% 50%;
-        visibility: ${show ? "visible" : "hidden"}
+        visibility: ${show ? 'visible' : 'hidden'}
       "
     />
   `;
@@ -39,7 +38,7 @@ export const createSvgLineHor = (
   heightCanvas = 100,
   widthStroke = 20,
   length = 70,
-  color = "#000000",
+  color = '#000000',
 ) => {
   const x1 = (widthCanvas - length) / 2;
   const x2 = x1 + length;
@@ -56,7 +55,7 @@ export const createSvgT = (
   height = 70,
   width = 70,
   widthStroke = 20,
-  color = "#000000",
+  color = '#000000',
 ) => {
   const xHorUL = (widthCanvas - width) / 2;
   const xVertUL = (widthCanvas - widthStroke) / 2;
@@ -75,7 +74,7 @@ export const createSvgCircle = (
   heightCanvas = 100,
   widthStroke = 20,
   diameter = 70,
-  color = "#000000",
+  color = '#000000',
 ) => {
   const cx = widthCanvas / 2;
   const cy = heightCanvas / 2;
@@ -92,7 +91,7 @@ export const createSvgCircleOpen = (
   widthStroke = 20,
   diameter = 70,
   degOpen = 75,
-  color = "#000000",
+  color = '#000000',
 ) => {
   const cx = widthCanvas / 2;
   const cy = heightCanvas / 2;
@@ -122,7 +121,7 @@ export const createSvgCross = (
   widthStroke = 20,
   height = 70,
   width = 70,
-  color = "#000000",
+  color = '#000000',
 ) => {
   const xHorUL = (widthCanvas - width) / 2;
   const yHorUL = (heightCanvas - widthStroke) / 2;
@@ -144,7 +143,7 @@ export const createSvgBox = (
   widthStroke = 20,
   height = 70,
   width = 70,
-  color = "#000000",
+  color = '#000000',
 ) => {
   const xLeft = (widthCanvas - width) / 2;
   const yTop = (heightCanvas - height) / 2;
@@ -168,7 +167,7 @@ export const createSvgGrid = (
   widthStroke = 20,
   height = 70,
   width = 70,
-  color = "#000000",
+  color = '#000000',
 ) => {
   const xLeft = (widthCanvas - width) / 2;
   const yTop = (heightCanvas - height) / 2;
@@ -200,7 +199,7 @@ export const createSvgBoxOpen = (
   widthStroke = 15,
   height = 80,
   width = 80,
-  color = "#000000",
+  color = '#000000',
 ) => {
   const xLeft = (widthCanvas - width) / 2;
   const yTop = (heightCanvas - height) / 2;

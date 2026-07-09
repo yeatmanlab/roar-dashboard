@@ -10,11 +10,11 @@ export const TAG_REQ_DEF = 'def';
 
 // it is NameModule rather than NameTask, but called name task everywhere
 export const NameTask = {
-  SHARED: "shared",
-  ET: "et",
-  MP: "roav-mp",
-  RVP: "roav-rvp",
-  CR: "roav-cr",
+  SHARED: 'shared',
+  ET: 'et',
+  MP: 'roav-mp',
+  RVP: 'roav-rvp',
+  CR: 'roav-cr',
 };
 
 export const ModeGame = {
@@ -75,18 +75,12 @@ export const TypeKey = {
 };
 
 export const TypeSize = {
-  SMALL: "small",
-  MEDIUM: "medium",
-  LARGE: "large",
+  SMALL: 'small',
+  MEDIUM: 'medium',
+  LARGE: 'large',
 };
 
-export const composeKeyAsset = (
-  tagTrial,
-  tagReq,
-  descr,
-  modeGame,
-  nameTask,
-) => {
+export const composeKeyAsset = (tagTrial, tagReq, descr, modeGame, nameTask) => {
   const modeGameRes = modeGame ?? sessionGet(SK.MODE_GAME);
   const nameTaskRes = nameTask ?? sessionGet(SK.NAME_TASK);
   let keyAsset = camelCase(nameTaskRes);

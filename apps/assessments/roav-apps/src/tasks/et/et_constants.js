@@ -5,9 +5,9 @@ export const ET = {
     FPS_REQ: 60,
   },
   FM: {
-    URL_BASE: "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4",
+    URL_BASE: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4',
     // URL_BASE: "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1657299874",
-    NAME_FILE_SCRIPT: "face_mesh.min.js",
+    NAME_FILE_SCRIPT: 'face_mesh.min.js',
     CONF_DETECT_MIN: 0.5,
     CONF_TRACK_MIN: 0.5,
     TIMEOUT_START: 1000,
@@ -35,7 +35,5 @@ export const CALIBR_VD_DEF = {
   vd: ET.VD_DEF,
   flNorm: ET.FL_NORM_DEF,
   flMult: ET.VIDEO.HEIGHT_REQ,
-  sizeIris:
-    (ET.VIDEO.HEIGHT_REQ * ET.SIZE_IRIS_WORLD_DEF) /
-    (10 * ET.VD_DEF * ET.VIDEO.WIDTH_REQ), // 0.01316
+  sizeIris: (ET.VIDEO.HEIGHT_REQ * ET.SIZE_IRIS_WORLD_DEF) / (10 * ET.VD_DEF * ET.VIDEO.WIDTH_REQ), // 0.01316
 };

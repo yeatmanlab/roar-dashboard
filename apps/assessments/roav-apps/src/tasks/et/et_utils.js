@@ -19,15 +19,9 @@ export const et_calcMedianTrim = (arr, percTrimLow = 0, percTrimHigh = 0) => {
   return et_calcMedian(arrTrimmed);
 };
 
-export const et_calcMedianArrStruct = (arrStruct, key) =>
-  et_calcMedian(arrStruct.map((m) => m[key]));
+export const et_calcMedianArrStruct = (arrStruct, key) => et_calcMedian(arrStruct.map((m) => m[key]));
 
-export const et_calcMedianTrimArrStruct = (
-  arrStruct,
-  key,
-  percTrimLow = 0,
-  percTrimHigh = 0,
-) =>
+export const et_calcMedianTrimArrStruct = (arrStruct, key, percTrimLow = 0, percTrimHigh = 0) =>
   et_calcMedianTrim(
     arrStruct.map((m) => m[key]),
     percTrimLow,

@@ -1,25 +1,22 @@
-import _omitBy from "lodash/omitBy";
-import _isNull from "lodash/isNull";
-import _isUndefined from "lodash/isUndefined";
-import { getAgeData, getGrade } from "@bdelab/roar-utils";
-import i18next from "i18next";
-import { ModeGame } from "../../shared/helpers/namingHelpers";
-import { NAME_CORPUS_DEF } from "../../shared/helpers/loadCorpus";
+import _omitBy from 'lodash/omitBy';
+import _isNull from 'lodash/isNull';
+import _isUndefined from 'lodash/isUndefined';
+import { getAgeData, getGrade } from '@bdelab/roar-utils';
+import i18next from 'i18next';
+import { ModeGame } from '../../shared/helpers/namingHelpers';
+import { NAME_CORPUS_DEF } from '../../shared/helpers/loadCorpus';
 import {
   NAME_CONFIG_BLOCK_DEF,
   NAME_CONFIG_STIM_DEF,
   NAME_CONFIG_QUEST_DEF,
   NAME_CONFIG_ET_DEF,
   SUBVAR_DEF,
-} from "./cr_loadCorpus";
-import { createFirekitShim } from "../../shared/helpers/firekitShim";
+} from './cr_loadCorpus';
+import { createFirekitShim } from '../../shared/helpers/firekitShim';
 // import { makePid } from "../../shared/trials/userDataHelpers";
 
 export const cr_initConfig = async (gameParams, userParams) => {
-  const cleanParams = _omitBy(
-    _omitBy({ ...gameParams, ...userParams }, _isNull),
-    _isUndefined,
-  );
+  const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
 
   const selectModeGame = (modeGameIn, userMetadataIn) => {
     const gradeIn = getGrade(userMetadataIn.grade);
@@ -29,10 +26,7 @@ export const cr_initConfig = async (gameParams, userParams) => {
     } else if (modeGameIn === ModeGame.STANDARD) {
       modeGameRes = ModeGame.STANDARD;
     } else {
-      modeGameRes =
-        gradeIn <= 5 || gradeIn === undefined
-          ? ModeGame.GAME
-          : ModeGame.STANDARD;
+      modeGameRes = gradeIn <= 5 || gradeIn === undefined ? ModeGame.GAME : ModeGame.STANDARD;
     }
     return modeGameRes;
   };
@@ -66,7 +60,7 @@ export const cr_initConfig = async (gameParams, userParams) => {
   } = cleanParams;
 
   const ageData = getAgeData(birthMonth, birthYear, age, ageMonths);
-  if (language !== "en") {
+  if (language !== 'en') {
     await i18next.changeLanguage(language);
   }
 
@@ -80,14 +74,14 @@ export const cr_initConfig = async (gameParams, userParams) => {
     firekit: createFirekitShim({ taskId: taskName }),
     taskName: taskName,
     corpusName: corpusName || NAME_CORPUS_DEF,
-    modeGame: modeGame || "all",
-    modeGameRes: "stand", // TODO: SUPER IMPORTANT - should be cleanParams.modeGameRes,
+    modeGame: modeGame || 'all',
+    modeGameRes: 'stand', // TODO: SUPER IMPORTANT - should be cleanParams.modeGameRes,
     nameConfigStim: nameConfigStim ?? NAME_CONFIG_STIM_DEF,
     nameConfigBlock: nameConfigBlock ?? NAME_CONFIG_BLOCK_DEF,
     nameConfigQuest: nameConfigQuest ?? NAME_CONFIG_QUEST_DEF,
     nameConfigEt: nameConfigEt ?? NAME_CONFIG_ET_DEF,
     subvar: subvar ?? SUBVAR_DEF,
-    recruitment: recruitment || "dev", // "lab-eval-1", // "lab-eval" TODO: should be "school", can be "pilot" - requests PID,
+    recruitment: recruitment || 'dev', // "lab-eval-1", // "lab-eval" TODO: should be "school", can be "pilot" - requests PID,
     screenCalibrate: screenCalibrate || true, // TODO: should be false
     videoEnable: videoEnable || true, // TODO: should be false
     videoRecord: videoRecord || false, // TODO: should be false
@@ -97,10 +91,7 @@ export const cr_initConfig = async (gameParams, userParams) => {
   };
 
   const updatedGameParams = Object.fromEntries(
-    Object.entries(gameParams).map(([key, value]) => [
-      key,
-      config[key] ?? value,
-    ]),
+    Object.entries(gameParams).map(([key, value]) => [key, config[key] ?? value]),
   );
   await config.firekit.updateTaskParams(updatedGameParams);
 

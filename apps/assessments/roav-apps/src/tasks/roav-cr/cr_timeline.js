@@ -1,12 +1,12 @@
-import { jsPsych } from "../shared/helpers/taskSetup";
-import "regenerator-runtime/runtime";
-import { mapTrials } from "../shared/trials/mapTrials";
-import { cr_mapTrials } from "./trials/cr_mapTrials";
-import { t_timelineDef } from "./trials/cr_timelineDef";
-import { setTaskClassCss } from "../shared/helpers/cssHelpers";
-import { initValidationFlagsHandler } from "../shared/trials/validityHelpers";
-import { cr_clearStoreOnTimelineStart } from "./helpers/cr_initStore";
-import { et_stateSetFirekit } from "../et/et_state";
+import { jsPsych } from '../shared/helpers/taskSetup';
+import 'regenerator-runtime/runtime';
+import { mapTrials } from '../shared/trials/mapTrials';
+import { cr_mapTrials } from './trials/cr_mapTrials';
+import { t_timelineDef } from './trials/cr_timelineDef';
+import { setTaskClassCss } from '../shared/helpers/cssHelpers';
+import { initValidationFlagsHandler } from '../shared/trials/validityHelpers';
+import { cr_clearStoreOnTimelineStart } from './helpers/cr_initStore';
+import { et_stateSetFirekit } from '../et/et_state';
 
 export const cr_buildTimeline = (config) => {
   cr_clearStoreOnTimelineStart();

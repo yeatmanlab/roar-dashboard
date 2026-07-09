@@ -10,11 +10,11 @@ import { rvp_initStore } from './roav-rvp/helpers/rvp_initStore';
 import { rvp_loadCorpus } from './roav-rvp/helpers/rvp_loadCorpus';
 import rvp_assets from './roav-rvp/rvp_assets.json';
 
-import { cr_buildTimeline } from "./roav-cr/cr_timeline";
-import { cr_initConfig } from "./roav-cr/helpers/cr_initConfig";
-import { cr_initStore } from "./roav-cr/helpers/cr_initStore";
-import { cr_loadCorpus } from "./roav-cr/helpers/cr_loadCorpus";
-import cr_assets from "./roav-cr/cr_assets.json";
+import { cr_buildTimeline } from './roav-cr/cr_timeline';
+import { cr_initConfig } from './roav-cr/helpers/cr_initConfig';
+import { cr_initStore } from './roav-cr/helpers/cr_initStore';
+import { cr_loadCorpus } from './roav-cr/helpers/cr_loadCorpus';
+import cr_assets from './roav-cr/cr_assets.json';
 
 export default {
   // if temporary points to the local assets, change back
@@ -41,7 +41,7 @@ export default {
     initStore: cr_initStore,
     loadCorpus: cr_loadCorpus,
     buildTimelineTask: cr_buildTimeline,
-    bucketURI: "https://storage.googleapis.com/roav-mp/z_CR",
+    bucketURI: 'https://storage.googleapis.com/roav-mp/z_CR',
     assets: cr_assets,
     variants: {},
   },

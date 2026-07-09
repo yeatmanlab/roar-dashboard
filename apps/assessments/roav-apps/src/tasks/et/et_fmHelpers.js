@@ -1,9 +1,9 @@
-import jsPsychCallFunction from "@jspsych/plugin-call-function";
+import jsPsychCallFunction from '@jspsych/plugin-call-function';
 
 // import ndarray from "ndarray";
 // import ops from "ndarray-ops";
-import { et_stateResetOngoing, et_stateSnapshot, state } from "./et_state";
-import { ET } from "./et_constants";
+import { et_stateResetOngoing, et_stateSnapshot, state } from './et_state';
+import { ET } from './et_constants';
 
 export const FM_CONT_IRIS_L = [
   [474, 475],
@@ -108,25 +108,13 @@ export const FM_PNTS_EYE_R = [463, 257, 359, 253];
 //   ],
 // };
 
-export const fm_xMinFromCoords = (coords) =>
-  Math.min(...coords.map((coord) => coord[0]));
-export const fm_xMaxFromCoords = (coords) =>
-  Math.max(...coords.map((coord) => coord[0]));
-export const fm_yMinFromCoords = (coords) =>
-  Math.min(...coords.map((coord) => coord[1]));
-export const fm_yMaxFromCoords = (coords) =>
-  Math.max(...coords.map((coord) => coord[1]));
+export const fm_xMinFromCoords = (coords) => Math.min(...coords.map((coord) => coord[0]));
+export const fm_xMaxFromCoords = (coords) => Math.max(...coords.map((coord) => coord[0]));
+export const fm_yMinFromCoords = (coords) => Math.min(...coords.map((coord) => coord[1]));
+export const fm_yMaxFromCoords = (coords) => Math.max(...coords.map((coord) => coord[1]));
 
-export const fm_drawPoint = (
-  x,
-  y,
-  widthImg,
-  heightImg,
-  canvas,
-  clr = "black",
-  sizePx = 5,
-) => {
-  const ctx = canvas.getContext("2d");
+export const fm_drawPoint = (x, y, widthImg, heightImg, canvas, clr = 'black', sizePx = 5) => {
+  const ctx = canvas.getContext('2d');
   ctx.beginPath();
   ctx.arc(x * widthImg, y * heightImg, sizePx / 2, 0, 2 * Math.PI);
   ctx.fillStyle = clr;
@@ -143,10 +131,10 @@ export const fm_drawBB = (
   heightImg,
   canvas,
   fill,
-  clrEdge = "yellow",
-  clrFill = "yellow",
+  clrEdge = 'yellow',
+  clrFill = 'yellow',
 ) => {
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext('2d');
   const x = xMin * widthImg;
   const y = yMin * heightImg;
   const w = (xMax - xMin) * widthImg;
@@ -165,13 +153,13 @@ export const fm_drawContour = (
   heightImg,
   canvas,
   fill,
-  clrEdge = "blue",
-  clrFill = "rgba(13, 110, 253, 0.5)",
+  clrEdge = 'blue',
+  clrFill = 'rgba(13, 110, 253, 0.5)',
 ) => {
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext('2d');
   ctx.beginPath();
   coords.forEach(([x, y], i) => {
-    ctx[i === 0 ? "moveTo" : "lineTo"](x * widthImg, y * heightImg);
+    ctx[i === 0 ? 'moveTo' : 'lineTo'](x * widthImg, y * heightImg);
   });
   ctx.closePath();
   if (fill) {
@@ -233,8 +221,7 @@ export const fm_isPointInsidePolygon = (point, coords) => {
     const yi = coords[i][1];
     const xj = coords[j][0];
     const yj = coords[j][1];
-    const intersect =
-      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
     if (intersect) inside = !inside;
   }
   return inside;
@@ -290,7 +277,7 @@ export const fm_loadMediaPipe = () =>
       resolve();
       return;
     }
-    const script = document.createElement("script");
+    const script = document.createElement('script');
     script.src = `${ET.FM.URL_BASE}/${ET.FM.NAME_FILE_SCRIPT}`;
     script.onload = resolve;
     script.onerror = reject;
@@ -354,12 +341,8 @@ export const fm_def_fillStateOnResultsFm = (resFm) => {
     state.coordsIrisL = fm_indsPairToCoords(fmLandmarks, FM_CONT_IRIS_L);
     state.coordsIrisR = fm_indsPairToCoords(fmLandmarks, FM_CONT_IRIS_R);
     state.metricsIris = {
-      widthIrisL:
-        fm_xMaxFromCoords(state.coordsIrisL) -
-        fm_xMinFromCoords(state.coordsIrisL),
-      widthIrisR:
-        fm_xMaxFromCoords(state.coordsIrisR) -
-        fm_xMinFromCoords(state.coordsIrisR),
+      widthIrisL: fm_xMaxFromCoords(state.coordsIrisL) - fm_xMinFromCoords(state.coordsIrisL),
+      widthIrisR: fm_xMaxFromCoords(state.coordsIrisR) - fm_xMinFromCoords(state.coordsIrisR),
     };
 
     // // --- viewing distance
@@ -387,49 +370,29 @@ export const fm_def_fillStateOnResultsFm = (resFm) => {
     ]) {
       const xMinEye = fm_xMinFromCoords(coords) * state.widthImg;
       const yMinEye = fm_yMinFromCoords(coords) * state.heightImg;
-      const widthEye =
-        (fm_xMaxFromCoords(coords) - fm_xMinFromCoords(coords)) *
-        state.widthImg;
-      const heightEye =
-        (fm_yMaxFromCoords(coords) - fm_yMinFromCoords(coords)) *
-        state.heightImg;
+      const widthEye = (fm_xMaxFromCoords(coords) - fm_xMinFromCoords(coords)) * state.widthImg;
+      const heightEye = (fm_yMaxFromCoords(coords) - fm_yMinFromCoords(coords)) * state.heightImg;
 
       if (canvasNative) {
         canvasNative.width = widthEye;
         canvasNative.height = heightEye;
-        const contextNative = canvasNative.getContext("2d", {
+        const contextNative = canvasNative.getContext('2d', {
           willReadFrequently: true,
         });
         contextNative.save();
         contextNative.translate(widthEye, 0);
         contextNative.scale(-1, 1);
-        contextNative.drawImage(
-          resFm.image,
-          xMinEye,
-          yMinEye,
-          widthEye,
-          heightEye,
-          0,
-          0,
-          widthEye,
-          heightEye,
-        );
+        contextNative.drawImage(resFm.image, xMinEye, yMinEye, widthEye, heightEye, 0, 0, widthEye, heightEye);
         contextNative.restore();
       }
 
       if (canvasScaled) {
         canvasScaled.width = ET.ET.SIZE_IMG_EYE_MODEL;
         canvasScaled.height = ET.ET.SIZE_IMG_EYE_MODEL;
-        const contextScaled = canvasScaled.getContext("2d", {
+        const contextScaled = canvasScaled.getContext('2d', {
           willReadFrequently: true,
         });
-        contextScaled.drawImage(
-          canvasNative,
-          0,
-          0,
-          ET.ET.SIZE_IMG_EYE_MODEL,
-          ET.ET.SIZE_IMG_EYE_MODEL,
-        );
+        contextScaled.drawImage(canvasNative, 0, 0, ET.ET.SIZE_IMG_EYE_MODEL, ET.ET.SIZE_IMG_EYE_MODEL);
       }
     }
   });
