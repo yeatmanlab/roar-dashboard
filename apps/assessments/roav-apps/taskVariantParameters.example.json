@@ -20,5 +20,17 @@
       "recruitment": "school",
       "taskName": "roav-rvp"
     }
+  },
+  {
+    "variantName": "roav-rvp-pt",
+    "params": {
+      "corpusName": "corpus-def",
+      "language": "pt",
+      "modeGame": "all",
+      "nameConfigBlock": "config-block-def",
+      "nameConfigStim": "config-stim-def",
+      "recruitment": "school",
+      "taskName": "roav-rvp"
+    }
   }
 ]
