@@ -8,6 +8,7 @@ import LanguageDetector from 'i18next-browser-languagedetector'; // detect user 
 import enTranslations from './locales/en/translation.json'; // load local json as array, contains text for buttons, full screen, progress bar
 import esTranslations from './locales/es/translation.json'; // load local json as array
 import itTranslations from './locales/it/translation.json'; // load local json as array
+import ptTranslations from './locales/pt/translation.json'; // load local json as array
 
 // get browser language
 const languageDetector = new LanguageDetector();
@@ -46,6 +47,9 @@ i18next
       },
       it: {
         translation: itTranslations,
+      },
+      pt: {
+        translation: ptTranslations,
       },
     },
   });

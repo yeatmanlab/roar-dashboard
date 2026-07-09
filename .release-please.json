@@ -133,6 +133,13 @@
       "release-type": "node",
       "component": "roar-readaloud",
       "release-as": "1.4.2"
+    },
+    "apps/assessments/roav-apps": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roav-apps",
+      "release-as": "1.0.1"
     }
   },
   "group-pull-request-title-pattern": "chore: release ${version}",
