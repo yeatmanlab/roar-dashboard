@@ -1,5 +1,4 @@
 import { config as base } from '@roar-platform/eslint-config';
-import cypress from 'eslint-plugin-cypress/flat';
 import globals from 'globals';
 
 export default [
@@ -85,36 +84,6 @@ export default [
       'no-redeclare': 'off',
       'no-async-promise-executor': 'off',
       'no-prototype-builtins': 'off',
-    },
-  },
-
-  // Cypress test files
-  cypress.configs.recommended,
-  {
-    files: ['cypress/**/*.cy.js', 'cypress/**/*.js'],
-    plugins: { cypress },
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-    },
-    rules: {
-      'cypress/no-unnecessary-waiting': 'warn',
-      'cypress/unsafe-to-chain-command': 'warn',
-    },
-  },
-
-  // Cypress config file — `setupNodeEvents(on, config)` params are conventionally unused.
-  {
-    files: ['cypress.config.js'],
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-      globals: {
-        ...globals.node,
-      },
-    },
-    rules: {
-      'no-unused-vars': ['error', { args: 'none' }],
     },
   },
 ];
