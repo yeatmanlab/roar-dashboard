@@ -23,3 +23,6 @@ apps/assessments/roar-survey/ @yeatmanlab/roar-maintainers
 
 # roar-readaloud assessment
 apps/assessments/roar-readaloud/ @yeatmanlab/roar-maintainers
+
+# roam-apps assessment
+apps/assessments/roam-apps/ @yeatmanlab/roar-maintainers @KruttikaBhat
