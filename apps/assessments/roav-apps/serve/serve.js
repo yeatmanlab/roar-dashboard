@@ -66,6 +66,10 @@ onAuthStateChanged(auth, async (user) => {
 
       // Game params come entirely from the seeded variant — the run is linked to its
       // variantId, so what was presented must match what the variant declares.
+      // Load-bearing: every seeded roav-apps variant's params MUST include `taskName` —
+      // TaskLauncher (src/index.js) reads it off gameParams to route to
+      // taskConfig[camelize(taskName)]. getVariantById round-trips the seeded params verbatim,
+      // so a variant missing taskName would fail task resolution here.
       const gameParams = { ...variantParams };
 
       // User/participant params come from the launch URL. The dev locale override is a

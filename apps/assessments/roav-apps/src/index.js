@@ -12,6 +12,7 @@ import { isTaskFinished } from './tasks/shared/helpers/isTaskFinished';
 import './styles/styles.scss'; // getting all the css styles
 import { initSentry } from './sentry';
 import { wireScoreAdapter } from './sdk/roav-apps-firekit-facade.js';
+import { buildRunMetadata } from './tasks/shared/helpers/runMetadata';
 import { initPreloadTrials } from './tasks/shared/trials/preloadTrials';
 import { initTrialSaving } from './tasks/shared/helpers/initTrialSaving';
 import taskConfig from './tasks/taskConfig';
@@ -32,10 +33,7 @@ export class TaskLauncher {
     // Operator/participant-supplied context (PID + demographics from the launch URL) is
     // persisted to run metadata — never to the user record. Absent/empty URL params are
     // omitted so metadata only carries what was actually provided.
-    const runMetadata = Object.fromEntries(
-      Object.entries(this.userParams ?? {}).filter(([, value]) => value != null && value !== ''),
-    );
-    await startRun(Object.keys(runMetadata).length > 0 ? runMetadata : undefined);
+    await startRun(buildRunMetadata(this.userParams));
 
     const { taskName } = this.gameParams;
 
