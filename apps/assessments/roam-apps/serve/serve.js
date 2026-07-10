@@ -1,11 +1,3 @@
-/*
-1. Gets properties of the URL. I'm guessing that these values are provided somewhere before this and get embedded 
-in the page (possibly when running in production mode). 
-2. Initialise the firebase project
-3. Sign in the user (based on firebase credentials)
-4. Start the task once the user is signed in (user state change).
-*/
-
 import { RoarAppkit, initializeFirebaseProject } from '@bdelab/roar-firekit'; //firekit functions
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'; //firebase authorization
 import { TaskLauncher } from '../src';
