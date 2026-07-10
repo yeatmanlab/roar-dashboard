@@ -20,6 +20,10 @@ const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 // the recording path — never the user record.
 const assessmentPid = urlParams.get('participant') ?? '';
 const grade = urlParams.get('grade');
+const age = urlParams.get('age');
+const birthMonth = urlParams.get('birthmonth');
+const birthYear = urlParams.get('birthyear');
+const ageMonths = urlParams.get('agemonths');
 // Dev-only locale override; roav-ran ships English only (i18next defaults to en).
 const languageOverride = urlParams.get('lng');
 
@@ -67,6 +71,10 @@ onAuthStateChanged(auth, async (user) => {
       const userParams = {
         assessmentPid,
         grade,
+        age,
+        birthMonth,
+        birthYear,
+        ageMonths,
         ...(languageOverride ? { language: languageOverride } : {}),
       };
 
