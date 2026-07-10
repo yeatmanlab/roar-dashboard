@@ -76,7 +76,6 @@
     "lodash": "^4.17.21",
     "mime-types": "^2.1.35",
     "regenerator-runtime": "^0.13.9",
-    "roarr": "^7.14.0",
     "simple-keyboard": "^3.8.54",
     "store2": "^2.13.2"
   },
@@ -88,12 +87,12 @@
   "devDependencies": {
     "@babel/core": "^7.22.5",
     "@babel/preset-env": "^7.22.5",
+    "@roar-platform/eslint-config": "*",
+    "@roar-platform/prettier-config": "*",
     "@rollup/plugin-commonjs": "^25.0.3",
     "@rollup/plugin-dsv": "^3.0.2",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^15.1.0",
-    "@roar-platform/eslint-config": "*",
-    "@roar-platform/prettier-config": "*",
     "@sentry/rollup-plugin": "^2.14.1",
     "@sentry/webpack-plugin": "^2.14.1",
     "babel-loader": "^9.1.2",

@@ -49,9 +49,6 @@
   },
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "dependencies": {
-    "@roar-platform/assessment-schema": "^0.1.0",
-    "@roar-platform/assessment-sdk": "^0.1.0",
-    "@roar-platform/scoring-tables": "^0.1.0",
     "@bdelab/jscat": "^5.2.2",
     "@bdelab/roar-utils": "^1.0.18",
     "@jspsych-contrib/plugin-audio-multi-response": "^1.0.0",
@@ -66,6 +63,9 @@
     "@jspsych/plugin-survey-html-form": "^1.0.0",
     "@jspsych/plugin-survey-multi-select": "^1.1.0",
     "@jspsych/plugin-survey-text": "^1.1.0",
+    "@roar-platform/assessment-schema": "^0.1.0",
+    "@roar-platform/assessment-sdk": "^0.1.0",
+    "@roar-platform/scoring-tables": "^0.1.0",
     "detect-it": "^4.0.1",
     "firebase": "^10.5.0",
     "fscreen": "^1.2.0",
@@ -76,7 +76,6 @@
     "mime-types": "^2.1.35",
     "papaparse": "^5.5.3",
     "regenerator-runtime": "^0.13.9",
-    "roarr": "^7.14.0",
     "store2": "^2.13.2"
   },
   "peerDependencies": {
@@ -86,12 +85,12 @@
   "devDependencies": {
     "@babel/core": "^7.22.5",
     "@babel/preset-env": "^7.22.5",
+    "@roar-platform/eslint-config": "*",
+    "@roar-platform/prettier-config": "*",
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-dsv": "^3.0.4",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.1",
-    "@roar-platform/eslint-config": "*",
-    "@roar-platform/prettier-config": "*",
     "@sentry/rollup-plugin": "^2.14.0",
     "@sentry/webpack-plugin": "^2.14.0",
     "babel-loader": "^9.1.2",
