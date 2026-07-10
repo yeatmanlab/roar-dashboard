@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<style>
+  #stimulus-grid {
+    position: absolute;
+    top: 30%;
+    left: 3%;
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: clamp(8px, 2vw, 24px) clamp(16px, 4vw, 56px);
+    align-items: center;
+    width: 60%;
+  }
+
+  .stimulus-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(6px, 1.2vw, 16px);
+    border-radius: 14px;
+    transition: background-color 0.15s ease;
+  }
+
+  .stimulus-cell.highlighted {
+    background-color: #f5d9a8;
+  }
+
+  .stimulus-cell img {
+    height: clamp(80px, 18vh, 200px);
+    width: auto;
+    display: block;
+  }
+
+  /* Same breakpoint as shared.scss .lion-char-instructions media query */
+  @media screen and (max-width: 834px),
+         screen and (any-pointer: coarse) and (max-width: 1024px) {
+    .static-container {
+      justify-content: start;
+    }
+
+    #stimulus-grid {
+      position: relative;
+      top: 10%;
+      left: 0%;
+      width: auto;
+    }
+  }
+
+</style>
+
+<body>
+  <div class="container-fluid h-100">
+    <div class="static-container">
+      <div class="header-container--practice-intro"> 
+        <h2 class="header"></h2>
+        <h3 class="subtitle--practice-intro"></h3>
+      </div>
+      <div id="stimulus-grid"></div>
+      <img class="lion-char-practice-intro" src="https://storage.googleapis.com/roav-ran/shared/assets/pointingLeftLionAge12.webp" alt="Lion character">
+    </div>
+  </div>
+  <button disabled class="next-button" aria-label="Continue"></button>
+  <audio id="practice-intro-audio"></audio>
+</body>
+
+<script data-dynamic>
+  var cfg = window.practiceIntroConfig || {};
+  var stimuliImages = cfg.assets.stimuli.images || [];
+  var stimuliAudios = cfg.assets.stimuli.audioSrcs || [];
+  var stimulusDir = cfg.stimulusDir || '';
+  var practiceSignal = window.practiceIntroAbortController
+    ? window.practiceIntroAbortController.signal
+    : undefined;
+
+  var FALLBACK_DELAY_MS = 1200;
+  var userSpoke = false;
+  var animFrameId = null;
+  var micStream = null;
+  var mediaRecorder;
+  var mediaChunks = [];
+  var timeoutId = null;
+
+  function stripSsml(str) {
+    return (str || '').replace(/<[^>]*>/g, '').trim();
+  }
+
+  function playAudio(src, onEnded) {
+    if (src) {
+      audio.src = src;
+      audio.currentTime = 0;
+      var handler = function () {
+        audio.removeEventListener('ended', handler);
+        onEnded();
+      };
+      audio.addEventListener('ended', handler, { signal: practiceSignal });
+      audio.play().catch(function () {
+        audio.removeEventListener('ended', handler);
+        setTimeout(onEnded, FALLBACK_DELAY_MS);
+      });
+    } else {
+      setTimeout(onEnded, FALLBACK_DELAY_MS);
+    }
+  }
+
+  // Build the stimulus grid
+  var grid = document.getElementById('stimulus-grid');
+  stimuliImages.forEach(function (filename) {
+    var cell = document.createElement('div');
+    cell.className = 'stimulus-cell';
+    var img = document.createElement('img');
+    img.src = stimulusDir + '/' + filename;
+    img.alt = filename.replace('.svg', '');
+    cell.appendChild(img);
+    grid.appendChild(cell);
+  });
+
+  var cells = grid.querySelectorAll('.stimulus-cell');
+  var audio = document.getElementById('practice-intro-audio');
+  var title = document.querySelector('.header');
+  var subtitle = document.querySelector('.subtitle--practice-intro');
+  var nextBtn = document.querySelector('.next-button');
+
+  nextBtn.addEventListener('click', async function () {
+    nextBtn.disabled = true;
+    cleanupAudio();
+    if (window.endPractice) {
+      await window.endPractice();
+    } else {
+      document.dispatchEvent(new Event('pageComplete'));
+    }
+  }, { signal: practiceSignal });
+
+  // Phase 1: show header text, play header audio; next button stays disabled
+  title.innerHTML = stripSsml(cfg.assets.header.text);
+  playAudio(cfg.assets.header.audioSrc, function () {
+    highlightStep(0);
+  });
+
+  // Phase 2: play each stimulus audio sequentially, highlighting the matching cell
+  function highlightStep(index) {
+    cells.forEach(function (c) { c.classList.remove('highlighted'); });
+    if (index >= stimuliImages.length) {
+      showHeader2Phase();
+      return;
+    }
+    cells[index].classList.add('highlighted');
+    playAudio(stimuliAudios[index] || '', function () {
+      highlightStep(index + 1);
+    });
+  }
+
+  // Phase 3: remove highlights, play header2 audio with header2 text
+  function showHeader2Phase() {
+    var header2Text = cfg.assets.header2.text || '';
+    var breakMatch = header2Text.match(/^(.*?)<break[^>]*\/>(.*)$/s);
+    if (breakMatch) {
+      title.innerHTML = breakMatch[1].trim();
+      subtitle.innerHTML = breakMatch[2].trim();
+      subtitle.style.display = 'block';
+    } else {
+      title.innerHTML = stripSsml(header2Text);
+    }
+    playAudio(cfg.assets.header2.audioSrc, function () {
+      showPracticePhase();
+    });
+  }
+
+  // Phase 4: start RMS mic detection; enable next button when user speaks
+  function showPracticePhase() {
+    nextBtn.disabled = true;
+    setupMediaStream();
+    if (window.startPracticeRecording) window.startPracticeRecording();
+  }
+
+  async function setupMediaStream() {
+    try {
+      const audioContext = new AudioContext();
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      const micSource = audioContext.createMediaStreamSource(micStream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      micSource.connect(analyser);
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      function detectAudio() {
+        analyser.getByteTimeDomainData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += (dataArray[i] - 128) * (dataArray[i] - 128);
+        }
+        const rms = Math.sqrt(sum / bufferLength);
+        if (rms > 5.5) {
+          if (timeoutId !== null) { clearTimeout(timeoutId); timeoutId = null; }
+          userSpoke = true;
+          nextBtn.disabled = false;
+          return;
+        }
+        animFrameId = requestAnimationFrame(detectAudio);
+      }
+
+      animFrameId = requestAnimationFrame(detectAudio);
+      timeoutId = setTimeout(function () {
+        if (!userSpoke) {
+          nextBtn.disabled = false;
+        }
+      }, 5000);
+    } catch (err) {
+      console.error('Microphone access failed:', err);
+      nextBtn.disabled = false;
+    }
+  }
+
+  function cleanupAudio() {
+    if (timeoutId !== null) { clearTimeout(timeoutId); timeoutId = null; }
+    if (animFrameId !== null) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+    if (micStream !== null) { micStream.getTracks().forEach(function (t) { t.stop(); }); micStream = null; }
+  }
+</script>
+</html>
