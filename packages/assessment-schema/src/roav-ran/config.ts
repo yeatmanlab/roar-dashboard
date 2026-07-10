@@ -10,7 +10,10 @@
 export const RAN_TASK_ID = 'ran' as const;
 export type RanTaskId = typeof RAN_TASK_ID;
 
-export const SYMBOL_SEARCH_TASK_ID = 'symbolSearch' as const;
+// Kebab-case: the DB `tasks.slug` check constraint requires `^[a-z0-9]+(-[a-z0-9]+)*$`.
+// The assessment routes tasks via `taskConfig[camelize(taskName)]`, and `camelize('symbol-search')`
+// yields `symbolSearch`, matching the taskConfig key — so the slug is kebab while the code stays camel.
+export const SYMBOL_SEARCH_TASK_ID = 'symbol-search' as const;
 export type SymbolSearchTaskId = typeof SYMBOL_SEARCH_TASK_ID;
 
 export type RoavRanTaskId = RanTaskId | SymbolSearchTaskId;
