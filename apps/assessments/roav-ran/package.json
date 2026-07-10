@@ -35,7 +35,7 @@
     "dev": "bash ../../../scripts/dev-platform.sh",
     "dev:ci": "npx webpack serve --mode development --env dbmode=development",
     "start": "bash ../../../scripts/assessment-env-up.sh",
-    "update": "npm --prefix ../../../packages/assessment-schema run build && npm --prefix ../../../packages/assessment-sdk run build",
+    "update": "npm --prefix ../../../packages/assessment-sdk run build",
     "stop": "bash ../../../scripts/assessment-env-down.sh",
     "restart": "npm run stop && npm run start",
     "rebuild": "bash ../../../scripts/assessment-env-build.sh",
