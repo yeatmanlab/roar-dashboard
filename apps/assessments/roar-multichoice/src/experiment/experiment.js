@@ -46,7 +46,9 @@ export async function buildExperiment(config, computedScoreCallback) {
     responseTimeLowThreshold: 2000,
     accuracyThreshold: 0.5,
     minResponsesRequired: 10,
-    includedReliabilityFlags: ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
+    includedReliabilityFlags: config.isAdaptive
+      ? ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast']
+      : [],
     customValidations: [
       {
         flag: 'accuracyTooLowAndResponseTimeTooFast',
@@ -60,13 +62,12 @@ export async function buildExperiment(config, computedScoreCallback) {
   });
 
   const multichoiceHandleEngagementFlags = (flags, reliable) => {
-    // Only update engagement flags for adaptive tasks
-    if (config.isAdaptive) {
-      store.session.set('engagementFlags', flags);
-      store.session.set('isReliable', reliable);
-      return updateEngagementFlags(flags, reliable);
+    store.session.set('engagementFlags', flags);
+    store.session.set('isReliable', reliable);
+    if (config.firekit.run.started) {
+      return config.firekit?.updateEngagementFlags(flags, reliable);
     }
-    return null;
+    return undefined;
   };
 
   multichoiceValidityEvaluator = new ValidityEvaluator({
