@@ -55,11 +55,7 @@
             >
               <ScoreDistributionOverview
                 :task-ids="sortedAndFilteredTaskIds"
-                :runs-by-task-id="
-                  props.orgType === 'district'
-                    ? aggregatedDistrictSupportCategories
-                    : computeAssignmentAndRunData.runsByTaskId
-                "
+                :runs-by-task-id="runsByTaskIdForDistributionChart"
                 :org-type="props.orgType"
                 :tasks-dictionary="tasksDictionary"
               />
@@ -404,6 +400,7 @@ import {
   taskDisplayNames,
   taskInfoById,
   getSupportLevel,
+  getFoundationalCompositeSupportLevel,
   tasksToDisplayGraphs,
   rawOnlyTasks,
   tasksToDisplayPercentCorrect,
@@ -939,15 +936,17 @@ const computedProgressData = computed(() => {
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
 const computeAssignmentAndRunData = computed(() => {
   if (props.orgType === 'district') {
-    return { assignmentTableData: [], runsByTaskId: {} };
+    return { assignmentTableData: [], runsByTaskId: {}, compositeFoundationalRuns: [] };
   }
   if (!assignmentData.value || assignmentData.value.length === 0) {
-    return { assignmentTableData: [], runsByTaskId: {} };
+    return { assignmentTableData: [], runsByTaskId: {}, compositeFoundationalRuns: [] };
   } else {
     // assignmentTableData is an array of objects, each representing a row in the table
     const assignmentTableDataAcc = [];
     // runsByTaskId is an object with keys as taskIds and values as arrays of scores
     const runsByTaskIdAcc = {};
+    // compositeFoundationalRunsAcc holds a support-level run per assignment with a foundational composite score
+    const compositeFoundationalRunsAcc = [];
 
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
@@ -996,10 +995,10 @@ const computeAssignmentAndRunData = computed(() => {
             return assessment.startedOn < earliest ? assessment.startedOn : earliest;
           }, null) ?? null,
         completionDate: assignment.completed
-          ? (assignment.assessments.reduce((latest, assessment) => {
+          ? assignment.assessments.reduce((latest, assessment) => {
               if (!latest) return assessment.completedOn;
               return assessment.completedOn > latest ? assessment.completedOn : latest;
-            }, null) ?? null)
+            }, null) ?? null
           : null,
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
@@ -1269,6 +1268,28 @@ const computeAssignmentAndRunData = computed(() => {
         }
       }
 
+      // Logic to update compositeFoundationalRunsAcc
+      if (assignment.foundationalComposite) {
+        const { support_level: compositeSupportLevel, tag_color: compositeTagColor } =
+          getFoundationalCompositeSupportLevel(grade, assignment.foundationalComposite);
+
+        compositeFoundationalRunsAcc.push({
+          grade: getGrade(grade),
+          scores: {
+            support_level: compositeSupportLevel,
+            stdPercentile: assignment.foundationalComposite.percentile ?? null,
+            rawScore:
+              assignment.foundationalComposite.roarScore ?? assignment.foundationalComposite.thetaEstimate ?? null,
+          },
+          taskId: 'compositeFoundational',
+          user: {
+            grade,
+            schoolName: schoolsDictWithGrade.value[schoolId] ?? '0 Unknown School',
+          },
+          tag_color: compositeTagColor,
+        });
+      }
+
       // update scores for current row with computed object
       currRow.scores = currRowScores;
       currRow.numAssessmentsCompleted = numAssessmentsCompleted;
@@ -1321,8 +1342,24 @@ const computeAssignmentAndRunData = computed(() => {
       }
     }
 
-    return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
+    return {
+      runsByTaskId: filteredRunsByTaskId,
+      assignmentTableData: assignmentTableDataAcc,
+      compositeFoundationalRuns: compositeFoundationalRunsAcc,
+    };
   }
+});
+
+// runsByTaskId for the ScoreDistributionOverview chart, including the foundational composite score
+// (kept separate from computeAssignmentAndRunData.runsByTaskId since 'compositeFoundational' is not a real taskId
+// and would break taskId-keyed logic like sortedTaskIds and CSV export).
+const runsByTaskIdForDistributionChart = computed(() => {
+  if (props.orgType === 'district') return aggregatedDistrictSupportCategories.value;
+
+  const { runsByTaskId, compositeFoundationalRuns } = computeAssignmentAndRunData.value;
+  if (!compositeFoundationalRuns?.length) return runsByTaskId;
+
+  return { ...runsByTaskId, compositeFoundational: compositeFoundationalRuns };
 });
 
 // This composable manages the data which is passed into the FilterBar component slot for filtering

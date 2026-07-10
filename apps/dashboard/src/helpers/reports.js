@@ -836,6 +836,74 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   };
 };
 
+// Grades for which the foundational composite score is evaluated using raw score instead of percentile.
+// Mirrors the cutoff logic in roar-firebase-functions' aggregateFoundationalCompositeScores.
+const FOUNDATIONAL_COMPOSITE_RAW_SCORE_GRADES = [6, 7, 8, 9];
+const FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF = 40;
+const FOUNDATIONAL_COMPOSITE_PERCENTILE_DEVELOPING_CUTOFF = 20;
+const FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF = 487;
+const FOUNDATIONAL_COMPOSITE_RAW_SCORE_DEVELOPING_CUTOFF = 447;
+
+/**
+ * Computes the support level for a user's foundational composite score, mirroring the cutoff logic
+ * used by roar-firebase-functions' aggregateFoundationalCompositeScores for district-level reports.
+ *
+ * @param {string|number} grade - The grade level of the student (e.g., 'K', '1', 6).
+ * @param {{percentile?: number, roarScore?: number, thetaEstimate?: number}} foundationalComposite - The assignment's foundational composite score object.
+ * @returns {{support_level: string|null, tag_color: string|null}} The computed support level and tag color.
+ */
+export const getFoundationalCompositeSupportLevel = (grade, foundationalComposite) => {
+  let support_level = null;
+  let tag_color = null;
+
+  if (!foundationalComposite) {
+    return { support_level, tag_color };
+  }
+
+  const gradeLevel = getGrade(grade);
+  const useRawScore = !Number.isFinite(gradeLevel) || FOUNDATIONAL_COMPOSITE_RAW_SCORE_GRADES.includes(gradeLevel);
+
+  if (!useRawScore) {
+    const percentile = foundationalComposite.percentile;
+    if (percentile === null || percentile === undefined) {
+      return { support_level, tag_color };
+    }
+    if (percentile >= FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF) {
+      support_level = 'Achieved Skill';
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
+    } else if (
+      percentile > FOUNDATIONAL_COMPOSITE_PERCENTILE_DEVELOPING_CUTOFF &&
+      percentile < FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF
+    ) {
+      support_level = 'Developing Skill';
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
+    } else {
+      support_level = 'Needs Extra Support';
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
+    }
+  } else {
+    const rawScore = foundationalComposite.roarScore ?? foundationalComposite.thetaEstimate;
+    if (rawScore === null || rawScore === undefined) {
+      return { support_level, tag_color };
+    }
+    if (rawScore >= FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF) {
+      support_level = 'Achieved Skill';
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
+    } else if (
+      rawScore > FOUNDATIONAL_COMPOSITE_RAW_SCORE_DEVELOPING_CUTOFF &&
+      rawScore < FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF
+    ) {
+      support_level = 'Developing Skill';
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
+    } else {
+      support_level = 'Needs Extra Support';
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
+    }
+  }
+
+  return { support_level, tag_color };
+};
+
 export function getTagColor(supportLevel) {
   if (supportLevel === 'Needs Extra Support') {
     return SCORE_SUPPORT_LEVEL_COLORS.BELOW;

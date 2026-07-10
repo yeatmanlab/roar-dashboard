@@ -39,7 +39,7 @@
         </div>
       </div>
 
-      <div v-if="orgType === 'district' && compositeFoundational" class="chart-row">
+      <div v-if="compositeFoundational" class="chart-row">
         <div class="chart-label text-gray-600">
           <span class="whitespace-nowrap text-lg font-bold">Foundational Skills Composite</span>
           <!-- <span class="text-sm font-light uppercase"> (Composite Score)</span> -->
@@ -172,14 +172,26 @@ const comprehensionTaskIds = computed(() => {
 });
 
 const compositeFoundational = computed(() => {
-  if (props.orgType !== 'district') return null;
   const composite = props.runsByTaskId?.['compositeFoundational'];
   if (!composite) return null;
-  return {
-    below: composite.below?.total ?? 0,
-    some: composite.some?.total ?? 0,
-    above: composite.above?.total ?? 0,
-  };
+
+  if (props.orgType === 'district') {
+    return {
+      below: composite.below?.total ?? 0,
+      some: composite.some?.total ?? 0,
+      above: composite.above?.total ?? 0,
+    };
+  }
+
+  const counts = { below: 0, some: 0, above: 0 };
+  for (const run of composite) {
+    const supportLevel = run.scores?.support_level;
+    console.log('considering level', supportLevel);
+    if (supportLevel === 'Needs Extra Support') counts.below++;
+    else if (supportLevel === 'Developing Skill') counts.some++;
+    else if (supportLevel === 'Achieved Skill') counts.above++;
+  }
+  return counts;
 });
 
 const supportLevelCountsByTaskId = computed(() => {

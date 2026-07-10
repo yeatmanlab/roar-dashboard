@@ -3,6 +3,7 @@ import {
   taskDisplayNames,
   addElementToPdf,
   getSupportLevel,
+  getFoundationalCompositeSupportLevel,
   getScoreValue,
   getRawScoreThreshold,
   getRawScoreRange,
@@ -196,6 +197,68 @@ describe('reports', () => {
           tag_color: null,
         });
       });
+    });
+  });
+
+  describe('getFoundationalCompositeSupportLevel', () => {
+    it('should return null support level when foundationalComposite is missing', () => {
+      const result = getFoundationalCompositeSupportLevel(3, undefined);
+      expect(result).toEqual({ support_level: null, tag_color: null });
+    });
+
+    it('should return null support level when percentile is missing for a percentile-based grade', () => {
+      const result = getFoundationalCompositeSupportLevel(3, { roarScore: 500 });
+      expect(result).toEqual({ support_level: null, tag_color: null });
+    });
+
+    it('should return Achieved Skill for percentile >= 40 (grade < 6)', () => {
+      const result = getFoundationalCompositeSupportLevel(3, { percentile: 40 });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
+
+    it('should return Developing Skill for percentile between 20 and 40 (grade < 6)', () => {
+      const result = getFoundationalCompositeSupportLevel(3, { percentile: 30 });
+      expect(result).toEqual({ support_level: 'Developing Skill', tag_color: '#edc037' });
+    });
+
+    it('should return Needs Extra Support for percentile <= 20 (grade < 6)', () => {
+      const result = getFoundationalCompositeSupportLevel(3, { percentile: 20 });
+      expect(result).toEqual({ support_level: 'Needs Extra Support', tag_color: '#c93d82' });
+    });
+
+    it('should use percentile for grades above 9', () => {
+      const result = getFoundationalCompositeSupportLevel(10, { percentile: 50 });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
+
+    it('should return null support level when raw score is missing for a raw-score-based grade', () => {
+      const result = getFoundationalCompositeSupportLevel(7, { percentile: 50 });
+      expect(result).toEqual({ support_level: null, tag_color: null });
+    });
+
+    it('should return Achieved Skill for roarScore >= 487 (grades 6-9)', () => {
+      const result = getFoundationalCompositeSupportLevel(7, { roarScore: 487 });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
+
+    it('should return Developing Skill for roarScore between 447 and 487 (grades 6-9)', () => {
+      const result = getFoundationalCompositeSupportLevel(7, { roarScore: 460 });
+      expect(result).toEqual({ support_level: 'Developing Skill', tag_color: '#edc037' });
+    });
+
+    it('should return Needs Extra Support for roarScore <= 447 (grades 6-9)', () => {
+      const result = getFoundationalCompositeSupportLevel(7, { roarScore: 447 });
+      expect(result).toEqual({ support_level: 'Needs Extra Support', tag_color: '#c93d82' });
+    });
+
+    it('should fall back to thetaEstimate when roarScore is missing (grades 6-9)', () => {
+      const result = getFoundationalCompositeSupportLevel(7, { thetaEstimate: 500 });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
+
+    it('should use raw score when grade is missing/invalid', () => {
+      const result = getFoundationalCompositeSupportLevel(undefined, { roarScore: 500 });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
     });
   });
 
