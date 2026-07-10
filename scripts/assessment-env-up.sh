@@ -52,10 +52,24 @@ else
 
   echo "Starting assessment environment (DB, migrations, Firebase emulator, backend)..."
 
-  # Remove any orphaned containers from a previous run under a different compose project.
-  docker rm -f assessment-db assessment-db-migrate 2>/dev/null || true
+  # Force-remove stale containers by name before starting. These linger from a
+  # previous run and cause name or port conflicts — including containers left
+  # under an older compose project name (docker rm by name ignores project
+  # scoping, unlike --remove-orphans) and the since-renamed "firebase-emulator"
+  # service (now "firebase-auth-emulator"), whose old container still publishes
+  # 9000/9099/9199 and blocks the new emulator from binding them.
+  docker rm -f \
+    assessment-db \
+    assessment-db-migrate \
+    firebase-auth-emulator \
+    firebase-emulator \
+    assessment-backend \
+    2>/dev/null || true
 
-  docker compose -f "$COMPOSE_FILE" up -d --wait
+  # --remove-orphans drops any container in the roar-assessment project whose
+  # service no longer exists, so future service renames self-heal without
+  # needing to be listed above.
+  docker compose -f "$COMPOSE_FILE" up -d --wait --remove-orphans
 
   echo "All services healthy. Starting assessment dev server..."
 fi

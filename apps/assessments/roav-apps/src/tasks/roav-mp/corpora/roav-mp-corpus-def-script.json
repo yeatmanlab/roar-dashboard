@@ -1,0 +1,587 @@
+{
+  "nameCorpus": "corpus-def-script",
+  "trials": [
+    {
+      "nameTrial": "t_enterFullscreen",
+      "params": true
+    },
+
+    {
+      "nameTrial": "t_enterLandscape"
+    },
+
+    {
+      "nameTrial": "t_installTouchGuards"
+    },
+
+    {
+      "nameTrial": "t_collectDataMonitor"
+    },
+
+    {
+      "nameTrial": "t_createQuest",
+      "params": {
+        "tGuess": 1.35,
+        "tGuessSd": 0.3,
+        "pThreshold": 0.75,
+        "beta": 3.5,
+        "delta": 0.03,
+        "gamma": 0.5,
+        "grain": 0.01,
+        "range": 1.3,
+        "plotIt": false
+      }
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "intro",
+      "params": {
+        "animateBtn": true,
+        "durationTrial": 600000
+      }
+    },
+
+    {
+      "nameTrial": "t_setAllowModeInputAll",
+      "params": true
+    },
+
+    {
+      "nameTrial": "t_initModeInputTargetRdk"
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "instr-task",
+      "params": {
+        "keyImgCharacter": ["", "", "character-others-flying-away"],
+        "modeGameTrial": "game",
+        "modeGameSkipResponse": "game"
+      }
+    },
+
+    {
+      "nameTrial": "t_instructionInputLR",
+      "tagReq": "instr-input-all",
+      "params": {
+        "enableBtnLeft": true,
+        "enableBtnRight": true,
+        "animateBtnLeft": true,
+        "animateBtnRight": true,
+        "allowInputKeyAny": false,
+        "modeGameTrial": "stand",
+        "modeInputTargetAnswerTrial": "all",
+        "modeInputTargetTrial": "all"
+      }
+    },
+
+    {
+      "nameTrial": "t_timelineInputMode"
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "instr-ready-to-watch-right",
+      "params": {
+        "keyImgCharacter": ["", "", "swarms-left-right"],
+        "animateBtn": true
+      }
+    },
+
+    {
+      "nameTrial": "t_setParamsBlockRdk",
+      "params": {
+        "metaparams": {
+          "trial_duration": 2000,
+          "_subtype_trial": "const",
+          "coherence": 0.96,
+          "number_of_dots": 250,
+          "border": true,
+          "_dot_life": 10000,
+          "_fixation_duration_pre": 0
+        },
+        "info": {
+          "nameBlock": "block-instruction",
+          "stageAssessment": "instruction",
+          "evaluateValidity": false,
+          "playAudio": true,
+          "gapColorSameAsBorder": true,
+          "animateFade": false,
+          "keyImgBtnLeft": ["rdk", "", "button-key-left"],
+          "keyImgBtnRight": ["rdk", "", "button-key-right"]
+        }
+      }
+    },
+
+    {
+      "nameTrial": "t_rdk",
+      "tagReq": "instr-demo-right",
+      "params": {
+        "metaparams": {
+          "trial_duration": 60000,
+          "_coherent_direction": "right",
+          "choices": ["dummy", "ArrowRight"]
+        },
+        "info": {
+          "animateBtnRight": true,
+          "enableBtnLeft": false,
+          "showBtnLeft": false
+        }
+      }
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "instr-response-right",
+      "params": {
+        "animateBtn": true
+      }
+    },
+
+    {
+      "nameTrial": "t_rdk",
+      "tagReq": "instr-demo-left",
+      "params": {
+        "metaparams": {
+          "trial_duration": 60000,
+          "_coherent_direction": "left",
+          "choices": ["ArrowLeft", "dummy"]
+        },
+        "info": {
+          "animateBtnLeft": true,
+          "showBtnRight": false,
+          "enableBtnRight": false
+        }
+      }
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "practice-ready-to-watch-feedback",
+      "params": {
+        "keyImgCharacter": ["", "", "characters-objects-left-right"],
+        "animateBtn": true
+      }
+    },
+
+    {
+      "nameTrial": "t_setParamsBlockRdk",
+      "params": {
+        "metaparams": {
+          "_subtype_trial": "const",
+          "trial_duration": 20000,
+          "number_of_dots": 200,
+          "border": true
+        },
+        "info": {
+          "stageAssessment": "practice",
+          "nameBlock": "block-practice-feedback-av",
+          "evaluateValidity": false,
+          "keyAudio": ["rdk", "practice-feedback", ""],
+          "textBanner": ["rdk", "practice-feedback", "text2"],
+          "playAudio": true,
+          "gapColorSameAsBorder": true,
+          "keyImgBtnLeft": ["rdk", "", "button-key-left"],
+          "keyImgBtnRight": ["rdk", "", "button-key-right"]
+        }
+      }
+    },
+
+    {
+      "nameTrial": "t_createBlockRdk",
+      "params": {
+        "playFeedbackAv": true,
+        "modeSeq": "all",
+        "arrMetaparams": [
+          { "coherence": 0.96, "_coherent_direction": "right" },
+          { "coherence": 0.96, "_coherent_direction": "left" }
+        ]
+      }
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "practice-ready-to-watch-no-feedback",
+      "params": {
+        "keyImgCharacter": ["", "", "character-objects"]
+      }
+    },
+
+    {
+      "nameTrial": "t_setParamsBlockRdk",
+      "params": {
+        "metaparams": {
+          "_subtype_trial": "const",
+          "trial_duration": 15000
+        },
+        "info": {
+          "stageAssessment": "practice",
+          "nameBlock": "block-practice-1",
+          "showTextBanner": false
+        }
+      }
+    },
+
+    {
+      "nameTrial": "t_createBlockRdk",
+      "params": {
+        "modeSeq": "all",
+        "arrMetaparams": [
+          { "coherence": 0.96, "_coherent_direction": "left" },
+          { "coherence": 0.7, "_coherent_direction": "left" },
+          { "coherence": 0.7, "_coherent_direction": "right" },
+          { "coherence": 0.96, "_coherent_direction": "right" }
+        ]
+      }
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "practice-reward-after-no-feedback",
+      "params": {
+        "keyImgCharacter": ["", "", "character-reward-4"],
+        "modeGameTrial": "game",
+        "modeGameSkipResponse": "game"
+      }
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "instr-take-best-guess",
+      "params": {
+        "durationTrial": 180000
+      }
+    },
+
+    {
+      "nameTrial": "t_createValidityEvaluator",
+      "params": {
+        "responseTimeLowThreshold": 250,
+        "accuracyThreshold": 0.5
+      }
+    },
+
+    {
+      "nameTrial": "t_startNewBlockValidation",
+      "params": "block-test-1"
+    },
+
+    {
+      "nameTrial": "t_setParamsBlockRdk",
+      "params": {
+        "metaparams": {},
+        "info": {
+          "stageAssessment": "test",
+          "nameBlock": "block-test-1",
+          "showTextBanner": false
+        },
+        "reset": true
+      }
+    },
+
+    {
+      "nameTrial": "t_createBlockRdk",
+      "params": {
+        "modeSeq": "random"
+      }
+    },
+
+    {
+      "nameTrial": "t_createBlockRdk",
+      "params": {
+        "modeSeq": "fixed",
+        "arrMetaparams": [
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.96,
+            "_coherent_direction": "right"
+          },
+          { "_coherent_direction": "right" },
+          { "_coherent_direction": "left" },
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.48,
+            "_coherent_direction": "right"
+          },
+          { "_coherent_direction": "right" },
+          { "_coherent_direction": "left" },
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.24,
+            "_coherent_direction": "left"
+          },
+          { "_coherent_direction": "right" },
+          { "_coherent_direction": "left" },
+          {
+            "_subtype_trial": "catch",
+            "coherence": 1.0,
+            "_coherent_direction": "left"
+          },
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.12,
+            "_coherent_direction": "right"
+          },
+          { "_coherent_direction": "right" },
+          { "_coherent_direction": "left" },
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.06,
+            "_coherent_direction": "left"
+          },
+          { "_coherent_direction": "right" },
+          { "_coherent_direction": "left" },
+          {
+            "_subtype_trial": "catch",
+            "coherence": 1.0,
+            "_coherent_direction": "right"
+          }
+        ]
+      }
+    },
+
+    {
+      "nameTrial": "t_setEnableTrialsIfValidationPassed",
+      "params": false
+    },
+
+    {
+      "nameTrial": "t_markAsCompletedValidation"
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "reminder",
+      "params": {
+        "keyImgCharacter": ["", "", "character-objects"],
+        "animateBtn": true
+      }
+    },
+
+    {
+      "nameTrial": "t_setEnableTrials",
+      "params": true
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "test-break-after-block-1",
+      "params": {
+        "keyImgCharacter": ["", "", "character-reward-6"],
+        "durationTrial": 180000
+      }
+    },
+
+    {
+      "nameTrial": "t_startNewBlockValidation",
+      "params": "block-test-2"
+    },
+
+    {
+      "nameTrial": "t_setParamsBlockRdk",
+      "params": {
+        "metaparams": {},
+        "info": {
+          "stageAssessment": "test",
+          "nameBlock": "block-test-2",
+          "showTextBanner": false
+        },
+        "reset": false
+      }
+    },
+
+    {
+      "nameTrial": "t_createBlockRdk",
+      "params": {
+        "modeSeq": "random"
+      }
+    },
+
+    {
+      "nameTrial": "t_createBlockRdk",
+      "params": {
+        "modeSeq": "fixed",
+        "arrMetaparams": [
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.96,
+            "_coherent_direction": "left"
+          },
+          { "_coherent_direction": "right" },
+          { "_coherent_direction": "left" },
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.48,
+            "_coherent_direction": "left"
+          },
+          { "_coherent_direction": "left" },
+          { "_coherent_direction": "right" },
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.24,
+            "_coherent_direction": "right"
+          },
+          { "_coherent_direction": "left" },
+          { "_coherent_direction": "right" },
+          {
+            "_subtype_trial": "catch",
+            "coherence": 1.0,
+            "_coherent_direction": "right"
+          },
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.12,
+            "_coherent_direction": "right"
+          },
+          { "_coherent_direction": "left" },
+          { "_coherent_direction": "right" },
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.06,
+            "_coherent_direction": "left"
+          },
+          { "_coherent_direction": "left" },
+          { "_coherent_direction": "right" },
+          {
+            "_subtype_trial": "catch",
+            "coherence": 1.0,
+            "_coherent_direction": "left"
+          }
+        ]
+      }
+    },
+
+    {
+      "nameTrial": "t_setEnableTrialsIfValidationPassed",
+      "params": false
+    },
+
+    {
+      "nameTrial": "t_markAsCompletedValidation"
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "reminder",
+      "params": {
+        "keyImgCharacter": ["", "", "character-objects"],
+        "animateBtn": true
+      }
+    },
+
+    {
+      "nameTrial": "t_setEnableTrials",
+      "params": true
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "test-break-after-block-2",
+      "params": {
+        "keyImgCharacter": ["", "", "character-reward-7"],
+        "durationTrial": 180000
+      }
+    },
+
+    {
+      "nameTrial": "t_startNewBlockValidation",
+      "params": "block-test-3"
+    },
+
+    {
+      "nameTrial": "t_setParamsBlockRdk",
+      "params": {
+        "metaparams": {},
+        "info": {
+          "stageAssessment": "test",
+          "nameBlock": "block-test-3",
+          "showTextBanner": false
+        },
+        "reset": false
+      }
+    },
+
+    {
+      "nameTrial": "t_createBlockRdk",
+      "params": {
+        "modeSeq": "random"
+      }
+    },
+
+    {
+      "nameTrial": "t_createBlockRdk",
+      "params": {
+        "modeSeq": "fixed",
+        "arrMetaparams": [
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.96,
+            "_coherent_direction": "left"
+          },
+          { "_coherent_direction": "left" },
+          { "_coherent_direction": "right" },
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.48,
+            "_coherent_direction": "left"
+          },
+          { "_coherent_direction": "left" },
+          { "_coherent_direction": "right" },
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.24,
+            "_coherent_direction": "right"
+          },
+          { "_coherent_direction": "left" },
+          { "_coherent_direction": "right" },
+          {
+            "_subtype_trial": "catch",
+            "coherence": 1.0,
+            "_coherent_direction": "right"
+          },
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.12,
+            "_coherent_direction": "left"
+          },
+          { "_coherent_direction": "left" },
+          { "_coherent_direction": "right" },
+          {
+            "_subtype_trial": "const",
+            "coherence": 0.06,
+            "_coherent_direction": "right"
+          },
+          { "_coherent_direction": "left" },
+          { "_coherent_direction": "right" },
+          {
+            "_subtype_trial": "catch",
+            "coherence": 1.0,
+            "_coherent_direction": "left"
+          }
+        ]
+      }
+    },
+
+    {
+      "nameTrial": "t_markAsCompletedValidation"
+    },
+
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "end-screen",
+      "params": {
+        "animateBtn": true,
+        "keyImgCharacter": ["", "", "character-reward-8"]
+      }
+    },
+
+    {
+      "nameTrial": "t_exitFullscreen"
+    },
+
+    {
+      "nameTrial": "t_uninstallTouchGuards"
+    }
+  ]
+}

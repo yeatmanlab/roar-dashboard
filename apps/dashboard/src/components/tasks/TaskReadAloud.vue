@@ -6,31 +6,32 @@
   </div>
 </template>
 <script setup>
-import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
+import { onMounted, watch, ref, computed, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
+import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { READALOUD_TASK_ID } from '@roar-platform/assessment-schema/roar-readaloud';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import { getRoarApiClient } from '@/clients/roar-api';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../../../package-lock.json';
+import { version } from '@roar-platform/roar-readaloud/package.json';
 
 const props = defineProps({
-  taskId: { type: String, required: true, default: 'roar-readaloud' },
-  language: { type: String, required: true, default: 'en' },
-  launchId: { type: String, required: false, default: null },
+  taskId: { type: String, default: READALOUD_TASK_ID },
+  language: { type: String, default: 'en' },
+  launchId: { type: String, default: null },
 });
 
 let TaskLauncher;
 
-const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roar-readaloud'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit } = storeToRefs(authStore);
+const { isAuthReady } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -46,8 +47,10 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.accessToken) init();
 });
 
+// launchId path throws immediately in startTask (proxy-launch not yet supported),
+// so skip the query entirely when launchId is set to avoid a pointless loading delay.
 const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
-  enabled: initialized,
+  enabled: computed(() => initialized.value && !props.launchId),
 });
 
 // The following code intercepts the back button and instead forces a refresh.
@@ -62,7 +65,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roar-readaloud')).default;
+    TaskLauncher = (await import('@roar-platform/roar-readaloud')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -79,9 +82,9 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isFirekitInit, isLoadingUserData],
-  async ([newFirekitInitValue, newLoadingUserData]) => {
-    if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
+  [isAuthReady, isLoadingUserData],
+  async ([newIsAuthReady, newLoadingUserData]) => {
+    if (newIsAuthReady && !newLoadingUserData && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
@@ -95,7 +98,7 @@ async function startTask(selectedAdmin) {
     // Move interval to component scope for cleanup
     if (checkGameStarted) clearInterval(checkGameStarted);
     checkGameStarted = setInterval(function () {
-      // Poll for the preload trials progress bar to exist and then begin the game
+      // Poll for the first read-aloud view (bootstrap card) to render, then hide the spinner.
       let gameLoading = document.querySelector('.card-title');
       if (gameLoading) {
         gameStarted.value = true;
@@ -103,27 +106,111 @@ async function startTask(selectedAdmin) {
       }
     }, 100);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
-
     const userDob = _get(userData.value, 'studentData.dob');
-    const userDateObj = new Date(userDob);
+    const userDateObj = userDob ? new Date(userDob) : null;
 
     const userParams = {
       grade: _get(userData.value, 'studentData.grade'),
-      birthMonth: userDateObj.getMonth() + 1,
-      birthYear: userDateObj.getFullYear(),
+      birthMonth: userDateObj ? userDateObj.getMonth() + 1 : undefined,
+      birthYear: userDateObj ? userDateObj.getFullYear() : undefined,
       language: props.language,
     };
 
-    const gameParams = { ...appKit._taskInfo.variantParams };
+    // Initialize the new assessment SDK for the dashboard execution path (mirrors TaskMultichoice).
+    // Resolve the task UUID and the current user's Postgres UUID, then match the selected
+    // administration and its read-aloud variant before initializing the SDK compat facade.
+    //
+    // NOTE: Until the dashboard migrates its administration queries to the new REST API,
+    // selectedAdmin.value.id is a Firestore document ID and will not match any administration
+    // in the new backend. The fallback (matching by task UUID within embedded tasks) is used
+    // until that migration is complete.
+    const roarApiClient = getRoarApiClient();
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title');
+    const [taskRes, meRes] = await Promise.all([
+      roarApiClient.tasks.get({ params: { taskId: props.taskId } }),
+      roarApiClient.me.get(),
+    ]);
+
+    if (taskRes.status !== 200) {
+      throw new Error(`read-aloud task not found in the ROAR backend (status ${taskRes.status}).`);
+    }
+    if (meRes.status !== 200) {
+      throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
+    }
+
+    // Proxy-launch path (launchId set) requires resolving the participant's Postgres UUID from
+    // the launch record — props.launchId is an assignment/launch ID, not a user ID. Fail loudly
+    // until this is properly implemented.
+    if (props.launchId) {
+      throw new Error(
+        'Proxy-launch path is not yet supported for Read Aloud. Resolve the participant Postgres UUID before enabling this path.',
+      );
+    }
+    const participantId = meRes.body.data.id;
+
+    // Fetch the participant's administrations from the ROAR Postgres backend.
+    const adminsRes = await roarApiClient.users.listUserAdministrations({
+      params: { userId: participantId },
+      query: { embed: 'tasks', perPage: 50 },
+    });
+
+    if (adminsRes.status !== 200) {
+      throw new Error(`Failed to fetch administrations from the ROAR backend (status ${adminsRes.status}).`);
+    }
+
+    const taskUuid = taskRes.body.data.id;
+    const backendAdmins = adminsRes.body.data.items;
+
+    // TODO: Remove this matching step once the frontend has fully integrated with the ROAR Postgres backend.
+    // Until then, match the Postgres backend admin to the selected admin from Firestore.
+    // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1839
+    const matchedAdmin =
+      backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
+      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === taskUuid));
+
+    if (!matchedAdmin) {
+      throw new Error('No administration containing the read-aloud task found in the ROAR backend.');
+    }
+
+    const taskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === taskUuid);
+    if (!taskVariant) {
+      throw new Error('No read-aloud task variant found in the matched administration.');
+    }
+
+    initFirekitCompat(
+      {
+        baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
+        auth: {
+          getToken: () => Promise.resolve(authStore.accessToken),
+          refreshToken: () => authStore.forceIdTokenRefresh(),
+        },
+        participant: { participantId },
+      },
+      {
+        variantId: taskVariant.variantId,
+        taskVersion: version,
+        administrationId: matchedAdmin.id,
+        isAnonymous: false,
+      },
+    );
+
+    // Source the variant parameters from the assessment SDK now that initFirekitCompat has run.
+    const { variantParams } = await getVariantById(taskVariant.variantId);
+    const gameParams = { ...variantParams };
+
+    // Read Aloud drives its own DOM (no jsPsych target div) and takes a session object as the
+    // third constructor arg. assessmentUid seeds the recording storage-path segment; there is no
+    // operator-entered participant ID on the dashboard path, so assessmentPid stays empty.
+    const roarApp = new TaskLauncher(gameParams, userParams, {
+      assessmentPid: '',
+      assessmentUid: participantId,
+    });
 
     await roarApp.run().then(() => {
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
       if (props.launchId) {
-        router.go(-1);
+        router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
       } else {
         router.push({ name: 'Home' });
       }
@@ -137,8 +224,6 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roar-readaloud/lib/resources/roar-readaloud.css';
-
 .game-target {
   position: absolute;
   top: 0;

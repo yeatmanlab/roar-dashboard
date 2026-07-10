@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+      crossorigin="anonymous"
+    />
+    <!-- <script src="https://www.hes.kyushu-u.ac.jp/~kurokid/QUEST/dist/jsQUEST.js"></script> -->
+    <script src="https://eyetrackingdata.blob.core.windows.net/public/views/jsQUEST.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/onnxjs/dist/onnx.min.js"></script>
+  </head>
+
+  <style>
+    html,
+    body {
+      height: 100%; /* Ensures the full height of the document is 100% of the viewport */
+      margin: 0; /* Removes default margin */
+      padding: 0; /* Removes default padding */
+      display: flex; /* Uses flexbox to center children */
+      justify-content: center; /* Centers children horizontally */
+      align-items: center; /* Centers children vertically */
+      font-family: sans-serif;
+    }
+
+    #canvas-container {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    #headCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      /* border-radius: 50%; */
+      /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); */
+      object-fit: cover;
+    }
+
+    #instruction {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #confirmContainer {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #fixationStim {
+      top: 40%;
+      left: 50%;
+      transform: translate(
+        -50%,
+        -50%
+      ); /* This will center the element both horizontally and vertically */
+      position: absolute;
+    }
+
+    #leftPeripheralStim {
+      top: 40%;
+      display: flex;
+      transform: translate(
+        -50%,
+        -50%
+      ); /* This will center the element both horizontally and vertically */
+      position: absolute;
+    }
+
+    #rightPeripheralStim {
+      top: 40%;
+      display: flex;
+      transform: translate(
+        -50%,
+        -50%
+      ); /* This will center the element both horizontally and vertically */
+      position: absolute;
+    }
+
+    #container_options {
+      bottom: 0%;
+      left: 50%;
+      transform: translate(
+        -50%,
+        -50%
+      ); /* This will center the element both horizontally and vertically */
+      position: absolute;
+      width: 80%;
+      display: flex; /* Enables flexbox */
+      flex-direction: column; /* Stacks child elements vertically */
+      justify-content: center; /* Centers children vertically in the container */
+      align-items: center; /* Aligns children horizontally in the center */
+    }
+
+    .row {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    /* Styling for the fade-in animation */
+    .fadeIn {
+      animation: fadeIn 0.5s forwards;
+    }
+    /* Keyframes for the fade-in animation */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+
+  <body>
+    <div id="canvas-container" style="visibility: hidden">
+      <h5 id="message"></h5>
+      <canvas id="headCanvas" class="frame" style="position: relative"></canvas>
+    </div>
+
+    <!-- Center Instructions Panel -->
+    <div id="instructionsContentArea">
+      <div class="row gap-2" id="instruction">
+        <div class="col">
+          <div class="card" style="width: 45rem; height: 39rem">
+            <div class="card-body" id="cardthing" style="text-align: center">
+              <h3 class="card-title" id="instructionTitle">Crowding</h3>
+              <h4 class="card-text" id="instructionSubtitle"></h4>
+              <h5 class="card-text" id="instructionDescription"></h5>
+              <div style="text-align: center; margin-bottom: 3vh">
+                <img
+                  id="explanationGif"
+                  src="https://eyetrackingdata.blob.core.windows.net/public/Images/squareAddition_white.png"
+                  width="350px"
+                />
+              </div>
+              <button
+                type="button"
+                class="btn btn-primary"
+                id="startTestButton"
+                onclick="startTest()"
+              >
+                Start
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="fixationStim"
+      class="column"
+      style="visibility: hidden; display: flex"
+    >
+      <img
+        id="fixationImg"
+        src="https://eyetrackingdata.blob.core.windows.net/public/Images/squareAddition.png"
+        style="width: 100%; height: 100%"
+      />
+    </div>
+
+    <div
+      id="leftPeripheralStim"
+      class="column"
+      style="visibility: hidden"
+    ></div>
+
+    <div
+      id="rightPeripheralStim"
+      class="column"
+      style="visibility: hidden"
+    ></div>
+
+    <div
+      class="hidden-container"
+      id="container_options"
+      style="bottom: 0px; visibility: hidden"
+    >
+      <h1 id="answerTitle">Select Answer</h1>
+      <div class="row" id="row1"></div>
+    </div>
+
+    <div class="panel-block" style="display: block" ;>
+      <video class="inputVideo" style="display: none"></video>
+    </div>
+
+    <audio autoplay id="voiceover"></audio>
+
+    <script data-dynamic>
+      // ----------- required -------------------
+      function runAfterEveryFrame(output) {
+        var xpred =
+          ((x_coef * (output.output.cpuData[0] * 100 - 50) + x_intercept) *
+            screen.width) /
+          100;
+        var ypred = "40%"; //-16.18*(output.output.cpuData[1]*100) + 6.32
+
+        if (recalibrate) {
+          diffs.push(screen.width / 2 - xpred);
+          diff = calculateMedian(diffs);
+        }
+        xpred = xpred + diff;
+        blueCircle.style.left = xpred.toString() + "px";
+        blueCircle.style.top = ypred.toString();
+
+        var leftPosition =
+          (window.innerWidth / 2 - leftPeripheralStimPosition) / 2;
+        leftPosition = leftPosition + leftPeripheralStimPosition;
+        var rightPosition =
+          (rightPeripheralStimPosition - window.innerWidth / 2) / 2;
+        rightPosition = rightPosition + window.innerWidth / 2;
+        var leftVisible = leftPeripheralStim.style.visibility !== "hidden";
+        var rightVisible = rightPeripheralStim.style.visibility !== "hidden";
+
+        if (leftVisible && xpred < leftPosition) {
+          eyeMoved = true;
+        }
+
+        if (rightVisible && xpred > rightPosition) {
+          eyeMoved = true;
+        }
+      }
+
+      function pageCompleted() {
+        count_initTrials = 0;
+        continueProcessing = false;
+        const event = new Event("pageComplete");
+        document.dispatchEvent(event);
+      }
+
+      // ----------- var -------------------
+
+      var canvasContainer = document.getElementById("canvas-container");
+      var fixationStim = document.getElementById("fixationStim");
+      var leftPeripheralStim = document.getElementById("leftPeripheralStim");
+      var rightPeripheralStim = document.getElementById("rightPeripheralStim");
+
+      var _parentDir = store.session.get("id");
+      var testConfig = store.session.get("testConfig");
+      var deviceConfig =
+        store.session.get("deviceConfig") ?? defaultDeviceConfig;
+      var participantConfig =
+        store.session.get("participantConfig") ?? defaultParticipantConfig;
+      var x_coef =
+        store.session.get("x_coef") !== null
+          ? store.session.get("x_coef")
+          : -3.49; // Default value can be 0 or any other default you choose
+      var x_intercept =
+        store.session.get("x_intercept") !== null
+          ? store.session.get("x_intercept")
+          : 45; // Default value can be 0
+      var y_coef =
+        store.session.get("y_coef") !== null ? store.session.get("y_coef") : 0; // Default value can be 0
+      var y_intercept =
+        store.session.get("y_intercept") !== null
+          ? store.session.get("y_intercept")
+          : 0; // Default value can be 0
+      var canvasContour = participantConfig["canvasContour"];
+      var fixationPosition = 0;
+      var leftPeripheralStimPosition = 0;
+      var rightPeripheralStimPosition = 0;
+
+      var distance = testConfig.distance_cm;
+      var logmar = testConfig.size_logmar;
+      var answers = testConfig.stimulus;
+      var multiple = testConfig.multiple_arcmin_to_deg;
+      var eccentricity = testConfig.eccentricity_deg;
+      var PixelsPerDegree = get_PixelsPerDegree(
+        distance,
+        deviceConfig.screenWidthPX,
+        deviceConfig.screenWidth,
+      );
+      var stimulusSize = get_stimulusSize(logmar, multiple, PixelsPerDegree);
+      var lowestSpacingDegPossible = get_lowestSpacingDeg(
+        stimulusSize,
+        PixelsPerDegree,
+        (minSpacingMultiple = 1.2),
+      );
+      var quest;
+      var condition;
+      var historyofResults = [];
+      var time = 0;
+      var shuffledStim = [];
+      var continueProcessing = true;
+
+      var _videoURL = "";
+      var count_initTrials = 0;
+
+      var diff = 0;
+      var diffs = []; //storing eye movement data
+      var recalibrate = false;
+      var eyeMoved = false;
+      var count_eyeMoved = 0;
+      var horizontalSpacing_deg = 0;
+
+      // ----------- functions -------------------
+
+      async function startTest() {
+        await runInference();
+        openFullscreen();
+        startRecording();
+        updateCountdown(init_newTrial);
+      }
+
+      // Show the pop-up with fade-in animation
+      function showPopUp(messageString, showCanvas, audioFile) {
+        var message = document.getElementById("message");
+        message.innerHTML = messageString;
+        if (showCanvas) {
+          headCanvas.style.visibility = "visible";
+        }
+        canvasContainer.style.visibility = "visible";
+        canvasContainer.classList.add("fadeIn");
+        document.getElementById(
+          "voiceover",
+        ).src = `https://eyetrackingdata.blob.core.windows.net/public/Audios/${audioFile}.mp3`;
+      }
+
+      // Hide the pop-up
+      function hidePopUp() {
+        headCanvas.style.visibility = "hidden";
+        canvasContainer.style.visibility = "hidden";
+        canvasContainer.classList.remove("fadeIn");
+      }
+
+      function pageCompleted() {
+        count_initTrials = 0;
+        continueProcessing = false;
+        const event = new Event("pageComplete");
+        document.dispatchEvent(event);
+      }
+
+      async function init_newTrial() {
+        container_options.style.visibility = "hidden";
+        if (headinPlace()) {
+          hidePopUp();
+          if (
+            (!testConfig.quest && shuffledStim.length > 0) ||
+            (testConfig.quest && count_initTrials < testConfig.numberofTrials)
+          ) {
+            await startRecording();
+            condition = get_nextCondition();
+            horizontalSpacing_deg = condition.spacingFactor;
+            newTrial(
+              condition.direction,
+              1 - condition.direction,
+              condition.spacingFactor,
+            );
+            count_initTrials++;
+          } else {
+            console.log("completed page");
+            pageCompleted();
+          }
+        } else {
+          showPopUp(
+            "We notice your head moved. Position your head inside the lines to continue.",
+            true,
+            "headMovement",
+          );
+          let intervalId = setInterval(async () => {
+            if (headinPlace()) {
+              clearInterval(intervalId); // Stop checking once the head is in place
+              document.getElementById("voiceover").pause();
+              document.getElementById("voiceover").currentTime = 0;
+              await init_newTrial(); // Initiate a new trial
+            }
+          }, 1000); // 200 milliseconds interval}
+        }
+      }
+
+      function newTrial(
+        leftStim,
+        rightStim,
+        horizontalSpacing_deg,
+        timeTillStim = 1.5,
+        stimTime = 1,
+        verticalSpacing_deg = 0,
+      ) {
+        // Assuming centerStim, leftPeripheralStim, rightPeripheralStim, and responseBar are already defined in the HTML
+        eyeMoved = false;
+        hidePopUp();
+        container_options.style.visibility = "hidden";
+        console.log("horizontalSpacing_deg", horizontalSpacing_deg);
+        // Show the center stimulus
+        fixationStim.style.visibility = "visible";
+        tempAnswers = shuffle(answers).slice(0, 5);
+        tempStim = stimulusTemplate(
+          tempAnswers[0],
+          tempAnswers[1],
+          tempAnswers[2],
+          tempAnswers[3],
+          tempAnswers[4],
+          horizontalSpacing_deg,
+          verticalSpacing_deg,
+        );
+
+        if (leftStim) {
+          leftPeripheralStim.innerHTML = "";
+          leftPeripheralStim.append(tempStim);
+        }
+
+        if (rightStim) {
+          rightPeripheralStim.innerHTML = "";
+          rightPeripheralStim.append(tempStim);
+        }
+
+        diffs = [];
+
+        setTimeout(
+          () => {
+            recalibrate = true;
+          },
+          (timeTillStim / 2) * 1000,
+        );
+
+        // Show left and right stimuli after 'timeTillStim' seconds
+        setTimeout(() => {
+          recalibrate = false;
+
+          if (leftStim) {
+            leftPeripheralStim.style.visibility = "visible";
+          }
+
+          if (rightStim) {
+            rightPeripheralStim.style.visibility = "visible";
+          }
+
+          time = new Date().getTime();
+          // After 'stimTime' seconds, show the response
+          setTimeout(responseBar, stimTime * 1000);
+        }, timeTillStim * 1000);
+      }
+
+      function recordAnswer(filename, eyeMoved, uploadUrl) {
+        if (!eyeMoved) {
+          quest = jsQUEST.QuestUpdate(
+            quest,
+            horizontalSpacing_deg,
+            Number(tempAnswers[0] === filename),
+          );
+        } else {
+          if (count_eyeMoved < 15) {
+            shuffledStim.push([condition.spacingFactor, condition.direction]);
+            count_initTrials--;
+          } else {
+            quest = jsQUEST.QuestUpdate(
+              quest,
+              horizontalSpacing_deg,
+              Number(tempAnswers[0] === filename),
+            );
+          }
+          count_eyeMoved++;
+        }
+        timeEnd = new Date().getTime();
+        historyofResults.push({
+          stim: tempAnswers[0],
+          direction: condition.direction == 1 ? "L" : "R",
+          correct: Number(tempAnswers[0] === filename),
+          criticalDeg: condition.spacingFactor,
+          time: timeEnd - time,
+          meanQuest: jsQUEST.QuestMean(quest),
+          sdQuest: jsQUEST.QuestSd(quest),
+          video_url: _videoURL,
+          eyeMoved: Number(eyeMoved),
+          fixMonitoring: Number(count_eyeMoved <= 15),
+          uploadUrl,
+        });
+      }
+    </script>
+  </body>
+</html>

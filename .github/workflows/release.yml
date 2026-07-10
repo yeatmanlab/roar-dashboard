@@ -80,9 +80,11 @@ jobs:
             apps/assessments/roar-levante-tasks
             apps/assessments/roar-multichoice
             apps/assessments/roar-pa
+            apps/assessments/roar-readaloud
             apps/assessments/roar-sre
             apps/assessments/roar-survey
             apps/assessments/roar-swr
+            apps/assessments/roav-apps
           )
 
           deployed=()

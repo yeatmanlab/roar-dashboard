@@ -1,0 +1,145 @@
+{
+  "arrsMetaparams": [
+    [
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.96,
+        "_coherent_direction": "right"
+      },
+      { "_coherent_direction": "right" },
+      { "_coherent_direction": "left" },
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.48,
+        "_coherent_direction": "right"
+      },
+      { "_coherent_direction": "right" },
+      { "_coherent_direction": "left" },
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.24,
+        "_coherent_direction": "left"
+      },
+      { "_coherent_direction": "right" },
+      { "_coherent_direction": "left" },
+      {
+        "_subtype_trial": "catch",
+        "coherence": 1.0,
+        "_coherent_direction": "left"
+      },
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.12,
+        "_coherent_direction": "right"
+      },
+      { "_coherent_direction": "right" },
+      { "_coherent_direction": "left" },
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.06,
+        "_coherent_direction": "left"
+      },
+      { "_coherent_direction": "right" },
+      { "_coherent_direction": "left" },
+      {
+        "_subtype_trial": "catch",
+        "coherence": 1.0,
+        "_coherent_direction": "right"
+      }
+    ],
+    [
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.96,
+        "_coherent_direction": "left"
+      },
+      { "_coherent_direction": "right" },
+      { "_coherent_direction": "left" },
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.48,
+        "_coherent_direction": "left"
+      },
+      { "_coherent_direction": "left" },
+      { "_coherent_direction": "right" },
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.24,
+        "_coherent_direction": "right"
+      },
+      { "_coherent_direction": "left" },
+      { "_coherent_direction": "right" },
+      {
+        "_subtype_trial": "catch",
+        "coherence": 1.0,
+        "_coherent_direction": "right"
+      },
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.12,
+        "_coherent_direction": "right"
+      },
+      { "_coherent_direction": "left" },
+      { "_coherent_direction": "right" },
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.06,
+        "_coherent_direction": "left"
+      },
+      { "_coherent_direction": "left" },
+      { "_coherent_direction": "right" },
+      {
+        "_subtype_trial": "catch",
+        "coherence": 1.0,
+        "_coherent_direction": "left"
+      }
+    ],
+    [
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.96,
+        "_coherent_direction": "left"
+      },
+      { "_coherent_direction": "left" },
+      { "_coherent_direction": "right" },
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.48,
+        "_coherent_direction": "left"
+      },
+      { "_coherent_direction": "left" },
+      { "_coherent_direction": "right" },
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.24,
+        "_coherent_direction": "right"
+      },
+      { "_coherent_direction": "left" },
+      { "_coherent_direction": "right" },
+      {
+        "_subtype_trial": "catch",
+        "coherence": 1.0,
+        "_coherent_direction": "right"
+      },
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.12,
+        "_coherent_direction": "left"
+      },
+      { "_coherent_direction": "left" },
+      { "_coherent_direction": "right" },
+      {
+        "_subtype_trial": "const",
+        "coherence": 0.06,
+        "_coherent_direction": "right"
+      },
+      { "_coherent_direction": "left" },
+      { "_coherent_direction": "right" },
+      {
+        "_subtype_trial": "catch",
+        "coherence": 1.0,
+        "_coherent_direction": "left"
+      }
+    ]
+  ]
+}
