@@ -63,7 +63,7 @@
       "sequentialStimulus": true,
       "skipInstructions": true,
       "stimulusBlocks": 3,
-      "taskName": "symbolSearch"
+      "taskName": "symbol-search"
     }
   }
 ]
