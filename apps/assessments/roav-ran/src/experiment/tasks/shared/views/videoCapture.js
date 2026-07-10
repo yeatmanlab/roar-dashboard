@@ -7,6 +7,8 @@
  * @module videoCapture
  */
 
+import { uploadFile } from '@roar-platform/assessment-sdk/compat/firekit';
+
 /** @type {number} Original image width */
 export var orig_img_width;
 /** @type {number} Original image height */
@@ -313,10 +315,11 @@ export async function saveRecordings({ filename, deviceConfig, config, metadata 
   try {
     // console.log("Uploading file:", filename);
 
-    return await config.firekit.uploadFileOrBlobToStorage({
-      filename: filename,
-      assessmentPid: store.session.get('id'),
+    return await uploadFile({
+      filename,
       fileOrBlob: mediaBlob,
+      taskId: config.task,
+      assessmentPid: store.session.get('id'),
       customMetadata: parseMetadata(metadata),
     });
   } catch (error) {
