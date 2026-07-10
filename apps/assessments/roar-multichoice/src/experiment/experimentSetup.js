@@ -412,7 +412,7 @@ export const setNextStimulus = () => {
   store.session.set('catName', catToSelect);
 
   if (!catToSelect) {
-    store.session.remove("nextStimulus");
+    store.session.remove('nextStimulus');
     return;
   }
 

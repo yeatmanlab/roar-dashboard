@@ -46,9 +46,7 @@ export async function buildExperiment(config, computedScoreCallback) {
     responseTimeLowThreshold: 2000,
     accuracyThreshold: 0.5,
     minResponsesRequired: 10,
-    includedReliabilityFlags: config.isAdaptive
-      ? ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast']
-      : [],
+    includedReliabilityFlags: config.isAdaptive ? ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'] : [],
     customValidations: [
       {
         flag: 'accuracyTooLowAndResponseTimeTooFast',

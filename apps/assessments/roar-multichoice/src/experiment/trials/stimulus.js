@@ -131,15 +131,8 @@ const trialsMapped = [0, 1].map((i) => {
       const thetaCoreRaw = clowder?.theta?.core;
       const thetaSECoreRaw = clampPositive(clowder?.seMeasurement?.core);
       const thetaComprehensionRaw = clowder?.theta?.composite_comprehension;
-      const thetaSEComprehensionRaw = clampPositive(
-        clowder?.seMeasurement?.composite_comprehension,
-      );
-      const [
-        thetaCoreScaled,
-        thetaSEScaled,
-        thetaComprehensionScaled,
-        thetaSEScaledComprehension,
-      ] = scaleTheta(
+      const thetaSEComprehensionRaw = clampPositive(clowder?.seMeasurement?.composite_comprehension);
+      const [thetaCoreScaled, thetaSEScaled, thetaComprehensionScaled, thetaSEScaledComprehension] = scaleTheta(
         thetaCoreRaw,
         thetaSECoreRaw,
         thetaComprehensionRaw,
