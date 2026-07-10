@@ -244,17 +244,25 @@ const ScoreReportService = (() => {
     };
   };
 
-  const getScoresArrayForTask = (task) => {
-    if (!rawOnlyTasks.includes(task.taskId) || task.taskId === 'letter' || task.taskId === 'letter-en-ca') {
+  const getScoresArrayForTask = (task, scoringVersion) => {
+    const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(task.taskId) && scoringVersion >= 1;
+    if (
+      !rawOnlyTasks.includes(task.taskId) ||
+      task.taskId === 'letter' ||
+      task.taskId === 'letter-en-ca' ||
+      hasNewlyAddedNorms
+    ) {
       return task.scoresArray;
     }
     return null;
   };
 
-  const getScoreToDisplay = (taskId, grade, rawOnlyTasks) => {
+  const getScoreToDisplay = (taskId, grade, rawOnlyTasks, scoringVersion) => {
+    // Unnormed tasks with individual score report cards (percentile field is set to percent correct)
     const alwaysDisplaysPercentile = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
 
-    if (rawOnlyTasks.includes(taskId)) {
+    const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(taskId) && scoringVersion >= 1;
+    if (rawOnlyTasks.includes(taskId) && !hasNewlyAddedNorms) {
       return SCORE_TYPES.RAW_SCORE;
     }
 
@@ -319,7 +327,7 @@ const ScoreReportService = (() => {
         };
 
         const tags = createTaskTags(optional, reliable, engagementFlags, i18n);
-        const scoreToDisplay = getScoreToDisplay(taskId, grade, rawOnlyTasks);
+        const scoreToDisplay = getScoreToDisplay(taskId, grade, rawOnlyTasks, scoringVersions[taskId]);
 
         computedTaskAcc[taskId] = {
           taskId,

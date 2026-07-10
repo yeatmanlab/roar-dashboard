@@ -93,7 +93,7 @@ export function useScoreListData(params) {
   });
 
   const getTaskScoresArray = computed(() => {
-    return (task) => ScoreReportService.getScoresArrayForTask(task);
+    return (task) => ScoreReportService.getScoresArrayForTask(task, taskScoringVersions[task.taskId]);
   });
 
   return {

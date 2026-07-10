@@ -6,7 +6,7 @@ import { getSupportLevel, getRawScoreRange, getPaSkillsToWorkOn } from '@/helper
 // TODO: Update tests once normed task cards are implemented (enable condition scoringVersion >= 1 in hasNewlyAddedNorms)
 // Mock dependencies
 vi.mock('@/helpers/reports', () => ({
-  rawOnlyTasks: ['mock-raw-task'],
+  rawOnlyTasks: ['mock-raw-task', 'cva'],
   tasksToDisplayPercentCorrect: ['phonics'],
   previouslyUnnormedTasks: ['morphology', 'cva', 'trog', 'roar-inference'],
   taskDisplayNames: {
@@ -191,12 +191,12 @@ describe('ScoreReportService', () => {
   describe('getScoresArrayForTask', () => {
     it('should return undefined for tasks not in rawOnlyTasks when scoresArray is not provided', () => {
       const task = { taskId: 'mock-task-1' }; // not in rawOnlyTasks, no scoresArray
-      expect(ScoreReportService.getScoresArrayForTask(task)).toBeUndefined();
+      expect(ScoreReportService.getScoresArrayForTask(task, null)).toBeUndefined();
     });
 
     it('should return null for raw-only tasks (except letter tasks)', () => {
       const task = { taskId: 'mock-raw-task' }; // in rawOnlyTasks
-      expect(ScoreReportService.getScoresArrayForTask(task)).toBeNull();
+      expect(ScoreReportService.getScoresArrayForTask(task, null)).toBeNull();
     });
 
     it('should return scores array for tasks that have one', () => {
@@ -208,7 +208,7 @@ describe('ScoreReportService', () => {
         ],
       };
 
-      expect(ScoreReportService.getScoresArrayForTask(task)).toEqual([
+      expect(ScoreReportService.getScoresArrayForTask(task, null)).toEqual([
         { name: 'score1', value: 10 },
         { name: 'score2', value: 20 },
       ]);
@@ -221,7 +221,25 @@ describe('ScoreReportService', () => {
         scoresArray: [{ name: 'phoneme', value: 15 }],
       };
 
-      expect(ScoreReportService.getScoresArrayForTask(taskWithScores)).toEqual([{ name: 'phoneme', value: 15 }]);
+      expect(ScoreReportService.getScoresArrayForTask(taskWithScores, null)).toEqual([{ name: 'phoneme', value: 15 }]);
+    });
+
+    it('should return scores array for previously unnormed tasks with scoringVersion >= 1', () => {
+      const task = {
+        taskId: 'cva', // in rawOnlyTasks and previouslyUnnormedTasks
+        scoresArray: [{ name: 'score1', value: 10 }],
+      };
+
+      expect(ScoreReportService.getScoresArrayForTask(task, 1)).toEqual([{ name: 'score1', value: 10 }]);
+    });
+
+    it('should return null for previously unnormed raw-only tasks with scoringVersion < 1', () => {
+      const task = {
+        taskId: 'cva',
+        scoresArray: [{ name: 'score1', value: 10 }],
+      };
+
+      expect(ScoreReportService.getScoresArrayForTask(task, 0)).toBeNull();
     });
   });
 
