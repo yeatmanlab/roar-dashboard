@@ -255,7 +255,7 @@ const getScoringVersions = computed(() => {
 const implementsValidityChecking = (taskId) => {
   // trog and roar-inference were previously unnormed but now report reliability when normed.
   // They are the only tasks in both TASKS_EXCLUDED_FROM_RETAKE and previouslyUnnormedTasks
-  const isNormed = (taskId === 'trog' || taskId === 'roar-inference') && getScoringVersions.value[taskId] > 1;
+  const isNormed = (taskId === 'trog' || taskId === 'roar-inference') && getScoringVersions.value[taskId] >= 1;
 
   return !TASKS_EXCLUDED_FROM_RETAKE.includes(taskId) || isNormed;
 };
