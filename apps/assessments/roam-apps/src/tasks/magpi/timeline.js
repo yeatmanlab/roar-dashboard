@@ -43,9 +43,9 @@ export default function buildTimeline(config) {
   // navigation instruction
   //timeline.push(navigationInstruction);
 
-  timeline.push(symCompBlock('symbolicComp', 'test_response'));
+  timeline.push(symCompBlock('symbolicComp', 'test'));
 
-  timeline.push(numberLineOuterLoop('numberLine', 'test_response'));
+  timeline.push(numberLineOuterLoop('numberLine', 'test'));
 
   timeline.push(exitFullscreen);
 

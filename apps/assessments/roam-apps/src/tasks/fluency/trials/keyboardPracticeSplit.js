@@ -51,7 +51,7 @@ const instructionPracticeIntro = (instr) => {
     },
     data: {
       // Here is where we specify that we should save the trial to Firestore
-      assessment_stage: 'practice_response',
+      assessment_stage: 'practice',
     },
     on_load: () => {
       if (instr.name === 'number') {
@@ -150,7 +150,7 @@ const feedbackIncorrect = (instr) => {
     },
     data: {
       // Here is where we specify that we should save the trial to Firestore
-      assessment_stage: 'practice_response',
+      assessment_stage: 'practice',
     },
     on_load: () => {
       if (instr.name === 'number') {

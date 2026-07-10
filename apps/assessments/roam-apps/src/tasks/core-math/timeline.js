@@ -101,7 +101,7 @@ export default function buildTimeline(config) {
 
   if (store.session.get('magpiPilot')) {
     timeline.push(transitionScreen);
-    timeline.push(numberLineOuterLoop('numberLine', 'test_response'));
+    timeline.push(numberLineOuterLoop('numberLine', 'test'));
   }
 
   timeline.push(endScreen); // End Task

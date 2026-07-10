@@ -193,9 +193,9 @@ export const magpiPilotTimeline = () => {
     timeline: [
       introMagpi,
       symInstructions,
-      symPracticeLoop('practice', 'practice_response', 'symbolicComp'),
+      symPracticeLoop('practice', 'practice', 'symbolicComp'),
       postPracticeMagpi,
-      symCompBlock('stimulus', 'test_response', 'symbolicComp'),
+      symCompBlock('stimulus', 'test', 'symbolicComp'),
     ],
   };
 };

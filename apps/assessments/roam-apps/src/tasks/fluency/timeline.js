@@ -79,7 +79,7 @@ export default function buildFluencyTimeline(config) {
           timeline.push(rtControlKeyboardPractice());
         }
         timeline.push(practice(blockOrder[i], i));
-        timeline.push(responseTimeBlock('stimulus', blockOrder[i], i, 'test_response'));
+        timeline.push(responseTimeBlock('stimulus', blockOrder[i], i, 'test'));
       }
       timeline.push(postRTControl(taskOrder[0]));
       //increment task index and reset progress bar
@@ -90,12 +90,12 @@ export default function buildFluencyTimeline(config) {
       //instructions
       timeline.push(instructions(taskOrder[i]));
       //practice
-      timeline.push(runPractice('practice', 'practice_response', taskOrder[i]));
+      timeline.push(runPractice('practice', 'practice', taskOrder[i]));
       //pre-task reminder
       timeline.push(postPracticeReminder(taskOrder[i]));
       timeline.push(preMainIntro);
       //main task
-      timeline.push(numberMainOuterLoop('stimulus', 'test_response', taskOrder[i]));
+      timeline.push(numberMainOuterLoop('stimulus', 'test', taskOrder[i]));
       timeline.push(endScreen(taskOrder[i], i));
       //increment task index and reset progress bar
       timeline.push(reInitStore());
@@ -105,10 +105,10 @@ export default function buildFluencyTimeline(config) {
     timeline.push(reInitStore());
     timeline.push(introARF);
     timeline.push(instructions(config.responseMode));
-    timeline.push(runPractice('practice', 'practice_response', config.responseMode));
+    timeline.push(runPractice('practice', 'practice', config.responseMode));
     timeline.push(postPracticeReminder(config.responseMode));
     timeline.push(preMainIntro);
-    timeline.push(numberMainOuterLoop('stimulus', 'test_response', config.responseMode));
+    timeline.push(numberMainOuterLoop('stimulus', 'test', config.responseMode));
     timeline.push(endScreen(config.responseMode, 0));
   } else {
     //introduction
@@ -116,12 +116,12 @@ export default function buildFluencyTimeline(config) {
     //instructions
     timeline.push(instructions(config.responseMode));
     //practice
-    timeline.push(runPractice('practice', 'practice_response', config.responseMode));
+    timeline.push(runPractice('practice', 'practice', config.responseMode));
     //more instructions
     timeline.push(postPracticeReminder(config.responseMode));
     timeline.push(preMainIntro);
     //main task
-    timeline.push(numberMainOuterLoop('stimulus', 'test_response', config.responseMode));
+    timeline.push(numberMainOuterLoop('stimulus', 'test', config.responseMode));
     //end screen
     /*if (store.session.get("responseModality")) {
       let endText =
