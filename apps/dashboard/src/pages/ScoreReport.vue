@@ -2006,7 +2006,7 @@ const sortedTaskIds = computed(() => {
         allTaskIds.add(taskId);
       } else if (
         normedTaskIds.includes(taskId) &&
-        !['letter', 'morphology', 'cva', 'trog', 'roar-inference'].includes(taskId)
+        !['letter', 'morphology', 'cva', 'trog', 'roar-inference', 'swr-es', 'sre-es'].includes(taskId)
       ) {
         // Include tasks that don't require scoring versions
         allTaskIds.add(taskId);
@@ -2029,7 +2029,7 @@ const sortedTaskIds = computed(() => {
 });
 
 const sortedAndFilteredTaskIds = computed(() => {
-  const tasksRequiringScoringVersion = ['letter', 'morphology', 'cva', 'trog', 'roar-inference'];
+  const tasksRequiringScoringVersion = ['letter', 'morphology', 'cva', 'trog', 'roar-inference', 'swr-es', 'sre-es'];
   return sortedTaskIds.value?.filter((taskId) => {
     if (!tasksToDisplayGraphs.includes(taskId)) return false;
     if (tasksRequiringScoringVersion.includes(taskId)) {
@@ -2040,7 +2040,7 @@ const sortedAndFilteredTaskIds = computed(() => {
 });
 
 const sortedAndFilteredSubscoreTaskIds = computed(() => {
-  const tasksRequiringScoringVersion = ['letter', 'morphology', 'cva', 'trog', 'roar-inference'];
+  const tasksRequiringScoringVersion = ['letter', 'morphology', 'cva', 'trog', 'roar-inference', 'swr-es', 'sre-es'];
 
   if (props.orgType === 'district') {
     const districtTasks =

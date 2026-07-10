@@ -72,6 +72,48 @@
       </div>
     </div>
 
+    <hr v-if="spanishFoundationalTaskIds.length > 0" class="divider" />
+
+    <!-- Spanish Foundational Literacy Skills Section -->
+    <div v-if="spanishFoundationalTaskIds.length > 0" class="chart-grid">
+      <div class="chart-section-header font-bold">Spanish Foundational Literacy Skills</div>
+
+      <div v-for="taskId of spanishFoundationalTaskIds" :key="taskId" class="chart-row">
+        <div class="chart-label text-gray-600">
+          <span class="whitespace-nowrap text-lg font-bold">{{
+            tasksDictionary?.[taskId]?.technicalName ?? taskId
+          }}</span>
+          <span v-if="tasksDictionary?.[taskId]?.publicName" class="text-sm font-light uppercase">
+            ({{ tasksDictionary?.[taskId]?.publicName }})</span
+          >
+        </div>
+        <PvChart
+          v-if="!isChartEmpty(supportLevelCountsByTaskId[taskId])"
+          type="bar"
+          :data="setDistributionChartData(supportLevelCountsByTaskId[taskId])"
+          :options="setDistributionChartOptions(supportLevelCountsByTaskId[taskId])"
+          class="h-2rem chart-item"
+        />
+        <PvChart
+          v-else
+          type="bar"
+          :data="getGrayChartData()"
+          :options="getGrayChartOptions()"
+          class="h-2rem chart-item"
+        />
+        <span
+          v-if="descriptionsByTaskId[taskId]"
+          v-tooltip.top="`${descriptionsByTaskId[taskId].header}${descriptionsByTaskId[taskId].description}`"
+          class="pi pi-info-circle info-icon h-full pt-1"
+          data-html2canvas-ignore="true"
+        />
+        <span v-else class="info-icon-placeholder" data-html2canvas-ignore="true" />
+        <div v-if="descriptionsByTaskId[taskId]" class="chart-description text-sm text-gray-500">
+          {{ descriptionsByTaskId[taskId].header }}{{ descriptionsByTaskId[taskId].description }}
+        </div>
+      </div>
+    </div>
+
     <hr v-if="comprehensionTaskIds.length > 0" class="divider" />
 
     <!-- Comprehension Skills Section -->
@@ -166,6 +208,11 @@ const foundationalTaskIds = computed(() => {
   return props.taskIds.filter((id) => foundational.includes(id));
 });
 
+const spanishFoundationalTaskIds = computed(() => {
+  const spanishFoundational = ['swr-es', 'sre-es'];
+  return props.taskIds.filter((id) => spanishFoundational.includes(id));
+});
+
 const comprehensionTaskIds = computed(() => {
   const comprehension = ['morphology', 'cva', 'trog', 'roar-inference', 'vocab'];
   return props.taskIds.filter((id) => comprehension.includes(id));
@@ -251,7 +298,7 @@ const getGrayChartOptions = () => {
 <style scoped>
 .chart-grid {
   display: grid;
-  grid-template-columns: 25rem 1fr auto;
+  grid-template-columns: 28rem 1fr auto;
   row-gap: 0.5rem;
   column-gap: 0.75rem;
   align-items: center;
@@ -271,7 +318,7 @@ const getGrayChartOptions = () => {
   grid-column: 1 / -1;
   text-align: center;
   text-transform: uppercase;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .chart-label {
@@ -293,7 +340,7 @@ const getGrayChartOptions = () => {
 
 .divider {
   grid-column: 1 / -1;
-  margin: 1.5rem 0;
+  margin: 0.5rem 0;
   border: none;
   border-top: 1px solid #d1d5db;
 }

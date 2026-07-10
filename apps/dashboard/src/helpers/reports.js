@@ -388,7 +388,18 @@ export const includedValidityFlags = {
  *  Tasks to Display Graphs
  *  A list of tasks who, when included in a score report, will generate breakdown graphs.
  */
-export const tasksToDisplayGraphs = ['swr', 'sre', 'pa', 'letter', 'morphology', 'cva', 'trog', 'roar-inference'];
+export const tasksToDisplayGraphs = [
+  'swr',
+  'sre',
+  'pa',
+  'letter',
+  'morphology',
+  'cva',
+  'trog',
+  'roar-inference',
+  'swr-es',
+  'sre-es',
+];
 
 /*
  *  Raw Only Tasks
@@ -1728,6 +1739,18 @@ export const taskInfoById = {
       'in the yellow category are continuing to develop their understanding of English syntax and may benefit from additional exposure to ' +
       'and practice with increasingly complex sentence structures. Students in the green category demonstrate syntactic knowledge that is ' +
       'likely sufficient to support comprehension of grade-level texts and continued growth in reading and academic learning.',
+  },
+  'swr-es': {
+    color: '#E97A49',
+    header: 'ROAR - PALABRA',
+    subheader: 'Single Word Recognition (Spanish)',
+    desc: "ROAR - Palabra evaluates a student's ability to quickly and automatically recognize individual words in Spanish. The student's score will range between {{RAW_SCORE_RANGE}}.",
+  },
+  'sre-es': {
+    color: '#92974C',
+    header: 'ROAR - FRASE',
+    subheader: 'Sentence Reading Efficiency (Spanish)',
+    desc: "ROAR - Frase examines silent reading fluency and comprehension for individual sentences in Spanish. The student's score will range between {{RAW_SCORE_RANGE}}.",
   },
 };
 
