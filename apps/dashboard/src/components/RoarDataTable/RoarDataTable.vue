@@ -732,6 +732,10 @@ let toolTipByHeader = (header) => {
       taskId: 'swr-es',
       desc: 'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
     },
+    'ROAR - Frase': {
+      taskId: 'sre-es',
+      desc: 'Assesses reading fluency at the sentence level in Spanish. This test is still in the research phase. \n\n Percentile ranges from 0-99 \n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
     Report: 'Individual Score Report',
   };
 
