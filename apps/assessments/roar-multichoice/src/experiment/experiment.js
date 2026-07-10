@@ -62,7 +62,7 @@ export async function buildExperiment(config, computedScoreCallback) {
   const multichoiceHandleEngagementFlags = (flags, reliable) => {
     store.session.set('engagementFlags', flags);
     store.session.set('isReliable', reliable);
-    if (config.firekit.run.started) {
+    if (config.runStarted) {
       return updateEngagementFlags(flags, reliable);
     }
     return undefined;
