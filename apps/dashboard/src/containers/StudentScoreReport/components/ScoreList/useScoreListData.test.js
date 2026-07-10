@@ -711,13 +711,13 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: null,
         t: mockT,
-        taskScoringVersions: {},
+        taskScoringVersions: { task1: 6 },
       };
 
       const { computedTaskData, getTaskScoresArray } = useScoreListData(params);
 
       const result = getTaskScoresArray.value(computedTaskData.value[0]);
-      expect(ScoreReportService.getScoresArrayForTask).toHaveBeenCalledWith(computedTaskData.value[0]);
+      expect(ScoreReportService.getScoresArrayForTask).toHaveBeenCalledWith(computedTaskData.value[0], 6);
       expect(result).toEqual([{ name: 'skill1', value: 5 }]);
     });
   });
