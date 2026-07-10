@@ -56,6 +56,8 @@ runs:
             - 'apps/assessments/roar-readaloud/**'
           roav-apps:
             - 'apps/assessments/roav-apps/**'
+          roav-ran:
+            - 'apps/assessments/roav-ran/**'
 
     - name: Build matrix
       id: matrix
@@ -72,7 +74,7 @@ runs:
         if [ -n "${{ inputs.assessment }}" ]; then
           echo "matrix=$(jq -c -n --arg a "${{ inputs.assessment }}" '[$a]')" >> $GITHUB_OUTPUT
         elif [ "${{ steps.filter.outputs.shared }}" == "true" ]; then
-          echo 'matrix=["roar-pa","roar-swr","roar-sre","roar-letter","roar-multichoice","roar-survey","roar-levante-tasks","roar-readaloud","roav-apps"]' >> $GITHUB_OUTPUT
+          echo 'matrix=["roar-pa","roar-swr","roar-sre","roar-letter","roar-multichoice","roar-survey","roar-levante-tasks","roar-readaloud","roav-apps","roav-ran"]' >> $GITHUB_OUTPUT
         else
           echo 'matrix=${{ steps.filter.outputs.changes }}' >> $GITHUB_OUTPUT
         fi
