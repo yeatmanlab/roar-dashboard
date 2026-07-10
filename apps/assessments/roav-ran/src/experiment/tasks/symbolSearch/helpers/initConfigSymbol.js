@@ -4,11 +4,13 @@ import _isUndefined from 'lodash/isUndefined';
 import i18next from 'i18next';
 import { getGrade } from '@bdelab/roar-utils';
 import { stringToBoolean } from '../../shared/helpers';
+import { createFirekitShim } from '../../shared/helpers/firekitShim';
 
-export const initConfig = async (firekit, gameParams, userParams, displayElement) => {
+export const initConfig = async (gameParams, userParams, displayElement) => {
   const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
 
   const {
+    assessmentPid,
     userMetadata = {},
     audioFeedback,
     grade,
@@ -35,7 +37,8 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
     audioFeedback: audioFeedback || 'neutral',
     skipInstructions: skipInstructions ?? true,
     startTime: new Date(),
-    firekit,
+    pid: assessmentPid ?? null,
+    firekit: createFirekitShim({ variantParams: gameParams, assessmentPid }),
     displayElement: displayElement || null,
     // name of the csv files in the storage bucket
     practiceCorpus: practiceCorpus ?? '',
