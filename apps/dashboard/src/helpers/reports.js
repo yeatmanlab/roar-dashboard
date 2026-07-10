@@ -310,7 +310,10 @@ export function getExtendedDescription(taskId) {
  *  A map to correlate taskId with a proper header and description for use in the distribution graphs.
  */
 export const descriptionsByTaskId = {
-  // "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
+  letter: {
+    header: 'Letter Names and Sounds',
+    description: ' assesses knowledge of letter names and sounds.',
+  },
   pa: {
     header: 'Phonological Awareness',
     description: ' measures the ability to hear and manipulate the individual sounds within words.',

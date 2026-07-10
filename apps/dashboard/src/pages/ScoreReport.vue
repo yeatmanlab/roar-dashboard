@@ -1983,7 +1983,37 @@ const sortedTaskIds = computed(() => {
       return [];
     }
 
-    return Object.keys(aggregatedDistrictSupportCategories.value);
+    const categorizedTasks = Object.keys(aggregatedDistrictSupportCategories.value);
+    const assignedTaskIds = administrationData.value?.assessments?.map((a) => a.taskId) || [];
+
+    // Include tasks with data and any assigned normed tasks with scoring versions >= 1
+    const allTaskIds = new Set(categorizedTasks);
+    const normedTaskIds = [
+      'swr',
+      'sre',
+      'pa',
+      'letter',
+      'cva',
+      'morphology',
+      'roar-inference',
+      'trog',
+      'swr-es',
+      'sre-es',
+    ];
+
+    for (const taskId of assignedTaskIds) {
+      if (normedTaskIds.includes(taskId) && getScoringVersions.value[taskId] >= 1) {
+        allTaskIds.add(taskId);
+      } else if (
+        normedTaskIds.includes(taskId) &&
+        !['letter', 'morphology', 'cva', 'trog', 'roar-inference'].includes(taskId)
+      ) {
+        // Include tasks that don't require scoring versions
+        allTaskIds.add(taskId);
+      }
+    }
+
+    return Array.from(allTaskIds);
   } else {
     const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
     const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
