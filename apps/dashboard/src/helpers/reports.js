@@ -326,6 +326,14 @@ export const descriptionsByTaskId = {
     header: 'Sentence Reading Efficiency',
     description: ' assesses reading fluency at the sentence level.',
   },
+  'swr-es': {
+    header: 'Palabra (Single Word Recognition - Spanish)',
+    description: ' assesses decoding skills at the word level in Spanish.',
+  },
+  'sre-es': {
+    header: 'Frase (Sentence Reading Efficiency - Spanish)',
+    description: ' assesses reading fluency at the sentence level in Spanish.',
+  },
   morphology: {
     header: 'Morphology',
     description:

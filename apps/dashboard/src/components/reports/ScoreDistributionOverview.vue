@@ -298,7 +298,7 @@ const getGrayChartOptions = () => {
 <style scoped>
 .chart-grid {
   display: grid;
-  grid-template-columns: 28rem 1fr auto;
+  grid-template-columns: 27rem 1fr auto;
   row-gap: 0.5rem;
   column-gap: 0.75rem;
   align-items: center;
