@@ -3,20 +3,21 @@ import i18next from 'i18next';
 import './i18n.js';
 import './styles/index.js';
 import { camelize } from '@bdelab/roar-utils';
+import { startRun, flushUploads } from '@roar-platform/assessment-sdk/compat/firekit';
 
 import taskConfig from './tasks/taskConfig';
+import { buildRunMetadata } from './tasks/shared/helpers/runMetadata';
 
-import { calibrationView, configureDeviceView, consentView, preloadView } from './tasks/shared/views';
+import { consentView, preloadView } from './tasks/shared/views';
 
 // Centralize window assignments so all views can access these globals
 window.store = store;
 window.i18next = i18next;
 
 class TaskLauncher {
-  constructor(firekit, gameParams, userParams, displayElement) {
+  constructor(gameParams, userParams, displayElement) {
     this.gameParams = gameParams;
     this.userParams = userParams;
-    this.firekit = firekit;
     this.displayElement = displayElement;
   }
 
@@ -28,7 +29,9 @@ class TaskLauncher {
       await consentView();
     }
 
-    await this.firekit.startRun();
+    // Operator/participant context (PID + demographics from the launch URL) is persisted to
+    // run metadata — never to the user record. Empty params are omitted by buildRunMetadata.
+    await startRun(buildRunMetadata(this.userParams));
 
     const { initConfig, buildTaskViews, audioMapping, imageAssets } = taskConfig[camelize(this.gameParams.taskName)];
 
@@ -36,20 +39,20 @@ class TaskLauncher {
     const audioMappingLang = audioMapping[i18next.language];
 
     //cleans the parameters and sets other variables (time, number of trials, corpus name)
-    const config = await initConfig(this.firekit, this.gameParams, this.userParams, this.displayElement);
+    const config = await initConfig(this.gameParams, this.userParams, this.displayElement);
     //store this data in the browser
     store.session.set('config', config);
 
     await preloadView(config, audioMappingLang, imageAssets);
-
-    // Uncomment to check run level information in firestore
-    // console.log("Run info :", config.firekit.run.runRef.id);
 
     const task = new buildTaskViews(config, audioMappingLang, this.gameParams);
     const result = await task.run();
     if (result === 'aborted') return 'aborted';
 
     await config.firekit.updateEngagementFlags([], true);
+    // Drain any in-flight recording uploads before marking the run complete, so the final
+    // recordings aren't dropped on navigation/unload.
+    await flushUploads();
     await config.firekit.finishRun();
     return 'success';
   }

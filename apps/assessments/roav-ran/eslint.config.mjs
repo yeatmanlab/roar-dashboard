@@ -4,44 +4,22 @@ import globals from 'globals';
 export default [
   ...base,
 
-  // Not linted: generated/vendored assets, plus source slated for imminent rewrite in
-  // later PRs — excluded now so CI passes without fighting lint on soon-to-change code.
-  //   - `serve/`: the standalone dev-server imports the removed firebaseConfig secret and
-  //     firekit-era Firebase auth; the sdk-wiring PR rewrites it.
-  //   - the firekit-driven files below read `config.firekit.*` and are converted to the
-  //     assessment SDK in the sdk-wiring PR. Remove these ignores when that PR relands
-  //     them on the SDK so the new code is linted.
+  // Generated / vendored assets that shouldn't be linted.
   {
-    ignores: [
-      'dist/**',
-      'lib/**',
-      'node_modules/**',
-      'src/**/*.onnx',
-      '**/*.wasm',
-      'serve/**',
-      // firekit → assessment-SDK rewrite targets (sdk-wiring PR)
-      'src/experiment/index.js',
-      'src/experiment/tasks/RAN/task.js',
-      'src/experiment/tasks/RAN/views/RANView.js',
-      'src/experiment/tasks/RAN/helpers/initConfigRAN.js',
-      'src/experiment/tasks/shared/views/videoCapture.js',
-      'src/experiment/tasks/shared/views/calibrationView.js',
-      'src/experiment/tasks/shared/views/configureDeviceView.js',
-      'src/experiment/tasks/symbolSearch/helpers/viewHelpers.js',
-      'src/experiment/tasks/symbolSearch/helpers/initConfigSymbol.js',
-    ],
+    ignores: ['dist/**', 'lib/**', 'node_modules/**', 'src/**/*.onnx', '**/*.wasm'],
   },
 
-  // Browser + Web Worker globals for assessment source. The gaze-estimation worker
-  // (onnxruntime-web) runs off the main thread, so worker globals (self, postMessage,
-  // importScripts) are needed alongside browser ones.
+  // Browser + Web Worker globals for assessment source and the serve harness. The
+  // gaze-estimation worker (onnxruntime-web) runs off the main thread, so worker globals
+  // are needed alongside browser ones. `ROAR_API_BASE_URL` is defined by webpack/rollup.
   {
-    files: ['src/**/*.js'],
+    files: ['src/**/*.js', 'serve/**/*.js'],
     languageOptions: {
       globals: {
         ...globals.browser,
         ...globals.worker,
         process: 'readonly',
+        ROAR_API_BASE_URL: 'readonly',
       },
     },
     rules: {
@@ -57,11 +35,11 @@ export default [
     },
   },
 
-  // The remaining migrated experiment code is raw legacy source carried in verbatim, with
-  // pre-existing debt (unused imports/vars, an empty block, and a dead barrel re-export of
-  // a never-added trialHelpers.js). Per the migration boundary we don't edit the assessment
-  // author's code, so these are downgraded to warnings — surfaced for cleanup, not blocking
-  // CI. The rollup build is the real gate for genuinely unresolved imports.
+  // The migrated experiment code is raw legacy source carried in verbatim, with pre-existing
+  // debt (unused imports/vars, an empty block, and a dead barrel re-export of a never-added
+  // trialHelpers.js). Per the migration boundary we don't edit the assessment author's code,
+  // so these are downgraded to warnings — surfaced for cleanup, not blocking CI. The rollup
+  // build is the real gate for genuinely unresolved imports.
   {
     files: ['src/experiment/**/*.js'],
     rules: {
