@@ -1,5 +1,6 @@
 import store from 'store2';
 import { enterFullscreen, getUserDataTimeline } from '../trials';
+import { updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
 
 //randomly generates a 16 character string as the pid
 const makePid = () => {
@@ -26,11 +27,15 @@ export const initTimeline = (configMain) => {
     on_timeline_finish: async () => {
       const config = store.session.get('config');
       config.pid = config.pid || makePid();
-      await configMain.firekit.updateUser({
-        assessmentPid: config.pid,
-        labId: config.labId,
-        ...config.userMetadata, //... concantenates the key-variable pairs in config.userMetadata to the rest of the dictionary
-      });
+      try {
+        await updateUser({
+          assessmentPid: config.pid,
+          labId: config.labId,
+          ...config.userMetadata, //... concantenates the key-variable pairs in config.userMetadata to the rest of the dictionary
+        });
+      } catch (err) {
+        console.error('[roam-apps] updateUser failed (non-fatal):', err);
+      }
     },
   };
 

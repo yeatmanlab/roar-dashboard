@@ -1,6 +1,7 @@
 import jsPsychSurveyHtmlForm from '@jspsych/plugin-survey-html-form'; //set of inputs
 import store from 'store2'; //storing session data
 import { getAgeData } from '@bdelab/roar-utils';
+import { updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
 
 const survey_responseModality = {
   type: jsPsychSurveyHtmlForm,
@@ -90,11 +91,15 @@ export const surveyTimeline = (configMain) => {
     timeline: [survey_responseModality],
     on_timeline_finish: async () => {
       const config = store.session.get('config');
-      await configMain.firekit.updateUser({
-        assessmentPid: config.pid,
-        labId: config.labId,
-        ...config.userMetadata,
-      });
+      try {
+        await updateUser({
+          assessmentPid: config.pid,
+          labId: config.labId,
+          ...config.userMetadata,
+        });
+      } catch (err) {
+        console.error('[roam-apps] updateUser failed (non-fatal):', err);
+      }
     },
   };
 

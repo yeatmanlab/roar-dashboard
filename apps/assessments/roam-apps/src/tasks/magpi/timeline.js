@@ -2,6 +2,7 @@ import 'regenerator-runtime/runtime'; //async function
 // setup
 import { initTrialSaving, initTimeline } from '../shared/helpers';
 import { jsPsych } from '../taskSetup'; //initialised jspsych object
+import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/firekit';
 import { ValidityEvaluator, createEvaluateValidity } from '@bdelab/roar-utils'; // for validity
 import { exitFullscreen } from '../shared/trials'; //jspsych object for exiting full screen
 import { preloadTrials } from '../..';
@@ -27,10 +28,7 @@ export default function buildTimeline(config) {
   });
 
   const handleEngagementFlags = (flags, reliable) => {
-    if (config.firekit.run.started) {
-      return config.firekit.updateEngagementFlags(flags, reliable);
-    }
-    return null;
+    return updateEngagementFlags(flags, reliable);
   };
 
   validityEvaluator = new ValidityEvaluator({
