@@ -65,7 +65,7 @@ export async function buildExperiment(config, computedScoreCallback) {
     store.session.set('engagementFlags', flags);
     store.session.set('isReliable', reliable);
     if (config.firekit.run.started) {
-      return config.firekit?.updateEngagementFlags(flags, reliable);
+      return updateEngagementFlags(flags, reliable);
     }
     return undefined;
   };
