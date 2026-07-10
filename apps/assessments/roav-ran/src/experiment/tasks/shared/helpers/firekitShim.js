@@ -15,10 +15,9 @@ const STAGE_MAP = {
   practice_response: 'practice_response',
   test_response: 'test_response',
   eyecalibration: 'practice_response',
-  headcalibration: 'practice_response',
 };
 
-const normalizeStage = (rawStage) => STAGE_MAP[String(rawStage ?? '').toLowerCase()] ?? 'test';
+export const normalizeStage = (rawStage) => STAGE_MAP[String(rawStage ?? '').toLowerCase()] ?? 'test';
 
 // Warn once per no-op method (dev only) so a researcher's firekit muscle memory doesn't
 // silently mislead them — the shape is preserved but the behavior is intentionally gone.
