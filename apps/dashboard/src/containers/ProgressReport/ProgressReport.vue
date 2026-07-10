@@ -31,6 +31,7 @@
             :columns="progressReportColumns"
             :total-records="filteredTableData?.length"
             :loading="isLoadingAssignments || isFetchingAssignments"
+            :task-scoring-versions="getScoringVersions"
             :page-limit="pageLimit"
             :allow-filtering="true"
             :reset-filters="resetFilters"
@@ -190,6 +191,21 @@ const handleViewChange = () => {
   const { administrationId, orgType, orgId } = props;
   router.push({ path: getDynamicRouterPath(APP_ROUTES.SCORE_REPORT, { administrationId, orgType, orgId }) });
 };
+
+/**
+ * Returns a map of taskId to scoringVersion based on the administrationData.
+ * If no scoringVersion is provided, value will be null.
+ */
+const getScoringVersions = computed(() => {
+  if (!administrationData.value?.assessments) return {};
+  const scoringVersions = Object.fromEntries(
+    administrationData.value?.assessments?.map((assessment) => [
+      assessment.taskId,
+      assessment?.params?.scoringVersion ?? null,
+    ]),
+  );
+  return scoringVersions;
+});
 
 // Initialization
 let unsubscribe;
