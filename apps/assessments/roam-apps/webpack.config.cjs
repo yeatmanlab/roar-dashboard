@@ -122,6 +122,7 @@ const webConfig = merge(commonConfig, {
       org: 'roar-89588e380',
       project: 'roam',
       authToken: process.env.SENTRY_AUTH_TOKEN,
+      deleteSourcemapsAfterUpload: true,
       debug: true,
       errorHandler: (err) => {
         console.warn(err);
@@ -132,6 +133,7 @@ const webConfig = merge(commonConfig, {
 
 const productionConfig = merge(webConfig, {
   mode: 'production',
+  devtool: false,
 });
 
 const developmentConfig = merge(webConfig, {
