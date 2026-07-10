@@ -292,7 +292,7 @@ export default defineConfig(({ mode }) => {
                 levante: ['@roar-platform/roar-levante-tasks'],
                 utils: ['@bdelab/roar-utils'],
                 vocab: ['@bdelab/roar-vocab'],
-                ran: ['@bdelab/roav-ran'],
+                ran: ['@roar-platform/roav-ran'],
                 crowding: ['@bdelab/roav-crowding'],
                 'roav-mep': ['@bdelab/roav-mep'],
                 'roar-readaloud': ['@roar-platform/roar-readaloud'],
