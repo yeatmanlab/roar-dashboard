@@ -51,7 +51,7 @@
   "dependencies": {
     "@bdelab/jscat": "^5.2.3",
     "@bdelab/roar-firekit": "^9.6.0",
-    "@bdelab/roar-utils": "^1.2.2",
+    "@bdelab/roar-utils": "^1.2.8",
     "@jspsych-contrib/plugin-audio-multi-response": "^1.0.0",
     "@jspsych-contrib/plugin-html-multi-response": "^1.0.2",
     "@jspsych-contrib/plugin-html-swipe-response": "^1.0.0",

@@ -84,6 +84,8 @@ jobs:
             apps/assessments/roar-sre
             apps/assessments/roar-survey
             apps/assessments/roar-swr
+            apps/assessments/roav-apps
+            apps/assessments/roav-ran
           )
 
           deployed=()
