@@ -146,6 +146,17 @@ const developmentConfig = merge(webConfig, {
     client: {
       overlay: false,
     },
+    // Proxy /v1 to the local backend so the browser sees a same-origin request —
+    // no CORS headers needed on the backend. Mirrors how Firebase Hosting proxies
+    // to Cloud Run in staging/production.
+    proxy: [
+      {
+        context: ['/v1'],
+        target: process.env.BACKEND_URL ?? 'https://localhost:4000',
+        secure: false,
+        changeOrigin: true,
+      },
+    ],
   },
 });
 
