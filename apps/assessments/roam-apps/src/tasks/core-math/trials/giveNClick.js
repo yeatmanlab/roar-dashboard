@@ -2,12 +2,10 @@ import store from 'store2';
 import { jsPsych } from '../../taskSetup';
 import { mediaAssets } from '../../..';
 import jsPsychHtmlButtonResponse from '@jspsych/plugin-html-button-response';
-import { validityEvaluator } from '../timeline';
+import { validityEvaluator , catIRT } from '../timeline';
 import { startTimer } from '../helpers/updateCountDown';
-import { catIRT } from '../timeline';
-import { addResponse, endGame, updateSkillScores, scaleTheta } from './trialHelpers';
+import { addResponse, endGame, updateSkillScores, scaleTheta , isMobile } from './trialHelpers';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
-import { isMobile } from './trialHelpers';
 
 // store dragging time for each apple
 let dropCount;

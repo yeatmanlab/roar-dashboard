@@ -15,9 +15,9 @@ export const initTrialSaving = (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-      // eslint-disable-next-line prefer-rest-params
+       
       fn.apply(fn, arguments);
-      // eslint-disable-next-line prefer-rest-params
+       
       code.apply(fn, arguments);
     };
 

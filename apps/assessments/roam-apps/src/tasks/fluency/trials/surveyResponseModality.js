@@ -89,7 +89,7 @@ export const surveyTimeline = (configMain) => {
   const beginningTimeline = {
     timeline: [survey_responseModality],
     on_timeline_finish: async () => {
-      // eslint-disable-next-line no-param-reassign
+       
       const config = store.session.get('config');
       await configMain.firekit.updateUser({
         assessmentPid: config.pid,

@@ -3,19 +3,17 @@ Defines the jspsych object for the task trial (practice or main). Includes the o
 Data of each trial will be saved in jspsych data on finish of trial. Some session data variables are updated.
 */
 
-/* eslint-disable no-plusplus */
-/* eslint-disable prefer-const */
-/* eslint-disable arrow-body-style */
+ 
+ 
+ 
 import store from 'store2'; //storing session data
 import { jsPsych } from '../../taskSetup';
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import { mediaAssets } from '../../..';
 import { shuffle } from '../../shared/helpers/shuffleArray';
-import { updateProgressBar } from '../../shared/helpers';
-import { roamValidityEvaluator } from '../timeline';
+import { updateProgressBar , dashToCamelCase } from '../../shared/helpers';
+import { roamValidityEvaluator , validityEvaluator } from '../timeline';
 import i18next from 'i18next';
-import { dashToCamelCase } from '../../shared/helpers';
-import { validityEvaluator } from '../timeline';
 import { pushSkill } from './trialDefinitions';
 import { isMobile } from '../helpers';
 

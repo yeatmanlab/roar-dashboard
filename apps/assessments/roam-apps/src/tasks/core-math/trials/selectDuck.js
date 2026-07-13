@@ -3,11 +3,9 @@ import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-respo
 import { jsPsych } from '../../taskSetup';
 import { mediaAssets } from '../../..';
 import { startTimer } from '../helpers/updateCountDown';
-import { validityEvaluator } from '../timeline';
-import { catIRT } from '../timeline';
-import { addResponse, endGame, updateSkillScores, scaleTheta } from './trialHelpers';
+import { validityEvaluator , catIRT } from '../timeline';
+import { addResponse, endGame, updateSkillScores, scaleTheta , isMobile } from './trialHelpers';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
-import { isMobile } from './trialHelpers';
 
 let source;
 let audioFile;

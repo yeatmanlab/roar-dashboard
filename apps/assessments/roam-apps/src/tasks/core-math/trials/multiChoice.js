@@ -2,13 +2,11 @@ import store from 'store2';
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import { jsPsych } from '../../taskSetup';
 import { mediaAssets } from '../../..';
-import { validityEvaluator } from '../timeline';
+import { validityEvaluator , catIRT } from '../timeline';
 import { startTimer } from '../helpers/updateCountDown';
-import { catIRT } from '../timeline';
-import { addResponse, endGame, updateSkillScores, scaleTheta } from './trialHelpers';
+import { addResponse, endGame, updateSkillScores, scaleTheta , isMobile } from './trialHelpers';
 import { scaleJsPsychContentToFit } from './scaleContent';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
-import { isMobile } from './trialHelpers';
 //import { parseKatex } from "../helpers";
 
 let source;

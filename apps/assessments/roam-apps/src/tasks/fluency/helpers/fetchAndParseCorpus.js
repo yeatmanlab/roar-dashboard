@@ -9,7 +9,7 @@ import { randomInteger } from '../../shared/helpers/randomInteger';
 import store from 'store2'; //storing session data
 //import itemsAll from "../../../../items-all.csv";
 import { shuffle } from '../../shared/helpers';
-import { camelize } from '@bdelab/roar-utils';
+import { camelize , getLanguage } from '@bdelab/roar-utils';
 //import { groupMapping } from "../../taskSetup";
 import { getGrade } from '@bdelab/roar-utils';
 import { Clowder, prepareClowderCorpus } from '@bdelab/jscat';
@@ -17,7 +17,6 @@ import _ from 'lodash';
 import { fetchAndParseCorpusRM } from '../../responseModalityStudy/helpers';
 import 'simple-keyboard/build/css/index.css';
 import { isMobile } from './initStore';
-import { getLanguage } from '@bdelab/roar-utils';
 import i18next from 'i18next';
 import { generateItemIdx, getIdxList, assignItems, getItemFromBankFluency } from '../../shared/helpers/parseHelpers';
 import {

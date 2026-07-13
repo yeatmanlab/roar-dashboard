@@ -6,14 +6,13 @@ Defines the main task class.
 4. Imports css styles.
 */
 
-/* eslint-disable import/extensions */
+ 
 import store from 'store2'; //cross browser local storage
 import { isTaskFinished } from './tasks/shared/helpers';
-import { camelize } from '@bdelab/roar-utils';
+import { camelize , generateAssetObject, createPreloadTrials } from '@bdelab/roar-utils';
 import './styles/game.scss'; //getting all the css styles
 import { initSentry } from './sentry';
 import taskConfig from './tasks/taskConfig';
-import { generateAssetObject, createPreloadTrials } from '@bdelab/roar-utils';
 import { checkAudio } from './tasks/shared/helpers';
 import i18next from 'i18next';
 import { clearStore } from './tasks/shared/helpers';

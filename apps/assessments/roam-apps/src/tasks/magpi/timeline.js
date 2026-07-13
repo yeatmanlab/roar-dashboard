@@ -10,9 +10,9 @@ import { symCompBlock } from './trials/symCompBlock'; // Import the number compa
 import { numberLineOuterLoop } from './trials/numberLineBlock';
 import store from 'store2';
 
-// eslint-disable-next-line import/no-mutable-exports
+ 
 export let validityEvaluator;
-// eslint-disable-next-line import/no-mutable-exports
+ 
 
 //calls the initializatioon functions, builds the timeline
 export default function buildTimeline(config) {
