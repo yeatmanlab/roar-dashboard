@@ -188,7 +188,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
       for (let i = 0; i < textboxVal.length; i++) {
         let response;
         let target = Number(stimulus.target[i]);
-        if (textboxVal.hasOwn(i)) {
+        if (Object.hasOwn(textboxVal, i)) {
           response = Number(textboxVal[i]);
           if (textboxVal[i] === null || textboxVal[i] === '') {
             response = '';
@@ -403,7 +403,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       for (let i = 0; i < textboxVal.length; i++) {
         let response;
         let target = Number(stimulus.target[i]);
-        if (textboxVal.hasOwn(i)) {
+        if (Object.hasOwn(textboxVal, i)) {
           response = Number(textboxVal[i]);
           if (textboxVal[i] === null || textboxVal[i] === '') {
             response = '';

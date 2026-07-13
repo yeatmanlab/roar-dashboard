@@ -114,8 +114,8 @@ const getNextStimulus = (corpusName) => {
   }
   if (
     store.session.get('grade') > 4 ||
-    !store.session.get('nextStimulus').hasOwn('audio_file') ||
-    (store.session.get('nextStimulus').hasOwn('audio_file') && store.session.get('nextStimulus').audio_file === '')
+    !Object.hasOwn(store.session.get('nextStimulus'), 'audio_file') ||
+    (Object.hasOwn(store.session.get('nextStimulus'), 'audio_file') && store.session.get('nextStimulus').audio_file === '')
   ) {
     store.session.set('replayButton', false);
   }
@@ -209,7 +209,7 @@ export const updateSkillScores = (correct, stimulus) => {
     let scores = store.session.get('skillScores');
     for (let i = 0; i < stimulus['skill'].length; i++) {
       let skill = stimulus['skill'][i];
-      if (!scores.hasOwn(skill)) {
+      if (!Object.hasOwn(scores, skill)) {
         //initialise the skill category scores
         initSkill(scores, skill);
       }

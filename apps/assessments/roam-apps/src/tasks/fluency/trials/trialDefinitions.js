@@ -197,7 +197,7 @@ const checkAndPushSkill = (skillArr, subtask, skill) => {
     }
   }
 
-  if (skillArr.hasOwn(subtask)) {
+  if (Object.hasOwn(skillArr, subtask)) {
     if (!skillArr[subtask].includes(skill)) {
       if (subtask === 'multiplication' || subtask === 'division') {
         //get the facts that have been assessed for that operation in sorted order

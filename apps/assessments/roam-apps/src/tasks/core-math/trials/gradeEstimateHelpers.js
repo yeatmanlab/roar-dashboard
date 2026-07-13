@@ -16,7 +16,7 @@ export const initGradeEstimate = (gradeEstimateObject, subtask) => {
 };
 
 export const updateGradeEstimateObject = (gradeEstimateObject, subtask, zetaGrade, correct, grade) => {
-  if (!gradeEstimateObject.hasOwn(subtask)) {
+  if (!Object.hasOwn(gradeEstimateObject, subtask)) {
     //initialise the grade estimate object for the sub task
     initGradeEstimate(gradeEstimateObject, subtask);
   }

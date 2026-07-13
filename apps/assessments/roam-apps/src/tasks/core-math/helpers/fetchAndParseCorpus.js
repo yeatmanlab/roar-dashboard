@@ -375,7 +375,7 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
     itemType.push(current_item['item_type']);
 
     //update the min and max grades for the subskill object
-    if (!subSkillRange.hasOwn(current_item['skill_category_camel'])) {
+    if (!Object.hasOwn(subSkillRange, current_item['skill_category_camel'])) {
       subSkillRange[current_item['skill_category_camel']] = {
         minGrade: 11,
         maxGrade: -1,
