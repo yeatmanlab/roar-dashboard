@@ -28,8 +28,8 @@ export type TaskSeedConfig = {
   tasks: Record<string, { name: string; nameSimple: string; nameTechnical: string }>;
   /** Allowed parameter keys. If set, unknown keys are rejected. */
   allowedParamKeys?: Set<string>;
-  /** Custom validation per variant. Throws on invalid input. */
-  validateVariant?: (loc: string, params: Record<string, unknown>) => void;
+  /** Custom validation per variant. Throws on invalid input. Return false to skip the variant. */
+  validateVariant?: (loc: string, params: Record<string, unknown>) => void | boolean;
   /** For multi-task configs, resolves which taskId a variant belongs to from its params. */
   resolveTaskId?: (params: Record<string, unknown>) => string;
 };

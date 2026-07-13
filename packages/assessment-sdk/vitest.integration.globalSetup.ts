@@ -47,6 +47,9 @@ function runSeedScript(backendDir: string, childEnv: Record<string, string | und
       FIREBASE_AUTH_EMULATOR_HOST: childEnv.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099',
       GOOGLE_CLOUD_PROJECT: childEnv.GOOGLE_CLOUD_PROJECT || 'demo-roar',
       AUTHZ_MODEL_PATH: path.resolve(backendDir, '../../packages/authz/authorization-model.fga'),
+      // Point dotenv at .env.test so the seed script's `config({ override: true })`
+      // reload (index.ts line 39) doesn't overwrite test DB URLs with .env values.
+      DOTENV_CONFIG_PATH: path.join(backendDir, '.env.test'),
     },
     stdio: ['ignore', 'inherit', 'inherit'],
     timeout: SEED_TIMEOUT,
@@ -62,9 +65,9 @@ function runSeedScript(backendDir: string, childEnv: Record<string, string | und
  * @returns Object with FGA_STORE_ID and FGA_MODEL_ID, or null if not found
  */
 function readFgaEnv(backendDir: string): { FGA_STORE_ID: string; FGA_MODEL_ID: string } | null {
-  const envPath = process.env.DOTENV_CONFIG_PATH
-    ? path.resolve(process.env.DOTENV_CONFIG_PATH)
-    : path.join(backendDir, '.env');
+  // The seed script writes FGA IDs to the dotenv file resolved by DOTENV_CONFIG_PATH.
+  // Since we set DOTENV_CONFIG_PATH to .env.test in the child env, read from .env.test.
+  const envPath = path.join(backendDir, '.env.test');
 
   try {
     if (existsSync(envPath)) {
@@ -283,6 +286,8 @@ export default async function globalSetup() {
       PORT: BACKEND_PORT,
       ALLOWED_ORIGINS: `http://localhost:${BACKEND_PORT}`,
       AUTHZ_MODEL_PATH: path.resolve(backendDir, '../../packages/authz/authorization-model.fga'),
+      // Point dotenv/config at .env.test so the server connects to the test databases.
+      DOTENV_CONFIG_PATH: path.join(backendDir, '.env.test'),
       ...(fgaEnv ? { FGA_STORE_ID: fgaEnv.FGA_STORE_ID, FGA_MODEL_ID: fgaEnv.FGA_MODEL_ID } : {}),
     },
     stdio: ['ignore', 'pipe', 'pipe'],

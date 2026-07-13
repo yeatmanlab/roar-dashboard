@@ -2,7 +2,9 @@ import { multichoice } from '@roar-platform/assessment-schema';
 
 import type { TaskSeedConfig } from '../task-seed-configs';
 
-const { MORPHOLOGY_TASK_ID, CVA_TASK_ID } = multichoice;
+const { MORPHOLOGY_TASK_ID, CVA_TASK_ID, MULTICHOICE_SCORING_VERSION } = multichoice;
+
+const VALID_SCORING_VERSIONS = new Set(Object.values(MULTICHOICE_SCORING_VERSION));
 
 export const multichoiceConfig: TaskSeedConfig = {
   tasks: {
@@ -12,15 +14,25 @@ export const multichoiceConfig: TaskSeedConfig = {
       nameTechnical: 'Rapid Online Assessment of Reading — Morphology',
     },
     [CVA_TASK_ID]: {
-      name: 'Comprehension of Vocabulary and Affixes',
+      name: 'Written Vocabulary',
       nameSimple: 'CVA',
-      nameTechnical: 'Rapid Online Assessment of Reading — Comprehension of Vocabulary and Affixes',
+      nameTechnical: 'Rapid Online Assessment of Reading — Written Vocabulary',
     },
   },
+  validateVariant(loc, params) {
+    const scoringVersion = params.scoringVersion as number | null | undefined;
+    if (scoringVersion !== undefined && scoringVersion !== null) {
+      if (!VALID_SCORING_VERSIONS.has(scoringVersion)) {
+        throw new Error(
+          `${loc}: invalid scoringVersion ${scoringVersion}. Valid: ${[...VALID_SCORING_VERSIONS].join(', ')}`,
+        );
+      }
+    }
+  },
   resolveTaskId(params) {
-    const taskName = params.taskName as string | undefined;
-    if (taskName === MORPHOLOGY_TASK_ID) return MORPHOLOGY_TASK_ID;
-    if (taskName === CVA_TASK_ID) return CVA_TASK_ID;
-    throw new Error(`Unknown multichoice taskName "${taskName}". Expected "${MORPHOLOGY_TASK_ID}" or "${CVA_TASK_ID}"`);
+    const task = params.task as string | undefined;
+    if (task === MORPHOLOGY_TASK_ID) return MORPHOLOGY_TASK_ID;
+    if (task === CVA_TASK_ID) return CVA_TASK_ID;
+    throw new Error(`Unknown multichoice task "${task}". Expected "${MORPHOLOGY_TASK_ID}" or "${CVA_TASK_ID}"`);
   },
 };

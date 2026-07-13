@@ -10,6 +10,7 @@
     "dev:setup": "cd apps/backend && npm run dev:setup",
     "dev:seed": "cd apps/backend && npm run dev:seed",
     "dev:reset": "cd apps/backend && npm run dev:reset",
+    "dev:seed:tasks": "cd apps/backend && npm run dev:seed:tasks",
     "dev:init": "cd apps/backend && npm run dev:init",
     "dev:setup:certs": "setup-certs",
     "watch": "turbo watch dev",

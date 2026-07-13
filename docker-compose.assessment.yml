@@ -56,7 +56,7 @@ services:
   # One-shot migration runner.
   # Sets up postgres_fdw prerequisites, applies all Drizzle migrations, and
   # seeds the assessment task data. ASSESSMENT_NAME is set by assessment-env-up.sh
-  # and drives the db:seed --task ${ASSESSMENT_NAME} script. Exits 0 on success.
+  # and drives the dev:seed:tasks --task ${ASSESSMENT_NAME} script. Exits 0 on success.
   # ────────────────────────────────────────────────────────────────────────────
   assessment-db-migrate:
     container_name: assessment-db-migrate
@@ -70,7 +70,7 @@ services:
         ./scripts/setup-fdw-local.sh &&
         cd apps/backend &&
         npm run db:migrate &&
-        npm run db:seed -- --task ${ASSESSMENT_NAME:-}
+        npm run dev:seed:tasks -- --task ${ASSESSMENT_NAME:-}
       "
     environment:
       ASSESSMENT_NAME: ${ASSESSMENT_NAME:-}

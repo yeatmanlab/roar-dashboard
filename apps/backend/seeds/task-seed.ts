@@ -6,8 +6,8 @@
  * with a single entrypoint driven by a task config registry.
  *
  * Usage:
- *   npm run db:seed -- --task roar-pa
- *   TASK_VARIANT_PARAMETERS_FILE=./params.json npm run db:seed -- --task roar-swr
+ *   npm run dev:seed:tasks -- --task roar-pa
+ *   TASK_VARIANT_PARAMETERS_FILE=./params.json npm run dev:seed:tasks -- --task roar-swr
  *
  * The --task argument selects a config from the registry which provides:
  * - Task ID(s) and metadata (name, nameSimple, nameTechnical)
@@ -37,7 +37,7 @@ import type { TaskSeedConfig, VariantDef } from './task-seed-configs';
 const taskArg = process.argv.find((_, i, arr) => arr[i - 1] === '--task');
 if (!taskArg) {
   const available = Object.keys(TASK_SEED_CONFIGS).join(', ');
-  console.error(`Usage: npm run db:seed -- --task <name>\nAvailable tasks: ${available}`);
+  console.error(`Usage: npm run dev:seed:tasks -- --task <name>\nAvailable tasks: ${available}`);
   process.exit(1);
 }
 
@@ -68,7 +68,10 @@ function validateVariants(raw: unknown): VariantDef[] {
     throw new Error('taskVariantParameters.json must be a non-empty array');
   }
 
-  return raw.map((entry: unknown, i: number) => {
+  const result: VariantDef[] = [];
+
+  for (let i = 0; i < raw.length; i++) {
+    const entry: unknown = raw[i];
     const label = `Entry [${i}]`;
 
     if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
@@ -99,13 +102,19 @@ function validateVariants(raw: unknown): VariantDef[] {
       }
     }
 
-    // Run custom validation if provided
+    // Run custom validation if provided. Return false to skip the variant.
     if (config.validateVariant) {
-      config.validateVariant(loc, p);
+      const shouldInclude = config.validateVariant(loc, p);
+      if (shouldInclude === false) {
+        console.log(`  Skipping ${loc}: validateVariant returned false`);
+        continue;
+      }
     }
 
-    return { variantName: name, params: p };
-  });
+    result.push({ variantName: name, params: p });
+  }
+
+  return result;
 }
 
 // ─── Load and validate file ──────────────────────────────────────────────────
@@ -166,7 +175,7 @@ async function seedVariant(taskDbId: string, def: VariantDef): Promise<void> {
   });
 
   if (existing) {
-    console.log(`  Variant "${def.variantName}" already exists (${existing.id}), skipping.`);
+    console.log(`Variant "${def.variantName}" already exists (${existing.id}), skipping.`);
     return;
   }
 

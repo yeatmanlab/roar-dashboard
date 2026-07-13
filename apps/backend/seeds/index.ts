@@ -33,10 +33,14 @@ async function main(): Promise<void> {
 
   await runSetup();
 
-  // Re-load .env so the FGA store/model IDs written by setup are available
-  // to the seed step (which needs them for tuple sync).
+  // Re-load the dotenv file so the FGA store/model IDs written by setup are
+  // available to the seed step (which needs them for tuple sync).
+  // Manual `config()` does NOT read `DOTENV_CONFIG_PATH` — only the
+  // `import 'dotenv/config'` preload respects it — so we must pass the path
+  // explicitly to avoid reloading `.env` when CI sets DOTENV_CONFIG_PATH to
+  // `.env.test`.
   const { config } = await import('dotenv');
-  config({ override: true });
+  config({ override: true, path: process.env.DOTENV_CONFIG_PATH || undefined });
 
   // Truncate all tables before seeding so the pipeline is idempotent.
   // In CI the backend integration tests may have seeded data into the
