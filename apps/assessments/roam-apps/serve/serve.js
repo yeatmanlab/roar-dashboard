@@ -1,10 +1,10 @@
 import { RoarAppkit, initializeFirebaseProject } from '@bdelab/roar-firekit'; //firekit functions
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'; //firebase authorization
 import { TaskLauncher } from '../src';
+// eslint-disable-next-line import/no-unresolved -- handled in PR 2
 import { roarConfig } from './firebaseConfig'; //firebase configuration details
 import i18next from 'i18next'; //has info on language?
 import { convertStrToBool } from '../src/tasks/shared/helpers';
-import { randomInteger } from '../src/tasks/shared/helpers/randomInteger';
 
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime'; //for async

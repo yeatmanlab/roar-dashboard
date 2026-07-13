@@ -41,7 +41,7 @@ export const giveN = (corpusName, assessment_stage_val) => {
 
       return `
           <canvas id="canvas-timer" width="${diameter}" height="${diameter}" class="canvas-timer"></canvas>
-          <img id="replay" draggable="false" src="${mediaAssets.images.iconSpeaker}" alt="replay"/> 
+          <img id="replay" draggable="false" src="${mediaAssets.images.iconSpeaker}" alt="replay"/>
           <div class=item-stimulus-long>
             <div class=question-box>
               <p>${store.session.get('nextStimulus').item}</p>

@@ -53,7 +53,7 @@ export const giveNClick = (corpusName, assessment_stage_val) => {
 
       return `
           <canvas id="canvas-timer" width="${diameter}" height="${diameter}" class="canvas-timer"></canvas>
-          <img id="replay" draggable="false" src="${mediaAssets.images.iconSpeaker}" alt="replay"/> 
+          <img id="replay" draggable="false" src="${mediaAssets.images.iconSpeaker}" alt="replay"/>
           <div class=item-stimulus-long>
             <div class=question-box>
               <p>${store.session.get('nextStimulus').item}</p>
@@ -169,7 +169,7 @@ export const giveNClick = (corpusName, assessment_stage_val) => {
       // Store the original position (left and top) of the image
 
       images.forEach((image, index) => {
-        image.addEventListener('click', (event) => {
+        image.addEventListener('click', () => {
           if (!isMoved[index]) {
             // Position the image relative to the destination image
             image.style.left = destinationPositions[index][1]; // Adjust '20' to set desired offset from the destination

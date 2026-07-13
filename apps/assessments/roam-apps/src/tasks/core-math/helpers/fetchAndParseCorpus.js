@@ -194,7 +194,7 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
   }
 
   //call the function for transforming item list
-  function downloadLocalCSV(data, key) {
+  /*function downloadLocalCSV(data, key) {
     return new Promise((resolve, reject) => {
       if (key === 'stimulus') {
         itemBank[key] = transformCSV(data);
@@ -375,7 +375,7 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
     itemType.push(current_item['item_type']);
 
     //update the min and max grades for the subskill object
-    if (!subSkillRange.hasOwnProperty(current_item['skill_category_camel'])) {
+    if (!subSkillRange.hasOwn(current_item['skill_category_camel'])) {
       subSkillRange[current_item['skill_category_camel']] = {
         minGrade: 11,
         maxGrade: -1,

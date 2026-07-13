@@ -102,7 +102,7 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
 
       document.getElementById('jspsych-survey-html-form').addEventListener('keydown', storeKeyPress);
     },
-    on_finish: (data) => {
+    on_finish: () => {
       // pause audio
       if (source) {
         source.stop();
@@ -243,7 +243,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
 
       document.getElementById('jspsych-survey-html-form').addEventListener('keydown', storeKeyPress);
     },
-    on_finish: (data) => {
+    on_finish: () => {
       // pause audio
       if (source) {
         source.stop();

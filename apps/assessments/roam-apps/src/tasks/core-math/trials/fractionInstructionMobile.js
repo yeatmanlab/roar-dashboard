@@ -104,7 +104,6 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
       startTime = performance.now(); //get initial time
     },
     on_load: () => {
-      let responseFormat = store.session.get('nextStimulus').response_format;
       let currentIdx = 0;
       let currentInput = document.getElementById('question_input_key_0');
       currentInput.classList.add('focused');
@@ -117,7 +116,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
 
       const decimalKey = store.session.get('decimalKey');
 
-      const keyboard = new SimpleKeyboard({
+      /*const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`],
         },
@@ -155,7 +154,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         } else {
           currentInput.textContent += button;
         }
-      }
+      }*/
 
       async function replayAudio() {
         // pause audio
@@ -175,7 +174,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
       }
       replayAudio();
     },
-    on_finish: (data) => {
+    on_finish: () => {
       // pause audio
       if (source) {
         source.stop();
@@ -189,7 +188,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
       for (let i = 0; i < textboxVal.length; i++) {
         let response;
         let target = Number(stimulus.target[i]);
-        if (textboxVal.hasOwnProperty(i)) {
+        if (textboxVal.hasOwn(i)) {
           response = Number(textboxVal[i]);
           if (textboxVal[i] === null || textboxVal[i] === '') {
             response = '';
@@ -319,7 +318,6 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       startTime = performance.now(); //get initial time
     },
     on_load: () => {
-      let responseFormat = store.session.get('nextStimulus').response_format;
       let currentIdx = 0;
       let currentInput = document.getElementById('question_input_key_0');
       currentInput.classList.add('focused');
@@ -332,6 +330,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
 
       const decimalKey = store.session.get('decimalKey');
 
+      /*
       const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`],
@@ -370,7 +369,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         } else {
           currentInput.textContent += button;
         }
-      }
+      }*/
 
       async function replayAudio() {
         // pause audio
@@ -390,7 +389,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       }
       replayAudio();
     },
-    on_finish: (data) => {
+    on_finish: () => {
       // pause audio
       if (source) {
         source.stop();
@@ -404,7 +403,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       for (let i = 0; i < textboxVal.length; i++) {
         let response;
         let target = Number(stimulus.target[i]);
-        if (textboxVal.hasOwnProperty(i)) {
+        if (textboxVal.hasOwn(i)) {
           response = Number(textboxVal[i]);
           if (textboxVal[i] === null || textboxVal[i] === '') {
             response = '';
@@ -536,6 +535,7 @@ const feedbackCorrect = {
       elements[i].style.fontSize = '3.5vh';
     }
 
+    /*
     const decimalKey = store.session.get('decimalKey');
 
     const keyboard = new SimpleKeyboard({
@@ -547,7 +547,7 @@ const feedbackCorrect = {
         '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
         '{empty}': ' ', // Prevents rendering key value
       },
-    });
+    });*/
   },
 };
 

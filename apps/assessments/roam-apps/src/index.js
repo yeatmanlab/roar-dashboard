@@ -5,17 +5,14 @@ Defines the main task class.
 3. Gets task variables,loads corpus (csv files with questions), builds timeline, initializes jspsych and runs timeline.
 4. Imports css styles.
 */
-
  
 import store from 'store2'; //cross browser local storage
-import { isTaskFinished } from './tasks/shared/helpers';
 import { camelize , generateAssetObject, createPreloadTrials } from '@bdelab/roar-utils';
 import './styles/game.scss'; //getting all the css styles
 import { initSentry } from './sentry';
 import taskConfig from './tasks/taskConfig';
-import { checkAudio } from './tasks/shared/helpers';
+import { checkAudio, isTaskFinished } from './tasks/shared/helpers';
 import i18next from 'i18next';
-import { clearStore } from './tasks/shared/helpers';
 
 export let mediaAssets;
 export let preloadTrials;
@@ -33,9 +30,9 @@ export class TaskLauncher {
     initSentry();
     await this.firekit.startRun();
 
-    const { taskName, language } = this.gameParams;
+    const { taskName } = this.gameParams;
 
-    const { initConfig, initStore, loadCorpus, buildTaskTimeline, bucketURI, assets } = taskConfig[camelize(taskName)];
+    const { initConfig, loadCorpus, buildTaskTimeline, bucketURI, assets } = taskConfig[camelize(taskName)];
 
     //cleans the parameters and sets other variables (time, number of trials, corpus name)
     const config = await initConfig(this.firekit, this.gameParams, this.userParams, this.displayElement);
