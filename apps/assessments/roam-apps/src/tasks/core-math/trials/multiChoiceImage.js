@@ -2,10 +2,10 @@ import store from 'store2';
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import { jsPsych } from '../../taskSetup';
 import { mediaAssets } from '../../..';
-import { validityEvaluator , catIRT } from '../timeline';
+import { validityEvaluator, catIRT } from '../timeline';
 import { camelize } from '@bdelab/roar-utils';
 import { startTimer } from '../helpers/updateCountDown';
-import { addResponse, endGame, updateSkillScores, scaleTheta , isMobile } from './trialHelpers';
+import { addResponse, endGame, updateSkillScores, scaleTheta, isMobile } from './trialHelpers';
 import { scaleJsPsychContentToFit } from './scaleContent';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
 

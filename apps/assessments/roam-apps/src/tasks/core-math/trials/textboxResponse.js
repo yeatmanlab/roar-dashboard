@@ -4,7 +4,7 @@ import jsPsychSurveyHtmlForm from '@jspsych/plugin-survey-html-form';
 import jsPsychHtmlKeyboardResponse from '@jspsych/plugin-html-keyboard-response';
 import { mediaAssets } from '../../..';
 import i18next from 'i18next';
-import { validityEvaluator , catIRT } from '../timeline';
+import { validityEvaluator, catIRT } from '../timeline';
 import { startTimer } from '../helpers/updateCountDown';
 // import { SimpleKeyboard } from 'simple-keyboard';
 //import "simple-keyboard/build/css/index.css";

@@ -9,7 +9,7 @@ import { keyboardInstruction } from './keyboardInstruction';
 import { fractionInstruction } from './fractionInstruction';
 import { ifBreakScreen } from './breakScreen';
 import { ifTimeoutFlash } from '../../shared/trials/blackScreen';
-import { updateStimulus , endGame } from './trialHelpers';
+import { updateStimulus, endGame } from './trialHelpers';
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
 
 //////dynamic timeline method with conditional functions

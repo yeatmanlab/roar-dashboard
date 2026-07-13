@@ -15,9 +15,8 @@ export const initTrialSaving = (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-       
       fn.apply(fn, arguments);
-       
+
       code.apply(fn, arguments);
     };
 

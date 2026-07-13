@@ -24,7 +24,6 @@ export const initTimeline = (configMain) => {
   const beginningTimeline = {
     timeline: initialTimeline,
     on_timeline_finish: async () => {
-       
       const config = store.session.get('config');
       config.pid = config.pid || makePid();
       await configMain.firekit.updateUser({

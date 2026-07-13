@@ -21,9 +21,9 @@ import { navigationInstruction } from '../shared/trials/navigation';
 import { Cat } from '@bdelab/jscat';
 import { numberLineOuterLoop } from '../magpi/trials/numberLineBlock';
 import { transitionScreen } from '../magpi/trials/numberLineInstruction';
- 
+
 export let validityEvaluator;
- 
+
 export let catIRT;
 
 //calls the initializatin functions, builds the timeline

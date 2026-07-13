@@ -23,7 +23,7 @@ import { responseTimeBlock } from '../responseModalityStudy/trials/responseTimeB
 import { practice } from '../responseModalityStudy/trials/practice';
 import { reInitStore } from './trials/trialDefinitions';
 import { magpiPilotTimeline, introARF } from '../magpi/trials/symCompInstructions';
- 
+
 export let validityEvaluator;
 
 //calls the initializatin functions, builds the timeline

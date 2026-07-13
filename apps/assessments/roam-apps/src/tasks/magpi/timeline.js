@@ -7,7 +7,7 @@ import { exitFullscreen } from '../shared/trials'; //jspsych object for exiting 
 import { preloadTrials } from '../..';
 import { symCompBlock } from './trials/symCompBlock'; // Import the number comparison block
 import { numberLineOuterLoop } from './trials/numberLineBlock';
- 
+
 export let validityEvaluator;
 
 //calls the initializatioon functions, builds the timeline

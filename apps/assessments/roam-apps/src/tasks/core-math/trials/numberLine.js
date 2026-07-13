@@ -3,8 +3,8 @@ import jsPsychHtmlButtonResponse from '@jspsych/plugin-html-button-response';
 import { jsPsych } from '../../taskSetup';
 import { mediaAssets } from '../../..';
 import { startTimer } from '../helpers/updateCountDown';
-import { validityEvaluator , catIRT } from '../timeline';
-import { addResponse, endGame, updateSkillScores, scaleTheta , isMobile } from './trialHelpers';
+import { validityEvaluator, catIRT } from '../timeline';
+import { addResponse, endGame, updateSkillScores, scaleTheta, isMobile } from './trialHelpers';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
 
 let source;

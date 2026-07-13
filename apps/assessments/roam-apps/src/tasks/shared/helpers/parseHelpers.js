@@ -6,7 +6,7 @@ import {
   lures_calf_multiplication,
   lures_calf_division,
 } from '../../fluency/helpers';
-import { randomInteger , prepareSurveyChoices } from '.';
+import { randomInteger, prepareSurveyChoices } from '.';
 import store from 'store2';
 
 //Get item properties from the item bank

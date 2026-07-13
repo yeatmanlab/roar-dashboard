@@ -5,7 +5,7 @@ import '../../../i18n/i18n';
 import 'regenerator-runtime/runtime'; //async function
 import store from 'store2'; //storing session data
 //import itemsAll from "../../../../items-all.csv";
-import { camelize , getLanguage, getGrade } from '@bdelab/roar-utils';
+import { camelize, getLanguage, getGrade } from '@bdelab/roar-utils';
 //import { groupMapping } from "../../taskSetup";
 import { Clowder, prepareClowderCorpus } from '@bdelab/jscat';
 import _ from 'lodash';
@@ -13,7 +13,7 @@ import { fetchAndParseCorpusRM } from '../../responseModalityStudy/helpers';
 import 'simple-keyboard/build/css/index.css';
 import { isMobile } from './initStore';
 import i18next from 'i18next';
-import { shuffle } from '../../shared/helpers'
+import { shuffle } from '../../shared/helpers';
 import { generateItemIdx, getIdxList, assignItems, getItemFromBankFluency } from '../../shared/helpers/parseHelpers';
 import {
   downloadCSVBins,

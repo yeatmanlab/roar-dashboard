@@ -2,9 +2,9 @@ import store from 'store2';
 import { jsPsych } from '../../taskSetup';
 import { mediaAssets } from '../../..';
 import jsPsychHtmlButtonResponse from '@jspsych/plugin-html-button-response';
-import { validityEvaluator , catIRT } from '../timeline';
+import { validityEvaluator, catIRT } from '../timeline';
 import { startTimer } from '../helpers/updateCountDown';
-import { addResponse, endGame, updateSkillScores, scaleTheta , isMobile } from './trialHelpers';
+import { addResponse, endGame, updateSkillScores, scaleTheta, isMobile } from './trialHelpers';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
 
 // store dragging time for each apple

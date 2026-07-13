@@ -6,7 +6,7 @@ export const shuffle = (array) => {
 
     // swap elements array[i] and array[j]
     // use "destructuring assignment" syntax
-     
+
     [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
   }
   return shuffledArray;

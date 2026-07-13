@@ -115,8 +115,7 @@ const getNextStimulus = (corpusName) => {
   if (
     store.session.get('grade') > 4 ||
     !store.session.get('nextStimulus').hasOwn('audio_file') ||
-    (store.session.get('nextStimulus').hasOwn('audio_file') &&
-      store.session.get('nextStimulus').audio_file === '')
+    (store.session.get('nextStimulus').hasOwn('audio_file') && store.session.get('nextStimulus').audio_file === '')
   ) {
     store.session.set('replayButton', false);
   }

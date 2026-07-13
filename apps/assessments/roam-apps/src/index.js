@@ -5,9 +5,9 @@ Defines the main task class.
 3. Gets task variables,loads corpus (csv files with questions), builds timeline, initializes jspsych and runs timeline.
 4. Imports css styles.
 */
- 
+
 import store from 'store2'; //cross browser local storage
-import { camelize , generateAssetObject, createPreloadTrials } from '@bdelab/roar-utils';
+import { camelize, generateAssetObject, createPreloadTrials } from '@bdelab/roar-utils';
 import './styles/game.scss'; //getting all the css styles
 import { initSentry } from './sentry';
 import taskConfig from './tasks/taskConfig';

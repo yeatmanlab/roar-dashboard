@@ -7,7 +7,7 @@ import store from 'store2'; //storing session data
 //import itemsInstructions from "../../../../items-instructions.csv";
 //import hyperParams from "../../../../hyperparameters_rasch_eap.csv";
 import { prepareSurveyChoices } from '../../shared/helpers';
-import { camelize, getGrade , getLanguage } from '@bdelab/roar-utils';
+import { camelize, getGrade, getLanguage } from '@bdelab/roar-utils';
 import { Clowder, prepareClowderCorpus } from '@bdelab/jscat';
 import 'katex/dist/katex.min.css'; //katex css
 import 'simple-keyboard/build/css/index.css'; //simple keyboard css

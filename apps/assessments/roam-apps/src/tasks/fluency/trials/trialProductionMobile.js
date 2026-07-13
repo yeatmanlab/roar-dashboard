@@ -3,15 +3,12 @@ Defines the jspsych object for the task trial (practice or main). Includes the o
 Data of each trial will be saved in jspsych data on finish of trial. Some session data variables are updated.
 */
 
- 
- 
- 
 import store from 'store2'; //storing session data
 import { jsPsych } from '../../taskSetup';
 import jsPsychHtmlKeyboardResponse from '@jspsych/plugin-html-keyboard-response';
 import jsPsychAudioKeyboardResponse from '@jspsych/plugin-audio-keyboard-response';
 import { mediaAssets } from '../../..';
-import { updateProgressBar , dashToCamelCase } from '../../shared/helpers';
+import { updateProgressBar, dashToCamelCase } from '../../shared/helpers';
 import i18next from 'i18next';
 import { validityEvaluator } from '../timeline';
 //import { SimpleKeyboard } from 'simple-keyboard';
