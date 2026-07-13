@@ -56,7 +56,6 @@
   "dependencies": {
     "@roar-platform/assessment-schema": "^0.1.0",
     "@roar-platform/assessment-sdk": "^0.1.0",
-    "@roar-platform/scoring-tables": "^0.1.0",
     "ajv": "^8.17.1",
     "ajv-errors": "^3.0.0",
     "@bdelab/roar-firekit": "^9.6.0",
@@ -86,6 +85,7 @@
     "@sentry/integrations": ">=7"
   },
   "devDependencies": {
+    "@roar-platform/scoring-tables": "^0.1.0",
     "@babel/core": "^7.19.3",
     "@babel/preset-env": "^7.19.4",
     "@rollup/plugin-commonjs": "^28.0.6",

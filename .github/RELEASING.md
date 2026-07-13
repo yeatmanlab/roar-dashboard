@@ -36,15 +36,27 @@ Publishing is gated on the **`NPM_PUBLISH_DRY_RUN` repository variable** (Settin
 - **Unset, or any value other than `false` → dry run.** The job runs `npm publish --dry-run` for every package, publishes nothing, and never queues an assessment Firebase deployment. This is the fail-safe default, so the pipeline is safe before the npm org and token exist.
 - **`false` → real publish.** The job runs `npm publish --provenance` and queues Firebase production deploys for any assessment that was actually published.
 
+The automated `push` release path uses this variable. A `workflow_dispatch` run can override it per-run (see below).
+
+### Manual runs (`workflow_dispatch`)
+
+The release workflow can also be triggered manually from the **Actions** tab, with two inputs:
+
+- **`dry_run`** (default checked) — leave checked to rehearse the dry-run path; uncheck for a real publish (needs the org + token). This input overrides `NPM_PUBLISH_DRY_RUN` for that run only.
+- **`only`** — limit the run to a single workspace path (e.g. `packages/api-contract`), leaving every other package untouched. Blank runs all publishable workspaces.
+
+This is how you rehearse the **real** publish path — including OIDC provenance signing and, for an assessment, the Firebase deploy trigger — on one low-risk package before flipping the whole pipeline live. The automated `push` path never sends dispatch inputs, so it is unaffected.
+
 ### Going live (first real publish)
 
 The pipeline is publish-ready but intentionally dry-runs until these one-time steps are done — no code change required:
 
 1. Create the `@roar-platform` organization on npmjs.com and confirm the CI identity can publish to it.
 2. Add the `NPM_TOKEN` secret — a granular token scoped to `@roar-platform` with publish rights.
-3. Set the repository variable `NPM_PUBLISH_DRY_RUN=false`.
-4. Point Release Please at `main` (`target-branch` in `.github/workflows/release.yml`) once the backend refactor lands.
-5. (Follow-up) Migrate from `NPM_TOKEN` to npm OIDC trusted publishing once the packages exist.
+3. **Rehearse the real path**: manually run the workflow with `dry_run` unchecked and `only: packages/api-contract` to validate a real publish + provenance on one package. Watch it closely — a bad first version can be `npm deprecate`d or unpublished within 72h.
+4. Set the repository variable `NPM_PUBLISH_DRY_RUN=false` to enable real publishing for the automated release flow.
+5. Point Release Please at `main` (`target-branch` in `.github/workflows/release.yml`) once the backend refactor lands.
+6. (Follow-up) Migrate from `NPM_TOKEN` to npm OIDC trusted publishing once the packages exist.
 
 ### Making a new package publishable
 
