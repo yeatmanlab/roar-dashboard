@@ -28,8 +28,8 @@
   "type": "module",
   "roar": {
     "hosting": {
-      "staging": "roav-ran-monorepo-abc",
-      "production": "roav-ran-monorepo"
+      "staging": "roar-ran-monorepo-abc",
+      "production": "roar-ran-monorepo"
     }
   },
   "scripts": {
