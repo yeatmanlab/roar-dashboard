@@ -11,8 +11,7 @@ import { camelize, generateAssetObject, createPreloadTrials } from '@bdelab/roar
 import './styles/game.scss'; //getting all the css styles
 import { initSentry } from './sentry';
 import taskConfig from './tasks/taskConfig';
-import { generateAssetObject, createPreloadTrials } from '@bdelab/roar-utils';
-import { checkAudio, isTaskComplete } from './tasks/shared/helpers';
+import { checkAudio, isTaskComplete, isTaskFinished } from './tasks/shared/helpers';
 import i18next from 'i18next';
 import { startRun, abortRun } from '@roar-platform/assessment-sdk/compat/firekit';
 
