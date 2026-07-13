@@ -6,7 +6,6 @@ import { jsPsych } from '../../taskSetup';
 import _round from 'lodash/round';
 import i18next from 'i18next';
 import { playAudio, stopAudio, initializeNumberLine, setMarkerFromValue } from './numberLineSlider';
-import { getDevice } from '@bdelab/roar-utils';
 import { isMobile } from '../../fluency/helpers';
 
 const delayAfterPlayback = () => {
@@ -178,9 +177,6 @@ const instructionIntro1 = () => {
   let stim = {
     type: jsPsychHtmlButtonResponse,
     stimulus: () => {
-      let line = `${i18next.t('magpiPilot.numberLine.text1', {
-        number: store.session.get('blockType'),
-      })}`;
       let displayText;
       if (store.session.get('blockType') === 20) {
         displayText = `<div class="number-line-item">${i18next.t('magpiPilot.numberLine.text1', {
@@ -328,7 +324,7 @@ const instructionIntro2 = () => {
       const line = document.getElementById('line');
       const marker = document.getElementById('marker');
 
-      handleContinueClick = (e) => {
+      handleContinueClick = () => {
         jsPsych.finishTrial({ response: currentValue });
       };
 

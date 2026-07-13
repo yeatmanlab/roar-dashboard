@@ -4,7 +4,6 @@ import { numberMainNAFC } from '../../fluency/trials/trialAFC';
 import { numberMainTimer } from '../../fluency/trials/trialProduction';
 import { initBlock, setTimer } from './trialDefinitions';
 import { updateStimulus } from '../../shared/helpers';
-import { practice } from './practice';
 import { jsPsych } from '../../taskSetup';
 
 /*let functionMain = {

@@ -4,6 +4,7 @@ import i18next from 'i18next';
 import '../../../i18n/i18n';
 import store from 'store2';
 
+/*
 const problemInstruction = {
   type: jsPsychAudioMultiResponse,
   stimulus: () => {
@@ -46,10 +47,10 @@ const problemInstruction = {
   keyboard_choices: () => [],
   button_choices: () => [''],
   button_html: () =>
-    /*`<div class="key-button"> ${i18next.t("navigation.continueButtonTextClick", {
+    `<div class="key-button"> ${i18next.t("navigation.continueButtonTextClick", {
           input: `${i18next.t("terms.here")}`,
           action: `${i18next.t("terms.continue")}`,
-        })} </div>`,*/
+        })} </div>`,
     `<img class="go-button" src=${mediaAssets.images.goButtonRectangleYellow} alt="button"/>`,
   on_start: () => {
     document.body.style.cursor = 'auto';
@@ -57,7 +58,9 @@ const problemInstruction = {
     document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
   },
 };
+*/
 
+/*
 const responseModeInstruction = {
   type: jsPsychAudioMultiResponse,
   stimulus: () => {
@@ -92,10 +95,10 @@ const responseModeInstruction = {
   keyboard_choices: () => [],
   button_choices: () => [''],
   button_html: () =>
-    /*`<div class="key-button"> ${i18next.t("navigation.continueButtonTextClick", {
+    `<div class="key-button"> ${i18next.t("navigation.continueButtonTextClick", {
           input: `${i18next.t("terms.here")}`,
           action: `${i18next.t("terms.continue")}`,
-        })} </div>`,*/
+        })} </div>`,
     `<img class="go-button" src=${mediaAssets.images.goButtonRectangleYellow} alt="button"/>`,
   on_start: () => {
     document.body.style.cursor = 'auto';
@@ -103,6 +106,7 @@ const responseModeInstruction = {
     document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
   },
 };
+*/
 
 export const practiceInstruction = {
   type: jsPsychAudioMultiResponse,

@@ -1,7 +1,6 @@
 import store from 'store2';
 import { jsPsych } from '../../taskSetup';
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import { updateProgressBar } from '../../shared/helpers';
 
 // Initialises timers
 export const initBlock = (corpusName, arrayIdx) => {

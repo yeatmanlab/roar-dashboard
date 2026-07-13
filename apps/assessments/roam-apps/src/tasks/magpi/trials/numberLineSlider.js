@@ -185,7 +185,7 @@ export const numberLineSlider = (assessment_stage_val) => {
       const warning = document.querySelector('.number-line-item-below');
       const continueBtn = document.getElementById('jspsych-html-button-response-button-0');
 
-      handleContinueClick = (e) => {
+      handleContinueClick = () => {
         if (!markerMoved) {
           warning.classList.remove('hidden');
           playAudio('numLineMoveFeedback');

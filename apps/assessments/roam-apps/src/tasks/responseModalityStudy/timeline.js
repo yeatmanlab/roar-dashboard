@@ -14,7 +14,6 @@ import { instructions } from './trials/instructions';
 import { endScreen } from './trials/endScreen';
 import { exitFullscreen } from '../shared/trials';
 import { navigationInstruction } from '../shared/trials/navigation';
-import { practice } from './trials/practice';
 
 //calls the initializatin functions, builds the timeline
 export default function buildResponseModalityTimeline(config) {

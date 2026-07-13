@@ -2,14 +2,8 @@
 Loads csv data for the practice and experiment trials. Renames columns, shuffles trials, as required. Sets the data to a struct and exports it as "corpus".
 */
 import '../../../i18n/i18n';
-import Papa from 'papaparse'; //parsing csv file in browser
 import 'regenerator-runtime/runtime'; //async function
-import { dashToCamelCase } from '../../shared/helpers';
-import { randomInteger } from '../../shared/helpers/randomInteger';
-import store from 'store2';
-import { shuffle } from '../../shared/helpers';
-import { prepareSurveyChoices } from '../../shared/helpers';
-import { getDigit, getRandomValues } from '../../shared/helpers';
+import { getDigit, getRandomValues, prepareSurveyChoices, shuffle, randomInteger } from '../../shared/helpers';
 
 const getRandomNumbers1Digit = (n) => {
   let shuffledNumbers = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
@@ -105,7 +99,7 @@ const generateItemsProduction = (numItems, percDouble) => {
   return itemArray;
 };
 
-export const fetchAndParseCorpusRM = (task, assets) => {
+export const fetchAndParseCorpusRM = () => {
   let stimulusArray = {};
 
   //make 200 items for each response mode: 2afc, 6afc, production
