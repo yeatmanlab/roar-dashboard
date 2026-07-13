@@ -174,7 +174,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         jsPsych.finishTrial();
       });
     },
-    on_finish: (data) => {
+    on_finish: () => {
       // pause audio
       if (source) {
         source.stop();
@@ -188,7 +188,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
       for (let i = 0; i < textboxVal.length; i++) {
         let response;
         let target = Number(stimulus.target[i]);
-        if (textboxVal.hasOwnProperty(i)) {
+        if (textboxVal.hasOwn(i)) {
           response = Number(textboxVal[i]);
           if (textboxVal[i] === null || textboxVal[i] === '') {
             response = '';
@@ -395,7 +395,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         jsPsych.finishTrial();
       });
     },
-    on_finish: (data) => {
+    on_finish: () => {
       // pause audio
       if (source) {
         source.stop();
@@ -408,7 +408,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       for (let i = 0; i < textboxVal.length; i++) {
         let response;
         let target = Number(stimulus.target[i]);
-        if (textboxVal.hasOwnProperty(i)) {
+        if (textboxVal.hasOwn(i)) {
           response = Number(textboxVal[i]);
           if (textboxVal[i] === null || textboxVal[i] === '') {
             response = '';

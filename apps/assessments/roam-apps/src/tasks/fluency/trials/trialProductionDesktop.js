@@ -383,7 +383,7 @@ export const practiceFeedbackIncorrectDesktop = (corpusName, assessment_stage_va
 
       waitForKeyUp();
     },
-    on_finish: (data) => {
+    on_finish: () => {
       if (source) {
         source.stop();
       }

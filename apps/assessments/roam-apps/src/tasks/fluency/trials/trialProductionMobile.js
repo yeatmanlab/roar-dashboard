@@ -99,7 +99,7 @@ export const numberMainTimerMobile = (corpusName, assessment_stage_val) => {
       let currentInput = document.getElementById('question_input_key');
       currentInput.classList.add('focused');
 
-      const keyboard = new SimpleKeyboard({
+      /*const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
         },
@@ -127,6 +127,7 @@ export const numberMainTimerMobile = (corpusName, assessment_stage_val) => {
           currentInput.textContent += button;
         }
       }
+      */
     },
     on_finish: (data) => {
       const stimulus = store.session.get('nextStimulus');
@@ -329,7 +330,7 @@ export const practiceFeedbackIncorrectMobile = (corpusName, assessment_stage_val
       currentInput.style.border = '2px solid rgb(255,0,0)';
       currentInput.style.outline = 'none';
 
-      const keyboard = new SimpleKeyboard({
+      /*const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
         },
@@ -356,7 +357,7 @@ export const practiceFeedbackIncorrectMobile = (corpusName, assessment_stage_val
         } else {
           currentInput.textContent += button;
         }
-      }
+      }*/
 
       async function replayAudio(audioFile) {
         const jsPsychAudioCtx = jsPsych.pluginAPI.audioContext();

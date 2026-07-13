@@ -66,7 +66,7 @@ const breakScreen = {
       }, 1000);
     }
   },
-  on_finish: (data) => {
+  on_finish: () => {
     jsPsych.data.addDataToLastTrial({
       save_trial: true,
       correct: 1,

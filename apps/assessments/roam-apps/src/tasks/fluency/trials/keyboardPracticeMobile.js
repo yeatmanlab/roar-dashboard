@@ -13,6 +13,7 @@ let textboxVal;
 let startTime;
 let source1, source2;
 
+/*
 const storeKeyRT = (keyName) => {
   const endTime = performance.now();
   const response_time = Math.round(endTime - startTime);
@@ -25,6 +26,7 @@ const storeKeyRT = (keyName) => {
   }
   rt.push(response_time);
 };
+*/
 
 export const practiceStimulusMobile = {
   type: jsPsychHtmlKeyboardResponse,
@@ -249,7 +251,7 @@ export const feedbackIncorrectMobile = {
     }
     replayAudio();
   },
-  on_finish: (data) => {
+  on_finish: () => {
     // pause audio
     if (source1) {
       source1.stop();
@@ -327,6 +329,7 @@ export const feedbackCorrectMobile = {
     let currentInput = document.getElementById('practice_number');
     currentInput.innerText = store.session.get('response');
 
+    /*
     const keyboard = new SimpleKeyboard({
       layout: {
         default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
@@ -337,5 +340,6 @@ export const feedbackCorrectMobile = {
         '{empty}': ' ', // Prevents rendering key value
       },
     });
+    */
   },
 };

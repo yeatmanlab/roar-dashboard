@@ -4,16 +4,17 @@ import { mediaAssets } from '../../..';
 import { jsPsych } from '../../taskSetup';
 import i18next from 'i18next';
 import store from 'store2';
-import { SimpleKeyboard } from 'simple-keyboard';
+// import { SimpleKeyboard } from 'simple-keyboard';
 import { isMobile } from './trialHelpers';
 //import "simple-keyboard/build/css/index.css";
 
 let rt = [];
 let key = [];
 let textboxVal;
-let startTime;
+//let startTime;
 let source;
 
+/*
 const storeKeyRT = (keyName) => {
   const endTime = performance.now();
   const response_time = Math.round(endTime - startTime);
@@ -26,6 +27,7 @@ const storeKeyRT = (keyName) => {
   }
   rt.push(response_time);
 };
+*/
 
 const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
   return {
@@ -66,7 +68,7 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
       rt = [];
       key = [];
       textboxVal = null;
-      startTime = performance.now();
+      //startTime = performance.now();
     },
     data: {
       // Here is where we specify that we should save the trial to Firestore
@@ -76,6 +78,7 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
       let currentInput = document.getElementById('practice_number');
       currentInput.classList.add('focused');
 
+      /*
       const decimalKey = store.session.get('decimalKey');
 
       const keyboard = new SimpleKeyboard({
@@ -105,7 +108,7 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
         } else {
           currentInput.textContent += button;
         }
-      }
+      }*/
 
       async function replayAudio() {
         // pause audio
@@ -125,7 +128,7 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
       }
       replayAudio();
     },
-    on_finish: (data) => {
+    on_finish: () => {
       // pause audio
       if (source) {
         source.stop();
@@ -215,7 +218,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       rt = [];
       key = [];
       textboxVal = null;
-      startTime = performance.now();
+      //startTime = performance.now();
     },
     data: {
       // Here is where we specify that we should save the trial to Firestore
@@ -225,6 +228,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       let currentInput = document.getElementById('practice_number');
       currentInput.classList.add('focused');
 
+      /*
       const decimalKey = store.session.get('decimalKey');
 
       const keyboard = new SimpleKeyboard({
@@ -254,7 +258,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         } else {
           currentInput.textContent += button;
         }
-      }
+      }*/
 
       async function replayAudio() {
         // pause audio
@@ -274,7 +278,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       }
       replayAudio();
     },
-    on_finish: (data) => {
+    on_finish: () => {
       // pause audio
       if (source) {
         source.stop();
@@ -365,7 +369,7 @@ const feedbackCorrect = {
   button_choices: () => [''],
   response_ends_trial: true,
   trial_ends_after_audio: true,
-  on_load: () => {
+  /*on_load: () => {
     const decimalKey = store.session.get('decimalKey');
 
     const keyboard = new SimpleKeyboard({
@@ -378,7 +382,7 @@ const feedbackCorrect = {
         '{empty}': ' ', // Prevents rendering key value
       },
     });
-  },
+  },*/
 };
 
 const ifCorrect = {

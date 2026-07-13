@@ -4,19 +4,19 @@ import { mediaAssets } from '../../..';
 import { jsPsych } from '../../taskSetup';
 import i18next from 'i18next';
 import store from 'store2';
-import { SimpleKeyboard } from 'simple-keyboard';
+// import {SimpleKeyboard} from 'simple-keyboard';
 import { isMobile } from './trialHelpers';
 //import "simple-keyboard/build/css/index.css";
 
 let rt = [];
 let key = [];
 let textboxVal = [];
-let startTime;
+//let startTime;
 //let finalRT;
 //let textbox_value = null;
 let source;
 
-const storeKeyRT = (keyName) => {
+/*const storeKeyRT = (keyName) => {
   const endTime = performance.now();
   const response_time = Math.round(endTime - startTime);
   if (keyName === '{enter}') {
@@ -27,7 +27,7 @@ const storeKeyRT = (keyName) => {
     key.push(keyName);
   }
   rt.push(response_time);
-};
+};*/
 
 // Fixed item, displays instructions for fraction problems
 const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
@@ -101,10 +101,10 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
       rt = [];
       key = [];
       textboxVal = [];
-      startTime = performance.now(); //get initial time
+      //startTime = performance.now(); //get initial time
     },
     on_load: () => {
-      let currentIdx = 0;
+      // let currentIdx = 0;
       let currentInput = document.getElementById('question_input_key_0');
       currentInput.classList.add('focused');
 
@@ -114,7 +114,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         elements[i].style.fontSize = '3.5vh';
       }
 
-      const decimalKey = store.session.get('decimalKey');
+      // const decimalKey = store.session.get('decimalKey');
 
       /*const keyboard = new SimpleKeyboard({
         layout: {
@@ -315,10 +315,10 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       rt = [];
       key = [];
       textboxVal = [];
-      startTime = performance.now(); //get initial time
+      //startTime = performance.now(); //get initial time
     },
     on_load: () => {
-      let currentIdx = 0;
+      //let currentIdx = 0;
       let currentInput = document.getElementById('question_input_key_0');
       currentInput.classList.add('focused');
 
@@ -328,7 +328,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         elements[i].style.fontSize = '3.5vh';
       }
 
-      const decimalKey = store.session.get('decimalKey');
+      //const decimalKey = store.session.get('decimalKey');
 
       /*
       const keyboard = new SimpleKeyboard({

@@ -85,7 +85,7 @@ export const startTimer = (countdownTime) => {
 
   let remainingTime = totalTime;
 
-  const { alert, warning, info } = colorCodes;
+  const { alert, warning } = colorCodes;
   let startColor = { r: 65, g: 184, b: 131 };
   let endColor = startColor;
   let color = startColor;

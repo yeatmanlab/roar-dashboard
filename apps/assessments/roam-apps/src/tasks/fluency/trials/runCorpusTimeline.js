@@ -7,7 +7,6 @@ import { updateStimulus } from '../../shared/helpers';
 import { numberMainTimer } from './trialProduction';
 import { numberMainNAFC } from './trialAFC';
 //import { numberMainSwipe } from "./trialSwipe";
-import { jsPsych } from '../../taskSetup';
 import store from 'store2'; //storing session data
 
 export const numberMainOuterLoop = (corpusName, assessment_stage_val, responseMode) => {
