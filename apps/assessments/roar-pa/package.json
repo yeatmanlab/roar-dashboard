@@ -70,7 +70,6 @@
     "@jspsych/plugin-survey-text": "^1.1.1",
     "@roar-platform/assessment-schema": "^0.1.0",
     "@roar-platform/assessment-sdk": "^0.1.0",
-    "@roar-platform/scoring-tables": "^0.1.0",
     "firebase": "^10.5.0",
     "i18next": "^23.10.1",
     "i18next-browser-languagedetector": "^7.1.0",
