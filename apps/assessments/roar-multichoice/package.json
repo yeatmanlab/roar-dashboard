@@ -1,7 +1,7 @@
 {
   "name": "@roar-platform/roar-multichoice",
   "description": "Morphology and Written Vocabulary (CVA) multiple-choice assessments for ROAR",
-  "version": "2.2.1",
+  "version": "2.3.1",
   "author": "Tonya & Willy",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
