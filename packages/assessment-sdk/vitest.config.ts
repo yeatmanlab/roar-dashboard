@@ -9,11 +9,14 @@ export default defineConfig(({ mode }) => {
 
   // Load env vars from the backend's .env.test/.env — the SDK integration
   // tests need CORE_DATABASE_URL, ASSESSMENT_DATABASE_URL, FGA_API_URL, etc.
-  // to run seeds/index.ts and spawn the backend server.
-  // Object.assign makes them available in globalSetup (which runs in the main
-  // process before workers), matching the backend's vitest.config.ts pattern.
+  // The `env` object is passed to the integration project so its workers
+  // receive the vars. The globalSetup file loads its own copy of these vars
+  // via loadEnv() — see vitest.integration.globalSetup.ts.
+  //
+  // NOTE: Do NOT Object.assign these into process.env here. That would leak
+  // backend env vars (e.g. FIREBASE_AUTH_EMULATOR_HOST) into unit test
+  // workers, breaking tests that assert on environment-dependent branches.
   const env = loadEnv(resolvedMode, backendDir, '');
-  Object.assign(process.env, env);
 
   return {
     test: {

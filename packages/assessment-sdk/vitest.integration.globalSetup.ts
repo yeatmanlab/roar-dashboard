@@ -2,8 +2,9 @@
  * Global setup for SDK integration tests.
  *
  * Seeds databases/FGA/Auth emulator via the backend seed script, then spawns
- * the backend server and waits for it to be healthy. Env vars are loaded in
- * vitest.config.ts via loadEnv() — this file only overrides what must differ.
+ * the backend server and waits for it to be healthy. Loads backend env vars
+ * (CORE_DATABASE_URL, FGA_API_URL, etc.) via loadEnv() at the start of setup
+ * so they're available in this main process without polluting unit test workers.
  *
  * When infrastructure is unavailable, the setup throws so the integration
  * test project fails immediately with a clear error message.
@@ -19,6 +20,7 @@ import { createConnection } from 'node:net';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadEnv } from 'vite';
 import type { ChildProcess } from 'node:child_process';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,19 +33,19 @@ const SEED_TIMEOUT = 120000;
  *
  * @param backendDir - Absolute path to the backend workspace root
  */
-function runSeedScript(backendDir: string): void {
+function runSeedScript(backendDir: string, childEnv: Record<string, string | undefined>): void {
   const seedScript = path.join(backendDir, 'seeds', 'index.ts');
-  const fixtureFile = process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json';
+  const fixtureFile = childEnv.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json';
 
   console.log('[sdk-integration] Running seed script...');
 
   execFileSync('npx', ['tsx', seedScript], {
     cwd: backendDir,
     env: {
-      ...process.env,
+      ...childEnv,
       TEST_FIXTURE_FILE: fixtureFile,
-      FIREBASE_AUTH_EMULATOR_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099',
-      GOOGLE_CLOUD_PROJECT: process.env.GOOGLE_CLOUD_PROJECT || 'demo-roar',
+      FIREBASE_AUTH_EMULATOR_HOST: childEnv.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099',
+      GOOGLE_CLOUD_PROJECT: childEnv.GOOGLE_CLOUD_PROJECT || 'demo-roar',
       AUTHZ_MODEL_PATH: path.resolve(backendDir, '../../packages/authz/authorization-model.fga'),
     },
     stdio: ['ignore', 'inherit', 'inherit'],
@@ -204,16 +206,26 @@ async function deleteFgaStore(fgaApiUrl: string, storeId: string): Promise<void>
 }
 
 export default async function globalSetup() {
+  // Load backend env vars into a local object — NOT into process.env.
+  // Vitest runs globalSetup for all projects in the same main process, so
+  // Object.assign(process.env, env) would leak backend vars (e.g.
+  // FIREBASE_AUTH_EMULATOR_HOST) into unit test workers, breaking tests
+  // that assert on environment-dependent branches.
+  const backendDir = path.resolve(__dirname, '../../apps/backend');
+  const backendEnv = loadEnv('test', backendDir, '');
+
+  // Merge for child processes: seed script and backend server inherit these
+  // vars without polluting the current process.
+  const childEnv = { ...process.env, ...backendEnv };
+
   const required = ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'] as const;
-  const missing = required.filter((key) => !process.env[key]);
+  const missing = required.filter((key) => !childEnv[key]);
   if (missing.length > 0) {
     throw new Error(
       `[sdk-integration] Missing env vars: ${missing.join(', ')}.\n` +
         'Start infrastructure with: docker compose up -d --wait',
     );
   }
-
-  const backendDir = path.resolve(__dirname, '../../apps/backend');
 
   const serverBin = path.join(backendDir, 'dist', 'server.js');
   if (!existsSync(serverBin)) {
@@ -223,8 +235,8 @@ export default async function globalSetup() {
   }
 
   // Probe required services before running the slow seed script
-  const fgaUrl = process.env.FGA_API_URL || 'http://localhost:4010';
-  const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
+  const fgaUrl = backendEnv.FGA_API_URL || 'http://localhost:4010';
+  const emulatorHost = backendEnv.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
   const [fgaUp, emulatorUp] = await Promise.all([
     isReachable(`${fgaUrl}/healthz`),
     isReachable(`http://${emulatorHost}/`),
@@ -250,7 +262,7 @@ export default async function globalSetup() {
   }
 
   // 1. Seed databases, FGA, Auth emulator, and write fixture files
-  runSeedScript(backendDir);
+  runSeedScript(backendDir, childEnv);
 
   // 2. Read FGA store/model IDs written by the seed script
   const fgaEnv = readFgaEnv(backendDir);
@@ -264,7 +276,7 @@ export default async function globalSetup() {
   const backendProcess = spawn('node', ['dist/server.js'], {
     cwd: backendDir,
     env: {
-      ...process.env,
+      ...childEnv,
       // Use 'production' to avoid pino-pretty transport which crashes in bundled ESM
       // (thread-stream uses __dirname, unavailable in ES modules).
       NODE_ENV: 'production',

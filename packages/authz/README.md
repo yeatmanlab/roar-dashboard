@@ -26,13 +26,14 @@ npm run test -w packages/authz
 docker compose up -d --wait
 ```
 
-Then seed the database, create the FGA store, deploy the model, and sync tuples:
+Then set up infrastructure and seed the database:
 
 ```bash
-npm run dev:seed
+npm run dev:setup   # FDW, migrations, FGA store + model
+npm run dev:seed    # Seed fixture data, sync FGA tuples
 ```
 
-The seed script creates a fresh FGA store, deploys the authorization model, and writes the store/model IDs to `apps/backend/.env` automatically.
+Or use `npm run dev:init` to run both in one step. The setup script creates a fresh FGA store, deploys the authorization model, and writes the store/model IDs to `apps/backend/.env` automatically.
 
 ### Validate and test the model
 

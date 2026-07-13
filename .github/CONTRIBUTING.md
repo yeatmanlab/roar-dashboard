@@ -301,9 +301,12 @@ one command, mirroring the CI end-to-end job:
 
 ```bash
 docker compose up -d --wait   # Start Postgres, OpenFGA, and the Firebase Auth emulator
-npm run dev:seed              # Run database migrations and seed fixture data
+npm run dev:setup             # Set up infrastructure (FDW, migrations, FGA store)
+npm run dev:seed              # Seed fixture data, sync FGA tuples, write fixture files
 npm run dev                   # Start the dashboard (and backend via turbo)
 ```
+
+Or use `npm run dev:init` to run setup and seed in one step.
 
 **Prerequisites:** Docker and the usual local state — the `env-configs`
 submodule, `apps/dashboard/env-configs/.env.keys`, and TLS certs
@@ -316,7 +319,8 @@ already run Postgres on `5432`, pick a free port:
 written to `/tmp/roar-cypress-fixture.json`). Sign in at https://localhost:5173
 with the `superAdmin` entry — email `<uuid>@test.local`, password `password`.
 
-**Resetting:** to wipe and re-seed all databases, run `npm run dev:reset`.
+**Resetting:** to wipe and re-seed all databases, run
+`npm run dev:reset && npm run dev:seed`.
 
 ## ROAR coding style
 

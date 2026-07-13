@@ -26,3 +26,6 @@ apps/assessments/roar-readaloud/ @yeatmanlab/roar-maintainers
 
 # roav-apps assessment
 apps/assessments/roav-apps/ @yeatmanlab/roar-maintainers @tonyamurray
+
+# roav-ran assessment
+apps/assessments/roav-ran/ @yeatmanlab/roar-maintainers @tonyamurray
