@@ -732,6 +732,22 @@ let toolTipByHeader = (header) => {
       taskId: 'swr-es',
       desc: 'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
     },
+    'ROAR - Morphology': {
+      taskId: 'morphology',
+      desc: 'Measures morphological awareness through knowledge of how prefixes and suffixes affect the meaning and function of words in a sentence. \n\n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
+    'ROAR - Written Vocab': {
+      taskId: 'cva',
+      desc: 'Measures synonym knowledge in the context of a sentence. \n\n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
+    'ROAR - Syntax': {
+      taskId: 'trog',
+      desc: 'Measures receptive comprehension of English syntax - how word order, phrases, and clauses contribute to meaning. \n\n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
+    'ROAR - Inference': {
+      taskId: 'roar-inference',
+      desc: 'Measures the ability to draw conclusions and make meaning beyond explicitly stated information in a paragraph. \n\n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
     Report: 'Individual Score Report',
   };
 
