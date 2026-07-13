@@ -6,7 +6,6 @@ import { initJsPsych } from 'jspsych';
 import i18next from 'i18next'; //get the i18next functions
 import '../i18n/i18n'; //get i18next class as defined in i18n.js to get the text for progress bar
 import store from 'store2'; //storing session data
-import { camelize } from '@bdelab/roar-utils';
 
 const redirectInfo = {
   cdm: 'https://stanford-cogsci.org:8880/landing_page.html',

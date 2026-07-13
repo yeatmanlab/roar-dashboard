@@ -10,13 +10,13 @@ import { randomInteger , prepareSurveyChoices } from '.';
 import store from 'store2';
 
 //Get item properties from the item bank
-export const getItemFromBank = (current_item, item, _responseMode) => {
+export const getItemFromBank = (current_item, item) => {
   for (const property in item) {
     current_item[property] = item[property];
   }
 };
 
-export const getItemFromBankKatex = (current_item, item, _responseMode) => {
+export const getItemFromBankKatex = (current_item, item) => {
   getItemFromBank(current_item, item);
 
   //use katex for generating fraction html

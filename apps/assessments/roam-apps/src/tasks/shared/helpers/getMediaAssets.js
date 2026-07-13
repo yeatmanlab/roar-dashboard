@@ -45,11 +45,16 @@ export async function getMediaAssets(
     }
   });
 
+  return categorizedObjects;
+
+  // listObjects is not defined anywhere in the codebase
+  /*
   if (data.nextPageToken) {
     return listObjects(bucketName, whitelist, language, data.nextPageToken, categorizedObjects);
   } else {
     return categorizedObjects;
   }
+  */
 }
 
 function isLanguageAndDeviceValid(filePath, languageCode, device) {
@@ -91,5 +96,5 @@ function isWhitelisted(filePath, whitelist) {
 // }
 
 function convertToCamelCase(str) {
-  return str.replace(/[-_\.]+(.)?/g, (_, c) => (c ? c.toUpperCase() : '')).replace(/^(.)/, (c) => c.toLowerCase());
+  return str.replace(/[-_.]+(.)?/g, (_, c) => (c ? c.toUpperCase() : '')).replace(/^(.)/, (c) => c.toLowerCase());
 }

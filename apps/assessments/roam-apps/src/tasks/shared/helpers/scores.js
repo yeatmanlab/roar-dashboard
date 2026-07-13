@@ -3,7 +3,6 @@ import _reduce from 'lodash/reduce';
 import _omit from 'lodash/omit';
 import store from 'store2';
 import _round from 'lodash/round';
-import omit from 'lodash/omit';
 
 /**
  * This function calculates computed scores given raw scores for each subtask.
@@ -117,7 +116,7 @@ export const computedScoreCallback = (rawScores) => {
     let rawScore = 0;
     let numCorrect = 0;
     let numIncorrect = 0;
-    if (subtaskScores.hasOwnProperty('test')) {
+    if (subtaskScores.hasOwn('test')) {
       numCorrect = subtaskScores.test.numCorrect;
       numIncorrect = subtaskScores.test.numIncorrect;
       numAttempted = getNumAttempted(subtask, subtaskScores.test.numAttempted);
@@ -138,7 +137,7 @@ export const computedScoreCallback = (rawScores) => {
           //Alpaca subtasks
           let gradeScore = null;
           let supportCategory = null;
-          if (store.session.get('gradeEstimateObject').hasOwnProperty(subtask)) {
+          if (store.session.get('gradeEstimateObject').hasOwn(subtask)) {
             gradeScore = store.session.get('gradeEstimateObject')[subtask].gradeScore;
             supportCategory = store.session.get('gradeEstimateObject')[subtask].supportCategory;
           }
@@ -164,7 +163,7 @@ export const computedScoreCallback = (rawScores) => {
           };
         } else {
           let assessedSkills = null;
-          if (store.session.get('assessedSkills').hasOwnProperty(subtask)) {
+          if (store.session.get('assessedSkills').hasOwn(subtask)) {
             assessedSkills = store.session.get('assessedSkills')[subtask].join(', ');
           }
 
@@ -201,7 +200,7 @@ export const computedScoreCallback = (rawScores) => {
   if (Object.keys(computedScores).length > 1) {
     if (store.session.get('responseModality')) {
       //for response modality composite
-      totalScore = computedScores.hasOwnProperty('FR') ? computedScores.FR.rawScore : 0;
+      totalScore = computedScores.hasOwn('FR') ? computedScores.FR.rawScore : 0;
     } else if ((taskName === 'fluency-arf' || taskName === 'fluency-calf') && responseMode.includes('afc')) {
       //do nothing
     } else {
@@ -220,7 +219,7 @@ export const computedScoreCallback = (rawScores) => {
     let gradeScore = null;
     let supportCategory = null;
     let totalCorrect = 0;
-    if (store.session.get('gradeEstimateObject').hasOwnProperty('composite')) {
+    if (store.session.get('gradeEstimateObject').hasOwn('composite')) {
       gradeScore = store.session.get('gradeEstimateObject').composite.gradeScore;
       supportCategory = store.session.get('gradeEstimateObject').composite.supportCategory;
       totalCorrect = store.session.get('gradeEstimateObject').composite.totalCorrect;
@@ -268,15 +267,15 @@ export const computedScoreCallback = (rawScores) => {
       let worstFacts = store.session.get('worstFacts');
       for (let i = 0; i < worstFacts.length; i++) {
         if (assessedSkills['multiplication'].includes(worstFacts[i])) {
-          if (!incorrectSkills.hasOwnProperty('multiplication')) {
+          if (!incorrectSkills.hasOwn('multiplication')) {
             incorrectSkills['multiplication'] = [];
           }
           incorrectSkills['multiplication'].push(worstFacts[i]);
         }
 
-        if (assessedSkills.hasOwnProperty('division')) {
+        if (assessedSkills.hasOwn('division')) {
           if (assessedSkills['division'].includes(worstFacts[i])) {
-            if (!incorrectSkills.hasOwnProperty('division')) {
+            if (!incorrectSkills.hasOwn('division')) {
               incorrectSkills['division'] = [];
             }
             incorrectSkills['division'].push(worstFacts[i]);

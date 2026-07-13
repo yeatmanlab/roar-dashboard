@@ -1,6 +1,5 @@
 import store from 'store2';
 import { enterFullscreen, getUserDataTimeline } from '../trials';
-import jsPsychCallFunction from '@jspsych/plugin-call-function';
 
 //randomly generates a 16 character string as the pid
 const makePid = () => {

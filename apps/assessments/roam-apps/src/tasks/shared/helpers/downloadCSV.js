@@ -1,13 +1,14 @@
 import Papa from 'papaparse'; //parsing csv file in browser
 import store from 'store2';
 
+// transformItemsCSV is not defined anywhere in the codebase
 //call the function for transforming item list
-export function downloadLocalCSV(data, itemBank) {
+/*export function downloadLocalCSV(data, itemBank) {
   return new Promise((resolve, reject) => {
     itemBank['items'] = transformItemsCSV(data, itemBank['difficultyIdx'], itemBank['start']);
     resolve(data);
   });
-}
+}*/
 
 export function downloadCSVBins(urls, key, itemBank, transformFn) {
   return new Promise((resolve, reject) => {
@@ -25,12 +26,13 @@ export function downloadCSVBins(urls, key, itemBank, transformFn) {
   });
 }
 
-export function downloadLocalCSVOrder(data, key, stimulusArray) {
+// transformOrderCSV is not defined anywhere in the codebase
+/*export function downloadLocalCSVOrder(data, key, stimulusArray) {
   return new Promise((resolve, reject) => {
     stimulusArray[key] = transformOrderCSV(data);
     resolve(data);
   });
-}
+}*/
 
 export function downloadCSV(url, key, stimulusArray, transformFn) {
   return new Promise((resolve, reject) => {
