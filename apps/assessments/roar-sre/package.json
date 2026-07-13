@@ -2,6 +2,11 @@
   "name": "@roar-platform/roar-sre",
   "description": "Sentence Reading Efficiency — a timed comprehension assessment for ROAR",
   "version": "3.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "apps/assessments/roar-sre"
+  },
   "author": "Jasmine Tran <jasetran@stanford.edu>",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

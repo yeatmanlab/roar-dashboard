@@ -6,6 +6,11 @@
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "packages/api-contract"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -18,6 +23,9 @@
   },
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "rollup -cw --environment NODE_ENV:development",
     "build": "rm -rf dist && rollup -c --environment NODE_ENV:production && tsc -p tsconfig.build.types.json",

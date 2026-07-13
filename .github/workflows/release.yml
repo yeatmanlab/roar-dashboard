@@ -69,12 +69,18 @@ jobs:
       - name: Publish new versions and collect deployed assessments
         id: publish
         # To add a new publishable package, append its workspace path to PUBLISHABLE_WORKSPACES.
+        # List upstream packages before their dependents so a real publish resolves in order.
         # Assessment apps (apps/assessments/*) are also queued for Firebase production deployment.
+        #
+        # DRY-RUN GATE: publishing is gated on the `NPM_PUBLISH_DRY_RUN` repository variable
+        # (Settings → Secrets and variables → Actions → Variables). It defaults to a dry run when
+        # unset, so nothing is published until someone explicitly sets NPM_PUBLISH_DRY_RUN=false.
+        # A dry run publishes nothing and never queues a Firebase deployment.
         # TODO: Replace NODE_AUTH_TOKEN with OIDC Trusted Publishers once configured for @roar-platform.
         run: |
           PUBLISHABLE_WORKSPACES=(
-            packages/assessment-schema
             packages/api-contract
+            packages/assessment-schema
             packages/assessment-sdk
             apps/assessments/roar-letter
             apps/assessments/roar-levante-tasks
@@ -88,12 +94,19 @@ jobs:
             apps/assessments/roav-ran
           )
 
+          if [ "${DRY_RUN}" != "false" ]; then
+            echo "::notice::NPM_PUBLISH_DRY_RUN is not 'false' — running in DRY-RUN mode. No packages will be published and no assessment deployments will be queued."
+          fi
+
           deployed=()
           for workspace in "${PUBLISHABLE_WORKSPACES[@]}"; do
             pkg=$(node -p "require('./${workspace}/package.json').name")
             ver=$(node -p "require('./${workspace}/package.json').version")
             if npm view "${pkg}@${ver}" version &>/dev/null; then
               echo "✓ ${pkg}@${ver} already on npm, skipping"
+            elif [ "${DRY_RUN}" != "false" ]; then
+              echo "[dry-run] ${pkg}@${ver} — validating publish without pushing to npm"
+              npm publish -w "${workspace}" --dry-run
             else
               echo "Publishing ${pkg}@${ver}..."
               npm publish -w "${workspace}" --provenance
@@ -109,6 +122,7 @@ jobs:
             echo "deployed_assessments=[]" >> $GITHUB_OUTPUT
           fi
         env:
+          DRY_RUN: ${{ vars.NPM_PUBLISH_DRY_RUN || 'true' }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #

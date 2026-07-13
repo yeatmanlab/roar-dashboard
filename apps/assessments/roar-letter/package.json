@@ -2,6 +2,11 @@
   "name": "@roar-platform/roar-letter",
   "description": "Letter and Phonics — a letter-name and phonics assessment for ROAR",
   "version": "4.1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "apps/assessments/roar-letter"
+  },
   "author": "ROAR Developers <roardeveloper@stanford.edu> (https://github.com/yeatmanlab/roar-consortium/blob/main/authors.json)",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

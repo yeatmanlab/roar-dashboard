@@ -2,6 +2,11 @@
   "name": "@roar-platform/roav-apps",
   "description": "ROAV Apps — Rapid Online Assessment of Vision perception tasks (motion perception, rapid visual processing) for ROAR",
   "version": "1.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "apps/assessments/roav-apps"
+  },
   "author": "Tanya Matskewich",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
