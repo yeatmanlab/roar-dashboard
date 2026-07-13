@@ -1,5 +1,5 @@
 {
-  "taskSlugs": ["roam-alpaca"],
+  "taskSlugs": ["roam-alpaca", "roam-alpaca-pt"],
   "scoreFields": {
     "percentile": [{ "minVersion": 0, "fieldName": null }],
     "percentileDisplay": [{ "minVersion": 0, "fieldName": null }],

@@ -1,5 +1,12 @@
 {
-  "taskSlugs": ["fluency-arf", "fluency-calf", "fluency-arf-es", "fluency-calf-es"],
+  "taskSlugs": [
+    "fluency-arf",
+    "fluency-calf",
+    "fluency-arf-es",
+    "fluency-calf-es",
+    "fluency-arf-pt",
+    "fluency-calf-pt"
+  ],
   "scoreFields": {},
   "classification": {
     "type": "none"

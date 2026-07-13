@@ -30,6 +30,21 @@
     }
   },
   {
+    "variantName": "pt-um-dígito-school-nostory-keyboardPractice",
+    "params": {
+      "audio": true,
+      "consent": false,
+      "keyboardPractice": true,
+      "labId": "YeatmanLab",
+      "language": "pt",
+      "recruitment": "school",
+      "responseMode": "production",
+      "storyOption": false,
+      "taskName": "fluency-arf",
+      "userMode": "default"
+    }
+  },
+  {
     "variantName": "calculation-fluency-6afc-school-v0226",
     "params": {
       "audio": true,
@@ -53,6 +68,21 @@
       "keyboardPractice": true,
       "labId": "YeatmanLab",
       "language": "es",
+      "recruitment": "school",
+      "responseMode": "production",
+      "storyOption": false,
+      "taskName": "fluency-calf",
+      "userMode": "default"
+    }
+  },
+  {
+    "variantName": "pt-vários-dígitos-school-nostory-keyboardPractice",
+    "params": {
+      "audio": true,
+      "consent": false,
+      "keyboardPractice": true,
+      "labId": "YeatmanLab",
+      "language": "pt",
       "recruitment": "school",
       "responseMode": "production",
       "storyOption": false,
@@ -90,6 +120,22 @@
       "storyOption": false,
       "taskName": "roam-alpaca",
       "userMode": "untimed"
+    }
+  },
+  {
+    "variantName": "pt-core-math-school-v0825",
+    "params": {
+      "audio": true,
+      "consent": false,
+      "corpusName": "items_v0825",
+      "keyboardPractice": true,
+      "labId": "YeatmanLab",
+      "language": "pt",
+      "recruitment": "school",
+      "responseMode": "production",
+      "storyOption": false,
+      "taskName": "roam-alpaca",
+      "userMode": "default"
     }
   }
 ]

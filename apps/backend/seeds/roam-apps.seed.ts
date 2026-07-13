@@ -52,10 +52,11 @@ const TASK_META: Record<string, { name: string; nameSimple: string; nameTechnica
   },
 };
 
-// Locale suffixes wired for seeding — only 'es' is dashboard-supported alongside 'en'.
+// Locale suffixes wired for seeding — 'es' and 'pt' are dashboard-supported alongside 'en'.
 // 'it' is migrated in source but intentionally not seeded (see migration plan).
 const LANGUAGE_NAMES: Record<string, string> = {
   es: 'Spanish',
+  pt: 'Portuguese',
 };
 
 // ─── Environment ─────────────────────────────────────────────────────────────
