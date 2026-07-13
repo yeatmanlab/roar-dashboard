@@ -10,9 +10,8 @@ import store from 'store2'; //storing session data
 import { jsPsych } from '../../taskSetup';
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import { mediaAssets } from '../../..';
-import { shuffle } from '../../shared/helpers/shuffleArray';
 import { updateProgressBar , dashToCamelCase } from '../../shared/helpers';
-import { roamValidityEvaluator , validityEvaluator } from '../timeline';
+import { validityEvaluator } from '../timeline';
 import i18next from 'i18next';
 import { pushSkill } from './trialDefinitions';
 import { isMobile } from '../helpers';
@@ -303,7 +302,6 @@ export const practiceFeedbackIncorrectAFC = (corpusName, assessment_stage_val) =
 export const practiceFeedbackCorrectAFC = {
   type: jsPsychAudioMultiResponse,
   stimulus: () => {
-    let audioFile = store.session.get('nextStimulus').audio;
     return mediaAssets.audio.instructionsFluencyCorrect;
   },
   prompt: () => {

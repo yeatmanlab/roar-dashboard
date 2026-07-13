@@ -2,22 +2,18 @@
 Loads csv data for the practice and experiment trials. Renames columns, shuffles trials, as required. Sets the data to a struct and exports it as "corpus".
 */
 import '../../../i18n/i18n';
-import Papa from 'papaparse'; //parsing csv file in browser
 import 'regenerator-runtime/runtime'; //async function
-import { dashToCamelCase } from '../../shared/helpers';
-import { randomInteger } from '../../shared/helpers/randomInteger';
 import store from 'store2'; //storing session data
 //import itemsAll from "../../../../items-all.csv";
-import { shuffle } from '../../shared/helpers';
-import { camelize , getLanguage } from '@bdelab/roar-utils';
+import { camelize , getLanguage, getGrade } from '@bdelab/roar-utils';
 //import { groupMapping } from "../../taskSetup";
-import { getGrade } from '@bdelab/roar-utils';
 import { Clowder, prepareClowderCorpus } from '@bdelab/jscat';
 import _ from 'lodash';
 import { fetchAndParseCorpusRM } from '../../responseModalityStudy/helpers';
 import 'simple-keyboard/build/css/index.css';
 import { isMobile } from './initStore';
 import i18next from 'i18next';
+import { shuffle } from '../../shared/helpers'
 import { generateItemIdx, getIdxList, assignItems, getItemFromBankFluency } from '../../shared/helpers/parseHelpers';
 import {
   downloadCSVBins,

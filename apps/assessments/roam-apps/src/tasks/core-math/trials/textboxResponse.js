@@ -6,10 +6,9 @@ import { mediaAssets } from '../../..';
 import i18next from 'i18next';
 import { validityEvaluator , catIRT } from '../timeline';
 import { startTimer } from '../helpers/updateCountDown';
-import { SimpleKeyboard } from 'simple-keyboard';
+// import { SimpleKeyboard } from 'simple-keyboard';
 //import "simple-keyboard/build/css/index.css";
-import { isMobile } from './trialHelpers';
-import { addResponse, endGame, updateSkillScores, scaleTheta } from './trialHelpers';
+import { addResponse, endGame, updateSkillScores, scaleTheta, isMobile } from './trialHelpers';
 import { scaleContentToFitMobile } from './scaleContent';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
 
@@ -564,12 +563,13 @@ const mobileKeyboard = (corpusName, assessment_stage_val) => {
     choices: 'NO_KEYS',
     response_ends_trials: false,
     on_load: () => {
-      let responseFormat = store.session.get('nextStimulus').response_format;
+      //let responseFormat = store.session.get('nextStimulus').response_format;
       //focus the first textbox
-      let currentIdx = 0;
+      //let currentIdx = 0;
       let currentInput = document.getElementById('question_input_key_0');
       currentInput.classList.add('focused');
 
+      /*
       const decimalKey = store.session.get('decimalKey');
 
       const keyboard = new SimpleKeyboard({
@@ -584,16 +584,18 @@ const mobileKeyboard = (corpusName, assessment_stage_val) => {
         onChange: (input) => onChange(input),
         onKeyPress: (button) => onKeyPress(button),
       });
+      */
 
       document.querySelectorAll('.response-box-mobile').forEach((el) => {
         el.addEventListener('click', () => {
           if (currentInput) currentInput.classList.remove('focused');
           currentInput = el;
           currentInput.classList.add('focused');
-          currentIdx = [...document.querySelectorAll('.response-box-mobile')].indexOf(currentInput);
+          //currentIdx = [...document.querySelectorAll('.response-box-mobile')].indexOf(currentInput);
         });
       });
 
+      /*
       function onChange(input) {
         if (currentIdx >= 0) {
           textboxVal[currentIdx] = document.getElementById('question_input_key_' + currentIdx).textContent;
@@ -623,6 +625,7 @@ const mobileKeyboard = (corpusName, assessment_stage_val) => {
           currentInput.textContent += button;
         }
       }
+      */
 
       //set the timer only for the default usermode
       if (store.session.get('config').userMode === 'default') {

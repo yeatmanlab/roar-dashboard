@@ -5,14 +5,10 @@ import { jsPsych } from '../taskSetup'; //initialised jspsych object
 import { ValidityEvaluator, createEvaluateValidity } from '@bdelab/roar-utils'; // for validity
 import { exitFullscreen } from '../shared/trials'; //jspsych object for exiting full screen
 import { preloadTrials } from '../..';
-import { navigationInstruction } from '../shared/trials/navigation';
 import { symCompBlock } from './trials/symCompBlock'; // Import the number comparison block
 import { numberLineOuterLoop } from './trials/numberLineBlock';
-import store from 'store2';
-
  
 export let validityEvaluator;
- 
 
 //calls the initializatioon functions, builds the timeline
 export default function buildTimeline(config) {

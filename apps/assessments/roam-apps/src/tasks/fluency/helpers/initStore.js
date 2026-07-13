@@ -1,6 +1,5 @@
 import store from 'store2'; //storing browser data
-import { camelize } from '@bdelab/roar-utils';
-import { getDevice } from '@bdelab/roar-utils';
+import { camelize, getDevice } from '@bdelab/roar-utils';
 import i18next from 'i18next';
 
 export const isMobile = getDevice() === 'mobile';

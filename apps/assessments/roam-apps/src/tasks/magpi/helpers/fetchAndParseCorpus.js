@@ -176,7 +176,7 @@ export const getCorpusNumLine = async () => {
   return corpusAll;
 };
 
-export const fetchAndParseCorpusMagpi = async (task, assets) => {
+export const fetchAndParseCorpusMagpi = async () => {
   let corpusNL = await getCorpusNumLine();
   let corpusSC = await getCorpusSymComp();
 

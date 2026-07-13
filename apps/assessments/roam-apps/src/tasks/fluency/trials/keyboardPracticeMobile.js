@@ -4,13 +4,13 @@ import { mediaAssets } from '../../..';
 import { jsPsych } from '../../taskSetup';
 import i18next from 'i18next';
 import store from 'store2';
-import { SimpleKeyboard } from 'simple-keyboard';
+//import { SimpleKeyboard } from 'simple-keyboard';
 //import "simple-keyboard/build/css/index.css";
 
 let rt = [];
 let key = [];
 let textboxVal;
-let startTime;
+//let startTime;
 let source1, source2;
 
 /*
@@ -61,7 +61,7 @@ export const practiceStimulusMobile = {
     rt = [];
     key = [];
     textboxVal = null;
-    startTime = performance.now();
+    //startTime = performance.now();
   },
   data: {
     // Here is where we specify that we should save the trial to Firestore
@@ -100,7 +100,8 @@ export const practiceStimulusMobile = {
       } else {
         currentInput.textContent += button;
       }
-    }*/
+    }
+    */
 
     async function replayAudio() {
       // pause audio
@@ -193,7 +194,7 @@ export const feedbackIncorrectMobile = {
     rt = [];
     key = [];
     textboxVal = null;
-    startTime = performance.now();
+    //startTime = performance.now();
   },
   data: {
     // Here is where we specify that we should save the trial to Firestore
@@ -231,7 +232,8 @@ export const feedbackIncorrectMobile = {
       } else {
         currentInput.textContent += button;
       }
-    }*/
+    }
+    */
 
     async function replayAudio() {
       // pause audio

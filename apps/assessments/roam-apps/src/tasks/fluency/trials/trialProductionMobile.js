@@ -14,7 +14,7 @@ import { mediaAssets } from '../../..';
 import { updateProgressBar , dashToCamelCase } from '../../shared/helpers';
 import i18next from 'i18next';
 import { validityEvaluator } from '../timeline';
-import { SimpleKeyboard } from 'simple-keyboard';
+//import { SimpleKeyboard } from 'simple-keyboard';
 import { pushSkill } from './trialDefinitions';
 import { isMobile } from '../helpers';
 //import "simple-keyboard/build/css/index.css";
@@ -22,8 +22,9 @@ import { isMobile } from '../helpers';
 let rt = [];
 let key = [];
 let textboxVal;
-let startTime;
+//let startTime;
 
+/*
 const storeKeyRT = (keyName) => {
   const endTime = performance.now();
   const response_time = Math.round(endTime - startTime);
@@ -36,6 +37,7 @@ const storeKeyRT = (keyName) => {
   }
   rt.push(response_time);
 };
+*/
 
 const itemToHtml = (stimulus) => {
   if (store.session.get('config').taskName === 'fluency-calf') {
@@ -90,7 +92,7 @@ export const numberMainTimerMobile = (corpusName, assessment_stage_val) => {
       rt = [];
       key = [];
       textboxVal = null;
-      startTime = performance.now(); //get initial time
+      //startTime = performance.now(); //get initial time
     },
     choices: 'NO_KEYS',
     response_ends_trials: false,
@@ -99,7 +101,8 @@ export const numberMainTimerMobile = (corpusName, assessment_stage_val) => {
       let currentInput = document.getElementById('question_input_key');
       currentInput.classList.add('focused');
 
-      /*const keyboard = new SimpleKeyboard({
+      /*
+      const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
         },
@@ -321,7 +324,7 @@ export const practiceFeedbackIncorrectMobile = (corpusName, assessment_stage_val
       rt = [];
       key = [];
       textboxVal = null;
-      startTime = performance.now(); //get initial time
+      //startTime = performance.now(); //get initial time
     },
     choices: 'NO_KEYS',
     response_ends_trials: false,
@@ -330,7 +333,8 @@ export const practiceFeedbackIncorrectMobile = (corpusName, assessment_stage_val
       currentInput.style.border = '2px solid rgb(255,0,0)';
       currentInput.style.outline = 'none';
 
-      /*const keyboard = new SimpleKeyboard({
+      /*
+      const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
         },
@@ -357,7 +361,8 @@ export const practiceFeedbackIncorrectMobile = (corpusName, assessment_stage_val
         } else {
           currentInput.textContent += button;
         }
-      }*/
+      }
+      */
 
       async function replayAudio(audioFile) {
         const jsPsychAudioCtx = jsPsych.pluginAPI.audioContext();
@@ -379,7 +384,7 @@ export const practiceFeedbackIncorrectMobile = (corpusName, assessment_stage_val
         );
       }
     },
-    on_finish: (data) => {
+    on_finish: () => {
       if (source) {
         source.stop();
       }
@@ -491,6 +496,7 @@ export const practiceFeedbackCorrectMobile = {
     currentInput.style.outline = 'none';
     currentInput.innerText = store.session.get('response');
 
+    /*
     const keyboard = new SimpleKeyboard({
       layout: {
         default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
@@ -501,5 +507,6 @@ export const practiceFeedbackCorrectMobile = {
         '{empty}': ' ', // Prevents rendering key value
       },
     });
+    */
   },
 };
