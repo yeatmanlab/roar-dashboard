@@ -50,6 +50,7 @@
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "dependencies": {
     "@bdelab/jscat": "^5.2.2",
+    "@bdelab/roar-firekit": "9.17.0",
     "@bdelab/roar-utils": "^1.2.2",
     "@jspsych-contrib/plugin-audio-multi-response": "^1.0.0",
     "@jspsych-contrib/plugin-html-multi-response": "^1.0.2",
@@ -75,6 +76,7 @@
     "lerp": "^1.0.3",
     "lodash": "^4.17.21",
     "mime-types": "^2.1.35",
+    "papaparse": "^5.5.4",
     "regenerator-runtime": "^0.13.9",
     "simple-keyboard": "^3.8.54",
     "store2": "^2.13.2"
