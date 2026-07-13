@@ -86,7 +86,7 @@ export const practiceStimulusDesktop = {
       rt.push(response_time);
     });
   },
-  on_finish: (data) => {
+  on_finish: () => {
     if (source2) {
       source2.stop();
     }
@@ -199,7 +199,7 @@ export const feedbackIncorrectDesktop = {
       rt.push(response_time);
     });
   },
-  on_finish: (data) => {
+  on_finish: () => {
     if (source1) {
       source1.stop();
     }

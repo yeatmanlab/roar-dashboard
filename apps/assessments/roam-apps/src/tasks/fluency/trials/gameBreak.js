@@ -7,8 +7,6 @@ import { mediaAssets } from '../../..';
 import i18next from 'i18next';
 import '../../../i18n/i18n';
 import store from 'store2'; //storing session data
-//import { groupMapping } from "../../taskSetup";
-import { camelize } from '@bdelab/roar-utils';
 import { isMobile } from '../helpers';
 import { jsPsych } from '../../taskSetup';
 

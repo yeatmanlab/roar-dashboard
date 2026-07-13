@@ -1,6 +1,4 @@
 import store from 'store2'; //storing session data
-import { jsPsych } from '../../taskSetup';
-import jsPsychSurveyHtmlForm from '@jspsych/plugin-survey-html-form';
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import { mediaAssets } from '../../..';
 import i18next from 'i18next';

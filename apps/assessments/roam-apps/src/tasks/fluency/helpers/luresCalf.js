@@ -38,15 +38,15 @@ export const lures_calf_addition = (operand1, operand2, difficulty) => {
 
   if (difficulty == 'A2' || difficulty == 'A4') {
     lure_list.push([]);
-    for (var i = 0; i < 5; i++) {
-      lure_list[5][i] = lure_list[2][i] - 100;
+    for (var k = 0; k < 5; k++) {
+      lure_list[5][k] = lure_list[2][k] - 100;
     }
   }
 
-  for (var i = 0; i < lures_correction[difficulty].length; i++) {
-    if (eval(lures_correction[difficulty][i][0])) {
-      for (var j = 0; j < lure_list.length; j++) {
-        lure_list[j][lures_correction[difficulty][i][1]] += lures_correction[difficulty][i][2];
+  for (var l = 0; l < lures_correction[difficulty].length; l++) {
+    if (eval(lures_correction[difficulty][l][0])) {
+      for (var m = 0; m < lure_list.length; m++) {
+        lure_list[m][lures_correction[difficulty][l][1]] += lures_correction[difficulty][l][2];
       }
     }
   }
@@ -123,16 +123,16 @@ export const lures_calf_subtraction = (operand1, operand2, difficulty) => {
 
   //inversion error
   if (difficulty == 'S2') {
-    for (var i = 0; i < 5; i++) {
-      lure_list[i][5] = 10 * (tens1 - tens2 + i - 2) + ones2 - ones1 - 10;
+    for (var k = 0; k < 5; k++) {
+      lure_list[k][5] = 10 * (tens1 - tens2 + k - 2) + ones2 - ones1 - 10;
     }
   }
 
   //correction for fixing tens place
-  for (var i = 0; i < lures_correction[difficulty].length; i++) {
-    if (eval(lures_correction[difficulty][i][0])) {
-      for (var j = 0; j < lure_list.length; j++) {
-        lure_list[j][lures_correction[difficulty][i][1]] += lures_correction[difficulty][i][2];
+  for (var l = 0; l < lures_correction[difficulty].length; l++) {
+    if (eval(lures_correction[difficulty][l][0])) {
+      for (var m = 0; m < lure_list.length; m++) {
+        lure_list[m][lures_correction[difficulty][l][1]] += lures_correction[difficulty][l][2];
       }
     }
   }
@@ -226,9 +226,9 @@ export const lures_calf_multiplication = (operand1, operand2) => {
   }
 
   if (ones1 == operand2) {
-    for (var i = 0; i < 5; i++) {
-      lure_list[i][3] = 10 * (tens1 + inc_list[i][0]) * (operand2 + inc_list[i][1]) + (ones1 - 2) * operand2;
-      lure_list[i][4] = 10 * (tens1 + inc_list[i][0]) * (operand2 + inc_list[i][1]) + (ones1 + 2) * operand2;
+    for (var l = 0; l < 5; l++) {
+      lure_list[l][3] = 10 * (tens1 + inc_list[l][0]) * (operand2 + inc_list[l][1]) + (ones1 - 2) * operand2;
+      lure_list[l][4] = 10 * (tens1 + inc_list[l][0]) * (operand2 + inc_list[l][1]) + (ones1 + 2) * operand2;
     }
   }
 
@@ -275,19 +275,19 @@ export const lures_calf_division = (operand1, operand2) => {
   }
 
   // correct negative lures
-  for (var i = 0; i < negative_correction.length; i++) {
-    if (answer < negative_correction[i][0]) {
-      for (var j = 0; j < lure_list[0].length; j++) {
-        lure_list[negative_correction[i][1]][j] += negative_correction[i][2];
+  for (var k = 0; k < negative_correction.length; k++) {
+    if (answer < negative_correction[k][0]) {
+      for (var l = 0; l < lure_list[0].length; l++) {
+        lure_list[negative_correction[k][1]][l] += negative_correction[k][2];
       }
     }
   }
 
   // correct tens place
-  for (var i = 0; i < lures_correction.length; i++) {
-    if (eval(lures_correction[i][0])) {
-      for (var j = 0; j < lure_list.length; j++) {
-        lure_list[j][lures_correction[i][1]] += lures_correction[i][2];
+  for (var m = 0; m < lures_correction.length; m++) {
+    if (eval(lures_correction[m][0])) {
+      for (var n = 0; n < lure_list.length; n++) {
+        lure_list[n][lures_correction[m][1]] += lures_correction[m][2];
       }
     }
   }

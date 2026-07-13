@@ -69,7 +69,9 @@ export const practiceStimulusMobile = {
     let currentInput = document.getElementById('practice_number');
     currentInput.classList.add('focused');
 
-    const keyboard = new SimpleKeyboard({
+    // Previous implementation using SimpleKeyboard library
+    /*
+      const keyboard = new SimpleKeyboard({
       layout: {
         default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
       },
@@ -82,7 +84,7 @@ export const practiceStimulusMobile = {
       onKeyPress: (button) => onKeyPress(button),
     });
 
-    function onChange(input) {
+    function onChange() {
       textboxVal = document.getElementById('practice_number').textContent;
     }
 
@@ -96,7 +98,7 @@ export const practiceStimulusMobile = {
       } else {
         currentInput.textContent += button;
       }
-    }
+    }*/
 
     async function replayAudio() {
       // pause audio
@@ -116,13 +118,11 @@ export const practiceStimulusMobile = {
     }
     replayAudio();
   },
-  on_finish: (data) => {
+  on_finish: () => {
     // pause audio
     if (source2) {
       source2.stop();
     }
-
-    const stimulus = store.session.get('nextStimulus');
 
     let response_val = Number(textboxVal);
     if (textboxVal === null || textboxVal === '') {
@@ -201,6 +201,7 @@ export const feedbackIncorrectMobile = {
     let currentInput = document.getElementById('practice_number');
     currentInput.classList.add('focused');
 
+    /*
     const keyboard = new SimpleKeyboard({
       layout: {
         default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
@@ -228,7 +229,7 @@ export const feedbackIncorrectMobile = {
       } else {
         currentInput.textContent += button;
       }
-    }
+    }*/
 
     async function replayAudio() {
       // pause audio
