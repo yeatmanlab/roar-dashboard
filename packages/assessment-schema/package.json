@@ -7,9 +7,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yeatmanlab/roar-dashboard.git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
     "directory": "packages/assessment-schema"
   },
+  "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "type": "module",
   "exports": {
     ".": {

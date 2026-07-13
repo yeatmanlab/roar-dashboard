@@ -4,7 +4,7 @@
   "version": "4.1.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yeatmanlab/roar-dashboard.git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
     "directory": "apps/assessments/roar-letter"
   },
   "author": "ROAR Developers <roardeveloper@stanford.edu> (https://github.com/yeatmanlab/roar-consortium/blob/main/authors.json)",

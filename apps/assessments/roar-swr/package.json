@@ -4,7 +4,7 @@
   "version": "1.15.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yeatmanlab/roar-dashboard.git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
     "directory": "apps/assessments/roar-swr"
   },
   "author": "Wanjing Anya Ma",

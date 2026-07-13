@@ -4,7 +4,7 @@
   "version": "2.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yeatmanlab/roar-dashboard.git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
     "directory": "apps/assessments/roav-ran"
   },
   "author": "Aryaman Taore",

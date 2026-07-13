@@ -8,9 +8,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yeatmanlab/roar-dashboard.git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
     "directory": "packages/api-contract"
   },
+  "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

@@ -4,7 +4,7 @@
   "version": "2.3.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yeatmanlab/roar-dashboard.git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
     "directory": "apps/assessments/roar-multichoice"
   },
   "author": "Tonya & Willy",

@@ -47,6 +47,8 @@ The release workflow can also be triggered manually from the **Actions** tab, wi
 
 This is how you rehearse the **real** publish path — including OIDC provenance signing and, for an assessment, the Firebase deploy trigger — on one low-risk package before flipping the whole pipeline live. The automated `push` path never sends dispatch inputs, so it is unaffected.
 
+Manual runs only publish; they do **not** create or update Release PRs (Release Please runs on `push` only), so it's safe to dispatch from any branch.
+
 ### Going live (first real publish)
 
 The pipeline is publish-ready but intentionally dry-runs until these one-time steps are done — no code change required:

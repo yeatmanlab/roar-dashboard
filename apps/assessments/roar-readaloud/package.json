@@ -4,7 +4,7 @@
   "version": "1.4.2",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yeatmanlab/roar-dashboard.git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
     "directory": "apps/assessments/roar-readaloud"
   },
   "author": "Aryaman Taore",

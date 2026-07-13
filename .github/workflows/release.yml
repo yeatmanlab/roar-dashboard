@@ -44,6 +44,11 @@ jobs:
     steps:
       - name: Run Release Please
         id: release
+        # Only manage Release PRs on push. On a manual workflow_dispatch (publish rehearsal) this
+        # step is skipped, so release-please never opens/updates a Release PR against the dispatch
+        # branch. The job still succeeds with empty outputs, and publish-assessment-packages runs
+        # via its `github.event_name == 'workflow_dispatch'` condition.
+        if: github.event_name == 'push'
         uses: googleapis/release-please-action@v5
         with:
           config-file: .release-please.json
