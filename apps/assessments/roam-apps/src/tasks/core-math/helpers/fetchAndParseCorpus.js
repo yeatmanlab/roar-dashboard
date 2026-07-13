@@ -211,7 +211,7 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
       itemBank[key] = getHyperParams(data);
       resolve(data);
     });
-  }
+  }*/
 
   function downloadCSV(urls, key) {
     return new Promise((resolve, reject) => {
