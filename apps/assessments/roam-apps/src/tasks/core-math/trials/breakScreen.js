@@ -67,12 +67,12 @@ const breakScreen = {
     }
   },
   on_finish: () => {
-    // Mapped to 'practice_response' (not 'test') so this filler trial is never summed into
+    // Mapped to 'practice' (not 'test') so this filler trial is never summed into
     // the test raw score — computedScoreCallback only reads the 'test' stage bucket.
     jsPsych.data.addDataToLastTrial({
       save_trial: true,
       correct: 1,
-      assessment_stage: 'practice_response',
+      assessment_stage: 'practice',
     });
 
     store.session.transact('breakCount', (oldVal) => oldVal + 1);
