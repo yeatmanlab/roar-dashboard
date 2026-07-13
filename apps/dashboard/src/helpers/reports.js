@@ -1307,12 +1307,19 @@ export const getRawScoreThreshold = (taskId, scoringVersion = null) => {
 };
 
 export const getRawScoreRange = (taskId, scoringVersion = null) => {
-  if (taskId.includes('swr')) {
+  if (taskId === 'swr') {
     return {
       min: 100,
       max: 900,
     };
-  } else if (taskId.includes('letter')) {
+  } else if (taskId === 'swr-es') {
+    if (scoringVersion >= 1) {
+      return {
+        min: 100,
+        max: 900,
+      };
+    }
+  } else if (taskId === 'letter') {
     if (scoringVersion >= 1) {
       return {
         min: 0,
@@ -1323,13 +1330,13 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 90,
     };
-  } else if (taskId.includes('phonics')) {
+  } else if (taskId === 'phonics') {
     return {
       min: 0,
       max: 150,
     };
     //// PA v4 was skipped in production; v5 uses this range
-  } else if (taskId.includes('pa')) {
+  } else if (taskId === 'pa') {
     if (scoringVersion >= 4) {
       return {
         min: 40,
@@ -1340,7 +1347,7 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 57,
     };
-  } else if (taskId.includes('sre')) {
+  } else if (taskId === 'sre') {
     if (scoringVersion >= 5) {
       return {
         min: 300,
@@ -1351,7 +1358,14 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 130,
     };
-  } else if (taskId.includes('morphology')) {
+  } else if (taskId === 'sre-es') {
+    if (scoringVersion >= 1) {
+      return {
+        min: 0,
+        max: 140,
+      };
+    }
+  } else if (taskId === 'morphology') {
     if (scoringVersion >= 1) {
       return {
         min: 280,
@@ -1363,7 +1377,7 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 100,
     };
-  } else if (taskId.includes('cva')) {
+  } else if (taskId === 'cva') {
     if (scoringVersion >= 1) {
       return {
         min: 287,
@@ -1375,7 +1389,7 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 100,
     };
-  } else if (taskId.includes('roar-inference')) {
+  } else if (taskId === 'roar-inference') {
     if (scoringVersion >= 1) {
       return {
         min: 300,
@@ -1387,7 +1401,7 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 100,
     };
-  } else if (taskId.includes('trog')) {
+  } else if (taskId === 'trog') {
     if (scoringVersion >= 1) {
       return {
         min: 53,
