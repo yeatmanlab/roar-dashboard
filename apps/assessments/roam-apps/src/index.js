@@ -14,6 +14,7 @@ import taskConfig from './tasks/taskConfig';
 import { checkAudio, isTaskComplete, isTaskFinished } from './tasks/shared/helpers';
 import i18next from 'i18next';
 import { startRun, abortRun } from '@roar-platform/assessment-sdk/compat/firekit';
+import { wireScoreAdapter } from './sdk/roam-firekit-facade';
 
 export let mediaAssets;
 export let preloadTrials;
@@ -29,6 +30,7 @@ export class TaskLauncher {
     //Start the ROAR run. Push the task and run info to the backend.
     //Call this method before starting the jsPsych experiment.
     initSentry();
+    wireScoreAdapter();
     await startRun(this.userParams);
 
     const { taskName } = this.gameParams;
