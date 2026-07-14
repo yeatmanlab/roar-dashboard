@@ -61,6 +61,11 @@ defineProps({
 
 let returnScoreTooltip = (colData, fieldPath) => {
   const pathSegments = fieldPath.split('.');
+
+  if (pathSegments[0] === 'compositeScore') {
+    return handleCompositeScoreTooltip(colData);
+  }
+
   const taskId = pathSegments[0] === 'scores' ? pathSegments[1] : null;
   // Subskill fieldPaths are formatted as scores.taskId.subskillId.property
   const subskillId = pathSegments.length > 3 ? pathSegments[2] : null;
@@ -154,6 +159,23 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
   // If the task is a scored task and has a raw score, then display all scores
   return _toolTip;
+}
+
+function handleCompositeScoreTooltip(colData) {
+  const composite = colData.compositeScore;
+  if (!composite?.supportLevel) return '';
+
+  let toolTip = composite.supportLevel + '\n\n';
+  if (composite.rawScore != undefined) {
+    toolTip += 'Raw Score: ' + composite.rawScore + '\n';
+  }
+  if (composite.standardScore != undefined) {
+    toolTip += 'Standard: ' + composite.standardScore + '\n';
+  }
+  if (composite.percentile != undefined) {
+    toolTip += 'Percentile: ' + composite.percentile + '\n';
+  }
+  return toolTip;
 }
 
 function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {

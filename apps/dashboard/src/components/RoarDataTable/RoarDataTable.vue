@@ -178,7 +178,7 @@
               </template>
               <template #body="{ data: colData }">
                 <!-- If column is a score field, use a dedicated component to render tags and scores -->
-                <div v-if="col.field && col.field?.split('.')[0] === 'scores'">
+                <div v-if="col.field && ['scores', 'compositeScore'].includes(col.field?.split('.')[0])">
                   <TableScoreTag :col-data="colData" :col="col" />
                 </div>
                 <div v-else-if="col.dataType == 'progress'">

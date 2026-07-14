@@ -988,17 +988,21 @@ const computeAssignmentAndRunData = computed(() => {
           orgType: props.orgType,
           userId: user.userId,
         },
-        compositeScore: assignment.compositeScore ?? null,
+        // Overwritten below with foundational composite support-category data when available.
+        compositeScore:
+          assignment.compositeScore != null
+            ? { rawScore: assignment.compositeScore, percentile: null, displayValue: assignment.compositeScore }
+            : null,
         startDate:
           assignment.assessments.reduce((earliest, assessment) => {
             if (!earliest) return assessment.startedOn;
             return assessment.startedOn < earliest ? assessment.startedOn : earliest;
           }, null) ?? null,
         completionDate: assignment.completed
-          ? (assignment.assessments.reduce((latest, assessment) => {
+          ? assignment.assessments.reduce((latest, assessment) => {
               if (!latest) return assessment.completedOn;
               return assessment.completedOn > latest ? assessment.completedOn : latest;
-            }, null) ?? null)
+            }, null) ?? null
           : null,
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
@@ -1268,18 +1272,33 @@ const computeAssignmentAndRunData = computed(() => {
         }
       }
 
-      // Logic to update compositeFoundationalRunsAcc
+      // Logic to update compositeFoundationalRunsAcc and the row's composite score / support category
       if (assignment.foundationalComposite) {
         const { support_level: compositeSupportLevel, tag_color: compositeTagColor } =
           getFoundationalCompositeSupportLevel(grade, assignment.foundationalComposite);
+
+        const compositeRawScore = assignment.foundationalComposite.roarScore ?? null;
+        const compositeStandard = assignment.foundationalComposite.standardScore ?? null;
+        const compositePercentile =
+          assignment.foundationalComposite.percentile != null
+            ? _round(assignment.foundationalComposite.percentile)
+            : null;
+
+        currRow.compositeScore = {
+          rawScore: compositeRawScore,
+          percentile: compositePercentile,
+          standardScore: compositeStandard,
+          displayValue: compositePercentile ?? compositeRawScore,
+          supportLevel: compositeSupportLevel,
+          tagColor: compositeTagColor,
+        };
 
         compositeFoundationalRunsAcc.push({
           grade: getGrade(grade),
           scores: {
             support_level: compositeSupportLevel,
             stdPercentile: assignment.foundationalComposite.percentile ?? null,
-            rawScore:
-              assignment.foundationalComposite.roarScore ?? assignment.foundationalComposite.thetaEstimate ?? null,
+            rawScore: compositeRawScore,
           },
           taskId: 'compositeFoundational',
           user: {
@@ -1877,11 +1896,14 @@ const scoreReportColumns = computed(() => {
   }
   if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
     tableColumns.push({
-      field: 'compositeScore',
+      field: viewMode.value === 'raw' ? 'compositeScore.rawScore' : 'compositeScore.displayValue',
       header: 'Composite Score',
       dataType: 'text',
       sort: true,
       hidden: true,
+      tag: viewMode.value !== 'color',
+      emptyTag: viewMode.value === 'color',
+      tagColor: 'compositeScore.tagColor',
       headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
     });
   }
