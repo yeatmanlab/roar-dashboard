@@ -1,11 +1,9 @@
+import { StatusCodes } from 'http-status-codes';
 import { createApiClient } from '@roar-platform/assessment-sdk';
 
-// listTaskVariants sits behind the auth guard and returns the success envelope
-// { data: { items, pagination } } on 200.
-const HTTP_STATUS_OK = 200;
-
-// Published variants per task are few; a single large page avoids pagination
-// bookkeeping for what is only a dev/staging convenience.
+// 100 is the API's max perPage. Published variants per task are few, so a single page
+// avoids pagination bookkeeping for a dev/staging convenience; if a task ever exceeds it,
+// mountVariantPicker logs rather than silently truncating (see the totalPages check).
 const VARIANTS_PER_PAGE = 100;
 
 const PICKER_CONTAINER_ID = 'roar-variant-picker';
@@ -34,6 +32,8 @@ export async function mountVariantPicker({ baseUrl, auth, taskId, currentVariant
     const client = createApiClient({ baseUrl, auth });
     const result = await client.tasks.listTaskVariants({
       params: { taskId },
+      // Sort/status are set explicitly (rather than leaning on the contract's defaults) so the
+      // dropdown stays name-sorted and published-only regardless of future schema-default changes.
       query: {
         status: 'published',
         perPage: VARIANTS_PER_PAGE,
@@ -42,13 +42,22 @@ export async function mountVariantPicker({ baseUrl, auth, taskId, currentVariant
       },
     });
 
-    if (result.status !== HTTP_STATUS_OK) {
+    if (result.status !== StatusCodes.OK) {
       console.warn(`[variant-picker] listTaskVariants returned ${result.status}`);
       return;
     }
 
-    const variants = result.body.data.items;
+    const { items: variants, pagination } = result.body.data;
     if (variants.length === 0) return;
+
+    // The single page is capped at the API max (VARIANTS_PER_PAGE); make truncation
+    // visible rather than silently showing only the first page.
+    if (pagination && pagination.totalPages > 1) {
+      console.warn(
+        `[variant-picker] ${taskId} has more than ${VARIANTS_PER_PAGE} published variants; ` +
+          `showing only the first page (${pagination.totalPages} pages total).`,
+      );
+    }
 
     renderPicker(variants, currentVariantId);
   } catch (err) {

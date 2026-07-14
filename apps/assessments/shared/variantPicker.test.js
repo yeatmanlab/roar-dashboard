@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
 
 // The picker builds its client via the SDK's createApiClient; mock it so we can
 // drive listTaskVariants responses without a backend.
@@ -16,8 +17,8 @@ const SELECT_ID = 'roar-variant-picker-select';
 const baseArgs = { baseUrl: '/v1', auth: { getToken: vi.fn() }, taskId: 'pa' };
 
 /** Build a 200 listTaskVariants envelope for the given variant items. */
-function okResponse(items) {
-  return { status: 200, body: { data: { items } } };
+function okResponse(items, totalPages = 1) {
+  return { status: StatusCodes.OK, body: { data: { items, pagination: { totalPages } } } };
 }
 
 function getSelect() {
@@ -85,6 +86,15 @@ describe('mountVariantPicker', () => {
     expect(getSelect().value).toBe('draft-x');
   });
 
+  it('warns (but still renders) when the results span more than one page', async () => {
+    listTaskVariants.mockResolvedValue(okResponse([{ id: 'v1', name: 'English' }], 3));
+
+    await mountVariantPicker({ ...baseArgs, currentVariantId: 'v1' });
+
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('pages total'));
+    expect(getSelect()).not.toBeNull();
+  });
+
   it('navigates to the chosen variant, preserving other query params', async () => {
     const assign = vi.fn();
     const original = window.location;
@@ -120,7 +130,7 @@ describe('mountVariantPicker', () => {
   });
 
   it('renders nothing and does not throw on a non-200 response', async () => {
-    listTaskVariants.mockResolvedValue({ status: 403, body: {} });
+    listTaskVariants.mockResolvedValue({ status: StatusCodes.FORBIDDEN, body: {} });
 
     await expect(mountVariantPicker({ ...baseArgs })).resolves.toBeUndefined();
     expect(document.getElementById(PICKER_ID)).toBeNull();

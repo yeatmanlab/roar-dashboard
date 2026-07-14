@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@roar-platform/assessment-schema": "^0.1.0",
-    "@roar-platform/assessment-sdk": "^0.1.0"
+    "@roar-platform/assessment-sdk": "^0.1.0",
+    "http-status-codes": "^2.3.0"
   },
   "peerDependencies": {
     "@sentry/browser": ">=7",
