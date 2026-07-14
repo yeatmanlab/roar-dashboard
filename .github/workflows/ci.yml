@@ -561,11 +561,11 @@ jobs:
   # default (first published) variant; in-page variant selection lands with the
   # variant-picker enhancement (a follow-up PR).
   #
-  # Credentials come from the dedicated `assessments:preview` environment — a PR-permissive
-  # environment (all-branches deployment policy) holding the same secrets as
-  # `assessments:staging`, so the real staging-deploy environment stays branch-locked while
-  # previews can deploy from PR branches. The assessment hosting sites live under the same
-  # staging Firebase project.
+  # Credentials come from the `assessments:staging` environment, which has an all-branches
+  # deployment policy (no required reviewers), so PR branches can deploy previews directly.
+  # Staging holds only synthetic data and the assessment hosting sites live under the same
+  # staging Firebase project, so a preview channel targets the same low-risk surface as a
+  # normal staging deploy.
   #
   # Fork PRs receive no repository/environment secrets from GitHub, so this job would
   # otherwise fail at the GCP auth step with empty credentials. The `if` below skips it
@@ -581,7 +581,7 @@ jobs:
       needs.detect-assessment-changes.outputs.matrix != '[]' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    environment: assessments:preview
+    environment: assessments:staging
     timeout-minutes: 15
     env:
       # Lets the Sentry webpack plugin upload source maps for the preview build — it reads
