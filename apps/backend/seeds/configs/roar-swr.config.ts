@@ -1,3 +1,13 @@
+/**
+ * Seed config for ROAR Single Word Recognition (SWR).
+ *
+ * SWR is a single-word reading fluency assessment available in multiple languages.
+ * Each language maps to a separate backend task (swr, swr-es, swr-it, swr-pt, swr-de)
+ * via the `lng` param — the task set is derived from the unique `lng` values in the
+ * parameters file.
+ *
+ * Params match the gameParams from roar-swr's serve.js.
+ */
 import { swr } from '@roar-platform/assessment-schema';
 
 import type { TaskSeedConfig } from '../task-seed-configs';
@@ -52,11 +62,13 @@ export const swrConfig: TaskSeedConfig = {
     const lng = params.lng as string | undefined;
     if (!lng) throw new Error(`${loc}: "lng" is required`);
 
+    // lng must be a known SWR language code (e.g., "en", "es", "it", "pt", "de")
     const validLanguages = new Set(Object.values(SWR_LANGUAGES).map((l) => l.code));
     if (!validLanguages.has(lng)) {
       throw new Error(`${loc}: unsupported lng "${lng}". Valid: ${[...validLanguages].join(', ')}`);
     }
 
+    // scoringVersion is optional but must match a known version when present
     const scoringVersion = params.scoringVersion as number | null | undefined;
     if (scoringVersion !== undefined && scoringVersion !== null) {
       if (!VALID_SCORING_VERSIONS.has(scoringVersion)) {
@@ -66,6 +78,7 @@ export const swrConfig: TaskSeedConfig = {
       }
     }
   },
+  /** Routes each variant to its language-specific task via the `lng` param. */
   resolveTaskId(params) {
     const lng = params.lng as string | undefined;
     if (!lng) return SWR_TASK_IDS.EN;

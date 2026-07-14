@@ -1,3 +1,12 @@
+/**
+ * Seed config for ROAV RAN (Rapid Automatized Naming) and Symbol Search.
+ *
+ * Two tasks routed by `params.taskName`:
+ * - RAN — rapid naming of letters, digits, objects, or colors
+ * - Symbol Search — visual scanning and matching
+ *
+ * Metadata is sourced from the assessment-schema constants.
+ */
 import { roavRan } from '@roar-platform/assessment-schema';
 
 import type { TaskSeedConfig } from '../task-seed-configs';
@@ -27,6 +36,7 @@ export const roavRanConfig: TaskSeedConfig = {
       throw new Error(`${loc}: unknown taskName "${params.taskName}". Known: ${[...KNOWN_TASK_IDS].join(', ')}`);
     }
   },
+  /** Routes each variant to its task via `params.taskName` (1:1 mapping). */
   resolveTaskId(params) {
     return params.taskName as string;
   },

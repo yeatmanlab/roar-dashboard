@@ -1,3 +1,12 @@
+/**
+ * Seed config for ROAR Read Aloud.
+ *
+ * Read Aloud is a single-task oral reading fluency assessment. All variants belong
+ * to the one readaloud task. Metadata is sourced from the assessment-schema constants.
+ *
+ * Params match the gameParams from roar-readaloud's serve.js. The `taskName` param,
+ * if present, must equal the canonical task ID.
+ */
 import { readaloud } from '@roar-platform/assessment-schema';
 
 import type { TaskSeedConfig } from '../task-seed-configs';

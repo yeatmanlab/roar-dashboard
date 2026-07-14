@@ -1,3 +1,14 @@
+/**
+ * Seed config for ROAR Phonological Awareness (PA).
+ *
+ * PA is a single-task assessment (no multi-task routing). All variants belong to
+ * the one PA task. The `language` param is required and must be a known PA language.
+ *
+ * PA supports adaptive testing — params like `isAdaptive`, `itemSelect`, and
+ * `abilityMethod` control the CAT engine behavior.
+ *
+ * Params match the gameParams from roar-pa's serve.js.
+ */
 import { pa } from '@roar-platform/assessment-schema';
 
 import type { TaskSeedConfig } from '../task-seed-configs';

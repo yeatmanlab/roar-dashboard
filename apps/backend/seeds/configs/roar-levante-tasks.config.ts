@@ -1,3 +1,15 @@
+/**
+ * Seed config for LEVANTE assessment tasks.
+ *
+ * LEVANTE is a battery of early learning assessments. Each task is a separate
+ * assessment module (e.g., trog, matrix-reasoning, theory-of-mind). Variants are
+ * routed to their task via `params.taskName`, which must match a known task ID.
+ *
+ * Tasks are split into three tiers by scoring support:
+ * - Normed: have full norming tables (trog, roar-inference)
+ * - Provisional: have provisional scoring configs (egma-math, matrix-reasoning, etc.)
+ * - Additional: no scoring config in assessment-schema, but still need DB entries
+ */
 import { levante } from '@roar-platform/assessment-schema';
 
 import type { TaskSeedConfig } from '../task-seed-configs';
@@ -83,6 +95,7 @@ export const levanteConfig: TaskSeedConfig = {
       nameTechnical: 'LEVANTE Intro',
     },
   },
+  /** Routes each variant to its task via `params.taskName` (1:1 mapping). */
   resolveTaskId(params) {
     const taskName = params.taskName as string | undefined;
     if (!taskName) throw new Error('"taskName" is required in params for levante tasks');

@@ -1,3 +1,12 @@
+/**
+ * Seed config for ROAR Multichoice (Morphology + Written Vocabulary).
+ *
+ * The multichoice assessment contains two distinct tasks routed by `params.task`:
+ * - `"morphology"` — morphological awareness (prefix/suffix knowledge)
+ * - `"cva"` — written vocabulary (Comprehension of Vocabulary and Affixes)
+ *
+ * Both tasks share the same scoring version pool.
+ */
 import { multichoice } from '@roar-platform/assessment-schema';
 
 import type { TaskSeedConfig } from '../task-seed-configs';
@@ -29,6 +38,7 @@ export const multichoiceConfig: TaskSeedConfig = {
       }
     }
   },
+  /** Routes each variant to morphology or CVA based on `params.task`. */
   resolveTaskId(params) {
     const task = params.task as string | undefined;
     if (task === MORPHOLOGY_TASK_ID) return MORPHOLOGY_TASK_ID;

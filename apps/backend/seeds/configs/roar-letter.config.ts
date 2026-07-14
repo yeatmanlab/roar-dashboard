@@ -1,3 +1,18 @@
+/**
+ * Seed config for ROAR Letter Names and Sounds / Phonics.
+ *
+ * Two task families are supported, distinguished by the required `task` param:
+ *
+ * - **Letter** (`params.task === "letter"`): Letter-name and letter-sound identification.
+ *   Requires `params.language` to route to the correct language-specific backend task
+ *   (letter-en, letter-es, letter-en-ca). Unsupported languages are skipped gracefully.
+ *
+ * - **Phonics** (`params.task === "phonics"`): Phonics decoding. Always seeded under the
+ *   single English phonics task — no language routing.
+ *
+ * scoringVersion validation only applies to letter tasks (phonics has no scoring versions
+ * in the schema).
+ */
 import { letter } from '@roar-platform/assessment-schema';
 
 import type { TaskSeedConfig } from '../task-seed-configs';
@@ -40,11 +55,13 @@ export const letterConfig: TaskSeedConfig = {
       const language = params.language as string | undefined;
       if (!language) throw new Error(`${loc}: "language" is required for letter tasks`);
 
-      // Skip unsupported languages gracefully (matches original seed script behavior)
+      // Gracefully skip languages not yet supported by the backend (return false = skip).
+      // Language keys are case-sensitive (e.g., "en", "es", "en-CA").
       if (!SUPPORTED_LANGUAGES.has(language)) {
         return false;
       }
 
+      // scoringVersion validation only applies to letter tasks, not phonics
       const scoringVersion = params.scoringVersion as number | null | undefined;
       if (scoringVersion !== undefined && scoringVersion !== null) {
         if (!VALID_SCORING_VERSIONS.has(scoringVersion)) {
@@ -55,6 +72,11 @@ export const letterConfig: TaskSeedConfig = {
       }
     }
   },
+  /**
+   * Routes variants to their task by `params.task` and `params.language`:
+   * - phonics → single English phonics task
+   * - letter + language → language-specific letter task (en, es, en-CA)
+   */
   resolveTaskId(params) {
     const language = params.language as string | undefined;
     const task = params.task as string | undefined;

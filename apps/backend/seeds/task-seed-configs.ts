@@ -23,14 +23,42 @@ export type VariantDef = {
   params: Record<string, unknown>;
 };
 
+/**
+ * Configuration for seeding a single assessment's tasks and variants.
+ *
+ * Each assessment provides a config that defines its task metadata, parameter validation,
+ * and (for multi-task assessments) the logic to route a variant to the correct task.
+ *
+ * The variant parameters come from a `taskVariantParameters.json` file whose entries
+ * match the `gameParams` the assessment's `serve.js` passes to the task runner.
+ *
+ * @see {@link ../task-seed.ts} for the unified runner that consumes these configs.
+ */
 export type TaskSeedConfig = {
   /** Map of taskId → task metadata for DB insertion. */
   tasks: Record<string, { name: string; nameSimple: string; nameTechnical: string }>;
-  /** Allowed parameter keys. If set, unknown keys are rejected. */
+
+  /**
+   * Allowed parameter keys. If set, unknown keys are rejected.
+   * Derived from the assessment's serve.js gameParams.
+   */
   allowedParamKeys?: Set<string>;
-  /** Custom validation per variant. Throws on invalid input. Return false to skip the variant. */
+
+  /**
+   * Custom validation per variant. Throws on invalid input.
+   *
+   * @returns `void` to accept the variant, `false` to skip it gracefully (e.g., for
+   *          unsupported languages that shouldn't fail the seed run).
+   */
   validateVariant?: (loc: string, params: Record<string, unknown>) => void | boolean;
-  /** For multi-task configs, resolves which taskId a variant belongs to from its params. */
+
+  /**
+   * For multi-task assessments, resolves which taskId a variant belongs to from its params.
+   *
+   * Single-task configs omit this — all variants belong to the one task in `tasks`.
+   * Multi-task configs (SWR, SRE, Letter, Multichoice, ROAV, Levante) use a routing
+   * param (`lng`, `task`, `taskName`) to determine the target task.
+   */
   resolveTaskId?: (params: Record<string, unknown>) => string;
 };
 

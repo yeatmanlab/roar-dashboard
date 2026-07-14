@@ -1,3 +1,16 @@
+/**
+ * Seed config for ROAR Sentence Reading Efficiency (SRE).
+ *
+ * SRE is a sentence-level reading fluency assessment available in multiple languages.
+ * Each language maps to a separate backend task (sre, sre-es, sre-pt, sre-de) via the
+ * `lng` param.
+ *
+ * Unlike SWR, SRE silently skips unsupported languages rather than throwing — this
+ * matches the original seed script behavior where new languages in the parameters file
+ * were ignored until backend support was added.
+ *
+ * Params match the gameParams from roar-sre's serve.js.
+ */
 import { sre } from '@roar-platform/assessment-schema';
 
 import type { TaskSeedConfig } from '../task-seed-configs';
@@ -44,11 +57,13 @@ export const sreConfig: TaskSeedConfig = {
     const lng = params.lng as string | undefined;
     if (!lng) throw new Error(`${loc}: "lng" is required`);
 
-    // Skip unsupported languages gracefully (matches original seed script behavior)
+    // Gracefully skip languages not yet supported by the backend (return false = skip).
+    // This lets the parameters file include future languages without breaking the seed.
     if (!SUPPORTED_LANGUAGES.has(lng)) {
       return false;
     }
 
+    // scoringVersion is optional but must match a known version when present
     const scoringVersion = params.scoringVersion as number | null | undefined;
     if (scoringVersion !== undefined && scoringVersion !== null) {
       if (!VALID_SCORING_VERSIONS.has(scoringVersion)) {
@@ -58,6 +73,7 @@ export const sreConfig: TaskSeedConfig = {
       }
     }
   },
+  /** Routes each variant to its language-specific task via the `lng` param. */
   resolveTaskId(params) {
     const lng = params.lng as string | undefined;
     if (!lng) return SRE_TASK_IDS.EN;
