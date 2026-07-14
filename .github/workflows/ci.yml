@@ -387,3 +387,131 @@ jobs:
           CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
           COMMIT_INFO_MESSAGE: "${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Assessment PR preview links
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  #
+  # For each changed assessment, build the staging bundle and deploy it to an
+  # ephemeral Firebase Hosting *preview channel* on that assessment's existing
+  # staging hosting site, then post the preview URL on the PR. The preview points
+  # at the staging backend (baked-in ROAR_API_BASE_URL) and authenticates
+  # anonymously against the staging assessment Firebase project via the site's
+  # /__/firebase/init.json — identical to the live staging assessment, just on an
+  # ephemeral channel. No Firebase apiKeys enter the workflow. Reviewers get the
+  # default (first published) variant; in-page variant selection lands with the
+  # variant-picker enhancement (a follow-up PR).
+  #
+  # Credentials come from the `assessments:staging` environment (the assessment
+  # hosting sites live under that project; the same secrets drive
+  # deploy-assessments-staging.yml). NOTE: for previews to run on PR branches, that
+  # environment must permit non-main deployments — i.e. no "required reviewers" gate
+  # and no deployment-branch policy restricting it to `main`. If it's locked to main,
+  # move these four secrets to a PR-permissive environment (e.g. assessments:preview)
+  # and point this job at it instead.
+  #
+  # Fork PRs receive no repository/environment secrets from GitHub, so this job would
+  # otherwise fail at the GCP auth step with empty credentials. The `if` below skips it
+  # cleanly for forks — previews run only for same-repo branch PRs (authored by
+  # maintainers with push access), which is also the only case that can satisfy the
+  # environment's deployment-branch policy.
+  preview-assessments:
+    name: Preview ${{ matrix.assessment }}
+    needs: [detect-assessment-changes, lint, build]
+    # Skip cleanly for fork PRs — GitHub withholds secrets from them, so the deploy would
+    # fail at GCP auth. Previews run only for same-repo branch PRs.
+    if: >-
+      needs.detect-assessment-changes.outputs.matrix != '[]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: assessments:staging
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        assessment: ${{ fromJson(needs.detect-assessment-changes.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Read hosting site name
+        id: hosting
+        run: |
+          site=$(jq -r '.roar.hosting.staging' apps/assessments/${{ matrix.assessment }}/package.json)
+          echo "site=$site" >> "$GITHUB_OUTPUT"
+
+      - name: Build assessment
+        uses: ./.github/actions/build-assessment
+        with:
+          assessment: ${{ matrix.assessment }}
+          build-script: build:staging
+          roar-api-base-url: ${{ secrets.ROAR_API_BASE_URL }}
+
+      # The assessment firebase.json hardcodes sentry_environment=production in its
+      # Report-To/CSP headers; retag it to the PR so preview Sentry events group
+      # separately from production issues. Mirrors deploy-assessment.yml.
+      - name: Set Sentry environment for preview
+        run: |
+          sed -i "s|sentry_environment=production|sentry_environment=pr-${{ github.event.pull_request.number }}|g" \
+            apps/assessments/${{ matrix.assessment }}/firebase.json
+
+      # No github-token here on purpose: it would trigger the FirebaseExtended action's
+      # own PR comment, which isn't keyed per-site and would clobber across matrix legs.
+      # We post a per-assessment sticky comment below using the deployment-url output.
+      - name: Deploy preview channel
+        id: deploy
+        uses: ./.github/actions/deploy-firebase-hosting
+        with:
+          firebase-channel: preview
+          expires: 7d
+          firebase-hosting-site: ${{ steps.hosting.outputs.site }}
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
+          dist-path: apps/assessments/${{ matrix.assessment }}/dist
+          firebase-config-path: apps/assessments/${{ matrix.assessment }}/firebase.json
+
+      - name: Comment preview URL
+        if: steps.deploy.outputs.deployment-url != ''
+        uses: actions/github-script@v7
+        env:
+          ASSESSMENT: ${{ matrix.assessment }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.deployment-url }}
+        with:
+          script: |
+            const assessment = process.env.ASSESSMENT;
+            const url = process.env.PREVIEW_URL;
+            // Hidden marker keeps one sticky comment per assessment: re-pushes update it
+            // in place, and multiple changed assessments never clobber each other.
+            const marker = `<!-- assessment-preview:${assessment} -->`;
+            const body = [
+              marker,
+              `### 🔍 Preview — \`${assessment}\``,
+              url,
+              '',
+              "_Runs the default (first published) variant against the **staging** backend, reflecting " +
+                "this PR's bundle changes. Expires in 7 days (refreshed on each push). In-page variant " +
+                "selection lands with the variant-picker enhancement._",
+            ].join('\n');
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
