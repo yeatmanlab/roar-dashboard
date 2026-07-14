@@ -561,13 +561,11 @@ jobs:
   # default (first published) variant; in-page variant selection lands with the
   # variant-picker enhancement (a follow-up PR).
   #
-  # Credentials come from the `assessments:staging` environment (the assessment
-  # hosting sites live under that project; the same secrets drive
-  # deploy-assessments-staging.yml). NOTE: for previews to run on PR branches, that
-  # environment must permit non-main deployments — i.e. no "required reviewers" gate
-  # and no deployment-branch policy restricting it to `main`. If it's locked to main,
-  # move these four secrets to a PR-permissive environment (e.g. assessments:preview)
-  # and point this job at it instead.
+  # Credentials come from the dedicated `assessments:preview` environment — a PR-permissive
+  # environment (all-branches deployment policy) holding the same secrets as
+  # `assessments:staging`, so the real staging-deploy environment stays branch-locked while
+  # previews can deploy from PR branches. The assessment hosting sites live under the same
+  # staging Firebase project.
   #
   # Fork PRs receive no repository/environment secrets from GitHub, so this job would
   # otherwise fail at the GCP auth step with empty credentials. The `if` below skips it
@@ -583,8 +581,13 @@ jobs:
       needs.detect-assessment-changes.outputs.matrix != '[]' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    environment: assessments:staging
+    environment: assessments:preview
     timeout-minutes: 15
+    env:
+      # Lets the Sentry webpack plugin upload source maps for the preview build — it reads
+      # SENTRY_AUTH_TOKEN from the process env during build:staging. Set at job level so it
+      # reaches the composite build-assessment action.
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
     strategy:
       fail-fast: false
       matrix:
