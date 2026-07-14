@@ -620,7 +620,8 @@ jobs:
 
       # No github-token here on purpose: it would trigger the FirebaseExtended action's
       # own PR comment, which isn't keyed per-site and would clobber across matrix legs.
-      # We post a per-assessment sticky comment below using the deployment-url output.
+      # This leg records its deployment-url to an artifact; the separate preview-comment
+      # job aggregates all legs into a single sticky comment after the matrix completes.
       - name: Deploy preview channel
         id: deploy
         uses: ./.github/actions/deploy-firebase-hosting
