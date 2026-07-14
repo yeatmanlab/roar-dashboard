@@ -1398,7 +1398,7 @@ export const taskInfoById = {
 };
 
 // Then create a function to populate the template
-export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
+export const replaceScoreRange = (desc, taskId, scoringVersion = null, supportThreshold = null) => {
   if (!desc) return '';
 
   // Only process desc field if it contains placeholders
@@ -1408,8 +1408,16 @@ export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   }
 
   if (desc.includes('{{SUPPORT_RANGE}}')) {
-    const useUpdatedNorms = (taskId === 'sre' && scoringVersion >= 4) || (taskId === 'swr' && scoringVersion >= 7);
-    return desc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
+    // Prefer the backend-resolved support threshold (the developing-cutoff complement the
+    // facets response supplies); fall back to the legacy scoringVersion rule when it isn't
+    // available (older backend, or a task with no facet). swr ≥ v7 / sre ≥ v4 → 80%, else 75%.
+    const resolved =
+      supportThreshold != null
+        ? supportThreshold
+        : (taskId === 'sre' && scoringVersion >= 4) || (taskId === 'swr' && scoringVersion >= 7)
+          ? 80
+          : 75;
+    return desc.replace('{{SUPPORT_RANGE}}', `${resolved}%`);
   }
 
   return desc;
