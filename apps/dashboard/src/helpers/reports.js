@@ -871,7 +871,7 @@ export const getFoundationalCompositeSupportLevel = (grade, foundationalComposit
     if (typeof percentile === 'string' && /[<>]/.test(percentile)) {
       percentile = parseFloat(percentile.replace(/[<>]/g, ''));
     }
-    console.log('Percentile found:', percentile);
+
     if (percentile >= FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF) {
       support_level = 'Achieved Skill';
       tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;

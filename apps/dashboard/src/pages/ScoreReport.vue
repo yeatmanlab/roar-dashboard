@@ -1897,7 +1897,12 @@ const scoreReportColumns = computed(() => {
   }
   if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
     tableColumns.push({
-      field: viewMode.value === 'raw' ? 'compositeScore.rawScore' : 'compositeScore.displayValue',
+      field:
+        viewMode.value === 'raw'
+          ? 'compositeScore.rawScore'
+          : viewMode.value === 'standard'
+            ? 'compositeScore.standardScore'
+            : 'compositeScore.displayValue',
       header: 'Composite Score',
       dataType: 'text',
       sort: true,

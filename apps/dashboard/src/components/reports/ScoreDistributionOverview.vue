@@ -186,7 +186,6 @@ const compositeFoundational = computed(() => {
   const counts = { below: 0, some: 0, above: 0 };
   for (const run of composite) {
     const supportLevel = run.scores?.support_level;
-    console.log('considering level', supportLevel);
     if (supportLevel === 'Needs Extra Support') counts.below++;
     else if (supportLevel === 'Developing Skill') counts.some++;
     else if (supportLevel === 'Achieved Skill') counts.above++;
