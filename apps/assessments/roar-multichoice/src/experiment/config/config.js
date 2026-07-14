@@ -323,6 +323,7 @@ export const initConfig = async (gameParams, userParams, displayElement) => {
     nItemsSecondary: nItemsSecondary ?? ((isAdaptive ?? isCvaGroupRandom) && task === 'cva' ? 5 : null),
     forceSecondaryBehavior,
     startItemSelect,
+    runStarted: true,
   };
 
   // updateTaskParams is not supported in the SDK; log a deprecation warning and continue

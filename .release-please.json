@@ -126,6 +126,27 @@
       "release-type": "node",
       "component": "roar-levante-tasks",
       "release-as": "1.0.6"
+    },
+    "apps/assessments/roar-readaloud": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roar-readaloud",
+      "release-as": "1.4.2"
+    },
+    "apps/assessments/roav-apps": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roav-apps",
+      "release-as": "1.0.1"
+    },
+    "apps/assessments/roav-ran": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roav-ran",
+      "release-as": "2.0.1"
     }
   },
   "group-pull-request-title-pattern": "chore: release ${version}",

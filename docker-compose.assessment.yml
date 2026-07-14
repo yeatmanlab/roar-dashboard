@@ -16,7 +16,7 @@ name: roar-assessment
 #
 # Service dependency order:
 #   assessment-db (healthy) → assessment-db-migrate (completed)
-#                           → firebase-auth-emulator (healthy)
+#                           → firebase-emulator (healthy)
 #                           → backend (healthy)
 #                           → assessment dev server (on host)
 #
@@ -90,30 +90,41 @@ services:
     # One-shot service — no restart policy.
 
   # ────────────────────────────────────────────────────────────────────────────
-  # Firebase Auth emulator.
-  # The Auth emulator is pure Node.js (no Java required).
-  # Assessments connect to it via FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099.
+  # Firebase Auth + Storage emulators.
+  # Auth is pure Node.js; Storage needs a JRE (installed in the firebase-emulator image)
+  # to run the rules runtime. Assessments connect via FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
+  # (auth) and upload recordings to the Storage emulator on 127.0.0.1:9199, viewable in the
+  # Emulator UI on :9000.
   # ────────────────────────────────────────────────────────────────────────────
-  firebase-auth-emulator:
-    container_name: firebase-auth-emulator
+  firebase-emulator:
+    container_name: firebase-emulator
     build:
       context: .
       dockerfile: assessment.Dockerfile
       target: firebase-emulator
     volumes:
       - ./apps/assessments/shared/firebase.json:/app/firebase.json:ro
+      # firebase.json references storage.rules; mount it so the Storage emulator can load it.
+      - ./apps/assessments/shared/storage.rules:/app/storage.rules:ro
     command: >
       firebase emulators:start
-        --only auth
+        --only auth,storage
         --project demo-roar
         --config /app/firebase.json
     ports:
       - "9099:9099"
+      # Storage emulator (recording uploads) and the Emulator UI (view recordings at :9000,
+      # clear of the backend on :4000).
+      - "9199:9199"
+      - "9000:9000"
     healthcheck:
-      # curl returns 0 on any HTTP response — just checks that the port is accepting
-      # connections, which is sufficient to confirm the emulator is ready.
+      # curl returns 0 on any HTTP response — checks that both the auth (9099) and storage
+      # (9199) emulators are accepting connections so `--wait` doesn't proceed before uploads work.
       test:
-        ["CMD-SHELL", "curl --silent http://localhost:9099/ --output /dev/null"]
+        [
+          "CMD-SHELL",
+          "curl --silent http://localhost:9099/ --output /dev/null && curl --silent http://localhost:9199/ --output /dev/null",
+        ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -140,7 +151,7 @@ services:
       # Canonical project identifier for emulated Firebase projects
       # Should match FIREBASE_EMULATOR_PROJECT_ID constant in @assessment-schema/src/firebase-emulator.ts
       GOOGLE_CLOUD_PROJECT: demo-roar
-      FIREBASE_AUTH_EMULATOR_HOST: firebase-auth-emulator:9099
+      FIREBASE_AUTH_EMULATOR_HOST: firebase-emulator:9099
       # The webpack dev server proxies /v1 to the backend so CORS never applies
       # in this environment. This value just satisfies the production boot check
       # (ALLOWED_ORIGINS must be set when NODE_ENV=production).
@@ -156,7 +167,7 @@ services:
     depends_on:
       assessment-db-migrate:
         condition: service_completed_successfully
-      firebase-auth-emulator:
+      firebase-emulator:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:4000/health/live"]

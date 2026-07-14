@@ -20,3 +20,15 @@ apps/assessments/roar-multichoice/ @yeatmanlab/roar-maintainers @tonyamurray
 
 # roar-survey assessment
 apps/assessments/roar-survey/ @yeatmanlab/roar-maintainers
+
+# roar-readaloud assessment
+apps/assessments/roar-readaloud/ @yeatmanlab/roar-maintainers
+
+# roav-apps assessment
+apps/assessments/roav-apps/ @yeatmanlab/roar-maintainers @tanyamelca
+
+# roav-ran assessment
+apps/assessments/roav-ran/ @yeatmanlab/roar-maintainers
+
+# roam-apps assessment
+apps/assessments/roam-apps/ @yeatmanlab/roar-maintainers @KruttikaBhat
