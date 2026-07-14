@@ -1,4 +1,3 @@
-// Benign comment to trigger the PR preview process -- remove later!
 import { startRun, abortRun } from '@roar-platform/assessment-sdk/compat/firekit';
 import { initConfig } from './experiment/config/config';
 import { buildExperiment } from './experiment/experiment';

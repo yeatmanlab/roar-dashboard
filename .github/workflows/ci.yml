@@ -568,10 +568,20 @@ jobs:
   # and no deployment-branch policy restricting it to `main`. If it's locked to main,
   # move these four secrets to a PR-permissive environment (e.g. assessments:preview)
   # and point this job at it instead.
+  #
+  # Fork PRs receive no repository/environment secrets from GitHub, so this job would
+  # otherwise fail at the GCP auth step with empty credentials. The `if` below skips it
+  # cleanly for forks — previews run only for same-repo branch PRs (authored by
+  # maintainers with push access), which is also the only case that can satisfy the
+  # environment's deployment-branch policy.
   preview-assessments:
     name: Preview ${{ matrix.assessment }}
     needs: [detect-assessment-changes, lint, build]
-    if: needs.detect-assessment-changes.outputs.matrix != '[]'
+    # Skip cleanly for fork PRs — GitHub withholds secrets from them, so the deploy would
+    # fail at GCP auth. Previews run only for same-repo branch PRs.
+    if: >-
+      needs.detect-assessment-changes.outputs.matrix != '[]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     environment: assessments:staging
     timeout-minutes: 15
