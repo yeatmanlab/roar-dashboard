@@ -86,7 +86,7 @@ const survey_responseModality = {
   },
 };
 
-export const surveyTimeline = (configMain) => {
+export const surveyTimeline = () => {
   const beginningTimeline = {
     timeline: [survey_responseModality],
     on_timeline_finish: async () => {

@@ -11,7 +11,7 @@ const makePid = () => {
 };
 
 //start the timeline with entering into fullscreen and getting some information from user (consent form, lab id, pid, survey)
-export const initTimeline = (configMain) => {
+export const initTimeline = () => {
   // If the participant's ID was **not** supplied through the query string, then
   // ask the user to fill out a form with their ID, class and school.
 
