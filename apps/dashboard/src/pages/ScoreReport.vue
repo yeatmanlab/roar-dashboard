@@ -1143,6 +1143,7 @@ const computeAssignmentAndRunData = computed(() => {
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           // isNewScoring is 1.2.23+, otherwise handles 1.2.14
           const isNewScoring = _has(assessment, 'scores.computed.composite.numCorrect');
+          const hasTestAnswers = _get(assessment, 'scores.raw.composite.test');
           const propertyKeys = isNewScoring
             ? ['numCorrect', 'numIncorrect', 'numAttempted']
             : ['totalCorrect', 'totalIncorrect', 'totalNumAttempted'];
@@ -1151,7 +1152,17 @@ const computeAssignmentAndRunData = computed(() => {
             _get(assessment, `scores.computed.composite.${key}`),
           );
 
-          Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, numAttempted, isNewScoring });
+          // Non-response modality (1.3.6+) return computed.composite even when no test questions have been answered
+          if (hasTestAnswers) {
+            Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, numAttempted, isNewScoring });
+          } else {
+            Object.assign(currRowScores[taskId], {
+              numCorrect: null,
+              numIncorrect: null,
+              numAttempted: null,
+              isNewScoring,
+            });
+          }
 
           currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
           currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
@@ -1165,7 +1176,7 @@ const computeAssignmentAndRunData = computed(() => {
             const scores = _get(assessment, 'scores.computed');
             // Verify non-response modality scores (1.3.6+) by confirming that at least one subskill is present
             const hasSubskills = scores ? Object.keys(scores).some((key) => roamFluencySubskills[key]) : false;
-            if (hasSubskills) {
+            if (hasSubskills && hasTestAnswers) {
               const allIncorrectSkills = [];
               const subsetIncorrectSkills = [];
               Object.keys(roamFluencySubskills).forEach((subskill) => {
@@ -1185,8 +1196,7 @@ const computeAssignmentAndRunData = computed(() => {
                     if (taskId === 'fluency-calf' || subskill === 'addition' || subskill === 'subtraction') {
                       allIncorrectSkills.push(...parsedIncorrectSkills);
                     } else {
-                      // For fluency-arf, multiplication and division skills are considered the same
-                      // Separate them from addition and subtraction because we want to count duplicate of those skills
+                      // For fluency-arf, multiplication and division skills are considered the same for counting purposes
                       subsetIncorrectSkills.push(...parsedIncorrectSkills);
                     }
                   }
@@ -1209,12 +1219,14 @@ const computeAssignmentAndRunData = computed(() => {
             }
 
             // Non-response modality scores (1.3.6+) can return decimal rawScore for main score report
-            if (currRowScores[taskId].rawScore != undefined) {
+            if (currRowScores[taskId].rawScore != undefined && hasTestAnswers) {
               currRowScores[taskId].rawScore = parseFloat(Number(currRowScores[taskId].rawScore).toFixed(2));
             }
           }
 
-          scoreFilterTags += ' Assessed ';
+          if (hasTestAnswers) {
+            scoreFilterTags += ' Assessed ';
+          }
         }
         if (taskId === 'phonics' && assessment.scores) {
           // Process phonics scores
