@@ -5,6 +5,7 @@
   "description": "Shared helpers used across ROAR assessment standalone harnesses (serve.js).",
   "type": "module",
   "scripts": {
+    "build": "echo \"assessment-shared is source-only (imported directly and bundled by consuming assessments); no build step\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
