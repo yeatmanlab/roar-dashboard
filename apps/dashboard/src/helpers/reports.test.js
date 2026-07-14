@@ -260,6 +260,21 @@ describe('reports', () => {
       const result = getFoundationalCompositeSupportLevel(undefined, { roarScore: 500 });
       expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
     });
+
+    it('should handle a percentile formatted with a "<" prefix (grade < 6)', () => {
+      const result = getFoundationalCompositeSupportLevel(3, { percentile: '<1' });
+      expect(result).toEqual({ support_level: 'Needs Extra Support', tag_color: '#c93d82' });
+    });
+
+    it('should handle a percentile formatted with a ">" prefix (grade < 6)', () => {
+      const result = getFoundationalCompositeSupportLevel(3, { percentile: '>99' });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
+
+    it('should handle a roarScore formatted with a ">" prefix (grades 6-9)', () => {
+      const result = getFoundationalCompositeSupportLevel(7, { roarScore: '>487' });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
   });
 
   describe('getScoreValue', () => {

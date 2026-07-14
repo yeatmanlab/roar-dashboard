@@ -838,7 +838,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
 
 // Grades for which the foundational composite score is evaluated using raw score instead of percentile.
 // Mirrors the cutoff logic in roar-firebase-functions' aggregateFoundationalCompositeScores.
-const FOUNDATIONAL_COMPOSITE_RAW_SCORE_GRADES = [6, 7, 8, 9];
+const FOUNDATIONAL_COMPOSITE_RAW_SCORE_GRADE_CUTOFF = 6;
 const FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF = 40;
 const FOUNDATIONAL_COMPOSITE_PERCENTILE_DEVELOPING_CUTOFF = 20;
 const FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF = 487;
@@ -861,13 +861,17 @@ export const getFoundationalCompositeSupportLevel = (grade, foundationalComposit
   }
 
   const gradeLevel = getGrade(grade);
-  const useRawScore = !Number.isFinite(gradeLevel) || FOUNDATIONAL_COMPOSITE_RAW_SCORE_GRADES.includes(gradeLevel);
+  const useRawScore = !Number.isFinite(gradeLevel) || FOUNDATIONAL_COMPOSITE_RAW_SCORE_GRADE_CUTOFF <= gradeLevel;
 
   if (!useRawScore) {
-    const percentile = foundationalComposite.percentile;
+    let percentile = foundationalComposite.percentile;
     if (percentile === null || percentile === undefined) {
       return { support_level, tag_color };
     }
+    if (typeof percentile === 'string' && /[<>]/.test(percentile)) {
+      percentile = parseFloat(percentile.replace(/[<>]/g, ''));
+    }
+    console.log('Percentile found:', percentile);
     if (percentile >= FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF) {
       support_level = 'Achieved Skill';
       tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
@@ -882,9 +886,12 @@ export const getFoundationalCompositeSupportLevel = (grade, foundationalComposit
       tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
     }
   } else {
-    const rawScore = foundationalComposite.roarScore ?? foundationalComposite.thetaEstimate;
+    let rawScore = foundationalComposite.roarScore;
     if (rawScore === null || rawScore === undefined) {
       return { support_level, tag_color };
+    }
+    if (typeof rawScore === 'string' && /[<>]/.test(rawScore)) {
+      rawScore = parseFloat(rawScore.replace(/[<>]/g, ''));
     }
     if (rawScore >= FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF) {
       support_level = 'Achieved Skill';

@@ -1279,10 +1279,11 @@ const computeAssignmentAndRunData = computed(() => {
 
         const compositeRawScore = assignment.foundationalComposite.roarScore ?? null;
         const compositeStandard = assignment.foundationalComposite.standardScore ?? null;
-        const compositePercentile =
-          assignment.foundationalComposite.percentile != null
-            ? _round(assignment.foundationalComposite.percentile)
-            : null;
+        let compositePercentile = assignment.foundationalComposite.percentile;
+        // Check for null or undefined values, only round if the score is not a string.
+        if (compositePercentile != null) {
+          if (typeof compositePercentile !== 'string') compositePercentile = _round(compositePercentile);
+        } else compositePercentile = null;
 
         currRow.compositeScore = {
           rawScore: compositeRawScore,
