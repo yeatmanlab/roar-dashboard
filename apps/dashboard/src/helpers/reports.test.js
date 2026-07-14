@@ -226,8 +226,8 @@ describe('reports', () => {
       expect(result).toEqual({ support_level: 'Needs Extra Support', tag_color: '#c93d82' });
     });
 
-    it('should use percentile for grades above 9', () => {
-      const result = getFoundationalCompositeSupportLevel(10, { percentile: 50 });
+    it('should use raw score for grades above 9 (no upper grade cutoff)', () => {
+      const result = getFoundationalCompositeSupportLevel(10, { roarScore: 500 });
       expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
     });
 
@@ -251,9 +251,9 @@ describe('reports', () => {
       expect(result).toEqual({ support_level: 'Needs Extra Support', tag_color: '#c93d82' });
     });
 
-    it('should fall back to thetaEstimate when roarScore is missing (grades 6-9)', () => {
+    it('should not fall back to thetaEstimate when roarScore is missing (grades 6-9)', () => {
       const result = getFoundationalCompositeSupportLevel(7, { thetaEstimate: 500 });
-      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+      expect(result).toEqual({ support_level: null, tag_color: null });
     });
 
     it('should use raw score when grade is missing/invalid', () => {
