@@ -5,6 +5,7 @@ import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { pa } from '@roar-platform/assessment-schema';
 import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
+import { mountVariantPicker } from '../../shared/variantPicker.js';
 import { wireScoreAdapter } from '../src/sdk/pa-firekit-facade';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
@@ -61,6 +62,19 @@ onAuthStateChanged(auth, async (user) => {
         taskVersion,
         isAnonymous: true,
       });
+
+      // Dev/staging only: mount a variant switcher so reviewers can hop between published
+      // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
+      // eslint-disable-next-line no-undef
+      if (ROAR_DB !== 'production') {
+        mountVariantPicker({
+          // eslint-disable-next-line no-undef
+          baseUrl: ROAR_API_BASE_URL,
+          auth: authCallbacks,
+          taskId: pa.PA_TASK_ID,
+          currentVariantId: resolvedVariantId,
+        });
+      }
 
       // Wire PA score computation pipeline
       wireScoreAdapter();
