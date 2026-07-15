@@ -12,7 +12,7 @@ export const ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS = {
   RT_CONTROL_2AFC: 'rtControl_2afc',
   RT_CONTROL_6AFC: 'rtControl_6afc',
   RT_CONTROL_PRODUCTION: 'rtControl_production',
-};
+} as const;
 
 /**
  * Subtasks below do not have scores for assessmentStage=PRACTICE

@@ -113,4 +113,29 @@ describe('computedScoreCallback', () => {
       expect(computed.numberLine).not.toHaveProperty('subPercentCorrect');
     });
   });
+
+  describe('single non-composite subtask (no composite key)', () => {
+    test('response-modality FR only: builds a composite instead of reading undefined.rawScore', () => {
+      mockSession({
+        config: { taskName: 'fluency-arf', responseMode: 'production' },
+        responseModality: true,
+        trialNumTotalProduction: 10,
+        totalCorrect: 7,
+      });
+
+      // Only the FR subtask is populated, so at the branch check computedScores is
+      // length 1 with no 'composite' key. Before the `!Object.hasOwn(computedScores,
+      // COMPOSITE_DOMAIN)` guard, length===1 fell through to the else branch and read
+      // `computedScores.composite.rawScore` → undefined.rawScore → threw.
+      let computed;
+      expect(() => {
+        computed = computedScoreCallback({ FR: { test: { numCorrect: 7, numIncorrect: 3, numAttempted: 10 } } });
+      }).not.toThrow();
+
+      expect(computed.FR).toMatchObject({ numCorrect: 7, numIncorrect: 3, numAttempted: 10, rawScore: 7 });
+      // Composite is derived from the response-modality path (totalCorrect + FR totals),
+      // not read blindly off a non-existent composite key.
+      expect(computed.composite).toMatchObject({ numCorrect: 7, numIncorrect: 3, numAttempted: 10, rawScore: 7 });
+    });
+  });
 });
