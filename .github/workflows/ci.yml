@@ -706,8 +706,10 @@ jobs:
               // append duplicate title cards for every preview below the list.
               ...rows.map((r) => `- \`${r.assessment}\` — [${r.url}](${r.url})`),
               '',
-              "_Each runs the default (first published) variant against the **staging** backend, " +
-                "reflecting this PR's bundle changes. Expires in 7 days (refreshed on each push)._",
+              "_Each preview opens on the default (first published) variant against the **staging** " +
+                "backend, reflecting this PR's bundle changes. Most include an in-page variant picker " +
+                "(dev/staging only) to switch between published variants. Expires in 7 days " +
+                "(refreshed on each push)._",
             ].join('\n');
 
             const comments = await github.paginate(github.rest.issues.listComments, {
