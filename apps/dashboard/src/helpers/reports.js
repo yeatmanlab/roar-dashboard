@@ -492,7 +492,7 @@ export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
  *  Colors corresponding to each support level.
  */
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
-import { SCORE_SUPPORT_SKILL_LEVELS } from '../constants/scores';
+import { SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
 
 export const progressTags = {
   Optional: {

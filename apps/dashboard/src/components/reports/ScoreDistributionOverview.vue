@@ -140,8 +140,8 @@ import PvChart from 'primevue/chart';
 import { setDistributionChartData, setDistributionChartOptions } from '@/helpers/plotting';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 import { descriptionsByTaskId } from '@/helpers/reports';
-import { SCORE_SUPPORT_SKILL_LEVELS } from '../../constants/scores';
-import { SINGULAR_ORG_TYPES } from '../../constants/orgTypes';
+import { SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 const props = defineProps({
   taskIds: {
