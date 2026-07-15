@@ -200,7 +200,7 @@ export const computedScoreCallback = (rawScores) => {
   // The `else` branch below (direct `computedScores.composite` access) is only valid
   // when the accumulator's sole key really is the literal 'composite' domain — which
   // the SDK only produces when a trial carries no explicit `subtask` field unlike firekit
-  // which appended composite to rawScore automatically. 
+  // which appended composite to rawScore automatically.
   if (Object.keys(computedScores).length > 1 || !Object.hasOwn(computedScores, 'composite')) {
     if (store.session.get('responseModality')) {
       //for response modality composite
