@@ -4,6 +4,7 @@ import {
   addElementToPdf,
   getSupportLevel,
   getFoundationalCompositeSupportLevel,
+  sanitizeScoreValue,
   getScoreValue,
   getRawScoreThreshold,
   getRawScoreRange,
@@ -274,6 +275,48 @@ describe('reports', () => {
     it('should handle a roarScore formatted with a ">" prefix (grades 6-9)', () => {
       const result = getFoundationalCompositeSupportLevel(7, { roarScore: '>487' });
       expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
+  });
+
+  describe('sanitizeScoreValue', () => {
+    it('should strip a leading "<" and return a number', () => {
+      expect(sanitizeScoreValue('<1')).toBe(1);
+    });
+
+    it('should strip a leading ">" and return a number', () => {
+      expect(sanitizeScoreValue('>99')).toBe(99);
+    });
+
+    it('should parse a decimal value after stripping "<" or ">"', () => {
+      expect(sanitizeScoreValue('>99.5')).toBe(99.5);
+    });
+
+    it('should return the original number unchanged when given a number', () => {
+      expect(sanitizeScoreValue(75)).toBe(75);
+    });
+
+    it('should return the original string unchanged when it contains no "<" or ">"', () => {
+      expect(sanitizeScoreValue('75')).toBe('75');
+    });
+
+    it('should return 0 unchanged', () => {
+      expect(sanitizeScoreValue(0)).toBe(0);
+    });
+
+    it('should return undefined unchanged', () => {
+      expect(sanitizeScoreValue(undefined)).toBe(undefined);
+    });
+
+    it('should return null unchanged', () => {
+      expect(sanitizeScoreValue(null)).toBe(null);
+    });
+
+    it('should return NaN when the remaining value is not numeric', () => {
+      expect(sanitizeScoreValue('<abc')).toBeNaN();
+    });
+
+    it('should strip both "<" and ">" if a string somehow contains both', () => {
+      expect(sanitizeScoreValue('<>50')).toBe(50);
     });
   });
 
