@@ -2,7 +2,11 @@ import type { ScoreEntryConstraint } from '../types/score-entry.type.js';
 import { COMPOSITE_DOMAIN } from '../constants/common-domains.js';
 import { AssessmentStage } from '../enums/assessment-stage.enum.js';
 import { ScoreType } from '../enums/score-type.enum.js';
-import { ROAM_FLUENCY_SUBTASK_DOMAINS, ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS, ROAM_ALPACA_SUBTASK_DOMAINS } from './domains.js';
+import {
+  ROAM_FLUENCY_SUBTASK_DOMAINS,
+  ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS,
+  ROAM_ALPACA_SUBTASK_DOMAINS,
+} from './domains.js';
 import {
   ROAM_FLUENCY_SUBTASK_SCORE_NAMES,
   ROAM_FLUENCY_RAW_SUBTASK_SCORE_NAMES,
@@ -130,16 +134,29 @@ export function toRoamFluencyScoreEntries(
         }
       }
 
-      pushScoreEntries(entries, scores, ROAM_FLUENCY_COMPOSITE_SCORE_NAMES, ROAM_FLUENCY_RAW_COMPOSITE_SCORE_NAMES, domain);
+      pushScoreEntries(
+        entries,
+        scores,
+        ROAM_FLUENCY_COMPOSITE_SCORE_NAMES,
+        ROAM_FLUENCY_RAW_COMPOSITE_SCORE_NAMES,
+        domain,
+      );
 
       const incorrectSkills = scores['incorrectSkills'];
       if (incorrectSkills != null && typeof incorrectSkills === 'object') {
         for (const [operator, skillValue] of Object.entries(incorrectSkills as Record<string, unknown>)) {
-          const name = ROAM_FLUENCY_INCORRECT_SKILLS_GROUPS[operator as keyof typeof ROAM_FLUENCY_INCORRECT_SKILLS_GROUPS];
+          const name =
+            ROAM_FLUENCY_INCORRECT_SKILLS_GROUPS[operator as keyof typeof ROAM_FLUENCY_INCORRECT_SKILLS_GROUPS];
           if (!name || skillValue == null) continue;
           const strValue = String(skillValue);
           if (!strValue) continue;
-          entries.push({ type: ScoreType.COMPUTED, domain, name, value: strValue, assessmentStage: AssessmentStage.TEST });
+          entries.push({
+            type: ScoreType.COMPUTED,
+            domain,
+            name,
+            value: strValue,
+            assessmentStage: AssessmentStage.TEST,
+          });
         }
       }
 
@@ -231,7 +248,13 @@ export function toRoamAlpacaScoreEntries(
         }
       }
 
-      pushScoreEntries(entries, scores, ROAM_ALPACA_COMPOSITE_SCORE_NAMES, ROAM_ALPACA_RAW_COMPOSITE_SCORE_NAMES, domain);
+      pushScoreEntries(
+        entries,
+        scores,
+        ROAM_ALPACA_COMPOSITE_SCORE_NAMES,
+        ROAM_ALPACA_RAW_COMPOSITE_SCORE_NAMES,
+        domain,
+      );
       continue;
     }
 

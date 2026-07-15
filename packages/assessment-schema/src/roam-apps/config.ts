@@ -19,7 +19,6 @@ export const ROAM_FLUENCY_CALF_TASK_IDS = {
 
 export type RoamFluencyCalfId = (typeof ROAM_FLUENCY_CALF_TASK_IDS)[keyof typeof ROAM_FLUENCY_CALF_TASK_IDS];
 
-
 export const ROAM_ALPACA_TASK_IDS = {
   EN: 'roam-alpaca',
   ES: 'roam-alpaca-es',

@@ -58,7 +58,8 @@ export function resolveRoamTaskId(taskName: string, language: string): string {
 
   if (taskName === ROAM_FLUENCY_ARF_TASK_IDS.EN) {
     return (
-      ROAM_FLUENCY_ARF_LANGUAGES[code as keyof typeof ROAM_FLUENCY_ARF_LANGUAGES]?.taskId ?? ROAM_FLUENCY_ARF_TASK_IDS.EN
+      ROAM_FLUENCY_ARF_LANGUAGES[code as keyof typeof ROAM_FLUENCY_ARF_LANGUAGES]?.taskId ??
+      ROAM_FLUENCY_ARF_TASK_IDS.EN
     );
   }
   if (taskName === ROAM_FLUENCY_CALF_TASK_IDS.EN) {

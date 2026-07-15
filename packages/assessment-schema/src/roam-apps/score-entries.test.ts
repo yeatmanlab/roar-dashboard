@@ -7,7 +7,11 @@ import {
   ROAM_ALPACA_SUBTASK_SCORE_NAMES,
   ROAM_ALPACA_COMPOSITE_SCORE_NAMES,
 } from './score-names.js';
-import { ROAM_FLUENCY_SUBTASK_DOMAINS, ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS, ROAM_ALPACA_SUBTASK_DOMAINS } from './domains.js';
+import {
+  ROAM_FLUENCY_SUBTASK_DOMAINS,
+  ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS,
+  ROAM_ALPACA_SUBTASK_DOMAINS,
+} from './domains.js';
 import { COMPOSITE_DOMAIN } from '../constants/common-domains.js';
 
 describe('toRoamFluencyScoreEntries', () => {
@@ -121,7 +125,10 @@ describe('toRoamFluencyScoreEntries', () => {
       ]) {
         expect(entries).toContainEqual(expect.objectContaining({ type: 'raw', domain: 'composite', name }));
       }
-      for (const name of [ROAM_FLUENCY_COMPOSITE_SCORE_NAMES.RAW_SCORE, ROAM_FLUENCY_COMPOSITE_SCORE_NAMES.SUB_PERCENT_CORRECT]) {
+      for (const name of [
+        ROAM_FLUENCY_COMPOSITE_SCORE_NAMES.RAW_SCORE,
+        ROAM_FLUENCY_COMPOSITE_SCORE_NAMES.SUB_PERCENT_CORRECT,
+      ]) {
         expect(entries).toContainEqual(expect.objectContaining({ type: 'computed', domain: 'composite', name }));
       }
     });
@@ -218,7 +225,11 @@ describe('toRoamFluencyScoreEntries', () => {
       });
 
       expect(entries).toHaveLength(1);
-      expect(entries[0]).toMatchObject({ domain: 'addition', name: ROAM_FLUENCY_SUBTASK_SCORE_NAMES.NUM_CORRECT, value: '5' });
+      expect(entries[0]).toMatchObject({
+        domain: 'addition',
+        name: ROAM_FLUENCY_SUBTASK_SCORE_NAMES.NUM_CORRECT,
+        value: '5',
+      });
     });
   });
 });
@@ -273,7 +284,8 @@ describe('toRoamAlpacaScoreEntries', () => {
       expect(
         entries.some(
           (e) =>
-            e.name === ROAM_ALPACA_SUBTASK_SCORE_NAMES.GRADE_ESTIMATE || e.name === ROAM_ALPACA_SUBTASK_SCORE_NAMES.SUPPORT_LEVEL,
+            e.name === ROAM_ALPACA_SUBTASK_SCORE_NAMES.GRADE_ESTIMATE ||
+            e.name === ROAM_ALPACA_SUBTASK_SCORE_NAMES.SUPPORT_LEVEL,
         ),
       ).toBe(false);
     });
@@ -308,11 +320,15 @@ describe('toRoamAlpacaScoreEntries', () => {
       expect(entries).toContainEqual(
         expect.objectContaining({ type: 'raw', name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.THETA_ESTIMATE_RAW }),
       );
-      expect(entries).toContainEqual(expect.objectContaining({ type: 'raw', name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.NUM_CORRECT }));
+      expect(entries).toContainEqual(
+        expect.objectContaining({ type: 'raw', name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.NUM_CORRECT }),
+      );
       expect(entries).toContainEqual(
         expect.objectContaining({ type: 'computed', name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.THETA_ESTIMATE }),
       );
-      expect(entries).toContainEqual(expect.objectContaining({ type: 'computed', name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.ROAR_SCORE }));
+      expect(entries).toContainEqual(
+        expect.objectContaining({ type: 'computed', name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.ROAR_SCORE }),
+      );
       expect(entries).toContainEqual({
         type: 'computed',
         domain: 'composite',
@@ -369,7 +385,11 @@ describe('toRoamAlpacaScoreEntries', () => {
       });
 
       expect(entries).toHaveLength(1);
-      expect(entries[0]).toMatchObject({ domain: 'geometry', name: ROAM_ALPACA_SUBTASK_SCORE_NAMES.NUM_CORRECT, value: '5' });
+      expect(entries[0]).toMatchObject({
+        domain: 'geometry',
+        name: ROAM_ALPACA_SUBTASK_SCORE_NAMES.NUM_CORRECT,
+        value: '5',
+      });
     });
   });
 });

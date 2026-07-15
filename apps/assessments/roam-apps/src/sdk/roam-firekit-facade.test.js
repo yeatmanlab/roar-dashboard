@@ -88,18 +88,15 @@ describe('wireScoreAdapter', () => {
       expect(adapter(computed)).not.toEqual(toRoamFluencyScoreEntries(computed));
     });
 
-    test.each(['fluency-arf', 'fluency-calf'])(
-      'selects the fluency adapter when config.taskName is %s',
-      (taskName) => {
-        mockSessionGet.mockReturnValue({ taskName });
-        const adapter = facade._getScoreAdapter();
+    test.each(['fluency-arf', 'fluency-calf'])('selects the fluency adapter when config.taskName is %s', (taskName) => {
+      mockSessionGet.mockReturnValue({ taskName });
+      const adapter = facade._getScoreAdapter();
 
-        // 'addition' is a fluency subtask domain alpaca doesn't recognize.
-        const computed = { addition: { numCorrect: 5, numIncorrect: 1, numAttempted: 6 } };
-        expect(adapter(computed)).toEqual(toRoamFluencyScoreEntries(computed));
-        expect(adapter(computed)).not.toEqual(toRoamAlpacaScoreEntries(computed));
-      },
-    );
+      // 'addition' is a fluency subtask domain alpaca doesn't recognize.
+      const computed = { addition: { numCorrect: 5, numIncorrect: 1, numAttempted: 6 } };
+      expect(adapter(computed)).toEqual(toRoamFluencyScoreEntries(computed));
+      expect(adapter(computed)).not.toEqual(toRoamAlpacaScoreEntries(computed));
+    });
 
     test('defaults to the fluency adapter when config/taskName is absent', () => {
       mockSessionGet.mockReturnValue(undefined);

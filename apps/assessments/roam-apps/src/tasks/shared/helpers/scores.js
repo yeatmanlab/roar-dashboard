@@ -50,14 +50,16 @@ export const computedScoreCallback = (rawScores) => {
   const responseMode = store.session.get('config').responseMode;
   const calculateRawScore = (numCorrect, numIncorrect, subtask) => {
     if (
-      (subtask === ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS.MULTIPLE_CHOICE && taskName === ROAM_FLUENCY_ARF_TASK_IDS.EN) ||
+      (subtask === ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS.MULTIPLE_CHOICE &&
+        taskName === ROAM_FLUENCY_ARF_TASK_IDS.EN) ||
       subtask === ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS.RT_CONTROL_2AFC ||
       (subtask !== ROAM_FLUENCY_SUBTASK_DOMAINS.SYMBOLIC_COMP && responseMode === '2afc')
     ) {
       //for 2AFC, score = correct-incorrect
       return Math.max(0, numCorrect - numIncorrect);
     } else if (
-      (subtask === ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS.MULTIPLE_CHOICE && taskName === ROAM_FLUENCY_CALF_TASK_IDS.EN) ||
+      (subtask === ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS.MULTIPLE_CHOICE &&
+        taskName === ROAM_FLUENCY_CALF_TASK_IDS.EN) ||
       subtask === ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS.RT_CONTROL_6AFC ||
       responseMode === '6afc'
     ) {
@@ -221,7 +223,10 @@ export const computedScoreCallback = (rawScores) => {
       totalScore = Object.hasOwn(computedScores, ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS.FREE_RESPONSE)
         ? computedScores[ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS.FREE_RESPONSE].rawScore
         : 0;
-    } else if ((taskName === ROAM_FLUENCY_ARF_TASK_IDS.EN || taskName === ROAM_FLUENCY_CALF_TASK_IDS.EN) && responseMode.includes('afc')) {
+    } else if (
+      (taskName === ROAM_FLUENCY_ARF_TASK_IDS.EN || taskName === ROAM_FLUENCY_CALF_TASK_IDS.EN) &&
+      responseMode.includes('afc')
+    ) {
       //do nothing
     } else {
       totalScore = _reduce(_omit(computedScores, omitList), (sum, score) => sum + score.rawScore, 0);

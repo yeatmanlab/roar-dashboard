@@ -1,4 +1,3 @@
-
 const ROAM_BASE_SUBTASK_SCORE_NAMES = {
   NUM_ATTEMPTED: 'numAttempted',
   NUM_CORRECT: 'numCorrect',
@@ -12,7 +11,8 @@ export const ROAM_FLUENCY_SUBTASK_SCORE_NAMES = {
   SUB_PERCENT_CORRECT: 'subPercentCorrect',
 } as const;
 
-export type RoamFluencySubtaskScoreName = (typeof ROAM_FLUENCY_SUBTASK_SCORE_NAMES)[keyof typeof ROAM_FLUENCY_SUBTASK_SCORE_NAMES];
+export type RoamFluencySubtaskScoreName =
+  (typeof ROAM_FLUENCY_SUBTASK_SCORE_NAMES)[keyof typeof ROAM_FLUENCY_SUBTASK_SCORE_NAMES];
 
 export const ROAM_FLUENCY_RAW_SUBTASK_SCORE_NAMES = new Set<RoamFluencySubtaskScoreName>([
   ROAM_FLUENCY_SUBTASK_SCORE_NAMES.NUM_CORRECT,
@@ -25,7 +25,8 @@ export const ROAM_FLUENCY_COMPOSITE_SCORE_NAMES = {
   SUB_PERCENT_CORRECT: 'subPercentCorrect',
 } as const;
 
-export type RoamFluencyCompositeScoreName = (typeof ROAM_FLUENCY_COMPOSITE_SCORE_NAMES)[keyof typeof ROAM_FLUENCY_COMPOSITE_SCORE_NAMES];
+export type RoamFluencyCompositeScoreName =
+  (typeof ROAM_FLUENCY_COMPOSITE_SCORE_NAMES)[keyof typeof ROAM_FLUENCY_COMPOSITE_SCORE_NAMES];
 
 export const ROAM_FLUENCY_RAW_COMPOSITE_SCORE_NAMES = new Set<RoamFluencyCompositeScoreName>([
   ROAM_FLUENCY_COMPOSITE_SCORE_NAMES.NUM_CORRECT,
@@ -40,9 +41,13 @@ export const ROAM_FLUENCY_INCORRECT_SKILLS_SCORE_NAMES = {
   SUBTRACTION_INCORRECT_SKILLS: 'subtractionIncorrectSkills',
 } as const;
 
-export type RoamFluencyIncorrectSkillsScoreName = (typeof ROAM_FLUENCY_INCORRECT_SKILLS_SCORE_NAMES)[keyof typeof ROAM_FLUENCY_INCORRECT_SKILLS_SCORE_NAMES];
+export type RoamFluencyIncorrectSkillsScoreName =
+  (typeof ROAM_FLUENCY_INCORRECT_SKILLS_SCORE_NAMES)[keyof typeof ROAM_FLUENCY_INCORRECT_SKILLS_SCORE_NAMES];
 
-export type RoamFluencyScoreName = RoamFluencySubtaskScoreName | RoamFluencyCompositeScoreName | RoamFluencyIncorrectSkillsScoreName;
+export type RoamFluencyScoreName =
+  | RoamFluencySubtaskScoreName
+  | RoamFluencyCompositeScoreName
+  | RoamFluencyIncorrectSkillsScoreName;
 
 export const ROAM_ALPACA_SUBTASK_SCORE_NAMES = {
   ...ROAM_BASE_SUBTASK_SCORE_NAMES,
@@ -51,7 +56,8 @@ export const ROAM_ALPACA_SUBTASK_SCORE_NAMES = {
   SUPPORT_LEVEL: 'supportLevel',
 } as const;
 
-export type RoamAlpacaSubtaskScoreName = (typeof ROAM_ALPACA_SUBTASK_SCORE_NAMES)[keyof typeof ROAM_ALPACA_SUBTASK_SCORE_NAMES];
+export type RoamAlpacaSubtaskScoreName =
+  (typeof ROAM_ALPACA_SUBTASK_SCORE_NAMES)[keyof typeof ROAM_ALPACA_SUBTASK_SCORE_NAMES];
 
 export const ROAM_ALPACA_RAW_SUBTASK_SCORE_NAMES = new Set<RoamAlpacaSubtaskScoreName>([
   ROAM_ALPACA_SUBTASK_SCORE_NAMES.NUM_CORRECT,
@@ -69,7 +75,8 @@ export const ROAM_ALPACA_COMPOSITE_SCORE_NAMES = {
   THETA_ESTIMATE_RAW: 'thetaEstimateRaw',
 } as const;
 
-export type RoamAlpacaCompositeScoreName = (typeof ROAM_ALPACA_COMPOSITE_SCORE_NAMES)[keyof typeof ROAM_ALPACA_COMPOSITE_SCORE_NAMES];
+export type RoamAlpacaCompositeScoreName =
+  (typeof ROAM_ALPACA_COMPOSITE_SCORE_NAMES)[keyof typeof ROAM_ALPACA_COMPOSITE_SCORE_NAMES];
 
 export const ROAM_ALPACA_RAW_COMPOSITE_SCORE_NAMES = new Set<RoamAlpacaCompositeScoreName>([
   ROAM_ALPACA_COMPOSITE_SCORE_NAMES.NUM_CORRECT,

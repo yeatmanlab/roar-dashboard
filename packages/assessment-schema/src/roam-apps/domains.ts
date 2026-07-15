@@ -12,29 +12,29 @@ export const ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS = {
   RT_CONTROL_2AFC: 'rtControl_2afc',
   RT_CONTROL_6AFC: 'rtControl_6afc',
   RT_CONTROL_PRODUCTION: 'rtControl_production',
-}
+};
 
 /**
  * Subtasks below do not have scores for assessmentStage=PRACTICE
- * 
- * symbolicComp is for fluency-arf recruitment=magpiPilot 
- * It only contains the base subtask score names. 
+ *
+ * symbolicComp is for fluency-arf recruitment=magpiPilot
+ * It only contains the base subtask score names.
  */
 export const ROAM_FLUENCY_SUBTASK_DOMAINS = {
   ADDITION: 'addition',
   DIVISION: 'division',
   MULTIPLICATION: 'multiplication',
   SUBTRACTION: 'subtraction',
-  SYMBOLIC_COMP: 'symbolicComp'
+  SYMBOLIC_COMP: 'symbolicComp',
 } as const;
 
 export type RoamFluencySubtaskDomain = (typeof ROAM_FLUENCY_SUBTASK_DOMAINS)[keyof typeof ROAM_FLUENCY_SUBTASK_DOMAINS];
 
 /**
  * Subtasks below do not have scores for assessmentStage=PRACTICE
- * 
- * numberLine is for recruitment=magpiPilot 
- * It only contains the base subtask score names. 
+ *
+ * numberLine is for recruitment=magpiPilot
+ * It only contains the base subtask score names.
  */
 export const ROAM_ALPACA_SUBTASK_DOMAINS = {
   NUMBER_KNOWLEDGE: 'numberKnowledge',
@@ -42,7 +42,7 @@ export const ROAM_ALPACA_SUBTASK_DOMAINS = {
   ARITHMETIC_EXPRESSIONS: 'arithmeticExpressions',
   RATIONAL_NUMBERS_PROBABILITY: 'rationalNumbersProbability',
   ALGEBRAIC_THINKING: 'algebraicThinking',
-  NUMBER_LINE: 'numberLine'
+  NUMBER_LINE: 'numberLine',
 } as const;
 
 export type RoamAlpacaSubtaskDomain = (typeof ROAM_ALPACA_SUBTASK_DOMAINS)[keyof typeof ROAM_ALPACA_SUBTASK_DOMAINS];
