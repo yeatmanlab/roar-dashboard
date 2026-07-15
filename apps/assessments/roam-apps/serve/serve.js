@@ -5,6 +5,11 @@ import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk
 import { TaskLauncher } from '../src';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
+import {
+  ROAM_FLUENCY_ARF_TASK_IDS,
+  ROAM_FLUENCY_CALF_TASK_IDS,
+  ROAM_ALPACA_TASK_IDS,
+} from '@roar-platform/assessment-schema/roam-apps';
 
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime'; //for async
@@ -19,6 +24,15 @@ const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 
 // Task selection: variantId wins; otherwise taskId resolves to the first published variant for that task.
 const taskId = urlParams.get('task') ?? 'fluency-arf';
+
+// All roam backend task slugs (language-suffixed). roam's tasks each hold only a few
+// variants, so the dev variant picker lists across all of them to surface every seeded
+// variant. Un-seeded slugs (e.g. a locale that wasn't seeded) are skipped by the picker.
+const ROAM_TASK_IDS = [
+  ...Object.values(ROAM_FLUENCY_ARF_TASK_IDS),
+  ...Object.values(ROAM_FLUENCY_CALF_TASK_IDS),
+  ...Object.values(ROAM_ALPACA_TASK_IDS),
+];
 
 // Demographics
 const grade = urlParams.get('grade'); //for number Lab prolific study
@@ -45,13 +59,11 @@ onAuthStateChanged(auth, async (user) => {
       // Provision the anonymous ROAR user (and resolve a variant) via the SDK.
       // The variantId URL param wins; otherwise falls back to the first published variant for taskId.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
-        // eslint-disable-next-line no-undef
         { baseUrl, auth: authCallbacks },
         { ...(variantId ? { variantId } : {}), taskId },
       );
 
       const ctx = {
-        // eslint-disable-next-line no-undef
         baseUrl,
         auth: authCallbacks,
         participant: { participantId },
@@ -72,20 +84,18 @@ onAuthStateChanged(auth, async (user) => {
       // from the resolved variant — not URL params. See
       // taskVariantParameters.example.json for the shape. initConfig merges these
       // over userParams, reads `language`, and drives i18next.changeLanguage.
-      const { variantParams, taskId: resolvedTaskId } = await getVariantById(resolvedVariantId);
+      const { variantParams } = await getVariantById(resolvedVariantId);
 
       // Dev/staging only: mount a variant switcher so reviewers can hop between
       // published variants without hand-editing the URL. No-op in production (the
-      // guard is eliminated at build). Uses the resolved variant's taskId so it lists
-      // the correct family even when only ?variantId= was provided — roam serves
-      // fluency-arf, fluency-calf, and roam-alpaca.
-      // eslint-disable-next-line no-undef
+      // guard is eliminated at build). roam's tasks are language-suffixed and hold
+      // only a few variants each, so the picker lists across all roam task slugs to
+      // surface every seeded variant; selecting one reloads with its ?variantId=.
       if (ROAR_DB !== 'production') {
         mountVariantPicker({
-          // eslint-disable-next-line no-undef
           baseUrl,
           auth: authCallbacks,
-          taskId: resolvedTaskId,
+          taskId: ROAM_TASK_IDS,
           currentVariantId: resolvedVariantId,
         });
       }

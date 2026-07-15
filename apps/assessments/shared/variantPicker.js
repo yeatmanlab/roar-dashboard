@@ -23,41 +23,56 @@ const PICKER_CONTAINER_ID = 'roar-variant-picker';
  * @param {object} options
  * @param {string} options.baseUrl - ROAR backend API base URL (ROAR_API_BASE_URL).
  * @param {{ getToken: () => Promise<string | undefined> }} options.auth - Anonymous auth callbacks.
- * @param {string} options.taskId - Task slug or UUID whose published variants to list.
+ * @param {string | string[]} options.taskId - Task slug(s)/UUID(s) whose published variants to
+ *   list. Pass an array for multi-task assessments (e.g. roam-apps, whose language-suffixed
+ *   tasks each hold only a few variants) to aggregate published variants across all of them.
  * @param {string} [options.currentVariantId] - Variant to pre-select in the dropdown.
  * @returns {Promise<void>}
  */
 export async function mountVariantPicker({ baseUrl, auth, taskId, currentVariantId }) {
   try {
     const client = createApiClient({ baseUrl, auth });
-    const result = await client.tasks.listTaskVariants({
-      params: { taskId },
-      // Sort/status are set explicitly (rather than leaning on the contract's defaults) so the
-      // dropdown stays name-sorted and published-only regardless of future schema-default changes.
-      query: {
-        status: 'published',
-        perPage: VARIANTS_PER_PAGE,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      },
-    });
+    // Accept one task or several. Multi-task assessments pass every task slug so the
+    // dropdown surfaces all published variants across the app, not just one task's.
+    const taskIds = Array.isArray(taskId) ? taskId : [taskId];
 
-    if (result.status !== StatusCodes.OK) {
-      console.warn(`[variant-picker] listTaskVariants returned ${result.status}`);
-      return;
-    }
+    const perTask = await Promise.all(
+      taskIds.map(async (id) => {
+        const result = await client.tasks.listTaskVariants({
+          params: { taskId: id },
+          // Sort/status are set explicitly (rather than leaning on the contract's defaults) so the
+          // dropdown stays name-sorted and published-only regardless of future schema-default changes.
+          query: {
+            status: 'published',
+            perPage: VARIANTS_PER_PAGE,
+            sortBy: 'name',
+            sortOrder: 'asc',
+          },
+        });
 
-    const { items: variants, pagination } = result.body.data;
+        if (result.status !== StatusCodes.OK) {
+          // A task slug that isn't seeded (e.g. an un-seeded locale) returns non-200 —
+          // skip it rather than aborting the whole picker.
+          console.warn(`[variant-picker] listTaskVariants(${id}) returned ${result.status}`);
+          return [];
+        }
+
+        const { items, pagination } = result.body.data;
+        // The single page is capped at the API max (VARIANTS_PER_PAGE); make truncation
+        // visible rather than silently showing only the first page.
+        if (pagination && pagination.totalPages > 1) {
+          console.warn(
+            `[variant-picker] ${id} has more than ${VARIANTS_PER_PAGE} published variants; ` +
+              `showing only the first page (${pagination.totalPages} pages total).`,
+          );
+        }
+        return items;
+      }),
+    );
+
+    // Aggregate and re-sort by name — per-task sorting doesn't guarantee global order.
+    const variants = perTask.flat().sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
     if (variants.length === 0) return;
-
-    // The single page is capped at the API max (VARIANTS_PER_PAGE); make truncation
-    // visible rather than silently showing only the first page.
-    if (pagination && pagination.totalPages > 1) {
-      console.warn(
-        `[variant-picker] ${taskId} has more than ${VARIANTS_PER_PAGE} published variants; ` +
-          `showing only the first page (${pagination.totalPages} pages total).`,
-      );
-    }
 
     renderPicker(variants, currentVariantId);
   } catch (err) {
