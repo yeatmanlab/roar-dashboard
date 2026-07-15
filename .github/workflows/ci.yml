@@ -402,13 +402,11 @@ jobs:
   # default (first published) variant; in-page variant selection lands with the
   # variant-picker enhancement (a follow-up PR).
   #
-  # Credentials come from the `assessments:staging` environment (the assessment
-  # hosting sites live under that project; the same secrets drive
-  # deploy-assessments-staging.yml). NOTE: for previews to run on PR branches, that
-  # environment must permit non-main deployments — i.e. no "required reviewers" gate
-  # and no deployment-branch policy restricting it to `main`. If it's locked to main,
-  # move these four secrets to a PR-permissive environment (e.g. assessments:preview)
-  # and point this job at it instead.
+  # Credentials come from the `assessments:staging` environment, which has an all-branches
+  # deployment policy (no required reviewers), so PR branches can deploy previews directly.
+  # Staging holds only synthetic data and the assessment hosting sites live under the same
+  # staging Firebase project, so a preview channel targets the same low-risk surface as a
+  # normal staging deploy.
   #
   # Fork PRs receive no repository/environment secrets from GitHub, so this job would
   # otherwise fail at the GCP auth step with empty credentials. The `if` below skips it
@@ -426,6 +424,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: assessments:staging
     timeout-minutes: 15
+    env:
+      # Lets the Sentry webpack plugin upload source maps for the preview build — it reads
+      # SENTRY_AUTH_TOKEN from the process env during build:staging. Set at job level so it
+      # reaches the composite build-assessment action.
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
     strategy:
       fail-fast: false
       matrix:
@@ -458,7 +461,8 @@ jobs:
 
       # No github-token here on purpose: it would trigger the FirebaseExtended action's
       # own PR comment, which isn't keyed per-site and would clobber across matrix legs.
-      # We post a per-assessment sticky comment below using the deployment-url output.
+      # This leg records its deployment-url to an artifact; the separate preview-comment
+      # job aggregates all legs into a single sticky comment after the matrix completes.
       - name: Deploy preview channel
         id: deploy
         uses: ./.github/actions/deploy-firebase-hosting
@@ -472,28 +476,83 @@ jobs:
           dist-path: apps/assessments/${{ matrix.assessment }}/dist
           firebase-config-path: apps/assessments/${{ matrix.assessment }}/firebase.json
 
-      - name: Comment preview URL
+      # Record this assessment's preview URL as an artifact so the single `preview-comment`
+      # fan-in job can aggregate every link into one PR comment (instead of one per assessment).
+      - name: Record preview result
         if: steps.deploy.outputs.deployment-url != ''
-        uses: actions/github-script@v7
         env:
           ASSESSMENT: ${{ matrix.assessment }}
           PREVIEW_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          mkdir -p preview-results
+          printf '%s\t%s\n' "$ASSESSMENT" "$PREVIEW_URL" > "preview-results/$ASSESSMENT.tsv"
+
+      - name: Upload preview result
+        if: steps.deploy.outputs.deployment-url != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-result-${{ matrix.assessment }}
+          path: preview-results/${{ matrix.assessment }}.tsv
+          retention-days: 1
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Post all assessment preview links in one PR comment
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  #
+  # Fan-in for the preview-assessments matrix: each leg uploads its deploy URL as an
+  # artifact; this single job aggregates them into one sticky comment (hidden marker) that
+  # updates in place on every push. A single job avoids the write race that parallel matrix
+  # legs would hit editing one shared comment. always() so it still posts whatever deployed
+  # even if some legs failed; the fork / empty-matrix guards mirror the deploy job.
+  preview-comment:
+    name: Post preview links
+    needs: [detect-assessment-changes, preview-assessments]
+    if: >-
+      always() &&
+      needs.detect-assessment-changes.outputs.matrix != '[]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download preview results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: preview-result-*
+          path: preview-results
+          merge-multiple: true
+
+      - name: Upsert single preview comment
+        uses: actions/github-script@v7
         with:
           script: |
-            const assessment = process.env.ASSESSMENT;
-            const url = process.env.PREVIEW_URL;
-            // Hidden marker keeps one sticky comment per assessment: re-pushes update it
-            // in place, and multiple changed assessments never clobber each other.
-            const marker = `<!-- assessment-preview:${assessment} -->`;
+            const fs = require('fs');
+            const dir = 'preview-results';
+            const rows = [];
+            if (fs.existsSync(dir)) {
+              for (const file of fs.readdirSync(dir)) {
+                const [assessment, url] = fs.readFileSync(`${dir}/${file}`, 'utf8').trim().split('\t');
+                if (assessment && url) rows.push({ assessment, url });
+              }
+            }
+            // Nothing deployed (e.g. every leg failed) — don't post an empty comment.
+            if (rows.length === 0) return;
+            rows.sort((a, b) => a.assessment.localeCompare(b.assessment));
+
+            // Single hidden marker → one sticky comment, updated in place on re-push.
+            const marker = '<!-- assessment-previews -->';
             const body = [
               marker,
-              `### 🔍 Preview — \`${assessment}\``,
-              url,
+              '### 🔍 Assessment previews',
+              // Explicit markdown links (not naked URLs) so the unfurl-links bot doesn't
+              // append duplicate title cards for every preview below the list.
+              ...rows.map((r) => `- \`${r.assessment}\` — [${r.url}](${r.url})`),
               '',
-              "_Runs the default (first published) variant against the **staging** backend, reflecting " +
-                "this PR's bundle changes. Expires in 7 days (refreshed on each push). In-page variant " +
-                "selection lands with the variant-picker enhancement._",
+              "_Each preview opens on the default (first published) variant against the **staging** " +
+                "backend, reflecting this PR's bundle changes. Most include an in-page variant picker " +
+                "(dev/staging only) to switch between published variants. Expires in 7 days " +
+                "(refreshed on each push)._",
             ].join('\n');
+
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner,
               repo: context.repo.repo,

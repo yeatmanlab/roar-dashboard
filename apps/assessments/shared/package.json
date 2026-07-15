@@ -1,0 +1,30 @@
+{
+  "name": "@roar-platform/assessment-shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared helpers used across ROAR assessment standalone harnesses (serve.js).",
+  "type": "module",
+  "scripts": {
+    "build": "echo \"assessment-shared is source-only (imported directly and bundled by consuming assessments); no build step\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@roar-platform/assessment-schema": "^0.1.0",
+    "@roar-platform/assessment-sdk": "^0.1.0",
+    "http-status-codes": "^2.3.0"
+  },
+  "peerDependencies": {
+    "@sentry/browser": ">=7",
+    "@sentry/integrations": ">=7"
+  },
+  "devDependencies": {
+    "@roar-platform/eslint-config": "*",
+    "eslint": "^9.0.0",
+    "globals": "^16.0.0",
+    "jsdom": "^29.1.1",
+    "vitest": "^3.2.4"
+  }
+}
