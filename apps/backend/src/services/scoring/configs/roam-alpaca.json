@@ -1,5 +1,5 @@
 {
-  "taskSlugs": ["roam-alpaca", "roam-alpaca-pt"],
+  "taskSlugs": ["roam-alpaca", "roam-alpaca-es", "roam-alpaca-pt"],
   "scoreFields": {
     "percentile": [{ "minVersion": 0, "fieldName": null }],
     "percentileDisplay": [{ "minVersion": 0, "fieldName": null }],
@@ -17,40 +17,40 @@
       "kind": "number",
       "key": "numberKnowledge",
       "label": "Number Knowledge",
-      "name": "numberKnowledgePercentCorrect",
-      "round": true,
+      "domain": "numberKnowledge",
+      "name": "subPercentCorrect",
       "provisional": true
     },
     {
       "kind": "number",
       "key": "geometry",
       "label": "Geometry",
-      "name": "geometryPercentCorrect",
-      "round": true,
+      "domain": "geometry",
+      "name": "subPercentCorrect",
       "provisional": true
     },
     {
       "kind": "number",
       "key": "arithmeticExpressions",
       "label": "Arithmetic Expressions",
-      "name": "arithmeticExpressionsPercentCorrect",
-      "round": true,
+      "domain": "arithmeticExpressions",
+      "name": "subPercentCorrect",
       "provisional": true
     },
     {
       "kind": "number",
       "key": "rationalNumbersProbability",
       "label": "Rational Numbers & Probability",
-      "name": "rationalNumbersProbabilityPercentCorrect",
-      "round": true,
+      "domain": "rationalNumbersProbability",
+      "name": "subPercentCorrect",
       "provisional": true
     },
     {
       "kind": "number",
       "key": "algebraicThinking",
       "label": "Algebraic Thinking",
-      "name": "algebraicThinkingPercentCorrect",
-      "round": true,
+      "domain": "algebraicThinking",
+      "name": "subPercentCorrect",
       "provisional": true
     },
     {

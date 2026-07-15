@@ -3,11 +3,12 @@
  */
 
 /**
- * Used for recruitment=responseModality. Only FC and FR are reported on the frontend
+ * Used for recruitment=responseModality. Only FC and FR are reported on the frontend.
+ * FC = forced/multiple choice (AFC trials); FR = free response (production trials).
  */
 export const ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS = {
-  FREE_CHOICE: 'FC',
-  MULTIPLE_CHOICE: 'FR',
+  MULTIPLE_CHOICE: 'FC',
+  FREE_RESPONSE: 'FR',
   RT_CONTROL_2AFC: 'rtControl_2afc',
   RT_CONTROL_6AFC: 'rtControl_6afc',
   RT_CONTROL_PRODUCTION: 'rtControl_production',
@@ -36,11 +37,11 @@ export type RoamFluencySubtaskDomain = (typeof ROAM_FLUENCY_SUBTASK_DOMAINS)[key
  * It only contains the base subtask score names. 
  */
 export const ROAM_ALPACA_SUBTASK_DOMAINS = {
-  NUMBER_KNOWLEDGE: 'numberKnowedge',
+  NUMBER_KNOWLEDGE: 'numberKnowledge',
   GEOMETRY: 'geometry',
   ARITHMETIC_EXPRESSIONS: 'arithmeticExpressions',
   RATIONAL_NUMBERS_PROBABILITY: 'rationalNumbersProbability',
-  ALGEBRIAC_THINKING: 'algebriacThinking',
+  ALGEBRAIC_THINKING: 'algebraicThinking',
   NUMBER_LINE: 'numberLine'
 } as const;
 

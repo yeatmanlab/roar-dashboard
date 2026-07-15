@@ -191,8 +191,8 @@ const KNOWN_ALPACA_SUBTASK_DOMAINS = new Set<string>(Object.values(ROAM_ALPACA_S
  *   thetaEstimate is the shared-scale calibrated estimate, roarScore and rawScore are
  *   both derived formulas despite their names, gradeEstimate/supportLevel are looked
  *   up from gradeEstimateObject, and incorrectSkills is a formatted string.
- * - Subtask domains (numberKnowedge, geometry, arithmeticExpressions,
- *   rationalNumbersProbability, algebriacThinking, numberLine): RAW for numCorrect,
+ * - Subtask domains (numberKnowledge, geometry, arithmeticExpressions,
+ *   rationalNumbersProbability, algebraicThinking, numberLine): RAW for numCorrect,
  *   numIncorrect, numAttempted; COMPUTED for rawScore, subPercentCorrect,
  *   gradeEstimate, supportLevel. numberLine only ever populates the 4 base fields, so
  *   the extra fields are simply absent for that domain.

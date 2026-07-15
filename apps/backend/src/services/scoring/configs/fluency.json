@@ -12,7 +12,21 @@
     "type": "none"
   },
   "subscores": [
-    { "kind": "number", "key": "freeResponse", "label": "Free Response", "name": "frRawScore", "provisional": true },
-    { "kind": "number", "key": "multipleChoice", "label": "Multiple Choice", "name": "fcRawScore", "provisional": true }
+    {
+      "kind": "number",
+      "key": "freeResponse",
+      "label": "Free Response",
+      "domain": "FR",
+      "name": "rawScore",
+      "provisional": true
+    },
+    {
+      "kind": "number",
+      "key": "multipleChoice",
+      "label": "Multiple Choice",
+      "domain": "FC",
+      "name": "rawScore",
+      "provisional": true
+    }
   ]
 }

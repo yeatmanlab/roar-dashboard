@@ -94,7 +94,7 @@ describe('toRoamFluencyScoreEntries', () => {
 
     it('emits only the base 4 fields for a responseModality domain (FC)', () => {
       const entries = toRoamFluencyScoreEntries({
-        [ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS.FREE_CHOICE]: {
+        [ROAM_FLUENCY_RESPONSE_MODALITY_SUBTASK_DOMAINS.MULTIPLE_CHOICE]: {
           numCorrect: 3,
           numIncorrect: 0,
           numAttempted: 3,
