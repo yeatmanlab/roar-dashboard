@@ -1,5 +1,10 @@
 import { getFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
-import { toRoamAppsScoreEntries } from './score-entries';
+import {
+  toRoamFluencyScoreEntries,
+  toRoamAlpacaScoreEntries,
+  ROAM_ALPACA_TASK_IDS,
+} from '@roar-platform/assessment-schema/roam-apps';
+import store from 'store2';
 
 /**
  * Maps the SDK's four assessmentStage values down to the two buckets
@@ -25,8 +30,13 @@ const STAGE_TO_SCORING_KEY = {
  * - `_getRawScores` — returns the accumulated counts in the
  *   `{ [subtask]: { practice: {...}, test: {...} } }` shape `computedScoreCallback`
  *   expects as its `rawScores` argument.
- * - `_getScoreAdapter` — always returns `toRoamAppsScoreEntries`, which flattens
- *   whatever `computedScoreCallback` returns into `ScoreEntry[]`.
+ * - `_getScoreAdapter` — returns the task-specific entry adapter from
+ *   `@roar-platform/assessment-schema/roam-apps`: `toRoamAlpacaScoreEntries` for
+ *   roam-alpaca, `toRoamFluencyScoreEntries` for fluency-arf/fluency-calf. The two
+ *   differ in composite shape (alpaca emits theta/gradeEstimate and a single-string
+ *   incorrectSkills; fluency emits per-operator nested incorrectSkills), so each
+ *   task family needs its own adapter. taskName is read from config at call time so
+ *   it reflects the running task (the base task ID scores.js branches on).
  *
  * `computedScoreCallback` (passed to `writeTrial` in `initTrialSaving.js`) is
  * unchanged — it already reads session-store state (theta estimates, grade
@@ -76,5 +86,14 @@ export function wireScoreAdapter() {
     return rawScores;
   };
 
-  facade._getScoreAdapter = () => toRoamAppsScoreEntries;
+  // Select the entry adapter by task family. taskName is the base task ID
+  // ('roam-alpaca', 'fluency-arf', 'fluency-calf') carried in config — the same
+  // string scores.js branches on — read at call time so it reflects the running
+  // task. Called with `computed` only (strict defaults off), so an unrecognized
+  // corpus-derived domain is skipped rather than throwing mid-run.
+  facade._getScoreAdapter = () => {
+    const taskName = store.session.get('config')?.taskName;
+    return (computed) =>
+      taskName === ROAM_ALPACA_TASK_IDS.EN ? toRoamAlpacaScoreEntries(computed) : toRoamFluencyScoreEntries(computed);
+  };
 }
