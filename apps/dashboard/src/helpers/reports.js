@@ -492,6 +492,7 @@ export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
  *  Colors corresponding to each support level.
  */
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
+import { SCORE_SUPPORT_SKILL_LEVELS } from '../constants/scores';
 
 export const progressTags = {
   Optional: {
@@ -864,46 +865,40 @@ export const getFoundationalCompositeSupportLevel = (grade, foundationalComposit
   const useRawScore = !Number.isFinite(gradeLevel) || FOUNDATIONAL_COMPOSITE_RAW_SCORE_GRADE_CUTOFF <= gradeLevel;
 
   if (!useRawScore) {
-    let percentile = foundationalComposite.percentile;
+    let percentile = sanitizeScoreValue(foundationalComposite.percentile);
     if (percentile === null || percentile === undefined) {
       return { support_level, tag_color };
     }
-    if (typeof percentile === 'string' && /[<>]/.test(percentile)) {
-      percentile = parseFloat(percentile.replace(/[<>]/g, ''));
-    }
 
     if (percentile >= FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF) {
-      support_level = 'Achieved Skill';
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL;
       tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
     } else if (
       percentile > FOUNDATIONAL_COMPOSITE_PERCENTILE_DEVELOPING_CUTOFF &&
       percentile < FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF
     ) {
-      support_level = 'Developing Skill';
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL;
       tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
     } else {
-      support_level = 'Needs Extra Support';
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT;
       tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
     }
   } else {
-    let rawScore = foundationalComposite.roarScore;
+    let rawScore = sanitizeScoreValue(foundationalComposite.roarScore);
     if (rawScore === null || rawScore === undefined) {
       return { support_level, tag_color };
     }
-    if (typeof rawScore === 'string' && /[<>]/.test(rawScore)) {
-      rawScore = parseFloat(rawScore.replace(/[<>]/g, ''));
-    }
     if (rawScore >= FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF) {
-      support_level = 'Achieved Skill';
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL;
       tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
     } else if (
       rawScore > FOUNDATIONAL_COMPOSITE_RAW_SCORE_DEVELOPING_CUTOFF &&
       rawScore < FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF
     ) {
-      support_level = 'Developing Skill';
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL;
       tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
     } else {
-      support_level = 'Needs Extra Support';
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT;
       tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
     }
   }
@@ -1251,6 +1246,19 @@ function resolveFieldName(taskId, grade, fieldType, isLegacy = false) {
 }
 
 /**
+ * Takes a score value possibly including < or >,
+ * returns a number stripped of the extra characters.
+ * @param {string | number} scoreValue
+ * @returns { number }
+ */
+export function sanitizeScoreValue(scoreValue) {
+  if (typeof scoreValue === 'string' && /[<>]/.test(scoreValue)) {
+    scoreValue = parseFloat(scoreValue.replace(/[<>]/g, ''));
+  }
+  return scoreValue;
+}
+
+/**
  * Safely accesses a score value from a scores object with fallback to legacy field names
  * @param {Object} scoresObject - The scores object to access
  * @param {string} taskId - The task identifier
@@ -1270,12 +1278,8 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
   const newFieldName = resolveFieldName(taskId, gradeValue, fieldType, false);
   if (newFieldName && scoresObject[newFieldName] !== undefined) {
     let scoreValue = scoresObject[newFieldName];
-    if (
-      (fieldType === 'percentile' || fieldType === 'standardScore') &&
-      typeof scoreValue === 'string' &&
-      /[<>]/.test(scoreValue)
-    ) {
-      scoreValue = parseFloat(scoreValue.replace(/[<>]/g, ''));
+    if (fieldType === 'percentile' || fieldType === 'standardScore') {
+      scoreValue = sanitizeScoreValue(scoreValue);
     }
     return scoreValue;
   }
