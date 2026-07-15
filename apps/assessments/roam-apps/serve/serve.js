@@ -1,8 +1,10 @@
-import { RoarAppkit, initializeFirebaseProject } from '@bdelab/roar-firekit'; //firekit functions
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth'; //firebase authorization
+import { initializeApp } from 'firebase/app'; //firebase app initialization
+import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth'; //firebase authorization
+import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
+import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+// import { resolveRoamTaskId } from '@roar-platform/assessment-schema/roam-apps';
 import { TaskLauncher } from '../src';
-// eslint-disable-next-line import/no-unresolved -- handled in PR 2
-import { roarConfig } from './firebaseConfig'; //firebase configuration details
+import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import i18next from 'i18next'; //has info on language?
 import { convertStrToBool } from '../src/tasks/shared/helpers';
 
@@ -19,11 +21,17 @@ const storyOption = convertStrToBool(urlParams.get('storyOption'));
 const keyboardPractice = convertStrToBool(urlParams.get('keyboardPractice'));
 const audio = convertStrToBool(urlParams.get('audio'));
 const corpusName = urlParams.get('corpusName');
-/*let group = parseInt(urlParams.get("group")); // for prolific study
-if (isNaN(group)) {
-  group = randomInteger(1, 8);
-}*/
-//const study = urlParams.get("study"); // for prolific study
+
+//const taskId = language === "en" ? "fluency" : `fluency-${language}`;
+
+let taskId = taskName;
+if (language !== 'en') {
+  taskId = taskId + '-' + language;
+}
+
+// Backend run/variant resolution
+const variantId = urlParams.get('variantId');
+const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 
 const assessmentPid = urlParams.get('PROLIFIC_PID') || urlParams.get('participant'); //will get if it's prolific study
 const labId = urlParams.get('labId');
@@ -37,69 +45,78 @@ const grade = urlParams.get('grade'); //for number Lab prolific study
 const consent = convertStrToBool(urlParams.get('consent'));
 const { language } = i18next;
 
-// This function is part of bde-lab firekit package, it requires the firebase configuration details, name, authPersistence
-// @ts-ignore
-const appKit = await initializeFirebaseProject(roarConfig.firebaseConfig, 'assessmentApp', 'none');
+const firebaseConfig = await getFirebaseConfig();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-//const taskId = language === "en" ? "fluency" : `fluency-${language}`;
-
-let taskId = taskName;
-if (language !== 'en') {
-  taskId = taskId + '-' + language;
+if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+  connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
 }
 
-//adds an observes for changes in the user's sign-in state.
-//This seems to start the task when the firebase project has been initialised and the user is signed in.
-onAuthStateChanged(appKit.auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (user) {
-    const userInfo = {
-      assessmentPid,
-      assessmentUid: user.uid,
-      userMetadata: {
-        districtId: '',
-      },
-    };
+    try {
+      const authCallbacks = { getToken: () => user.getIdToken() };
 
-    const userParams = {
-      assessmentPid,
-      grade,
-      birthMonth,
-      birthYear,
-      age,
-      ageMonths,
-      //group,
-    };
+      // taskName/language map to the backend task ID the same way the URL params
+      // (task, lng) always have — resolveRoamTaskId mirrors the old inline
+      // `taskName + '-' + language` logic, but against the verified task ID table.
+      // const taskId = resolveRoamTaskId(taskName, language);
 
-    const gameParams = {
-      userMode,
-      recruitment,
-      labId,
-      consent,
-      responseMode,
-      taskName,
-      storyOption,
-      keyboardPractice,
-      audio,
-      corpusName,
-    };
+      // Provision the anonymous ROAR user (and resolve a variant) via the SDK.
+      // The variantId URL param wins; otherwise it falls back to the first published variant.
+      const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
+        // eslint-disable-next-line no-undef
+        { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
+        { ...(variantId ? { variantId } : {}), taskId },
+      );
 
-    const taskInfo = {
-      taskId: taskId,
-      variantParams: gameParams,
-    };
+      const ctx = {
+        // eslint-disable-next-line no-undef
+        baseUrl: ROAR_API_BASE_URL,
+        auth: authCallbacks,
+        participant: { participantId },
+        // Without this, computedScoreCallback failures inside writeTrial are
+        // caught and silently dropped — the trial still writes, but with no
+        // scores and no visible error. See firekit.ts's writeTrial catch block.
+        logger: console,
+      };
 
-    //generates a new roarApp class based on the roar firestore API
-    const firekit = new RoarAppkit({
-      firebaseProject: appKit,
-      taskInfo,
-      userInfo,
-    });
+      initFirekitCompat(ctx, {
+        variantId: resolvedVariantId,
+        taskVersion,
+        isAnonymous: true,
+      });
 
-    const task = new TaskLauncher(firekit, gameParams, userParams);
-    task.run();
+      const userParams = {
+        assessmentPid,
+        grade,
+        birthMonth,
+        birthYear,
+        age,
+        ageMonths,
+      };
+
+      const gameParams = {
+        userMode,
+        recruitment,
+        labId,
+        consent,
+        responseMode,
+        taskName,
+        storyOption,
+        keyboardPractice,
+        audio,
+        corpusName,
+      };
+
+      const task = new TaskLauncher(gameParams, userParams);
+      task.run();
+    } catch (err) {
+      console.error('Failed to initialize assessment:', err);
+    }
   }
 });
 
-//signs in the user based on the firebase credentials
-//Ensures that data can be written to firebase
-await signInAnonymously(appKit.auth);
+//signs in the user anonymously so a ROAR run can be provisioned and written to
+await signInAnonymously(auth);
