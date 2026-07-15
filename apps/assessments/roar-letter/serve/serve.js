@@ -5,6 +5,7 @@ import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { LETTER_LANGUAGES, PHONICS_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
 import RoarLetter from '../src/experiment/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
+import { mountVariantPicker } from '../../shared/variantPicker.js';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
@@ -33,9 +34,11 @@ const language = LETTER_LANGUAGES[lngParam] ?? LETTER_LANGUAGES.en;
 // Phonics is a separate task family — language doesn't affect its task ID.
 const taskId = task === 'phonics' ? PHONICS_TASK_IDS.EN : language.taskId;
 
+// App config
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const baseUrl = ROAR_API_BASE_URL;
 
 if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
   connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
@@ -50,14 +53,12 @@ onAuthStateChanged(auth, async (user) => {
       // Performs the participant-free calls and hands back the participantId and resolved variantId.
       // The variantId URL param wins; otherwise it falls back to the first published variant.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
-        // eslint-disable-next-line no-undef
-        { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
+        { baseUrl, auth: authCallbacks },
         { ...(variantId ? { variantId } : {}), taskId },
       );
 
       const ctx = {
-        // eslint-disable-next-line no-undef
-        baseUrl: ROAR_API_BASE_URL,
+        baseUrl,
         auth: authCallbacks,
         participant: { participantId },
       };
@@ -67,6 +68,17 @@ onAuthStateChanged(auth, async (user) => {
         taskVersion,
         isAnonymous: true,
       });
+
+      // Dev/staging only: mount a variant switcher so reviewers can hop between published
+      // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
+      if (ROAR_DB !== 'production') {
+        mountVariantPicker({
+          baseUrl,
+          auth: authCallbacks,
+          taskId,
+          currentVariantId: resolvedVariantId,
+        });
+      }
 
       const { variantParams } = await getVariantById(resolvedVariantId);
 

@@ -20,6 +20,8 @@ export default [
         ...globals.browser,
         ...globals.worker,
         process: 'readonly',
+        ROAR_DB: 'readonly',
+        ROAR_API_BASE_URL: 'readonly',
       },
     },
     rules: {
