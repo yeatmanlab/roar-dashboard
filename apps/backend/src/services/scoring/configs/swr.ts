@@ -26,4 +26,10 @@ export default {
       { minVersion: 0, thresholds: { above: 550, some: 400 } },
     ],
   },
+  displayCategory: [{ minVersion: 0, category: 'normed' }],
+  displayRanges: {
+    percentile: { min: 0, max: 99 },
+    standardScore: { min: 0, max: 180 },
+    rawScore: { min: 100, max: 900 },
+  },
 } as const;
