@@ -1906,7 +1906,7 @@ const scoreReportColumns = computed(() => {
       header: 'Composite Score',
       dataType: 'text',
       sort: true,
-      hidden: true,
+      hidden: false,
       tag: viewMode.value !== 'color',
       emptyTag: viewMode.value === 'color',
       tagColor: 'compositeScore.tagColor',
