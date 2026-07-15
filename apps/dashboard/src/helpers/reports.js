@@ -1766,13 +1766,55 @@ export const taskInfoById = {
     color: '#E97A49',
     header: 'ROAR - PALABRA',
     subheader: 'Single Word Recognition (Spanish)',
-    desc: "ROAR - Palabra evaluates a student's ability to quickly and automatically recognize individual words in Spanish. The student's score will range between {{RAW_SCORE_RANGE}}.",
+    desc:
+      "ROAR - Palabra evaluates a student's ability to quickly and automatically recognize individual words in Spanish. " +
+      "To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between " +
+      "{{RAW_SCORE_RANGE}} and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in " +
+      'Spanish word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. ' +
+      'Students in grades K-5 in the pink category have Spanish word-level decoding skills below 20% of their peers in the same grade level in monolingual, Spanish-speaking Latin American educational contexts. ' +
+      'Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level in the same context. ' +
+      'Students in the yellow category are still developing their individual word decoding skills and will likely benefit from further practice and support in foundational reading skills. ' +
+      'Students in grades K-5 in the yellow category have Spanish word-level decoding skills below 40% of their peers. ' +
+      'For those students in grades 6-12 in the yellow category, their word-level decoding skills are between a third and fifth grade-level. ' +
+      'Students of all grade levels in the green category demonstrate that word-level decoding is supporting them towards fluency and comprehension of connected text in Spanish.',
+    definitions: [
+      {
+        header: 'WHAT IS DECODING',
+        desc: 'Decoding refers to the ability to sound out and recognize words by associating individual letters or groups of letters with their corresponding sounds. It involves applying knowledge of letter-sound relationships to read words accurately and fluently.',
+      },
+      {
+        header: 'WHAT IS AUTOMATICITY?',
+        desc: 'Automaticity refers to the ability to read words quickly and accurately without having to think about each letter or sound. It allows readers to focus more on understanding what they are reading instead of getting stuck on individual words.',
+      },
+    ],
   },
   'sre-es': {
     color: '#92974C',
     header: 'ROAR - FRASE',
     subheader: 'Sentence Reading Efficiency (Spanish)',
-    desc: "ROAR - Frase examines silent reading fluency and comprehension for individual sentences in Spanish. The student's score will range between {{RAW_SCORE_RANGE}}.",
+    desc:
+      'ROAR - Frase examines silent reading fluency and comprehension for individual sentences in Spanish. ' +
+      "To become fluent readers, students need to decode words accurately and read sentences smoothly. Poor fluency can make it harder for students to understand what they're reading. " +
+      "Students who don't receive support for their basic reading skills may find it challenging to improve their overall reading ability. " +
+      'This assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties with decoding words accurately or reading slowly and with effort. ' +
+      "The student's score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting 'Raw Score' on the table above. " +
+      'Students in the pink category need support in Spanish sentence-reading efficiency to support growth in reading comprehension. ' +
+      'Students in grades K-5 in the pink category have Spanish sentence-reading efficiency skills below 20% of their peers in the same grade level in monolingual, Spanish-speaking Latin American educational contexts. ' +
+      'Students in grades 6-12 in the pink category have sentence-reading efficiency skills below a third-grade level in the same context. ' +
+      'Students in the yellow category are still developing their sentence-reading efficiency skills and will benefit from focused reading practice. ' +
+      'Students in grades K-5 in the yellow category have Spanish sentence-reading efficiency skills below 40% of their peers. ' +
+      'For those students in grades 6-12 in the yellow category, their sentence-reading efficiency skills are between a third and fifth grade-level. ' +
+      'Students of all grade-levels in the green category demonstrate that sentence-reading efficiency is not a barrier in their reading in Spanish.',
+    definitions: [
+      {
+        header: 'WHAT IS FLUENCY?',
+        desc: 'Fluency refers to the ability of a student to read text effortlessly, accurately, and with appropriate expression. It involves the skills of decoding words, recognizing sight words, and understanding the meaning of the text. Fluent readers demonstrate a smooth and natural reading pace, which enhances their overall comprehension and enjoyment of reading.',
+      },
+      {
+        header: 'HOW DO THESE SKILLS RELATE TO THE OTHER ROAR ASSESSMENTS?',
+        desc: 'ROAR-Sentence Reading Efficiency builds upon fundamental decoding and phonological awareness skills that are present in the ROAR-Word and ROAR-Phonological Awareness assessments. Therefore, if a student needs support with phonological awareness and single word recognition, then it is likely that they will struggle with the reading fluency skills measured by ROAR-Sentence Reading Efficiency.',
+      },
+    ],
   },
 };
 
