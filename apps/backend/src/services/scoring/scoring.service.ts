@@ -146,13 +146,6 @@ export function getSupportLevel(input: ScoringInput): SupportLevel | null {
   return null;
 }
 
-const DISPLAY_SCORE_TYPE_LABELS: Record<DisplayScoreType, string> = {
-  percentile: 'Percentile',
-  standardScore: 'Standard Score',
-  rawScore: 'Raw Score',
-  percentCorrect: 'Percent Correct',
-};
-
 /**
  * Resolve a task's primary display descriptor (which score to surface, its
  * value, label, and range) from config — moving the dashboard's
@@ -233,7 +226,7 @@ export function getScoreDisplay(args: {
   return {
     scoreType,
     value,
-    label: DISPLAY_SCORE_TYPE_LABELS[scoreType],
+    label: scoreType,
     range: config.displayRanges?.[scoreType] ?? null,
   };
 }

@@ -3642,6 +3642,84 @@ describe('ReportService', () => {
       expect(swrTask.skillsToWorkOn).toBeUndefined();
     });
 
+    // --- Display descriptor ---
+
+    it('includes display descriptor for normed tasks (e.g., swr with percentile at grade < 6)', async () => {
+      setupDefaults();
+      const completedScoreRow: RunScoreRow = {
+        userId: targetUserId,
+        taskVariantId: VARIANT_ID_1,
+        scoreName: ScoreField.PERCENTILE,
+        scoreValue: '65',
+      };
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-1',
+          taskVariantId: VARIANT_ID_1,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.display).toBeDefined();
+      expect(swrTask.display?.scoreType).toBe('percentile');
+      expect(swrTask.display?.value).toBe(65);
+      expect(swrTask.display?.label).toBe('percentile');
+      expect(swrTask.display?.range).toEqual({ min: 0, max: 99 });
+    });
+
+    it('includes display descriptor for percent-correct tasks (e.g., letter)', async () => {
+      const LETTER_TASK_ID = 'e4567890-defg-8901-1234-567890123456';
+      setupDefaults();
+      mockTaskVariantRepository.getById.mockResolvedValueOnce({
+        ...VARIANT_1,
+        taskId: LETTER_TASK_ID,
+        taskSlug: 'letter',
+      });
+      const completedScoreRow: RunScoreRow = {
+        userId: targetUserId,
+        taskVariantId: VARIANT_ID_1,
+        scoreName: ScoreField.PERCENT_CORRECT,
+        scoreValue: '85',
+      };
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-1',
+          taskVariantId: VARIANT_ID_1,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      const letterTask = result.tasks.find((t) => t.taskId === LETTER_TASK_ID)!;
+      expect(letterTask.display).toBeDefined();
+      expect(letterTask.display?.scoreType).toBe('percentCorrect');
+      expect(letterTask.display?.value).toBe(85);
+      expect(letterTask.display?.label).toBe('percentCorrect');
+      expect(letterTask.display?.range).toEqual({ min: 0, max: 100 });
+    });
+
     // --- Historical scores ---
 
     it('builds historicalScores per task, sorted ascending by administration dateStart', async () => {
