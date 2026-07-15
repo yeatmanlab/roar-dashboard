@@ -4,18 +4,20 @@ import {
   toRoamAlpacaScoreEntries,
   ROAM_ALPACA_TASK_IDS,
 } from '@roar-platform/assessment-schema/roam-apps';
+import { AssessmentStage } from '@roar-platform/assessment-schema';
 import store from 'store2';
 
 /**
  * Maps the SDK's four assessmentStage values down to the two buckets
  * (`practice` / `test`) that `computedScoreCallback` in `scores.js` expects
- * under each subtask (it only reads `subtaskScores.test`).
+ * under each subtask (it only reads the `AssessmentStage.TEST` bucket). The
+ * `_response` variants aren't in the enum, so they're composed off it.
  */
 const STAGE_TO_SCORING_KEY = {
-  practice: 'practice',
-  practice_response: 'practice',
-  test: 'test',
-  test_response: 'test',
+  [AssessmentStage.PRACTICE]: AssessmentStage.PRACTICE,
+  [`${AssessmentStage.PRACTICE}_response`]: AssessmentStage.PRACTICE,
+  [AssessmentStage.TEST]: AssessmentStage.TEST,
+  [`${AssessmentStage.TEST}_response`]: AssessmentStage.TEST,
 };
 
 /**
