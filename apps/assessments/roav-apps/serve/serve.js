@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
+import { ROAV_MP_TASK_ID, ROAV_RVP_TASK_ID } from '@roar-platform/assessment-schema/roav-apps';
 import { TaskLauncher } from '../src';
 import { getFirebaseConfig } from '../../shared/firebaseConfig.js';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
@@ -13,6 +14,9 @@ const urlParams = new URLSearchParams(queryString);
 
 // Task selection: variantId wins; otherwise taskId resolves to the first published variant.
 const taskId = urlParams.get('task') ?? 'roav-rvp';
+
+// The dev variant picker lists every published variant across all ROAV apps tasks.
+const PICKER_TASK_IDS = [ROAV_MP_TASK_ID, ROAV_RVP_TASK_ID];
 const variantId = urlParams.get('variantId');
 const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 
@@ -71,7 +75,7 @@ onAuthStateChanged(auth, async (user) => {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,
-          taskId,
+          taskId: PICKER_TASK_IDS,
           currentVariantId: resolvedVariantId,
         });
       }
