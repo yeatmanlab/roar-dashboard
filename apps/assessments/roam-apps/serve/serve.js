@@ -4,6 +4,7 @@ import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { TaskLauncher } from '../src';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
+import { mountVariantPicker } from '../../shared/variantPicker.js';
 
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime'; //for async
@@ -26,9 +27,11 @@ const birthMonth = urlParams.get('birthmonth');
 const age = urlParams.get('age');
 const ageMonths = urlParams.get('agemonths');
 
+// App config
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const baseUrl = ROAR_API_BASE_URL;
 
 if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
   connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
@@ -43,13 +46,13 @@ onAuthStateChanged(auth, async (user) => {
       // The variantId URL param wins; otherwise falls back to the first published variant for taskId.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         // eslint-disable-next-line no-undef
-        { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
+        { baseUrl, auth: authCallbacks },
         { ...(variantId ? { variantId } : {}), taskId },
       );
 
       const ctx = {
         // eslint-disable-next-line no-undef
-        baseUrl: ROAR_API_BASE_URL,
+        baseUrl,
         auth: authCallbacks,
         participant: { participantId },
         // Without this, computedScoreCallback failures inside writeTrial are
@@ -69,7 +72,23 @@ onAuthStateChanged(auth, async (user) => {
       // from the resolved variant — not URL params. See
       // taskVariantParameters.example.json for the shape. initConfig merges these
       // over userParams, reads `language`, and drives i18next.changeLanguage.
-      const { variantParams } = await getVariantById(resolvedVariantId);
+      const { variantParams, taskId: resolvedTaskId } = await getVariantById(resolvedVariantId);
+
+      // Dev/staging only: mount a variant switcher so reviewers can hop between
+      // published variants without hand-editing the URL. No-op in production (the
+      // guard is eliminated at build). Uses the resolved variant's taskId so it lists
+      // the correct family even when only ?variantId= was provided — roam serves
+      // fluency-arf, fluency-calf, and roam-alpaca.
+      // eslint-disable-next-line no-undef
+      if (ROAR_DB !== 'production') {
+        mountVariantPicker({
+          // eslint-disable-next-line no-undef
+          baseUrl,
+          auth: authCallbacks,
+          taskId: resolvedTaskId,
+          currentVariantId: resolvedVariantId,
+        });
+      }
 
       const userParams = {
         assessmentPid,
