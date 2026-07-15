@@ -177,7 +177,7 @@ const compositeFoundational = computed(() => {
   const composite = props.runsByTaskId?.['compositeFoundational'];
   if (!composite) return null;
 
-  if (props.orgType === 'district') {
+  if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
     return {
       below: composite.below?.total ?? 0,
       some: composite.some?.total ?? 0,
