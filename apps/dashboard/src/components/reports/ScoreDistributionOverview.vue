@@ -39,7 +39,7 @@
         </div>
       </div>
 
-      <div v-if="orgType === 'district' && compositeFoundational" class="chart-row">
+      <div v-if="compositeFoundational" class="chart-row">
         <div class="chart-label text-gray-600">
           <span class="whitespace-nowrap text-lg font-bold">Foundational Skills Composite</span>
           <!-- <span class="text-sm font-light uppercase"> (Composite Score)</span> -->
@@ -182,6 +182,8 @@ import PvChart from 'primevue/chart';
 import { setDistributionChartData, setDistributionChartOptions } from '@/helpers/plotting';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 import { descriptionsByTaskId } from '@/helpers/reports';
+import { SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 const props = defineProps({
   taskIds: {
@@ -219,14 +221,25 @@ const comprehensionTaskIds = computed(() => {
 });
 
 const compositeFoundational = computed(() => {
-  if (props.orgType !== 'district') return null;
   const composite = props.runsByTaskId?.['compositeFoundational'];
   if (!composite) return null;
-  return {
-    below: composite.below?.total ?? 0,
-    some: composite.some?.total ?? 0,
-    above: composite.above?.total ?? 0,
-  };
+
+  if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
+    return {
+      below: composite.below?.total ?? 0,
+      some: composite.some?.total ?? 0,
+      above: composite.above?.total ?? 0,
+    };
+  }
+
+  const counts = { below: 0, some: 0, above: 0 };
+  for (const run of composite) {
+    const supportLevel = run.scores?.support_level;
+    if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.below++;
+    else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.some++;
+    else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.above++;
+  }
+  return counts;
 });
 
 const supportLevelCountsByTaskId = computed(() => {
@@ -238,7 +251,7 @@ const supportLevelCountsByTaskId = computed(() => {
       continue;
     }
 
-    if (props.orgType === 'district') {
+    if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
       result[taskId] = {
         below: runs.below?.total ?? 0,
         some: runs.some?.total ?? 0,
@@ -248,9 +261,9 @@ const supportLevelCountsByTaskId = computed(() => {
       const counts = { below: 0, some: 0, above: 0 };
       for (const run of runs) {
         const supportLevel = run.scores?.support_level;
-        if (supportLevel === 'Needs Extra Support') counts.below++;
-        else if (supportLevel === 'Developing Skill') counts.some++;
-        else if (supportLevel === 'Achieved Skill') counts.above++;
+        if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.below++;
+        else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.some++;
+        else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.above++;
       }
       result[taskId] = counts;
     }

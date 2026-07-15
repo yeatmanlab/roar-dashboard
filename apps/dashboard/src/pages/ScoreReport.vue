@@ -55,11 +55,7 @@
             >
               <ScoreDistributionOverview
                 :task-ids="sortedAndFilteredTaskIds"
-                :runs-by-task-id="
-                  props.orgType === 'district'
-                    ? aggregatedDistrictSupportCategories
-                    : computeAssignmentAndRunData.runsByTaskId
-                "
+                :runs-by-task-id="runsByTaskIdForDistributionChart"
                 :org-type="props.orgType"
                 :tasks-dictionary="tasksDictionary"
               />
@@ -404,6 +400,7 @@ import {
   taskDisplayNames,
   taskInfoById,
   getSupportLevel,
+  getFoundationalCompositeSupportLevel,
   tasksToDisplayGraphs,
   rawOnlyTasks,
   tasksToDisplayPercentCorrect,
@@ -939,15 +936,17 @@ const computedProgressData = computed(() => {
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
 const computeAssignmentAndRunData = computed(() => {
   if (props.orgType === 'district') {
-    return { assignmentTableData: [], runsByTaskId: {} };
+    return { assignmentTableData: [], runsByTaskId: {}, compositeFoundationalRuns: [] };
   }
   if (!assignmentData.value || assignmentData.value.length === 0) {
-    return { assignmentTableData: [], runsByTaskId: {} };
+    return { assignmentTableData: [], runsByTaskId: {}, compositeFoundationalRuns: [] };
   } else {
     // assignmentTableData is an array of objects, each representing a row in the table
     const assignmentTableDataAcc = [];
     // runsByTaskId is an object with keys as taskIds and values as arrays of scores
     const runsByTaskIdAcc = {};
+    // compositeFoundationalRunsAcc holds a support-level run per assignment with a foundational composite score
+    const compositeFoundationalRunsAcc = [];
 
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
@@ -989,7 +988,11 @@ const computeAssignmentAndRunData = computed(() => {
           orgType: props.orgType,
           userId: user.userId,
         },
-        compositeScore: assignment.compositeScore ?? null,
+        // Overwritten below with foundational composite support-category data when available.
+        compositeScore:
+          assignment.compositeScore != null
+            ? { rawScore: assignment.compositeScore, percentile: null, displayValue: assignment.compositeScore }
+            : null,
         startDate:
           assignment.assessments.reduce((earliest, assessment) => {
             if (!earliest) return assessment.startedOn;
@@ -1269,6 +1272,44 @@ const computeAssignmentAndRunData = computed(() => {
         }
       }
 
+      // Logic to update compositeFoundationalRunsAcc and the row's composite score / support category
+      if (assignment.foundationalComposite) {
+        const { support_level: compositeSupportLevel, tag_color: compositeTagColor } =
+          getFoundationalCompositeSupportLevel(grade, assignment.foundationalComposite);
+
+        const compositeRawScore = assignment.foundationalComposite.roarScore ?? null;
+        const compositeStandard = assignment.foundationalComposite.standardScore ?? null;
+        let compositePercentile = assignment.foundationalComposite.percentile;
+        // Check for null or undefined values, only round if the score is not a string.
+        if (compositePercentile != null) {
+          if (typeof compositePercentile !== 'string') compositePercentile = _round(compositePercentile);
+        } else compositePercentile = null;
+
+        currRow.compositeScore = {
+          rawScore: compositeRawScore,
+          percentile: compositePercentile,
+          standardScore: compositeStandard,
+          displayValue: compositePercentile ?? compositeRawScore,
+          supportLevel: compositeSupportLevel,
+          tagColor: compositeTagColor,
+        };
+
+        compositeFoundationalRunsAcc.push({
+          grade: getGrade(grade),
+          scores: {
+            support_level: compositeSupportLevel,
+            stdPercentile: assignment.foundationalComposite.percentile ?? null,
+            rawScore: compositeRawScore,
+          },
+          taskId: 'compositeFoundational',
+          user: {
+            grade,
+            schoolName: schoolsDictWithGrade.value[schoolId] ?? '0 Unknown School',
+          },
+          tag_color: compositeTagColor,
+        });
+      }
+
       // update scores for current row with computed object
       currRow.scores = currRowScores;
       currRow.numAssessmentsCompleted = numAssessmentsCompleted;
@@ -1321,8 +1362,24 @@ const computeAssignmentAndRunData = computed(() => {
       }
     }
 
-    return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
+    return {
+      runsByTaskId: filteredRunsByTaskId,
+      assignmentTableData: assignmentTableDataAcc,
+      compositeFoundationalRuns: compositeFoundationalRunsAcc,
+    };
   }
+});
+
+// runsByTaskId for the ScoreDistributionOverview chart, including the foundational composite score
+// (kept separate from computeAssignmentAndRunData.runsByTaskId since 'compositeFoundational' is not a real taskId
+// and would break taskId-keyed logic like sortedTaskIds and CSV export).
+const runsByTaskIdForDistributionChart = computed(() => {
+  if (props.orgType === 'district') return aggregatedDistrictSupportCategories.value;
+
+  const { runsByTaskId, compositeFoundationalRuns } = computeAssignmentAndRunData.value;
+  if (!compositeFoundationalRuns?.length) return runsByTaskId;
+
+  return { ...runsByTaskId, compositeFoundational: compositeFoundationalRuns };
 });
 
 // This composable manages the data which is passed into the FilterBar component slot for filtering
@@ -1840,11 +1897,19 @@ const scoreReportColumns = computed(() => {
   }
   if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
     tableColumns.push({
-      field: 'compositeScore',
+      field:
+        viewMode.value === 'raw'
+          ? 'compositeScore.rawScore'
+          : viewMode.value === 'standard'
+            ? 'compositeScore.standardScore'
+            : 'compositeScore.displayValue',
       header: 'Composite Score',
       dataType: 'text',
       sort: true,
-      hidden: true,
+      hidden: false,
+      tag: viewMode.value !== 'color',
+      emptyTag: viewMode.value === 'color',
+      tagColor: 'compositeScore.tagColor',
       headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
     });
   }

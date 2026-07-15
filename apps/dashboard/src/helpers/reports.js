@@ -511,6 +511,7 @@ export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
  *  Colors corresponding to each support level.
  */
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
+import { SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
 
 export const progressTags = {
   Optional: {
@@ -855,6 +856,75 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   };
 };
 
+// Grades for which the foundational composite score is evaluated using raw score instead of percentile.
+// Mirrors the cutoff logic in roar-firebase-functions' aggregateFoundationalCompositeScores.
+const FOUNDATIONAL_COMPOSITE_RAW_SCORE_GRADE_CUTOFF = 6;
+const FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF = 40;
+const FOUNDATIONAL_COMPOSITE_PERCENTILE_DEVELOPING_CUTOFF = 20;
+const FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF = 487;
+const FOUNDATIONAL_COMPOSITE_RAW_SCORE_DEVELOPING_CUTOFF = 447;
+
+/**
+ * Computes the support level for a user's foundational composite score, mirroring the cutoff logic
+ * used by roar-firebase-functions' aggregateFoundationalCompositeScores for district-level reports.
+ *
+ * @param {string|number} grade - The grade level of the student (e.g., 'K', '1', 6).
+ * @param {{percentile?: number, roarScore?: number, thetaEstimate?: number}} foundationalComposite - The assignment's foundational composite score object.
+ * @returns {{support_level: string|null, tag_color: string|null}} The computed support level and tag color.
+ */
+export const getFoundationalCompositeSupportLevel = (grade, foundationalComposite) => {
+  let support_level = null;
+  let tag_color = null;
+
+  if (!foundationalComposite) {
+    return { support_level, tag_color };
+  }
+
+  const gradeLevel = getGrade(grade);
+  const useRawScore = !Number.isFinite(gradeLevel) || FOUNDATIONAL_COMPOSITE_RAW_SCORE_GRADE_CUTOFF <= gradeLevel;
+
+  if (!useRawScore) {
+    let percentile = sanitizeScoreValue(foundationalComposite.percentile);
+    if (percentile === null || percentile === undefined) {
+      return { support_level, tag_color };
+    }
+
+    if (percentile >= FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF) {
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
+    } else if (
+      percentile > FOUNDATIONAL_COMPOSITE_PERCENTILE_DEVELOPING_CUTOFF &&
+      percentile < FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF
+    ) {
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
+    } else {
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
+    }
+  } else {
+    let rawScore = sanitizeScoreValue(foundationalComposite.roarScore);
+    if (rawScore === null || rawScore === undefined) {
+      return { support_level, tag_color };
+    }
+    if (rawScore >= FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF) {
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
+    } else if (
+      rawScore > FOUNDATIONAL_COMPOSITE_RAW_SCORE_DEVELOPING_CUTOFF &&
+      rawScore < FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF
+    ) {
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
+    } else {
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
+    }
+  }
+
+  return { support_level, tag_color };
+};
+
 export function getTagColor(supportLevel) {
   if (supportLevel === 'Needs Extra Support') {
     return SCORE_SUPPORT_LEVEL_COLORS.BELOW;
@@ -1195,6 +1265,19 @@ function resolveFieldName(taskId, grade, fieldType, isLegacy = false) {
 }
 
 /**
+ * Takes a score value possibly including < or >,
+ * returns a number stripped of the extra characters.
+ * @param {string | number} scoreValue
+ * @returns { number }
+ */
+export function sanitizeScoreValue(scoreValue) {
+  if (typeof scoreValue === 'string' && /[<>]/.test(scoreValue)) {
+    scoreValue = parseFloat(scoreValue.replace(/[<>]/g, ''));
+  }
+  return scoreValue;
+}
+
+/**
  * Safely accesses a score value from a scores object with fallback to legacy field names
  * @param {Object} scoresObject - The scores object to access
  * @param {string} taskId - The task identifier
@@ -1214,12 +1297,8 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
   const newFieldName = resolveFieldName(taskId, gradeValue, fieldType, false);
   if (newFieldName && scoresObject[newFieldName] !== undefined) {
     let scoreValue = scoresObject[newFieldName];
-    if (
-      (fieldType === 'percentile' || fieldType === 'standardScore') &&
-      typeof scoreValue === 'string' &&
-      /[<>]/.test(scoreValue)
-    ) {
-      scoreValue = parseFloat(scoreValue.replace(/[<>]/g, ''));
+    if (fieldType === 'percentile' || fieldType === 'standardScore') {
+      scoreValue = sanitizeScoreValue(scoreValue);
     }
     return scoreValue;
   }
