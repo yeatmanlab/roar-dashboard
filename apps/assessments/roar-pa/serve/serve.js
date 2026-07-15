@@ -5,6 +5,7 @@ import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { pa } from '@roar-platform/assessment-schema';
 import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
+import { mountVariantPicker } from '../../shared/variantPicker.js';
 import { wireScoreAdapter } from '../src/sdk/pa-firekit-facade';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
@@ -25,13 +26,13 @@ const birthMonth = urlParams.get('birthmonth');
 const age = urlParams.get('age');
 const ageMonths = urlParams.get('agemonths');
 
+// App config
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const baseUrl = ROAR_API_BASE_URL;
 
-// eslint-disable-next-line no-undef
 if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-  // eslint-disable-next-line no-undef
   connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
 }
 
@@ -44,14 +45,12 @@ onAuthStateChanged(auth, async (user) => {
       // Performs the participant-free calls and hands back the participantId and resolved variantId.
       // The variantId URL param wins; otherwise it falls back to the first published variant.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
-        // eslint-disable-next-line no-undef
-        { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
+        { baseUrl, auth: authCallbacks },
         { ...(variantId ? { variantId } : {}), taskId: pa.PA_TASK_ID },
       );
 
       const ctx = {
-        // eslint-disable-next-line no-undef
-        baseUrl: ROAR_API_BASE_URL,
+        baseUrl,
         auth: authCallbacks,
         participant: { participantId },
       };
@@ -61,6 +60,17 @@ onAuthStateChanged(auth, async (user) => {
         taskVersion,
         isAnonymous: true,
       });
+
+      // Dev/staging only: mount a variant switcher so reviewers can hop between published
+      // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
+      if (ROAR_DB !== 'production') {
+        mountVariantPicker({
+          baseUrl,
+          auth: authCallbacks,
+          taskId: pa.PA_TASK_ID,
+          currentVariantId: resolvedVariantId,
+        });
+      }
 
       // Wire PA score computation pipeline
       wireScoreAdapter();
