@@ -10,4 +10,8 @@ export default {
     rawScore: [{ minVersion: 0, fieldName: SWR_SCORE_NAMES.NUM_CORRECT }],
   },
   classification: { type: 'none' as const },
+  displayCategory: [{ minVersion: 0, category: 'rawOnly' }],
+  displayRanges: {
+    rawScore: { min: 100, max: 900 },
+  },
 } as const;

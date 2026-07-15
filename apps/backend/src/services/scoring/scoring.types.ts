@@ -48,6 +48,27 @@ export interface RawScoreThreshold {
 }
 
 /**
+ * The score types a task can surface as its primary display.
+ */
+export type DisplayScoreType = 'percentile' | 'standardScore' | 'rawScore' | 'percentCorrect';
+
+/**
+ * Per-task display descriptor — what the frontend paints without knowing
+ * scoring versions or per-task display rules. Computed by `getScoreDisplay`
+ * from the task's config (display category + ranges) and resolved scores.
+ */
+export interface ScoreDisplay {
+  /** Which score is the primary display for this task/grade/version. */
+  scoreType: DisplayScoreType;
+  /** The numeric value to render for `scoreType` (null when absent). */
+  value: number | null;
+  /** Stable label key for the score type; the frontend localizes. */
+  label: string;
+  /** Inclusive dial/breakdown range, or null when the config declares none. */
+  range: { min: number; max: number } | null;
+}
+
+/**
  * Resolved score field names for looking up values in the fdwRunScores table.
  * Each array contains the `name` column values for that field type. Empty if the task
  * has no applicable field. When resolved with a specific scoring version, arrays contain
