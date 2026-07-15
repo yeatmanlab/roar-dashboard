@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app'; //firebase app initialization
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth'; //firebase authorization
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
 import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
-// import { resolveRoamTaskId } from '@roar-platform/assessment-schema/roam-apps';
+import { resolveRoamTaskId } from '@roar-platform/assessment-schema/roam-apps';
 import { TaskLauncher } from '../src';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import i18next from 'i18next'; //has info on language?
@@ -23,11 +23,6 @@ const audio = convertStrToBool(urlParams.get('audio'));
 const corpusName = urlParams.get('corpusName');
 
 //const taskId = language === "en" ? "fluency" : `fluency-${language}`;
-
-let taskId = taskName;
-if (language !== 'en') {
-  taskId = taskId + '-' + language;
-}
 
 // Backend run/variant resolution
 const variantId = urlParams.get('variantId');
@@ -61,7 +56,7 @@ onAuthStateChanged(auth, async (user) => {
       // taskName/language map to the backend task ID the same way the URL params
       // (task, lng) always have — resolveRoamTaskId mirrors the old inline
       // `taskName + '-' + language` logic, but against the verified task ID table.
-      // const taskId = resolveRoamTaskId(taskName, language);
+      const taskId = resolveRoamTaskId(taskName, language);
 
       // Provision the anonymous ROAR user (and resolve a variant) via the SDK.
       // The variantId URL param wins; otherwise it falls back to the first published variant.
