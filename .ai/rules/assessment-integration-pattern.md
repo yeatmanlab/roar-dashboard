@@ -11,6 +11,11 @@ tags: assessments, monorepo, build, integration, workspaces
 > [!TIP]
 > This rule describes what an integrated assessment **looks like**. For the step-by-step procedure to get one there — migrating an existing repo or scaffolding a new one — see [.ai/assessment-migration.md](../assessment-migration.md).
 
+> [!NOTE]
+> **Last verified 2026-07-16 against `99e8384d0` (project/backend-refactor)**, except where noted below. This rule makes concrete claims about a repo that changes weekly, so treat it as a map, not the territory: **where this rule and the repo disagree, the repo wins.** Re-derive the integration surface with the `git grep` in that section rather than trusting the table — that table has been wrong before, from a `grep -r` that picked up a generated file.
+>
+> Written deliberately ahead of three changes expected to land alongside it, none of which were in that commit: declarative seed configs ([#1890](https://github.com/yeatmanlab/roar-dashboard/pull/1890)), the npm publishing manifest fields ([#2023](https://github.com/yeatmanlab/roar-dashboard/pull/2023)), and the last four `.json` scoring configs converting to `.ts`. If you're reading this after they merged, the note has served its purpose — delete this paragraph.
+
 Assessments live at `apps/assessments/<name>/` and are npm workspaces (`apps/assessments/*` is in the root `workspaces` array), built and orchestrated by Turbo. The package name is always `@roar-platform/<directory-name>` — the directory name is load-bearing: the seed registry, CI matrices, hosting targets, and the `ASSESSMENT_NAME` derived by `scripts/assessment-env-up.sh` all key off it.
 
 ### Every assessment is two artifacts from one directory
@@ -169,7 +174,13 @@ Single-task assessments omit `resolveTaskId` entirely. The routing param differs
 
 ### The integration surface
 
-An assessment is not integrated when its directory exists. It is integrated when every file below names it. Grep an existing one (`grep -rl roav-ran --exclude-dir=node_modules --exclude-dir=dist .`) to see the current surface — that grep is the checklist's source of truth, and it's how you verify you missed nothing.
+An assessment is not integrated when its directory exists. It is integrated when every file below names it. To see the current surface, grep an existing one:
+
+```bash
+git grep -l roav-ran -- . ':!apps/assessments/roav-ran' ':!package-lock.json'
+```
+
+That grep is the checklist's source of truth, and it's how you verify you missed nothing. Use **`git grep`**, not `grep -r`: it searches tracked files only, so generated artifacts can't masquerade as source. `apps/dashboard/firebase/admin/firebase.json` is the trap — it's gitignored and built by `vite.config.js` from `firebase.template.json` + `csp.template.json`, but it lists every asset bucket, so a working-tree grep reports it and invites a hand-edit the next build silently discards.
 
 | Area      | File                                                                    | What to add                                                                                                               |
 | --------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -182,8 +193,8 @@ An assessment is not integrated when its directory exists. It is integrated when
 | Dashboard | `src/components/tasks/TaskX.vue`                                        | Launch component                                                                                                          |
 | Dashboard | `package.json`                                                          | Dep pinned to the **exact** workspace version                                                                             |
 | Dashboard | `vite.config.js`                                                        | `manualChunks` entry                                                                                                      |
-| Dashboard | `firebase/admin/csp.template.json` + `firebase.json`                    | Allowlist the GCS asset bucket — **both files, two lists in the template**                                                |
-| CI        | `.github/CODEOWNERS`                                                    | Per-assessment block                                                                                                      |
+| Dashboard | `firebase/admin/csp.template.json`                                      | Allowlist the GCS asset bucket in **both `img-src` and `media-src`**                                                      |
+| Repo      | `.github/CODEOWNERS`                                                    | Per-assessment block — lands with the code in Phase 1, not with CI                                                        |
 | CI        | `.github/actions/detect-assessment-changes/action.yml`                  | Paths filter **and** the hardcoded fallback matrix — two edits in one file                                                |
 | CI        | `.github/workflows/deploy-assessments-production.yml`                   | Fallback matrix                                                                                                           |
 | CI        | `.github/workflows/release.yml`                                         | `PUBLISHABLE_WORKSPACES`                                                                                                  |
@@ -191,7 +202,7 @@ An assessment is not integrated when its directory exists. It is integrated when
 
 The duplicated matrices are what gets missed. `detect-assessment-changes` lists assessments **twice** — once as a `dorny/paths-filter` filter, once as a hardcoded JSON array used when a shared dependency changes — and `deploy-assessments-production.yml` carries a third copy. Miss the fallback arrays and the assessment deploys on its own changes but silently stops deploying when `packages/assessment-sdk` or `apps/assessments/shared/` changes: exactly the case where a redeploy matters most.
 
-`roam-apps` is the current worked example of _migrated but not integrated_. Its directory exists and it's symlinked at `@roar-platform/roam-apps`, but the dashboard still imports `@bdelab/roam-apps` from the registry, it has no seed config, and it appears in none of the four CI/release lists.
+`roam-apps` is the current worked example of _migrated but not integrated_. It landed the code and stopped there: the directory exists, it's symlinked at `@roar-platform/roam-apps`, and it has a CODEOWNERS block — the Phase 1 set, exactly. Everything downstream is still missing. It has no schema namespace and no seed config; the dashboard still imports `@bdelab/roam-apps` from the registry (reading its version out of `package-lock.json`, the legacy pattern); and it's absent from `detect-assessment-changes`, the production deploy matrix, `PUBLISHABLE_WORKSPACES`, and both release-please files. A directory under `apps/assessments/` proves only that Phase 1 happened.
 
 ### Local development
 

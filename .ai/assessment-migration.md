@@ -4,6 +4,11 @@ This is the procedure for bringing an assessment into `apps/assessments/` — ei
 
 Both paths converge after Phase 1. Migration is the longer road, so it's the one written out in full — greenfield differences are called out inline.
 
+> [!NOTE]
+> **Last verified 2026-07-16 against `99e8384d0` (project/backend-refactor)**, except where noted below. Commands, file paths, and phase contents here were checked against the repo at that commit, but it moves weekly: **where this document and the repo disagree, the repo wins.** Re-derive rather than trust — and prefer `git grep` over `grep -r`, which reports generated artifacts as though they were source.
+>
+> Written deliberately ahead of three changes expected to land alongside it, none of which were in that commit: declarative seed configs ([#1890](https://github.com/yeatmanlab/roar-dashboard/pull/1890) — Phase 2 assumes `seeds/configs/<name>.config.ts` and `dev:seed:tasks`, replacing the per-assessment `seeds/<name>.seed.ts`), the npm publishing manifest fields ([#2023](https://github.com/yeatmanlab/roar-dashboard/pull/2023) — the `repository` field and `scoring-tables` placement in Phase 1's `package.json`), and the last four `.json` scoring configs converting to `.ts`. If you're reading this after they merged, the note has served its purpose — delete this paragraph.
+
 ## Phase 0 — Plan before you branch
 
 **Write a migration plan first.** Every assessment migrated so far has had one, and they earn their keep: each surfaced at least one thing that would have been discovered painfully mid-PR. Answer these before writing code:
@@ -204,13 +209,13 @@ Follow the [serve.js contract](rules/assessment-integration-pattern.md#the-serve
 
 Rewrite `TaskX.vue` mirroring the closest existing component. It is the same sequence Phase 3 just proved, with a real user instead of an anonymous one: resolve the participant via `GET /me`, resolve the administration and variant, `initFirekitCompat` with `taskVersion` imported from the package's own `package.json`, then `getVariantById` → `new TaskLauncher(...)`.
 
-The rest is the dashboard rows of the [integration surface table](rules/assessment-integration-pattern.md#the-integration-surface): the dep pinned to the exact workspace version, the `vite.config.js` chunk, and the CSP bucket allowlist in **both** `firebase/admin/csp.template.json` and `firebase/admin/firebase.json`. Miss the CSP entry and the assessment's stimuli are blocked in the deployed dashboard while working perfectly in local dev.
+The rest is the dashboard rows of the [integration surface table](rules/assessment-integration-pattern.md#the-integration-surface): the dep pinned to the exact workspace version, the `vite.config.js` chunk, and the CSP bucket allowlist. Add the assessment's GCS bucket to **both the `img-src` and `media-src` arrays** in `firebase/admin/csp.template.json` — that template is the source file. `firebase/admin/firebase.json` sits next to it and lists the same buckets, but it's a build artifact: `vite.config.js` generates it by merging `firebase.template.json` with the CSP template, it's gitignored, and hand-edits are overwritten by the next build. Miss the CSP entry and the assessment's stimuli are blocked in the deployed dashboard while working perfectly in local dev.
 
 **Phase 4 is done when** the task launches from the dashboard against the local stack and score reports render. Because Phase 3 proved the standalone path, anything failing here is a dashboard problem — that narrowing is the whole reason for the split.
 
 ## Phase 5 — CI, deployment, e2e, release
 
-Nothing here changes how the assessment behaves; it changes whether the platform knows about it. Work the CI and release rows of the [integration surface table](rules/assessment-integration-pattern.md#the-integration-surface): CODEOWNERS, both `detect-assessment-changes` lists, the production deploy matrix, `PUBLISHABLE_WORKSPACES`, and both release-please files. For release mechanics and the publishing dry-run gate, see [.github/RELEASING.md](../.github/RELEASING.md).
+Nothing here changes how the assessment behaves; it changes whether the platform knows about it. Work the CI and release rows of the [integration surface table](rules/assessment-integration-pattern.md#the-integration-surface): both `detect-assessment-changes` lists, the production deploy matrix, `PUBLISHABLE_WORKSPACES`, and both release-please files. CODEOWNERS is not among them — it lands back in Phase 1, so ownership is right from the first commit rather than five PRs later. For release mechanics and the publishing dry-run gate, see [.github/RELEASING.md](../.github/RELEASING.md).
 
 **e2e needs no wiring — it follows from the matrix.** Once the assessment is in `detect-assessment-changes`, `ci.yml` runs its Cypress specs per changed assessment: it copies `taskVariantParameters.example.json`, brings up `docker-compose.assessment.yml` with `ASSESSMENT_NAME`, starts `npm run dev:ci` on `:8000`, and runs `cypress/e2e/**/*`. Three consequences worth knowing:
 
