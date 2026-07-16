@@ -63,7 +63,7 @@ describe('useAdministrationScoreStudentsQuery', () => {
 
   afterEach(() => {
     queryClient?.clear();
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('calls useQuery with the student-scores key and a gated, readonly enabled', () => {
@@ -94,16 +94,13 @@ describe('useAdministrationScoreStudentsQuery', () => {
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
 
-    let queryFn;
-    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
-      queryFn = options.queryFn;
-      return { data: { value: null }, error: { value: null } };
-    });
+    vi.spyOn(VueQuery, 'useQuery');
 
     withSetup(() => useAdministrationScoreStudentsQuery(administrationId, 'school', scopeId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
+    const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
     const result = await queryFn();
 
     expect(mockListStudents).toHaveBeenCalledTimes(2);
@@ -136,6 +133,8 @@ describe('useAdministrationScoreStudentsQuery', () => {
     const scopeId = ref(null);
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = null;
+
+    vi.spyOn(VueQuery, 'useQuery');
 
     withSetup(() => useAdministrationScoreStudentsQuery(nanoid(), 'school', scopeId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
