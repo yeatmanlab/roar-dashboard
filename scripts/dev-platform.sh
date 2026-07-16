@@ -79,5 +79,5 @@ npx concurrently \
   --kill-others-on-fail \
   --names emulator,assessment \
   --prefix-colors cyan,green \
-  "npx firebase emulators:start --only auth --project $EMULATOR_PROJECT_ID --config $FIREBASE_CONFIG" \
+  "npx firebase emulators:start --only auth,storage --project $EMULATOR_PROJECT_ID --config $FIREBASE_CONFIG" \
   "for i in \$(seq 1 60); do curl -s http://localhost:9099/ >/dev/null 2>&1 && break; [ \"\$i\" = \"60\" ] && exit 1; sleep 1; done && $ASSESSMENT_SERVER_CMD"

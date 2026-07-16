@@ -1,0 +1,147 @@
+@use 'vars' as *;
+
+.roav-animation-rotate-with-pause {
+  animation: roav-keyframes-rotate-with-pause 4s ease-in-out infinite;
+}
+
+@keyframes roav-keyframes-rotate-with-pause {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  25% {
+    transform: translate(-50%, -50%) rotate(180deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+  80% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.roav-animation-rotate {
+  animation: roav-keyframes-rotate-slow 2s linear infinite;
+}
+
+.roav-animation-rotate-slow {
+  animation: roav-keyframes-rotate-slow 4s linear infinite;
+}
+
+@keyframes roav-keyframes-rotate-slow {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(180deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.roav-animation-pulse-opacity {
+  animation: roav-keyframes-pulse-opacity 2s ease-in-out infinite;
+}
+
+@keyframes roav-keyframes-pulse-opacity {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.roav-animation-pulse-scale-small {
+  animation: roav-keyframes-pulse-scale-small 2s ease-in-out infinite;
+}
+
+@keyframes roav-keyframes-pulse-scale-small {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+.roav-animation-pulse-scale-medium {
+  animation: roav-keyframes-pulse-scale-medium 2s ease-in-out infinite;
+}
+
+@keyframes roav-keyframes-pulse-scale-medium {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.4);
+  }
+}
+
+.roav-animation-glow-strong {
+  animation: roav-keyframes-glow-strong 2s ease-in-out infinite;
+}
+
+@keyframes roav-keyframes-glow-strong {
+  0%,
+  100% {
+    box-shadow: 0 8px 8px $roav-glow-attention-neutral;
+  }
+  50% {
+    box-shadow:
+      0 8px 8px $roav-glow-attention-neutral,
+      0 0 15px $roav-glow-attention-strong,
+      0 0 15px $roav-glow-attention-strong,
+      0 0 15px $roav-glow-attention-strong,
+      0 0 15px $roav-glow-attention-strong;
+  }
+}
+
+.roav-animation-pulse-outline {
+  animation: roav-keyframes-pulse-outline 2s ease-in-out infinite;
+}
+
+@keyframes roav-keyframes-pulse-outline {
+  0%,
+  100% {
+    outline: 4px solid $roav-yellow;
+  }
+  50% {
+    outline: 8px solid $roav-yellow;
+  }
+}
+
+// ************************************************
+// ROAV-RVP
+// ************************************************
+
+.roav-rvp-animation-mark-fix {
+  @extend .roav-animation-rotate;
+}
+
+.roav-rvp-animation-stim-targ {
+  @extend .roav-animation-pulse-scale-small;
+  // outline: 2px solid $roav-yellow;
+  // box-shadow: 0 0 2px 1px $roav-yellow;
+  // background: rgba(0, 179, 255, 0.173)
+}
+
+.roav-rvp-animation-mark-targ {
+  @extend .roav-animation-pulse-scale-medium;
+  //outline: 2px solid $roav-yellow;
+  // box-shadow: 0 0 2px 1px $roav-yellow;
+}
+
+.roav-rvp-animation-button-resp {
+  @extend .roav-animation-pulse-outline; // .roav-animation-glow-strong;
+  outline: 2px solid $roav-yellow;
+  // rgb(255, 200, 12)
+  // box-shadow: 0 0 2px 1px $roav-yellow;
+  // background: rgba(255, 198, 12, 0.29)
+}

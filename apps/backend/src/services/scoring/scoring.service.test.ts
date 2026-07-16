@@ -714,7 +714,7 @@ describe('getScoreDisplay', () => {
       scoringVersion: 0,
       scores: { rawScore: 500, percentile: 50, standardScore: 100 },
     });
-    expect(display).toEqual({ scoreType: 'percentile', value: 50, label: 'Percentile', range: { min: 0, max: 99 } });
+    expect(display).toEqual({ scoreType: 'percentile', value: 50, label: 'percentile', range: { min: 0, max: 99 } });
   });
 
   it('surfaces standard score for a normed task at grade >= 6', () => {
@@ -779,7 +779,7 @@ describe('getScoreDisplay', () => {
     expect(display).toEqual({
       scoreType: 'percentCorrect',
       value: 85,
-      label: 'Percent Correct',
+      label: 'percentCorrect',
       range: { min: 0, max: 100 },
     });
   });
