@@ -1403,6 +1403,9 @@ const SUPPORT_LEVEL_DISPLAY = {
 // correct/incorrect difference, raw-only) rather than the normed percentile/standard/raw the
 // backend overlay supplies. listStudents maps their `percentile`/`rawScore` to task-specific
 // numbers, so these keep their client-computed cells entirely (deferred follow-up).
+//
+// Exception: swr-es and correct-incorrect-difference tasks with scoring version >= 1 are normed
+// and should receive the backend overlay, per the existing branching logic (lines 911, 1154, 1561).
 const SPECIAL_TASK_SLUGS = new Set([
   ...tasksToDisplayPercentCorrect,
   ...tasksToDisplayTotalCorrect,
@@ -1410,6 +1413,16 @@ const SPECIAL_TASK_SLUGS = new Set([
   ...tasksToDisplayCorrectIncorrectDifference,
   ...rawOnlyTasks,
 ]);
+
+const isSpecialTask = (slug) => {
+  if (!SPECIAL_TASK_SLUGS.has(slug)) return false;
+  // swr-es and correct-incorrect-difference tasks with scoring version >= 1 are normed
+  if ((slug === 'swr-es' || tasksToDisplayCorrectIncorrectDifference.includes(slug)) &&
+      getScoringVersions.value[slug] >= 1) {
+    return false;
+  }
+  return true;
+};
 
 // Backend scores re-keyed: userId → { taskSlug → entry }. The table columns are slug-based,
 // while the response keys `scores` by task UUID.
@@ -1452,7 +1465,9 @@ const tableDataWithBackendScores = computed(() => {
       // Special (non-normed) tasks keep their client-computed cell: listStudents maps their
       // `percentile`/`rawScore` to task-specific values that don't belong in the normed
       // columns, and those cells + the CSV export stay client-side (deferred follow-up).
-      if (!entry || SPECIAL_TASK_SLUGS.has(slug)) {
+      // Exception: normed swr-es (scoring version >= 1) and correct-incorrect-difference tasks
+      // should use the backend overlay instead of client-computed values.
+      if (!entry || isSpecialTask(slug)) {
         mergedScores[slug] = clientScore;
         continue;
       }
