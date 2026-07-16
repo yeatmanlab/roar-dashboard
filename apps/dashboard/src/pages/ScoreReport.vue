@@ -526,7 +526,7 @@ const {
 // from the Firestore `useAdministrationAssignmentsQuery` / `useDistrictSupportCategoriesQuery`,
 // which also feed the table + subscore tables. They're unified onto the backend in the final
 // score-report cleanup PR once those components are migrated.
-const { data: scoreOverviewData } = useAdministrationScoreOverviewQuery(
+const { data: scoreOverviewData, isLoading: isLoadingScoreOverview } = useAdministrationScoreOverviewQuery(
   props.administrationId,
   props.orgType,
   props.orgId,
