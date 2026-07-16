@@ -94,13 +94,16 @@ describe('useAdministrationScoreStudentsQuery', () => {
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
 
-    vi.spyOn(VueQuery, 'useQuery');
+    let queryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      queryFn = options.queryFn;
+      return { data: { value: null }, error: { value: null } };
+    });
 
     withSetup(() => useAdministrationScoreStudentsQuery(administrationId, 'school', scopeId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
     const result = await queryFn();
 
     expect(mockListStudents).toHaveBeenCalledTimes(2);
