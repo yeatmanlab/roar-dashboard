@@ -72,8 +72,6 @@ describe('useAdministrationScoreFacetsQuery', () => {
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
 
-    vi.spyOn(VueQuery, 'useQuery');
-
     withSetup(() => useAdministrationScoreFacetsQuery(nanoid(), 'district', nanoid()), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
@@ -93,13 +91,15 @@ describe('useAdministrationScoreFacetsQuery', () => {
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
 
-    vi.spyOn(VueQuery, 'useQuery');
-
     withSetup(() => useAdministrationScoreFacetsQuery(administrationId, 'school', scopeId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
+
+    // Clear the call count from the auto-run so we can test the manual call
+    mockGetScoreFacets.mockClear();
+
     const result = await queryFn();
 
     expect(mockGetScoreFacets).toHaveBeenCalledTimes(1);
@@ -116,8 +116,6 @@ describe('useAdministrationScoreFacetsQuery', () => {
 
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
-
-    vi.spyOn(VueQuery, 'useQuery');
 
     withSetup(() => useAdministrationScoreFacetsQuery(nanoid(), 'school', nanoid()), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
@@ -151,7 +149,7 @@ describe('useAdministrationScoreFacetsQuery', () => {
     authStore.accessToken = 'test-token';
 
     let retryFn;
-    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+    vi.mocked(VueQuery.useQuery).mockImplementation((options) => {
       retryFn = options.retry;
       return { data: { value: null }, error: { value: null } };
     });
