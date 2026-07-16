@@ -6,6 +6,13 @@
   </div>
 </template>
 <script setup>
+/**
+ * @deprecated Superseded by TaskLevante.vue. The `vocab` task (LEVANTE Vocabulary
+ * Assessment) is launched through the roar-levante-tasks bundle via TaskLevante with
+ * `taskId: 'vocab'`; the /game/vocab routes now point there. This component still uses
+ * the legacy `@bdelab/roar-vocab` + `roarfirekit.startAssessment` path and is no longer
+ * routed. Kept temporarily to avoid deletions; slated for removal (ticket 1965 follow-up).
+ */
 import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
