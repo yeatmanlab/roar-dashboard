@@ -130,7 +130,7 @@ const draw = async () => {
 };
 
 watch(
-  [() => overviewDistributionChart.value, () => props.runs, () => props.supportLevelCounts, () => props.orgType],
+  [() => overviewDistributionChart.value, () => props.supportLevelCounts],
   () => {
     if (props.taskId !== 'letter') {
       draw();
