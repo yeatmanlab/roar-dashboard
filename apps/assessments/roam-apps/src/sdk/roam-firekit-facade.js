@@ -4,7 +4,7 @@ import {
   toRoamAlpacaScoreEntries,
   ROAM_ALPACA_TASK_IDS,
 } from '@roar-platform/assessment-schema/roam-apps';
-import { AssessmentStage } from '@roar-platform/assessment-schema';
+import { AssessmentStage, buildRawCountEntries, COMPOSITE_DOMAIN } from '@roar-platform/assessment-schema';
 import store from 'store2';
 
 /**
@@ -32,13 +32,15 @@ const STAGE_TO_SCORING_KEY = {
  * - `_getRawScores` — returns the accumulated counts in the
  *   `{ [subtask]: { practice: {...}, test: {...} } }` shape `computedScoreCallback`
  *   expects as its `rawScores` argument.
- * - `_getScoreAdapter` — returns the task-specific entry adapter from
- *   `@roar-platform/assessment-schema/roam-apps`: `toRoamAlpacaScoreEntries` for
- *   roam-alpaca, `toRoamFluencyScoreEntries` for fluency-arf/fluency-calf. The two
- *   differ in composite shape (alpaca emits theta/gradeEstimate and a single-string
- *   incorrectSkills; fluency emits per-operator nested incorrectSkills), so each
- *   task family needs its own adapter. taskName is read from config at call time so
- *   it reflects the running task (the base task ID scores.js branches on).
+ * - `_getScoreAdapter` — returns a function that converts computed scores to
+ *   ScoreEntry[] arrays. Internally:
+ *   1. Calls the task-specific entry adapter (`toRoamAlpacaScoreEntries` for
+ *      roam-alpaca, `toRoamFluencyScoreEntries` for fluency-arf/fluency-calf) to
+ *      generate test-phase entries from computedScoreCallback output.
+ *   2. Appends practice raw count entries (numCorrect, numAttempted, numIncorrect)
+ *      for each subtask and composite domain from the accumulator, since
+ *      computedScoreCallback only processes test-phase data.
+ *   taskName is read from config at call time so it reflects the running task.
  *
  * `computedScoreCallback` (passed to `writeTrial` in `initTrialSaving.js`) is
  * unchanged — it already reads session-store state (theta estimates, grade
@@ -95,7 +97,32 @@ export function wireScoreAdapter() {
   // corpus-derived domain is skipped rather than throwing mid-run.
   facade._getScoreAdapter = () => {
     const taskName = store.session.get('config')?.taskName;
-    return (computed) =>
-      taskName === ROAM_ALPACA_TASK_IDS.EN ? toRoamAlpacaScoreEntries(computed) : toRoamFluencyScoreEntries(computed);
+    return (computed) => {
+      // Test-phase entries via task-specific adapter (assessmentStage='test').
+      const entries =
+        taskName === ROAM_ALPACA_TASK_IDS.EN ? toRoamAlpacaScoreEntries(computed) : toRoamFluencyScoreEntries(computed);
+
+      // computedScoreCallback only processes test-phase data and ignores practice.
+      const compositePractice = { numCorrect: 0, numAttempted: 0, numIncorrect: 0 };
+
+      for (const [subtask, stages] of Object.entries(accumulator)) {
+        const practiceData = stages[AssessmentStage.PRACTICE];
+        if (!practiceData || practiceData.numAttempted === 0) continue;
+
+        entries.push(...buildRawCountEntries(subtask, practiceData, AssessmentStage.PRACTICE));
+
+        if (subtask !== COMPOSITE_DOMAIN) {
+          compositePractice.numCorrect += practiceData.numCorrect ?? 0;
+          compositePractice.numAttempted += practiceData.numAttempted ?? 0;
+          compositePractice.numIncorrect += practiceData.numIncorrect ?? 0;
+        }
+      }
+
+      if (compositePractice.numAttempted > 0) {
+        entries.push(...buildRawCountEntries(COMPOSITE_DOMAIN, compositePractice, AssessmentStage.PRACTICE));
+      }
+
+      return entries;
+    };
   };
 }
