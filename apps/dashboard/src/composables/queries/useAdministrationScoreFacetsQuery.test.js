@@ -6,14 +6,14 @@ import { nanoid } from 'nanoid';
 import { StatusCodes } from 'http-status-codes';
 import { withSetup } from '@/test-support/withSetup.js';
 import { useAuthStore } from '@/store/auth';
-import useAdministrationScoreStudentsQuery from './useAdministrationScoreStudentsQuery';
-import { ADMINISTRATION_SCORE_STUDENTS_QUERY_KEY } from '@/constants/queryKeys';
+import useAdministrationScoreFacetsQuery from './useAdministrationScoreFacetsQuery';
+import { ADMINISTRATION_SCORE_FACETS_QUERY_KEY } from '@/constants/queryKeys';
 
-const mockListStudents = vi.fn();
+const mockGetScoreFacets = vi.fn();
 
 vi.mock('@/clients/roar-api', () => ({
   getRoarApiClient: () => ({
-    administrations: { scoreReports: { listStudents: mockListStudents } },
+    administrations: { scoreReports: { getScoreFacets: mockGetScoreFacets } },
   }),
 }));
 
@@ -25,40 +25,42 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
-// Mirrors the real StudentScoresResponseSchema shape.
-const TASK_UUID = '11111111-1111-1111-1111-111111111111';
-const TASKS = [{ taskId: TASK_UUID, taskSlug: 'swr', taskName: 'Word', orderIndex: 0 }];
-const makeRow = (userId) => ({
-  user: { userId, firstName: 'A', lastName: 'B', grade: '3' },
-  scores: {
-    [TASK_UUID]: {
-      rawScore: 10,
-      percentile: 50,
-      standardScore: 100,
-      supportLevel: 'achievedSkill',
-      reliable: true,
-      engagementFlags: [],
-      optional: false,
-      completed: true,
+// Mirrors the real ScoreFacetsResponseSchema shape.
+const SUPPORT = { achievedSkill: { count: 3 }, developingSkill: { count: 2 }, needsExtraSupport: { count: 1 } };
+const FACETS_RESPONSE = {
+  totalStudents: 6,
+  computedAt: '2026-06-27T00:00:00.000Z',
+  tasks: [
+    {
+      taskId: '11111111-1111-1111-1111-111111111111',
+      taskSlug: 'swr',
+      taskName: 'Word',
+      orderIndex: 0,
+      supportLevelByGrade: [{ grade: '3', totalAssessed: 6, ...SUPPORT }],
+      supportLevelBySchool: [],
+      scoreBinsByGrade: [
+        {
+          grade: '3',
+          rawScore: [{ binStart: 100, binEnd: 130, count: 6 }],
+          percentile: [{ binStart: 0, binEnd: 10, count: 6 }],
+        },
+      ],
+      scoreBinsBySchool: [],
     },
-  },
-});
-const makePage = (page, totalPages, items) => ({
-  status: StatusCodes.OK,
-  body: {
-    data: { tasks: TASKS, items, pagination: { page, perPage: 100, totalItems: 2, totalPages }, exclusions: {} },
-  },
-});
+  ],
+};
 
-describe('useAdministrationScoreStudentsQuery', () => {
+const okResult = () => ({ status: StatusCodes.OK, body: { data: FACETS_RESPONSE } });
+
+describe('useAdministrationScoreFacetsQuery', () => {
   let piniaInstance;
   let queryClient;
 
   beforeEach(() => {
     piniaInstance = createTestingPinia();
     queryClient = new VueQuery.QueryClient({ defaultOptions: { queries: { retry: false } } });
-    mockListStudents.mockReset();
-    mockListStudents.mockResolvedValue(makePage(1, 1, [makeRow('u1')]));
+    mockGetScoreFacets.mockReset();
+    mockGetScoreFacets.mockResolvedValue(okResult());
   });
 
   afterEach(() => {
@@ -66,67 +68,63 @@ describe('useAdministrationScoreStudentsQuery', () => {
     vi.restoreAllMocks();
   });
 
-  it('calls useQuery with the student-scores key and a gated, readonly enabled', () => {
+  it('calls useQuery with the facets key and a gated, readonly enabled', () => {
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationScoreStudentsQuery(nanoid(), 'school', nanoid()), {
+    withSetup(() => useAdministrationScoreFacetsQuery(nanoid(), 'district', nanoid()), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     const call = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
-    expect(call.queryKey[0]).toBe(ADMINISTRATION_SCORE_STUDENTS_QUERY_KEY);
+    expect(call.queryKey[0]).toBe(ADMINISTRATION_SCORE_FACETS_QUERY_KEY);
     expect(call.queryFn).toBeInstanceOf(Function);
     expect(isRef(call.enabled)).toBe(true);
     expect(isReadonly(call.enabled)).toBe(true);
     expect(call.enabled.value).toBe(true);
   });
 
-  it('follows pagination and aggregates all pages into { students, tasks, exclusions }', async () => {
+  it('makes a single (non-paginated) request and unwraps the envelope', async () => {
     const administrationId = nanoid();
     const scopeId = nanoid();
-    mockListStudents
-      .mockResolvedValueOnce(makePage(1, 2, [makeRow('u1')]))
-      .mockResolvedValueOnce(makePage(2, 2, [makeRow('u2')]));
 
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationScoreStudentsQuery(administrationId, 'school', scopeId), {
+    withSetup(() => useAdministrationScoreFacetsQuery(administrationId, 'school', scopeId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
     const result = await queryFn();
 
-    expect(mockListStudents).toHaveBeenCalledTimes(2);
-    expect(mockListStudents).toHaveBeenNthCalledWith(1, {
+    expect(mockGetScoreFacets).toHaveBeenCalledTimes(1);
+    expect(mockGetScoreFacets).toHaveBeenCalledWith({
       params: { id: administrationId },
-      query: { page: 1, perPage: 100, scopeType: 'school', scopeId },
+      query: { scopeType: 'school', scopeId },
     });
-    expect(result.students.map((s) => s.user.userId)).toEqual(['u1', 'u2']);
-    expect(result.tasks).toEqual(TASKS);
-    expect(result.exclusions).toEqual({});
+    expect(result).toEqual(FACETS_RESPONSE);
+    expect(result.tasks[0].supportLevelByGrade[0]).toMatchObject({ grade: '3', achievedSkill: { count: 3 } });
   });
 
   it('throws when the API returns a non-200 status', async () => {
-    mockListStudents.mockResolvedValue({ status: StatusCodes.FORBIDDEN, body: {} });
+    mockGetScoreFacets.mockResolvedValue({ status: StatusCodes.BAD_REQUEST, body: {} });
 
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationScoreStudentsQuery(nanoid(), 'school', nanoid()), {
+    withSetup(() => useAdministrationScoreFacetsQuery(nanoid(), 'school', nanoid()), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
-    await expect(queryFn()).rejects.toThrow(/status 403/);
+    await expect(queryFn()).rejects.toThrow(/status 400/);
   });
 
   it('stays disabled until the access token and scopeId are available', async () => {
@@ -136,7 +134,7 @@ describe('useAdministrationScoreStudentsQuery', () => {
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationScoreStudentsQuery(nanoid(), 'school', scopeId), {
+    withSetup(() => useAdministrationScoreFacetsQuery(nanoid(), 'school', scopeId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -160,7 +158,7 @@ describe('useAdministrationScoreStudentsQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useAdministrationScoreStudentsQuery(nanoid(), 'school', nanoid()), {
+    withSetup(() => useAdministrationScoreFacetsQuery(nanoid(), 'school', nanoid()), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
