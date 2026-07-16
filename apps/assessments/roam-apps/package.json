@@ -2,6 +2,11 @@
   "name": "@roar-platform/roam-apps",
   "description": "Rapid Online Assessment of Math — fluency and core-math tasks for the ROAR platform",
   "version": "1.3.13",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "apps/assessments/roam-apps"
+  },
   "author": "Kruttika Bhat",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -65,7 +70,7 @@
     "@jspsych/plugin-survey-html-form": "^1.0.0",
     "@jspsych/plugin-survey-multi-select": "^1.1.0",
     "@jspsych/plugin-survey-text": "^1.1.0",
-    "@roar-platform/assessment-schema": "0.1.0",
+    "@roar-platform/assessment-schema": "^0.1.0",
     "@roar-platform/assessment-sdk": "^0.1.0",
     "detect-it": "^4.0.1",
     "firebase": "^11.5.0",
