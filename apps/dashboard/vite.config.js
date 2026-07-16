@@ -282,7 +282,7 @@ export default defineConfig(({ mode }) => {
                 // jspsych must be its own chunk so it initializes (and exports ParameterType) before
                 // any assessment plugin chunk that accesses ParameterType at module evaluation time.
                 jspsych: ['jspsych'],
-                roam: ['@bdelab/roam-apps'],
+                roam: ['@roar-platform/roam-apps'],
                 firekit: ['@bdelab/roar-firekit'],
                 letter: ['@roar-platform/roar-letter'],
                 multichoice: ['@roar-platform/roar-multichoice'],
