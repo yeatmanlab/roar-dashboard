@@ -49,26 +49,35 @@ const subscoreColumns = computed(() => subscoreData.value?.subscoreColumns ?? []
 const columns = computed(() => {
   const rows = students.value;
   const tableColumns = [];
-  if (rows.find((row) => row.user?.username)) {
-    tableColumns.push({ field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true });
+
+  // Always include identity columns to prevent layout shift during load.
+  // Show all possible identity columns if any data exists; during initial load,
+  // include them to stabilize the layout.
+  if (rows.length > 0 || isLoading.value) {
+    // Only add if at least one row has the field, or during loading to stabilize layout
+    if (rows.length === 0 || rows.find((row) => row.user?.username)) {
+      tableColumns.push({ field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true });
+    }
+    if (rows.length === 0 || rows.find((row) => row.user?.email)) {
+      tableColumns.push({ field: 'user.email', header: 'Email', dataType: 'text', pinned: true, sort: true });
+    }
+    if (rows.length === 0 || rows.find((row) => row.user?.firstName)) {
+      tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true });
+    }
+    if (rows.length === 0 || rows.find((row) => row.user?.lastName)) {
+      tableColumns.push({ field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true });
+    }
   }
-  if (rows.find((row) => row.user?.email)) {
-    tableColumns.push({ field: 'user.email', header: 'Email', dataType: 'text', pinned: true, sort: true });
-  }
-  if (rows.find((row) => row.user?.firstName)) {
-    tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true });
-  }
-  if (rows.find((row) => row.user?.lastName)) {
-    tableColumns.push({ field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true });
-  }
+
   tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true });
   if (props.orgType === 'district') {
     tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: true });
   }
 
   // One column per server-declared subscore; values are looked up by key from each
-  // row's `subscores` map. Sort is disabled because cells mix display strings
-  // ("15/19", comma lists) and numbers.
+  // row's `subscores` map. Sort is disabled uniformly because cells mix display
+  // strings ("15/19", comma lists) and numbers. In a future PR, the backend's
+  // TaskSubscoreColumnSchema could expose value types to enable per-column sorting.
   for (const column of subscoreColumns.value) {
     tableColumns.push({ field: `subscores.${column.key}`, header: column.label, dataType: 'text', sort: false });
   }
