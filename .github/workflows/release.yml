@@ -86,6 +86,7 @@ jobs:
             apps/assessments/roar-swr
             apps/assessments/roav-apps
             apps/assessments/roav-ran
+            apps/assessments/roam-apps
           )
 
           deployed=()
