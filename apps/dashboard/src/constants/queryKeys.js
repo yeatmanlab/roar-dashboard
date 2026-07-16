@@ -5,6 +5,7 @@ export const ADMINISTRATION_QUERY_KEY = 'administration';
 export const ADMINISTRATION_ASSIGNMENTS_QUERY_KEY = 'administration-assignments';
 export const ADMINISTRATION_PROGRESS_QUERY_KEY = 'administration-progress';
 export const ADMINISTRATION_PROGRESS_OVERVIEW_QUERY_KEY = 'administration-progress-overview';
+export const ADMINISTRATION_SCORE_OVERVIEW_QUERY_KEY = 'administration-score-overview';
 export const ADMINISTRATION_ASSIGNEES_QUERY_KEY = 'administration-assignees';
 export const ADMINISTRATION_TASK_VARIANTS_QUERY_KEY = 'administration-task-variants';
 export const ADMINISTRATION_AGREEMENTS_QUERY_KEY = 'administration-agreements';

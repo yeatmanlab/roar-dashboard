@@ -94,6 +94,7 @@ import {
   formatTaskSubscoreColumnValue,
   getSupportLevel,
   getScoreDisplay,
+  getSupportThreshold,
   parseScoreValue,
   resolveScoreFieldNames,
   PA_SKILL_THRESHOLD,
@@ -811,7 +812,15 @@ export function ReportService({
         return { totalStudents: 0, tasks: [], computedAt: new Date().toISOString() };
       }
 
-      // 4. Fetch UNFILTERED population in scope. Bin edges (step 8) need the
+      // 4. Scoring versions per variant (drives classification cutoffs and the
+      //    per-task support threshold). Resolved before the empty-population
+      //    early return below so `buildEmptyTaskFacet` can carry the threshold —
+      //    it's task-config metadata, well-defined even with zero students.
+      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
+      const allParams = await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds);
+      const scoringVersionByVariant = extractScoringVersions(allParams);
+
+      // 5. Fetch UNFILTERED population in scope. Bin edges (step 8) need the
       //    unfiltered set per the #1782 bin-edge-stability contract; filters
       //    are applied in JS in step 7. The admin window is threaded through
       //    so the strict overlap predicate is applied (#1792); facets does
@@ -825,15 +834,12 @@ export function ReportService({
       if (totalStudents === 0) {
         return {
           totalStudents,
-          tasks: taskGroups.map(({ representative }) => buildEmptyTaskFacet(representative)),
+          tasks: taskGroups.map(({ representative }) =>
+            buildEmptyTaskFacet(representative, scoringVersionByVariant.get(representative.taskVariantId) ?? null),
+          ),
           computedAt: new Date().toISOString(),
         };
       }
-
-      // 5. Scoring versions per variant (drives classification cutoffs).
-      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
-      const allParams = await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds);
-      const scoringVersionByVariant = extractScoringVersions(allParams);
 
       // 6. Bulk-fetch completed run scores for the full unfiltered population.
       const studentIds = students.map((s) => s.userId);
@@ -2528,12 +2534,13 @@ function studentMatchesUserFilter(student: StudentOverviewRow, filter: ParsedFil
 }
 
 /** Zero-state facet for a task with no students in scope. */
-function buildEmptyTaskFacet(task: ReportTaskMeta): ServiceTaskScoreFacet {
+function buildEmptyTaskFacet(task: ReportTaskMeta, scoringVersion: number | null): ServiceTaskScoreFacet {
   return {
     taskId: task.taskId,
     taskSlug: task.taskSlug,
     taskName: task.taskName,
     orderIndex: task.orderIndex,
+    supportThreshold: getSupportThreshold(task.taskSlug, scoringVersion),
     supportLevelByGrade: [],
     supportLevelBySchool: [],
     scoreBinsByGrade: [],
@@ -2770,6 +2777,12 @@ function aggregateTaskFacet({
     taskSlug: representative.taskSlug,
     taskName: representative.taskName,
     orderIndex: representative.orderIndex,
+    // Task-level metadata: resolved from the representative (lowest-orderIndex)
+    // variant's scoring version, matching the per-task dedup rule used above.
+    supportThreshold: getSupportThreshold(
+      representative.taskSlug,
+      scoringVersionByVariant.get(representative.taskVariantId) ?? null,
+    ),
     supportLevelByGrade,
     supportLevelBySchool,
     scoreBinsByGrade,

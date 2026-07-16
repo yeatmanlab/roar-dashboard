@@ -43,13 +43,19 @@
                 </div>
               </template>
             </ReportHeader>
-            <div v-if="isLoadingAssignments || isLoadingDistrictSupportCategories" class="loading-wrapper">
+            <div
+              v-if="isLoadingAssignments || isLoadingDistrictSupportCategories || isLoadingScoreOverview"
+              class="loading-wrapper"
+            >
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="text-sm font-light text-gray-600 uppercase">Loading Overview Charts</div>
             </div>
             <div
               v-if="
-                !isLoadingAssignments && !isLoadingDistrictSupportCategories && sortedAndFilteredTaskIds?.length > 0
+                !isLoadingAssignments &&
+                !isLoadingDistrictSupportCategories &&
+                !isLoadingScoreOverview &&
+                sortedAndFilteredTaskIds?.length > 0
               "
               class="py-3 mb-2 text-left bg-gray-100"
             >
@@ -58,11 +64,7 @@
                   <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
                     <div class="distribution-overview-wrapper">
                       <DistributionChartOverview
-                        :runs="
-                          props.orgType === 'district'
-                            ? aggregatedDistrictSupportCategories[taskId]
-                            : computeAssignmentAndRunData.runsByTaskId[taskId]
-                        "
+                        :support-level-counts="scoreOverviewBySlug[taskId]"
                         :initialized="initialized"
                         :task-id="taskId"
                         :org-type="props.orgType"
@@ -427,6 +429,7 @@ import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useAdministrationScoreOverviewQuery from '@/composables/queries/useAdministrationScoreOverviewQuery';
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
@@ -515,6 +518,25 @@ const {
 } = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId, {
   enabled: computed(() => initialized.value && props.orgType === 'district'),
 });
+
+// Server-computed support-level distributions per task: the source of the "at a glance"
+// chart VALUES, scoped to this org/class/group. Keyed by task slug to match the slug-based
+// `sortedAndFilteredTaskIds` the template iterates.
+//
+// NOTE (incremental): only the chart values move to the backend here. Which tasks show a
+// chart (`sortedAndFilteredTaskIds`) and the district loading / empty-state still derive
+// from the Firestore `useAdministrationAssignmentsQuery` / `useDistrictSupportCategoriesQuery`,
+// which also feed the table + subscore tables. They're unified onto the backend in the final
+// score-report cleanup PR once those components are migrated.
+const { data: scoreOverviewData, isLoading: isLoadingScoreOverview } = useAdministrationScoreOverviewQuery(
+  props.administrationId,
+  props.orgType,
+  props.orgId,
+  { enabled: initialized },
+);
+const scoreOverviewBySlug = computed(() =>
+  Object.fromEntries((scoreOverviewData.value?.tasks ?? []).map((task) => [task.taskSlug, task.supportLevels])),
+);
 
 const getScoringVersions = computed(() => {
   if (!administrationData.value?.assessments) return {};
