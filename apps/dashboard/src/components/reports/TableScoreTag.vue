@@ -181,6 +181,8 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
 
 function getFlags(colData, taskId) {
   const flags = colData.scores[taskId]?.engagementFlags;
+  // engagementFlags may be an array (backend score shape) or a legacy object map — normalize.
+  const flagKeys = Array.isArray(flags) ? flags : Object.keys(flags ?? {});
   const flagMessages = {
     accuracyTooLow: 'Responses were inaccurate',
     notEnoughResponses: `Incomplete. This student may retake ${
@@ -194,14 +196,14 @@ function getFlags(colData, taskId) {
   if (flags && !colData.scores[taskId].reliable) {
     if (includedValidityFlags[taskId]) {
       // only display flags that are included in the includedValidityFlags object
-      const filteredFlags = Object.keys(flags).filter((flag) => includedValidityFlags[taskId].includes(flag));
+      const filteredFlags = flagKeys.filter((flag) => includedValidityFlags[taskId].includes(flag));
       const reliabilityFlags = filteredFlags.map((flag) => {
         return flagMessages[flag] || _lowerCase(flag);
       });
       if (reliabilityFlags.length === 0) return '';
       return 'Unreliable Score' + '\n' + ' - ' + reliabilityFlags.join('\n - ') + '\n\n';
     } else {
-      const reliabilityFlags = Object.keys(flags).map((flag) => {
+      const reliabilityFlags = flagKeys.map((flag) => {
         return flagMessages[flag] || _lowerCase(flag);
       });
       if (reliabilityFlags.length > 0) {
