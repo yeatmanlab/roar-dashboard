@@ -424,7 +424,7 @@ import { i18n } from '@/translations/i18n';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
 import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
-import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
+import { CSV_EXPORT_STATIC_COLUMNS, CSV_EXPORT_COMPOSITE_SCORE_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '@/constants/levanteTasks';
@@ -1427,7 +1427,7 @@ const viewOptions = ref([
  */
 
 const createExportData = ({ rows, includeProgress = false }) => {
-  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate }) => {
+  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate, compositeScore }) => {
     let tableRow = {
       Username: user?.username,
       Email: user?.email, // This will only be used when exporting all rows
@@ -1442,6 +1442,13 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
     tableRow['Start Date'] = startDate ? new Date(startDate).toLocaleDateString('en-US') : null;
     tableRow['Completion Date'] = completionDate ? new Date(completionDate).toLocaleDateString('en-US') : null;
+
+    if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+      tableRow['Composite Score - Percentile'] = compositeScore?.percentile;
+      tableRow['Composite Score - Standard'] = compositeScore?.standardScore;
+      tableRow['Composite Score - Raw'] = compositeScore?.rawScore;
+      tableRow['Composite Score - Support Level'] = compositeScore?.supportLevel;
+    }
 
     if (props.orgType === 'district') {
       tableRow['School'] = user?.schoolName;
@@ -1608,6 +1615,10 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
 
   // Define the static columns
   const staticColumns = [...CSV_EXPORT_STATIC_COLUMNS];
+
+  if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+    staticColumns.push(...CSV_EXPORT_COMPOSITE_SCORE_COLUMNS);
+  }
 
   if (orgData.value?.clever === true) {
     staticColumns.push('State ID');
