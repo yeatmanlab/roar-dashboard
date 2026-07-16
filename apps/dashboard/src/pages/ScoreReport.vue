@@ -43,13 +43,19 @@
                 </div>
               </template>
             </ReportHeader>
-            <div v-if="isLoadingAssignments || isLoadingDistrictSupportCategories" class="loading-wrapper">
+            <div
+              v-if="isLoadingAssignments || isLoadingDistrictSupportCategories || isLoadingScoreOverview"
+              class="loading-wrapper"
+            >
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="text-sm font-light text-gray-600 uppercase">Loading Overview Charts</div>
             </div>
             <div
               v-if="
-                !isLoadingAssignments && !isLoadingDistrictSupportCategories && sortedAndFilteredTaskIds?.length > 0
+                !isLoadingAssignments &&
+                !isLoadingDistrictSupportCategories &&
+                !isLoadingScoreOverview &&
+                sortedAndFilteredTaskIds?.length > 0
               "
               class="py-3 mb-2 text-left bg-gray-100"
             >
@@ -522,7 +528,7 @@ const {
 // from the Firestore `useAdministrationAssignmentsQuery` / `useDistrictSupportCategoriesQuery`,
 // which also feed the table + subscore tables. They're unified onto the backend in the final
 // score-report cleanup PR once those components are migrated.
-const { data: scoreOverviewData } = useAdministrationScoreOverviewQuery(
+const { data: scoreOverviewData, isLoading: isLoadingScoreOverview } = useAdministrationScoreOverviewQuery(
   props.administrationId,
   props.orgType,
   props.orgId,
