@@ -122,6 +122,7 @@ const webConfig = merge(commonConfig, {
       org: 'roar-89588e380',
       project: 'roam',
       authToken: process.env.SENTRY_AUTH_TOKEN,
+      deleteSourcemapsAfterUpload: true,
       debug: true,
       errorHandler: (err) => {
         console.warn(err);
@@ -132,6 +133,7 @@ const webConfig = merge(commonConfig, {
 
 const productionConfig = merge(webConfig, {
   mode: 'production',
+  devtool: false,
 });
 
 const developmentConfig = merge(webConfig, {
@@ -144,6 +146,17 @@ const developmentConfig = merge(webConfig, {
     client: {
       overlay: false,
     },
+    // Proxy /v1 to the local backend so the browser sees a same-origin request —
+    // no CORS headers needed on the backend. Mirrors how Firebase Hosting proxies
+    // to Cloud Run in staging/production.
+    proxy: [
+      {
+        context: ['/v1'],
+        target: process.env.BACKEND_URL ?? 'https://localhost:4000',
+        secure: false,
+        changeOrigin: true,
+      },
+    ],
   },
 });
 
@@ -155,6 +168,9 @@ module.exports = async (env, args) => {
       new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
+        // Default to '/v1' so dev builds use relative URLs proxied by webpack-dev-server.
+        // Set ROAR_API_BASE_URL for production — full URL including /v1.
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || '/v1'),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
@@ -162,9 +178,23 @@ module.exports = async (env, args) => {
     ],
   };
 
+  // Firebase config is injected via EnvironmentPlugin only for local dev builds.
+  // Staging and production deployments fetch firebase config at runtime from /__/firebase/init.json
+  // (served automatically by Firebase Hosting), so no secrets enter the build pipeline.
+  const devFirebaseConfig = {
+    plugins: [
+      new webpack.EnvironmentPlugin({
+        // Empty string by default — connectAuthEmulator() in serve.js only fires when
+        // this is explicitly set (e.g. by assessment-environment:up). Regular dev builds
+        // connecting to a real Firebase project are unaffected.
+        FIREBASE_AUTH_EMULATOR_HOST: '',
+      }),
+    ],
+  };
+
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig);
+      return merge(developmentConfig, envDependentConfig, devFirebaseConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:

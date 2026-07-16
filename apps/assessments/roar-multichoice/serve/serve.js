@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
-import { getMultichoiceTaskId } from '@roar-platform/assessment-schema/roar-multichoice';
+import { getMultichoiceTaskId, MULTICHOICE_TASKS } from '@roar-platform/assessment-schema/roar-multichoice';
 import RoarMultichoice from '../src/experiment/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
@@ -15,6 +15,9 @@ const urlParams = new URLSearchParams(queryString);
 // Task family — 'morphology' or 'cva' (English only)
 const task = urlParams.get('task') ?? 'morphology';
 const taskId = getMultichoiceTaskId(task);
+
+// The dev variant picker lists every published variant across all multichoice tasks.
+const PICKER_TASK_IDS = [...MULTICHOICE_TASKS];
 
 // Participant / session
 const assessmentPid = urlParams.get('participant');
@@ -69,7 +72,7 @@ onAuthStateChanged(auth, async (user) => {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,
-          taskId,
+          taskId: PICKER_TASK_IDS,
           currentVariantId: resolvedVariantId,
         });
       }
