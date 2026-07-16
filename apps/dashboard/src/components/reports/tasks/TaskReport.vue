@@ -8,7 +8,7 @@
     </div>
   </div>
   <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
-    <div v-if="orgType === 'district'" class="mb-3" data-html2canvas-ignore="true">
+    <div v-if="hasSchoolFacets" class="mb-3" data-html2canvas-ignore="true">
       <div class="flex uppercase text-xs font-light justify-content-center align-items-center">view rows by</div>
       <PvSelectButton
         v-model="facetMode"
@@ -26,7 +26,7 @@
           :org-type="orgType"
           :org-id="orgId"
           :task-id="taskId"
-          :runs="runs"
+          :facets="facets"
           :facet-mode="facetMode"
         />
       </div>
@@ -37,7 +37,7 @@
           :org-type="orgType"
           :org-id="orgId"
           :task-id="taskId"
-          :runs="runs"
+          :facets="facets"
           :facet-mode="facetMode"
           :min-grade-by-runs="minGradeByRuns"
         />
@@ -166,9 +166,11 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  runs: {
-    type: Array,
-    required: true,
+  facets: {
+    // Per-task facet aggregation from `getScoreFacets`; null while loading.
+    type: Object,
+    required: false,
+    default: null,
   },
   taskScoringVersions: {
     type: Object,
@@ -184,25 +186,22 @@ const facetModes = [
   { name: 'School', key: 'schoolName' },
 ];
 
+// Kindergarten / "0" sort as grade 0; everything else is its numeric grade.
+const gradeNumeric = (grade) => (grade === '0' || grade === 'Kindergarten' ? 0 : Number(grade));
+
+// Lowest grade present in the task's grade facets — drives whether the facet chart
+// offers the Raw/Percentile toggle (percentile is meaningful for early grades only).
 const minGradeByRuns = computed(() => {
-  if (props.orgType === 'district') {
-    // For district, props.runs is an object with support categories
-    // We need to extract all grade values from the nested structure
-    if (!props.runs || typeof props.runs !== 'object') {
-      return 0;
-    }
-    const allGrades = [];
-    Object.values(props.runs).forEach((category) => {
-      if (category && typeof category === 'object' && category.grades) {
-        allGrades.push(...Object.keys(category.grades));
-      }
-    });
-    return allGrades.length > 0 ? Math.min(...allGrades.map(Number)) : 0;
-  }
-  return Math.min(
-    ...props.runs.filter((run) => run.scores.rawScore || run.scores.stdPercentile).map((run) => run.grade),
-  );
+  const grades = (props.facets?.scoreBinsByGrade ?? [])
+    .map((entry) => gradeNumeric(entry.grade))
+    .filter((n) => Number.isFinite(n));
+  return grades.length ? Math.min(...grades) : 0;
 });
+
+// The school-facet toggle is shown only when the backend supplies school facets,
+// which happens at district scope (empty arrays elsewhere). This replaces the prior
+// explicit `orgType === 'district'` check — the data drives the UI.
+const hasSchoolFacets = computed(() => (props.facets?.supportLevelBySchool?.length ?? 0) > 0);
 
 const taskDesc = computed(() => {
   return replaceScoreRange(taskInfoById[props.taskId]?.desc, props.taskId, props.taskScoringVersions[props.taskId]);
