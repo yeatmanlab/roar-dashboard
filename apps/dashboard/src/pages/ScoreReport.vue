@@ -1160,9 +1160,12 @@ const computeAssignmentAndRunData = computed(() => {
               numCorrect: null,
               numIncorrect: null,
               numAttempted: null,
+              rawScore: null,
               isNewScoring,
             });
           }
+
+          //Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, numAttempted, isNewScoring });
 
           currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
           currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
