@@ -11,7 +11,7 @@ import type { TaskSeedConfig } from '../task-seed-configs';
 
 const { ROAV_MP_TASK_ID, ROAV_RVP_TASK_ID } = roavApps;
 
-const KNOWN_TASK_IDS = new Set([ROAV_MP_TASK_ID, ROAV_RVP_TASK_ID]);
+const KNOWN_TASK_IDS = new Set<string>([ROAV_MP_TASK_ID, ROAV_RVP_TASK_ID]);
 
 export const roavAppsConfig: TaskSeedConfig = {
   tasks: {

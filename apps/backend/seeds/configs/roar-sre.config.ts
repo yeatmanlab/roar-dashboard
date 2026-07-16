@@ -17,8 +17,8 @@ import type { TaskSeedConfig } from '../task-seed-configs';
 
 const { SRE_TASK_IDS, SRE_LANGUAGES, SRE_SCORING_VERSION } = sre;
 
-const VALID_SCORING_VERSIONS = new Set(Object.values(SRE_SCORING_VERSION));
-const SUPPORTED_LANGUAGES = new Set(Object.values(SRE_LANGUAGES).map((l) => l.code));
+const VALID_SCORING_VERSIONS = new Set<number>(Object.values(SRE_SCORING_VERSION));
+const SUPPORTED_LANGUAGES = new Set<string>(Object.values(SRE_LANGUAGES).map((l) => l.code));
 
 export const sreConfig: TaskSeedConfig = {
   tasks: {
@@ -72,6 +72,8 @@ export const sreConfig: TaskSeedConfig = {
         );
       }
     }
+
+    return true;
   },
   /** Routes each variant to its language-specific task via the `lng` param. */
   resolveTaskId(params) {

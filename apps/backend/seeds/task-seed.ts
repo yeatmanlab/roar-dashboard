@@ -41,12 +41,19 @@ if (!taskArg) {
   process.exit(1);
 }
 
-const config: TaskSeedConfig | undefined = TASK_SEED_CONFIGS[taskArg];
-if (!config) {
-  const available = Object.keys(TASK_SEED_CONFIGS).join(', ');
-  console.error(`Unknown task "${taskArg}". Available tasks: ${available}`);
-  process.exit(1);
+// Resolved via a function so `config` is typed non-optional — narrowing on a
+// module-level binding doesn't propagate into the functions below.
+function resolveConfig(name: string): TaskSeedConfig {
+  const resolved = TASK_SEED_CONFIGS[name];
+  if (!resolved) {
+    const available = Object.keys(TASK_SEED_CONFIGS).join(', ');
+    console.error(`Unknown task "${name}". Available tasks: ${available}`);
+    process.exit(1);
+  }
+  return resolved;
 }
+
+const config: TaskSeedConfig = resolveConfig(taskArg);
 
 // ─── Environment ─────────────────────────────────────────────────────────────
 

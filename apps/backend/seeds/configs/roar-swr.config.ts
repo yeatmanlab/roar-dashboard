@@ -14,7 +14,7 @@ import type { TaskSeedConfig } from '../task-seed-configs';
 
 const { SWR_TASK_IDS, SWR_LANGUAGES, SWR_SCORING_VERSION } = swr;
 
-const VALID_SCORING_VERSIONS = new Set(Object.values(SWR_SCORING_VERSION));
+const VALID_SCORING_VERSIONS = new Set<number>(Object.values(SWR_SCORING_VERSION));
 
 export const swrConfig: TaskSeedConfig = {
   tasks: {
@@ -63,7 +63,7 @@ export const swrConfig: TaskSeedConfig = {
     if (!lng) throw new Error(`${loc}: "lng" is required`);
 
     // lng must be a known SWR language code (e.g., "en", "es", "it", "pt", "de")
-    const validLanguages = new Set(Object.values(SWR_LANGUAGES).map((l) => l.code));
+    const validLanguages = new Set<string>(Object.values(SWR_LANGUAGES).map((l) => l.code));
     if (!validLanguages.has(lng)) {
       throw new Error(`${loc}: unsupported lng "${lng}". Valid: ${[...validLanguages].join(', ')}`);
     }

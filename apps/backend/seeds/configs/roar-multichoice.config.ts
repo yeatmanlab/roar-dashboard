@@ -13,7 +13,7 @@ import type { TaskSeedConfig } from '../task-seed-configs';
 
 const { MORPHOLOGY_TASK_ID, CVA_TASK_ID, MULTICHOICE_SCORING_VERSION } = multichoice;
 
-const VALID_SCORING_VERSIONS = new Set(Object.values(MULTICHOICE_SCORING_VERSION));
+const VALID_SCORING_VERSIONS = new Set<number>(Object.values(MULTICHOICE_SCORING_VERSION));
 
 export const multichoiceConfig: TaskSeedConfig = {
   tasks: {

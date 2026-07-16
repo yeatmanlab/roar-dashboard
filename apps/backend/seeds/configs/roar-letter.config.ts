@@ -19,8 +19,18 @@ import type { TaskSeedConfig } from '../task-seed-configs';
 
 const { LETTER_TASK_IDS, PHONICS_TASK_IDS, LETTER_LANGUAGES, LETTER_SCORING_VERSION } = letter;
 
-const VALID_SCORING_VERSIONS = new Set(Object.values(LETTER_SCORING_VERSION));
+const VALID_SCORING_VERSIONS = new Set<number>(Object.values(LETTER_SCORING_VERSION));
 const SUPPORTED_LANGUAGES = new Set(Object.keys(LETTER_LANGUAGES));
+
+/**
+ * Valid values of the `task` variant parameter — the task-family discriminator.
+ * Distinct from the seeded task IDs (LETTER_TASK_IDS / PHONICS_TASK_IDS): a
+ * Spanish variant has `task: 'letter'` but resolves to the `letter-es` task ID.
+ */
+const TASK_PARAM = {
+  LETTER: 'letter',
+  PHONICS: 'phonics',
+} as const;
 
 export const letterConfig: TaskSeedConfig = {
   tasks: {
@@ -47,11 +57,11 @@ export const letterConfig: TaskSeedConfig = {
   },
   validateVariant(loc, params) {
     const task = params.task as string | undefined;
-    if (task !== 'letter' && task !== 'phonics') {
-      throw new Error(`${loc}: "task" must be "letter" or "phonics", got "${task}"`);
+    if (task !== TASK_PARAM.LETTER && task !== TASK_PARAM.PHONICS) {
+      throw new Error(`${loc}: "task" must be "${TASK_PARAM.LETTER}" or "${TASK_PARAM.PHONICS}", got "${task}"`);
     }
 
-    if (task === 'letter') {
+    if (task === TASK_PARAM.LETTER) {
       const language = params.language as string | undefined;
       if (!language) throw new Error(`${loc}: "language" is required for letter tasks`);
 
@@ -71,6 +81,8 @@ export const letterConfig: TaskSeedConfig = {
         }
       }
     }
+
+    return true;
   },
   /**
    * Routes variants to their task by `params.task` and `params.language`:
@@ -80,7 +92,7 @@ export const letterConfig: TaskSeedConfig = {
   resolveTaskId(params) {
     const language = params.language as string | undefined;
     const task = params.task as string | undefined;
-    if (task === 'phonics') return PHONICS_TASK_IDS.EN;
+    if (task === TASK_PARAM.PHONICS) return PHONICS_TASK_IDS.EN;
     if (!language || language === 'en') return LETTER_TASK_IDS.EN;
     if (language === 'es') return LETTER_TASK_IDS.ES;
     if (language === 'en-CA' || language === 'en-ca') return LETTER_TASK_IDS.EN_CA;

@@ -99,7 +99,7 @@ export const levanteConfig: TaskSeedConfig = {
   resolveTaskId(params) {
     const taskName = params.taskName as string | undefined;
     if (!taskName) throw new Error('"taskName" is required in params for levante tasks');
-    const knownIds = new Set(Object.values(ALL_LEVANTE_TASK_IDS));
+    const knownIds = new Set<string>(Object.values(ALL_LEVANTE_TASK_IDS));
     if (!knownIds.has(taskName)) {
       throw new Error(`Unknown levante taskName "${taskName}". Known: ${[...knownIds].join(', ')}`);
     }
