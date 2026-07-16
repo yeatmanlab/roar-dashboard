@@ -94,10 +94,7 @@ import {
   formatTaskSubscoreColumnValue,
   getSupportLevel,
   getScoreDisplay,
-<<<<<<< enh/score-report-support-threshold
   getSupportThreshold,
-=======
->>>>>>> project/backend-refactor
   parseScoreValue,
   resolveScoreFieldNames,
   PA_SKILL_THRESHOLD,
