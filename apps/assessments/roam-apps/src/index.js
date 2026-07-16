@@ -1,7 +1,7 @@
 /*
 Defines the main task class.
 1. Sets the input variables
-2. Starts the ROAR firekit run function
+2. Starts the ROAR run via the assessment-sdk
 3. Gets task variables,loads corpus (csv files with questions), builds timeline, initializes jspsych and runs timeline.
 4. Imports css styles.
 */
@@ -11,31 +11,34 @@ import { camelize, generateAssetObject, createPreloadTrials } from '@bdelab/roar
 import './styles/game.scss'; //getting all the css styles
 import { initSentry } from './sentry';
 import taskConfig from './tasks/taskConfig';
-import { checkAudio, isTaskFinished } from './tasks/shared/helpers';
+import { checkAudio, isTaskComplete, isTaskFinished } from './tasks/shared/helpers';
 import i18next from 'i18next';
+import { startRun, abortRun } from '@roar-platform/assessment-sdk/compat/firekit';
+import { wireScoreAdapter } from './sdk/roam-firekit-facade';
 
 export let mediaAssets;
 export let preloadTrials;
 export class TaskLauncher {
-  constructor(firekit, gameParams, userParams, displayElement) {
+  constructor(gameParams, userParams, isDev = false, displayElement) {
     this.gameParams = gameParams;
     this.userParams = userParams;
-    this.firekit = firekit;
+    this.isDev = isDev;
     this.displayElement = displayElement;
   }
 
   async init() {
-    //Start the ROAR run. Push the task and run info to Firestore.
+    //Start the ROAR run. Push the task and run info to the backend.
     //Call this method before starting the jsPsych experiment.
     initSentry();
-    await this.firekit.startRun();
+    wireScoreAdapter();
+    await startRun(this.userParams);
 
     const { taskName } = this.gameParams;
 
     const { initConfig, loadCorpus, buildTaskTimeline, bucketURI, assets } = taskConfig[camelize(taskName)];
 
     //cleans the parameters and sets other variables (time, number of trials, corpus name)
-    const config = await initConfig(this.firekit, this.gameParams, this.userParams, this.displayElement);
+    const config = await initConfig(this.gameParams, this.userParams, this.displayElement);
     //store this data in the browser
     store.session.set('config', config);
 
@@ -55,7 +58,11 @@ export class TaskLauncher {
     const { jsPsych, timeline } = await this.init();
     jsPsych.opts.show_progress_bar = this.gameParams.taskName === 'roam-alpaca' ? false : true;
     jsPsych.run(timeline);
-    await isTaskFinished(() => this.firekit.run.completed === true);
+    await isTaskFinished(() => isTaskComplete());
+  }
+
+  abort() {
+    abortRun().catch((err) => console.warn('[roam-apps] abortRun failed:', err));
   }
 }
 

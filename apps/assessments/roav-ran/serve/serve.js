@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
+import { RAN_TASK_ID, SYMBOL_SEARCH_TASK_ID } from '@roar-platform/assessment-schema/roav-ran';
 import TaskLauncher from '../src/experiment/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig.js';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
@@ -14,6 +15,9 @@ const urlParams = new URLSearchParams(queryString);
 // Task selection: variantId wins; otherwise taskId resolves to the first published variant.
 // roav-ran is English-only, so the task slug is used directly (no language suffix).
 const taskId = urlParams.get('task') ?? 'ran';
+
+// The dev variant picker lists every published variant across all roav-ran tasks.
+const PICKER_TASK_IDS = [RAN_TASK_ID, SYMBOL_SEARCH_TASK_ID];
 const variantId = urlParams.get('variantId');
 const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 
@@ -68,7 +72,7 @@ onAuthStateChanged(auth, async (user) => {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,
-          taskId,
+          taskId: PICKER_TASK_IDS,
           currentVariantId: resolvedVariantId,
         });
       }

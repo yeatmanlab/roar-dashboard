@@ -1,0 +1,141 @@
+[
+  {
+    "variantName": "math-facts-2afc-school",
+    "params": {
+      "audio": true,
+      "consent": false,
+      "keyboardPractice": false,
+      "labId": "YeatmanLab",
+      "language": "en",
+      "recruitment": "school",
+      "responseMode": "2afc",
+      "storyOption": false,
+      "taskName": "fluency-arf",
+      "userMode": "default"
+    }
+  },
+  {
+    "variantName": "un-dígito-school-nostory-keyboardPractice",
+    "params": {
+      "audio": true,
+      "consent": false,
+      "keyboardPractice": true,
+      "labId": "YeatmanLab",
+      "language": "es",
+      "recruitment": "school",
+      "responseMode": "production",
+      "storyOption": false,
+      "taskName": "fluency-arf",
+      "userMode": "default"
+    }
+  },
+  {
+    "variantName": "pt-um-dígito-school-nostory-keyboardPractice",
+    "params": {
+      "audio": true,
+      "consent": false,
+      "keyboardPractice": true,
+      "labId": "YeatmanLab",
+      "language": "pt",
+      "recruitment": "school",
+      "responseMode": "production",
+      "storyOption": false,
+      "taskName": "fluency-arf",
+      "userMode": "default"
+    }
+  },
+  {
+    "variantName": "calculation-fluency-6afc-school-v0226",
+    "params": {
+      "audio": true,
+      "consent": false,
+      "corpusName": "items_v0226",
+      "keyboardPractice": false,
+      "labId": "YeatmanLab",
+      "language": "en",
+      "recruitment": "school",
+      "responseMode": "6afc",
+      "storyOption": false,
+      "taskName": "fluency-calf",
+      "userMode": "default"
+    }
+  },
+  {
+    "variantName": "varios-dígitos-school-nostory-keyboardPractice",
+    "params": {
+      "audio": true,
+      "consent": false,
+      "keyboardPractice": true,
+      "labId": "YeatmanLab",
+      "language": "es",
+      "recruitment": "school",
+      "responseMode": "production",
+      "storyOption": false,
+      "taskName": "fluency-calf",
+      "userMode": "default"
+    }
+  },
+  {
+    "variantName": "pt-vários-dígitos-school-nostory-keyboardPractice",
+    "params": {
+      "audio": true,
+      "consent": false,
+      "keyboardPractice": true,
+      "labId": "YeatmanLab",
+      "language": "pt",
+      "recruitment": "school",
+      "responseMode": "production",
+      "storyOption": false,
+      "taskName": "fluency-calf",
+      "userMode": "default"
+    }
+  },
+  {
+    "variantName": "core-math-school-v0825",
+    "params": {
+      "audio": true,
+      "consent": false,
+      "corpusName": "items_v0825",
+      "keyboardPractice": true,
+      "labId": "YeatmanLab",
+      "language": "en",
+      "recruitment": "school",
+      "responseMode": "production",
+      "storyOption": false,
+      "taskName": "roam-alpaca",
+      "userMode": "default"
+    }
+  },
+  {
+    "variantName": "core-math-school-untimed-v0825",
+    "params": {
+      "audio": true,
+      "consent": false,
+      "corpusName": "items_v0825",
+      "keyboardPractice": true,
+      "labId": "YeatmanLab",
+      "language": "en",
+      "recruitment": "school",
+      "responseMode": "production",
+      "storyOption": false,
+      "taskName": "roam-alpaca",
+      "userMode": "untimed"
+    }
+  },
+  {
+    "variantName": "pt-core-math-school-v0825",
+    "params": {
+      "audio": true,
+      "consent": false,
+      "corpusName": "items_v0825",
+      "keyboardPractice": true,
+      "labId": "YeatmanLab",
+      "language": "pt",
+      "recruitment": "school",
+      "responseMode": "production",
+      "storyOption": false,
+      "taskName": "roam-alpaca",
+      "userMode": "default"
+    }
+  }
+]

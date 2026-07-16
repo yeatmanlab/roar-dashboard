@@ -44,7 +44,7 @@ export const practiceStimulusDesktop = {
   },
   data: {
     // Here is where we specify that we should save the trial to Firestore
-    assessment_stage: 'practice_response',
+    assessment_stage: 'practice',
   },
   on_load: () => {
     document.getElementById('practice_number').focus();
@@ -157,7 +157,7 @@ export const feedbackIncorrectDesktop = {
   },
   data: {
     // Here is where we specify that we should save the trial to Firestore
-    assessment_stage: 'practice_response',
+    assessment_stage: 'practice',
   },
   on_load: () => {
     document.getElementById('practice_number').focus();

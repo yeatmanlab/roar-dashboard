@@ -31,6 +31,9 @@ const useParameterValidation = urlParams.get('useParameterValidation') === 'true
 const lngParam = urlParams.get('lng') ?? 'en';
 const language = SRE_LANGUAGES[lngParam] ?? SRE_LANGUAGES.en;
 
+// The dev variant picker lists every published variant across all SRE language tasks.
+const PICKER_TASK_IDS = Object.values(SRE_LANGUAGES).map((l) => l.taskId);
+
 // App config
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -72,7 +75,7 @@ onAuthStateChanged(auth, async (user) => {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,
-          taskId: language.taskId,
+          taskId: PICKER_TASK_IDS,
           currentVariantId: resolvedVariantId,
         });
       }

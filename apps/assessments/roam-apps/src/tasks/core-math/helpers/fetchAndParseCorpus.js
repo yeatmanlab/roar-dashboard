@@ -310,7 +310,7 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
           current_item['demoNumbers'] = current_item['lead_raw'][0].replace(/[^0-9]/g, '');
         }
       }
-      current_item['assessment_stage'] = 'practice_response';
+      current_item['assessment_stage'] = 'practice';
 
       stimulusArray.push(current_item);
       itemType.push(current_item['item_type']);
@@ -369,7 +369,7 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
 
     current_item['countDownAppears'] = current_item['time_limit'] - current_item['countdown_time'] * 1000;
 
-    current_item['assessment_stage'] = 'test_response';
+    current_item['assessment_stage'] = 'test';
 
     stimulusArray.push(current_item);
     itemType.push(current_item['item_type']);
