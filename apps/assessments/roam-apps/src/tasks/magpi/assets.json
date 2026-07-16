@@ -1,0 +1,9 @@
+{
+  "default": {
+    "languageSpecific": {
+      "device": ["navigation-instruction.mp3"],
+      "shared": []
+    },
+    "shared": ["nullAudio.mp3", "neutral-sound-cut.mp3", "goButtonRectangleYellow.png"]
+  }
+}

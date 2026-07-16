@@ -78,3 +78,27 @@ describe('app middleware wiring', () => {
     expect(requestLog.info).toHaveBeenCalled();
   });
 });
+
+describe('app JSON body limit', () => {
+  // app.ts raises express.json()'s limit from the 100kb default to 1mb (mirroring the legacy
+  // Firestore per-document ceiling). This is a global change affecting every endpoint, so
+  // assert the boundary directly to lock in the intent and catch an accidental revert.
+  it('rejects a JSON body larger than 1mb with 413', async () => {
+    const oversized = { data: 'x'.repeat(1024 * 1024 + 1024) }; // ~1mb + 1kb of payload
+
+    const res = await request(app).post('/v1/anything').send(oversized);
+
+    expect(res.status).toBe(413);
+  });
+
+  it('accepts a JSON body under 1mb — express.json parses it and passes it on to routing', async () => {
+    const underLimit = { data: 'x'.repeat(512 * 1024) }; // ~512kb, comfortably under 1mb
+
+    const res = await request(app).post('/v1/anything').send(underLimit);
+
+    // Parses without a size error, so it reaches the catch-all (no route matches) → 404,
+    // and crucially NOT 413. A 100kb default would have rejected this body.
+    expect(res.status).not.toBe(413);
+    expect(res.status).toBe(404);
+  });
+});

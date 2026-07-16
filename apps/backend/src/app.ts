@@ -17,7 +17,10 @@ const app = express();
 app.use(requestLogger);
 app.use(securityHeadersMiddleware);
 app.use(corsMiddleware);
-app.use(express.json());
+// Mirror the ~1 MiB per-document ceiling of the legacy Firestore write path (which bypassed
+// this backend) rather than Express's 100 KB default, so clients sized against Firestore keep
+// working.
+app.use(express.json({ limit: '1mb' }));
 
 app.use(healthRouter);
 

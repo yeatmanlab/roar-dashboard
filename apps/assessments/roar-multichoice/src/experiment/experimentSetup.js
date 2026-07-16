@@ -411,6 +411,11 @@ export const setNextStimulus = () => {
 
   store.session.set('catName', catToSelect);
 
+  if (!catToSelect) {
+    store.session.remove('nextStimulus');
+    return;
+  }
+
   const previousItem = store.session.get('previousItem');
   const previousAnswer = store.session.get('previousAnswer');
 

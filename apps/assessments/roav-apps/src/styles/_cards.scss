@@ -1,0 +1,163 @@
+@use 'vars' as *;
+
+// ============================================
+// INSTRUCTION CARD
+// ============================================
+
+// card container
+.roav-card-button-container {
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  grid-template-rows: 10svh 1fr 25svh;
+  place-items: center;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 1svh, 20px);
+  z-index: 90;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+// card
+.roav-card {
+  width: 40svw;
+  max-width: 40svw;
+  overflow: hidden;
+  border: 6px solid $roav-yellow;
+  border-radius: 20px;
+  z-index: 15;
+  &.game {
+    background-color: $roav-bg-card-game;
+  }
+  &.stand {
+    background-color: $roav-bg-card-stand;
+
+    .roav-mp-body & {
+      background-color: $roav-bg-card-stand;
+    }
+    .roav-rvp-body & {
+      background-color: $roav-bg-card-game;
+    }
+  }
+}
+
+.roav-card-with-img-text {
+  height: 60svh;
+  display: grid;
+  grid-template-rows: 40% 60%; // split between image and text
+}
+
+.roav-card-with-text {
+  height: 40svh;
+  display: flex;
+  flex-direction: column;
+}
+
+// image zone
+.roav-card-img-wrap {
+  padding: 4svh 0 0 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.roav-card-img {
+  height: 85%;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  max-width: 90%;
+  padding: 0vh; // was 2vh
+  background: transparent;
+}
+
+// text zone
+.roav-card-text-wrap {
+  padding: 4svh 4svh 3svh 4svh; // inside, so that text does not touch borders
+  overflow: hidden;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+  &.stand {
+    background-color: $roav-bg-card-stand;
+    .roav-mp-body & {
+      background-color: $roav-bg-card-stand;
+    }
+    .roav-rvp-body & {
+      background-color: $roav-bg-card-stand;
+    }
+  }
+
+  &.game {
+    background-color: $roav-bg-card-game;
+  }
+}
+
+.roav-card-with-text .roav-card-text-wrap {
+  height: 100%;
+}
+
+.roav-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  line-height: 1.35;
+  font-size: 3svh; // var(--size-font, 3svh);
+  overflow: hidden;
+  width: 100%;
+  justify-content: center;
+}
+
+.roav-card-text h2,
+.roav-card-text p {
+  margin: 0;
+}
+
+// ============================================
+// SYSTEM CARD
+// ============================================
+
+.roav-card-sys {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.roav-card-sys-img {
+  display: block;
+  max-width: 20vw;
+  max-height: 25vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+// ============================================
+// LOG (DEBUGGING) CARD
+// ============================================
+
+.roav-card-log {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 250px;
+  height: 350px;
+  border: 2px solid;
+  font-family: monospace;
+  z-index: 2000;
+  padding: 0.5rem;
+  resize: vertical;
+}
