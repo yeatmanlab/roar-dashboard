@@ -32,6 +32,14 @@ This directory contains modular, enforceable engineering rules for the ROAR Plat
 | --------------------------------------------------- | ------ | --------------------------------------------------------------------------- |
 | [sdk-layer-architecture](sdk-layer-architecture.md) | HIGH   | Receiver/Command/Compat pattern, ts-rest client usage, auth-agnostic design |
 
+### Assessments
+
+| Rule                                                                | Impact | Description                                                                                                |
+| ------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------- |
+| [assessment-integration-pattern](assessment-integration-pattern.md) | HIGH   | Dual build (rollup library / webpack standalone), shared harness, declarative seeding, integration surface |
+
+The step-by-step procedure for migrating or scaffolding an assessment lives in [.ai/assessment-migration.md](../assessment-migration.md).
+
 ### Frontend
 
 | Rule                                                            | Impact | Description                                                                                                                            |
@@ -85,6 +93,7 @@ Rules use a flat structure with prefix-based categories:
 | `architecture-` | System design and structural decisions       |
 | `backend-`      | Express/TypeScript backend (`apps/backend/`) |
 | `sdk-`          | Assessment SDK (`packages/assessment-sdk/`)  |
+| `assessment-`   | Assessments (`apps/assessments/*`)           |
 | `frontend-`     | Vue 3 dashboard (`apps/dashboard/`)          |
 | `quality-`      | TypeScript strictness and code quality       |
 | `testing-`      | Test conventions (unit and integration)      |
