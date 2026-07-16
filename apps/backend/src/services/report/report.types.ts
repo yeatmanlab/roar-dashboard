@@ -456,6 +456,13 @@ export interface ServiceTaskScoreFacet {
   taskSlug: string;
   taskName: string;
   orderIndex: number;
+  /**
+   * The "support range" percentage shown in the task's report description — the
+   * percentage of peers a needs-extra-support student scores below (the complement
+   * of the version-resolved `developing` percentile cutoff). `null` for tasks
+   * without a percentile-then-rawscore classification. See `getSupportThreshold`.
+   */
+  supportThreshold: number | null;
   supportLevelByGrade: (ServiceSupportLevelDistribution & { grade: string; totalAssessed: number })[];
   supportLevelBySchool: (ServiceSupportLevelDistribution & {
     schoolId: string;
