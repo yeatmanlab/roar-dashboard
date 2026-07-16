@@ -15,7 +15,7 @@ set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 COMPOSE_FILE="$REPO_ROOT/docker-compose.assessment.yml"
 
-CONTAINERS=(assessment-backend assessment-db-migrate firebase-auth-emulator assessment-db)
+CONTAINERS=(assessment-backend assessment-db-migrate firebase-emulator assessment-db)
 
 echo "Stopping assessment environment..."
 

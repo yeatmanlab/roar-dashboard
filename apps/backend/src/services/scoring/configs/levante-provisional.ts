@@ -30,4 +30,8 @@ export default {
       subskill: false,
     },
   ],
+  displayCategory: [{ minVersion: 0, category: 'rawOnly' }],
+  displayRanges: {
+    rawScore: { min: 0, max: 100 },
+  },
 } as const;

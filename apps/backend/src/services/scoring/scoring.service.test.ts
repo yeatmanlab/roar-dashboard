@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   parseScoreValue,
   getSupportLevel,
+  getScoreDisplay,
   getRawScoreThreshold,
+  getSupportThreshold,
   resolveScoreFieldNames,
   resolveScoreFieldName,
   getSupportLevelFieldName,
@@ -410,6 +412,34 @@ describe('getRawScoreThreshold', () => {
   });
 });
 
+describe('getSupportThreshold', () => {
+  // The "support range" is 100 - the version-resolved `developing` percentile
+  // cutoff (the needsExtraSupport boundary). sre: developing 25 (legacy) → 75,
+  // 20 (v4 updated) → 80 — matching the dashboard's prior 75/80 literal.
+  it('returns the sre legacy support range (75%)', () => {
+    expect(getSupportThreshold('sre', null)).toBe(75);
+    expect(getSupportThreshold('sre', 0)).toBe(75);
+    expect(getSupportThreshold('sre', 3)).toBe(75);
+  });
+
+  it('returns the sre updated support range (80%) for v >= 4', () => {
+    expect(getSupportThreshold('sre', 4)).toBe(80);
+  });
+
+  it('resolves the support range for other percentile-then-rawscore tasks', () => {
+    // swr flips at v7, pa at v4 — both use developing 25 (legacy) → 75, 20 (updated) → 80.
+    expect(getSupportThreshold('swr', null)).toBe(75);
+    expect(getSupportThreshold('swr', 7)).toBe(80);
+    expect(getSupportThreshold('pa', null)).toBe(75);
+  });
+
+  it('returns null for tasks without a percentile-then-rawscore classification', () => {
+    expect(getSupportThreshold('letter', null)).toBeNull();
+    expect(getSupportThreshold('morphology', null)).toBeNull();
+    expect(getSupportThreshold('unknown-task', null)).toBeNull();
+  });
+});
+
 describe('resolveScoreFieldNames', () => {
   describe('without scoringVersion (all possible names)', () => {
     it('resolves swr fields (all versions)', () => {
@@ -662,5 +692,95 @@ describe('getSupportLevelFieldName', () => {
 
   it('returns null for unknown tasks', () => {
     expect(getSupportLevelFieldName('unknown-task')).toBeNull();
+  });
+});
+
+describe('getScoreDisplay', () => {
+  it('returns null for tasks without a display config', () => {
+    expect(
+      getScoreDisplay({
+        taskSlug: 'unknown-task',
+        gradeLevel: 3,
+        scoringVersion: 0,
+        scores: { rawScore: 1, percentile: 1, standardScore: 1 },
+      }),
+    ).toBeNull();
+  });
+
+  it('surfaces percentile for a normed task below the percentile grade', () => {
+    const display = getScoreDisplay({
+      taskSlug: 'swr',
+      gradeLevel: 3,
+      scoringVersion: 0,
+      scores: { rawScore: 500, percentile: 50, standardScore: 100 },
+    });
+    expect(display).toEqual({ scoreType: 'percentile', value: 50, label: 'percentile', range: { min: 0, max: 99 } });
+  });
+
+  it('surfaces standard score for a normed task at grade >= 6', () => {
+    const display = getScoreDisplay({
+      taskSlug: 'swr',
+      gradeLevel: 8,
+      scoringVersion: 0,
+      scores: { rawScore: 500, percentile: 50, standardScore: 100 },
+    });
+    expect(display).toMatchObject({ scoreType: 'standardScore', value: 100, range: { min: 0, max: 180 } });
+  });
+
+  it('uses percent-correct for swr-es at v0 (no normed fields exist for v0)', () => {
+    const display = getScoreDisplay({
+      taskSlug: 'swr-es',
+      gradeLevel: 3,
+      scoringVersion: 0,
+      scores: { rawScore: 300, percentile: null, standardScore: null },
+    });
+    // v0 has no percentile field, so the percent-correct value is null today — see the
+    // swr-es config flag; the integration suite validates the value against real data.
+    expect(display).toMatchObject({ scoreType: 'percentCorrect', value: null });
+  });
+
+  it('falls back to raw score for a normed task at grade >= 6 with no standard score', () => {
+    const display = getScoreDisplay({
+      taskSlug: 'swr',
+      gradeLevel: 8,
+      scoringVersion: 0,
+      scores: { rawScore: 480, percentile: null, standardScore: null },
+    });
+    expect(display).toMatchObject({ scoreType: 'rawScore', value: 480, range: { min: 100, max: 900 } });
+  });
+
+  it('uses standard score for a normed task when grade is null (no percentile branch)', () => {
+    const display = getScoreDisplay({
+      taskSlug: 'swr',
+      gradeLevel: null,
+      scoringVersion: 0,
+      scores: { rawScore: 480, percentile: 40, standardScore: 95 },
+    });
+    expect(display).toMatchObject({ scoreType: 'standardScore', value: 95 });
+  });
+
+  it('surfaces normed (percentile) display for swr-es at v1+', () => {
+    const display = getScoreDisplay({
+      taskSlug: 'swr-es',
+      gradeLevel: 3,
+      scoringVersion: 10,
+      scores: { rawScore: 500, percentile: 60, standardScore: 105 },
+    });
+    expect(display).toMatchObject({ scoreType: 'percentile', value: 60 });
+  });
+
+  it('surfaces percent-correct for letter (the percentile field holds the percent value)', () => {
+    const display = getScoreDisplay({
+      taskSlug: 'letter',
+      gradeLevel: 1,
+      scoringVersion: 0,
+      scores: { rawScore: 20, percentile: 85, standardScore: null },
+    });
+    expect(display).toEqual({
+      scoreType: 'percentCorrect',
+      value: 85,
+      label: 'percentCorrect',
+      range: { min: 0, max: 100 },
+    });
   });
 });

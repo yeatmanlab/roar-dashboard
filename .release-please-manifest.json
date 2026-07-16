@@ -10,5 +10,8 @@
   "apps/assessments/roar-letter": "4.0.10",
   "apps/assessments/roar-multichoice": "2.2.1",
   "apps/assessments/roar-survey": "0.2.2",
-  "apps/assessments/roar-levante-tasks": "1.0.6"
+  "apps/assessments/roar-levante-tasks": "1.0.6",
+  "apps/assessments/roar-readaloud": "1.4.2",
+  "apps/assessments/roav-apps": "1.0.1",
+  "apps/assessments/roav-ran": "2.0.1"
 }
