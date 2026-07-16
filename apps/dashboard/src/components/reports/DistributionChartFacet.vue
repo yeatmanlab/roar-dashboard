@@ -54,9 +54,13 @@ const props = defineProps({
       return { name: 'Grade', key: 'grade' };
     },
   },
-  runs: {
-    type: Array,
-    required: true,
+  facets: {
+    // Per-task facet aggregation from `getScoreFacets` (scoreBinsByGrade /
+    // scoreBinsBySchool). Each bin is `{ binStart, binEnd, count }`, already
+    // computed server-side. Null while the query is loading.
+    type: Object,
+    required: false,
+    default: null,
   },
   minGradeByRuns: {
     type: Number,
@@ -64,47 +68,11 @@ const props = defineProps({
   },
 });
 
-const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
-  const rows = [];
-  if (!binsObj || typeof binsObj !== 'object') return rows;
-
-  for (const [binLabel, payload] of Object.entries(binsObj)) {
-    const [a, b] = String(binLabel).split('-').map(Number);
-    const value = Number.isFinite(a) && Number.isFinite(b) ? (a + b) / 2 : NaN;
-    if (!Number.isFinite(value)) continue;
-
-    if (facet === 'grade') {
-      const grades = payload?.grades ?? {};
-      for (const [gradeKey, countRaw] of Object.entries(grades)) {
-        const count = Number(countRaw) || 0;
-        for (let i = 0; i < count; i++) {
-          rows.push({
-            grade: String(gradeKey),
-            scores: { [scoreKey]: value },
-          });
-        }
-      }
-    } else {
-      const schools = payload?.schools ?? {};
-      for (const school of Object.values(schools)) {
-        const name = school?.name ?? 'Unknown school';
-        const count = Number(school?.count) || 0;
-        for (let i = 0; i < count; i++) {
-          rows.push({
-            user: { schoolName: name },
-            scores: { [scoreKey]: value },
-          });
-        }
-      }
-    }
-  }
-  return rows;
-};
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 // Normalize facet mode to 'grade' | 'school'
 const facetKind = computed(() => (props.facetMode?.name === 'Grade' ? 'grade' : 'school'));
-
-const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
+const isGradeFacet = computed(() => props.facetMode.key === 'grade');
 
 const scoreMode = ref({ name: 'Raw Score', key: 'rawScore' });
 const scoreModes = [
@@ -112,72 +80,55 @@ const scoreModes = [
   { name: 'Percentile', key: 'stdPercentile' },
 ];
 
-const getBinSize = (scoreMode, taskId) => {
-  if (scoreMode === 'Percentile') {
-    return 10;
-  } else if (scoreMode === 'Raw Score') {
-    if (taskId === 'pa') return 5;
-    else if (taskId === 'sre') return 10;
-    else if (taskId === 'swr') return 50;
-  }
-  return 10;
-};
+// Leading-zero trim matches the prior client behavior (e.g. "01" → "1").
+const trimGrade = (grade) => String(grade ?? '').replace(/^0+(?=\D|\d)/, '');
+// Kindergarten / "0" sort as grade 0; everything else is its numeric grade.
+const gradeNumeric = (grade) => (grade === '0' || grade === 'Kindergarten' ? 0 : Number(grade));
 
-const getRangeLow = (scoreMode, taskId) => {
-  if (scoreMode === 'Percentile') {
-    return 0;
-  } else if (scoreMode === 'Raw Score') {
-    if (taskId === 'pa') return 0;
-    else if (taskId === 'sre') return 0;
-    else if (taskId === 'swr') return 100;
-  }
-  return 0;
-};
+const facetEntries = computed(() => {
+  if (!props.facets) return [];
+  return facetKind.value === 'grade' ? (props.facets.scoreBinsByGrade ?? []) : (props.facets.scoreBinsBySchool ?? []);
+});
 
-const getRangeHigh = (scoreMode, taskId) => {
-  if (scoreMode === 'Percentile') {
-    return 100;
-  } else if (scoreMode === 'Raw Score') {
-    if (taskId === 'pa') return 57;
-    else if (taskId === 'sre') return 130;
-    else if (taskId === 'swr') return 900;
-  }
-  return 100;
-};
-
-// With Percentile View, only display runs under grade 6
-const computedRuns = computed(() => {
-  if (props.orgType === 'district') {
-    const facet = facetKind.value;
-    const modeKey = scoreMode.value.name === 'Percentile' ? 'percentile' : 'raw';
-    const scoreKey = scoreMode.value.name === 'Percentile' ? 'stdPercentile' : 'rawScore';
-
-    const levels = ['above', 'some', 'below'];
-    const rows = [];
-
-    // if backend provided keyed bins (preferred)
-    const hasKeyed = levels.some((k) => props?.runs?.[k]?.[modeKey]);
-    if (hasKeyed) {
-      for (const levelKey of levels) {
-        const binsObj = props?.runs?.[levelKey]?.[modeKey];
-        if (binsObj) {
-          rows.push(...makeRunsFromBins({ binsObj, facet, scoreKey, levelKey }));
-        }
+// Flatten the per-facet pre-binned distributions into Vega rows. The backend bins
+// (`{ binStart, binEnd, count }`) are consumed directly via `bin: 'binned'` — no
+// client-side re-binning, so the histogram exactly reflects the server aggregation.
+const binValues = computed(() => {
+  const scoreKey = scoreMode.value.key === 'stdPercentile' ? 'percentile' : 'rawScore';
+  const rows = [];
+  for (const entry of facetEntries.value) {
+    if (facetKind.value === 'grade') {
+      const gradeNum = gradeNumeric(entry.grade);
+      // Percentile view is only meaningful for early grades — preserve the prior <6 filter.
+      if (scoreMode.value.key === 'stdPercentile' && gradeNum >= 6) continue;
+      for (const bin of entry[scoreKey] ?? []) {
+        rows.push({
+          facet: trimGrade(entry.grade),
+          gradeNumeric: gradeNum,
+          binStart: bin.binStart,
+          binEnd: bin.binEnd,
+          count: bin.count,
+        });
       }
     } else {
-      // fallback to flat shape: props.runs.percentile / props.runs.raw (no color by level)
-      rows.push(...makeRunsFromBins({ binsObj: props?.runs?.[modeKey], facet, scoreKey }));
+      const name = entry.schoolName ?? 'Unknown school';
+      for (const bin of entry[scoreKey] ?? []) {
+        rows.push({ facet: name, gradeNumeric: null, binStart: bin.binStart, binEnd: bin.binEnd, count: bin.count });
+      }
     }
-
-    return rows;
   }
-
-  // non-district (original)
-  if (scoreMode.value.name === 'Percentile' && props.facetMode.name === 'Grade') {
-    return props.runs.filter((run) => Number(run.grade) < 6);
-  }
-  return props.runs;
+  return rows;
 });
+
+// Percentile is a fixed 0–100 axis; raw-score axes fit the server's bin range.
+const xDomain = computed(() => {
+  if (scoreMode.value.key === 'stdPercentile') return [0, 100];
+  const starts = binValues.value.map((b) => b.binStart);
+  const ends = binValues.value.map((b) => b.binEnd);
+  if (!starts.length) return [0, 100];
+  return [Math.min(...starts), Math.max(...ends)];
+});
+
 const distributionChartFacet = computed(() => {
   if (isLoadingTasksDictionary.value) return {};
   return {
@@ -190,22 +141,14 @@ const distributionChartFacet = computed(() => {
       dx: 70,
     },
     data: {
-      values: computedRuns.value,
+      values: binValues.value,
     },
-    transform: isGradeFacet.value
-      ? [
-          {
-            calculate: "datum.grade === '0' || datum.grade === 'Kindergarten' ? 0 : toNumber(datum.grade)",
-            as: 'gradeNumeric',
-          },
-        ]
-      : [],
     mark: 'bar',
     height: 50,
     width: 360,
     encoding: {
       row: {
-        field: isGradeFacet.value ? 'gradeNumeric' : `user.${props.facetMode.key}`,
+        field: isGradeFacet.value ? 'gradeNumeric' : 'facet',
         type: isGradeFacet.value ? 'quantitative' : 'ordinal',
         title: '',
         header: {
@@ -236,12 +179,11 @@ const distributionChartFacet = computed(() => {
       },
 
       x: {
-        field: `scores.${scoreMode.value.key}`,
+        field: 'binStart',
+        bin: 'binned',
+        type: 'quantitative',
         title: scoreMode.value.name,
-        bin: {
-          step: getBinSize(scoreMode.value.name, props.taskId),
-          extent: [getRangeLow(scoreMode.value.name, props.taskId), getRangeHigh(scoreMode.value.name, props.taskId)],
-        },
+        scale: { domain: xDomain.value },
         sort: 'ascending',
         axis: {
           labelAngle: 0,
@@ -250,10 +192,11 @@ const distributionChartFacet = computed(() => {
           labelFontSize: 14,
         },
       },
+      x2: { field: 'binEnd' },
 
       y: {
+        field: 'count',
         type: 'quantitative',
-        aggregate: 'count',
         title: 'Count',
         sort: 'ascending',
         axis: {
@@ -268,14 +211,10 @@ const distributionChartFacet = computed(() => {
         },
       },
       tooltip: [
-        {
-          field: `scores.${scoreMode.value.key}`,
-          title: `${scoreMode.value.name}`,
-          type: 'quantitative',
-          format: `.0f`,
-        },
-        props.facetMode.name === 'Grade' ? { field: 'grade', title: 'Student Grade' } : {},
-        { aggregate: 'count', title: 'Student Count' },
+        { field: 'binStart', title: `${scoreMode.value.name} (min)`, type: 'quantitative', format: '.0f' },
+        { field: 'binEnd', title: `${scoreMode.value.name} (max)`, type: 'quantitative', format: '.0f' },
+        isGradeFacet.value ? { field: 'gradeNumeric', title: 'Student Grade' } : { field: 'facet', title: 'School' },
+        { field: 'count', title: 'Student Count', type: 'quantitative' },
       ],
     },
     resolve: {
@@ -297,28 +236,10 @@ const draw = async () => {
   await embed(`#roar-distribution-chart-${props.taskId}`, chartSpecDist);
 };
 
-const isGradeFacet = computed(() => props.facetMode.key === 'grade');
-
-// Watch for changes to the computed chart specification (includes tasksDictionary loading)
+// Redraw whenever the computed chart spec changes (covers facets, facetMode,
+// scoreMode, and tasksDictionary loading).
 watch(
   () => distributionChartFacet.value,
-  () => {
-    draw();
-  },
-  { deep: true },
-);
-
-// Update Distribution Graph on external facetMode change
-watch(
-  () => props.facetMode,
-  () => {
-    draw();
-  },
-);
-
-// Update Distribution Graph on computedRuns recalculation
-watch(
-  () => computedRuns,
   () => {
     draw();
   },
