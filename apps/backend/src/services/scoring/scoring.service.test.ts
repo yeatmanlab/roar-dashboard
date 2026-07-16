@@ -4,6 +4,7 @@ import {
   getSupportLevel,
   getScoreDisplay,
   getRawScoreThreshold,
+  getSupportThreshold,
   resolveScoreFieldNames,
   resolveScoreFieldName,
   getSupportLevelFieldName,
@@ -408,6 +409,34 @@ describe('getRawScoreThreshold', () => {
     expect(getRawScoreThreshold('letter', null)).toBeNull();
     expect(getRawScoreThreshold('morphology', null)).toBeNull();
     expect(getRawScoreThreshold('unknown-task', null)).toBeNull();
+  });
+});
+
+describe('getSupportThreshold', () => {
+  // The "support range" is 100 - the version-resolved `developing` percentile
+  // cutoff (the needsExtraSupport boundary). sre: developing 25 (legacy) → 75,
+  // 20 (v4 updated) → 80 — matching the dashboard's prior 75/80 literal.
+  it('returns the sre legacy support range (75%)', () => {
+    expect(getSupportThreshold('sre', null)).toBe(75);
+    expect(getSupportThreshold('sre', 0)).toBe(75);
+    expect(getSupportThreshold('sre', 3)).toBe(75);
+  });
+
+  it('returns the sre updated support range (80%) for v >= 4', () => {
+    expect(getSupportThreshold('sre', 4)).toBe(80);
+  });
+
+  it('resolves the support range for other percentile-then-rawscore tasks', () => {
+    // swr flips at v7, pa at v4 — both use developing 25 (legacy) → 75, 20 (updated) → 80.
+    expect(getSupportThreshold('swr', null)).toBe(75);
+    expect(getSupportThreshold('swr', 7)).toBe(80);
+    expect(getSupportThreshold('pa', null)).toBe(75);
+  });
+
+  it('returns null for tasks without a percentile-then-rawscore classification', () => {
+    expect(getSupportThreshold('letter', null)).toBeNull();
+    expect(getSupportThreshold('morphology', null)).toBeNull();
+    expect(getSupportThreshold('unknown-task', null)).toBeNull();
   });
 });
 
