@@ -6,6 +6,7 @@ import 'regenerator-runtime/runtime'; //async function
 // setup
 import { initTrialSaving, initTimeline } from '../shared/helpers';
 import { jsPsych } from '../taskSetup'; //initialised jspsych object
+import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/firekit';
 //import { preloadTrials } from "./helperFunctions"; //jspsych object for preloading media, function for initialising Cat class
 import { intro } from './trials/introduction';
 import { endScreen } from './trials/endScreen';
@@ -60,10 +61,7 @@ export default function buildTimeline(config) {
   });
 
   const handleEngagementFlags = (flags, reliable) => {
-    if (config.firekit.run.started) {
-      return config.firekit.updateEngagementFlags(flags, reliable);
-    }
-    return null;
+    return updateEngagementFlags(flags, reliable);
   };
 
   validityEvaluator = new ValidityEvaluator({
@@ -103,7 +101,7 @@ export default function buildTimeline(config) {
 
   if (store.session.get('magpiPilot')) {
     timeline.push(transitionScreen);
-    timeline.push(numberLineOuterLoop('numberLine', 'test_response'));
+    timeline.push(numberLineOuterLoop('numberLine', 'test'));
   }
 
   timeline.push(endScreen); // End Task
