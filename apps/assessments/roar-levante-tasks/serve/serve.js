@@ -2,8 +2,13 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
+import {
+  LEVANTE_NORMED_TASK_IDS,
+  LEVANTE_PROVISIONAL_TASK_IDS,
+} from '@roar-platform/assessment-schema/roar-levante-tasks';
 import { TaskLauncher } from '../src';
 import { getFirebaseConfig } from '../../shared/firebaseConfig.js';
+import { mountVariantPicker } from '../../shared/variantPicker.js';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
@@ -35,9 +40,14 @@ const versionOverride = urlParams.get('version');
 // Task selection: variantId wins; otherwise taskId resolves to the first published variant for that task.
 const taskId = urlParams.get('task') ?? 'egma-math';
 
+// The dev variant picker lists every published variant across all LEVANTE tasks.
+const PICKER_TASK_IDS = [...Object.values(LEVANTE_NORMED_TASK_IDS), ...Object.values(LEVANTE_PROVISIONAL_TASK_IDS)];
+
+// App config
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const baseUrl = ROAR_API_BASE_URL;
 
 if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
   connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
@@ -51,14 +61,12 @@ onAuthStateChanged(auth, async (user) => {
       // Provision the anonymous ROAR user (and resolve a variant) via the SDK.
       // The variantId URL param wins; otherwise falls back to the first published variant for taskId.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
-        // eslint-disable-next-line no-undef
-        { baseUrl: ROAR_API_BASE_URL, auth: authCallbacks },
+        { baseUrl, auth: authCallbacks },
         { ...(variantId ? { variantId } : {}), taskId },
       );
 
       const ctx = {
-        // eslint-disable-next-line no-undef
-        baseUrl: ROAR_API_BASE_URL,
+        baseUrl,
         auth: authCallbacks,
         participant: { participantId },
       };
@@ -68,6 +76,17 @@ onAuthStateChanged(auth, async (user) => {
         taskVersion,
         isAnonymous: true,
       });
+
+      // Dev/staging only: mount a variant switcher so reviewers can hop between published
+      // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
+      if (ROAR_DB !== 'production') {
+        mountVariantPicker({
+          baseUrl,
+          auth: authCallbacks,
+          taskId: PICKER_TASK_IDS,
+          currentVariantId: resolvedVariantId,
+        });
+      }
 
       const { variantParams } = await getVariantById(resolvedVariantId);
 
@@ -82,7 +101,6 @@ onAuthStateChanged(auth, async (user) => {
         ...(versionOverride !== null ? { version: Number(versionOverride) } : {}),
       };
 
-      // eslint-disable-next-line no-undef
       const isDev = ROAR_DB === 'development';
       const task = new TaskLauncher(variantParams, userParams, isDev);
       task.run();

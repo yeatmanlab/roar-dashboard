@@ -199,6 +199,22 @@ export type SupportLevelValue = z.infer<typeof SupportLevelValueSchema>;
  * `reliable` and `engagementFlags` are populated from the underlying run regardless
  * of completion. They are null/empty when no run exists.
  */
+/**
+ * Per-task display descriptor — the server's decision about which score to
+ * surface as the primary display, its value, label, and range. The frontend
+ * renders this directly instead of re-deriving display rules from scoring
+ * versions / task slugs. Omitted on tasks whose scoring config declares no
+ * display category yet (the frontend keeps its legacy path for those).
+ */
+export const ScoreDisplaySchema = z.object({
+  scoreType: z.enum(['percentile', 'standardScore', 'rawScore', 'percentCorrect']),
+  value: z.number().nullable(),
+  label: z.string(),
+  range: z.object({ min: z.number(), max: z.number() }).nullable(),
+});
+
+export type ScoreDisplay = z.infer<typeof ScoreDisplaySchema>;
+
 export const StudentScoreEntrySchema = z.object({
   rawScore: z.number().int().nullable(),
   percentile: z.number().int().nullable(),
@@ -213,6 +229,8 @@ export const StudentScoreEntrySchema = z.object({
   optional: z.boolean(),
   /** Whether the student has at least one completed run for this task. */
   completed: z.boolean(),
+  /** Server-computed primary display descriptor (see ScoreDisplaySchema). */
+  display: ScoreDisplaySchema.optional(),
 });
 
 export type StudentScoreEntry = z.infer<typeof StudentScoreEntrySchema>;
@@ -342,6 +360,8 @@ export const IndividualStudentReportTaskSchema = z.object({
   tags: z.array(TaskTagSchema),
   subscores: z.record(z.string(), SubscoreEntrySchema).optional(),
   skillsToWorkOn: z.array(z.string()).optional(),
+  /** Server-computed primary display descriptor (see ScoreDisplaySchema). */
+  display: ScoreDisplaySchema.optional(),
   historicalScores: z.array(HistoricalScoreSchema),
 });
 
@@ -473,6 +493,17 @@ const ScoreBinsBySchoolSchema = z.object({
  * null-guarding.
  */
 const TaskScoreFacetSchema = ReportTaskMetadataSchema.extend({
+  /**
+   * The "support range" percentage shown in the task's report description — the
+   * percentage of peers a needs-extra-support student scores below (the complement
+   * of the version-resolved `developing` percentile cutoff). Lets the dashboard's
+   * `TaskReport` description render its `{{SUPPORT_RANGE}}` value without branching
+   * on scoring versions. `null` for tasks without a percentile-then-rawscore
+   * classification (their descriptions carry no `{{SUPPORT_RANGE}}` placeholder).
+   * Optional for deploy-window safety — the frontend falls back to its legacy
+   * version rule when an older backend omits it.
+   */
+  supportThreshold: z.number().nullable().optional(),
   supportLevelByGrade: z.array(SupportLevelByGradeSchema),
   supportLevelBySchool: z.array(SupportLevelBySchoolSchema),
   scoreBinsByGrade: z.array(ScoreBinsByGradeSchema),

@@ -67,4 +67,10 @@ export default {
       domain: LETTER_SUBSCORE_DEFS.letterSounds.domain,
     },
   ],
+  displayCategory: [{ minVersion: 0, category: 'percentCorrect' }],
+  displayRanges: {
+    percentCorrect: { min: 0, max: 100 },
+    // Raw-score breakdown range, matching the dashboard's getRawScoreRange for letter.
+    rawScore: { min: 0, max: 90 },
+  },
 };

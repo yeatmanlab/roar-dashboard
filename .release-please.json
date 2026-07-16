@@ -140,6 +140,13 @@
       "release-type": "node",
       "component": "roav-apps",
       "release-as": "1.0.1"
+    },
+    "apps/assessments/roav-ran": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roav-ran",
+      "release-as": "2.0.1"
     }
   },
   "group-pull-request-title-pattern": "chore: release ${version}",

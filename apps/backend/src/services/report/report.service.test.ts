@@ -2137,6 +2137,24 @@ describe('ReportService', () => {
         expect(task.scoreBinsByGrade).toEqual([]);
         expect(task.scoreBinsBySchool).toEqual([]);
       }
+      // Support threshold is task-config metadata (the developing-cutoff complement),
+      // so the zero-student empty facet still carries it. sre at version 0 → 75.
+      expect(result.tasks.find((t) => t.taskSlug === 'sre')!.supportThreshold).toBe(75);
+    });
+
+    it('populates per-task supportThreshold from the resolved scoring version', async () => {
+      setupDefaultFacetsMocks();
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const bySlug = Object.fromEntries(result.tasks.map((t) => [t.taskSlug, t.supportThreshold]));
+      // percentile-then-rawscore tasks at version 0 → 100 - developing(25) = 75.
+      expect(bySlug.swr).toBe(75);
+      expect(bySlug.sre).toBe(75);
+      expect(bySlug.pa).toBe(75);
+      // vocab has no percentile-then-rawscore classification → null.
+      expect(bySlug.vocab).toBeNull();
     });
 
     it('returns computedAt as a parseable ISO datetime', async () => {
@@ -3640,6 +3658,43 @@ describe('ReportService', () => {
       const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
       expect(swrTask.subscores).toBeUndefined();
       expect(swrTask.skillsToWorkOn).toBeUndefined();
+    });
+
+    // --- Display descriptor ---
+
+    it('includes display descriptor for normed tasks (e.g., swr with percentile at grade < 6)', async () => {
+      setupDefaults();
+      const completedScoreRow: RunScoreRow = {
+        userId: targetUserId,
+        taskVariantId: VARIANT_ID_1,
+        scoreName: ScoreField.PERCENTILE,
+        scoreValue: '65',
+      };
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-1',
+          taskVariantId: VARIANT_ID_1,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.display).toBeDefined();
+      expect(swrTask.display?.scoreType).toBe('percentile');
+      expect(swrTask.display?.value).toBe(65);
+      expect(swrTask.display?.label).toBe('percentile');
+      expect(swrTask.display?.range).toEqual({ min: 0, max: 99 });
     });
 
     // --- Historical scores ---

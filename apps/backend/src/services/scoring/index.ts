@@ -1,7 +1,9 @@
 export {
   parseScoreValue,
   getSupportLevel,
+  getScoreDisplay,
   getRawScoreThreshold,
+  getSupportThreshold,
   resolveScoreFieldNames,
   resolveScoreFieldName,
   getSupportLevelFieldName,
@@ -29,4 +31,11 @@ export type {
   PaSkillsToWorkOnSubscoreColumn,
   LetterToWorkOnSubscoreColumn,
 } from './scoring.config-schema';
-export type { SupportLevel, ScoringInput, RawScoreThreshold, ScoreFieldResolution } from './scoring.types';
+export type {
+  SupportLevel,
+  ScoringInput,
+  RawScoreThreshold,
+  ScoreFieldResolution,
+  ScoreDisplay,
+  DisplayScoreType,
+} from './scoring.types';

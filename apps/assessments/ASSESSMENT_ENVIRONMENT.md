@@ -8,26 +8,26 @@ A local developer environment for running and querying ROAR assessments against 
 
 Run these from the assessment's directory (e.g. `apps/assessments/roar-pa/`):
 
-| Script | What it does |
-|--------|-------------|
-| `npm start` | Start the assessment environment and open the dev server |
-| `npm stop` | Stop the environment and delete the local database |
-| `npm restart` | Restart the environment (use when something seems stuck) |
-| `npm run update` | Rebuild platform libraries after pulling new code, then start |
+| Script            | What it does                                                   |
+| ----------------- | -------------------------------------------------------------- |
+| `npm start`       | Start the assessment environment and open the dev server       |
+| `npm stop`        | Stop the environment and delete the local database             |
+| `npm restart`     | Restart the environment (use when something seems stuck)       |
+| `npm run update`  | Rebuild platform libraries after pulling new code, then start  |
 | `npm run rebuild` | Rebuild Docker images from scratch (rarely needed — see below) |
 
 The other scripts in `package.json` (`build`, `build:staging`, `build:production`, `dev`, etc.) are for CI and platform developers. You can ignore them.
 
 ## What it starts (PA)
 
-| Process | URL |
-|---------|-----|
-| Firebase emulator — Auth | http://localhost:9099 |
+| Process                                         | URL                   |
+| ----------------------------------------------- | --------------------- |
+| Firebase emulator — Auth                        | http://localhost:9099 |
 | Firebase emulator — Storage (recording uploads) | http://localhost:9199 |
-| Firebase emulator — UI (browse recordings) | http://localhost:9000 |
-| ROAR backend (HTTP) | http://localhost:4000 |
-| PA assessment dev server | http://localhost:8000 |
-| PostgreSQL | localhost:5432 |
+| Firebase emulator — UI (browse recordings)      | http://localhost:9000 |
+| ROAR backend (HTTP)                             | http://localhost:4000 |
+| PA assessment dev server                        | http://localhost:8000 |
+| PostgreSQL                                      | localhost:5432        |
 
 The Firebase emulator runs Auth and Storage together (one container) with the Emulator UI on :9000. Storage only matters for assessments that record audio/video (e.g. Read Aloud) — see [Viewing recordings](#viewing-recordings-audiovideo-assessments).
 
@@ -35,7 +35,10 @@ Two databases are created: `roar_core` (users, tasks, runs) and `roar_assessment
 
 ## Prerequisites
 
-- **Docker** with Compose v2 (`docker compose version` should work)
+- **Dependencies** installed with `npm install` run from monorepo root
+- **Docker** with Compose v2 (`docker compose version` should work). If you don't have it:
+  - macOS: install Docker Desktop with `brew install --cask docker`, then launch it from Applications (Compose v2 is bundled). Alternatively download it from https://www.docker.com/products/docker-desktop/.
+  - Ubuntu/Debian: install Docker Engine and the Compose plugin with Docker's convenience script — `curl -fsSL https://get.docker.com | sh` — then `sudo usermod -aG docker $USER` and log out/in so you can run Docker without `sudo`. See https://docs.docker.com/engine/install/ubuntu/ for the manual apt steps.
 - **Port 5432 free** — the assessment database binds to the standard Postgres port. If you have a local Postgres instance running, stop it first:
   - macOS (Homebrew): `brew services stop postgresql@<version>`
   - Ubuntu/Debian: `sudo systemctl stop postgresql`
@@ -254,12 +257,12 @@ Each recording's storage path is also written onto its **trial row**, so the two
 
 ## Connection reference
 
-| Setting | Value |
-|---------|-------|
-| Host | `localhost` |
-| Port | `5432` |
-| Username | `postgres` |
-| Password | *(none)* |
-| Core database | `roar_core` |
+| Setting             | Value             |
+| ------------------- | ----------------- |
+| Host                | `localhost`       |
+| Port                | `5432`            |
+| Username            | `postgres`        |
+| Password            | _(none)_          |
+| Core database       | `roar_core`       |
 | Assessment database | `roar_assessment` |
-| SSL mode | `disable` |
+| SSL mode            | `disable`         |

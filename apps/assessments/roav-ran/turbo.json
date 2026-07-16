@@ -1,0 +1,16 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "env": ["ROAR_API_BASE_URL", "SENTRY_AUTH_TOKEN"],
+      "outputs": ["dist/**"]
+    },
+    "dev": {
+      "passThroughEnv": ["BACKEND_URL", "FIREBASE_AUTH_EMULATOR_HOST"]
+    },
+    "lint": {
+      "dependsOn": ["^build"]
+    }
+  }
+}

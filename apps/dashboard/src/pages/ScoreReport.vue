@@ -43,13 +43,19 @@
                 </div>
               </template>
             </ReportHeader>
-            <div v-if="isLoadingAssignments || isLoadingDistrictSupportCategories" class="loading-wrapper">
+            <div
+              v-if="isLoadingAssignments || isLoadingDistrictSupportCategories || isLoadingScoreOverview"
+              class="loading-wrapper"
+            >
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="text-sm font-light text-gray-600 uppercase">Loading Overview Charts</div>
             </div>
             <div
               v-if="
-                !isLoadingAssignments && !isLoadingDistrictSupportCategories && sortedAndFilteredTaskIds?.length > 0
+                !isLoadingAssignments &&
+                !isLoadingDistrictSupportCategories &&
+                !isLoadingScoreOverview &&
+                sortedAndFilteredTaskIds?.length > 0
               "
               class="py-3 mb-2 text-left bg-gray-100"
             >
@@ -58,11 +64,7 @@
                   <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
                     <div class="distribution-overview-wrapper">
                       <DistributionChartOverview
-                        :runs="
-                          props.orgType === 'district'
-                            ? aggregatedDistrictSupportCategories[taskId]
-                            : computeAssignmentAndRunData.runsByTaskId[taskId]
-                        "
+                        :support-level-counts="scoreOverviewBySlug[taskId]"
                         :initialized="initialized"
                         :task-id="taskId"
                         :org-type="props.orgType"
@@ -335,11 +337,7 @@
                     :task-id="taskId"
                     :initialized="initialized"
                     :administration-id="administrationId"
-                    :runs="
-                      orgType === 'district'
-                        ? aggregatedDistrictSupportCategories?.[taskId]
-                        : computeAssignmentAndRunData.runsByTaskId?.[taskId]
-                    "
+                    :facets="facetsByTask[taskId]"
                     :org-type="orgType"
                     :org-id="orgId"
                     :org-info="orgData"
@@ -427,6 +425,9 @@ import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useAdministrationScoreOverviewQuery from '@/composables/queries/useAdministrationScoreOverviewQuery';
+import useAdministrationScoreStudentsQuery from '@/composables/queries/useAdministrationScoreStudentsQuery';
+import useAdministrationScoreFacetsQuery from '@/composables/queries/useAdministrationScoreFacetsQuery';
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
@@ -515,6 +516,40 @@ const {
 } = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId, {
   enabled: computed(() => initialized.value && props.orgType === 'district'),
 });
+
+// Server-computed support-level distributions per task: the source of the "at a glance"
+// chart VALUES, scoped to this org/class/group. Keyed by task slug to match the slug-based
+// `sortedAndFilteredTaskIds` the template iterates.
+//
+// NOTE (incremental): only the chart values move to the backend here. Which tasks show a
+// chart (`sortedAndFilteredTaskIds`) and the district loading / empty-state still derive
+// from the Firestore `useAdministrationAssignmentsQuery` / `useDistrictSupportCategoriesQuery`,
+// which also feed the table + subscore tables. They're unified onto the backend in the final
+// score-report cleanup PR once those components are migrated.
+const { data: scoreOverviewData, isLoading: isLoadingScoreOverview } = useAdministrationScoreOverviewQuery(
+  props.administrationId,
+  props.orgType,
+  props.orgId,
+  { enabled: initialized },
+);
+const scoreOverviewBySlug = computed(() =>
+  Object.fromEntries((scoreOverviewData.value?.tasks ?? []).map((task) => [task.taskSlug, task.supportLevels])),
+);
+
+// Server-computed distribution facets per task (support-level + score bins, faceted by
+// grade and school) — the source for the per-task TaskReport distribution charts at ALL
+// scopes. This replaces both the client-side facet binning (non-district) and the Firestore
+// `aggregatedDistrictSupportCategories` feed (district); the charts no longer distinguish
+// scope. School facets are populated at district scope only (empty arrays elsewhere).
+const { data: scoreFacetsData } = useAdministrationScoreFacetsQuery(
+  props.administrationId,
+  props.orgType,
+  props.orgId,
+  { enabled: initialized },
+);
+const facetsByTask = computed(() =>
+  Object.fromEntries((scoreFacetsData.value?.tasks ?? []).map((task) => [task.taskSlug, task])),
+);
 
 const getScoringVersions = computed(() => {
   if (!administrationData.value?.assessments) return {};
@@ -835,7 +870,12 @@ const assignedNormedTaskIds = computed(() => assignedTaskIds.value.filter((id) =
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
-    const engagementFlagExists = Object.keys(assessment.engagementFlags).some((flag) =>
+    // engagementFlags may arrive as an array (backend / normalized rows) or a legacy
+    // Firestore object map (raw assessment) — normalize before reading.
+    const engagementFlags = Array.isArray(assessment.engagementFlags)
+      ? assessment.engagementFlags
+      : Object.keys(assessment.engagementFlags ?? {});
+    const engagementFlagExists = engagementFlags.some((flag) =>
       includedValidityFlags[assessment.taskId]?.includes(flag),
     );
     if (support_level === 'Optional') {
@@ -1086,7 +1126,11 @@ const computeAssignmentAndRunData = computed(() => {
           optional: isOptional,
           supportLevel: support_level,
           reliable: assessment.reliable,
-          engagementFlags: assessment.engagementFlags ?? [],
+          // engagementFlags is normalized to an array of flag-name strings (matching the
+          // backend score shape); legacy Firestore data carries it as an object map.
+          engagementFlags: Array.isArray(assessment.engagementFlags)
+            ? assessment.engagementFlags
+            : Object.keys(assessment.engagementFlags ?? {}),
           tagColor: tagColor,
           percentile: percentile,
           percentileString: percentileString,
@@ -1351,13 +1395,118 @@ const computeAssignmentAndRunData = computed(() => {
   }
 });
 
+// --- Backend per-student scores (the score-report table's core score source) ---
+// The table's core per-task scores (rawScore / percentile / standardScore / supportLevel
+// + reliability) come from the backend; the frontend owns presentation (color per level,
+// number formatting). The per-task "special" fields (percentCorrect, gradeEstimate, ROAM
+// fr/fc, …) and the CSV/PDF export still derive from `computeAssignmentAndRunData` — a
+// deferred follow-up. There is no student table at district scope, so the query is off there.
+const { data: studentScoresData } = useAdministrationScoreStudentsQuery(
+  props.administrationId,
+  props.orgType,
+  props.orgId,
+  { enabled: computed(() => initialized.value && props.orgType !== 'district') },
+);
+
+// The frontend owns the color for each backend support-level enum (`reliable: false` plus a
+// recognized engagement flag fades the color). The backend is the source of truth for the
+// level itself; `optional` / `null` levels keep the client-derived cell.
+const SUPPORT_LEVEL_DISPLAY = {
+  needsExtraSupport: { label: 'Needs Extra Support', color: SCORE_SUPPORT_LEVEL_COLORS.BELOW, faded: '#d6b8c7' },
+  developingSkill: { label: 'Developing Skill', color: SCORE_SUPPORT_LEVEL_COLORS.SOME, faded: '#e8dbb5' },
+  achievedSkill: { label: 'Achieved Skill', color: SCORE_SUPPORT_LEVEL_COLORS.ABOVE, faded: '#c0d9bd' },
+};
+
+// Non-normed tasks whose columns show task-specific values (percent correct, grade estimate,
+// correct/incorrect difference, raw-only) rather than the normed percentile/standard/raw the
+// backend overlay supplies. listStudents maps their `percentile`/`rawScore` to task-specific
+// numbers, so these keep their client-computed cells entirely (deferred follow-up).
+const SPECIAL_TASK_SLUGS = new Set([
+  ...tasksToDisplayPercentCorrect,
+  ...tasksToDisplayTotalCorrect,
+  ...tasksToDisplayGradeEstimate,
+  ...tasksToDisplayCorrectIncorrectDifference,
+  ...rawOnlyTasks,
+]);
+
+// Backend scores re-keyed: userId → { taskSlug → entry }. The table columns are slug-based,
+// while the response keys `scores` by task UUID.
+const backendScoresByUser = computed(() => {
+  const data = studentScoresData.value;
+  if (!data) return {};
+  const slugByUuid = Object.fromEntries(data.tasks.map((task) => [task.taskId, task.taskSlug]));
+  const byUser = {};
+  for (const row of data.students) {
+    const slugScores = {};
+    for (const [taskUuid, entry] of Object.entries(row.scores)) {
+      slugScores[slugByUuid[taskUuid] ?? taskUuid] = entry;
+    }
+    byUser[row.user.userId] = slugScores;
+  }
+  return byUser;
+});
+
+/**
+ * Overlay the backend per-student core scores onto the client-computed table rows.
+ *
+ * For each task the backend scores, the numeric fields (rawScore / percentile /
+ * standardScore) and the support-level classification + color are taken from the backend;
+ * the frontend formats them. Fields the backend leaves null (e.g. percentile for non-normed
+ * tasks) and the per-task "special" fields keep the client value, so the special-task
+ * columns and the CSV/PDF export are unaffected (deferred follow-up).
+ */
+const tableDataWithBackendScores = computed(() => {
+  const clientRows = computeAssignmentAndRunData.value.assignmentTableData;
+  const byUser = backendScoresByUser.value;
+  if (!clientRows.length || Object.keys(byUser).length === 0) return clientRows;
+
+  return clientRows.map((row) => {
+    const backendScores = byUser[row.user.userId];
+    if (!backendScores) return row;
+
+    const mergedScores = {};
+    for (const [slug, clientScore] of Object.entries(row.scores)) {
+      const entry = backendScores[slug];
+      // Special (non-normed) tasks keep their client-computed cell: listStudents maps their
+      // `percentile`/`rawScore` to task-specific values that don't belong in the normed
+      // columns, and those cells + the CSV export stay client-side (deferred follow-up).
+      if (!entry || SPECIAL_TASK_SLUGS.has(slug)) {
+        mergedScores[slug] = clientScore;
+        continue;
+      }
+
+      const merged = { ...clientScore };
+      if (entry.rawScore != null) merged.rawScore = entry.rawScore;
+      // Only the numeric `percentile` (the table cell) comes from the backend; keep the
+      // client's `percentileString`, which carries the >99 / <1 display cap the CSV export uses.
+      if (entry.percentile != null) merged.percentile = entry.percentile;
+      if (entry.standardScore != null) merged.standardScore = entry.standardScore;
+      if (entry.reliable != null) merged.reliable = entry.reliable;
+      if (entry.engagementFlags) merged.engagementFlags = entry.engagementFlags;
+
+      const levelInfo = entry.supportLevel ? SUPPORT_LEVEL_DISPLAY[entry.supportLevel] : null;
+      if (levelInfo) {
+        merged.supportLevel = levelInfo.label;
+        const faded =
+          entry.reliable === false &&
+          (entry.engagementFlags ?? []).some((flag) => includedValidityFlags[slug]?.includes(flag));
+        merged.tagColor = faded ? levelInfo.faded : levelInfo.color;
+      }
+
+      mergedScores[slug] = merged;
+    }
+
+    return { ...row, scores: mergedScores };
+  });
+});
+
 // This composable manages the data which is passed into the FilterBar component slot for filtering
 const filteredTableData = ref([]);
 
 watch(
-  computeAssignmentAndRunData,
+  tableDataWithBackendScores,
   (newValue) => {
-    filteredTableData.value = newValue.assignmentTableData;
+    filteredTableData.value = newValue;
   },
   { immediate: true, deep: true },
 );
@@ -1486,12 +1635,10 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
       // Add reliability information
       if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
-        const engagementFlags = Object.keys(score.engagementFlags);
+        const engagementFlags = score.engagementFlags;
         if (engagementFlags.length > 0) {
           if (includedValidityFlags[taskId]) {
-            const filteredFlags = Object.keys(score.engagementFlags).filter((flag) =>
-              includedValidityFlags[taskId].includes(flag),
-            );
+            const filteredFlags = score.engagementFlags.filter((flag) => includedValidityFlags[taskId].includes(flag));
             tableRow[`${taskName} - Reliability`] =
               filteredFlags.length === 0 ? 'Unreliable' : `Unreliable: ${filteredFlags.map(_lowerCase).join(', ')}`;
           } else {

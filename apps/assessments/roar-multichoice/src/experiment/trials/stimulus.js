@@ -127,20 +127,28 @@ const trialsMapped = [0, 1].map((i) => {
         itemId = nextStimulus.itemId;
       }
 
-      // Collect theta SEs from clowder
+      // Collect theta estimates and SEs from clowder
+      const thetaCoreRaw = clowder?.theta?.core;
+      const thetaSECoreRaw = clampPositive(clowder?.seMeasurement?.core);
       const thetaComprehensionRaw = clowder?.theta?.composite_comprehension;
       const thetaSEComprehensionRaw = clampPositive(clowder?.seMeasurement?.composite_comprehension);
-      const [, thetaSEScaled, , thetaSEScaledComprehension] = scaleTheta(
-        thetaComprehensionRaw,
-        thetaSEComprehensionRaw,
+      const [thetaCoreScaled, thetaSEScaled, thetaComprehensionScaled, thetaSEScaledComprehension] = scaleTheta(
+        thetaCoreRaw,
+        thetaSECoreRaw,
         thetaComprehensionRaw,
         thetaSEComprehensionRaw,
       );
 
+      const thetaEstimates = {
+        core: thetaCoreScaled,
+        composite_comprehension: thetaComprehensionScaled,
+        scaled: thetaCoreScaled,
+      };
+
       const thetaSEs = {
-        core: clowder?.seMeasurement?.core,
+        core: thetaSEScaled,
         composite_comprehension: clampPositive(thetaSEScaledComprehension),
-        scaled: clampPositive(thetaSEScaled),
+        scaled: thetaSEScaled,
       };
 
       let adaptiveTrialData = {};
@@ -156,6 +164,7 @@ const trialsMapped = [0, 1].map((i) => {
         const itemParameters = Object.fromEntries(catParameterPairs);
 
         adaptiveTrialData = {
+          thetaEstimates,
           thetaSEs,
         };
 
