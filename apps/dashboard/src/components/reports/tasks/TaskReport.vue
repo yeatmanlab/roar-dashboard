@@ -46,9 +46,9 @@
   </div>
   <div v-if="orgType !== 'district'" class="my-2 mx-4">
     <SubscoreTable
-      v-if="tasksWithSubscores.includes(taskId) && !isLoadingTasksDictionary"
+      v-if="tasksWithSubscores.includes(taskId) && taskUuid && !isLoadingTasksDictionary"
       :task-id="taskId"
-      :task-uuid="taskUuid || taskId"
+      :task-uuid="taskUuid"
       :task-name="tasksDictionary[taskId]?.nameSimple ?? taskId"
       :administration-id="administrationId"
       :org-type="orgType"
