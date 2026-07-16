@@ -39,7 +39,7 @@ const practiceStimulus = {
   },
   data: {
     // Here is where we specify that we should save the trial to Firestore
-    assessment_stage: 'practice_response',
+    assessment_stage: 'practice',
   },
   on_load: () => {
     document.getElementById('practice_number').focus();
@@ -145,7 +145,7 @@ const feedbackIncorrect = {
   },
   data: {
     // Here is where we specify that we should save the trial to Firestore
-    assessment_stage: 'practice_response',
+    assessment_stage: 'practice',
   },
   on_load: () => {
     document.getElementById('practice_number').focus();

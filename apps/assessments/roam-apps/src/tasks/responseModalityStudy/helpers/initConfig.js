@@ -11,9 +11,10 @@ import _isNull from 'lodash/isNull'; //checks if value of object is null
 import _isUndefined from 'lodash/isUndefined'; //check if value of object is undefined
 import { getAgeData } from '@bdelab/roar-utils'; //restructures age information
 import i18next from 'i18next'; //for language info
+import { updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
 
 //gets the variables required for the task
-export const initConfigResponseModality = async (firekit, gameParams, userParams, displayElement) => {
+export const initConfigResponseModality = async (gameParams, userParams, displayElement) => {
   //concatenates gameparams and userparams (2 dictionaries?) and omits anything that is null or undefined
   const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
 
@@ -54,7 +55,6 @@ export const initConfigResponseModality = async (firekit, gameParams, userParams
     totalTrialsMain: 10,
     stopCriterion: 3, //number of trials to get right to move on to next block
     startTime: new Date(),
-    firekit,
     displayElement: displayElement || null,
     responseMode: responseMode || 'production',
     taskName: taskName,
@@ -64,19 +64,15 @@ export const initConfigResponseModality = async (firekit, gameParams, userParams
     audio: audio ?? true,
   };
 
-  //updates game gameParams, maps values from config to gameParams
-  const updatedGameParams = Object.fromEntries(
-    Object.entries(gameParams).map(([key, value]) => [key, config[key] ?? value]),
-  );
-
-  //firekit is also updated
-  await config.firekit.updateTaskParams(updatedGameParams);
+  // updateTaskParams is not supported in the SDK; log a deprecation warning and continue
+  console.warn('[roam-apps] updateTaskParams is deprecated and has no effect.');
 
   if (config.pid !== null) {
-    await config.firekit.updateUser({
-      assessmentPid: config.pid,
-      ...userMetadata,
-    });
+    try {
+      await updateUser({ assessmentPid: config.pid, ...userMetadata });
+    } catch (err) {
+      console.error('[roam-apps] updateUser failed (non-fatal):', err);
+    }
   }
 
   return config;

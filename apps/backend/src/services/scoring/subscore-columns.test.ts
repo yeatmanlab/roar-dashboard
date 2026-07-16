@@ -72,6 +72,17 @@ describe('subscore columns (config-driven)', () => {
       expect(getNumericFieldForSubscore('roam-alpaca', 'rawScore')).toEqual({ scoreName: 'roarScore' });
     });
 
+    it('returns scoreName + domain for a domain-scoped number column (roam-alpaca subtasks share subPercentCorrect)', () => {
+      expect(getNumericFieldForSubscore('roam-alpaca', 'numberKnowledge')).toEqual({
+        scoreName: 'subPercentCorrect',
+        scoreDomain: 'numberKnowledge',
+      });
+      expect(getNumericFieldForSubscore('roam-alpaca', 'geometry')).toEqual({
+        scoreName: 'subPercentCorrect',
+        scoreDomain: 'geometry',
+      });
+    });
+
     it('returns null for paSkillsToWorkOn, stringPassthrough, and unknown keys', () => {
       expect(getNumericFieldForSubscore('pa', 'skillsToWorkOn')).toBeNull();
       expect(getNumericFieldForSubscore('letter', 'lettersToWorkOn')).toBeNull();
