@@ -36,7 +36,7 @@ export default function buildResponseModalityTimeline(config) {
   // add the response time block, randomise the order of 2afc, 6afc, and production.
   let blockOrder = store.session.get('blockOrder').stimulus;
   for (let i = 0; i < blockOrder.length; i++) {
-    timeline.push(responseTimeBlock('stimulus', blockOrder[i], i, 'test_response'));
+    timeline.push(responseTimeBlock('stimulus', blockOrder[i], i, 'test'));
   }
 
   timeline.push(endScreen); // End Task

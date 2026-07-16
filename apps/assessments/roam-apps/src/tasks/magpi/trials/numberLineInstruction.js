@@ -264,7 +264,7 @@ const instructionIntro2 = () => {
   let stim = {
     type: jsPsychHtmlButtonResponse,
     data: {
-      assessment_stage: 'practice_response',
+      assessment_stage: 'practice',
     },
     stimulus: () => {
       let displayText;

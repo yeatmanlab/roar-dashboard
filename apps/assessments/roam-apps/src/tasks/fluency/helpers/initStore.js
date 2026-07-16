@@ -1,6 +1,7 @@
 import store from 'store2'; //storing browser data
 import { camelize, getDevice } from '@bdelab/roar-utils';
 import i18next from 'i18next';
+import { ROAM_FLUENCY_SUBTASK_DOMAINS } from '@roar-platform/assessment-schema/roam-apps';
 
 export const isMobile = getDevice() === 'mobile';
 
@@ -163,10 +164,10 @@ export const initStoreFluency = () => {
 
   //name to save subtask in scores
   store.session.set('operatorMap', {
-    '+': 'addition',
-    '-': 'subtraction',
-    '&times': 'multiplication',
-    '&divide': 'division',
+    '+': ROAM_FLUENCY_SUBTASK_DOMAINS.ADDITION,
+    '-': ROAM_FLUENCY_SUBTASK_DOMAINS.SUBTRACTION,
+    '&times': ROAM_FLUENCY_SUBTASK_DOMAINS.MULTIPLICATION,
+    '&divide': ROAM_FLUENCY_SUBTASK_DOMAINS.DIVISION,
   });
   store.session.set('assessedSkills', {});
   store.session.set('assessedFacts', { multiplication: [], division: [] });
