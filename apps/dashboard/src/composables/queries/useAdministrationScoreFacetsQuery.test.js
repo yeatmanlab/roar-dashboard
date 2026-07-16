@@ -65,7 +65,7 @@ describe('useAdministrationScoreFacetsQuery', () => {
 
   afterEach(() => {
     queryClient?.clear();
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('calls useQuery with the facets key and a gated, readonly enabled', () => {
@@ -131,6 +131,8 @@ describe('useAdministrationScoreFacetsQuery', () => {
     const scopeId = ref(null);
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = null;
+
+    vi.spyOn(VueQuery, 'useQuery');
 
     withSetup(() => useAdministrationScoreFacetsQuery(nanoid(), 'school', scopeId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
