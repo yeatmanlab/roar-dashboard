@@ -337,11 +337,7 @@
                     :task-id="taskId"
                     :initialized="initialized"
                     :administration-id="administrationId"
-                    :runs="
-                      orgType === 'district'
-                        ? aggregatedDistrictSupportCategories?.[taskId]
-                        : computeAssignmentAndRunData.runsByTaskId?.[taskId]
-                    "
+                    :facets="facetsByTask[taskId]"
                     :org-type="orgType"
                     :org-id="orgId"
                     :org-info="orgData"
@@ -431,6 +427,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useAdministrationScoreOverviewQuery from '@/composables/queries/useAdministrationScoreOverviewQuery';
 import useAdministrationScoreStudentsQuery from '@/composables/queries/useAdministrationScoreStudentsQuery';
+import useAdministrationScoreFacetsQuery from '@/composables/queries/useAdministrationScoreFacetsQuery';
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
@@ -537,6 +534,21 @@ const { data: scoreOverviewData, isLoading: isLoadingScoreOverview } = useAdmini
 );
 const scoreOverviewBySlug = computed(() =>
   Object.fromEntries((scoreOverviewData.value?.tasks ?? []).map((task) => [task.taskSlug, task.supportLevels])),
+);
+
+// Server-computed distribution facets per task (support-level + score bins, faceted by
+// grade and school) — the source for the per-task TaskReport distribution charts at ALL
+// scopes. This replaces both the client-side facet binning (non-district) and the Firestore
+// `aggregatedDistrictSupportCategories` feed (district); the charts no longer distinguish
+// scope. School facets are populated at district scope only (empty arrays elsewhere).
+const { data: scoreFacetsData } = useAdministrationScoreFacetsQuery(
+  props.administrationId,
+  props.orgType,
+  props.orgId,
+  { enabled: initialized },
+);
+const facetsByTask = computed(() =>
+  Object.fromEntries((scoreFacetsData.value?.tasks ?? []).map((task) => [task.taskSlug, task])),
 );
 
 const getScoringVersions = computed(() => {
@@ -1409,9 +1421,6 @@ const SUPPORT_LEVEL_DISPLAY = {
 // correct/incorrect difference, raw-only) rather than the normed percentile/standard/raw the
 // backend overlay supplies. listStudents maps their `percentile`/`rawScore` to task-specific
 // numbers, so these keep their client-computed cells entirely (deferred follow-up).
-//
-// Exception: swr-es and correct-incorrect-difference tasks with scoring version >= 1 are normed
-// and should receive the backend overlay, per the existing branching logic (lines 911, 1154, 1561).
 const SPECIAL_TASK_SLUGS = new Set([
   ...tasksToDisplayPercentCorrect,
   ...tasksToDisplayTotalCorrect,
@@ -1419,18 +1428,6 @@ const SPECIAL_TASK_SLUGS = new Set([
   ...tasksToDisplayCorrectIncorrectDifference,
   ...rawOnlyTasks,
 ]);
-
-const isSpecialTask = (slug) => {
-  if (!SPECIAL_TASK_SLUGS.has(slug)) return false;
-  // swr-es and correct-incorrect-difference tasks with scoring version >= 1 are normed
-  if (
-    (slug === 'swr-es' || tasksToDisplayCorrectIncorrectDifference.includes(slug)) &&
-    getScoringVersions.value[slug] >= 1
-  ) {
-    return false;
-  }
-  return true;
-};
 
 // Backend scores re-keyed: userId → { taskSlug → entry }. The table columns are slug-based,
 // while the response keys `scores` by task UUID.
@@ -1473,9 +1470,7 @@ const tableDataWithBackendScores = computed(() => {
       // Special (non-normed) tasks keep their client-computed cell: listStudents maps their
       // `percentile`/`rawScore` to task-specific values that don't belong in the normed
       // columns, and those cells + the CSV export stay client-side (deferred follow-up).
-      // Exception: normed swr-es (scoring version >= 1) and correct-incorrect-difference tasks
-      // should use the backend overlay instead of client-computed values.
-      if (!entry || isSpecialTask(slug)) {
+      if (!entry || SPECIAL_TASK_SLUGS.has(slug)) {
         mergedScores[slug] = clientScore;
         continue;
       }
