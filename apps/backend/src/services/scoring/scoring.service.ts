@@ -454,7 +454,12 @@ export function getNumericFieldForSubscore(
       ? { scoreName: column.percentCorrectName, scoreDomain: column.domain }
       : { scoreName: column.percentCorrectName };
   }
-  if (column.kind === 'number') return { scoreName: column.name };
+  if (column.kind === 'number') {
+    // Domain-bearing number columns (roam-alpaca's per-subtask subPercentCorrect,
+    // shared across every subtask domain) carry the domain so the repository can
+    // match (name, domain); distinct-name columns match on name alone.
+    return column.domain ? { scoreName: column.name, scoreDomain: column.domain } : { scoreName: column.name };
+  }
   return null;
 }
 

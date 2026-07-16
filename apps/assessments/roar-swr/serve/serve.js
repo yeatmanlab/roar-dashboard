@@ -31,6 +31,9 @@ const useParameterValidation = urlParams.get('useParameterValidation') === 'true
 const lngParam = urlParams.get('lng') ?? 'en';
 const language = SWR_LANGUAGES[lngParam] ?? SWR_LANGUAGES.en;
 
+// The dev variant picker lists every published variant across all SWR language tasks.
+const PICKER_TASK_IDS = Object.values(SWR_LANGUAGES).map((l) => l.taskId);
+
 // App config
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -72,7 +75,7 @@ onAuthStateChanged(auth, async (user) => {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,
-          taskId: language.taskId,
+          taskId: PICKER_TASK_IDS,
           currentVariantId: resolvedVariantId,
         });
       }

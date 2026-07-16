@@ -34,6 +34,9 @@ const language = LETTER_LANGUAGES[lngParam] ?? LETTER_LANGUAGES.en;
 // Phonics is a separate task family — language doesn't affect its task ID.
 const taskId = task === 'phonics' ? PHONICS_TASK_IDS.EN : language.taskId;
 
+// The dev variant picker lists every published variant across all letter language tasks plus phonics.
+const PICKER_TASK_IDS = [...Object.values(LETTER_LANGUAGES).map((l) => l.taskId), PHONICS_TASK_IDS.EN];
+
 // App config
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -75,7 +78,7 @@ onAuthStateChanged(auth, async (user) => {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,
-          taskId,
+          taskId: PICKER_TASK_IDS,
           currentVariantId: resolvedVariantId,
         });
       }
