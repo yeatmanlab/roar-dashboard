@@ -1,5 +1,5 @@
 const timeout = Cypress.env('timeout');
-const participantId = '123456789';
+//const participantId = '123456789';
 const questionInput = '42';
 
 function typeEnter() {
@@ -13,9 +13,9 @@ function waitTimeout() {
 function playRoamIntro() {
   waitTimeout();
 
-  //   Click textbox and enter random participantId
-  cy.get('#input-0', { timeout: timeout }).type(`${participantId} {enter}`);
-  waitTimeout();
+  //   Click textbox and enter random participantId -> participant id page was removed for default app version
+  //cy.get('#input-0', { timeout: timeout }).type(`${participantId} {enter}`);
+  //waitTimeout();
   typeEnter();
   waitTimeout();
 

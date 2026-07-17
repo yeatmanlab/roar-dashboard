@@ -11,13 +11,13 @@ const breakScreen = {
   stimulus: () => {
     breakCount = store.session.get('breakCount');
     let audioFile = 'coreMathBreak' + breakCount;
-    if (store.session.get('isK2')) {
+    if (store.session.get('config').storyOption || store.session.get('isK2')) {
       audioFile = audioFile + 'K2';
     }
     return mediaAssets.audio[audioFile];
   },
   prompt: () => {
-    if (store.session.get('isK2')) {
+    if (store.session.get('config').storyOption || store.session.get('isK2')) {
       return `
        <div class = "jspsych-content-modified">
           <img src="${mediaAssets.images['coreMathBreakScreen' + breakCount]}" alt= "background" class="imageBG"> 

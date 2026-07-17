@@ -8,7 +8,6 @@ import { addResponse, endGame, updateSkillScores, scaleTheta, isMobile } from '.
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
 
 let source;
-let audioFile;
 
 // Fixed item. Displays 8 ducks in a row. Task is to select the nth duck.
 export const selectDuck = (corpusName, assessment_stage_val) => {
@@ -20,8 +19,7 @@ export const selectDuck = (corpusName, assessment_stage_val) => {
       assessment_stage: assessment_stage_val,
     },
     stimulus: () => {
-      audioFile = store.session.get('nextStimulus').audio_file;
-      return mediaAssets.audio[audioFile];
+      return mediaAssets.audio.nullAudio;
     },
     prompt: () => {
       //to set the dimensions of the timer in pixels (make sure it is even)
@@ -85,7 +83,7 @@ export const selectDuck = (corpusName, assessment_stage_val) => {
 
       //setup replay button
       const replayBtn = document.getElementById('replay');
-
+      let audioFile = store.session.get('nextStimulus').audio_file;
       async function replayAudio() {
         // pause audio
         if (source) {
@@ -104,6 +102,8 @@ export const selectDuck = (corpusName, assessment_stage_val) => {
       }
 
       replayBtn.addEventListener('click', replayAudio);
+      //play audio immediately when item loads
+      replayAudio();
 
       //disable on load to prevent double clicking
       let buttons = document.querySelectorAll('.jspsych-audio-multi-response-button');

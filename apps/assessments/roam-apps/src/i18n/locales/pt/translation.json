@@ -1,1 +1,297 @@
-{}
+{
+  "loading": "Esta atividade está carregando...",
+  "progressBar": "Progresso concluído",
+  "preloadTrial": {
+    "messageText": "Aguarde enquanto a atividade carrega. Isso pode levar alguns minutos."
+  },
+  "fullScreenTrial": {
+    "prompt": "Alternando para o modo de tela cheia.",
+    "buttonText": "Ir"
+  },
+  "navigation": {
+    "continueButtonText": "Pressione <span class='yellow'>QUALQUER TECLA</span> para {{action}}.",
+    "continueButtonTextClick": "Click <span class='yellow'>{{input}}</span> to {{action}}.",
+    "text1": "Para realizar a atividade, utilize as setas que aparecem na tela.",
+    "text2": "{{mode}} na seta para começar.",
+    "text3": "Clique",
+    "text4": "Toque"
+  },
+  "intro": {
+    "fluency-arf": {
+      "YeatmanLab": "Bem-vindo(a)!",
+      "numberLab": "Welcome to the ARF activity!",
+      "text1": "Nesta atividade, você resolverá operações de matemática. Você irá começar com adição e subtração.",
+      "text2": "Resolva essas operações mentalmente, SEM usar lápis ou papel."
+    },
+    "fluency-calf": {
+      "YeatmanLab": "Bem-vindo!",
+      "numberLab": "Welcome to the CalF acitivity!",
+      "text1": "Nesta atividade, você resolverá operações de matemática. Você irá começar com adição e subtração.",
+      "text2": "Alguns dos números são grandes, então reserve um momento para <u><b>pegar lápis e papel</b></u> antes de começar."
+    },
+    "core-math": {
+      "text1": "Bem-vindo a esta atividade de matemática!",
+      "text2": "Nesta atividade, você resolverá diferentes tipos de operações matemáticas.",
+      "text3": "Você poderá encontrar operações que ainda não conhece. Faça o seu melhor e tente responder ao máximo de operações que conseguir.",
+      "K2": {
+        "text1": "Bem-vindo!",
+        "text2": "Eu sou Aline, a alpaca. Você pode me ajudar a voltar para casa?",
+        "text3": "Minha casa fica no topo de uma montanha. Para subir a montanha, precisamos resolver alguns problemas de matemática."
+      }
+    }
+  },
+  "instructions": {
+    "text1": "Instruções",
+    "fluency": {
+      "text2": "Use as teclas numéricas <u><b>da parte de cima do seu teclado</b></u> para digitar a sua resposta.",
+      "text3": "Vamos experimentar: pressione qualquer tecla numérica do seu teclado.",
+      "text4": "Pressione \"Enter\" para salvar sua resposta e ir para o próximo problema.",
+      "text5": "Por favor, tente pressionar \"Enter\".",
+      "text6": "Se quiser mudar sua resposta antes de enviar, apague o que digitou usando \"Backspace\u232B\".",
+      "text7": "Vamos tentar pressionar \"Backspace\u232B\".",
+      "text8": "Se a resposta tiver dois dígitos, como o 10, digite primeiro 1 e depois 0 para formar o número 10.",
+      "text9": "Vamos tentar! Digite o número 10 na caixa de texto e pressione \"Enter\" para enviar sua resposta.",
+      "text10": "Isso mesmo!",
+      "text11": "Essa não é a chave correta. Por favor, tente novamente.",
+      "text12": "Essa resposta não está correta. Por favor, tente novamente.",
+      "text13": "Lembre-se:",
+      "text14": "Se você não souber a resposta, pode pular o problema pressionando \"Enter\".",
+      "text15": "Vamos praticar um pouco!",
+      "fluency-arf": "Lembre-se de resolver essas operações mentalmente, SEM usar lápis ou papel.",
+      "fluency-calf-YeatmanLab": "Lembre-se de ter lápis e papel à mão para te ajudar a resolver as operações.",
+      "fluency-calf-numberLab": "Remember to have pencil and paper ready to help you solve the problems. Please do NOT use a calculator.",
+      "text16": "Pressione <span class='yellow'>QUALQUER TECLA</span> para começar os exercícios.",
+      "text17": "Se você não souber a resposta, pode pular a questão clicando no botão <span class='green-btn-mobile'><b>\"Enviar\"</b></span>.",
+      "text18": "Você verá <b>duas</b> opções.",
+      "text19": "Você verá <b>seis</b> opções.",
+      "text20": "Use o mouse para selecionar sua resposta.",
+      "text21": "Use o seu dedo para selecionar a resposta."
+    },
+    "core-math": {
+      "text2": "Use {{mode}} para responder às operações.",
+      "mouse": "o mouse",
+      "finger": "o seu dedo",
+      "text3": "Use as teclas numéricas na parte superior do teclado.",
+      "text4": "Pressione \"Enter\" para enviar sua resposta e ir para a próxima operação.",
+      "text5": "Se quiser mudar sua resposta antes de enviá-la, apague o que digitou usando \"Backspace\u232B\".",
+      "text6": "Se precisar ouvir a pergunta novamente, pressione o ícone do alto-falante na parte superior da tela.",
+      "text7": "Time!",
+      "text8": "Se você estiver demorando para responder uma operação, você verá um aviso de tempo no canto da tela.",
+      "text9": "Quando o tempo acabar, você ouvirá um som e receberá uma nova operação.",
+      "text10-YeatmanLab": "Tenha lápis e papel por perto, caso precise deles.",
+      "text10-numberLab": "Keep pencil and paper ready in case you need them. Please do NOT use a calculator.",
+      "text11": "A Aline fará algumas pausas ao longo do caminho. Se você precisar descansar, você poderá fazer uma pausa quando a Aline parar para descansar.",
+      "text12": "Haverá pausas durante a atividade. Durante essas pausas, você poderá descansar pelo tempo que precisar.",
+      "text13": "Pressione a seta quando estiver pronto para começar.",
+      "text14": "Vamos praticar! Digite o número 10 na caixa de texto e pressione \"Enter\" para enviar sua resposta.",
+      "text15": "Use as teclas de seta ou o mouse para alternar entre as caixas de resposta. Pressione \"Enter\", ou clique na seta quando terminar e estiver pronto para continuar.",
+      "text16": "Essa resposta não está correta. Se você estiver com dificuldades, observe a imagem para obter ajuda.",
+      "text17": "Use o teclado que aparece na tela para digitar sua resposta.",
+      "text18": "Pressione <span class='green-btn-mobile'><b>\"Enviar\"</b></span> para enviar sua resposta e ir para a próxima operação.",
+      "text19": "Se quiser mudar sua resposta antes de enviá-la, pressione o botão <span class='red-btn-mobile'><b>\"Excluir\"</b></span>.",
+      "text20": "Vamos praticar! Digite o número 10 na caixa de texto e pressione <span class='green-btn-mobile'><b>\"Enviar\"</b></span>.",
+      "text21": "Você pode alternar para a outra caixa de resposta tocando nela. Pressione o botão <span class='green-btn-mobile'><b>\"Enviar\"</b></span> quando terminar e estiver pronto para continuar."
+    }
+  },
+  "practice": {
+    "feedbackCorrect": "Isso mesmo!",
+    "feedbackCorrect2": "Press \"Enter\" or \"Return\" to continue.",
+    "feedbackCorrect3": "Select the arrow to continue.",
+    "feedbackIncorrect": "Você respondeu {{answer}}.",
+    "feedbackIncorrect1": "Essa resposta não está correta.",
+    "feedbackIncorrect2": "Por favor, tente novamente.",
+    "feedbackIncorrect3": "A resposta correta é <b>{{target}}</b>.",
+    "feedbackIncorrect4": "Por favor, digite <b>{{target}}</b> na caixa de texto e pressione \"Enter\" para continuar.",
+    "feedbackIncorrect5": "Por favor, selecione <b>{{target}}</b>.",
+    "feedbackIncorrect6": "Por favor, digite <b>{{target}}</b> na caixa de texto e pressione <span class='green-btn-mobile'><b>\"Enviar\"</b></span> para continuar."
+  },
+  "postPractice": {
+    "text1": "Ótimo trabalho!",
+    "text2": "Durante a atividade, lembre-se de:",
+    "text3": "Prestar muita atenção <u><b>às mudanças dos sinais</b></u>.",
+    "text4": "Você pode pular esta fase se não tiver certeza, pressionando \"Enter\".",
+    "text5": "Vamos começar!",
+    "fluency-arf": "Agora você está pronto para resolver as operações sozinho.",
+    "fluency-calf-YeatmanLab": "Agora você está pronto para resolver as operações sozinho. Se ainda não pegou lápis e papel, aproveite este momento para pegá-los.",
+    "fluency-calf-numberLab": "You are now ready to solve problems on your own. If you haven't gotten a pencil and paper yet, take this moment to grab them. Please do NOT use a calculator.",
+    "text6": "Você terá <u><b>{{time}} minutos</b></u> para responder o máximo de questões que conseguir.",
+    "text7": "Responda o mais rápido que puder e tente não cometer erros.",
+    "text8": "Boa sorte!",
+    "text9": "Pressione <span class='yellow'>QUALQUER TECLA</span> para começar.",
+    "text10": "Se não tiver certeza, tudo bem, apenas faça o seu melhor!",
+    "text11": "You will have <u><b>30 seconds</b></u> to answer as many as you can.",
+    "text12": "Você pode pular esta etapa se não tiver certeza, clicando no botão <span class='green-btn-mobile'><b>\"Enviar\"</b></span>."
+  },
+  "warning": "CUIDADO: uma das caixas de resposta está vazia. Pressione \"Enter\" ou clica na seta se você deseja enviar essa resposta",
+  "warning-mobile": "CUIDADO: uma das caixas de resposta está vazia. Pressione \"Enviar\" se você deseja enviar essa resposta",
+  "warning-number-line": "Você precisa arrastar o marcador! Dê o seu melhor palpite!",
+  "responseModalityStudy": {
+    "intro": {
+      "text1": "Welcome to the math fluency activity!",
+      "text2": "In this activity, you will be doing math problems involving addition, subtraction, multiplication, and division.",
+      "text3": "Activity {{number}}",
+      "text4": "For this activity, you will be using the <b>{{mode}}</b>.",
+      "text5": "mouse",
+      "text6": "keyboard",
+      "text7": "In this activity, you will be doing math problems. You will solve the first set of problems by {{mode}}.",
+      "text8": "In this activity, you will be doing math problems.",
+      "text9": "typing your answers on the keyboard",
+      "text10": "clicking on your answer with the mouse",
+      "text11": "tapping your answer with your finger"
+    },
+    "instructions": {
+      "text1": "Instructions",
+      "text2": "You will answer problems in <u>three</u> different ways.",
+      "text3": "Before we solve any math problems, let's practice each way of answering!",
+      "text4": "Choices will appear below the math problem. Use the mouse to select your answer.",
+      "text5": "You will have <b><u>{{time}} minutes</u></b> to answer as many problems as you can.<br><br>Work as fast as you can, and try not to make mistakes.<br><br>Good luck!",
+      "text6": "We're first going to practice with the keyboard.",
+      "text7": "We're first going to practice {{mode}} when there are two choices.",
+      "text8": "We're first going to practice {{mode}} when there are six choices.",
+      "text9": "clicking with the mouse",
+      "text10": "tapping with your finger"
+    },
+    "practice": {
+      "text1": "Instructions",
+      "text2": "Use your {{mode}} the button that matches the number.",
+      "text3": "mouse to click",
+      "text4": "finger to tap",
+      "text5": "A number will be shown on the screen. Use the keyboard to type that number into the textbox.",
+      "text6": "You will have <b><u>30 seconds</u></b> to answer as many as you can. Work as fast as you can, and try not to make mistakes. {{continue}}",
+      "text7": "A number will be shown on the screen. Type that number into the textbox using the number keys <u><b>at the top of your keyboard</b></u>.",
+      "text8": "Press \"Enter\" or \"Return\" to save your answer and go to the next practice item.",
+      "text9": "Click the arrow to begin.",
+      "text10": "Tap the arrow to begin.",
+      "text11": "Let's practice with the keyboard!",
+      "text12": "Let's practice {{mode}} with {{type}} choices!",
+      "text13": "two",
+      "text14": "six",
+      "text15": "clicking",
+      "text16": "tapping"
+    },
+    "endScreen": {
+      "text1": "We will now start the math activities. You will be doing four activities, one after the other.<br><br>If you haven't gotten a pencil and paper yet, take this moment to grab them. Please do NOT use a calculator.",
+      "text2": "You are done with the first activity. You will now start the second activity.",
+      "text3": "You are done with the second activity. You will now start the third activity.",
+      "text4": "You are done with the third activity. You will now start the last activity.",
+      "text5": "Great job!",
+      "text6": "Let's now solve some math problems.",
+      "text7": "For the first set of problems, {{mode}}.",
+      "text8": "Great work!",
+      "text9": "You are all done with the first set of problems. For the second set of problems, {{mode}}.",
+      "text10": "use the keyboard to type your answers",
+      "text11": "use the mouse to click on your answers",
+      "text12": "use your finger to tap on your answers"
+    }
+  },
+  "magpiPilot": {
+    "symbolicComp": {
+      "intro": {
+        "text1": "Bem-vindo!",
+        "text2": "Nesta atividade, você resolverá operações de matemática.",
+        "text3": "Mas primeiro, vamos jogar um joguinho rápido com números!",
+        "text4": "Você se saiu muito bem naquele jogo de números!",
+        "text5": "Vamos resolver algumas operações de matemática agora. Você irá começar com adição e subtração.",
+        "text6": "Resolva essas operações mentalmente, SEM usar lápis ou papel."
+      },
+      "instructions": {
+        "text1": "Você verá dois números. Sua tarefa é escolher o <u><b>maior</b></u>.",
+        "text1K": "Você verá dois números. Sua tarefa é escolher o <u><b>maior</b></u>.",
+        "text2": "Pressione a seta para praticar!"
+      },
+      "practice": {
+        "correct": "Isso mesmo!<br>{{target}} é maior que {{distractor}}.",
+        "correctK": "Isso mesmo!<br>{{target}} é maior que {{distractor}}.",
+        "incorrect": "A resposta correta é <b>{{target}}</b>.<br>{{target}} é maior que {{distractor}}. Clique no <b>{{target}}</b>.",
+        "incorrectK": "A resposta correta é <b>{{target}}</b>.<br>{{target}} é maior que {{distractor}}. Clique no <b>{{target}}</b>."
+      },
+      "postPractice": {
+        "text1": "Vamos fazer isso de verdade agora.",
+        "text2": "Dê o seu melhor e vá o mais rápido que puder!",
+        "text3": "Você tem 1 minuto e 30 segundos.",
+        "text4": "Lembre-se de escolher o <u><b>maior</b></u> número.",
+        "text4K": "Lembre-se de escolher o <u><b>maior</b></u> número."
+      }
+    },
+    "numberLine": {
+      "transition": {
+        "K2-text1": "Quase lá!",
+        "K2-text2": "Mas, há algumas pedras grandes no caminho.",
+        "K2-text3": "Para escalar as pedras, você precisa ajudar a Aline a <b>colocar números</b> em uma <b>reta numérica</b>.<br><br>Pressione a seta para praticar!",
+        "K2-text4": "Você está pronto!",
+        "K2-text5": "Você verá um número que Aline precisa colocar na linha. Arraste o marcador para onde você acha que o número deve ficar.<br><br>Depois, <b>pressione a seta</b> para continuar.",
+        "K2-text6": "Vamos ajudar a Aline a colocar números nesta reta numérica.",
+        "text1": "Ótimo trabalho!",
+        "text2": "Agora vamos resolver alguns exercícios com retas numéricas.",
+        "text3": "Sua tarefa é achar a posição de certos números na reta numérica.",
+        "text4": "Pressione a seta para continuar.",
+        "text5": "Vamos começar!",
+        "text6": "Você verá um número. Arraste o marcador para onde você acha que o número deve ficar.<br><br>Depois, <b>pressione a seta</b> para salvar sua resposta e ir para a próxima pergunta.",
+        "text7": "Ótimo!",
+        "text8": "Vamos marcar algumas frações nesta reta numérica.",
+        "text9": "Pressione a seta para começar!"
+      },
+      "feedback": {
+        "correct": "Isso mesmo! O número {{number}} é aqui.",
+        "incorrect": "Boa tentativa! O número {{number}} é aqui. Clique no marcador!"
+      },
+      "text1": "Esta é uma reta numérica que vai de 0 a {{number}}.",
+      "text2": "Ótimo trabalho! Agora a reta numérica vai de <b>0 a {{number}}</b>.",
+      "text3": "O ponto preto é chamado de <b>marcador</b>. Neste momento, o <b>marcador</b> está no 0.",
+      "text4": "Neste momento, o marcador está no 0.",
+      "text5": "O marcador está no 0.",
+      "text6": "Tente mover o marcador para {{number}}.",
+      "text7": "Clique e arraste o marcador para movê-lo. Você também pode clicar na linha.",
+      "text8": "Clique na seta quando terminar!",
+      "text9": "Nessa reta numérica, o número 1 está aqui.",
+      "text10": "{{number}} está aqui."
+    }
+  },
+  "gameBreak": {
+    "core-math": {
+      "break0": {
+        "K2-text1": "Bom trabalho!",
+        "K2-text2": "A Aline está fazendo uma pausa para comer algumas maçãs. Pressione a seta quando estiver pronto para continuar.",
+        "text1": "Bom trabalho!"
+      },
+      "break1": {
+        "K2-text1": "Excelente trabalho!",
+        "K2-text2": "Você atravessou o vale e começou a subir a montanha. Deixe Aline descansar um pouco e depois pressione a seta para continuar.",
+        "text1": "Você está indo muito bem!"
+      },
+      "break2": {
+        "K2-text1": "Ufa!",
+        "K2-text2": "A Aline está ficando cansada. Faça uma pausa, se precisar, e depois pressione a seta para continuar.",
+        "text1": "Excelente trabalho!"
+      },
+      "break3": {
+        "K2-text1": "Quase lá!",
+        "K2-text2": "Você está quase no topo da montanha. Faça uma pequena pausa e depois pressione a seta para continuar.",
+        "text1": "Bom trabalho!"
+      },
+      "text1": "Faça uma pausa se precisar.",
+      "text2": "Pressione a seta quando estiver pronto para continuar."
+    },
+    "endScreen": {
+      "text1": "Você terminou a atividade.",
+      "text2": "Muito obrigado por participar.",
+      "text3": "Pressione <span class='yellow'>QUALQUER TECLA</span> para salvar o seu trabalho e sair.",
+      "text4": "Ótimo trabalho!",
+      "text5": "Você conseguiu!",
+      "text6": "Muito obrigado por ajudar a Aline a voltar para casa.",
+      "text7": "Pressione a seta para salvar seu trabalho e sair."
+    }
+  },
+  "terms": {
+    "anyKey": "QUALQUER TECLA",
+    "continue": "continuar",
+    "here": "HERE",
+    "begin": "começar",
+    "delete": "Excluir",
+    "submit": "Enviar",
+    "simplifiedFraction": "simpli",
+    "mathFact": "fact",
+    "problem2x": "\\text{ou}",
+    "mathProblem": "Problema de Matemática"
+  }
+}

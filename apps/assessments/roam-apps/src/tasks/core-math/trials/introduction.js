@@ -7,14 +7,14 @@ import store from 'store2';
 export const intro = {
   type: jsPsychAudioMultiResponse,
   stimulus: () => {
-    if (store.session.get('isK2')) {
+    if (store.session.get('config').storyOption || store.session.get('isK2')) {
       return mediaAssets.audio.coreMathIntroductionK2;
     } else {
       return mediaAssets.audio.coreMathIntroduction;
     }
   },
   prompt: () => {
-    if (store.session.get('isK2')) {
+    if (store.session.get('config').storyOption || store.session.get('isK2')) {
       return `
        <div class = "jspsych-content-modified">
           <img src="${mediaAssets.images.coreMathIntro}" alt= "background" class="imageBG"> 
