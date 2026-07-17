@@ -18,7 +18,7 @@
  * location until it finds the `roar-backend` package — robust across:
  *
  *   - vitest unit/integration tests (loaded from `src/` via tsx)
- *   - bundled production output (`dist/server.js` / `dist/server-test.js`)
+ *   - bundled production output (`dist/server.js`)
  *   - any future restructure that moves source or bundle around within
  *     the workspace, since the helper keys off `package.json` content
  *     rather than directory-depth assumptions.
