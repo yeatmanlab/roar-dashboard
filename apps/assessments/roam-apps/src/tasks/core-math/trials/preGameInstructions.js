@@ -203,14 +203,14 @@ const pencilPaper = {
 const preTaskCheck = {
   type: jsPsychAudioMultiResponse,
   stimulus: () => {
-    if (store.session.get('isK2')) {
+    if (store.session.get('config').storyOption || store.session.get('isK2')) {
       return mediaAssets.audio.coreMathPretaskCheckK2;
     } else {
       return mediaAssets.audio.coreMathPretaskCheck;
     }
   },
   prompt: () => {
-    if (store.session.get('isK2')) {
+    if (store.session.get('config').storyOption || store.session.get('isK2')) {
       return `
          <div class = "jspsych-content-modified">
             <img src="${mediaAssets.images.coreMathIntro}" alt= "background" class="imageBG"> 

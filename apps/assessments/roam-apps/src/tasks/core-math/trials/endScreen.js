@@ -8,13 +8,13 @@ export const endScreen = {
   type: jsPsychAudioMultiResponse,
   stimulus: () => {
     let audioFile = 'coreMathEndScreen';
-    if (store.session.get('isK2')) {
+    if (store.session.get('config').storyOption || store.session.get('isK2')) {
       audioFile = audioFile + 'K2';
     }
     return mediaAssets.audio[audioFile];
   },
   prompt: () => {
-    if (store.session.get('isK2')) {
+    if (store.session.get('config').storyOption || store.session.get('isK2')) {
       return `
        <div class = "jspsych-content-modified">
           <img src="${mediaAssets.images.coreMathEndScreenK2}" alt= "background" class="imageBG"> 

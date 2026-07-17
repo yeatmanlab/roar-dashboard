@@ -6,6 +6,7 @@ import store from 'store2'; //storing session data
 //import items from "../../../../items.csv";
 //import itemsInstructions from "../../../../items-instructions.csv";
 //import hyperParams from "../../../../hyperparameters_rasch_eap.csv";
+//import breakMap from "../../../../break-mapping.csv"
 import { prepareSurveyChoices } from '../../shared/helpers';
 import { camelize, getGrade, getLanguage } from '@bdelab/roar-utils';
 import { Clowder, prepareClowderCorpus } from '@bdelab/jscat';
@@ -24,7 +25,7 @@ const transformCSV = (csvInput) => {
   let prev_ID;
   let arr = [];
 
-  for (var i = 0; i < csvInput.length; i++) {
+  for (let i = 0; i < csvInput.length; i++) {
     const newRow = {
       itemID: parseInt(csvInput[i].ID),
       problemID: parseFloat(csvInput[i].PID),
@@ -78,7 +79,7 @@ const transformCSV = (csvInput) => {
 
     let distractor_list = [];
 
-    for (var j = 1; j < 6; j++) {
+    for (let j = 1; j < 6; j++) {
       if (csvInput[i]['distractor_' + j]) {
         distractor_list.push(csvInput[i]['distractor_' + j].toString());
       } else {
@@ -94,7 +95,7 @@ const transformCSV = (csvInput) => {
 
 const transformInstructions = (csvInput) => {
   let arr = [];
-  for (var i = 0; i < csvInput.length; i++) {
+  for (let i = 0; i < csvInput.length; i++) {
     const newRow = {
       itemID: parseInt(csvInput[i].ID),
       after_item_ID: parseInt(csvInput[i].after_item_ID),
@@ -108,6 +109,27 @@ const transformInstructions = (csvInput) => {
     arr.push(newRow);
   }
   return arr;
+};
+
+const transformBreaks = (csvInput) => {
+  let breakObj = [];
+  const parseNumberList = (str) => str.split(',').map((s) => Number(s.trim()));
+
+  for (let i = 0; i < csvInput.length; i++) {
+    const newRow = {
+      gradeLower: parseInt(csvInput[i].grade_lower),
+      gradeUpper: parseInt(csvInput[i].grade_upper),
+      breakIdx: parseNumberList(csvInput[i].break_idx),
+      breakIdxLower: parseNumberList(csvInput[i].break_idx_lower),
+      breakScreens: parseNumberList(csvInput[i].break_screens),
+      startIdx: parseInt(csvInput[i].start_idx),
+      lowerStartIdx: parseInt(csvInput[i].lower_start_idx),
+    };
+    newRow.startOffset = !!newRow.startIdx;
+
+    breakObj.push(newRow);
+  }
+  return breakObj;
 };
 
 const getHyperParams = (csvInput) => {
@@ -164,6 +186,12 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
   // get language for url
   let lng = getLanguage(i18next.language);
 
+  //comma key
+  let commaKey = ',';
+  if (lng === 'pt') {
+    commaKey = '.';
+  }
+
   if (store.session.get('config').userMode === 'adaptive') {
     corpusLocation = {
       stimulus: `https://storage.googleapis.com/roam-apps/` + lng + `/shared/corpora/core-math/items_cat.csv`,
@@ -190,8 +218,21 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
         `/shared/corpora/core-math/` +
         store.session.get('config').corpusName +
         `-hyperparams.csv`,
+      breaks:
+        `https://storage.googleapis.com/roam-apps/` +
+        lng +
+        `/shared/corpora/core-math/` +
+        store.session.get('config').corpusName +
+        `-break-mapping.csv`,
     };
   }
+
+  const transformers = {
+    stimulus: transformCSV,
+    instructions: transformInstructions,
+    hyperParams: getHyperParams,
+    breaks: transformBreaks,
+  };
 
   //call the function for transforming item list
   /*function downloadLocalCSV(data, key) {
@@ -219,13 +260,11 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
         download: true,
         header: true,
         complete: function (results) {
-          if (key === 'stimulus') {
-            itemBank[key] = transformCSV(results.data);
-          } else if (key === 'instructions') {
-            itemBank[key] = transformInstructions(results.data);
-          } else {
-            itemBank[key] = getHyperParams(results.data);
+          const transform = transformers[key];
+          if (!transform) {
+            throw new Error(`No transformer defined for key: ${key}`);
           }
+          itemBank[key] = transform(results.data);
           resolve(results.data);
         },
         error: function (error) {
@@ -258,6 +297,12 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
 
     try {
       await downloadCSV(corpusLocation, 'hyperParams');
+    } catch (error) {
+      console.error('Error:', error);
+    }
+
+    try {
+      await downloadCSV(corpusLocation, 'breaks');
     } catch (error) {
       console.error('Error:', error);
     }
@@ -363,7 +408,7 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
       if (current_item['item'].includes('100')) {
         current_item['limit'] = '100';
       } else {
-        current_item['limit'] = '1,000';
+        current_item['limit'] = '1' + commaKey + '000';
       }
     }
 
@@ -402,19 +447,6 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
   store.session.set('cc_grade', grade);
 
   store.session.set('isK2', grade < 3 || grade === undefined);
-  let breakMapping = {
-    'K-2': [11, 20, 30, 40],
-    '3-4': [9, 33, 43, 53],
-    '5-12': [18, 28, 38, 48],
-  };
-
-  let breakMappingLower = {
-    'K-2': [11, 20, 30, 40],
-    '3-4': [13, 23, 33, 59],
-    '5-12': [33, 43, 53, 63],
-  };
-
-  store.session.set('breakMappingLower', breakMappingLower);
 
   // arrays to store the previous starting point items
   let preStimulusArray = [];
@@ -422,109 +454,73 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
   let checkStimulusArray = [];
   let checkItemType = [];
   let itemsToCheck = 2;
+  const DEMO_CORPUS_LIMIT = 30;
+
   //number of items to check before dropping students to lower starting point
   store.session.set('itemsToCheck', itemsToCheck);
 
-  if (grade >= 5) {
-    //start from problem ID 43 for grades above 4, check 2 items
-    let endCheck = 42 + itemsToCheck;
-    checkStimulusArray = stimulusArray.slice(42, endCheck);
-    checkItemType = itemType.slice(42, endCheck);
-    //previous starting point
-    preStimulusArray = stimulusArray.slice(27, 42);
-    preItemType = itemType.slice(27, 42);
-    //remaining items
+  const getBreaksForGrade = (breaksList, grade) => {
+    if (grade === undefined) return breaksList[0];
+
+    const match = breaksList.find((b) => b.gradeLower <= grade && grade <= b.gradeUpper);
+    if (match) return match;
+
+    const lastRow = breaksList[breaksList.length - 1];
+    if (grade > lastRow.gradeUpper) return lastRow;
+
+    return breaksList[0];
+  };
+
+  const breaks = getBreaksForGrade(itemBank.breaks, grade);
+
+  if (breaks.startOffset) {
+    const endCheck = breaks.startIdx + itemsToCheck;
+
+    checkStimulusArray = stimulusArray.slice(breaks.startIdx, endCheck);
+    checkItemType = itemType.slice(breaks.startIdx, endCheck);
+
+    preStimulusArray = stimulusArray.slice(breaks.lowerStartIdx, breaks.startIdx);
+    preItemType = itemType.slice(breaks.lowerStartIdx, breaks.startIdx);
+
     stimulusArray.splice(0, endCheck);
     itemType.splice(0, endCheck);
-
-    //break locations
-    store.session.set('breakMap', breakMapping['5-12']);
-    store.session.set('maxBreaks', breakMapping['5-12'].length);
-
-    let breakScreens = [2, 3, 1, 0];
-    store.session.set('breakScreenNames', breakScreens);
-    //add story mode assets
-    for (let i = 0; i < breakScreens.length; i++) {
-      assets.default.shared.push('core-math-break-screen-' + breakScreens[i] + '.png');
-      assets.default.languageSpecific.shared.push('core-math-break-' + i + '.mp3');
-    }
-
-    //instruction assets
-    assets.default.languageSpecific.device.push('core-math-response.gif');
-    assets.default.languageSpecific.shared.push('core-math-introduction.mp3');
-    assets.default.languageSpecific.shared.push('core-math-pretask-check.mp3');
-    assets.default.languageSpecific.shared.push('core-math-end-screen.mp3');
-  } else if (grade == 3 || grade == 4) {
-    let endCheck = 27 + itemsToCheck;
-    //start from problem ID 28, check 2 items
-    checkStimulusArray = stimulusArray.slice(27, endCheck);
-    checkItemType = itemType.slice(27, endCheck);
-    //previous starting point
-    preStimulusArray = stimulusArray.slice(0, 27);
-    preItemType = itemType.slice(0, 27);
-    //remaining items
-    stimulusArray.splice(0, endCheck);
-    itemType.splice(0, endCheck);
-
-    //break locations
-    store.session.set('breakMap', breakMapping['3-4']);
-    store.session.set('maxBreaks', breakMapping['3-4'].length);
-
-    let breakScreens = [2, 3, 1, 0];
-    store.session.set('breakScreenNames', breakScreens);
-    //add story mode assets
-    for (let i = 0; i < breakScreens.length; i++) {
-      assets.default.shared.push('core-math-break-screen-' + breakScreens[i] + '.png');
-      assets.default.languageSpecific.shared.push('core-math-break-' + i + '.mp3');
-    }
-
-    //instruction assets
-    assets.default.languageSpecific.device.push('core-math-response-k4.gif');
-    assets.default.languageSpecific.shared.push('core-math-introduction.mp3');
-    assets.default.languageSpecific.shared.push('core-math-pretask-check.mp3');
-    assets.default.languageSpecific.shared.push('core-math-end-screen.mp3');
-  } else {
-    //Grade K-2: do nothing to corpus, start from beginning
-    //for demo version reduce the corpus size to be uptil item 30
-    if (store.session.get('config').recruitment === 'demo') {
-      stimulusArray.splice(30);
-      itemType.splice(30);
-    }
-
-    //break locations
-    store.session.set('breakMap', breakMapping['K-2']);
-    store.session.set('maxBreaks', breakMapping['K-2'].length);
-
-    let breakScreens = [0, 1, 2, 3];
-    store.session.set('breakScreenNames', breakScreens);
-    //add story mode assets
-    for (let i = 0; i < breakScreens.length; i++) {
-      assets.default.shared.push('core-math-break-screen-' + breakScreens[i] + '.png');
-      assets.default.languageSpecific.shared.push('core-math-break-' + i + '-k2.mp3');
-    }
-
-    //instruction assets
-    assets.default.languageSpecific.device.push('core-math-response-k4.gif');
-    assets.default.languageSpecific.shared.push('core-math-introduction-k2.mp3');
-    assets.default.languageSpecific.shared.push('core-math-pretask-check-k2.mp3');
-
-    //add end screen for story mode
-    assets.default.shared.push('core-math-end-screen-k2.png');
-    assets.default.languageSpecific.shared.push('core-math-end-screen-k2.mp3');
+  } else if (store.session.get('config').recruitment === 'demo') {
+    stimulusArray.splice(DEMO_CORPUS_LIMIT);
+    itemType.splice(DEMO_CORPUS_LIMIT);
   }
 
-  //Add item specific audio files
-  /*for (let i = 0; i < stimulusArray.length; i++) {
-    if (stimulusArray[i].audio_file) {
-      if (stimulusArray[i].audio_file.length != 0) {
-        assets.default.languageSpecific.shared.push(
-          stimulusArray[i].audio_file + ".mp3",
-        );
-        //camelize the audio file name
-        stimulusArray[i].audio_file = camelize(stimulusArray[i].audio_file);
-      }
-    }
-  }*/
+  //break locations
+  store.session.set('breakMap', breaks.breakIdx);
+  store.session.set('maxBreaks', breaks.breakIdx.length);
+
+  store.session.set('breakScreenNames', breaks.breakScreens);
+
+  store.session.set('breakMappingLower', breaks.breakIdxLower);
+
+  //add story mode assets
+  let suffix = '';
+  if (store.session.get('config').storyOption || store.session.get('isK2')) {
+    assets.default.shared.push('core-math-end-screen-k2.png');
+    suffix = '-k2';
+  }
+
+  for (let i = 0; i < breaks.breakScreens.length; i++) {
+    assets.default.shared.push('core-math-break-screen-' + breaks.breakScreens[i] + '.png');
+    assets.default.languageSpecific.shared.push('core-math-break-' + i + suffix + '.mp3');
+  }
+
+  //instruction assets
+  assets.default.languageSpecific.shared.push('core-math-introduction' + suffix + '.mp3');
+  assets.default.languageSpecific.shared.push('core-math-pretask-check' + suffix + '.mp3');
+  assets.default.languageSpecific.shared.push('core-math-end-screen' + suffix + '.mp3');
+
+  //speaker button instruction
+  if (grade > 4) {
+    assets.default.languageSpecific.device.push('core-math-response.gif');
+  } else {
+    assets.default.languageSpecific.device.push('core-math-response-k4.gif');
+  }
+
   addItemSpecificAudio(checkStimulusArray, assets);
   addItemSpecificAudio(preStimulusArray, assets);
   addItemSpecificAudio(stimulusArray, assets);
