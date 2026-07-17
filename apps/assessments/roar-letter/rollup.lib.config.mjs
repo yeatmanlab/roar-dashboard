@@ -24,10 +24,9 @@ export default defineConfig({
     format: 'es',
     sourcemap: true,
   },
-  // @sentry/* is provided by the dashboard's own Sentry setup — externalize to avoid
-  // double-registering Sentry when the bundle is consumed.
-  // All other deps (jspsych, firebase, @bdelab/*) are bundled for a self-contained package.
-  external: [/^@sentry\//],
+  // Workspace deps and peer deps are externalized — consumers provide these themselves.
+  // Everything else (jspsych, firebase, @bdelab/*) is bundled for a self-contained package.
+  external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@roar-platform\/assessment-schema(\/.*)?$/, /^@sentry\//],
   plugins: [
     postcss({
       inject: true,

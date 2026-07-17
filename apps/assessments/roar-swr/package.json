@@ -2,6 +2,11 @@
   "name": "@roar-platform/roar-swr",
   "description": "Single Word Recognition — a timed word-reading assessment for ROAR",
   "version": "1.15.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "apps/assessments/roar-swr"
+  },
   "author": "Wanjing Anya Ma",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -65,7 +70,6 @@
     "@jspsych/plugin-survey-text": "^1.1.0",
     "@roar-platform/assessment-schema": "^0.1.0",
     "@roar-platform/assessment-sdk": "^0.1.0",
-    "@roar-platform/scoring-tables": "^0.1.0",
     "ajv": "^8.17.1",
     "ajv-errors": "^3.0.0",
     "detect-it": "^4.0.1",
@@ -84,6 +88,7 @@
     "@sentry/integrations": ">=7"
   },
   "devDependencies": {
+    "@roar-platform/scoring-tables": "^0.1.0",
     "@babel/core": "^7.19.0",
     "@babel/preset-env": "^7.19.0",
     "@roar-platform/eslint-config": "*",

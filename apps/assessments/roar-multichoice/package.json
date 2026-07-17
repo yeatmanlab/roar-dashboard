@@ -2,6 +2,11 @@
   "name": "@roar-platform/roar-multichoice",
   "description": "Morphology and Written Vocabulary (CVA) multiple-choice assessments for ROAR",
   "version": "2.3.1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "apps/assessments/roar-multichoice"
+  },
   "author": "Tonya & Willy",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -65,7 +70,6 @@
     "@jspsych/plugin-survey-text": "^1.1.0",
     "@roar-platform/assessment-schema": "^0.1.0",
     "@roar-platform/assessment-sdk": "^0.1.0",
-    "@roar-platform/scoring-tables": "^0.1.0",
     "detect-it": "^4.0.1",
     "firebase": "^10.13.2",
     "fscreen": "^1.2.0",
@@ -84,6 +88,7 @@
     "@sentry/wasm": ">=7"
   },
   "devDependencies": {
+    "@roar-platform/scoring-tables": "^0.1.0",
     "@babel/core": "^7.22.5",
     "@babel/preset-env": "^7.22.5",
     "@roar-platform/eslint-config": "*",

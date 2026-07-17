@@ -2,6 +2,11 @@
   "name": "@roar-platform/roav-ran",
   "description": "RAN (Rapid Automatized Naming) and Symbol Search — timed naming / visual-search assessments with gaze estimation and audio recording for ROAR",
   "version": "2.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "apps/assessments/roav-ran"
+  },
   "author": "Aryaman Taore",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

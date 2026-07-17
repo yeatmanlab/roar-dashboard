@@ -49,7 +49,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yeatmanlab/roar-survey-app.git"
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "apps/assessments/roar-survey"
   },
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "dependencies": {
