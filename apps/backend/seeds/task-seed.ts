@@ -1,43 +1,59 @@
 /**
- * Seed script for roav-ran (ran, symbolSearch) tasks and variants.
+ * Unified task/variant seed script for all assessments.
  *
- * Reads variant definitions from the file at TASK_VARIANT_PARAMETERS_FILE (required).
- * The file is a JSON array where each entry has a variantName and a params object whose
- * keys match the gameParams accepted by roav-ran's serve.js. The set of tasks to create
- * is derived from the unique taskName values present in the file.
- *
- * Idempotent — tasks and variants that already exist by slug/name are skipped.
+ * Seeds a single assessment's task(s) and variants from a taskVariantParameters.json
+ * file. Replaces the per-assessment seed scripts (roar-pa.seed.ts, roar-swr.seed.ts, etc.)
+ * with a single entrypoint driven by a task config registry.
  *
  * Usage:
- *   TASK_VARIANT_PARAMETERS_FILE=./taskVariantParameters.json npm run db:seed:roav-ran -w apps/backend
+ *   npm run dev:seed:tasks -- --task roar-pa
+ *   TASK_VARIANT_PARAMETERS_FILE=./params.json npm run dev:seed:tasks -- --task roar-swr
  *
- * To get started, copy taskVariantParameters.example.json in the assessment directory:
- *   cp apps/assessments/roav-ran/taskVariantParameters.example.json \
- *      apps/assessments/roav-ran/taskVariantParameters.json
+ * The --task argument selects a config from the registry which provides:
+ * - Task ID(s) and metadata (name, nameSimple, nameTechnical)
+ * - Allowed parameter keys for validation
+ * - Optional custom validation function
  *
- * Requires CORE_DATABASE_URL and TASK_VARIANT_PARAMETERS_FILE to be set.
+ * Idempotent — tasks and variants that already exist are skipped.
+ *
+ * Environment variables:
+ * - CORE_DATABASE_URL: Core database connection string (required)
+ * - TASK_VARIANT_PARAMETERS_FILE: Path to the parameters JSON file (required)
  */
-
+import 'dotenv/config';
 import { readFileSync } from 'fs';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { and, eq } from 'drizzle-orm';
 import { Pool } from 'pg';
-import { roavRan } from '@roar-platform/assessment-schema';
+
 import * as CoreDbSchema from '../src/db/schema/core';
 import { tasks, taskVariants, taskVariantParameters } from '../src/db/schema/core';
+import { TASK_SEED_CONFIGS } from './task-seed-configs';
 
-const { RAN_TASK_ID, SYMBOL_SEARCH_TASK_ID, RAN_TASK, SYMBOL_SEARCH_TASK } = roavRan;
-type RoavRanTaskId = typeof RAN_TASK_ID | typeof SYMBOL_SEARCH_TASK_ID;
+import type { TaskSeedConfig, VariantDef } from './task-seed-configs';
 
-// ─── Task metadata ────────────────────────────────────────────────────────────
-// Sourced from the assessment-schema task entries (single source of truth).
+// ─── CLI arguments ───────────────────────────────────────────────────────────
 
-const TASK_META = {
-  [RAN_TASK_ID]: RAN_TASK,
-  [SYMBOL_SEARCH_TASK_ID]: SYMBOL_SEARCH_TASK,
-} as const satisfies Record<RoavRanTaskId, { name: string; nameSimple: string; nameTechnical: string }>;
+const taskArg = process.argv.find((_, i, arr) => arr[i - 1] === '--task');
+if (!taskArg) {
+  const available = Object.keys(TASK_SEED_CONFIGS).join(', ');
+  console.error(`Usage: npm run dev:seed:tasks -- --task <name>\nAvailable tasks: ${available}`);
+  process.exit(1);
+}
 
-const KNOWN_TASK_IDS = new Set<string>(Object.keys(TASK_META));
+// Resolved via a function so `config` is typed non-optional — narrowing on a
+// module-level binding doesn't propagate into the functions below.
+function resolveConfig(name: string): TaskSeedConfig {
+  const resolved = TASK_SEED_CONFIGS[name];
+  if (!resolved) {
+    const available = Object.keys(TASK_SEED_CONFIGS).join(', ');
+    console.error(`Unknown task "${name}". Available tasks: ${available}`);
+    process.exit(1);
+  }
+  return resolved;
+}
+
+const config: TaskSeedConfig = resolveConfig(taskArg);
 
 // ─── Environment ─────────────────────────────────────────────────────────────
 
@@ -52,13 +68,6 @@ if (!TASK_VARIANT_PARAMETERS_FILE) {
   );
 }
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-type VariantDef = {
-  variantName: string;
-  params: Record<string, unknown>;
-};
-
 // ─── Validation ──────────────────────────────────────────────────────────────
 
 function validateVariants(raw: unknown): VariantDef[] {
@@ -66,7 +75,10 @@ function validateVariants(raw: unknown): VariantDef[] {
     throw new Error('taskVariantParameters.json must be a non-empty array');
   }
 
-  return raw.map((entry: unknown, i: number) => {
+  const result: VariantDef[] = [];
+
+  for (let i = 0; i < raw.length; i++) {
+    const entry: unknown = raw[i];
     const label = `Entry [${i}]`;
 
     if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
@@ -88,19 +100,31 @@ function validateVariants(raw: unknown): VariantDef[] {
 
     const p = params as Record<string, unknown>;
 
-    if (!('taskName' in p) || typeof p.taskName !== 'string') {
-      throw new Error(`${loc}: "taskName" is required in params`);
+    // Validate allowed parameter keys if the config defines them
+    if (config.allowedParamKeys) {
+      for (const key of Object.keys(p)) {
+        if (!config.allowedParamKeys.has(key)) {
+          throw new Error(`${loc}: unknown param "${key}"`);
+        }
+      }
     }
 
-    if (!KNOWN_TASK_IDS.has(p.taskName)) {
-      throw new Error(`${loc}: unknown taskName "${p.taskName}". Known tasks: ${[...KNOWN_TASK_IDS].join(', ')}`);
+    // Run custom validation if provided. Return false to skip the variant.
+    if (config.validateVariant) {
+      const shouldInclude = config.validateVariant(loc, p);
+      if (shouldInclude === false) {
+        console.log(`  Skipping ${loc}: validateVariant returned false`);
+        continue;
+      }
     }
 
-    return { variantName: name, params: p };
-  });
+    result.push({ variantName: name, params: p });
+  }
+
+  return result;
 }
 
-// ─── Load and validate file ───────────────────────────────────────────────────
+// ─── Load and validate file ──────────────────────────────────────────────────
 
 let variantDefs: VariantDef[];
 
@@ -117,16 +141,14 @@ try {
   throw err;
 }
 
-// ─── Database ─────────────────────────────────────────────────────────────────
+// ─── Database ────────────────────────────────────────────────────────────────
 
 const pool = new Pool({ connectionString: CORE_DATABASE_URL });
 const db = drizzle(pool, { schema: CoreDbSchema, casing: 'snake_case' });
 
-// ─── Seeding ──────────────────────────────────────────────────────────────────
+// ─── Seeding ─────────────────────────────────────────────────────────────────
 
-async function seedTask(taskId: string): Promise<{ id: string }> {
-  const meta = TASK_META[taskId as RoavRanTaskId];
-
+async function seedTask(taskId: string, meta: TaskSeedConfig['tasks'][string]): Promise<{ id: string }> {
   const [inserted] = await db
     .insert(tasks)
     .values({
@@ -136,7 +158,7 @@ async function seedTask(taskId: string): Promise<{ id: string }> {
       nameTechnical: meta.nameTechnical,
       taskConfig: {},
     })
-    .onConflictDoNothing({ target: tasks.slug })
+    .onConflictDoNothing()
     .returning();
 
   const task = inserted ?? (await db.query.tasks.findFirst({ where: eq(tasks.slug, taskId) }));
@@ -151,22 +173,22 @@ async function seedTask(taskId: string): Promise<{ id: string }> {
   return task;
 }
 
-async function seedVariant(taskId: string, def: VariantDef): Promise<void> {
+async function seedVariant(taskDbId: string, def: VariantDef): Promise<void> {
   // Query-first: the unique index on task_variants is a functional partial index
   // (lower(name) WHERE name IS NOT NULL), which Drizzle cannot target in
   // onConflictDoNothing — so we check existence explicitly.
   const existing = await db.query.taskVariants.findFirst({
-    where: and(eq(taskVariants.taskId, taskId), eq(taskVariants.name, def.variantName)),
+    where: and(eq(taskVariants.taskId, taskDbId), eq(taskVariants.name, def.variantName)),
   });
 
   if (existing) {
-    console.log(`  Variant "${def.variantName}" already exists (${existing.id}), skipping.`);
+    console.log(`Variant "${def.variantName}" already exists (${existing.id}), skipping.`);
     return;
   }
 
   const [variant] = await db
     .insert(taskVariants)
-    .values({ taskId, name: def.variantName, status: 'published' })
+    .values({ taskId: taskDbId, name: def.variantName, status: 'published' })
     .returning();
 
   if (!variant) throw new Error(`Failed to insert variant "${def.variantName}"`);
@@ -188,7 +210,7 @@ async function seedVariant(taskId: string, def: VariantDef): Promise<void> {
       )
       .onConflictDoNothing({ target: [taskVariantParameters.taskVariantId, taskVariantParameters.name] });
 
-    console.log(`  Inserted ${paramEntries.length} parameters for "${def.variantName}"`);
+    console.log(`  Inserted ${paramEntries.length} parameter(s) for "${def.variantName}"`);
   }
 }
 
@@ -196,18 +218,27 @@ async function seed(): Promise<void> {
   console.log(`Reading variants from ${TASK_VARIANT_PARAMETERS_FILE}`);
   console.log(`Found ${variantDefs.length} variant(s) to seed.\n`);
 
-  const taskIdsNeeded = [...new Set(variantDefs.map((d) => d.params.taskName as string))];
+  // Determine which task(s) need seeding.
+  // Multi-task configs (e.g., roav-apps) resolve taskId from variant params via resolveTaskId.
+  // Single-task configs have exactly one entry in config.tasks.
+  const taskIds = config.resolveTaskId
+    ? [...new Set(variantDefs.map((d) => config.resolveTaskId!(d.params)))]
+    : Object.keys(config.tasks);
 
   const tasksById = new Map<string, { id: string }>();
-  for (const taskId of taskIdsNeeded) {
+  for (const taskId of taskIds) {
+    const meta = config.tasks[taskId];
+    if (!meta) {
+      throw new Error(`No task metadata found for "${taskId}" in config "${taskArg}"`);
+    }
     console.log(`Seeding task "${taskId}"...`);
-    tasksById.set(taskId, await seedTask(taskId));
+    tasksById.set(taskId, await seedTask(taskId, meta));
   }
 
   for (const def of variantDefs) {
-    const taskId = def.params.taskName as string;
+    const taskId = config.resolveTaskId ? config.resolveTaskId(def.params) : taskIds[0]!;
     const task = tasksById.get(taskId)!;
-    console.log(`\nSeeding variant "${def.variantName}" (taskName=${taskId})...`);
+    console.log(`\nSeeding variant "${def.variantName}"...`);
     await seedVariant(task.id, def);
   }
 

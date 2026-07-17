@@ -36,7 +36,9 @@ export const UserOrgFactory = Factory.define<UserOrg>(({ onCreate }) => {
     userId: '00000000-0000-0000-0000-000000000000', // Override required
     orgId: '00000000-0000-0000-0000-000000000000', // Override required
     role: UserRole.STUDENT,
-    enrollmentStart: new Date(),
+    // Backdate by 1 s so enrollment is safely ≤ Postgres NOW() when
+    // the query runs, avoiding a JS-vs-DB clock race on enrollmentStart.
+    enrollmentStart: new Date(Date.now() - 1000),
     enrollmentEnd: null,
     createdAt: new Date(),
     updatedAt: new Date(),

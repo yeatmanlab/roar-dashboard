@@ -1,280 +1,316 @@
 /**
- * Global Setup for SDK Integration Tests
+ * Global setup for SDK integration tests.
  *
- * Spawns a dedicated test server process before running integration tests.
- * The test server uses server-test.ts entrypoint which:
- * - Initializes database pools and runs migrations
- * - Truncates tables and seeds baseFixture test data
- * - Initializes OpenFGA store, deploys model, and syncs tuples
- * - Mocks AuthService to accept test tokens (token = Firebase UID)
- * - Writes fixture data to a JSON file for SDK tests to discover
+ * Seeds databases/FGA/Auth emulator via the backend seed script, then spawns
+ * the backend server and waits for it to be healthy. Loads backend env vars
+ * (CORE_DATABASE_URL, FGA_API_URL, etc.) via loadEnv() at the start of setup
+ * so they're available in this main process without polluting unit test workers.
  *
- * PREREQUISITES:
- * - PostgreSQL must be running on the connection string specified by CORE_DATABASE_URL
- * - OpenFGA must be running on the URL specified by FGA_API_URL (default: http://localhost:8080)
- * - Backend must be built: `npm run build -w apps/backend`
- *   (This setup automatically builds if dist/server-test.js is missing)
+ * When infrastructure is unavailable, the setup throws so the integration
+ * test project fails immediately with a clear error message.
  *
- * TEST DATA SEEDING:
- * - baseFixture data is seeded automatically during server startup
- * - Fixture data (task variant IDs, user authIds) is written to TEST_FIXTURE_FILE
- * - SDK tests read the fixture file instead of making HTTP calls
- * - No hardcoded UUIDs needed — all test data is fetched at runtime
+ * Vitest expects globalSetup to return a teardown function (not a named export).
+ * The teardown kills the spawned backend process and deletes the FGA store.
  *
- * ENVIRONMENT VARIABLES:
- * - BACKEND_PORT: Port for the backend server (default: 4001)
- * - CORE_DATABASE_URL: Core database connection string (required)
- * - ASSESSMENT_DATABASE_URL: Assessment database connection string (required)
- * - FGA_API_URL: OpenFGA server URL (default: http://localhost:8080)
- * - TEST_FIXTURE_FILE: Path to write fixture data JSON (default: /tmp/roar-test-fixture.json)
- *
- * TROUBLESHOOTING:
- * - "Cannot find module 'dist/server-test.js'": Run `npm run build -w apps/backend`
- * - "EADDRINUSE: port 4001 already in use": Change BACKEND_PORT or kill the existing process
- * - "Connection refused" on database: Ensure PostgreSQL is running on CORE_DATABASE_URL
- * - "Connection refused" on FGA: Ensure OpenFGA is running on FGA_API_URL
- * - Fixture file not found: Check TEST_FIXTURE_FILE path and ensure server started successfully
+ * Prerequisites: PostgreSQL, OpenFGA, Firebase Auth emulator, built backend.
  */
 
-import { spawn } from 'node:child_process';
-import { existsSync, statSync } from 'node:fs';
+import { spawn, execFileSync } from 'node:child_process';
+import { createConnection } from 'node:net';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { loadEnv } from 'vite';
+import type { ChildProcess } from 'node:child_process';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const BACKEND_PORT = process.env.BACKEND_PORT || '4001';
-const BACKEND_START_TIMEOUT = 30000; // 30 seconds
-const BACKEND_BUILD_TIMEOUT = 60000; // 60 seconds for build
-
-let backendProcess: ReturnType<typeof spawn> | null = null;
+const SEED_TIMEOUT = 120000;
 
 /**
- * Builds the backend if not already built.
- * Required because the global setup runs `node dist/server-test.js` directly.
+ * Runs the seed script to seed databases, initialize FGA, seed Auth emulator,
+ * and write fixture files. Blocks until the script exits.
+ *
+ * @param backendDir - Absolute path to the backend workspace root
  */
-async function buildBackendIfNeeded(backendDir: string): Promise<void> {
-  const testServerBin = path.join(backendDir, 'dist', 'server-test.js');
-  const sourceFile = path.join(backendDir, 'src', 'server-test.ts');
+function runSeedScript(backendDir: string, childEnv: Record<string, string | undefined>): void {
+  const seedScript = path.join(backendDir, 'seeds', 'index.ts');
+  const fixtureFile = childEnv.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json';
 
-  if (existsSync(testServerBin) && existsSync(sourceFile)) {
-    const binStats = statSync(testServerBin);
-    const srcStats = statSync(sourceFile);
-    if (binStats.mtime > srcStats.mtime) {
-      console.log('[SDK Integration Tests] Test server binary is up-to-date');
-      return;
-    }
-  }
+  console.log('[sdk-integration] Running seed script...');
 
-  console.log('[SDK Integration Tests] Building backend...');
-
-  return new Promise<void>((resolve, reject) => {
-    const buildProcess = spawn('npm', ['run', 'build'], {
-      cwd: backendDir,
-      env: {
-        ...process.env,
-        BUILD_TEST_SERVER: 'true', // Build both server.js and server-test.js
-      },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    let buildOutput = '';
-    let buildError = '';
-
-    buildProcess.stdout?.on('data', (data) => {
-      buildOutput += data.toString();
-    });
-
-    buildProcess.stderr?.on('data', (data) => {
-      buildError += data.toString();
-    });
-
-    buildProcess.on('close', (code) => {
-      if (code === 0) {
-        console.log('[SDK Integration Tests] Backend build completed successfully');
-        resolve();
-      } else {
-        reject(
-          new Error(
-            `[SDK Integration Tests] Backend build failed with code ${code}.\nStdout: ${buildOutput}\nStderr: ${buildError}`,
-          ),
-        );
-      }
-    });
-
-    buildProcess.on('error', (error) => {
-      reject(new Error(`[SDK Integration Tests] Failed to spawn build process: ${error.message}`));
-    });
-
-    setTimeout(() => {
-      buildProcess.kill();
-      reject(new Error(`[SDK Integration Tests] Backend build timeout after ${BACKEND_BUILD_TIMEOUT}ms`));
-    }, BACKEND_BUILD_TIMEOUT);
+  execFileSync('npx', ['tsx', seedScript], {
+    cwd: backendDir,
+    env: {
+      ...childEnv,
+      TEST_FIXTURE_FILE: fixtureFile,
+      FIREBASE_AUTH_EMULATOR_HOST: childEnv.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099',
+      GOOGLE_CLOUD_PROJECT: childEnv.GOOGLE_CLOUD_PROJECT || 'demo-roar',
+      AUTHZ_MODEL_PATH: path.resolve(backendDir, '../../packages/authz/authorization-model.fga'),
+      // Point dotenv at .env.test so the seed script's `config({ override: true })`
+      // reload (index.ts line 39) doesn't overwrite test DB URLs with .env values.
+      DOTENV_CONFIG_PATH: path.join(backendDir, '.env.test'),
+    },
+    stdio: ['ignore', 'inherit', 'inherit'],
+    timeout: SEED_TIMEOUT,
   });
+
+  console.log('[sdk-integration] Seed script completed');
 }
 
 /**
- * Waits for the backend to be ready by polling the health endpoint and fixture file.
+ * Reads FGA store/model IDs from the backend's dotenv file (written by the seed script).
+ *
+ * @param backendDir - Absolute path to the backend workspace root
+ * @returns Object with FGA_STORE_ID and FGA_MODEL_ID, or null if not found
  */
-async function waitForBackendHealth(port: string, fixtureFile: string, maxAttempts = 30): Promise<void> {
+function readFgaEnv(backendDir: string): { FGA_STORE_ID: string; FGA_MODEL_ID: string } | null {
+  // The seed script writes FGA IDs to the dotenv file resolved by DOTENV_CONFIG_PATH.
+  // Since we set DOTENV_CONFIG_PATH to .env.test in the child env, read from .env.test.
+  const envPath = path.join(backendDir, '.env.test');
+
+  try {
+    if (existsSync(envPath)) {
+      const content = readFileSync(envPath, 'utf-8');
+      const storeMatch = content.match(/^FGA_STORE_ID=(.+)$/m);
+      const modelMatch = content.match(/^FGA_MODEL_ID=(.+)$/m);
+      if (storeMatch?.[1] && modelMatch?.[1]) {
+        return { FGA_STORE_ID: storeMatch[1], FGA_MODEL_ID: modelMatch[1] };
+      }
+    }
+  } catch {
+    // File doesn't exist or is malformed
+  }
+  return null;
+}
+
+/**
+ * Waits for the backend to be ready by polling the health endpoint.
+ * Also monitors the spawned process — if it exits early (e.g., port conflict,
+ * bad config), rejects immediately instead of waiting for the full timeout.
+ *
+ * @param proc - The spawned backend process
+ * @param port - Port the backend is listening on
+ * @param maxAttempts - Maximum number of poll attempts (1 second apart)
+ */
+async function waitForBackendHealth(proc: ChildProcess, port: string, maxAttempts = 30): Promise<void> {
   const healthUrl = `http://localhost:${port}/health/startup`;
-  let lastError: Error | null = null;
+
+  // Race health polling against early process exit
+  const earlyExit = new Promise<never>((_, reject) => {
+    proc.on('close', (code) => {
+      reject(new Error(`[sdk-integration] Backend exited early with code ${code}`));
+    });
+  });
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const response = await fetch(healthUrl, { signal: controller.signal });
-      clearTimeout(timeoutId);
-
-      if (response.ok && existsSync(fixtureFile)) {
-        console.log(`[SDK Integration Tests] Backend is healthy at ${healthUrl}`);
-        console.log(`[SDK Integration Tests] Fixture file exists at ${fixtureFile}`);
+      const response = await Promise.race([fetch(healthUrl, { signal: AbortSignal.timeout(5000) }), earlyExit]);
+      if (response.ok) {
+        console.log(`[sdk-integration] Backend is healthy at ${healthUrl}`);
         return;
       }
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
+      // If the process exited, the earlyExit promise rejected — propagate it
+      if (error instanceof Error && error.message.includes('exited early')) {
+        throw error;
+      }
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
 
-  throw new Error(
-    `[SDK Integration Tests] Backend failed to start after ${maxAttempts} attempts. Last error: ${lastError?.message}`,
-  );
+  throw new Error(`[sdk-integration] Backend failed to start after ${maxAttempts} attempts`);
 }
 
 /**
- * Global setup for SDK integration tests.
+ * Probes a URL to check if the service is reachable.
  *
- * Spawns a test server process that initializes the database, seeds test data,
- * sets up OpenFGA authorization, and writes fixture data for SDK tests to consume.
- * Waits for the server to be healthy before returning.
- *
- * Requires CORE_DATABASE_URL and ASSESSMENT_DATABASE_URL environment variables.
- * Automatically builds the backend if dist/server-test.js is missing.
- *
- * @returns Promise that resolves when the test server is ready
+ * @param url - URL to probe (e.g., http://localhost:4010/healthz)
+ * @returns true if the service responded, false otherwise
  */
-export default async function globalSetup() {
-  // Skip backend startup when integration tests are not requested
-  if (process.env.RUN_INTEGRATION_TESTS !== 'true') {
-    console.log('[SDK Integration Tests] Skipping global setup (RUN_INTEGRATION_TESTS not set)');
-    return;
-  }
-
-  // Validate required environment variables
-  const required = ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'] as const;
-  for (const key of required) {
-    if (!process.env[key]) {
-      throw new Error(`[SDK Integration Tests] Missing required env var: ${key}`);
-    }
-  }
-
-  const backendDir = path.resolve(__dirname, '../../apps/backend');
-
-  // Build backend if needed
+async function isReachable(url: string): Promise<boolean> {
   try {
-    await buildBackendIfNeeded(backendDir);
-  } catch (error) {
+    await fetch(url, { signal: AbortSignal.timeout(2000) });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Checks if a TCP port is already in use.
+ *
+ * @param port - Port number to check
+ * @returns true if something is listening on the port
+ */
+function isPortInUse(port: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = createConnection({ port: Number(port), host: '127.0.0.1' });
+    socket.once('connect', () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.once('error', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.setTimeout(1000, () => {
+      socket.destroy();
+      resolve(false);
+    });
+  });
+}
+
+/**
+ * Kills a spawned process, escalating from SIGTERM to SIGKILL if needed.
+ *
+ * @param proc - The child process to kill
+ */
+async function killProcess(proc: ChildProcess): Promise<void> {
+  if (proc.killed) return;
+
+  const closed = new Promise<void>((resolve) => proc.on('close', resolve));
+
+  proc.kill('SIGTERM');
+
+  const graceful = await Promise.race([
+    closed.then(() => true),
+    new Promise<false>((resolve) => setTimeout(() => resolve(false), 3000)),
+  ]);
+
+  if (!graceful) {
+    console.warn('[sdk-integration] Backend did not exit after SIGTERM, sending SIGKILL');
+    proc.kill('SIGKILL');
+    await Promise.race([closed, new Promise<void>((resolve) => setTimeout(resolve, 2000))]);
+  }
+
+  console.log(`[sdk-integration] Backend process terminated (pid ${proc.pid})`);
+}
+
+/**
+ * Deletes the FGA store created by the seed script.
+ * Best-effort — failures are logged but don't propagate.
+ *
+ * @param fgaApiUrl - The OpenFGA server URL
+ * @param storeId - The store ID to delete
+ */
+async function deleteFgaStore(fgaApiUrl: string, storeId: string): Promise<void> {
+  try {
+    const response = await fetch(`${fgaApiUrl}/stores/${storeId}`, {
+      method: 'DELETE',
+      signal: AbortSignal.timeout(5000),
+    });
+    if (response.ok) {
+      console.log(`[sdk-integration] Deleted FGA store ${storeId}`);
+    }
+  } catch {
+    // Best effort — store may already be gone or OpenFGA may not be reachable
+  }
+}
+
+export default async function globalSetup() {
+  // Load backend env vars into a local object — NOT into process.env.
+  // Vitest runs globalSetup for all projects in the same main process, so
+  // Object.assign(process.env, env) would leak backend vars (e.g.
+  // FIREBASE_AUTH_EMULATOR_HOST) into unit test workers, breaking tests
+  // that assert on environment-dependent branches.
+  const backendDir = path.resolve(__dirname, '../../apps/backend');
+  const backendEnv = loadEnv('test', backendDir, '');
+
+  // Merge for child processes: seed script and backend server inherit these
+  // vars without polluting the current process.
+  const childEnv = { ...process.env, ...backendEnv };
+
+  const required = ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'] as const;
+  const missing = required.filter((key) => !childEnv[key]);
+  if (missing.length > 0) {
     throw new Error(
-      `[SDK Integration Tests] Failed to build backend: ${error instanceof Error ? error.message : String(error)}`,
+      `[sdk-integration] Missing env vars: ${missing.join(', ')}.\n` +
+        'Start infrastructure with: docker compose up -d --wait',
     );
   }
 
-  console.log(`[SDK Integration Tests] Starting test server on port ${BACKEND_PORT}...`);
+  const serverBin = path.join(backendDir, 'dist', 'server.js');
+  if (!existsSync(serverBin)) {
+    throw new Error(
+      `[sdk-integration] Backend not built (${serverBin} not found).\n` + 'Run: npm run build -w apps/backend',
+    );
+  }
 
-  // Spawn the test server process using the dedicated server-test.ts entrypoint
-  // This entrypoint initializes databases, seeds fixtures, sets up FGA, and mocks auth
-  backendProcess = spawn('node', ['dist/server-test.js'], {
+  // Probe required services before running the slow seed script
+  const fgaUrl = backendEnv.FGA_API_URL || 'http://localhost:4010';
+  const emulatorHost = backendEnv.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
+  const [fgaUp, emulatorUp] = await Promise.all([
+    isReachable(`${fgaUrl}/healthz`),
+    isReachable(`http://${emulatorHost}/`),
+  ]);
+
+  if (!fgaUp || !emulatorUp) {
+    const down = [!fgaUp && `OpenFGA (${fgaUrl})`, !emulatorUp && `Auth emulator (${emulatorHost})`]
+      .filter(Boolean)
+      .join(', ');
+    throw new Error(
+      `[sdk-integration] Unreachable services: ${down}.\n` + 'Start infrastructure with: docker compose up -d --wait',
+    );
+  }
+
+  // Check for stale backend process before seeding
+  if (await isPortInUse(BACKEND_PORT)) {
+    throw new Error(
+      `[sdk-integration] Port ${BACKEND_PORT} is already in use.\n` +
+        'A stale backend process may be running. Kill it with: lsof -ti :' +
+        BACKEND_PORT +
+        ' | xargs kill',
+    );
+  }
+
+  // 1. Seed databases, FGA, Auth emulator, and write fixture files
+  runSeedScript(backendDir, childEnv);
+
+  // 2. Read FGA store/model IDs written by the seed script
+  const fgaEnv = readFgaEnv(backendDir);
+  if (!fgaEnv) {
+    console.warn('[sdk-integration] Could not read FGA env — server may fail to authorize requests');
+  }
+
+  // 3. Spawn the backend server
+  console.log(`[sdk-integration] Starting server on port ${BACKEND_PORT}...`);
+
+  const backendProcess = spawn('node', ['dist/server.js'], {
     cwd: backendDir,
     env: {
-      ...process.env,
+      ...childEnv,
       // Use 'production' to avoid pino-pretty transport which crashes in bundled ESM
       // (thread-stream uses __dirname, unavailable in ES modules).
-      // Trade-off: logs are JSON only, less readable during debugging.
-      // For human-readable logs, rebuild locally: NODE_ENV=development npm run test -w packages/assessment-sdk
       NODE_ENV: 'production',
       PORT: BACKEND_PORT,
-      TEST_FIXTURE_FILE: process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json',
-      // Provide absolute path so bundled code doesn't rely on __dirname-relative resolution
+      ALLOWED_ORIGINS: `http://localhost:${BACKEND_PORT}`,
       AUTHZ_MODEL_PATH: path.resolve(backendDir, '../../packages/authz/authorization-model.fga'),
+      // Point dotenv/config at .env.test so the server connects to the test databases.
+      DOTENV_CONFIG_PATH: path.join(backendDir, '.env.test'),
+      ...(fgaEnv ? { FGA_STORE_ID: fgaEnv.FGA_STORE_ID, FGA_MODEL_ID: fgaEnv.FGA_MODEL_ID } : {}),
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
-  // Capture backend output for debugging
-  backendProcess.stdout?.on('data', (data) => {
-    console.log(`[Backend stdout] ${data}`);
-  });
+  backendProcess.stdout?.on('data', (data: Buffer) => process.stdout.write(`[backend] ${data}`));
+  backendProcess.stderr?.on('data', (data: Buffer) => process.stderr.write(`[backend] ${data}`));
 
-  backendProcess.stderr?.on('data', (data) => {
-    console.error(`[Backend stderr] ${data}`);
-  });
-
-  // Handle backend process errors
-  backendProcess.on('error', (error) => {
-    console.error('[SDK Integration Tests] Failed to spawn backend:', error);
-  });
-
-  backendProcess.on('exit', (code, signal) => {
-    if (code !== null && code !== 0) {
-      console.error(`[SDK Integration Tests] Backend exited with code ${code}`);
-    }
-    if (signal) {
-      console.error(`[SDK Integration Tests] Backend killed by signal ${signal}`);
-    }
-  });
-
-  // Wait for backend to be ready
-  const fixtureFile = process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json';
+  // 4. Wait for backend to be ready (also detects early exit)
   try {
-    await Promise.race([
-      waitForBackendHealth(BACKEND_PORT, fixtureFile),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => {
-          const dbUrl = process.env.CORE_DATABASE_URL ? '(set)' : '(not set)';
-          const fgaUrl = process.env.FGA_API_URL || 'http://localhost:8080';
-          reject(
-            new Error(
-              `[SDK Integration Tests] Backend startup timeout after ${BACKEND_START_TIMEOUT}ms. ` +
-                `Check that PostgreSQL (${dbUrl}) and OpenFGA (${fgaUrl}) are running.`,
-            ),
-          );
-        }, BACKEND_START_TIMEOUT),
-      ),
-    ]);
+    await waitForBackendHealth(backendProcess, BACKEND_PORT);
   } catch (error) {
-    if (backendProcess) {
-      backendProcess.kill();
-    }
+    backendProcess.kill('SIGKILL');
     throw error;
   }
 
-  // Store the backend process for cleanup
-  // @ts-expect-error globalThis doesn't have __BACKEND_PROCESS__ in type definitions
-  globalThis.__BACKEND_PROCESS__ = backendProcess;
-  // @ts-expect-error globalThis doesn't have __BACKEND_PORT__ in type definitions
-  globalThis.__BACKEND_PORT__ = BACKEND_PORT;
-}
+  // Return the teardown function — Vitest calls this after all tests complete.
+  // Uses closure variables instead of globalThis so there's no stale-reference risk.
+  return async function teardown() {
+    await killProcess(backendProcess);
 
-/**
- * Global teardown for SDK integration tests.
- *
- * Kills the test server process spawned by globalSetup.
- * Waits for the process to fully close before returning.
- *
- * @returns Promise that resolves when the backend process has been terminated
- */
-export async function teardown() {
-  // @ts-expect-error globalThis doesn't have __BACKEND_PROCESS__ in type definitions
-  const proc = globalThis.__BACKEND_PROCESS__ as ReturnType<typeof spawn> | undefined;
-  if (proc && !proc.killed) {
-    proc.kill('SIGTERM');
-    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 5000));
-    const close = new Promise<void>((resolve) => proc.on('close', resolve));
-    await Promise.race([timeout, close]);
-    console.log('[SDK Integration Tests] Backend process terminated');
-  }
+    if (fgaEnv?.FGA_STORE_ID) {
+      await deleteFgaStore(fgaUrl, fgaEnv.FGA_STORE_ID);
+    }
+  };
 }

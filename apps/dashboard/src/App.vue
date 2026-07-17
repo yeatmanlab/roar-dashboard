@@ -50,6 +50,7 @@ const VueQueryDevtools = defineAsyncComponent(() =>
 );
 
 import { useAuthStore } from '@/store/auth';
+import { createAuthService } from '@/services/AuthService';
 import { fetchDocById } from '@/helpers/query/utils';
 import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import { i18n } from '@/translations/i18n';
@@ -142,8 +143,21 @@ watch(meError, (err) => {
 });
 
 onBeforeMount(async () => {
+  // 1. Create the AuthService singleton — owns Firebase Auth directly.
+  createAuthService({
+    projectId: import.meta.env.VITE_FIREBASE_ADMIN_PROJECT_ID,
+    apiKey: import.meta.env.VITE_FIREBASE_ADMIN_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_ADMIN_AUTH_DOMAIN,
+    emulatorAuthHost: import.meta.env.VITE_FIREBASE_EMULATOR_AUTH_HOST || undefined,
+  });
+
+  // 2. Initialize Auth (Firebase app + emulator + token listener).
+  await authStore.initAuth();
+
+  // 3. Initialize Firekit for non-auth operations (Firestore, assessments).
   await authStore.initFirekit();
 
+  // 4. Check for pending SSO redirect results.
   await authStore.initStateFromRedirect().then(async () => {
     // TODO(post-/me): retire once useUserClaimsQuery is migrated; see frontend migration plan.
     //

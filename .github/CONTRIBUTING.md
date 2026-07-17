@@ -300,33 +300,27 @@ such as task/variant management as a super admin — bring up the whole stack wi
 one command, mirroring the CI end-to-end job:
 
 ```bash
-npm run dev:local
+docker compose up -d --wait   # Start Postgres, OpenFGA, and the Firebase Auth emulator
+npm run dev:setup             # Set up infrastructure (FDW, migrations, FGA store)
+npm run dev:seed              # Seed fixture data, sync FGA tuples, write fixture files
+npm run dev                   # Start the dashboard (and backend via turbo)
 ```
 
-This starts Postgres and OpenFGA (via Docker), the Firebase Auth emulator, the
-backend (`server-test`, which seeds fixture data), and the dashboard in local
-emulator mode.
+Or use `npm run dev:init` to run setup and seed in one step.
 
-**Prerequisites:** Docker, a Java runtime for the Auth emulator
-(`brew install openjdk` on macOS), and the usual local state — the `env-configs`
+**Prerequisites:** Docker and the usual local state — the `env-configs`
 submodule, `apps/dashboard/env-configs/.env.keys`, and TLS certs
-(`npm run dev:setup:certs`). If you already run Postgres on `5432`, pick a free
-port: `ROAR_LOCAL_PG_PORT=5433 npm run dev:local`.
+(`npm run dev:setup:certs`). The Firebase Auth emulator runs inside a Docker
+container, so Java and firebase-tools are not required on the host. If you
+already run Postgres on `5432`, pick a free port:
+`ROAR_PG_PORT=5433 docker compose up -d --wait`.
 
-**Signing in:** the script prints the seeded logins on startup (also written to
-`/tmp/roar-cypress-fixture.json`). Sign in at https://localhost:5173 with the
-`superAdmin` entry — email `<uuid>@test.local`, password `test-password-emulator`.
+**Signing in:** the seed script prints the seeded logins on startup (also
+written to `/tmp/roar-cypress-fixture.json`). Sign in at https://localhost:5173
+with the `superAdmin` entry — email `<uuid>@test.local`, password `password`.
 
-**Known limitations (local emulator mode):**
-
-- Only the **Auth** emulator runs, and sign-in still flows through firekit, so the
-  bridges that make local login work are intentionally super-admin-only and
-  transient — search `TODO(firekit-removal)` for details.
-- The home page may not fully load (it still reads not-yet-migrated Firestore
-  data); navigate straight to backend-backed pages such as `/manage-tasks-variants`.
-
-See the header comment in [`scripts/dev-local-stack.sh`](../scripts/dev-local-stack.sh)
-for the full design, all port overrides, and teardown behavior.
+**Resetting:** to wipe and re-seed all databases, run
+`npm run dev:reset && npm run dev:seed`.
 
 ## ROAR coding style
 
