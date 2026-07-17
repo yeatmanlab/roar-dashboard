@@ -116,6 +116,7 @@ jobs:
             apps/assessments/roar-swr
             apps/assessments/roav-apps
             apps/assessments/roav-ran
+            apps/assessments/roam-apps
           )
 
           # Optional single-workspace scope for a manual rehearsal (workflow_dispatch `only` input).
