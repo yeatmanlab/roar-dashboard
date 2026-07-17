@@ -2,6 +2,10 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { bootstrapAnonymousSession } from '@roar-platform/assessment-sdk';
+import {
+  LEVANTE_NORMED_TASK_IDS,
+  LEVANTE_PROVISIONAL_TASK_IDS,
+} from '@roar-platform/assessment-schema/roar-levante-tasks';
 import { TaskLauncher } from '../src';
 import { getFirebaseConfig } from '../../shared/firebaseConfig.js';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
@@ -35,6 +39,9 @@ const versionOverride = urlParams.get('version');
 
 // Task selection: variantId wins; otherwise taskId resolves to the first published variant for that task.
 const taskId = urlParams.get('task') ?? 'egma-math';
+
+// The dev variant picker lists every published variant across all LEVANTE tasks.
+const PICKER_TASK_IDS = [...Object.values(LEVANTE_NORMED_TASK_IDS), ...Object.values(LEVANTE_PROVISIONAL_TASK_IDS)];
 
 // App config
 const firebaseConfig = await getFirebaseConfig();
@@ -76,7 +83,7 @@ onAuthStateChanged(auth, async (user) => {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,
-          taskId,
+          taskId: PICKER_TASK_IDS,
           currentVariantId: resolvedVariantId,
         });
       }

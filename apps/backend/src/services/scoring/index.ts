@@ -3,6 +3,7 @@ export {
   getSupportLevel,
   getScoreDisplay,
   getRawScoreThreshold,
+  getSupportThreshold,
   resolveScoreFieldNames,
   resolveScoreFieldName,
   getSupportLevelFieldName,

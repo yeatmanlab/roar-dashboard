@@ -15,6 +15,7 @@ import { levanteConfig } from './configs/roar-levante-tasks.config';
 import { readaloudConfig } from './configs/roar-readaloud.config';
 import { roavAppsConfig } from './configs/roav-apps.config';
 import { roavRanConfig } from './configs/roav-ran.config';
+import { roamAppsConfig } from './configs/roam-apps.config';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -75,4 +76,5 @@ export const TASK_SEED_CONFIGS: Record<string, TaskSeedConfig> = {
   'roar-readaloud': readaloudConfig,
   'roav-apps': roavAppsConfig,
   'roav-ran': roavRanConfig,
+  'roam-apps': roamAppsConfig,
 };

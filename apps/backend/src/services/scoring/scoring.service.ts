@@ -258,6 +258,40 @@ export function getRawScoreThreshold(taskSlug: string, scoringVersion: number | 
 }
 
 /**
+ * Get the "support range" percentage shown in a task's report description — the
+ * percentage of peers a needs-extra-support student scores below.
+ *
+ * This is the complement of the version-resolved `developing` percentile cutoff:
+ * {@link getSupportLevel} classifies a student `needsExtraSupport` at
+ * `percentile <= developing` (see `classifyByThresholds`), i.e. they score below
+ * `(100 - developing)%` of their peers. Returning it here moves the dashboard's
+ * version-keyed 80/75 literal (`replaceScoreRange` / `{{SUPPORT_RANGE}}`) into the
+ * backend so the frontend paints a value instead of branching on scoring versions.
+ *
+ * Returns null for tasks whose classification isn't `percentile-then-rawscore`
+ * (no percentile cutoff → no support range); those descriptions carry no
+ * `{{SUPPORT_RANGE}}` placeholder anyway.
+ *
+ * @param taskSlug - The task slug (e.g., 'sre', 'swr')
+ * @param scoringVersion - The scoring version, or null for legacy (treated as 0)
+ * @returns The support-range percentage (e.g. 80, 75), or null if unavailable
+ */
+export function getSupportThreshold(taskSlug: string, scoringVersion: number | null): number | null {
+  const config = getScoringConfig(taskSlug);
+  if (!config || config.classification.type !== 'percentile-then-rawscore') {
+    return null;
+  }
+
+  const version = scoringVersion ?? 0;
+  const entry = resolveVersionedEntry(config.classification.percentileCutoffs, version);
+  if (!entry) {
+    return null;
+  }
+
+  return 100 - entry.cutoffs.developing;
+}
+
+/**
  * Resolve a single score field name for a specific task, field type, grade, and scoring version.
  *
  * @param taskSlug - The task slug
@@ -420,7 +454,12 @@ export function getNumericFieldForSubscore(
       ? { scoreName: column.percentCorrectName, scoreDomain: column.domain }
       : { scoreName: column.percentCorrectName };
   }
-  if (column.kind === 'number') return { scoreName: column.name };
+  if (column.kind === 'number') {
+    // Domain-bearing number columns (roam-alpaca's per-subtask subPercentCorrect,
+    // shared across every subtask domain) carry the domain so the repository can
+    // match (name, domain); distinct-name columns match on name alone.
+    return column.domain ? { scoreName: column.name, scoreDomain: column.domain } : { scoreName: column.name };
+  }
   return null;
 }
 

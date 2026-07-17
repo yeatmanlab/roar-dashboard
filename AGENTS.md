@@ -113,6 +113,7 @@ packages/assessment-sdk/      # Assessment client SDK
 
 - **[.ai/commands.md](.ai/commands.md)**: Complete command reference
 - **[.ai/knowledge-base.md](.ai/knowledge-base.md)**: Domain knowledge (entity hierarchy, roles, databases, auth, gotchas)
+- **[.ai/assessment-migration.md](.ai/assessment-migration.md)**: Step-by-step for migrating or scaffolding an assessment into `apps/assessments/`
 - **[.ai/rules/README.md](.ai/rules/README.md)**: Rules index and category guide
 - **[.ai/rules/](.ai/rules/)**: Individual engineering rules (browse by prefix)
 

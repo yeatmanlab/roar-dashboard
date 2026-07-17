@@ -493,6 +493,17 @@ const ScoreBinsBySchoolSchema = z.object({
  * null-guarding.
  */
 const TaskScoreFacetSchema = ReportTaskMetadataSchema.extend({
+  /**
+   * The "support range" percentage shown in the task's report description — the
+   * percentage of peers a needs-extra-support student scores below (the complement
+   * of the version-resolved `developing` percentile cutoff). Lets the dashboard's
+   * `TaskReport` description render its `{{SUPPORT_RANGE}}` value without branching
+   * on scoring versions. `null` for tasks without a percentile-then-rawscore
+   * classification (their descriptions carry no `{{SUPPORT_RANGE}}` placeholder).
+   * Optional for deploy-window safety — the frontend falls back to its legacy
+   * version rule when an older backend omits it.
+   */
+  supportThreshold: z.number().nullable().optional(),
   supportLevelByGrade: z.array(SupportLevelByGradeSchema),
   supportLevelBySchool: z.array(SupportLevelBySchoolSchema),
   scoreBinsByGrade: z.array(ScoreBinsByGradeSchema),
