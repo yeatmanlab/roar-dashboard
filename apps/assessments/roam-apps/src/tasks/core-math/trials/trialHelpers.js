@@ -24,14 +24,7 @@ export const initBlock = (corpusName, idx) => {
             store.session.set('responseTracker', []);
 
             let breakMapping = store.session.get('breakMappingLower');
-            let grade = store.session.get('grade');
-            if (grade >= 5) {
-              store.session.set('breakMap', breakMapping['5-12']);
-            } else if (grade == 3 || grade == 4) {
-              store.session.set('breakMap', breakMapping['3-4']);
-            } else {
-              store.session.set('breakMap', breakMapping['K-2']);
-            }
+            store.session.set('breakMap', breakMapping);
           } else {
             store.session.set('corpusToRun', 'remaining');
           }

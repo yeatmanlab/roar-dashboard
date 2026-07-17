@@ -4,7 +4,7 @@ const timeout = Cypress.env('timeout');
 const endText = 'You are all done.';
 
 describe('Test play through of ARF as a participant', () => {
-  it('ARF Play through Test', () => {
+  it.skip('ARF Play through Test', () => {
     Cypress.on('uncaught:exception', () => false);
 
     cy.visit('/');

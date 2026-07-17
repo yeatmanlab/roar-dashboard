@@ -407,8 +407,7 @@ const practiceFeedbackCorrect = () => {
       }
       return (
         `<div class="number-line-item">
-                    ${i18next.t('magpiPilot.numberLine.feedback.text1')} 
-                    ${i18next.t('magpiPilot.numberLine.feedback.text3', {
+                    ${i18next.t('magpiPilot.numberLine.feedback.correct', {
                       number: number,
                       interpolation: {
                         escapeValue: false,
@@ -486,13 +485,12 @@ const practiceFeedbackIncorrect = () => {
       }
       return (
         `<div class="number-line-item">
-                    ${i18next.t('magpiPilot.numberLine.feedback.text2')} 
-                    ${i18next.t('magpiPilot.numberLine.feedback.text3', {
+                    ${i18next.t('magpiPilot.numberLine.feedback.incorrect', {
                       number: number,
                       interpolation: {
                         escapeValue: false,
                       },
-                    })} ${i18next.t('magpiPilot.numberLine.feedback.text4')}
+                    })}
                 </div>
                 <div class="number-line-container">
                     <div class="number-line-element" id="line">
