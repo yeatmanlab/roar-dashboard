@@ -46,81 +46,15 @@
   </div>
   <div v-if="orgType !== 'district'" class="my-2 mx-4">
     <SubscoreTable
-      v-if="taskId === 'phonics' && !isLoadingTasksDictionary"
-      task-id="phonics"
-      :task-name="tasksDictionary['phonics'].nameSimple"
+      v-if="tasksWithSubscores.includes(taskId) && taskUuid && !isLoadingTasksDictionary"
+      :task-id="taskId"
+      :task-uuid="taskUuid"
+      :task-name="tasksDictionary[taskId]?.nameSimple ?? taskId"
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
       :administration-name="administrationInfo.name ?? undefined"
       :org-name="orgInfo.name ?? undefined"
-      :computed-table-data="computedTableData"
-    />
-    <SubscoreTable
-      v-if="taskId === 'letter' && !isLoadingTasksDictionary"
-      task-id="letter"
-      :task-name="tasksDictionary['letter'].nameSimple"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-      :computed-table-data="computedTableData"
-    />
-    <SubscoreTable
-      v-if="taskId === 'letter-en-ca' && !isLoadingTasksDictionary"
-      task-id="letter-en-ca"
-      :task-name="tasksDictionary['letter-en-ca'].nameSimple"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-      :computed-table-data="computedTableData"
-    />
-    <SubscoreTable
-      v-if="taskId === 'pa' && !isLoadingTasksDictionary"
-      task-id="pa"
-      :task-name="tasksDictionary['pa'].nameSimple"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-      :computed-table-data="computedTableData"
-    />
-    <SubscoreTable
-      v-if="taskId === 'fluency-calf' && !isLoadingTasksDictionary"
-      task-id="fluency-calf"
-      :task-name="tasksDictionary['fluency-calf'].nameSimple"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-      :computed-table-data="computedTableData"
-    />
-    <SubscoreTable
-      v-if="taskId === 'fluency-arf' && !isLoadingTasksDictionary"
-      task-id="fluency-arf"
-      :task-name="tasksDictionary['fluency-arf'].nameSimple"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-      :computed-table-data="computedTableData"
-    />
-    <SubscoreTable
-      v-if="taskId === 'roam-alpaca' && !isLoadingTasksDictionary"
-      task-id="roam-alpaca"
-      :task-name="tasksDictionary['roam-alpaca'].nameSimple"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-      :computed-table-data="computedTableData"
     />
   </div>
 </template>
@@ -146,10 +80,6 @@ const props = defineProps({
     type: Object,
     required: true,
   },
-  computedTableData: {
-    type: Array,
-    required: true,
-  },
   orgType: {
     type: String,
     required: true,
@@ -165,6 +95,12 @@ const props = defineProps({
   taskId: {
     type: String,
     required: true,
+  },
+  taskUuid: {
+    // Task UUID for the subscores endpoint (path param); resolved upstream from
+    // the report's task metadata. Empty until that loads.
+    type: String,
+    default: '',
   },
   facets: {
     // Per-task facet aggregation from `getScoreFacets`; null while loading.
@@ -185,6 +121,10 @@ const facetModes = [
   { name: 'Grade', key: 'grade' },
   { name: 'School', key: 'schoolName' },
 ];
+
+// Tasks with a registered backend subscore schema — only these render a subscore
+// table. Others (e.g. SWR/SRE) have no subscore schema and 400 from the endpoint.
+const tasksWithSubscores = ['phonics', 'letter', 'letter-en-ca', 'pa', 'fluency-calf', 'fluency-arf', 'roam-alpaca'];
 
 // Kindergarten / "0" sort as grade 0; everything else is its numeric grade.
 const gradeNumeric = (grade) => (grade === '0' || grade === 'Kindergarten' ? 0 : Number(grade));
