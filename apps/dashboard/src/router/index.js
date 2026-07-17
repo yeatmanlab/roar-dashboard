@@ -128,7 +128,9 @@ const routes = [
   {
     path: GAME_ROUTES.VOCAB,
     name: 'Vocab',
-    component: () => import('../components/tasks/TaskVocab.vue'),
+    // Vocab (LEVANTE Vocabulary Assessment) is a task within the roar-levante-tasks
+    // bundle, launched through TaskLevante with taskId 'vocab'.
+    component: () => import('../components/tasks/TaskLevante.vue'),
     props: { taskId: 'vocab', language: 'en' },
     meta: { pageTitle: 'Vocab' },
   },
@@ -399,7 +401,9 @@ const routes = [
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.VOCAB,
     name: 'Launch Vocab',
-    component: () => import('../components/tasks/TaskVocab.vue'),
+    // Vocab is launched via the roar-levante-tasks bundle through TaskLevante (see the
+    // non-launch Vocab route above).
+    component: () => import('../components/tasks/TaskLevante.vue'),
     props: (route) => ({
       taskId: 'vocab',
       language: 'en',

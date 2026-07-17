@@ -6,6 +6,14 @@
   </div>
 </template>
 <script setup>
+/**
+ * @deprecated Dead code. Crowding is not yet meant to be live on the dashboard; the task
+ * will eventually fold into the roav-apps bundle and launch through TaskRoav.vue (roav-cr,
+ * Phase 2). This component still uses the legacy `@bdelab/roav-crowding` +
+ * `roarfirekit.startAssessment` path and is out of scope for the firekit cutover
+ * (ticket 1965). Full removal is tracked by roar-project-management#1998 (gated on TaskRoav
+ * integrating roav-cr) — do not extend.
+ */
 import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
