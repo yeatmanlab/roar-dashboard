@@ -29,8 +29,8 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
                   
                   <ol>
                     <li>${i18next.t('instructions.fluency.text2')}</li>
-                    <li style="margin-top: 0.5vh">${i18next.t('instructions.fluency.text4')}</li>
-                    <li style="margin-top: 0.5vh">${i18next.t('instructions.fluency.text6')}</li>
+                    <li style="margin-top: 0.5vh">${i18next.t('instructions.core-math.text4')}</li>
+                    <li style="margin-top: 0.5vh">${i18next.t('instructions.core-math.text5')}</li>
                   </ol>
                   <p class="practice-text">${i18next.t('instructions.core-math.text14')}</p>
                   <input type="text" name="practice_number" id="practice_number" class="textbox" style="width:"` +
