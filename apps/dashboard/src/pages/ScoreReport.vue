@@ -1152,20 +1152,7 @@ const computeAssignmentAndRunData = computed(() => {
             _get(assessment, `scores.computed.composite.${key}`),
           );
 
-          // Non-response modality (1.3.6+) return computed.composite even when no test questions have been answered
-          if (hasTestAnswers) {
-            Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, numAttempted, isNewScoring });
-          } else {
-            Object.assign(currRowScores[taskId], {
-              numCorrect: null,
-              numIncorrect: null,
-              numAttempted: null,
-              rawScore: null,
-              isNewScoring,
-            });
-          }
-
-          //Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, numAttempted, isNewScoring });
+          Object.assign(currRowScores[taskId], { numCorrect, numIncorrect, numAttempted, isNewScoring });
 
           currRowScores[taskId].recruitment = _get(assessment, 'params.recruitment');
           currRowScores[taskId].fc = _get(assessment, 'scores.computed.FC');
@@ -1177,43 +1164,56 @@ const computeAssignmentAndRunData = computed(() => {
             currRowScores[taskId].rawScore = totalRawScore === 0 ? null : totalRawScore;
           } else {
             const scores = _get(assessment, 'scores.computed');
+
+            // We do not want to show Symbolic Comp (recruitment=magpiPilot), but if it exists, that means it is one of the new fluency-arf runs.
+            const allSubskills = { ...roamFluencySubskills, symbolicComp: 'Symbolic Comp' };
+
             // Verify non-response modality scores (1.3.6+) by confirming that at least one subskill is present
-            const hasSubskills = scores ? Object.keys(scores).some((key) => roamFluencySubskills[key]) : false;
-            if (hasSubskills && hasTestAnswers) {
+            const hasSubskills = scores ? Object.keys(scores).some((key) => allSubskills[key]) : false;
+
+            // We filter out subskills with < 1 attempted test questions to hide them in the subscore table.
+            // hasSubskills is used to determine if new scoring before the keys above are filtered below.
+            // This happens when only practice questions are answered.
+            currRowScores[taskId].hasSubskills = hasSubskills;
+            if (hasSubskills) {
               const allIncorrectSkills = [];
               const subsetIncorrectSkills = [];
-              Object.keys(roamFluencySubskills).forEach((subskill) => {
-                const subskillInfo = _get(assessment, `scores.computed.${subskill}`);
-                if (subskillInfo) {
-                  currRowScores[taskId][subskill] = {
-                    percentCorrect: `${Math.round(subskillInfo.subPercentCorrect * 100)}%`,
-                    ...subskillInfo,
-                    rawScore: parseFloat(Number(subskillInfo.rawScore).toFixed(2)),
-                  };
-                  const subskillIncorrectSkills = _get(
-                    assessment,
-                    `scores.computed.composite.incorrectSkills.${subskill}`,
-                  );
-                  if (subskillIncorrectSkills) {
-                    const parsedIncorrectSkills = subskillIncorrectSkills.split(',').map((s) => s.trim());
-                    if (taskId === 'fluency-calf' || subskill === 'addition' || subskill === 'subtraction') {
-                      allIncorrectSkills.push(...parsedIncorrectSkills);
-                    } else {
-                      // For fluency-arf, multiplication and division skills are considered the same for counting purposes
-                      subsetIncorrectSkills.push(...parsedIncorrectSkills);
+
+              // If only practice questions are answered, we still want to show 0 in the overall score column.
+              if (hasTestAnswers) {
+                Object.keys(roamFluencySubskills).forEach((subskill) => {
+                  const subskillInfo = _get(assessment, `scores.computed.${subskill}`);
+                  if (subskillInfo) {
+                    currRowScores[taskId][subskill] = {
+                      percentCorrect: `${Math.round(subskillInfo.subPercentCorrect * 100)}%`,
+                      ...subskillInfo,
+                      rawScore: parseFloat(Number(subskillInfo.rawScore).toFixed(2)),
+                    };
+                    const subskillIncorrectSkills = _get(
+                      assessment,
+                      `scores.computed.composite.incorrectSkills.${subskill}`,
+                    );
+                    if (subskillIncorrectSkills) {
+                      const parsedIncorrectSkills = subskillIncorrectSkills.split(',').map((s) => s.trim());
+                      if (taskId === 'fluency-calf' || subskill === 'addition' || subskill === 'subtraction') {
+                        allIncorrectSkills.push(...parsedIncorrectSkills);
+                      } else {
+                        // For fluency-arf, multiplication and division skills are considered the same for counting purposes
+                        subsetIncorrectSkills.push(...parsedIncorrectSkills);
+                      }
                     }
                   }
-                }
-              });
+                });
 
-              if (taskId === 'fluency-arf') {
-                allIncorrectSkills.push(...new Set(subsetIncorrectSkills));
+                if (taskId === 'fluency-arf') {
+                  allIncorrectSkills.push(...new Set(subsetIncorrectSkills));
+                }
               }
 
               // subPercentCorrect field is returned starting 1.3.9
               // Writes percentCorrect to top-level for main score report tooltip and composite for subscore tooltip
               currRowScores[taskId].composite = {
-                totalIncorrectSkills: allIncorrectSkills.length,
+                totalIncorrectSkills: allIncorrectSkills.length != 0 ? allIncorrectSkills.length : null,
                 percentCorrect: `${Math.round(scores.composite?.subPercentCorrect * 100)}%`,
                 ...scores.composite,
                 rawScore: parseFloat(Number(scores.composite?.rawScore).toFixed(2)),
@@ -1222,14 +1222,12 @@ const computeAssignmentAndRunData = computed(() => {
             }
 
             // Non-response modality scores (1.3.6+) can return decimal rawScore for main score report
-            if (currRowScores[taskId].rawScore != undefined && hasTestAnswers) {
+            if (currRowScores[taskId].rawScore != undefined) {
               currRowScores[taskId].rawScore = parseFloat(Number(currRowScores[taskId].rawScore).toFixed(2));
             }
           }
 
-          if (hasTestAnswers) {
-            scoreFilterTags += ' Assessed ';
-          }
+          scoreFilterTags += ' Assessed ';
         }
         if (taskId === 'phonics' && assessment.scores) {
           // Process phonics scores
