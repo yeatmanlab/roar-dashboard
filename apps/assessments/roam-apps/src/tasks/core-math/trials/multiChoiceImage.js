@@ -114,7 +114,7 @@ export const multiChoiceImage = (corpusName, assessment_stage_val) => {
         source.start(0);
       }
 
-      if (store.session.get('replayButton') & (store.session.get('nextStimulus').audio_file !== '')) {
+      if (store.session.get('replayButton') && store.session.get('nextStimulus').audio_file !== '') {
         const replayBtn = document.getElementById('replay');
         replayBtn.addEventListener('click', replayAudio);
         //play audio immediately when item loads
