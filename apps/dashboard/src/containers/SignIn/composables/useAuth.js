@@ -7,6 +7,7 @@ import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 import { fetchDocById } from '@/helpers/query/utils';
 import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import { APP_ROUTES } from '@/constants/routes';
+import { getAuthService } from '@/services/AuthService';
 
 export function useAuth(context) {
   const { authStore, router, route, email, password, invalid, emailLinkSent, showPasswordField, resetSignInUI } =
@@ -53,13 +54,12 @@ export function useAuth(context) {
       emailLinkSent.value = true;
     });
   }
-  // ✅ Password reset “always-success” alert
   const showSuccessAlert = ref(false);
   const successEmail = ref('');
 
   /**
    * Forgot password:
-   * - optionally accepts an identifier (e.g., the chip’s email)
+   * - optionally accepts an identifier (e.g., the chip's email)
    * - skips request for usernames (no @)
    * - tries to send reset email if methods suggest password-based sign-in
    * - ALWAYS shows the success alert
@@ -68,10 +68,11 @@ export function useAuth(context) {
     const identifier = String(overrideIdentifier ?? email.value ?? '').trim();
 
     try {
+      const authService = getAuthService();
       // Optional pre-check (avoids EMAIL_NOT_FOUND noise)
       let methods = [];
       try {
-        methods = await roarfirekit.value?.fetchEmailAuthMethods(identifier);
+        methods = await authService.fetchSignInMethodsForEmail(identifier);
       } catch {
         /* ignore */
       }
@@ -84,10 +85,10 @@ export function useAuth(context) {
         });
 
       if (hasPasswordish) {
-        await roarfirekit.value.sendPasswordResetEmail(identifier);
+        await authService.sendPasswordResetEmail(identifier);
       }
     } catch {
-      // swallow errors — UX is “always success”
+      // swallow errors — UX is "always success"
     } finally {
       successEmail.value = identifier;
       showSuccessAlert.value = true;
@@ -104,56 +105,44 @@ export function useAuth(context) {
   }
 
   // ---------- SSO flows ----------
-  function authWithClever() {
+  /**
+   * Generic SSO handler. Uses popup in development (except Cypress) and on
+   * desktop for Google; falls back to redirect everywhere else.
+   *
+   * @param {'google' | 'clever' | 'classlink' | 'nycps'} provider
+   */
+  function authWithSSO(provider) {
     spinner.value = true;
-    if (process.env.NODE_ENV === 'development' && !window.Cypress) {
+    const usePopup =
+      (process.env.NODE_ENV === 'development' && !window.Cypress) || (provider === 'google' && !isMobileBrowser());
+
+    if (usePopup) {
       authStore
-        .signInWithCleverPopup()
+        .signInWithPopup(provider)
         .then(getUserClaims)
-        .catch(() => (spinner.value = false));
+        .catch(() => {
+          spinner.value = false;
+          invalid.value = true;
+        });
     } else {
-      spinner.value = true;
-      authStore.signInWithCleverRedirect();
+      authStore.signInWithRedirect(provider);
     }
+  }
+
+  function authWithClever() {
+    authWithSSO('clever');
   }
 
   function authWithClassLink() {
-    spinner.value = true;
-    if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-      authStore
-        .signInWithClassLinkPopup()
-        .then(getUserClaims)
-        .catch(() => (spinner.value = false));
-    } else {
-      authStore.signInWithClassLinkRedirect();
-    }
+    authWithSSO('classlink');
   }
 
   function authWithNYCPS() {
-    spinner.value = true;
-    if (process.env.NODE_ENV === 'development' && !window.Cypress) {
-      authStore
-        .signInWithNYCPSPopup()
-        .then(getUserClaims)
-        .catch(() => (spinner.value = false));
-    } else {
-      authStore.signInWithNYCPSRedirect();
-    }
+    authWithSSO('nycps');
   }
 
   function authWithGoogle() {
-    spinner.value = true;
-    if (isMobileBrowser()) {
-      authStore.signInWithGoogleRedirect();
-      return;
-    }
-    authStore
-      .signInWithGooglePopup()
-      .then(getUserClaims)
-      .catch(() => {
-        spinner.value = false;
-        invalid.value = true;
-      });
+    authWithSSO('google');
   }
 
   // ---------- Email/password ----------

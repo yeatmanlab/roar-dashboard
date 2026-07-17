@@ -41,10 +41,15 @@ export const FIREBASE_FUNCTIONS_ERROR_REASONS = Object.freeze({
 /**
  * Whether the dashboard is pointed at the local Firebase Auth emulator.
  *
- * Derived once from `VITE_FIREBASE_EMULATOR_ENABLED` at build time (Vite inlines
- * the value), accepting either the boolean `true` or the string `'true'`. It is
- * `false` (inert) in deployed builds. Centralized here so every consumer
+ * Derived from `VITE_FIREBASE_EMULATOR_AUTH_HOST` (set by dev-local-stack.sh) or
+ * the legacy `VITE_FIREBASE_EMULATOR_ENABLED` flag for backward compatibility.
+ * It is `false` (inert) in deployed builds. Centralized here so every consumer
  * evaluates the flag identically.
+ *
+ * Consumers: `resolveUserClaims.js`, `isDashboardReady.js`, `usePermissions.js`.
+ * These will be migrated in follow-up PRs.
  */
 export const IS_FIREBASE_EMULATOR_ENABLED =
-  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === true || import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';
+  Boolean(import.meta.env.VITE_FIREBASE_EMULATOR_AUTH_HOST) ||
+  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === true ||
+  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';

@@ -61,7 +61,9 @@ describe('AdministrationDatePicker.vue', () => {
   });
 
   it('formats dates correctly', () => {
-    const testDate = new Date(2025, 0, 1); // January 1st, 2025
+    // Use Date.UTC so the test works regardless of local timezone
+    // (getDateString formats with timeZone: 'UTC')
+    const testDate = new Date(Date.UTC(2025, 0, 1));
     const formattedDate = wrapper.vm.getDateString(testDate);
     expect(formattedDate).toBe('January 1, 2025');
   });

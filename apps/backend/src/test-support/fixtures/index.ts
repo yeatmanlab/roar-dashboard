@@ -33,7 +33,7 @@ export let baseFixture: BaseFixture;
  * - Task variants and related test data
  *
  * The seeded data is stored in the exported `baseFixture` variable for access by tests.
- * This function is called during test setup (e.g., vitest.setup.ts beforeAll hook or server-test.ts startup).
+ * This function is called during test setup (e.g., vitest.setup.ts beforeAll hook).
  * Tests should NOT call this directly - use the exported `baseFixture` instead.
  *
  * @returns The seeded BaseFixture instance

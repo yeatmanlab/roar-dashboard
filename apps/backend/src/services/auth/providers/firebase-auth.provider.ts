@@ -6,18 +6,19 @@ import { ApiErrorMessage } from '../../../enums/api-error-message.enum';
 import { ApiError } from '../../../errors/api-error';
 import { logger } from '../../../logger';
 import { getFirebaseErrorCode } from '../../../utils/get-firebase-error-code.util';
-import type { DecodedUser, IAuthProvider } from '../auth.service';
+import type { DecodedUser } from '../auth.service';
 
 /**
  * Firebase Auth Provider
  *
- * This auth provider uses Firebase Auth to verify JWT tokens and extract user information.
- * Handles Firebase-specific errors and converts them to ApiError.
+ * Uses Firebase Admin SDK to verify JWT tokens and extract user information.
+ * When `FIREBASE_AUTH_EMULATOR_HOST` is set, the Admin SDK automatically
+ * connects to the Auth emulator — no code change needed.
  *
  * @throws {ApiError} AUTH_TOKEN_EXPIRED if the token has expired
  * @throws {ApiError} AUTH_TOKEN_INVALID for any other verification failure
  */
-export class FirebaseAuthProvider implements IAuthProvider {
+export class FirebaseAuthProvider {
   async verifyToken(token: string): Promise<DecodedUser> {
     try {
       const decoded = await FirebaseAuthClient.verifyIdToken(token, true);
