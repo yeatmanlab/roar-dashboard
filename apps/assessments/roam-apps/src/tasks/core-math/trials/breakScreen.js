@@ -73,6 +73,8 @@ const breakScreen = {
       save_trial: true,
       correct: 1,
       assessment_stage: 'practice',
+      corpus_name: 'breakScreen',
+      trial_num_block: store.session.get('breakCount') + 1,
     });
 
     store.session.transact('breakCount', (oldVal) => oldVal + 1);
