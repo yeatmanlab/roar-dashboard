@@ -177,10 +177,10 @@ module.exports = async (env, args) => {
   const devFirebaseConfig = {
     plugins: [
       new webpack.EnvironmentPlugin({
-        // Empty string by default — connectAuthEmulator() in serve.js only fires when
-        // this is explicitly set (e.g. by npm start). Regular dev builds
-        // connecting to a real Firebase project are unaffected.
-        FIREBASE_AUTH_EMULATOR_HOST: '',
+        // Defaults to the local Auth emulator — assessment development always runs
+        // against the emulator, never a real Firebase project. An explicit
+        // FIREBASE_AUTH_EMULATOR_HOST env var still overrides this default.
+        FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
       }),
     ],
   };

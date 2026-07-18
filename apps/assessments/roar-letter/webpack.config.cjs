@@ -172,7 +172,7 @@ module.exports = async (env, args) => {
         process: 'process/browser',
       }),
       new webpack.EnvironmentPlugin({
-        FIREBASE_AUTH_EMULATOR_HOST: '',
+        FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
       }),
     ],
   };

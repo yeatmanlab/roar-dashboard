@@ -133,14 +133,15 @@ cd "$ASSESSMENT_DIR"
 
 # Vite-based assessments (e.g. roar-survey) have no webpack.config.cjs.
 # Use vite for those; webpack for everything else.
+# FIREBASE_AUTH_EMULATOR_HOST needs no explicit value — dev-mode bundler configs
+# default it to the local emulator. BACKEND_URL points the /v1 proxy at the
+# containerized backend (plain HTTP) instead of the host-run TLS default.
 if [[ -f "$ASSESSMENT_DIR/webpack.config.cjs" ]]; then
   exec env \
-    FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
     BACKEND_URL=http://localhost:4000 \
     npx webpack serve --open --mode development --env dbmode=development
 else
   exec env \
-    FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
     BACKEND_URL=http://localhost:4000 \
     npx vite --mode development
 fi

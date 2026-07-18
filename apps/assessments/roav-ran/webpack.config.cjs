@@ -185,11 +185,11 @@ module.exports = async (env, args) => {
 
   // Development only: surface the Auth emulator host to the browser bundle so
   // getFirebaseConfig() connects to the emulator instead of fetching /__/firebase/init.json
-  // (which 404s outside Firebase Hosting). Empty default → production fetch path when unset.
+  // (which 404s outside Firebase Hosting). Defaults to the local Auth emulator in dev — assessment development never targets a real Firebase project.
   const devFirebaseConfig = {
     plugins: [
       new webpack.EnvironmentPlugin({
-        FIREBASE_AUTH_EMULATOR_HOST: '',
+        FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
       }),
     ],
   };
