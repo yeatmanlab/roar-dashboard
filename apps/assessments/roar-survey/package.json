@@ -32,7 +32,7 @@
     "vue": "^3.0.0"
   },
   "scripts": {
-    "dev": "bash ../../../scripts/dev-platform.sh",
+    "dev": "FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 vite --mode development",
     "dev:ci": "npx vite --mode development --port 8000",
     "setup": "bash ../../../scripts/assessment-setup.sh",
     "start": "bash ../../../scripts/assessment-env-up.sh",

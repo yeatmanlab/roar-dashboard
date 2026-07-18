@@ -15,6 +15,11 @@ services:
     ports:
       - "${ROAR_PG_PORT:-5432}:5432"
     volumes:
+      # Persist database data across `docker compose down` — the Auth emulator
+      # already persists its users, so without this the two drift apart after a
+      # down/up (emulator users exist, their DB rows don't). The postgres:18
+      # image expects the mount at /var/lib/postgresql (not .../data).
+      - postgres-data:/var/lib/postgresql
       - ./docker/postgres:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -82,4 +87,5 @@ services:
       retries: 12
 
 volumes:
+  postgres-data:
   firebase-auth-data:
