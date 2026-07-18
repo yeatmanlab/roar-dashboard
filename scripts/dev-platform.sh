@@ -16,7 +16,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ASSESSMENT_DIR="$(pwd)"
-FIREBASE_CONFIG="$REPO_ROOT/apps/assessments/shared/firebase.json"
+FIREBASE_CONFIG="$REPO_ROOT/docker/firebase-emulator/firebase.json"
 # Canonical value: packages/assessment-schema/src/firebase-emulator.ts (FIREBASE_EMULATOR_PROJECT_ID)
 EMULATOR_PROJECT_ID="demo-roar"
 EMULATOR_HOST="127.0.0.1:9099"

@@ -6,16 +6,17 @@
  * run. Drizzle can't perform these operations because they require
  * superuser privileges.
  *
- * This is a TypeScript port of `scripts/setup-fdw-local.sh` that uses
- * the `pg` client directly so it works in any Node environment without
+ * Uses the `pg` client directly so it works in any Node environment without
  * requiring `psql` on the PATH — notably the `cypress/browsers` container
  * used by the e2e CI job, which doesn't ship with postgresql-client.
  *
  * Called from:
  *  - `vitest.integration.globalSetup.ts` before `runMigrations()`
  *
- * The bash script under `scripts/` is kept for local developer use
- * (manual one-time setup), but the test runtime no longer depends on it.
+ * The Docker dev stacks don't need this helper — their Postgres init script
+ * (`docker/postgres/init-dev-databases.sh`) provisions the same prerequisites
+ * at first boot. This helper covers non-Docker Postgres instances (CI test
+ * databases, host-run setups).
  */
 import { Client } from 'pg';
 

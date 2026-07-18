@@ -54,9 +54,11 @@ services:
       timeout: 5s
       retries: 12
 
+  # Shared emulator image (docker/firebase-emulator) — this stack starts auth only;
+  # the assessment stack starts auth + storage from the same image and config.
   firebase-auth-emulator:
     container_name: roar-firebase-auth
-    build: docker/firebase-auth-emulator
+    build: docker/firebase-emulator
     command: >
       emulators:start
         --only auth
@@ -66,9 +68,12 @@ services:
         --export-on-exit /emulator-data
     ports:
       - "${ROAR_AUTH_PORT:-9099}:9099"
-      - "${ROAR_AUTH_UI_PORT:-9999}:9999"
+      - "${ROAR_AUTH_UI_PORT:-9999}:9000"
     volumes:
-      - ./docker/firebase-auth-emulator/firebase.json:/firebase.json:ro
+      - ./docker/firebase-emulator/firebase.json:/firebase.json:ro
+      # firebase.json references storage.rules relative to its own location; mount it
+      # so the config resolves even though this stack doesn't start the Storage emulator.
+      - ./docker/firebase-emulator/storage.rules:/storage.rules:ro
       - firebase-auth-data:/emulator-data
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:9099/ || exit 1"]
