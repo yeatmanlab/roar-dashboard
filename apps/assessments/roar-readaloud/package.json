@@ -44,7 +44,7 @@
     "seed:tasks": "bash ../../../scripts/assessment-seed-tasks.sh",
     "update": "npm --prefix ../../../packages/assessment-schema run build && npm --prefix ../../../packages/assessment-sdk run build",
     "stop": "bash ../../../scripts/assessment-env-down.sh",
-    "restart": "npm run stop && npm run start",
+    "restart": "bash ../../../scripts/assessment-restart.sh",
     "rebuild": "bash ../../../scripts/assessment-env-build.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
