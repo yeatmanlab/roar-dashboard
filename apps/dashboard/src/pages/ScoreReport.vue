@@ -1143,7 +1143,6 @@ const computeAssignmentAndRunData = computed(() => {
         } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
           // isNewScoring is 1.2.23+, otherwise handles 1.2.14
           const isNewScoring = _has(assessment, 'scores.computed.composite.numCorrect');
-          const hasTestAnswers = _get(assessment, 'scores.raw.composite.test');
           const propertyKeys = isNewScoring
             ? ['numCorrect', 'numIncorrect', 'numAttempted']
             : ['totalCorrect', 'totalIncorrect', 'totalNumAttempted'];
@@ -1164,50 +1163,43 @@ const computeAssignmentAndRunData = computed(() => {
             currRowScores[taskId].rawScore = totalRawScore === 0 ? null : totalRawScore;
           } else {
             const scores = _get(assessment, 'scores.computed');
-
-            // We do not want to show Symbolic Comp (recruitment=magpiPilot), but if it exists, that means it is one of the new fluency-arf runs.
-            const allSubskills = { ...roamFluencySubskills, symbolicComp: 'Symbolic Comp' };
-
             // Verify non-response modality scores (1.3.6+) by confirming that at least one subskill is present
-            const hasSubskills = scores ? Object.keys(scores).some((key) => allSubskills[key]) : false;
+            const hasSubskills = scores ? Object.keys(scores).some((key) => roamFluencySubskills[key]) : false;
 
-            // We filter out subskills with < 1 attempted test questions to hide them in the subscore table.
-            // hasSubskills is used to determine if new scoring before the keys above are filtered below.
-            // This happens when only practice questions are answered.
-            currRowScores[taskId].hasSubskills = hasSubskills;
+            // Since we filter out empty subskills, we need a state that maintains we're dealing with new fluency scores (formatting)
+            // We do not show Symbolic Comp (recruitment=magpiPilot, 1.3.11+) scores
+            currRowScores[taskId].useSubskillFormat = hasSubskills || _has(scores, 'symbolicComp');
+
             if (hasSubskills) {
               const allIncorrectSkills = [];
               const subsetIncorrectSkills = [];
 
-              // If only practice questions are answered, we still want to show 0 in the overall score column.
-              if (hasTestAnswers) {
-                Object.keys(roamFluencySubskills).forEach((subskill) => {
-                  const subskillInfo = _get(assessment, `scores.computed.${subskill}`);
-                  if (subskillInfo) {
-                    currRowScores[taskId][subskill] = {
-                      percentCorrect: `${Math.round(subskillInfo.subPercentCorrect * 100)}%`,
-                      ...subskillInfo,
-                      rawScore: parseFloat(Number(subskillInfo.rawScore).toFixed(2)),
-                    };
-                    const subskillIncorrectSkills = _get(
-                      assessment,
-                      `scores.computed.composite.incorrectSkills.${subskill}`,
-                    );
-                    if (subskillIncorrectSkills) {
-                      const parsedIncorrectSkills = subskillIncorrectSkills.split(',').map((s) => s.trim());
-                      if (taskId === 'fluency-calf' || subskill === 'addition' || subskill === 'subtraction') {
-                        allIncorrectSkills.push(...parsedIncorrectSkills);
-                      } else {
-                        // For fluency-arf, multiplication and division skills are considered the same for counting purposes
-                        subsetIncorrectSkills.push(...parsedIncorrectSkills);
-                      }
+              Object.keys(roamFluencySubskills).forEach((subskill) => {
+                const subskillInfo = _get(assessment, `scores.computed.${subskill}`);
+                if (subskillInfo && subskillInfo.numAttempted > 0) {
+                  currRowScores[taskId][subskill] = {
+                    percentCorrect: `${Math.round(subskillInfo.subPercentCorrect * 100)}%`,
+                    ...subskillInfo,
+                    rawScore: parseFloat(Number(subskillInfo.rawScore).toFixed(2)),
+                  };
+                  const subskillIncorrectSkills = _get(
+                    assessment,
+                    `scores.computed.composite.incorrectSkills.${subskill}`,
+                  );
+                  if (subskillIncorrectSkills) {
+                    const parsedIncorrectSkills = subskillIncorrectSkills.split(',').map((s) => s.trim());
+                    if (taskId === 'fluency-calf' || subskill === 'addition' || subskill === 'subtraction') {
+                      allIncorrectSkills.push(...parsedIncorrectSkills);
+                    } else {
+                      // For fluency-arf, multiplication and division skills are considered the same for counting purposes
+                      subsetIncorrectSkills.push(...parsedIncorrectSkills);
                     }
                   }
-                });
-
-                if (taskId === 'fluency-arf') {
-                  allIncorrectSkills.push(...new Set(subsetIncorrectSkills));
                 }
+              });
+
+              if (taskId === 'fluency-arf') {
+                allIncorrectSkills.push(...new Set(subsetIncorrectSkills));
               }
 
               // subPercentCorrect field is returned starting 1.3.9
