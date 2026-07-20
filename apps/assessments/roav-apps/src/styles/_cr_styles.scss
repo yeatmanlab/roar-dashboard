@@ -1,0 +1,114 @@
+@use 'vars' as *;
+
+.roav-cr-btns-resp-wrap {
+  position: absolute;
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+.roav-cr-btn-resp {
+  border: 4px solid rgba(166, 166, 166);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  user-select: none;
+  -webkit-user-drag: none;
+  touch-action: none;
+}
+
+.roav-cr-img-btn-resp {
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  touch-action: none;
+}
+
+.roav-cr-img-bg-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -20;
+}
+
+.roav-cr-img-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.roav-cr-stim-resp-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.roav-cr-warn-timeout {
+  animation: warn-flash 1s ease-in-out infinite;
+}
+
+@keyframes warn-flash {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: #e7e7e7;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.roav-cr-stim-wrap {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+}
+
+//===========================================================
+// VERTICAL SAME/DIFF BUTTONS
+//===========================================================
+
+.roav-cr-btn-resp-compare-lr {
+  position: absolute;
+  top: calc(var(--height-fs) / 2);
+  transform: translateY(-50%);
+  line-height: 0;
+  box-shadow: none;
+  padding: 0;
+  // border: none;
+  border: 4px solid rgba(166, 166, 166);
+  background: transparent;
+  display: inline-block;
+  width: fit-content;
+  height: fit-content;
+  z-index: 100;
+  user-select: none;
+  -webkit-user-drag: none;
+  touch-action: none;
+}
+
+.roav-cr-btn-resp-compare-tb {
+  position: absolute;
+  left: calc(var(--width-fs) / 2);
+  transform: translateX(-50%);
+  line-height: 0;
+  box-shadow: none;
+  padding: 0;
+  // border: none;
+  border: 4px solid rgba(166, 166, 166);
+  background: transparent;
+  display: inline-block;
+  width: fit-content;
+  height: fit-content;
+  z-index: 100;
+  user-select: none;
+  -webkit-user-drag: none;
+  touch-action: none;
+}

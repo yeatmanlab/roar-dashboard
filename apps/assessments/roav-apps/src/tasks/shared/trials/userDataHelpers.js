@@ -5,10 +5,10 @@ import { SESSION_KEYS as SK } from '../helpers/sessionKeys';
 const LENGTH_PID = 16;
 
 // randomly generates a 16 character string as the pid
-const makePid = () => {
+export const makePid = (lenPid = LENGTH_PID) => {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < LENGTH_PID; i += 1) text += possible.charAt(Math.floor(Math.random() * possible.length));
+  for (let i = 0; i < lenPid; i += 1) text += possible.charAt(Math.floor(Math.random() * possible.length));
   return text;
 };
 

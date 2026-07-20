@@ -5,7 +5,7 @@
   "numRepeatBlockMax": 1,
   "numTrialBlock": 12,
   "numTrialExtra": 2,
-  "durationStimExtra": 2000,
+  "durationStimExtra": 1000,
   "arrMetaparams": [
     {
       "typeStim": "opto",

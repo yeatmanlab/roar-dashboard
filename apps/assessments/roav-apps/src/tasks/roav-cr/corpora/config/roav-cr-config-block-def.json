@@ -1,0 +1,107 @@
+{
+  "numTrialBlock": 40,
+  "subvars": {
+    "sv1": [
+      {
+        "tagParams": "shape-ident|hv|sync|",
+        "numTrial": 20,
+        "instr": true,
+        "numTrialNoflank": 10,
+        "instrNoflank": true
+      },
+      {
+        "tagParams": "shape-compare-lr|hv|sync|",
+        "numTrial": 20,
+        "instr": true,
+        "numTrialNoflank": 10,
+        "instrNoflank": true
+      }
+    ],
+    "sv2": [
+      {
+        "tagParams": "shape-ident|hv|sync|",
+        "numTrial": 20,
+        "instr": true,
+        "numTrialNoflank": 10,
+        "instrNoflank": true
+      },
+      {
+        "tagParams": "shape-ident|hv|soa|",
+        "numTrial": 20,
+        "instr": false,
+        "numTrialNoflank": 0,
+        "instrNoflank": false
+      }
+    ],
+    "sv3": [
+      {
+        "tagParams": "shape-compare-lr|hv|sync|",
+        "numTrial": 20,
+        "instr": true,
+        "numTrialNoflank": 10,
+        "instrNoflank": true
+      },
+      {
+        "tagParams": "shape-compare-lr|hv|soa|",
+        "numTrial": 20,
+        "instr": false,
+        "numTrialNoflank": 0,
+        "instrNoflank": false
+      }
+    ]
+  },
+  "mapMetaparamsBlock": {
+    "shape-ident|hv|sync|": {
+      "typeTask": "shape-ident",
+      "namesStim": ["car", "heart", "butterfly", "tree", "duck"],
+      "_sameFlank": true,
+      "_nameFlank": "cloud",
+      "showFlankHor": true,
+      "showFlankVert": true,
+      "ratioMax": 1,
+      "_eccentTarg": 6,
+      "_unitEccentTarg": "deg",
+      "durationTargPre": 0,
+      "durationStim": 167
+    },
+    "shape-ident|hv|soa|": {
+      "typeTask": "shape-ident",
+      "namesStim": ["car", "heart", "butterfly", "tree", "duck"],
+      "_sameFlank": true,
+      "_nameFlank": "cloud",
+      "showFlankHor": true,
+      "showFlankVert": true,
+      "ratioMax": 1,
+      "_eccentTarg": 6,
+      "_unitEccentTarg": "deg",
+      "durationTargPre": -67,
+      "durationStim": 100
+    },
+    "shape-compare-lr|hv|sync|": {
+      "typeTask": "shape-compare-lr",
+      "namesStim": ["car", "heart", "butterfly", "tree", "duck"],
+      "_sameFlank": true,
+      "_nameFlank": "cloud",
+      "showFlankHor": true,
+      "showFlankVert": true,
+      "ratioMax": 0.75,
+      "_eccentTarg": 6,
+      "_unitEccentTarg": "deg",
+      "durationTargPre": 0,
+      "durationStim": 167
+    },
+    "shape-compare-lr|hv|soa|": {
+      "typeTask": "shape-compare-lr",
+      "namesStim": ["car", "heart", "butterfly", "tree", "duck"],
+      "_sameFlank": true,
+      "_nameFlank": "cloud",
+      "showFlankHor": true,
+      "showFlankVert": true,
+      "ratioMax": 0.75,
+      "_eccentTarg": 6,
+      "_unitEccentTarg": "deg",
+      "durationTargPre": -67,
+      "durationStim": 100
+    }
+  }
+}

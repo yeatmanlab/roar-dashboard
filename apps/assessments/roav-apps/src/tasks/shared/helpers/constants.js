@@ -18,3 +18,9 @@ export const FPS_STANDARD = {
   FPS_90: 90,
   FPS_120: 120,
 };
+
+export const SCREEN = {
+  WIDTH_CM_MIN: 20,
+  WIDTH_CM_MAX: 100,
+  WIDTH_CM_DEF: 30,
+};

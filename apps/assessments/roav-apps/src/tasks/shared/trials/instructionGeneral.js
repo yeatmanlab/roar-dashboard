@@ -1,7 +1,7 @@
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
 import '../../../i18n/i18n';
-import { fillTextKeyValuesDef, ModeGame, TypeKey, AssessmentStage } from '../helpers/namingHelpers';
+import { fillTextKeyValuesDef, ModeGame, TypeKey } from '../helpers/namingHelpers';
 import { fitTextInstructionDef, scrollToTop, startReflowLayout, stopReflowLayout } from '../helpers/layoutHelpers';
 import { mediaAssets } from '../helpers/mediaAssets';
 import { resetModeInputLast, updateModeInputInfoOnPointerEvent } from './inputModeHelpers';
@@ -13,7 +13,7 @@ import { DURATIONS } from '../helpers/constants';
 import { enableTrialByModeGame, skipResponseByModeGame } from './flowHelpers';
 import { t_trialEnterFullscreenConditional } from './screenHelpers';
 
-const tagTrial = AssessmentStage.INSTRUCTION;
+const tagTrial = 'instruction';
 
 // text - unique, very structured (audio has to be coordinated with video)
 const paramsDef = (tagReq) => ({

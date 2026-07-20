@@ -53,4 +53,10 @@ export const SESSION_KEYS = {
   INPUT_KEYBOARD_DETECTED: 'inputKeyboardDetected',
   INPUT_KEY_LEFT_DETECTED: 'inputKeyLeftDetected',
   INPUT_KEY_RIGHT_DETECTED: 'inputKeyRightDetected',
+
+  // screen dimensions
+  WIDTH_SCREEN_CM: 'screenWidthCm',
+  HEIGHT_SCREEN_CM: 'screenHeightCm',
+  SCREEN_CALIBRATE: 'screenCalibrate',
+  SCREEN_CALIBRATED: 'screenCalibrated',
 };
