@@ -2,14 +2,14 @@
 # assessment-env-down.sh — Stop the shared assessment infrastructure and
 # remove all associated volumes.
 #
-# Called from an assessment package's assessment-environment:down script.
+# Called from an assessment package's `stop` script.
 # Falls back to direct process kills when the Docker API can't stop containers.
 # On some Linux systems, AppArmor blocks 'docker stop'/'docker kill' with
 # "permission denied"; in that case the script prints the 'sudo kill' command
 # to run manually.
 #
 # Usage (from any assessment package.json):
-#   "assessment-environment:down": "bash ../../../scripts/assessment-env-down.sh"
+#   "stop": "bash ../../../scripts/assessment-env-down.sh"
 set -uo pipefail
 
 # Shared context (REPO_ROOT, COMPOSE_FILE). See assessment-common.sh.

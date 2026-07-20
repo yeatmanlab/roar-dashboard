@@ -2,16 +2,16 @@
 # assessment-env-up.sh — Start the shared assessment infrastructure and the
 # assessment dev server.
 #
-# Called from an assessment package's assessment-environment:up script.
+# Called from an assessment package's `start` script.
 # Starts the shared Docker stack (DB, migrations, Firebase emulator, backend)
 # then runs the assessment dev server in the directory that invoked this script.
 #
 # Its pre-flight checks are hard gates (unlike `npm run setup`, whose equivalent
-# checks are advisory): `init` is optional, so this script cannot assume it ran
+# checks are advisory): `setup` is optional, so this script cannot assume it ran
 # and must fail safe on its own.
 #
 # Usage (from any assessment package.json):
-#   "assessment-environment:up": "bash ../../../scripts/assessment-env-up.sh"
+#   "start": "bash ../../../scripts/assessment-env-up.sh"
 set -euo pipefail
 
 # Shared context (REPO_ROOT, COMPOSE_FILE, ASSESSMENT_DIR, ASSESSMENT_NAME,

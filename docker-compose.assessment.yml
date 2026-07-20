@@ -3,16 +3,17 @@ name: roar-assessment
 # ──────────────────────────────────────────────────────────────────────────────
 # Assessment environment — full local stack for running ROAR assessments.
 #
-# Start:
-#   npm run assessment-environment:up -w apps/assessments/roar-pa
-#   (or: bash scripts/assessment-env-up.sh)
+# Start (run from an assessment directory, e.g. apps/assessments/roar-pa):
+#   npm start
+#   (or: bash ../../../scripts/assessment-env-up.sh)
 #
-# Stop and delete data:
-#   npm run assessment-environment:down -w apps/assessments/roar-pa
-#   (or: bash scripts/assessment-env-down.sh)
+# Stop and delete data (run from an assessment directory):
+#   npm stop
+#   (or: bash ../../../scripts/assessment-env-down.sh)
 #
-# Rebuild images after pulling new code:
-#   docker compose -f docker-compose.assessment.yml build
+# Rebuild images after pulling new code (run from an assessment directory):
+#   npm run rebuild
+#   (or: bash ../../../scripts/assessment-env-build.sh)
 #
 # Service dependency order:
 #   assessment-db (healthy) → assessment-db-migrate (completed)
