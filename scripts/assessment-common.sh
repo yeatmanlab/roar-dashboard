@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # assessment-common.sh — Shared context and pre-flight checks for the assessment
 # environment scripts (assessment-setup, assessment-env-up, assessment-seed-tasks,
-# assessment-env-build, assessment-env-down).
+# assessment-restart, assessment-env-build, assessment-env-down).
 #
 # SOURCE this file, don't execute it:
 #   source "$(cd "$(dirname "$0")" && pwd)/assessment-common.sh"
@@ -91,4 +91,31 @@ print_params_file_missing_help() {
   echo "Error: taskVariantParameters.json not found in $ASSESSMENT_DIR." >&2
   echo "  Create it with 'npm run setup', or copy the example yourself from this directory:" >&2
   echo "    cp taskVariantParameters.example.json taskVariantParameters.json" >&2
+}
+
+# ── Destructive-action confirmation ───────────────────────────────────────────
+
+# Prompt before an irreversible teardown (stop / restart delete the DB volume).
+# Returns 0 to proceed, 1 to abort. Skips the prompt (returns 0) on a non-TTY
+# (CI, pipes) or when -y/--yes/--force is present in the passed args, so automation
+# and already-confirmed callers aren't blocked. Prints only the warning + prompt;
+# the caller prints its own "Aborted …" message and picks the exit code — both
+# callers exit 0, since a decline is a valid choice (not an error) and npm
+# shouldn't print a "lifecycle script failed" wrapper.
+# Usage:  if ! confirm_teardown "$@"; then echo "Aborted …"; exit 0; fi
+confirm_teardown() {
+  local arg reply
+  for arg in "$@"; do
+    case "$arg" in
+      -y | --yes | --force) return 0 ;;
+    esac
+  done
+  [ -t 0 ] || return 0
+  echo "WARNING: this stops the assessment environment and DELETES the local database." >&2
+  echo "         All runs, trials, scores, and uploaded recordings are permanently lost." >&2
+  read -r -p "Continue? [y/N] " reply
+  case "$reply" in
+    [Yy] | [Yy][Ee][Ss]) return 0 ;;
+    *) return 1 ;;
+  esac
 }

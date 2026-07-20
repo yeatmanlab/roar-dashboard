@@ -72,7 +72,9 @@ To find the run you just produced, sort by recency (see [the runs query](#useful
 
 In dev and staging (never production), a small **variant picker** appears in the top-right corner of the assessment — a dropdown of the task's published variants. Selecting one reloads the page with that `variantId` (preserving your other URL parameters), so you can hop between seeded variants without hand-editing the URL.
 
-It lists the same published variants you seeded via `taskVariantParameters.json`, so pair it with `npm run seed:tasks`: add a variant, seed it, reload, and it's in the dropdown. For multi-task assessments the picker aggregates the published variants across every task. If a variant you expect is missing, it wasn't seeded — re-check your config and re-run `npm run seed:tasks`.
+It lists the same published variants you seeded via `taskVariantParameters.json`, so pair it with `npm run seed:tasks`: add a variant, seed it, reload, and it's in the dropdown. If a variant you expect is missing, it wasn't seeded — re-check your config and re-run `npm run seed:tasks`.
+
+**Scoped to the running assessment.** The picker queries `GET /tasks/:taskId/variants` for only the task ID(s) this assessment's dev server serves. So even though the shared database also holds every other assessment's variants once you've seeded them (see [switching between assessments](./ASSESSMENT_ENVIRONMENT.md#switching-between-assessments)), `roar-swr`'s picker never shows `roar-pa`'s variants. A multi-task or multi-language assessment shows all of _its own_ tasks' variants (e.g. `roar-swr` lists both English and Spanish), but never another assessment's.
 
 ---
 

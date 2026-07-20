@@ -8,6 +8,10 @@
 # "permission denied"; in that case the script prints the 'sudo kill' command
 # to run manually.
 #
+# The teardown deletes the database volume (all local data), so it prompts for
+# confirmation when run interactively. Skip with -y/--yes, or on a non-TTY (CI,
+# pipes), where it proceeds without asking.
+#
 # Usage (from any assessment package.json):
 #   "stop": "bash ../../../scripts/assessment-env-down.sh"
 set -uo pipefail
@@ -16,6 +20,16 @@ set -uo pipefail
 source "$(cd "$(dirname "$0")" && pwd)/assessment-common.sh"
 
 CONTAINERS=(assessment-backend assessment-db-migrate firebase-emulator assessment-db)
+
+# Confirm before the irreversible teardown (deletes the DB volume, losing every
+# run/trial/score/recording). Declining is a valid choice, not an error, so exit 0
+# — a non-zero exit would make npm print a misleading "lifecycle script failed"
+# wrapper. `restart` runs its own confirm and calls this with --yes, so this prompt
+# fires only for a bare `stop`. See confirm_teardown in assessment-common.sh.
+if ! confirm_teardown "$@"; then
+  echo "Aborted — the local database was left intact." >&2
+  exit 0
+fi
 
 echo "Stopping assessment environment..."
 

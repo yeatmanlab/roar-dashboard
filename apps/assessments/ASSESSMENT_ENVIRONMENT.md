@@ -71,6 +71,26 @@ npm stop       # Stop ALL Docker services and permanently DELETE the database
 
 `npm stop` tears down the containers **and their volumes** — every run, trial, score, and uploaded recording is gone. Use it when you want a clean slate; don't use it to "restart."
 
+Because the teardown is irreversible, both `npm stop` and `npm restart` **prompt for confirmation** before wiping the database. Declining is clean — it exits without an error and changes nothing: `npm stop` doesn't tear down, and `npm restart` neither tears down nor starts. Bypass the prompt with `npm run stop -- --yes` (or `npm run restart -- --yes`); non-interactive shells (CI, pipes) proceed without prompting.
+
+---
+
+## Switching between assessments
+
+The Docker stack — database, backend, and Firebase emulators — is **shared across all assessments** and keeps running in the background; only the dev server on port 8000 is per-assessment. So moving from one assessment to another (say `roar-swr` → `roar-pa`) tears nothing down:
+
+1. **Stop the current dev server** with Ctrl+C — frees port 8000; the stack and your data stay up.
+2. **`cd` to the other assessment** (e.g. `cd ../roar-pa`).
+3. **Seed it into the running database:** `npm run seed:tasks`. The stack only auto-seeds the _first_ assessment that brought it up, so each additional assessment you switch to needs its task(s)/variants seeded once — until then it starts but can't resolve a variant. (First time on that assessment, create its config first: `cp taskVariantParameters.example.json taskVariantParameters.json`.)
+4. **`npm start`** — it detects the running stack and launches this assessment's dev server against the same database.
+
+A few things follow from the stack being shared and persistent:
+
+- **Switching back needs no re-seed.** Seeding is additive and the database persists — it survives Ctrl+C; only `npm stop` / `npm restart` wipe it. Once an assessment is seeded, returning to it is just Ctrl+C → `cd` → `npm start`.
+- **Runs from both assessments coexist** in the same database — handy for cross-assessment work.
+- **No full `npm run setup` needed.** The platform libraries are built once at the repo root and shared, so only the per-assessment `taskVariantParameters.json` (and its seed) is assessment-specific. Running `setup` mid-switch would also spuriously flag port 5433 as "in use" — that's your own running stack.
+- **If you fully stopped the stack** (`npm stop`) between assessments, skip step 3: the next `npm start` brings the stack up fresh and auto-seeds whichever assessment you start it from.
+
 ---
 
 ## Script reference
@@ -83,7 +103,7 @@ Run all of these from the assessment's directory. This is the whole surface — 
 | `npm start`          | Start the shared stack (if not already up) and the assessment dev server                 | Every time you sit down to work                                                                                               |
 | `npm run seed:tasks` | Seed **new** variants from `taskVariantParameters.json` into the running DB, no teardown | After editing `taskVariantParameters.json`, to pick up new variants **without losing your data**                              |
 | `npm stop`           | Stop all Docker services and delete the database volume                                  | When you want a completely clean slate                                                                                        |
-| `npm restart`        | `npm stop && npm start` — full teardown (including data) and fresh start                 | When the stack is wedged and `seed:tasks` isn't the issue. **Destroys your data**                                             |
+| `npm restart`        | Confirmed full teardown (**deletes data**) and fresh start                               | When the stack is wedged and `seed:tasks` isn't the issue. **Destroys your data**                                             |
 | `npm run update`     | Rebuild the host platform libraries (SDK / schema / scoring-tables)                      | After `git pull` brings changes to those packages (see [Updating after a pull](#updating-after-a-pull))                       |
 | `npm run rebuild`    | Force a no-cache rebuild of the Docker images                                            | After changes to the backend, migrations, Dockerfile, or shared deps (see [Rebuilding images](#rebuilding-the-docker-images)) |
 
