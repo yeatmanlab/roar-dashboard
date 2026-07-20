@@ -12,8 +12,8 @@
 #   "assessment-environment:down": "bash ../../../scripts/assessment-env-down.sh"
 set -uo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-COMPOSE_FILE="$REPO_ROOT/docker-compose.assessment.yml"
+# Shared context (REPO_ROOT, COMPOSE_FILE). See assessment-common.sh.
+source "$(cd "$(dirname "$0")" && pwd)/assessment-common.sh"
 
 CONTAINERS=(assessment-backend assessment-db-migrate firebase-emulator assessment-db)
 
