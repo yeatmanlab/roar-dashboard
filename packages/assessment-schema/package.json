@@ -5,6 +5,12 @@
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "packages/assessment-schema"
+  },
+  "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "type": "module",
   "exports": {
     ".": {
@@ -69,6 +75,9 @@
     }
   },
   "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "check-types": "tsc --noEmit",
@@ -80,7 +89,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@roar-platform/api-contract": "*"
+    "@roar-platform/api-contract": "^0.1.0"
   },
   "devDependencies": {
     "@roar-platform/eslint-config": "*",

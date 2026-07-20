@@ -30,4 +30,5 @@ vi.mock('../../logger', () => ({
     fatal: vi.fn(),
     child: vi.fn(() => mockChild),
   },
+  createChildLogger: vi.fn(() => mockChild),
 }));

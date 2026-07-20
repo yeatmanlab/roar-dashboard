@@ -10,7 +10,6 @@ import { scaleJsPsychContentToFit } from './scaleContent';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
 
 let source;
-let audioFile;
 
 //Displays a multiple choice question, with images as options that are displayed in 2 rows
 export const multiChoiceImage = (corpusName, assessment_stage_val) => {
@@ -22,12 +21,7 @@ export const multiChoiceImage = (corpusName, assessment_stage_val) => {
       assessment_stage: assessment_stage_val,
     },
     stimulus: () => {
-      if (store.session.get('replayButton') && store.session.get('nextStimulus').audio_file !== '') {
-        audioFile = store.session.get('nextStimulus').audio_file;
-      } else {
-        audioFile = 'nullAudio';
-      }
-      return mediaAssets.audio[audioFile];
+      return mediaAssets.audio.nullAudio;
     },
     prompt: () => {
       let currentItem = store.session.get('nextStimulus');
@@ -102,6 +96,7 @@ export const multiChoiceImage = (corpusName, assessment_stage_val) => {
       }
 
       //setup replay button
+      let audioFile = store.session.get('nextStimulus').audio_file;
       async function replayAudio() {
         // pause audio
         if (source) {
@@ -119,9 +114,11 @@ export const multiChoiceImage = (corpusName, assessment_stage_val) => {
         source.start(0);
       }
 
-      if (store.session.get('replayButton') & (store.session.get('nextStimulus').audio_file !== '')) {
+      if (store.session.get('replayButton') && store.session.get('nextStimulus').audio_file !== '') {
         const replayBtn = document.getElementById('replay');
         replayBtn.addEventListener('click', replayAudio);
+        //play audio immediately when item loads
+        replayAudio();
       }
 
       //disable on load to prevent double clicking

@@ -2,6 +2,11 @@
   "name": "@roar-platform/roar-readaloud",
   "description": "Read Aloud — a phonics oral-reading assessment with audio/video recording and gaze estimation for ROAR",
   "version": "1.4.2",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "apps/assessments/roar-readaloud"
+  },
   "author": "Aryaman Taore",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

@@ -140,7 +140,6 @@ const developmentConfig = merge(webConfig, {
   mode: 'development',
   devtool: 'inline-source-map',
   devServer: {
-    https: true,
     port: 8000,
     static: './dist',
     client: {

@@ -2,6 +2,11 @@
   "name": "@roar-platform/roar-swr",
   "description": "Single Word Recognition — a timed word-reading assessment for ROAR",
   "version": "1.15.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "apps/assessments/roar-swr"
+  },
   "author": "Wanjing Anya Ma",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -50,7 +55,6 @@
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "dependencies": {
     "@bdelab/jscat": "^5.2.3",
-    "@bdelab/roar-firekit": "^9.6.0",
     "@bdelab/roar-utils": "^1.2.8",
     "@jspsych-contrib/plugin-audio-multi-response": "^1.0.0",
     "@jspsych-contrib/plugin-html-multi-response": "^1.0.2",
@@ -66,7 +70,6 @@
     "@jspsych/plugin-survey-text": "^1.1.0",
     "@roar-platform/assessment-schema": "^0.1.0",
     "@roar-platform/assessment-sdk": "^0.1.0",
-    "@roar-platform/scoring-tables": "^0.1.0",
     "ajv": "^8.17.1",
     "ajv-errors": "^3.0.0",
     "detect-it": "^4.0.1",
@@ -85,6 +88,7 @@
     "@sentry/integrations": ">=7"
   },
   "devDependencies": {
+    "@roar-platform/scoring-tables": "^0.1.0",
     "@babel/core": "^7.19.0",
     "@babel/preset-env": "^7.19.0",
     "@roar-platform/eslint-config": "*",

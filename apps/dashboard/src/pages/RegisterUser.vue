@@ -25,9 +25,9 @@ import { isMobileBrowser } from '@/helpers';
 const authStore = useAuthStore();
 const authWithGoogle = () => {
   if (isMobileBrowser()) {
-    authStore.signInWithGoogleRedirect();
+    authStore.signInWithRedirect('google');
   } else {
-    authStore.signInWithGooglePopup();
+    authStore.signInWithPopup('google');
   }
 };
 </script>

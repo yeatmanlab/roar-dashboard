@@ -68,6 +68,7 @@ const loadDotenvFiles = (mode) => {
   let envFilePaths = [];
   const allowOverride = !mode.includes('production') && !mode.includes('staging');
 
+  // 1. Load from the env-configs submodule (encrypted, shared across team).
   const modeEnvFilePath = path.resolve(__dirname, `./env-configs/.env.${mode}`);
   const modeLocalEnvFileName = path.resolve(__dirname, `./env-configs/.env.${mode}.local`);
 
@@ -78,6 +79,16 @@ const loadDotenvFiles = (mode) => {
     path: envFilePaths,
     override: allowOverride,
   });
+
+  // 2. Load apps/dashboard/.env as an override for any mode's submodule values.
+  // This allows the dashboard to define env vars (e.g. VITE_ROAR_API_BASE_URL,
+  // VITE_FIREBASE_EMULATOR_AUTH_HOST) without modifying the encrypted submodule.
+  if (allowOverride) {
+    const appRootEnvFile = path.resolve(__dirname, '.env');
+    if (fs.existsSync(appRootEnvFile)) {
+      config({ path: [appRootEnvFile], override: true });
+    }
+  }
 };
 
 const buildFirebaseConfig = (mode = 'development') => {
@@ -131,17 +142,13 @@ const buildFirebaseConfig = (mode = 'development') => {
 
   // In Firebase Auth emulator mode, allow the local Auth emulator origin so the
   // Firebase Web SDK can reach it (connectAuthEmulator talks to it over http).
-  // Only the Auth emulator is run locally, and this branch is a no-op unless
-  // VITE_FIREBASE_EMULATOR_ENABLED is set — so deployed builds are unaffected.
-  const useFirebaseEmulator =
-    process.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true' || process.env.VITE_FIREBASE_EMULATOR_ENABLED === true;
-  if (useFirebaseEmulator) {
-    const authEmulatorPort = Number(process.env.VITE_FIREBASE_EMULATOR_AUTH_PORT) || 9099;
-    cspObj['connect-src'] = [
-      ...(cspObj['connect-src'] ?? []),
-      `http://127.0.0.1:${authEmulatorPort}`,
-      `http://localhost:${authEmulatorPort}`,
-    ];
+  // This branch is a no-op unless VITE_FIREBASE_EMULATOR_AUTH_HOST is set —
+  // so deployed builds are unaffected.
+  const emulatorAuthHost = process.env.VITE_FIREBASE_EMULATOR_AUTH_HOST;
+  if (emulatorAuthHost) {
+    const [, portStr] = emulatorAuthHost.split(':');
+    const port = Number(portStr) || 9099;
+    cspObj['connect-src'] = [...(cspObj['connect-src'] ?? []), `http://127.0.0.1:${port}`, `http://localhost:${port}`];
   }
 
   // Join arrays into single-line policy
@@ -282,7 +289,7 @@ export default defineConfig(({ mode }) => {
                 // jspsych must be its own chunk so it initializes (and exports ParameterType) before
                 // any assessment plugin chunk that accesses ParameterType at module evaluation time.
                 jspsych: ['jspsych'],
-                roam: ['@bdelab/roam-apps'],
+                roam: ['@roar-platform/roam-apps'],
                 firekit: ['@bdelab/roar-firekit'],
                 letter: ['@roar-platform/roar-letter'],
                 multichoice: ['@roar-platform/roar-multichoice'],
@@ -291,7 +298,6 @@ export default defineConfig(({ mode }) => {
                 swr: ['@roar-platform/roar-swr'],
                 levante: ['@roar-platform/roar-levante-tasks'],
                 utils: ['@bdelab/roar-utils'],
-                vocab: ['@bdelab/roar-vocab'],
                 ran: ['@roar-platform/roav-ran'],
                 crowding: ['@bdelab/roav-crowding'],
                 'roav-mep': ['@bdelab/roav-mep'],

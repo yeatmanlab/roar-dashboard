@@ -232,10 +232,8 @@
         "text9": "Press the arrow to start!"
       },
       "feedback": {
-        "text1": "That's right!",
-        "text2": "Good try!",
-        "text3": "The {{number}} is here.",
-        "text4": "Click the marker!"
+        "correct": "That's right! The {{number}} is here.",
+        "incorrect": "Good try! The {{number}} is here. Click the marker!"
       },
       "text1": "This is a number line that goes from 0 to {{number}}.",
       "text2": "Great job! Now the number line goes from <b>0 to {{number}}</b>.",
