@@ -580,6 +580,29 @@ describe('UsersController', () => {
       const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
       expect(errorBody.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
+
+    it('maps an INTERNAL_SERVER_ERROR ApiError to a 500 response', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockListUserMemberships.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserMemberships(mockAuthContext, 'student-1');
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+    });
+
+    it('rethrows non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Unexpected error');
+      mockListUserMemberships.mockRejectedValue(unexpectedError);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await expect(Controller.listUserMemberships(mockAuthContext, 'student-1')).rejects.toThrow('Unexpected error');
+    });
   });
 
   describe('create', () => {
