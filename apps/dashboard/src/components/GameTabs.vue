@@ -11,7 +11,7 @@
           style="border: solid 2px #00000014; border-radius: 10px"
         >
           <span class="flex align-items-center gap-2">
-            {{ game.taskData.name }}
+            {{ getTaskName(game.taskId, game.taskData.name) }}
           </span>
         </PvTab>
       </PvTabList>
@@ -43,14 +43,14 @@
             <span
               class="tabview-nav-link-label"
               :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`"
-              >{{ game.taskData.name }}</span
+              >{{ getTaskName(game.taskId, game.taskData.name) }}</span
             >
           </template>
           <div class="roar-tabview-game flex flex-row p-5 surface-100 w-full">
             <div class="roar-game-content flex flex-column" style="width: 70%">
-              <div class="roar-game-title font-bold">{{ game.taskData.name }}</div>
+              <div class="roar-game-title font-bold">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
               <div class="roar-game-description mr-2">
-                <p>{{ game.taskData.description }}</p>
+                <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
               </div>
               <div class="flex flex-column h-full">
                 <div class="roar-game-meta">
@@ -258,6 +258,27 @@ const implementsValidityChecking = (taskId) => {
   const isNormed = (taskId === 'trog' || taskId === 'roar-inference') && getScoringVersions.value[taskId] >= 1;
 
   return !TASKS_EXCLUDED_FROM_RETAKE.includes(taskId) || isNormed;
+};
+
+const getTaskName = (taskId, taskName) => {
+  // Translate Levante task names. The task name is not the same as the taskId.
+  const taskIdLowercased = taskId.toLowerCase();
+
+  if (LEVANTE_TASKS.includes(camelize(taskIdLowercased))) {
+    return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
+  }
+
+  return taskName;
+};
+
+const getTaskDescription = (taskId, taskDescription) => {
+  // Translate Levante task descriptions if not in English
+  const taskIdLowercased = taskId.toLowerCase();
+
+  if (LEVANTE_TASKS.includes(camelize(taskIdLowercased))) {
+    return t(`gameTabs.${camelize(taskIdLowercased)}Description`);
+  }
+  return taskDescription;
 };
 
 const getRoutePath = (taskId) => {
