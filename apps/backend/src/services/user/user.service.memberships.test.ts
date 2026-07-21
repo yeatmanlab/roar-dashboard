@@ -4,7 +4,7 @@ import { UserService } from './user.service';
 import { UserFactory, AuthContextFactory } from '../../test-support/factories/user.factory';
 import { createMockUserRepository } from '../../test-support/repositories/user.repository';
 import { createMockAuthorizationService } from '../../test-support/services/authorization.service';
-import type { UserMembershipDetail } from '../../repositories/user.repository';
+import type { UserMembershipDetail } from '../../types/user';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 
 /**

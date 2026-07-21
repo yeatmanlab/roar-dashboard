@@ -2,12 +2,12 @@ import { eq, and, or, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup, NewUserFamily } from '../db/schema';
 import { EntityType } from '../types/entity-type';
+import type { UserMembershipDetail } from '../types/user';
 import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes, groups } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type { CoreTransaction } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { UserRole } from '../enums/user-role.enum';
-import type { UserFamilyRole } from '../enums/user-family-role.enum';
 import { BaseRepository } from './base.repository';
 import { isEnrollmentActive, isActiveInFamily } from './utils/enrollment.utils';
 import { logger } from '../logger';
@@ -19,17 +19,6 @@ import { logger } from '../logger';
  * than a false grant.
  */
 const FGA_SUPPORTED_ORG_TYPES: ReadonlySet<string> = new Set([EntityType.DISTRICT, EntityType.SCHOOL]);
-
-/**
- * A single active entity membership of a user, enriched for the memberships read
- * endpoint: each row carries the member's `role`, and class rows carry the parent
- * `schoolId` / `districtId` (a student has no school-level row of their own — their
- * school is the parent of their class).
- */
-export type UserMembershipDetail =
-  | { entityType: 'district' | 'school' | 'group'; entityId: string; role: UserRole }
-  | { entityType: 'class'; entityId: string; role: UserRole; schoolId?: string; districtId?: string }
-  | { entityType: 'family'; entityId: string; role: UserFamilyRole };
 
 /**
  * User Repository

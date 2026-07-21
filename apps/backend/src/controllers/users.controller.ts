@@ -1,6 +1,6 @@
 import type { AuthContext } from '../types/auth-context';
 import type { User } from '../db/schema';
-import type { UserMembershipDetail } from '../repositories/user.repository';
+import type { UserMembershipDetail } from '../types/user';
 import type {
   UserResponse,
   CreateUserRequestBody,
