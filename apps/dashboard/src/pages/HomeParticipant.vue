@@ -280,8 +280,26 @@ const {
   enabled: initialized,
 });
 
+const selectedAdminGames = computed(() => mapAdministrationTasksToGames(selectedAdmin.value, tasks.value));
+
+// The participant's org memberships are needed only to build external launch URLs
+// for generic external tasks (not internal players, qualtrics, or mefs). Fetch the
+// memberships read on demand — gated on such a task being present in the selected
+// administration — so the common internal-only homepage makes no extra backend call.
+const needsOrgMembershipsForLaunch = computed(() => selectedAdminGames.value.some(gameNeedsOrgMemberships));
+
+const { data: memberships, isLoading: isLoadingMemberships } = useUserMembershipsQuery(userId, {
+  enabled: computed(() => initialized.value && Boolean(userId.value) && needsOrgMembershipsForLaunch.value),
+});
+
+// Only let the memberships fetch hold isLoading true when the current selection needs it
 const isLoading = computed(() => {
-  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingTasks.value;
+  return (
+    isLoadingUserData.value ||
+    isLoadingAssignments.value ||
+    isLoadingTasks.value ||
+    (needsOrgMembershipsForLaunch.value && isLoadingMemberships.value)
+  );
 });
 
 const isFetching = computed(() => {
@@ -433,7 +451,7 @@ const toggleShowOptionalAssessments = () => {
 // filtered out and don't appear on the homepage.
 const assessments = computed(() => {
   if (isFetching.value || !selectedAdmin.value) return [];
-  return mapAdministrationTasksToGames(selectedAdmin.value, tasks.value);
+  return selectedAdminGames.value;
 });
 
 const requiredAssessments = computed(() => {
@@ -442,16 +460,6 @@ const requiredAssessments = computed(() => {
 
 const optionalAssessments = computed(() => {
   return _filter(assessments.value, (assessment) => assessment.optional);
-});
-
-// The participant's org memberships are needed only to build external launch URLs
-// for generic external tasks (not internal players, qualtrics, or mefs). Fetch the
-// memberships read on demand — gated on such a task being present in the selected
-// administration — so the common internal-only homepage makes no extra backend call.
-const needsOrgMembershipsForLaunch = computed(() => assessments.value.some(gameNeedsOrgMemberships));
-
-const { data: memberships } = useUserMembershipsQuery(userId, {
-  enabled: computed(() => initialized.value && Boolean(userId.value) && needsOrgMembershipsForLaunch.value),
 });
 
 // The data object passed to GameTabs: the backend user profile (`mapUser`) plus the
