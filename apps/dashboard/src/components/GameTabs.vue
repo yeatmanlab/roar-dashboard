@@ -242,9 +242,22 @@ const props = defineProps({
 
 const { t, locale } = useI18n();
 
+const getScoringVersions = computed(() => {
+  if (props.games.length === 0) return {};
+  const scoringVersions = props.games.reduce((acc, game) => {
+    acc[game.taskId] = game?.params?.scoringVersion ?? null;
+    return acc;
+  }, {});
+  return scoringVersions;
+});
+
 /** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. **/
 const implementsValidityChecking = (taskId) => {
-  return !TASKS_EXCLUDED_FROM_RETAKE.includes(taskId);
+  // trog and roar-inference were previously unnormed but now report reliability when normed.
+  // They are the only tasks in both TASKS_EXCLUDED_FROM_RETAKE and previouslyUnnormedTasks
+  const isNormed = (taskId === 'trog' || taskId === 'roar-inference') && getScoringVersions.value[taskId] >= 1;
+
+  return !TASKS_EXCLUDED_FROM_RETAKE.includes(taskId) || isNormed;
 };
 
 const getTaskName = (taskId, taskName) => {
@@ -254,8 +267,10 @@ const getTaskName = (taskId, taskName) => {
   if (LEVANTE_TASKS.includes(camelize(taskIdLowercased))) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
   }
+
   return taskName;
 };
+
 const getTaskDescription = (taskId, taskDescription) => {
   // Translate Levante task descriptions if not in English
   const taskIdLowercased = taskId.toLowerCase();
