@@ -3,16 +3,17 @@
 #
 # Run once from an assessment directory before your first `npm start`. It:
 #   1. Checks Docker (Compose v2) is available — warns with install options if not.
-#   2. Checks the ephemeral Postgres host port (ASSESSMENT_PG_PORT, default 5433)
-#      is free — warns with options if it's taken.
+#   2. Checks every host port the stack binds (STACK_PORTS: Postgres on
+#      ASSESSMENT_PG_PORT, the Firebase emulators, the backend) is free — warns
+#      with a per-port diagnosis if not.
 #   3. Installs dependencies and builds the platform libraries from the repo root.
 #   4. Creates taskVariantParameters.json from the example (never clobbers an
 #      existing one).
 #   5. Points you at the documentation and the next command.
 #
-# Docker availability and the Postgres host port are checked but NOT required to
-# finish setup — neither is needed for the install/build/copy steps. Any blocker
-# is collected and re-printed at the end so it is resolved before `npm start`.
+# Docker availability and the host ports are checked but NOT required to finish
+# setup — neither is needed for the install/build/copy steps. Any blocker is
+# collected and re-printed at the end so it is resolved before `npm start`.
 #
 # Usage (from any assessment package.json):
 #   "setup": "bash ../../../scripts/assessment-setup.sh"
@@ -39,14 +40,23 @@ else
 fi
 echo
 
-# ── 2. Postgres host port ────────────────────────────────────────────────────
-echo "[2/4] Checking that port $ASSESSMENT_PG_PORT (ephemeral Postgres) is free..."
-if port_in_use "$ASSESSMENT_PG_PORT"; then
-  echo "  Port $ASSESSMENT_PG_PORT is already in use." >&2
-  print_port_in_use_help
-  warnings+=("Free port $ASSESSMENT_PG_PORT (or set ASSESSMENT_PG_PORT) before running 'npm start'.")
+# ── 2. Stack host ports ──────────────────────────────────────────────────────
+# Advisory only: `npm start` force-removes stale assessment containers before
+# its own (hard) port check, so a clash from a leftover assessment run resolves
+# itself — but a running platform stack or local process won't.
+echo "[2/4] Checking that the stack's host ports are free (Postgres $ASSESSMENT_PG_PORT, emulators 9099/9199/9000, backend 4000)..."
+busy_ports=()
+for port in "${STACK_PORTS[@]}"; do
+  if port_in_use "$port"; then
+    echo "  Port $port is already in use." >&2
+    diagnose_port_conflict "$port"
+    busy_ports+=("$port")
+  fi
+done
+if [ ${#busy_ports[@]} -gt 0 ]; then
+  warnings+=("Free the port(s) listed above (${busy_ports[*]}) before running 'npm start'.")
 else
-  echo "  Port $ASSESSMENT_PG_PORT is free."
+  echo "  All ports are free."
 fi
 echo
 
