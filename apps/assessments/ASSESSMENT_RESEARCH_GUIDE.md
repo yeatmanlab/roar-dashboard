@@ -93,7 +93,7 @@ brew install pgweb
 **Connect to `roar_core`** (users, tasks, variants):
 
 ```bash
-pgweb --url "postgres://postgres@localhost:5433/roar_core?sslmode=disable"
+pgweb --url "postgres://postgres:postgres@localhost:5433/roar_core?sslmode=disable"
 ```
 
 Open http://localhost:8081 in your browser.
@@ -101,7 +101,7 @@ Open http://localhost:8081 in your browser.
 **Connect to `roar_assessment`** (trials, scores) — on a second port so you can browse both at once:
 
 ```bash
-pgweb --url "postgres://postgres@localhost:5433/roar_assessment?sslmode=disable" --listen 8082
+pgweb --url "postgres://postgres:postgres@localhost:5433/roar_assessment?sslmode=disable" --listen 8082
 ```
 
 > The ephemeral database is on host port **5433**, not 5432 — see the [Connection reference](#connection-reference). (If you set `ASSESSMENT_PG_PORT` when starting the stack, use that port instead.)
@@ -317,7 +317,7 @@ Any query above can be exported to CSV — pick the option that fits how you're 
 **psql `\copy`** — scriptable, and it writes to the machine where `psql` runs (not the container), so the file lands in your current directory. The whole `\copy` command must be on **one physical line**:
 
 ```bash
-psql "postgres://postgres@localhost:5433/roar_assessment?sslmode=disable"
+psql "postgres://postgres:postgres@localhost:5433/roar_assessment?sslmode=disable"
 ```
 
 ```sql
@@ -327,7 +327,7 @@ psql "postgres://postgres@localhost:5433/roar_assessment?sslmode=disable"
 **One-liner from the shell** — same result without an interactive session, handy for repeatable exports:
 
 ```bash
-psql "postgres://postgres@localhost:5433/roar_assessment?sslmode=disable" --csv \
+psql "postgres://postgres:postgres@localhost:5433/roar_assessment?sslmode=disable" --csv \
   -c "SELECT trial_num_total, item, correct, response_time_ms
       FROM app.run_trials WHERE run_id = '<your-run-id>' ORDER BY trial_index" \
   > trials.csv
@@ -383,7 +383,7 @@ Each recording's `gs://` reference is also written onto its trial. It isn't a st
 | Host                | `localhost`                   |
 | Port                | `5433` (`ASSESSMENT_PG_PORT`) |
 | Username            | `postgres`                    |
-| Password            | _(none)_                      |
+| Password            | `postgres`                    |
 | Core database       | `roar_core`                   |
 | Assessment database | `roar_assessment`             |
 | SSL mode            | `disable`                     |
@@ -394,10 +394,10 @@ Port **5433** (not the standard 5432) lets the ephemeral stack coexist with a pe
 
 ```bash
 # psql (no install needed if Postgres is already on your machine)
-psql "postgres://postgres@localhost:5433/roar_core?sslmode=disable"
+psql "postgres://postgres:postgres@localhost:5433/roar_core?sslmode=disable"
 
 # pgcli (autocomplete)
-pgcli postgres://postgres@localhost:5433/roar_assessment
+pgcli postgres://postgres:postgres@localhost:5433/roar_assessment
 ```
 
-**PgAdmin** (desktop GUI): create a server with host `localhost`, port `5433`, username `postgres`, and a blank password.
+**PgAdmin** (desktop GUI): create a server with host `localhost`, port `5433`, username `postgres`, and password `postgres`.

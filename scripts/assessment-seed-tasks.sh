@@ -42,7 +42,7 @@ echo
 # (dotenv does not override already-set variables), so this targets the
 # container DB regardless of local backend config.
 cd "$REPO_ROOT"
-CORE_DATABASE_URL="postgres://postgres@localhost:${ASSESSMENT_PG_PORT}/roar_core" \
+CORE_DATABASE_URL="postgres://postgres:postgres@localhost:${ASSESSMENT_PG_PORT}/roar_core" \
 TASK_VARIANT_PARAMETERS_FILE="$PARAMS_FILE" \
   "${NPM_CLI[@]}" run dev:seed:tasks -w apps/backend -- --task "$ASSESSMENT_NAME"
 
