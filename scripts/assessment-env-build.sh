@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 # assessment-env-build.sh — Force a no-cache rebuild of the assessment Docker images.
 #
-# Called from an assessment package's assessment-env:build script.
+# Called from an assessment package's `rebuild` script.
 # Use this when changes to the Dockerfile or build context are not picked up
 # due to Docker layer caching.
 #
 # Usage (from any assessment package.json):
-#   "assessment-environment:build": "bash ../../../scripts/assessment-env-build.sh"
+#   "rebuild": "bash ../../../scripts/assessment-env-build.sh"
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-COMPOSE_FILE="$REPO_ROOT/docker-compose.assessment.yml"
+# Shared context (REPO_ROOT, COMPOSE_FILE) and pre-flight checks. See assessment-common.sh.
+source "$(cd "$(dirname "$0")" && pwd)/assessment-common.sh"
 
-if ! docker compose version &>/dev/null; then
-  echo "Error: 'docker compose' (v2) is required. Install Docker Desktop or Docker Engine with the Compose plugin." >&2
+if ! docker_compose_available; then
+  echo "Error: Docker with Compose v2 is required." >&2
+  print_docker_install_help
   exit 1
 fi
 

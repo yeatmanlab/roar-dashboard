@@ -3,16 +3,17 @@ name: roar-assessment
 # ──────────────────────────────────────────────────────────────────────────────
 # Assessment environment — full local stack for running ROAR assessments.
 #
-# Start:
-#   npm run assessment-environment:up -w apps/assessments/roar-pa
-#   (or: bash scripts/assessment-env-up.sh)
+# Start (run from an assessment directory, e.g. apps/assessments/roar-pa):
+#   npm start
+#   (or: bash ../../../scripts/assessment-env-up.sh)
 #
-# Stop and delete data:
-#   npm run assessment-environment:down -w apps/assessments/roar-pa
-#   (or: bash scripts/assessment-env-down.sh)
+# Stop and delete data (run from an assessment directory):
+#   npm stop
+#   (or: bash ../../../scripts/assessment-env-down.sh)
 #
-# Rebuild images after pulling new code:
-#   docker compose -f docker-compose.assessment.yml build
+# Rebuild images after pulling new code (run from an assessment directory):
+#   npm run rebuild
+#   (or: bash ../../../scripts/assessment-env-build.sh)
 #
 # Service dependency order:
 #   assessment-db (healthy) → assessment-db-migrate (completed)
@@ -28,10 +29,11 @@ services:
   # Ephemeral PostgreSQL instance.
   # Hosts roar_core and roar_assessment (created by the entrypoint init script).
   #
-  # Binds to the standard Postgres port. If you have a local PostgreSQL instance
-  # running, stop it before starting the assessment environment:
-  #   macOS (Homebrew): brew services stop postgresql@<version>
-  #   Ubuntu/Debian:    sudo systemctl stop postgresql
+  # Published on host port ${ASSESSMENT_PG_PORT:-5433} — deliberately NOT the
+  # standard 5432 — so this ephemeral stack can run alongside a persistent
+  # platform-dev Postgres on 5432 (see docker-compose.yml, ROAR_PG_PORT).
+  # The assessment scripts export the same variable (scripts/assessment-common.sh),
+  # so the port the scripts connect to and the port Compose publishes always match.
   # ────────────────────────────────────────────────────────────────────────────
   assessment-db:
     container_name: assessment-db
@@ -46,7 +48,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5432:5432"
+      # Host side defaults to 5433 to coexist with a persistent Postgres on 5432.
+      - "${ASSESSMENT_PG_PORT:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./scripts/init-assessment-db.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro

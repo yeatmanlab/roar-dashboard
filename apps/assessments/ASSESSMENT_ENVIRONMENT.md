@@ -1,24 +1,115 @@
-# Assessment Environment
+# Assessment Environment — Setup & Operations
 
-A local developer environment for running and querying ROAR assessments against a real PostgreSQL database.
+A local developer environment for running ROAR assessments against a real PostgreSQL database, a real backend, and the Firebase emulators — no cloud credentials required.
 
-> **This guide covers the PA assessment.** Each assessment in the monorepo has its own directory (e.g. `apps/assessments/roar-pa/`) with its own scripts. The Firebase emulator (Auth + Storage + UI), backend, and PostgreSQL databases are shared across all assessments; only the assessment dev server itself differs — they all currently run on the same port (http://localhost:8000).
+This is the **setup and operations** guide: how to install, start, stop, seed, and troubleshoot the environment. For querying the data you produce (runs, trials, scores, metadata) and the day-to-day research loop, see the companion **[Research Guide](./ASSESSMENT_RESEARCH_GUIDE.md)**.
 
-## Scripts quick reference
+> **The environment is shared across all assessments.** Each assessment lives in its own directory (e.g. `apps/assessments/roar-pa/`) and runs its own dev server, but the Firebase emulators (Auth + Storage), backend, and PostgreSQL databases are one shared Docker stack. Only the assessment dev server differs — they all run on the same port (http://localhost:8000), one at a time.
 
-Run these from the assessment's directory (e.g. `apps/assessments/roar-pa/`):
+---
 
-| Script            | What it does                                                   |
-| ----------------- | -------------------------------------------------------------- |
-| `npm start`       | Start the assessment environment and open the dev server       |
-| `npm stop`        | Stop the environment and delete the local database             |
-| `npm restart`     | Restart the environment (use when something seems stuck)       |
-| `npm run update`  | Rebuild platform libraries after pulling new code, then start  |
-| `npm run rebuild` | Rebuild Docker images from scratch (rarely needed — see below) |
+## TL;DR
 
-The other scripts in `package.json` (`build`, `build:staging`, `build:production`, `dev`, etc.) are for CI and platform developers. You can ignore them.
+From the assessment's directory (e.g. `apps/assessments/roar-pa/`):
 
-## What it starts (PA)
+```bash
+npm run setup    # First time only: check prerequisites, install, build, create config
+npm start        # Start the environment and open the dev server
+```
+
+After that, `npm start` is all you need for day-to-day work. Everything else is in the [script reference](#script-reference) below.
+
+---
+
+## Prerequisites
+
+`npm run setup` checks these for you and prints fix-it instructions, but for reference:
+
+- **Node dependencies** — installed with `npm install` from the monorepo root (setup does this).
+- **Docker** with Compose v2 (`docker compose version` should work). If you don't have it:
+  - macOS: `brew install --cask docker`, then launch Docker Desktop (Compose v2 is bundled). Or download from https://www.docker.com/products/docker-desktop/.
+  - Ubuntu/Debian: `curl -fsSL https://get.docker.com | sh`, then `sudo usermod -aG docker $USER` and log out/in so you can run Docker without `sudo`. See https://docs.docker.com/engine/install/ubuntu/ for the manual apt steps.
+- **Port 5433 free** — the ephemeral database publishes on host port **5433** by default (deliberately not the standard 5432), so it can run alongside a persistent platform-dev Postgres on 5432. If something already holds 5433, free it or set `ASSESSMENT_PG_PORT` to another port:
+  - Find it: `lsof -i :5433` (macOS) / `ss -tlnp | grep :5433` (Linux)
+  - Usual cause is a leftover assessment container: `docker ps | grep 5433`
+
+---
+
+## First-time setup: `npm run setup`
+
+Run once from the assessment directory, before your first `npm start`:
+
+```bash
+cd apps/assessments/roar-pa
+npm run setup
+```
+
+It walks through four steps and finishes by pointing you at the next command:
+
+1. **Checks Docker** (Compose v2). If missing, prints install options and flags it as a blocker — but keeps going, since the remaining steps don't need Docker.
+2. **Checks the ephemeral Postgres host port is free** (`ASSESSMENT_PG_PORT`, default 5433). If it's taken, prints how to find the holder and flags it as a blocker.
+3. **Installs dependencies and builds the platform libraries** from the repo root (`api-contract`, `assessment-schema`, `scoring-tables`, `assessment-sdk`). The assessment dev server bundles these from their built output, so they must exist before the first start. This step can take a few minutes.
+4. **Creates `taskVariantParameters.json`** from the committed example (never overwrites an existing one — see [Configuring task variants](#configuring-task-variants)).
+
+Any Docker/port blocker is re-printed in a summary at the end so you resolve it before starting. Once setup is happy, run `npm start`.
+
+> Docker and the Postgres host port are **checked but not required** to finish setup — install/build/copy all run regardless, so you can prep the repo now and sort out Docker later.
+
+---
+
+## Starting and stopping
+
+```bash
+npm start      # Start the shared stack (if needed) and the assessment dev server
+```
+
+**Ctrl+C stops only the assessment dev server.** The Docker services (database, backend, Firebase emulators) keep running in the background and your data is preserved. Run `npm start` again to reattach the dev server to the same database — it detects the running stack and skips straight to the dev server.
+
+```bash
+npm stop       # Stop ALL Docker services and permanently DELETE the database
+```
+
+`npm stop` tears down the containers **and their volumes** — every run, trial, score, and uploaded recording is gone. Use it when you want a clean slate; don't use it to "restart."
+
+Because the teardown is irreversible, both `npm stop` and `npm restart` **prompt for confirmation** before wiping the database. Declining is clean — it exits without an error and changes nothing: `npm stop` doesn't tear down, and `npm restart` neither tears down nor starts. Bypass the prompt with `npm run stop -- --yes` (or `npm run restart -- --yes`); non-interactive shells (CI, pipes) proceed without prompting.
+
+---
+
+## Switching between assessments
+
+The Docker stack — database, backend, and Firebase emulators — is **shared across all assessments** and keeps running in the background; only the dev server on port 8000 is per-assessment. So moving from one assessment to another (say `roar-swr` → `roar-pa`) tears nothing down:
+
+1. **Stop the current dev server** with Ctrl+C — frees port 8000; the stack and your data stay up.
+2. **`cd` to the other assessment** (e.g. `cd ../roar-pa`).
+3. **Seed it into the running database:** `npm run seed:tasks`. The stack only auto-seeds the _first_ assessment that brought it up, so each additional assessment you switch to needs its task(s)/variants seeded once — until then it starts but can't resolve a variant. (First time on that assessment, create its config first: `cp taskVariantParameters.example.json taskVariantParameters.json`.)
+4. **`npm start`** — it detects the running stack and launches this assessment's dev server against the same database.
+
+A few things follow from the stack being shared and persistent:
+
+- **Switching back needs no re-seed.** Seeding is additive and the database persists — it survives Ctrl+C; only `npm stop` / `npm restart` wipe it. Once an assessment is seeded, returning to it is just Ctrl+C → `cd` → `npm start`.
+- **Runs from both assessments coexist** in the same database — handy for cross-assessment work.
+- **No full `npm run setup` needed.** The platform libraries are built once at the repo root and shared, so only the per-assessment `taskVariantParameters.json` (and its seed) is assessment-specific. Running `setup` mid-switch would also spuriously flag port 5433 as "in use" — that's your own running stack.
+- **If you fully stopped the stack** (`npm stop`) between assessments, skip step 3: the next `npm start` brings the stack up fresh and auto-seeds whichever assessment you start it from.
+
+---
+
+## Script reference
+
+Run all of these from the assessment's directory. This is the whole surface — the other scripts in `package.json` (`build`, `build:staging`, `dev`, etc.) are for CI and platform developers; ignore them.
+
+| Script               | What it does                                                                             | When to use                                                                                                                   |
+| -------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `npm run setup`      | Check prerequisites, install deps, build platform libraries, create the config file      | Once, on first setup (or on a fresh clone)                                                                                    |
+| `npm start`          | Start the shared stack (if not already up) and the assessment dev server                 | Every time you sit down to work                                                                                               |
+| `npm run seed:tasks` | Seed **new** variants from `taskVariantParameters.json` into the running DB, no teardown | After editing `taskVariantParameters.json`, to pick up new variants **without losing your data**                              |
+| `npm stop`           | Stop all Docker services and delete the database volume                                  | When you want a completely clean slate                                                                                        |
+| `npm restart`        | Confirmed full teardown (**deletes data**) and fresh start                               | When the stack is wedged and `seed:tasks` isn't the issue. **Destroys your data**                                             |
+| `npm run update`     | Rebuild the host platform libraries (SDK / schema / scoring-tables)                      | After `git pull` brings changes to those packages (see [Updating after a pull](#updating-after-a-pull))                       |
+| `npm run rebuild`    | Force a no-cache rebuild of the Docker images                                            | After changes to the backend, migrations, Dockerfile, or shared deps (see [Rebuilding images](#rebuilding-the-docker-images)) |
+
+---
+
+## What it starts
 
 | Process                                         | URL                   |
 | ----------------------------------------------- | --------------------- |
@@ -26,49 +117,35 @@ The other scripts in `package.json` (`build`, `build:staging`, `build:production
 | Firebase emulator — Storage (recording uploads) | http://localhost:9199 |
 | Firebase emulator — UI (browse recordings)      | http://localhost:9000 |
 | ROAR backend (HTTP)                             | http://localhost:4000 |
-| PA assessment dev server                        | http://localhost:8000 |
-| PostgreSQL                                      | localhost:5432        |
+| Assessment dev server                           | http://localhost:8000 |
+| PostgreSQL                                      | localhost:5433        |
 
-The Firebase emulator runs Auth and Storage together (one container) with the Emulator UI on :9000. Storage only matters for assessments that record audio/video (e.g. Read Aloud) — see [Viewing recordings](#viewing-recordings-audiovideo-assessments).
+The services start in dependency order: database (healthy) → migrations + task seed (completed) → Firebase emulators (healthy) → backend (healthy) → the dev server on your host. Storage only matters for assessments that record audio/video (e.g. Read Aloud) — see the Research Guide's [Viewing recordings](./ASSESSMENT_RESEARCH_GUIDE.md#viewing-recordings-audiovideo-assessments).
 
-Two databases are created: `roar_core` (users, tasks, runs) and `roar_assessment` (trials, scores).
+### Two databases
 
-## Prerequisites
+Two databases are created, and knowing which holds what is the thing that trips people up when writing queries:
 
-- **Dependencies** installed with `npm install` run from monorepo root
-- **Docker** with Compose v2 (`docker compose version` should work). If you don't have it:
-  - macOS: install Docker Desktop with `brew install --cask docker`, then launch it from Applications (Compose v2 is bundled). Alternatively download it from https://www.docker.com/products/docker-desktop/.
-  - Ubuntu/Debian: install Docker Engine and the Compose plugin with Docker's convenience script — `curl -fsSL https://get.docker.com | sh` — then `sudo usermod -aG docker $USER` and log out/in so you can run Docker without `sudo`. See https://docs.docker.com/engine/install/ubuntu/ for the manual apt steps.
-- **Port 5432 free** — the assessment database binds to the standard Postgres port. If you have a local Postgres instance running, stop it first:
-  - macOS (Homebrew): `brew services stop postgresql@<version>`
-  - Ubuntu/Debian: `sudo systemctl stop postgresql`
+| Database          | Holds                                                        |
+| ----------------- | ------------------------------------------------------------ |
+| `roar_core`       | `users`, `tasks`, `task_variants`, `task_variant_parameters` |
+| `roar_assessment` | `runs`, `run_trials`, `run_scores`, `run_trial_interactions` |
 
-## Starting the environment
+`runs` and `run_scores` are also mirrored into `roar_core` via a foreign data wrapper (`app_assessment_fdw.runs`, `app_assessment_fdw.run_scores`) so you can join them against users and tasks in a single query. **`run_trials` is not mirrored** — trial-level data is only queryable in `roar_assessment`. Connection details and query examples are in the [Research Guide](./ASSESSMENT_RESEARCH_GUIDE.md#querying-your-data).
 
-From the assessment's directory (e.g. `apps/assessments/roar-pa` for PA):
+> **Port 5433, not 5432.** This ephemeral stack publishes Postgres on host port **5433** by default so it can run at the same time as a persistent platform-dev Postgres on 5432 (many platform developers keep both). Override with `ASSESSMENT_PG_PORT` if 5433 is taken — Compose and the scripts read the same variable.
 
-```bash
-npm start
-```
-
-**Ctrl+C** stops only the assessment dev server. The Docker services (database, backend, Firebase emulator) keep running in the background — your data is preserved. Run `npm start` again to restart the dev server against the same database.
-
-To stop all Docker services **and permanently delete the database**:
-
-```bash
-npm stop
-```
+---
 
 ## Configuring task variants
 
-Each assessment reads a local **`taskVariantParameters.json`** file to determine which task variants to seed into the ephemeral database. The file is not committed to git — copy the example to get started:
+Each assessment reads a local **`taskVariantParameters.json`** to decide which task variants to seed into the database. The file is **not committed** (it's gitignored) and is **required before the first start** — `npm run setup` creates it for you from the committed example, or copy it yourself from the assessment's directory:
 
 ```bash
-cp apps/assessments/roar-swr/taskVariantParameters.example.json \
-   apps/assessments/roar-swr/taskVariantParameters.json
+cp taskVariantParameters.example.json taskVariantParameters.json
 ```
 
-The file is a JSON array. Each entry defines one variant to seed:
+The file is a JSON array; each entry defines one variant to seed:
 
 ```json
 [
@@ -83,25 +160,60 @@ The file is a JSON array. Each entry defines one variant to seed:
 ]
 ```
 
-The keys in `params` map directly to the URL parameters you would pass to the assessment dev server. The example file documents all available parameters with their valid values and sensible defaults.
+The keys in `params` map directly to the URL parameters the assessment dev server understands. The committed `taskVariantParameters.example.json` documents every available parameter with its valid values and sensible defaults.
 
-**Tasks are derived automatically** — the seed creates a task row for each unique `lng` value in the file. There is no separate task config needed.
+### How seeding works
 
-**Re-seeding is additive.** Variants are matched by name. If you add a new entry to `taskVariantParameters.json` and restart the environment, the new variant is seeded alongside the existing ones. Use `variantId=<id>` in the dev server URL to target a specific variant.
+When the stack first comes up, a one-shot migration container runs the database migrations and then seeds this assessment's task(s) and variants. It's driven by the assessment's directory name — `roar-pa` → the `roar-pa` seed config — so **an unregistered assessment fails the migration container** rather than the dev server, naming the tasks it knows about.
 
-**Validation** runs at seed time. The seed will fail with a descriptive error if `taskVariantParameters.json` is missing, contains unknown parameter keys, or has invalid values.
+Each assessment has a seed config in `apps/backend/seeds/configs/<name>.config.ts` that defines:
+
+- the **task(s)** the variants belong to (single-task assessments have one; multi-task assessments route each variant to a task from its params),
+- the **allowed parameter keys**, and
+- a **validation function**.
+
+**Validation runs at seed time.** Seeding fails with a descriptive error if `taskVariantParameters.json` is missing, contains an unknown parameter key, or has an invalid value — the rules come from that config, not from a generic schema.
+
+Variants are seeded as `published` and matched by name, so seeding is **idempotent and additive**: a variant that already exists is skipped, and a new entry is added alongside the existing ones. To target a specific variant when playing the assessment, pass `variantId=<id>` in the dev server URL — or use the [variant picker](./ASSESSMENT_RESEARCH_GUIDE.md#switching-variants-the-variant-picker).
+
+### Adding or changing variants without losing data
+
+Here's the catch: the seed only runs automatically **once**, inside that migration container at bring-up. Editing `taskVariantParameters.json` afterward and running `npm start` again does **nothing** — when the stack is already up, `npm start` skips straight to the dev server and never re-runs the seed. And `npm restart` / `npm stop` re-seed only because they wipe the database volume first, taking every run/trial/score you've generated with them.
+
+Use **`npm run seed:tasks`** instead. It runs the same idempotent, additive-by-name seeder against the **live** database, so newly added variants appear immediately while your generated data stays put:
+
+```bash
+# 1. Edit taskVariantParameters.json — add a new entry
+# 2. Seed it into the running environment (no teardown, no data loss)
+npm run seed:tasks
+# 3. Reload the assessment (or use the variant picker) to see the new variant
+```
+
+It requires the environment to be running (`npm start` first) — it seeds into the live container database. This is the recommended way to iterate on variants.
+
+---
+
+## Updating after a pull
+
+After `git pull` brings in new code, which command you need depends on what changed:
+
+- **Platform libraries the dev server bundles** (`assessment-sdk`, `assessment-schema`, `scoring-tables`): run **`npm run update`** to rebuild them on the host, then restart the dev server (Ctrl+C, `npm start`). Which libraries `update` rebuilds varies by assessment — check its `package.json`.
+- **Backend, migrations, `api-contract`, the Dockerfile, or root dependencies**: these run inside the Docker images, so run **`npm run rebuild`** (see below).
+- **The `assessment-schema` package** is used by _both_ the host dev server and the backend, so a change there can need **both** `update` and `rebuild`.
+
+When in doubt after a large pull, `npm run rebuild` then `npm run update` is the safe combination.
 
 ---
 
 ## Rebuilding the Docker images
 
-Docker caches build layers, so changes to files that are copied into the image are sometimes not picked up by a normal start. Force a clean rebuild with:
+Docker caches build layers, so changes to files copied into an image aren't always picked up by a normal start. Force a clean rebuild with:
 
 ```bash
 npm run rebuild
 ```
 
-Run this after making changes to any of the following:
+Run this after changing any of the following:
 
 - `assessment.Dockerfile`
 - `apps/backend/` — source, migrations, seeds, or dependencies
@@ -109,160 +221,42 @@ Run this after making changes to any of the following:
 - `packages/assessment-schema/` — shared assessment data schemas
 - Root `package.json` / `package-lock.json` — dependency changes
 
-The environment does not need to be stopped first — the rebuild only updates the images. Run `npm start` afterward to start the environment with the new images.
+The environment doesn't need to be stopped first — the rebuild only updates the images. Run `npm start` afterward to bring the environment up with the new images.
 
 ---
 
-## Querying your data
+## Troubleshooting
 
-### PgWeb (recommended)
+**"Port 5433 is already in use."** Something is holding the ephemeral database's host port — usually a leftover assessment container (`docker ps | grep 5433`) or, rarely, another service. Stop it, or run with a different port: `ASSESSMENT_PG_PORT=<port> npm start`.
 
-PgWeb is a browser-based SQL client — no configuration files, no GUI to install, just a URL.
+**"Port 8000 is already in use."** A previous dev server (or another assessment) is still running. Stop that process, then `npm start`.
 
-**Install:**
+**"taskVariantParameters.json not found."** You skipped the config step. Run `npm run setup`, or copy the example manually (see [Configuring task variants](#configuring-task-variants)).
 
-```bash
-# macOS
-brew install pgweb
+**The migration container failed / "Unknown task."** The assessment isn't registered in the seed config registry, or its `taskVariantParameters.json` has an invalid parameter. The error names the available tasks and the offending key. Fix the config or the params file, then `npm run rebuild` and `npm start`.
 
-# Linux / other — download the binary from https://github.com/sosedoff/pgweb/releases
-```
+**"My new variant didn't show up."** Editing `taskVariantParameters.json` doesn't re-seed on its own. Run `npm run seed:tasks` (preserves your data) rather than `npm restart` (wipes it). See [Adding or changing variants without losing data](#adding-or-changing-variants-without-losing-data).
 
-**Connect to `roar_core`** (users, tasks, runs):
+**Want a clean slate but keep your seeded variants?** Truncate the run tables (`TRUNCATE app.runs CASCADE` in `roar_assessment`) instead of `npm restart` — it clears your generated runs/trials/scores in one step without re-seeding. See the Research Guide's [Resetting your generated data](./ASSESSMENT_RESEARCH_GUIDE.md#resetting-your-generated-data).
 
-```bash
-pgweb --url "postgres://postgres@localhost:5432/roar_core?sslmode=disable"
-```
+**A code change isn't taking effect.** Host library change → `npm run update`; backend/migration/Dockerfile change → `npm run rebuild`. See [Updating after a pull](#updating-after-a-pull).
 
-Open http://localhost:8081 in your browser.
+**Stale containers / name or port conflicts on start.** `npm start` force-removes known stale containers before bringing the stack up, but if it's still wedged, `npm stop` (deletes data) then `npm start` gives a clean slate.
 
-**Connect to `roar_assessment`** (trials, scores):
-
-```bash
-pgweb --url "postgres://postgres@localhost:5432/roar_assessment?sslmode=disable"
-```
-
-To browse both databases at once, run a second `pgweb` on a different port:
-
-```bash
-pgweb --url "postgres://postgres@localhost:5432/roar_assessment?sslmode=disable" --listen 8082
-```
-
----
-
-### Database layout
-
-All tables live in the `app` schema — prefix every table name with `app.`.
-
-User and task data (`app.users`, `app.tasks`, `app.task_variants`) lives in **`roar_core`**.
-Trial and score data (`app.run_trials`, `app.run_scores`) lives in **`roar_assessment`**.
-Run records (`app.runs`) live in **`roar_assessment`** but are also accessible from `roar_core` via a foreign data wrapper at `app_assessment_fdw.runs` — use that when you need to join runs against users or tasks.
-
-### Useful queries
-
-**All runs for the PA task** — run in `roar_core`:
-
-```sql
-SELECT
-  r.id,
-  u.name_first,
-  u.name_last,
-  r.completed_at,
-  r.reliable_run
-FROM app_assessment_fdw.runs r
-JOIN app.users u ON u.id = r.user_id
-JOIN app.task_variants tv ON tv.id = r.task_variant_id
-JOIN app.tasks t ON t.id = tv.task_id
-WHERE t.slug = 'pa'
-  AND r.deleted_at IS NULL
-ORDER BY r.created_at DESC;
-```
-
-**Trial-level data for a specific run** — run in `roar_assessment`:
-
-```sql
-SELECT
-  trial_num_total,
-  item,
-  correct,
-  response,
-  response_time_ms,
-  subtask
-FROM app.run_trials
-WHERE run_id = '<your-run-id>'
-ORDER BY trial_num_total;
-```
-
-**Scores for completed runs** — run in `roar_assessment`:
-
-```sql
-SELECT
-  r.id AS run_id,
-  s.domain,
-  s.name,
-  s.value,
-  s.category_score
-FROM app.run_scores s
-JOIN app.runs r ON r.id = s.run_id
-WHERE r.completed_at IS NOT NULL
-  AND r.deleted_at IS NULL
-ORDER BY r.completed_at DESC;
-```
-
----
-
-### Alternatives
-
-**psql** (command-line, no install needed if Postgres is already on your machine):
-
-```bash
-psql "postgres://postgres@localhost:5432/roar_core?sslmode=disable"
-```
-
-**pgcli** (command-line with autocomplete):
-
-```bash
-brew install pgcli   # macOS
-pgcli postgres://postgres@localhost:5432/roar_core
-```
-
-**PgAdmin** (full desktop GUI):
-Download from https://www.pgadmin.org. Create a new server with host `localhost`, port `5432`, username `postgres`, and leave the password blank.
-
----
-
-## Viewing recordings (audio/video assessments)
-
-Assessments that capture audio or video — e.g. Read Aloud (`roar-readaloud`) — upload their recordings through the assessment SDK to the local **Firebase Storage emulator**, so dev needs no cloud credentials and touches no real bucket. The blobs are browsable in the **Emulator UI** — nothing extra to install.
-
-**Open the Emulator UI:** http://localhost:9000 → **Storage** tab.
-
-The Storage tab lists the emulated `demo-roar.appspot.com` bucket (created on the first upload) and lets you browse and download the uploaded blobs. Recordings are written under a deterministic path:
-
-```
-{taskId}/{participantId}/{assessmentPid}/{administrationId}/{runId}/{filename}
-```
-
-For an anonymous dev run of Read Aloud that looks like:
-
-```
-roar-readaloud/<participantId>/<pid>/test-administration/<runId>/<filename>
-```
-
-Each recording's storage path is also written onto its **trial row**, so the two line up: the `gs://…` reference stored in `app.run_trials` (see [Querying your data](#querying-your-data) → `roar_assessment`) matches the blob's path in the Storage tab.
-
-**Lifetime.** The Storage emulator keeps recordings in memory — there is no import/export configured. They survive **Ctrl+C** (which stops only the dev server; the emulator container keeps running), but are cleared when the emulator container restarts (`npm restart`) or when you tear the environment down with `npm stop`.
+**`docker stop` fails with "permission denied" (Linux/AppArmor).** `npm stop` falls back to direct process kills and, if those are blocked too, prints the exact `sudo kill` command to run. Run it, then re-run `npm stop`.
 
 ---
 
 ## Connection reference
 
-| Setting             | Value             |
-| ------------------- | ----------------- |
-| Host                | `localhost`       |
-| Port                | `5432`            |
-| Username            | `postgres`        |
-| Password            | _(none)_          |
-| Core database       | `roar_core`       |
-| Assessment database | `roar_assessment` |
-| SSL mode            | `disable`         |
+| Setting             | Value                         |
+| ------------------- | ----------------------------- |
+| Host                | `localhost`                   |
+| Port                | `5433` (`ASSESSMENT_PG_PORT`) |
+| Username            | `postgres`                    |
+| Password            | _(none)_                      |
+| Core database       | `roar_core`                   |
+| Assessment database | `roar_assessment`             |
+| SSL mode            | `disable`                     |
+
+For clients, queries, and the metadata fields, continue to the **[Research Guide](./ASSESSMENT_RESEARCH_GUIDE.md)**.
