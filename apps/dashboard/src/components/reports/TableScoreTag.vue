@@ -44,6 +44,7 @@ import {
   subskillTasks,
   roamFluencySubskillHeaders,
   roamFluencyTasks,
+  previouslyUnnormedTasks,
 } from '@/helpers/reports.js';
 
 defineProps({
@@ -137,7 +138,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       }
     } else if (
       tasksToDisplayPercentCorrect.includes(_taskId) &&
-      !(_taskId === 'swr-es' && _colData.scores?.[_taskId]?.scoringVersion)
+      !(previouslyUnnormedTasks.includes(_taskId) && _colData.scores?.[_taskId]?.scoringVersion)
     ) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
@@ -148,7 +149,11 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       if (_colData.scores?.[_taskId]?.gradeEstimate) {
         _toolTip += 'Grade Estimate: ' + _colData.scores?.[_taskId]?.gradeEstimate + '\n';
       }
-    } else if (rawOnlyTasks.includes(_taskId) && _colData.scores?.[_taskId]?.rawScore !== undefined) {
+    } else if (
+      rawOnlyTasks.includes(_taskId) &&
+      _colData.scores?.[_taskId]?.rawScore !== undefined &&
+      !(previouslyUnnormedTasks.includes(_taskId) && _colData.scores?.[_taskId]?.scoringVersion)
+    ) {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
     } else {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
