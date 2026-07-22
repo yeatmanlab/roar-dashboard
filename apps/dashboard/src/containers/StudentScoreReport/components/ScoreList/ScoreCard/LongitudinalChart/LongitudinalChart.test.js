@@ -25,7 +25,7 @@ vi.mock('@/helpers/reports', () => ({
   tasksToDisplayPercentCorrect: [],
   tasksToDisplayTotalCorrect: [],
   tasksToDisplayGradeEstimate: [],
-  previouslyUnnormedTasks: [],
+  isTaskNormed: vi.fn(() => true),
 }));
 
 // Mock Chart.js

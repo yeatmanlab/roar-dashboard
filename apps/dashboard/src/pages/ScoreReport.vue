@@ -418,6 +418,7 @@ import {
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
+  isTaskNormed,
   previouslyUnnormedTasks,
 } from '@/helpers/reports';
 import { i18n } from '@/translations/i18n';
@@ -796,11 +797,7 @@ const isEmptyDistrictSupportCategories = computed(() => {
 
 const assignedTaskIds = computed(() => administrationData.value?.assessments?.map((task) => task.taskId));
 
-const assignedNormedTaskIds = computed(() =>
-  assignedTaskIds.value.filter((id) =>
-    ['swr', 'sre', 'pa', 'letter', 'cva', 'morphology', 'roar-inference', 'trog', 'swr-es', 'sre-es'].includes(id),
-  ),
-);
+const assignedNormedTaskIds = computed(() => assignedTaskIds.value.filter((id) => tasksToDisplayGraphs.includes(id)));
 
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
@@ -819,7 +816,7 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
     } else if (
       (tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
         tasksToDisplayPercentCorrect.includes(assessment.taskId)) &&
-      !(previouslyUnnormedTasks.includes(assessment.taskId) && getScoringVersions.value[assessment.taskId] >= 1)
+      !isTaskNormed(assessment.taskId, getScoringVersions.value[assessment.taskId])
     ) {
       const test = assessment.scores?.raw?.composite?.test;
       const tasksWithUndefinedPercentCorrect = ['swr-es', 'letter', 'letter-es', 'morphology', 'phonics'];
@@ -871,7 +868,7 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
     (tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
       tasksToDisplayTotalCorrect.includes(taskId) ||
       tasksToDisplayGradeEstimate.includes(assessment.taskId)) &&
-    !(previouslyUnnormedTasks.includes(taskId) && getScoringVersions.value[taskId] >= 1)
+    !isTaskNormed(taskId, getScoringVersions.value[taskId])
   ) {
     if (assessment.scores === undefined) {
       support_level = null;
@@ -1114,7 +1111,7 @@ const computeAssignmentAndRunData = computed(() => {
           Object.assign(currRowScores[taskId], { numCorrect, numAttempted, percentCorrect, scoringVersion });
 
           // Applies only to unnormed scores. Scores are considered normed when scoringVersion >= 1
-          if (!(previouslyUnnormedTasks.includes(taskId) && getScoringVersions.value[taskId] >= 1)) {
+          if (!isTaskNormed(taskId, getScoringVersions.value[taskId])) {
             currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
             scoreFilterTags += ' Assessed ';
             // @TODO: Remove after decoupling the percentile returned by getScoreValue from the individual score report.
@@ -1475,16 +1472,13 @@ const createExportData = ({ rows, includeProgress = false }) => {
       const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
 
       // Add task-specific score information
-      if (
-        tasksToDisplayPercentCorrect.includes(taskId) &&
-        !(previouslyUnnormedTasks.includes(taskId) && getScoringVersions.value[taskId] >= 1)
-      ) {
+      if (tasksToDisplayPercentCorrect.includes(taskId) && !isTaskNormed(taskId, getScoringVersions.value[taskId])) {
         tableRow[`${taskName} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (
         tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-        !(getScoringVersions.value[taskId] >= 1)
+        !isTaskNormed(taskId, getScoringVersions.value[taskId])
       ) {
         tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
@@ -1517,10 +1511,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
         Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
           tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
         });
-      } else if (
-        rawOnlyTasks.includes(taskId) &&
-        !(previouslyUnnormedTasks.includes(taskId) && getScoringVersions.value[taskId] >= 1)
-      ) {
+      } else if (rawOnlyTasks.includes(taskId) && !isTaskNormed(taskId, getScoringVersions.value[taskId])) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
@@ -1994,19 +1985,19 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.percentile`;
     } else if (
       viewMode.value === 'standard' &&
-      (!tasksToDisplayPercentCorrect.includes(taskId) ||
-        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
-      !tasksToDisplayTotalCorrect.includes(taskId) &&
-      !tasksToDisplayGradeEstimate.includes(taskId)
+      ((!tasksToDisplayPercentCorrect.includes(taskId) &&
+        !tasksToDisplayTotalCorrect.includes(taskId) &&
+        !tasksToDisplayGradeEstimate.includes(taskId)) ||
+        isTaskNormed(taskId, getScoringVersions.value[taskId]))
     ) {
       colField = `scores.${taskId}.standardScore`;
     } else if (
       viewMode.value === 'raw' &&
-      !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      (!tasksToDisplayPercentCorrect.includes(taskId) ||
-        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
-      !tasksToDisplayTotalCorrect.includes(taskId) &&
-      !tasksToDisplayGradeEstimate.includes(taskId)
+      ((!tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+        !tasksToDisplayPercentCorrect.includes(taskId) &&
+        !tasksToDisplayTotalCorrect.includes(taskId) &&
+        !tasksToDisplayGradeEstimate.includes(taskId)) ||
+        isTaskNormed(taskId, getScoringVersions.value[taskId]))
     ) {
       colField = `scores.${taskId}.rawScore`;
     } else {
@@ -2077,29 +2068,11 @@ const sortedTaskIds = computed(() => {
     const categorizedTasks = Object.keys(aggregatedDistrictSupportCategories.value);
     const assignedTaskIds = administrationData.value?.assessments?.map((a) => a.taskId) || [];
 
-    // Include tasks with data and any assigned normed tasks with scoring versions >= 1
+    // Include tasks with data and any assigned normed tasks
     const allTaskIds = new Set(categorizedTasks);
-    const normedTaskIds = [
-      'swr',
-      'sre',
-      'pa',
-      'letter',
-      'cva',
-      'morphology',
-      'roar-inference',
-      'trog',
-      'swr-es',
-      'sre-es',
-    ];
 
     for (const taskId of assignedTaskIds) {
-      if (normedTaskIds.includes(taskId) && getScoringVersions.value[taskId] >= 1) {
-        allTaskIds.add(taskId);
-      } else if (
-        normedTaskIds.includes(taskId) &&
-        !['letter', 'morphology', 'cva', 'trog', 'roar-inference', 'swr-es', 'sre-es'].includes(taskId)
-      ) {
-        // Include tasks that don't require scoring versions
+      if (isTaskNormed(taskId, getScoringVersions.value[taskId])) {
         allTaskIds.add(taskId);
       }
     }
@@ -2120,45 +2093,33 @@ const sortedTaskIds = computed(() => {
 });
 
 const sortedAndFilteredTaskIds = computed(() => {
-  const tasksRequiringScoringVersion = ['letter', 'morphology', 'cva', 'trog', 'roar-inference', 'swr-es', 'sre-es'];
   return sortedTaskIds.value?.filter((taskId) => {
     if (!tasksToDisplayGraphs.includes(taskId)) return false;
-    if (tasksRequiringScoringVersion.includes(taskId)) {
-      return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
-    }
-    return true;
+    return isTaskNormed(taskId, getScoringVersions.value[taskId]);
   });
 });
 
 const sortedAndFilteredSubscoreTaskIds = computed(() => {
-  const tasksRequiringScoringVersion = ['letter', 'morphology', 'cva', 'trog', 'roar-inference', 'swr-es', 'sre-es'];
-
   if (props.orgType === 'district') {
-    const districtTasks =
-      sortedTaskIds.value?.filter((taskId) => {
-        if (!tasksToDisplayGraphs.includes(taskId)) return false;
-        if (tasksRequiringScoringVersion.includes(taskId)) {
-          return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
-        }
-        return true;
-      }) || [];
+    const districtTasks = sortedAndFilteredTaskIds.value || [];
 
     // Also include assigned tasks with scoring versions >= 1 that may not be in aggregated categories
     const assignedTaskIds = administrationData.value?.assessments?.map((a) => a.taskId) || [];
     const additionalTasks = assignedTaskIds.filter(
       (taskId) =>
-        tasksRequiringScoringVersion.includes(taskId) &&
-        getScoringVersions.value[taskId] &&
-        getScoringVersions.value[taskId] >= 1 &&
+        previouslyUnnormedTasks.includes(taskId) &&
+        isTaskNormed(taskId, getScoringVersions.value[taskId]) &&
         !districtTasks.includes(taskId),
     );
 
     return [...districtTasks, ...additionalTasks].sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
   }
+  // Show all available subscore tables, including unnormed assessments like roam and phonics
+  // Some tasks require a scoring version to be available
   const availableTaskIds = Object.keys(computeAssignmentAndRunData.value?.runsByTaskId);
   return availableTaskIds
     .filter((taskId) => {
-      if (tasksRequiringScoringVersion.includes(taskId)) {
+      if (previouslyUnnormedTasks.includes(taskId)) {
         return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
       }
       return true;

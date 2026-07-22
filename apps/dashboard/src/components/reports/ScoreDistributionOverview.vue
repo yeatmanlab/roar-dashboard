@@ -16,17 +16,11 @@
         <PvChart
           v-if="!isChartEmpty(supportLevelCountsByTaskId[taskId])"
           type="bar"
-          :data="setDistributionChartData(supportLevelCountsByTaskId[taskId])"
-          :options="setDistributionChartOptions(supportLevelCountsByTaskId[taskId])"
+          :data="chartDataByTaskId[taskId]"
+          :options="chartOptionsByTaskId[taskId]"
           class="h-2rem chart-item"
         />
-        <PvChart
-          v-else
-          type="bar"
-          :data="getGrayChartData()"
-          :options="getGrayChartOptions()"
-          class="h-2rem chart-item"
-        />
+        <PvChart v-else type="bar" :data="grayChartData" :options="grayChartOptions" class="h-2rem chart-item" />
         <span
           v-if="descriptionsByTaskId[taskId]"
           v-tooltip.top="`${descriptionsByTaskId[taskId].header}${descriptionsByTaskId[taskId].description}`"
@@ -47,17 +41,11 @@
         <PvChart
           v-if="!isChartEmpty(compositeFoundational)"
           type="bar"
-          :data="setDistributionChartData(compositeFoundational)"
-          :options="setDistributionChartOptions(compositeFoundational)"
+          :data="compositeFoundationalChartData"
+          :options="compositeFoundationalChartOptions"
           class="h-2rem chart-item"
         />
-        <PvChart
-          v-else
-          type="bar"
-          :data="getGrayChartData()"
-          :options="getGrayChartOptions()"
-          class="h-2rem chart-item"
-        />
+        <PvChart v-else type="bar" :data="grayChartData" :options="grayChartOptions" class="h-2rem chart-item" />
         <span
           v-tooltip.top="
             'The Foundational Skills Composite reflects overall performance on foundational reading skills, including phonological awareness, letter knowledge, word reading, and sentence reading.'
@@ -90,17 +78,11 @@
         <PvChart
           v-if="!isChartEmpty(supportLevelCountsByTaskId[taskId])"
           type="bar"
-          :data="setDistributionChartData(supportLevelCountsByTaskId[taskId])"
-          :options="setDistributionChartOptions(supportLevelCountsByTaskId[taskId])"
+          :data="chartDataByTaskId[taskId]"
+          :options="chartOptionsByTaskId[taskId]"
           class="h-2rem chart-item"
         />
-        <PvChart
-          v-else
-          type="bar"
-          :data="getGrayChartData()"
-          :options="getGrayChartOptions()"
-          class="h-2rem chart-item"
-        />
+        <PvChart v-else type="bar" :data="grayChartData" :options="grayChartOptions" class="h-2rem chart-item" />
         <span
           v-if="descriptionsByTaskId[taskId]"
           v-tooltip.top="`${descriptionsByTaskId[taskId].header}${descriptionsByTaskId[taskId].description}`"
@@ -132,17 +114,11 @@
         <PvChart
           v-if="!isChartEmpty(supportLevelCountsByTaskId[taskId])"
           type="bar"
-          :data="setDistributionChartData(supportLevelCountsByTaskId[taskId])"
-          :options="setDistributionChartOptions(supportLevelCountsByTaskId[taskId])"
+          :data="chartDataByTaskId[taskId]"
+          :options="chartOptionsByTaskId[taskId]"
           class="h-2rem chart-item"
         />
-        <PvChart
-          v-else
-          type="bar"
-          :data="getGrayChartData()"
-          :options="getGrayChartOptions()"
-          class="h-2rem chart-item"
-        />
+        <PvChart v-else type="bar" :data="grayChartData" :options="grayChartOptions" class="h-2rem chart-item" />
         <span
           v-if="descriptionsByTaskId[taskId]"
           v-tooltip.top="`${descriptionsByTaskId[taskId].header}${descriptionsByTaskId[taskId].description}`"
@@ -180,9 +156,8 @@
 import { computed } from 'vue';
 import PvChart from 'primevue/chart';
 import { setDistributionChartData, setDistributionChartOptions } from '@/helpers/plotting';
-import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS , SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
 import { descriptionsByTaskId } from '@/helpers/reports';
-import { SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 const props = defineProps({
@@ -275,22 +250,46 @@ const isChartEmpty = (chartData) => {
   return !chartData || (chartData.below === 0 && chartData.some === 0 && chartData.above === 0);
 };
 
-const getGrayChartData = () => {
-  return {
-    labels: [''],
-    datasets: [
-      {
-        label: 'No Data',
-        data: [1],
-        backgroundColor: '#dadee6',
-        borderRadius: 6,
-        borderSkipped: false,
-      },
-    ],
-  };
-};
+// Memoized so PvChart receives a stable reference across re-renders, avoiding needless
+// Chart.js destroy/recreate cycles (its `options` watcher fires on reference change alone).
+const chartDataByTaskId = computed(() => {
+  const result = {};
+  for (const taskId of props.taskIds) {
+    result[taskId] = setDistributionChartData(supportLevelCountsByTaskId.value[taskId]);
+  }
+  return result;
+});
 
-const getGrayChartOptions = () => {
+const chartOptionsByTaskId = computed(() => {
+  const result = {};
+  for (const taskId of props.taskIds) {
+    result[taskId] = setDistributionChartOptions(supportLevelCountsByTaskId.value[taskId]);
+  }
+  return result;
+});
+
+const compositeFoundationalChartData = computed(() =>
+  compositeFoundational.value ? setDistributionChartData(compositeFoundational.value) : null,
+);
+
+const compositeFoundationalChartOptions = computed(() =>
+  compositeFoundational.value ? setDistributionChartOptions(compositeFoundational.value) : null,
+);
+
+const grayChartData = computed(() => ({
+  labels: [''],
+  datasets: [
+    {
+      label: 'No Data',
+      data: [1],
+      backgroundColor: '#dadee6',
+      borderRadius: 6,
+      borderSkipped: false,
+    },
+  ],
+}));
+
+const grayChartOptions = computed(() => {
   const baseOptions = setDistributionChartOptions({ below: 1, some: 0, above: 0 });
   return {
     ...baseOptions,
@@ -305,7 +304,7 @@ const getGrayChartOptions = () => {
       },
     },
   };
-};
+});
 </script>
 
 <style scoped>

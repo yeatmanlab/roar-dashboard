@@ -232,6 +232,7 @@ import PvTabs from 'primevue/tabs';
 import PvTag from 'primevue/tag';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { isTaskNormed } from '@/helpers/reports';
 
 const props = defineProps({
   games: { type: Array, required: true },
@@ -253,11 +254,7 @@ const getScoringVersions = computed(() => {
 
 /** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. **/
 const implementsValidityChecking = (taskId) => {
-  // trog and roar-inference were previously unnormed but now report reliability when normed.
-  // They are the only tasks in both TASKS_EXCLUDED_FROM_RETAKE and previouslyUnnormedTasks
-  const isNormed = (taskId === 'trog' || taskId === 'roar-inference') && getScoringVersions.value[taskId] >= 1;
-
-  return !TASKS_EXCLUDED_FROM_RETAKE.includes(taskId) || isNormed;
+  return !TASKS_EXCLUDED_FROM_RETAKE.includes(taskId) || isTaskNormed(taskId, getScoringVersions.value[taskId]);
 };
 
 const getTaskName = (taskId, taskName) => {

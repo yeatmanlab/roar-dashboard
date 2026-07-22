@@ -16,6 +16,7 @@ import {
   getPaSkillsToWorkOn,
   PA_SKILL_THRESHOLD,
   PA_SKILL_LEGACY_THRESHOLD,
+  isTaskNormed,
 } from './reports';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
@@ -628,8 +629,9 @@ describe('reports', () => {
 
         expect(getScoreValue(scoresObject, 'phonics', 2, 'percentile')).toBe(88);
         expect(getScoreValue(scoresObject, 'phonics', 2, 'percentileDisplay')).toBe(88);
-        expect(getScoreValue(scoresObject, 'phonics', 2, 'standardScore')).toBe(88);
-        expect(getScoreValue(scoresObject, 'phonics', 2, 'standardScoreDisplay')).toBe(88);
+        // Phonics has no standard score concept
+        expect(getScoreValue(scoresObject, 'phonics', 2, 'standardScore')).toBe(undefined);
+        expect(getScoreValue(scoresObject, 'phonics', 2, 'standardScoreDisplay')).toBe(undefined);
         expect(getScoreValue(scoresObject, 'phonics', 2, 'rawScore')).toBe(132);
       });
     });
@@ -1074,6 +1076,75 @@ describe('reports', () => {
         /distribution-chart-elementary-v2-en\.webp$/,
       );
     });
+
+    describe('edge cases around isTaskNormed / updatedNormVersions membership', () => {
+      it('should ignore tasks not in updatedNormVersions regardless of their version (e.g. phonics, letter-es)', () => {
+        expect(
+          getDistributionChartPath(3, { swr: 7, sre: 4, phonics: 99, 'letter-es': 99, 'pa-es': 99 }, 'en'),
+        ).toMatch(/distribution-chart-elementary-v2-en\.webp$/);
+      });
+
+      it('should still return no-cutoffs for mixed versions even with unrelated unlisted tasks present', () => {
+        expect(getDistributionChartPath(3, { swr: 6, sre: 4, phonics: 99, 'letter-es': 99 }, 'en')).toMatch(
+          /distribution-chart-no-cutoffs-en\.webp$/,
+        );
+      });
+
+      it('should treat unversioned-normed tasks (swr/sre/pa) as applicable even with null scoringVersion', () => {
+        expect(getDistributionChartPath(3, { pa: null }, 'en')).toMatch(/distribution-chart-elementary-v1-en\.webp$/);
+      });
+
+      it('should treat unversioned-normed tasks (swr/sre/pa) as applicable even with undefined scoringVersion', () => {
+        expect(getDistributionChartPath(3, { swr: undefined }, 'en')).toMatch(
+          /distribution-chart-elementary-v1-en\.webp$/,
+        );
+      });
+
+      it('should return no-cutoffs when one task has updated norms and another has an undefined scoringVersion', () => {
+        // swr:7 meets its updated-norm threshold; sre:undefined normalizes to old norms -> mixed result
+        expect(getDistributionChartPath(3, { swr: 7, sre: undefined }, 'en')).toMatch(
+          /distribution-chart-no-cutoffs-en\.webp$/,
+        );
+      });
+
+      it('should exclude a previously-unnormed task with scoringVersion exactly 0', () => {
+        expect(getDistributionChartPath(3, { swr: 7, letter: 0 }, 'en')).toMatch(
+          /distribution-chart-elementary-v2-en\.webp$/,
+        );
+      });
+
+      it('should include a previously-unnormed task once scoringVersion reaches its own updated-norm threshold', () => {
+        // letter's updatedNormVersions threshold is 1, same as its isTaskNormed threshold
+        expect(getDistributionChartPath(3, { letter: 1 }, 'en')).toMatch(/distribution-chart-elementary-v2-en\.webp$/);
+      });
+
+      it('should return v1 when both swr and sre are undefined', () => {
+        expect(getDistributionChartPath(3, { swr: undefined, sre: undefined }, 'en')).toMatch(
+          /distribution-chart-elementary-v1-en\.webp$/,
+        );
+      });
+
+      it('should exclude a previously-unnormed task with an undefined scoringVersion, even alongside an updated task', () => {
+        expect(getDistributionChartPath(3, { swr: 7, letter: undefined }, 'en')).toMatch(
+          /distribution-chart-elementary-v2-en\.webp$/,
+        );
+      });
+
+      it('should return no-cutoffs when swr is undefined and a previously-unnormed task is now normed', () => {
+        // swr:undefined normalizes to old norms; letter:1 meets its own updated-norm threshold -> mixed result
+        expect(getDistributionChartPath(3, { swr: undefined, letter: 1 }, 'en')).toMatch(
+          /distribution-chart-no-cutoffs-en\.webp$/,
+        );
+      });
+
+      it('should not let an unnormed, undefined previously-unnormed task affect an undefined swr result', () => {
+        // letter:undefined is still unnormed, so it's excluded from applicableTasks entirely,
+        // leaving only swr:undefined -> normalizes to old norms -> v1
+        expect(getDistributionChartPath(3, { swr: undefined, letter: undefined }, 'en')).toMatch(
+          /distribution-chart-elementary-v1-en\.webp$/,
+        );
+      });
+    });
   });
 
   describe('getPaSkillsToWorkOn', () => {
@@ -1219,6 +1290,54 @@ describe('reports', () => {
         };
         expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM']);
       });
+    });
+  });
+
+  describe('isTaskNormed', () => {
+    it.each(['swr', 'sre', 'pa'])(
+      'returns true for unversioned normed task "%s" regardless of scoringVersion',
+      (taskId) => {
+        expect(isTaskNormed(taskId)).toBe(true);
+        expect(isTaskNormed(taskId, 0)).toBe(true);
+        expect(isTaskNormed(taskId, 5)).toBe(true);
+      },
+    );
+
+    it.each(['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'roar-inference', 'trog'])(
+      'returns false for previously-unnormed task "%s" when scoringVersion is null',
+      (taskId) => {
+        expect(isTaskNormed(taskId)).toBe(false);
+      },
+    );
+
+    it.each(['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'roar-inference', 'trog'])(
+      'returns false for previously-unnormed task "%s" when scoringVersion is below 1',
+      (taskId) => {
+        expect(isTaskNormed(taskId, 0)).toBe(false);
+      },
+    );
+
+    it.each(['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'roar-inference', 'trog'])(
+      'returns true for previously-unnormed task "%s" once scoringVersion reaches 1',
+      (taskId) => {
+        expect(isTaskNormed(taskId, 1)).toBe(true);
+        expect(isTaskNormed(taskId, 5)).toBe(true);
+      },
+    );
+
+    it('returns false for a task that is neither unversioned-normed nor previously-unnormed', () => {
+      expect(isTaskNormed('unknown-task')).toBe(false);
+      expect(isTaskNormed('unknown-task', 10)).toBe(false);
+    });
+
+    it('returns false when taskId is null or undefined', () => {
+      expect(isTaskNormed(null)).toBe(false);
+      expect(isTaskNormed(undefined)).toBe(false);
+      expect(isTaskNormed(null, 5)).toBe(false);
+    });
+
+    it('defaults scoringVersion to null when not provided', () => {
+      expect(isTaskNormed('letter')).toBe(false);
     });
   });
 });

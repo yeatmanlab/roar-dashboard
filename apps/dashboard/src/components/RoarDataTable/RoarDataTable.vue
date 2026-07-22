@@ -540,7 +540,7 @@ const props = defineProps({
   },
   groupheaders: { type: Boolean, default: false },
   testId: { type: String, default: 'roar-data-table' },
-  taskScoringVersions: { type: Object, required: false, default: () => {} },
+  taskScoringVersions: { type: Object, required: false, default: () => ({}) },
 });
 
 const inputColumns = ref(props.columns);
