@@ -44,6 +44,7 @@ import {
   subskillTasks,
   roamFluencySubskillHeaders,
   roamFluencyTasks,
+  getScoreValue,
 } from '@/helpers/reports.js';
 
 defineProps({
@@ -79,12 +80,12 @@ let returnScoreTooltip = (colData, fieldPath) => {
     return handleSubskillToolTip(taskId, subskillId, toolTip, colData);
   } else if (colData.scores[taskId]?.supportLevel || (taskId && !scoredTasks.includes(taskId))) {
     // Handle raw only tasks or scored tasks
-    return handleToolTip(taskId, toolTip, colData);
+    return handleToolTip(taskId, toolTip, colData, colData.grade);
   }
   return toolTip;
 };
 
-function handleToolTip(_taskId, _toolTip, _colData) {
+function handleToolTip(_taskId, _toolTip, _colData, _grade) {
   // Get the support level and flags, if they exist
   if (_colData.scores?.[_taskId]?.supportLevel) {
     _toolTip += _colData.scores?.[_taskId]?.supportLevel + '\n' + '\n';
@@ -152,8 +153,10 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
     } else {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
-      _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
-      _toolTip += 'Standardized Score: ' + _colData.scores?.[_taskId]?.standardScore + '\n';
+      const percentile = getScoreValue(_colData.scores?.[_taskId], _taskId, _grade, 'percentile');
+      const standardScore = getScoreValue(_colData.scores?.[_taskId], _taskId, _grade, 'standardScore');
+      _toolTip += 'Percentile: ' + percentile + '\n';
+      _toolTip += 'Standardized Score: ' + standardScore + '\n';
     }
   }
   // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
