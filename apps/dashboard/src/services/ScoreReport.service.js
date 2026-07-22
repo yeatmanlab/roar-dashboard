@@ -287,15 +287,27 @@ const ScoreReportService = (() => {
         (!taskId.includes('es') || scoringVersions[taskId] >= 1);
 
       if (!taskId.includes('vocab') && hasNorms) {
-        rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore');
+        rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore', compositeScores?.scoringVersion);
       } else {
         rawScore = compositeScores;
       }
 
       // SCORE_FIELD_MAPPINGS.rawScore enables, SCORE_FIELD_MAPPINGS.percentileScore determines dial value
       if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
-        const percentileScore = getScoreValue(compositeScores, taskId, grade, 'percentile');
-        const standardScore = getScoreValue(compositeScores, taskId, grade, SCORE_TYPES.STANDARD_SCORE);
+        const percentileScore = getScoreValue(
+          compositeScores,
+          taskId,
+          grade,
+          'percentile',
+          compositeScores?.scoringVersion,
+        );
+        const standardScore = getScoreValue(
+          compositeScores,
+          taskId,
+          grade,
+          SCORE_TYPES.STANDARD_SCORE,
+          compositeScores?.scoringVersion,
+        );
         const rawScoreRange = getRawScoreRange(taskId, scoringVersions[taskId]);
         const supportColor = getDialColor(grade, percentileScore, rawScore, taskId, optional, scoringVersions[taskId]);
 

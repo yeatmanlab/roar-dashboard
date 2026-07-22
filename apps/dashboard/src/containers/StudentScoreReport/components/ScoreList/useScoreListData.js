@@ -48,9 +48,21 @@ export function useScoreListData(params) {
           .map((run) => {
             const composite = run.scores?.composite || run.scores;
             const processedScores = {
-              rawScore: getScoreValue(composite, task.taskId, gradeLevel, 'rawScore'),
-              percentileScore: getScoreValue(composite, task.taskId, gradeLevel, 'percentile'),
-              standardScore: getScoreValue(composite, task.taskId, gradeLevel, 'standardScore'),
+              rawScore: getScoreValue(composite, task.taskId, gradeLevel, 'rawScore', composite?.scoringVersion),
+              percentileScore: getScoreValue(
+                composite,
+                task.taskId,
+                gradeLevel,
+                'percentile',
+                composite?.scoringVersion,
+              ),
+              standardScore: getScoreValue(
+                composite,
+                task.taskId,
+                gradeLevel,
+                'standardScore',
+                composite?.scoringVersion,
+              ),
               scoringVersion: composite?.scoringVersion ?? null,
             };
 

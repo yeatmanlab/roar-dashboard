@@ -850,20 +850,22 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   const compositeScores = _get(assessment, 'scores.computed.composite');
   const gradeValue = getGrade(toValue(grade));
 
-  // For PA, use direct field access (computed scores have simple names)
-  // For other tasks, use getScoreValue with grade-based resolution
-  let percentile, percentileString, standardScore, rawScore;
-  if (taskId === 'pa') {
-    percentile = compositeScores?.percentile;
-    percentileString = compositeScores?.percentileString;
-    standardScore = compositeScores?.standardScore;
-    rawScore = compositeScores?.roarScore ?? compositeScores?.rawScore;
-  } else {
-    percentile = getScoreValue(compositeScores, taskId, gradeValue, 'percentile');
-    percentileString = getScoreValue(compositeScores, taskId, gradeValue, 'percentileDisplay');
-    standardScore = getScoreValue(compositeScores, taskId, gradeValue, 'standardScore');
-    rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore');
-  }
+  const percentile = getScoreValue(compositeScores, taskId, gradeValue, 'percentile', compositeScores?.scoringVersion);
+  const percentileString = getScoreValue(
+    compositeScores,
+    taskId,
+    gradeValue,
+    'percentileDisplay',
+    compositeScores?.scoringVersion,
+  );
+  const standardScore = getScoreValue(
+    compositeScores,
+    taskId,
+    gradeValue,
+    'standardScore',
+    compositeScores?.scoringVersion,
+  );
+  const rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore', compositeScores?.scoringVersion);
 
   if (
     (tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
