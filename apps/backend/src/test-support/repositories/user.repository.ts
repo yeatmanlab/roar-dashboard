@@ -13,6 +13,7 @@ export function createMockUserRepository(): MockedObject<UserRepository> {
     ...createMockBaseRepositoryMethods(),
     findByAuthId: vi.fn(),
     getUserEntityMemberships: vi.fn(),
+    getUserMembershipsDetailed: vi.fn(),
     hasPlatformAdminRole: vi.fn(),
     findClassParentSchool: vi.fn(),
     createWithMemberships: vi.fn(),

@@ -2,6 +2,7 @@ import { eq, and, or, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup, NewUserFamily } from '../db/schema';
 import { EntityType } from '../types/entity-type';
+import type { UserMembershipDetail } from '../types/user';
 import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes, groups } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type { CoreTransaction } from '../db/clients';
@@ -10,6 +11,14 @@ import { UserRole } from '../enums/user-role.enum';
 import { BaseRepository } from './base.repository';
 import { isEnrollmentActive, isActiveInFamily } from './utils/enrollment.utils';
 import { logger } from '../logger';
+
+/**
+ * Org types supported by the FGA model. Only `district` and `school` map to FGA
+ * object types today; other org types (national, state, local, department) are not
+ * yet used in ROAR and are skipped (logged) so a user gets a safe denial rather
+ * than a false grant.
+ */
+const FGA_SUPPORTED_ORG_TYPES: ReadonlySet<string> = new Set([EntityType.DISTRICT, EntityType.SCHOOL]);
 
 /**
  * User Repository
@@ -80,7 +89,6 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     // FGA model today. Other org types (national, state, local, department) are not yet
     // used in ROAR — log a warning and skip them so the user gets a safe denial rather
     // than a false grant.
-    const FGA_SUPPORTED_ORG_TYPES: ReadonlySet<string> = new Set([EntityType.DISTRICT, EntityType.SCHOOL]);
     const orgMemberships: { entityType: EntityType; entityId: string }[] = [];
     for (const row of orgRows) {
       if (FGA_SUPPORTED_ORG_TYPES.has(row.orgType)) {
@@ -100,6 +108,81 @@ export class UserRepository extends BaseRepository<User, typeof users> {
       ...classRows.map((r) => ({ entityType: EntityType.CLASS, entityId: r.entityId })),
       ...groupRows.map((r) => ({ entityType: EntityType.GROUP, entityId: r.entityId })),
       ...familyRows.map((r) => ({ entityType: EntityType.FAMILY, entityId: r.entityId })),
+    ];
+  }
+
+  /**
+   * Get a user's active entity memberships, enriched for the memberships read endpoint.
+   *
+   * Like {@link getUserEntityMemberships}, but additionally returns each membership's
+   * `role` and, for class memberships, the parent `schoolId` / `districtId` (read off
+   * the `classes` row). Active-only: enrollment/membership windows must currently be
+   * open. Unsupported org types are skipped (logged), same as `getUserEntityMemberships`.
+   *
+   * @param userId - The user whose memberships to look up
+   * @returns Array of detailed memberships across orgs, classes, groups, and families
+   */
+  async getUserMembershipsDetailed(userId: string): Promise<UserMembershipDetail[]> {
+    const [orgRows, classRows, groupRows, familyRows] = await Promise.all([
+      this.db
+        .select({ entityId: userOrgs.orgId, role: userOrgs.role, orgType: orgs.orgType })
+        .from(userOrgs)
+        .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+        .where(and(eq(userOrgs.userId, userId), isEnrollmentActive(userOrgs))),
+      this.db
+        .select({
+          entityId: userClasses.classId,
+          role: userClasses.role,
+          schoolId: classes.schoolId,
+          districtId: classes.districtId,
+        })
+        .from(userClasses)
+        .innerJoin(classes, eq(userClasses.classId, classes.id))
+        .where(and(eq(userClasses.userId, userId), isEnrollmentActive(userClasses))),
+      this.db
+        .select({ entityId: userGroups.groupId, role: userGroups.role })
+        .from(userGroups)
+        .where(and(eq(userGroups.userId, userId), isEnrollmentActive(userGroups))),
+      this.db
+        .select({ entityId: userFamilies.familyId, role: userFamilies.role })
+        .from(userFamilies)
+        .where(and(eq(userFamilies.userId, userId), isActiveInFamily(userFamilies))),
+    ]);
+
+    const orgMemberships: UserMembershipDetail[] = [];
+    for (const row of orgRows) {
+      if (FGA_SUPPORTED_ORG_TYPES.has(row.orgType)) {
+        // Safe: filtered to 'district' | 'school', which TypeScript can't infer statically.
+        orgMemberships.push({
+          entityType: row.orgType as 'district' | 'school',
+          entityId: row.entityId,
+          role: row.role,
+        });
+      } else {
+        logger.warn(
+          { userId, orgId: row.entityId, orgType: row.orgType },
+          'Skipping org membership with unsupported FGA org type',
+        );
+      }
+    }
+
+    return [
+      ...orgMemberships,
+      ...classRows.map(
+        (r): UserMembershipDetail => ({
+          entityType: EntityType.CLASS,
+          entityId: r.entityId,
+          role: r.role,
+          schoolId: r.schoolId,
+          districtId: r.districtId,
+        }),
+      ),
+      ...groupRows.map(
+        (r): UserMembershipDetail => ({ entityType: EntityType.GROUP, entityId: r.entityId, role: r.role }),
+      ),
+      ...familyRows.map(
+        (r): UserMembershipDetail => ({ entityType: EntityType.FAMILY, entityId: r.entityId, role: r.role }),
+      ),
     ];
   }
 

@@ -3361,3 +3361,165 @@ describe('POST /v1/users/anonymous', () => {
     expect(allTuples).toHaveLength(0);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/users/:userId/memberships
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/users/:userId/memberships', () => {
+  type MembershipItem = {
+    entityType: string;
+    entityId: string;
+    role?: string;
+    schoolId?: string;
+    districtId?: string;
+  };
+
+  // A student enrolled in a class in school A AND a class in school B, who is also
+  // a child in a family — exercises cross-school scoping and family-row visibility.
+  let crossSchoolChild: Awaited<ReturnType<typeof UserFactory.create>>;
+  let childParent: Awaited<ReturnType<typeof UserFactory.create>>;
+  let otherParent: Awaited<ReturnType<typeof UserFactory.create>>;
+  let childFamilyId: string;
+
+  beforeAll(async () => {
+    const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+    const { FamilyFactory } = await import('../test-support/factories/family.factory');
+    const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+
+    crossSchoolChild = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+    await UserClassFactory.create({
+      userId: crossSchoolChild.id,
+      classId: baseFixture.classInSchoolA.id,
+      role: UserRole.STUDENT,
+    });
+    await UserClassFactory.create({
+      userId: crossSchoolChild.id,
+      classId: baseFixture.classInSchoolB.id,
+      role: UserRole.STUDENT,
+    });
+
+    const family = await FamilyFactory.create();
+    childFamilyId = family.id;
+    childParent = await UserFactory.create({ dob: '1985-01-01' });
+    await UserFamilyFactory.create({ userId: childParent.id, familyId: family.id, role: 'parent' });
+    await UserFamilyFactory.create({ userId: crossSchoolChild.id, familyId: family.id, role: 'child' });
+
+    // A parent of a DIFFERENT family — must not be able to read crossSchoolChild.
+    const otherFamily = await FamilyFactory.create();
+    otherParent = await UserFactory.create({ dob: '1986-01-01' });
+    await UserFamilyFactory.create({ userId: otherParent.id, familyId: otherFamily.id, role: 'parent' });
+
+    await syncFgaTuplesFromPostgres();
+  });
+
+  it('returns the full set to a guardian — both classes, the family row, and class parent IDs', async () => {
+    const res = await expectRoute('GET', `/v1/users/${crossSchoolChild.id}/memberships`)
+      .as({ id: childParent.id, authId: childParent.authId! })
+      .toReturn(StatusCodes.OK);
+
+    const items: MembershipItem[] = res.body.data.items;
+    const classA = items.find((m) => m.entityType === 'class' && m.entityId === baseFixture.classInSchoolA.id);
+    const classB = items.find((m) => m.entityType === 'class' && m.entityId === baseFixture.classInSchoolB.id);
+    const family = items.find((m) => m.entityType === 'family' && m.entityId === childFamilyId);
+
+    expect(classA).toBeDefined();
+    expect(classB).toBeDefined();
+    expect(family).toBeDefined();
+    // A guardian is entitled to the whole child, so the class parent IDs are present.
+    expect(classA?.schoolId).toBe(baseFixture.schoolA.id);
+    expect(classA?.districtId).toBe(baseFixture.district.id);
+    expect(classB?.schoolId).toBe(baseFixture.schoolB.id);
+  });
+
+  it('returns the full set to the user themselves (with class parent IDs)', async () => {
+    const res = await expectRoute('GET', `/v1/users/${crossSchoolChild.id}/memberships`)
+      .as({ id: crossSchoolChild.id, authId: crossSchoolChild.authId! })
+      .toReturn(StatusCodes.OK);
+
+    const items: MembershipItem[] = res.body.data.items;
+    const classA = items.find((m) => m.entityType === 'class' && m.entityId === baseFixture.classInSchoolA.id);
+    expect(classA?.role).toBe('student');
+    expect(classA?.schoolId).toBe(baseFixture.schoolA.id);
+    expect(classA?.districtId).toBe(baseFixture.district.id);
+    expect(items.some((m) => m.entityType === 'class' && m.entityId === baseFixture.classInSchoolB.id)).toBe(true);
+    expect(items.some((m) => m.entityType === 'family' && m.entityId === childFamilyId)).toBe(true);
+  });
+
+  it('returns the full set to a super admin', async () => {
+    const res = await expectRoute('GET', `/v1/users/${crossSchoolChild.id}/memberships`)
+      .as(tiers.superAdmin)
+      .toReturn(StatusCodes.OK);
+
+    const items: MembershipItem[] = res.body.data.items;
+    const entityIds = items.map((m) => m.entityId);
+    expect(entityIds).toContain(baseFixture.classInSchoolA.id);
+    expect(entityIds).toContain(baseFixture.classInSchoolB.id);
+    expect(entityIds).toContain(childFamilyId);
+  });
+
+  it('scopes a school-A principal to school A — no school-B class, no family row, class parent IDs stripped', async () => {
+    const res = await expectRoute('GET', `/v1/users/${crossSchoolChild.id}/memberships`)
+      .as({ id: baseFixture.schoolAPrincipal.id, authId: baseFixture.schoolAPrincipal.authId! })
+      .toReturn(StatusCodes.OK);
+
+    const items: MembershipItem[] = res.body.data.items;
+    const classA = items.find((m) => m.entityType === 'class' && m.entityId === baseFixture.classInSchoolA.id);
+
+    // Sees the school-A class they supervise...
+    expect(classA).toBeDefined();
+    // ...but parent school/district IDs are withheld: a class-scoped supervisor can list the
+    // class's users without `can_read` on the parent school, so echoing them would leak org IDs.
+    expect(classA?.schoolId).toBeUndefined();
+    expect(classA?.districtId).toBeUndefined();
+    // Never the school-B enrolment, never the family row.
+    expect(items.some((m) => m.entityType === 'class' && m.entityId === baseFixture.classInSchoolB.id)).toBe(false);
+    expect(items.some((m) => m.entityType === 'family')).toBe(false);
+  });
+
+  it('denies a parent of a different family — no cross-family leakage (403)', async () => {
+    const res = await expectRoute('GET', `/v1/users/${crossSchoolChild.id}/memberships`)
+      .as({ id: otherParent.id, authId: otherParent.authId! })
+      .toReturn(StatusCodes.FORBIDDEN);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+  });
+
+  it('denies an unrelated student (403)', async () => {
+    const res = await expectRoute('GET', `/v1/users/${crossSchoolChild.id}/memberships`)
+      .as(tiers.student)
+      .toReturn(StatusCodes.FORBIDDEN);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+  });
+
+  it('returns 401 when unauthenticated', async () => {
+    const res = await expectRoute('GET', `/v1/users/${crossSchoolChild.id}/memberships`)
+      .unauthenticated()
+      .toReturn(StatusCodes.UNAUTHORIZED);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+  });
+
+  it('returns 404 for a non-existent user', async () => {
+    const res = await expectRoute('GET', '/v1/users/00000000-0000-0000-0000-000000000000/memberships')
+      .as(tiers.superAdmin)
+      .toReturn(StatusCodes.NOT_FOUND);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+  });
+
+  it('returns 404 for a rostering-ended target user (#1742)', async () => {
+    const endedUser = await UserFactory.create({
+      dob: '2015-01-01',
+      grade: '3',
+      rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+    });
+
+    const res = await expectRoute('GET', `/v1/users/${endedUser.id}/memberships`)
+      .as(tiers.superAdmin)
+      .toReturn(StatusCodes.NOT_FOUND);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+  });
+});
