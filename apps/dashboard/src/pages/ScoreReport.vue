@@ -1994,19 +1994,19 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.percentile`;
     } else if (
       viewMode.value === 'standard' &&
-      (!tasksToDisplayPercentCorrect.includes(taskId) ||
-        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
-      !tasksToDisplayTotalCorrect.includes(taskId) &&
-      !tasksToDisplayGradeEstimate.includes(taskId)
+      ((!tasksToDisplayPercentCorrect.includes(taskId) &&
+        !tasksToDisplayTotalCorrect.includes(taskId) &&
+        !tasksToDisplayGradeEstimate.includes(taskId)) ||
+        (previouslyUnnormedTasks.includes(taskId) && getScoringVersions.value[taskId] >= 1))
     ) {
       colField = `scores.${taskId}.standardScore`;
     } else if (
       viewMode.value === 'raw' &&
-      !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      (!tasksToDisplayPercentCorrect.includes(taskId) ||
-        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
-      !tasksToDisplayTotalCorrect.includes(taskId) &&
-      !tasksToDisplayGradeEstimate.includes(taskId)
+      ((!tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+        !tasksToDisplayPercentCorrect.includes(taskId) &&
+        !tasksToDisplayTotalCorrect.includes(taskId) &&
+        !tasksToDisplayGradeEstimate.includes(taskId)) ||
+        (previouslyUnnormedTasks.includes(taskId) && getScoringVersions.value[taskId] >= 1))
     ) {
       colField = `scores.${taskId}.rawScore`;
     } else {
