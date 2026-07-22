@@ -82,6 +82,64 @@ const FamilyMembershipSchema = z.object({
 export const UserMembershipSchema = z.union([OrgMembershipSchema, FamilyMembershipSchema]);
 export type UserMembership = z.infer<typeof UserMembershipSchema>;
 
+/**
+ * Response membership shapes for `GET /users/:userId/memberships`.
+ *
+ * Distinct from the create-body `UserMembershipSchema` above: this read shape
+ * carries the member's `role`, and class rows can additionally carry the parent
+ * `schoolId` / `districtId` so a consumer can resolve a student's current
+ * school(s) without a separate lookup (a student has no school-level membership
+ * row of their own — their school is the parent of their class).
+ *
+ * The parent `schoolId` / `districtId` are **optional**: they are returned only on
+ * full-access reads (self, super admin, or a guardian of the user), which is where
+ * the homepage use case lives. A scoped supervisory requester (administrator or
+ * educator) may hold `can_list_users` on a class without `can_read` on its parent
+ * school, so the parent IDs are omitted on that path to avoid disclosing org
+ * identifiers they cannot otherwise read.
+ *
+ * v1 returns **active (current) memberships only**; enrollment dates are omitted.
+ * A future `?status=active|all` toggle would reintroduce them.
+ */
+const OrgGroupMembershipResponseSchema = z.object({
+  entityType: z.enum(['district', 'school', 'group']),
+  entityId: z.string().uuid(),
+  role: UserRoleSchema,
+});
+
+const ClassMembershipResponseSchema = z.object({
+  entityType: z.literal('class'),
+  entityId: z.string().uuid(),
+  role: UserRoleSchema,
+  schoolId: z.string().uuid().optional(),
+  districtId: z.string().uuid().optional(),
+});
+
+const FamilyMembershipResponseSchema = z.object({
+  entityType: z.literal('family'),
+  entityId: z.string().uuid(),
+  role: UserFamilyRoleSchema,
+});
+
+export const UserMembershipResponseSchema = z.union([
+  OrgGroupMembershipResponseSchema,
+  ClassMembershipResponseSchema,
+  FamilyMembershipResponseSchema,
+]);
+export type UserMembershipResponse = z.infer<typeof UserMembershipResponseSchema>;
+
+/**
+ * Response body payload for `GET /users/:userId/memberships`.
+ *
+ * Unpaginated: a user's active membership set is small and bounded (students sit
+ * at the leaves of the org hierarchy, admins at the top), so there is nothing to
+ * page through.
+ */
+export const UserMembershipsResponseSchema = z.object({
+  items: z.array(UserMembershipResponseSchema),
+});
+export type UserMembershipsResponse = z.infer<typeof UserMembershipsResponseSchema>;
+
 const CreateUserIdentifiersSchema = z.object({
   stateId: z.string().optional(),
   pid: z.string().optional(),
