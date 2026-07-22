@@ -1,0 +1,136 @@
+{
+  "authSignIn": {
+    "atLeastOneLowercase": "Pelo menos uma letra minúscula",
+    "atLeastOneUpperCase": "Pelo menos uma letra maiúscula",
+    "atLeastOneNumber": "Pelo menos um número",
+    "atLeastOneNumeric": "Pelo menos um número",
+    "buttonLabel": "Ir!",
+    "minimumCharacters": "Mínimo de 8 caracteres",
+    "emailId": "e-mail",
+    "emailPlaceholder": "Insira seu e-mail ou nome de usuário",
+    "incorrectEmailOrPassword": "Nome de usuário/e-mail ou senha inválidos.",
+    "invalidEmailPlaceholder": "Erro: e-mail inválido",
+    "passwordId": "senha",
+    "passwordPlaceholder": "Senha",
+    "pickPassword": "Escolha uma senha",
+    "selectLanguage": "Selecione o idioma",
+    "signInWithEmailLinkPlaceHolder": "Clique em Ir para iniciar sessão com um link de e-mail.",
+    "signInWithEmailLinkInstead": "Faça login usando o link do e-mail",
+    "signInWithPasswordInstead": "Faça login usando a senha",
+    "suggestions": "Sugestões",
+    "forgotPassword": "Esqueceu sua senha?",
+    "or": "OU",
+    "magicLink": "Solicitar link por e-mail",
+    "error": "Erro",
+    "success": "Sucesso",
+    "checkYourEmail": "Verifique seu e-mail {email} para obter instruções sobre como redefinir sua senha."
+  },
+  "cleverLanding": {
+    "cleverLoading": "Carregando seus dados do Clever..."
+  },
+  "classLinkLanding": {
+    "classLinkLoading": "Carregando seus dados do ClassLink..."
+  },
+  "ssoAuth": {
+    "errorTitle": "Não foi possível concluir o login",
+    "errorMessage": "Estamos com dificuldades para configurar sua conta. Por favor, tente novamente.",
+    "retryButton": "Tente novamente",
+    "signOutButton": "Sair"
+  },
+  "consentModal": {
+    "consentTitle": "Consentimento",
+    "assentTitle": "Assentimento",
+    "acceptButton": "Continuar",
+    "toastHeader": "Confirmado"
+  },
+  "homeParticipant": {
+    "showOptionalAssignments": "Mostrar tarefas opcionais",
+    "loadingAssignments": "Carregando tarefas",
+    "selectAssignment": "Selecione uma tarefa",
+    "noAssignments": "Não há tarefas disponíveis no momento. Se você acabou de se cadastrar, aguarde alguns minutos e atualize a página.",
+    "contactAdministrator": "Entre em contato com seu administrador para ser adicionado a uma tarefa."
+  },
+  "homeSelector": {
+    "loading": "Carregando...",
+    "inactivityLogout": "Por motivos de segurança, você será desconectado em breve. Clique em \"Continuar\" se desejar manter sua sessão.\n Caso contrário, você será desconectado automaticamente em { timeLeft } segundos.",
+    "inactivityLogoutAcceptLabel": "Continuar"
+  },
+  "gameTabs": {
+    "clickToStart": "Clique para começar",
+    "externalTaskMessage": "Clique aqui para abrir novamente",
+    "taskCompleted": "Tarefa concluída!",
+    "allowRetake": "A avaliação precisa ser feita novamente",
+    "retakeAssessment": "Refazer a avalaição",
+    "heartsAndFlowersDescription": "Escolha o lado correto para os corações e flores.",
+    "heartsAndFlowersName": "Corações e Flores",
+    "egmaMathDescription": "Resolva as operações matemáticas.",
+    "egmaMathName": "Jogo de Matemática",
+    "matrixReasoningDescription": "Encontre a peça que falta para completar o quebra-cabeça.",
+    "matrixReasoningName": "Jogo de Quebra-Cabeça",
+    "memoryGameDescription": "Observe os quadrados se iluminarem. Lembre-se da ordem e repita o mesmo padrão.",
+    "memoryGameName": "Jogo da Memória",
+    "mentalRotationDescription": "Combine as figuras.",
+    "mentalRotationName": "Jogo de Combinação",
+    "sameDifferentSelectionDescription": "Procure elementos em comum entre as formas.",
+    "sameDifferentSelectionName": "Jogo das Formas",
+    "theoryOfMindDescription": "Listen to the stories and answer the questions.",
+    "theoryOfMindName": "Stories Game",
+    "trogDescription": "Listen to the words and choose the matching picture.",
+    "trogName": "ROAR - Syntax",
+    "surveyName": "Thoughts and Feelings",
+    "surveyDescription": "Answer questions about your time at school.",
+    "mefsName": "Lion and Monkey Game",
+    "mefsDescription": "Match the shapes and colors.",
+    "vocabName": "Vocabulary Game",
+    "vocabDescription": "Listen to the word and choose the matching image.",
+    "roarInferenceName": "ROAR - Inference",
+    "roarInferenceDescription": "Read the stories and answer the questions."
+  },
+  "navBar": {
+    "greeting": "Oi",
+    "signOut": "Sair",
+    "changeLanguage": "Alterar idioma",
+    "accountSettings": "Configurações"
+  },
+  "notFound": {
+    "label": "Voltar para a página inicial",
+    "pageNotFound": "Página não encontrada",
+    "sorry": "Desculpe, não conseguimos encontrar essa página!"
+  },
+  "participantSidebar": {
+    "grade": "Nota",
+    "studentInfo": "Informações para estudantes",
+    "tasksCompleted": "Tarefas concluídas!"
+  },
+  "pageSignIn": {
+    "havingTrouble": "Está com alguma dificuldade?",
+    "login": "Faça login para começar a rugir!",
+    "loginWith": "Faça login com",
+    "welcome": "Bem-vindo(a) ao ROAR!",
+    "EnterYourPassword": "Digite sua senha",
+    "almostTime": "Está quase na hora de deixar seu aprendizado RUGIR",
+    "ChooseYourProvider": "Selecione um provedor",
+    "ChooseYourProviderDescription": "Por favor, selecione um provedor para continuar.",
+    "Terms": "Termos",
+    "Privacy": "Privacidade",
+    "continue": "Continuar",
+    "availableProviders": "Provedores disponíveis",
+    "usePassword": "Faça login com a senha",
+    "checkInbox": "Confira sua caixa de entrada",
+    "checkInboxDescription": "Enviamos um link de verificação para o e-mail fornecido."
+  },
+  "tasks": {
+    "preparing": "Preparando o jogo!",
+    "loading": "carregando"
+  },
+  "sentryForm": {
+    "formTitle": "Relatório de erro do ROAR",
+    "buttonLabel": "Reportar um problema",
+    "submitButtonLabel": "Enviar relatório de problema",
+    "cancelButtonLabel": "Cancelar",
+    "namePlaceholder": "Seu nome (opcional)",
+    "emailPlaceholder": "seu.email@exemplo.org (opcional)",
+    "messageLabel": "🐞 Este formulário deve ser usado apenas para reportar erros do sistema e problemas técnicos. \n\n 💬 Para perguntas gerais ou necessidade de suporte, procure primeiro o responsável pelo suporte do ROAR na sua rede de ensino. \n\n 📧 Caso ele não esteja disponível ou não consiga resolver o seu problema, entre em contato conosco pelo e-mail: roar-partnerships@stanford.edu. \n\n Descreva o seu problema:",
+    "messagePlaceholder": "Qual é o problema? O que você gostaria de ter vivenciado em vez disso? Obrigado por compartilhar."
+  }
+}

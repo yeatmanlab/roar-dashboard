@@ -8,6 +8,7 @@ import {
   esCOTranslations,
   esIndividualScoreReport,
   esCOIndividualScoreReport,
+  ptTranslations,
 } from './exports';
 
 export const languageOptions = {
@@ -15,6 +16,7 @@ export const languageOptions = {
   en: { translations: enTranslations, language: 'English (United Kingdom)', code: 'gb' },
   es: { translations: esTranslations, language: 'Español (Spain)', code: 'es' },
   'es-CO': { translations: esCOTranslations, language: 'Español (América Latina)', code: 'col' },
+  pt: { translations: ptTranslations, language: 'Português (Brasil)', code: 'pt' },
 };
 export let browserLocale = window.navigator.language;
 
@@ -44,6 +46,7 @@ export const i18n = createI18n({
     'en-US': { ...enUSTranslations, ...enUSIndividualScoreReport },
     es: { ...esTranslations, ...esIndividualScoreReport },
     'es-CO': { ...esCOTranslations, ...esCOIndividualScoreReport },
+    pt: { ...ptTranslations },
   },
   legacy: false,
   globalInjection: true,
