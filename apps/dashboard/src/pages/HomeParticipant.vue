@@ -79,17 +79,17 @@
         <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
         <Transition name="fade" mode="out-in">
           <GameTabs
-            v-if="canShowAssessments && showOptionalAssessments && userData"
+            v-if="canShowAssessments && showOptionalAssessments && participantData"
             :games="optionalAssessments"
             :sequential="isSequential"
-            :user-data="userData"
+            :user-data="participantData"
             :launch-id="launchId"
           />
           <GameTabs
-            v-else-if="canShowAssessments && requiredAssessments && userData"
+            v-else-if="canShowAssessments && requiredAssessments && participantData"
             :games="requiredAssessments"
             :sequential="isSequential"
-            :user-data="userData"
+            :user-data="participantData"
             :launch-id="launchId"
           />
         </Transition>
@@ -118,7 +118,8 @@ import PvToggleSwitch from 'primevue/toggleswitch';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useMeQuery from '@/composables/queries/useMeQuery';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
+import useUserMembershipsQuery from '@/composables/queries/useUserMembershipsQuery';
 import useUserAdministrationsQuery from '@/composables/queries/useUserAdministrationsQuery';
 import useUserAdministrationAgreementsQuery from '@/composables/queries/useUserAdministrationAgreementsQuery';
 import useAgreementVersionContentQuery from '@/composables/queries/useAgreementVersionContentQuery';
@@ -130,7 +131,7 @@ import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import { AppMessageState, MESSAGE_STATE_TYPES } from '@/components/AppMessageState';
 import AppSpinner from '@/components/AppSpinner.vue';
-import { mapAdministrationTasksToGames } from '@/helpers/participantGames';
+import { mapAdministrationTasksToGames, gameNeedsOrgMemberships } from '@/helpers/participantGames';
 import { resolveConsentRequirement, CONSENT_REQUIREMENT_STATUS } from '@/helpers/resolveConsentRequirement';
 import { USER_ADMINISTRATION_AGREEMENTS_QUERY_KEY } from '@/constants/queryKeys';
 
@@ -187,25 +188,30 @@ const getOptionLabel = computed(() => {
 const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
 
+// Resolve the participant's ROAR (Postgres) user ID from the backend `/me`
+// endpoint. This is the identity the backend user, administrations, and
+// agreements endpoints expect — NOT the Firebase `roarUid`.
+//
+// NOTE: In proxy-launch mode (`props.launchId` set), `me.id` is the launching
+// user's ID, not the participant's. Resolving the participant's UUID for the
+// proxy path is handled by the separate proxy-launch change; the standard
+// student homepage path is unaffected.
+const { data: me } = useMeQuery({ enabled: initialized });
+const userId = computed(() => me.value?.id);
+
+// Participant profile from the backend (`GET /users/:id` → `mapUser`), replacing
+// the Firestore user-doc read — the last Firestore read on this page. Pass the
+// resolved Postgres `userId` (not `props.launchId`) and gate on it:
+// `useUserStudentDataQuery` falls back to the Firestore `roarUid` for a falsy
+// arg, which the backend would 404 on, so the query stays disabled until the
+// Postgres id is known.
 const {
   isLoading: isLoadingUserData,
   isFetching: isFetchingUserData,
   data: userData,
-} = useUserDataQuery(props.launchId, {
-  enabled: initialized,
+} = useUserStudentDataQuery(userId, {
+  enabled: computed(() => initialized.value && Boolean(userId.value)),
 });
-
-// Resolve the student's ROAR (Postgres) user ID from the backend `/me` endpoint,
-// the same way the Task players do. This is the identity the new
-// `GET /users/:userId/administrations` endpoint expects — NOT the Firebase
-// `roarUid`.
-//
-// NOTE: In proxy-launch mode (`props.launchId` set), `me.id` is the launching
-// user's ID, not the participant's. Resolving the participant's UUID from the
-// launch record is not yet implemented (mirrors the documented limitation in
-// the Task players). The standard student homepage path is unaffected.
-const { data: me } = useMeQuery({ enabled: initialized });
-const userId = computed(() => me.value?.id);
 
 const {
   isLoading: isLoadingAssignments,
@@ -274,8 +280,26 @@ const {
   enabled: initialized,
 });
 
+const selectedAdminGames = computed(() => mapAdministrationTasksToGames(selectedAdmin.value, tasks.value));
+
+// The participant's org memberships are needed only to build external launch URLs
+// for generic external tasks (not internal players, qualtrics, or mefs). Fetch the
+// memberships read on demand — gated on such a task being present in the selected
+// administration — so the common internal-only homepage makes no extra backend call.
+const needsOrgMembershipsForLaunch = computed(() => selectedAdminGames.value.some(gameNeedsOrgMemberships));
+
+const { data: memberships, isLoading: isLoadingMemberships } = useUserMembershipsQuery(userId, {
+  enabled: computed(() => initialized.value && Boolean(userId.value) && needsOrgMembershipsForLaunch.value),
+});
+
+// Only let the memberships fetch hold isLoading true when the current selection needs it
 const isLoading = computed(() => {
-  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingTasks.value;
+  return (
+    isLoadingUserData.value ||
+    isLoadingAssignments.value ||
+    isLoadingTasks.value ||
+    (needsOrgMembershipsForLaunch.value && isLoadingMemberships.value)
+  );
 });
 
 const isFetching = computed(() => {
@@ -427,7 +451,7 @@ const toggleShowOptionalAssessments = () => {
 // filtered out and don't appear on the homepage.
 const assessments = computed(() => {
   if (isFetching.value || !selectedAdmin.value) return [];
-  return mapAdministrationTasksToGames(selectedAdmin.value, tasks.value);
+  return selectedAdminGames.value;
 });
 
 const requiredAssessments = computed(() => {
@@ -436,6 +460,39 @@ const requiredAssessments = computed(() => {
 
 const optionalAssessments = computed(() => {
   return _filter(assessments.value, (assessment) => assessment.optional);
+});
+
+// The data object passed to GameTabs: the backend user profile (`mapUser`) plus the
+// three fields GameTabs reads that the user response doesn't carry — `birthMonth` /
+// `birthYear` (derived from `studentData.dob`) and the current school / class IDs
+// (from the memberships read; a student's school is the parent of their class). This
+// reassembles the legacy `userData` shape from backend sources so `mapUser` and
+// GameTabs stay unchanged.
+const participantData = computed(() => {
+  if (!userData.value) return null;
+
+  // `dob` is an ISO calendar date (`YYYY-MM-DD`) from the backend; split it rather than
+  // parsing via `new Date()` to avoid an off-by-one in negative-UTC timezones.
+  const dob = userData.value.studentData?.dob ?? '';
+  const [birthYear, birthMonth] = dob.split('-');
+
+  const rows = memberships.value ?? [];
+  const classRows = rows.filter((membership) => membership.entityType === 'class');
+  const currentClassIds = [...new Set(classRows.map((membership) => membership.entityId))];
+  const currentSchoolIds = [
+    ...new Set([
+      ...classRows.map((membership) => membership.schoolId).filter(Boolean),
+      ...rows.filter((membership) => membership.entityType === 'school').map((membership) => membership.entityId),
+    ]),
+  ];
+
+  return {
+    ...userData.value,
+    birthYear: birthYear ? Number(birthYear) : undefined,
+    birthMonth: birthMonth ? Number(birthMonth) : undefined,
+    schools: { current: currentSchoolIds },
+    classes: { current: currentClassIds },
+  };
 });
 
 // Hard gate for the assessment list: the student may only reach the games once
