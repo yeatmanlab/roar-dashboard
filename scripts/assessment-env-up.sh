@@ -3,8 +3,8 @@
 # assessment dev server.
 #
 # Called from an assessment package's `start` script.
-# Starts the shared Docker stack (DB, migrations, Firebase emulator, backend)
-# then runs the assessment dev server in the directory that invoked this script.
+# Starts the shared Docker stack (DB, migrations, Firebase emulators, backend)
+# then runs the dev server in the assessment directory that invoked this script.
 #
 # Its pre-flight checks are hard gates (unlike `npm run setup`, whose equivalent
 # checks are advisory): `setup` is optional, so this script cannot assume it ran
@@ -28,7 +28,7 @@ if ! docker_compose_available; then
 fi
 
 # If the backend container is already running the full stack is up — the backend
-# only starts after migrations and the Firebase emulator are healthy. This covers
+# only starts after migrations and the Firebase emulators are healthy. This covers
 # the common case where the user killed the dev server with Ctrl+C but left the
 # Docker stack running. Skip straight to restarting the dev server.
 if assessment_container_running assessment-backend; then
@@ -40,22 +40,12 @@ else
     exit 1
   fi
 
-  # Check the host port before Docker tries to bind it (the error Docker produces
-  # when the port is taken is cryptic).
-  if port_in_use "$ASSESSMENT_PG_PORT"; then
-    echo "Error: port $ASSESSMENT_PG_PORT is already in use." >&2
-    print_port_in_use_help
-    exit 1
-  fi
-
-  echo "Starting assessment environment (DB, migrations, Firebase emulator, backend)..."
-
   # Force-remove stale containers by name before starting. These linger from a
   # previous run and cause name or port conflicts — including containers left
   # under an older compose project name (docker rm by name ignores project
-  # scoping, unlike --remove-orphans) and the since-renamed "firebase-emulator"
-  # service (now "firebase-auth-emulator"), whose old container still publishes
-  # 9000/9099/9199 and blocks the new emulator from binding them.
+  # scoping, unlike --remove-orphans) and the retired "firebase-auth-emulator"
+  # container name from older checkouts. Runs before the port preflight so
+  # leftovers from a previous assessment run self-heal instead of erroring.
   docker rm -f \
     assessment-db \
     assessment-db-migrate \
@@ -63,6 +53,19 @@ else
     firebase-emulator \
     assessment-backend \
     2>/dev/null || true
+
+  # Check every port the stack binds (STACK_PORTS) before Docker tries to — the
+  # error Docker produces when a port is taken is cryptic, and the fix differs
+  # by culprit.
+  for port in "${STACK_PORTS[@]}"; do
+    if port_in_use "$port"; then
+      echo "Error: port ${port} is already in use." >&2
+      diagnose_port_conflict "$port"
+      exit 1
+    fi
+  done
+
+  echo "Starting assessment environment (DB, migrations, Firebase emulators, backend)..."
 
   # --remove-orphans drops any container in the roar-assessment project whose
   # service no longer exists, so future service renames self-heal without
@@ -75,14 +78,15 @@ cd "$ASSESSMENT_DIR"
 
 # Vite-based assessments (e.g. roar-survey) have no webpack.config.cjs.
 # Use vite for those; webpack for everything else.
+# FIREBASE_AUTH_EMULATOR_HOST needs no explicit value — dev-mode bundler configs
+# default it to the local emulator. BACKEND_URL points the /v1 proxy at the
+# containerized backend (plain HTTP) instead of the host-run TLS default.
 if [[ -f "$ASSESSMENT_DIR/webpack.config.cjs" ]]; then
   exec env \
-    FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
     BACKEND_URL=http://localhost:4000 \
     npx webpack serve --open --mode development --env dbmode=development
 else
   exec env \
-    FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
     BACKEND_URL=http://localhost:4000 \
     npx vite --mode development
 fi

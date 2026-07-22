@@ -27,7 +27,10 @@ name: roar-assessment
 services:
   # ────────────────────────────────────────────────────────────────────────────
   # Ephemeral PostgreSQL instance.
-  # Hosts roar_core and roar_assessment (created by the entrypoint init script).
+  # Uses the shared init script (docker/postgres) — the same one the platform
+  # stack runs — which creates the databases and provisions the postgres_fdw
+  # prerequisites over the Unix socket at first boot. The extra databases it
+  # creates (test + OpenFGA) are unused here and harmless.
   #
   # Published on host port ${ASSESSMENT_PG_PORT:-5433} — deliberately NOT the
   # standard 5432 — so this ephemeral stack can run alongside a persistent
@@ -37,7 +40,7 @@ services:
   # ────────────────────────────────────────────────────────────────────────────
   assessment-db:
     container_name: assessment-db
-    image: postgres:17
+    image: postgres:18
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 3s
@@ -46,20 +49,26 @@ services:
       start_period: 5s
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_PASSWORD: postgres
     ports:
       # Host side defaults to 5433 to coexist with a persistent Postgres on 5432.
       - "${ASSESSMENT_PG_PORT:-5433}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./scripts/init-assessment-db.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
+      # postgres-18-data (not the previous "pgdata") so the Postgres 17 → 18 bump
+      # and the switch to the shared init script both take effect on a fresh
+      # volume — init scripts only run when the data directory is empty. The
+      # postgres:18 image expects the mount at /var/lib/postgresql (not .../data);
+      # it lays out major-version subdirectories underneath.
+      - postgres-18-data:/var/lib/postgresql
+      - ./docker/postgres:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
 
   # ────────────────────────────────────────────────────────────────────────────
   # One-shot migration runner.
-  # Sets up postgres_fdw prerequisites, applies all Drizzle migrations, and
-  # seeds the assessment task data. ASSESSMENT_NAME is set by assessment-env-up.sh
-  # and drives the dev:seed:tasks --task ${ASSESSMENT_NAME} script. Exits 0 on success.
+  # Applies all Drizzle migrations and seeds the assessment task data (FDW
+  # prerequisites are provisioned by the Postgres init script). ASSESSMENT_NAME
+  # is set by assessment-env-up.sh and drives the dev:seed:tasks --task
+  # ${ASSESSMENT_NAME} script. Exits 0 on success.
   # ────────────────────────────────────────────────────────────────────────────
   assessment-db-migrate:
     container_name: assessment-db-migrate
@@ -67,23 +76,16 @@ services:
       context: .
       dockerfile: assessment.Dockerfile
       target: assessment-runtime
-    working_dir: /app
+    working_dir: /app/apps/backend
     command: >
       sh -c "
-        ./scripts/setup-fdw-local.sh &&
-        cd apps/backend &&
         npm run db:migrate &&
         npm run dev:seed:tasks -- --task ${ASSESSMENT_NAME:-}
       "
     environment:
       ASSESSMENT_NAME: ${ASSESSMENT_NAME:-}
-      CORE_DATABASE_URL: postgres://postgres@assessment-db:5432/roar_core
-      ASSESSMENT_DATABASE_URL: postgres://postgres@assessment-db:5432/roar_assessment
-      CORE_DB: roar_core
-      ASSESSMENT_DB: roar_assessment
-      PG_HOST: assessment-db
-      PG_PORT: "5432"
-      PG_USER: postgres
+      CORE_DATABASE_URL: postgres://postgres:postgres@assessment-db:5432/roar_core
+      ASSESSMENT_DATABASE_URL: postgres://postgres:postgres@assessment-db:5432/roar_assessment
       TASK_VARIANT_PARAMETERS_FILE: /app/assessment-config/taskVariantParameters.json
     volumes:
       - ./apps/assessments/${ASSESSMENT_NAME:-}:/app/assessment-config:ro
@@ -94,26 +96,24 @@ services:
 
   # ────────────────────────────────────────────────────────────────────────────
   # Firebase Auth + Storage emulators.
-  # Auth is pure Node.js; Storage needs a JRE (installed in the firebase-emulator image)
-  # to run the rules runtime. Assessments connect via FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
-  # (auth) and upload recordings to the Storage emulator on 127.0.0.1:9199, viewable in the
+  # Uses the shared emulator image (docker/firebase-emulator) — the platform stack
+  # starts auth only from the same image and config; this stack adds storage.
+  # Assessments connect via FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 (auth) and
+  # upload recordings to the Storage emulator on 127.0.0.1:9199, viewable in the
   # Emulator UI on :9000.
   # ────────────────────────────────────────────────────────────────────────────
   firebase-emulator:
     container_name: firebase-emulator
-    build:
-      context: .
-      dockerfile: assessment.Dockerfile
-      target: firebase-emulator
+    build: docker/firebase-emulator
     volumes:
-      - ./apps/assessments/shared/firebase.json:/app/firebase.json:ro
+      - ./docker/firebase-emulator/firebase.json:/firebase.json:ro
       # firebase.json references storage.rules; mount it so the Storage emulator can load it.
-      - ./apps/assessments/shared/storage.rules:/app/storage.rules:ro
+      - ./docker/firebase-emulator/storage.rules:/storage.rules:ro
     command: >
-      firebase emulators:start
+      emulators:start
         --only auth,storage
         --project demo-roar
-        --config /app/firebase.json
+        --config /firebase.json
     ports:
       - "9099:9099"
       # Storage emulator (recording uploads) and the Emulator UI (view recordings at :9000,
@@ -149,8 +149,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: "4000"
-      CORE_DATABASE_URL: postgres://postgres@assessment-db:5432/roar_core
-      ASSESSMENT_DATABASE_URL: postgres://postgres@assessment-db:5432/roar_assessment
+      CORE_DATABASE_URL: postgres://postgres:postgres@assessment-db:5432/roar_core
+      ASSESSMENT_DATABASE_URL: postgres://postgres:postgres@assessment-db:5432/roar_assessment
       # Canonical project identifier for emulated Firebase projects
       # Should match FIREBASE_EMULATOR_PROJECT_ID constant in @assessment-schema/src/firebase-emulator.ts
       GOOGLE_CLOUD_PROJECT: demo-roar
@@ -161,7 +161,9 @@ services:
       ALLOWED_ORIGINS: "http://localhost:8000"
       # Placeholder FGA config — the FGA client must be initialized at startup
       # (module-level service instantiation), but FGA is never actually called
-      # for anonymous assessment runs.
+      # for anonymous assessment runs (the same-user access check short-circuits
+      # first). Deliberate: this stack ships no OpenFGA service — see
+      # yeatmanlab/roar-project-management#1999.
       FGA_API_URL: http://placeholder:5050
       FGA_STORE_ID: "00000000000000000000000000"
       FGA_MODEL_ID: "00000000000000000000000000"
@@ -181,4 +183,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  pgdata:
+  postgres-18-data:

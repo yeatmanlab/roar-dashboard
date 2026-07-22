@@ -1,12 +1,10 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # assessment.Dockerfile
 #
-# Dual-role image for the local assessment environment.
-# Two independent targets are produced from a single build context:
-#
-#   assessment-runtime  — runs DB migrations (CMD override in compose) or
-#                         serves the backend API (default CMD).
-#   firebase-emulator   — runs the Firebase Auth emulator.
+# Backend image for the local assessment environment. The assessment-runtime
+# target runs DB migrations (CMD override in compose) or serves the backend API
+# (default CMD). The Firebase emulator uses the shared image in
+# docker/firebase-emulator/ instead.
 #
 # Used exclusively by docker-compose.assessment.yml.
 # ──────────────────────────────────────────────────────────────────────────────
@@ -57,7 +55,7 @@ RUN turbo build --filter=roar-backend
 FROM node:24-slim AS assessment-runtime
 
 RUN apt-get update -qq \
-    && apt-get install -y --no-install-recommends curl postgresql-client \
+    && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -84,33 +82,8 @@ COPY --from=builder /app/apps/backend/src/db                       ./apps/backen
 COPY --from=builder /app/package.json                           ./package.json
 COPY --from=builder /app/apps/backend/package.json              ./apps/backend/package.json
 
-# FDW setup script — lives at repo root/scripts/, not in turbo prune output.
-# Copied directly from build context.
-COPY scripts/setup-fdw-local.sh ./scripts/setup-fdw-local.sh
-
 ENV NODE_ENV=production
 ENV PORT=4000
 EXPOSE 4000
 
 CMD ["node", "apps/backend/dist/server.js"]
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Stage 3 — Firebase Auth emulator (independent)
-# ──────────────────────────────────────────────────────────────────────────────
-FROM node:24-slim AS firebase-emulator
-
-# curl for the healthcheck; a headless JRE for the Storage emulator, which runs the
-# security-rules runtime in Java. (The Auth emulator is pure Node and needs no JRE.)
-RUN apt-get update -qq \
-    && apt-get install -y --no-install-recommends curl default-jre-headless \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN npm install -g firebase-tools@13
-
-# Pre-download the Storage emulator JAR and the Emulator UI at build time so the container
-# starts them without needing network access at runtime.
-RUN firebase setup:emulators:storage \
-    && firebase setup:emulators:ui
-
-WORKDIR /app
-EXPOSE 9099 9199 9000

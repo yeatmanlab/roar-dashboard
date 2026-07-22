@@ -54,7 +54,7 @@ import { getFirebaseConfig } from "../../shared/firebaseConfig";
 import { mountVariantPicker } from "../../shared/variantPicker.js";
 ```
 
-It provides `getFirebaseConfig()` (emulator config when `FIREBASE_AUTH_EMULATOR_HOST` is set, otherwise Firebase Hosting's `/__/firebase/init.json`), `mountVariantPicker()`, `initSentry()`, and the `firebase.json` / `storage.rules` the emulator container mounts. Anything genuinely common to every standalone harness belongs here rather than copied into each assessment.
+It provides `getFirebaseConfig()` (emulator config when `FIREBASE_AUTH_EMULATOR_HOST` is set, otherwise Firebase Hosting's `/__/firebase/init.json`), `mountVariantPicker()`, and `initSentry()`. Anything genuinely common to every standalone harness belongs here rather than copied into each assessment. (The emulator's `firebase.json` / `storage.rules` live in `docker/firebase-emulator/` — the shared emulator image both dev stacks build from.)
 
 ### The serve.js contract
 

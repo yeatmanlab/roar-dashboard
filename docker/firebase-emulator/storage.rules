@@ -2,7 +2,7 @@ rules_version = '2';
 
 // Rules for the LOCAL Firebase Storage emulator only.
 //
-// Loaded solely by apps/assessments/shared/firebase.json's `storage` block when the
+// Loaded solely by docker/firebase-emulator/firebase.json's `storage` block when the
 // emulator suite runs in dev. Production/staging recordings go to the admin-project
 // buckets (gs://roar-admin-recordings-{prod,staging}) which enforce their own rules;
 // this file is never deployed there.

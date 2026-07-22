@@ -35,6 +35,11 @@ PARAMS_FILE="$ASSESSMENT_DIR/taskVariantParameters.json"
 # publishes the same port the scripts connect to; override ASSESSMENT_PG_PORT to change it.
 export ASSESSMENT_PG_PORT="${ASSESSMENT_PG_PORT:-5433}"
 
+# All host ports the assessment stack binds: Postgres, Firebase Auth emulator,
+# Storage emulator, Emulator UI, backend API. Looped by the port pre-flights in
+# assessment-setup.sh (advisory) and assessment-env-up.sh (hard gate).
+STACK_PORTS=("$ASSESSMENT_PG_PORT" 9099 9199 9000 4000)
+
 # The npm to use for nested npm calls. When npm runs a lifecycle script
 # (`npm run <script>`) it prepends every ancestor node_modules/.bin to PATH,
 # which can shadow `npm` itself with an old vendored copy — this repo transitively
@@ -77,13 +82,59 @@ print_docker_install_help() {
   echo "                 sudo usermod -aG docker \$USER   (then log out/in)" >&2
 }
 
-# What to do when the ephemeral Postgres host port is already taken. A stale
-# assessment container is the usual cause now that the default is 5433, not 5432.
-print_port_in_use_help() {
-  echo "  Find what is holding port $ASSESSMENT_PG_PORT and stop it:" >&2
-  echo "    macOS: lsof -i :$ASSESSMENT_PG_PORT      Linux: ss -tlnp | grep :$ASSESSMENT_PG_PORT" >&2
-  echo "  A leftover assessment container is the usual cause: docker ps | grep $ASSESSMENT_PG_PORT" >&2
-  echo "  Or pick another port: ASSESSMENT_PG_PORT=<port> npm start" >&2
+# Diagnose what is occupying a host port and print how to free it. Prints only
+# the diagnosis — no headline and no exit — so the caller decides whether the
+# conflict is a hard error (env-up) or an advisory warning (setup). The most
+# common culprits, in order: the platform dev stack, a local process, or another
+# Docker container. (env-up force-removes stale assessment containers before its
+# port check, so those rarely reach this diagnosis.)
+# Usage: diagnose_port_conflict 5433
+diagnose_port_conflict() {
+  local port="$1"
+
+  # A Docker container publishing the port? Compose labels tell us which stack.
+  local container project
+  container="$(docker ps --filter "publish=${port}" --format '{{.Names}}' 2>/dev/null | head -1)"
+  if [[ -n "$container" ]]; then
+    project="$(docker inspect --format '{{index .Config.Labels "com.docker.compose.project"}}' "$container" 2>/dev/null || true)"
+    case "$project" in
+      roar-platform)
+        echo "  The ROAR platform dev stack is running (container: ${container})." >&2
+        echo "  Stop it first, from the repository root:" >&2
+        echo "    docker compose down" >&2
+        ;;
+      roar-assessment)
+        echo "  A previous assessment environment is still partially running (container: ${container})." >&2
+        echo "  Reset it first:" >&2
+        echo "    npm run stop   # or: bash scripts/assessment-env-down.sh" >&2
+        ;;
+      *)
+        echo "  A Docker container is holding the port: ${container}" >&2
+        echo "  Stop it with:" >&2
+        echo "    docker stop ${container}" >&2
+        ;;
+    esac
+    return
+  fi
+
+  # Not a container — a host process. The Postgres port gets tailored advice:
+  # a local PostgreSQL install is a common culprit, and the port is overridable
+  # when the clash is intentional.
+  if [[ "$port" == "$ASSESSMENT_PG_PORT" ]]; then
+    echo "  A local PostgreSQL instance may be running. Stop it, or pick another port:" >&2
+    echo "    macOS (Homebrew): brew services stop postgresql@<version>" >&2
+    echo "    Ubuntu/Debian:    sudo systemctl stop postgresql" >&2
+    echo "    Or:               ASSESSMENT_PG_PORT=<port> npm start" >&2
+    return
+  fi
+
+  local proc
+  proc="$(lsof -i ":${port}" -sTCP:LISTEN 2>/dev/null | awk 'NR==2 {print $1 " (pid " $2 ")"}')"
+  if [[ -n "$proc" ]]; then
+    echo "  Held by: ${proc}. Stop that process and retry." >&2
+  else
+    echo "  Find the process with: lsof -i :${port}  (or: ss -tlnp | grep ${port})" >&2
+  fi
 }
 
 # taskVariantParameters.json is missing — how to create it.

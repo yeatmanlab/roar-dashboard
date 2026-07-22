@@ -254,7 +254,7 @@ The environment doesn't need to be stopped first — the rebuild only updates th
 | Host                | `localhost`                   |
 | Port                | `5433` (`ASSESSMENT_PG_PORT`) |
 | Username            | `postgres`                    |
-| Password            | _(none)_                      |
+| Password            | `postgres`                    |
 | Core database       | `roar_core`                   |
 | Assessment database | `roar_assessment`             |
 | SSL mode            | `disable`                     |
