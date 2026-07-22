@@ -629,8 +629,9 @@ describe('reports', () => {
 
         expect(getScoreValue(scoresObject, 'phonics', 2, 'percentile')).toBe(88);
         expect(getScoreValue(scoresObject, 'phonics', 2, 'percentileDisplay')).toBe(88);
-        expect(getScoreValue(scoresObject, 'phonics', 2, 'standardScore')).toBe(88);
-        expect(getScoreValue(scoresObject, 'phonics', 2, 'standardScoreDisplay')).toBe(88);
+        // Phonics has no standard score concept
+        expect(getScoreValue(scoresObject, 'phonics', 2, 'standardScore')).toBe(undefined);
+        expect(getScoreValue(scoresObject, 'phonics', 2, 'standardScoreDisplay')).toBe(undefined);
         expect(getScoreValue(scoresObject, 'phonics', 2, 'rawScore')).toBe(132);
       });
     });

@@ -1162,12 +1162,12 @@ const SCORE_FIELD_MAPPINGS = {
       legacy: 'totalPercentCorrect',
     },
     standardScore: {
-      new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
+      new: undefined,
+      legacy: undefined,
     },
     standardScoreDisplay: {
-      new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
+      new: undefined,
+      legacy: undefined,
     },
     rawScore: {
       new: 'totalCorrect',
