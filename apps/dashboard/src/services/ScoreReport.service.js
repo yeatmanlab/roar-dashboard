@@ -280,13 +280,13 @@ const ScoreReportService = (() => {
 
       let rawScore = null;
 
-      // Manual check (not isTaskNormed): this gates field extractability, not normed-display status,
-      // and must default true for unlisted tasks, unlike isTaskNormed's default-false.
-      const hasNorms =
-        (!previouslyUnnormedTasks.includes(taskId) || scoringVersions[taskId] >= 1) &&
-        (!taskId.includes('es') || scoringVersions[taskId] >= 1);
+      // This decides whether we should extract the raw score to display the individual score report cards
+      const shouldExtractScoreFields =
+        ((!previouslyUnnormedTasks.includes(taskId) || scoringVersions[taskId] >= 1) &&
+          (!taskId.includes('es') || scoringVersions[taskId] >= 1)) ||
+        taskId === 'letter';
 
-      if (!taskId.includes('vocab') && hasNorms) {
+      if (!taskId.includes('vocab') && shouldExtractScoreFields) {
         rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore', compositeScores?.scoringVersion);
       } else {
         rawScore = compositeScores;
@@ -328,7 +328,7 @@ const ScoreReportService = (() => {
           },
           percentileScore: {
             name:
-              tasksToDisplayPercentCorrect.includes(taskId) && !hasNorms
+              tasksToDisplayPercentCorrect.includes(taskId) && !isTaskNormed(taskId, scoringVersions[taskId])
                 ? i18n.t('scoreReports.percentCorrect')
                 : i18n.t('scoreReports.percentileScore'),
             value: Math.round(percentileScore),
