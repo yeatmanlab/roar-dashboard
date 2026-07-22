@@ -65,9 +65,35 @@
                   :class="{ 'hover:surface-200 pointer': !game.completedOn || game.taskData.external }"
                 >
                   <div class="flex align-items-center justify-content-center font-bold mt-2 h-full responsive-text">
+                    <!-- Retake required (show before checking if complete) -->
+                    <PvMessage
+                      v-if="game?.allowRetake === true && implementsValidityChecking(game.taskId)"
+                      severity="warn"
+                      class="w-full"
+                    >
+                      <div class="flex flex-column align-items-center gap-2">
+                        <span>{{ $t('gameTabs.allowRetake') }}</span>
+                        <router-link
+                          v-if="!game.taskData.external"
+                          :to="{ path: getRoutePath(game.taskId) }"
+                          class="no-underline text-yellow-900 hover:text-yellow-800 w-full flex align-items-center justify-content-center p-3 hover:bg-yellow-100"
+                        >
+                          <i class="pi pi-refresh mr-2"></i>{{ $t('gameTabs.retakeAssessment') }}
+                        </router-link>
+                        <a
+                          v-else
+                          :href="externalLinksByTask[game.taskId]"
+                          target="_blank"
+                          class="no-underline text-yellow-900 hover:text-yellow-800 w-full flex align-items-center justify-content-center p-3 hover:bg-yellow-100"
+                          @click="onExternalTaskClick(game)"
+                        >
+                          <i class="pi pi-refresh mr-2"></i>{{ $t('gameTabs.retakeAssessment') }}
+                        </a>
+                      </div>
+                    </PvMessage>
                     <!-- Tasks that are not yet complete -->
                     <div
-                      v-if="
+                      v-else-if="
                         (!allGamesComplete &&
                           !game.completedOn &&
                           !game.taskData?.taskURL &&
@@ -144,38 +170,11 @@
                           "
                           class="pi pi-check-circle mr-3"
                         />
-                        <div class="flex flex-column align-items-center gap-2">
-                          <span
-                            v-if="game.allowRetake !== true || !implementsValidityChecking(game.taskId)"
-                            style="cursor: default"
-                            >{{ taskCompletedMessage }}</span
-                          >
-                          <PvMessage
-                            v-if="game?.allowRetake === true && implementsValidityChecking(game.taskId)"
-                            severity="warn"
-                            class="w-full"
-                          >
-                            <div class="flex flex-column align-items-center gap-2">
-                              <span>{{ $t('gameTabs.allowRetake') }}</span>
-                              <router-link
-                                v-if="!game.taskData.external"
-                                :to="{ path: getRoutePath(game.taskId) }"
-                                class="no-underline text-yellow-900 hover:text-yellow-800 w-full flex align-items-center justify-content-center p-3 hover:bg-yellow-100"
-                              >
-                                <i class="pi pi-refresh mr-2"></i>{{ $t('gameTabs.retakeAssessment') }}
-                              </router-link>
-                              <a
-                                v-else
-                                :href="externalLinksByTask[game.taskId]"
-                                target="_blank"
-                                class="no-underline text-yellow-900 hover:text-yellow-800 w-full flex align-items-center justify-content-center p-3 hover:bg-yellow-100"
-                                @click="onExternalTaskClick(game)"
-                              >
-                                <i class="pi pi-refresh mr-2"></i>{{ $t('gameTabs.retakeAssessment') }}
-                              </a>
-                            </div>
-                          </PvMessage>
-                        </div>
+                        <span
+                          v-if="game.allowRetake !== true || !implementsValidityChecking(game.taskId)"
+                          style="cursor: default"
+                          >{{ taskCompletedMessage }}</span
+                        >
                       </div>
                     </div>
                   </div>
