@@ -33,7 +33,6 @@
     "packages/*"
   ],
   "dependencies": {
-    "@bdelab/roav-ran": "2.1.5",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2"
   }
