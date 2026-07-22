@@ -685,6 +685,12 @@ export const updatedNormVersions = {
   trog: 1, // syntax
 };
 
+export const isTaskNormed = (taskId, scoringVersion = null) => {
+  // Tasks that were returning normed scores before scoringVersion field was introduced
+  const unversionedNormedTasks = ['swr', 'sre', 'pa'];
+  return unversionedNormedTasks.includes(taskId) || (previouslyUnnormedTasks.includes(taskId) && scoringVersion >= 1);
+};
+
 function getOrdinalSuffix(n) {
   const { locale } = useI18n();
   // If the active language is Spanish, just use º

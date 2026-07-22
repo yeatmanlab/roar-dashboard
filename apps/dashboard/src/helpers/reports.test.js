@@ -16,6 +16,7 @@ import {
   getPaSkillsToWorkOn,
   PA_SKILL_THRESHOLD,
   PA_SKILL_LEGACY_THRESHOLD,
+  isTaskNormed,
 } from './reports';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
@@ -1219,6 +1220,54 @@ describe('reports', () => {
         };
         expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM']);
       });
+    });
+  });
+
+  describe('isTaskNormed', () => {
+    it.each(['swr', 'sre', 'pa'])(
+      'returns true for unversioned normed task "%s" regardless of scoringVersion',
+      (taskId) => {
+        expect(isTaskNormed(taskId)).toBe(true);
+        expect(isTaskNormed(taskId, 0)).toBe(true);
+        expect(isTaskNormed(taskId, 5)).toBe(true);
+      },
+    );
+
+    it.each(['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'roar-inference', 'trog'])(
+      'returns false for previously-unnormed task "%s" when scoringVersion is null',
+      (taskId) => {
+        expect(isTaskNormed(taskId)).toBe(false);
+      },
+    );
+
+    it.each(['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'roar-inference', 'trog'])(
+      'returns false for previously-unnormed task "%s" when scoringVersion is below 1',
+      (taskId) => {
+        expect(isTaskNormed(taskId, 0)).toBe(false);
+      },
+    );
+
+    it.each(['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'roar-inference', 'trog'])(
+      'returns true for previously-unnormed task "%s" once scoringVersion reaches 1',
+      (taskId) => {
+        expect(isTaskNormed(taskId, 1)).toBe(true);
+        expect(isTaskNormed(taskId, 5)).toBe(true);
+      },
+    );
+
+    it('returns false for a task that is neither unversioned-normed nor previously-unnormed', () => {
+      expect(isTaskNormed('unknown-task')).toBe(false);
+      expect(isTaskNormed('unknown-task', 10)).toBe(false);
+    });
+
+    it('returns false when taskId is null or undefined', () => {
+      expect(isTaskNormed(null)).toBe(false);
+      expect(isTaskNormed(undefined)).toBe(false);
+      expect(isTaskNormed(null, 5)).toBe(false);
+    });
+
+    it('defaults scoringVersion to null when not provided', () => {
+      expect(isTaskNormed('letter')).toBe(false);
     });
   });
 });
