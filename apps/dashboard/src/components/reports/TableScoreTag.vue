@@ -153,16 +153,8 @@ function handleToolTip(_taskId, _toolTip, _colData, _grade) {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
     } else {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
-      let percentile;
-      let standardScore;
-      // PA scoring version 5 uses direct field names; other versions/tasks use grade-based resolution
-      if (_taskId === 'pa' && _colData.scores?.[_taskId]?.scoringVersion >= 5) {
-        percentile = _colData.scores?.[_taskId]?.percentile;
-        standardScore = _colData.scores?.[_taskId]?.standardScore;
-      } else {
-        percentile = getScoreValue(_colData.scores?.[_taskId], _taskId, _grade, 'percentile');
-        standardScore = getScoreValue(_colData.scores?.[_taskId], _taskId, _grade, 'standardScore');
-      }
+      const percentile = getScoreValue(_colData.scores?.[_taskId], _taskId, _grade, 'percentile');
+      const standardScore = getScoreValue(_colData.scores?.[_taskId], _taskId, _grade, 'standardScore');
       _toolTip += 'Percentile: ' + percentile + '\n';
       _toolTip += 'Standardized Score: ' + standardScore + '\n';
     }
