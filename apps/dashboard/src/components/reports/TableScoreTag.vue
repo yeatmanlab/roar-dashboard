@@ -153,8 +153,9 @@ function handleToolTip(_taskId, _toolTip, _colData, _grade) {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
     } else {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
-      const percentile = getScoreValue(_colData.scores?.[_taskId], _taskId, _grade, 'percentile');
-      const standardScore = getScoreValue(_colData.scores?.[_taskId], _taskId, _grade, 'standardScore');
+      const scoringVersion = _colData.scores?.[_taskId]?.scoringVersion;
+      const percentile = getScoreValue(_colData.scores?.[_taskId], _taskId, _grade, 'percentile', scoringVersion);
+      const standardScore = getScoreValue(_colData.scores?.[_taskId], _taskId, _grade, 'standardScore', scoringVersion);
       _toolTip += 'Percentile: ' + percentile + '\n';
       _toolTip += 'Standardized Score: ' + standardScore + '\n';
     }

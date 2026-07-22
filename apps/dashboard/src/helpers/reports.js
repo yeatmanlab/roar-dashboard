@@ -997,20 +997,44 @@ const SCORE_FIELD_MAPPINGS = {
   },
   pa: {
     percentile: {
-      new: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentile'),
-      legacy: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentile'),
+      new: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'percentile';
+        return gradeLevel < 6 ? 'percentile' : 'sprPercentile';
+      },
+      legacy: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'percentile';
+        return gradeLevel < 6 ? 'percentile' : 'sprPercentile';
+      },
     },
     percentileDisplay: {
-      new: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentileString'),
-      legacy: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentileString'),
+      new: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'percentile';
+        return gradeLevel < 6 ? 'percentile' : 'sprPercentileString';
+      },
+      legacy: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'percentile';
+        return gradeLevel < 6 ? 'percentile' : 'sprPercentileString';
+      },
     },
     standardScore: {
-      new: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScore'),
-      legacy: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScore'),
+      new: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'standardScore';
+        return gradeLevel < 6 ? 'standardScore' : 'sprStandardScore';
+      },
+      legacy: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'standardScore';
+        return gradeLevel < 6 ? 'standardScore' : 'sprStandardScore';
+      },
     },
     standardScoreDisplay: {
-      new: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString'),
-      legacy: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      new: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'standardScore';
+        return gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString';
+      },
+      legacy: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'standardScore';
+        return gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString';
+      },
     },
     rawScore: {
       new: 'roarScore',
@@ -1235,15 +1259,16 @@ const SCORE_FIELD_MAPPINGS = {
 };
 
 /**
- * Resolves field name based on task, grade, and field type
+ * Resolves field name based on task, grade, scoring version, and field type
  * @param {string} taskId - The task identifier
  * @param {number} grade - The grade level
  * @param {string} fieldType - The type of field (percentile, standardScore, etc.)
  * @param {boolean} isLegacy - Whether to use legacy field names
+ * @param {number} scoringVersion - Optional scoring version for version-dependent field names
  * @see ./SCORE_FIELD_MIGRATION_GUIDE.md
  * @returns {string|undefined} The resolved field name
  */
-function resolveFieldName(taskId, grade, fieldType, isLegacy = false) {
+function resolveFieldName(taskId, grade, fieldType, isLegacy = false, scoringVersion = null) {
   if (!ALLOWED_SCORE_FIELD_TYPES.includes(fieldType)) {
     throw new Error(`Invalid fieldType. Expected one of ${ALLOWED_SCORE_FIELD_TYPES.join(', ')}, but got ${fieldType}`);
   }
@@ -1256,9 +1281,9 @@ function resolveFieldName(taskId, grade, fieldType, isLegacy = false) {
   const fieldMapping = taskMapping[fieldType];
   const fieldName = isLegacy ? fieldMapping.legacy : fieldMapping.new;
 
-  // Handle function-based field names (grade-dependent)
+  // Handle function-based field names (grade-dependent and/or version-dependent)
   if (typeof fieldName === 'function') {
-    return fieldName(grade);
+    return fieldName(grade, scoringVersion);
   }
 
   return fieldName;
@@ -1283,10 +1308,11 @@ export function sanitizeScoreValue(scoreValue) {
  * @param {string} taskId - The task identifier
  * @param {number} grade - The grade level
  * @param {string} fieldType - The type of field to access
+ * @param {number} scoringVersion - Optional scoring version for version-dependent field names
  * @see ./SCORE_FIELD_MIGRATION_GUIDE.md
  * @returns {*} The score value or undefined if not found
  */
-export function getScoreValue(scoresObject, taskId, grade, fieldType) {
+export function getScoreValue(scoresObject, taskId, grade, fieldType, scoringVersion = null) {
   if (!scoresObject || !taskId || fieldType === undefined) {
     return undefined;
   }
@@ -1294,7 +1320,7 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
   const gradeValue = toValue(grade);
 
   // Try new field name first
-  const newFieldName = resolveFieldName(taskId, gradeValue, fieldType, false);
+  const newFieldName = resolveFieldName(taskId, gradeValue, fieldType, false, scoringVersion);
   if (newFieldName && scoresObject[newFieldName] !== undefined) {
     let scoreValue = scoresObject[newFieldName];
     if (fieldType === 'percentile' || fieldType === 'standardScore') {
@@ -1304,7 +1330,7 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
   }
 
   // Fall back to legacy field name
-  const legacyFieldName = resolveFieldName(taskId, gradeValue, fieldType, true);
+  const legacyFieldName = resolveFieldName(taskId, gradeValue, fieldType, true, scoringVersion);
   if (legacyFieldName && scoresObject[legacyFieldName] !== undefined) {
     return scoresObject[legacyFieldName];
   }
