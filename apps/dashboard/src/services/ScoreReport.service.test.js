@@ -9,6 +9,13 @@ vi.mock('@/helpers/reports', () => ({
   rawOnlyTasks: ['mock-raw-task', 'cva'],
   tasksToDisplayPercentCorrect: ['phonics'],
   previouslyUnnormedTasks: ['morphology', 'cva', 'trog', 'roar-inference'],
+  // Only tasks explicitly listed here are treated as normed; matches production's
+  // "has this task's scoring been upgraded to versioned norms" contract.
+  isTaskNormed: vi.fn((taskId, scoringVersion) => {
+    const unversionedNormedTasks = ['swr', 'sre', 'pa'];
+    const previouslyUnnormedTasks = ['morphology', 'cva', 'trog', 'roar-inference'];
+    return unversionedNormedTasks.includes(taskId) || (previouslyUnnormedTasks.includes(taskId) && scoringVersion >= 1);
+  }),
   taskDisplayNames: {
     'mock-task-1': { extendedName: 'Task One', order: 1 },
     'mock-task-2': { extendedName: 'Task Two', order: 2 },

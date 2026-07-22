@@ -808,7 +808,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tasksToDisplayTotalCorrect.includes(taskId) ||
       tasksToDisplayGradeEstimate.includes(taskId)) &&
     rawScore !== undefined &&
-    !(previouslyUnnormedTasks.includes(taskId) && scoringVersion >= 1)
+    !isTaskNormed(taskId, scoringVersion)
   ) {
     return {
       support_level: 'Raw Score',
@@ -1567,7 +1567,7 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
   // Filter to only tasks that have updated norms and exclude unnormed tasks (version < 1)
   // isDistributionChartEnabled ensures there are in-progress/completed normed tasks
   const applicableTasks = tasks.filter(
-    ([taskId, version]) => taskId in updatedNormVersions && !(previouslyUnnormedTasks.includes(taskId) && version < 1),
+    ([taskId, version]) => taskId in updatedNormVersions && isTaskNormed(taskId, version),
   );
 
   const pickPath = (baseKey) => {
@@ -1580,8 +1580,13 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
   if (grade == null || grade === '' || Number.isNaN(Number(grade))) return path;
 
   if (parseInt(grade) < 6) {
-    const hasNoUpdatedNorms = applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
-    const hasAllUpdatedNorms = applicableTasks.every(([taskId, version]) => version >= updatedNormVersions[taskId]);
+    // Normalize undefined to null so both mean "no version recorded" and compare the same way.
+    const hasNoUpdatedNorms = applicableTasks.every(
+      ([taskId, version]) => (version ?? null) < updatedNormVersions[taskId],
+    );
+    const hasAllUpdatedNorms = applicableTasks.every(
+      ([taskId, version]) => (version ?? null) >= updatedNormVersions[taskId],
+    );
 
     if (hasAllUpdatedNorms) {
       path = pickPath('elementaryV2');

@@ -11,6 +11,7 @@ import {
   tasksToDisplayPercentCorrect,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
+  isTaskNormed,
   previouslyUnnormedTasks,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
@@ -170,12 +171,11 @@ const ScoreReportService = (() => {
 
   const getScoreDescription = (task, grade, i18n, scoringVersion) => {
     const taskName = taskDisplayNames[task.taskId]?.extendedName;
-    const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(task.taskId) && scoringVersion >= 1;
 
     // --- CHANGED: use safe wrapper instead of direct call ---
     const taskDescription = safeGetExtendedDescription(String(task.taskId));
 
-    if (tasksToDisplayPercentCorrect.includes(task.taskId) && !hasNewlyAddedNorms) {
+    if (tasksToDisplayPercentCorrect.includes(task.taskId) && !isTaskNormed(task.taskId, scoringVersion)) {
       return {
         keypath: 'scoreReports.percentageCorrectTaskDescription',
         slots: {
@@ -194,7 +194,7 @@ const ScoreReportService = (() => {
       };
     }
 
-    if (rawOnlyTasks.includes(task.taskId) && !hasNewlyAddedNorms) {
+    if (rawOnlyTasks.includes(task.taskId) && !isTaskNormed(task.taskId, scoringVersion)) {
       return {
         keypath: 'scoreReports.rawTaskDescription',
         slots: {
@@ -245,12 +245,11 @@ const ScoreReportService = (() => {
   };
 
   const getScoresArrayForTask = (task, scoringVersion) => {
-    const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(task.taskId) && scoringVersion >= 1;
     if (
       !rawOnlyTasks.includes(task.taskId) ||
       task.taskId === 'letter' ||
       task.taskId === 'letter-en-ca' ||
-      hasNewlyAddedNorms
+      isTaskNormed(task.taskId, scoringVersion)
     ) {
       return task.scoresArray;
     }
@@ -261,8 +260,7 @@ const ScoreReportService = (() => {
     // Unnormed tasks with individual score report cards (percentile field is set to percent correct)
     const alwaysDisplaysPercentile = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
 
-    const hasNewlyAddedNorms = previouslyUnnormedTasks.includes(taskId) && scoringVersion >= 1;
-    if (rawOnlyTasks.includes(taskId) && !hasNewlyAddedNorms) {
+    if (rawOnlyTasks.includes(taskId) && !isTaskNormed(taskId, scoringVersion)) {
       return SCORE_TYPES.RAW_SCORE;
     }
 
@@ -282,6 +280,8 @@ const ScoreReportService = (() => {
 
       let rawScore = null;
 
+      // Manual check (not isTaskNormed): this gates field extractability, not normed-display status,
+      // and must default true for unlisted tasks, unlike isTaskNormed's default-false.
       const hasNorms =
         (!previouslyUnnormedTasks.includes(taskId) || scoringVersions[taskId] >= 1) &&
         (!taskId.includes('es') || scoringVersions[taskId] >= 1);

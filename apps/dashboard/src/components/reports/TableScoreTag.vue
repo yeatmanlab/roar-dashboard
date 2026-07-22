@@ -44,7 +44,7 @@ import {
   subskillTasks,
   roamFluencySubskillHeaders,
   roamFluencyTasks,
-  previouslyUnnormedTasks,
+  isTaskNormed,
 } from '@/helpers/reports.js';
 
 defineProps({
@@ -103,7 +103,10 @@ function handleToolTip(_taskId, _toolTip, _colData) {
     _colData.scores?.[_taskId]?.numCorrect ||
     _colData.scores?.[_taskId]?.numIncorrect
   ) {
-    if (tasksToDisplayCorrectIncorrectDifference.includes(_taskId) && !_colData.scores?.[_taskId]?.scoringVersion) {
+    if (
+      tasksToDisplayCorrectIncorrectDifference.includes(_taskId) &&
+      !isTaskNormed(_taskId, _colData.scores?.[_taskId]?.scoringVersion)
+    ) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
       _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.correctIncorrectDifference + '\n';
@@ -138,7 +141,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       }
     } else if (
       tasksToDisplayPercentCorrect.includes(_taskId) &&
-      !(previouslyUnnormedTasks.includes(_taskId) && _colData.scores?.[_taskId]?.scoringVersion)
+      !isTaskNormed(_taskId, _colData.scores?.[_taskId]?.scoringVersion)
     ) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
@@ -152,7 +155,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
     } else if (
       rawOnlyTasks.includes(_taskId) &&
       _colData.scores?.[_taskId]?.rawScore !== undefined &&
-      !(previouslyUnnormedTasks.includes(_taskId) && _colData.scores?.[_taskId]?.scoringVersion)
+      !isTaskNormed(_taskId, _colData.scores?.[_taskId]?.scoringVersion)
     ) {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
     } else {
