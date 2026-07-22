@@ -1515,7 +1515,10 @@ const createExportData = ({ rows, includeProgress = false }) => {
         Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
           tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
         });
-      } else if (rawOnlyTasks.includes(taskId)) {
+      } else if (
+        rawOnlyTasks.includes(taskId) &&
+        !(previouslyUnnormedTasks.includes(taskId) && getScoringVersions.value[taskId] >= 1)
+      ) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
