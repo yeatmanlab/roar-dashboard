@@ -850,8 +850,8 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   const compositeScores = _get(assessment, 'scores.computed.composite');
   const gradeValue = getGrade(toValue(grade));
 
-  const percentile = getScoreValue(compositeScores, taskId, gradeValue, 'percentile', compositeScores?.scoringVersion);
-  const percentileString = getScoreValue(
+  let percentile = getScoreValue(compositeScores, taskId, gradeValue, 'percentile', compositeScores?.scoringVersion);
+  let percentileString = getScoreValue(
     compositeScores,
     taskId,
     gradeValue,
@@ -865,7 +865,7 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
     'standardScore',
     compositeScores?.scoringVersion,
   );
-  const rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore', compositeScores?.scoringVersion);
+  let rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore', compositeScores?.scoringVersion);
 
   if (
     (tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
