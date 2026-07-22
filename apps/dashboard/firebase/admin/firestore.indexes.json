@@ -999,6 +999,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.sre_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.swr",
           "order": "ASCENDING"
         },
@@ -1023,6 +1046,29 @@
         },
         {
           "fieldPath": "progress.swr_es",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.swr_pt",
           "order": "ASCENDING"
         },
         {
@@ -1705,6 +1751,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.pa_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.roar_readaloud",
           "order": "ASCENDING"
         },
@@ -1774,6 +1843,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.sre_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.swr",
           "order": "ASCENDING"
         },
@@ -1798,6 +1890,29 @@
         },
         {
           "fieldPath": "progress.swr_es",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.swr_pt",
           "order": "ASCENDING"
         },
         {
@@ -3027,6 +3142,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.sre_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.swr",
           "order": "ASCENDING"
         },
@@ -3051,6 +3189,29 @@
         },
         {
           "fieldPath": "progress.swr_es",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.swr_pt",
           "order": "ASCENDING"
         },
         {
@@ -3844,6 +4005,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.sre_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.swr",
           "order": "ASCENDING"
         },
@@ -3868,6 +4052,29 @@
         },
         {
           "fieldPath": "progress.swr_es",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.swr_pt",
           "order": "ASCENDING"
         },
         {
@@ -6975,6 +7182,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.pa_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.phonics",
           "order": "ASCENDING"
         },
@@ -7205,6 +7435,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.pa_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.phonics",
           "order": "ASCENDING"
         },
@@ -7413,6 +7666,29 @@
         },
         {
           "fieldPath": "progress.pa_es",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.pa_pt",
           "order": "ASCENDING"
         },
         {
@@ -7872,6 +8148,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.pa_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.families",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.phonics",
           "order": "ASCENDING"
         },
@@ -8033,6 +8332,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.sre_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.families",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.swr",
           "order": "ASCENDING"
         },
@@ -8057,6 +8379,29 @@
         },
         {
           "fieldPath": "progress.swr_es",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.families",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.swr_pt",
           "order": "ASCENDING"
         },
         {

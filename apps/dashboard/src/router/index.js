@@ -45,6 +45,13 @@ const routes = [
     meta: { pageTitle: 'SWR (ES)' },
   },
   {
+    path: GAME_ROUTES.SWR_PT,
+    name: 'SWR-PT',
+    component: () => import('../components/tasks/TaskSWR.vue'),
+    props: { taskId: 'swr-pt', language: 'pt' },
+    meta: { pageTitle: 'SWR (PT)' },
+  },
+  {
     path: GAME_ROUTES.PA,
     name: 'PA',
     component: () => import('../components/tasks/TaskPA.vue'),
@@ -59,6 +66,13 @@ const routes = [
     meta: { pageTitle: 'PA-ES' },
   },
   {
+    path: GAME_ROUTES.PA_PT,
+    name: 'PA-PT',
+    component: () => import('../components/tasks/TaskPA.vue'),
+    props: { taskId: 'pa-pt', language: 'pt' },
+    meta: { pageTitle: 'PA (PT)' },
+  },
+  {
     path: GAME_ROUTES.SRE,
     name: 'SRE',
     component: () => import('../components/tasks/TaskSRE.vue'),
@@ -71,6 +85,13 @@ const routes = [
     component: () => import('../components/tasks/TaskSRE.vue'),
     props: { taskId: 'sre-es', language: 'es' },
     meta: { pageTitle: 'SRE-ES' },
+  },
+  {
+    path: GAME_ROUTES.SRE_PT,
+    name: 'SRE-PT',
+    component: () => import('../components/tasks/TaskSRE.vue'),
+    props: { taskId: 'sre-pt', language: 'pt' },
+    meta: { pageTitle: 'SRE (PT)' },
   },
   {
     path: GAME_ROUTES.LETTER,
@@ -266,6 +287,17 @@ const routes = [
     meta: { pageTitle: 'SWR (ES)', permission: Permissions.Tasks.LAUNCH },
   },
   {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SWR_PT,
+    name: 'Launch SWR-PT',
+    component: () => import('../components/tasks/TaskSWR.vue'),
+    props: (route) => ({
+      taskId: 'swr-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'SWR (PT)', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.PA,
     name: 'Launch PA',
     component: () => import('../components/tasks/TaskPA.vue'),
@@ -291,6 +323,17 @@ const routes = [
     meta: { pageTitle: 'PA-ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.PA_PT,
+    name: 'Launch PA-PT',
+    component: () => import('../components/tasks/TaskPA.vue'),
+    props: (route) => ({
+      taskId: 'pa-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'PA-PT', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.SRE,
     name: 'Launch SRE',
     component: () => import('../components/tasks/TaskSRE.vue'),
@@ -311,6 +354,17 @@ const routes = [
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'SRE-ES', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
+    path: '/launch/:launchId' + GAME_ROUTES.SRE_PT,
+    name: 'Launch SRE-PT',
+    component: () => import('../components/tasks/TaskSRE.vue'),
+    props: (route) => ({
+      taskId: 'sre-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'SRE-PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: '/launch/:launchId' + GAME_ROUTES.LETTER,

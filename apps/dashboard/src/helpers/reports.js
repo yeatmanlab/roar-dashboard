@@ -383,6 +383,9 @@ export const excludeFromScoringTasks = [
   'roar-survey',
   'roav-mp',
   'roav-rvp',
+  'swr-pt',
+  'pa-pt',
+  'sre-pt',
   ...LEVANTE_TASK_IDS_NO_SCORES,
 ];
 

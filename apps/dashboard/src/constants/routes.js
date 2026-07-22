@@ -9,10 +9,13 @@
 export const GAME_ROUTES = {
   SWR: '/game/swr',
   SWR_ES: '/game/swr-es',
+  SWR_PT: '/game/swr-pt',
   PA: '/game/pa',
   PA_ES: '/game/pa-es',
+  PA_PT: '/game/pa-pt',
   SRE: '/game/sre',
   SRE_ES: '/game/sre-es',
+  SRE_PT: '/game/sre-pt',
   LETTER: '/game/letter',
   LETTER_ES: '/game/letter-es',
   LETTER_EN_CA: '/game/letter-en-ca',
