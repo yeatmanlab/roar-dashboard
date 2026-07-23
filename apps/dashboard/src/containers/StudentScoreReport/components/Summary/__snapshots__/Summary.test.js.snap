@@ -35,6 +35,7 @@ exports[`Summary.vue > snapshots > renders with different student name 1`] = `
     <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">s</strong></li>
   </ul>
   <p data-v-7eb30534="">Based on these results, Michael shows strong performance.</p>
+  <p data-v-7eb30534="">Compare results over time to track progress.</p>
 </section>"
 `;
 
@@ -106,6 +107,7 @@ exports[`Summary.vue > snapshots > renders with multiple tasks 1`] = `
     <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">s</strong></li>
   </ul>
   <p data-v-7eb30534="">Based on these results, Sarah shows strong performance.</p>
+  <p data-v-7eb30534="">Compare results over time to track progress.</p>
 </section>"
 `;
 
@@ -135,5 +137,6 @@ exports[`Summary.vue > snapshots > renders with single task 1`] = `
     <li data-v-7eb30534="" class="pb-1"><strong data-v-7eb30534="">g</strong></li>
   </ul>
   <p data-v-7eb30534="">Based on these results, John shows strong performance.</p>
+  <p data-v-7eb30534="">Compare results over time to track progress.</p>
 </section>"
 `;
