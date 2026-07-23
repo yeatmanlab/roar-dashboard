@@ -198,7 +198,7 @@ module.exports = async (env, args) => {
     case 'development':
       return merge(developmentConfig, envDependentConfig, devFirebaseConfig);
     case 'production':
-      return merge(productionConfig, envDependentConfig, devFirebaseConfig);
+      return merge(productionConfig, envDependentConfig);
     default:
       throw new Error('No matching configuration was found!');
   }
