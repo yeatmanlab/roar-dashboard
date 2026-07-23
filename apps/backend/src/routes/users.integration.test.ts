@@ -1374,7 +1374,7 @@ describe('GET /v1/users/:userId/administrations', () => {
         return new Map(tasks.map((t) => [t.variantId, t]));
       }
 
-      it("embeds the child target user's progress (run state), not the requesting guardian's", async () => {
+      it("embeds the child target user's task state (progress and assignment), not the requesting guardian's", async () => {
         const byVariant = await getGuardianEmbeddedTasks();
 
         expect(byVariant.get(progressVariant.id)?.progress).toEqual({
@@ -1382,10 +1382,6 @@ describe('GET /v1/users/:userId/administrations', () => {
           completedOn: childCompletedAt.toISOString(),
           allowRetake: false,
         });
-      });
-
-      it('embeds assigned/optional flags evaluated against the child target user, not the requesting guardian', async () => {
-        const byVariant = await getGuardianEmbeddedTasks();
 
         // The child's grade ('3') satisfies `grade == '3'` → assigned.
         expect(byVariant.get(assignedVariant.id)?.assigned).toBe(true);
