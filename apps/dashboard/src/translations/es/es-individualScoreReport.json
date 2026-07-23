@@ -14,6 +14,8 @@
     "completedTasks": "Este reporte incluye puntajes para las siguientes evaluaciones:",
     "roarSummary": "La Evaluación Rápida de Lectura en Línea (ROAR) evalúa a los estudiantes en una variedad de habilidades fundamentales de lectura.",
     "summary": "En este informe, encontrará la puntuación de {firstName} en el momento de la prueba, así como formas en que puede apoyar a {firstName} en su camino hacia la fluidez y comprensión lectora.",
+    "longitudinalNote": "The scores in the longitudinal charts represent runs using compatible scoring versions. If there are runs not shown here, their scoring versions are not directly comparable. See our {link} for details.",
+    "longitudinalLink": "Technical Manual",
     "taskTabHeader": "Comprender las puntuaciones",
     "taskIntro": "Las evaluaciones ROAR arrojan este tipo de puntuaciones:",
     "standardScore": "Puntuación Estándar",
