@@ -3226,6 +3226,7 @@ describe('AdministrationService', () => {
       const mockUser = UserFactory.build({ id: 'target-user-123' });
 
       mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockUserRepository.getUserEntityMemberships.mockResolvedValue([]);
       mockAuthorizationService.listAccessibleObjects
         .mockResolvedValueOnce(['admin-1', 'admin-2', 'admin-3'].map((id) => `administration:${id}`))
         .mockResolvedValueOnce(['admin-2', 'admin-3', 'admin-4'].map((id) => `administration:${id}`));
@@ -3325,6 +3326,7 @@ describe('AdministrationService', () => {
       const mockUser = UserFactory.build({ id: 'target-user-123' });
 
       mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockUserRepository.getUserEntityMemberships.mockResolvedValue([]);
       mockAuthorizationService.listAccessibleObjects
         .mockResolvedValueOnce(['admin-1', 'admin-2'].map((id) => `administration:${id}`))
         .mockResolvedValueOnce(['admin-3', 'admin-4'].map((id) => `administration:${id}`));
@@ -3395,6 +3397,7 @@ describe('AdministrationService', () => {
       const mockUser = UserFactory.build({ id: 'target-user-123' });
 
       mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockUserRepository.getUserEntityMemberships.mockResolvedValue([]);
       mockAuthorizationService.listAccessibleObjects
         .mockResolvedValueOnce([`administration:${mockAdmin.id}`])
         .mockResolvedValueOnce([`administration:${mockAdmin.id}`]);
@@ -5424,6 +5427,7 @@ describe('AdministrationService', () => {
       const mockAgreementRepo = createMockAgreementRepository();
 
       mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockUserRepository.getUserEntityMemberships.mockResolvedValue([]);
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
       mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
       mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
@@ -5467,6 +5471,7 @@ describe('AdministrationService', () => {
       const mockAgreementRepo = createMockAgreementRepository();
 
       mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockUserRepository.getUserEntityMemberships.mockResolvedValue([]);
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
       // Target user passes; requester is denied.
       mockAuthorizationService.requirePermission.mockResolvedValueOnce(undefined).mockRejectedValueOnce(
