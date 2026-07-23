@@ -188,17 +188,6 @@ const getOptionLabel = computed(() => {
 const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
 
-// Resolve the participant's ROAR (Postgres) user ID from the backend `/me`
-// endpoint. This is the identity the backend user, administrations, and
-// agreements endpoints expect — NOT the Firebase `roarUid`.
-//
-// NOTE: In proxy-launch mode (`props.launchId` set), `me.id` is the launching
-// user's ID, not the participant's. Resolving the participant's UUID for the
-// proxy path is handled by the separate proxy-launch change; the standard
-// student homepage path is unaffected.
-const { data: me } = useMeQuery({ enabled: initialized });
-const userId = computed(() => me.value?.id);
-
 // Participant profile from the backend (`GET /users/:id` → `mapUser`), replacing
 // the Firestore user-doc read — the last Firestore read on this page. Pass the
 // resolved Postgres `userId` (not `props.launchId`) and gate on it:
