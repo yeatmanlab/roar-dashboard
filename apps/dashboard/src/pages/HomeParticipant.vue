@@ -188,20 +188,6 @@ const getOptionLabel = computed(() => {
 const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
 
-// Participant profile from the backend (`GET /users/:id` → `mapUser`), replacing
-// the Firestore user-doc read — the last Firestore read on this page. Pass the
-// resolved Postgres `userId` (not `props.launchId`) and gate on it:
-// `useUserStudentDataQuery` falls back to the Firestore `roarUid` for a falsy
-// arg, which the backend would 404 on, so the query stays disabled until the
-// Postgres id is known.
-const {
-  isLoading: isLoadingUserData,
-  isFetching: isFetchingUserData,
-  data: userData,
-} = useUserStudentDataQuery(userId, {
-  enabled: computed(() => initialized.value && Boolean(userId.value)),
-});
-
 // Resolve the participant's ROAR (Postgres) user ID — the identity the
 // `GET /users/:userId/administrations` endpoint expects, NOT the Firebase
 // `roarUid`.
@@ -216,8 +202,22 @@ const {
 // Reading another user's administrations and agreements relies on the backend
 // guardian-read authorization (`can_read_child`); without it the parent-scoped
 // reads return 403.
-const { data: me } = useMeQuery({ enabled: initialized });
+const { data: me } = useMeQuery({ enabled: computed(() => initialized.value && !props.launchId) });
 const userId = computed(() => props.launchId ?? me.value?.id);
+
+// Participant profile from the backend (`GET /users/:id` → `mapUser`), replacing
+// the Firestore user-doc read — the last Firestore read on this page. Pass the
+// resolved Postgres `userId` (not `props.launchId`) and gate on it:
+// `useUserStudentDataQuery` falls back to the Firestore `roarUid` for a falsy
+// arg, which the backend would 404 on, so the query stays disabled until the
+// Postgres id is known.
+const {
+  isLoading: isLoadingUserData,
+  isFetching: isFetchingUserData,
+  data: userData,
+} = useUserStudentDataQuery(userId, {
+  enabled: computed(() => initialized.value && Boolean(userId.value)),
+});
 
 const {
   isLoading: isLoadingAssignments,
