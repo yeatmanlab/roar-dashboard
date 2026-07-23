@@ -1234,6 +1234,32 @@ describe('GET /v1/users/:userId/administrations', () => {
       expect(res.body.data).toHaveProperty('pagination');
     });
 
+    it('authorized guardian can list administrations for a child in their family', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+
+      const parent = await UserFactory.create({ dob: '1987-02-02' });
+      const child = await UserFactory.create({ dob: '2018-02-02', grade: '2' });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      await UserOrgFactory.create({
+        userId: child.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.STUDENT,
+      });
+
+      await syncFgaTuplesFromPostgres();
+
+      const res = await expectRoute('GET', `/v1/users/${child.id}/administrations`)
+        .as({ id: parent.id, authId: parent.authId! })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.items).toBeDefined();
+    });
+
     it('returns 401 when unauthenticated', async () => {
       const res = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}/administrations`)
         .unauthenticated()
@@ -1859,6 +1885,58 @@ describe('GET /v1/users/:userId/administrations', () => {
       // districtBStudent is in a different district from tiers.admin (who is in districtA)
       const res = await expectRoute('GET', `/v1/users/${baseFixture.districtBStudent.id}/administrations`)
         .as(tiers.admin)
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 403 when guardian tries to list administrations for a child from another family', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+
+      const parent = await UserFactory.create({ dob: '1988-03-03' });
+      const child = await UserFactory.create({ dob: '2019-03-03', grade: '1' });
+      const targetFamily = await FamilyFactory.create();
+      const unrelatedFamily = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: parent.id, familyId: unrelatedFamily.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: targetFamily.id, role: 'child' });
+
+      await UserOrgFactory.create({
+        userId: child.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.STUDENT,
+      });
+
+      await syncFgaTuplesFromPostgres();
+
+      const res = await expectRoute('GET', `/v1/users/${child.id}/administrations`)
+        .as({ id: parent.id, authId: parent.authId! })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 403 when a user with no guardian relation tries to list administrations for a child', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+
+      const parent = await UserFactory.create({ dob: '1991-07-07' });
+      const child = await UserFactory.create({ dob: '2020-07-07', grade: '1' });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      await UserOrgFactory.create({
+        userId: child.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.STUDENT,
+      });
+
+      await syncFgaTuplesFromPostgres();
+
+      const res = await expectRoute('GET', `/v1/users/${child.id}/administrations`)
+        .as({ id: parent.id, authId: parent.authId! })
         .toReturn(StatusCodes.FORBIDDEN);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
@@ -3019,6 +3097,32 @@ describe('GET /v1/users/:userId/administrations/:administrationId/agreements', (
       expect(res.body.data).toHaveProperty('pagination');
     });
 
+    it('authorized guardian can list agreements for a child in their family', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+
+      const parent = await UserFactory.create({ dob: '1989-04-04' });
+      const child = await UserFactory.create({ dob: '2020-04-04', grade: '1' });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      await UserOrgFactory.create({
+        userId: child.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.STUDENT,
+      });
+
+      await syncFgaTuplesFromPostgres();
+
+      const res = await expectRoute('GET', path(child.id, administrationId))
+        .as({ id: parent.id, authId: parent.authId! })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.items).toBeDefined();
+    });
+
     it('returns 404 when the target user does not exist', async () => {
       const res = await expectRoute('GET', path('00000000-0000-0000-0000-000000000000', administrationId))
         .as(tiers.superAdmin)
@@ -3043,6 +3147,58 @@ describe('GET /v1/users/:userId/administrations/:administrationId/agreements', (
       // middleware/FGA stack for the cross-user access path.
       const res = await expectRoute('GET', path(minorTarget.id, administrationId))
         .as({ id: baseFixture.districtBAdmin.id, authId: baseFixture.districtBAdmin.authId! })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 403 when guardian tries to list agreements for a child from another family', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+
+      const parent = await UserFactory.create({ dob: '1990-05-05' });
+      const child = await UserFactory.create({ dob: '2020-05-05', grade: '1' });
+      const targetFamily = await FamilyFactory.create();
+      const unrelatedFamily = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: parent.id, familyId: unrelatedFamily.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: targetFamily.id, role: 'child' });
+
+      await UserOrgFactory.create({
+        userId: child.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.STUDENT,
+      });
+
+      await syncFgaTuplesFromPostgres();
+
+      const res = await expectRoute('GET', path(child.id, administrationId))
+        .as({ id: parent.id, authId: parent.authId! })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 403 when a user with no guardian relation tries to list agreements for a child', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+
+      const parent = await UserFactory.create({ dob: '1991-06-06' });
+      const child = await UserFactory.create({ dob: '2020-06-06', grade: '1' });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      await UserOrgFactory.create({
+        userId: child.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.STUDENT,
+      });
+
+      await syncFgaTuplesFromPostgres();
+
+      const res = await expectRoute('GET', path(child.id, administrationId))
+        .as({ id: parent.id, authId: parent.authId! })
         .toReturn(StatusCodes.FORBIDDEN);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
