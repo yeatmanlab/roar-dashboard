@@ -1234,6 +1234,19 @@ describe('GET /v1/users/:userId/administrations', () => {
       expect(res.body.data).toHaveProperty('pagination');
     });
 
+    it('teacher can list administrations for users in their district', async () => {
+      // tiers.educator is a TEACHER at baseFixture.district.id (a supervisory
+      // role), so it should retain descendant access to schoolAStudent the
+      // same way tiers.admin does above — unaffected by the new guardian
+      // check, which only applies once the admin/teacher intersection is empty.
+      const res = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}/administrations`)
+        .as(tiers.educator)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data).toHaveProperty('items');
+      expect(res.body.data).toHaveProperty('pagination');
+    });
+
     it('authorized guardian can list administrations for a child in their family', async () => {
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
       const { FamilyFactory } = await import('../test-support/factories/family.factory');
@@ -3091,6 +3104,31 @@ describe('GET /v1/users/:userId/administrations/:administrationId/agreements', (
     it('super admin can list agreements for any user', async () => {
       const res = await expectRoute('GET', path(minorTarget.id, administrationId))
         .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data).toHaveProperty('items');
+      expect(res.body.data).toHaveProperty('pagination');
+    });
+
+    it('admin can list agreements for a user in their district', async () => {
+      // tiers.admin is an administrator at baseFixture.district.id, the same
+      // org the administration is assigned to and minorTarget is enrolled in —
+      // this exercises the admin/teacher intersection path directly, unaffected
+      // by the guardian check that only applies once that intersection is empty.
+      const res = await expectRoute('GET', path(minorTarget.id, administrationId))
+        .as(tiers.admin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data).toHaveProperty('items');
+      expect(res.body.data).toHaveProperty('pagination');
+    });
+
+    it('teacher can list agreements for a user in their district', async () => {
+      // tiers.educator is a TEACHER at baseFixture.district.id — a supervisory
+      // role — so it retains the same admin/teacher intersection access as
+      // tiers.admin above.
+      const res = await expectRoute('GET', path(minorTarget.id, administrationId))
+        .as(tiers.educator)
         .toReturn(StatusCodes.OK);
 
       expect(res.body.data).toHaveProperty('items');
