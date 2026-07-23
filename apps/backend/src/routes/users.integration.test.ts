@@ -1273,6 +1273,125 @@ describe('GET /v1/users/:userId/administrations', () => {
       expect(res.body.data.items).toBeDefined();
     });
 
+    describe('embed reflects the child target user, not the requesting guardian', () => {
+      // Shared fixture: one guardian/child pair and one administration with two
+      // task variants — a plain one (progress) and a conditionally-assigned one
+      // (assigned/optional) — seeded once so both assertions below reuse the same
+      // administration, task variants, and FGA sync instead of paying full setup
+      // cost per test.
+      let guardianEmbedAdmin: DbAdministration;
+      let progressVariant: DbTaskVariant;
+      let assignedVariant: DbTaskVariant;
+      let guardianChild: { id: string };
+      let guardianParent: { id: string; authId: string };
+
+      // Only the CHILD has a canonical run — the parent never touched this task.
+      // If the embed were accidentally keyed to the requester (the parent)
+      // instead of the target (the child), progress would come back null.
+      const childCompletedAt = new Date('2025-10-01T12:00:00.000Z');
+
+      beforeAll(async () => {
+        const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+        const { FamilyFactory } = await import('../test-support/factories/family.factory');
+        const { TaskFactory } = await import('../test-support/factories/task.factory');
+        const { TaskVariantFactory } = await import('../test-support/factories/task-variant.factory');
+        const { AdministrationTaskVariantFactory } =
+          await import('../test-support/factories/administration-task-variant.factory');
+        const { RunFactory } = await import('../test-support/factories/run.factory');
+        const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+
+        // The parent is an adult with no `grade` — if `assigned_if` were
+        // evaluated against the REQUESTER's demographics instead of the
+        // target child's, the assigned-variant assertion below would flip.
+        const parent = await UserFactory.create({ dob: '1986-07-07' });
+        const child = await UserFactory.create({ dob: '2017-07-07', grade: '3' });
+        guardianParent = { id: parent.id, authId: parent.authId! };
+        guardianChild = { id: child.id };
+
+        const family = await FamilyFactory.create();
+        await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+        await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+        await UserOrgFactory.create({ userId: child.id, orgId: baseFixture.district.id, role: UserRole.STUDENT });
+
+        guardianEmbedAdmin = await AdministrationFactory.create({
+          name: 'Guardian Embed Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: guardianEmbedAdmin.id,
+          orgId: baseFixture.district.id,
+        });
+        await writeFgaAdministrationAssignment(guardianEmbedAdmin.id, baseFixture.district.id, FgaType.DISTRICT);
+
+        const task = await TaskFactory.create({
+          name: 'Guardian Embed Task',
+          slug: `guardian-embed-${faker.string.alphanumeric(8).toLowerCase()}`,
+        });
+        [progressVariant, assignedVariant] = await Promise.all([
+          TaskVariantFactory.create({ taskId: task.id, name: 'Progress Variant' }),
+          TaskVariantFactory.create({ taskId: task.id, name: 'Assigned Variant' }),
+        ]);
+
+        const ASSIGNED_IF_GRADE_3: Condition = { field: 'studentData.grade', op: Operator.EQUAL, value: '3' };
+        await Promise.all([
+          AdministrationTaskVariantFactory.create({
+            administrationId: guardianEmbedAdmin.id,
+            taskVariantId: progressVariant.id,
+            orderIndex: 0,
+          }),
+          AdministrationTaskVariantFactory.create({
+            administrationId: guardianEmbedAdmin.id,
+            taskVariantId: assignedVariant.id,
+            orderIndex: 1,
+            conditionsAssignment: ASSIGNED_IF_GRADE_3,
+            conditionsRequirements: null,
+          }),
+        ]);
+
+        await RunFactory.create({
+          userId: child.id,
+          administrationId: guardianEmbedAdmin.id,
+          taskVariantId: progressVariant.id,
+          taskId: task.id,
+          useForReporting: true,
+          reliableRun: true,
+          completedAt: childCompletedAt,
+        });
+
+        await syncFgaTuplesFromPostgres();
+      });
+
+      async function getGuardianEmbeddedTasks(): Promise<Map<string, AdministrationTask>> {
+        const res = await expectRoute('GET', `/v1/users/${guardianChild.id}/administrations?embed=progress&perPage=100`)
+          .as(guardianParent)
+          .toReturn(StatusCodes.OK);
+
+        const item = res.body.data.items.find((i: Administration) => i.id === guardianEmbedAdmin.id);
+        if (!item) {
+          throw new Error('Expected the seeded guardian embed administration in the response');
+        }
+        const tasks = (item.tasks ?? []) as AdministrationTask[];
+        return new Map(tasks.map((t) => [t.variantId, t]));
+      }
+
+      it("embeds the child target user's progress (run state), not the requesting guardian's", async () => {
+        const byVariant = await getGuardianEmbeddedTasks();
+
+        expect(byVariant.get(progressVariant.id)?.progress).toEqual({
+          startedOn: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
+          completedOn: childCompletedAt.toISOString(),
+          allowRetake: false,
+        });
+      });
+
+      it('embeds assigned/optional flags evaluated against the child target user, not the requesting guardian', async () => {
+        const byVariant = await getGuardianEmbeddedTasks();
+
+        // The child's grade ('3') satisfies `grade == '3'` → assigned.
+        expect(byVariant.get(assignedVariant.id)?.assigned).toBe(true);
+      });
+    });
+
     it('returns 401 when unauthenticated', async () => {
       const res = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}/administrations`)
         .unauthenticated()
