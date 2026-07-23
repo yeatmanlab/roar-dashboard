@@ -443,7 +443,6 @@ export const includeReliabilityFlagsOnExport = [
   'Syntax',
   'Inference',
   'Morphology',
-  'Letter',
   'Written Vocab',
 ];
 
