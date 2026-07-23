@@ -156,7 +156,7 @@
 import { computed } from 'vue';
 import PvChart from 'primevue/chart';
 import { setDistributionChartData, setDistributionChartOptions } from '@/helpers/plotting';
-import { SCORE_SUPPORT_LEVEL_COLORS , SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
 import { descriptionsByTaskId } from '@/helpers/reports';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
