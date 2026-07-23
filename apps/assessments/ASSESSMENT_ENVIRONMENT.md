@@ -29,9 +29,11 @@ After that, `npm start` is all you need for day-to-day work. Everything else is 
 - **Docker** with Compose v2 (`docker compose version` should work). If you don't have it:
   - macOS: `brew install --cask docker`, then launch Docker Desktop (Compose v2 is bundled). Or download from https://www.docker.com/products/docker-desktop/.
   - Ubuntu/Debian: `curl -fsSL https://get.docker.com | sh`, then `sudo usermod -aG docker $USER` and log out/in so you can run Docker without `sudo`. See https://docs.docker.com/engine/install/ubuntu/ for the manual apt steps.
-- **Port 5433 free** — the ephemeral database publishes on host port **5433** by default (deliberately not the standard 5432), so it can run alongside a persistent platform-dev Postgres on 5432. If something already holds 5433, free it or set `ASSESSMENT_PG_PORT` to another port:
-  - Find it: `lsof -i :5433` (macOS) / `ss -tlnp | grep :5433` (Linux)
-  - Usual cause is a leftover assessment container: `docker ps | grep 5433`
+- **Stack host ports free** — the stack binds five host ports, and `npm start` refuses to launch while any of them is taken (it names the holder and how to free it):
+  - **5433** — the ephemeral database (deliberately not the standard 5432, so it can run alongside a persistent platform-dev Postgres on 5432). The only overridable port: `ASSESSMENT_PG_PORT=<port> npm start`.
+  - **9099 / 9199 / 9000** — the Firebase Auth emulator, Storage emulator, and Emulator UI. Note the platform dev stack also binds 9099, so the two stacks can't run at the same time.
+  - **4000** — the backend API.
+  - Find a holder yourself: `lsof -i :<port>` (macOS) / `ss -tlnp | grep :<port>` (Linux)
 
 ---
 
@@ -47,13 +49,13 @@ npm run setup
 It walks through four steps and finishes by pointing you at the next command:
 
 1. **Checks Docker** (Compose v2). If missing, prints install options and flags it as a blocker — but keeps going, since the remaining steps don't need Docker.
-2. **Checks the ephemeral Postgres host port is free** (`ASSESSMENT_PG_PORT`, default 5433). If it's taken, prints how to find the holder and flags it as a blocker.
+2. **Checks every host port the stack binds is free** — the database port (`ASSESSMENT_PG_PORT`, default 5433), the Firebase emulators (9099/9199/9000), and the backend (4000). Each taken port gets a diagnosis naming the holder and is flagged as a blocker.
 3. **Installs dependencies and builds the platform libraries** from the repo root (`api-contract`, `assessment-schema`, `scoring-tables`, `assessment-sdk`). The assessment dev server bundles these from their built output, so they must exist before the first start. This step can take a few minutes.
 4. **Creates `taskVariantParameters.json`** from the committed example (never overwrites an existing one — see [Configuring task variants](#configuring-task-variants)).
 
 Any Docker/port blocker is re-printed in a summary at the end so you resolve it before starting. Once setup is happy, run `npm start`.
 
-> Docker and the Postgres host port are **checked but not required** to finish setup — install/build/copy all run regardless, so you can prep the repo now and sort out Docker later.
+> Docker and the host ports are **checked but not required** to finish setup — install/build/copy all run regardless, so you can prep the repo now and sort out Docker later.
 
 ---
 
@@ -88,7 +90,7 @@ A few things follow from the stack being shared and persistent:
 
 - **Switching back needs no re-seed.** Seeding is additive and the database persists — it survives Ctrl+C; only `npm stop` / `npm restart` wipe it. Once an assessment is seeded, returning to it is just Ctrl+C → `cd` → `npm start`.
 - **Runs from both assessments coexist** in the same database — handy for cross-assessment work.
-- **No full `npm run setup` needed.** The platform libraries are built once at the repo root and shared, so only the per-assessment `taskVariantParameters.json` (and its seed) is assessment-specific. Running `setup` mid-switch would also spuriously flag port 5433 as "in use" — that's your own running stack.
+- **No full `npm run setup` needed.** The platform libraries are built once at the repo root and shared, so only the per-assessment `taskVariantParameters.json` (and its seed) is assessment-specific. Running `setup` mid-switch would also spuriously flag the stack's ports as "in use" — that's your own running stack.
 - **If you fully stopped the stack** (`npm stop`) between assessments, skip step 3: the next `npm start` brings the stack up fresh and auto-seeds whichever assessment you start it from.
 
 ---
@@ -227,7 +229,9 @@ The environment doesn't need to be stopped first — the rebuild only updates th
 
 ## Troubleshooting
 
-**"Port 5433 is already in use."** Something is holding the ephemeral database's host port — usually a leftover assessment container (`docker ps | grep 5433`) or, rarely, another service. Stop it, or run with a different port: `ASSESSMENT_PG_PORT=<port> npm start`.
+**"Port 5433 is already in use."** Something is holding the ephemeral database's host port — the error names the holder. Stop it, or run with a different port: `ASSESSMENT_PG_PORT=<port> npm start`.
+
+**"Port 9099 / 9199 / 9000 / 4000 is already in use."** Another service is holding a Firebase emulator, Emulator UI, or backend port — most commonly the ROAR platform dev stack, which also binds 9099. These ports aren't overridable: stop the holder (the error names it; for the platform stack, `docker compose down` from the repo root), then `npm start`.
 
 **"Port 8000 is already in use."** A previous dev server (or another assessment) is still running. Stop that process, then `npm start`.
 
