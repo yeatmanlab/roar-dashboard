@@ -288,17 +288,14 @@ const isGameRequiresRetake = (game) => {
   return game?.allowRetake === true && implementsValidityChecking(game.taskId);
 };
 
-const isGameInProgress = (game) => {
-  return game.startedOn && !game.completedOn;
-};
-
 const isGameCompleted = (game) => {
   return game.completedOn && (game?.allowRetake !== true || !implementsValidityChecking(game.taskId));
 };
 
 const setGameTabTextColor = (game) => {
   return {
-    'text-yellow-600': isGameRequiresRetake(game) || isGameInProgress(game),
+    'text-yellow-600': isGameRequiresRetake(game) || (game.startedOn && !game.completedOn),
+    'text-gray-500': !game.startedOn && !isGameRequiresRetake(game),
     'text-green-500': isGameCompleted(game),
     'bg-white': isGameCompleted(game),
   };
