@@ -88,13 +88,16 @@ print_docker_install_help() {
 # common culprits, in order: the platform dev stack, a local process, or another
 # Docker container. (env-up force-removes stale assessment containers before its
 # port check, so those rarely reach this diagnosis.)
+# Callers run under set -euo pipefail, so every probe here is failure-tolerant
+# (|| true): a dead Docker daemon or a missing lsof must degrade the diagnosis,
+# not abort the calling script mid-check.
 # Usage: diagnose_port_conflict 5433
 diagnose_port_conflict() {
   local port="$1"
 
   # A Docker container publishing the port? Compose labels tell us which stack.
   local container project
-  container="$(docker ps --filter "publish=${port}" --format '{{.Names}}' 2>/dev/null | head -1)"
+  container="$(docker ps --filter "publish=${port}" --format '{{.Names}}' 2>/dev/null | head -1 || true)"
   if [[ -n "$container" ]]; then
     project="$(docker inspect --format '{{index .Config.Labels "com.docker.compose.project"}}' "$container" 2>/dev/null || true)"
     case "$project" in
@@ -129,7 +132,7 @@ diagnose_port_conflict() {
   fi
 
   local proc
-  proc="$(lsof -i ":${port}" -sTCP:LISTEN 2>/dev/null | awk 'NR==2 {print $1 " (pid " $2 ")"}')"
+  proc="$(lsof -i ":${port}" -sTCP:LISTEN 2>/dev/null | awk 'NR==2 {print $1 " (pid " $2 ")"}' || true)"
   if [[ -n "$proc" ]]; then
     echo "  Held by: ${proc}. Stop that process and retry." >&2
   else
