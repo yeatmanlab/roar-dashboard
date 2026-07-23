@@ -164,6 +164,13 @@ const routes = [
     meta: { pageTitle: 'ROAM-ARF ES' },
   },
   {
+    path: GAME_ROUTES.FLUENCY_ARF_PT,
+    name: 'Fluency-ARF-PT',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: { taskId: 'fluency-arf-pt', language: 'pt' },
+    meta: { pageTitle: 'ROAM-ARF PT' },
+  },
+  {
     path: GAME_ROUTES.FLUENCY_CALF,
     name: 'Fluency-CALF',
     component: () => import('../components/tasks/TaskRoam.vue'),
@@ -178,6 +185,13 @@ const routes = [
     meta: { pageTitle: 'ROAM-CALF ES' },
   },
   {
+    path: GAME_ROUTES.FLUENCY_CALF_PT,
+    name: 'Fluency-CALF-PT',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: { taskId: 'fluency-calf-pt', language: 'pt' },
+    meta: { pageTitle: 'ROAM-CALF PT' },
+  },
+  {
     path: GAME_ROUTES.ROAM_ALPACA,
     name: 'Fluency-Alpaca',
     component: () => import('../components/tasks/TaskRoam.vue'),
@@ -190,6 +204,13 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'roam-alpaca-es', language: 'es' },
     meta: { pageTitle: 'ROAM-Alpaca ES' },
+  },
+  {
+    path: GAME_ROUTES.ROAM_ALPACA_PT,
+    name: 'Fluency-Alpaca-PT',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: { taskId: 'roam-alpaca-pt', language: 'pt' },
+    meta: { pageTitle: 'ROAM-Alpaca PT' },
   },
   {
     path: GAME_ROUTES.CORE_TASKS,
@@ -466,6 +487,17 @@ const routes = [
     meta: { pageTitle: 'ROAM-ARF ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_ARF_PT,
+    name: 'Launch Fluency-ARF-PT',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-arf-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'ROAM-ARF PT', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_CALF,
     name: 'Launch Fluency-CALF',
     component: () => import('../components/tasks/TaskRoam.vue'),
@@ -488,6 +520,17 @@ const routes = [
     meta: { pageTitle: 'ROAM-CALF ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_CALF_PT,
+    name: 'Launch Fluency-CALF-PT',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-calf-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'ROAM-CALF PT', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAM_ALPACA,
     name: 'Launch Fluency-Alpaca',
     component: () => import('../components/tasks/TaskRoam.vue'),
@@ -508,6 +551,17 @@ const routes = [
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-Alpaca ES', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAM_ALPACA_PT,
+    name: 'Launch Fluency-Alpaca-PT',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'roam-alpaca-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'ROAM-Alpaca PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.CORE_TASKS,

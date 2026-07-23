@@ -386,6 +386,9 @@ export const excludeFromScoringTasks = [
   'swr-pt',
   'pa-pt',
   'sre-pt',
+  'fluency-arf-pt',
+  'fluency-calf-pt',
+  'roam-alpaca-pt',
   ...LEVANTE_TASK_IDS_NO_SCORES,
 ];
 

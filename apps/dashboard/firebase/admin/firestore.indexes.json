@@ -792,6 +792,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.fluency_arf_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.fluency_calf",
           "order": "ASCENDING"
         },
@@ -816,6 +839,29 @@
         },
         {
           "fieldPath": "progress.fluency_calf_es",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.fluency_calf_pt",
           "order": "ASCENDING"
         },
         {
@@ -1567,6 +1613,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.fluency_arf_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.fluency_calf",
           "order": "ASCENDING"
         },
@@ -1591,6 +1660,29 @@
         },
         {
           "fieldPath": "progress.fluency_calf_es",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.fluency_calf_pt",
           "order": "ASCENDING"
         },
         {
@@ -2843,6 +2935,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.fluency_arf_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.fluency_calf",
           "order": "ASCENDING"
         },
@@ -2867,6 +2982,29 @@
         },
         {
           "fieldPath": "progress.fluency_calf_es",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.fluency_calf_pt",
           "order": "ASCENDING"
         },
         {
@@ -3706,6 +3844,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.fluency_arf_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.fluency_calf",
           "order": "ASCENDING"
         },
@@ -3730,6 +3891,29 @@
         },
         {
           "fieldPath": "progress.fluency_calf_es",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.fluency_calf_pt",
           "order": "ASCENDING"
         },
         {
@@ -6998,6 +7182,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.roam_alpaca_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.roar_inference",
           "order": "ASCENDING"
         },
@@ -7229,6 +7436,29 @@
         },
         {
           "fieldPath": "progress.roam_alpaca",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.roam_alpaca_pt",
           "order": "ASCENDING"
         },
         {
@@ -7504,6 +7734,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.roam_alpaca_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.roar_inference",
           "order": "ASCENDING"
         },
@@ -7735,6 +7988,29 @@
         },
         {
           "fieldPath": "progress.roam_alpaca",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.roam_alpaca_pt",
           "order": "ASCENDING"
         },
         {
@@ -7918,6 +8194,29 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "progress.fluency_arf_pt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.families",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "progress.fluency_calf",
           "order": "ASCENDING"
         },
@@ -7942,6 +8241,29 @@
         },
         {
           "fieldPath": "progress.fluency_calf_es",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.families",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.fluency_calf_pt",
           "order": "ASCENDING"
         },
         {
@@ -8195,6 +8517,29 @@
         },
         {
           "fieldPath": "progress.roam_alpaca",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.families",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "progress.roam_alpaca_pt",
           "order": "ASCENDING"
         },
         {
