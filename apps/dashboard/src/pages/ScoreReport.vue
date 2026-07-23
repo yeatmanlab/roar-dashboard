@@ -51,76 +51,35 @@
               v-if="
                 !isLoadingAssignments && !isLoadingDistrictSupportCategories && sortedAndFilteredTaskIds?.length > 0
               "
-              class="py-3 mb-2 text-left bg-gray-100"
+              class="py-3 mb-2 text-left"
             >
-              <div class="overview-wrapper">
-                <div class="chart-wrapper">
-                  <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
-                    <div class="distribution-overview-wrapper">
-                      <DistributionChartOverview
-                        :runs="
-                          props.orgType === 'district'
-                            ? aggregatedDistrictSupportCategories[taskId]
-                            : computeAssignmentAndRunData.runsByTaskId[taskId]
-                        "
-                        :initialized="initialized"
-                        :task-id="taskId"
-                        :org-type="props.orgType"
-                        :org-id="props.orgId"
-                        :administration-id="props.administrationId"
-                      />
-                      <div className="task-description mt-3">
-                        <span class="font-bold">
-                          {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
-                        </span>
-                        <span class="font-light">
-                          {{
-                            descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : ''
-                          }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ScoreDistributionOverview
+                :task-ids="sortedAndFilteredTaskIds"
+                :runs-by-task-id="runsByTaskIdForDistributionChart"
+                :org-type="props.orgType"
+                :tasks-dictionary="tasksDictionary"
+              />
+              <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
               <div
-                v-if="!isLoadingAssignments && sortedAndFilteredTaskIds?.length > 0"
-                class="flex rounded legend-container flex-column align-items-center"
+                v-if="
+                  !isLoadingAssignments &&
+                  sortedAndFilteredTaskIds?.length > 0 &&
+                  !isEmptyDistrictSupportCategories &&
+                  props.orgType === 'district'
+                "
+                class="flex rounded flex-column align-items-center mt-3"
               >
-                <div class="flex align-items-center">
-                  <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.BELOW};`" />
-                    <div>
-                      <div>Needs Extra Support</div>
-                    </div>
-                  </div>
-                  <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.SOME};`" />
-                    <div>
-                      <div>Developing Skill</div>
-                    </div>
-                  </div>
-                  <div class="legend-entry">
-                    <div class="circle" :style="`background-color: ${SCORE_SUPPORT_LEVEL_COLORS.ABOVE};`" />
-                    <div>
-                      <div>Achieved Skill</div>
-                    </div>
-                  </div>
-                </div>
-                <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
-                <div v-if="!isEmptyDistrictSupportCategories && props.orgType === 'district'">
-                  <p
-                    v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
-                    class="text-center text-sm font-bold px-4"
-                  >
-                    In this district-level report, visualizations are available for foundational ROAR assessments (Word,
-                    Sentence, and Phoneme) to give you clear, reliable insights on these foundational skills.
-                  </p>
-                  <p class="text-center align-items-center text-sm font-bold px-4">
-                    View school-level or classroom-level reports to see student-level data and information about other
-                    assessments.
-                  </p>
-                </div>
+                <p
+                  v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
+                  class="text-center text-sm font-bold px-4"
+                >
+                  In this district-level report, visualizations are available for foundational and comprehension
+                  assessments to give you clear, reliable insights on these skills.
+                </p>
+                <p class="text-center align-items-center text-sm font-bold px-4">
+                  View school-level or classroom-level reports to see student-level data and information about other
+                  assessments.
+                </p>
               </div>
             </div>
             <div
@@ -130,8 +89,8 @@
               <p class="text-center text-sm font-bold px-4">
                 {{
                   assignedNormedTaskIds.length === 0
-                    ? 'In this district-level report, visualizations are only available for foundational ROAR assessments (Word, Sentence, and Phoneme). None of these are currently assigned within your district.'
-                    : 'Visualizations will appear once students complete Word, Sentence, and/or Phoneme assessments.'
+                    ? 'Visualizations are only available for foundational reading and comprehension assessments. If visualizations are not showing, your students were not assigned any of these assessments.'
+                    : 'Visualizations will appear once students complete our foundational or comprehension assessments.'
                 }}
               </p>
               <p class="text-center align-items-center text-sm font-bold px-4">
@@ -259,6 +218,7 @@
             :page-limit="pageLimit"
             :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
+            :task-scoring-versions="getScoringVersions"
             test-id="score-report__data-table"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
@@ -439,8 +399,8 @@ import { getTitle } from '@/helpers/query/administrations';
 import {
   taskDisplayNames,
   taskInfoById,
-  descriptionsByTaskId,
   getSupportLevel,
+  getFoundationalCompositeSupportLevel,
   tasksToDisplayGraphs,
   rawOnlyTasks,
   tasksToDisplayPercentCorrect,
@@ -458,12 +418,14 @@ import {
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
+  isTaskNormed,
+  previouslyUnnormedTasks,
 } from '@/helpers/reports';
 import { i18n } from '@/translations/i18n';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
 import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
-import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
+import { CSV_EXPORT_STATIC_COLUMNS, CSV_EXPORT_COMPOSITE_SCORE_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '@/constants/levanteTasks';
@@ -471,9 +433,10 @@ import _startCase from 'lodash/startCase';
 import AppDialog from '@/components/Dialog/Dialog.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { getStudentExternalId } from '@/helpers/getStudentExternalId';
+import ScoreDistributionOverview from '@/components/reports/ScoreDistributionOverview.vue';
 const { userCan, Permissions } = usePermissions();
 
-let TaskReport, DistributionChartOverview;
+let TaskReport;
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -606,7 +569,9 @@ const handleExportToPdf = async () => {
   // Add At a Glance Charts and report header to the PDF
   const atAGlanceCharts = document.getElementById('at-a-glance-charts');
   if (atAGlanceCharts !== null) {
+    atAGlanceCharts.classList.add('pdf-export-mode');
     yCounter = await addElementToPdf(atAGlanceCharts, doc, yCounter);
+    atAGlanceCharts.classList.remove('pdf-export-mode');
   }
 
   // Initialize to first tab
@@ -831,8 +796,8 @@ const isEmptyDistrictSupportCategories = computed(() => {
 });
 
 const assignedTaskIds = computed(() => administrationData.value?.assessments?.map((task) => task.taskId));
-// Currently do not want to show swr-es and sre-es pi charts
-const assignedNormedTaskIds = computed(() => assignedTaskIds.value.filter((id) => ['swr', 'sre', 'pa'].includes(id)));
+
+const assignedNormedTaskIds = computed(() => assignedTaskIds.value.filter((id) => tasksToDisplayGraphs.includes(id)));
 
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
@@ -849,8 +814,9 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
     } else if (support_level === 'Achieved Skill' && engagementFlagExists) {
       return '#c0d9bd';
     } else if (
-      tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
-      tasksToDisplayPercentCorrect.includes(assessment.taskId)
+      (tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
+        tasksToDisplayPercentCorrect.includes(assessment.taskId)) &&
+      !isTaskNormed(assessment.taskId, getScoringVersions.value[assessment.taskId])
     ) {
       const test = assessment.scores?.raw?.composite?.test;
       const tasksWithUndefinedPercentCorrect = ['swr-es', 'letter', 'letter-es', 'morphology', 'phonics'];
@@ -881,16 +847,28 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
   const compositeScores = _get(assessment, 'scores.computed.composite');
   const gradeValue = getGrade(toValue(grade));
 
-  let percentile = getScoreValue(compositeScores, taskId, gradeValue, 'percentile');
-  let percentileString = getScoreValue(compositeScores, taskId, gradeValue, 'percentileDisplay');
-  let standardScore = getScoreValue(compositeScores, taskId, gradeValue, 'standardScore');
-  let rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore');
+  let percentile = getScoreValue(compositeScores, taskId, gradeValue, 'percentile', compositeScores?.scoringVersion);
+  let percentileString = getScoreValue(
+    compositeScores,
+    taskId,
+    gradeValue,
+    'percentileDisplay',
+    compositeScores?.scoringVersion,
+  );
+  const standardScore = getScoreValue(
+    compositeScores,
+    taskId,
+    gradeValue,
+    'standardScore',
+    compositeScores?.scoringVersion,
+  );
+  let rawScore = getScoreValue(compositeScores, taskId, gradeValue, 'rawScore', compositeScores?.scoringVersion);
 
   if (
-    (tasksToDisplayPercentCorrect.includes(assessment.taskId) &&
-      !(taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) ||
-    tasksToDisplayTotalCorrect.includes(taskId) ||
-    tasksToDisplayGradeEstimate.includes(assessment.taskId)
+    (tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
+      tasksToDisplayTotalCorrect.includes(taskId) ||
+      tasksToDisplayGradeEstimate.includes(assessment.taskId)) &&
+    !isTaskNormed(taskId, getScoringVersions.value[taskId])
   ) {
     if (assessment.scores === undefined) {
       support_level = null;
@@ -967,15 +945,17 @@ const computedProgressData = computed(() => {
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
 const computeAssignmentAndRunData = computed(() => {
   if (props.orgType === 'district') {
-    return { assignmentTableData: [], runsByTaskId: {} };
+    return { assignmentTableData: [], runsByTaskId: {}, compositeFoundationalRuns: [] };
   }
   if (!assignmentData.value || assignmentData.value.length === 0) {
-    return { assignmentTableData: [], runsByTaskId: {} };
+    return { assignmentTableData: [], runsByTaskId: {}, compositeFoundationalRuns: [] };
   } else {
     // assignmentTableData is an array of objects, each representing a row in the table
     const assignmentTableDataAcc = [];
     // runsByTaskId is an object with keys as taskIds and values as arrays of scores
     const runsByTaskIdAcc = {};
+    // compositeFoundationalRunsAcc holds a support-level run per assignment with a foundational composite score
+    const compositeFoundationalRunsAcc = [];
 
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
@@ -1017,7 +997,11 @@ const computeAssignmentAndRunData = computed(() => {
           orgType: props.orgType,
           userId: user.userId,
         },
-        compositeScore: assignment.compositeScore ?? null,
+        // Overwritten below with foundational composite support-category data when available.
+        compositeScore:
+          assignment.compositeScore != null
+            ? { rawScore: assignment.compositeScore, percentile: null, displayValue: assignment.compositeScore }
+            : null,
         startDate:
           assignment.assessments.reduce((earliest, assessment) => {
             if (!earliest) return assessment.startedOn;
@@ -1126,8 +1110,8 @@ const computeAssignmentAndRunData = computed(() => {
 
           Object.assign(currRowScores[taskId], { numCorrect, numAttempted, percentCorrect, scoringVersion });
 
-          // Only assign these values for swr-es if unnormed score
-          if (assessment.taskId !== 'swr-es' || !scoringVersion) {
+          // Applies only to unnormed scores. Scores are considered normed when scoringVersion >= 1
+          if (!isTaskNormed(taskId, getScoringVersions.value[taskId])) {
             currRowScores[taskId].tagColor = percentCorrect === null ? 'transparent' : tagColor;
             scoreFilterTags += ' Assessed ';
             // @TODO: Remove after decoupling the percentile returned by getScoreValue from the individual score report.
@@ -1297,6 +1281,44 @@ const computeAssignmentAndRunData = computed(() => {
         }
       }
 
+      // Logic to update compositeFoundationalRunsAcc and the row's composite score / support category
+      if (assignment.foundationalComposite) {
+        const { support_level: compositeSupportLevel, tag_color: compositeTagColor } =
+          getFoundationalCompositeSupportLevel(grade, assignment.foundationalComposite);
+
+        const compositeRawScore = assignment.foundationalComposite.roarScore ?? null;
+        const compositeStandard = assignment.foundationalComposite.standardScore ?? null;
+        let compositePercentile = assignment.foundationalComposite.percentile;
+        // Check for null or undefined values, only round if the score is not a string.
+        if (compositePercentile != null) {
+          if (typeof compositePercentile !== 'string') compositePercentile = _round(compositePercentile);
+        } else compositePercentile = null;
+
+        currRow.compositeScore = {
+          rawScore: compositeRawScore,
+          percentile: compositePercentile,
+          standardScore: compositeStandard,
+          displayValue: compositePercentile ?? compositeRawScore,
+          supportLevel: compositeSupportLevel,
+          tagColor: compositeTagColor,
+        };
+
+        compositeFoundationalRunsAcc.push({
+          grade: getGrade(grade),
+          scores: {
+            support_level: compositeSupportLevel,
+            stdPercentile: assignment.foundationalComposite.percentile ?? null,
+            rawScore: compositeRawScore,
+          },
+          taskId: 'compositeFoundational',
+          user: {
+            grade,
+            schoolName: schoolsDictWithGrade.value[schoolId] ?? '0 Unknown School',
+          },
+          tag_color: compositeTagColor,
+        });
+      }
+
       // update scores for current row with computed object
       currRow.scores = currRowScores;
       currRow.numAssessmentsCompleted = numAssessmentsCompleted;
@@ -1349,8 +1371,24 @@ const computeAssignmentAndRunData = computed(() => {
       }
     }
 
-    return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
+    return {
+      runsByTaskId: filteredRunsByTaskId,
+      assignmentTableData: assignmentTableDataAcc,
+      compositeFoundationalRuns: compositeFoundationalRunsAcc,
+    };
   }
+});
+
+// runsByTaskId for the ScoreDistributionOverview chart, including the foundational composite score
+// (kept separate from computeAssignmentAndRunData.runsByTaskId since 'compositeFoundational' is not a real taskId
+// and would break taskId-keyed logic like sortedTaskIds and CSV export).
+const runsByTaskIdForDistributionChart = computed(() => {
+  if (props.orgType === 'district') return aggregatedDistrictSupportCategories.value;
+
+  const { runsByTaskId, compositeFoundationalRuns } = computeAssignmentAndRunData.value;
+  if (!compositeFoundationalRuns?.length) return runsByTaskId;
+
+  return { ...runsByTaskId, compositeFoundational: compositeFoundationalRuns };
 });
 
 // This composable manages the data which is passed into the FilterBar component slot for filtering
@@ -1398,7 +1436,7 @@ const viewOptions = ref([
  */
 
 const createExportData = ({ rows, includeProgress = false }) => {
-  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate }) => {
+  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate, compositeScore }) => {
     let tableRow = {
       Username: user?.username,
       Email: user?.email, // This will only be used when exporting all rows
@@ -1414,6 +1452,13 @@ const createExportData = ({ rows, includeProgress = false }) => {
     tableRow['Start Date'] = startDate ? new Date(startDate).toLocaleDateString('en-US') : null;
     tableRow['Completion Date'] = completionDate ? new Date(completionDate).toLocaleDateString('en-US') : null;
 
+    if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+      tableRow['Composite Score - Percentile'] = compositeScore?.percentile;
+      tableRow['Composite Score - Standard'] = compositeScore?.standardScore;
+      tableRow['Composite Score - Raw'] = compositeScore?.rawScore;
+      tableRow['Composite Score - Support Level'] = compositeScore?.supportLevel;
+    }
+
     if (props.orgType === 'district') {
       tableRow['School'] = user?.schoolName;
     }
@@ -1427,16 +1472,13 @@ const createExportData = ({ rows, includeProgress = false }) => {
       const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
 
       // Add task-specific score information
-      if (
-        tasksToDisplayPercentCorrect.includes(taskId) &&
-        !(taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)
-      ) {
+      if (tasksToDisplayPercentCorrect.includes(taskId) && !isTaskNormed(taskId, getScoringVersions.value[taskId])) {
         tableRow[`${taskName} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (
         tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-        !(getScoringVersions.value[taskId] >= 1)
+        !isTaskNormed(taskId, getScoringVersions.value[taskId])
       ) {
         tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
@@ -1469,7 +1511,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
         Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
           tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
         });
-      } else if (rawOnlyTasks.includes(taskId)) {
+      } else if (rawOnlyTasks.includes(taskId) && !isTaskNormed(taskId, getScoringVersions.value[taskId])) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
@@ -1579,6 +1621,10 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
 
   // Define the static columns
   const staticColumns = [...CSV_EXPORT_STATIC_COLUMNS];
+
+  if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+    staticColumns.push(...CSV_EXPORT_COMPOSITE_SCORE_COLUMNS);
+  }
 
   if (orgData.value?.clever === true) {
     staticColumns.push('State ID');
@@ -1868,11 +1914,19 @@ const scoreReportColumns = computed(() => {
   }
   if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
     tableColumns.push({
-      field: 'compositeScore',
+      field:
+        viewMode.value === 'raw'
+          ? 'compositeScore.rawScore'
+          : viewMode.value === 'standard'
+            ? 'compositeScore.standardScore'
+            : 'compositeScore.displayValue',
       header: 'Composite Score',
       dataType: 'text',
       sort: true,
-      hidden: true,
+      hidden: false,
+      tag: viewMode.value !== 'color',
+      emptyTag: viewMode.value === 'color',
+      tagColor: 'compositeScore.tagColor',
       headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
     });
   }
@@ -1931,19 +1985,19 @@ const scoreReportColumns = computed(() => {
       colField = `scores.${taskId}.percentile`;
     } else if (
       viewMode.value === 'standard' &&
-      (!tasksToDisplayPercentCorrect.includes(taskId) ||
-        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
-      !tasksToDisplayTotalCorrect.includes(taskId) &&
-      !tasksToDisplayGradeEstimate.includes(taskId)
+      ((!tasksToDisplayPercentCorrect.includes(taskId) &&
+        !tasksToDisplayTotalCorrect.includes(taskId) &&
+        !tasksToDisplayGradeEstimate.includes(taskId)) ||
+        isTaskNormed(taskId, getScoringVersions.value[taskId]))
     ) {
       colField = `scores.${taskId}.standardScore`;
     } else if (
       viewMode.value === 'raw' &&
-      !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      (!tasksToDisplayPercentCorrect.includes(taskId) ||
-        (taskId === 'swr-es' && getScoringVersions.value[taskId] >= 1)) &&
-      !tasksToDisplayTotalCorrect.includes(taskId) &&
-      !tasksToDisplayGradeEstimate.includes(taskId)
+      ((!tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+        !tasksToDisplayPercentCorrect.includes(taskId) &&
+        !tasksToDisplayTotalCorrect.includes(taskId) &&
+        !tasksToDisplayGradeEstimate.includes(taskId)) ||
+        isTaskNormed(taskId, getScoringVersions.value[taskId]))
     ) {
       colField = `scores.${taskId}.rawScore`;
     } else {
@@ -2011,7 +2065,19 @@ const sortedTaskIds = computed(() => {
       return [];
     }
 
-    return Object.keys(aggregatedDistrictSupportCategories.value);
+    const categorizedTasks = Object.keys(aggregatedDistrictSupportCategories.value);
+    const assignedTaskIds = administrationData.value?.assessments?.map((a) => a.taskId) || [];
+
+    // Include tasks with data and any assigned normed tasks
+    const allTaskIds = new Set(categorizedTasks);
+
+    for (const taskId of assignedTaskIds) {
+      if (isTaskNormed(taskId, getScoringVersions.value[taskId])) {
+        allTaskIds.add(taskId);
+      }
+    }
+
+    return Array.from(allTaskIds);
   } else {
     const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
     const specialTaskIds = ['swr', 'sre', 'pa', 'phonics'].filter((id) => Object.keys(runsByTaskId).includes(id));
@@ -2028,18 +2094,37 @@ const sortedTaskIds = computed(() => {
 
 const sortedAndFilteredTaskIds = computed(() => {
   return sortedTaskIds.value?.filter((taskId) => {
-    return tasksToDisplayGraphs.includes(taskId);
+    if (!tasksToDisplayGraphs.includes(taskId)) return false;
+    return isTaskNormed(taskId, getScoringVersions.value[taskId]);
   });
 });
 
 const sortedAndFilteredSubscoreTaskIds = computed(() => {
   if (props.orgType === 'district') {
-    return sortedTaskIds.value?.filter((taskId) => {
-      return tasksToDisplayGraphs.includes(taskId);
-    });
+    const districtTasks = sortedAndFilteredTaskIds.value || [];
+
+    // Also include assigned tasks with scoring versions >= 1 that may not be in aggregated categories
+    const assignedTaskIds = administrationData.value?.assessments?.map((a) => a.taskId) || [];
+    const additionalTasks = assignedTaskIds.filter(
+      (taskId) =>
+        previouslyUnnormedTasks.includes(taskId) &&
+        isTaskNormed(taskId, getScoringVersions.value[taskId]) &&
+        !districtTasks.includes(taskId),
+    );
+
+    return [...districtTasks, ...additionalTasks].sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
   }
+  // Show all available subscore tables, including unnormed assessments like roam and phonics
+  // Some tasks require a scoring version to be available
   const availableTaskIds = Object.keys(computeAssignmentAndRunData.value?.runsByTaskId);
-  return availableTaskIds.sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
+  return availableTaskIds
+    .filter((taskId) => {
+      if (previouslyUnnormedTasks.includes(taskId)) {
+        return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
+      }
+      return true;
+    })
+    .sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
 });
 
 let unsubscribe;
@@ -2057,7 +2142,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(async () => {
   TaskReport = (await import('@/components/reports/tasks/TaskReport.vue')).default;
-  DistributionChartOverview = (await import('@/components/reports/DistributionChartOverview.vue')).default;
   if (roarfirekit.value.restConfig?.()) refresh();
 });
 </script>

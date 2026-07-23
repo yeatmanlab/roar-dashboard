@@ -310,18 +310,48 @@ export function getExtendedDescription(taskId) {
  *  A map to correlate taskId with a proper header and description for use in the distribution graphs.
  */
 export const descriptionsByTaskId = {
-  // "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
+  letter: {
+    header: 'Letter Names and Sounds',
+    description: ' assesses knowledge of letter names and sounds.',
+  },
   pa: {
-    header: 'ROAR-Phonological Awareness',
+    header: 'Phonological Awareness',
     description: ' measures the ability to hear and manipulate the individual sounds within words.',
   },
   swr: {
-    header: 'ROAR-Single Word Recognition',
+    header: 'Single Word Recognition',
     description: ' assesses decoding skills at the word level.',
   },
   sre: {
-    header: 'ROAR-Sentence Reading Efficiency',
+    header: 'Sentence Reading Efficiency',
     description: ' assesses reading fluency at the sentence level.',
+  },
+  'swr-es': {
+    header: 'Palabra (Spanish Single Word Recognition)',
+    description: ' assesses decoding skills at the word level in Spanish.',
+  },
+  'sre-es': {
+    header: 'Frase (Spanish Sentence Reading Efficiency)',
+    description: ' assesses reading fluency at the sentence level in Spanish.',
+  },
+  morphology: {
+    header: 'Morphology',
+    description:
+      ' measures morphological awareness - through their knowledge of how prefixes and suffixes affect the meaning and function of words in a sentence.',
+  },
+  cva: {
+    header: 'Written Vocabulary',
+    description: ' measures synonym knowledge in the context of a sentence.',
+  },
+  trog: {
+    header: 'Syntax',
+    description:
+      ' measures receptive comprehension of English syntax - how word order, phrases, and clauses contribute to meaning.',
+  },
+  'roar-inference': {
+    header: 'Inference',
+    description:
+      ' measures the ability to draw conclusions and make meaning beyond explicitly stated information in a paragraph.',
   },
 };
 
@@ -354,13 +384,30 @@ export const includedValidityFlags = {
   'sre-es': ['incomplete', 'responseTimeTooFast'],
   swr: ['responseTimeTooFast', 'notEnoughResponses'], // adding 'notEnoughResponses' for SWR since there is no current flag in the game to mark as incomplete like SRE does
   'swr-es': ['responseTimeTooFast', 'notEnoughResponses'],
+  // letter does not have engagementFlags
+  letter: [],
+  morphology: ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
+  cva: ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
+  'roar-inference': ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
+  trog: ['notEnoughResponses', 'accuracyTooLowAndResponseTimeTooFast'],
 };
 
 /*
  *  Tasks to Display Graphs
  *  A list of tasks who, when included in a score report, will generate breakdown graphs.
  */
-export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
+export const tasksToDisplayGraphs = [
+  'swr',
+  'sre',
+  'pa',
+  'letter',
+  'morphology',
+  'cva',
+  'trog',
+  'roar-inference',
+  'swr-es',
+  'sre-es',
+];
 
 /*
  *  Raw Only Tasks
@@ -389,8 +436,18 @@ export const excludeFromScoringTasks = [
   ...LEVANTE_TASK_IDS_NO_SCORES,
 ];
 
-// TODO: Add newly normed tasks after fixing exported data
-export const includeReliabilityFlagsOnExport = ['Word', 'Letter', 'Phoneme', 'Sentence', 'Palabra', 'Frase'];
+export const includeReliabilityFlagsOnExport = [
+  'Word',
+  'Letter',
+  'Phoneme',
+  'Sentence',
+  'Palabra',
+  'Frase',
+  'Syntax',
+  'Inference',
+  'Morphology',
+  'Written Vocab',
+];
 
 /*
  *  Tasks to Display Percent Correct
@@ -456,6 +513,7 @@ export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
  *  Colors corresponding to each support level.
  */
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
+import { SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
 
 export const progressTags = {
   Optional: {
@@ -629,6 +687,12 @@ export const updatedNormVersions = {
   trog: 1, // syntax
 };
 
+export const isTaskNormed = (taskId, scoringVersion = null) => {
+  // Tasks that were returning normed scores before scoringVersion field was introduced
+  const unversionedNormedTasks = ['swr', 'sre', 'pa'];
+  return unversionedNormedTasks.includes(taskId) || (previouslyUnnormedTasks.includes(taskId) && scoringVersion >= 1);
+};
+
 function getOrdinalSuffix(n) {
   const { locale } = useI18n();
   // If the active language is Spanish, just use º
@@ -738,16 +802,15 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       tag_color: undefined,
     };
   }
-
   /**
    * scoringVersion >= 1 returns normed scores for the following tasks in tasksToDisplayPercentCorrect: letter, swr-es, morphology, cva, roar-inference
    */
   if (
-    ((tasksToDisplayPercentCorrect.includes(taskId) &&
-      !(previouslyUnnormedTasks.includes(taskId) && scoringVersion >= 1)) ||
-      tasksToDisplayTotalCorrect.includes(taskId)) &&
-    tasksToDisplayGradeEstimate.includes(taskId) &&
-    rawScore !== undefined
+    (tasksToDisplayPercentCorrect.includes(taskId) ||
+      tasksToDisplayTotalCorrect.includes(taskId) ||
+      tasksToDisplayGradeEstimate.includes(taskId)) &&
+    rawScore !== undefined &&
+    !isTaskNormed(taskId, scoringVersion)
   ) {
     return {
       support_level: 'Raw Score',
@@ -799,6 +862,75 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     support_level,
     tag_color,
   };
+};
+
+// Grades for which the foundational composite score is evaluated using raw score instead of percentile.
+// Mirrors the cutoff logic in roar-firebase-functions' aggregateFoundationalCompositeScores.
+const FOUNDATIONAL_COMPOSITE_RAW_SCORE_GRADE_CUTOFF = 6;
+const FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF = 40;
+const FOUNDATIONAL_COMPOSITE_PERCENTILE_DEVELOPING_CUTOFF = 20;
+const FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF = 487;
+const FOUNDATIONAL_COMPOSITE_RAW_SCORE_DEVELOPING_CUTOFF = 447;
+
+/**
+ * Computes the support level for a user's foundational composite score, mirroring the cutoff logic
+ * used by roar-firebase-functions' aggregateFoundationalCompositeScores for district-level reports.
+ *
+ * @param {string|number} grade - The grade level of the student (e.g., 'K', '1', 6).
+ * @param {{percentile?: number, roarScore?: number, thetaEstimate?: number}} foundationalComposite - The assignment's foundational composite score object.
+ * @returns {{support_level: string|null, tag_color: string|null}} The computed support level and tag color.
+ */
+export const getFoundationalCompositeSupportLevel = (grade, foundationalComposite) => {
+  let support_level = null;
+  let tag_color = null;
+
+  if (!foundationalComposite) {
+    return { support_level, tag_color };
+  }
+
+  const gradeLevel = getGrade(grade);
+  const useRawScore = !Number.isFinite(gradeLevel) || FOUNDATIONAL_COMPOSITE_RAW_SCORE_GRADE_CUTOFF <= gradeLevel;
+
+  if (!useRawScore) {
+    let percentile = sanitizeScoreValue(foundationalComposite.percentile);
+    if (percentile === null || percentile === undefined) {
+      return { support_level, tag_color };
+    }
+
+    if (percentile >= FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF) {
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
+    } else if (
+      percentile > FOUNDATIONAL_COMPOSITE_PERCENTILE_DEVELOPING_CUTOFF &&
+      percentile < FOUNDATIONAL_COMPOSITE_PERCENTILE_ACHIEVE_CUTOFF
+    ) {
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
+    } else {
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
+    }
+  } else {
+    let rawScore = sanitizeScoreValue(foundationalComposite.roarScore);
+    if (rawScore === null || rawScore === undefined) {
+      return { support_level, tag_color };
+    }
+    if (rawScore >= FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF) {
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.ABOVE;
+    } else if (
+      rawScore > FOUNDATIONAL_COMPOSITE_RAW_SCORE_DEVELOPING_CUTOFF &&
+      rawScore < FOUNDATIONAL_COMPOSITE_RAW_SCORE_ACHIEVE_CUTOFF
+    ) {
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.SOME;
+    } else {
+      support_level = SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT;
+      tag_color = SCORE_SUPPORT_LEVEL_COLORS.BELOW;
+    }
+  }
+
+  return { support_level, tag_color };
 };
 
 export function getTagColor(supportLevel) {
@@ -873,20 +1005,44 @@ const SCORE_FIELD_MAPPINGS = {
   },
   pa: {
     percentile: {
-      new: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentile'),
-      legacy: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentile'),
+      new: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'percentile';
+        return gradeLevel < 6 ? 'percentile' : 'sprPercentile';
+      },
+      legacy: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'percentile';
+        return gradeLevel < 6 ? 'percentile' : 'sprPercentile';
+      },
     },
     percentileDisplay: {
-      new: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentileString'),
-      legacy: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentileString'),
+      new: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'percentile';
+        return gradeLevel < 6 ? 'percentile' : 'sprPercentileString';
+      },
+      legacy: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'percentile';
+        return gradeLevel < 6 ? 'percentile' : 'sprPercentileString';
+      },
     },
     standardScore: {
-      new: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScore'),
-      legacy: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScore'),
+      new: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'standardScore';
+        return gradeLevel < 6 ? 'standardScore' : 'sprStandardScore';
+      },
+      legacy: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'standardScore';
+        return gradeLevel < 6 ? 'standardScore' : 'sprStandardScore';
+      },
     },
     standardScoreDisplay: {
-      new: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString'),
-      legacy: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      new: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'standardScore';
+        return gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString';
+      },
+      legacy: (gradeLevel, scoringVersion) => {
+        if (scoringVersion >= 5) return 'standardScore';
+        return gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString';
+      },
     },
     rawScore: {
       new: 'roarScore',
@@ -1008,12 +1164,12 @@ const SCORE_FIELD_MAPPINGS = {
       legacy: 'totalPercentCorrect',
     },
     standardScore: {
-      new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
+      new: undefined,
+      legacy: undefined,
     },
     standardScoreDisplay: {
-      new: 'totalPercentCorrect',
-      legacy: 'totalPercentCorrect',
+      new: undefined,
+      legacy: undefined,
     },
     rawScore: {
       new: 'totalCorrect',
@@ -1111,15 +1267,16 @@ const SCORE_FIELD_MAPPINGS = {
 };
 
 /**
- * Resolves field name based on task, grade, and field type
+ * Resolves field name based on task, grade, scoring version, and field type
  * @param {string} taskId - The task identifier
  * @param {number} grade - The grade level
  * @param {string} fieldType - The type of field (percentile, standardScore, etc.)
  * @param {boolean} isLegacy - Whether to use legacy field names
+ * @param {number} scoringVersion - Optional scoring version for version-dependent field names
  * @see ./SCORE_FIELD_MIGRATION_GUIDE.md
  * @returns {string|undefined} The resolved field name
  */
-function resolveFieldName(taskId, grade, fieldType, isLegacy = false) {
+function resolveFieldName(taskId, grade, fieldType, isLegacy = false, scoringVersion = null) {
   if (!ALLOWED_SCORE_FIELD_TYPES.includes(fieldType)) {
     throw new Error(`Invalid fieldType. Expected one of ${ALLOWED_SCORE_FIELD_TYPES.join(', ')}, but got ${fieldType}`);
   }
@@ -1132,12 +1289,25 @@ function resolveFieldName(taskId, grade, fieldType, isLegacy = false) {
   const fieldMapping = taskMapping[fieldType];
   const fieldName = isLegacy ? fieldMapping.legacy : fieldMapping.new;
 
-  // Handle function-based field names (grade-dependent)
+  // Handle function-based field names (grade-dependent and/or version-dependent)
   if (typeof fieldName === 'function') {
-    return fieldName(grade);
+    return fieldName(grade, scoringVersion);
   }
 
   return fieldName;
+}
+
+/**
+ * Takes a score value possibly including < or >,
+ * returns a number stripped of the extra characters.
+ * @param {string | number} scoreValue
+ * @returns { number }
+ */
+export function sanitizeScoreValue(scoreValue) {
+  if (typeof scoreValue === 'string' && /[<>]/.test(scoreValue)) {
+    scoreValue = parseFloat(scoreValue.replace(/[<>]/g, ''));
+  }
+  return scoreValue;
 }
 
 /**
@@ -1146,10 +1316,11 @@ function resolveFieldName(taskId, grade, fieldType, isLegacy = false) {
  * @param {string} taskId - The task identifier
  * @param {number} grade - The grade level
  * @param {string} fieldType - The type of field to access
+ * @param {number} scoringVersion - Optional scoring version for version-dependent field names
  * @see ./SCORE_FIELD_MIGRATION_GUIDE.md
  * @returns {*} The score value or undefined if not found
  */
-export function getScoreValue(scoresObject, taskId, grade, fieldType) {
+export function getScoreValue(scoresObject, taskId, grade, fieldType, scoringVersion = null) {
   if (!scoresObject || !taskId || fieldType === undefined) {
     return undefined;
   }
@@ -1157,21 +1328,17 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
   const gradeValue = toValue(grade);
 
   // Try new field name first
-  const newFieldName = resolveFieldName(taskId, gradeValue, fieldType, false);
+  const newFieldName = resolveFieldName(taskId, gradeValue, fieldType, false, scoringVersion);
   if (newFieldName && scoresObject[newFieldName] !== undefined) {
     let scoreValue = scoresObject[newFieldName];
-    if (
-      (fieldType === 'percentile' || fieldType === 'standardScore') &&
-      typeof scoreValue === 'string' &&
-      /[<>]/.test(scoreValue)
-    ) {
-      scoreValue = parseFloat(scoreValue.replace(/[<>]/g, ''));
+    if (fieldType === 'percentile' || fieldType === 'standardScore') {
+      scoreValue = sanitizeScoreValue(scoreValue);
     }
     return scoreValue;
   }
 
   // Fall back to legacy field name
-  const legacyFieldName = resolveFieldName(taskId, gradeValue, fieldType, true);
+  const legacyFieldName = resolveFieldName(taskId, gradeValue, fieldType, true, scoringVersion);
   if (legacyFieldName && scoresObject[legacyFieldName] !== undefined) {
     return scoresObject[legacyFieldName];
   }
@@ -1201,8 +1368,8 @@ export const getRawScoreThreshold = (taskId, scoringVersion = null) => {
   } else if (taskId === 'sre') {
     if (scoringVersion >= 5) {
       return {
-        above: 483.5,
-        some: 420,
+        above: 487,
+        some: 427,
       };
     } else if (scoringVersion >= 4) {
       return {
@@ -1224,8 +1391,8 @@ export const getRawScoreThreshold = (taskId, scoringVersion = null) => {
   } else if (taskId === 'pa') {
     if (scoringVersion >= 4) {
       return {
-        above: 475.5,
-        some: 416.5,
+        above: 480,
+        some: 420,
       };
     }
     return {
@@ -1243,27 +1410,27 @@ export const getRawScoreThreshold = (taskId, scoringVersion = null) => {
     if (scoringVersion >= 1) {
       return {
         above: 527,
-        some: 463.5,
+        some: 467,
       };
     }
   } else if (taskId === 'cva') {
     if (scoringVersion >= 1) {
       return {
         above: 520,
-        some: 443.5,
+        some: 447,
       };
     }
   } else if (taskId === 'roar-inference') {
     if (scoringVersion >= 1) {
       return {
-        above: 530.5,
-        some: 467,
+        above: 533,
+        some: 473,
       };
     }
   } else if (taskId === 'trog') {
     if (scoringVersion >= 1) {
       return {
-        above: 543.5,
+        above: 540,
         some: 487,
       };
     }
@@ -1272,12 +1439,19 @@ export const getRawScoreThreshold = (taskId, scoringVersion = null) => {
 };
 
 export const getRawScoreRange = (taskId, scoringVersion = null) => {
-  if (taskId.includes('swr')) {
+  if (taskId === 'swr') {
     return {
       min: 100,
       max: 900,
     };
-  } else if (taskId.includes('letter')) {
+  } else if (taskId === 'swr-es') {
+    if (scoringVersion >= 1) {
+      return {
+        min: 100,
+        max: 900,
+      };
+    }
+  } else if (taskId === 'letter') {
     if (scoringVersion >= 1) {
       return {
         min: 0,
@@ -1288,13 +1462,13 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 90,
     };
-  } else if (taskId.includes('phonics')) {
+  } else if (taskId === 'phonics') {
     return {
       min: 0,
       max: 150,
     };
     //// PA v4 was skipped in production; v5 uses this range
-  } else if (taskId.includes('pa')) {
+  } else if (taskId === 'pa') {
     if (scoringVersion >= 4) {
       return {
         min: 40,
@@ -1305,7 +1479,7 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 57,
     };
-  } else if (taskId.includes('sre')) {
+  } else if (taskId === 'sre') {
     if (scoringVersion >= 5) {
       return {
         min: 300,
@@ -1316,52 +1490,60 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
       min: 0,
       max: 130,
     };
-  } else if (taskId.includes('morphology')) {
+  } else if (taskId === 'sre-es') {
+    if (scoringVersion >= 1) {
+      return {
+        min: 0,
+        max: 140,
+      };
+    }
+  } else if (taskId === 'morphology') {
     if (scoringVersion >= 1) {
       return {
         min: 280,
         max: 720,
       };
     }
+    // Percent
     return {
       min: 0,
-      max: 130,
+      max: 100,
     };
-  } else if (taskId.includes('cva')) {
-    // TODO: Delete one of the if statements after
+  } else if (taskId === 'cva') {
     if (scoringVersion >= 1) {
       return {
         min: 287,
         max: 753,
       };
     }
+    // Percent
     return {
       min: 0,
-      max: 130,
+      max: 100,
     };
-  } else if (taskId.includes('roar-inference')) {
-    // TODO: Delete one of the if statements
+  } else if (taskId === 'roar-inference') {
     if (scoringVersion >= 1) {
       return {
         min: 300,
         max: 793,
       };
     }
+    // Percent
     return {
-      min: 300,
-      max: 793,
+      min: 0,
+      max: 100,
     };
-  } else if (taskId.includes('trog')) {
+  } else if (taskId === 'trog') {
     if (scoringVersion >= 1) {
       return {
         min: 53,
         max: 800,
       };
     }
-    // TODO: Delete after developing normed task cards
+    // Percent
     return {
-      min: 53,
-      max: 800,
+      min: 0,
+      max: 100,
     };
   }
   return null;
@@ -1387,7 +1569,7 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
   // Filter to only tasks that have updated norms and exclude unnormed tasks (version < 1)
   // isDistributionChartEnabled ensures there are in-progress/completed normed tasks
   const applicableTasks = tasks.filter(
-    ([taskId, version]) => taskId in updatedNormVersions && !(previouslyUnnormedTasks.includes(taskId) && version < 1),
+    ([taskId, version]) => taskId in updatedNormVersions && isTaskNormed(taskId, version),
   );
 
   const pickPath = (baseKey) => {
@@ -1400,8 +1582,13 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
   if (grade == null || grade === '' || Number.isNaN(Number(grade))) return path;
 
   if (parseInt(grade) < 6) {
-    const hasNoUpdatedNorms = applicableTasks.every(([taskId, version]) => version < updatedNormVersions[taskId]);
-    const hasAllUpdatedNorms = applicableTasks.every(([taskId, version]) => version >= updatedNormVersions[taskId]);
+    // Normalize undefined to null so both mean "no version recorded" and compare the same way.
+    const hasNoUpdatedNorms = applicableTasks.every(
+      ([taskId, version]) => (version ?? null) < updatedNormVersions[taskId],
+    );
+    const hasAllUpdatedNorms = applicableTasks.every(
+      ([taskId, version]) => (version ?? null) >= updatedNormVersions[taskId],
+    );
 
     if (hasAllUpdatedNorms) {
       path = pickPath('elementaryV2');
@@ -1629,6 +1816,124 @@ export const taskInfoById = {
       'student-level and classroom-wide competencies so that instruction can be customized ' +
       'appropriately.',
   },
+  cva: {
+    header: '`ROAR - Written Vocabulary',
+    color: '#52627E',
+    subheader: 'CVA Assessment',
+    desc:
+      'Written Vocabulary evaluates a student’s knowledge of academic vocabulary through their ability to identify words with similar ' +
+      'meanings in context. Vocabulary knowledge is a critical component of reading comprehension, as students must understand the ' +
+      'meanings of individual words to make sense of increasingly complex texts. This assessment measures a student’s ability to ' +
+      'identify synonyms of words based on their meaning within a sentence, providing insight into their vocabulary knowledge. The ' +
+      'student’s score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting "Raw Score" on the table above. ' +
+      'Students in the pink category need support in developing academic vocabulary and understanding word meanings. Limited ' +
+      'vocabulary knowledge may make it more difficult for these students to comprehend grade-level texts and learn new academic ' +
+      'content. Students in the yellow category are continuing to develop their academic vocabulary and may benefit from additional ' +
+      'exposure to rich language and explicit vocabulary instruction. Students in the green category demonstrate vocabulary ' +
+      'knowledge that is likely sufficient to support comprehension of grade-level texts and continued growth in reading and learning.',
+  },
+  morphology: {
+    header: 'ROAR - Morphology',
+    color: '#52627E',
+    subheader: 'Morphology Assessment',
+    desc:
+      'Morphology measures a student’s ability to use morphological information, such as prefixes and suffixes, to signal the meaning ' +
+      'and grammatical function of words in a sentence. Morphological awareness supports reading comprehension by helping students to ' +
+      'build vocabulary through decoding and understand complex words. This assessment provides insight into the student’s understanding ' +
+      'of word structure and vocabulary. The student’s score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting ' +
+      '"Raw Score" on the table above. Students in the pink category need support in developing morphological awareness and understanding ' +
+      'how word parts contribute to meaning. Difficulties in this area may make it more challenging to understand unfamiliar vocabulary ' +
+      'and comprehend complex texts. Students in the yellow category are continuing to develop their understanding of morphological ' +
+      'structures and may benefit from additional practice with word formation and word meanings. Students in the green category demonstrate ' +
+      'morphological knowledge that is likely sufficient to support vocabulary growth, reading comprehension, and learning from complex text.',
+  },
+  'roar-inference': {
+    header: 'ROAR - Inference',
+    color: '#52627E',
+    subheader: 'Inference Assessment',
+    desc:
+      'Inference evaluates a student’s ability to make meaning beyond information that is explicitly stated in a text. The ability to ' +
+      'make inferences is an important component of reading comprehension, as readers must integrate statements in a passage with their ' +
+      'background knowledge to understand implied ideas, relationships, and intentions. This assessment measures a student’s ability to ' +
+      'answer questions that require inference-making based on short written passages, providing insight into their ability to make ' +
+      'connections between sentences within a text and between the text and their background knowledge. The student’s score will range ' +
+      "between {{RAW_SCORE_RANGE}} and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need " +
+      'support in developing inferential comprehension skills. Difficulties in this area may make it challenging to understand implied ' +
+      'meanings, connect ideas across a text, and fully comprehend grade-level reading materials. Students in the yellow category are ' +
+      'continuing to develop their ability to draw inferences from text and may benefit from additional practice identifying textual ' +
+      'evidence and using it to support conclusions. Students in the green category demonstrate inferential comprehension skills that ' +
+      'are likely sufficient to support successful understanding of grade-level texts and continued growth in reading comprehension.',
+  },
+  trog: {
+    header: 'ROAR - Syntax',
+    color: '#52627E',
+    subheader: 'TROG Assessment',
+    desc:
+      'Syntax evaluates a student’s understanding of English sentence structure and how grammatical relationships contribute to meaning. ' +
+      'Syntactic knowledge supports reading comprehension by helping students interpret how word order, phrases, and clauses work together ' +
+      'to convey ideas within a sentence. This assessment measures a student’s ability to use syntactic structures to understand meaning ' +
+      'in context, providing insight into their comprehension of English language structures. The student’s score will range between ' +
+      "{{RAW_SCORE_RANGE}} and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in " +
+      'developing syntactic knowledge and understanding how sentence structure contributes to meaning. Difficulties in this area may make ' +
+      'it more challenging to comprehend complex texts, follow multi-clause sentences, and interpret relationships between ideas. Students ' +
+      'in the yellow category are continuing to develop their understanding of English syntax and may benefit from additional exposure to ' +
+      'and practice with increasingly complex sentence structures. Students in the green category demonstrate syntactic knowledge that is ' +
+      'likely sufficient to support comprehension of grade-level texts and continued growth in reading and academic learning.',
+  },
+  'swr-es': {
+    color: '#E97A49',
+    header: 'ROAR - PALABRA',
+    subheader: 'Single Word Recognition (Spanish)',
+    desc:
+      "ROAR - Palabra evaluates a student's ability to quickly and automatically recognize individual words in Spanish. " +
+      "To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between " +
+      "{{RAW_SCORE_RANGE}} and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in " +
+      'Spanish word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. ' +
+      'Students in grades K-5 in the pink category have Spanish word-level decoding skills below 20% of their peers in the same grade level in monolingual, Spanish-speaking Latin American educational contexts. ' +
+      'Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level in the same context. ' +
+      'Students in the yellow category are still developing their individual word decoding skills and will likely benefit from further practice and support in foundational reading skills. ' +
+      'Students in grades K-5 in the yellow category have Spanish word-level decoding skills below 40% of their peers. ' +
+      'For those students in grades 6-12 in the yellow category, their word-level decoding skills are between a third and fifth grade-level. ' +
+      'Students of all grade levels in the green category demonstrate that word-level decoding is supporting them towards fluency and comprehension of connected text in Spanish.',
+    definitions: [
+      {
+        header: 'WHAT IS DECODING',
+        desc: 'Decoding refers to the ability to sound out and recognize words by associating individual letters or groups of letters with their corresponding sounds. It involves applying knowledge of letter-sound relationships to read words accurately and fluently.',
+      },
+      {
+        header: 'WHAT IS AUTOMATICITY?',
+        desc: 'Automaticity refers to the ability to read words quickly and accurately without having to think about each letter or sound. It allows readers to focus more on understanding what they are reading instead of getting stuck on individual words.',
+      },
+    ],
+  },
+  'sre-es': {
+    color: '#92974C',
+    header: 'ROAR - FRASE',
+    subheader: 'Sentence Reading Efficiency (Spanish)',
+    desc:
+      'ROAR - Frase examines silent reading fluency and comprehension for individual sentences in Spanish. ' +
+      "To become fluent readers, students need to decode words accurately and read sentences smoothly. Poor fluency can make it harder for students to understand what they're reading. " +
+      "Students who don't receive support for their basic reading skills may find it challenging to improve their overall reading ability. " +
+      'This assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties with decoding words accurately or reading slowly and with effort. ' +
+      "The student's score will range between {{RAW_SCORE_RANGE}} and can be viewed by selecting 'Raw Score' on the table above. " +
+      'Students in the pink category need support in Spanish sentence-reading efficiency to support growth in reading comprehension. ' +
+      'Students in grades K-5 in the pink category have Spanish sentence-reading efficiency skills below 20% of their peers in the same grade level in monolingual, Spanish-speaking Latin American educational contexts. ' +
+      'Students in grades 6-12 in the pink category have sentence-reading efficiency skills below a third-grade level in the same context. ' +
+      'Students in the yellow category are still developing their sentence-reading efficiency skills and will benefit from focused reading practice. ' +
+      'Students in grades K-5 in the yellow category have Spanish sentence-reading efficiency skills below 40% of their peers. ' +
+      'For those students in grades 6-12 in the yellow category, their sentence-reading efficiency skills are between a third and fifth grade-level. ' +
+      'Students of all grade-levels in the green category demonstrate that sentence-reading efficiency is not a barrier in their reading in Spanish.',
+    definitions: [
+      {
+        header: 'WHAT IS FLUENCY?',
+        desc: 'Fluency refers to the ability of a student to read text effortlessly, accurately, and with appropriate expression. It involves the skills of decoding words, recognizing sight words, and understanding the meaning of the text. Fluent readers demonstrate a smooth and natural reading pace, which enhances their overall comprehension and enjoyment of reading.',
+      },
+      {
+        header: 'HOW DO THESE SKILLS RELATE TO THE OTHER ROAR ASSESSMENTS?',
+        desc: 'ROAR-Sentence Reading Efficiency builds upon fundamental decoding and phonological awareness skills that are present in the ROAR-Word and ROAR-Phonological Awareness assessments. Therefore, if a student needs support with phonological awareness and single word recognition, then it is likely that they will struggle with the reading fluency skills measured by ROAR-Sentence Reading Efficiency.',
+      },
+    ],
+  },
 };
 
 // Then create a function to populate the template
@@ -1636,7 +1941,6 @@ export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   if (!desc) return '';
 
   let editedDesc = desc;
-  // Only process desc field if it contains placeholders
   if (desc.includes('{{RAW_SCORE_RANGE}}')) {
     const range = getRawScoreRange(taskId, scoringVersion);
     editedDesc = editedDesc.replace('{{RAW_SCORE_RANGE}}', `${range?.min}-${range?.max}`);

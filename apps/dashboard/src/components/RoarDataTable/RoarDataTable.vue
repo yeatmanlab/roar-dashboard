@@ -178,7 +178,7 @@
               </template>
               <template #body="{ data: colData }">
                 <!-- If column is a score field, use a dedicated component to render tags and scores -->
-                <div v-if="col.field && col.field?.split('.')[0] === 'scores'">
+                <div v-if="col.field && ['scores', 'compositeScore'].includes(col.field?.split('.')[0])">
                   <TableScoreTag :col-data="colData" :col="col" />
                 </div>
                 <div v-else-if="col.dataType == 'progress'">
@@ -485,7 +485,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _uniq from 'lodash/uniq';
-import { progressTags } from '@/helpers/reports';
+import { progressTags, replaceScoreRange, previouslyUnnormedTasks, getRawScoreRange } from '@/helpers/reports';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
@@ -540,6 +540,7 @@ const props = defineProps({
   },
   groupheaders: { type: Boolean, default: false },
   testId: { type: String, default: 'roar-data-table' },
+  taskScoringVersions: { type: Object, required: false, default: () => ({}) },
 });
 
 const inputColumns = ref(props.columns);
@@ -711,20 +712,66 @@ const resetFilters = () => {
 
 let toolTipByHeader = (header) => {
   const headerToTooltipMap = {
-    'ROAR - Word':
-      'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
-    'ROAR - Letter':
-      'Assesses knowledge of letter names and sounds. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-48 or 0-90, depending on diagnostic length',
-    'ROAR - Phoneme':
-      'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57',
-    'ROAR - Sentence':
-      'Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-130 ',
-    'ROAR - Palabra':
-      'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
+    'ROAR - Word': {
+      taskId: 'swr',
+      desc: 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
+    },
+    'ROAR - Letter': {
+      taskId: 'letter',
+      desc: 'Assesses knowledge of letter names and sounds. \n\n Percentile ranges from 0-99 \n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
+    'ROAR - Phoneme': {
+      taskId: 'pa',
+      desc: 'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
+    'ROAR - Sentence': {
+      taskId: 'sre',
+      desc: 'Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
+    'ROAR - Palabra': {
+      taskId: 'swr-es',
+      desc: 'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
+    },
+    'ROAR - Frase': {
+      taskId: 'sre-es',
+      desc: 'Assesses reading fluency at the sentence level in Spanish. This test is still in the research phase. \n\n Percentile ranges from 0-99 \n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
+    'ROAR - Morphology': {
+      taskId: 'morphology',
+      desc: 'Measures morphological awareness through knowledge of how prefixes and suffixes affect the meaning and function of words in a sentence. \n\n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
+    'ROAR - Written Vocab': {
+      taskId: 'cva',
+      desc: 'Measures synonym knowledge in the context of a sentence. \n\n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
+    'ROAR - Syntax': {
+      taskId: 'trog',
+      desc: 'Measures receptive comprehension of English syntax - how word order, phrases, and clauses contribute to meaning. \n\n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
+    'ROAR - Inference': {
+      taskId: 'roar-inference',
+      desc: 'Measures the ability to draw conclusions and make meaning beyond explicitly stated information in a paragraph. \n\n Raw Score ranges from {{RAW_SCORE_RANGE}}',
+    },
     Report: 'Individual Score Report',
   };
 
-  return headerToTooltipMap[header] || '';
+  if (!headerToTooltipMap[header]) {
+    return '';
+  }
+
+  if (typeof headerToTooltipMap[header] === 'string') {
+    return headerToTooltipMap[header];
+  }
+
+  const { taskId, desc } = headerToTooltipMap[header];
+
+  if (previouslyUnnormedTasks.includes(taskId)) {
+    const hasRawScoreRange = getRawScoreRange(taskId, props.taskScoringVersions[taskId]);
+    // Return only description (1st sentence) if raw score range is not available
+    if (!hasRawScoreRange) return desc.split('.')[0];
+  }
+
+  return replaceScoreRange(desc, taskId, props.taskScoringVersions[taskId]);
 };
 
 // Generate list of options given a column
