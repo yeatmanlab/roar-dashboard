@@ -1,7 +1,7 @@
 {
   "name": "@roar-platform/roar-sre",
   "description": "Sentence Reading Efficiency — a timed comprehension assessment for ROAR",
-  "version": "3.1.0",
+  "version": "3.2.4",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
