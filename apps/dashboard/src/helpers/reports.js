@@ -430,6 +430,16 @@ export const excludeFromScoringTasks = [
   'roar-survey',
   'roav-mp',
   'roav-rvp',
+  'swr-pt',
+  'pa-pt',
+  'sre-pt',
+  'fluency-arf-pt',
+  'fluency-calf-pt',
+  'roam-alpaca-pt',
+  'roav-mp-pt',
+  'roav-rvp-pt',
+  'symbol-search',
+  'symbol-search-pt',
   ...LEVANTE_TASK_IDS_NO_SCORES,
 ];
 
