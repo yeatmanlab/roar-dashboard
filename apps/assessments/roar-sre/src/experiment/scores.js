@@ -451,7 +451,7 @@ export class RoarScores {
           const rawScore = Math.max(score[SRE_SUBTASK_DOMAINS.AI_V1_P1].sreScore, 0);
           const aiRow = this.aiLookupTable.find((row) => row.rawScore === rawScore && row.form === 'aiP1');
           if (!aiRow) throw new Error(`Missing AI equating row for form aiP1, rawScore ${rawScore}`);
-          return aiRow.sreScore;
+          if (aiRow) return aiRow.sreScore;
         }
         if (score[SRE_SUBTASK_DOMAINS.AI_V1_P2]?.sreScore != null) {
           if (!this.aiTableLoaded)
@@ -459,7 +459,7 @@ export class RoarScores {
           const rawScore = Math.max(score[SRE_SUBTASK_DOMAINS.AI_V1_P2].sreScore, 0);
           const aiRow = this.aiLookupTable.find((row) => row.rawScore === rawScore && row.form === 'aiP2');
           if (!aiRow) throw new Error(`Missing AI equating row for form aiP2, rawScore ${rawScore}`);
-          return aiRow.sreScore;
+          if (aiRow) return aiRow.sreScore;
         }
       } else if (this.taskId === SRE_TASK_IDS.ES) {
         // For Spanish, we omit the practice and composite subtasks and take the sum of the sreScores.
@@ -563,15 +563,9 @@ export class RoarScores {
         };
       }
     }
-    if (compositeScore != null && this.taskId === SRE_TASK_IDS.EN) {
-      const clampedSreScore = Math.max(compositeScore, 0);
+      if (computedScores[COMPOSITE_DOMAIN]?.thetaEstimate != null && this.taskId === SRE_TASK_IDS.EN) {
       computedScores[COMPOSITE_FOUNDATIONAL_DOMAIN] = {
-        thetaEstimate:
-          Math.round(
-            (clampedSreScore * SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS.TRANSFORMATION_SCALE +
-              SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS.TRANSFORMATION_SHIFT) *
-              10,
-          ) / 10,
+        thetaEstimate: computedScores[COMPOSITE_DOMAIN].thetaEstimate,
       };
     }
     return computedScores;

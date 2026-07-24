@@ -146,7 +146,6 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
   const lng = cleanParams.lng ?? cleanParams.language ?? 'en';
   const languageEntry = SRE_LANGUAGES[lng] ?? SRE_LANGUAGES.en;
   const taskId = languageEntry.taskId;
-  const defaultScoringVersion = languageEntry.defaultScoringVersion ?? null;
 
   const {
     userMode,
@@ -165,15 +164,10 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
     age,
     ageMonths,
     timerLength,
-    scoringVersion = defaultScoringVersion,
+    scoringVersion,
   } = cleanParams;
 
   const is90s2BlocksFixedForms = lng === 'en' && userMode === '90s2BlocksFixedForms';
-  const scoringVersionParsed = Number.isNaN(parseInt(scoringVersion, 10))
-    ? is90s2BlocksFixedForms
-      ? SRE_SCORING_VERSION.V4
-      : defaultScoringVersion
-    : scoringVersion;
 
   if (language !== 'en') i18next.changeLanguage(language);
 
@@ -198,7 +192,7 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
     timerLength: timerLength ?? 180000,
     timerLengthList: getTimerOption(userMode || selectDefaultMode(language)),
     useParameterValidation: useParameterValidation ?? true,
-    scoringVersion: scoringVersionParsed,
+    scoringVersion: scoringVersion ?? null,
   };
 
   const updatedGameParams = Object.fromEntries(
