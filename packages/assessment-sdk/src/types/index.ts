@@ -6,4 +6,5 @@ export * from './run-event-status';
 export * from './start-run';
 export * from './update-engagement-flags';
 export * from './update-user';
+export * from './upload-file';
 export * from './write-trial';

@@ -2,36 +2,43 @@
 
 A local developer environment for running and querying ROAR assessments against a real PostgreSQL database.
 
-> **This guide covers the PA assessment.** Each assessment in the monorepo has its own directory (e.g. `apps/assessments/roar-pa/`) with its own scripts. The Firebase Auth emulator, backend, and PostgreSQL databases are shared across all assessments; only the assessment dev server and its port differ.
+> **This guide covers the PA assessment.** Each assessment in the monorepo has its own directory (e.g. `apps/assessments/roar-pa/`) with its own scripts. The Firebase emulator (Auth + Storage + UI), backend, and PostgreSQL databases are shared across all assessments; only the assessment dev server itself differs — they all currently run on the same port (http://localhost:8000).
 
 ## Scripts quick reference
 
 Run these from the assessment's directory (e.g. `apps/assessments/roar-pa/`):
 
-| Script | What it does |
-|--------|-------------|
-| `npm start` | Start the assessment environment and open the dev server |
-| `npm stop` | Stop the environment and delete the local database |
-| `npm restart` | Restart the environment (use when something seems stuck) |
-| `npm run update` | Rebuild platform libraries after pulling new code, then start |
+| Script            | What it does                                                   |
+| ----------------- | -------------------------------------------------------------- |
+| `npm start`       | Start the assessment environment and open the dev server       |
+| `npm stop`        | Stop the environment and delete the local database             |
+| `npm restart`     | Restart the environment (use when something seems stuck)       |
+| `npm run update`  | Rebuild platform libraries after pulling new code, then start  |
 | `npm run rebuild` | Rebuild Docker images from scratch (rarely needed — see below) |
 
 The other scripts in `package.json` (`build`, `build:staging`, `build:production`, `dev`, etc.) are for CI and platform developers. You can ignore them.
 
 ## What it starts (PA)
 
-| Process | URL |
-|---------|-----|
-| Firebase Auth emulator | http://localhost:9099 |
-| ROAR backend (HTTP) | http://localhost:4000 |
-| PA assessment dev server | http://localhost:8000 |
-| PostgreSQL | localhost:5432 |
+| Process                                         | URL                   |
+| ----------------------------------------------- | --------------------- |
+| Firebase emulator — Auth                        | http://localhost:9099 |
+| Firebase emulator — Storage (recording uploads) | http://localhost:9199 |
+| Firebase emulator — UI (browse recordings)      | http://localhost:9000 |
+| ROAR backend (HTTP)                             | http://localhost:4000 |
+| PA assessment dev server                        | http://localhost:8000 |
+| PostgreSQL                                      | localhost:5432        |
+
+The Firebase emulator runs Auth and Storage together (one container) with the Emulator UI on :9000. Storage only matters for assessments that record audio/video (e.g. Read Aloud) — see [Viewing recordings](#viewing-recordings-audiovideo-assessments).
 
 Two databases are created: `roar_core` (users, tasks, runs) and `roar_assessment` (trials, scores).
 
 ## Prerequisites
 
-- **Docker** with Compose v2 (`docker compose version` should work)
+- **Dependencies** installed with `npm install` run from monorepo root
+- **Docker** with Compose v2 (`docker compose version` should work). If you don't have it:
+  - macOS: install Docker Desktop with `brew install --cask docker`, then launch it from Applications (Compose v2 is bundled). Alternatively download it from https://www.docker.com/products/docker-desktop/.
+  - Ubuntu/Debian: install Docker Engine and the Compose plugin with Docker's convenience script — `curl -fsSL https://get.docker.com | sh` — then `sudo usermod -aG docker $USER` and log out/in so you can run Docker without `sudo`. See https://docs.docker.com/engine/install/ubuntu/ for the manual apt steps.
 - **Port 5432 free** — the assessment database binds to the standard Postgres port. If you have a local Postgres instance running, stop it first:
   - macOS (Homebrew): `brew services stop postgresql@<version>`
   - Ubuntu/Debian: `sudo systemctl stop postgresql`
@@ -224,14 +231,38 @@ Download from https://www.pgadmin.org. Create a new server with host `localhost`
 
 ---
 
+## Viewing recordings (audio/video assessments)
+
+Assessments that capture audio or video — e.g. Read Aloud (`roar-readaloud`) — upload their recordings through the assessment SDK to the local **Firebase Storage emulator**, so dev needs no cloud credentials and touches no real bucket. The blobs are browsable in the **Emulator UI** — nothing extra to install.
+
+**Open the Emulator UI:** http://localhost:9000 → **Storage** tab.
+
+The Storage tab lists the emulated `demo-roar.appspot.com` bucket (created on the first upload) and lets you browse and download the uploaded blobs. Recordings are written under a deterministic path:
+
+```
+{taskId}/{participantId}/{assessmentPid}/{administrationId}/{runId}/{filename}
+```
+
+For an anonymous dev run of Read Aloud that looks like:
+
+```
+roar-readaloud/<participantId>/<pid>/test-administration/<runId>/<filename>
+```
+
+Each recording's storage path is also written onto its **trial row**, so the two line up: the `gs://…` reference stored in `app.run_trials` (see [Querying your data](#querying-your-data) → `roar_assessment`) matches the blob's path in the Storage tab.
+
+**Lifetime.** The Storage emulator keeps recordings in memory — there is no import/export configured. They survive **Ctrl+C** (which stops only the dev server; the emulator container keeps running), but are cleared when the emulator container restarts (`npm restart`) or when you tear the environment down with `npm stop`.
+
+---
+
 ## Connection reference
 
-| Setting | Value |
-|---------|-------|
-| Host | `localhost` |
-| Port | `5432` |
-| Username | `postgres` |
-| Password | *(none)* |
-| Core database | `roar_core` |
+| Setting             | Value             |
+| ------------------- | ----------------- |
+| Host                | `localhost`       |
+| Port                | `5432`            |
+| Username            | `postgres`        |
+| Password            | _(none)_          |
+| Core database       | `roar_core`       |
 | Assessment database | `roar_assessment` |
-| SSL mode | `disable` |
+| SSL mode            | `disable`         |

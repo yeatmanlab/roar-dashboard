@@ -487,18 +487,50 @@ jobs:
           cp apps/assessments/${{ matrix.assessment }}/taskVariantParameters.example.json \
              apps/assessments/${{ matrix.assessment }}/taskVariantParameters.json
 
+      # Not every assessment ships Cypress e2e specs (roar-readaloud has the scaffold but no specs
+      # yet; roav-apps has no Cypress setup). cypress-io/github-action exits 1 on "no spec files
+      # found", so skip the infra spin-up + Cypress run when the assessment has no specs.
+      - name: Check for Cypress specs
+        id: cypress-specs
+        run: |
+          if find "apps/assessments/${{ matrix.assessment }}/cypress/e2e" -type f \
+               \( -name '*.cy.js' -o -name '*.cy.ts' -o -name '*.cy.jsx' -o -name '*.cy.tsx' \) 2>/dev/null | grep -q .; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No Cypress e2e specs for ${{ matrix.assessment }} — skipping the Cypress run."
+          fi
+
       - name: Start assessment infrastructure
+        if: steps.cypress-specs.outputs.found == 'true'
         run: docker compose -f docker-compose.assessment.yml up -d --wait
         timeout-minutes: 10
         env:
           ASSESSMENT_NAME: ${{ matrix.assessment }}
 
+      # Pin Chrome so every machine in the parallel run reports an identical browserVersion.
+      # Bare ubuntu-latest runners drift the Chrome version as GitHub updates them (e.g. 149 vs
+      # 150), which makes Cypress Cloud refuse to group the parallel machines ("we do not
+      # parallelize tests across different environments"). This job can't use a cypress/browsers
+      # container like e2e-tests / component-tests because it runs `docker compose` to bring up
+      # the assessment env (no docker-in-docker inside a job container), so it pins Chrome on the
+      # bare runner instead. Version 130 matches the cypress/browsers image the other jobs use.
+      - name: Pin Chrome version
+        id: setup-chrome
+        if: steps.cypress-specs.outputs.found == 'true'
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: '130'
+
       - name: Run Cypress tests
+        if: steps.cypress-specs.outputs.found == 'true'
         uses: cypress-io/github-action@v6
         with:
           install: false
           start: npm run dev:ci
-          browser: ${{ matrix.browser }}
+          # Point Cypress at the pinned binary explicitly so it doesn't fall back to the runner's
+          # (drifting) system Chrome. The matrix still labels this leg "chrome".
+          browser: ${{ steps.setup-chrome.outputs.chrome-path }}
           working-directory: apps/assessments/${{ matrix.assessment }}
           wait-on: "http://localhost:8000"
           wait-on-timeout: 120

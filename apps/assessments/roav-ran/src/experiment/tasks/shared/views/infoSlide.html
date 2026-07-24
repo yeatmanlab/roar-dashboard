@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+  <div class="container-fluid h-100">
+    <div class="static-container">
+      <h2 class="header--center"></h2>
+      <img class="lion-char" src="https://storage.googleapis.com/roav-ran/shared/assets/pointingLeftLionAge12.webp" alt="Lion character">
+      <p class="next-text"></p>
+    </div>
+    <button class="next-button" id="info-next-button" aria-label="Continue"></button>
+  </div>
+  <audio id="voiceover"></audio>
+</body>
+
+<script data-dynamic>
+  function resolveAudio(url) {
+    return window._preloadedAudioURLs?.get(url) ?? url;
+  }
+
+  function playVoiceover(onFail) {
+    var ctxState = window._getAudioContextState ? window._getAudioContextState() : 'unknown';
+    var whenReady = window._whenAudioContextRunning ? window._whenAudioContextRunning() : Promise.resolve();
+    whenReady.then(function () {
+      var ctxState2 = window._getAudioContextState ? window._getAudioContextState() : 'unknown';
+      voiceover.play().catch(function (err) {
+        // iOS fires the AudioContext 'interrupted' statechange as a macrotask, which
+        // may arrive after play() has already been called. Yield to the macrotask
+        // queue so the interrupted→running cycle completes, then retry.
+        console.warn('[infoSlide] play() rejected:', err && err.name, '— retrying after yield');
+        setTimeout(function () {
+          var retryReady = window._whenAudioContextRunning ? window._whenAudioContextRunning() : Promise.resolve();
+          retryReady.then(function () { voiceover.play().catch(onFail); });
+        }, 0);
+      });
+    });
+  }
+
+  var FALLBACK_DELAY_MS = 1200;
+  var slideIndex = 0;
+  var slides = window.infoSlides || [];
+  var infoSignal = window.infoSlideAbortController
+    ? window.infoSlideAbortController.signal
+    : undefined;
+  var voiceover = document.getElementById('voiceover');
+
+  document.querySelector('.next-button').addEventListener('click', function () {
+    voiceover.pause();
+    showSlide(++slideIndex);
+  }, { signal: infoSignal });
+
+  showSlide(slideIndex);
+
+  function showSlide(index) {
+    if (index >= slides.length) {
+      document.dispatchEvent(new Event('pageComplete'));
+      return;
+    }
+
+    var slide = slides[index];
+    
+    document.querySelector('.header--center').textContent = slide.header.text || '';
+
+    const nextText = document.querySelector(".next-text");
+    nextText.textContent = slide.footer.text || '';
+
+    if (window.isMobile) {
+      nextText.innerHTML = (slide.footer.text ?? "").replace(/\n/g, "<br>");
+      if (slide.footer.text.includes("\n")) {
+        nextText.style.bottom = window.isPortrait ? "2.25rem" : "2rem";
+      } else {
+        // reset for slides without newlines
+        nextText.style.bottom = "3rem";
+      }
+    }
+
+    var btn = document.querySelector('.next-button');
+    if (slide.showButton === false) {
+      btn.classList.add('hidden');
+    } else {
+      btn.classList.remove('hidden');
+    }
+
+    var headerSrc = slide.header && slide.header.audioSrc;
+    var footerSrc = slide.footer && slide.footer.audioSrc;
+
+    if (headerSrc || footerSrc) {
+      btn.disabled = true;
+    }
+
+    //add a condition to check whether instruction is skippable (before audio finishes)
+    if(slide.skippable){
+      btn.disabled = false;
+    }
+
+    if (headerSrc) {
+      voiceover.src = resolveAudio(headerSrc);
+      voiceover.addEventListener('ended', function onHeaderEnded() {
+        if (footerSrc) {
+          voiceover.src = resolveAudio(footerSrc);
+          voiceover.addEventListener('ended', function () {
+            btn.disabled = false;
+          }, { once: true, signal: infoSignal });
+          playVoiceover(function () { btn.disabled = false; });
+        } else {
+          btn.disabled = false;
+        }
+      }, { once: true, signal: infoSignal });
+      playVoiceover(function () {
+        setTimeout(function () { btn.disabled = false; }, FALLBACK_DELAY_MS);
+      });
+    } else if (footerSrc) {
+      voiceover.src = resolveAudio(footerSrc);
+      voiceover.addEventListener('ended', function () {
+        btn.disabled = false;
+      }, { once: true, signal: infoSignal });
+      playVoiceover(function () {
+        setTimeout(function () { btn.disabled = false; }, FALLBACK_DELAY_MS);
+      });
+    }
+  }
+</script>
+</html>

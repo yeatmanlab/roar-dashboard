@@ -208,7 +208,7 @@ const routes = [
     path: GAME_ROUTES.ROAV_MP,
     name: 'MP',
     component: () => import('../components/tasks/TaskRoav.vue'),
-    props: { taskId: 'roav-mp', language: 'en' },
+    props: { taskId: 'roav-mp' },
     meta: { pageTitle: 'MP' },
   },
   {
@@ -544,7 +544,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoav.vue'),
     props: (route) => ({
       taskId: 'roav-mp',
-      language: 'en',
       launchId: route.params.launchId,
     }),
     meta: {

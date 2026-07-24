@@ -1,0 +1,560 @@
+<!-- Scripts -->
+<script data-dynamic src="https://cdn.jsdelivr.net/npm/remote-calibrator@latest"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+<!-- CSS -->
+<style>
+
+body {
+  margin: 0;
+}
+
+  .column {
+  float: left;
+  padding: 10px;
+}
+
+.left, .right {
+  width: 33%;
+}
+
+.middle {
+  width: 33%;
+}
+
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.container {
+    width: 75%;  /* Set the width for the container */
+    margin: auto; /* Center the container if needed */
+}
+
+ #audio-visualization {
+    width: 100%;  /* Both elements fill the container */
+    height: 100px; /* Set a fixed height for the canvas */
+
+    /* display: block; Ensure they are not inline */
+}
+
+#audio-visualization-audioonly {
+    width:100%;
+    height: 100px; /* Set a fixed height for the canvas */
+}
+
+</style>
+
+<!-- HTML -->
+<body id="body">
+
+  <div class="px-4 py-5 my-5 text-center" style="display: block;">
+    <h1 class="display-5 fw-bold" id="title" data-alt-id="configureDevice">Configure Device</h1>
+    <h5 data-alt-id="configureDevice_text1"> To get started, we will need to set up a few things. </h5>
+    <h5 data-alt-id="configureDevice_text2"> If you’re not sure what to do, ask an adult to help you with this part. </h5>
+    <img src="https://storage.googleapis.com/roav-ran/shared/assets/legacy/parent-help-icon.png" width="10%">
+    <div class="col-lg-6 mx-auto" style="margin-top: -8vh;">
+      <p class="lead mt-3 mb-5"></p>
+
+        <!-- Preconfigured Devices -->
+        <div class="d-grid gap-2 justify-content-center">
+
+          <div class="row gap-2" id="findDevice-collapsableCards" style="display: none;">
+            <div class="col">
+            <div
+              class="card"
+              style="width: 42rem; height: 11rem"
+              id="findDevice"
+            >
+              <div class="card-body">
+                <h5 class="card-title" data-alt-id="chooseDevice">(0) Choose Device</h5>
+                <p class="card-text" data-alt-id="chooseDevice_text1">
+                  Please select the device you are taking the test on.
+                </p>
+                <select id="deviceList" onchange="selectDevice()"></select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+        <!-- ROW 1: Full Screen | Get Screen Size -->
+        <div class="row gap-2" id="screenSize-collapsableCards">
+          <div class="col" >
+            <div class="card" style="width:20rem; height:11rem" id="card-fullscreen">
+              <div class="card-body">
+                <h5 class="card-title" data-alt-id="fullScreen">(0) Full Screen</h5>
+                <p class="card-text" data-alt-id="fullScreen_text1">Do not exit out of 'Full Screen' mode for the remainder of this study.</p>
+                <button type="button" class="btn btn-primary" id="fullscreen" onclick="openFullscreen()" data-alt-id="fullScreen_text2">Make Fullscreen</button>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card" style="width:20rem;height:11rem" id="card-screen-size">
+              <div class="card-body">
+                <h5 class="card-title" data-alt-id="screenSize">(0) Screen Size</h5>
+                <p class="card-text" data-alt-id="screenSize_text1">We need this to calibrate your device's screen size.</p>
+                <button type="button" class="btn btn-primary" id="measureScreen" onclick="getScreenSize()" data-alt-id="screenSize_text2">Measure Screen Size</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ROW 2: Webcam Centered | Height of Webcam -->
+          <div class="row gap-2" id="webcam-collapsableCards">
+            <div class="col">
+            <div class="card" style="width: 20rem;" id="card-webcam-center">
+              <div class="card-body">
+                <h5 class="card-title" data-alt-id="webcamCentered">(0) Is your webcam centred?</h5>
+                <h6 class="card-subtitle mb-2 text-muted" data-alt-id="webcamCentered_text1">It is expected that for laptops the webcam is already centred.</h6>
+                <p class="card-text" data-alt-id="webcamCentered_text2">If you are using a separate webcam, please centre this in the middle (as seen in the image below).</p>
+                <img src="https://eyetrackingdata.blob.core.windows.net/public/Images/webcamCentered.jpg" alt="center webcam" width="100%" style="padding-bottom:10px;">
+                <button type="button" class="btn btn-primary" id="measureDistanceFromScreeen" onclick="getwebcamCentered()" data-alt-id="webcamCentered_text3">My Webcam is Centered</button>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card" style="width: 20rem;" id="card-height-camera">
+              <div class="card-body">
+                <h5 class="card-title" data-alt-id="webcamHeight">(0) Height of Webcam</h5>
+                <p class="card-text" data-alt-id="webcamHeight_text1">This is the distance between the centre of your webcam's lens and the top bezel of your screen (image provided for example)</p>
+                <img src="https://eyetrackingdata.blob.core.windows.net/public/Images/webcamPosition.PNG" alt="center webcam" width="100%" style="padding-bottom:10px;">
+                <label for="heightInput" data-alt-id="webcamHeight_text2">Height in cm:</label>
+                <input type="number" id="heightInput" name="heightInput" required
+                      minlength="1" maxlength="8" size="10" value="2">
+                    </br></br>
+                <button type="button" class="btn btn-primary" id="getHeightbutton" onclick="getHeightWebcam()" data-alt-id="webcamHeight_text3">Done</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="row gap-2" id="access-cameracollapsableCards">
+          <div class="col">
+            <div class="card" style="width: 42rem;height:11rem" id="card-camera">
+              <div class="card-body">
+                <h5 class="card-title" id="camera-access-title" data-alt-id="cameraAccess">(0) Camera Access</h5>
+                <p class="card-text" id="camera-access-text" data-alt-id="cameraAccess_text1">Please provide access to your camera to record your eye movements.</p>
+                <button type="button" class="btn btn-primary" id="start-camera" data-alt-id="cameraAccess_text2">Provide Access</button>
+                </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row gap-2" id="access-audiocollapsableCards" style="display: none;">
+          <div class="col">
+            <div class="card" style="width: 42rem;height:11rem" id="card-audio">
+              <div class="card-body">
+                <h5 class="card-title" data-alt-id="audioAccess">(0) Audio Access</h5>
+                <p class="card-text" data-alt-id="audioAccess_text1">Please provide access to your microphone to record audio.</p>
+                <button type="button" class="btn btn-primary" id="start-audio" data-alt-id="audioAccess_text2">Provide Access</button>
+                </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ROW 4: Check Recording  -->
+        <div class="row gap-2" style="padding-top:1rem;" id="check-cameracollapsableCards">
+          <div class="col">
+            <div class="card" style="width:42rem" id="card-final-check">
+              <div class="card-body">
+                <h5 class="card-title" data-alt-id="finalChecks">(0) Final Checks</h5>
+                <p id="finalChecks_text" data-alt-id="finalChecks_text1">Please ensure your video is well-lit and centered. Speak at a normal volume to check the audio level below.</p>
+
+                <div id="video-quality-checks">
+                  <div class="column left">
+                    <img src="https://eyetrackingdata.blob.core.windows.net/public/Images/badlighting.jpg" alt="center webcam" width="100%" style="padding-bottom:10px;">
+                    <b data-alt-id="badLighting">Bad Lighting</b> &#10060;</br>
+                    <span data-alt-id="badLightingDescription">(Make sure eyes and face are clearly visible)</span>
+                  </div>
+                  <div class="column middle">
+                    <img src="https://eyetrackingdata.blob.core.windows.net/public/Images/glassesReflection.jpg" alt="center webcam" width="100%" style="padding-bottom:10px;">
+                    <b data-alt-id="glassesOn">Glasses On</b> &#10060;</br>
+                    <span data-alt-id="removeGlasses">(Remove Glasses)</span>
+                  </div>
+                  <div class="column middle">
+                    <img src="https://eyetrackingdata.blob.core.windows.net/public/Images/goodPosition.jpg" alt="center webcam" width="100%" style="padding-bottom:10px;">
+                    <b data-alt-id="idealView">Ideal View</b> &#10004 &#65039;</br>
+                    <span data-alt-id="idealViewDescription">(Face close to camera and centered with clear view of eyes)</span>
+                  </div>
+                </div>
+                <div class="container">
+                  <video autoplay="true" id="videoElement" style="width:100%; background-color: darkgray;"></video>
+                  <canvas id="audio-visualization" width="640" height="100"></canvas>
+                </div>
+
+                <button type="button" class="btn btn-primary" id="Final-Check" onclick="finalCheckComplete()" data-alt-id="finalChecks_text2" disabled>I'm Looking and Sounding Great</button>
+              </div>
+            </div>
+          </div>          
+        </div>
+        
+        <!-- ROW 4b: Audio-Only Final Check -->
+        <div class="row gap-2" style="padding-top:1rem; display: none;" id="check-audiocollapsableCards">
+          <div class="col">
+            <div class="card" style="width:42rem" id="card-final-check-audio">
+              <div class="card-body">
+                <h5 class="card-title" data-alt-id="finalChecks">(0) Final Checks</h5>
+                <p id="finalChecks_audioOnly_text2" data-alt-id="finalChecks_audioOnly_text1">Speak at a normal volume to check the audio level below.</p>
+                <div class="container">
+                  <canvas id="audio-visualization-audioonly" width="640" height="100"></canvas>
+                </div>
+
+                <button type="button" class="btn btn-primary" id="Final-Check-Audio" onclick="finalCheckComplete()" data-alt-id="finalChecks_text2" disabled>I'm Sounding Great</button>
+              </div>
+            </div>
+          </div>          
+        </div>
+        
+
+        <!-- ROW 5: User Details  -->
+        <div class="row gap-2" style="padding-top:1rem;">
+          <div class="col">
+            <div class="card" style="width:42rem" id="card-camera">
+              <div class="card-body">
+                <h5 class="card-title" data-alt-id="readytostart">(0) Ready to Start?</h5>
+                <label for="idInput" data-alt-id="readytostart_text1">Participant ID:</label>
+                <input type="text" id="idInput" name="idInput" required
+                      minlength="1" maxlength="100" size="10">
+                  </br></br>
+                <button type="button" class="btn btn-primary" id="confirmButton" data-alt-id="readytostart_text2" disabled>Continue</button>
+              </div>
+            </div>
+          </div>          
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Audio Playing -->  
+    <!-- <audio autoplay id="voiceover" src="https://eyetrackingdata.blob.core.windows.net/public/Audios/deviceConfig.mp3"></audio> -->
+    <audio autoplay id="voiceover"></audio>
+
+  </body>
+
+<script data-dynamic>
+var deviceConfig = {};
+
+// hide the pid box if the app is running on a URL that contains "roar.education" (i.e. prod)
+// TODO: gse-roar-admin-staging is for dashboard testing, remove before deploying to prod
+const hidePIDBox = new URL(window.location).origin.includes("roar.education") || new URL(window.location).origin.includes("gse-roar-admin-staging");
+
+var voiceover  = document.getElementById('voiceover'); // TO DO: Doesn't have enough time to load? Only plays if the consent screen shows up first
+
+RemoteCalibrator.init();
+
+var desktop = document.documentElement;
+var finalCheckButton = document.getElementById("Final-Check")
+var finalCheckButtonAudio = document.getElementById("Final-Check-Audio")
+var confirmButton = document.getElementById("confirmButton");
+var cardFullscreen = document.getElementById("card-fullscreen");
+var cardScreenSize = document.getElementById("card-screen-size");
+var cardDistanceScreen = document.getElementById("card-distance-screen");
+var cardcamera = document.getElementById("card-camera");
+var cardwebcamCenter = document.getElementById("card-webcam-center");
+var cardheightcamera = document.getElementById("card-height-camera")
+var cardfinalcheck = document.getElementById("card-final-check");
+var cardfinalcheckaudio = document.getElementById("card-final-check-audio");
+var heightInput_textbox = document.getElementById("heightInput")
+var idInput_textbox = document.getElementById("idInput")
+var idInput_textbox = document.getElementById("idInput");
+var idInput_label = document.querySelector('label[for="idInput"]');
+
+if (hidePIDBox === true) {
+    idInput_textbox.style.display = 'none';
+    idInput_label.style.display = 'none';
+}
+
+var video = document.querySelector("#videoElement");
+var deviceConfigs = {}
+
+var audioDetected = false;
+var fullScreen = false;
+var screenSizeCalibrated = false;
+var cameraStarted = false;
+var HeightWebcamEntered = false;
+var finalcheck = false;
+var webcamCentered = false;
+var normalizedFocalLength = 0;
+var prolificID;
+var screenWidth=0;
+var screenHeight=0;
+var screenWidthPX=window.screen.width;
+var screenHeightPX=window.screen.height;
+var webcamHeight=0;
+var distance = 0;
+var webcamInfo;
+var bEyeTracking = true;
+
+
+function makeid(length) {
+    var result           = '';
+    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for ( var i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * 
+ charactersLength));
+   }
+   return result;
+}
+
+function selectDevice() {
+  const dropdown = document.getElementById("deviceList");
+  const selectedValue = dropdown.options[dropdown.selectedIndex].value;
+
+  // Check if the selected device is in deviceConfig, default to "custom" otherwise
+  const selectedDeviceConfig =
+    deviceConfigs[selectedValue] || deviceConfigs.custom;
+
+  console.log(selectedDeviceConfig)
+  // Call the handleDevice function with the selected device's configuration
+  document.getElementById("findDevice").style.backgroundColor = "#bcf5bc";
+  handleDevice(selectedDeviceConfig);
+
+}
+
+
+
+function openFullscreen() {
+  if (desktop.requestFullscreen) {
+    desktop.requestFullscreen();
+  } else if (desktop.webkitRequestFullscreen) { /* Safari */
+    desktop.webkitRequestFullscreen();
+  } else if (desktop.msRequestFullscreen) { /* IE11 */
+    desktop.msRequestFullscreen();
+  }
+
+    screenWidthPX = window.screen.width;
+    screenHeightPX = window.screen.height;
+
+    fullScreen = true
+    cardFullscreen.style.backgroundColor = '#bcf5bc'
+
+  checkAllComplete()
+}
+
+function getScreenSize(){
+    RemoteCalibrator.screenSize({}, data => {
+      console.log(`ScreenWidth: ${data.value.screenWidthCm}cm.`)
+      console.log(`ScreenHeight: ${data.value.screenHeightCm}cm.`)
+
+      screenWidth = data.value.screenWidthCm
+      screenHeight = data.value.screenHeightCm
+
+      if (screenWidth!=null && screenHeight!=null) {
+        screenSizeCalibrated = true
+        cardScreenSize.style.backgroundColor = '#bcf5bc'
+        console.log(screenSizeCalibrated)
+      }
+      checkAllComplete()
+    })    
+}
+
+
+function getwebcamCentered(){
+      webcamCentered = true
+      cardwebcamCenter.style.backgroundColor = '#bcf5bc'
+      checkAllComplete()
+}
+
+function getHeightWebcam(){
+  if (heightInput_textbox.value>0){
+  HeightWebcamEntered = true
+  webcamHeight = heightInput_textbox.value
+  heightInput_textbox.disabled = true
+  cardheightcamera.style.backgroundColor = '#bcf5bc'
+  }
+  checkAllComplete()
+}
+
+function finalCheckComplete(){
+  let userConfirmed = true
+  if (!audioDetected) {
+        userConfirmed = confirm("We couldn't hear you, are you sure your microphone is working? Click OK to continue anyway, or Cancel to check your settings.");
+  }
+  if (userConfirmed) {
+  finalcheck = true
+  if (cardfinalcheck) {
+    cardfinalcheck.style.backgroundColor = '#bcf5bc'
+  }
+  if (cardfinalcheckaudio) {
+    cardfinalcheckaudio.style.backgroundColor = '#bcf5bc'
+  }
+  checkAllComplete()
+  }
+}
+
+
+async function setupMediaStream(requestVideo) {
+    const audioContext = new AudioContext();
+    const canvas = requestVideo ? document.getElementById('audio-visualization') : document.getElementById('audio-visualization-audioonly');
+    const ctx = canvas.getContext('2d');
+
+    const mediaConstraints = {
+        audio: true
+    };
+    
+    if (requestVideo) {
+        mediaConstraints.video = {
+            width: { ideal: 1920 }, 
+            height: { ideal: 1080 }, 
+            frameRate: { ideal: 60, max: 60 },
+            facingMode: "user"
+        };
+    }
+
+    const cameraStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+
+    if (requestVideo && cameraStream.getVideoTracks().length > 0) {
+        const { width, height } = cameraStream.getVideoTracks()[0].getSettings();
+        const videoTrack = cameraStream.getVideoTracks()[0];
+        webcamInfo = videoTrack.getCapabilities
+          ? videoTrack.getCapabilities()
+          : {};
+
+        webcamInfo['image_width'] = width
+        webcamInfo['image_height'] = height
+
+        console.log(`${width}x${height}`); // Log video resolution
+
+        const video = document.querySelector('video');
+        video.srcObject = cameraStream;
+        video.muted = true; // Mute the video element to prevent audio playback
+
+        if (height > 0) {
+            video.addEventListener('canplay', function onCanPlay() {
+                video.removeEventListener('canplay', onCanPlay);
+                cardcamera.style.backgroundColor = '#bcf5bc';
+                cameraStarted = true;
+                video.style.backgroundColor = '#bcf5bc';
+                finalCheckButton.disabled = false;
+                checkAllComplete();
+            });
+        } else {
+            video.style.backgroundColor = '#FA8072';
+            alert("Your webcam does not meet our resolution standards");
+        }
+    } else if (!requestVideo) {
+        // Audio-only mode
+        const cardaudio = document.getElementById("card-audio");
+        if (cardaudio) {
+            cardaudio.style.backgroundColor = '#bcf5bc';
+        }
+        
+        cameraStarted = true;
+        if (finalCheckButtonAudio) {
+            finalCheckButtonAudio.disabled = false;
+        }
+        checkAllComplete();
+    }
+
+    // Set up audio analyser
+    const micSource = audioContext.createMediaStreamSource(cameraStream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 2048;
+    micSource.connect(analyser);
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    function draw() {
+        requestAnimationFrame(draw);
+        analyser.getByteTimeDomainData(dataArray);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgb(0, 0, 0)';
+        ctx.beginPath();
+
+        const sliceWidth = canvas.width * 1.0 / bufferLength;
+        let x = 0;
+        let sum = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = v * canvas.height / 2;
+
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+
+            sum += (dataArray[i] - 128) * (dataArray[i] - 128); // Summing for RMS calculation
+            x += sliceWidth;
+        }
+
+        ctx.lineTo(canvas.width, canvas.height / 2);
+        ctx.stroke();
+        let rms = Math.sqrt(sum / bufferLength);
+        if (rms > 5.5 && !audioDetected) {
+            audioDetected = true;
+            checkAllComplete();
+        }
+
+    }
+
+    draw(); // Start the drawing function
+}
+
+document.querySelector("#start-camera").addEventListener('click', async () => {
+    await setupMediaStream(true);
+});
+
+document.querySelector("#start-audio").addEventListener('click', async () => {
+    await setupMediaStream(false);
+});
+
+
+function checkAllComplete() {
+    const hasCollapsedCards = Array.from(document.querySelectorAll('.card-title')).some(card => 
+        card.closest('.card').style.display === 'none' || card.closest('.card').offsetParent === null
+    );
+    const hasCameraCollapsedCards = Array.from(document.querySelectorAll('[id*="-cameracollapsableCards"]')).every(element => 
+    element.style.display === 'none' || element.offsetParent === null
+  );
+
+    const allConditionsMet = fullScreen && screenSizeCalibrated && cameraStarted && audioDetected && webcamCentered && HeightWebcamEntered && finalcheck;
+    const minimalConditionsMet = cameraStarted && audioDetected && finalcheck && screenSizeCalibrated;
+    const bareConditionsMet = screenSizeCalibrated && cameraStarted && audioDetected && finalcheck;
+    
+    let conditionsMet = false;
+    if (bEyeTracking) {
+      // Eye tracking mode: require camera access (cameraStarted) and finalcheck
+      conditionsMet = (hasCollapsedCards && minimalConditionsMet) || (!hasCollapsedCards && allConditionsMet);
+    } else {
+      // Audio-only mode: require microphone access (cameraStarted) and finalcheck
+      conditionsMet = hasCameraCollapsedCards && bareConditionsMet;
+    }
+    
+    if (conditionsMet) {
+      confirmButton.classList.remove('btn-secondary')
+      confirmButton.classList.add('btn-primary')
+      confirmButton.disabled = false;
+    }
+}
+
+
+
+
+// function continueToTest(){
+//   video.remove()
+//   prolificID = idInput_textbox.value.trim() ? idInput_textbox.value : makeid(10);
+
+//   localStorage.prolificID = prolificID
+//   localStorage.screenHeight = screenHeight
+//   localStorage.screenWidth = screenWidth
+//   localStorage.webcamHeight = webcamHeight
+//   localStorage.distance = distance
+//   window.location.href = "criticalSpacingMenu_six.html";
+
+// }
+
+</script>

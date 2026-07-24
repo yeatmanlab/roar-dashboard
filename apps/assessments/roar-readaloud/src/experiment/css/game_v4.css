@@ -1,0 +1,540 @@
+/* CSS Document */
+#rdk-image-left,
+#rdk-image-right,
+#rdk-div-left,
+#rdk-div-right {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#rdk-image-left,
+#rdk-image-right,
+#rdk-practice-image-left,
+#rdk-practice-image-right {
+  z-index: 999;
+}
+
+#rdk-div-left,
+#rdk-image-left,
+#rdk-practice-image-left {
+  left: 0;
+}
+
+#rdk-div-right,
+#rdk-image-right,
+#rdk-practice-image-right {
+  right: 0;
+}
+
+#rdk-div-left,
+#rdk-div-right {
+  width: 25%;
+  height: 100%;
+}
+
+#rdk-practice-image-left {
+  height: 100%;
+  width: 40%;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#rdk-practice-image-right {
+  height: 100%;
+  width: 40%;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+body {
+  width: 60%;
+  margin: auto;
+  text-align: center;
+}
+
+h1 {
+  margin-top: 10%;
+  margin-right: 10%;
+  margin-left: 10%;
+  text-align: center;
+  padding-inline: 10px;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  font-weight: semi-bold;
+  font-size: 5vh;
+  color: rgba(76, 101, 139, 1);
+}
+
+h2 {
+  text-align: center;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  font-style: normal;
+  font-weight: regular;
+  font-size: 4vh;
+  color: rgba(76, 101, 139, 1);
+}
+
+h3 {
+  text-align: center;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  font-style: normal;
+  font-weight: regular;
+  font-size: 3vh;
+  color: rgba(76, 101, 139, 1);
+}
+
+p,
+.jspsych-survey-text-preamble {
+  text-align: center;
+  vertical-align: middle;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  font-style: normal;
+  font-weight: normal;
+  font-size: 3vh;
+  color: rgba(0, 0, 0, 1);
+}
+
+.consent_form_title {
+  margin-right: 10%;
+  margin-left: 10%;
+  font-size: 3vh;
+}
+
+.consent_form_text {
+  margin: 10%;
+  text-align: left;
+  font-size: 2vh;
+}
+
+.survey_form_text {
+  text-align: center;
+  font-size: 3vh;
+}
+
+.consent_form_agree {
+  margin: 5%;
+  text-align: left;
+  font-size: 2vh;
+}
+
+.debrief_text {
+  margin: 20%;
+  text-align: left;
+  font-size: 2vh;
+}
+
+.jspsych-survey-multi-select-option {
+  font-size: 2vh;
+  text-align: center;
+}
+
+.stimulus {
+  text-align: center;
+  vertical-align: middle;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 5vh;
+  line-height: 5vh;
+  color: rgba(0, 0, 0, 1);
+}
+
+.full_screen {
+  text-align: center;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 32px;
+  line-height: 32px;
+  padding-top: 300px;
+  color: rgba(0, 0, 0, 1);
+}
+
+.feedback {
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  text-align: center;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 3vh;
+  line-height: 3vh;
+  color: rgba(0, 0, 0, 1);
+}
+
+.jspsych-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.transparent {
+  background: rgba(255, 255, 255, 0);
+  border-color: rgba(255, 255, 255, 0);
+}
+
+.center {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+.star-center {
+  margin: 0;
+  position: absolute;
+  top: 45%;
+  left: 51%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+.vertical-center {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
+.jspsych-video-button-response-stimulus {
+  margin: 0;
+  position: absolute;
+  top: 45%;
+  height: 90%;
+  -ms-transform: translateY(-45%);
+  transform: translateY(-45%);
+}
+
+.stimulus_div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.text_div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 60%;
+}
+
+.center {
+  vertical-align: middle;
+  text-align: center;
+}
+
+.middle {
+  position: relative;
+  text-align: left;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.lower {
+  position: fixed;
+  bottom: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 7vh;
+}
+
+.orange {
+  color: rgba(219, 97, 69, 1);
+}
+
+.blue {
+  color: rgba(66, 152, 181, 1);
+}
+
+.yellow {
+  color: rgba(255, 202, 97, 1);
+}
+
+.row {
+  display: flex;
+}
+
+.column_1 {
+  padding: 0 2vh 0 2vh;
+  flex: 33%;
+}
+
+.column_2_upper {
+  margin-top: 5%;
+  padding: 0 2vh 0 2vh;
+  flex: 50%;
+  margin-right: 5%;
+  margin-left: 5%;
+}
+
+.column_2_lower {
+  padding: 0 2vh 0 2vh;
+  flex: 50%;
+  margin-right: 5%;
+  margin-left: 5%;
+}
+
+.column_3 {
+  padding: 0 2vh 0 2vh;
+  flex: 67%;
+  margin-right: 10%;
+}
+
+.button {
+  left: 0;
+  right: 0;
+  background-color: rgb(255, 255, 255);
+  text-align: center;
+  vertical-align: middle;
+  padding: 2vh;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  font-style: normal;
+  font-weight: bold;
+  font-size: 3vh;
+  color: rgb(0, 0, 0);
+  position: fixed;
+  display: block;
+  bottom: 0;
+}
+
+.story-scene {
+  width: 100%;
+  position: fixed;
+  display: block;
+  bottom: 5vh;
+}
+
+.scene {
+  position: fixed;
+  bottom: 5vh;
+  width: 100%;
+  display: block;
+}
+
+.characterleft {
+  text-align: center;
+  position: relative;
+  top: 30%;
+  height: 30vh;
+}
+
+.imageleft {
+  text-align: center;
+  position: relative;
+  top: 50%;
+  height: 30vh;
+}
+
+.adventure_mid_break {
+  position: relative;
+  display: inline-flex;
+  flex-direction: row;
+  height: 30vh;
+  bottom: 4vh;
+  right: 10%;
+  justify-content: center;
+}
+
+.coin {
+  position: relative;
+  top: 5vh;
+  height: 15vh;
+}
+
+.cues {
+  position: relative;
+  top: 5vh;
+  margin-bottom: 5vh;
+  height: 15vh;
+}
+
+.coin_feedback {
+  position: relative;
+  width: 20vh;
+}
+
+.wizard {
+  position: relative;
+  height: 30vh;
+  display: inline-block;
+  right: 20%;
+  bottom: 4vh;
+}
+
+.guardian {
+  position: relative;
+  height: 30vh;
+  bottom: 4vh;
+  display: inline-flex;
+}
+
+#gate {
+  height: 40vh;
+  left: 50vh;
+  display: inline-flex;
+}
+
+.normal_center_text {
+  text-align: center;
+  position: relative;
+  top: 50%;
+}
+
+.key {
+  vertical-align: middle;
+  text-align: center;
+  position: relative;
+  top: 600px;
+}
+
+/* jsPsych progress bar */
+
+#jspsych-progressbar-container {
+  color: #555;
+  border-bottom: 1px solid #dedede;
+  background-color: #f9f9f9;
+  margin-bottom: 1em;
+  text-align: center;
+  padding: 8px 0px;
+  width: 100%;
+  line-height: 1em;
+}
+#jspsych-progressbar-container span {
+  font-size: 14px;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  padding-right: 14px;
+}
+#jspsych-progressbar-outer {
+  background-color: #eee;
+  width: 50%;
+  margin: auto;
+  height: 14px;
+  display: inline-block;
+  vertical-align: middle;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+#jspsych-progressbar-inner {
+  background-color: #aaa;
+  width: 0%;
+  height: 100%;
+}
+
+/* Control appearance of jsPsych.data.displayData() */
+#jspsych-data-display {
+  text-align: left;
+}
+
+/* borrowing Bootstrap style for btn elements, but combining styles a bit */
+.jspsych-btn {
+  padding: 2px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  left: 0;
+  top: 0;
+  background: rgba(255, 255, 255, 0);
+  border-width: 2px;
+  border-color: rgba(0, 0, 0, 1);
+  color: rgb(0, 0, 0);
+
+  /* display: inline-block;
+	padding: 1vh 2vh;
+	margin: 1vh;
+	font-size: 4vh;
+	font-weight: bold;
+	font-family: "Source Sans Pro", Gotham, "Helvetica Neue", Helvetica, Arial, "sans-serif";
+	cursor: pointer;
+	line-height: 1.4;
+	text-align: center;
+	white-space: nowrap;
+	vertical-align: middle;
+	background-image: none;
+	border: 1vh solid transparent;
+	border-radius: 1vh;
+	color: rgb(0, 0, 0);
+	background-color: rgb(255, 255, 255);
+	border-color: darkgrey; */
+}
+
+.mep-stimulus {
+  display: inline-block;
+  width: 1.65vw;
+  height: 1.65vw;
+  margin: 0.13vw;
+  padding: 0px 0px 0.825vw 0px;
+  background: white;
+  border-style: solid;
+  border-width: 0px 0px 8px 0px;
+  border-color: rgba(255, 255, 255, 0);
+}
+
+.bottom-border-blue {
+  border-bottom-color: rgba(0, 0, 255, 1) !important;
+}
+
+.bottom-border-red {
+  border-bottom-color: rgba(255, 0, 0, 1) !important;
+}
+
+#jspsych-html-button-response-stimulus {
+  margin-bottom: 25vw;
+}
+
+#fixation-prompt {
+  margin-bottom: 0.825%;
+}
+
+.jspsych-html-button-response-button {
+  display: inline-block;
+  width: 4vw;
+  height: 4vw;
+  margin: 0.75vw;
+}
+
+#jspsych-fullscreen-btn {
+  position: sticky;
+  bottom: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 255, 255, 1);
+  background-color: rgba(76, 101, 139, 1);
+  border-color: darkgrey;
+  display: inline-block;
+  padding: 1vh 2vh;
+  margin: 4vh 1vh 1vh 1vh;
+  font-size: 4vh;
+  font-weight: bold;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  cursor: pointer;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  background-image: none;
+  border: 1vh solid transparent;
+  border-radius: 1vh;
+}
+
+.jspsych-survey-html-form {
+  position: fixed;
+  bottom: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}

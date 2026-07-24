@@ -1,0 +1,106 @@
+{
+  "name": "@roar-platform/roav-ran",
+  "description": "RAN (Rapid Automatized Naming) and Symbol Search — timed naming / visual-search assessments with gaze estimation and audio recording for ROAR",
+  "version": "2.0.1",
+  "author": "Aryaman Taore",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "type": "module",
+  "roar": {
+    "hosting": {
+      "staging": "roav-ran-monorepo-abc",
+      "production": "roav-ran-monorepo"
+    }
+  },
+  "scripts": {
+    "build": "rollup -c rollup.lib.config.mjs",
+    "build:staging": "webpack --mode production --env dbmode=staging",
+    "build:production": "webpack --mode production --env dbmode=production",
+    "predev": "if lsof -i :8000 -sTCP:LISTEN >/dev/null 2>&1 || ss -tlnp 2>/dev/null | grep -q ':8000 '; then echo 'Error: port 8000 is already in use. Stop that process before starting the dev server.' >&2; exit 1; fi",
+    "dev": "bash ../../../scripts/dev-platform.sh",
+    "dev:ci": "npx webpack serve --mode development --env dbmode=development",
+    "start": "bash ../../../scripts/assessment-env-up.sh",
+    "update": "npm --prefix ../../../packages/assessment-sdk run build",
+    "stop": "bash ../../../scripts/assessment-env-down.sh",
+    "restart": "npm run stop && npm run start",
+    "rebuild": "bash ../../../scripts/assessment-env-build.sh",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write --log-level=warn",
+    "format:check": "prettier . --check",
+    "test": "vitest --run --passWithNoTests"
+  },
+  "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
+  "dependencies": {
+    "@bdelab/roar-utils": "^1.0.18",
+    "@roar-platform/assessment-sdk": "^0.1.0",
+    "firebase": "^10.13.2",
+    "i18next": "^22.4.15",
+    "i18next-browser-languagedetector": "^7.0.1",
+    "lodash": "^4.17.21",
+    "ml-regression-polynomial": "^3.0.0",
+    "ndarray": "^1.0.19",
+    "ndarray-ops": "^1.2.2",
+    "onnxruntime-web": "^1.17.1",
+    "regenerator-runtime": "^0.13.9",
+    "store2": "^2.13.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.5",
+    "@babel/preset-env": "^7.22.5",
+    "@roar-platform/eslint-config": "*",
+    "@roar-platform/prettier-config": "*",
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-dsv": "^3.0.4",
+    "@rollup/plugin-html": "^1.0.4",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-url": "^8.0.2",
+    "@rollup/plugin-wasm": "^6.2.2",
+    "@sentry/webpack-plugin": "^2.14.0",
+    "@surma/rollup-plugin-off-main-thread": "^2.2.3",
+    "babel-loader": "^9.1.2",
+    "copy-webpack-plugin": "^12.0.2",
+    "css-loader": "^6.7.1",
+    "csv-loader": "^3.0.5",
+    "dotenv": "^16.4.5",
+    "eslint": "^9.0.0",
+    "file-loader": "^6.2.0",
+    "globals": "^16.0.0",
+    "html-loader": "^5.0.0",
+    "html-webpack-plugin": "^5.5.0",
+    "node-loader": "^2.0.0",
+    "path-browserify": "^1.0.1",
+    "prettier": "^3.6.0",
+    "process": "^0.11.10",
+    "rollup": "^4.48.1",
+    "rollup-plugin-copy": "^3.5.0",
+    "rollup-plugin-esbuild": "^6.1.1",
+    "rollup-plugin-postcss": "^4.0.2",
+    "rollup-plugin-string": "^3.0.0",
+    "sass": "^1.64.2",
+    "sass-loader": "^13.3.2",
+    "stream-browserify": "^3.0.0",
+    "style-loader": "^3.3.1",
+    "vitest": "^3.2.4",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1",
+    "webpack-merge": "^5.8.0"
+  }
+}

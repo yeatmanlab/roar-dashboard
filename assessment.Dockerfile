@@ -99,12 +99,18 @@ CMD ["node", "apps/backend/dist/server.js"]
 # ──────────────────────────────────────────────────────────────────────────────
 FROM node:24-slim AS firebase-emulator
 
+# curl for the healthcheck; a headless JRE for the Storage emulator, which runs the
+# security-rules runtime in Java. (The Auth emulator is pure Node and needs no JRE.)
 RUN apt-get update -qq \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends curl default-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
-# firebase-tools@13 bundles the Auth emulator as pure Node.js — no Java required.
 RUN npm install -g firebase-tools@13
 
+# Pre-download the Storage emulator JAR and the Emulator UI at build time so the container
+# starts them without needing network access at runtime.
+RUN firebase setup:emulators:storage \
+    && firebase setup:emulators:ui
+
 WORKDIR /app
-EXPOSE 9099
+EXPOSE 9099 9199 9000
