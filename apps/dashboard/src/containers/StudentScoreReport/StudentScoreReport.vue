@@ -180,7 +180,8 @@ const tasks = computed(
       ?.map((assignment) => assignment.taskId)
       .filter((t) => {
         if (!STUDENT_SCORE_REPORT_TASK_IDS.includes(t)) return false;
-        if (previouslyUnnormedTasks.includes(t)) return getScoringVersions.value[t] >= 1;
+        // Letter displayed score cards before norming (percent correct)
+        if (previouslyUnnormedTasks.includes(t) && t !== 'letter') return getScoringVersions.value[t] >= 1;
         return true;
       }) || [],
 );

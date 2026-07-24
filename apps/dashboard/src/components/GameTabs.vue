@@ -231,6 +231,7 @@ import PvTabs from 'primevue/tabs';
 import PvTag from 'primevue/tag';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { isTaskNormed } from '@/helpers/reports';
 
 const props = defineProps({
   games: { type: Array, required: true },
@@ -241,9 +242,18 @@ const props = defineProps({
 
 const { t, locale } = useI18n();
 
+const getScoringVersions = computed(() => {
+  if (props.games.length === 0) return {};
+  const scoringVersions = props.games.reduce((acc, game) => {
+    acc[game.taskId] = game?.params?.scoringVersion ?? null;
+    return acc;
+  }, {});
+  return scoringVersions;
+});
+
 /** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. **/
 const implementsValidityChecking = (taskId) => {
-  return !TASKS_EXCLUDED_FROM_RETAKE.includes(taskId);
+  return !TASKS_EXCLUDED_FROM_RETAKE.includes(taskId) || isTaskNormed(taskId, getScoringVersions.value[taskId]);
 };
 
 const getTaskName = (taskId, taskName) => {
@@ -253,8 +263,10 @@ const getTaskName = (taskId, taskName) => {
   if (LEVANTE_TASKS.includes(camelize(taskIdLowercased))) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
   }
+
   return taskName;
 };
+
 const getTaskDescription = (taskId, taskDescription) => {
   // Translate Levante task descriptions if not in English
   const taskIdLowercased = taskId.toLowerCase();
