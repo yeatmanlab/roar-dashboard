@@ -188,16 +188,22 @@ const getOptionLabel = computed(() => {
 const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
 
-// Resolve the participant's ROAR (Postgres) user ID from the backend `/me`
-// endpoint. This is the identity the backend user, administrations, and
-// agreements endpoints expect — NOT the Firebase `roarUid`.
+// Resolve the participant's ROAR (Postgres) user ID — the identity the
+// `GET /users/:userId/administrations` endpoint expects, NOT the Firebase
+// `roarUid`.
 //
-// NOTE: In proxy-launch mode (`props.launchId` set), `me.id` is the launching
-// user's ID, not the participant's. Resolving the participant's UUID for the
-// proxy path is handled by the separate proxy-launch change; the standard
-// student homepage path is unaffected.
-const { data: me } = useMeQuery({ enabled: initialized });
-const userId = computed(() => me.value?.id);
+// In proxy-launch mode (`props.launchId` set — e.g. a parent launching a
+// child from StudentCardSimple), `launchId` IS the participant's ROAR user
+// UUID, so it is the participant identity. On the self path (`launchId`
+// null) we fall back to the launching user's own `/me` ID. This drives the
+// per-user administrations query, the consent-gate agreements query, and
+// consent recording below.
+//
+// Reading another user's administrations and agreements relies on the backend
+// guardian-read authorization (`can_read_child`); without it the parent-scoped
+// reads return 403.
+const { data: me } = useMeQuery({ enabled: computed(() => initialized.value && !props.launchId) });
+const userId = computed(() => props.launchId ?? me.value?.id);
 
 // Participant profile from the backend (`GET /users/:id` → `mapUser`), replacing
 // the Firestore user-doc read — the last Firestore read on this page. Pass the
