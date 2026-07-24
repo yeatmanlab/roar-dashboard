@@ -891,8 +891,17 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
         const numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
         const oldNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
         rawScore = _get(assessment, 'scores.computed.composite.rawScore');
-        // If numAttempted, set as assessed
-        tag_color = oldNumAttempted || numAttempted ? '#A4DDED' : '#EEEEF0';
+        const hasSubskills = _get(assessment, 'scores.computed')
+          ? Object.keys(_get(assessment, 'scores.computed')).some((key) => roamFluencySubskills[key])
+          : false;
+
+        // Show assessed color for new fluency-arf (1.3.6+) subskills, even with 0 attempts.
+        // Covers students timing out on the first test question.
+        if (assessment?.taskId === 'fluency-arf' && assessment?.completedOn && hasSubskills) {
+          tag_color = '#A4DDED';
+        } else {
+          tag_color = oldNumAttempted || numAttempted ? '#A4DDED' : '#EEEEF0';
+        }
       }
     }
   } else {
@@ -1154,7 +1163,9 @@ const computeAssignmentAndRunData = computed(() => {
             // We do not show Symbolic Comp (recruitment=magpiPilot, 1.3.11+) scores
             currRowScores[taskId].useSubskillFormat = hasSubskills || _has(scores, 'symbolicComp');
 
-            if (hasSubskills) {
+            const timedOutWithAttempts = currRowScores[taskId].numAttempted === 0 && assessment?.completedOn;
+
+            if (hasSubskills && (currRowScores[taskId].numAttempted > 0 || timedOutWithAttempts)) {
               const allIncorrectSkills = [];
               const subsetIncorrectSkills = [];
 
@@ -1198,8 +1209,11 @@ const computeAssignmentAndRunData = computed(() => {
             }
 
             // Non-response modality scores (1.3.6+) can return decimal rawScore for main score report
-            if (currRowScores[taskId].rawScore != undefined) {
+            if (currRowScores[taskId].rawScore != undefined && currRowScores[taskId].numAttempted > 0) {
               currRowScores[taskId].rawScore = parseFloat(Number(currRowScores[taskId].rawScore).toFixed(2));
+              // Hide if only practice questions are completed and student did not time out
+            } else if (!timedOutWithAttempts) {
+              currRowScores[taskId].numAttempted = null;
             }
           }
 
