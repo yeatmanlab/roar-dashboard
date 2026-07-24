@@ -5,7 +5,7 @@
   "packages/assessment-sdk": "0.1.0",
   "packages/assessment-schema": "0.1.0",
   "apps/assessments/roar-pa": "5.1.0",
-  "apps/assessments/roar-swr": "1.15.0",
+  "apps/assessments/roar-swr": "1.17.4",
   "apps/assessments/roar-sre": "3.2.4",
   "apps/assessments/roar-letter": "4.0.10",
   "apps/assessments/roar-multichoice": "2.2.1",
