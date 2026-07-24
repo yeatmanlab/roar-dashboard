@@ -7,6 +7,7 @@ export { default as enUSIndividualScoreReport } from './en/us/en-us-individualSc
 export { default as esIndividualScoreReport } from './es/es-individualScoreReport.json';
 export { default as esCOIndividualScoreReport } from './es/co/es-co-individualScoreReport.json';
 export { default as ptTranslations } from './pt/pt-componentTranslations.json';
+export { default as ptBRTranslations } from './pt/br/pt-componentTranslations.json';
 export { default as pageTitlesEN } from './en/pageTitles.json';
 export { default as pageTitlesUS } from './en/us/pageTitles.json';
 export { default as pageTitlesES } from './es/pageTitles.json';
