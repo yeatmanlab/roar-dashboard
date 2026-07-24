@@ -250,11 +250,25 @@ const routes = [
     meta: { pageTitle: 'MP' },
   },
   {
+    path: GAME_ROUTES.ROAV_MP_PT,
+    name: 'MP-PT',
+    component: () => import('../components/tasks/TaskRoav.vue'),
+    props: { taskId: 'roav-mp-pt', language: 'pt' },
+    meta: { pageTitle: 'MP (PT)' },
+  },
+  {
     path: GAME_ROUTES.ROAV_RVP,
     name: 'RVP',
     component: () => import('../components/tasks/TaskRoav.vue'),
     props: { taskId: 'roav-rvp', language: 'en' },
     meta: { pageTitle: 'RVP' },
+  },
+  {
+    path: GAME_ROUTES.ROAV_RVP_PT,
+    name: 'RVP-PT',
+    component: () => import('../components/tasks/TaskRoav.vue'),
+    props: { taskId: 'roav-rvp-pt', language: 'pt' },
+    meta: { pageTitle: 'RVP (PT)' },
   },
   {
     path: GAME_ROUTES.ROAR_READALOUD,
@@ -663,6 +677,20 @@ const routes = [
     },
   },
   {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAV_MP_PT,
+    name: 'Launch Roav - MP-PT',
+    component: () => import('../components/tasks/TaskRoav.vue'),
+    props: (route) => ({
+      taskId: 'roav-mp-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: {
+      pageTitle: 'ROAR MP-PT',
+      permission: Permissions.Tasks.LAUNCH,
+    },
+  },
+  {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAV_RVP,
     name: 'Launch Roav - RVP',
     component: () => import('../components/tasks/TaskRoav.vue'),
@@ -673,6 +701,20 @@ const routes = [
     }),
     meta: {
       pageTitle: 'ROAR RVP',
+      permission: Permissions.Tasks.LAUNCH,
+    },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAV_RVP_PT,
+    name: 'Launch Roav - RVP-PT',
+    component: () => import('../components/tasks/TaskRoav.vue'),
+    props: (route) => ({
+      taskId: 'roav-rvp-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: {
+      pageTitle: 'ROAR RVP-PT',
       permission: Permissions.Tasks.LAUNCH,
     },
   },
