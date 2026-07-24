@@ -14,6 +14,14 @@
         {{ studentFirstName }}
       </template>
     </i18n-t>
+
+    <i18n-t keypath="scoreReports.longitudinalNote" tag="p">
+      <template #link>
+        <a href="https://roar.stanford.edu/technical/" target="_blank">
+          {{ $t('scoreReports.longitudinalLink') }}
+        </a>
+      </template>
+    </i18n-t>
   </section>
 </template>
 
