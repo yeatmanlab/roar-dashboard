@@ -1328,7 +1328,7 @@ const computeAssignmentAndRunData = computed(() => {
         // Hide when only practice questions are completed and not timed out, which is considered completed
         if (
           (testNumAttempted === undefined || testNumAttempted === 0) &&
-          assignment.progress[assessment.taskId.replace(/-/g, '_')].toLowerCase() !== 'completed'
+          assignment.progress[assessment.taskId.replace(/-/g, '_')] !== 'completed'
         ) {
           currRowScores[taskId] = null;
         }
