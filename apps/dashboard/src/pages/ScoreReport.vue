@@ -895,9 +895,9 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
           ? Object.keys(_get(assessment, 'scores.computed')).some((key) => roamFluencySubskills[key])
           : false;
 
-        // Show assessed color for new fluency-arf (1.3.6+) subskills, even with 0 attempts.
+        // Show assessed color for new fluency (1.3.6+) subskills, even with 0 attempts.
         // Covers students timing out on the first test question.
-        if (assessment?.taskId === 'fluency-arf' && assessment?.completedOn && hasSubskills) {
+        if (assessment?.completedOn && hasSubskills) {
           tag_color = '#A4DDED';
         } else {
           tag_color = oldNumAttempted || numAttempted ? '#A4DDED' : '#EEEEF0';
@@ -966,7 +966,6 @@ const computeAssignmentAndRunData = computed(() => {
     const runsByTaskIdAcc = {};
     // compositeFoundationalRunsAcc holds a support-level run per assignment with a foundational composite score
     const compositeFoundationalRunsAcc = [];
-
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
       const grade = String(assignment.userData?.grade);
@@ -1211,9 +1210,6 @@ const computeAssignmentAndRunData = computed(() => {
             // Non-response modality scores (1.3.6+) can return decimal rawScore for main score report
             if (currRowScores[taskId].rawScore != undefined && currRowScores[taskId].numAttempted > 0) {
               currRowScores[taskId].rawScore = parseFloat(Number(currRowScores[taskId].rawScore).toFixed(2));
-              // Hide if only practice questions are completed and student did not time out
-            } else if (!timedOutWithAttempts) {
-              currRowScores[taskId].numAttempted = null;
             }
           }
 
@@ -1326,6 +1322,15 @@ const computeAssignmentAndRunData = computed(() => {
               tagColor: getTagColor(scores.composite.supportLevel),
             };
           }
+        }
+
+        const testNumAttempted = _get(assessment, 'scores.raw.composite.test.numAttempted');
+        // Hide when only practice questions are completed and not timed out, which is considered completed
+        if (
+          (testNumAttempted === undefined || testNumAttempted === 0) &&
+          assignment.progress[assessment.taskId.replace(/-/g, '_')].toLowerCase() !== 'completed'
+        ) {
+          currRowScores[taskId] = null;
         }
 
         // Logic to update runsByTaskIdAcc
