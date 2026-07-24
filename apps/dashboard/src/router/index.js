@@ -222,6 +222,20 @@ const routes = [
     meta: { pageTitle: 'Core Tasks' },
   },
   {
+    path: GAME_ROUTES.SYMBOL_SEARCH,
+    name: 'Symbol Search',
+    component: () => import('../components/tasks/TaskRan.vue'),
+    props: { taskId: 'symbol-search', language: 'en' },
+    meta: { pageTitle: 'Symbol Search' },
+  },
+  {
+    path: GAME_ROUTES.SYMBOL_SEARCH_PT,
+    name: 'Symbol Search-PT',
+    component: () => import('../components/tasks/TaskRan.vue'),
+    props: { taskId: 'symbol-search-pt', language: 'pt' },
+    meta: { pageTitle: 'Symbol Search (PT)' },
+  },
+  {
     path: GAME_ROUTES.RAN,
     name: 'RAN',
     component: () => import('../components/tasks/TaskRan.vue'),
@@ -599,6 +613,34 @@ const routes = [
     }),
     meta: {
       pageTitle: 'RAN',
+      permission: Permissions.Tasks.LAUNCH,
+    },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SYMBOL_SEARCH,
+    name: 'Launch Symbol Search',
+    component: () => import('../components/tasks/TaskRan.vue'),
+    props: (route) => ({
+      taskId: 'symbol-search',
+      language: 'en',
+      launchId: route.params.launchId,
+    }),
+    meta: {
+      pageTitle: 'Symbol Search',
+      permission: Permissions.Tasks.LAUNCH,
+    },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SYMBOL_SEARCH_PT,
+    name: 'Launch Symbol Search-PT',
+    component: () => import('../components/tasks/TaskRan.vue'),
+    props: (route) => ({
+      taskId: 'symbol-search-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: {
+      pageTitle: 'Symbol Search (PT)',
       permission: Permissions.Tasks.LAUNCH,
     },
   },

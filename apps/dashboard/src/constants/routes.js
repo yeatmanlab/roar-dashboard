@@ -39,6 +39,8 @@ export const GAME_ROUTES = {
   ROAV_RVP_PT: '/game/roav-rvp-pt',
   CORE_TASKS: '/game/core-tasks/:taskId',
   RAN: '/game/ran',
+  SYMBOL_SEARCH: '/game/symbol-search',
+  SYMBOL_SEARCH_PT: '/game/symbol-search-pt',
   CROWDING: '/game/crowding',
   ROAV_MEP: '/game/roav-mep',
   ROAR_READALOUD: '/game/roar-readaloud',
