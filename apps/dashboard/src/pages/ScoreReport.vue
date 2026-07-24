@@ -414,10 +414,11 @@ import {
   includedValidityFlags,
   roamAlpacaSubskills,
   getTagColor,
-  roamFluencyTasks,
+  roamFluencySubskills,
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
+  roamFluencySubskillHeadersNonResponse,
   isTaskNormed,
   previouslyUnnormedTasks,
 } from '@/helpers/reports';
@@ -890,8 +891,17 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
         const numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
         const oldNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
         rawScore = _get(assessment, 'scores.computed.composite.rawScore');
-        // If numAttempted, set as assessed
-        tag_color = oldNumAttempted || numAttempted ? '#A4DDED' : '#EEEEF0';
+        const hasSubskills = _get(assessment, 'scores.computed')
+          ? Object.keys(_get(assessment, 'scores.computed')).some((key) => roamFluencySubskills[key])
+          : false;
+
+        // Show assessed color for new fluency (1.3.6+) subskills, even with 0 attempts.
+        // Covers students timing out on the first test question.
+        if (assessment?.completedOn && hasSubskills) {
+          tag_color = '#A4DDED';
+        } else {
+          tag_color = oldNumAttempted || numAttempted ? '#A4DDED' : '#EEEEF0';
+        }
       }
     }
   } else {
@@ -956,7 +966,6 @@ const computeAssignmentAndRunData = computed(() => {
     const runsByTaskIdAcc = {};
     // compositeFoundationalRunsAcc holds a support-level run per assignment with a foundational composite score
     const compositeFoundationalRunsAcc = [];
-
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
       const grade = String(assignment.userData?.grade);
@@ -1144,6 +1153,64 @@ const computeAssignmentAndRunData = computed(() => {
             const { fc, fr } = currRowScores[taskId];
             const totalRawScore = (fc?.rawScore ?? 0) + (fr?.rawScore ?? 0);
             currRowScores[taskId].rawScore = totalRawScore === 0 ? null : totalRawScore;
+          } else {
+            const scores = _get(assessment, 'scores.computed');
+            // Verify non-response modality scores (1.3.6+) by confirming that at least one subskill is present
+            const hasSubskills = scores ? Object.keys(scores).some((key) => roamFluencySubskills[key]) : false;
+
+            // Since we filter out empty subskills, we need a state that maintains we're dealing with new fluency scores (formatting)
+            // We do not show Symbolic Comp (recruitment=magpiPilot, 1.3.11+) scores
+            currRowScores[taskId].useSubskillFormat = hasSubskills || _has(scores, 'symbolicComp');
+
+            const timedOutWithAttempts = currRowScores[taskId].numAttempted === 0 && assessment?.completedOn;
+
+            if (hasSubskills && (currRowScores[taskId].numAttempted > 0 || timedOutWithAttempts)) {
+              const allIncorrectSkills = [];
+              const subsetIncorrectSkills = [];
+
+              Object.keys(roamFluencySubskills).forEach((subskill) => {
+                const subskillInfo = _get(assessment, `scores.computed.${subskill}`);
+                if (subskillInfo && subskillInfo.numAttempted > 0) {
+                  currRowScores[taskId][subskill] = {
+                    percentCorrect: `${Math.round(subskillInfo.subPercentCorrect * 100)}%`,
+                    ...subskillInfo,
+                    rawScore: parseFloat(Number(subskillInfo.rawScore).toFixed(2)),
+                  };
+                  const subskillIncorrectSkills = _get(
+                    assessment,
+                    `scores.computed.composite.incorrectSkills.${subskill}`,
+                  );
+                  if (subskillIncorrectSkills) {
+                    const parsedIncorrectSkills = subskillIncorrectSkills.split(',').map((s) => s.trim());
+                    if (taskId === 'fluency-calf' || subskill === 'addition' || subskill === 'subtraction') {
+                      allIncorrectSkills.push(...parsedIncorrectSkills);
+                    } else {
+                      // For fluency-arf, multiplication and division skills are considered the same for counting purposes
+                      subsetIncorrectSkills.push(...parsedIncorrectSkills);
+                    }
+                  }
+                }
+              });
+
+              if (taskId === 'fluency-arf') {
+                allIncorrectSkills.push(...new Set(subsetIncorrectSkills));
+              }
+
+              // subPercentCorrect field is returned starting 1.3.9
+              // Writes percentCorrect to top-level for main score report tooltip and composite for subscore tooltip
+              currRowScores[taskId].composite = {
+                totalIncorrectSkills: allIncorrectSkills.length != 0 ? allIncorrectSkills.length : null,
+                percentCorrect: `${Math.round(scores.composite?.subPercentCorrect * 100)}%`,
+                ...scores.composite,
+                rawScore: parseFloat(Number(scores.composite?.rawScore).toFixed(2)),
+              };
+              currRowScores[taskId].percentCorrect = `${Math.round(scores.composite?.subPercentCorrect * 100)}%`;
+            }
+
+            // Non-response modality scores (1.3.6+) can return decimal rawScore for main score report
+            if (currRowScores[taskId].rawScore != undefined && currRowScores[taskId].numAttempted > 0) {
+              currRowScores[taskId].rawScore = parseFloat(Number(currRowScores[taskId].rawScore).toFixed(2));
+            }
           }
 
           scoreFilterTags += ' Assessed ';
@@ -1257,6 +1324,15 @@ const computeAssignmentAndRunData = computed(() => {
           }
         }
 
+        const testNumAttempted = _get(assessment, 'scores.raw.composite.test.numAttempted');
+        // Hide when only practice questions are completed and not timed out, which is considered completed
+        if (
+          (testNumAttempted === undefined || testNumAttempted === 0) &&
+          assignment.progress[assessment.taskId.replace(/-/g, '_')].toLowerCase() !== 'completed'
+        ) {
+          currRowScores[taskId] = null;
+        }
+
         // Logic to update runsByTaskIdAcc
         const run = {
           // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
@@ -1357,19 +1433,6 @@ const computeAssignmentAndRunData = computed(() => {
     const filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
       return Object.keys(taskInfoById).includes(taskId);
     });
-
-    // We only want to display the ROAM Tasks if the recruitment param is responseModality
-    // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
-    // Response modality admins who switch mid-way will no longer see the subscore tables
-    const assessments = administrationData.value.assessments;
-    for (const assessment of assessments) {
-      if (roamFluencyTasks.includes(assessment.taskId)) {
-        const recruitment = assessment.params.recruitment;
-        if (recruitment !== 'responseModality') {
-          delete filteredRunsByTaskId[assessment.taskId];
-        }
-      }
-    }
 
     return {
       runsByTaskId: filteredRunsByTaskId,
@@ -1484,33 +1547,43 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        const setSubscore = (field, score) => {
-          // Response modality prod data only uses new field names (ver 1.2.23+)
-          let result = '';
-          let total = 0;
-          if (score.fr) {
-            const frScore = score.fr[field] ?? 0;
-            result += `Free Response: ${frScore}`;
-            total += frScore;
-          }
+        const hasSubskills = scores ? Object.keys(scores[taskId]).some((key) => roamFluencySubskills[key]) : false;
+        // Non-response modality (1.3.6+)
+        if (hasSubskills) {
+          tableRow[`${taskName} - Raw Score`] = score.rawScore;
 
-          if (score.fc) {
-            const fcScore = score.fc[field] ?? 0;
-            result += `${result ? '\n' : ''}Multiple Choice: ${fcScore}`;
-            total += fcScore;
-          }
+          Object.entries(roamFluencySubskillHeadersNonResponse).forEach(([property, propertyHeader]) => {
+            tableRow[`${taskName} - ${propertyHeader}`] = score[property];
+          });
+        } else {
+          const setSubscore = (field, score) => {
+            // Response modality prod data only uses new field names (ver 1.2.23+)
+            let result = '';
+            let total = 0;
+            if (score.fr) {
+              const frScore = score.fr[field] ?? 0;
+              result += `Free Response: ${frScore}`;
+              total += frScore;
+            }
 
-          if (score.fr || score.fc) result += `\nTotal: ${total}`;
+            if (score.fc) {
+              const fcScore = score.fc[field] ?? 0;
+              result += `${result ? '\n' : ''}Multiple Choice: ${fcScore}`;
+              total += fcScore;
+            }
 
-          // If result is an empty string, handle a non-response modality score
-          return result || score[field];
-        };
+            if (score.fr || score.fc) result += `\nTotal: ${total}`;
 
-        tableRow[`${taskName} - Raw Score`] = score.rawScore;
+            // If result is an empty string, handle a non-response modality score
+            return result || score[field];
+          };
 
-        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-          tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
-        });
+          tableRow[`${taskName} - Raw Score`] = score.rawScore;
+
+          Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+            tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
+          });
+        }
       } else if (rawOnlyTasks.includes(taskId) && !isTaskNormed(taskId, getScoringVersions.value[taskId])) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
