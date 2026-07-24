@@ -1107,9 +1107,6 @@ export function AdministrationService({
       );
       const targetUserAdminIds = targetUserAdmins.map(extractFgaObjectId);
 
-      if (targetUserAdminIds.length === 0) {
-        return { items: [], totalItems: 0 };
-      }
       // Fetch administrations based on user role and authorization
       let result: PaginatedResult<Administration>;
 
@@ -1122,12 +1119,18 @@ export function AdministrationService({
         // the intersection would always be empty.
         result = await administrationRepository.getByIds(targetUserAdminIds, queryParams);
       } else {
-        const requesterUserAdmins = await authorizationService.listAccessibleObjects(
-          requesterUserId,
-          FgaRelation.CAN_LIST,
-          FgaType.ADMINISTRATION,
-        );
-        const requesterUserAdminIds = new Set(requesterUserAdmins.map(extractFgaObjectId));
+        const requesterUserAdminIds =
+          targetUserAdminIds.length > 0
+            ? new Set(
+                (
+                  await authorizationService.listAccessibleObjects(
+                    requesterUserId,
+                    FgaRelation.CAN_LIST,
+                    FgaType.ADMINISTRATION,
+                  )
+                ).map(extractFgaObjectId),
+              )
+            : new Set<string>();
         const intersectedIds = targetUserAdminIds.filter((id) => requesterUserAdminIds.has(id));
 
         if (intersectedIds.length === 0) {

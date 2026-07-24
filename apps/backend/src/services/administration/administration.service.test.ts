@@ -3269,10 +3269,11 @@ describe('AdministrationService', () => {
       expect(result.totalItems).toBe(2);
     });
 
-    it('should return empty result when target user has no accessible administrations', async () => {
+    it('throws 403 for non-super-admin, non-guardian requester when target user has no accessible administrations', async () => {
       const mockUser = UserFactory.build({ id: 'target-user-123' });
 
       mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockUserRepository.getUserEntityMemberships.mockResolvedValue([]);
       mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
 
       const service = AdministrationService({
@@ -3281,18 +3282,72 @@ describe('AdministrationService', () => {
         authorizationService: mockAuthorizationService,
       });
 
+      await expect(
+        service.getUserAdministrations({ userId: 'requester-user', isSuperAdmin: false }, 'target-user-123', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 403,
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      // Only the target's accessible-objects lookup runs — the requester's FGA
+      // call is skipped since the intersection can never be non-empty.
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledTimes(1);
+      expect(mockAdministrationRepository.getByIds).not.toHaveBeenCalled();
+    });
+
+    it('returns empty result for super admin when target user has no accessible administrations', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
+      mockAdministrationRepository.getByIds.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
       const result = await service.getUserAdministrations(
-        { userId: 'requester-user', isSuperAdmin: false },
+        { userId: 'super-admin', isSuperAdmin: true },
         'target-user-123',
         { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc' },
       );
 
-      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
-        'target-user-123',
-        'can_list',
-        'administration',
-      );
-      expect(mockAdministrationRepository.getByIds).not.toHaveBeenCalled();
+      expect(mockAdministrationRepository.getByIds).toHaveBeenCalledWith([], expect.anything());
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('returns empty result for authorized guardian when child has no accessible administrations', async () => {
+      const child = UserFactory.build({ id: 'child-1', rosteringEnded: null });
+
+      mockUserRepository.getById.mockResolvedValue(child);
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
+      mockUserRepository.getUserEntityMemberships.mockResolvedValue([{ entityType: 'family', entityId: 'family-1' }]);
+      mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
+      mockAdministrationRepository.getByIds.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministrations({ userId: 'parent-1', isSuperAdmin: false }, 'child-1', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      });
+
+      expect(mockAdministrationRepository.getByIds).toHaveBeenCalledWith([], expect.anything());
       expect(result.items).toEqual([]);
       expect(result.totalItems).toBe(0);
     });
