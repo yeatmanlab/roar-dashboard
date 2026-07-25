@@ -13,7 +13,6 @@ import {
   domainToAssessmentStage,
 } from '@roar-platform/assessment-schema';
 import {
-  SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS,
   SRE_SCORE_TABLE_URL,
   SRE_SCORING_VERSION,
   SRE_SUBTASK_DOMAINS,
@@ -563,7 +562,7 @@ export class RoarScores {
         };
       }
     }
-      if (computedScores[COMPOSITE_DOMAIN]?.thetaEstimate != null && this.taskId === SRE_TASK_IDS.EN) {
+    if (computedScores[COMPOSITE_DOMAIN]?.thetaEstimate != null && this.taskId === SRE_TASK_IDS.EN) {
       computedScores[COMPOSITE_FOUNDATIONAL_DOMAIN] = {
         thetaEstimate: computedScores[COMPOSITE_DOMAIN].thetaEstimate,
       };

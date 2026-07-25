@@ -7,7 +7,7 @@ import _isUndefined from 'lodash/isUndefined';
 import { getAgeData, getGrade } from '@bdelab/roar-utils';
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
 import i18next from 'i18next';
-import { SRE_LANGUAGES, SRE_SCORING_VERSION, SRE_SUBTASK_DOMAINS } from '@roar-platform/assessment-schema/roar-sre';
+import { SRE_LANGUAGES, SRE_SUBTASK_DOMAINS } from '@roar-platform/assessment-schema/roar-sre';
 import { writeTrial, finishRun, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { jsPsych } from '../jsPsych';
@@ -166,8 +166,6 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
     timerLength,
     scoringVersion,
   } = cleanParams;
-
-  const is90s2BlocksFixedForms = lng === 'en' && userMode === '90s2BlocksFixedForms';
 
   if (language !== 'en') i18next.changeLanguage(language);
 
