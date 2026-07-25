@@ -11,6 +11,9 @@ import { processCSV } from './config/corpus';
 import deCorpusTest from './config/corpus/de/test.csv';
 import deCorpusPractice from './config/corpus/de/practice.csv';
 import deTranslations from '../locales/de/translation.json';
+import ptCorpusTest from './config/corpus/pt/test.csv';
+import ptCorpusPractice from './config/corpus/pt/practice.csv';
+import ptTranslations from '../locales/pt/translation.json';
 import enCorpusTestCatFoundational from './config/corpus/en/phoneme_foundational_composite.csv';
 
 export const corpusTranslations = {
@@ -27,6 +30,10 @@ export const corpusTranslations = {
   de: {
     test: deCorpusTest,
     practice: deCorpusPractice,
+  },
+  pt: {
+    test: ptCorpusTest,
+    practice: ptCorpusPractice,
   },
   // it: {
   //   test: itCorpusTest,
@@ -71,8 +78,11 @@ i18next
       de: {
         translation: deTranslations,
       },
-      it: {
-        translation: 'itTranslations',
+      pt: {
+        translation: ptTranslations,
       },
+      // it: {
+      //   translation: 'itTranslations',
+      // },
     },
   });

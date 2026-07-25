@@ -38,7 +38,11 @@ export const delPracticeTrials = {
     },
     {
       type: jsPsychAudioButtonResponse,
-      stimulus: () => mediaAssets.audio[camelize(store.session('feedbackAudio'))],
+      stimulus: () => {
+        const feedbackAudio = store.session('feedbackAudio');
+        const audioUrl = mediaAssets.audio[camelize(feedbackAudio)];
+        return audioUrl || mediaAssets.audio.ns_013;
+      },
       prompt: () => `
             <div id="jspsych-html-multi-response-stimulus">
               <img draggable="false" class="testImageCenter" src="${store.session('feedbackImage')}" alt="reward">

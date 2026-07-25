@@ -36,7 +36,11 @@ export const writePracticeTrials = (block) => ({
     },
     {
       type: jsPsychAudioButtonResponse,
-      stimulus: () => mediaAssets.audio[camelize(store.session('feedbackAudio'))],
+      stimulus: () => {
+        const feedbackAudio = store.session('feedbackAudio');
+        const audioUrl = mediaAssets.audio[camelize(feedbackAudio)];
+        return audioUrl || mediaAssets.audio.ns_013;
+      },
       choices: [],
       response_allowed_while_playing: false,
       trial_ends_after_audio: true,

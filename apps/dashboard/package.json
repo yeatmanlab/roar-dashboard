@@ -39,7 +39,7 @@
     "@primevue/themes": "^4.2.4",
     "@roar-platform/api-contract": "^0.1.0",
     "@roar-platform/assessment-schema": "^0.1.0",
-    "@roar-platform/roar-pa": "5.1.0",
+    "@roar-platform/roar-pa": "5.3.7",
     "@roar-platform/assessment-sdk": "^0.1.0",
     "@sentry/browser": "^8.0.0",
     "@sentry/integrations": "^7.114.0",
