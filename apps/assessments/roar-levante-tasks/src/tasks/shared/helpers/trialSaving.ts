@@ -5,7 +5,6 @@ import { taskStore } from '../../../taskStore';
 import { recordCompletion } from './recordCompletion';
 import { Logger } from '../../../utils/logger';
 import { finishExperiment } from '../trials';
-import { shouldUseClowder } from './shouldUseClowder';
 import { ScoringHandler } from './scoringHandler';
 
 export const initTrialSaving = (config: Record<string, any>) => {
