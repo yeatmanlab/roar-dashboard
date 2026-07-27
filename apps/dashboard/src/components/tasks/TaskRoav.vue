@@ -22,7 +22,10 @@ const props = defineProps({
   launchId: { type: String, default: null },
 });
 
-let TaskLauncher;
+// Start loading the assessment bundle at setup rather than in onMounted. The
+// watcher below runs with `immediate: true`, so startTask can execute during
+// setup — before onMounted would have assigned the launcher.
+const taskLauncherPromise = import('@roar-platform/roav-apps').then((module) => module.TaskLauncher);
 
 const router = useRouter();
 const taskStarted = ref(false);
@@ -61,13 +64,7 @@ window.addEventListener(
   { once: true },
 );
 
-onMounted(async () => {
-  try {
-    TaskLauncher = (await import('@roar-platform/roav-apps')).TaskLauncher;
-  } catch (error) {
-    console.error('An error occurred while importing the game module.', error);
-  }
-
+onMounted(() => {
   if (authStore.isAuthReady) init();
 });
 
@@ -181,6 +178,8 @@ async function startTask(selectedAdmin) {
     );
 
     const { variantParams } = await getVariantById(roavTaskVariant.variantId);
+
+    const TaskLauncher = await taskLauncherPromise;
 
     const roarApp = new TaskLauncher(variantParams, userParams);
 

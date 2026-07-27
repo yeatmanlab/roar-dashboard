@@ -24,7 +24,10 @@ const props = defineProps({
   launchId: { type: String, default: null },
 });
 
-let TaskLauncher;
+// Start loading the assessment bundle at setup rather than in onMounted. The
+// watcher below runs with `immediate: true`, so startTask can execute during
+// setup — before onMounted would have assigned the launcher.
+const taskLauncherPromise = import('@roar-platform/roar-readaloud').then((module) => module.default);
 
 const router = useRouter();
 const taskStarted = ref(false);
@@ -63,13 +66,7 @@ window.addEventListener(
   { once: true },
 );
 
-onMounted(async () => {
-  try {
-    TaskLauncher = (await import('@roar-platform/roar-readaloud')).default;
-  } catch (error) {
-    console.error('An error occurred while importing the game module.', error);
-  }
-
+onMounted(() => {
   if (authStore.isAuthReady) init();
 });
 
@@ -201,6 +198,8 @@ async function startTask(selectedAdmin) {
     // Read Aloud drives its own DOM (no jsPsych target div) and takes a session object as the
     // third constructor arg. assessmentUid seeds the recording storage-path segment; there is no
     // operator-entered participant ID on the dashboard path, so assessmentPid stays empty.
+    const TaskLauncher = await taskLauncherPromise;
+
     const roarApp = new TaskLauncher(gameParams, userParams, {
       assessmentPid: '',
       assessmentUid: participantId,
