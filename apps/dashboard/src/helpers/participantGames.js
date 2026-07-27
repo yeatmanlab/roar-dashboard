@@ -12,6 +12,27 @@
 import { findTaskByIdOrSlug } from '@/helpers/taskIdentifiers';
 
 /**
+ * Whether a game's external launch URL needs the participant's org membership
+ * IDs (`schoolId` / `classId`).
+ *
+ * Mirrors the generic-external branch of `GameTabs.externalLinksByTask`: a task
+ * with an external URL that is neither `qualtrics` (needs only `assessmentPid`)
+ * nor `mefs` (needs only age, derived from `dob`) builds its URL with
+ * `schoolId` / `classId`. The participant homepage uses this to fetch the
+ * memberships read **only** when such a task is present — internal-only
+ * administrations make no extra call.
+ *
+ * @param {Object} game – A game object from {@link mapAdministrationTasksToGames}.
+ * @returns {boolean} True when the game's launch URL needs org membership IDs.
+ */
+export function gameNeedsOrgMemberships(game) {
+  const hasExternalUrl = Boolean(game?.taskData?.variantURL || game?.taskData?.taskURL);
+  if (!hasExternalUrl) return false;
+  const taskId = String(game?.taskId ?? '');
+  return !taskId.includes('qualtrics') && !taskId.includes('mefs');
+}
+
+/**
  * Map a single administration task (with embedded per-student state) plus the
  * matched catalog task into a homepage game object.
  *

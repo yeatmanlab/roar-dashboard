@@ -49,6 +49,10 @@ export function registerUserRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, params: { userId, administrationId }, query }) =>
         UsersController.listUserAdministrationAgreements(user!, userId, administrationId, query),
     },
+    listUserMemberships: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { userId } }) => UsersController.listUserMemberships(user!, userId),
+    },
     scoreReports: {
       getGuardianStudentReport: {
         middleware: [AuthGuardMiddleware],

@@ -66,6 +66,7 @@ describe('UsersController', () => {
   const mockGetUserAdministrations = vi.fn();
   const mockGetUserAdministration = vi.fn();
   const mockListUserAdministrationAgreements = vi.fn();
+  const mockListUserMemberships = vi.fn();
   const mockGetGuardianStudentReport = vi.fn();
   const mockAuthContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
 
@@ -78,6 +79,7 @@ describe('UsersController', () => {
     mockUserService.create = mockCreate;
     mockUserService.update = mockUpdate;
     mockUserService.recordUserAgreement = mockRecordUserAgreement;
+    mockUserService.listUserMemberships = mockListUserMemberships;
     vi.mocked(UserService).mockReturnValue(mockUserService);
 
     // Setup the mock AdministrationService
@@ -538,6 +540,68 @@ describe('UsersController', () => {
       const { UsersController: Controller } = await import('./users.controller');
 
       await expect(Controller.update(superAdminContext, targetUserId, validBody)).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('listUserMemberships', () => {
+    const classMembership = {
+      entityType: 'class' as const,
+      entityId: 'class-A',
+      role: 'student' as const,
+      schoolId: 'school-A',
+      districtId: 'district-1',
+    };
+    const familyMembership = { entityType: 'family' as const, entityId: 'fam-1', role: 'child' as const };
+    const schoolMembership = { entityType: 'school' as const, entityId: 'school-A', role: 'administrator' as const };
+
+    it('returns 200 with the membership items, preserving schoolId/districtId on class rows', async () => {
+      mockListUserMemberships.mockResolvedValue([classMembership, familyMembership, schoolMembership]);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserMemberships(mockAuthContext, 'student-1');
+
+      const data = expectOkResponse(result);
+      // Deep equality confirms the transform preserves the class parent IDs and the
+      // family / org role shapes unchanged.
+      expect(data.items).toEqual([classMembership, familyMembership, schoolMembership]);
+      expect(mockListUserMemberships).toHaveBeenCalledWith(mockAuthContext, 'student-1');
+    });
+
+    it('maps a FORBIDDEN ApiError to a 403 response', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockListUserMemberships.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserMemberships(mockAuthContext, 'student-1');
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('maps an INTERNAL_SERVER_ERROR ApiError to a 500 response', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockListUserMemberships.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserMemberships(mockAuthContext, 'student-1');
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+    });
+
+    it('rethrows non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Unexpected error');
+      mockListUserMemberships.mockRejectedValue(unexpectedError);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await expect(Controller.listUserMemberships(mockAuthContext, 'student-1')).rejects.toThrow('Unexpected error');
     });
   });
 

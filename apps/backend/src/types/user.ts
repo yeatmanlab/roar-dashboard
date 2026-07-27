@@ -79,3 +79,14 @@ export type EnrolledUserEntity = EnrolledUserBase & {
   demographics?: EnrolledUserDemographicsEntity;
 };
 export type EnrolledFamilyUserEntity = User & { roles: UserFamilyRole[] };
+
+/**
+ * A single active entity membership of a user, enriched for the memberships read
+ * endpoint: each row carries the member's `role`, and class rows carry the parent
+ * `schoolId` / `districtId` (a student has no school-level row of their own — their
+ * school is the parent of their class).
+ */
+export type UserMembershipDetail =
+  | { entityType: 'district' | 'school' | 'group'; entityId: string; role: UserRole }
+  | { entityType: 'class'; entityId: string; role: UserRole; schoolId?: string; districtId?: string }
+  | { entityType: 'family'; entityId: string; role: UserFamilyRole };
