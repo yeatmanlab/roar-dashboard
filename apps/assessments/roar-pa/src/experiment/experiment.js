@@ -33,6 +33,8 @@ import esPractice from './config/corpus/es/practice.csv';
 import esTest from './config/corpus/es/test.csv';
 import dePractice from './config/corpus/de/practice.csv';
 import deTest from './config/corpus/de/test.csv';
+import ptPractice from './config/corpus/pt/practice.csv';
+import ptTest from './config/corpus/pt/test.csv';
 import enTestCatFoundational from './config/corpus/en/phoneme_foundational_composite.csv';
 import { processCSV } from './config/corpus';
 
@@ -131,6 +133,8 @@ export function buildExperiment(config) {
       files = [esPractice, esTest];
     } else if (i18next.language === 'de') {
       files = [dePractice, deTest];
+    } else if (i18next.language === 'pt') {
+      files = [ptPractice, ptTest];
     } else if (config.isAdaptive) {
       files = [enPracticeCat, enTestCatFoundational];
     } else {
