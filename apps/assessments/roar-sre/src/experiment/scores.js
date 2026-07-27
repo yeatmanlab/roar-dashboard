@@ -560,6 +560,12 @@ export class RoarScores {
           ...normedScores,
           scoringVersion: this.scoringVersion,
         };
+
+        // For v4, derive thetaEstimate from sreScore
+        if (this.scoringVersion === SRE_SCORING_VERSION.V4 && computedScores[COMPOSITE_DOMAIN].sreScore != null) {
+          computedScores[COMPOSITE_DOMAIN].thetaEstimate =
+            Math.round((computedScores[COMPOSITE_DOMAIN].sreScore * 0.0770899 + -3.0328717) * 10) / 10;
+        }
       }
     }
     if (computedScores[COMPOSITE_DOMAIN]?.thetaEstimate != null && this.taskId === SRE_TASK_IDS.EN) {
