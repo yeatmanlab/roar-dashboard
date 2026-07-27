@@ -18,6 +18,14 @@ const openSchoolScoreReport = () => {
 };
 
 describe('Partner Admin: Score Reports', () => {
+  // TEMP DIAGNOSTIC: the global uncaught:exception handler in cypress/support/e2e.js swallows
+  // JS errors silently, which hides the real cause when CSV export fails in CI but not locally.
+  // Log the error so it shows up in the CI run output, then remove once root-caused.
+  Cypress.on('uncaught:exception', (err) => {
+    cy.task('log', `[scoreReports.cy.js] Uncaught exception: ${err.message}\n${err.stack}`);
+    return false;
+  });
+
   // @TODO: Expand on test to verify only stats exist for district admin.
   it('Renders only stats for district admin score report', () => {
     // Login as a partner admin.
