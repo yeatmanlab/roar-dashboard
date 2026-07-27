@@ -63,6 +63,7 @@ describe('Partner Admin: Score Reports', () => {
 
     // Validate that the exported file exists.
     // @TODO: Extend to validate contents of the file.
+    cy.wait(500); // Small buffer for file system write
     cy.readFile(`cypress/downloads/roar-scores-partner-test-administration-cypress-test-school.csv`);
   });
 
@@ -97,6 +98,7 @@ describe('Partner Admin: Score Reports', () => {
 
     // Validate that the exported file exists.
     // @TODO: Extend to validate contents of the file.
+    cy.wait(500); // Small buffer for file system write
     cy.readFile(`cypress/downloads/roar-scores-selected-partner-test-administration-cypress-test-school.csv`);
   });
 });
