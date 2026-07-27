@@ -50,7 +50,7 @@ vi.mock('@roar-platform/assessment-schema', () => ({
   },
 }));
 
-const { PA_TASK_ID, PA_SCORING_VERSION, PA_SCORE_KIND } = pa;
+const { PA_TASK_ID, PA_SCORING_VERSION } = pa;
 
 const setSession = ({ config, thetas, thetaSEs }) => {
   store.session.set('config', config);
