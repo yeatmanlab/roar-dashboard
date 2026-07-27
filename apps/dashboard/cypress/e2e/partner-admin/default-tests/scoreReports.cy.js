@@ -58,34 +58,12 @@ describe('Partner Admin: Score Reports', () => {
     // Open the score report.
     openSchoolScoreReport();
 
-    // TEMP DIAGNOSTIC: capture anything Vue swallows internally (e.g. errors thrown inside the
-    // @click handler) so it shows up in CI output via cy.task, since these never reach
-    // window.onerror/unhandledrejection and are invisible to Cypress's uncaught:exception hook.
-    cy.window().then((win) => {
-      cy.spy(win.console, 'error').as('consoleError');
-    });
-
     // Export the score report.
     cy.get('[data-cy="data-table__export-table-btn"]').contains('Export All (CSV)').click();
 
-    cy.get('@consoleError').then((spy) => {
-      if (spy.callCount) {
-        const messages = spy
-          .getCalls()
-          .map((call) => call.args.map(String).join(' '))
-          .join('\n---\n');
-        cy.task('log', `[scoreReports.cy.js] console.error during "Exports the complete score report":\n${messages}`);
-      } else {
-        cy.task('log', '[scoreReports.cy.js] no console.error captured during "Exports the complete score report"');
-      }
-    });
-
     // Validate that the exported file exists.
     // @TODO: Extend to validate contents of the file.
-    // CI has been observed taking ~6-7s to generate/download this file (vs. instant locally), so give a wide margin.
-    cy.readFile(`cypress/downloads/roar-scores-partner-test-administration-cypress-test-school.csv`, {
-      timeout: 15000,
-    });
+    cy.readFile(`cypress/downloads/roar-scores-partner-test-administration-cypress-test-school.csv`);
   });
 
   it('Exports a selected score report', () => {
@@ -114,33 +92,11 @@ describe('Partner Admin: Score Reports', () => {
     cy.findAllByTestId('row-checkbox__input').eq(3).click();
     cy.findAllByTestId('row-checkbox__input').eq(5).click();
 
-    // TEMP DIAGNOSTIC: capture anything Vue swallows internally (e.g. errors thrown inside the
-    // @click handler) so it shows up in CI output via cy.task, since these never reach
-    // window.onerror/unhandledrejection and are invisible to Cypress's uncaught:exception hook.
-    cy.window().then((win) => {
-      cy.spy(win.console, 'error').as('consoleError');
-    });
-
     // Export the score report.
     cy.get('[data-cy="data-table__export-selected-btn"]').contains('Export Selected (CSV)').click();
 
-    cy.get('@consoleError').then((spy) => {
-      if (spy.callCount) {
-        const messages = spy
-          .getCalls()
-          .map((call) => call.args.map(String).join(' '))
-          .join('\n---\n');
-        cy.task('log', `[scoreReports.cy.js] console.error during "Exports a selected score report":\n${messages}`);
-      } else {
-        cy.task('log', '[scoreReports.cy.js] no console.error captured during "Exports a selected score report"');
-      }
-    });
-
     // Validate that the exported file exists.
     // @TODO: Extend to validate contents of the file.
-    // CI has been observed taking ~6-7s to generate/download this file (vs. instant locally), so give a wide margin.
-    cy.readFile(`cypress/downloads/roar-scores-selected-partner-test-administration-cypress-test-school.csv`, {
-      timeout: 15000,
-    });
+    cy.readFile(`cypress/downloads/roar-scores-selected-partner-test-administration-cypress-test-school.csv`);
   });
 });
