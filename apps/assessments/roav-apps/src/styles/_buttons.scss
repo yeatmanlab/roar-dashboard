@@ -17,9 +17,9 @@
   background-image: none;
   border: 1vh solid transparent;
   border-radius: 1vh;
-  color: $text-yellow;
+  color: white;
   background-color: $roav-blue;
-  border-color: $roav-blue-dark;
+  // border-color: $roav-blue-dark;
 }
 
 // ============================================
@@ -141,6 +141,10 @@ img.roav-button-attention-strong:not(:disabled) {
     color: $roav-yellow;
   }
   .roav-rvp-body & {
+    color: $roav-yellow;
+  }
+
+  .roav-cr-body & {
     color: $roav-yellow;
   }
 }

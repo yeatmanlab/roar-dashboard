@@ -10,7 +10,9 @@ export const htmlImgSvgPositioned = (
   degRot = 0,
   nameClass = undefined,
 ) => {
-  // if (!show) return "";
+  if (!show) {
+    return '';
+  }
   const htmlClass = nameClass ? `class="${nameClass}"` : '';
   return `
     <img

@@ -22,6 +22,26 @@
     }
   },
   {
+    "variantName": "roav-cr-default",
+    "params": {
+      "corpusName": "corpus-def",
+      "etCalibrate": true,
+      "etEnable": true,
+      "modeGame": "all",
+      "nameConfigBlock": "config-block-def",
+      "nameConfigEt": "config-et-def",
+      "nameConfigQuest": "config-quest-def",
+      "nameConfigStim": "config-stim-def",
+      "recruitment": "school",
+      "screenCalibrate": true,
+      "subvar": "sv1",
+      "taskName": "roav-cr",
+      "vdCalibrate": true,
+      "videoEnable": true,
+      "videoRecord": false
+    }
+  },
+  {
     "variantName": "roav-rvp-pt",
     "params": {
       "corpusName": "corpus-def",
