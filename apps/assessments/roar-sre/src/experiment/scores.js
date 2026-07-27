@@ -13,7 +13,6 @@ import {
   domainToAssessmentStage,
 } from '@roar-platform/assessment-schema';
 import {
-  SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS,
   SRE_SCORE_TABLE_URL,
   SRE_SCORING_VERSION,
   SRE_SUBTASK_DOMAINS,
@@ -451,7 +450,7 @@ export class RoarScores {
           const rawScore = Math.max(score[SRE_SUBTASK_DOMAINS.AI_V1_P1].sreScore, 0);
           const aiRow = this.aiLookupTable.find((row) => row.rawScore === rawScore && row.form === 'aiP1');
           if (!aiRow) throw new Error(`Missing AI equating row for form aiP1, rawScore ${rawScore}`);
-          return aiRow.sreScore;
+          if (aiRow) return aiRow.sreScore;
         }
         if (score[SRE_SUBTASK_DOMAINS.AI_V1_P2]?.sreScore != null) {
           if (!this.aiTableLoaded)
@@ -459,7 +458,7 @@ export class RoarScores {
           const rawScore = Math.max(score[SRE_SUBTASK_DOMAINS.AI_V1_P2].sreScore, 0);
           const aiRow = this.aiLookupTable.find((row) => row.rawScore === rawScore && row.form === 'aiP2');
           if (!aiRow) throw new Error(`Missing AI equating row for form aiP2, rawScore ${rawScore}`);
-          return aiRow.sreScore;
+          if (aiRow) return aiRow.sreScore;
         }
       } else if (this.taskId === SRE_TASK_IDS.ES) {
         // For Spanish, we omit the practice and composite subtasks and take the sum of the sreScores.
@@ -561,17 +560,17 @@ export class RoarScores {
           ...normedScores,
           scoringVersion: this.scoringVersion,
         };
+
+        // For v4, derive thetaEstimate from sreScore
+        if (this.scoringVersion === SRE_SCORING_VERSION.V4 && computedScores[COMPOSITE_DOMAIN].sreScore != null) {
+          computedScores[COMPOSITE_DOMAIN].thetaEstimate =
+            Math.round((computedScores[COMPOSITE_DOMAIN].sreScore * 0.0770899 + -3.0328717) * 10) / 10;
+        }
       }
     }
-    if (compositeScore != null && this.taskId === SRE_TASK_IDS.EN) {
-      const clampedSreScore = Math.max(compositeScore, 0);
+    if (computedScores[COMPOSITE_DOMAIN]?.thetaEstimate != null && this.taskId === SRE_TASK_IDS.EN) {
       computedScores[COMPOSITE_FOUNDATIONAL_DOMAIN] = {
-        thetaEstimate:
-          Math.round(
-            (clampedSreScore * SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS.TRANSFORMATION_SCALE +
-              SRE_COMPOSITE_FOUNDATIONAL_IRT_PARAMS.TRANSFORMATION_SHIFT) *
-              10,
-          ) / 10,
+        thetaEstimate: computedScores[COMPOSITE_DOMAIN].thetaEstimate,
       };
     }
     return computedScores;

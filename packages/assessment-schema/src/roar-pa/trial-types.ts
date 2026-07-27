@@ -8,16 +8,7 @@ export type PaTrialType = (typeof PA_TRIAL_TYPES)[keyof typeof PA_TRIAL_TYPES];
 
 import { COMPOSITE_DOMAIN } from '../constants/common-domains.js';
 
-export const PA_CATS = [
-  'practiceFSM',
-  'practiceLSM',
-  'practiceDEL',
-  'fsm',
-  'lsm',
-  'del',
-  COMPOSITE_DOMAIN,
-  'composite_foundational',
-] as const;
+export const PA_CATS = ['fsm', 'lsm', 'del', COMPOSITE_DOMAIN, 'composite_foundational'] as const;
 
 export type PaCat = (typeof PA_CATS)[number];
 

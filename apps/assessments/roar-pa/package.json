@@ -1,7 +1,7 @@
 {
   "name": "@roar-platform/roar-pa",
   "description": "This is a 3-AFC task to measure phonological awareness",
-  "version": "5.1.0",
+  "version": "5.3.7",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
