@@ -17,7 +17,7 @@ export const languageOptions = {
   en: { translations: enTranslations, language: 'English (United Kingdom)', code: 'gb' },
   es: { translations: esTranslations, language: 'Español (Spain)', code: 'es' },
   'es-CO': { translations: esCOTranslations, language: 'Español (América Latina)', code: 'col' },
-  pt: { translations: ptTranslations, language: 'Português (Brasil)', code: 'pt' },
+  pt: { translations: ptTranslations, language: 'Português', code: 'pt' },
   'pt-BR': { translations: ptBRTranslations, language: 'Português (Brasil)', code: 'br' },
 };
 export let browserLocale = window.navigator.language;
