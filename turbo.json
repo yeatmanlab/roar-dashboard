@@ -20,8 +20,6 @@
     "TEST_FIXTURE_FILE",
     "FGA_API_URL",
     "BACKEND_PORT",
-    "BUILD_TEST_SERVER",
-    "RUN_INTEGRATION_TESTS",
     "CYPRESS",
     "CYPRESS_BASE_URL",
     "CYPRESS_PROJECT_ID",
@@ -69,7 +67,7 @@
       ]
     },
     "@roar-platform/assessment-sdk#test": {
-      "dependsOn": ["roar-backend#test", "^build"],
+      "dependsOn": ["roar-backend#test", "roar-backend#build", "^build"],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**"]
     },

@@ -10,6 +10,7 @@ export function createMockUserService(): MockedObject<ReturnType<typeof UserServ
   return {
     findByAuthId: vi.fn(),
     getById: vi.fn(),
+    listUserMemberships: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     recordUserAgreement: vi.fn(),

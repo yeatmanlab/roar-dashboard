@@ -21,9 +21,11 @@ const flushFinish = () => new Promise((resolve) => setImmediate(resolve));
 
 let app: Express;
 
+// Importing the app triggers the full route tree (routes → controllers → services → repositories).
+// Under heavy parallel test load, the dynamic import can exceed the default 10s hookTimeout.
 beforeAll(async () => {
   app = (await import('./app')).default;
-});
+}, 30_000);
 
 describe('app middleware wiring', () => {
   beforeEach(() => {

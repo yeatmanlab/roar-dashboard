@@ -12,6 +12,8 @@ export default [
       globals: {
         ...globals.browser,
         process: 'readonly',
+        ROAR_DB: 'readonly',
+        ROAR_API_BASE_URL: 'readonly',
       },
     },
     rules: {

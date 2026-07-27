@@ -6,6 +6,12 @@
   </div>
 </template>
 <script setup>
+/**
+ * @deprecated Dead code. The `roav-mep` task has not been migrated to the assessment SDK
+ * and is out of scope for the firekit cutover (ticket 1965). This component still launches
+ * via the legacy `@bdelab/roav-mep` + `roarfirekit.startAssessment` path. Full removal is
+ * tracked by roar-project-management#1998 (gated on TaskRoav integrating roav-cr) — do not extend.
+ */
 import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';

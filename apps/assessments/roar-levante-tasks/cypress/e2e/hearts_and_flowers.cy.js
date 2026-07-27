@@ -9,6 +9,15 @@ let mixed_practice = false;
 let final_instructions = false; // instructions before final mixed test phase
 let mixed_test = false;
 
+// jsPsych clears `.jspsych-content` (innerHTML = '') on every trial transition, so an empty
+// content div is NOT a reliable "game over" signal — a mid-game inter-trial blank (fixation ISI,
+// feedback swap, stimulus load) looks identical to the true end. The game actually ends with the
+// end-game instruction screen (getEndGame) followed by exitFullscreen, after which the content
+// stays empty. So when we catch an empty container we confirm it stays empty across this window
+// before concluding the game is over; a transient blank repopulates well within it. This is what
+// removes the intermittent "expected false to be true" failures.
+const GAME_OVER_CONFIRM_MS = 3000;
+
 describe('test hearts and flowers', () => {
   beforeEach(() => {
     heart_phase = false;
@@ -51,6 +60,23 @@ function hafLoop(isV2 = false) {
       } else {
         pickAnswer(isV2);
       }
+      hafLoop(isV2);
+    } else {
+      // Empty content might be the real end or just a transient inter-trial blank — confirm.
+      confirmGameOver(isV2);
+    }
+  });
+}
+
+// Distinguishes a true game-over (content stays empty) from a transient inter-trial blank
+// (content repopulates with the next trial). Only once the content is still empty after the
+// confirm window do we make the terminal assertion that the game progressed through every phase.
+function confirmGameOver(isV2) {
+  cy.wait(GAME_OVER_CONFIRM_MS);
+
+  cy.get('.jspsych-content').then((content) => {
+    if (content.children().length) {
+      // The blank was a mid-game transition — resume playing.
       hafLoop(isV2);
     } else {
       // make sure that the game has progressed through major phases before passing

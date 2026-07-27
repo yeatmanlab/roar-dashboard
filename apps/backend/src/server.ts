@@ -7,6 +7,7 @@ import { FgaClient } from './clients/fga.client';
 import { initializeDatabasePools, closeDatabasePools } from './db/clients';
 import { setShuttingDown } from './health/shutdown-state';
 import { logger } from './logger';
+import { AuthService } from './services/auth/auth.service';
 
 /** Maximum time to wait for graceful shutdown before force-exiting. */
 const SHUTDOWN_GRACE_MS = 10_000;
@@ -55,6 +56,10 @@ function onListening(): void {
 }
 
 async function startServer(): Promise<void> {
+  // FGA store/model IDs arrive via the dotenv file loaded by `import 'dotenv/config'`
+  // at the top of this module. In local dev, the seed script writes them to .env;
+  // in CI, the seed script writes them to .env.test (loaded via DOTENV_CONFIG_PATH).
+
   // Initialize database pools FIRST, before importing app.
   // This ensures CoreDbClient and AssessmentDbClient are defined
   // before any module-level service instantiation occurs.
@@ -62,6 +67,8 @@ async function startServer(): Promise<void> {
 
   // Attaches OIDC auth to the FGA client when FGA_OIDC_AUDIENCE is set, no-op otherwise.
   await FgaClient.initialize();
+
+  logger.info({ provider: AuthService.getProviderName() }, 'Auth provider active');
 
   // Dynamic import AFTER database is ready.
   // This fixes the initialization order issue where repositories would

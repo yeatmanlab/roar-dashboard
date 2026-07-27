@@ -34,11 +34,11 @@
     }
   },
   {
-    "variantName": "roar-syntax-01-15-1015",
+    "variantName": "roar-syntax-2026-05-14-v4",
     "params": {
       "age": null,
       "buttonLayout": "diamond",
-      "corpus": "roar-syntax-item-2026-05-14-v3",
+      "corpus": "roar-syntax-item-2026-05-14-v4",
       "keyHelpers": true,
       "language": "en",
       "maxIncorrect": 103,

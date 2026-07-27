@@ -4,6 +4,18 @@ on:
   push:
     branches:
       - main
+  # Manual trigger for on-demand publish runs: a dry-run rehearsal any time, or — once the
+  # @roar-platform org + NPM_TOKEN exist — a scoped real-publish rehearsal before the big flip.
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (no real publish, no deploy). Uncheck for a real publish — requires the @roar-platform org + NPM_TOKEN."
+        type: boolean
+        default: true
+      only:
+        description: "Limit to a single workspace path (e.g. packages/api-contract). Leave blank to run all publishable workspaces."
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -32,6 +44,11 @@ jobs:
     steps:
       - name: Run Release Please
         id: release
+        # Only manage Release PRs on push. On a manual workflow_dispatch (publish rehearsal) this
+        # step is skipped, so release-please never opens/updates a Release PR against the dispatch
+        # branch. The job still succeeds with empty outputs, and publish-assessment-packages runs
+        # via its `github.event_name == 'workflow_dispatch'` condition.
+        if: github.event_name == 'push'
         uses: googleapis/release-please-action@v5
         with:
           config-file: .release-please.json
@@ -46,7 +63,7 @@ jobs:
   publish-assessment-packages:
     name: Publish assessment packages to npm
     needs: release-please
-    if: needs.release-please.outputs.releases_created == 'true'
+    if: needs.release-please.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
       deployed_assessments: ${{ steps.publish.outputs.deployed_assessments }}
@@ -69,12 +86,25 @@ jobs:
       - name: Publish new versions and collect deployed assessments
         id: publish
         # To add a new publishable package, append its workspace path to PUBLISHABLE_WORKSPACES.
+        # List upstream packages before their dependents so a real publish resolves in order.
         # Assessment apps (apps/assessments/*) are also queued for Firebase production deployment.
+        #
+        # DRY-RUN GATE: publishing is gated so nothing is published until it's explicitly disabled.
+        # Resolution order (first wins): the workflow_dispatch `dry_run` input → the
+        # `NPM_PUBLISH_DRY_RUN` repository variable (Settings → Secrets and variables → Actions →
+        # Variables) → a fail-safe dry run. A dry run publishes nothing and never queues a deploy.
+        # The workflow_dispatch `only` input scopes a run to a single workspace — e.g. a real-publish
+        # rehearsal on one package before flipping the whole pipeline live.
         # TODO: Replace NODE_AUTH_TOKEN with OIDC Trusted Publishers once configured for @roar-platform.
         run: |
+          # An explicit workflow_dispatch input wins; otherwise the repo variable; otherwise fail-safe.
+          # Resolved in bash (not a GitHub expression) so a `dry_run: false` input isn't swallowed by
+          # `||` treating the boolean false as falsy.
+          DRY_RUN="${DISPATCH_DRY_RUN:-${VAR_DRY_RUN:-true}}"
+
           PUBLISHABLE_WORKSPACES=(
-            packages/assessment-schema
             packages/api-contract
+            packages/assessment-schema
             packages/assessment-sdk
             apps/assessments/roar-letter
             apps/assessments/roar-levante-tasks
@@ -86,7 +116,22 @@ jobs:
             apps/assessments/roar-swr
             apps/assessments/roav-apps
             apps/assessments/roav-ran
+            apps/assessments/roam-apps
           )
+
+          # Optional single-workspace scope for a manual rehearsal (workflow_dispatch `only` input).
+          if [ -n "${ONLY}" ]; then
+            if ! printf '%s\n' "${PUBLISHABLE_WORKSPACES[@]}" | grep -qxF -- "${ONLY}"; then
+              echo "::error::'${ONLY}' is not a known publishable workspace"
+              exit 1
+            fi
+            PUBLISHABLE_WORKSPACES=("${ONLY}")
+            echo "::notice::Scoped to a single workspace: ${ONLY}"
+          fi
+
+          if [ "${DRY_RUN}" != "false" ]; then
+            echo "::notice::Dry-run mode — nothing will be published and no assessment deployment will be queued. (Set dry_run=false or NPM_PUBLISH_DRY_RUN=false for a real publish.)"
+          fi
 
           deployed=()
           for workspace in "${PUBLISHABLE_WORKSPACES[@]}"; do
@@ -94,6 +139,9 @@ jobs:
             ver=$(node -p "require('./${workspace}/package.json').version")
             if npm view "${pkg}@${ver}" version &>/dev/null; then
               echo "✓ ${pkg}@${ver} already on npm, skipping"
+            elif [ "${DRY_RUN}" != "false" ]; then
+              echo "[dry-run] ${pkg}@${ver} — validating publish without pushing to npm"
+              npm publish -w "${workspace}" --dry-run
             else
               echo "Publishing ${pkg}@${ver}..."
               npm publish -w "${workspace}" --provenance
@@ -109,6 +157,9 @@ jobs:
             echo "deployed_assessments=[]" >> $GITHUB_OUTPUT
           fi
         env:
+          DISPATCH_DRY_RUN: ${{ github.event.inputs.dry_run }}
+          VAR_DRY_RUN: ${{ vars.NPM_PUBLISH_DRY_RUN }}
+          ONLY: ${{ github.event.inputs.only }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #

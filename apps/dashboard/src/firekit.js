@@ -1,5 +1,4 @@
 import { RoarFirekit } from '@bdelab/roar-firekit';
-import { IS_FIREBASE_EMULATOR_ENABLED } from '@/constants/firebase';
 
 const isLocalhost = window.location.hostname === 'localhost';
 const isCypress = window.Cypress;
@@ -58,7 +57,9 @@ const APP_CHECK_DEBUG_TOKEN =
       : VITE_FIREKIT_APPCHECK_DEBUG_TOKEN
     : undefined;
 
-// Define the Firekit configuration object
+// Firekit configuration — always uses production config. Auth emulator wiring
+// is handled by the dashboard's own AuthService, not by firekit. Firekit is
+// retained only for non-auth operations (Firestore queries, assessments).
 const firekitConfig = {
   admin: {
     projectId: VITE_FIREBASE_ADMIN_PROJECT_ID,
@@ -83,59 +84,18 @@ const firekitConfig = {
   },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Local Firebase Auth emulator support (opt-in via VITE_FIREBASE_EMULATOR_ENABLED).
-//
-// When enabled, Firekit points Firebase at the local Auth emulator instead of
-// the live dev project. roar-firekit detects an EmulatorFirebaseConfig (one
-// carrying `emulatorPorts`) and calls connectAuthEmulator internally during
-// init(), so we don't have to reach into the Auth instances ourselves.
-//
-// The project id MUST match the backend's GCLOUD_PROJECT (demo-roar by default)
-// so emulator-issued ID tokens verify through the same path as production.
-// apiKey/siteKey are placeholders the emulator ignores.
-//
-// Only the Auth emulator is started by the local stack. The db/functions ports
-// exist solely to satisfy roar-firekit's EmulatorFirebaseConfig shape — Firestore
-// and Functions emulators are intentionally not run in this mode.
-// ─────────────────────────────────────────────────────────────────────────────
-const useFirebaseEmulator = IS_FIREBASE_EMULATOR_ENABLED;
-
-const emulatorProject = {
-  projectId: import.meta.env.VITE_FIREBASE_EMULATOR_PROJECT_ID || 'demo-roar',
-  apiKey: 'fake-api-key',
-  siteKey: 'fake-site-key',
-  debugToken: APP_CHECK_DEBUG_TOKEN,
-  emulatorPorts: {
-    auth: Number(import.meta.env.VITE_FIREBASE_EMULATOR_AUTH_PORT) || 9099,
-    db: Number(import.meta.env.VITE_FIREBASE_EMULATOR_FIRESTORE_PORT) || 8085,
-    functions: Number(import.meta.env.VITE_FIREBASE_EMULATOR_FUNCTIONS_PORT) || 5001,
-  },
-};
-
-// Both Firebase projects (admin + app) point at the same emulator instance and
-// project id; the emulator keys its user pool by project id.
-const emulatorFirekitConfig = {
-  admin: emulatorProject,
-  app: emulatorProject,
-};
-
 /**
- * Initialize a new Firekit instance.
+ * Initialize a new Firekit instance for non-auth operations.
+ *
+ * Auth is handled by the dashboard's AuthService. Firekit is initialized with
+ * production config only — it provides Firestore data access and assessment
+ * launching.
  *
  * @returns {Promise<RoarFirekit>} A promise that resolves with the initialized Firekit instance.
  */
 export async function initializeFirekit() {
-  if (useFirebaseEmulator) {
-    console.warn(
-      '[firekit] Firebase Auth emulator mode is ON (VITE_FIREBASE_EMULATOR_ENABLED). ' +
-        `Using project "${emulatorProject.projectId}" against the local Auth emulator. ` +
-        'This must never be enabled in a deployed build.',
-    );
-  }
-
   const firekit = new RoarFirekit({
-    roarConfig: useFirebaseEmulator ? emulatorFirekitConfig : firekitConfig,
+    roarConfig: firekitConfig,
     authPersistence: 'session',
     verboseLogging: VITE_FIREKIT_VERBOSE_LOGGING_ENABLED === true,
   });

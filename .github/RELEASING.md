@@ -15,11 +15,58 @@ The monorepo uses **hybrid versioning**:
 | backend | Shared (platform) | `apps/backend` |
 | dashboard | Shared (platform) | `apps/dashboard` |
 | api-contract | Independent | `packages/api-contract` |
+| assessment-schema | Independent | `packages/assessment-schema` |
 | assessment-sdk | Independent | `packages/assessment-sdk` |
+| assessment apps | Independent (per app) | `apps/assessments/*` |
 
 **Platform Release**: When backend or dashboard changes are released, they share a single version number (e.g., `3.26.0`).
 
-**Independent Releases**: API contract and assessment SDK are versioned independently and can be released separately from the platform. This allows api-contract to be released once its publishing pipeline is implemented, without blocking platform releases.
+**Independent Releases**: API contract, assessment schema, and assessment SDK are versioned independently and published to npm on release, with no platform deployment.
+
+**Assessment Apps**: Each assessment app under `apps/assessments/*` (e.g. `roar-pa`, `roar-swr`) is also versioned and published to npm independently. In addition, publishing an assessment queues a Firebase Hosting **production deployment** for that app (via the `trigger-assessment-production-deployments` job) — this is separate from the backend + dashboard platform deployment.
+
+## Publishing packages to npm
+
+The publishable packages and the assessment apps are published to the `@roar-platform` npm scope by the `publish-assessment-packages` job in `.github/workflows/release.yml`. The job runs after Release Please cuts a release (a Release PR is merged and tags are created), builds every workspace, then iterates a single `PUBLISHABLE_WORKSPACES` list — upstream packages before their dependents. For each package it skips versions already on npm and otherwise publishes with provenance.
+
+### Dry-run gate (`NPM_PUBLISH_DRY_RUN`)
+
+Publishing is gated on the **`NPM_PUBLISH_DRY_RUN` repository variable** (Settings → Secrets and variables → Actions → **Variables** — a variable, not a secret):
+
+- **Unset, or any value other than `false` → dry run.** The job runs `npm publish --dry-run` for every package, publishes nothing, and never queues an assessment Firebase deployment. This is the fail-safe default, so the pipeline is safe before the npm org and token exist.
+- **`false` → real publish.** The job runs `npm publish --provenance` and queues Firebase production deploys for any assessment that was actually published.
+
+The automated `push` release path uses this variable. A `workflow_dispatch` run can override it per-run (see below).
+
+### Manual runs (`workflow_dispatch`)
+
+The release workflow can also be triggered manually from the **Actions** tab, with two inputs:
+
+- **`dry_run`** (default checked) — leave checked to rehearse the dry-run path; uncheck for a real publish (needs the org + token). This input overrides `NPM_PUBLISH_DRY_RUN` for that run only.
+- **`only`** — limit the run to a single workspace path (e.g. `packages/api-contract`), leaving every other package untouched. Blank runs all publishable workspaces.
+
+This is how you rehearse the **real** publish path — including OIDC provenance signing and, for an assessment, the Firebase deploy trigger — on one low-risk package before flipping the whole pipeline live. The automated `push` path never sends dispatch inputs, so it is unaffected.
+
+Manual runs only publish; they do **not** create or update Release PRs (Release Please runs on `push` only), so it's safe to dispatch from any branch.
+
+### Going live (first real publish)
+
+The pipeline is publish-ready but intentionally dry-runs until these one-time steps are done — no code change required:
+
+1. Create the `@roar-platform` organization on npmjs.com and confirm the CI identity can publish to it.
+2. Add the `NPM_TOKEN` secret — a granular token scoped to `@roar-platform` with publish rights.
+3. **Rehearse the real path**: manually run the workflow with `dry_run` unchecked and `only: packages/api-contract` to validate a real publish + provenance on one package. Watch it closely — a bad first version can be `npm deprecate`d or unpublished within 72h.
+4. Set the repository variable `NPM_PUBLISH_DRY_RUN=false` to enable real publishing for the automated release flow.
+5. Point Release Please at `main` (`target-branch` in `.github/workflows/release.yml`) once the backend refactor lands.
+6. (Follow-up) Migrate from `NPM_TOKEN` to npm OIDC trusted publishing once the packages exist.
+
+### Making a new package publishable
+
+Add its workspace path to `PUBLISHABLE_WORKSPACES` (upstream packages before their dependents), and ensure its `package.json` has:
+
+- `"files": ["dist"]` — otherwise the gitignored `dist/` is excluded and the tarball ships source instead of the built entrypoints.
+- `"repository"` with `url: https://github.com/yeatmanlab/roar-dashboard.git` and a per-package `directory` — required for `npm publish --provenance`.
+- Internal `@roar-platform/*` dependencies pinned to a caret range of the current version (e.g. `"^0.1.0"`), not `"*"` — npm does not support the `workspace:` protocol, and `"*"` would publish an unpinned range. The `node-workspace` Release Please plugin keeps these ranges in step as versions bump.
 
 ## Workflow
 
@@ -48,7 +95,9 @@ docs(sdk): update integration guide
 - `backend` - Backend API service
 - `dashboard` - Frontend dashboard
 - `api-contract` - Shared API contract
+- `assessment-schema` - Assessment configuration and scoring schema
 - `sdk` - Assessment SDK
+- `roar-pa`, `roar-swr`, … - Individual assessment apps (scope matches the release-please component name)
 - `infra` - Infrastructure/CI/CD
 
 **Examples**:
@@ -171,7 +220,9 @@ Release Please generates per-package changelogs:
 - `apps/backend/CHANGELOG.md` - Backend changes
 - `apps/dashboard/CHANGELOG.md` - Dashboard changes
 - `packages/api-contract/CHANGELOG.md` - API contract changes
+- `packages/assessment-schema/CHANGELOG.md` - Assessment schema changes
 - `packages/assessment-sdk/CHANGELOG.md` - SDK changes
+- `apps/assessments/*/CHANGELOG.md` - Per-assessment changes (one per assessment app)
 
 **GitHub Releases** serve as the platform-level summary. Each GitHub Release includes:
 - All packages released in that version
@@ -268,6 +319,21 @@ Release Please generates per-package changelogs:
 
 **Note**: Release Please does NOT track dependencies between packages. Each package is bumped independently based on its own conventional commits. Platform deployment is triggered only when both backend AND dashboard are released.
 
+### Example 6: Assessment Release
+
+**Scenario**: You ship a fix to the ROAR Phoneme Assessment (`roar-pa`).
+
+1. Create PR with title: `fix(roar-pa): correct stimulus timing` → merge
+2. Release Please creates Release PR with:
+   - `roar-pa` version: `5.1.0` → `5.1.1` (patch bump)
+   - All other packages: unchanged
+3. Review and merge Release PR
+4. Tag created: `roar-pa-v5.1.1`
+5. `roar-pa` is published to npm, then its Firebase Hosting production deployment is queued
+6. **No platform deployment triggered** (assessments deploy independently of backend + dashboard)
+
+**Note**: The npm publish and Firebase deploy only happen on a real release run — while `NPM_PUBLISH_DRY_RUN` is unset or not `false`, the publish job dry-runs and queues no deployment.
+
 ## Troubleshooting
 
 ### Release Please Didn't Create a Release PR
@@ -350,7 +416,9 @@ A: Release Please runs on every push to `main`. It creates a Release PR if conve
 - `apps/backend/CHANGELOG.md`
 - `apps/dashboard/CHANGELOG.md`
 - `packages/api-contract/CHANGELOG.md`
+- `packages/assessment-schema/CHANGELOG.md`
 - `packages/assessment-sdk/CHANGELOG.md`
+- `apps/assessments/*/CHANGELOG.md` (one per assessment app)
 
 ### Versioning Strategy (Hybrid)
 
@@ -358,8 +426,10 @@ A: Release Please runs on every push to `main`. It creates a Release PR if conve
 |---------|-----------|-----------------|
 | backend | Shared (platform) | 3.26.0 |
 | dashboard | Shared (platform) | 3.26.0 |
-| api-contract | Independent | 3.26.0 |
+| api-contract | Independent | 0.1.0 |
+| assessment-schema | Independent | 0.1.0 |
 | assessment-sdk | Independent | 0.1.0 |
+| assessment apps | Independent (per app) | per app (e.g. `roar-pa` 5.1.0) |
 | internal packages | Unversioned | N/A |
 
 **Platform Release**: When backend or dashboard changes are released, they share a single version number via the `linked-versions` plugin and trigger production deployment.
@@ -370,17 +440,23 @@ A: Release Please runs on every push to `main`. It creates a Release PR if conve
 
 **Plugins Used**:
 - `linked-versions`: Groups backend and dashboard to share version numbers
-- `node-workspace`: Removed to prevent unintended version bumps (each package versions independently based on its own commits)
+- `node-workspace`: Enabled — keeps internal `@roar-platform/*` dependency ranges in sync and bumps a workspace's dependents when a package they depend on is released
 
 ### Deployment Trigger
 
-Production deployment is triggered when **both backend AND dashboard are released together**. This ensures coordinated platform updates.
+Platform (backend + dashboard) production deployment is triggered when **both backend AND dashboard are released together**. This ensures coordinated platform updates.
 
 - ✅ Backend + Dashboard released → Platform deployment triggered
 - ❌ Backend only → No platform deployment
 - ❌ Dashboard only → No platform deployment
 - ❌ API contract only → No platform deployment (independent release)
-- ❌ SDK only → No platform deployment (independent release)
+- ❌ SDK / assessment-schema only → No platform deployment (independent release)
+
+**Assessment apps** deploy independently of the platform. When an assessment is actually published to npm on release, its Firebase Hosting production deployment is queued automatically:
+
+- ✅ Assessment app published → that app's Firebase Hosting production deploy is queued (`trigger-assessment-production-deployments`)
+- ❌ Dry run (`NPM_PUBLISH_DRY_RUN` ≠ `false`) → nothing published, so no assessment deploy is queued
+- ❌ Library package (api-contract / assessment-schema / assessment-sdk) published → npm only, no Firebase deploy
 
 ### Why Release Please?
 
@@ -396,7 +472,9 @@ Tags are created automatically when Release PR is merged:
 - `backend-v3.27.0` - Backend release
 - `dashboard-v3.27.0` - Dashboard release
 - `api-contract-v3.27.0` - API contract release
+- `assessment-schema-v0.2.0` - Assessment schema release (independent version)
 - `assessment-sdk-v0.2.0` - SDK release (independent version)
+- `roar-pa-v5.1.1` - Assessment app release (independent version)
 
 ### Bootstrap Configuration
 

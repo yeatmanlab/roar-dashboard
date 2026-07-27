@@ -240,6 +240,48 @@ const SubscoreColumnSchema = z.discriminatedUnion('kind', [
  */
 const SubscoresSchema = z.array(SubscoreColumnSchema).min(1);
 
+// --- Display descriptor ---
+
+/**
+ * Which score a task surfaces as its primary display, and how it's labelled.
+ * Moves the dashboard's `getScoreToDisplay` + percent-correct/raw-only branching
+ * into config so the frontend paints `display` without knowing scoring versions.
+ *
+ * - `normed`        — percentile (grades below `percentileBelowGrade`) else
+ *                     standard score; falls back to raw when the resolved
+ *                     version has no normed fields (e.g. swr-es v0).
+ * - `percentCorrect`— the task's `percentile` field holds a percent-correct value
+ *                     (letter/phonics: `TOTAL_PERCENT_CORRECT`).
+ * - `rawOnly`       — raw score only.
+ * - `gradeEstimate` — raw score primary (grade-estimate tasks, e.g. roam-alpaca).
+ */
+export const DISPLAY_CATEGORIES = ['normed', 'percentCorrect', 'rawOnly', 'gradeEstimate'] as const;
+
+const DisplayCategorySchema = z.enum(DISPLAY_CATEGORIES);
+
+/**
+ * Versioned display category. Resolved by descending `minVersion` (first match
+ * where `scoringVersion >= minVersion`) — lets a task be percent-correct at v0
+ * and normed at v1+ (swr-es / sre-es) without the response builder branching.
+ */
+const VersionedDisplayCategorySchema = z.object({
+  minVersion: z.number().int().min(0),
+  category: DisplayCategorySchema,
+});
+
+const ScoreRangeSchema = z.object({ min: z.number(), max: z.number() });
+
+/**
+ * Display ranges (dial min/max) per display score type. Not versioned — the
+ * dashboard's `getRawScoreRange` is per-task, not per-version.
+ */
+const DisplayRangesSchema = z.object({
+  percentile: ScoreRangeSchema.optional(),
+  standardScore: ScoreRangeSchema.optional(),
+  rawScore: ScoreRangeSchema.optional(),
+  percentCorrect: ScoreRangeSchema.optional(),
+});
+
 // --- Top-level scoring config ---
 
 export const ScoringConfigSchema = z.object({
@@ -252,6 +294,14 @@ export const ScoringConfigSchema = z.object({
    * `subscores` field on per-task entries when this block is present.
    */
   subscores: SubscoresSchema.optional(),
+  /**
+   * Optional display descriptor. When present, the report responses include a
+   * per-task `display` object; tasks without it omit `display` (the frontend
+   * keeps its legacy path until the config is authored). Ordered by descending
+   * `minVersion`.
+   */
+  displayCategory: z.array(VersionedDisplayCategorySchema).min(1).superRefine(descendingMinVersion).optional(),
+  displayRanges: DisplayRangesSchema.optional(),
 });
 
 // --- Inferred types ---
@@ -263,6 +313,9 @@ export type FieldNameValue = z.infer<typeof FieldNameValueSchema>;
 export type VersionedFieldName = z.infer<typeof VersionedFieldNameSchema>;
 export type Classification = z.infer<typeof ClassificationSchema>;
 export type PercentileThenRawscoreClassification = z.infer<typeof PercentileThenRawscoreClassificationSchema>;
+export type DisplayCategory = z.infer<typeof DisplayCategorySchema>;
+export type ScoreRange = z.infer<typeof ScoreRangeSchema>;
+export type DisplayRanges = z.infer<typeof DisplayRangesSchema>;
 
 // Subscore column types (consumed by the scoring service helpers + report service)
 export type SubscoreColumn = z.infer<typeof SubscoreColumnSchema>;

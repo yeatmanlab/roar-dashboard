@@ -6,7 +6,7 @@
 import { computed, onMounted, watch } from 'vue';
 import embed from 'vega-embed';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
-import { SCORE_SUPPORT_LEVEL_COLORS, MATCHING_SUPPORT_LEVELS } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 const props = defineProps({
   initialized: {
@@ -17,9 +17,14 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  runs: {
-    type: Array,
+  // Backend-aggregated support-level counts from the score-overview endpoint,
+  // shaped `{ needsExtraSupport: { count }, developingSkill: { count }, achievedSkill: { count } }`.
+  // When provided, it is the chart's data source and `runs` is ignored — this is
+  // the server-computed replacement for the client-side `runs` aggregation.
+  supportLevelCounts: {
+    type: Object,
     required: false,
+    default: undefined,
   },
   // Backend-aggregated support-level counts from the score-overview endpoint,
   // shaped `{ needsExtraSupport: { count }, developingSkill: { count }, achievedSkill: { count } }`.
@@ -90,10 +95,15 @@ const supportLevelsOverview = computed(() => {
     }
   }
 
-  // transform dictionary into datatype readable to vega
-  return Object.entries(values)
-    .filter(([support_level]) => support_level !== 'null')
-    .map(([support_level, count]) => ({ category: support_level, value: count }));
+const supportLevelsOverview = computed(() => {
+  // Server-aggregated counts from the score-overview endpoint, shaped
+  // `{ needsExtraSupport: { count }, developingSkill: { count }, achievedSkill: { count } }`.
+  if (!props.supportLevelCounts) return [];
+
+  return Object.entries(BACKEND_SUPPORT_LEVEL_LABELS).map(([key, category]) => ({
+    category,
+    value: props.supportLevelCounts[key]?.count ?? 0,
+  }));
 });
 
 const overviewDistributionChart = computed(() => {

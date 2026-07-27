@@ -10,7 +10,7 @@
 import { onMounted, onBeforeUnmount, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { SURVEY_TASK_ID } from '@roar-platform/assessment-schema/roar-survey';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
@@ -27,7 +27,7 @@ const props = defineProps({
 const router = useRouter();
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit } = storeToRefs(authStore);
+const { isAuthReady } = storeToRefs(authStore);
 
 const sdkInitialized = ref(false);
 const surveyJson = ref(null);
@@ -54,9 +54,9 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isFirekitInit],
-  async ([newFirekitInitValue]) => {
-    if (newFirekitInitValue && !taskStarted.value) {
+  [isAuthReady],
+  async ([newIsAuthReady]) => {
+    if (newIsAuthReady && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
@@ -67,15 +67,6 @@ watch(
 
 async function startTask(selectedAdmin) {
   try {
-    const appKit = await authStore.roarfirekit.startAssessment(
-      selectedAdmin.value.id,
-      props.taskId,
-      version,
-      props.launchId,
-    );
-
-    const gameParams = { ...appKit._taskInfo.variantParams };
-
     if (props.launchId) {
       throw new Error(
         'Proxy-launch path is not yet supported for roar-survey. Resolve the participant Postgres UUID before enabling this path.',
@@ -129,6 +120,12 @@ async function startTask(selectedAdmin) {
         isAnonymous: false,
       },
     );
+
+    // Source the survey's variant parameters from the assessment SDK now that
+    // initFirekitCompat has run. The seeded variant carries the required `survey`
+    // key (the GCS filename), which getVariantById round-trips verbatim.
+    const { variantParams } = await getVariantById(surveyTaskVariant.variantId);
+    const gameParams = { ...variantParams };
 
     // Fetch survey JSON from GCS using the survey file name from variant params.
     // The bucket URL matches src/constants/bucketBaseUrl.js in the assessment source.

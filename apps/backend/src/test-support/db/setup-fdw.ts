@@ -13,7 +13,6 @@
  *
  * Called from:
  *  - `vitest.integration.globalSetup.ts` before `runMigrations()`
- *  - `server-test.ts` before `runMigrations()`
  *
  * The bash script under `scripts/` is kept for local developer use
  * (manual one-time setup), but the test runtime no longer depends on it.
@@ -30,7 +29,7 @@ import { Client } from 'pg';
 export async function setupFdwForTests(): Promise<void> {
   for (const key of ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'] as const) {
     if (!process.env[key]) {
-      throw new Error(`[setup-fdw] Missing required env var: ${key}`);
+      throw new Error(`Missing required env var: ${key}`);
     }
   }
 
@@ -196,7 +195,7 @@ export function assertSameHostPort(
 ): void {
   if (core.host !== assessment.host || core.port !== assessment.port) {
     throw new Error(
-      `[setup-fdw] CORE_DATABASE_URL and ASSESSMENT_DATABASE_URL must share the same host:port. ` +
+      `CORE_DATABASE_URL and ASSESSMENT_DATABASE_URL must share the same host:port. ` +
         `Got core=${core.host}:${core.port}, assessment=${assessment.host}:${assessment.port}`,
     );
   }

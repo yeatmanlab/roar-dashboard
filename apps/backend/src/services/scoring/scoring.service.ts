@@ -1,7 +1,14 @@
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
 import type { ScoringConfig, FieldNameValue, SCORE_FIELD_TYPES, SubscoreColumn } from './scoring.config-schema';
 import { getScoringConfig } from './scoring.config-registry';
-import type { SupportLevel, ScoringInput, RawScoreThreshold, ScoreFieldResolution } from './scoring.types';
+import type {
+  SupportLevel,
+  ScoringInput,
+  RawScoreThreshold,
+  ScoreFieldResolution,
+  ScoreDisplay,
+  DisplayScoreType,
+} from './scoring.types';
 
 const ANGLE_BRACKET_PATTERN = /[<>]/g;
 const VALID_SUPPORT_LEVELS: ReadonlySet<string> = new Set(['achievedSkill', 'developingSkill', 'needsExtraSupport']);
@@ -140,6 +147,91 @@ export function getSupportLevel(input: ScoringInput): SupportLevel | null {
 }
 
 /**
+ * Resolve a task's primary display descriptor (which score to surface, its
+ * value, label, and range) from config — moving the dashboard's
+ * `getScoreToDisplay` + percent-correct/raw-only/version branching server-side.
+ *
+ * Returns null for tasks whose config declares no `displayCategory` (the
+ * frontend keeps its legacy path for those until the config is authored).
+ *
+ * Algorithm:
+ * 1. Resolve the display category for the task's scoring version (versioned).
+ * 2. `percentCorrect` → the percent value lives in the `percentile` field.
+ *    `rawOnly`/`gradeEstimate` → raw score.
+ *    `normed` → percentile for grades below `percentileBelowGrade` (when a
+ *    percentile is present), else standard score, else raw (e.g. swr-es v0,
+ *    which has no normed fields at that version).
+ * 3. Attach the configured range for the resolved score type, if any.
+ *
+ * @param args.taskSlug - The task slug
+ * @param args.gradeLevel - Numeric grade level, or null
+ * @param args.scoringVersion - The scoring version, or null for legacy v0
+ * @param args.scores - The resolved { rawScore, percentile, standardScore } for the run
+ * @returns The display descriptor, or null when the task has no display config
+ */
+export function getScoreDisplay(args: {
+  taskSlug: string;
+  gradeLevel: number | null;
+  scoringVersion: number | null;
+  scores: { rawScore: number | null; percentile: number | null; standardScore: number | null };
+}): ScoreDisplay | null {
+  const { taskSlug, gradeLevel, scoringVersion, scores } = args;
+
+  const config = getScoringConfig(taskSlug);
+  if (!config?.displayCategory) {
+    return null;
+  }
+
+  const version = scoringVersion ?? 0;
+  const categoryEntry = resolveVersionedEntry(config.displayCategory, version);
+  if (!categoryEntry) {
+    return null;
+  }
+
+  let scoreType: DisplayScoreType;
+  let value: number | null;
+
+  switch (categoryEntry.category) {
+    case 'percentCorrect':
+      // For percent-correct tasks the percentile field carries the percent value.
+      scoreType = 'percentCorrect';
+      value = scores.percentile;
+      break;
+    case 'rawOnly':
+    case 'gradeEstimate':
+      scoreType = 'rawScore';
+      value = scores.rawScore;
+      break;
+    case 'normed': {
+      const percentileBelowGrade =
+        config.classification.type === 'percentile-then-rawscore' ? config.classification.percentileBelowGrade : 6;
+      const usePercentile =
+        scores.percentile !== null &&
+        (percentileBelowGrade === null || (gradeLevel !== null && gradeLevel < percentileBelowGrade));
+
+      if (usePercentile) {
+        scoreType = 'percentile';
+        value = scores.percentile;
+      } else if (scores.standardScore !== null) {
+        scoreType = 'standardScore';
+        value = scores.standardScore;
+      } else {
+        scoreType = 'rawScore';
+        value = scores.rawScore;
+      }
+      break;
+    }
+  }
+
+  return {
+    scoreType,
+    value,
+    label: scoreType,
+    range: config.displayRanges?.[scoreType] ?? null,
+  };
+}
+
+/**
  * Get raw score thresholds for a task and scoring version.
  *
  * Use this to retrieve the threshold values themselves (e.g., for display in a score report).
@@ -163,6 +255,40 @@ export function getRawScoreThreshold(taskSlug: string, scoringVersion: number | 
   }
 
   return { above: entry.thresholds.above, some: entry.thresholds.some };
+}
+
+/**
+ * Get the "support range" percentage shown in a task's report description — the
+ * percentage of peers a needs-extra-support student scores below.
+ *
+ * This is the complement of the version-resolved `developing` percentile cutoff:
+ * {@link getSupportLevel} classifies a student `needsExtraSupport` at
+ * `percentile <= developing` (see `classifyByThresholds`), i.e. they score below
+ * `(100 - developing)%` of their peers. Returning it here moves the dashboard's
+ * version-keyed 80/75 literal (`replaceScoreRange` / `{{SUPPORT_RANGE}}`) into the
+ * backend so the frontend paints a value instead of branching on scoring versions.
+ *
+ * Returns null for tasks whose classification isn't `percentile-then-rawscore`
+ * (no percentile cutoff → no support range); those descriptions carry no
+ * `{{SUPPORT_RANGE}}` placeholder anyway.
+ *
+ * @param taskSlug - The task slug (e.g., 'sre', 'swr')
+ * @param scoringVersion - The scoring version, or null for legacy (treated as 0)
+ * @returns The support-range percentage (e.g. 80, 75), or null if unavailable
+ */
+export function getSupportThreshold(taskSlug: string, scoringVersion: number | null): number | null {
+  const config = getScoringConfig(taskSlug);
+  if (!config || config.classification.type !== 'percentile-then-rawscore') {
+    return null;
+  }
+
+  const version = scoringVersion ?? 0;
+  const entry = resolveVersionedEntry(config.classification.percentileCutoffs, version);
+  if (!entry) {
+    return null;
+  }
+
+  return 100 - entry.cutoffs.developing;
 }
 
 /**
@@ -328,7 +454,12 @@ export function getNumericFieldForSubscore(
       ? { scoreName: column.percentCorrectName, scoreDomain: column.domain }
       : { scoreName: column.percentCorrectName };
   }
-  if (column.kind === 'number') return { scoreName: column.name };
+  if (column.kind === 'number') {
+    // Domain-bearing number columns (roam-alpaca's per-subtask subPercentCorrect,
+    // shared across every subtask domain) carry the domain so the repository can
+    // match (name, domain); distinct-name columns match on name alone.
+    return column.domain ? { scoreName: column.name, scoreDomain: column.domain } : { scoreName: column.name };
+  }
   return null;
 }
 

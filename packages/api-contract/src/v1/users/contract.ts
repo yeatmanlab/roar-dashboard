@@ -8,6 +8,7 @@ import {
   UpdateUserRequestBodySchema,
   RecordUserAgreementRequestBodySchema,
   RecordUserAgreementResponseSchema,
+  UserMembershipsResponseSchema,
 } from './schema';
 
 import {
@@ -211,6 +212,31 @@ export const UsersContract = c.router(
         'Use ?locale=<bcp47> to select the current version returned per agreement (defaults to en-US). ' +
         'Returns 403 if the requester does not have access to the administration for the specified user. ' +
         'Returns 404 if the specified user or administration does not exist, or the specified user lacks access to it.',
+    },
+    listUserMemberships: {
+      method: 'GET',
+      path: '/:userId/memberships',
+      pathParams: z.object({
+        userId: z.string().uuid(),
+      }),
+      responses: {
+        200: SuccessEnvelopeSchema(UserMembershipsResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: "List a user's active entity memberships",
+      description:
+        "Returns the specified user's active (current) org, class, group, and family memberships, each with the " +
+        "member's role. Class memberships can also include the parent schoolId and districtId so a caller can resolve " +
+        "the user's current school(s) without a separate lookup. Results are scoped to the requester's access: " +
+        'self, super admins, and a guardian of the user receive the full set (including family memberships and the ' +
+        'class parent IDs); a supervisory requester (administrator or educator) receives only the entities within ' +
+        'their reach, with class rows stripped of the parent school/district IDs, and no family memberships. ' +
+        'Returns 403 if the requester cannot access the specified user. ' +
+        'Returns 404 if the specified user does not exist.',
     },
     // Nest guardian / longitudinal score report sub-router under /users
     scoreReports: GuardianStudentReportContract,

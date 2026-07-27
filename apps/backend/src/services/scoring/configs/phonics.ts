@@ -46,4 +46,10 @@ export default {
       round: true,
     },
   ],
+  displayCategory: [{ minVersion: 0, category: 'percentCorrect' }],
+  displayRanges: {
+    percentCorrect: { min: 0, max: 100 },
+    // Raw-score breakdown range, matching the dashboard's getRawScoreRange for phonics.
+    rawScore: { min: 0, max: 150 },
+  },
 };

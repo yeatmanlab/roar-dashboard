@@ -12,4 +12,10 @@ export default {
   classification: {
     type: 'none' as const,
   },
+  displayCategory: [{ minVersion: 0, category: 'normed' }],
+  displayRanges: {
+    percentile: { min: 0, max: 99 },
+    standardScore: { min: 0, max: 180 },
+    rawScore: { min: 0, max: 130 },
+  },
 } as const;

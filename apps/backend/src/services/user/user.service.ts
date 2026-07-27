@@ -8,6 +8,7 @@ import { RosteringEntityType } from '../../enums/rostering-entity-type.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { UserFamilyRole } from '../../enums/user-family-role.enum';
 import { EntityType } from '../../types/entity-type';
+import type { UserMembershipDetail } from '../../types/user';
 import { StatusCodes } from 'http-status-codes';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -1574,9 +1575,104 @@ export function UserService({
     }
   }
 
+  /**
+   * List a user's active entity memberships, scoped to the requester's access.
+   *
+   * Authorization is two-layered:
+   * 1. Gate — {@link verifyUserAccess} (404-before-403, super-admin bypass, self, or
+   *    `can_list_users` on any of the target's entities; rostering-ended target → 404).
+   * 2. Row filter — the rows returned are scoped to what the requester may see of this
+   *    user:
+   *    - super admin / self / guardian (a parent with `can_list_users` on one of the
+   *      target's families) receive the full set, including family memberships;
+   *    - any other authorized requester (an administrator or educator) receives only the
+   *      entities they can `can_list_users`, checked per the target's own membership
+   *      entities, and class rows are returned without their parent school/district IDs
+   *      (the requester may list a class's users without being able to read its parent
+   *      school). Family memberships are dropped on this path — a supervisory requester
+   *      holds no family relation — so families surface only to self / guardian / super admin.
+   *
+   * Example: a principal of school A requesting a student enrolled in schools A and B
+   * receives the school-A class memberships only, never the school-B ones.
+   *
+   * @param authContext - Requesting user's authentication context
+   * @param targetUserId - UUID of the user whose memberships to list
+   * @returns The target's active memberships visible to the requester
+   * @throws {ApiError} NOT_FOUND if the user does not exist or is rostering-ended
+   * @throws {ApiError} FORBIDDEN if the requester cannot access the user
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if a database or FGA query fails
+   */
+  async function listUserMemberships(authContext: AuthContext, targetUserId: string): Promise<UserMembershipDetail[]> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // 1. Gate: existence + base access. Throws 404 (not found / rostering-ended) or 403.
+      await verifyUserAccess(authContext, targetUserId);
+
+      // 2. Fetch the target's active memberships (role + class parent IDs).
+      const memberships = await userRepository.getUserMembershipsDetailed(targetUserId);
+
+      // 3. Full set for callers entitled to the whole user: super admin, the user
+      //    themselves, and a guardian (parent) of the user.
+      if (isSuperAdmin || userId === targetUserId) {
+        return memberships;
+      }
+
+      const familyObjects = memberships
+        .filter((m) => m.entityType === EntityType.FAMILY)
+        .map((m) => `${FgaType.FAMILY}:${m.entityId}`);
+
+      const isGuardian =
+        familyObjects.length > 0 &&
+        (await authorizationService.hasAnyPermission(userId, FgaRelation.CAN_LIST_USERS, familyObjects));
+
+      if (isGuardian) {
+        return memberships;
+      }
+
+      // 4. Supervisory path (administrator or educator): scope rows to the requester's
+      //    reach. Check `can_list_users` per the target's own (small, bounded) membership
+      //    entities and keep only those that pass — so a school-A admin sees the user's
+      //    school-A enrolment but never their school-B one. Family rows are never visible
+      //    here: a supervisory requester has no `can_list_users` on a family.
+      const allowed = await Promise.all(
+        memberships.map((m) =>
+          authorizationService.hasPermission(
+            userId,
+            FgaRelation.CAN_LIST_USERS,
+            `${ENTITY_TYPE_TO_FGA_TYPE[m.entityType]}:${m.entityId}`,
+          ),
+        ),
+      );
+
+      // Strip the parent school/district IDs from surviving class rows on this path. A
+      // requester can hold `can_list_users` on a class (e.g. a teacher rostered on it)
+      // without holding `can_read` on the parent school, so echoing those IDs would
+      // disclose org identifiers they can't otherwise read. The parent IDs are only
+      // needed by the homepage, which takes the full-set path above.
+      return memberships
+        .filter((_, index) => allowed[index] === true)
+        .map((m) =>
+          m.entityType === 'class' ? { entityType: 'class' as const, entityId: m.entityId, role: m.role } : m,
+        );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, targetUserId } }, 'Failed to list user memberships');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, targetUserId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     findByAuthId,
     getById,
+    listUserMemberships,
     create,
     update,
     recordUserAgreement,

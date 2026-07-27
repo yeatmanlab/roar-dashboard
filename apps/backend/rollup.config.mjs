@@ -8,14 +8,9 @@ import alias from '@rollup/plugin-alias';
 import run from '@rollup/plugin-run';
 
 const isDev = process.env.NODE_ENV !== 'production';
-const buildTestServer = process.env.BUILD_TEST_SERVER === 'true';
-
-// Only include server-test.ts if explicitly requested via BUILD_TEST_SERVER=true
-// This prevents the test server from being shipped with the production build
-const input = buildTestServer ? ['src/server.ts', 'src/server-test.ts'] : 'src/server.ts';
 
 export default defineConfig({
-  input,
+  input: 'src/server.ts',
   output: isDev
     ? {
         dir: 'dist',
@@ -27,7 +22,7 @@ export default defineConfig({
         // Output to a directory with code splitting enabled.
         // IMPORTANT: Do NOT use `file` + `inlineDynamicImports: true` here.
         //
-        // server.ts and server-test.ts use dynamic imports to defer loading the application module
+        // server.ts uses a dynamic import to defer loading the application module
         // until after initializeDatabasePools() completes. This ensures CoreDbClient and
         // AssessmentDbClient are defined before any module-level service/repository
         // instantiation occurs (e.g., `const userService = UserService()` in auth middleware).

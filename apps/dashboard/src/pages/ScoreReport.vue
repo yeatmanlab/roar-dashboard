@@ -43,13 +43,19 @@
                 </div>
               </template>
             </ReportHeader>
-            <div v-if="isLoadingAssignments || isLoadingDistrictSupportCategories" class="loading-wrapper">
+            <div
+              v-if="isLoadingAssignments || isLoadingDistrictSupportCategories || isLoadingScoreOverview"
+              class="loading-wrapper"
+            >
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="text-sm font-light text-gray-600 uppercase">Loading Overview Charts</div>
             </div>
             <div
               v-if="
-                !isLoadingAssignments && !isLoadingDistrictSupportCategories && sortedAndFilteredTaskIds?.length > 0
+                !isLoadingAssignments &&
+                !isLoadingDistrictSupportCategories &&
+                !isLoadingScoreOverview &&
+                sortedAndFilteredTaskIds?.length > 0
               "
               class="py-3 mb-2 text-left bg-gray-100"
             >

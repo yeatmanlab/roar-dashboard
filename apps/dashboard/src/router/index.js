@@ -128,7 +128,9 @@ const routes = [
   {
     path: GAME_ROUTES.VOCAB,
     name: 'Vocab',
-    component: () => import('../components/tasks/TaskVocab.vue'),
+    // Vocab (LEVANTE Vocabulary Assessment) is a task within the roar-levante-tasks
+    // bundle, launched through TaskLevante with taskId 'vocab'.
+    component: () => import('../components/tasks/TaskLevante.vue'),
     props: { taskId: 'vocab', language: 'en' },
     meta: { pageTitle: 'Vocab' },
   },
@@ -136,43 +138,64 @@ const routes = [
     path: GAME_ROUTES.FLUENCY_ARF,
     name: 'Fluency-ARF',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'fluency-arf', language: 'en' },
+    props: { taskId: 'fluency-arf' },
     meta: { pageTitle: 'ROAM-ARF' },
   },
   {
     path: GAME_ROUTES.FLUENCY_ARF_ES,
     name: 'Fluency-ARF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'fluency-arf-es', language: 'es' },
+    props: { taskId: 'fluency-arf-es' },
     meta: { pageTitle: 'ROAM-ARF ES' },
+  },
+  {
+    path: GAME_ROUTES.FLUENCY_ARF_PT,
+    name: 'Fluency-ARF-PT',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: { taskId: 'fluency-arf-pt' },
+    meta: { pageTitle: 'ROAM-ARF PT' },
   },
   {
     path: GAME_ROUTES.FLUENCY_CALF,
     name: 'Fluency-CALF',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'fluency-calf', language: 'en' },
+    props: { taskId: 'fluency-calf' },
     meta: { pageTitle: 'ROAM-CALF' },
   },
   {
     path: GAME_ROUTES.FLUENCY_CALF_ES,
     name: 'Fluency-CALF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'fluency-calf-es', language: 'es' },
+    props: { taskId: 'fluency-calf-es' },
     meta: { pageTitle: 'ROAM-CALF ES' },
+  },
+  {
+    path: GAME_ROUTES.FLUENCY_CALF_PT,
+    name: 'Fluency-CALF-PT',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: { taskId: 'fluency-calf-pt' },
+    meta: { pageTitle: 'ROAM-CALF PT' },
   },
   {
     path: GAME_ROUTES.ROAM_ALPACA,
     name: 'Fluency-Alpaca',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'roam-alpaca', language: 'en' },
+    props: { taskId: 'roam-alpaca' },
     meta: { pageTitle: 'ROAM-Alpaca' },
   },
   {
     path: GAME_ROUTES.ROAM_ALPACA_ES,
     name: 'Fluency-Alpaca-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'roam-alpaca-es', language: 'es' },
+    props: { taskId: 'roam-alpaca-es' },
     meta: { pageTitle: 'ROAM-Alpaca ES' },
+  },
+  {
+    path: GAME_ROUTES.ROAM_ALPACA_PT,
+    name: 'Fluency-Alpaca-PT',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: { taskId: 'roam-alpaca-pt' },
+    meta: { pageTitle: 'ROAM-Alpaca PT' },
   },
   {
     path: GAME_ROUTES.CORE_TASKS,
@@ -378,7 +401,9 @@ const routes = [
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.VOCAB,
     name: 'Launch Vocab',
-    component: () => import('../components/tasks/TaskVocab.vue'),
+    // Vocab is launched via the roar-levante-tasks bundle through TaskLevante (see the
+    // non-launch Vocab route above).
+    component: () => import('../components/tasks/TaskLevante.vue'),
     props: (route) => ({
       taskId: 'vocab',
       language: 'en',
@@ -392,7 +417,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'fluency-arf',
-      language: 'en',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-ARF', permission: Permissions.Tasks.LAUNCH },
@@ -403,10 +427,19 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'fluency-arf-es',
-      language: 'es',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-ARF ES', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_ARF_PT,
+    name: 'Launch Fluency-ARF-PT',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-arf-pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'ROAM-ARF PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_CALF,
@@ -414,7 +447,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'fluency-calf',
-      language: 'en',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-CALF', permission: Permissions.Tasks.LAUNCH },
@@ -425,10 +457,19 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'fluency-calf-es',
-      language: 'es',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-CALF ES', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_CALF_PT,
+    name: 'Launch Fluency-CALF-PT',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'fluency-calf-pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'ROAM-CALF PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAM_ALPACA,
@@ -436,7 +477,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'roam-alpaca',
-      language: 'en',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-Alpaca', permission: Permissions.Tasks.LAUNCH },
@@ -447,10 +487,19 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'roam-alpaca-es',
-      language: 'es',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-Alpaca ES', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAM_ALPACA_PT,
+    name: 'Launch Fluency-Alpaca-PT',
+    component: () => import('../components/tasks/TaskRoam.vue'),
+    props: (route) => ({
+      taskId: 'roam-alpaca-pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'ROAM-Alpaca PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.CORE_TASKS,

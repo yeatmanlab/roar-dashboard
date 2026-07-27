@@ -118,4 +118,10 @@ export default {
     },
     { kind: 'paSkillsToWorkOn', key: 'skillsToWorkOn', label: 'Skills To Work On' },
   ],
+  displayCategory: [{ minVersion: 0, category: 'normed' }],
+  displayRanges: {
+    percentile: { min: 0, max: 99 },
+    standardScore: { min: 0, max: 180 },
+    rawScore: { min: 0, max: 57 },
+  },
 } as const;

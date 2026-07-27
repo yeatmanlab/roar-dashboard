@@ -67,12 +67,21 @@ export const logger = createLogger();
 
 /**
  * Creates a child logger with additional context.
- * Useful for adding request-specific context like traceId.
+ * Useful for adding request-specific context like traceId, or a message
+ * prefix to identify the subsystem producing the log.
+ *
+ * @param context - Bindings merged into every log line (e.g. `{ traceId }`)
+ * @param options - Pino child options (e.g. `{ msgPrefix: '[seed] ' }`)
  *
  * @example
  * const reqLogger = createChildLogger({ traceId: req.headers['x-cloud-trace-context'] });
  * reqLogger.info('Processing request');
+ *
+ * @example
+ * const seedLogger = createChildLogger({}, { msgPrefix: '[seed] ' });
+ * seedLogger.info('Running migrations...');
+ * // => [seed] Running migrations...
  */
-export function createChildLogger(context: Record<string, unknown>) {
-  return logger.child(context);
+export function createChildLogger(context: Record<string, unknown>, options?: { msgPrefix?: string }) {
+  return logger.child(context, options);
 }

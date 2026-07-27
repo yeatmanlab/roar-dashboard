@@ -244,6 +244,19 @@ export type StudentScoresFilterField =
  */
 export type ServiceSupportLevelValue = 'achievedSkill' | 'developingSkill' | 'needsExtraSupport' | 'optional';
 
+/**
+ * Per-task display descriptor — which score the task surfaces as its primary
+ * display, plus the value/label/range. Computed by the scoring service from the
+ * task's config so the frontend paints it without scoring-version logic.
+ * Absent on tasks whose config declares no display category.
+ */
+export interface ServiceScoreDisplay {
+  scoreType: 'percentile' | 'standardScore' | 'rawScore' | 'percentCorrect';
+  value: number | null;
+  label: string;
+  range: { min: number; max: number } | null;
+}
+
 /** Per-task score entry on a student row. */
 export interface ServiceStudentScoreEntry {
   rawScore: number | null;
@@ -256,6 +269,8 @@ export interface ServiceStudentScoreEntry {
   optional: boolean;
   /** Whether the student has at least one completed run for this task. */
   completed: boolean;
+  /** Primary display descriptor; absent when the task has no display config. */
+  display?: ServiceScoreDisplay;
 }
 
 /** A student row in score results. */
@@ -339,6 +354,8 @@ export interface ServiceStudentReportTaskBase {
   subscores?: Record<string, ServiceSubscoreEntry>;
   /** Present only for PA tasks. */
   skillsToWorkOn?: string[];
+  /** Primary display descriptor; absent when the task has no display config. */
+  display?: ServiceScoreDisplay;
 }
 
 export interface ServiceIndividualStudentReportTask extends ServiceStudentReportTaskBase {
@@ -439,6 +456,13 @@ export interface ServiceTaskScoreFacet {
   taskSlug: string;
   taskName: string;
   orderIndex: number;
+  /**
+   * The "support range" percentage shown in the task's report description — the
+   * percentage of peers a needs-extra-support student scores below (the complement
+   * of the version-resolved `developing` percentile cutoff). `null` for tasks
+   * without a percentile-then-rawscore classification. See `getSupportThreshold`.
+   */
+  supportThreshold: number | null;
   supportLevelByGrade: (ServiceSupportLevelDistribution & { grade: string; totalAssessed: number })[];
   supportLevelBySchool: (ServiceSupportLevelDistribution & {
     schoolId: string;

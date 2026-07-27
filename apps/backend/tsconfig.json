@@ -1,7 +1,4 @@
 {
   "extends": "@roar-platform/typescript-config/backend.json",
-  "compilerOptions": {
-    "rootDir": "./src"
-  },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "seeds/**/*"]
 }
