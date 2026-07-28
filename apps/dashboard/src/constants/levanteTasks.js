@@ -52,4 +52,9 @@ export const LEVANTE_TASK_IDS_PT = [
   'same-different-selection-pt',
 ];
 
-export const LEVANTE_TASK_IDS_NO_SCORES = [...LEVANTE_TASKS_PT, 'hearts-and-flowers', 'memory-game', 'same-different-selection'];
+export const LEVANTE_TASK_IDS_NO_SCORES = [
+  ...LEVANTE_TASKS_PT,
+  'hearts-and-flowers',
+  'memory-game',
+  'same-different-selection',
+];

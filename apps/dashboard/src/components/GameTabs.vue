@@ -265,17 +265,15 @@ const getLanguageSuffix = (taskId) => {
 const getLevanteTaskId = (taskId) => {
   if (!taskId || typeof taskId !== 'string') return null;
   let baseTaskId = taskId.toLowerCase();
-  
+
   const langSuffix = getLanguageSuffix(taskId);
   if (langSuffix) {
     baseTaskId = baseTaskId.replace(`-${langSuffix}`, '');
   }
-  
+
   const taskIdCamelized = camelize(baseTaskId);
-  
-  return LEVANTE_TASKS.includes(taskIdCamelized) 
-    ? taskIdCamelized 
-    : null;
+
+  return LEVANTE_TASKS.includes(taskIdCamelized) ? taskIdCamelized : null;
 };
 
 /** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. **/
