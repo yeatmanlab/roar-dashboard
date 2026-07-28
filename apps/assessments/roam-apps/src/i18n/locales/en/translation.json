@@ -187,11 +187,11 @@
   "magpiPilot": {
     "symbolicComp": {
       "intro": {
-        "text1": "Welcome!",
-        "text2": "In this activity, you will be doing math problems.",
-        "text3": "But first, let's play a quick numbers game!",
-        "text4": "You did great on that numbers game!",
-        "text5": "Let's do some math problems now. You will start with addition and subtraction.",
+        "text1": "Great job!",
+        "text2": "You did great on those math problems.",
+        "text3": "Let's play a quick numbers game now.",
+        "text4": "Welcome!",
+        "text5": "In this activity, you will solve math problems and then play a numbers game. You will start with addition and subtraction.",
         "text6": "Solve these problems in your head WITHOUT using pencil or paper."
       },
       "instructions": {

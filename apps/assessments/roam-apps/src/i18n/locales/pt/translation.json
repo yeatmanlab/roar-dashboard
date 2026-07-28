@@ -187,11 +187,11 @@
   "magpiPilot": {
     "symbolicComp": {
       "intro": {
-        "text1": "Bem-vindo!",
-        "text2": "Nesta atividade, você resolverá operações de matemática.",
-        "text3": "Mas primeiro, vamos jogar um joguinho rápido com números!",
-        "text4": "Você se saiu muito bem naquele jogo de números!",
-        "text5": "Vamos resolver algumas operações de matemática agora. Você irá começar com adição e subtração.",
+        "text1": "Ótimo trabalho!",
+        "text2": "Você se saiu muito bem nos problemas de matemática.",
+        "text3": "Vamos jogar um joguinho rápido com números.",
+        "text4": "Bem-vindo!",
+        "text5": "Nesta atividade, você resolverá operações de matemática e depois brincará com um joguinho de números. Você irá começar com adição e subtração.",
         "text6": "Resolva essas operações mentalmente, SEM usar lápis ou papel."
       },
       "instructions": {
