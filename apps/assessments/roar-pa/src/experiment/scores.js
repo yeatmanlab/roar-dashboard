@@ -7,20 +7,79 @@ import { getGrade } from '@bdelab/roar-utils';
 import { selectNormRow } from '@roar-platform/scoring-tables';
 import { COMPOSITE_DOMAIN, pa } from '@roar-platform/assessment-schema';
 
-const { PA_TASK_ID, PA_SCORE_KIND, PA_SCORE_TABLE_URL, PA_SCORING_VERSION, PA_COMPOSITE_FOUNDATIONAL } = pa;
+const { PA_TASK_ID, PA_SCORE_TABLE_URL, PA_SCORING_VERSION, PA_COMPOSITE_FOUNDATIONAL } = pa;
+
+const getGradeAndAgeForScoring = (scoringVersion = 3) => {
+  let ageMonths = store.session.get('config').userMetadata?.ageMonths;
+  let grade = getGrade(store.session.get('config').userMetadata?.grade);
+  const { taskId } = store.session.get('config');
+
+  // If age is not provided, we calculate it based on grade
+  // Note: We use == instead of === because we want to catch both undefined and null.
+  // eslint-disable-next-line eqeqeq
+  if (ageMonths == undefined) {
+    // eslint-disable-next-line eqeqeq
+    if (grade == undefined) {
+      throw new Error('Attempting to determine user age from grade but grade is undefined');
+    }
+
+    ageMonths = 66 + grade * 12;
+  }
+
+  const isAdaptive = scoringVersion >= 4;
+  const ageMin = isAdaptive ? 60 : 48;
+  const ageMax = isAdaptive ? 130 : 144;
+
+  if (ageMonths < ageMin) ageMonths = ageMin;
+  if (ageMonths > ageMax) ageMonths = ageMax;
+  // Clamp grade to [1, 12] for v3 PA if < 1 or > 12. Otherwise, leave it unchanged.
+  // eslint-disable-next-line eqeqeq
+  if (grade != undefined && taskId === PA_TASK_ID && scoringVersion === PA_SCORING_VERSION.V3_FIXED)
+    grade = Math.min(12, Math.max(1, grade));
+
+  return {
+    ageMonths,
+    grade,
+  };
+};
+
+const isValidForScoring = ({ ageMonths, grade, scoringVersion }) => {
+  if (scoringVersion >= PA_SCORING_VERSION.V3_FIXED) {
+    // For sre v4 & sre-es v1, we need the age, or we can estimate the age from the grade
+    // eslint-disable-next-line eqeqeq
+    return ageMonths != undefined || grade != undefined;
+  }
+
+  throw new Error('Invalid scoring version');
+};
+
+const useGradeForScoring = ({ scoringVersion, taskId }) =>
+  scoringVersion === PA_SCORING_VERSION.V3_FIXED && taskId === PA_TASK_ID;
+
+const useAgeForScoring = ({ scoringVersion, taskId }) =>
+  scoringVersion !== PA_SCORING_VERSION.V3_FIXED && taskId === PA_TASK_ID;
 
 export class RoarScores {
   constructor() {
-    this.scoringVersion = parseInt(store.session.get('config').scoringVersion, 10);
-    this.roarScoreKind = this.isAdaptiveScoring() ? PA_SCORE_KIND.SCALED_IRT : PA_SCORE_KIND.RAW_TOTAL_CORRECT;
-    this.tableURL = PA_SCORE_TABLE_URL(this.scoringVersion);
+    const rawScoringVersion = store.session.get('config').scoringVersion;
+    this.scoringVersion = rawScoringVersion !== null ? parseInt(rawScoringVersion, 10) : null;
+    this.taskId = PA_TASK_ID;
+    this.useAgeForScoring = useAgeForScoring({ scoringVersion: this.scoringVersion, taskId: PA_TASK_ID });
+    this.useGradeForScoring = useGradeForScoring({ scoringVersion: this.scoringVersion, taskId: PA_TASK_ID });
+    this.tableURL = this.scoringVersion ? PA_SCORE_TABLE_URL(this.scoringVersion) : null;
     this.lookupTable = [];
     this.tableLoaded = false;
     this.tableLoadingPromise = null;
     this.tableLoadingError = null;
+    this.isValidForScoring = undefined;
+    this.ageForScore = null;
+    this.gradeForScore = null;
   }
 
   isAdaptiveScoring() {
+    if (this.scoringVersion === null) {
+      return false;
+    }
     if (!Number.isFinite(this.scoringVersion)) {
       throw new Error(
         `Invalid scoringVersion: ${this.scoringVersion}. Expected a finite number >= ${PA_SCORING_VERSION.V4_ADAPTIVE} for adaptive scoring or < ${PA_SCORING_VERSION.V4_ADAPTIVE} for fixed scoring.`,
@@ -42,49 +101,62 @@ export class RoarScores {
 
     // Create and store the loading promise
     this.tableLoadingPromise = new Promise((resolve, reject) => {
-      const ageInMonths = store.session.get('config').userMetadata?.ageMonths;
-      const grade = getGrade(store.session.get('config').userMetadata?.grade);
+      try {
+        const { ageMonths, grade } = getGradeAndAgeForScoring(this.scoringVersion);
 
-      if (ageInMonths == undefined && grade == undefined) reject();
+        if (!this.isAdaptiveScoring()) {
+          this.isValidForScoring = isValidForScoring({
+            ageMonths,
+            grade,
+            scoringVersion: this.scoringVersion,
+          });
+        } else {
+          this.isValidForScoring = true;
+        }
 
-      const ageMin = this.isAdaptiveScoring() ? 60 : 48;
-      const ageMax = this.isAdaptiveScoring() ? 120 : 144;
+        if (!this.isValidForScoring) {
+          reject(new Error('Invalid age or grade for scoring'));
+          return;
+        }
 
-      this.ageForScore = ageInMonths;
-      if (ageInMonths < ageMin) this.ageForScore = ageMin;
-      if (ageInMonths > ageMax) this.ageForScore = ageMax;
+        this.ageForScore = ageMonths;
+        this.gradeForScore = grade;
 
-      Papa.parse(this.tableURL, {
-        download: true,
-        header: true,
-        dynamicTyping: true,
-        skipEmptyLines: true,
-        step: (row) => {
-          if (this.isAdaptiveScoring() && Number(this.ageForScore) === Number(row.data.ageMonths)) {
-            // If adaptive, lookup scores by age only.
-            this.lookupTable.push(_omit(row.data, ['', 'X']));
-          } else if (grade && grade >= 6) {
-            // Otherwise, lookup by grade if the user is in grade 6 or above.
-            if (grade === Number(row.data.grade)) {
+        Papa.parse(this.tableURL, {
+          download: true,
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          step: (row) => {
+            if (this.isAdaptiveScoring() && Number(this.ageForScore) === Number(row.data.ageMonths)) {
+              // If adaptive, lookup scores by age only.
+              this.lookupTable.push(_omit(row.data, ['', 'X']));
+            } else if (this.gradeForScore && this.gradeForScore >= 6) {
+              // Fallback: lookup by grade if the user is in grade 6 or above.
+              if (this.gradeForScore === Number(row.data.grade)) {
+                this.lookupTable.push(_omit(row.data, ['', 'X']));
+              }
+            } else if (Number(this.ageForScore) === Number(row.data.ageMonths)) {
+              // Otherwise, lookup by age in months.
               this.lookupTable.push(_omit(row.data, ['', 'X']));
             }
-          } else if (Number(this.ageForScore) === Number(row.data.ageMonths)) {
-            // Otherwise, lookup by age in months.
-            this.lookupTable.push(_omit(row.data, ['', 'X']));
-          }
-        },
-        complete: () => {
-          this.tableLoaded = true;
-          this.tableLoadingPromise = null;
-          resolve();
-        },
-        error: (error) => {
-          this.tableLoadingPromise = null;
-          // Reset to prevent stale data on retry
-          this.lookupTable = [];
-          reject(error);
-        },
-      });
+          },
+          complete: () => {
+            this.tableLoaded = true;
+            this.tableLoadingPromise = null;
+            resolve();
+          },
+          error: (error) => {
+            this.tableLoadingPromise = null;
+            // Reset to prevent stale data on retry
+            this.lookupTable = [];
+            reject(error);
+          },
+        });
+      } catch (error) {
+        this.tableLoadingPromise = null;
+        reject(error);
+      }
     });
 
     return this.tableLoadingPromise;
@@ -195,7 +267,9 @@ export class RoarScores {
       scoringVersion: this.scoringVersion,
     };
 
-    if (this.isAdaptiveScoring()) {
+    const thetas = store.session.get('thetas');
+    const thetaSEs = store.session.get('thetaSEs');
+    if (this.isAdaptiveScoring() && thetas && thetaSEs) {
       for (const key of Object.keys(computedScores)) {
         const thetaKey = key.toLowerCase();
         const theta = store.session.get('thetas')[thetaKey];
@@ -204,8 +278,8 @@ export class RoarScores {
         // Composite values are overwritten below by compositeThetas with the shared-scale estimates.
         computedScores[key].thetaEstimateRaw = theta;
         computedScores[key].thetaSERaw = thetaSE;
-        computedScores[key].thetaEstimate = theta;
-        computedScores[key].thetaSE = thetaSE;
+        computedScores[key].thetaEstimate = thetas[key.toLowerCase()];
+        computedScores[key].thetaSE = thetaSEs[key.toLowerCase()];
       }
 
       const compositeThetas = {
@@ -262,7 +336,7 @@ export class RoarScores {
       // Then we find the row in the lookup table that corresponds to the total score.
       let myRow;
 
-      if (this.isAdaptiveScoring()) {
+      if (this.isAdaptiveScoring() && thetas) {
         // Adaptive: match the age row whose thetaEstimate equals the scaled theta on the 0.1 grid.
         myRow = selectNormRow(this.lookupTable, {
           keyColumn: 'ageMonths',

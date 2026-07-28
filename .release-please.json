@@ -83,21 +83,21 @@
       "version-file": "package.json",
       "release-type": "node",
       "component": "roar-pa",
-      "release-as": "5.1.0"
+      "release-as": "5.3.7"
     },
     "apps/assessments/roar-swr": {
       "changelog-path": "CHANGELOG.md",
       "version-file": "package.json",
       "release-type": "node",
       "component": "roar-swr",
-      "release-as": "1.15.0"
+      "release-as": "1.17.4"
     },
     "apps/assessments/roar-sre": {
       "changelog-path": "CHANGELOG.md",
       "version-file": "package.json",
       "release-type": "node",
       "component": "roar-sre",
-      "release-as": "3.1.0"
+      "release-as": "3.2.4"
     },
     "apps/assessments/roar-letter": {
       "changelog-path": "CHANGELOG.md",

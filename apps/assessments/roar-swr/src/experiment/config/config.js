@@ -194,7 +194,6 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
   const lng = cleanParams.lng ?? 'en';
   const languageEntry = SWR_LANGUAGES[lng] ?? SWR_LANGUAGES.en;
   const taskId = languageEntry.taskId;
-  const defaultScoringVersion = languageEntry.defaultScoringVersion ?? 6;
 
   const {
     userMode = 'shortAdaptive',
@@ -216,13 +215,10 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
     birthYear,
     age,
     ageMonths,
-    scoringVersion = defaultScoringVersion,
+    scoringVersion,
   } = cleanParams;
 
   const ageData = getAgeData(birthMonth, birthYear, age, ageMonths);
-  const parsedScoringVersion = Number.isNaN(parseInt(scoringVersion, 10))
-    ? defaultScoringVersion
-    : parseInt(scoringVersion, 10);
 
   if (language !== 'en') i18next.changeLanguage(language);
 
@@ -265,7 +261,7 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
     addNoResponse: addNoResponse ?? false,
     displayElement: displayElement || null,
     useParameterValidation: useParameterValidation ?? true,
-    scoringVersion: parsedScoringVersion,
+    scoringVersion: scoringVersion ?? null,
   };
 
   const updatedGameParams = Object.fromEntries(
