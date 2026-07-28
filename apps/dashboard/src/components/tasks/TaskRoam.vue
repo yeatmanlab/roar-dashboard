@@ -26,6 +26,9 @@ const props = defineProps({
 // watcher below runs with `immediate: true`, so startTask can execute during
 // setup — before onMounted would have assigned the launcher.
 const taskLauncherPromise = import('@roar-platform/roam-apps').then((module) => module.TaskLauncher);
+// Mark the rejection handled so a failed import doesn't log `Uncaught (in promise)`
+// during the gap before startTask awaits it — that await still rejects into its catch.
+taskLauncherPromise.catch(() => {});
 
 const router = useRouter();
 const taskStarted = ref(false);
