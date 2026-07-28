@@ -1326,11 +1326,12 @@ const computeAssignmentAndRunData = computed(() => {
 
         const testNumAttempted = _get(assessment, 'scores.raw.composite.test.numAttempted');
         // Hide when only practice questions are completed and not timed out, which is considered completed
+        // Setting these to empty object hides the tag and tooltips
         if (
           (testNumAttempted === undefined || testNumAttempted === 0) &&
           assignment.progress[assessment.taskId.replace(/-/g, '_')] !== 'completed'
         ) {
-          currRowScores[taskId] = null;
+          Object.assign(currRowScores[taskId], {});
         }
 
         // Logic to update runsByTaskIdAcc
@@ -2198,10 +2199,6 @@ const sortedAndFilteredSubscoreTaskIds = computed(() => {
       return true;
     })
     .sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
-
-  console.log(
-    `[ScoreReport] Rendering ${filteredTaskIds.length} subscore table(s) for org ${props.orgId} (${props.orgType}): [${filteredTaskIds.join(', ')}]`,
-  );
 
   return filteredTaskIds;
 });

@@ -107,8 +107,6 @@ export const exportCsv = (data, filename) => {
     columns: csvColumns,
   });
 
-  console.log(`[exportCsv] Saving ${csvData.length} row(s) to filename: "${filename}"`);
-
   const blob = new Blob([csv]);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob, { type: 'text/plain' });

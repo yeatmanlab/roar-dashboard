@@ -18,22 +18,6 @@ const openSchoolScoreReport = () => {
 };
 
 describe('Partner Admin: Score Reports', () => {
-  // Cypress does not print the application-under-test's browser console output to the terminal, so it never shows
-  // up in CI logs (only in the interactive runner's console). Forward it through the existing cy.task('log', ...)
-  // channel (see cypress.config.cjs) so it appears in CI output. Scoped to this spec only (via cy.window(), run
-  // after the page has already loaded) so it doesn't affect other specs.
-  beforeEach(() => {
-    cy.window().then((win) => {
-      ['log', 'warn', 'error'].forEach((level) => {
-        const original = win.console[level].bind(win.console);
-        cy.stub(win.console, level).callsFake((...args) => {
-          cy.task('log', `[browser console.${level}] ${args.map(String).join(' ')}`, { log: false });
-          original(...args);
-        });
-      });
-    });
-  });
-
   // @TODO: Expand on test to verify only stats exist for district admin.
   it('Renders only stats for district admin score report', () => {
     // Login as a partner admin.
@@ -75,10 +59,7 @@ describe('Partner Admin: Score Reports', () => {
     openSchoolScoreReport();
 
     // Export the score report.
-    // Note: The export button is scoped to the main score report table (data-cy="score-report__table") because
-    // per-task subscore tables (rendered inside the tabs below the main table) also render their own RoarDataTable
-    // with an identically-labeled "Export All (CSV)" button. Without scoping, this selector can match a subscore
-    // table's export button instead of the main table's, silently downloading the wrong CSV file.
+    // Export button is scoped to the main score report table (data-cy="score-report__table")
     cy.get('[data-cy="score-report__table"] [data-cy="data-table__export-table-btn"]')
       .contains('Export All (CSV)')
       .click();
@@ -107,15 +88,11 @@ describe('Partner Admin: Score Reports', () => {
     openSchoolScoreReport();
 
     // Validate that the export button is disabled.
-    // Note: Scoped to the main score report table (see comment in the "Exports the complete score report" test above)
-    // to avoid colliding with the identically-labeled export buttons on the per-task subscore tables.
     cy.get('[data-cy="score-report__table"] [data-cy="data-table__export-selected-btn"]')
       .should('exist')
       .should('be.disabled');
 
     // Select a user to export.
-    // Note: Scoped to the main score report table since the per-task subscore tables render their own row
-    // checkboxes with the same "row-checkbox__input" test ID.
     cy.get('[data-cy="score-report__table"]').findAllByTestId('row-checkbox__input').eq(1).click();
     cy.get('[data-cy="score-report__table"]').findAllByTestId('row-checkbox__input').eq(3).click();
     cy.get('[data-cy="score-report__table"]').findAllByTestId('row-checkbox__input').eq(5).click();
