@@ -8,6 +8,7 @@ import store from "store2"; //storing session data
 import { initTrialSaving, initTimeline } from "../shared/helpers";
 import { jsPsych } from "../taskSetup"; //initialised jspsych object
 //import { preloadTrials } from "./helperFunctions"; //jspsych object for preloading media, function for initialising Cat class
+import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/firekit';
 import {
   intro,
   postPracticeReminder,
@@ -53,10 +54,7 @@ export default function buildFluencyTimeline(config) {
   });
 
   const handleEngagementFlags = (flags, reliable) => {
-    if (config.firekit.run.started) {
-      return config.firekit.updateEngagementFlags(flags, reliable);
-    }
-    return null;
+    return updateEngagementFlags(flags, reliable);
   };
 
   validityEvaluator = new ValidityEvaluator({
