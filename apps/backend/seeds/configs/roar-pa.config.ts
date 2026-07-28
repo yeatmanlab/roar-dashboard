@@ -24,6 +24,7 @@ export const paConfig: TaskSeedConfig = {
       name: 'Phonological Awareness',
       nameSimple: 'Phonological Awareness',
       nameTechnical: 'Rapid Online Assessment of Reading — Phonological Awareness',
+      image: 'https://raw.githubusercontent.com/yeatmanlab/roar-assets/main/roar-apps/phoneme-no-lion.png',
     },
   },
   allowedParamKeys: new Set([
@@ -56,4 +57,7 @@ export const paConfig: TaskSeedConfig = {
       }
     }
   },
+
+  // English, fixed forms, scoring version 3.
+  defaultVariant: 'English Fixed (v3)',
 };

@@ -37,7 +37,24 @@ export type VariantDef = {
  */
 export type TaskSeedConfig = {
   /** Map of taskId → task metadata for DB insertion. */
-  tasks: Record<string, { name: string; nameSimple: string; nameTechnical: string }>;
+  tasks: Record<
+    string,
+    {
+      name: string;
+      nameSimple: string;
+      nameTechnical: string;
+      /**
+       * Tile artwork for the participant's assessment list.
+       *
+       * Optional, but a task without one falls through to a hardcoded fallback in
+       * `GameTabs.vue` that no CSP directive allows, so the tile renders a broken
+       * image. Host must be allowlisted in `img-src` — `raw.githubusercontent.com/yeatmanlab/`
+       * (where the `roar-assets` artwork lives) and the `storage.googleapis.com/roar-*`
+       * buckets already are.
+       */
+      image?: string;
+    }
+  >;
 
   /**
    * Allowed parameter keys. If set, unknown keys are rejected.
@@ -61,6 +78,20 @@ export type TaskSeedConfig = {
    * param (`lng`, `task`, `taskName`) to determine the target task.
    */
   resolveTaskId?: (params: Record<string, unknown>) => string;
+
+  /**
+   * `variantName` of the variant to assign to the dev fixture's administration, making
+   * this assessment launchable from the dashboard on a greenfield setup.
+   *
+   * Naming it here rather than taking the first entry of `taskVariantParameters.json`
+   * keeps the choice deterministic and platform-owned: that file is authored per
+   * assessment and its order can change in an unrelated PR.
+   *
+   * Configs without this field seed their tasks and variants as before but are not
+   * assigned to any administration. Must match a `variantName` in the assessment's
+   * parameters file, or the assignment step logs and skips it.
+   */
+  defaultVariant?: string;
 };
 
 // ─── Registry ────────────────────────────────────────────────────────────────

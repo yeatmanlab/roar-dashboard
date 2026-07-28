@@ -27,7 +27,14 @@ import { and, eq } from 'drizzle-orm';
 import { Pool } from 'pg';
 
 import * as CoreDbSchema from '../src/db/schema/core';
-import { tasks, taskVariants, taskVariantParameters } from '../src/db/schema/core';
+import {
+  administrations,
+  administrationTaskVariants,
+  tasks,
+  taskVariants,
+  taskVariantParameters,
+} from '../src/db/schema/core';
+import { DEV_IDS } from './fixture-ids';
 import { TASK_SEED_CONFIGS } from './task-seed-configs';
 
 import type { TaskSeedConfig, VariantDef } from './task-seed-configs';
@@ -40,6 +47,25 @@ if (!taskArg) {
   console.error(`Usage: npm run dev:seed:tasks -- --task <name>\nAvailable tasks: ${available}`);
   process.exit(1);
 }
+
+/**
+ * Skips assigning the config's `defaultVariant` to the launch sandbox administration.
+ * The assignment is what makes the assessment launchable from the dashboard, so it
+ * is on by default; opt out when seeding variants into a database whose
+ * administrations you manage yourself.
+ */
+const skipAssignment = process.argv.includes('--no-assign');
+
+/**
+ * Re-sync parameters for variants that already exist.
+ *
+ * Seeding is otherwise skip-if-present, so editing `taskVariantParameters.json` and
+ * re-running has no effect — which makes iterating on a variant's parameters
+ * impossible without deleting the row by hand. This replaces the stored parameters
+ * with what the file now says, leaving the variant (and any runs referencing it)
+ * in place.
+ */
+const refreshParams = process.argv.includes('--refresh-params');
 
 // Resolved via a function so `config` is typed non-optional — narrowing on a
 // module-level binding doesn't propagate into the functions below.
@@ -148,32 +174,55 @@ const db = drizzle(pool, { schema: CoreDbSchema, casing: 'snake_case' });
 
 // ─── Seeding ─────────────────────────────────────────────────────────────────
 
+/**
+ * Insert a task, or bring an existing one back in line with its config.
+ *
+ * Task metadata is entirely config-derived, so the config is authoritative: a row
+ * seeded before a field was added (`image`, say) would otherwise keep its stale
+ * values forever, because a plain `onConflictDoNothing` can only ever create.
+ * Variants are deliberately not treated this way — they carry participant runs, so
+ * changing them is opt-in via `--refresh-params`.
+ *
+ * @param taskId - Task slug
+ * @param meta - Task metadata from the seed config
+ * @returns The task row
+ */
 async function seedTask(taskId: string, meta: TaskSeedConfig['tasks'][string]): Promise<{ id: string }> {
-  const [inserted] = await db
-    .insert(tasks)
-    .values({
-      slug: taskId,
-      name: meta.name,
-      nameSimple: meta.nameSimple,
-      nameTechnical: meta.nameTechnical,
-      taskConfig: {},
-    })
-    .onConflictDoNothing()
-    .returning();
+  const metadata = {
+    name: meta.name,
+    nameSimple: meta.nameSimple,
+    nameTechnical: meta.nameTechnical,
+    ...(meta.image ? { image: meta.image } : {}),
+  };
 
-  const task = inserted ?? (await db.query.tasks.findFirst({ where: eq(tasks.slug, taskId) }));
-  if (!task) throw new Error(`Failed to insert or find task "${taskId}"`);
+  const existing = await db.query.tasks.findFirst({ where: eq(tasks.slug, taskId) });
 
-  if (inserted) {
-    console.log(`  Inserted task "${taskId}": ${task.id}`);
-  } else {
-    console.log(`  Task "${taskId}" already exists (${task.id}), skipping.`);
+  if (!existing) {
+    const [inserted] = await db
+      .insert(tasks)
+      .values({ slug: taskId, ...metadata, taskConfig: {} })
+      .returning();
+
+    if (!inserted) throw new Error(`Failed to insert task "${taskId}"`);
+
+    console.log(`  Inserted task "${taskId}": ${inserted.id}`);
+    return inserted;
   }
 
-  return task;
+  const stale = Object.entries(metadata).filter(([key, value]) => existing[key as keyof typeof existing] !== value);
+
+  if (stale.length === 0) {
+    console.log(`  Task "${taskId}" already exists (${existing.id}), skipping.`);
+    return existing;
+  }
+
+  await db.update(tasks).set(metadata).where(eq(tasks.slug, taskId));
+  console.log(`  Task "${taskId}" (${existing.id}) updated: ${stale.map(([key]) => key).join(', ')}`);
+
+  return existing;
 }
 
-async function seedVariant(taskDbId: string, def: VariantDef): Promise<void> {
+async function seedVariant(taskDbId: string, def: VariantDef): Promise<{ id: string }> {
   // Query-first: the unique index on task_variants is a functional partial index
   // (lower(name) WHERE name IS NOT NULL), which Drizzle cannot target in
   // onConflictDoNothing — so we check existence explicitly.
@@ -182,8 +231,13 @@ async function seedVariant(taskDbId: string, def: VariantDef): Promise<void> {
   });
 
   if (existing) {
-    console.log(`Variant "${def.variantName}" already exists (${existing.id}), skipping.`);
-    return;
+    if (refreshParams) {
+      await writeVariantParameters(existing.id, def, { replace: true });
+      console.log(`Variant "${def.variantName}" already exists (${existing.id}), parameters refreshed.`);
+    } else {
+      console.log(`Variant "${def.variantName}" already exists (${existing.id}), skipping.`);
+    }
+    return existing;
   }
 
   const [variant] = await db
@@ -195,22 +249,92 @@ async function seedVariant(taskDbId: string, def: VariantDef): Promise<void> {
 
   console.log(`  Inserted variant "${def.variantName}": ${variant.id}`);
 
+  await writeVariantParameters(variant.id, def, { replace: false });
+
+  return variant;
+}
+
+/**
+ * Write a variant's parameters.
+ *
+ * @param variantId - The variant to write parameters for
+ * @param def - Variant definition supplying the parameter values
+ * @param options.replace - Delete existing parameters first, so removed keys disappear
+ *   rather than lingering. Used by `--refresh-params`; a plain insert can only add.
+ */
+async function writeVariantParameters(
+  variantId: string,
+  def: VariantDef,
+  { replace }: { replace: boolean },
+): Promise<void> {
   // Omit null/undefined params — only store params with explicit values.
   const paramEntries = Object.entries(def.params).filter(([, v]) => v !== null && v !== undefined);
 
-  if (paramEntries.length > 0) {
-    await db
-      .insert(taskVariantParameters)
-      .values(
-        paramEntries.map(([name, value]) => ({
-          taskVariantId: variant.id,
-          name,
-          value,
-        })),
-      )
-      .onConflictDoNothing({ target: [taskVariantParameters.taskVariantId, taskVariantParameters.name] });
+  if (replace) {
+    await db.delete(taskVariantParameters).where(eq(taskVariantParameters.taskVariantId, variantId));
+  }
 
-    console.log(`  Inserted ${paramEntries.length} parameter(s) for "${def.variantName}"`);
+  if (paramEntries.length === 0) return;
+
+  await db
+    .insert(taskVariantParameters)
+    .values(paramEntries.map(([name, value]) => ({ taskVariantId: variantId, name, value })))
+    .onConflictDoNothing({ target: [taskVariantParameters.taskVariantId, taskVariantParameters.name] });
+
+  console.log(`  ${replace ? 'Replaced' : 'Inserted'} ${paramEntries.length} parameter(s) for "${def.variantName}"`);
+}
+
+/**
+ * Assign a seeded variant to the dev fixture's launch-sandbox administration, which
+ * is what makes the assessment launchable from the dashboard as a fixture student.
+ *
+ * The sandbox exists so this seed never mixes real tasks into the administrations
+ * that carry synthetic `TaskFactory` tasks — those drive the progress and score
+ * fixtures and must keep their shape.
+ *
+ * No-ops when that administration is absent. That is the normal case for the
+ * assessment e2e stack, which runs migrations and this seed but never seeds the dev
+ * fixture (`docker-compose.assessment.yml`), and for any database whose
+ * administrations are managed elsewhere.
+ *
+ * Idempotent: the junction's primary key is (administration_id, task_variant_id).
+ *
+ * @param variantId - The seeded task variant to assign
+ * @param variantName - Variant name, for logging
+ */
+async function assignToFixtureAdministration(variantId: string, variantName: string): Promise<void> {
+  const administrationId = DEV_IDS.administrationLaunch;
+
+  const administration = await db.query.administrations.findFirst({
+    where: eq(administrations.id, administrationId),
+    columns: { id: true },
+  });
+
+  if (!administration) {
+    console.log(`\nLaunch sandbox administration not found — skipping assignment of "${variantName}".`);
+    console.log('  (expected when the dev fixture has not been seeded, e.g. the assessment e2e stack)');
+    return;
+  }
+
+  // Append after whatever the fixture already assigned, so ordered administrations
+  // keep a stable sequence across repeated seeds of different assessments.
+  const assigned = await db
+    .select({ orderIndex: administrationTaskVariants.orderIndex })
+    .from(administrationTaskVariants)
+    .where(eq(administrationTaskVariants.administrationId, administrationId));
+
+  const nextOrderIndex = assigned.reduce((max, row) => Math.max(max, row.orderIndex + 1), 0);
+
+  const [inserted] = await db
+    .insert(administrationTaskVariants)
+    .values({ administrationId, taskVariantId: variantId, orderIndex: nextOrderIndex })
+    .onConflictDoNothing()
+    .returning();
+
+  if (inserted) {
+    console.log(`\nAssigned "${variantName}" to the launch sandbox administration (order ${nextOrderIndex}).`);
+  } else {
+    console.log(`\nVariant "${variantName}" is already assigned to the launch sandbox administration, skipping.`);
   }
 }
 
@@ -235,11 +359,30 @@ async function seed(): Promise<void> {
     tasksById.set(taskId, await seedTask(taskId, meta));
   }
 
+  const variantIdsByName = new Map<string, string>();
+
   for (const def of variantDefs) {
     const taskId = config.resolveTaskId ? config.resolveTaskId(def.params) : taskIds[0]!;
     const task = tasksById.get(taskId)!;
     console.log(`\nSeeding variant "${def.variantName}"...`);
-    await seedVariant(task.id, def);
+    const variant = await seedVariant(task.id, def);
+    variantIdsByName.set(def.variantName, variant.id);
+  }
+
+  if (config.defaultVariant && !skipAssignment) {
+    const variantId = variantIdsByName.get(config.defaultVariant);
+
+    if (variantId) {
+      await assignToFixtureAdministration(variantId, config.defaultVariant);
+    } else {
+      // A defaultVariant naming a variant this run didn't seed means the config and
+      // the parameters file have drifted apart — surface it rather than silently
+      // leaving the assessment unlaunchable.
+      console.warn(
+        `\nConfig "${taskArg}" names defaultVariant "${config.defaultVariant}", ` +
+          'which is not in the parameters file — skipping assignment.',
+      );
+    }
   }
 
   console.log('\nSeeding complete.');

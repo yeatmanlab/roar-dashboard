@@ -38,6 +38,7 @@ export const letterConfig: TaskSeedConfig = {
       name: 'Letter',
       nameSimple: 'Letter',
       nameTechnical: 'Rapid Online Assessment of Reading — Letter',
+      image: 'https://raw.githubusercontent.com/yeatmanlab/roar-assets/main/roar-apps/letter-no-lion.png',
     },
     [LETTER_TASK_IDS.ES]: {
       name: 'Letter (Spanish)',
@@ -98,4 +99,7 @@ export const letterConfig: TaskSeedConfig = {
     if (language === 'en-CA' || language === 'en-ca') return LETTER_TASK_IDS.EN_CA;
     throw new Error(`Unknown letter language "${language}"`);
   },
+
+  // English letter, school recruitment, random item selection.
+  defaultVariant: 'letter-school-cat-random-5min-v2',
 };

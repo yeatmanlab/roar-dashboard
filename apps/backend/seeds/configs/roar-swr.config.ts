@@ -22,6 +22,7 @@ export const swrConfig: TaskSeedConfig = {
       name: 'Single Word Recognition',
       nameSimple: 'SWR',
       nameTechnical: 'Rapid Online Assessment of Reading — Single Word Recognition',
+      image: 'https://raw.githubusercontent.com/yeatmanlab/roar-assets/main/roar-apps/word-no-lion.png',
     },
     [SWR_TASK_IDS.ES]: {
       name: 'Single Word Recognition (Spanish)',
@@ -86,4 +87,7 @@ export const swrConfig: TaskSeedConfig = {
     if (!entry) throw new Error(`Unknown SWR language "${lng}"`);
     return entry.taskId;
   },
+
+  // English, short-adaptive, scoring version 7.
+  defaultVariant: 'English (v7)',
 };
