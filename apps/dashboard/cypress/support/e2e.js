@@ -13,6 +13,17 @@ beforeEach(() => {
   // This is required as the window.Cypress object seems to be unreliable in some cases in the current Cypress version.
   cy.on('window:before:load', (win) => {
     win.localStorage.setItem('__E2E__', 'true');
+
+    // Cypress does not print the application-under-test's browser console output to the terminal, so it never shows
+    // up in CI logs (only in the interactive runner's console). Forward it through the existing cy.task('log', ...)
+    // channel (see cypress.config.cjs) so it appears in CI output.
+    ['log', 'warn', 'error'].forEach((level) => {
+      const original = win.console[level];
+      cy.stub(win.console, level).callsFake((...args) => {
+        cy.task('log', `[browser console.${level}] ${args.map(String).join(' ')}`, { log: false });
+        original.apply(win.console, args);
+      });
+    });
   });
 
   cy.visit('/');
