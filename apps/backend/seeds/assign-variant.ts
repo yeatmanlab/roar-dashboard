@@ -22,7 +22,8 @@ import { and, eq } from 'drizzle-orm';
 import { Pool } from 'pg';
 
 import * as CoreDbSchema from '../src/db/schema/core';
-import { administrations, administrationTaskVariants, tasks, taskVariants } from '../src/db/schema/core';
+import { administrations, tasks, taskVariants } from '../src/db/schema/core';
+import { assignTaskVariant } from './utils/assign-task-variant';
 
 /** How many variant names to show when `--variant` is needed but wasn't given. */
 const MAX_LISTED_VARIANTS = 10;
@@ -101,29 +102,14 @@ async function main(): Promise<void> {
 
   const variant = await resolveVariant();
 
-  // Append after existing assignments so ordered administrations keep a stable sequence.
-  const assigned = await db
-    .select({ orderIndex: administrationTaskVariants.orderIndex })
-    .from(administrationTaskVariants)
-    .where(eq(administrationTaskVariants.administrationId, administration.id));
+  const orderIndex = await assignTaskVariant(db, administration.id, variant.id);
 
-  const nextOrderIndex = assigned.reduce((max, row) => Math.max(max, row.orderIndex + 1), 0);
-
-  const [inserted] = await db
-    .insert(administrationTaskVariants)
-    .values({
-      administrationId: administration.id,
-      taskVariantId: variant.id,
-      orderIndex: nextOrderIndex,
-    })
-    .onConflictDoNothing()
-    .returning();
-
-  if (inserted) {
-    console.log(`Assigned "${variant.name}" (${slug}) to "${administration.name}" at order ${nextOrderIndex}.`);
-  } else {
+  if (orderIndex === null) {
     console.log(`"${variant.name}" (${slug}) is already assigned to "${administration.name}", skipping.`);
+    return;
   }
+
+  console.log(`Assigned "${variant.name}" (${slug}) to "${administration.name}" at order ${orderIndex}.`);
 }
 
 main()

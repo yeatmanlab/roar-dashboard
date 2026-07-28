@@ -27,15 +27,10 @@ import { and, eq } from 'drizzle-orm';
 import { Pool } from 'pg';
 
 import * as CoreDbSchema from '../src/db/schema/core';
-import {
-  administrations,
-  administrationTaskVariants,
-  tasks,
-  taskVariants,
-  taskVariantParameters,
-} from '../src/db/schema/core';
+import { administrations, tasks, taskVariants, taskVariantParameters } from '../src/db/schema/core';
 import { DEV_IDS } from './fixture-ids';
 import { TASK_SEED_CONFIGS } from './task-seed-configs';
+import { assignTaskVariant } from './utils/assign-task-variant';
 
 import type { TaskSeedConfig, VariantDef } from './task-seed-configs';
 
@@ -316,26 +311,14 @@ async function assignToFixtureAdministration(variantId: string, variantName: str
     return;
   }
 
-  // Append after whatever the fixture already assigned, so ordered administrations
-  // keep a stable sequence across repeated seeds of different assessments.
-  const assigned = await db
-    .select({ orderIndex: administrationTaskVariants.orderIndex })
-    .from(administrationTaskVariants)
-    .where(eq(administrationTaskVariants.administrationId, administrationId));
+  const orderIndex = await assignTaskVariant(db, administrationId, variantId);
 
-  const nextOrderIndex = assigned.reduce((max, row) => Math.max(max, row.orderIndex + 1), 0);
-
-  const [inserted] = await db
-    .insert(administrationTaskVariants)
-    .values({ administrationId, taskVariantId: variantId, orderIndex: nextOrderIndex })
-    .onConflictDoNothing()
-    .returning();
-
-  if (inserted) {
-    console.log(`\nAssigned "${variantName}" to the launch sandbox administration (order ${nextOrderIndex}).`);
-  } else {
+  if (orderIndex === null) {
     console.log(`\nVariant "${variantName}" is already assigned to the launch sandbox administration, skipping.`);
+    return;
   }
+
+  console.log(`\nAssigned "${variantName}" to the launch sandbox administration (order ${orderIndex}).`);
 }
 
 async function seed(): Promise<void> {

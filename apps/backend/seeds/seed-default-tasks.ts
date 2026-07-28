@@ -15,6 +15,11 @@
  * rather than importing keeps that script's module-level CLI parsing and pool
  * lifecycle intact, and isolates a failure in one assessment from the others.
  *
+ * Logging follows the `dev:init` pipeline steps (`setup`, `reset`, `seed`) and uses the
+ * structured logger, so a full run reads as one stream. The scripts it spawns —
+ * `task-seed.ts` and `assign-variant.ts` — are standalone CLIs and stay on plain
+ * `console` output, which is why a combined run shows both styles.
+ *
  * Environment variables:
  * - CORE_DATABASE_URL: Core database connection string (required, inherited)
  */

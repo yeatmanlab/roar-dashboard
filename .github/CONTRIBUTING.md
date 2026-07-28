@@ -346,6 +346,10 @@ administrations keep their synthetic tasks, which drive the progress and score
 fixtures, so the two never mix in one task list. Sign in as
 `class-a-student@test.local` and pick that administration.
 
+That step runs on its own as `npm run dev:seed:tasks:default`, which is worth
+knowing when you have re-seeded the fixture (`dev:reset && dev:seed`) and want the
+launchable assessments back without re-running the whole pipeline.
+
 To add another assessment:
 
 ```bash
