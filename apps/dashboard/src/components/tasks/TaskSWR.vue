@@ -24,7 +24,13 @@ const props = defineProps({
   launchId: { type: String, default: null },
 });
 
-let TaskLauncher;
+// Start loading the assessment bundle at setup rather than in onMounted. The
+// watcher below runs with `immediate: true`, so startTask can execute during
+// setup — before onMounted would have assigned the launcher.
+const taskLauncherPromise = import('@roar-platform/roar-swr').then((module) => module.default);
+// Mark the rejection handled so a failed import doesn't log `Uncaught (in promise)`
+// during the gap before startTask awaits it — that await still rejects into its catch.
+taskLauncherPromise.catch(() => {});
 
 const router = useRouter();
 const taskStarted = ref(false);
@@ -63,13 +69,7 @@ window.addEventListener(
   { once: true },
 );
 
-onMounted(async () => {
-  try {
-    TaskLauncher = (await import('@roar-platform/roar-swr')).default;
-  } catch (error) {
-    console.error('An error occurred while importing the game module.', error);
-  }
-
+onMounted(() => {
   if (authStore.isAuthReady) init();
 });
 
@@ -199,6 +199,8 @@ async function startTask(selectedAdmin) {
     // lng is passed explicitly so config.js can derive taskId via SWR_LANGUAGES.
     const { variantParams } = await getVariantById(swrTaskVariant.variantId);
     const gameParams = { ...variantParams, lng: props.language };
+
+    const TaskLauncher = await taskLauncherPromise;
 
     const roarApp = new TaskLauncher(gameParams, userParams, 'jspsych-target');
 
