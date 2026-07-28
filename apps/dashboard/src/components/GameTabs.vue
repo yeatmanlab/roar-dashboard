@@ -214,7 +214,7 @@
 </template>
 <script setup>
 import VideoPlayer from '@/components/VideoPlayer.vue';
-import { LEVANTE_TASKS, LEVANTE_TASKS_PT } from '@/constants/levanteTasks';
+import { LEVANTE_TASKS } from '@/constants/levanteTasks';
 import { TASKS_EXCLUDED_FROM_RETAKE } from '@/constants/tasksExcludedFromRetake';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
