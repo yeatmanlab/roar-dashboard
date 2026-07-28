@@ -214,7 +214,7 @@
 </template>
 <script setup>
 import VideoPlayer from '@/components/VideoPlayer.vue';
-import { LEVANTE_TASKS } from '@/constants/levanteTasks';
+import { LEVANTE_TASKS, LEVANTE_TASKS_PT } from '@/constants/levanteTasks';
 import { TASKS_EXCLUDED_FROM_RETAKE } from '@/constants/tasksExcludedFromRetake';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
@@ -252,46 +252,72 @@ const getScoringVersions = computed(() => {
   return scoringVersions;
 });
 
+const getLanguageSuffix = (taskId) => {
+  if (!taskId || typeof taskId !== 'string') return '';
+  const normalized = taskId.toLowerCase();
+  // @TODO: Refactor when more languages are deployed
+  if (normalized.endsWith('-pt')) return 'pt';
+  return '';
+};
+
+// Translated Levante task ids use the `-[lng]` suffix.
+// All language variants share the same translation key (without the suffix).
+const getLevanteTaskId = (taskId) => {
+  if (!taskId || typeof taskId !== 'string') return null;
+  let baseTaskId = taskId.toLowerCase();
+  
+  const langSuffix = getLanguageSuffix(taskId);
+  if (langSuffix) {
+    baseTaskId = baseTaskId.replace(`-${langSuffix}`, '');
+  }
+  
+  const taskIdCamelized = camelize(baseTaskId);
+  
+  return LEVANTE_TASKS.includes(taskIdCamelized) 
+    ? taskIdCamelized 
+    : null;
+};
+
 /** Filter out tasks that do not handle validity and reliability, thus allowing for retakes. **/
 const implementsValidityChecking = (taskId) => {
   return !TASKS_EXCLUDED_FROM_RETAKE.includes(taskId) || isTaskNormed(taskId, getScoringVersions.value[taskId]);
 };
 
 const getTaskName = (taskId, taskName) => {
-  // Translate Levante task names. The task name is not the same as the taskId.
-  const taskIdLowercased = taskId.toLowerCase();
+  const levanteTaskId = getLevanteTaskId(taskId);
 
-  if (LEVANTE_TASKS.includes(camelize(taskIdLowercased))) {
-    return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
+  if (levanteTaskId) {
+    return t(`gameTabs.${levanteTaskId}Name`);
   }
 
   return taskName;
 };
 
 const getTaskDescription = (taskId, taskDescription) => {
-  // Translate Levante task descriptions if not in English
-  const taskIdLowercased = taskId.toLowerCase();
+  const levanteTaskId = getLevanteTaskId(taskId);
 
-  if (LEVANTE_TASKS.includes(camelize(taskIdLowercased))) {
-    return t(`gameTabs.${camelize(taskIdLowercased)}Description`);
+  if (levanteTaskId) {
+    return t(`gameTabs.${levanteTaskId}Description`);
   }
   return taskDescription;
 };
 
 const getRoutePath = (taskId) => {
-  const lowerCasedAndCamelizedTaskId = camelize(taskId.toLowerCase());
+  const levanteTaskId = getLevanteTaskId(taskId);
+  const langSuffix = getLanguageSuffix(taskId);
+  const langPath = langSuffix ? `-${langSuffix}` : '';
   // For externally launched participants, prepend the launch route to the task path
   if (props.launchId) {
-    if (LEVANTE_TASKS.includes(lowerCasedAndCamelizedTaskId)) {
-      return `/launch/${props.launchId}/game/core-tasks/` + taskId;
+    if (levanteTaskId) {
+      return `/launch/${props.launchId}/game/core-tasks${langPath}/${taskId}`;
     } else {
-      return `/launch/${props.launchId}/game/` + taskId;
+      return `/launch/${props.launchId}/game/${taskId}`;
     }
   } else {
-    if (LEVANTE_TASKS.includes(lowerCasedAndCamelizedTaskId)) {
-      return '/game/core-tasks/' + taskId;
+    if (levanteTaskId) {
+      return `/game/core-tasks${langPath}/${taskId}`;
     } else {
-      return '/game/' + taskId;
+      return `/game/${taskId}`;
     }
   }
 };
