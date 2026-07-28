@@ -15,14 +15,25 @@ export const LEVANTE_TASKS = [
 ];
 
 /**
+ * A camel-cased list of Portuguese LEVANTE core-task apps
+ */
+export const LEVANTE_TASKS_PT = [
+  'heartsAndFlowersPt',
+  'matrixReasoningPt',
+  'memoryGamePt',
+  'mentalRotationPt',
+  'sameDifferentSelectionPt',
+];
+
+/**
  * A kebab-cased list of LEVANTE core-task app taskIds
  */
 export const LEVANTE_TASK_IDS = [
   'hearts-and-flowers',
   'egma-math',
-  'matrix-reasoning',
+  'matrix-reasoning', // Pattern Recognition
   'memory-game',
-  'mental-rotation',
+  'mental-rotation', // Shape Rotation
   'same-different-selection',
   'theory-of-mind',
   'trog',
@@ -30,4 +41,15 @@ export const LEVANTE_TASK_IDS = [
   'roar-inference',
 ];
 
-export const LEVANTE_TASK_IDS_NO_SCORES = ['hearts-and-flowers', 'memory-game'];
+/**
+ * A kebab-cased list of Portuguese LEVANTE core-task app taskIds
+ */
+export const LEVANTE_TASK_IDS_PT = [
+  'hearts-and-flowers-pt',
+  'matrix-reasoning-pt', // Pattern Recognition
+  'memory-game-pt',
+  'mental-rotation-pt', // Shape Rotation
+  'same-different-selection-pt',
+];
+
+export const LEVANTE_TASK_IDS_NO_SCORES = [...LEVANTE_TASKS_PT, 'hearts-and-flowers', 'memory-game', 'same-different-selection'];
