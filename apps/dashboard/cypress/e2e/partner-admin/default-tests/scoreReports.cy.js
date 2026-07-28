@@ -18,6 +18,22 @@ const openSchoolScoreReport = () => {
 };
 
 describe('Partner Admin: Score Reports', () => {
+  // Cypress does not print the application-under-test's browser console output to the terminal, so it never shows
+  // up in CI logs (only in the interactive runner's console). Forward it through the existing cy.task('log', ...)
+  // channel (see cypress.config.cjs) so it appears in CI output. Scoped to this spec only (via cy.window(), run
+  // after the page has already loaded) so it doesn't affect other specs.
+  beforeEach(() => {
+    cy.window().then((win) => {
+      ['log', 'warn', 'error'].forEach((level) => {
+        const original = win.console[level].bind(win.console);
+        cy.stub(win.console, level).callsFake((...args) => {
+          cy.task('log', `[browser console.${level}] ${args.map(String).join(' ')}`, { log: false });
+          original(...args);
+        });
+      });
+    });
+  });
+
   // @TODO: Expand on test to verify only stats exist for district admin.
   it('Renders only stats for district admin score report', () => {
     // Login as a partner admin.
