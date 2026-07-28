@@ -2190,7 +2190,7 @@ const sortedAndFilteredSubscoreTaskIds = computed(() => {
   // Show all available subscore tables, including unnormed assessments like roam and phonics
   // Some tasks require a scoring version to be available
   const availableTaskIds = Object.keys(computeAssignmentAndRunData.value?.runsByTaskId);
-  return availableTaskIds
+  const filteredTaskIds = availableTaskIds
     .filter((taskId) => {
       if (previouslyUnnormedTasks.includes(taskId)) {
         return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
@@ -2198,6 +2198,12 @@ const sortedAndFilteredSubscoreTaskIds = computed(() => {
       return true;
     })
     .sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
+
+  console.log(
+    `[ScoreReport] Rendering ${filteredTaskIds.length} subscore table(s) for org ${props.orgId} (${props.orgType}): [${filteredTaskIds.join(', ')}]`,
+  );
+
+  return filteredTaskIds;
 });
 
 let unsubscribe;
