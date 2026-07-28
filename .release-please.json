@@ -153,7 +153,7 @@
       "version-file": "package.json",
       "release-type": "node",
       "component": "roav-ran",
-      "release-as": "2.1.5"
+      "release-as": "2.1.6"
     }
   },
   "group-pull-request-title-pattern": "chore: release ${version}",
