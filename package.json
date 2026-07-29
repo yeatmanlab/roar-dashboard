@@ -14,6 +14,7 @@
     "dev:seed:tasks:default": "cd apps/backend && npm run dev:seed:tasks:default",
     "dev:assign:variant": "cd apps/backend && npm run dev:assign:variant",
     "dev:init": "cd apps/backend && npm run dev:init",
+    "dev:down": "bash scripts/dev-env-down.sh",
     "dev:setup:certs": "setup-certs",
     "watch": "turbo watch dev",
     "build": "turbo run build",
