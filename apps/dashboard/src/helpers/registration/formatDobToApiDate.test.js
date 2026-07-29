@@ -19,6 +19,30 @@ describe('formatDobToApiDate', () => {
     expect(formatDobToApiDate('2015-12-25')).toBe('2015-12-25');
   });
 
+  // Regression: `new Date('YYYY-MM-DD')` parses as UTC midnight while the helper's
+  // local getters read local time, so date-only strings used to come back a day
+  // early for every negative UTC offset. These dates are returned verbatim without
+  // touching `Date`, so the result no longer depends on the runner's time zone.
+  it('returns date-only strings unchanged regardless of time zone', () => {
+    expect(formatDobToApiDate('2015-12-25')).toBe('2015-12-25');
+    expect(formatDobToApiDate('2015-01-01')).toBe('2015-01-01');
+    expect(formatDobToApiDate('2016-02-29')).toBe('2016-02-29'); // real leap day
+  });
+
+  it('trims surrounding whitespace on a date-only string', () => {
+    expect(formatDobToApiDate('  2015-12-25  ')).toBe('2015-12-25');
+  });
+
+  // `new Date('2015-02-30')` silently rolls over to March 1 rather than reporting
+  // an invalid date, which would have recorded a DOB the user never entered.
+  it('throws on a date-only string naming a day that does not exist', () => {
+    expect(() => formatDobToApiDate('2015-02-30')).toThrow(/invalid/i);
+    expect(() => formatDobToApiDate('2015-11-31')).toThrow(/invalid/i);
+    expect(() => formatDobToApiDate('2015-02-29')).toThrow(/invalid/i); // 2015 is not a leap year
+    expect(() => formatDobToApiDate('2015-13-01')).toThrow(/invalid/i);
+    expect(() => formatDobToApiDate('2015-00-10')).toThrow(/invalid/i);
+  });
+
   it('throws on a missing date', () => {
     expect(() => formatDobToApiDate('')).toThrow(/required/i);
     expect(() => formatDobToApiDate(undefined)).toThrow(/required/i);
