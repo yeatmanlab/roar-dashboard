@@ -33,10 +33,9 @@
         </div>
       </div>
 
-      <div v-if="compositeFoundational" class="chart-row">
+      <!-- <div v-if="compositeFoundational" class="chart-row">
         <div class="chart-label text-gray-600">
           <span class="whitespace-nowrap text-lg font-bold">Foundational Skills Composite</span>
-          <!-- <span class="text-sm font-light uppercase"> (Composite Score)</span> -->
         </div>
         <PvChart
           v-if="!isChartEmpty(compositeFoundational)"
@@ -57,7 +56,7 @@
           The Foundational Skills Composite reflects overall performance on foundational reading skills, including
           phonological awareness, letter knowledge, word reading, and sentence reading.
         </div>
-      </div>
+      </div> -->
     </div>
 
     <hr v-if="spanishFoundationalTaskIds.length > 0" class="divider" />
