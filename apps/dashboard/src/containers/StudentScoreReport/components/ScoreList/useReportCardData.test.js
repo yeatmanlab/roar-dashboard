@@ -2,9 +2,26 @@ import { describe, it, expect, vi } from 'vitest';
 import { useReportCardData } from './useReportCardData';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
-// Mock roar-utils (external package with broken export)
+// Mock the broken @bdelab/roar-utils package
 vi.mock('@bdelab/roar-utils', () => ({
-  getGrade: vi.fn(),
+  getGrade: (grade) => {
+    if (typeof grade === 'number') return grade;
+    if (!grade) return 0;
+    const gradeStr = String(grade).toLowerCase().trim();
+    if (/^\d+$/.test(gradeStr)) return parseInt(gradeStr, 10);
+    return 0;
+  },
+}));
+
+// Mock getStudentGradeLevel to use the mocked getGrade
+vi.mock('@/helpers/getStudentGradeLevel', () => ({
+  getStudentGradeLevel: (grade) => {
+    if (typeof grade === 'number') return grade;
+    if (!grade) return 0;
+    const gradeStr = String(grade).toLowerCase().trim();
+    if (/^\d+$/.test(gradeStr)) return parseInt(gradeStr, 10);
+    return 0;
+  },
 }));
 
 // Pass-through translator so assertions can match i18n keys directly.

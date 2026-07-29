@@ -3,9 +3,26 @@ import { mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
 import { ref } from 'vue';
 
-// Mock roar-utils (external package with broken export)
+// Mock the broken @bdelab/roar-utils package
 vi.mock('@bdelab/roar-utils', () => ({
-  getGrade: vi.fn(),
+  getGrade: (grade) => {
+    if (typeof grade === 'number') return grade;
+    if (!grade) return 0;
+    const gradeStr = String(grade).toLowerCase().trim();
+    if (/^\d+$/.test(gradeStr)) return parseInt(gradeStr, 10);
+    return 0;
+  },
+}));
+
+// Mock getStudentGradeLevel to use the mocked getGrade
+vi.mock('@/helpers/getStudentGradeLevel', () => ({
+  getStudentGradeLevel: (grade) => {
+    if (typeof grade === 'number') return grade;
+    if (!grade) return 0;
+    const gradeStr = String(grade).toLowerCase().trim();
+    if (/^\d+$/.test(gradeStr)) return parseInt(gradeStr, 10);
+    return 0;
+  },
 }));
 
 // Mock the ScoreCard component to avoid Chart.js dependencies
