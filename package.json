@@ -4,7 +4,7 @@
   "bin": {
     "setup-certs": "./scripts/setup-certs.sh"
   },
-  "version": "3.26.0",
+  "version": "3.29.0",
   "scripts": {
     "dev": "turbo run dev --filter=!./apps/assessments/*",
     "dev:setup": "cd apps/backend && npm run dev:setup",
