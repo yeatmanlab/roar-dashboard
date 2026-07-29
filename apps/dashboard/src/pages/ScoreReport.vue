@@ -1436,7 +1436,8 @@ const viewOptions = ref([
  */
 
 const createExportData = ({ rows, includeProgress = false }) => {
-  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate, compositeScore }) => {
+  // const computedExportData = _map(rows, ({ user, scores, startDate, completionDate, compositeScore }) => {
+  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate }) => {
     let tableRow = {
       Username: user?.username,
       Email: user?.email, // This will only be used when exporting all rows

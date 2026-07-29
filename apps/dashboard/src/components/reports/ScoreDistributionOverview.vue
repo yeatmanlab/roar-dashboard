@@ -194,27 +194,27 @@ const comprehensionTaskIds = computed(() => {
   return props.taskIds.filter((id) => comprehension.includes(id));
 });
 
-const compositeFoundational = computed(() => {
-  const composite = props.runsByTaskId?.['compositeFoundational'];
-  if (!composite) return null;
+// const compositeFoundational = computed(() => {
+//   const composite = props.runsByTaskId?.['compositeFoundational'];
+//   if (!composite) return null;
 
-  if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
-    return {
-      below: composite.below?.total ?? 0,
-      some: composite.some?.total ?? 0,
-      above: composite.above?.total ?? 0,
-    };
-  }
+//   if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
+//     return {
+//       below: composite.below?.total ?? 0,
+//       some: composite.some?.total ?? 0,
+//       above: composite.above?.total ?? 0,
+//     };
+//   }
 
-  const counts = { below: 0, some: 0, above: 0 };
-  for (const run of composite) {
-    const supportLevel = run.scores?.support_level;
-    if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.below++;
-    else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.some++;
-    else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.above++;
-  }
-  return counts;
-});
+//   const counts = { below: 0, some: 0, above: 0 };
+//   for (const run of composite) {
+//     const supportLevel = run.scores?.support_level;
+//     if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.below++;
+//     else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.some++;
+//     else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.above++;
+//   }
+//   return counts;
+// });
 
 const supportLevelCountsByTaskId = computed(() => {
   const result = {};
@@ -267,13 +267,13 @@ const chartOptionsByTaskId = computed(() => {
   return result;
 });
 
-const compositeFoundationalChartData = computed(() =>
-  compositeFoundational.value ? setDistributionChartData(compositeFoundational.value) : null,
-);
+// const compositeFoundationalChartData = computed(() =>
+//   compositeFoundational.value ? setDistributionChartData(compositeFoundational.value) : null,
+// );
 
-const compositeFoundationalChartOptions = computed(() =>
-  compositeFoundational.value ? setDistributionChartOptions(compositeFoundational.value) : null,
-);
+// const compositeFoundationalChartOptions = computed(() =>
+//   compositeFoundational.value ? setDistributionChartOptions(compositeFoundational.value) : null,
+// );
 
 const grayChartData = computed(() => ({
   labels: [''],
