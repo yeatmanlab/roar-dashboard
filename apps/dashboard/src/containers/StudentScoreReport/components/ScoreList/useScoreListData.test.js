@@ -547,14 +547,14 @@ describe('useScoreListData', () => {
     it('should append percentage for letter tasks', () => {
       const taskData = [
         {
-          taskId: 'letter',
+          taskId: 'letter-en-ca',
           scores: { composite: { rawScore: 90 } },
         },
       ];
 
       const processedTasks = [
         {
-          taskId: 'letter',
+          taskId: 'letter-en-ca',
           rawScore: { value: 90 },
           scoreToDisplay: SCORE_TYPES.RAW_SCORE,
         },

@@ -1,5 +1,5 @@
 import { PROGRESS_COLORS } from '@/constants/completionStatus';
-import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
 
 export const chart = {};
 
@@ -180,6 +180,60 @@ export const setProgressChartOptions = (orgStats) => {
       },
     },
   };
+};
+
+/**
+ * Maps a task's server-aggregated support-level distribution onto the
+ * `{ below, some, above }` shape the distribution charts consume.
+ *
+ * The score-overview endpoint (`ScoreOverviewResponseSchema.tasks[].supportLevels`)
+ * returns `{ needsExtraSupport: { count }, developingSkill: { count }, achievedSkill: { count } }`
+ * and has already aggregated across the report's org/class/group, so there is no
+ * scope-dependent branching to do here — unlike
+ * {@link aggregateSupportLevelRuns}, which still has to.
+ *
+ * @param {Object|undefined} supportLevels - The endpoint's `supportLevels` object for one task.
+ * @returns {{below: number, some: number, above: number}} Counts, zeroed for a missing task.
+ */
+export const mapSupportLevelCounts = (supportLevels) => ({
+  below: supportLevels?.needsExtraSupport?.count ?? 0,
+  some: supportLevels?.developingSkill?.count ?? 0,
+  above: supportLevels?.achievedSkill?.count ?? 0,
+});
+
+/**
+ * Aggregates client-side runs into `{ below, some, above }` counts.
+ *
+ * Used only for the foundational composite, which the score-overview endpoint has no
+ * equivalent for. Accepts either shape the caller may hold: an array of runs carrying
+ * `scores.support_level` (school/class/group scope), or the pre-aggregated
+ * `{ below: { total }, ... }` object the Firestore district feed supplies.
+ *
+ * Runs with an unrecognized or absent support level are skipped, matching the prior
+ * client aggregation — only classified runs count toward the distribution.
+ *
+ * @param {Array|Object|null|undefined} runs - Runs array, or pre-aggregated district totals.
+ * @returns {{below: number, some: number, above: number}|null} Counts, or null when absent.
+ */
+export const aggregateSupportLevelRuns = (runs) => {
+  if (!runs) return null;
+
+  if (!Array.isArray(runs)) {
+    return {
+      below: runs.below?.total ?? 0,
+      some: runs.some?.total ?? 0,
+      above: runs.above?.total ?? 0,
+    };
+  }
+
+  const counts = { below: 0, some: 0, above: 0 };
+  for (const run of runs) {
+    const supportLevel = run?.scores?.support_level;
+    if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.below++;
+    else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.some++;
+    else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.above++;
+  }
+  return counts;
 };
 
 /**
