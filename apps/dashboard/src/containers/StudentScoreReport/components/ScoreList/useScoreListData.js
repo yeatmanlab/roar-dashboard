@@ -91,7 +91,7 @@ export function useScoreListData(params) {
 
   const scoreValueTemplate = computed(() => {
     return (task) => {
-      const appendPercentageTo = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
+      const appendPercentageTo = ['phonics', 'letter-es', 'letter-en-ca'];
       if (appendPercentageTo.includes(task.taskId)) {
         return task[task.scoreToDisplay].value + '%';
       }
