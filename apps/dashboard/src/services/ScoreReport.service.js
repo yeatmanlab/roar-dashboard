@@ -11,6 +11,8 @@ import {
   tasksToDisplayPercentCorrect,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
+  isTaskNormed,
+  previouslyUnnormedTasks,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
@@ -173,7 +175,7 @@ const ScoreReportService = (() => {
     // --- CHANGED: use safe wrapper instead of direct call ---
     const taskDescription = safeGetExtendedDescription(String(task.taskId));
 
-    if (tasksToDisplayPercentCorrect.includes(task.taskId) && !(task.taskId === 'swr-es' && scoringVersion >= 1)) {
+    if (tasksToDisplayPercentCorrect.includes(task.taskId) && !isTaskNormed(task.taskId, scoringVersion)) {
       return {
         keypath: 'scoreReports.percentageCorrectTaskDescription',
         slots: {
@@ -192,7 +194,7 @@ const ScoreReportService = (() => {
       };
     }
 
-    if (rawOnlyTasks.includes(task.taskId)) {
+    if (rawOnlyTasks.includes(task.taskId) && !isTaskNormed(task.taskId, scoringVersion)) {
       return {
         keypath: 'scoreReports.rawTaskDescription',
         slots: {
@@ -242,17 +244,23 @@ const ScoreReportService = (() => {
     };
   };
 
-  const getScoresArrayForTask = (task) => {
-    if (!rawOnlyTasks.includes(task.taskId) || task.taskId === 'letter' || task.taskId === 'letter-en-ca') {
+  const getScoresArrayForTask = (task, scoringVersion) => {
+    if (
+      !rawOnlyTasks.includes(task.taskId) ||
+      task.taskId === 'letter' ||
+      task.taskId === 'letter-en-ca' ||
+      isTaskNormed(task.taskId, scoringVersion)
+    ) {
       return task.scoresArray;
     }
     return null;
   };
 
-  const getScoreToDisplay = (taskId, grade, rawOnlyTasks) => {
+  const getScoreToDisplay = (taskId, grade, rawOnlyTasks, scoringVersion) => {
+    // Unnormed tasks with individual score report cards (percentile field is set to percent correct)
     const alwaysDisplaysPercentile = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
 
-    if (rawOnlyTasks.includes(taskId)) {
+    if (rawOnlyTasks.includes(taskId) && !isTaskNormed(taskId, scoringVersion)) {
       return SCORE_TYPES.RAW_SCORE;
     }
 
@@ -264,7 +272,7 @@ const ScoreReportService = (() => {
   };
 
   const processTaskScores = (taskData, grade, i18n, scoringVersions = {}) => {
-    const tasksBlacklist = ['vocab', 'cva'];
+    const tasksBlacklist = ['vocab'];
     const computedTaskAcc = {};
 
     for (const { taskId, scores, reliable, optional, engagementFlags } of taskData) {
@@ -272,17 +280,35 @@ const ScoreReportService = (() => {
 
       let rawScore = null;
 
-      const useSpanishNorms = (taskId === 'swr-es' || taskId === 'sre-es') && scoringVersions[taskId] >= 1;
-      if (!taskId.includes('vocab') && (!taskId.includes('es') || useSpanishNorms)) {
-        rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore');
+      // This decides whether we should extract the raw score to display the individual score report cards
+      const shouldExtractScoreFields =
+        ((!previouslyUnnormedTasks.includes(taskId) || scoringVersions[taskId] >= 1) &&
+          (!taskId.includes('es') || scoringVersions[taskId] >= 1)) ||
+        taskId === 'letter';
+
+      if (!taskId.includes('vocab') && shouldExtractScoreFields) {
+        rawScore = getScoreValue(compositeScores, taskId, grade, 'rawScore', compositeScores?.scoringVersion);
       } else {
         rawScore = compositeScores;
       }
 
+      // SCORE_FIELD_MAPPINGS.rawScore enables, SCORE_FIELD_MAPPINGS.percentileScore determines dial value
       if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
-        const percentileScore = getScoreValue(compositeScores, taskId, grade, 'percentile');
-        const standardScore = getScoreValue(compositeScores, taskId, grade, SCORE_TYPES.STANDARD_SCORE);
-        const rawScoreRange = getRawScoreRange(taskId);
+        const percentileScore = getScoreValue(
+          compositeScores,
+          taskId,
+          grade,
+          'percentile',
+          compositeScores?.scoringVersion,
+        );
+        const standardScore = getScoreValue(
+          compositeScores,
+          taskId,
+          grade,
+          SCORE_TYPES.STANDARD_SCORE,
+          compositeScores?.scoringVersion,
+        );
+        const rawScoreRange = getRawScoreRange(taskId, scoringVersions[taskId]);
         const supportColor = getDialColor(grade, percentileScore, rawScore, taskId, optional, scoringVersions[taskId]);
 
         const scoresForTask = {
@@ -302,7 +328,7 @@ const ScoreReportService = (() => {
           },
           percentileScore: {
             name:
-              tasksToDisplayPercentCorrect.includes(taskId) && !useSpanishNorms
+              tasksToDisplayPercentCorrect.includes(taskId) && !isTaskNormed(taskId, scoringVersions[taskId])
                 ? i18n.t('scoreReports.percentCorrect')
                 : i18n.t('scoreReports.percentileScore'),
             value: Math.round(percentileScore),
@@ -313,7 +339,7 @@ const ScoreReportService = (() => {
         };
 
         const tags = createTaskTags(optional, reliable, engagementFlags, i18n);
-        const scoreToDisplay = getScoreToDisplay(taskId, grade, rawOnlyTasks);
+        const scoreToDisplay = getScoreToDisplay(taskId, grade, rawOnlyTasks, scoringVersions[taskId]);
 
         computedTaskAcc[taskId] = {
           taskId,

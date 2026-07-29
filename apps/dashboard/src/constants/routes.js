@@ -31,6 +31,7 @@ export const GAME_ROUTES = {
   ROAM_ALPACA_ES: '/game/roam-alpaca-es',
   ROAM_ALPACA_PT: '/game/roam-alpaca-pt',
   ROAV_MP: '/game/roav-mp',
+  ROAV_RVP: '/game/roav-rvp',
   CORE_TASKS: '/game/core-tasks/:taskId',
   RAN: '/game/ran',
   CROWDING: '/game/crowding',
