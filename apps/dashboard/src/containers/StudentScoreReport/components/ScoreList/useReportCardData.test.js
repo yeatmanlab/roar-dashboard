@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { describe, it, expect, vi } from 'vitest';
 import { useReportCardData } from './useReportCardData';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
@@ -25,12 +24,6 @@ vi.mock('@/helpers/getStudentGradeLevel', () => ({
   },
 }));
 
-=======
-import { describe, it, expect } from 'vitest';
-import { useReportCardData } from './useReportCardData';
-import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
-
->>>>>>> f8301fc0b (Wire the individual student report (administrator path) to the backend endpoint)
 // Pass-through translator so assertions can match i18n keys directly.
 const t = (key) => key;
 

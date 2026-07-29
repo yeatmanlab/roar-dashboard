@@ -90,12 +90,6 @@ describe('useAdministrationTaskSubscoresQuery', () => {
     const administrationId = nanoid();
     const taskId = nanoid();
     const scopeId = nanoid();
-<<<<<<< HEAD
-=======
-    mockListTaskSubscores
-      .mockResolvedValueOnce(makePage(1, 2, [makeRow('u1')]))
-      .mockResolvedValueOnce(makePage(2, 2, [makeRow('u2')]));
->>>>>>> 820aa2184 (Wire the score-report subscore tables to the backend subscores endpoint)
 
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
@@ -106,14 +100,11 @@ describe('useAdministrationTaskSubscoresQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-<<<<<<< HEAD
     mockListTaskSubscores.mockReset();
     mockListTaskSubscores
       .mockResolvedValueOnce(makePage(1, 2, [makeRow('u1')]))
       .mockResolvedValueOnce(makePage(2, 2, [makeRow('u2')]));
 
-=======
->>>>>>> 820aa2184 (Wire the score-report subscore tables to the backend subscores endpoint)
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
     const result = await queryFn();
 

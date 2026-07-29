@@ -111,6 +111,9 @@ describe('useGuardianStudentReportQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
+    mockGetGuardianStudentReport.mockReset();
+    mockGetGuardianStudentReport.mockResolvedValue(okResult());
+
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
     const result = await queryFn();
 
