@@ -12,6 +12,7 @@ import _isUndefined from 'lodash/isUndefined'; //check if value of object is und
 import { getAgeData } from '@bdelab/roar-utils'; //restructures age information
 import i18next from 'i18next'; //for language info
 import { updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
+import { getStoryOption } from '../../shared/helpers';
 
 //gets the variables required for the task
 export const initConfigCoreMath = async (gameParams, userParams, displayElement) => {
@@ -60,7 +61,7 @@ export const initConfigCoreMath = async (gameParams, userParams, displayElement)
     taskName: taskName,
     corpusName: corpusName || 'items',
     //group: group,
-    storyOption: storyOption ?? false,
+    story: getStoryOption(storyOption, grade),
     keyboardPractice: keyboardPractice ?? true,
     audio: audio ?? true,
   };
