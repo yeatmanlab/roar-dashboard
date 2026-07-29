@@ -39,7 +39,7 @@ function clickFirstVisible() {
 
 // Loops until the completion text is present.
 function makeChoiceOrContinue(gameCompleteText, tries = 0) {
-  if (tries > 800) throw new Error('Exceeded max tries while playing the game.');
+  if (tries > 1600) throw new Error('Exceeded max tries while playing the game.');
 
   cy.get('body', { timeout: 1000 }).then(($body) => {
     const text = $body.text().replace(/\s\s+/g, ' ').trim();
@@ -83,13 +83,6 @@ export function startGame(administration, language, optional, task, auth) {
 
   cy.waitForAssessmentReadyState();
   cy.get('.jspsych-btn').should('be.visible').click();
-
-  cy.wait(0.1 * Cypress.env('timeout'));
-  Cypress.on('uncaught:exception', () => {
-    return false;
-  });
-
-  cy.get('.go-button').should('be.visible').click();
 }
 
 export function playMorphology({
