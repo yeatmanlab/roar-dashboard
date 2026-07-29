@@ -322,6 +322,23 @@ with the `superAdmin` entry — email `<uuid>@test.local`, password `password`.
 **Resetting:** to wipe and re-seed all databases, run
 `npm run dev:reset && npm run dev:seed`.
 
+**Stopping and restarting:** run `docker compose stop` to stop the containers
+while retaining PostgreSQL and Firebase Auth emulator data. Restart them with
+`docker compose up -d --wait`.
+
+**Tearing down:** run `npm run dev:down` to remove the local stack and delete
+PostgreSQL data. This preserves the `firebase-auth-data` volume. The next
+startup needs `npm run dev:init` to recreate and seed the databases. A raw
+`docker compose down` retains the explicitly managed PostgreSQL volume, which
+is reused on the next startup instead of creating another anonymous volume.
+
+The teardown command also removes a legacy anonymous PostgreSQL volume when it
+is still attached to the `roar-postgres` container. For volumes that were
+already detached by the previous configuration, use `docker system df -v` and
+`docker volume inspect <volume-name>` to identify the volume before removing it
+with `docker volume rm <volume-name>`. Do not use a broad volume prune when
+unrelated Docker projects are present.
+
 ## ROAR coding style
 
 Most ROAR repositories use [prettier][link_prettier] and [eslint][link_eslint]

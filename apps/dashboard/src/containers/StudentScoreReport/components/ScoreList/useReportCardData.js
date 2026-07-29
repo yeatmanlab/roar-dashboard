@@ -53,7 +53,7 @@ export function useReportCardData(params) {
   // Which score type the card surfaces (mirrors ScoreReport.service.getScoreToDisplay).
   const getScoreToDisplay = (slug, grade) => {
     if (rawOnlyTasks.includes(slug)) return SCORE_TYPES.RAW_SCORE;
-    if (['phonics', 'letter', 'letter-es', 'letter-en-ca'].includes(slug)) return SCORE_TYPES.PERCENTILE_SCORE;
+    if (['phonics', 'letter-es', 'letter-en-ca'].includes(slug)) return SCORE_TYPES.PERCENTILE_SCORE;
     return toValue(grade) >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
   };
 
@@ -127,7 +127,7 @@ export function useReportCardData(params) {
       );
     }
 
-    // Score-breakdown rows: standard, percentile (grade < 6 only), raw — the order the
+    // Score-breakdown rows: standard (grade < 6 only), percentile (grade >= 6 only), raw — the order the
     // legacy createScoresArray sorts to. Letter/PA granular rows are a known gap.
     const scoresArray = [
       [
@@ -137,7 +137,7 @@ export function useReportCardData(params) {
         scoresForTask.standardScore.max,
       ],
     ];
-    if (grade < 6) {
+    if (grade >= 6) {
       scoresArray.push([
         scoresForTask.percentileScore.name,
         scoresForTask.percentileScore.value,
@@ -177,7 +177,7 @@ export function useReportCardData(params) {
   });
 
   const scoreValueTemplate = computed(() => (task) => {
-    const appendPercentageTo = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
+    const appendPercentageTo = ['phonics', 'letter-es', 'letter-en-ca'];
     if (appendPercentageTo.includes(task.taskId)) {
       const value = task[task.scoreToDisplay].value;
       return value == null ? '' : value + '%';
