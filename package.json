@@ -12,6 +12,7 @@
     "dev:reset": "cd apps/backend && npm run dev:reset",
     "dev:seed:tasks": "cd apps/backend && npm run dev:seed:tasks",
     "dev:init": "cd apps/backend && npm run dev:init",
+    "dev:down": "bash scripts/dev-env-down.sh",
     "dev:setup:certs": "setup-certs",
     "watch": "turbo watch dev",
     "build": "turbo run build",
