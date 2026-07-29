@@ -187,7 +187,12 @@ async function seedTask(taskId: string, meta: TaskSeedConfig['tasks'][string]): 
     name: meta.name,
     nameSimple: meta.nameSimple,
     nameTechnical: meta.nameTechnical,
+    // Optional display fields are written only when the config supplies them, so a
+    // value set elsewhere — an admin editing a description through the dashboard,
+    // say — survives a re-seed instead of being nulled out.
+    ...(meta.description ? { description: meta.description } : {}),
     ...(meta.image ? { image: meta.image } : {}),
+    ...(meta.tutorialVideo ? { tutorialVideo: meta.tutorialVideo } : {}),
   };
 
   const existing = await db.query.tasks.findFirst({ where: eq(tasks.slug, taskId) });

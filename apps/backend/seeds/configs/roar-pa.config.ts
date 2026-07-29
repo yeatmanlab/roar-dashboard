@@ -24,6 +24,7 @@ export const paConfig: TaskSeedConfig = {
       name: 'Phonological Awareness',
       nameSimple: 'Phonological Awareness',
       nameTechnical: 'Rapid Online Assessment of Reading — Phonological Awareness',
+      description: 'Identify the sounds in the words',
       image: 'https://raw.githubusercontent.com/yeatmanlab/roar-assets/main/roar-apps/phoneme-no-lion.png',
     },
   },

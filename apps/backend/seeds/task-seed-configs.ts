@@ -43,6 +43,13 @@ export type TaskSeedConfig = {
       name: string;
       nameSimple: string;
       nameTechnical: string;
+
+      /**
+       * Participant-facing blurb shown on the task tile, e.g. "Words will flash quickly
+       * on the screen. Decide if they are real or made up."
+       */
+      description?: string;
+
       /**
        * Tile artwork for the participant's assessment list.
        *
@@ -53,6 +60,14 @@ export type TaskSeedConfig = {
        * buckets already are.
        */
       image?: string;
+
+      /**
+       * Instructional video played in place of the tile artwork when present.
+       *
+       * Host must be allowlisted in `media-src`, which covers the
+       * `storage.googleapis.com/roar-*` buckets.
+       */
+      tutorialVideo?: string;
     }
   >;
 

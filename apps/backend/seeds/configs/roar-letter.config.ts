@@ -38,6 +38,7 @@ export const letterConfig: TaskSeedConfig = {
       name: 'Letter',
       nameSimple: 'Letter',
       nameTechnical: 'Rapid Online Assessment of Reading — Letter',
+      description: 'Match letters to their names and sounds.',
       image: 'https://raw.githubusercontent.com/yeatmanlab/roar-assets/main/roar-apps/letter-no-lion.png',
     },
     [LETTER_TASK_IDS.ES]: {

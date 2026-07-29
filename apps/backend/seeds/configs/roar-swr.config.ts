@@ -22,7 +22,9 @@ export const swrConfig: TaskSeedConfig = {
       name: 'Single Word Recognition',
       nameSimple: 'SWR',
       nameTechnical: 'Rapid Online Assessment of Reading — Single Word Recognition',
+      description: 'Words will flash quickly on the screen. Decide if they are real or made up.',
       image: 'https://raw.githubusercontent.com/yeatmanlab/roar-assets/main/roar-apps/word-no-lion.png',
+      tutorialVideo: 'https://storage.googleapis.com/roar-swr/en/shared/ROAR-SWR%20instructional%20video.mp4',
     },
     [SWR_TASK_IDS.ES]: {
       name: 'Single Word Recognition (Spanish)',

@@ -26,6 +26,7 @@ export const sreConfig: TaskSeedConfig = {
       name: 'Sentence Reading Efficiency',
       nameSimple: 'SRE',
       nameTechnical: 'Rapid Online Assessment of Reading — Sentence Reading Efficiency',
+      description: 'Read the sentences as quickly as you can and decide if they are true or false.',
       image: 'https://raw.githubusercontent.com/yeatmanlab/roar-assets/main/roar-apps/sentence-no-lion.png',
     },
     [SRE_TASK_IDS.ES]: {
