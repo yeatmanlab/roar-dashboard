@@ -99,6 +99,9 @@ describe('useAdministrationScoreFacetsQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
+    mockGetScoreFacets.mockReset();
+    mockGetScoreFacets.mockResolvedValue(okResult());
+
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
     const result = await queryFn();
 

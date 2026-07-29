@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { useReportCardData } from './useReportCardData';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
+
+// Mock roar-utils (external package with broken export)
+vi.mock('@bdelab/roar-utils', () => ({
+  getGrade: vi.fn(),
+}));
 
 // Pass-through translator so assertions can match i18n keys directly.
 const t = (key) => key;

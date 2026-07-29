@@ -104,6 +104,9 @@ describe('useAdministrationIndividualScoreReportQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
+    mockGetIndividualStudentReport.mockReset();
+    mockGetIndividualStudentReport.mockResolvedValue(okResult());
+
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
     const result = await queryFn();
 

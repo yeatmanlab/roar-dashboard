@@ -3,6 +3,11 @@ import { mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
 import { ref } from 'vue';
 
+// Mock roar-utils (external package with broken export)
+vi.mock('@bdelab/roar-utils', () => ({
+  getGrade: vi.fn(),
+}));
+
 // Mock the ScoreCard component to avoid Chart.js dependencies
 vi.mock('./ScoreCard', () => ({
   default: {

@@ -87,9 +87,6 @@ describe('useAdministrationScoreStudentsQuery', () => {
   it('follows pagination and aggregates all pages into { students, tasks, exclusions }', async () => {
     const administrationId = nanoid();
     const scopeId = nanoid();
-    mockListStudents
-      .mockResolvedValueOnce(makePage(1, 2, [makeRow('u1')]))
-      .mockResolvedValueOnce(makePage(2, 2, [makeRow('u2')]));
 
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
@@ -99,6 +96,11 @@ describe('useAdministrationScoreStudentsQuery', () => {
     withSetup(() => useAdministrationScoreStudentsQuery(administrationId, 'school', scopeId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
+
+    mockListStudents.mockReset();
+    mockListStudents
+      .mockResolvedValueOnce(makePage(1, 2, [makeRow('u1')]))
+      .mockResolvedValueOnce(makePage(2, 2, [makeRow('u2')]));
 
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
     const result = await queryFn();
