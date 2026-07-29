@@ -78,14 +78,14 @@ describe('useReportCardData', () => {
     expect(unreliable.tags[1].tooltip).toContain('response time too fast');
   });
 
-  it('includes the percentile breakdown row only for grade < 6', () => {
+  it('includes the percentile breakdown row only for grade >= 6', () => {
     const [underSix] = cards([makeTask()], '3');
     const namesUnder = underSix.scoresArray.map((row) => row[0]);
-    expect(namesUnder).toContain('scoreReports.percentileScore');
+    expect(namesUnder).not.toContain('scoreReports.percentileScore');
 
     const [overSix] = cards([makeTask()], '8');
     const namesOver = overSix.scoresArray.map((row) => row[0]);
-    expect(namesOver).not.toContain('scoreReports.percentileScore');
+    expect(namesOver).toContain('scoreReports.percentileScore');
   });
 
   it('formats phonics subscores onto the displayed score as correct/attempted strings', () => {

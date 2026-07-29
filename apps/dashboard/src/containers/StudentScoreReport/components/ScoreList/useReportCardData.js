@@ -37,6 +37,21 @@ import { TAG_SEVERITIES } from '@/constants/tags';
  * @param {Object} params.taskScoringVersions – Map of task slug → scoring version.
  * @param {Function} params.t – i18n translate function.
  */
+// Tasks with normed assessments, mapped to their minimum norming version.
+// A task uses normed norms when its scoring version >= the normed version.
+const NORMED_TASK_VERSIONS = {
+  swr: 7,
+  sre: 5,
+  'swr-es': 7,
+  'sre-es': 5,
+  pa: 5,
+  letter: 1,
+  'letter-es': 1,
+  'letter-en-ca': 1,
+  trog: 1,
+  'roar-inference': 1,
+};
+
 export function useReportCardData(params) {
   const { reportTasks, studentGrade, taskScoringVersions = {}, t } = params;
 
@@ -85,7 +100,7 @@ export function useReportCardData(params) {
   const buildEntry = (task) => {
     const slug = task.taskSlug;
     const grade = gradeLevel;
-    const useSpanishNorms = (slug === 'swr-es' || slug === 'sre-es') && taskScoringVersions[slug] >= 1;
+    const useNormedAssessment = NORMED_TASK_VERSIONS[slug] && taskScoringVersions[slug] >= NORMED_TASK_VERSIONS[slug];
     // Optional tasks render a neutral dial (matching legacy getDialColor, which returns no
     // color for optional tasks) even though the backend classifies a completed optional task.
     const dialColor = task.optional
@@ -110,12 +125,12 @@ export function useReportCardData(params) {
       },
       percentileScore: {
         name:
-          tasksToDisplayPercentCorrect.includes(slug) && !useSpanishNorms
+          tasksToDisplayPercentCorrect.includes(slug) && !useNormedAssessment
             ? t('scoreReports.percentCorrect')
             : t('scoreReports.percentileScore'),
         value: round(task.scores?.percentile),
         min: 0,
-        max: slug.includes('letter') ? 100 : 99,
+        max: ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) ? 100 : 99,
         supportColor: dialColor,
       },
     };
