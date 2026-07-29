@@ -184,8 +184,9 @@ export function useReportCardData(params) {
       scoreToDisplay = cardKey;
     }
 
-    // Score-breakdown rows: standard, percentile (grade >= 6 only), raw — the order the
-    // legacy createScoresArray sorts to. Letter/PA granular rows are a known gap.
+    // Score-breakdown rows: standard, percentile (grade >= 6 or when display descriptor
+    // specifies percentile), raw — the order the legacy createScoresArray sorts to.
+    // Letter/PA granular rows are a known gap.
     const scoresArray = [
       [
         scoresForTask.standardScore.name,
@@ -194,7 +195,10 @@ export function useReportCardData(params) {
         scoresForTask.standardScore.max,
       ],
     ];
-    if (grade >= 6) {
+    if (
+      grade >= 6 ||
+      (task.display && DISPLAY_TYPE_TO_CARD_KEY[task.display.scoreType] === SCORE_TYPES.PERCENTILE_SCORE)
+    ) {
       scoresArray.push([
         scoresForTask.percentileScore.name,
         scoresForTask.percentileScore.value,
@@ -235,12 +239,16 @@ export function useReportCardData(params) {
 
   const scoreValueTemplate = computed(() => (task) => {
     const appendPercentageTo = ['phonics', 'letter-es', 'letter-en-ca'];
-    if (appendPercentageTo.includes(task.taskId)) {
-      const value = task[task.scoreToDisplay].value;
+    const score = task[task.scoreToDisplay];
+
+    // Append % for phonics/letter variants or when display descriptor specifies percentCorrect
+    if (appendPercentageTo.includes(task.taskId) || score.name === 'scoreReports.percentCorrect') {
+      const value = score.value;
       return value == null ? '' : value + '%';
     }
+
     return task.scoreToDisplay === SCORE_TYPES.PERCENTILE_SCORE
-      ? ScoreReportService.getPercentileSuffixTemplate(task.percentileScore.value, i18n)
+      ? ScoreReportService.getPercentileSuffixTemplate(score.value, i18n)
       : undefined;
   });
 
