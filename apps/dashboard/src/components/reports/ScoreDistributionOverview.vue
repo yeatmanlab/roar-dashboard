@@ -155,23 +155,42 @@
 <script setup>
 import { computed } from 'vue';
 import PvChart from 'primevue/chart';
-import { setDistributionChartData, setDistributionChartOptions } from '@/helpers/plotting';
-import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
+import {
+  setDistributionChartData,
+  setDistributionChartOptions,
+  mapSupportLevelCounts,
+  aggregateSupportLevelRuns,
+} from '@/helpers/plotting';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 import { descriptionsByTaskId } from '@/helpers/reports';
-import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 const props = defineProps({
   taskIds: {
     type: Array,
     required: true,
   },
-  runsByTaskId: {
+  /**
+   * Backend-aggregated support-level distributions from the score-overview
+   * endpoint, keyed by task slug and shaped
+   * `{ needsExtraSupport: { count }, developingSkill: { count }, achievedSkill: { count } }`.
+   * Already scoped to the report's org/class/group by the server.
+   */
+  supportLevelsByTaskId: {
     type: Object,
-    required: true,
+    required: false,
+    default: () => ({}),
   },
-  orgType: {
-    type: String,
-    required: true,
+  /**
+   * Runs backing the foundational-composite row, which has no equivalent in the
+   * score-overview endpoint and so is still derived client-side. Either shape is
+   * accepted — an array of runs at school/class/group scope, or the pre-aggregated
+   * `{ below: { total }, ... }` object at district scope — and
+   * {@link aggregateSupportLevelRuns} distinguishes them, so no scope prop is needed.
+   */
+  compositeFoundationalRuns: {
+    type: [Array, Object],
+    required: false,
+    default: null,
   },
   tasksDictionary: {
     type: Object,
@@ -195,56 +214,16 @@ const comprehensionTaskIds = computed(() => {
   return props.taskIds.filter((id) => comprehension.includes(id));
 });
 
-const compositeFoundational = computed(() => {
-  const composite = props.runsByTaskId?.['compositeFoundational'];
-  if (!composite) return null;
+const compositeFoundational = computed(() => aggregateSupportLevelRuns(props.compositeFoundationalRuns));
 
-  if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
-    return {
-      below: composite.below?.total ?? 0,
-      some: composite.some?.total ?? 0,
-      above: composite.above?.total ?? 0,
-    };
-  }
-
-  const counts = { below: 0, some: 0, above: 0 };
-  for (const run of composite) {
-    const supportLevel = run.scores?.support_level;
-    if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.below++;
-    else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.some++;
-    else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.above++;
-  }
-  return counts;
-});
-
-const supportLevelCountsByTaskId = computed(() => {
-  const result = {};
-  for (const taskId of props.taskIds) {
-    const runs = props.runsByTaskId?.[taskId];
-    if (!runs) {
-      result[taskId] = { below: 0, some: 0, above: 0 };
-      continue;
-    }
-
-    if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
-      result[taskId] = {
-        below: runs.below?.total ?? 0,
-        some: runs.some?.total ?? 0,
-        above: runs.above?.total ?? 0,
-      };
-    } else {
-      const counts = { below: 0, some: 0, above: 0 };
-      for (const run of runs) {
-        const supportLevel = run.scores?.support_level;
-        if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.below++;
-        else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.some++;
-        else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.above++;
-      }
-      result[taskId] = counts;
-    }
-  }
-  return result;
-});
+// Server-aggregated counts, mapped from the endpoint's support-level names to the
+// chart's below/some/above vocabulary. The endpoint already aggregates across the
+// report's scope, so there is no district-vs-school branch to make here.
+const supportLevelCountsByTaskId = computed(() =>
+  Object.fromEntries(
+    props.taskIds.map((taskId) => [taskId, mapSupportLevelCounts(props.supportLevelsByTaskId?.[taskId])]),
+  ),
+);
 
 const isChartEmpty = (chartData) => {
   return !chartData || (chartData.below === 0 && chartData.some === 0 && chartData.above === 0);
