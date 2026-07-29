@@ -29,6 +29,8 @@
     "db:studio:core": "drizzle-kit studio --config ./drizzle.core.config.ts",
     "db:studio:assess": "drizzle-kit studio --config ./drizzle.assessment.config.ts",
     "dev:seed:tasks": "tsx seeds/task-seed.ts",
+    "dev:seed:tasks:default": "tsx ./seeds/seed-default-tasks.ts",
+    "dev:assign:variant": "tsx ./seeds/assign-variant.ts",
     "dev:setup": "tsx ./seeds/setup.ts",
     "dev:seed": "tsx ./seeds/seed.ts",
     "dev:reset": "tsx ./seeds/reset.ts",
