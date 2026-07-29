@@ -26,6 +26,8 @@ export const sreConfig: TaskSeedConfig = {
       name: 'Sentence Reading Efficiency',
       nameSimple: 'SRE',
       nameTechnical: 'Rapid Online Assessment of Reading — Sentence Reading Efficiency',
+      description: 'Read the sentences as quickly as you can and decide if they are true or false.',
+      image: 'https://raw.githubusercontent.com/yeatmanlab/roar-assets/main/roar-apps/sentence-no-lion.png',
     },
     [SRE_TASK_IDS.ES]: {
       name: 'Sentence Reading Efficiency (Spanish)',
@@ -83,4 +85,7 @@ export const sreConfig: TaskSeedConfig = {
     if (!entry) throw new Error(`Unknown SRE language "${lng}"`);
     return entry.taskId;
   },
+
+  // English, school recruitment, 90-second two-block fixed forms.
+  defaultVariant: 'sentence-school-90s2BlocksFixedForms-scoringVersion4',
 };
