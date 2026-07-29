@@ -124,7 +124,12 @@ const facetModes = [
 
 // Tasks with a registered backend subscore schema — only these render a subscore
 // table. Others (e.g. SWR/SRE) have no subscore schema and 400 from the endpoint.
-const tasksWithSubscores = ['phonics', 'letter', 'letter-en-ca', 'pa', 'fluency-calf', 'fluency-arf', 'roam-alpaca'];
+//
+// `letter` / `letter-en-ca` are deliberately excluded: #1910 disabled their subscore
+// tables on main pending normed letter subscores (the markup there is commented out
+// behind a `scoringVersion >= 1` gate). The backend does declare subscore columns for
+// them, so re-enabling is a one-line change once those norms land.
+const tasksWithSubscores = ['phonics', 'pa', 'fluency-calf', 'fluency-arf', 'roam-alpaca'];
 
 // Kindergarten / "0" sort as grade 0; everything else is its numeric grade.
 const gradeNumeric = (grade) => (grade === '0' || grade === 'Kindergarten' ? 0 : Number(grade));

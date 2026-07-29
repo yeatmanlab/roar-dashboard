@@ -68,6 +68,22 @@ module.exports = defineConfig({
         'file:preprocessor',
         vitePreprocessor({
           mode: 'development',
+          configFile: false,
+          resolve: {
+            alias: {
+              '@': path.resolve(__dirname, './src'),
+            },
+          },
+          plugins: [
+            Vue({
+              include: [/\.vue$/, /\.md$/],
+            }),
+            nodePolyfills({
+              globals: {
+                process: true,
+              },
+            }),
+          ],
         }),
       );
 
