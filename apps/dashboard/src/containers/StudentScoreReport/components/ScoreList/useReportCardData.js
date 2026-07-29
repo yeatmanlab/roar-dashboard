@@ -37,6 +37,21 @@ import { TAG_SEVERITIES } from '@/constants/tags';
  * @param {Object} params.taskScoringVersions – Map of task slug → scoring version.
  * @param {Function} params.t – i18n translate function.
  */
+// Tasks with normed assessments, mapped to their minimum norming version.
+// A task uses normed norms when its scoring version >= the normed version.
+const NORMED_TASK_VERSIONS = {
+  swr: 7,
+  sre: 5,
+  'swr-es': 7,
+  'sre-es': 5,
+  pa: 5,
+  letter: 1,
+  'letter-es': 1,
+  'letter-en-ca': 1,
+  trog: 1,
+  'roar-inference': 1,
+};
+
 export function useReportCardData(params) {
   const { reportTasks, studentGrade, taskScoringVersions = {}, t } = params;
 
@@ -69,7 +84,7 @@ export function useReportCardData(params) {
   // Which score type the card surfaces (mirrors ScoreReport.service.getScoreToDisplay).
   const getScoreToDisplay = (slug, grade) => {
     if (rawOnlyTasks.includes(slug)) return SCORE_TYPES.RAW_SCORE;
-    if (['phonics', 'letter', 'letter-es', 'letter-en-ca'].includes(slug)) return SCORE_TYPES.PERCENTILE_SCORE;
+    if (['phonics', 'letter-es', 'letter-en-ca'].includes(slug)) return SCORE_TYPES.PERCENTILE_SCORE;
     return toValue(grade) >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
   };
 
@@ -101,7 +116,7 @@ export function useReportCardData(params) {
   const buildEntry = (task) => {
     const slug = task.taskSlug;
     const grade = gradeLevel;
-    const useSpanishNorms = (slug === 'swr-es' || slug === 'sre-es') && taskScoringVersions[slug] >= 1;
+    const useNormedAssessment = NORMED_TASK_VERSIONS[slug] && taskScoringVersions[slug] >= NORMED_TASK_VERSIONS[slug];
     // Optional tasks render a neutral dial (matching legacy getDialColor, which returns no
     // color for optional tasks) even though the backend classifies a completed optional task.
     const dialColor = task.optional
@@ -126,12 +141,12 @@ export function useReportCardData(params) {
       },
       percentileScore: {
         name:
-          tasksToDisplayPercentCorrect.includes(slug) && !useSpanishNorms
+          tasksToDisplayPercentCorrect.includes(slug) && !useNormedAssessment
             ? t('scoreReports.percentCorrect')
             : t('scoreReports.percentileScore'),
         value: round(task.scores?.percentile),
         min: 0,
-        max: slug.includes('letter') ? 100 : 99,
+        max: ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) ? 100 : 99,
         supportColor: dialColor,
       },
     };
@@ -169,7 +184,7 @@ export function useReportCardData(params) {
       scoreToDisplay = cardKey;
     }
 
-    // Score-breakdown rows: standard, percentile (grade < 6 only), raw — the order the
+    // Score-breakdown rows: standard, percentile (grade >= 6 only), raw — the order the
     // legacy createScoresArray sorts to. Letter/PA granular rows are a known gap.
     const scoresArray = [
       [
@@ -179,7 +194,7 @@ export function useReportCardData(params) {
         scoresForTask.standardScore.max,
       ],
     ];
-    if (grade < 6) {
+    if (grade >= 6) {
       scoresArray.push([
         scoresForTask.percentileScore.name,
         scoresForTask.percentileScore.value,
@@ -219,7 +234,7 @@ export function useReportCardData(params) {
   });
 
   const scoreValueTemplate = computed(() => (task) => {
-    const appendPercentageTo = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
+    const appendPercentageTo = ['phonics', 'letter-es', 'letter-en-ca'];
     if (appendPercentageTo.includes(task.taskId)) {
       const value = task[task.scoreToDisplay].value;
       return value == null ? '' : value + '%';

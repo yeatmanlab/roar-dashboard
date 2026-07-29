@@ -13,6 +13,7 @@ const props = {
   lazy: false,
   isInsideListOrgs: false,
   groupheaders: true,
+  taskScoringVersions: {},
 };
 
 // Use this data to compare against the data being filtered by the component
