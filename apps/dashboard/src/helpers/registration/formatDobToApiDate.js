@@ -1,3 +1,6 @@
+/** Matches a bare `YYYY-MM-DD` calendar date, with no time or zone component. */
+const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
 /**
  * Formats a date of birth into the `YYYY-MM-DD` string required by the typed
  * API (`AddChildSchema.dob` uses `z.string().date()`).
@@ -20,6 +23,31 @@
 export function formatDobToApiDate(dob) {
   if (dob === undefined || dob === null || dob === '') {
     throw new Error('Date of birth is required.');
+  }
+
+  // A date-only `YYYY-MM-DD` string is already the calendar date we want, and it
+  // carries no time zone. It must NOT round-trip through `new Date()`: ECMA-262
+  // parses the date-only form as UTC midnight, while the local getters below read
+  // it back in local time, so every user west of UTC would record the previous
+  // day (`'2015-12-25'` → `'2015-12-24'` in US time zones). Handle it directly.
+  if (typeof dob === 'string') {
+    const dateOnly = DATE_ONLY_PATTERN.exec(dob.trim());
+    if (dateOnly) {
+      const [, year, month, day] = dateOnly;
+      // `new Date('2015-02-30')` rolls over to March 1 instead of reporting an
+      // invalid date, so verify the parsed components match what was supplied
+      // rather than trusting the parse to reject impossible dates.
+      const parsed = new Date(`${year}-${month}-${day}T00:00:00Z`);
+      if (
+        Number.isNaN(parsed.getTime()) ||
+        parsed.getUTCFullYear() !== Number(year) ||
+        parsed.getUTCMonth() + 1 !== Number(month) ||
+        parsed.getUTCDate() !== Number(day)
+      ) {
+        throw new Error('Invalid date of birth.');
+      }
+      return `${year}-${month}-${day}`;
+    }
   }
 
   const date = dob instanceof Date ? dob : new Date(dob);

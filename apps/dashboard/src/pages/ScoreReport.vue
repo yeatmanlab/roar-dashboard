@@ -61,8 +61,8 @@
             >
               <ScoreDistributionOverview
                 :task-ids="sortedAndFilteredTaskIds"
-                :runs-by-task-id="runsByTaskIdForDistributionChart"
-                :org-type="props.orgType"
+                :support-levels-by-task-id="scoreOverviewBySlug"
+                :composite-foundational-runs="compositeFoundationalRunsForChart"
                 :tasks-dictionary="tasksDictionary"
               />
               <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
@@ -487,20 +487,21 @@ const {
   enabled: computed(() => initialized.value && props.orgType === 'district'),
 });
 
-// Server-computed support-level distributions per task, scoped to this org/class/group.
+// Server-computed support-level distributions per task: the source of the "at a glance"
+// chart values, already scoped to this org/class/group. Keyed by task slug to match the
+// slug-based `sortedAndFilteredTaskIds` the chart iterates.
 //
-// NOTE (merge of main into project/backend-refactor): main's #1910 replaced the per-task
-// vega charts this query fed with `ScoreDistributionOverview`, which computes its counts
-// client-side from `runsByTaskIdForDistributionChart`. Only the loading flag is consumed
-// here for now; re-pointing the chart's counts at `scoreOverviewData.tasks[].supportLevels`
-// (keyed by `taskSlug`) is the follow-up PR that finishes the backend migration for this
-// chart. The composite-foundational row has no backend equivalent and stays client-side
-// until the overview endpoint grows one.
-const { isLoading: isLoadingScoreOverview } = useAdministrationScoreOverviewQuery(
+// The foundational-composite row is the one part the endpoint can't supply — it has no
+// composite equivalent — so that row alone stays client-derived via
+// `compositeFoundationalRunsForChart` below.
+const { data: scoreOverviewData, isLoading: isLoadingScoreOverview } = useAdministrationScoreOverviewQuery(
   props.administrationId,
   props.orgType,
   props.orgId,
   { enabled: initialized },
+);
+const scoreOverviewBySlug = computed(() =>
+  Object.fromEntries((scoreOverviewData.value?.tasks ?? []).map((task) => [task.taskSlug, task.supportLevels])),
 );
 
 // Server-computed distribution facets per task (support-level + score bins, faceted by
@@ -1603,16 +1604,18 @@ const tableDataWithBackendScores = computed(() => {
   });
 });
 
-// runsByTaskId for the ScoreDistributionOverview chart, including the foundational composite score
-// (kept separate from computeAssignmentAndRunData.runsByTaskId since 'compositeFoundational' is not a real taskId
-// and would break taskId-keyed logic like sortedTaskIds and CSV export).
-const runsByTaskIdForDistributionChart = computed(() => {
-  if (props.orgType === 'district') return aggregatedDistrictSupportCategories.value;
+// Runs backing the ScoreDistributionOverview chart's foundational-composite row. The
+// per-task rows come from the backend score-overview endpoint (`scoreOverviewBySlug`);
+// the composite is the only row without a server equivalent, so it stays client-derived
+// until the overview endpoint grows one. Kept out of
+// `computeAssignmentAndRunData.runsByTaskId` because 'compositeFoundational' is not a real
+// taskId and would break taskId-keyed logic like sortedTaskIds and CSV export.
+const compositeFoundationalRunsForChart = computed(() => {
+  if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
+    return aggregatedDistrictSupportCategories.value?.compositeFoundational ?? null;
+  }
 
-  const { runsByTaskId, compositeFoundationalRuns } = computeAssignmentAndRunData.value;
-  if (!compositeFoundationalRuns?.length) return runsByTaskId;
-
-  return { ...runsByTaskId, compositeFoundational: compositeFoundationalRuns };
+  return computeAssignmentAndRunData.value.compositeFoundationalRuns ?? null;
 });
 
 // This composable manages the data which is passed into the FilterBar component slot for filtering
