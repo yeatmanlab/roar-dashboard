@@ -86,24 +86,23 @@ const transitionScreen2 = {
   type: jsPsychAudioMultiResponse,
   stimulus: () => {
     if (store.session.get('arrayIdx') === 0) {
-      if(store.session.get('config').story){
+      if (store.session.get('config').story) {
         return mediaAssets.audio['numLinePostPractice20']; // general instructions with Ally (for story mode)
       } else {
         return mediaAssets.audio['numLinePostPractice100']; // general instruction without Ally (for non story mode)
       }
-      
     } else if (store.session.get('arrayIdx') > 0) {
-        if (store.session.get('blockType') === 100) {
-          return mediaAssets.audio['numLinePostPractice100K2']; //instruction with Ally's name about putting numbers on a number line (applies for K-2 irrespective of story and non story mode)
-        } else {
-          return mediaAssets.audio['numLinePostPractice1']; // instruction without Ally's name about putting fractions on a number line (applies for 3-12 irrespective of story and non-story mode)
-        }
+      if (store.session.get('blockType') === 100) {
+        return mediaAssets.audio['numLinePostPractice100K2']; //instruction with Ally's name about putting numbers on a number line (applies for K-2 irrespective of story and non story mode)
+      } else {
+        return mediaAssets.audio['numLinePostPractice1']; // instruction without Ally's name about putting fractions on a number line (applies for 3-12 irrespective of story and non-story mode)
+      }
     }
   },
   prompt: () => {
     let headerText, paraText;
     if (store.session.get('arrayIdx') === 0) {
-      if(store.session.get('config').story){
+      if (store.session.get('config').story) {
         // general instructions with Ally (for story mode)
         headerText = `${i18next.t('magpiPilot.numberLine.transition.K2-text4')}`;
         paraText = `${i18next.t('magpiPilot.numberLine.transition.K2-text5')}`;
@@ -112,20 +111,19 @@ const transitionScreen2 = {
         headerText = `${i18next.t('magpiPilot.numberLine.transition.text5')}`;
         paraText = `${i18next.t('magpiPilot.numberLine.transition.text6')}`;
       }
-      
     } else if (store.session.get('arrayIdx') > 0) {
-        if (store.session.get('blockType') === 100) {
-          //instruction with Ally's name about putting numbers on a number line (applies for K-2 irrespective of story and non story mode)
-          headerText = `${i18next.t('magpiPilot.numberLine.transition.K2-text4')}`;
-          paraText = `${i18next.t('magpiPilot.numberLine.transition.K2-text6')}`;
-        } else {
-          // instruction without Ally's name about putting fractions on a number line (applies for 3-12 irrespective of story and non-story mode)
-          headerText = `${i18next.t('magpiPilot.numberLine.transition.text7')}`;
-          paraText = `${i18next.t('magpiPilot.numberLine.transition.text8')}`;
-        }
+      if (store.session.get('blockType') === 100) {
+        //instruction with Ally's name about putting numbers on a number line (applies for K-2 irrespective of story and non story mode)
+        headerText = `${i18next.t('magpiPilot.numberLine.transition.K2-text4')}`;
+        paraText = `${i18next.t('magpiPilot.numberLine.transition.K2-text6')}`;
+      } else {
+        // instruction without Ally's name about putting fractions on a number line (applies for 3-12 irrespective of story and non-story mode)
+        headerText = `${i18next.t('magpiPilot.numberLine.transition.text7')}`;
+        paraText = `${i18next.t('magpiPilot.numberLine.transition.text8')}`;
+      }
     }
 
-    if(store.session.get('config').story){
+    if (store.session.get('config').story) {
       return (
         `
        <div class = "jspsych-content-modified">

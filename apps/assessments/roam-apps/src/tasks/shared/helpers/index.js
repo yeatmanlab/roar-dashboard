@@ -15,4 +15,4 @@ export * from './randomInteger';
 export * from './getDigit';
 export * from './getRandomValues';
 export * from './updateProgressBar';
-export * from "./getStoryOption";
+export * from './getStoryOption';

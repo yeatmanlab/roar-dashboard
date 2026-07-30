@@ -1,4 +1,4 @@
-import { getGrade } from "@bdelab/roar-utils";
+import { getGrade } from '@bdelab/roar-utils';
 
 /**
  * Determines whether to show the "story" version of a task.
@@ -11,23 +11,23 @@ import { getGrade } from "@bdelab/roar-utils";
  *     (empty string, unrecognized string, null, undefined)
  */
 export const getStoryOption = (opt, grade) => {
-  if (typeof opt === "boolean") {
+  if (typeof opt === 'boolean') {
     return opt;
   }
 
-  if (typeof opt === "string") {
+  if (typeof opt === 'string') {
     const normalized = opt.toLowerCase();
 
-    if (normalized === "grade-based") {
+    if (normalized === 'grade-based') {
       if (grade == null) {
         return true;
       }
       return getGrade(grade) < 6;
     }
-    if (normalized === "false") {
+    if (normalized === 'false') {
       return false;
     }
-    if (normalized === "true") {
+    if (normalized === 'true') {
       return true;
     }
   }

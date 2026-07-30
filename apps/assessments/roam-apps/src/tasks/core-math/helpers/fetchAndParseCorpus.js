@@ -587,12 +587,12 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
       ];
     }
 
-    if(store.session.get('config').story){
-      assetList.push('num-line-intro-K2.mp3')
-      assetList.push('num-line-post-practice-20.mp3')
+    if (store.session.get('config').story) {
+      assetList.push('num-line-intro-K2.mp3');
+      assetList.push('num-line-post-practice-20.mp3');
     } else {
-      assetList.push('num-line-intro.mp3')
-      assetList.push('num-line-post-practice-100.mp3')
+      assetList.push('num-line-intro.mp3');
+      assetList.push('num-line-post-practice-100.mp3');
     }
 
     for (let i = 0; i < assetList.length; i++) {
