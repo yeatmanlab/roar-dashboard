@@ -52,6 +52,9 @@ const NORMED_TASK_VERSIONS = {
   morphology: 1,
 };
 
+// Core foundational assessments that default to normed when scoring version is undefined.
+const CORE_FOUNDATIONAL_TASKS = ['swr', 'sre', 'pa'];
+
 export function useReportCardData(params) {
   const { reportTasks, studentGrade, taskScoringVersions = {}, t } = params;
 
@@ -101,7 +104,9 @@ export function useReportCardData(params) {
   const buildEntry = (task) => {
     const slug = task.taskSlug;
     const grade = gradeLevel;
-    const useNormedAssessment = NORMED_TASK_VERSIONS[slug] && taskScoringVersions[slug] >= NORMED_TASK_VERSIONS[slug];
+    const useNormedAssessment =
+      CORE_FOUNDATIONAL_TASKS.includes(slug) &&
+      (taskScoringVersions[slug] == null || taskScoringVersions[slug] >= NORMED_TASK_VERSIONS[slug]);
     const dialColor = SUPPORT_LEVEL_DIAL_COLOR[task.supportLevel] ?? SCORE_SUPPORT_LEVEL_COLORS.ASSESSED;
     const rawRange = getRawScoreRange(slug);
 
