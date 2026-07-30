@@ -744,7 +744,7 @@ let toolTipByHeader = (header) => {
       taskId: 'cva',
       desc: 'Measures synonym knowledge in the context of a sentence. \n\n Raw Score ranges from {{RAW_SCORE_RANGE}}',
     },
-    'ROAR - Syntax': {
+    'ROAR - Picture Syntax': {
       taskId: 'trog',
       desc: 'Measures receptive comprehension of English syntax - how word order, phrases, and clauses contribute to meaning. \n\n Raw Score ranges from {{RAW_SCORE_RANGE}}',
     },
