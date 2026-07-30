@@ -62,9 +62,9 @@ describe('useReportCardData', () => {
     expect(card.scoreToDisplay).toBe('standardScore');
   });
 
-  it('renders a neutral dial (no color) for optional tasks', () => {
+  it('renders a colored dial for optional tasks (matching required tasks)', () => {
     const [card] = cards([makeTask({ optional: true })], '3');
-    expect(card.percentileScore.supportColor).toBeUndefined();
+    expect(card.percentileScore.supportColor).toBe(SCORE_SUPPORT_LEVEL_COLORS.ABOVE);
   });
 
   it('builds type + reliability tags from the backend flags (engagementFlags as an array)', () => {
@@ -78,14 +78,18 @@ describe('useReportCardData', () => {
     expect(unreliable.tags[1].tooltip).toContain('response time too fast');
   });
 
-  it('includes the percentile breakdown row only for grade >= 6', () => {
+  it('includes all score rows (standard, percentile, raw) for all grades', () => {
     const [underSix] = cards([makeTask()], '3');
     const namesUnder = underSix.scoresArray.map((row) => row[0]);
-    expect(namesUnder).not.toContain('scoreReports.percentileScore');
+    expect(namesUnder).toContain('scoreReports.standardScore');
+    expect(namesUnder).toContain('scoreReports.percentileScore');
+    expect(namesUnder).toContain('scoreReports.rawScore');
 
     const [overSix] = cards([makeTask()], '8');
     const namesOver = overSix.scoresArray.map((row) => row[0]);
+    expect(namesOver).toContain('scoreReports.standardScore');
     expect(namesOver).toContain('scoreReports.percentileScore');
+    expect(namesOver).toContain('scoreReports.rawScore');
   });
 
   it('formats phonics subscores onto the displayed score as correct/attempted strings', () => {
@@ -129,5 +133,48 @@ describe('useReportCardData', () => {
 
     const nullPercentile = { ...phonics, percentileScore: { ...phonics.percentileScore, value: null } };
     expect(scoreValueTemplate.value(nullPercentile)).toBe('');
+  });
+
+  it('unnormed letter shows percentile score type for all grades', () => {
+    const [card] = cards([makeTask({ taskSlug: 'letter' })], '3', {});
+    expect(card.scoreToDisplay).toBe('percentileScore');
+
+    const [cardGrade8] = cards([makeTask({ taskSlug: 'letter' })], '8', {});
+    expect(cardGrade8.scoreToDisplay).toBe('percentileScore');
+  });
+
+  it('normed letter shows standard score type for grade >= 6', () => {
+    const [card] = cards([makeTask({ taskSlug: 'letter' })], '8', { letter: 1 });
+    expect(card.scoreToDisplay).toBe('standardScore');
+  });
+
+  it('normed SWR/SRE/PA show normed score types regardless of scoring version', () => {
+    const [swr] = cards([makeTask({ taskSlug: 'swr' })], '3', {});
+    expect(swr.scoreToDisplay).toBe('percentileScore'); // grade < 6
+
+    const [sre] = cards([makeTask({ taskSlug: 'sre' })], '8', {});
+    expect(sre.scoreToDisplay).toBe('standardScore'); // grade >= 6
+
+    const [pa] = cards([makeTask({ taskSlug: 'pa' })], '5', {});
+    expect(pa.scoreToDisplay).toBe('percentileScore'); // grade < 6
+  });
+
+  it('unnormed letter percentile max is 100, normed letter is 99', () => {
+    const [unnormed] = cards([makeTask({ taskSlug: 'letter' })], '3', {});
+    expect(unnormed.percentileScore.max).toBe(100);
+
+    const [normed] = cards([makeTask({ taskSlug: 'letter' })], '3', { letter: 1 });
+    expect(normed.percentileScore.max).toBe(99);
+  });
+
+  it('phonics and language variants always show 100 for percentile max', () => {
+    const [phonics] = cards([makeTask({ taskSlug: 'phonics' })], '3', {});
+    expect(phonics.percentileScore.max).toBe(100);
+
+    const [letterEs] = cards([makeTask({ taskSlug: 'letter-es' })], '3', {});
+    expect(letterEs.percentileScore.max).toBe(100);
+
+    const [letterEnCa] = cards([makeTask({ taskSlug: 'letter-en-ca' })], '3', {});
+    expect(letterEnCa.percentileScore.max).toBe(100);
   });
 });
