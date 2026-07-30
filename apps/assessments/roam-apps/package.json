@@ -1,7 +1,7 @@
 {
   "name": "@roar-platform/roam-apps",
   "description": "Rapid Online Assessment of Math — fluency and core-math tasks for the ROAR platform",
-  "version": "1.3.20",
+  "version": "1.3.21",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
