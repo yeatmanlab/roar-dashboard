@@ -421,6 +421,7 @@ import {
   roamAlpacaSubskills,
   getTagColor,
   roamFluencySubskills,
+  roamFluencyTasks,
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
@@ -1490,6 +1491,30 @@ const computeAssignmentAndRunData = computed(() => {
     const filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
       return Object.keys(taskInfoById).includes(taskId);
     });
+
+    // DIVERGENCE FROM main (deliberate — do not delete when merging main).
+    //
+    // #1695 removed this filter on main because it also taught SubscoreTable to build
+    // non-response-modality columns client-side, so those tables render correctly there.
+    // This branch renders subscore columns from the backend instead, and
+    // `services/scoring/configs/fluency.ts` declares only the response-modality columns
+    // (`freeResponse` / `multipleChoice`) — non-response-modality runs score by operation
+    // and have no FR/FC domain scores. Dropping the filter here would surface a subscore
+    // tab whose every cell is blank.
+    //
+    // Keeping the filter preserves the pre-merge behavior: no subscore tab for these
+    // administrations. Remove it once `fluency.ts` declares non-response-modality columns
+    // and the subscores endpoint selects a column set from `recruitment`.
+    //
+    // Response modality admins who switch mid-way will no longer see the subscore tables.
+    const assessments = administrationData.value?.assessments ?? [];
+    for (const assessment of assessments) {
+      if (roamFluencyTasks.includes(assessment.taskId)) {
+        if (assessment.params?.recruitment !== 'responseModality') {
+          delete filteredRunsByTaskId[assessment.taskId];
+        }
+      }
+    }
 
     return {
       runsByTaskId: filteredRunsByTaskId,
