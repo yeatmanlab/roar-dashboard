@@ -223,4 +223,64 @@ describe('useReportCardData', () => {
     const [letterEnCa] = cards([makeTask({ taskSlug: 'letter-en-ca' })], '3', {});
     expect(letterEnCa.percentileScore.max).toBe(100);
   });
+
+  it('core foundational assessments (SWR, SRE, PA) default to normed when scoring version is undefined', () => {
+    // SWR, SRE, PA should assume normed (true) when scoring version is undefined
+    const { computedTaskData: swrData } = useReportCardData({
+      reportTasks: [makeTask({ taskSlug: 'swr' })],
+      studentGrade: '3',
+      taskScoringVersions: {},
+      t,
+    });
+    const [swrCard] = swrData.value;
+    expect(swrCard.percentileScore.name).toBe('scoreReports.percentileScore');
+
+    const { computedTaskData: sreData } = useReportCardData({
+      reportTasks: [makeTask({ taskSlug: 'sre' })],
+      studentGrade: '3',
+      taskScoringVersions: {},
+      t,
+    });
+    const [sreCard] = sreData.value;
+    expect(sreCard.percentileScore.name).toBe('scoreReports.percentileScore');
+
+    const { computedTaskData: paData } = useReportCardData({
+      reportTasks: [makeTask({ taskSlug: 'pa' })],
+      studentGrade: '3',
+      taskScoringVersions: {},
+      t,
+    });
+    const [paCard] = paData.value;
+    expect(paCard.percentileScore.name).toBe('scoreReports.percentileScore');
+  });
+
+  it('non-foundational assessments do not default to normed when scoring version is undefined', () => {
+    // Letter, trog, morphology, cva should NOT assume normed (false) when scoring version is undefined
+    const { computedTaskData: letterData } = useReportCardData({
+      reportTasks: [makeTask({ taskSlug: 'letter' })],
+      studentGrade: '3',
+      taskScoringVersions: {},
+      t,
+    });
+    const [letterCard] = letterData.value;
+    expect(letterCard.percentileScore.name).toBe('scoreReports.percentCorrect');
+
+    const { computedTaskData: trogData } = useReportCardData({
+      reportTasks: [makeTask({ taskSlug: 'trog' })],
+      studentGrade: '3',
+      taskScoringVersions: {},
+      t,
+    });
+    const [trogCard] = trogData.value;
+    expect(trogCard.percentileScore.name).toBe('scoreReports.percentCorrect');
+
+    const { computedTaskData: morphologyData } = useReportCardData({
+      reportTasks: [makeTask({ taskSlug: 'morphology' })],
+      studentGrade: '3',
+      taskScoringVersions: {},
+      t,
+    });
+    const [morphologyCard] = morphologyData.value;
+    expect(morphologyCard.percentileScore.name).toBe('scoreReports.percentCorrect');
+  });
 });

@@ -1,10 +1,10 @@
 <template>
   <div :id="'tab-view-description-' + taskId" class="flex flex-col items-center justify-center mx-2">
     <div>
-      <div style="text-transform: uppercase" class="text-2xl font-bold mt-3">{{ taskInfoById[taskId]?.subheader }}</div>
+      <div style="text-transform: uppercase" class="text-2xl font-bold mt-3">{{ taskInfo.subheader }}</div>
       <!-- The following HTML is from a hard-coded source (below) -->
       <!-- eslint-disable-next-line vue/no-v-html -->
-      <p class="mt-1 text-md font-light mb-3" v-html="taskDesc"></p>
+      <p class="mt-1 text-md font-light mb-3" v-html="taskInfo.desc"></p>
     </div>
   </div>
   <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
@@ -61,7 +61,13 @@
 <script setup>
 import { ref, computed } from 'vue';
 import PvSelectButton from 'primevue/selectbutton';
-import { tasksToDisplayGraphs, taskInfoById, replaceScoreRange } from '@/helpers/reports.js';
+import {
+  tasksToDisplayGraphs,
+  taskInfoById,
+  replaceScoreRange,
+  replaceDocLinks,
+  roamFluencyTasks,
+} from '@/helpers/reports.js';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery.js';
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 import DistributionChartFacet from '@/components/reports/DistributionChartFacet.vue';
@@ -148,16 +154,33 @@ const minGradeByRuns = computed(() => {
 // explicit `orgType === 'district'` check — the data drives the UI.
 const hasSchoolFacets = computed(() => (props.facets?.supportLevelBySchool?.length ?? 0) > 0);
 
-const taskDesc = computed(() => {
-  // The backend supplies the resolved support threshold on the per-task facet; pass it through
-  // so the {{SUPPORT_RANGE}} substitution paints the backend value. `replaceScoreRange` falls
-  // back to the scoringVersion rule when it's absent (older backend, or facet not yet loaded).
-  return replaceScoreRange(
-    taskInfoById[props.taskId]?.desc,
-    props.taskId,
-    props.taskScoringVersions[props.taskId],
-    props.facets?.supportThreshold,
-  );
+/**
+ * The administration-level `recruitment` param for this task, which distinguishes the
+ * two ROAM fluency variants. Optional-chained throughout: `assessments` is absent while
+ * the administration query resolves, and non-fluency tasks have no `recruitment` at all.
+ */
+const getRecruitment = () => {
+  return props.administrationInfo?.assessments?.find((task) => task.taskId === props.taskId)?.params?.recruitment;
+};
+
+const taskInfo = computed(() => {
+  const details = { subheader: '', desc: '' };
+  let taskId = props.taskId;
+
+  if (roamFluencyTasks.includes(props.taskId)) {
+    taskId = getRecruitment() === 'responseModality' ? `${props.taskId}-response-modality` : props.taskId;
+  }
+
+  details.subheader = taskInfoById[taskId]?.subheader ?? '';
+  let desc = taskInfoById[taskId]?.desc ?? '';
+  // scoringVersion is associated with original task id (props.taskId)
+  // Modified task id is to handle multiple descriptions and subheaders for one assessment (e.g. fluency-arf)
+  desc = replaceScoreRange(desc, taskId, props.taskScoringVersions[props.taskId]);
+  // Replace document links (non-response modality fluency arf and calf only)
+  desc = replaceDocLinks(desc, taskId);
+  details.desc = desc;
+
+  return details;
 });
 </script>
 
