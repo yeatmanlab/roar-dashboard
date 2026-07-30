@@ -1500,7 +1500,8 @@ const viewOptions = ref([
  */
 
 const createExportData = ({ rows, includeProgress = false }) => {
-  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate, compositeScore }) => {
+  // const computedExportData = _map(rows, ({ user, scores, startDate, completionDate, compositeScore }) => {
+  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate }) => {
     let tableRow = {
       Username: user?.username,
       Email: user?.email, // This will only be used when exporting all rows
@@ -1516,12 +1517,12 @@ const createExportData = ({ rows, includeProgress = false }) => {
     tableRow['Start Date'] = startDate ? new Date(startDate).toLocaleDateString('en-US') : null;
     tableRow['Completion Date'] = completionDate ? new Date(completionDate).toLocaleDateString('en-US') : null;
 
-    if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
-      tableRow['Composite Score - Percentile'] = compositeScore?.percentile;
-      tableRow['Composite Score - Standard'] = compositeScore?.standardScore;
-      tableRow['Composite Score - Raw'] = compositeScore?.rawScore;
-      tableRow['Composite Score - Support Level'] = compositeScore?.supportLevel;
-    }
+    // if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+    //   tableRow['Composite Score - Percentile'] = compositeScore?.percentile;
+    //   tableRow['Composite Score - Standard'] = compositeScore?.standardScore;
+    //   tableRow['Composite Score - Raw'] = compositeScore?.rawScore;
+    //   tableRow['Composite Score - Support Level'] = compositeScore?.supportLevel;
+    // }
 
     if (props.orgType === 'district') {
       tableRow['School'] = user?.schoolName;
@@ -1997,7 +1998,7 @@ const scoreReportColumns = computed(() => {
       header: 'Composite Score',
       dataType: 'text',
       sort: true,
-      hidden: false,
+      hidden: true,
       tag: viewMode.value !== 'color',
       emptyTag: viewMode.value === 'color',
       tagColor: 'compositeScore.tagColor',
