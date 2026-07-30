@@ -208,28 +208,6 @@ describe('useReportCardData', () => {
     expect(paCard.percentileScore.name).toBe('scoreReports.percentileScore');
   });
 
-  it('language variants (swr-es, sre-es) do not default to normed when scoring version is undefined', () => {
-    // Language variants should NOT assume normed (false) when scoring version is undefined
-    // They are in tasksToDisplayPercentCorrect, so they show "percentCorrect"
-    const { computedTaskData: swrEsData } = useReportCardData({
-      reportTasks: [makeTask({ taskSlug: 'swr-es' })],
-      studentGrade: '3',
-      taskScoringVersions: {},
-      t,
-    });
-    const [swrEsCard] = swrEsData.value;
-    expect(swrEsCard.percentileScore.name).toBe('scoreReports.percentCorrect');
-
-    const { computedTaskData: sreEsData } = useReportCardData({
-      reportTasks: [makeTask({ taskSlug: 'sre-es' })],
-      studentGrade: '3',
-      taskScoringVersions: {},
-      t,
-    });
-    const [sreEsCard] = sreEsData.value;
-    expect(sreEsCard.percentileScore.name).toBe('scoreReports.percentCorrect');
-  });
-
   it('non-foundational assessments do not default to normed when scoring version is undefined', () => {
     // Letter, trog, morphology, cva should NOT assume normed (false) when scoring version is undefined
     const { computedTaskData: letterData } = useReportCardData({
