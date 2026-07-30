@@ -184,8 +184,7 @@ export function useReportCardData(params) {
       scoreToDisplay = cardKey;
     }
 
-    // Score-breakdown rows: standard, percentile (grade >= 6 or when display descriptor
-    // specifies percentile), raw — the order the legacy createScoresArray sorts to.
+    // Score-breakdown rows: standard, percentile, raw — the order the legacy createScoresArray sorts to.
     // Letter/PA granular rows are a known gap.
     const scoresArray = [
       [
@@ -194,24 +193,19 @@ export function useReportCardData(params) {
         scoresForTask.standardScore.min,
         scoresForTask.standardScore.max,
       ],
-    ];
-    if (
-      grade >= 6 ||
-      (task.display && DISPLAY_TYPE_TO_CARD_KEY[task.display.scoreType] === SCORE_TYPES.PERCENTILE_SCORE)
-    ) {
-      scoresArray.push([
+      [
         scoresForTask.percentileScore.name,
         scoresForTask.percentileScore.value,
         scoresForTask.percentileScore.min,
         scoresForTask.percentileScore.max,
-      ]);
-    }
-    scoresArray.push([
-      scoresForTask.rawScore.name,
-      scoresForTask.rawScore.value,
-      scoresForTask.rawScore.min,
-      scoresForTask.rawScore.max,
-    ]);
+      ],
+      [
+        scoresForTask.rawScore.name,
+        scoresForTask.rawScore.value,
+        scoresForTask.rawScore.min,
+        scoresForTask.rawScore.max,
+      ],
+    ];
     if (slug === 'pa' && task.skillsToWorkOn) {
       const skills = task.skillsToWorkOn.map((key) => t(PA_SUBTASK_I18N_KEYS[key] ?? key));
       scoresArray.push([t('scoreReports.skillsToWorkOn'), skills.join(', ') || t('scoreReports.none')]);
