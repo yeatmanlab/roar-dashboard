@@ -210,6 +210,8 @@ describe('useReportCardData', () => {
 
   it('language variants (swr-es, sre-es) do not default to normed when scoring version is undefined', () => {
     // Language variants should NOT assume normed (false) when scoring version is undefined
+    // They show "percentileScore" because they're not in tasksToDisplayPercentCorrect,
+    // but their useNormedAssessment value is still false (since they're not in CORE_FOUNDATIONAL_TASKS)
     const { computedTaskData: swrEsData } = useReportCardData({
       reportTasks: [makeTask({ taskSlug: 'swr-es' })],
       studentGrade: '3',
@@ -217,7 +219,8 @@ describe('useReportCardData', () => {
       t,
     });
     const [swrEsCard] = swrEsData.value;
-    expect(swrEsCard.percentileScore.name).toBe('scoreReports.percentCorrect');
+    // Language variants always show percentileScore (they're not in tasksToDisplayPercentCorrect)
+    expect(swrEsCard.percentileScore.name).toBe('scoreReports.percentileScore');
 
     const { computedTaskData: sreEsData } = useReportCardData({
       reportTasks: [makeTask({ taskSlug: 'sre-es' })],
@@ -226,7 +229,7 @@ describe('useReportCardData', () => {
       t,
     });
     const [sreEsCard] = sreEsData.value;
-    expect(sreEsCard.percentileScore.name).toBe('scoreReports.percentCorrect');
+    expect(sreEsCard.percentileScore.name).toBe('scoreReports.percentileScore');
   });
 
   it('non-foundational assessments do not default to normed when scoring version is undefined', () => {
