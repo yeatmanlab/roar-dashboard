@@ -40,16 +40,16 @@ import { TAG_SEVERITIES } from '@/constants/tags';
 // Tasks with normed assessments, mapped to their minimum norming version.
 // A task uses normed norms when its scoring version >= the normed version.
 const NORMED_TASK_VERSIONS = {
-  swr: 7,
-  sre: 5,
-  'swr-es': 7,
-  'sre-es': 5,
-  pa: 5,
+  swr: 6,
+  sre: 3,
+  'swr-es': 1,
+  'sre-es': 1,
+  pa: 3,
   letter: 1,
-  'letter-es': 1,
-  'letter-en-ca': 1,
   trog: 1,
   'roar-inference': 1,
+  cva: 1,
+  morphology: 1,
 };
 
 export function useReportCardData(params) {
@@ -69,6 +69,7 @@ export function useReportCardData(params) {
   const getScoreToDisplay = (slug, grade) => {
     if (rawOnlyTasks.includes(slug)) return SCORE_TYPES.RAW_SCORE;
     if (['phonics', 'letter-es', 'letter-en-ca'].includes(slug)) return SCORE_TYPES.PERCENTILE_SCORE;
+    if (slug === 'letter' && !taskScoringVersions[slug]) return SCORE_TYPES.PERCENTILE_SCORE;
     return toValue(grade) >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
   };
 
@@ -101,11 +102,7 @@ export function useReportCardData(params) {
     const slug = task.taskSlug;
     const grade = gradeLevel;
     const useNormedAssessment = NORMED_TASK_VERSIONS[slug] && taskScoringVersions[slug] >= NORMED_TASK_VERSIONS[slug];
-    // Optional tasks render a neutral dial (matching legacy getDialColor, which returns no
-    // color for optional tasks) even though the backend classifies a completed optional task.
-    const dialColor = task.optional
-      ? undefined
-      : (SUPPORT_LEVEL_DIAL_COLOR[task.supportLevel] ?? SCORE_SUPPORT_LEVEL_COLORS.ASSESSED);
+    const dialColor = SUPPORT_LEVEL_DIAL_COLOR[task.supportLevel] ?? SCORE_SUPPORT_LEVEL_COLORS.ASSESSED;
     const rawRange = getRawScoreRange(slug);
 
     const scoresForTask = {
@@ -130,7 +127,10 @@ export function useReportCardData(params) {
             : t('scoreReports.percentileScore'),
         value: round(task.scores?.percentile),
         min: 0,
-        max: ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) ? 100 : 99,
+        max:
+          ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) || (slug === 'letter' && !taskScoringVersions[slug])
+            ? 100
+            : 99,
         supportColor: dialColor,
       },
     };
@@ -142,8 +142,8 @@ export function useReportCardData(params) {
       );
     }
 
-    // Score-breakdown rows: standard (grade < 6 only), percentile (grade >= 6 only), raw — the order the
-    // legacy createScoresArray sorts to. Letter/PA granular rows are a known gap.
+    // Score-breakdown rows: standard, percentile, raw — shown for all grades.
+    // Letter/PA granular rows are a known gap.
     const scoresArray = [
       [
         scoresForTask.standardScore.name,
@@ -151,21 +151,19 @@ export function useReportCardData(params) {
         scoresForTask.standardScore.min,
         scoresForTask.standardScore.max,
       ],
-    ];
-    if (grade >= 6) {
-      scoresArray.push([
+      [
         scoresForTask.percentileScore.name,
         scoresForTask.percentileScore.value,
         scoresForTask.percentileScore.min,
         scoresForTask.percentileScore.max,
-      ]);
-    }
-    scoresArray.push([
-      scoresForTask.rawScore.name,
-      scoresForTask.rawScore.value,
-      scoresForTask.rawScore.min,
-      scoresForTask.rawScore.max,
-    ]);
+      ],
+      [
+        scoresForTask.rawScore.name,
+        scoresForTask.rawScore.value,
+        scoresForTask.rawScore.min,
+        scoresForTask.rawScore.max,
+      ],
+    ];
     if (slug === 'pa' && task.skillsToWorkOn) {
       const skills = task.skillsToWorkOn.map((key) => t(PA_SUBTASK_I18N_KEYS[key] ?? key));
       scoresArray.push([t('scoreReports.skillsToWorkOn'), skills.join(', ') || t('scoreReports.none')]);

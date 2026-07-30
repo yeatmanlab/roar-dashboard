@@ -92,7 +92,8 @@ export function useScoreListData(params) {
   const scoreValueTemplate = computed(() => {
     return (task) => {
       const appendPercentageTo = ['phonics', 'letter-es', 'letter-en-ca'];
-      if (appendPercentageTo.includes(task.taskId)) {
+      const isUnnormedLetter = task.taskId === 'letter' && !taskScoringVersions[task.taskId];
+      if (appendPercentageTo.includes(task.taskId) || isUnnormedLetter) {
         return task[task.scoreToDisplay].value + '%';
       }
       if (task.scoreToDisplay === SCORE_TYPES.PERCENTILE_SCORE) {
