@@ -54,9 +54,19 @@ export function useReportCardData(params) {
 
   // Which score type the card surfaces (mirrors ScoreReport.service.getScoreToDisplay).
   const getScoreToDisplay = (slug, grade) => {
-    if (rawOnlyTasks.includes(slug)) return SCORE_TYPES.RAW_SCORE;
+    // Raw-only tasks only show raw scores when unnormed; normed versions show percentile/standard
+    if (rawOnlyTasks.includes(slug)) {
+      const normedVersion = NORMED_TASK_VERSIONS[slug];
+      const isNormed = normedVersion && taskScoringVersions[slug] != null && taskScoringVersions[slug] >= normedVersion;
+      if (!isNormed) return SCORE_TYPES.RAW_SCORE;
+      // If normed, fall through to show percentile/standard instead
+    }
     if (['phonics', 'letter-es', 'letter-en-ca'].includes(slug)) return SCORE_TYPES.PERCENTILE_SCORE;
-    if (slug === 'letter' && !taskScoringVersions[slug]) return SCORE_TYPES.PERCENTILE_SCORE;
+    if (
+      slug === 'letter' &&
+      (taskScoringVersions[slug] == null || taskScoringVersions[slug] < NORMED_TASK_VERSIONS[slug])
+    )
+      return SCORE_TYPES.PERCENTILE_SCORE;
     return toValue(grade) >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
   };
 
@@ -95,6 +105,7 @@ export function useReportCardData(params) {
     const rawRange = getRawScoreRange(slug);
 
     const isUnnormed = (s) => {
+      if (rawOnlyTasks.includes(s)) return false;
       const normedVersion = NORMED_TASK_VERSIONS[s];
       return normedVersion && (taskScoringVersions[s] == null || taskScoringVersions[s] < normedVersion);
     };
