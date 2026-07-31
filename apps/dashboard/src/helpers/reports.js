@@ -357,13 +357,48 @@ export const descriptionsByTaskId = {
 
 const pageWidth = 190; // Set page width for calculations
 const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
+
+/**
+ * Polls an element until it has a non-zero rendered size, or the timeout elapses.
+ *
+ * html2canvas silently produces a 0x0 canvas when it captures an element that hasn't
+ * finished rendering. That 0x0 element results in the function returnScaleFactor returning
+ * an Infinity/NaN height, which is sent to the jsPDF function addImage. This causes internal
+ * errors in jsPDF.
+ *
+ * @param {HTMLElement} element - Element expected to become visible/sized
+ * @param {Object} [options]
+ * @param {number} [options.timeout=3000] - Max time to wait in ms
+ * @param {number} [options.interval=50] - Poll interval in ms
+ * @returns {Promise<boolean>} Resolves true once the element has a non-zero size, false if it timed out
+ */
+export const waitForElementRendered = async (element, { timeout = 3000, interval = 50 } = {}) => {
+  if (!element) return false;
+
+  const hasSize = () => element.offsetWidth > 0 && element.offsetHeight > 0;
+  const start = Date.now();
+  while (!hasSize() && Date.now() - start < timeout) {
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  return hasSize();
+};
+
 // Helper function to add an element to a document and perform page break logic
 export const addElementToPdf = async (element, document, yCounter, offset = 0) => {
   await html2canvas(element, { windowWidth: 1300, scale: 2 }).then(function (canvas) {
+    // A 0-width/height canvas means the element wasn't actually rendered when captured.
+    // Skip it rather than feeding jsPDF an Infinity/NaN dimension, which crashes deep
+    // inside its internal coordinate scaling instead of failing where the bad value originated.
+    if (!canvas.width || !canvas.height) {
+      console.warn('Skipping PDF export for element with zero-size canvas capture.', element?.id);
+      return;
+    }
+
     const imgData = canvas.toDataURL('image/jpeg', 0.7, { willReadFrequently: true });
     const scaledCanvasHeight = canvas.height * returnScaleFactor(canvas.width);
+    const safeOffset = Number.isFinite(offset) ? offset : 0;
     // Add a new page for each task if there is no more space in the page for task desc and graph
-    if (yCounter + scaledCanvasHeight + offset > 287) {
+    if (yCounter + scaledCanvasHeight + safeOffset > 287) {
       document.addPage();
       yCounter = 10;
     } else {

@@ -359,7 +359,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, toValue, watch } from 'vue';
+import { computed, ref, onMounted, nextTick, toValue, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
@@ -409,6 +409,7 @@ import {
   excludeFromScoringTasks,
   includeReliabilityFlagsOnExport,
   addElementToPdf,
+  waitForElementRendered,
   getScoreValue,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
@@ -571,6 +572,7 @@ const handleExportToPdf = async () => {
   const atAGlanceCharts = document.getElementById('at-a-glance-charts');
   if (atAGlanceCharts !== null) {
     atAGlanceCharts.classList.add('pdf-export-mode');
+    await waitForElementRendered(atAGlanceCharts);
     yCounter = await addElementToPdf(atAGlanceCharts, doc, yCounter);
     atAGlanceCharts.classList.remove('pdf-export-mode');
   }
@@ -580,15 +582,19 @@ const handleExportToPdf = async () => {
 
   for (const [i, taskId] of sortedTaskIds.value.entries()) {
     activeTabIndex.value = i;
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await nextTick();
 
     // Add Task Description and Task Chart to document
     const tabViewDesc = document.getElementById('tab-view-description-' + taskId);
     const tabViewChart = document.getElementById('tab-view-chart-' + taskId);
+
+    // Wait for element to be rendered before capturing it for PDF export.
+    await waitForElementRendered(tabViewChart || tabViewDesc);
+
     const chartHeight =
       tabViewChart &&
-      (await html2canvas(document.getElementById('tab-view-chart-' + taskId)).then(
-        (canvas) => canvas.height * returnScaleFactor(canvas.width),
+      (await html2canvas(tabViewChart).then((canvas) =>
+        canvas.width ? canvas.height * returnScaleFactor(canvas.width) : 0,
       ));
 
     if (tabViewDesc !== null) {
@@ -1017,10 +1023,10 @@ const computeAssignmentAndRunData = computed(() => {
             return assessment.startedOn < earliest ? assessment.startedOn : earliest;
           }, null) ?? null,
         completionDate: assignment.completed
-          ? (assignment.assessments.reduce((latest, assessment) => {
+          ? assignment.assessments.reduce((latest, assessment) => {
               if (!latest) return assessment.completedOn;
               return assessment.completedOn > latest ? assessment.completedOn : latest;
-            }, null) ?? null)
+            }, null) ?? null
           : null,
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
