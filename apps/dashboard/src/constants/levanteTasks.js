@@ -55,6 +55,11 @@ export const LEVANTE_TASK_IDS_PT = [
 export const LEVANTE_TASK_IDS_NO_SCORES = [
   ...LEVANTE_TASKS_PT,
   'hearts-and-flowers',
+  'egma-math',
+  'matrix-reasoning',
   'memory-game',
+  'mental-rotation',
   'same-different-selection',
+  'theory-of-mind',
+  'mefs',
 ];
