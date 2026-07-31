@@ -7,6 +7,8 @@ import {
   getRawScoreRange,
   tasksToDisplayPercentCorrect,
   PA_SUBTASK_I18N_KEYS,
+  NORMED_TASK_VERSIONS,
+  CORE_FOUNDATIONAL_TASKS,
 } from '@/helpers/reports';
 import { getStudentGradeLevel } from '@/helpers/getStudentGradeLevel';
 import { SCORE_TYPES, SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
@@ -37,24 +39,6 @@ import { TAG_SEVERITIES } from '@/constants/tags';
  * @param {Object} params.taskScoringVersions – Map of task slug → scoring version.
  * @param {Function} params.t – i18n translate function.
  */
-// Tasks with normed assessments, mapped to their minimum norming version.
-// A task uses normed norms when its scoring version >= the normed version.
-const NORMED_TASK_VERSIONS = {
-  swr: 6,
-  sre: 3,
-  'swr-es': 1,
-  'sre-es': 1,
-  pa: 3,
-  letter: 1,
-  trog: 1,
-  'roar-inference': 1,
-  cva: 1,
-  morphology: 1,
-};
-
-// Core foundational assessments that default to normed when scoring version is undefined.
-const CORE_FOUNDATIONAL_TASKS = ['swr', 'sre', 'pa'];
-
 export function useReportCardData(params) {
   const { reportTasks, studentGrade, taskScoringVersions = {}, t } = params;
 
@@ -110,6 +94,11 @@ export function useReportCardData(params) {
     const dialColor = SUPPORT_LEVEL_DIAL_COLOR[task.supportLevel] ?? SCORE_SUPPORT_LEVEL_COLORS.ASSESSED;
     const rawRange = getRawScoreRange(slug);
 
+    const isUnnormed = (s) => {
+      const normedVersion = NORMED_TASK_VERSIONS[s];
+      return normedVersion && (taskScoringVersions[s] == null || taskScoringVersions[s] < normedVersion);
+    };
+
     const scoresForTask = {
       standardScore: {
         name: t('scoreReports.standardScore'),
@@ -132,10 +121,7 @@ export function useReportCardData(params) {
             : t('scoreReports.percentileScore'),
         value: round(task.scores?.percentile),
         min: 0,
-        max:
-          ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) || (slug === 'letter' && !taskScoringVersions[slug])
-            ? 100
-            : 99,
+        max: ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) || isUnnormed(slug) ? 100 : 99,
         supportColor: dialColor,
       },
     };
@@ -174,6 +160,8 @@ export function useReportCardData(params) {
       scoresArray.push([t('scoreReports.skillsToWorkOn'), skills.join(', ') || t('scoreReports.none')]);
     }
 
+    const shouldAppendPercentage = ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) || isUnnormed(slug);
+
     return {
       taskId: slug,
       scoreToDisplay: getScoreToDisplay(slug, grade),
@@ -183,6 +171,7 @@ export function useReportCardData(params) {
       // Already in the LongitudinalChart input shape ({ date, scores, administrationId }).
       historicalScores: task.historicalScores ?? [],
       scoresArray,
+      shouldAppendPercentage,
     };
   };
 
@@ -195,8 +184,7 @@ export function useReportCardData(params) {
   });
 
   const scoreValueTemplate = computed(() => (task) => {
-    const appendPercentageTo = ['phonics', 'letter-es', 'letter-en-ca'];
-    if (appendPercentageTo.includes(task.taskId)) {
+    if (task.shouldAppendPercentage) {
       const value = task[task.scoreToDisplay].value;
       return value == null ? '' : value + '%';
     }
