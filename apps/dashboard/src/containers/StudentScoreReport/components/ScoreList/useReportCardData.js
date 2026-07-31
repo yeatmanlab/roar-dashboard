@@ -98,17 +98,21 @@ export function useReportCardData(params) {
   const buildEntry = (task) => {
     const slug = task.taskSlug;
     const grade = gradeLevel;
-    const useNormedAssessment =
-      CORE_FOUNDATIONAL_TASKS.includes(slug) &&
-      (taskScoringVersions[slug] == null || taskScoringVersions[slug] >= NORMED_TASK_VERSIONS[slug]);
     const dialColor = SUPPORT_LEVEL_DIAL_COLOR[task.supportLevel] ?? SCORE_SUPPORT_LEVEL_COLORS.ASSESSED;
     const rawRange = getRawScoreRange(slug);
 
     const isUnnormed = (s) => {
-      if (rawOnlyTasks.includes(s)) return false;
       const normedVersion = NORMED_TASK_VERSIONS[s];
-      return normedVersion && (taskScoringVersions[s] == null || taskScoringVersions[s] < normedVersion);
+      if (!normedVersion) return false;
+      return taskScoringVersions[s] == null || taskScoringVersions[s] < normedVersion;
     };
+
+    // Core foundational tasks default to normed when scoring version is undefined
+    // Other normed tasks must be explicitly marked as normed
+    const normedVersion = NORMED_TASK_VERSIONS[slug];
+    const useNormedAssessment = CORE_FOUNDATIONAL_TASKS.includes(slug)
+      ? taskScoringVersions[slug] == null || taskScoringVersions[slug] >= normedVersion
+      : normedVersion && taskScoringVersions[slug] != null && taskScoringVersions[slug] >= normedVersion;
 
     const scoresForTask = {
       standardScore: {
