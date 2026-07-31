@@ -120,6 +120,11 @@ export function useReportCardData(params) {
     const isUnnormed = (s) => {
       const normedVersion = NORMED_TASK_VERSIONS[s];
       if (!normedVersion) return false;
+      // Core foundational tasks default to normed when scoring version is undefined
+      if (CORE_FOUNDATIONAL_TASKS.includes(s)) {
+        return taskScoringVersions[s] != null && taskScoringVersions[s] < normedVersion;
+      }
+      // Other tasks require explicit version to be normed
       return taskScoringVersions[s] == null || taskScoringVersions[s] < normedVersion;
     };
 
