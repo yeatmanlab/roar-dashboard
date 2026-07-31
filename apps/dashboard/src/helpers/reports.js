@@ -358,6 +358,10 @@ export const descriptionsByTaskId = {
 const pageWidth = 190; // Set page width for calculations
 const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
 
+// Width html2canvas lays its cloned document out at when capturing elements for PDF export,
+// so exports look the same regardless of the exporting user's actual window size.
+export const PDF_CAPTURE_WINDOW_WIDTH = 1300;
+
 /**
  * Polls an element until it has a non-zero rendered size, or the timeout elapses.
  *
@@ -385,7 +389,7 @@ export const waitForElementRendered = async (element, { timeout = 3000, interval
 
 // Helper function to add an element to a document and perform page break logic
 export const addElementToPdf = async (element, document, yCounter, offset = 0) => {
-  await html2canvas(element, { windowWidth: 1300, scale: 2 }).then(function (canvas) {
+  await html2canvas(element, { windowWidth: PDF_CAPTURE_WINDOW_WIDTH, scale: 2 }).then(function (canvas) {
     // A 0-width/height canvas means the element wasn't actually rendered when captured.
     // Skip it rather than feeding jsPDF an Infinity/NaN dimension, which crashes deep
     // inside its internal coordinate scaling instead of failing where the bad value originated.

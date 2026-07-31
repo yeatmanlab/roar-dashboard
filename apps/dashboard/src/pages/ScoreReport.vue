@@ -54,6 +54,7 @@
               class="py-3 mb-2 text-left"
             >
               <ScoreDistributionOverview
+                ref="scoreDistributionOverview"
                 :task-ids="sortedAndFilteredTaskIds"
                 :runs-by-task-id="runsByTaskIdForDistributionChart"
                 :org-type="props.orgType"
@@ -410,6 +411,7 @@ import {
   includeReliabilityFlagsOnExport,
   addElementToPdf,
   waitForElementRendered,
+  PDF_CAPTURE_WINDOW_WIDTH,
   getScoreValue,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
@@ -559,6 +561,7 @@ const proceedExportFromModal = async () => {
 };
 
 const activeTabIndex = ref(0);
+const scoreDistributionOverview = ref(null);
 
 const pageWidth = 190; // Set page width for calculations
 const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
@@ -572,8 +575,21 @@ const handleExportToPdf = async () => {
   const atAGlanceCharts = document.getElementById('at-a-glance-charts');
   if (atAGlanceCharts !== null) {
     atAGlanceCharts.classList.add('pdf-export-mode');
+
+    // html2canvas captures this element at a fixed PDF_CAPTURE_WINDOW_WIDTH regardless of the
+    // real browser width, but it clones the DOM without re-running our JS. Chart.js bakes each
+    // canvas's pixel size into an inline style based on the real layout, so that stale size would
+    // otherwise overflow the narrower/wider capture layout. Force the real element to the capture
+    // width and have the charts re-measure before html2canvas clones it, so the sizes match.
+    const originalWidth = atAGlanceCharts.style.width;
+    atAGlanceCharts.style.width = `${PDF_CAPTURE_WINDOW_WIDTH}px`;
+    scoreDistributionOverview.value?.resizeCharts();
+
     await waitForElementRendered(atAGlanceCharts);
     yCounter = await addElementToPdf(atAGlanceCharts, doc, yCounter);
+
+    atAGlanceCharts.style.width = originalWidth;
+    scoreDistributionOverview.value?.resizeCharts();
     atAGlanceCharts.classList.remove('pdf-export-mode');
   }
 
