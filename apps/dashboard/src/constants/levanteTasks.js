@@ -53,7 +53,7 @@ export const LEVANTE_TASK_IDS_PT = [
 ];
 
 export const LEVANTE_TASK_IDS_NO_SCORES = [
-  ...LEVANTE_TASKS_PT,
+  ...LEVANTE_TASK_IDS_PT,
   'hearts-and-flowers',
   'egma-math',
   'matrix-reasoning',
