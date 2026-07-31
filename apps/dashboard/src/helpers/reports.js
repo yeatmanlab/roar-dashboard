@@ -6,6 +6,23 @@ import { SCORE_REPORT_DISTRIBUTION_CHART_PATHS } from '../constants/filePaths';
 import { i18n } from '@/translations/i18n';
 import { useI18n } from 'vue-i18n';
 
+// A task uses normed norms when its scoring version >= the normed version.
+export const NORMED_TASK_VERSIONS = {
+  swr: 6,
+  sre: 3,
+  'swr-es': 1,
+  'sre-es': 1,
+  pa: 3,
+  letter: 1,
+  trog: 1,
+  'roar-inference': 1,
+  cva: 1,
+  morphology: 1,
+};
+
+// Core foundational assessments that default to normed when scoring version is undefined.
+export const CORE_FOUNDATIONAL_TASKS = ['swr', 'sre', 'pa'];
+
 /*
  *  Task Display Names
  *  A map of all tasks, including their taskId, display name, and index for ordering
