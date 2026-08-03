@@ -41,8 +41,8 @@
           v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
           class="text-center text-sm font-bold px-4"
         >
-          In this district-level report, visualizations are available for foundational and comprehension assessments
-          to give you clear, reliable insights on these skills.
+          In this district-level report, visualizations are available for foundational and comprehension assessments to
+          give you clear, reliable insights on these skills.
         </p>
         <p class="text-center align-items-center text-sm font-bold px-4">
           View school-level or classroom-level reports to see student-level data and information about other
@@ -62,8 +62,7 @@
         }}
       </p>
       <p class="text-center align-items-center text-sm font-bold px-4">
-        View school-level or classroom-level reports to see student-level data and information about other
-        assessments.
+        View school-level or classroom-level reports to see student-level data and information about other assessments.
       </p>
     </div>
   </div>
