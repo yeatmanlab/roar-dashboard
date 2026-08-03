@@ -188,6 +188,11 @@ const computedRuns = computed(() => {
       rows.push(...makeRunsFromBins({ binsObj: props?.runs?.[modeKey], facet, scoreKey }));
     }
 
+    // Filter grades for percentile view (only grades < 6)
+    if (scoreMode.value.name === 'Percentile' && facet === 'grade') {
+      return rows.filter((row) => Number(row.grade) < 6);
+    }
+
     return rows;
   }
 
