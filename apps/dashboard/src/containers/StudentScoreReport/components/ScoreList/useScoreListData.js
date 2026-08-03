@@ -91,12 +91,14 @@ export function useScoreListData(params) {
 
   const scoreValueTemplate = computed(() => {
     return (task) => {
-      const appendPercentageTo = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
-      if (appendPercentageTo.includes(task.taskId)) {
+      const appendPercentageTo = ['phonics', 'letter-es', 'letter-en-ca'];
+      const isUnnormedLetter = task.taskId === 'letter' && !taskScoringVersions[task.taskId];
+      if (appendPercentageTo.includes(task.taskId) || isUnnormedLetter) {
         return task[task.scoreToDisplay].value + '%';
       }
-      const percentileSuffix = ScoreReportService.getPercentileSuffixTemplate(task.percentileScore.value, { t });
-      return task.scoreToDisplay === SCORE_TYPES.PERCENTILE_SCORE ? percentileSuffix : undefined;
+      if (task.scoreToDisplay === SCORE_TYPES.PERCENTILE_SCORE) {
+        return ScoreReportService.getPercentileSuffixTemplate(task.percentileScore.value, { t });
+      }
     };
   });
 

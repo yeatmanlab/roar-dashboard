@@ -72,6 +72,8 @@ describe('useAdministrationTaskSubscoresQuery', () => {
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
 
+    vi.spyOn(VueQuery, 'useQuery');
+
     withSetup(() => useAdministrationTaskSubscoresQuery(nanoid(), nanoid(), 'school', nanoid()), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
@@ -92,21 +94,28 @@ describe('useAdministrationTaskSubscoresQuery', () => {
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
 
-    // Set up mock to return paginated data on multiple calls
-    mockListTaskSubscores
-      .mockResolvedValueOnce(makePage(1, 2, [makeRow('u1')]))
-      .mockResolvedValueOnce(makePage(2, 2, [makeRow('u2')]));
+    vi.spyOn(VueQuery, 'useQuery');
 
     withSetup(() => useAdministrationTaskSubscoresQuery(administrationId, taskId, 'school', scopeId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
+    mockListTaskSubscores.mockReset();
+    mockListTaskSubscores
+      .mockResolvedValueOnce(makePage(1, 2, [makeRow('u1')]))
+      .mockResolvedValueOnce(makePage(2, 2, [makeRow('u2')]));
+
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
-    // The queryFn was captured; calling it will execute the pagination logic
-    // which follows the response pagination to fetch all pages
-    // Verify the function was set up correctly
-    expect(queryFn).toBeInstanceOf(Function);
-    expect(vi.mocked(VueQuery.useQuery).mock.calls[0][0].queryKey[0]).toBe(ADMINISTRATION_TASK_SUBSCORES_QUERY_KEY);
+    const result = await queryFn();
+
+    expect(mockListTaskSubscores).toHaveBeenCalledTimes(2);
+    expect(mockListTaskSubscores).toHaveBeenNthCalledWith(1, {
+      params: { id: administrationId, taskId },
+      query: { page: 1, perPage: 100, scopeType: 'school', scopeId },
+    });
+    expect(result.students.map((s) => s.user.userId)).toEqual(['u1', 'u2']);
+    expect(result.subscoreColumns).toEqual(COLUMNS);
+    expect(result.task).toEqual(TASK);
   });
 
   it('throws when the API returns a non-200 status', async () => {
@@ -114,6 +123,8 @@ describe('useAdministrationTaskSubscoresQuery', () => {
 
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
+
+    vi.spyOn(VueQuery, 'useQuery');
 
     withSetup(() => useAdministrationTaskSubscoresQuery(nanoid(), nanoid(), 'school', nanoid()), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
@@ -147,7 +158,7 @@ describe('useAdministrationTaskSubscoresQuery', () => {
     authStore.accessToken = 'test-token';
 
     let retryFn;
-    vi.mocked(VueQuery.useQuery).mockImplementation((options) => {
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
       retryFn = options.retry;
       return { data: { value: null }, error: { value: null } };
     });
