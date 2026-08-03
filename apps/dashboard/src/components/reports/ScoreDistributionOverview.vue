@@ -15,20 +15,12 @@
         </div>
         <PvChart
           v-if="!isChartEmpty(supportLevelCountsByTaskId[taskId])"
-          :ref="registerChart(taskId)"
           type="bar"
           :data="chartDataByTaskId[taskId]"
           :options="chartOptionsByTaskId[taskId]"
           class="h-2rem chart-item"
         />
-        <PvChart
-          v-else
-          :ref="registerChart(taskId)"
-          type="bar"
-          :data="grayChartData"
-          :options="grayChartOptions"
-          class="h-2rem chart-item"
-        />
+        <PvChart v-else type="bar" :data="grayChartData" :options="grayChartOptions" class="h-2rem chart-item" />
         <span
           v-if="descriptionsByTaskId[taskId]"
           v-tooltip.top="`${descriptionsByTaskId[taskId].header}${descriptionsByTaskId[taskId].description}`"
@@ -84,20 +76,12 @@
         </div>
         <PvChart
           v-if="!isChartEmpty(supportLevelCountsByTaskId[taskId])"
-          :ref="registerChart(taskId)"
           type="bar"
           :data="chartDataByTaskId[taskId]"
           :options="chartOptionsByTaskId[taskId]"
           class="h-2rem chart-item"
         />
-        <PvChart
-          v-else
-          :ref="registerChart(taskId)"
-          type="bar"
-          :data="grayChartData"
-          :options="grayChartOptions"
-          class="h-2rem chart-item"
-        />
+        <PvChart v-else type="bar" :data="grayChartData" :options="grayChartOptions" class="h-2rem chart-item" />
         <span
           v-if="descriptionsByTaskId[taskId]"
           v-tooltip.top="`${descriptionsByTaskId[taskId].header}${descriptionsByTaskId[taskId].description}`"
@@ -128,20 +112,12 @@
         </div>
         <PvChart
           v-if="!isChartEmpty(supportLevelCountsByTaskId[taskId])"
-          :ref="registerChart(taskId)"
           type="bar"
           :data="chartDataByTaskId[taskId]"
           :options="chartOptionsByTaskId[taskId]"
           class="h-2rem chart-item"
         />
-        <PvChart
-          v-else
-          :ref="registerChart(taskId)"
-          type="bar"
-          :data="grayChartData"
-          :options="grayChartOptions"
-          class="h-2rem chart-item"
-        />
+        <PvChart v-else type="bar" :data="grayChartData" :options="grayChartOptions" class="h-2rem chart-item" />
         <span
           v-if="descriptionsByTaskId[taskId]"
           v-tooltip.top="`${descriptionsByTaskId[taskId].header}${descriptionsByTaskId[taskId].description}`"
@@ -328,24 +304,6 @@ const grayChartOptions = computed(() => {
     },
   };
 });
-
-// Chart.js caches each canvas's rendered pixel size, so when this component's container is
-// temporarily resized for PDF export, the canvases need to be told to re-measure explicitly
-// rather than waiting on their ResizeObserver callbacks to fire.
-const chartComponentsByTaskId = new Map();
-
-const registerChart = (taskId) => (component) => {
-  if (component) chartComponentsByTaskId.set(taskId, component);
-  else chartComponentsByTaskId.delete(taskId);
-};
-
-const resizeCharts = () => {
-  for (const component of chartComponentsByTaskId.values()) {
-    component.getChart?.()?.resize();
-  }
-};
-
-defineExpose({ resizeCharts });
 </script>
 
 <style scoped>
