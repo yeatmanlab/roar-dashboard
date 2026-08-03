@@ -2,10 +2,10 @@ import { computed, toValue } from 'vue';
 import _lowerCase from 'lodash/lowerCase';
 import ScoreReportService from '@/services/ScoreReport.service';
 import {
-  rawOnlyTasks,
   taskDisplayNames,
   getRawScoreRange,
   tasksToDisplayPercentCorrect,
+  tasksToCheckIfNormed,
   PA_SUBTASK_I18N_KEYS,
   NORMED_TASK_VERSIONS,
   CORE_FOUNDATIONAL_TASKS,
@@ -54,15 +54,20 @@ export function useReportCardData(params) {
 
   // Which score type the card surfaces (mirrors ScoreReport.service.getScoreToDisplay).
   const getScoreToDisplay = (slug, grade) => {
-    // Raw-only tasks only show raw scores when unnormed; normed versions show percentile/standard
-    if (rawOnlyTasks.includes(slug)) {
-      if (!isTaskNormed(slug)) return SCORE_TYPES.RAW_SCORE;
-      // If normed, fall through to show percentile/standard instead
+    const isNormed = isTaskNormed(slug);
+
+    // Tasks that need norming checks: letter shows percentile when unnormed, others show raw
+    if (tasksToCheckIfNormed.includes(slug)) {
+      if (slug === 'letter' && !isNormed) return SCORE_TYPES.PERCENTILE_SCORE;
+      if (slug !== 'letter' && !isNormed) return SCORE_TYPES.RAW_SCORE;
+      // If normed, fall through to default logic
     }
+
+    // Phonics and letter variants always show percentile
     if (['phonics', 'letter-es', 'letter-en-ca'].includes(slug)) return SCORE_TYPES.PERCENTILE_SCORE;
-    if (slug === 'letter' && !isTaskNormed(slug)) return SCORE_TYPES.PERCENTILE_SCORE;
-    // Only show standard score if the task is normed; unnormed tasks show percentile
-    if (toValue(grade) >= 6 && isTaskNormed(slug)) return SCORE_TYPES.STANDARD_SCORE;
+
+    // Only show standard score if normed and grade >= 6; unnormed tasks show percentile
+    if (toValue(grade) >= 6 && isNormed) return SCORE_TYPES.STANDARD_SCORE;
     return SCORE_TYPES.PERCENTILE_SCORE;
   };
 
