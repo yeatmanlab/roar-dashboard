@@ -433,6 +433,14 @@ export const tasksToDisplayGraphs = [
 export const rawOnlyTasks = ['cva', 'morphology', 'vocab', 'fluency', 'roar-readaloud'];
 
 /*
+ *  Tasks to Check If Normed
+ *  A list of tasks that require checking if they are normed or not to determine
+ *  which score type to display (raw scores for unnormed, percentile/standard for normed).
+ *  Exception: letter shows percentile when unnormed instead of raw score.
+ */
+export const tasksToCheckIfNormed = ['cva', 'morphology', 'letter', 'trog', 'roar-inference', 'swr-es', 'sre-es'];
+
+/*
  *  Excluded from Score Report Apps
  *  A list of tasks to be excluded from a RoarDataTable because they do not have scores.
  *  However, these tasks will still be included in the progress report.

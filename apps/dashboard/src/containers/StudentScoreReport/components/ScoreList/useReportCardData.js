@@ -2,10 +2,10 @@ import { computed, toValue } from 'vue';
 import _lowerCase from 'lodash/lowerCase';
 import ScoreReportService from '@/services/ScoreReport.service';
 import {
-  rawOnlyTasks,
   taskDisplayNames,
   getRawScoreRange,
   tasksToDisplayPercentCorrect,
+  tasksToCheckIfNormed,
   PA_SUBTASK_I18N_KEYS,
   NORMED_TASK_VERSIONS,
   CORE_FOUNDATIONAL_TASKS,
@@ -70,20 +70,21 @@ export function useReportCardData(params) {
 
   // Which score type the card surfaces (mirrors ScoreReport.service.getScoreToDisplay).
   const getScoreToDisplay = (slug, grade) => {
-    // Raw-only tasks only show raw scores when unnormed; normed versions show percentile/standard
-    if (rawOnlyTasks.includes(slug)) {
-      const normedVersion = NORMED_TASK_VERSIONS[slug];
-      const isNormed = normedVersion && taskScoringVersions[slug] != null && taskScoringVersions[slug] >= normedVersion;
-      if (!isNormed) return SCORE_TYPES.RAW_SCORE;
-      // If normed, fall through to show percentile/standard instead
+    const isNormed = isTaskNormed(slug);
+
+    // Tasks that need norming checks: letter shows percentile when unnormed, others show raw
+    if (tasksToCheckIfNormed.includes(slug)) {
+      if (slug === 'letter' && !isNormed) return SCORE_TYPES.PERCENTILE_SCORE;
+      if (slug !== 'letter' && !isNormed) return SCORE_TYPES.RAW_SCORE;
+      // If normed, fall through to default logic
     }
+
+    // Phonics and letter variants always show percentile
     if (['phonics', 'letter-es', 'letter-en-ca'].includes(slug)) return SCORE_TYPES.PERCENTILE_SCORE;
-    if (
-      slug === 'letter' &&
-      (taskScoringVersions[slug] == null || taskScoringVersions[slug] < NORMED_TASK_VERSIONS[slug])
-    )
-      return SCORE_TYPES.PERCENTILE_SCORE;
-    return toValue(grade) >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
+
+    // Only show standard score if normed and grade >= 6; unnormed tasks show percentile
+    if (toValue(grade) >= 6 && isNormed) return SCORE_TYPES.STANDARD_SCORE;
+    return SCORE_TYPES.PERCENTILE_SCORE;
   };
 
   // Type + reliability tags, derived from backend flags (mirrors the service's createTaskTags).
@@ -111,29 +112,22 @@ export function useReportCardData(params) {
 
   const round = (value) => (value == null ? null : Math.round(value));
 
+  // Determine if a task should be treated as normed. Core foundational tasks (SWR, SRE, PA)
+  // default to normed when scoring version is undefined; other normed tasks require explicit version.
+  const isTaskNormed = (slug) => {
+    const normedVersion = NORMED_TASK_VERSIONS[slug];
+    if (!normedVersion) return false;
+    return CORE_FOUNDATIONAL_TASKS.includes(slug)
+      ? taskScoringVersions[slug] == null || taskScoringVersions[slug] >= normedVersion
+      : normedVersion && taskScoringVersions[slug] != null && taskScoringVersions[slug] >= normedVersion;
+  };
+
   const buildEntry = (task) => {
     const slug = task.taskSlug;
     const grade = gradeLevel;
     const dialColor = SUPPORT_LEVEL_DIAL_COLOR[task.supportLevel] ?? SCORE_SUPPORT_LEVEL_COLORS.ASSESSED;
     const rawRange = getRawScoreRange(slug);
-
-    const isUnnormed = (s) => {
-      const normedVersion = NORMED_TASK_VERSIONS[s];
-      if (!normedVersion) return false;
-      // Core foundational tasks default to normed when scoring version is undefined
-      if (CORE_FOUNDATIONAL_TASKS.includes(s)) {
-        return taskScoringVersions[s] != null && taskScoringVersions[s] < normedVersion;
-      }
-      // Other tasks require explicit version to be normed
-      return taskScoringVersions[s] == null || taskScoringVersions[s] < normedVersion;
-    };
-
-    // Core foundational tasks default to normed when scoring version is undefined
-    // Other normed tasks must be explicitly marked as normed
-    const normedVersion = NORMED_TASK_VERSIONS[slug];
-    const useNormedAssessment = CORE_FOUNDATIONAL_TASKS.includes(slug)
-      ? taskScoringVersions[slug] == null || taskScoringVersions[slug] >= normedVersion
-      : normedVersion && taskScoringVersions[slug] != null && taskScoringVersions[slug] >= normedVersion;
+    const useNormedAssessment = isTaskNormed(slug);
 
     const scoresForTask = {
       standardScore: {
@@ -157,7 +151,7 @@ export function useReportCardData(params) {
             : t('scoreReports.percentileScore'),
         value: round(task.scores?.percentile),
         min: 0,
-        max: ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) || isUnnormed(slug) ? 100 : 99,
+        max: ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) || !useNormedAssessment ? 100 : 99,
         supportColor: dialColor,
       },
     };
@@ -222,7 +216,7 @@ export function useReportCardData(params) {
       scoresArray.push([t('scoreReports.skillsToWorkOn'), skills.join(', ') || t('scoreReports.none')]);
     }
 
-    const shouldAppendPercentage = ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) || isUnnormed(slug);
+    const shouldAppendPercentage = ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) || !useNormedAssessment;
 
     return {
       taskId: slug,
