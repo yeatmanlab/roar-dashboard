@@ -32,9 +32,11 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ScoreCardPrint as ScoreCard } from './ScoreCard';
 import { useScoreListData } from './useScoreListData';
+import { useReportCardData } from './useReportCardData';
 import { SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 
 const props = defineProps({
@@ -67,20 +69,42 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  // Backend-computed report tasks, supplied for both the administrator and parent paths
+  // (retires client scoring). The legacy `taskData` pipeline below is now dead and is
+  // removed in the score-report cleanup PR.
+  reportTasks: {
+    type: Array,
+    required: false,
+    default: null,
+  },
 });
 
 const { t } = useI18n();
 
-/**
- * Process task data into computed task data for display
- */
-const { computedTaskData, scoreValueTemplate, getTaskDescription, getTaskScoresArray } = useScoreListData({
+const legacy = useScoreListData({
   studentGrade: props.studentGrade,
   taskData: props.taskData,
   longitudinalData: props.longitudinalData,
   taskScoringVersions: props.taskScoringVersions,
   t,
 });
+const backend = useReportCardData({
+  reportTasks: () => props.reportTasks,
+  studentGrade: props.studentGrade,
+  taskScoringVersions: props.taskScoringVersions,
+  t,
+});
+
+const useBackend = computed(() => Array.isArray(props.reportTasks));
+const computedTaskData = computed(() =>
+  useBackend.value ? backend.computedTaskData.value : legacy.computedTaskData.value,
+);
+const scoreValueTemplate = (task) =>
+  useBackend.value ? backend.scoreValueTemplate.value(task) : legacy.scoreValueTemplate.value(task);
+const getTaskDescription = (task) =>
+  useBackend.value ? backend.getTaskDescription.value(task) : legacy.getTaskDescription.value(task);
+const getTaskScoresArray = (task) =>
+  useBackend.value ? backend.getTaskScoresArray.value(task) : legacy.getTaskScoresArray.value(task);
 
 /**
  * Returns the URL of the next steps document

@@ -6,14 +6,14 @@ import { nanoid } from 'nanoid';
 import { StatusCodes } from 'http-status-codes';
 import { withSetup } from '@/test-support/withSetup.js';
 import { useAuthStore } from '@/store/auth';
-import useAdministrationScoreFacetsQuery from './useAdministrationScoreFacetsQuery';
-import { ADMINISTRATION_SCORE_FACETS_QUERY_KEY } from '@/constants/queryKeys';
+import useGuardianStudentReportQuery from './useGuardianStudentReportQuery';
+import { USER_GUARDIAN_REPORT_QUERY_KEY } from '@/constants/queryKeys';
 
-const mockGetScoreFacets = vi.fn();
+const mockGetGuardianStudentReport = vi.fn();
 
 vi.mock('@/clients/roar-api', () => ({
   getRoarApiClient: () => ({
-    administrations: { scoreReports: { getScoreFacets: mockGetScoreFacets } },
+    users: { scoreReports: { getGuardianStudentReport: mockGetGuardianStudentReport } },
   }),
 }));
 
@@ -25,42 +25,55 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
-// Mirrors the real ScoreFacetsResponseSchema shape.
-const SUPPORT = { achievedSkill: { count: 3 }, developingSkill: { count: 2 }, needsExtraSupport: { count: 1 } };
-const FACETS_RESPONSE = {
-  totalStudents: 6,
-  computedAt: '2026-06-27T00:00:00.000Z',
-  tasks: [
+// Mirrors the real GuardianStudentReportResponseSchema shape.
+const REPORT = {
+  student: { userId: nanoid(), firstName: 'A', lastName: 'B', username: 'ab', grade: '3', schoolName: 'Maple' },
+  administrations: [
     {
-      taskId: '11111111-1111-1111-1111-111111111111',
-      taskSlug: 'swr',
-      taskName: 'Word',
-      orderIndex: 0,
-      supportLevelByGrade: [{ grade: '3', totalAssessed: 6, ...SUPPORT }],
-      supportLevelBySchool: [],
-      scoreBinsByGrade: [
+      administrationId: '11111111-1111-1111-1111-111111111111',
+      name: 'Fall 2025',
+      dateStart: '2025-09-01T00:00:00.000Z',
+      dateEnd: '2025-12-01T00:00:00.000Z',
+      tasks: [
         {
-          grade: '3',
-          rawScore: [{ binStart: 100, binEnd: 130, count: 6 }],
-          percentile: [{ binStart: 0, binEnd: 10, count: 6 }],
+          taskId: '22222222-2222-2222-2222-222222222222',
+          taskSlug: 'swr',
+          taskName: 'Word',
+          orderIndex: 0,
+          scores: { rawScore: 500, percentile: 50, standardScore: 100 },
+          supportLevel: 'achievedSkill',
+          reliable: true,
+          optional: false,
+          completed: true,
+          engagementFlags: [],
+          tags: [],
         },
       ],
-      scoreBinsBySchool: [],
     },
   ],
+  longitudinalScores: {
+    swr: [
+      {
+        administrationId: '11111111-1111-1111-1111-111111111111',
+        administrationName: 'Fall 2025',
+        date: '2025-09-15T00:00:00.000Z',
+        scores: { rawScore: 500, percentile: 50, standardScore: 100 },
+      },
+    ],
+  },
 };
 
-const okResult = () => ({ status: StatusCodes.OK, body: { data: FACETS_RESPONSE } });
+const okResult = () => ({ status: StatusCodes.OK, body: { data: REPORT } });
 
-describe('useAdministrationScoreFacetsQuery', () => {
+describe('useGuardianStudentReportQuery', () => {
   let piniaInstance;
   let queryClient;
 
   beforeEach(() => {
     piniaInstance = createTestingPinia();
     queryClient = new VueQuery.QueryClient({ defaultOptions: { queries: { retry: false } } });
-    mockGetScoreFacets.mockReset();
-    mockGetScoreFacets.mockResolvedValue(okResult());
+    mockGetGuardianStudentReport.mockReset();
+    mockGetGuardianStudentReport.mockResolvedValue(okResult());
   });
 
   afterEach(() => {
@@ -68,74 +81,70 @@ describe('useAdministrationScoreFacetsQuery', () => {
     vi.clearAllMocks();
   });
 
-  it('calls useQuery with the facets key and a gated, readonly enabled', () => {
+  it('calls useQuery with the guardian-report key and a gated, readonly enabled', () => {
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationScoreFacetsQuery(nanoid(), 'district', nanoid()), {
+    withSetup(() => useGuardianStudentReportQuery(nanoid()), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     const call = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
-    expect(call.queryKey[0]).toBe(ADMINISTRATION_SCORE_FACETS_QUERY_KEY);
+    expect(call.queryKey[0]).toBe(USER_GUARDIAN_REPORT_QUERY_KEY);
     expect(call.queryFn).toBeInstanceOf(Function);
     expect(isRef(call.enabled)).toBe(true);
     expect(isReadonly(call.enabled)).toBe(true);
     expect(call.enabled.value).toBe(true);
   });
 
-  it('makes a single (non-paginated) request and unwraps the envelope', async () => {
-    const administrationId = nanoid();
-    const scopeId = nanoid();
+  it('makes a single request (no scope params) keyed by userId and unwraps the envelope', async () => {
+    const userId = nanoid();
 
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationScoreFacetsQuery(administrationId, 'school', scopeId), {
+    withSetup(() => useGuardianStudentReportQuery(userId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    mockGetScoreFacets.mockReset();
-    mockGetScoreFacets.mockResolvedValue(okResult());
+    mockGetGuardianStudentReport.mockReset();
+    mockGetGuardianStudentReport.mockResolvedValue(okResult());
 
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
     const result = await queryFn();
 
-    expect(mockGetScoreFacets).toHaveBeenCalledTimes(1);
-    expect(mockGetScoreFacets).toHaveBeenCalledWith({
-      params: { id: administrationId },
-      query: { scopeType: 'school', scopeId },
-    });
-    expect(result).toEqual(FACETS_RESPONSE);
-    expect(result.tasks[0].supportLevelByGrade[0]).toMatchObject({ grade: '3', achievedSkill: { count: 3 } });
+    expect(mockGetGuardianStudentReport).toHaveBeenCalledTimes(1);
+    expect(mockGetGuardianStudentReport).toHaveBeenCalledWith({ params: { userId } });
+    expect(result).toEqual(REPORT);
+    expect(result.longitudinalScores.swr).toHaveLength(1);
   });
 
   it('throws when the API returns a non-200 status', async () => {
-    mockGetScoreFacets.mockResolvedValue({ status: StatusCodes.BAD_REQUEST, body: {} });
+    mockGetGuardianStudentReport.mockResolvedValue({ status: StatusCodes.FORBIDDEN, body: {} });
 
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = 'test-token';
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationScoreFacetsQuery(nanoid(), 'school', nanoid()), {
+    withSetup(() => useGuardianStudentReportQuery(nanoid()), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     const { queryFn } = vi.mocked(VueQuery.useQuery).mock.calls[0][0];
-    await expect(queryFn()).rejects.toThrow(/status 400/);
+    await expect(queryFn()).rejects.toThrow(/status 403/);
   });
 
-  it('stays disabled until the access token and scopeId are available', async () => {
-    const scopeId = ref(null);
+  it('stays disabled until the access token and userId are available', async () => {
+    const userId = ref(null);
     const authStore = useAuthStore(piniaInstance);
     authStore.accessToken = null;
 
-    withSetup(() => useAdministrationScoreFacetsQuery(nanoid(), 'school', scopeId), {
+    withSetup(() => useGuardianStudentReportQuery(userId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -143,7 +152,7 @@ describe('useAdministrationScoreFacetsQuery', () => {
     expect(call.enabled.value).toBe(false);
 
     authStore.accessToken = 'test-token';
-    scopeId.value = nanoid();
+    userId.value = nanoid();
     await nextTick();
 
     expect(call.enabled.value).toBe(true);
@@ -159,7 +168,7 @@ describe('useAdministrationScoreFacetsQuery', () => {
       return { data: { value: null }, error: { value: null } };
     });
 
-    withSetup(() => useAdministrationScoreFacetsQuery(nanoid(), 'school', nanoid()), {
+    withSetup(() => useGuardianStudentReportQuery(nanoid()), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
