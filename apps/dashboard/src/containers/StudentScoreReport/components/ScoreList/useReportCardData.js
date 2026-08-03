@@ -57,7 +57,9 @@ export function useReportCardData(params) {
     // Raw-only tasks only show raw scores when unnormed; normed versions show percentile/standard
     if (rawOnlyTasks.includes(slug)) {
       const normedVersion = NORMED_TASK_VERSIONS[slug];
-      const isNormed = normedVersion && taskScoringVersions[slug] != null && taskScoringVersions[slug] >= normedVersion;
+      const isNormed = CORE_FOUNDATIONAL_TASKS.includes(slug)
+        ? taskScoringVersions[slug] == null || taskScoringVersions[slug] >= normedVersion
+        : normedVersion && taskScoringVersions[slug] != null && taskScoringVersions[slug] >= normedVersion;
       if (!isNormed) return SCORE_TYPES.RAW_SCORE;
       // If normed, fall through to show percentile/standard instead
     }
@@ -101,12 +103,6 @@ export function useReportCardData(params) {
     const dialColor = SUPPORT_LEVEL_DIAL_COLOR[task.supportLevel] ?? SCORE_SUPPORT_LEVEL_COLORS.ASSESSED;
     const rawRange = getRawScoreRange(slug);
 
-    const isUnnormed = (s) => {
-      const normedVersion = NORMED_TASK_VERSIONS[s];
-      if (!normedVersion) return false;
-      return taskScoringVersions[s] == null || taskScoringVersions[s] < normedVersion;
-    };
-
     // Core foundational tasks default to normed when scoring version is undefined
     // Other normed tasks must be explicitly marked as normed
     const normedVersion = NORMED_TASK_VERSIONS[slug];
@@ -136,7 +132,7 @@ export function useReportCardData(params) {
             : t('scoreReports.percentileScore'),
         value: round(task.scores?.percentile),
         min: 0,
-        max: ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) || isUnnormed(slug) ? 100 : 99,
+        max: ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) || !useNormedAssessment ? 100 : 99,
         supportColor: dialColor,
       },
     };
@@ -175,7 +171,7 @@ export function useReportCardData(params) {
       scoresArray.push([t('scoreReports.skillsToWorkOn'), skills.join(', ') || t('scoreReports.none')]);
     }
 
-    const shouldAppendPercentage = ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) || isUnnormed(slug);
+    const shouldAppendPercentage = ['phonics', 'letter-es', 'letter-en-ca'].includes(slug) || !useNormedAssessment;
 
     return {
       taskId: slug,
