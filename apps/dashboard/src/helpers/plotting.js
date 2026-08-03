@@ -1,4 +1,5 @@
 import { PROGRESS_COLORS } from '@/constants/completionStatus';
+import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
 
 export const chart = {};
 
@@ -174,6 +175,166 @@ export const setProgressChartOptions = (orgStats) => {
         border: {
           display: false,
         },
+        min,
+        max,
+      },
+    },
+  };
+};
+
+/**
+ * Maps a task's server-aggregated support-level distribution onto the
+ * `{ below, some, above }` shape the distribution charts consume.
+ *
+ * The score-overview endpoint (`ScoreOverviewResponseSchema.tasks[].supportLevels`)
+ * returns `{ needsExtraSupport: { count }, developingSkill: { count }, achievedSkill: { count } }`
+ * and has already aggregated across the report's org/class/group, so there is no
+ * scope-dependent branching to do here — unlike
+ * {@link aggregateSupportLevelRuns}, which still has to.
+ *
+ * @param {Object|undefined} supportLevels - The endpoint's `supportLevels` object for one task.
+ * @returns {{below: number, some: number, above: number}} Counts, zeroed for a missing task.
+ */
+export const mapSupportLevelCounts = (supportLevels) => ({
+  below: supportLevels?.needsExtraSupport?.count ?? 0,
+  some: supportLevels?.developingSkill?.count ?? 0,
+  above: supportLevels?.achievedSkill?.count ?? 0,
+});
+
+/**
+ * Aggregates client-side runs into `{ below, some, above }` counts.
+ *
+ * Used only for the foundational composite, which the score-overview endpoint has no
+ * equivalent for. Accepts either shape the caller may hold: an array of runs carrying
+ * `scores.support_level` (school/class/group scope), or the pre-aggregated
+ * `{ below: { total }, ... }` object the Firestore district feed supplies.
+ *
+ * Runs with an unrecognized or absent support level are skipped, matching the prior
+ * client aggregation — only classified runs count toward the distribution.
+ *
+ * @param {Array|Object|null|undefined} runs - Runs array, or pre-aggregated district totals.
+ * @returns {{below: number, some: number, above: number}|null} Counts, or null when absent.
+ */
+export const aggregateSupportLevelRuns = (runs) => {
+  if (!runs) return null;
+
+  if (!Array.isArray(runs)) {
+    return {
+      below: runs.below?.total ?? 0,
+      some: runs.some?.total ?? 0,
+      above: runs.above?.total ?? 0,
+    };
+  }
+
+  const counts = { below: 0, some: 0, above: 0 };
+  for (const run of runs) {
+    const supportLevel = run?.scores?.support_level;
+    if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.below++;
+    else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.some++;
+    else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.above++;
+  }
+  return counts;
+};
+
+/**
+ * Generate Chart.js data configuration for a stacked horizontal score distribution bar.
+ *
+ * Creates a single-bar chart with three stacked segments representing support levels:
+ * - Needs Extra Support (pink): students below benchmark
+ * - Developing Skill (yellow): students approaching benchmark
+ * - Achieved Skill (green): students at or above benchmark
+ *
+ * @param {Object} supportLevelCounts - Counts per support level
+ * @param {number} [supportLevelCounts.below=0] - Count of students needing extra support
+ * @param {number} [supportLevelCounts.some=0] - Count of students developing skill
+ * @param {number} [supportLevelCounts.above=0] - Count of students who achieved skill
+ * @returns {Object} Chart.js data configuration with labels and datasets
+ */
+export const setDistributionChartData = (supportLevelCounts) => {
+  const { below = 0, some = 0, above = 0 } = supportLevelCounts || {};
+  const borderRadii = getBorderRadii(below, some, above);
+  const borderWidth = 0;
+
+  return {
+    labels: [''],
+    datasets: [
+      {
+        type: 'bar',
+        label: 'Needs Extra Support',
+        backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.BELOW,
+        data: [below],
+        borderWidth,
+        borderSkipped: false,
+        borderRadius: borderRadii.left,
+      },
+      {
+        type: 'bar',
+        label: 'Developing Skill',
+        backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.SOME,
+        data: [some],
+        borderWidth,
+        borderSkipped: false,
+        borderRadius: borderRadii.middle,
+      },
+      {
+        type: 'bar',
+        label: 'Achieved Skill',
+        backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.ABOVE,
+        data: [above],
+        borderWidth,
+        borderSkipped: false,
+        borderRadius: borderRadii.right,
+      },
+    ],
+  };
+};
+
+/**
+ * Generate Chart.js options configuration for a stacked horizontal score distribution bar.
+ *
+ * @param {Object} supportLevelCounts - Counts per support level
+ * @param {number} [supportLevelCounts.below=0] - Count of students needing extra support
+ * @param {number} [supportLevelCounts.some=0] - Count of students developing skill
+ * @param {number} [supportLevelCounts.above=0] - Count of students who achieved skill
+ * @returns {Object} Chart.js options configuration
+ */
+export const setDistributionChartOptions = (supportLevelCounts) => {
+  const { below = 0, some = 0, above = 0 } = supportLevelCounts || {};
+  const min = 0;
+  const max = below + some + above;
+
+  return {
+    indexAxis: 'y',
+    maintainAspectRatio: false,
+    aspectRatio: 9,
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const label = context.dataset.label || '';
+            const value = context.parsed.x;
+            const total = below + some + above;
+            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+            return `${label}: ${value} (${percentage}%)`;
+          },
+        },
+      },
+      legend: false,
+    },
+    scales: {
+      x: {
+        stacked: true,
+        ticks: { display: false },
+        grid: { display: false },
+        border: { display: false },
+        min,
+        max,
+      },
+      y: {
+        stacked: true,
+        ticks: { display: false },
+        grid: { display: false },
+        border: { display: false },
         min,
         max,
       },

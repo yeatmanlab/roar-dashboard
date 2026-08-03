@@ -41,7 +41,10 @@ export async function preloadView(config, audioMapping, imageAssets) {
   document.getElementById('loading-text').innerHTML = audioMapping.loading;
 
   const baseAssets = [
-    'tasks/shared/eyetracking_google.onnx',
+    // Bundler reference, not a runtime path — the emitted URL must match the one the
+    // worker resolves, or the preload warms a cache entry the worker never uses.
+    // See roar-project-management#1981.
+    new URL('./eyetracking_google.onnx', import.meta.url).href,
     'https://cdn.jsdelivr.net/npm/onnxjs/dist/onnx.min.js',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css',
     'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh_solution_simd_wasm_bin.wasm',

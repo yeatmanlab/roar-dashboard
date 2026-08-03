@@ -22,11 +22,17 @@ const timeout = Cypress.env('timeout');
 function playARFIntro() {
   waitTimeout();
 
-  //   Click textbox and enter random participantId
-  cy.get('#input-0').type(`${participantId} {enter}`);
-  waitTimeout();
-  typeEnter();
-  waitTimeout();
+  // Click textbox and enter random participantId
+  // Enter participant ID if box exists, otherwise just press enter (1.3.6+)
+  cy.get('body').then(($body) => {
+    if ($body.find('#input-0').length > 0) {
+      cy.get('#input-0').type(`${participantId} {enter}`);
+      waitTimeout();
+    } else {
+      typeEnter(); // Press enter if #input-0 doesn't exist
+      waitTimeout();
+    }
+  });
 
   //   Click enter
   cy.get('body').type('1 {enter}');
@@ -129,11 +135,17 @@ function playARFIntroES() {
 function playCALFIntro() {
   waitTimeout();
 
-  //   Click textbox and enter random participantId
-  cy.get('#input-0').type(`${participantId} {enter}`);
-  waitTimeout();
-  typeEnter();
-  waitTimeout();
+  // Click textbox and enter random participantId
+  // Enter participant ID if box exists, otherwise just press enter (1.3.6+)
+  cy.get('body').then(($body) => {
+    if ($body.find('#input-0').length > 0) {
+      cy.get('#input-0').type(`${participantId} {enter}`);
+      waitTimeout();
+    } else {
+      typeEnter(); // Press enter if #input-0 doesn't exist
+      waitTimeout();
+    }
+  });
 
   //   Click enter
   cy.get('body').type('1 {enter}');
