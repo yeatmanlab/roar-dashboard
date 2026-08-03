@@ -189,7 +189,7 @@ const computedRuns = computed(() => {
     }
 
     // Filter grades for percentile view (only grades < 6)
-    if (scoreMode.value.name === 'Percentile' && facet === 'grade') {
+    if (scoreMode.value.name === 'Percentile') {
       return rows.filter((row) => Number(row.grade) < 6);
     }
 
