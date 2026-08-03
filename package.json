@@ -4,14 +4,17 @@
   "bin": {
     "setup-certs": "./scripts/setup-certs.sh"
   },
-  "version": "3.26.0",
+  "version": "3.29.0",
   "scripts": {
     "dev": "turbo run dev --filter=!./apps/assessments/*",
     "dev:setup": "cd apps/backend && npm run dev:setup",
     "dev:seed": "cd apps/backend && npm run dev:seed",
     "dev:reset": "cd apps/backend && npm run dev:reset",
     "dev:seed:tasks": "cd apps/backend && npm run dev:seed:tasks",
+    "dev:seed:tasks:default": "cd apps/backend && npm run dev:seed:tasks:default",
+    "dev:assign:variant": "cd apps/backend && npm run dev:assign:variant",
     "dev:init": "cd apps/backend && npm run dev:init",
+    "dev:down": "bash scripts/dev-env-down.sh",
     "dev:setup:certs": "setup-certs",
     "watch": "turbo watch dev",
     "build": "turbo run build",

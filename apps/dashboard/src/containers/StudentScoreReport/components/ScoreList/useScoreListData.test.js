@@ -399,6 +399,116 @@ describe('useScoreListData', () => {
 
       expect(computedTaskData.value[0].historicalScores).toEqual([]);
     });
+
+    it('should preserve null scoringVersion without coercing to 0', () => {
+      const taskData = [
+        {
+          taskId: 'task1',
+          scores: { composite: { rawScore: 10 } },
+        },
+      ];
+
+      const longitudinalData = {
+        task1: [
+          {
+            date: '2024-01-01',
+            scores: { composite: { rawScore: 8, scoringVersion: null } },
+            assignmentId: 'a1',
+          },
+          {
+            date: '2024-02-01',
+            scores: { composite: { rawScore: 9, scoringVersion: 2 } },
+            assignmentId: 'a2',
+          },
+        ],
+      };
+
+      const processedTasks = [
+        {
+          taskId: 'task1',
+          rawScore: { value: 10 },
+          scoreToDisplay: SCORE_TYPES.RAW_SCORE,
+        },
+      ];
+
+      ScoreReportService.processTaskScores.mockReturnValue(processedTasks);
+      getScoreValue.mockImplementation((composite, taskId, grade, type) => {
+        if (type === 'rawScore') return composite.rawScore;
+        return undefined;
+      });
+
+      const params = {
+        studentGrade: 'Grade 5',
+        taskData,
+        longitudinalData,
+        t: mockT,
+        taskScoringVersions: {},
+      };
+
+      const { computedTaskData } = useScoreListData(params);
+
+      const history = computedTaskData.value[0].historicalScores;
+
+      // First run should have null scoringVersion (not coerced to 0)
+      expect(history[0].scores.scoringVersion).toBeNull();
+      expect(history[0].scores.scoringVersion).not.toBe(0);
+
+      // Second run should have scoringVersion 2
+      expect(history[1].scores.scoringVersion).toBe(2);
+
+      // Other scores should still be rounded
+      expect(history[0].scores.rawScore).toBe(8);
+      expect(history[1].scores.rawScore).toBe(9);
+    });
+
+    it('should default scoringVersion to null when not present', () => {
+      const taskData = [
+        {
+          taskId: 'task1',
+          scores: { composite: { rawScore: 10 } },
+        },
+      ];
+
+      const longitudinalData = {
+        task1: [
+          {
+            date: '2024-01-01',
+            scores: { composite: { rawScore: 8 } }, // No scoringVersion field
+            assignmentId: 'a1',
+          },
+        ],
+      };
+
+      const processedTasks = [
+        {
+          taskId: 'task1',
+          rawScore: { value: 10 },
+          scoreToDisplay: SCORE_TYPES.RAW_SCORE,
+        },
+      ];
+
+      ScoreReportService.processTaskScores.mockReturnValue(processedTasks);
+      getScoreValue.mockImplementation((composite, taskId, grade, type) => {
+        if (type === 'rawScore') return composite.rawScore;
+        return undefined;
+      });
+
+      const params = {
+        studentGrade: 'Grade 5',
+        taskData,
+        longitudinalData,
+        t: mockT,
+        taskScoringVersions: {},
+      };
+
+      const { computedTaskData } = useScoreListData(params);
+
+      const history = computedTaskData.value[0].historicalScores;
+
+      // scoringVersion defaults to null via ?? operator, so it's not filtered out
+      expect(history[0].scores.scoringVersion).toBeNull();
+      expect(history[0].scores).toHaveProperty('scoringVersion');
+    });
   });
 
   describe('scoreValueTemplate', () => {
@@ -601,13 +711,13 @@ describe('useScoreListData', () => {
         taskData,
         longitudinalData: null,
         t: mockT,
-        taskScoringVersions: {},
+        taskScoringVersions: { task1: 6 },
       };
 
       const { computedTaskData, getTaskScoresArray } = useScoreListData(params);
 
       const result = getTaskScoresArray.value(computedTaskData.value[0]);
-      expect(ScoreReportService.getScoresArrayForTask).toHaveBeenCalledWith(computedTaskData.value[0]);
+      expect(ScoreReportService.getScoresArrayForTask).toHaveBeenCalledWith(computedTaskData.value[0], 6);
       expect(result).toEqual([{ name: 'skill1', value: 5 }]);
     });
   });
