@@ -5,7 +5,8 @@ import '../../../i18n/i18n';
 import 'regenerator-runtime/runtime'; //async function
 import store from 'store2'; //storing session data
 //import itemsAll from "../../../../items-all.csv";
-import { camelize, getLanguage, getGrade } from '@bdelab/roar-utils';
+import { shuffle } from '../../shared/helpers';
+import { camelize, getGrade, getLanguage } from '@bdelab/roar-utils';
 //import { groupMapping } from "../../taskSetup";
 import { Clowder, prepareClowderCorpus } from '@bdelab/jscat';
 import _ from 'lodash';
@@ -13,7 +14,6 @@ import { fetchAndParseCorpusRM } from '../../responseModalityStudy/helpers';
 import 'simple-keyboard/build/css/index.css';
 import { isMobile } from './initStore';
 import i18next from 'i18next';
-import { shuffle } from '../../shared/helpers';
 import { generateItemIdx, getIdxList, assignItems, getItemFromBankFluency } from '../../shared/helpers/parseHelpers';
 import {
   downloadCSVBins,
@@ -172,6 +172,39 @@ export const fetchAndParseCorpusFluency = async (task, assets) => {
 
   //for each task generate the final stimulus array and save the corpus
   let corpusAll = [];
+
+  for (let i = 0; i < stimulusArray.length; i++) {
+    //generate the item indices
+    generateItemIdx(itemBank, stimulusArray[i], getIdxList);
+
+    //get the item values from item bank
+    let finalStimulusArray = assignItems(
+      Object.keys(urls['order']).length,
+      stimulusArray[i],
+      itemBank,
+      getItemFromBankFluency,
+      taskOrder[i],
+    );
+
+    //get the item values for practice items
+    for (var j = 0; j < practiceStimulusArray[i].length; j++) {
+      let current_item = {};
+      getItemFromBankFluency(current_item, practiceStimulusArray[i][j], taskOrder[i]);
+      practiceStimulusArray[i][j] = current_item;
+    }
+
+    let practiceKey = 'practice';
+    if (store.session.get('config').recruitment === 'responseModality') {
+      practiceKey = taskOrder[i] + '_' + practiceKey;
+    }
+
+    //set trial data to a struct, set name for later referencing (practice)
+    let corpus = {
+      stimulus: finalStimulusArray,
+      practice: { [practiceKey]: practiceStimulusArray[i] },
+    };
+    corpusAll.push(corpus);
+  }
   if (
     store.session.get('config').recruitment === 'responseModality' &&
     store.session.get('config').taskName === 'fluency-arf'
@@ -217,38 +250,6 @@ export const fetchAndParseCorpusFluency = async (task, assets) => {
     }
 
     assets.default.languageSpecific.device.push('instructions-sym-magpi.gif');
-  }
-  for (let i = 0; i < stimulusArray.length; i++) {
-    //generate the item indices
-    generateItemIdx(itemBank, stimulusArray[i], getIdxList);
-
-    //get the item values from item bank
-    let finalStimulusArray = assignItems(
-      Object.keys(urls['order']).length,
-      stimulusArray[i],
-      itemBank,
-      getItemFromBankFluency,
-      taskOrder[i],
-    );
-
-    //get the item values for practice items
-    for (var j = 0; j < practiceStimulusArray[i].length; j++) {
-      let current_item = {};
-      getItemFromBankFluency(current_item, practiceStimulusArray[i][j], taskOrder[i]);
-      practiceStimulusArray[i][j] = current_item;
-    }
-
-    let practiceKey = 'practice';
-    if (store.session.get('config').recruitment === 'responseModality') {
-      practiceKey = taskOrder[i] + '_' + practiceKey;
-    }
-
-    //set trial data to a struct, set name for later referencing (practice)
-    let corpus = {
-      stimulus: finalStimulusArray,
-      practice: { [practiceKey]: practiceStimulusArray[i] },
-    };
-    corpusAll.push(corpus);
   }
   //To maintain the corpus structure when run normally as 1 task
   /*if (corpusAll.length === 1) {
