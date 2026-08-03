@@ -92,12 +92,28 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
       const schools = payload?.schools ?? {};
       for (const school of Object.values(schools)) {
         const name = school?.name ?? 'Unknown school';
-        const count = Number(school?.count) || 0;
-        for (let i = 0; i < count; i++) {
-          rows.push({
-            user: { schoolName: name },
-            scores: { [scoreKey]: value },
-          });
+        const grades = school?.grades ?? {};
+
+        // If grade breakdown is available, expand by grade; otherwise use total count
+        if (Object.keys(grades).length > 0) {
+          for (const [gradeKey, countRaw] of Object.entries(grades)) {
+            const count = Number(countRaw) || 0;
+            for (let i = 0; i < count; i++) {
+              rows.push({
+                grade: String(gradeKey),
+                user: { schoolName: name },
+                scores: { [scoreKey]: value },
+              });
+            }
+          }
+        } else {
+          const count = Number(school?.count) || 0;
+          for (let i = 0; i < count; i++) {
+            rows.push({
+              user: { schoolName: name },
+              scores: { [scoreKey]: value },
+            });
+          }
         }
       }
     }
