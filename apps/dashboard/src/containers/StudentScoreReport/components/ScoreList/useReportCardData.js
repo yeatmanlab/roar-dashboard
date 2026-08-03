@@ -56,20 +56,14 @@ export function useReportCardData(params) {
   const getScoreToDisplay = (slug, grade) => {
     // Raw-only tasks only show raw scores when unnormed; normed versions show percentile/standard
     if (rawOnlyTasks.includes(slug)) {
-      const normedVersion = NORMED_TASK_VERSIONS[slug];
-      const isNormed = CORE_FOUNDATIONAL_TASKS.includes(slug)
-        ? taskScoringVersions[slug] == null || taskScoringVersions[slug] >= normedVersion
-        : normedVersion && taskScoringVersions[slug] != null && taskScoringVersions[slug] >= normedVersion;
-      if (!isNormed) return SCORE_TYPES.RAW_SCORE;
+      if (!isTaskNormed(slug)) return SCORE_TYPES.RAW_SCORE;
       // If normed, fall through to show percentile/standard instead
     }
     if (['phonics', 'letter-es', 'letter-en-ca'].includes(slug)) return SCORE_TYPES.PERCENTILE_SCORE;
-    if (
-      slug === 'letter' &&
-      (taskScoringVersions[slug] == null || taskScoringVersions[slug] < NORMED_TASK_VERSIONS[slug])
-    )
-      return SCORE_TYPES.PERCENTILE_SCORE;
-    return toValue(grade) >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
+    if (slug === 'letter' && !isTaskNormed(slug)) return SCORE_TYPES.PERCENTILE_SCORE;
+    // Only show standard score if the task is normed; unnormed tasks show percentile
+    if (toValue(grade) >= 6 && isTaskNormed(slug)) return SCORE_TYPES.STANDARD_SCORE;
+    return SCORE_TYPES.PERCENTILE_SCORE;
   };
 
   // Type + reliability tags, derived from backend flags (mirrors the service's createTaskTags).
@@ -97,18 +91,22 @@ export function useReportCardData(params) {
 
   const round = (value) => (value == null ? null : Math.round(value));
 
+  // Determine if a task should be treated as normed. Core foundational tasks (SWR, SRE, PA)
+  // default to normed when scoring version is undefined; other normed tasks require explicit version.
+  const isTaskNormed = (slug) => {
+    const normedVersion = NORMED_TASK_VERSIONS[slug];
+    if (!normedVersion) return false;
+    return CORE_FOUNDATIONAL_TASKS.includes(slug)
+      ? taskScoringVersions[slug] == null || taskScoringVersions[slug] >= normedVersion
+      : normedVersion && taskScoringVersions[slug] != null && taskScoringVersions[slug] >= normedVersion;
+  };
+
   const buildEntry = (task) => {
     const slug = task.taskSlug;
     const grade = gradeLevel;
     const dialColor = SUPPORT_LEVEL_DIAL_COLOR[task.supportLevel] ?? SCORE_SUPPORT_LEVEL_COLORS.ASSESSED;
     const rawRange = getRawScoreRange(slug);
-
-    // Core foundational tasks default to normed when scoring version is undefined
-    // Other normed tasks must be explicitly marked as normed
-    const normedVersion = NORMED_TASK_VERSIONS[slug];
-    const useNormedAssessment = CORE_FOUNDATIONAL_TASKS.includes(slug)
-      ? taskScoringVersions[slug] == null || taskScoringVersions[slug] >= normedVersion
-      : normedVersion && taskScoringVersions[slug] != null && taskScoringVersions[slug] >= normedVersion;
+    const useNormedAssessment = isTaskNormed(slug);
 
     const scoresForTask = {
       standardScore: {
