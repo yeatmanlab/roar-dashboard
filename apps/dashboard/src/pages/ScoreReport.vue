@@ -8,98 +8,79 @@
             <div class="text-sm font-light text-gray-600 uppercase">Loading Org Info</div>
           </div>
 
-          <div v-if="orgData && administrationData" id="at-a-glance-charts">
-            <ReportHeader
-              :org-type="props.orgType"
-              :org-name="_toUpper(orgData?.name)"
-              :administration-name="_toUpper(displayName)"
-              report-type="Score"
-              :report-view="reportView"
-              :report-views="reportViews"
-              @view-change="handleViewChange"
-            >
-              <template #export-buttons>
-                <div
-                  v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories"
-                  class="flex gap-2 mr-5 flex-column"
-                >
-                  <PvButton
-                    v-if="orgType !== 'district'"
-                    class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
-                    :icon="!csvExportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
-                    label="Export Combined Reports"
-                    @click="exportData({ includeProgress: true })"
-                  />
-                  <PvButton
-                    v-if="orgType !== 'district' || !isEmptyDistrictSupportCategories"
-                    class="flex flex-row p-2 mb-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
-                    :class="orgType === 'district' && !isEmptyDistrictSupportCategories ? 'mt-4' : ''"
-                    :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
-                    :disabled="exportLoading"
-                    label="Export To Pdf"
-                    data-html2canvas-ignore="true"
-                    @click="handleExportToPdf"
-                  />
-                </div>
-              </template>
-            </ReportHeader>
-            <div v-if="isLoadingAssignments || isLoadingDistrictSupportCategories" class="loading-wrapper">
-              <AppSpinner style="margin: 1rem 0rem" />
-              <div class="text-sm font-light text-gray-600 uppercase">Loading Overview Charts</div>
-            </div>
-            <div
-              v-if="
-                !isLoadingAssignments && !isLoadingDistrictSupportCategories && sortedAndFilteredTaskIds?.length > 0
-              "
-              class="py-3 mb-2 text-left"
-            >
-              <ScoreDistributionOverview
-                :task-ids="sortedAndFilteredTaskIds"
-                :runs-by-task-id="runsByTaskIdForDistributionChart"
-                :org-type="props.orgType"
-                :tasks-dictionary="tasksDictionary"
-              />
-              <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
+          <AtAGlanceCharts
+            v-if="orgData && administrationData"
+            id="at-a-glance-charts"
+            :org-type="props.orgType"
+            :org-name="_toUpper(orgData?.name)"
+            :administration-name="_toUpper(displayName)"
+            :report-view="reportView"
+            :report-views="reportViews"
+            :is-loading-assignments="isLoadingAssignments"
+            :is-loading-district-support-categories="isLoadingDistrictSupportCategories"
+            :is-empty-district-support-categories="isEmptyDistrictSupportCategories"
+            :sorted-and-filtered-task-ids="sortedAndFilteredTaskIds"
+            :runs-by-task-id-for-distribution-chart="runsByTaskIdForDistributionChart"
+            :tasks-dictionary="tasksDictionary"
+            :assigned-normed-task-ids="assignedNormedTaskIds"
+            :assigned-task-ids="assignedTaskIds"
+            @view-change="handleViewChange"
+          >
+            <template #export-buttons>
               <div
-                v-if="
-                  !isLoadingAssignments &&
-                  sortedAndFilteredTaskIds?.length > 0 &&
-                  !isEmptyDistrictSupportCategories &&
-                  props.orgType === 'district'
-                "
-                class="flex rounded flex-column align-items-center mt-3"
+                v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories"
+                class="flex gap-2 mr-5 flex-column"
               >
-                <p
-                  v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
-                  class="text-center text-sm font-bold px-4"
-                >
-                  In this district-level report, visualizations are available for foundational and comprehension
-                  assessments to give you clear, reliable insights on these skills.
-                </p>
-                <p class="text-center align-items-center text-sm font-bold px-4">
-                  View school-level or classroom-level reports to see student-level data and information about other
-                  assessments.
-                </p>
+                <PvButton
+                  v-if="orgType !== 'district'"
+                  class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
+                  :icon="!csvExportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
+                  label="Export Combined Reports"
+                  @click="exportData({ includeProgress: true })"
+                />
+                <PvButton
+                  v-if="orgType !== 'district' || !isEmptyDistrictSupportCategories"
+                  class="flex flex-row p-2 mb-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
+                  :class="orgType === 'district' && !isEmptyDistrictSupportCategories ? 'mt-4' : ''"
+                  :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
+                  :disabled="exportLoading"
+                  label="Export To Pdf"
+                  data-html2canvas-ignore="true"
+                  @click="handleExportToPdf"
+                />
               </div>
-            </div>
-            <div
-              v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories && isEmptyDistrictSupportCategories"
-              class="justify-content-center surface-100 p-2"
-            >
-              <p class="text-center text-sm font-bold px-4">
-                {{
-                  assignedNormedTaskIds.length === 0
-                    ? 'Visualizations are only available for foundational reading and comprehension assessments. If visualizations are not showing, your students were not assigned any of these assessments.'
-                    : 'Visualizations will appear once students complete our foundational or comprehension assessments.'
-                }}
-              </p>
-              <p class="text-center align-items-center text-sm font-bold px-4">
-                View school-level or classroom-level reports to see student-level data and information about other
-                assessments.
-              </p>
-            </div>
-          </div>
+            </template>
+          </AtAGlanceCharts>
         </section>
+
+        <!--
+          Off-screen twin of the at-a-glance charts, permanently rendered at the PDF capture
+          width. Chart.js bakes each canvas's pixel size into an inline style measured from its
+          real container, so a canvas sized for the live page overflows when html2canvas clones
+          the DOM into a differently-sized virtual window for export. Keeping a second copy that's
+          always laid out at PDF_CAPTURE_WINDOW_WIDTH means its charts are always correctly sized,
+          with no resize step (and no visible transition) needed at export time.
+        -->
+        <div aria-hidden="true" inert class="pdf-export-host" :style="{ width: `${PDF_CAPTURE_WINDOW_WIDTH}px` }">
+          <AtAGlanceCharts
+            v-if="orgData && administrationData"
+            id="at-a-glance-charts-export"
+            class="pdf-export-mode"
+            :org-type="props.orgType"
+            :org-name="_toUpper(orgData?.name)"
+            :administration-name="_toUpper(displayName)"
+            :report-view="reportView"
+            :report-views="reportViews"
+            :is-loading-assignments="isLoadingAssignments"
+            :is-loading-district-support-categories="isLoadingDistrictSupportCategories"
+            :is-empty-district-support-categories="isEmptyDistrictSupportCategories"
+            :sorted-and-filtered-task-ids="sortedAndFilteredTaskIds"
+            :runs-by-task-id-for-distribution-chart="runsByTaskIdForDistributionChart"
+            :tasks-dictionary="tasksDictionary"
+            :assigned-normed-task-ids="assignedNormedTaskIds"
+            :assigned-task-ids="assignedTaskIds"
+          />
+        </div>
 
         <!-- Loading data spinner -->
         <div v-if="isLoadingAssignments || isFetchingAssignments" class="my-4 loading-container">
@@ -359,7 +340,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, toValue, watch } from 'vue';
+import { computed, ref, onMounted, nextTick, toValue, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
@@ -382,7 +363,6 @@ import PvTabList from 'primevue/tablist';
 import PvTab from 'primevue/tab';
 import PvTabPanels from 'primevue/tabpanels';
 import PvProgressBar from 'primevue/progressbar';
-import ReportHeader from '@/components/ReportHeader.vue';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
@@ -409,6 +389,8 @@ import {
   excludeFromScoringTasks,
   includeReliabilityFlagsOnExport,
   addElementToPdf,
+  waitForElementRendered,
+  PDF_CAPTURE_WINDOW_WIDTH,
   getScoreValue,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
@@ -434,7 +416,7 @@ import _startCase from 'lodash/startCase';
 import AppDialog from '@/components/Dialog/Dialog.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { getStudentExternalId } from '@/helpers/getStudentExternalId';
-import ScoreDistributionOverview from '@/components/reports/ScoreDistributionOverview.vue';
+import AtAGlanceCharts from '@/components/reports/AtAGlanceCharts.vue';
 const { userCan, Permissions } = usePermissions();
 
 let TaskReport;
@@ -567,28 +549,36 @@ const handleExportToPdf = async () => {
   const doc = new jsPDF();
   let yCounter = 10; // yCounter tracks the y position in the PDF
 
-  // Add At a Glance Charts and report header to the PDF
-  const atAGlanceCharts = document.getElementById('at-a-glance-charts');
+  // Add At a Glance Charts and report header to the PDF. Captured from the permanently
+  // off-screen "-export" twin (see template) rather than the live, visible element, since that
+  // twin is always laid out at PDF_CAPTURE_WINDOW_WIDTH and its charts are always sized to match
+  // — nothing needs to be resized on the fly here.
+  const atAGlanceCharts = document.getElementById('at-a-glance-charts-export');
   if (atAGlanceCharts !== null) {
-    atAGlanceCharts.classList.add('pdf-export-mode');
+    await waitForElementRendered(atAGlanceCharts);
     yCounter = await addElementToPdf(atAGlanceCharts, doc, yCounter);
-    atAGlanceCharts.classList.remove('pdf-export-mode');
   }
 
   // Initialize to first tab
   activeTabIndex.value = 0;
 
-  for (const [i, taskId] of sortedTaskIds.value.entries()) {
+  for (const [i, taskId] of sortedAndFilteredSubscoreTaskIds.value.entries()) {
     activeTabIndex.value = i;
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await nextTick();
 
     // Add Task Description and Task Chart to document
+    console.log('looking for description element for ', taskId);
     const tabViewDesc = document.getElementById('tab-view-description-' + taskId);
+    console.log('found', tabViewDesc);
     const tabViewChart = document.getElementById('tab-view-chart-' + taskId);
+
+    // Wait for element to be rendered before capturing it for PDF export.
+    await waitForElementRendered(tabViewChart || tabViewDesc);
+
     const chartHeight =
       tabViewChart &&
-      (await html2canvas(document.getElementById('tab-view-chart-' + taskId)).then(
-        (canvas) => canvas.height * returnScaleFactor(canvas.width),
+      (await html2canvas(tabViewChart).then((canvas) =>
+        canvas.width ? canvas.height * returnScaleFactor(canvas.width) : 0,
       ));
 
     if (tabViewDesc !== null) {
@@ -2224,6 +2214,13 @@ onMounted(async () => {
 </script>
 
 <style lang="scss">
+.pdf-export-host {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  pointer-events: none;
+}
+
 .overview-wrapper {
   display: flex;
   flex-direction: column;
