@@ -740,67 +740,90 @@ describe('reports', () => {
   });
 
   describe('getRawScoreRange', () => {
-    it('should return correct range for swr', () => {
-      const result = getRawScoreRange('swr');
-      expect(result).toEqual({
-        min: 100,
-        max: 900,
+    describe('swr', () => {
+      it('returns the standard score range regardless of scoring version', () => {
+        expect(getRawScoreRange('swr')).toEqual({ min: 100, max: 900 });
+        expect(getRawScoreRange('swr', 7)).toEqual({ min: 100, max: 900 });
       });
     });
 
-    it('should return correct range for letter', () => {
-      const result = getRawScoreRange('letter');
-      expect(result).toEqual({
-        min: 0,
-        max: 90,
+    describe('swr-es', () => {
+      it('returns null when no scoring version is provided (unnormed)', () => {
+        expect(getRawScoreRange('swr-es')).toBeNull();
+      });
+
+      it('returns the standard score range once scoringVersion >= 1', () => {
+        expect(getRawScoreRange('swr-es', 1)).toEqual({ min: 100, max: 900 });
       });
     });
 
-    it('should return correct range for phonics', () => {
-      const result = getRawScoreRange('phonics');
-      expect(result).toEqual({
-        min: 0,
-        max: 150,
+    describe('letter', () => {
+      it('returns the legacy range when scoringVersion is below 1', () => {
+        expect(getRawScoreRange('letter')).toEqual({ min: 0, max: 90 });
+        expect(getRawScoreRange('letter', 0)).toEqual({ min: 0, max: 90 });
+      });
+
+      it('returns the updated range once scoringVersion >= 1', () => {
+        expect(getRawScoreRange('letter', 1)).toEqual({ min: 0, max: 100 });
       });
     });
 
-    describe('scoring version changes', () => {
-      it('should return updated range for letter with scoringVersion >= 1', () => {
-        const result = getRawScoreRange('letter', 1);
-        expect(result).toEqual({
-          min: 0,
-          max: 100,
-        });
-      });
-
-      it('should return legacy range for letter with scoringVersion < 1', () => {
-        const result = getRawScoreRange('letter', 0);
-        expect(result).toEqual({
-          min: 0,
-          max: 90,
-        });
-      });
-
-      it('should return updated range for pa with scoringVersion >= 4', () => {
-        const result = getRawScoreRange('pa', 5);
-        expect(result).toEqual({
-          min: 40,
-          max: 733,
-        });
-      });
-
-      it('should return updated range for sre with scoringVersion >= 5', () => {
-        const result = getRawScoreRange('sre', 5);
-        expect(result).toEqual({
-          min: 300,
-          max: 967,
-        });
+    describe('phonics', () => {
+      it('returns a fixed range regardless of scoring version', () => {
+        expect(getRawScoreRange('phonics')).toEqual({ min: 0, max: 150 });
+        expect(getRawScoreRange('phonics', 5)).toEqual({ min: 0, max: 150 });
       });
     });
 
-    it('should return null for unknown task', () => {
-      const result = getRawScoreRange('unknown');
-      expect(result).toBeNull();
+    describe('pa', () => {
+      it('returns the legacy range when scoringVersion is below 4', () => {
+        expect(getRawScoreRange('pa')).toEqual({ min: 0, max: 57 });
+        expect(getRawScoreRange('pa', 3)).toEqual({ min: 0, max: 57 });
+      });
+
+      it('returns the v5 range once scoringVersion >= 4', () => {
+        expect(getRawScoreRange('pa', 4)).toEqual({ min: 40, max: 733 });
+        expect(getRawScoreRange('pa', 5)).toEqual({ min: 40, max: 733 });
+      });
+    });
+
+    describe('sre', () => {
+      it('returns the legacy range when scoringVersion is below 5', () => {
+        expect(getRawScoreRange('sre')).toEqual({ min: 0, max: 130 });
+        expect(getRawScoreRange('sre', 4)).toEqual({ min: 0, max: 130 });
+      });
+
+      it('returns the updated range once scoringVersion >= 5', () => {
+        expect(getRawScoreRange('sre', 5)).toEqual({ min: 300, max: 967 });
+      });
+    });
+
+    describe('sre-es', () => {
+      it('returns null when no scoring version is provided (unnormed)', () => {
+        expect(getRawScoreRange('sre-es')).toBeNull();
+      });
+
+      it('returns a fixed range once scoringVersion >= 1', () => {
+        expect(getRawScoreRange('sre-es', 1)).toEqual({ min: 0, max: 140 });
+      });
+    });
+
+    describe.each([['morphology'], ['cva'], ['roar-inference'], ['trog']])('%s', (taskId) => {
+      it('returns a percent range when scoringVersion is below 1', () => {
+        expect(getRawScoreRange(taskId)).toEqual({ min: 0, max: 100 });
+        expect(getRawScoreRange(taskId, 0)).toEqual({ min: 0, max: 100 });
+      });
+
+      it('returns a standard score range once scoringVersion >= 1', () => {
+        expect(getRawScoreRange(taskId, 1)).toEqual({ min: 100, max: 900 });
+      });
+    });
+
+    describe('unrecognized task id', () => {
+      it('returns null regardless of scoring version', () => {
+        expect(getRawScoreRange('unknown')).toBeNull();
+        expect(getRawScoreRange('unknown', 5)).toBeNull();
+      });
     });
   });
 
