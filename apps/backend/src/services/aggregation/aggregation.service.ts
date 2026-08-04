@@ -282,9 +282,11 @@ function generateScoreRangeMap(min: number, max: number, divisor: number): Recor
 
   if (index > 0) {
     const lastRangeStr = rangeMap[index - 1];
-    const lastEnd = parseInt(lastRangeStr.split('-').pop() || lastRangeStr);
-    if (lastEnd < max) {
-      rangeMap[index] = `${max}`;
+    if (lastRangeStr !== undefined) {
+      const lastEnd = parseInt(lastRangeStr.split('-').pop() || lastRangeStr);
+      if (lastEnd < max) {
+        rangeMap[index] = `${max}`;
+      }
     }
   }
 
@@ -319,8 +321,12 @@ function getRawScoreRange(taskSlug: string, rawScore: number): string | null {
 
   return (
     Object.values(rangeMap).find((rangeStr) => {
-      const [min, max] = rangeStr.split('-').map(Number);
-      return rawScore >= min && rawScore <= (isNaN(max) ? min : max);
+      const parts = rangeStr.split('-').map(Number);
+      const min = parts[0];
+      const max = parts[1];
+      if (min === undefined) return false;
+      const upper = max !== undefined && !isNaN(max) ? max : min;
+      return rawScore >= min && rawScore <= upper;
     }) ?? null
   );
 }
