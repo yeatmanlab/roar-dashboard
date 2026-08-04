@@ -1697,9 +1697,9 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   // Define the static columns
   const staticColumns = [...CSV_EXPORT_STATIC_COLUMNS];
 
-  if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
-    staticColumns.push(...CSV_EXPORT_COMPOSITE_SCORE_COLUMNS);
-  }
+  // if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+  //   staticColumns.push(...CSV_EXPORT_COMPOSITE_SCORE_COLUMNS);
+  // }
 
   if (orgData.value?.clever === true) {
     staticColumns.push('State ID');
