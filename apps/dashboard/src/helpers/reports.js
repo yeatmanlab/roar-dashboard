@@ -1868,7 +1868,7 @@ export const taskInfoById = {
   cva: {
     header: '`ROAR - Written Vocabulary',
     color: '#52627E',
-    subheader: 'CVA Assessment',
+    subheader: 'Written Vocabulary',
     desc:
       'Written Vocabulary evaluates a student’s knowledge of academic vocabulary through their ability to identify words with similar ' +
       'meanings in context. Vocabulary knowledge is a critical component of reading comprehension, as students must understand the ' +
@@ -1884,7 +1884,7 @@ export const taskInfoById = {
   morphology: {
     header: 'ROAR - Morphology',
     color: '#52627E',
-    subheader: 'Morphology Assessment',
+    subheader: 'Morphology',
     desc:
       'Morphology measures a student’s ability to use morphological information, such as prefixes and suffixes, to signal the meaning ' +
       'and grammatical function of words in a sentence. Morphological awareness supports reading comprehension by helping students to ' +
