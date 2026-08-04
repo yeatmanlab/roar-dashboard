@@ -562,12 +562,14 @@ const handleExportToPdf = async () => {
   // Initialize to first tab
   activeTabIndex.value = 0;
 
-  for (const [i, taskId] of sortedTaskIds.value.entries()) {
+  for (const [i, taskId] of sortedAndFilteredSubscoreTaskIds.value.entries()) {
     activeTabIndex.value = i;
     await nextTick();
 
     // Add Task Description and Task Chart to document
+    console.log('looking for description element for ', taskId);
     const tabViewDesc = document.getElementById('tab-view-description-' + taskId);
+    console.log('found', tabViewDesc);
     const tabViewChart = document.getElementById('tab-view-chart-' + taskId);
 
     // Wait for element to be rendered before capturing it for PDF export.
