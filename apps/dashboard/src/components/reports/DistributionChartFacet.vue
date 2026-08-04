@@ -308,13 +308,13 @@ const distributionChartFacet = computed(() => {
         },
       },
       tooltip: [
-        {
-          field: `scores.${scoreMode.value.key}`,
-          title: `${scoreMode.value.name}`,
-          type: 'quantitative',
-          format: `.0f`,
-        },
-        props.facetMode.name === 'Grade' ? { field: 'grade', title: 'Student Grade' } : {},
+        // {
+        //   field: `scores.${scoreMode.value.key}`,
+        //   title: `${scoreMode.value.name}`,
+        //   type: 'quantitative',
+        //   format: `.0f`,
+        // },
+        // props.facetMode.name === 'Grade' ? { field: 'grade', title: 'Student Grade' } : {},
         { aggregate: 'count', title: 'Student Count' },
       ],
     },
