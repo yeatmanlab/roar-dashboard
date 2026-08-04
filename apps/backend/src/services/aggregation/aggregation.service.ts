@@ -275,7 +275,7 @@ function generateScoreRangeMap(min: number, max: number, divisor: number): Recor
   let index = 0;
 
   for (let start = min; start < max; start += divisor) {
-    const end = Math.min(start + divisor - 1, max);
+    const end = Math.min(start + divisor, max);
     rangeMap[index] = start === end ? `${start}` : `${start}-${end}`;
     index++;
   }
