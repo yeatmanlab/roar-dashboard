@@ -322,7 +322,8 @@ const grayChartOptions = computed(() => {
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
   align-items: center;
-  height: 2rem;
+  min-height: 2rem;
+  row-gap: 0.5rem;
 }
 
 .chart-section-header {
@@ -381,7 +382,11 @@ const grayChartOptions = computed(() => {
 
   .chart-row {
     grid-template-columns: 1fr;
-    row-gap: 0.25rem;
+    row-gap: 0.5rem;
+  }
+
+  .chart-label {
+    margin-top: 0;
   }
 
   .info-icon,

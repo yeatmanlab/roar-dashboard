@@ -92,12 +92,28 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
       const schools = payload?.schools ?? {};
       for (const school of Object.values(schools)) {
         const name = school?.name ?? 'Unknown school';
-        const count = Number(school?.count) || 0;
-        for (let i = 0; i < count; i++) {
-          rows.push({
-            user: { schoolName: name },
-            scores: { [scoreKey]: value },
-          });
+        const grades = school?.grades ?? {};
+
+        // If grade breakdown is available, expand by grade; otherwise use total count
+        if (Object.keys(grades).length > 0) {
+          for (const [gradeKey, countRaw] of Object.entries(grades)) {
+            const count = Number(countRaw) || 0;
+            for (let i = 0; i < count; i++) {
+              rows.push({
+                grade: String(gradeKey),
+                user: { schoolName: name },
+                scores: { [scoreKey]: value },
+              });
+            }
+          }
+        } else {
+          const count = Number(school?.count) || 0;
+          for (let i = 0; i < count; i++) {
+            rows.push({
+              user: { schoolName: name },
+              scores: { [scoreKey]: value },
+            });
+          }
         }
       }
     }
@@ -192,6 +208,11 @@ const computedRuns = computed(() => {
     } else {
       // fallback to flat shape: props.runs.percentile / props.runs.raw (no color by level)
       rows.push(...makeRunsFromBins({ binsObj: props?.runs?.[modeKey], facet, scoreKey }));
+    }
+
+    // Filter grades for percentile view (only grades < 6)
+    if (scoreMode.value.name === 'Percentile') {
+      return rows.filter((row) => Number(row.grade) < 6);
     }
 
     return rows;
@@ -292,16 +313,7 @@ const distributionChartFacet = computed(() => {
           format: '.0f',
         },
       },
-      tooltip: [
-        {
-          field: `scores.${scoreMode.value.key}`,
-          title: `${scoreMode.value.name}`,
-          type: 'quantitative',
-          format: `.0f`,
-        },
-        props.facetMode.name === 'Grade' ? { field: 'grade', title: 'Student Grade' } : {},
-        { aggregate: 'count', title: 'Student Count' },
-      ],
+      tooltip: [{ aggregate: 'count', title: 'Student Count' }],
     },
     resolve: {
       scale: {
