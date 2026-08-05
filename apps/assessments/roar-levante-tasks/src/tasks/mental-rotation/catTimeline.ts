@@ -12,7 +12,7 @@ import {
   filterMedia,
   prepareMultiBlockCat,
   checkFallbackCriteria,
-  isEnglish,
+  isLanguageAllowedDownex,
 } from '../shared/helpers';
 // trials
 import {
@@ -123,7 +123,7 @@ export default function buildMentalRotationCatTimeline(config: Record<string, an
   const polygonInstructBlock = {
     timeline: [polygonInstructions],
     conditional_function: () => {
-      return taskStore().currentCatBlock === 1 && isEnglish(taskStore().language);
+      return taskStore().currentCatBlock === 1 && isLanguageAllowedDownex(taskStore().language);
     },
   };
 
