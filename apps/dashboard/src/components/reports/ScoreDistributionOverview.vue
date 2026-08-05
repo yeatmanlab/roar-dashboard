@@ -33,10 +33,9 @@
         </div>
       </div>
 
-      <div v-if="compositeFoundational" class="chart-row">
+      <!-- <div v-if="compositeFoundational" class="chart-row">
         <div class="chart-label text-gray-600">
           <span class="whitespace-nowrap text-lg font-bold">Foundational Skills Composite</span>
-          <!-- <span class="text-sm font-light uppercase"> (Composite Score)</span> -->
         </div>
         <PvChart
           v-if="!isChartEmpty(compositeFoundational)"
@@ -57,7 +56,7 @@
           The Foundational Skills Composite reflects overall performance on foundational reading skills, including
           phonological awareness, letter knowledge, word reading, and sentence reading.
         </div>
-      </div>
+      </div> -->
     </div>
 
     <hr v-if="spanishFoundationalTaskIds.length > 0" class="divider" />
@@ -195,27 +194,27 @@ const comprehensionTaskIds = computed(() => {
   return props.taskIds.filter((id) => comprehension.includes(id));
 });
 
-const compositeFoundational = computed(() => {
-  const composite = props.runsByTaskId?.['compositeFoundational'];
-  if (!composite) return null;
+// const compositeFoundational = computed(() => {
+//   const composite = props.runsByTaskId?.['compositeFoundational'];
+//   if (!composite) return null;
 
-  if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
-    return {
-      below: composite.below?.total ?? 0,
-      some: composite.some?.total ?? 0,
-      above: composite.above?.total ?? 0,
-    };
-  }
+//   if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
+//     return {
+//       below: composite.below?.total ?? 0,
+//       some: composite.some?.total ?? 0,
+//       above: composite.above?.total ?? 0,
+//     };
+//   }
 
-  const counts = { below: 0, some: 0, above: 0 };
-  for (const run of composite) {
-    const supportLevel = run.scores?.support_level;
-    if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.below++;
-    else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.some++;
-    else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.above++;
-  }
-  return counts;
-});
+//   const counts = { below: 0, some: 0, above: 0 };
+//   for (const run of composite) {
+//     const supportLevel = run.scores?.support_level;
+//     if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.below++;
+//     else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.some++;
+//     else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.above++;
+//   }
+//   return counts;
+// });
 
 const supportLevelCountsByTaskId = computed(() => {
   const result = {};
@@ -268,13 +267,13 @@ const chartOptionsByTaskId = computed(() => {
   return result;
 });
 
-const compositeFoundationalChartData = computed(() =>
-  compositeFoundational.value ? setDistributionChartData(compositeFoundational.value) : null,
-);
+// const compositeFoundationalChartData = computed(() =>
+//   compositeFoundational.value ? setDistributionChartData(compositeFoundational.value) : null,
+// );
 
-const compositeFoundationalChartOptions = computed(() =>
-  compositeFoundational.value ? setDistributionChartOptions(compositeFoundational.value) : null,
-);
+// const compositeFoundationalChartOptions = computed(() =>
+//   compositeFoundational.value ? setDistributionChartOptions(compositeFoundational.value) : null,
+// );
 
 const grayChartData = computed(() => ({
   labels: [''],
@@ -323,7 +322,8 @@ const grayChartOptions = computed(() => {
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
   align-items: center;
-  height: 2rem;
+  min-height: 2rem;
+  row-gap: 0.5rem;
 }
 
 .chart-section-header {
@@ -382,7 +382,11 @@ const grayChartOptions = computed(() => {
 
   .chart-row {
     grid-template-columns: 1fr;
-    row-gap: 0.25rem;
+    row-gap: 0.5rem;
+  }
+
+  .chart-label {
+    margin-top: 0;
   }
 
   .info-icon,
