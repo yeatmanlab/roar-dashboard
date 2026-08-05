@@ -133,7 +133,8 @@ export default function buildMentalRotationCatTimeline(config: Record<string, an
 
   const instructionPracticeBlock = (blockNum: number) => {
     const trials = getPracticeInstructions(blockNum);
-    const practiceTransitionPrompt = blockNum === 1 ? 'mentalRotationInstruct5Downex' : 'generalYourTurn';
+    const practiceTransitionPrompt =
+      blockNum === 1 && taskStore().version === 2 ? 'mentalRotationInstruct5Downex' : 'generalYourTurn';
 
     return {
       timeline: [
