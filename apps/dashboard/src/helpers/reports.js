@@ -1551,8 +1551,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId === 'morphology') {
     if (scoringVersion >= 1) {
       return {
-        min: 280,
-        max: 720,
+        min: 100,
+        max: 900,
       };
     }
     // Percent
@@ -1563,8 +1563,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId === 'cva') {
     if (scoringVersion >= 1) {
       return {
-        min: 287,
-        max: 753,
+        min: 100,
+        max: 900,
       };
     }
     // Percent
@@ -1575,8 +1575,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId === 'roar-inference') {
     if (scoringVersion >= 1) {
       return {
-        min: 300,
-        max: 793,
+        min: 100,
+        max: 900,
       };
     }
     // Percent
@@ -1587,8 +1587,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId === 'trog') {
     if (scoringVersion >= 1) {
       return {
-        min: 53,
-        max: 800,
+        min: 100,
+        max: 900,
       };
     }
     // Percent
