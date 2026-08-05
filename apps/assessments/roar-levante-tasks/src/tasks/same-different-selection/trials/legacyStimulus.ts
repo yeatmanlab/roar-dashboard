@@ -249,10 +249,11 @@ export const legacyStimulus = (trial?: StimulusType) => {
       }
 
       if (stimulus.trialType === 'something-same-2' && taskStore().heavyInstructions) {
-        handleStaggeredButtons(pageStateHandler, buttonContainer, [
-          'same-different-selection-highlight-1',
-          'same-different-selection-highlight-2',
-        ]);
+        handleStaggeredButtons(
+          pageStateHandler,
+          Array.from(buttonContainer.children as HTMLCollectionOf<HTMLButtonElement>),
+          ['same-different-selection-highlight-1', 'same-different-selection-highlight-2'],
+        );
       }
 
       if (

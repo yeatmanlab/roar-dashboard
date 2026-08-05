@@ -194,6 +194,12 @@ button {
       border-color: $bg-accent_secondary;
       box-shadow: $button-default-box-shadow rgba($bg-accent_secondary, 0.5) inset;
     }
+
+    &.selected {
+      background: $bg-button-dark;
+      border-color: $bg-accent_dark;
+      box-shadow: $button-secondary-inner-shadow $bg-button-secondary inset;
+    }
   }
 
   &.slider {

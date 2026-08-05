@@ -243,7 +243,7 @@ function doOnLoad(
       audioKeys.push(audioKey);
     }
 
-    handleStaggeredButtons(pageStateHandler, buttonContainer, audioKeys);
+    handleStaggeredButtons(pageStateHandler, imgButtons, audioKeys);
   }
 
   const currentTrialIndex = jsPsych.getProgress().current_trial_global;

@@ -200,7 +200,7 @@ export const getCorpus = async (config: Record<string, any>, isDev: boolean) => 
 
   const bucketName = getBucketName(task, isDev, 'corpus');
 
-  let corpusUrl = `https://storage.googleapis.com/${bucketName}/${corpus}.csv?alt=media`;
+  let corpusUrl = `https://storage.googleapis.com/${bucketName}/${corpus}.csv?alt=media&v=3`;
 
   // Default corpuses are CAT and norm compatible (v1)
   if (task === 'roar-inference') {
