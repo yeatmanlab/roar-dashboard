@@ -52,7 +52,7 @@
 
         <div class="flex flex-row flex-wrap gap-2 pb-2" aria-label="Export Options">
           <PvButton
-            v-if="allowExport"
+            v-if="allowExportCSV"
             v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
             icon="pi pi-file-excel"
             label="Export All (CSV)"
@@ -62,7 +62,7 @@
           />
 
           <PvButton
-            v-if="allowExport"
+            v-if="allowExportCSV"
             v-tooltip.bottom="
               `Export scores for ${selectedRows.length} student${
                 selectedRows.length > 1 ? 's' : ''
@@ -78,7 +78,7 @@
           />
 
           <PvButton
-            v-if="allowExport"
+            v-if="allowExportPDF"
             v-tooltip.bottom="
               `Export PDF reports for ${selectedRows.length} selected student${selectedRows.length > 1 ? 's' : ''}`
             "
@@ -494,7 +494,7 @@ import { ORG_EXPORT_EVENTS } from '@/containers/OrgsList/constants/exportConstan
 /*
 Using the DataTable
 Required Props: columns, data
-Optional Props: allowExport (default: true), exportFilename (default: 'datatable-export')
+Optional Props: allowExportCSV (default: true), allowExportPDF (default: true), exportFilename (default: 'datatable-export')
 
 Columns:
 Array of objects consisting of a field and header at minimum.
@@ -527,7 +527,8 @@ const toggleView = () => {
 const props = defineProps({
   columns: { type: Array, required: true },
   data: { type: Array, required: true },
-  allowExport: { type: Boolean, default: true },
+  allowExportCSV: { type: Boolean, default: true },
+  allowExportPDF: { type: Boolean, default: true },
   exportFilename: { type: String, default: 'datatable-export' },
   pageLimit: { type: Number, default: 15 },
   totalRecords: { type: Number, required: false, default: 0 },

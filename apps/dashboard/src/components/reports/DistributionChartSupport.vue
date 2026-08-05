@@ -279,7 +279,7 @@ const distributionBySupport = computed(() => {
           labelExpr:
             props.facetMode.name === 'Grade'
               ? "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')"
-              : 'split(slice(datum.value, 2, datum.value.length), " ")',
+              : 'split(datum.value, " ")',
         },
       },
       yOffset: {
