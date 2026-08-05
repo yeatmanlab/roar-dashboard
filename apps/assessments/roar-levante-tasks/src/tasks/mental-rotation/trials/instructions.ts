@@ -6,159 +6,199 @@ import {
   PageStateHandler,
   PageAudioHandler,
   setupReplayAudio,
+  disableOkButton,
+  camelize,
+  pulseOkButton,
   enableOkButton,
   setupFullscreenButton,
 } from '../../shared/helpers';
 import { jsPsych } from '../../taskSetup';
 import { taskStore } from '../../../taskStore';
+import { animate } from '../helpers/animate';
 
 const replayButtonHtmlId = 'replay-btn-revisited';
 
-const audioConfig: AudioConfigType = {
-  restrictRepetition: {
-    enabled: true,
-    maxRepetitions: 2,
+const data = [
+  {
+    audio: ['mental-rotation-instruct1-part1-downex', 'mental-rotation-instruct1-part2-downex'],
+    choices: ['Rp-000-silh', 'Rn-000-silh'],
+    image: 'Rp-000-gray',
+    animations: [
+      {
+        item: 'stim-image',
+        animation: 'pulse',
+      },
+    ],
+    eventOrder: ['audio', 'animation', 'audio'],
   },
-  onEnded: enableOkButton,
-};
+  {
+    audio: ['mental-rotation-instruct2-downex', 'mental-rotation-instruct3-downex'],
+    choices: ['Rp-000-silh', 'Rn-000-silh'],
+    image: 'Rp-000-gray',
+    animations: [
+      {
+        item: 'distractor',
+        animation: 'pulse',
+      },
+      {
+        item: 'distractor',
+        animation: 'drag',
+      },
+    ],
+    eventOrder: ['audio', 'animation', 'animation', 'audio'],
+  },
+  {
+    audio: ['mental-rotation-instruct2-downex', 'mental-rotation-instruct4-downex'],
+    choices: ['Rp-000-silh', 'Rn-000-silh'],
+    image: 'Rp-000-gray',
+    animations: [
+      {
+        item: 'target',
+        animation: 'pulse',
+      },
+      {
+        item: 'target',
+        animation: 'drag',
+      },
+    ],
+    eventOrder: ['audio', 'animation', 'animation', 'audio'],
+  },
+];
 
-// Switch to HTMLMultiResponse when we have video with audio
-export const videoInstructionsFit = {
-  type: jsPsychHtmlMultiResponse,
-  data: () => {
-    return {
-      // save_trial: true,
-      assessment_stage: 'instructions',
-    };
-  },
-  stimulus: () => {
-    const videoSrc = mediaAssets.video.mentalRotationExampleFit;
+let startTime: number;
 
-    return `
-      <div class="lev-stimulus-container">
-        ${getParticipantUtilityButtonsHtml(replayButtonHtmlId)}
-        <video class="instruction-video" autoplay>
-          <source src=${videoSrc} type="video/mp4"/>
-          Video not loading: ${videoSrc}. Please continue the task.
-        </video>
-      </div>
-    `;
-  },
-  prompt_above_buttons: true,
-  button_choices: ['Continue'],
-  button_html: () => {
-    const t = taskStore().translations;
-    return `<button class="primary" disabled>${t.continueButtonText}</button>`;
-  },
-  keyboard_choices: 'NO_KEYS',
-  on_load: () => {
-    // const wrapper = document.getElementById('jspsych-audio-multi-response-prompt');
-    // wrapper.style.display = 'flex';
-    // wrapper.style.justifyContent = 'center';
-    PageAudioHandler.playAudio(mediaAssets.audio.mentalRotationTrainingInstruct3, audioConfig);
+export const instructions = data.map((data: any) => {
+  return {
+    type: jsPsychHtmlMultiResponse,
+    stimulus: () => {
+      const t = taskStore().translations;
+      const stimImage = mediaAssets.images[camelize(data.image)];
+      const itemText = data.audio.map((file: string) => t[camelize(file)]).join(' ');
 
-    const pageStateHandler = new PageStateHandler('mental-rotation-training-instruct3', true);
-    setupReplayAudio(pageStateHandler);
-    addExperimenterButtons();
-    setupFullscreenButton();
-  },
-  on_finish: () => {
-    PageAudioHandler.stopAndDisconnectNode();
+      return `<div class="lev-stimulus-container">
+                  ${getParticipantUtilityButtonsHtml(replayButtonHtmlId)}
+                  <div class="lev-row-container instruction-small">
+                      <p>${itemText}</p>
+                  </div>
 
-    jsPsych.data.addDataToLastTrial({
-      audioButtonPresses: PageAudioHandler.replayPresses,
-    });
-  },
-};
+                  <div id="stim-container" class="lev-stim-content"">
+                    <img
+                        id="stim-image"
+                        src=${stimImage}
+                        alt="Image not loading: ${data.image}. Please continue the task."
+                    />
+                  </div>
 
-export const videoInstructionsMisfit = {
-  type: jsPsychHtmlMultiResponse,
-  data: () => {
-    return {
-      assessment_stage: 'instructions',
-    };
-  },
-  stimulus: () => {
-    const videoSrc = mediaAssets.video.mentalRotationExampleMisfit;
+                  <div id="choices-container" class="lev-response-row multi-4" style="gap: 16px; margin-top: 16px">
+                    <button id="target" class="image-large no-pointer-events" disabled>
+                      <img src=${mediaAssets.images[camelize(data.choices[0])]} alt=${data.choices[0]} />
+                    </button>
+                    <button id="distractor" class="image-large no-pointer-events" disabled>
+                      <img src=${mediaAssets.images[camelize(data.choices[1])]} alt=${data.choices[1]} />
+                    </button>
+                  </div>
+              </div>`;
+    },
+    prompt_above_buttons: true,
+    button_choices: ['Next'],
+    button_html: () => {
+      const t = taskStore().translations;
+      return [`<button class="primary" disabled>${t.continueButtonText}</button>`];
+    },
+    keyboard_choices: () => 'NO_KEYS',
+    on_load: async () => {
+      startTime = performance.now();
 
-    return `
-      <div class="lev-stimulus-container">
-        ${getParticipantUtilityButtonsHtml(replayButtonHtmlId)}
-        <video class="instruction-video" autoplay>
-          <source src=${videoSrc} type="video/mp4"/>
-          Video not loading: ${videoSrc}. Please continue the task.
-        </video>
-      </div>
-    `;
-  },
-  prompt_above_buttons: true,
-  button_choices: ['Continue'],
-  button_html: () => {
-    const t = taskStore().translations;
-    return `<button class="primary" id="ok-button" disabled>${t.continueButtonText}</button>`;
-  },
-  keyboard_choices: 'NO_KEYS',
-  on_load: () => {
-    PageAudioHandler.playAudio(mediaAssets.audio.mentalRotationTrainingInstruct2, audioConfig);
+      addExperimenterButtons();
+      setupFullscreenButton();
 
-    const pageStateHandler = new PageStateHandler('mental-rotation-training-instruct2', true);
-    setupReplayAudio(pageStateHandler);
-    addExperimenterButtons();
-    setupFullscreenButton();
-  },
-  on_finish: () => {
-    PageAudioHandler.stopAndDisconnectNode();
+      const replayButton = document.getElementById(replayButtonHtmlId);
+      if (replayButton) {
+        replayButton.addEventListener('click', () => {
+          animateAndPlayAudio();
+        });
+      }
 
-    jsPsych.data.addDataToLastTrial({
-      audioButtonPresses: PageAudioHandler.replayPresses,
-    });
-  },
-};
+      function animateAndPlayAudio() {
+        // replay button and ok button should be disabled while animations are happening
+        if (replayButton) {
+          (replayButton as HTMLButtonElement).disabled = true;
+        }
 
-export const imageInstructions = {
-  type: jsPsychHtmlMultiResponse,
-  data: () => {
-    return {
-      assessment_stage: 'instructions',
-    };
-  },
-  stimulus: () => {
-    const imageSrc = mediaAssets.images.mentalRotationExample;
+        disableOkButton();
 
-    return `
-      <div class="lev-stimulus-container">
-        ${getParticipantUtilityButtonsHtml(replayButtonHtmlId)}
-        <img 
-          src=${imageSrc} 
-          class="instruction-video" 
-          alt="Image not loading: ${imageSrc}. Please continue the task."
-        />
-      </div>
-    `;
-  },
-  prompt_above_buttons: true,
-  button_choices: ['Continue'],
-  button_html: () => {
-    const t = taskStore().translations;
-    return `<button class="primary" disabled>${t.continueButtonText}</button>`;
-  },
-  keyboard_choices: 'NO_KEYS',
-  on_load: () => {
-    PageAudioHandler.playAudio(mediaAssets.audio.mentalRotationInstruct1, audioConfig);
+        // Preserve stim-container height before animation
+        const stimContainer = document.getElementById('stim-container');
+        const stimImage = document.getElementById('stim-image');
+        if (stimContainer && stimImage) {
+          const imageHeight = stimImage.offsetHeight;
+          stimContainer.style.minHeight = `${imageHeight}px`;
+        }
 
-    const pageStateHandler = new PageStateHandler('mental-rotation-instruct1', true);
-    setupReplayAudio(pageStateHandler);
-    addExperimenterButtons();
-    setupFullscreenButton();
-  },
-  on_finish: () => {
-    PageAudioHandler.stopAndDisconnectNode();
+        // create copies of the trial data to avoid mutating the original data
+        const trialAudio = [...data.audio];
+        const trialAnimations = [...data.animations];
+        const trialEventOrder = [...data.eventOrder];
 
-    jsPsych.data.addDataToLastTrial({
-      audioButtonPresses: PageAudioHandler.replayPresses,
-    });
-  },
-};
+        // reset stim image to its original position
+        if (stimImage) {
+          stimImage.style.position = '';
+          stimImage.style.left = '';
+          stimImage.style.top = '';
+          stimImage.style.zIndex = '';
+        }
+
+        // reset target source
+        const target: HTMLImageElement | null = document.getElementById('target')?.children[0] as HTMLImageElement;
+        if (target) {
+          target.src = mediaAssets.images[camelize(data.choices[0])];
+        }
+
+        const audioConfig: AudioConfigType = {
+          restrictRepetition: {
+            enabled: false,
+            maxRepetitions: 2,
+          },
+          onEnded: () => {
+            triggerNextEvent();
+          },
+        };
+
+        function triggerNextEvent() {
+          if (trialEventOrder.length === 0) {
+            enableOkButton();
+            pulseOkButton(3000, taskStore().totalTrialCount);
+            if (replayButton) {
+              (replayButton as HTMLButtonElement).disabled = false;
+            }
+            return;
+          }
+
+          const event = trialEventOrder.shift();
+          if (event === 'audio') {
+            PageAudioHandler.playAudio(mediaAssets.audio[camelize(trialAudio.shift())], audioConfig);
+          } else if (event === 'animation') {
+            const animationObject = trialAnimations.shift();
+            animate(animationObject.animation, animationObject.item);
+            setTimeout(triggerNextEvent, 2000);
+          }
+        }
+
+        triggerNextEvent();
+      }
+
+      animateAndPlayAudio();
+    },
+    on_finish: () => {
+      PageAudioHandler.stopAndDisconnectNode();
+
+      jsPsych.data.addDataToLastTrial({
+        audioButtonPresses: PageAudioHandler.replayPresses,
+        assessment_stage: 'instructions',
+      });
+    },
+  };
+});
 
 export const threeDimInstructions = {
   type: jsPsychHtmlMultiResponse,
@@ -169,7 +209,7 @@ export const threeDimInstructions = {
   },
   stimulus: () => {
     const t = taskStore().translations;
-    const prompt = taskStore().heavyInstructions ? t.mentalRotationInstruct3DDownex : t.mentalRotationInstruct3D;
+    const prompt = t.mentalRotationInstruct3D;
 
     return `
       <div class="lev-stimulus-container">
@@ -191,55 +231,17 @@ export const threeDimInstructions = {
   trial_ends_after_audio: false,
   response_allowed_while_playing: false,
   on_load: () => {
-    const prompt = taskStore().heavyInstructions ? 'mentalRotationInstruct3DDownex' : 'mentalRotationInstruct3D';
+    const prompt = 'mentalRotationInstruct3D';
 
-    PageAudioHandler.playAudio(mediaAssets.audio[prompt], audioConfig);
-    const pageStateHandler = new PageStateHandler(prompt, true);
-    setupReplayAudio(pageStateHandler);
-    addExperimenterButtons();
-    setupFullscreenButton();
-  },
-  on_finish: () => {
-    PageAudioHandler.stopAndDisconnectNode();
-
-    jsPsych.data.addDataToLastTrial({
-      audioButtonPresses: PageAudioHandler.replayPresses,
-    });
-  },
-};
-
-export const polygonInstructions = {
-  type: jsPsychHtmlMultiResponse,
-  data: () => {
-    return {
-      assessment_stage: 'instructions',
+    const audioConfig: AudioConfigType = {
+      restrictRepetition: {
+        enabled: false,
+        maxRepetitions: 2,
+      },
+      onEnded: () => {
+        enableOkButton();
+      },
     };
-  },
-  stimulus: () => {
-    const t = taskStore().translations;
-    const prompt = t.mentalRotationInstructPolygonDownex;
-
-    return `
-      <div class="lev-stimulus-container">
-        ${getParticipantUtilityButtonsHtml(replayButtonHtmlId)}
-        <div class="lev-row-container instruction">
-          <p>${prompt}</p>
-        </div>
-      </div>
-    `;
-  },
-  prompt_above_buttons: true,
-  button_choices: ['Continue'],
-  post_trial_gap: 350,
-  button_html: () => {
-    const t = taskStore().translations;
-    return `<button class="primary" disabled>${t.continueButtonText}</button>`;
-  },
-  keyboard_choices: 'NO_KEYS',
-  trial_ends_after_audio: false,
-  response_allowed_while_playing: false,
-  on_load: () => {
-    const prompt = 'mentalRotationInstructPolygonDownex';
 
     PageAudioHandler.playAudio(mediaAssets.audio[prompt], audioConfig);
     const pageStateHandler = new PageStateHandler(prompt, true);
