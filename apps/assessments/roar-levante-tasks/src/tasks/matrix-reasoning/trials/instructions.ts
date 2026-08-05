@@ -427,14 +427,20 @@ export const downexInstructions3 = {
       targetButton = buttons[targetImageIdx];
     }
 
-    function onCorrect() {
+    function onCorrect(onFeedbackEnded: () => void) {
       PageAudioHandler.stopAndDisconnectNode();
       cycleId++;
 
-      PageAudioHandler.playAudio(mediaAssets.audio.feedbackRightOne);
+      PageAudioHandler.playAudio(mediaAssets.audio.feedbackRightOne, {
+        restrictRepetition: {
+          enabled: false,
+          maxRepetitions: 2,
+        },
+        onEnded: onFeedbackEnded,
+      });
     }
 
-    function onIncorrect() {
+    function onIncorrect(onFeedbackEnded: () => void) {
       PageAudioHandler.stopAndDisconnectNode();
       cycleId++;
 
@@ -444,7 +450,13 @@ export const downexInstructions3 = {
         targetButton.style.animation = 'pulse 2s 0s 2';
       }
 
-      PageAudioHandler.playAudio(mediaAssets.audio.matrixReasoningFeedbackIncorrectDownex);
+      PageAudioHandler.playAudio(mediaAssets.audio.matrixReasoningFeedbackIncorrectDownex, {
+        restrictRepetition: {
+          enabled: false,
+          maxRepetitions: 2,
+        },
+        onEnded: onFeedbackEnded,
+      });
     }
 
     addPracticeButtonListeners(downexData3.choices[1], isTouchScreen, downexData3.choices, onCorrect, onIncorrect);
@@ -594,14 +606,20 @@ export const downexInstructions4 = {
       targetButton = buttons[targetImageIdx];
     }
 
-    function onCorrect() {
+    function onCorrect(onFeedbackEnded: () => void) {
       PageAudioHandler.stopAndDisconnectNode();
       cycleId++;
 
-      PageAudioHandler.playAudio(mediaAssets.audio.feedbackRightOne);
+      PageAudioHandler.playAudio(mediaAssets.audio.feedbackRightOne, {
+        restrictRepetition: {
+          enabled: false,
+          maxRepetitions: 2,
+        },
+        onEnded: onFeedbackEnded,
+      });
     }
 
-    function onIncorrect() {
+    function onIncorrect(onFeedbackEnded: () => void) {
       PageAudioHandler.stopAndDisconnectNode();
       cycleId++;
 
@@ -611,7 +629,13 @@ export const downexInstructions4 = {
         targetButton.style.animation = 'pulse 2s 0s 2';
       }
 
-      PageAudioHandler.playAudio(mediaAssets.audio.matrixReasoningFeedbackSmBlueDownex);
+      PageAudioHandler.playAudio(mediaAssets.audio.matrixReasoningFeedbackSmBlueDownex, {
+        restrictRepetition: {
+          enabled: false,
+          maxRepetitions: 2,
+        },
+        onEnded: onFeedbackEnded,
+      });
     }
 
     addPracticeButtonListeners(downexData4.choices[2], isTouchScreen, downexData4.choices, onCorrect, onIncorrect);
