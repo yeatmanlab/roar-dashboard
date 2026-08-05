@@ -14,9 +14,10 @@ import {
   updateTheta,
   enableOkButton,
   disableOkButton,
+  wrapListeners,
 } from '../../shared/helpers';
 import { finishExperiment } from '../../shared/trials';
-import { isTouchScreen, jsPsych } from '../../taskSetup';
+import { jsPsych } from '../../taskSetup';
 import { taskStore } from '../../../taskStore';
 import { handleStaggeredButtons } from '../../shared/helpers/staggerButtons';
 import { displayDebugInfo } from '../../shared/helpers/displayDebugInfo';
@@ -24,6 +25,7 @@ import { displayDebugInfo } from '../../shared/helpers/displayDebugInfo';
 const replayButtonHtmlId = 'replay-btn-revisited';
 let incorrectPracticeResponses: string[] = [];
 let startTime: number;
+let isFeedbackPlaying = false;
 
 export const generateImageChoices = (choices: string[]) => {
   return choices.map((choice) => {
@@ -43,6 +45,12 @@ export function handleButtonFeedback(
   responsevalue: number,
   correctAudio: string,
 ) {
+  if (isFeedbackPlaying) {
+    return;
+  }
+
+  isFeedbackPlaying = true;
+
   const choice = btn?.parentElement?.id || '';
   const answer = taskStore().correctResponseIdx.toString();
 
@@ -54,12 +62,11 @@ export function handleButtonFeedback(
   } else {
     btn.classList.add('error-shadow');
     feedbackAudio = mediaAssets.audio.feedbackTryAgain;
-    // renable buttons
-    setTimeout(() => enableBtns(cards), 500);
     incorrectPracticeResponses.push(choice);
   }
 
   function finishTrial() {
+    isFeedbackPlaying = false;
     jsPsych.finishTrial({
       response: choice,
       incorrectPracticeResponses,
@@ -81,8 +88,16 @@ export function handleButtonFeedback(
       enabled: false,
       maxRepetitions: 2,
     },
+    onEnded: () => {
+      isFeedbackPlaying = false;
+      enableBtns(cards);
+    },
   };
 
+  // Clear onended before stop so an interrupted clip cannot unlock early
+  if (PageAudioHandler.audioSource) {
+    PageAudioHandler.audioSource.onended = null;
+  }
   PageAudioHandler.stopAndDisconnectNode(); // disconnect first to avoid overlap
   isCorrectChoice
     ? PageAudioHandler.playAudio(feedbackAudio, correctAudioConfig)
@@ -261,14 +276,13 @@ export const legacyStimulus = (trial?: StimulusType) => {
         (assessmentStage === 'practice_response' && trialType !== 'something-same-1')
       ) {
         // cards should give feedback during test dimensions block
+        isFeedbackPlaying = false;
         const practiceBtns = Array.from(buttonContainer.children)
           .map((btnDiv) => btnDiv.firstChild)
           .filter((btn) => !!btn) as HTMLButtonElement[];
 
         practiceBtns.forEach((card, i) => {
-          const eventType = isTouchScreen ? 'touchend' : 'click';
-
-          card.addEventListener(eventType, (e) => {
+          wrapListeners(card, () => {
             handleButtonFeedback(card, practiceBtns, false, i, 'feedbackGoodJob');
           });
         });
@@ -347,7 +361,11 @@ export const legacyStimulus = (trial?: StimulusType) => {
           shouldTerminateCat();
           const allSequentialTrials = taskStore().sequentialTrials;
           const nextTrials = allSequentialTrials.filter((trial: StimulusType) => {
-            return trial.trialNumber === stim.trialNumber && trial.trialType === stim.trialType;
+            const equivalentTrialType =
+              stim.trialType === trial.trialType ||
+              (stim.trialType.includes('something-same') && trial.trialType.includes('something-same'));
+
+            return trial.trialNumber === stim.trialNumber && equivalentTrialType;
           });
 
           selectNextSequentialTrial(nextTrials);
