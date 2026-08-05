@@ -426,7 +426,9 @@ export const afcMatch = (trial?: StimulusType) => {
           return trial.trialNumber === stim.trialNumber && trial.trialType === stim.trialType;
         });
 
-        selectNextSequentialTrial(nextTrials);
+        if (stim.assessmentStage !== 'practice_response') {
+          selectNextSequentialTrial(nextTrials);
+        }
       }
     },
   };
