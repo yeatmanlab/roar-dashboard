@@ -1938,7 +1938,7 @@ export const taskInfoById = {
   'roar-inference': {
     header: 'ROAR - Inference',
     color: '#52627E',
-    subheader: 'Inference Assessment',
+    subheader: 'Inference',
     desc:
       'Inference evaluates a student’s ability to make meaning beyond information that is explicitly stated in a text. The ability to ' +
       'make inferences is an important component of reading comprehension, as readers must integrate statements in a passage with their ' +
@@ -1955,7 +1955,7 @@ export const taskInfoById = {
   trog: {
     header: 'ROAR - Picture Syntax',
     color: '#52627E',
-    subheader: 'Picture Syntax Assessment',
+    subheader: 'Picture Syntax',
     desc:
       'Picture Syntax evaluates a student’s understanding of English sentence structure and how grammatical relationships contribute to meaning. ' +
       'Syntactic knowledge supports reading comprehension by helping students interpret how word order, phrases, and clauses work together ' +
