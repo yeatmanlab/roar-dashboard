@@ -169,8 +169,8 @@ export const legacyStimulus = (trial?: StimulusType) => {
     prompt_above_buttons: true,
     button_choices: () => {
       const stim = trial || taskStore().nextStimulus;
-      if (stim.trialType === 'instructions' || stim.trialType == 'something-same-1') {
-        return ['OK'];
+      if (stim.trialType === 'instructions' || stim.trialType === 'something-same-1') {
+        return [taskStore().translations.continueButtonText];
       } else {
         const randomize = stim.answer ? 'yes' : 'no';
         // Randomize choices if there is an answer

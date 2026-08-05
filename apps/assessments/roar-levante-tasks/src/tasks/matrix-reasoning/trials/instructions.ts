@@ -92,7 +92,7 @@ export const instructions = instructionData.map((data) => {
 const downexData1 = {
   audio: [
     'matrix-reasoning-instruct1-part1-downex',
-    'matrix-reasoning-instruct1-part2-downex',
+    'matrix-reasoning-prompt1-part2-downex',
     'matrix-reasoning-instruct1-part3-downex',
     'matrix-reasoning-instruct1-part4-downex',
   ],

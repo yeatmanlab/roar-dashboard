@@ -210,7 +210,7 @@ export const stimulus = (trial?: StimulusType) => {
         const { choices } = prepareChoices(stim.answer, stim.distractors, randomize);
         return generateImageChoices(choices);
       } else {
-        return ['OK'];
+        return [taskStore().translations.continueButtonText];
       }
     },
     button_html: () => {

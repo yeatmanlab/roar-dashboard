@@ -164,6 +164,10 @@ function getButtonChoices(layoutConfigMap: Record<string, LayoutConfigType>, tri
   const { response } = itemLayoutConfig;
   const target = response.target;
   if (itemLayoutConfig) {
+    if (stimulus.assessmentStage === 'instructions') {
+      return [taskStore().translations.continueButtonText];
+    }
+
     const {
       isImageButtonResponse,
       response: { displayValues: buttonChoices },

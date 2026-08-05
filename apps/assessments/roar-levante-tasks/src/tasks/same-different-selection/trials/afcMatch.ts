@@ -155,7 +155,7 @@ export const afcMatch = (trial?: StimulusType) => {
     button_choices: () => {
       const stim = trial || taskStore().nextStimulus;
       if (stim.assessmentStage === 'instructions') {
-        return ['OK'];
+        return [taskStore().translations.continueButtonText];
       } else {
         const randomize = stim.answser ? 'yes' : 'no';
         // Randomize choices if there is an answer
@@ -231,7 +231,7 @@ export const afcMatch = (trial?: StimulusType) => {
           // Add primary OK button under the other buttons
           const okButton = document.createElement('button');
           okButton.className = 'primary';
-          okButton.textContent = 'OK';
+          okButton.textContent = taskStore().translations.continueButtonText;
           okButton.style.marginTop = '16px';
           okButton.disabled = true;
           okButton.addEventListener('click', () => {

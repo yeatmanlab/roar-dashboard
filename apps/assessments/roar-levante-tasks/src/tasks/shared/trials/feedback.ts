@@ -29,7 +29,7 @@ export const feedback = (
               if (inCorrectFeedbackAudioKey.toUpperCase().includes('BACKWARD')) {
                 promptOnIncorrect = t.memoryGameBackwardPrompt;
               } else {
-                promptOnIncorrect = t.memoryGameForwardPrompt;
+                promptOnIncorrect = t.memoryGameInput;
               }
               break;
             case 'egma-math':
