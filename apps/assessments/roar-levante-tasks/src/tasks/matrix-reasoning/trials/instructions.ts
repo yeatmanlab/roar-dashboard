@@ -671,6 +671,9 @@ export const downexInstructions4 = {
     }
 
     animateAndPlayAudio();
+
+    // reset incorrect counter so that task doesn't end prematurely in later trials
+    taskStore('numIncorrect', 0);
   },
   response_ends_trial: false,
   on_finish: () => {
