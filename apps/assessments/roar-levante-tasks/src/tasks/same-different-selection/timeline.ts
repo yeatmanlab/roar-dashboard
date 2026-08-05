@@ -67,7 +67,7 @@ export default function buildSameDifferentTimeline(config: Record<string, any>, 
   };
 
   const feedbackBlock = {
-    timeline: [feedback(true, 'feedbackCorrect', 'feedbackNotQuiteRight')],
+    timeline: [feedback(true)],
     conditional_function: () => {
       return (
         taskStore().nextStimulus.assessmentStage === 'practice_response' &&

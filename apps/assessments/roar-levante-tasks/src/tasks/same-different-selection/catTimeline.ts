@@ -81,7 +81,7 @@ export default function buildSameDifferentTimelineCat(config: Record<string, any
   };
 
   const feedbackBlock = {
-    timeline: [feedback(true, 'feedbackCorrect', 'feedbackNotQuiteRight')],
+    timeline: [feedback(true)],
     conditional_function: () => {
       return taskStore().version === 2;
     },
