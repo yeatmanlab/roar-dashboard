@@ -819,7 +819,7 @@ export function getGradeWithSuffix(grade) {
  * @returns {string} The CSS color variable to use for the dial.
  */
 export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
-  if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
+  if ((taskId === 'letter' && !scoringVersion) || taskId === 'letter-en-ca' || taskId === 'phonics') {
     return '#3b82f6'; // blue-500
   }
 
