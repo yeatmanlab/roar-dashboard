@@ -185,7 +185,7 @@ export const threeDimInstructions = {
   post_trial_gap: 350,
   button_html: () => {
     const t = taskStore().translations;
-    return `<button class="primary">${t.continueButtonText}</button>`;
+    return `<button class="primary" disabled>${t.continueButtonText}</button>`;
   },
   keyboard_choices: 'NO_KEYS',
   trial_ends_after_audio: false,
@@ -193,7 +193,7 @@ export const threeDimInstructions = {
   on_load: () => {
     const prompt = taskStore().heavyInstructions ? 'mentalRotationInstruct3DDownex' : 'mentalRotationInstruct3D';
 
-    PageAudioHandler.playAudio(mediaAssets.audio[prompt]);
+    PageAudioHandler.playAudio(mediaAssets.audio[prompt], audioConfig);
     const pageStateHandler = new PageStateHandler(prompt, true);
     setupReplayAudio(pageStateHandler);
     addExperimenterButtons();
@@ -233,7 +233,7 @@ export const polygonInstructions = {
   post_trial_gap: 350,
   button_html: () => {
     const t = taskStore().translations;
-    return `<button class="primary">${t.continueButtonText}</button>`;
+    return `<button class="primary" disabled>${t.continueButtonText}</button>`;
   },
   keyboard_choices: 'NO_KEYS',
   trial_ends_after_audio: false,
@@ -241,7 +241,7 @@ export const polygonInstructions = {
   on_load: () => {
     const prompt = 'mentalRotationInstructPolygonDownex';
 
-    PageAudioHandler.playAudio(mediaAssets.audio[prompt]);
+    PageAudioHandler.playAudio(mediaAssets.audio[prompt], audioConfig);
     const pageStateHandler = new PageStateHandler(prompt, true);
     setupReplayAudio(pageStateHandler);
     addExperimenterButtons();

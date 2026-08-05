@@ -398,15 +398,18 @@ button {
     padding: 0;
     box-sizing: border-box;
     border-color: $border-grey;
+    aspect-ratio: 1 / 1;
 
     img {
       border: none;
       width: $response-size-m;
-      height: $response-size-m;
+      height: auto;
       padding: 0;
       margin: 0;
       border-radius: $button-default-border-radius-small;
       float: left;
+      object-fit: contain;
+      aspect-ratio: 1 / 1;
     }
 
     @include respond-to('small') {

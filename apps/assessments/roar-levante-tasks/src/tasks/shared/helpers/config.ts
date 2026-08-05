@@ -48,7 +48,7 @@ export const DEFAULT_LAYOUT_CONFIG: LayoutConfigType = {
   inCorrectTrialConfig: {
     onIncorrectTrial: 'end',
   },
-  disableOkButton: false,
+  disableOkButton: true,
 };
 
 // Default corpus per task (camelCase task name). Used when variantParams.corpus is absent.

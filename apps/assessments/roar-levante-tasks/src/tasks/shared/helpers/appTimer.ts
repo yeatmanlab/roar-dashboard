@@ -25,6 +25,8 @@ export const TASK_MAX_TIME: TaskMaxTimeConfig = {
 
 // buffer in milliseconds after presentation of stimulus to allow some time to answer
 const RESPONSE_BUFFER = 2000;
+// more than this amount of time must be left to show instructions
+const INSTRUCTIONS_BUFFER = 10000;
 
 export function getActiveTaskElapsedMs(): number {
   const startTime = taskStore().startTime;
@@ -61,7 +63,11 @@ export const startAppTimer = (maxTimeInMinutes: number) => {
 // function for ending the task if the next trial
 export async function checkEndTaskEarly(timeRemaining: number, stimAudio: string) {
   const pageStateHandler = new PageStateHandler(stimAudio, false);
-  const minTrialDuration = (await pageStateHandler.getStimulusDurationMs()) + RESPONSE_BUFFER;
+  let minTrialDuration = (await pageStateHandler.getStimulusDurationMs()) + RESPONSE_BUFFER;
+
+  if (taskStore().nextStimulus.assessmentStage === 'instructions') {
+    minTrialDuration += INSTRUCTIONS_BUFFER;
+  }
 
   if (timeRemaining < minTrialDuration) {
     clearTimeout(taskStore().taskTimer);

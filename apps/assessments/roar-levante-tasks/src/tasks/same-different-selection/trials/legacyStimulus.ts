@@ -12,6 +12,8 @@ import {
   addExperimenterButtons,
   setupFullscreenButton,
   updateTheta,
+  enableOkButton,
+  disableOkButton,
 } from '../../shared/helpers';
 import { finishExperiment } from '../../shared/trials';
 import { isTouchScreen, jsPsych } from '../../taskSetup';
@@ -180,7 +182,8 @@ export const legacyStimulus = (trial?: StimulusType) => {
       const stim = trial || taskStore().nextStimulus;
       const buttonClass =
         stim.trialType === 'instructions' || stim.trialType === 'something-same-1' ? 'primary' : 'image-medium';
-      return `<button class="${buttonClass}">%choice%</button>`;
+      const disabled = stim.trialType === 'instructions' ? ' disabled' : '';
+      return `<button class="${buttonClass}"${disabled}>%choice%</button>`;
     },
     response_ends_trial: () => {
       const stim = trial || taskStore().nextStimulus;
@@ -201,7 +204,27 @@ export const legacyStimulus = (trial?: StimulusType) => {
         audioFile += '-heavy';
       }
 
-      PageAudioHandler.playAudio(mediaAssets.audio[camelize(audioFile)]);
+      const audioConfig: AudioConfigType =
+        stimulus.trialType === 'instructions'
+          ? {
+              restrictRepetition: {
+                enabled: false,
+                maxRepetitions: 2,
+              },
+              onEnded: enableOkButton,
+            }
+          : {
+              restrictRepetition: {
+                enabled: false,
+                maxRepetitions: 2,
+              },
+            };
+
+      PageAudioHandler.playAudio(mediaAssets.audio[camelize(audioFile)], audioConfig);
+
+      if (stimulus.trialType === 'instructions') {
+        disableOkButton();
+      }
 
       const pageStateHandler = new PageStateHandler(audioFile, true);
       setupReplayAudio(pageStateHandler);

@@ -164,7 +164,8 @@ export const afcMatch = (trial?: StimulusType) => {
     button_html: () => {
       const stim = trial || taskStore().nextStimulus;
       const buttonClass = stim.assessmentStage === 'instructions' ? 'primary' : 'image-medium';
-      return `<button class="${buttonClass}">%choice%</button>`;
+      const disabled = stim.assessmentStage === 'instructions' ? ' disabled' : '';
+      return `<button class="${buttonClass}"${disabled}>%choice%</button>`;
     },
     on_load: () => {
       // create img elements and arrange in grid as cards
@@ -180,6 +181,7 @@ export const afcMatch = (trial?: StimulusType) => {
           enabled: false,
           maxRepetitions: 2,
         },
+        ...(stim.assessmentStage === 'instructions' ? { onEnded: enableOkButton } : {}),
       };
       PageAudioHandler.playAudio(mediaAssets.audio[camelize(audioFile)], audioConfig);
 
@@ -194,6 +196,10 @@ export const afcMatch = (trial?: StimulusType) => {
         .filter((btn) => !!btn);
 
       let numberOfErrors = 0;
+
+      if (stim.assessmentStage === 'instructions') {
+        disableOkButton();
+      }
 
       if (stim.trialType !== 'instructions') {
         if (taskStore().version === 2) {

@@ -10,6 +10,7 @@ import {
   camelize,
   addPracticeButtonListeners,
   disableOkButton,
+  enableOkButton,
   displaceAnimation,
   enableAllButtons,
   popAnimation,
@@ -55,14 +56,22 @@ export const instructions = instructionData.map((data) => {
     button_html: () => {
       const t = taskStore().translations;
       return [
-        `<button class="primary">
+        `<button class="primary" disabled>
                 ${t[data.buttonText]}
             </button>`,
       ];
     },
     keyboard_choices: () => 'NO_KEYS',
     on_load: () => {
-      PageAudioHandler.playAudio(mediaAssets.audio[data.prompt]);
+      const audioConfig: AudioConfigType = {
+        restrictRepetition: {
+          enabled: true,
+          maxRepetitions: 2,
+        },
+        onEnded: enableOkButton,
+      };
+
+      PageAudioHandler.playAudio(mediaAssets.audio[data.prompt], audioConfig);
 
       const pageStateHandler = new PageStateHandler(data.prompt, true);
       setupReplayAudio(pageStateHandler);
