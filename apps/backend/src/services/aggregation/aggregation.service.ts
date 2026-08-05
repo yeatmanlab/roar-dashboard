@@ -294,9 +294,11 @@ function generateScoreRangeMap(min: number, max: number, divisor: number): Recor
 }
 
 const SWR_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
+const SWR_ES_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
 const PA_RANGE_MAP = generateScoreRangeMap(40, 733, 50);
 const LETTER_RANGE_MAP = generateScoreRangeMap(0, 100, 10);
 const SRE_RANGE_MAP = generateScoreRangeMap(300, 967, 50);
+const SRE_ES_RANGE_MAP = generateScoreRangeMap(0, 140, 10);
 const CVA_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
 const TROG_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
 const ROAR_INFERENCE_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
@@ -306,9 +308,11 @@ const COMPOSITE_FOUNDATIONAL_RANGE_MAP = generateScoreRangeMap(-100, 967, 100);
 function getRawScoreRange(taskSlug: string, rawScore: number): string | null {
   const scoreRangeMaps: Record<string, Record<number, string>> = {
     swr: SWR_RANGE_MAP,
+    'swr-es': SWR_ES_RANGE_MAP,
     pa: PA_RANGE_MAP,
     letter: LETTER_RANGE_MAP,
     sre: SRE_RANGE_MAP,
+    'sre-es': SRE_ES_RANGE_MAP,
     cva: CVA_RANGE_MAP,
     trog: TROG_RANGE_MAP,
     'roar-inference': ROAR_INFERENCE_RANGE_MAP,
