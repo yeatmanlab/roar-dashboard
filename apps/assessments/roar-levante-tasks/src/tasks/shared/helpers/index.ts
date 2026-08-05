@@ -60,3 +60,4 @@ export { pulseOkButton } from './pulseOkButton';
 export { isLanguageAllowedDownex } from './checkLocale';
 export { addExperimenterButtons } from './addUtilityButtons';
 export { setupFullscreenButton } from './addUtilityButtons';
+export { wrapListeners } from './wrapListeners';

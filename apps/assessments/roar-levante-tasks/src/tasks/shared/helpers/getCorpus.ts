@@ -78,7 +78,7 @@ const transformCSV = (csvInput: ParsedRowType[], sequentialStimulus: boolean, ta
 
   csvInput.forEach((row) => {
     // Leaving this here for quick testing of a certain type of trial
-    // if (!row.trial_type.includes('Number Line')) return;
+    //if (!row.trial_type.includes('-match')) return;
 
     if (row.block_threshold && !blockThresholds.includes(row.block_threshold)) {
       blockThresholds.push(row.block_threshold);

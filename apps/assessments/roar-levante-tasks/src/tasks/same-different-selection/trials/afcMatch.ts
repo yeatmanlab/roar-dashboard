@@ -10,11 +10,13 @@ import {
   camelize,
   enableOkButton,
   disableOkButton,
+  isTaskFinished,
   shouldTerminateCat,
   selectNextSequentialTrial,
   addExperimenterButtons,
   setupFullscreenButton,
   updateTheta,
+  wrapListeners,
 } from '../../shared/helpers';
 import { finishExperiment } from '../../shared/trials';
 import { taskStore } from '../../../taskStore';
@@ -303,8 +305,10 @@ export const afcMatch = (trial?: StimulusType) => {
           // linear button layout
           buttonContainer.classList.add('lev-response-row', 'multi-4');
         }
-        responseBtns.forEach((card, i) =>
-          card.addEventListener('click', async (e) => {
+
+        let firstClick = true; // only need to reenable buttons on first click
+        responseBtns.forEach((card, i) => {
+          const handleCardSelect = async () => {
             const answer = ((card as HTMLButtonElement)?.firstChild as HTMLImageElement)?.alt;
 
             if (!card) {
@@ -335,9 +339,14 @@ export const afcMatch = (trial?: StimulusType) => {
               }
             }
 
-            setTimeout(() => enableBtns(responseBtns), 500);
-          }),
-        );
+            if (firstClick) {
+              await isTaskFinished(() => card.disabled, 10).then(() => enableBtns(responseBtns));
+              firstClick = false;
+            }
+          };
+
+          wrapListeners(card, handleCardSelect);
+        });
       }
 
       displayDebugInfo(stim);
