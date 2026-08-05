@@ -304,10 +304,10 @@ describe('ScoreReportService', () => {
       expect(result[1].tags).toHaveLength(2);
     });
 
-    it('should handle grade >= 6 with standard score display', () => {
+    it('should handle grade >= 6 with standard score display for normed tasks', () => {
       const taskData = [
         {
-          taskId: 'mock-task-1',
+          taskId: 'pa',
           optional: false,
           reliable: true,
           scores: {
