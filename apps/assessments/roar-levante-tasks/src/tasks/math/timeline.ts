@@ -209,7 +209,7 @@ export default function buildMathTimeline(config: Record<string, any>, mediaAsse
 
   if (runCat) {
     // puts the CAT portion of the corpus into taskStore and removes instructions
-    const allCorpusParts = prepareCorpus(corpus, true, downexCorpus);
+    const allCorpusParts = prepareCorpus(corpus, 3, downexCorpus, false, -3);
     const olderKidInstructionPractice: StimulusType[] = allCorpusParts.ipLight;
     const olderKidInstructions: StimulusType[] = olderKidInstructionPractice.filter(
       (trial: StimulusType) => trial.trialType == 'instructions',

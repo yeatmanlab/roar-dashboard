@@ -27,7 +27,7 @@ export default function buildSameDifferentTimelineCat(config: Record<string, any
   const heavy: boolean = taskStore().heavyInstructions;
 
   const corpus: StimulusType[] = taskStore().corpora.stimulus;
-  const preparedCorpus = prepareCorpus(corpus, false, undefined, true);
+  const preparedCorpus = prepareCorpus(corpus, 0, undefined, true);
 
   const catCorpus = setupSds(taskStore().corpora.stimulus);
   const allBlocks = prepareMultiBlockCat(catCorpus);
