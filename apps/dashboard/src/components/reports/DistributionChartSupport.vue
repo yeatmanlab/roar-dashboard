@@ -65,8 +65,11 @@ const districtGradeSupportBreakdown = computed(() => {
     ['below', 'some', 'above'].forEach((level) => {
       const grades = props?.runs?.[level]?.grades ?? {};
       Object.entries(grades).forEach(([grade, count]) => {
-        // Trim grades of leading zeros
-        const trimmedGrade = grade.replace(/^0+(?=\D|\d)/, '');
+        // Trim grades of leading zeros and normalize kindergarten
+        let trimmedGrade = grade.replace(/^0+(?=\D|\d)/, '');
+        if (['K', 'kg', 'Kindergarten'].includes(trimmedGrade)) {
+          trimmedGrade = 'Kindergarten';
+        }
         if (!gradeMap.has(trimmedGrade)) {
           gradeMap.set(trimmedGrade, { category: trimmedGrade, support_levels: [0, 0, 0], totalStudents: 0 });
         }
@@ -83,8 +86,11 @@ const districtGradeSupportBreakdown = computed(() => {
   const gradeCounts = [];
   for (const run of props.runs) {
     const rawGrade = run?.user?.grade;
-    // Trim grades of leading zeros
-    const trimmedGrade = rawGrade.replace(/^0+(?=\D|\d)/, '');
+    // Trim grades of leading zeros and normalize kindergarten
+    let trimmedGrade = rawGrade.replace(/^0+(?=\D|\d)/, '');
+    if (['K', 'kg', 'Kindergarten'].includes(trimmedGrade)) {
+      trimmedGrade = 'Kindergarten';
+    }
     let gradeCounter = gradeCounts.find((g) => g.category === trimmedGrade);
     if (!gradeCounter) {
       gradeCounter = { category: trimmedGrade, support_levels: [0, 0, 0], totalStudents: 0 };
@@ -239,33 +245,7 @@ const distributionBySupport = computed(() => {
         spacing: 1,
         sort:
           props.facetMode.name === 'Grade'
-            ? [
-                'Kindergarten',
-                1,
-                '1',
-                2,
-                '2',
-                3,
-                '3',
-                4,
-                '4',
-                5,
-                '5',
-                6,
-                '6',
-                7,
-                '7',
-                8,
-                '8',
-                9,
-                '9',
-                10,
-                '10',
-                11,
-                '11',
-                12,
-                '12',
-              ]
+            ? ['Kindergarten', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
             : 'ascending',
         axis: {
           labelBaseline: 'line-bottom',

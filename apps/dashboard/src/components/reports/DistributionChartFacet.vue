@@ -77,13 +77,22 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
     const value = Number.isFinite(a) && Number.isFinite(b) ? (a + b) / 2 : NaN;
     if (!Number.isFinite(value)) continue;
 
+    const normalizeGrade = (gradeStr) => {
+      let grade = String(gradeStr).replace(/^0+(?=\D|\d)/, '');
+      if (['K', 'kg', 'Kindergarten'].includes(grade)) {
+        return 'Kindergarten';
+      }
+      return grade;
+    };
+
     if (facet === 'grade') {
       const grades = payload?.grades ?? {};
       for (const [gradeKey, countRaw] of Object.entries(grades)) {
         const count = Number(countRaw) || 0;
+        const normalizedGrade = normalizeGrade(gradeKey);
         for (let i = 0; i < count; i++) {
           rows.push({
-            grade: String(gradeKey),
+            grade: normalizedGrade,
             scores: { [scoreKey]: value },
           });
         }
@@ -98,9 +107,10 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
         if (Object.keys(grades).length > 0) {
           for (const [gradeKey, countRaw] of Object.entries(grades)) {
             const count = Number(countRaw) || 0;
+            const normalizedGrade = normalizeGrade(gradeKey);
             for (let i = 0; i < count; i++) {
               rows.push({
-                grade: String(gradeKey),
+                grade: normalizedGrade,
                 user: { schoolName: name },
                 scores: { [scoreKey]: value },
               });
@@ -212,7 +222,10 @@ const computedRuns = computed(() => {
 
     // Filter grades for percentile view (only grades < 6)
     if (scoreMode.value.name === 'Percentile') {
-      return rows.filter((row) => Number(row.grade) < 6);
+      return rows.filter((row) => {
+        const gradeNum = row.grade === 'Kindergarten' ? 0 : Number(row.grade);
+        return gradeNum < 6;
+      });
     }
 
     return rows;
@@ -220,7 +233,10 @@ const computedRuns = computed(() => {
 
   // non-district (original)
   if (scoreMode.value.name === 'Percentile' && props.facetMode.name === 'Grade') {
-    return props.runs.filter((run) => Number(run.grade) < 6);
+    return props.runs.filter((run) => {
+      const gradeNum = run.grade === 'Kindergarten' ? 0 : Number(run.grade);
+      return gradeNum < 6;
+    });
   }
   return props.runs;
 });
@@ -238,21 +254,13 @@ const distributionChartFacet = computed(() => {
     data: {
       values: computedRuns.value,
     },
-    transform: isGradeFacet.value
-      ? [
-          {
-            calculate: "datum.grade === '0' || datum.grade === 'Kindergarten' ? 0 : toNumber(datum.grade)",
-            as: 'gradeNumeric',
-          },
-        ]
-      : [],
     mark: 'bar',
     height: 50,
     width: 360,
     encoding: {
       row: {
-        field: isGradeFacet.value ? 'gradeNumeric' : `user.${props.facetMode.key}`,
-        type: isGradeFacet.value ? 'quantitative' : 'ordinal',
+        field: isGradeFacet.value ? 'grade' : `user.${props.facetMode.key}`,
+        type: 'ordinal',
         title: '',
         header: {
           titleColor: 'navy',
@@ -269,13 +277,15 @@ const distributionChartFacet = computed(() => {
           labelBaseline: 'line-bottom',
           labelPadding: 0,
           labelExpr: isGradeFacet.value
-            ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')"
+            ? "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')"
             : 'split(test(/^[0-9K] /, datum.value) ? slice(datum.value, 2, datum.value.length) : datum.value, " ")',
           labelLimit: 150,
-          labelSeparation: 0, // Set the spacing between lines in pixels
+          labelSeparation: 0,
         },
         spacing: 18,
-        sort: 'ascending',
+        sort: isGradeFacet.value
+          ? ['Kindergarten', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+          : 'ascending',
       },
       color: {
         value: SCORE_SUPPORT_LEVEL_COLORS['ASSESSED'],
