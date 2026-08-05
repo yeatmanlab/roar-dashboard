@@ -23,7 +23,7 @@
     background-color: gainsboro;
   }
 
-  @include respond-to('very-large') {
+  @include respond-to('large-lower-bound') {
     width: 40vh;
     height: 10vh;
     font-size: 1.2rem;
@@ -46,7 +46,7 @@
     text-align: left;
   }
 
-  @include respond-to('huge') {
+  @include respond-to('very-large-lower-bound') {
     font-size: xx-large;
     margin-left: 15%;
     margin-right: 15%;
@@ -63,7 +63,7 @@
   padding: 12px;
   font-weight: bold;
 
-  @include respond-to('huge') {
+  @include respond-to('very-large-lower-bound') {
     font-size: xx-large;
   }
 }

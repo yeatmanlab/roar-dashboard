@@ -149,14 +149,12 @@ button {
     padding: $button-primary-padding;
     border-color: $bg-accent_secondary;
     box-shadow: $button-default-box-shadow rgba($bg-accent_secondary, 0.5) inset;
-    font-size: $font-size-xs;
+    font-size: $font-size-xs-em;
     font-weight: $font-weight-dark;
     color: $txt-white;
 
     @include respond-to('small') {
-      font-size: $font-size-xxs;
       font-weight: $font-weight-normal;
-      color: $txt-white;
       padding: $button-primary-padding-small;
       border-radius: $button-default-border-radius-small;
     }
