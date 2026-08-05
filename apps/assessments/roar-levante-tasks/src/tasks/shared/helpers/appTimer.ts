@@ -65,7 +65,7 @@ export async function checkEndTaskEarly(timeRemaining: number, stimAudio: string
   const pageStateHandler = new PageStateHandler(stimAudio, false);
   let minTrialDuration = (await pageStateHandler.getStimulusDurationMs()) + RESPONSE_BUFFER;
 
-  if (taskStore().nextStimulus.assessmentStage === 'instructions') {
+  if (taskStore().nextStimulus?.assessmentStage === 'instructions') {
     minTrialDuration += INSTRUCTIONS_BUFFER;
   }
 
