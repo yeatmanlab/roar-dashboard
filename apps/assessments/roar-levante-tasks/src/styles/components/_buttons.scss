@@ -525,4 +525,15 @@ button {
   &:hover {
     cursor: default;
   }
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background: $bg-green_base;
+      border-color: $border-green_dark;
+      box-shadow:
+        $button-secondary-box-shadow $border-green_dark inset,
+        $button-secondary-inner-shadow $bg-green-gradient inset;
+      cursor: default;
+    }
+  }
 }
