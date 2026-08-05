@@ -3,6 +3,7 @@ import { getRegisteredSlugs, getScoringConfig } from './scoring.config-registry'
 import { ScoringConfigSchema } from './scoring.config-schema';
 
 import swrConfig from './configs/swr';
+import swrEsConfig from './configs/swr-es';
 import sreConfig from './configs/sre';
 import sreEsConfig from './configs/sre-es';
 import paConfig from './configs/pa';
@@ -18,6 +19,7 @@ import levanteProvisionalConfig from './configs/levante-provisional';
 
 const ALL_RAW_CONFIGS = [
   { name: 'swr', config: swrConfig },
+  { name: 'swr-es', config: swrEsConfig },
   { name: 'sre', config: sreConfig },
   { name: 'sre-es', config: sreEsConfig },
   { name: 'pa', config: paConfig },
@@ -144,10 +146,6 @@ describe('scoring config validation', () => {
 
     it('letter-en-ca shares config with letter', () => {
       expect(getScoringConfig('letter-en-ca')).toBe(getScoringConfig('letter'));
-    });
-
-    it('swr-es shares config with swr', () => {
-      expect(getScoringConfig('swr-es')).toBe(getScoringConfig('swr'));
     });
 
     it('morphology uses percentile-then-rawscore', () => {

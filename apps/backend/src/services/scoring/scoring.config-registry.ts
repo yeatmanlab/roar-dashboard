@@ -2,6 +2,7 @@ import type { ScoringConfig } from './scoring.config-schema';
 import { ScoringConfigSchema } from './scoring.config-schema';
 
 import swrConfig from './configs/swr';
+import swrEsConfig from './configs/swr-es';
 import swrItConfig from './configs/swr-it';
 import swrPtConfig from './configs/swr-pt';
 import swrDeConfig from './configs/swr-de';
@@ -20,6 +21,7 @@ import levanteProvisionalConfig from './configs/levante-provisional';
 
 const RAW_CONFIGS = [
   swrConfig,
+  swrEsConfig,
   swrItConfig,
   swrPtConfig,
   swrDeConfig,
