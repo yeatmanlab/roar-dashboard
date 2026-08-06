@@ -115,6 +115,10 @@ const props = defineProps({
     type: String,
     default: 'idle',
   },
+  resolveOrgId: {
+    type: Function,
+    default: null,
+  },
 });
 const tableColumns = ref([]);
 const editingRows = ref([]);
@@ -142,6 +146,7 @@ watch(
     console.log('watch students', props.students);
     if (_isEmpty(props.students)) return;
     tableColumns.value = generateColumns(props.students[0]);
+    // Fire-and-forget: no need for await because ref is updated immediately and no downstream dependencies
     validateAllStudents();
   },
   { immediate: true, deep: true },
@@ -173,12 +178,12 @@ function findMappedColumn(column) {
 }
 
 // Handle row edit save
-function onCellEditSave(event) {
+async function onCellEditSave(event) {
   let { data, newValue, field } = event;
 
   data[field] = typeof newValue === 'string' ? newValue.trim() : newValue;
 
-  validateStudent(data);
+  await validateStudent(data);
 }
 
 function deleteStudent(data) {
@@ -221,17 +226,15 @@ watch(
 );
 
 // Function to validate all students
-function validateAllStudents() {
+async function validateAllStudents() {
   if (_isEmpty(props.students)) return;
-  props.students.forEach((student) => {
-    validateStudent(student);
-  });
+  await Promise.all(props.students.map((student) => validateStudent(student)));
 }
 
 // Function to validate a single student
-function validateStudent(student) {
+async function validateStudent(student) {
   try {
-    const result = validityCheck(student);
+    const result = await validityCheck(student);
     validationResults.value[student['rowKey']] = result;
     return result;
   } catch (error) {
@@ -245,7 +248,7 @@ function validateStudent(student) {
 }
 
 // Validate a given row
-function validityCheck(row) {
+async function validityCheck(row) {
   const errors = [];
   // check that required fields are filled out
   if (props.usingEmail) {
@@ -274,6 +277,23 @@ function validityCheck(row) {
   if (!props.usingOrgPicker) {
     if (!(_get(row, 'districts') && _get(row, 'schools')) && !_get(row, 'groups')) {
       errors.push('District, School, or Group is required');
+    }
+
+    if (props.resolveOrgId) {
+      if (_get(row, 'districts') && _get(row, 'schools')) {
+        const districtId = await props.resolveOrgId(_get(row, 'districts'));
+        const schoolId = await props.resolveOrgId(_get(row, 'schools'));
+        if (!districtId || !schoolId) {
+          errors.push('District and School must be valid');
+        }
+      }
+
+      if (_get(row, 'groups')) {
+        const groupId = await props.resolveOrgId(_get(row, 'groups'));
+        if (!groupId) {
+          errors.push('Group must be valid');
+        }
+      }
     }
   }
   return { valid: _isEmpty(errors), errors };
