@@ -30,10 +30,18 @@
 
         <RoarDataTable
           v-if="users"
+          allow-global-filter
           :columns="columns"
           :data="users"
           :loading="isLoading || isFetching"
-          @sort="onSort($event)"
+          :global-filter-fields="[
+            'username',
+            'email',
+            'name.first',
+            'name.last',
+            'studentData.state_id',
+            'studentData.grade',
+          ]"
           @edit-button="onEditButtonClick($event)"
           @export-all="exportAllUsers"
           @export-selected="exportSelectedUsers"
@@ -143,7 +151,6 @@ import { required, sameAs, minLength } from '@vuelidate/validators';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvPassword from 'primevue/password';
-import _isEmpty from 'lodash/isEmpty';
 import _kebabCase from 'lodash/kebabCase';
 import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
@@ -325,14 +332,6 @@ const updateUserData = async () => {
 const closeModal = () => {
   isModalEnabled.value = false;
   localUserData.value = null;
-};
-
-const onSort = (event) => {
-  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
-    field: { fieldPath: item.field },
-    direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
-  }));
-  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : null;
 };
 
 const transformedUsersForExport = (targetUsers) =>

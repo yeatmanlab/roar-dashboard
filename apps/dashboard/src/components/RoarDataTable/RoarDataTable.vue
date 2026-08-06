@@ -9,6 +9,13 @@
         <div class="flex flex-row flex-wrap gap-2 pb-2" aria-label="Filter Options">
           <slot name="filterbar"></slot>
 
+          <div v-if="allowGlobalFilter" class="pb-2">
+            <PvFloatLabel>
+              <PvInputText id="data-table__global-filter" v-model="globalFilterQuery" />
+              <label for="data-table__global-filter">Search</label>
+            </PvFloatLabel>
+          </div>
+
           <PvFloatLabel>
             <PvMultiSelect
               id="data-table__select-columns"
@@ -114,6 +121,7 @@
             :multi-sort-meta="lazyPreSorting"
             show-gridlines
             filter-display="menu"
+            :global-filter-fields="globalFilterFields"
             paginator
             :rows="pageLimit"
             :always-show-paginator="true"
@@ -464,7 +472,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
 import PvDatePicker from 'primevue/datepicker';
@@ -519,6 +527,7 @@ Array of objects consisting of a field and header at minimum.
 */
 const rowViewMode = ref('Expand View');
 const countForVisualize = ref(false); //for starting compress
+const globalFilterQuery = ref(null);
 const toggleView = () => {
   compressedRows.value = !compressedRows.value;
   increasePadding();
@@ -530,6 +539,8 @@ const props = defineProps({
   allowExportCSV: { type: Boolean, default: true },
   allowExportPdf: { type: Boolean, default: true },
   exportFilename: { type: String, default: 'datatable-export' },
+  allowGlobalFilter: { type: Boolean, default: false },
+  globalFilterFields: { type: Array, required: false, default: () => [] },
   pageLimit: { type: Number, default: 15 },
   totalRecords: { type: Number, required: false, default: 0 },
   loading: { type: Boolean, default: false },
@@ -542,6 +553,10 @@ const props = defineProps({
   groupheaders: { type: Boolean, default: false },
   testId: { type: String, default: 'roar-data-table' },
   taskScoringVersions: { type: Object, required: false, default: () => ({}) },
+});
+
+watch(globalFilterQuery, (val) => {
+  refFilters.value.global.value = val;
 });
 
 const inputColumns = ref(props.columns);
@@ -701,6 +716,11 @@ const computedFilters = computed(() => {
       };
     }
   });
+
+  if (props.allowGlobalFilter) {
+    filters['global'] = { value: null, matchMode: FilterMatchMode.CONTAINS };
+  }
+
   return { computedOptions: options, computedFilters: filters };
 });
 
@@ -709,6 +729,7 @@ const refFilters = ref(computedFilters.value.computedFilters);
 
 const resetFilters = () => {
   refFilters.value = computedFilters.value.computedFilters;
+  globalFilterQuery.value = null;
   // emit('reset-filters');
 };
 
