@@ -32,7 +32,7 @@
           v-if="users"
           allow-global-filter
           :columns="columns"
-          :data="users"
+          :data="tableData"
           :loading="isLoading || isFetching"
           :global-filter-fields="[
             'username',
@@ -195,6 +195,17 @@ const {
 } = useOrgUsersQuery(props.orgType, props.orgId, page, orderBy, {
   enabled: initialized,
 });
+
+const tableData = computed(() =>
+  (users.value ?? []).map((user) => ({
+    ...user,
+    studentData: {
+      ...user.studentData,
+      // Normalize so sort works properly
+      grade: user.studentData?.grade != null ? String(user.studentData.grade) : user.studentData?.grade,
+    },
+  })),
+);
 
 const columns = ref([
   {
