@@ -652,6 +652,7 @@ function increasePadding() {
 }
 
 // Generate filters and options objects
+// @TODO: Seems like PrimeVue Column dataType can only be text, numeric, date, or boolean. Verify and clean up unused fields.
 const dataTypesToFilterMatchMode = {
   NUMERIC: FilterMatchMode.EQUALS,
   NUMBER: FilterMatchMode.EQUALS,
