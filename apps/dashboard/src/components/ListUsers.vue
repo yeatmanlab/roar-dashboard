@@ -193,7 +193,7 @@ const columns = ref([
   {
     field: 'username',
     header: 'Username',
-    dataType: 'string',
+    dataType: 'text',
     sort: true,
     filter: true,
   },
