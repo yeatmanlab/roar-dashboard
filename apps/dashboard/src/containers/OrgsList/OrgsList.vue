@@ -72,7 +72,6 @@
             :data="tableData"
             sortable
             :loading="isLoading || isFetching"
-            :allow-filtering="false"
             @export-all="exportAll"
             @show-activation-code="showCode"
             @export-org-users="(orgId) => exportOrgUsers(orgId)"

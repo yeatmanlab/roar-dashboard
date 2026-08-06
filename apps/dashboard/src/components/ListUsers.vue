@@ -34,7 +34,6 @@
           :data="users"
           :loading="isLoading || isFetching"
           :allow-export="false"
-          :allow-filtering="false"
           @sort="onSort($event)"
           @edit-button="onEditButtonClick($event)"
         />
