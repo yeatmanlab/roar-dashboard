@@ -33,7 +33,7 @@
             :loading="isLoadingAssignments || isFetchingAssignments"
             :task-scoring-versions="getScoringVersions"
             :page-limit="pageLimit"
-            :allow-export-p-d-f="false"
+            :allow-export-pdf="false"
             :reset-filters="resetFilters"
             :lazy-pre-sorting="orderBy"
             @export-selected="exportSelected"

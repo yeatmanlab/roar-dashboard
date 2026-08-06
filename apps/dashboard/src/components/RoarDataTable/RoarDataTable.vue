@@ -78,7 +78,7 @@
           />
 
           <PvButton
-            v-if="allowExportPDF"
+            v-if="allowExportPdf"
             v-tooltip.bottom="
               `Export PDF reports for ${selectedRows.length} selected student${selectedRows.length > 1 ? 's' : ''}`
             "
@@ -494,7 +494,7 @@ import { ORG_EXPORT_EVENTS } from '@/containers/OrgsList/constants/exportConstan
 /*
 Using the DataTable
 Required Props: columns, data
-Optional Props: allowExportCSV (default: true), allowExportPDF (default: true), exportFilename (default: 'datatable-export')
+Optional Props: allowExportCSV (default: true), allowExportPdf (default: true), exportFilename (default: 'datatable-export')
 
 Columns:
 Array of objects consisting of a field and header at minimum.
@@ -528,7 +528,7 @@ const props = defineProps({
   columns: { type: Array, required: true },
   data: { type: Array, required: true },
   allowExportCSV: { type: Boolean, default: true },
-  allowExportPDF: { type: Boolean, default: true },
+  allowExportPdf: { type: Boolean, default: true },
   exportFilename: { type: String, default: 'datatable-export' },
   pageLimit: { type: Number, default: 15 },
   totalRecords: { type: Number, required: false, default: 0 },
