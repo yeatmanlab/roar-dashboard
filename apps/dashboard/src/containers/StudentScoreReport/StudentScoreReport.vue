@@ -36,7 +36,6 @@
           <ScoreListPrint
             :student-first-name="studentFirstName"
             :student-grade="studentGrade"
-            :task-data="taskData"
             :report-tasks="reportTasks"
             :tasks-dictionary="tasksDictionary"
             :current-assignment-id="administrationId"
@@ -68,7 +67,6 @@
           <ScoreListScreen
             :student-first-name="studentFirstName"
             :student-grade="studentGrade"
-            :task-data="taskData"
             :report-tasks="reportTasks"
             :tasks-dictionary="tasksDictionary"
             :expanded="expanded"
