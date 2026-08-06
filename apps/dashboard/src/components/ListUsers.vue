@@ -31,6 +31,7 @@
         <RoarDataTable
           v-if="users"
           allow-global-filter
+          :allow-export-pdf="false"
           :columns="columns"
           :data="tableData"
           :loading="isLoading || isFetching"
