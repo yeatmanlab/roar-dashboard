@@ -33,9 +33,10 @@
           :columns="columns"
           :data="users"
           :loading="isLoading || isFetching"
-          :allow-export="false"
           @sort="onSort($event)"
           @edit-button="onEditButtonClick($event)"
+          @export-all="exportAllUsers"
+          @export-selected="exportSelectedUsers"
         />
       </div>
       <AppSpinner v-else />
@@ -143,9 +144,12 @@ import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvPassword from 'primevue/password';
 import _isEmpty from 'lodash/isEmpty';
+import _kebabCase from 'lodash/kebabCase';
+import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import useOrgUsersQuery from '@/composables/queries/useOrgUsersQuery';
 import { singularizeFirestoreCollection } from '@/helpers';
+import { exportCsv } from '@/helpers/query/utils';
 import AppSpinner from './AppSpinner.vue';
 import EditUsersForm from './EditUsersForm.vue';
 import RoarModal from './modals/RoarModal.vue';
@@ -320,6 +324,28 @@ const onSort = (event) => {
     direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
   }));
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : null;
+};
+
+const transformedUsersForExport = (targetUsers) =>
+  targetUsers.map((user) => ({
+    Username: _get(user, 'username'),
+    Email: _get(user, 'email'),
+    FirstName: _get(user, 'name.first'),
+    LastName: _get(user, 'name.last'),
+    StateId: _get(user, 'studentData.state_id'),
+    Grade: _get(user, 'studentData.grade'),
+    Gender: _get(user, 'studentData.gender'),
+    DateOfBirth: _get(user, 'studentData.dob'),
+    UserType: _get(user, 'userType'),
+    Archived: _get(user, 'archived'),
+  }));
+
+const exportAllUsers = () => {
+  exportCsv(transformedUsersForExport(users.value), `${_kebabCase(props.orgName)}-users-export.csv`);
+};
+
+const exportSelectedUsers = (selectedUsers) => {
+  exportCsv(transformedUsersForExport(selectedUsers), `${_kebabCase(props.orgName)}-users-export-selected.csv`);
 };
 
 // +-----------------+
