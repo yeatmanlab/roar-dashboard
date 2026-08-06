@@ -176,7 +176,7 @@ function findMappedColumn(column) {
 function onCellEditSave(event) {
   let { data, newValue, field } = event;
 
-  data[field] = newValue;
+  data[field] = typeof newValue === 'string' ? newValue.trim() : newValue;
 
   validateStudent(data);
 }
