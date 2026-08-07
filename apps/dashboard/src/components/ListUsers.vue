@@ -44,8 +44,8 @@
             'studentData.grade',
           ]"
           @edit-button="onEditButtonClick($event)"
-          @export-all="exportAllUsers"
-          @export-selected="exportSelectedUsers"
+          @export-all="exportAll"
+          @export-selected="exportSelected"
         />
       </div>
       <AppSpinner v-else />
@@ -346,7 +346,7 @@ const closeModal = () => {
   localUserData.value = null;
 };
 
-const transformedUsersForExport = (targetUsers) =>
+const transformForExport = (targetUsers) =>
   targetUsers.map((user) => ({
     Username: _get(user, 'username'),
     Email: _get(user, 'email'),
@@ -360,12 +360,12 @@ const transformedUsersForExport = (targetUsers) =>
     Archived: _get(user, 'archived'),
   }));
 
-const exportAllUsers = () => {
-  exportCsv(transformedUsersForExport(users.value), `${_kebabCase(props.orgName)}-users-export.csv`);
+const exportAll = () => {
+  exportCsv(transformForExport(users.value), `roar-users-${_kebabCase(props.orgName)}.csv`);
 };
 
-const exportSelectedUsers = (selectedUsers) => {
-  exportCsv(transformedUsersForExport(selectedUsers), `${_kebabCase(props.orgName)}-users-export-selected.csv`);
+const exportSelected = (selectedUsers) => {
+  exportCsv(transformForExport(selectedUsers), `roar-users-${_kebabCase(props.orgName)}-selected.csv`);
 };
 
 // +-----------------+
