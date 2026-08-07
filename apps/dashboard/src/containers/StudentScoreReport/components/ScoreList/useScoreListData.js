@@ -92,7 +92,7 @@ export function useScoreListData(params) {
   const scoreValueTemplate = computed(() => {
     return (task) => {
       const appendPercentageTo = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
-      if (appendPercentageTo.includes(task.taskId)) {
+      if (appendPercentageTo.includes(task.taskId) && !task.scores?.composite?.scoringVersion) {
         return task[task.scoreToDisplay].value + '%';
       }
       const percentileSuffix = ScoreReportService.getPercentileSuffixTemplate(task.percentileScore.value, { t });
