@@ -68,10 +68,13 @@
           <RoarDataTable
             v-if="showTable"
             :key="tableKey"
+            allow-global-filter
+            :allow-export-pdf="false"
             :columns="tableColumns"
             :data="tableData"
             sortable
             :loading="isLoading || isFetching"
+            :global-filter-fields="globalFilterFields"
             @export-all="exportAll"
             @show-activation-code="showCode"
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
@@ -304,6 +307,14 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
+const globalFilterFields = computed(() => {
+  const sharedFilterFields = ['name', 'abbreviation', 'address.formattedAddress'];
+  if (activeOrgType.value === 'districts') {
+    sharedFilterFields.push('ncesId', 'mdrNumber');
+  }
+  return sharedFilterFields;
+});
+
 // Use export orchestrator composable (must be after activeOrgType is defined)
 const {
   modalState,
@@ -375,6 +386,7 @@ const exportAll = async () => {
     isSuperAdmin,
     adminOrgs,
   );
+  console.log('org', orgData.value);
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 };
 
