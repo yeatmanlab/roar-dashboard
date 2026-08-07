@@ -427,6 +427,8 @@ const tableData = computed(() => {
     return {
       ...orgInfo,
       isExporting: exportingOrgId.value === org.id,
+      classlink: !!orgInfo.classlink,
+      clever: !!orgInfo.clever,
       routeParams: {
         orgType: activeOrgType.value,
         orgId: org.id,
