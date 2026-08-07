@@ -75,8 +75,8 @@
             sortable
             :loading="isLoading || isFetching"
             :global-filter-fields="globalFilterFields"
-            @export-all="exportAllOrgs"
-            @export-selected="exportSelectedOrgs"
+            @export-all="exportAll"
+            @export-selected="exportSelected"
             @show-activation-code="showCode"
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
@@ -378,7 +378,7 @@ function copyToClipboard(text) {
     });
 }
 
-const transformedOrgsForExport = (targetOrgs) =>
+const transformForExport = (targetOrgs) =>
   targetOrgs.map((org) => {
     const sharedFields = {
       Name: _get(org, 'name'),
@@ -410,14 +410,14 @@ const getExportFilename = () => {
     parentOrgName = district?.name ? `${_kebabCase(district.name)}-` : '';
   }
 
-  return `roar-${parentOrgName}${activeOrgType.value}`;
+  return `roar-orgs-${parentOrgName}${activeOrgType.value}`;
 };
-const exportAllOrgs = () => {
-  exportCsv(transformedOrgsForExport(orgData.value), `${getExportFilename()}.csv`);
+const exportAll = () => {
+  exportCsv(transformForExport(orgData.value), `${getExportFilename()}.csv`);
 };
 
-const exportSelectedOrgs = (selectedOrgs) => {
-  exportCsv(transformedOrgsForExport(selectedOrgs), `${getExportFilename()}-selected.csv`);
+const exportSelected = (selectedOrgs) => {
+  exportCsv(transformForExport(selectedOrgs), `${getExportFilename()}-selected.csv`);
 };
 
 const tableData = computed(() => {
