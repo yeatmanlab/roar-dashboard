@@ -75,7 +75,8 @@
             sortable
             :loading="isLoading || isFetching"
             :global-filter-fields="globalFilterFields"
-            @export-all="exportAll"
+            @export-all="exportAllOrgs"
+            @export-selected="exportSelectedOrgs"
             @show-activation-code="showCode"
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
@@ -212,8 +213,8 @@ import PvToggleButton from 'primevue/togglebutton';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _cloneDeep from 'lodash/cloneDeep';
+import _kebabCase from 'lodash/kebabCase';
 import { useAuthStore } from '@/store/auth';
-import { orgFetchAll } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -377,17 +378,46 @@ function copyToClipboard(text) {
     });
 }
 
-const exportAll = async () => {
-  const exportData = await orgFetchAll(
-    activeOrgType,
-    selectedDistrict,
-    selectedSchool,
-    orderBy,
-    isSuperAdmin,
-    adminOrgs,
-  );
-  console.log('org', orgData.value);
-  exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
+const transformedOrgsForExport = (targetOrgs) =>
+  targetOrgs.map((org) => {
+    const sharedFields = {
+      Name: _get(org, 'name'),
+      Abbreviation: _get(org, 'abbreviation'),
+      Address: _get(org, 'address.formattedAddress'),
+      Tags: _get(org, 'tags', []).join(', ').trim(),
+    };
+
+    if (activeOrgType.value === 'districts') {
+      sharedFields['MdrNumber'] = _get(org, 'mdrNumber');
+      sharedFields['NcesId'] = _get(org, 'ncesId');
+    }
+
+    if (activeOrgType.value !== 'groups' && activeOrgType.value !== 'families') {
+      sharedFields['Clever'] = _get(org, 'clever');
+      sharedFields['ClassLink'] = _get(org, 'classlink');
+    }
+
+    return sharedFields;
+  });
+
+const getExportFilename = () => {
+  let parentOrgName = '';
+  if (activeOrgType.value === 'classes') {
+    const school = allSchools.value?.find((s) => s.id === selectedSchool.value);
+    parentOrgName = school?.name ? `${_kebabCase(school.name)}-` : '';
+  } else if (activeOrgType.value === 'schools') {
+    const district = allDistricts.value?.find((d) => d.id === selectedDistrict.value);
+    parentOrgName = district?.name ? `${_kebabCase(district.name)}-` : '';
+  }
+
+  return `roar-${parentOrgName}${activeOrgType.value}`;
+};
+const exportAllOrgs = () => {
+  exportCsv(transformedOrgsForExport(orgData.value), `${getExportFilename()}.csv`);
+};
+
+const exportSelectedOrgs = (selectedOrgs) => {
+  exportCsv(transformedOrgsForExport(selectedOrgs), `${getExportFilename()}-selected.csv`);
 };
 
 const tableData = computed(() => {
