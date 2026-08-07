@@ -29,7 +29,7 @@
 <script setup>
 import { useI18n } from 'vue-i18n';
 import { ScoreCardScreen as ScoreCard } from './ScoreCard';
-import { useScoreListData } from './useScoreListData';
+import { useReportCardData } from './useReportCardData';
 
 const props = defineProps({
   studentFirstName: {
@@ -40,18 +40,9 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  taskData: {
-    type: Object,
-    required: true,
-  },
   tasksDictionary: {
     type: Object,
     required: true,
-  },
-  longitudinalData: {
-    type: Object,
-    required: false,
-    default: () => ({}),
   },
   expanded: {
     type: Boolean,
@@ -64,18 +55,28 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  // Backend-computed report tasks for both the administrator and parent paths; the card
+  // data comes from the backend (client scoring retired).
+  reportTasks: {
+    type: Array,
+    required: false,
+    default: null,
+  },
 });
 
 const { t } = useI18n();
 
-// Use the shared composable
-const { computedTaskData, scoreValueTemplate, getTaskDescription, getTaskScoresArray } = useScoreListData({
+const backend = useReportCardData({
+  reportTasks: () => props.reportTasks,
   studentGrade: props.studentGrade,
-  taskData: props.taskData,
-  longitudinalData: props.longitudinalData,
   taskScoringVersions: props.taskScoringVersions,
   t,
 });
+
+const { computedTaskData } = backend;
+const scoreValueTemplate = (task) => backend.scoreValueTemplate.value(task);
+const getTaskDescription = (task) => backend.getTaskDescription.value(task);
+const getTaskScoresArray = (task) => backend.getTaskScoresArray.value(task);
 </script>
 
 <style scoped>

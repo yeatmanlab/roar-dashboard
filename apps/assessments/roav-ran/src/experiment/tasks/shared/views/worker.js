@@ -24,7 +24,11 @@ async function loadModel() {
   }
 
   // env.wasm.wasmPaths
-  myOnnxSession = await InferenceSession.create('tasks/shared/eyetracking_google.onnx', {
+  // `new URL(..., import.meta.url)` is a bundler reference: webpack and Vite both emit the
+  // model and rewrite this to the emitted URL. A plain relative string is not — it would
+  // resolve against this worker's own script URL at runtime (not the document), which is
+  // why the dashboard never found the model. See roar-project-management#1981.
+  myOnnxSession = await InferenceSession.create(new URL('./eyetracking_google.onnx', import.meta.url).href, {
     executionProviders: ['wasm'],
     graphOptimizationLevel: 'all',
   });

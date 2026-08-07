@@ -13,14 +13,15 @@ Both paths converge after Phase 1. Migration is the longer road, so it's the one
 
 **Write a migration plan first.** Every assessment migrated so far has had one, and they earn their keep: each surfaced at least one thing that would have been discovered painfully mid-PR. Answer these before writing code:
 
-| Question                                                                    | Why it changes the work                                                                            |
-| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| How many tasks does the bundle serve, and what routes between them?         | Determines `resolveTaskId` and whether slugs are language-suffixed                                 |
-| Does it capture audio/video?                                                | Pulls in `uploadFile` / `flushUploads` and Storage emulator wiring                                 |
-| Is it scored client-side, backend-side, or both?                            | Decides whether you need a schema namespace and/or a scoring config                                |
-| Does it have tasks that should ship but not launch?                         | Bundle-only tasks (e.g. roam's `response-modality-study`) are excluded from seed/dashboard/scoring |
-| Which locales are wired vs. merely present?                                 | Migrate all source; wire only supported locales                                                    |
-| Does its build do anything unusual (WASM, ONNX, CSV corpora, eye-tracking)? | These are the genuine long poles — find them now                                                   |
+| Question                                                                    | Why it changes the work                                                                                                                |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| How many tasks does the bundle serve, and what routes between them?         | Determines `resolveTaskId` and whether slugs are language-suffixed                                                                     |
+| Does it capture audio/video?                                                | Pulls in `uploadFile` / `flushUploads` and Storage emulator wiring                                                                     |
+| Is it scored client-side, backend-side, or both?                            | Decides whether you need a schema namespace and/or a scoring config                                                                    |
+| Does it have tasks that should ship but not launch?                         | Bundle-only tasks (e.g. roam's `response-modality-study`) are excluded from seed/dashboard/scoring                                     |
+| Which locales are wired vs. merely present?                                 | Migrate all source; wire only supported locales                                                                                        |
+| Does its build do anything unusual (WASM, ONNX, CSV corpora, eye-tracking)? | These are the genuine long poles — find them now                                                                                       |
+| Does it load any asset by **string path at runtime**, or `fetch()` a CDN?   | Both break on the dashboard but not standalone — see [3c](#3c-runtime-loaded-assets-must-be-bundler-references) and Phase 4's CSP note |
 
 **Then chain the PRs.** Branch off `project/backend-refactor`, one concern per PR, each targeting the previous, merged bottom-up, draft by default:
 
@@ -203,13 +204,78 @@ Where the assessment has an **editable** participant-ID field (roav-ran and roav
 
 Follow the [serve.js contract](rules/assessment-integration-pattern.md#the-servejs-contract). Preserve the assessment's existing URL params for demographics — reviewers rely on them.
 
+### 3c. Runtime-loaded assets must be bundler references
+
+If the assessment loads an asset by **string path** at runtime — an ONNX model, a corpus, anything handed to a loader rather than `import`ed — it will work standalone and 404 on the dashboard. This is the failure behind [roar-project-management#1981](https://github.com/yeatmanlab/roar-project-management/issues/1981), which cost roav-ran and roar-readaloud a full debugging cycle each.
+
+A plain string is invisible to the bundler, so nothing is emitted and nothing is rewritten:
+
+```javascript
+// ✗ Not a bundler reference. Standalone works only because the lib build happens to
+//    copy the file to this exact path and the dev server serves dist/ at root.
+InferenceSession.create("tasks/shared/eyetracking_google.onnx");
+
+// ✓ A bundler reference. webpack and Vite both emit the asset and rewrite the URL.
+InferenceSession.create(
+  new URL("./eyetracking_google.onnx", import.meta.url).href,
+);
+```
+
+Three consequences that are not obvious and that you have to build to see:
+
+- **Put the asset next to the module that references it.** Rollup leaves `new URL(...)` intact rather than rewriting it, so the expression resolves against the _emitted_ module (`dist/index.js`, `dist/worker.js`) — a flat directory. Only a sibling path (`./asset`) is correct both in source, where webpack resolves it, and after bundling. roav-ran's model had to move from `tasks/shared/` into `tasks/shared/views/` for this reason; readaloud's was already beside its worker.
+- **The lib build's copy target follows.** `{ src: 'src/.../asset', dest: 'dist' }`, not a path mirroring the old string.
+- **Delete the webpack `CopyPlugin` entry.** Webpack emits the asset itself from the `new URL` reference; a copy just adds a second, unreferenced duplicate.
+
+**Why a dashboard-side copy step can't fix this**, if you're tempted: the same asset is often read from two contexts with different base URLs — a preload list on the main thread (document-relative) and `InferenceSession.create` inside a Web Worker (relative to the emitted worker chunk). No single copied path satisfies both. `new URL` does, because Vite rewrites it to a root-absolute `/assets/<name>-<hash>.ext` that resolves identically from either. `@rollup/plugin-url` does **not** — it emits a bare string and reintroduces the same ambiguity.
+
+Verify by building, not by reading — each stage has a distinct observable:
+
+```bash
+npm run build -w apps/assessments/<name>          # lib: asset in dist/ root, `new URL` intact in dist/*.js
+npm run build:staging -w apps/assessments/<name>  # standalone: hashed asset, no stale layout dirs
+npm run build -w apps/dashboard                   # dashboard: dist/assets/<name>-<hash>.ext + absolute reference
+```
+
+Grep the dashboard's built chunks for the asset name: a `"/assets/…-<hash>.…"` reference is the fixed state; a bare relative string means it's still broken.
+
 **Phase 3 is done when** `grep -rn "roar-firekit\|firekit\." apps/assessments/<name>/src` is empty and you have **played every task through `serve.js` against the local stack** (`npm start -w apps/assessments/<name>`), confirming runs, trials, and scores persist. Types passing is not evidence here. This is the phase that proves the assessment works at all — everything after it is integration.
 
 ## Phase 4 — Dashboard integration
 
 Rewrite `TaskX.vue` mirroring the closest existing component. It is the same sequence Phase 3 just proved, with a real user instead of an anonymous one: resolve the participant via `GET /me`, resolve the administration and variant, `initFirekitCompat` with `taskVersion` imported from the package's own `package.json`, then `getVariantById` → `new TaskLauncher(...)`.
 
+**Await the bundle import where you use it, never in `onMounted`.** The launch watcher runs with `immediate: true` — during `setup()`, before mount — so a launcher assigned in `onMounted` is still `undefined` when `startTask` reaches it, and the task dies with `TypeError: TaskLauncher is not a constructor`. It's a race, so it can pass locally on a warm module and fail on a first visit; every component carried it until it was fixed across the board:
+
+```javascript
+// Starts the fetch at setup, and ordering stops mattering.
+const taskLauncherPromise = import("@roar-platform/<name>").then(
+  (module) => module.default,
+);
+// …in startTask, immediately before constructing:
+const TaskLauncher = await taskLauncherPromise;
+```
+
+Keep the import specifier a static string literal — that's what lets Rollup's `manualChunks` split the assessment into its own chunk instead of loading all of them with the route.
+
 The rest is the dashboard rows of the [integration surface table](rules/assessment-integration-pattern.md#the-integration-surface): the dep pinned to the exact workspace version, the `vite.config.js` chunk, and the CSP bucket allowlist. Add the assessment's GCS bucket to **both the `img-src` and `media-src` arrays** in `firebase/admin/csp.template.json` — that template is the source file. `firebase/admin/firebase.json` sits next to it and lists the same buckets, but it's a build artifact: `vite.config.js` generates it by merging `firebase.template.json` with the CSP template, it's gitignored, and hand-edits are overwritten by the next build. Miss the CSP entry and the assessment's stimuli are blocked in the deployed dashboard while working perfectly in local dev.
+
+**The CSP surface is wider than stimulus buckets.** Audit every origin the assessment touches and add it to the directive that matches _how_ it's touched — the directives are not interchangeable, and standalone has no CSP at all, so nothing here surfaces before the dashboard:
+
+| The assessment does…                                             | Directive              |
+| ---------------------------------------------------------------- | ---------------------- |
+| Serve stimuli from a GCS bucket                                  | `img-src`, `media-src` |
+| `<script src>` a CDN library                                     | `script-src`           |
+| `<link rel=stylesheet>` a CDN stylesheet                         | `style-src`            |
+| **`fetch()` any of the above** (asset preloading, cache warming) | `connect-src`          |
+| **Play back a recording** via `URL.createObjectURL(...)`         | `media-src blob:`      |
+
+The last two rows are the ones that get missed, and both were live bugs on the dashboard while working perfectly standalone:
+
+- roav-ran preloads its `<script>`/`<link>` CDN assets through `fetch()` to warm the cache. `script-src` and `style-src` already trusted those exact URLs; `connect-src` did not, and every launch died — because the preloader treats one failed asset as fatal.
+- Any assessment that records mic or webcam plays the capture back from a `blob:` URL. `media-src` listed remote origins only, so playback was blocked for every recording assessment at once.
+
+Grep the assessment for `fetch(`, `createObjectURL`, preload lists, and hardcoded `https://` literals rather than waiting for the console to tell you.
 
 **Phase 4 is done when** the task launches from the dashboard against the local stack and score reports render. Because Phase 3 proved the standalone path, anything failing here is a dashboard problem — that narrowing is the whole reason for the split.
 
@@ -259,6 +325,12 @@ Nothing here changes how the assessment behaves; it changes whether the platform
 
 **Uploads throw inside the SDK** — see the `firebase` version pin above.
 
+**Asset 404s on the dashboard but loads standalone** — a runtime string path instead of a `new URL(..., import.meta.url)` bundler reference. See [3c](#3c-runtime-loaded-assets-must-be-bundler-references). In dev the 404 can be masked: Vite's SPA fallback answers unknown paths with `index.html` and a 200, so a preload "succeeds" while caching HTML and the real consumer fails later.
+
+**`TypeError: TaskLauncher is not a constructor`** — the bundle import was assigned in `onMounted` instead of awaited at the point of use. See Phase 4.
+
+**`Content-Security-Policy … blocked … (connect-src)` for a CDN URL the page already loads via a tag** — `script-src`/`style-src` govern the tag, `connect-src` governs `fetch()`. Add the same URL prefix to `connect-src`.
+
 ## Reference implementations
 
 | Shape                                       | Follow                             |
@@ -268,3 +340,4 @@ Nothing here changes how the assessment behaves; it changes whether the platform
 | Vue / vite app                              | `roar-survey`                      |
 | Audio/video recording + uploads             | `roar-readaloud`                   |
 | Language-as-task slugs                      | `roar-swr`, `roar-sre`, `roav-ran` |
+| Eye tracking — ONNX model, WASM, worker     | `roav-ran`, `roar-readaloud`       |
