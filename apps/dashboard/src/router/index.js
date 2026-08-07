@@ -225,10 +225,17 @@ const routes = [
     path: GAME_ROUTES.CORE_TASKS,
     name: 'Core Tasks',
     component: () => import('../components/tasks/TaskLevante.vue'),
-    props: true,
-    // Add which specific task?
-    // Code in App.vue overwrites updating it programmatically
+    // Allow passing taskId as a route parameter
+    props: (route) => ({ ...route.params, language: 'en' }),
     meta: { pageTitle: 'Core Tasks' },
+  },
+  {
+    path: GAME_ROUTES.CORE_TASKS_PT,
+    name: 'Core Tasks-PT',
+    component: () => import('../components/tasks/TaskLevante.vue'),
+    // Allow passing taskId as a route parameter
+    props: (route) => ({ ...route.params, language: 'pt' }),
+    meta: { pageTitle: 'Core Tasks (PT)' },
   },
   {
     path: GAME_ROUTES.SYMBOL_SEARCH,
@@ -610,6 +617,17 @@ const routes = [
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'Core Tasks', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.CORE_TASKS_PT,
+    name: 'Launch Core Tasks-PT',
+    component: () => import('../components/tasks/TaskLevante.vue'),
+    props: (route) => ({
+      taskId: route.params.taskId,
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'Core Tasks (PT)', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.RAN,

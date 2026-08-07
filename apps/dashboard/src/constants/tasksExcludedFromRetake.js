@@ -1,4 +1,4 @@
-import { LEVANTE_TASK_IDS } from './levanteTasks';
+import { LEVANTE_TASK_IDS_NO_SCORES } from './levanteTasks';
 
 const excludedTaskIds = [
   'roar-anb',
@@ -12,4 +12,4 @@ const excludedTaskIds = [
   'roar-readaloud',
 ];
 
-export const TASKS_EXCLUDED_FROM_RETAKE = [...LEVANTE_TASK_IDS, ...excludedTaskIds];
+export const TASKS_EXCLUDED_FROM_RETAKE = [...LEVANTE_TASK_IDS_NO_SCORES, ...excludedTaskIds];
