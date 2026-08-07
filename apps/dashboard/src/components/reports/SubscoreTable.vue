@@ -4,7 +4,6 @@
     :columns="columns"
     :data="computedTableData"
     :page-limit="pageLimit"
-    :allow-filtering="false"
     @export-all="exportAll"
     @export-selected="exportSelected"
   />
