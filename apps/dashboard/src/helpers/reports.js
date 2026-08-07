@@ -191,11 +191,11 @@ export const taskDisplayNames = {
     order: 30,
   },
   trog: {
-    name: 'Syntax',
-    publicName: 'ROAR - Syntax',
-    studentFacingName: 'Syntax',
-    extendedTitle: 'ROAR - Syntax',
-    extendedName: 'Syntax',
+    name: 'Picture Syntax',
+    publicName: 'ROAR - Picture Syntax',
+    studentFacingName: 'Picture Syntax',
+    extendedTitle: 'ROAR -Picture Syntax',
+    extendedName: 'Picture Syntax',
     order: 15,
   },
   roarInference: {
@@ -344,7 +344,7 @@ export const descriptionsByTaskId = {
     description: ' measures synonym knowledge in the context of a sentence.',
   },
   trog: {
-    header: 'Syntax',
+    header: 'Picture Syntax',
     description:
       ' measures receptive comprehension of English syntax - how word order, phrases, and clauses contribute to meaning.',
   },
@@ -489,7 +489,7 @@ export const includeReliabilityFlagsOnExport = [
   'Sentence',
   'Palabra',
   'Frase',
-  'Syntax',
+  'Picture Syntax',
   'Inference',
   'Morphology',
   'Written Vocab',
@@ -1948,7 +1948,7 @@ export const taskInfoById = {
   'roar-inference': {
     header: 'ROAR - Inference',
     color: '#52627E',
-    subheader: 'Inference Assessment',
+    subheader: 'Inference',
     desc:
       'Inference evaluates a student’s ability to make meaning beyond information that is explicitly stated in a text. The ability to ' +
       'make inferences is an important component of reading comprehension, as readers must integrate statements in a passage with their ' +
@@ -1963,11 +1963,11 @@ export const taskInfoById = {
       'are likely sufficient to support successful understanding of grade-level texts and continued growth in reading comprehension.',
   },
   trog: {
-    header: 'ROAR - Syntax',
+    header: 'ROAR - Picture Syntax',
     color: '#52627E',
-    subheader: 'TROG Assessment',
+    subheader: 'Picture Syntax',
     desc:
-      'Syntax evaluates a student’s understanding of English sentence structure and how grammatical relationships contribute to meaning. ' +
+      'Picture Syntax evaluates a student’s understanding of English sentence structure and how grammatical relationships contribute to meaning. ' +
       'Syntactic knowledge supports reading comprehension by helping students interpret how word order, phrases, and clauses work together ' +
       'to convey ideas within a sentence. This assessment measures a student’s ability to use syntactic structures to understand meaning ' +
       'in context, providing insight into their comprehension of English language structures. The student’s score will range between ' +
