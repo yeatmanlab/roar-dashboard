@@ -357,13 +357,52 @@ export const descriptionsByTaskId = {
 
 const pageWidth = 190; // Set page width for calculations
 const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
+
+// Width html2canvas lays its cloned document out at when capturing elements for PDF export,
+// so exports look the same regardless of the exporting user's actual window size.
+export const PDF_CAPTURE_WINDOW_WIDTH = 1300;
+
+/**
+ * Polls an element until it has a non-zero rendered size, or the timeout elapses.
+ *
+ * html2canvas silently produces a 0x0 canvas when it captures an element that hasn't
+ * finished rendering. That 0x0 element results in the function returnScaleFactor returning
+ * an Infinity/NaN height, which is sent to the jsPDF function addImage. This causes internal
+ * errors in jsPDF.
+ *
+ * @param {HTMLElement} element - Element expected to become visible/sized
+ * @param {Object} [options]
+ * @param {number} [options.timeout=3000] - Max time to wait in ms
+ * @param {number} [options.interval=50] - Poll interval in ms
+ * @returns {Promise<boolean>} Resolves true once the element has a non-zero size, false if it timed out
+ */
+export const waitForElementRendered = async (element, { timeout = 3000, interval = 50 } = {}) => {
+  if (!element) return false;
+
+  const hasSize = () => element.offsetWidth > 0 && element.offsetHeight > 0;
+  const start = Date.now();
+  while (!hasSize() && Date.now() - start < timeout) {
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  return hasSize();
+};
+
 // Helper function to add an element to a document and perform page break logic
 export const addElementToPdf = async (element, document, yCounter, offset = 0) => {
-  await html2canvas(element, { windowWidth: 1300, scale: 2 }).then(function (canvas) {
+  await html2canvas(element, { windowWidth: PDF_CAPTURE_WINDOW_WIDTH, scale: 2 }).then(function (canvas) {
+    // A 0-width/height canvas means the element wasn't actually rendered when captured.
+    // Skip it rather than feeding jsPDF an Infinity/NaN dimension, which crashes deep
+    // inside its internal coordinate scaling instead of failing where the bad value originated.
+    if (!canvas.width || !canvas.height) {
+      console.warn('Skipping PDF export for element with zero-size canvas capture.', element?.id);
+      return;
+    }
+
     const imgData = canvas.toDataURL('image/jpeg', 0.7, { willReadFrequently: true });
     const scaledCanvasHeight = canvas.height * returnScaleFactor(canvas.width);
+    const safeOffset = Number.isFinite(offset) ? offset : 0;
     // Add a new page for each task if there is no more space in the page for task desc and graph
-    if (yCounter + scaledCanvasHeight + offset > 287) {
+    if (yCounter + scaledCanvasHeight + safeOffset > 287) {
       document.addPage();
       yCounter = 10;
     } else {
@@ -613,11 +652,26 @@ export const roamAlpacaSubskillHeaders = {
   supportLevel: 'Support Level',
 };
 
+// Non-response modality (1.3.6+)
+export const roamFluencySubskills = {
+  addition: 'Addition',
+  subtraction: 'Subtraction',
+  multiplication: 'Multiplication',
+  division: 'Division',
+};
+
+// Response modality
 export const roamFluencySubskillHeaders = {
   rawScore: 'Raw Score',
   numCorrect: 'Num Correct',
   numIncorrect: 'Num Incorrect',
   numAttempted: 'Num Attempted',
+};
+
+// Non-response modality
+export const roamFluencySubskillHeadersNonResponse = {
+  ...roamFluencySubskillHeaders,
+  percentCorrect: 'Percent Correct',
 };
 
 /**
@@ -775,7 +829,7 @@ export function getGradeWithSuffix(grade) {
  * @returns {string} The CSS color variable to use for the dial.
  */
 export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
-  if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
+  if ((taskId === 'letter' && !scoringVersion) || taskId === 'letter-en-ca' || taskId === 'phonics') {
     return '#3b82f6'; // blue-500
   }
 
@@ -1507,8 +1561,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId === 'morphology') {
     if (scoringVersion >= 1) {
       return {
-        min: 280,
-        max: 720,
+        min: 100,
+        max: 900,
       };
     }
     // Percent
@@ -1519,8 +1573,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId === 'cva') {
     if (scoringVersion >= 1) {
       return {
-        min: 287,
-        max: 753,
+        min: 100,
+        max: 900,
       };
     }
     // Percent
@@ -1531,8 +1585,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId === 'roar-inference') {
     if (scoringVersion >= 1) {
       return {
-        min: 300,
-        max: 793,
+        min: 100,
+        max: 900,
       };
     }
     // Percent
@@ -1543,8 +1597,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId === 'trog') {
     if (scoringVersion >= 1) {
       return {
-        min: 53,
-        max: 800,
+        min: 100,
+        max: 900,
       };
     }
     // Percent
@@ -1772,7 +1826,7 @@ export const taskInfoById = {
     subheader: 'ReadAloud',
     desc: 'The read-aloud assessment records students’ responses as they read words aloud. The student is shown a nonword and asked to read it aloud, allowing us to evaluate decoding accuracy without relying on memorized words. Scores are not immediately available as student recordings need to be human-scored. The read-aloud assessment is currently under active development alongside the phonics assessment, and support for scoring is still limited at this time.',
   },
-  'fluency-arf': {
+  'fluency-arf-response-modality': {
     header: 'ROAM Math Facts',
     color: '#52627E',
     subheader: 'Math Facts - Response Modality Experiment',
@@ -1790,7 +1844,7 @@ export const taskInfoById = {
       'two 3-minute blocks, each scored separately. Each block begins with addition and ' +
       'subtraction, then progresses to multiplication and division.',
   },
-  'fluency-calf': {
+  'fluency-calf-response-modality': {
     header: 'ROAM Calculation Fluency',
     color: '#52627E',
     subheader: 'Calculation Fluency - Response Modality Experiment',
@@ -1807,6 +1861,43 @@ export const taskInfoById = {
       'the impact of digital familiarity on the assessment. Students experience these response ' +
       'modes as two 4.5-minute blocks, each scored separately. Each block begins with addition ' +
       'and subtraction, then progresses to multiplication and division.',
+  },
+  'fluency-arf': {
+    header: 'ROAM Math Facts',
+    color: '#52627E',
+    subheader: 'Math Facts',
+    desc:
+      "ROAM-Math Facts assesses students' fluency in answering single-digit addition, subtraction, " +
+      'multiplication, and division problems without using a paper and pencil. Students may use a ' +
+      'combination of strategies on these questions, including manual calculation and memory-based ' +
+      'retrieval. Students will use retrieval strategies more often as they develop their math fact ' +
+      'fluency. Efficiency with basic arithmetic facts has been shown to support more advanced math ' +
+      'learning and predict overall math achievement. This assessment will help educators understand ' +
+      'student performance in this foundational domain and see where students may benefit from ' +
+      'additional practice and support.\n\n' +
+      'Scores will range from 0-140 and can be viewed by selecting ' +
+      "'Raw Score' in the table above. A further breakdown of this score by operation, can be viewed " +
+      'in the table below. In case of multiplication and division, the top 3 math facts that students ' +
+      'need to work on are reported. Due to the timed nature of the assessment, students may not ' +
+      'encounter all Problem Types. Check here for definitions of each Problem Type and associated ' +
+      'terminology.',
+  },
+  'fluency-calf': {
+    header: 'ROAM Calculation Fluency',
+    color: '#52627E',
+    subheader: 'Calculation Fluency',
+    desc:
+      "ROAM-Calculation Fluency assesses students' ability to use addition, subtraction, " +
+      'multiplication, and division procedures to solve multi-digit arithmetic problems. Students ' +
+      'may use a pencil and paper to help them perform the calculations in this assessment. Mastery ' +
+      'of the algorithms for these four fundamental arithmetic operations forms the building blocks ' +
+      "for more advanced math skills. This assessment allows educators to evaluate students' command " +
+      'over these key arithmetic procedures and tailor instruction to support any specific areas of ' +
+      'difficulty.\n\n' +
+      'Scores will range from 0-120 and can be viewed by selecting ' +
+      "'Raw Score' in the table above. A further breakdown of this score by operation, can be viewed " +
+      'in the table below. Due to the timed nature of the assessment, students may not encounter all ' +
+      'Problem Types. Check here for definitions of each Problem Type and associated terminology.',
   },
   'roam-alpaca': {
     header: 'ROAM Core Math',
@@ -1826,7 +1917,7 @@ export const taskInfoById = {
   cva: {
     header: '`ROAR - Written Vocabulary',
     color: '#52627E',
-    subheader: 'CVA Assessment',
+    subheader: 'Written Vocabulary',
     desc:
       'Written Vocabulary evaluates a student’s knowledge of academic vocabulary through their ability to identify words with similar ' +
       'meanings in context. Vocabulary knowledge is a critical component of reading comprehension, as students must understand the ' +
@@ -1842,7 +1933,7 @@ export const taskInfoById = {
   morphology: {
     header: 'ROAR - Morphology',
     color: '#52627E',
-    subheader: 'Morphology Assessment',
+    subheader: 'Morphology',
     desc:
       'Morphology measures a student’s ability to use morphological information, such as prefixes and suffixes, to signal the meaning ' +
       'and grammatical function of words in a sentence. Morphological awareness supports reading comprehension by helping students to ' +
@@ -1959,4 +2050,24 @@ export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   }
 
   return editedDesc;
+};
+
+export const replaceDocLinks = (desc, taskId) => {
+  if (!desc) return '';
+
+  let formatted = desc.replace(/\n/g, '<br>');
+
+  if (['fluency-arf', 'fluency-calf'].includes(taskId)) {
+    formatted = formatted.replace(
+      'Check here for definitions of each Problem Type and associated terminology.',
+      '<span class="font-bold">Check {{LINK}} for definitions of each Problem Type and associated terminology.</span>',
+    );
+
+    formatted = formatted.replace(
+      '{{LINK}}',
+      '<a class="underline text-gray-700 hover:text-red-700" href="/docs/roam-arfcalf-subscores-explainer.pdf" target="_blank">here</a>',
+    );
+  }
+
+  return formatted;
 };

@@ -1,6 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
-import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
+import {
+  pageTitlesEN,
+  pageTitlesUS,
+  pageTitlesES,
+  pageTitlesCO,
+  pageTitlesPT,
+  pageTitlesBR,
+} from '@/translations/exports';
 import { APP_ROUTES, GAME_ROUTES } from '@/constants/routes';
 import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
 import { usePermissions } from '@/composables/usePermissions';
@@ -27,6 +34,8 @@ const routes = [
         en: pageTitlesEN['home'],
         es: pageTitlesES['home'],
         'es-CO': pageTitlesCO['home'],
+        pt: pageTitlesPT['home'],
+        'pt-BR': pageTitlesBR['home'],
       },
     },
   },
@@ -825,6 +834,8 @@ const routes = [
         en: pageTitlesEN['signIn'],
         es: pageTitlesES['signIn'],
         'es-CO': pageTitlesCO['signIn'],
+        pt: pageTitlesPT['signIn'],
+        'pt-BR': pageTitlesBR['signIn'],
       },
     },
   },

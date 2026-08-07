@@ -8,98 +8,79 @@
             <div class="text-sm font-light text-gray-600 uppercase">Loading Org Info</div>
           </div>
 
-          <div v-if="orgData && administrationData" id="at-a-glance-charts">
-            <ReportHeader
-              :org-type="props.orgType"
-              :org-name="_toUpper(orgData?.name)"
-              :administration-name="_toUpper(displayName)"
-              report-type="Score"
-              :report-view="reportView"
-              :report-views="reportViews"
-              @view-change="handleViewChange"
-            >
-              <template #export-buttons>
-                <div
-                  v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories"
-                  class="flex gap-2 mr-5 flex-column"
-                >
-                  <PvButton
-                    v-if="orgType !== 'district'"
-                    class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
-                    :icon="!csvExportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
-                    label="Export Combined Reports"
-                    @click="exportData({ includeProgress: true })"
-                  />
-                  <PvButton
-                    v-if="orgType !== 'district' || !isEmptyDistrictSupportCategories"
-                    class="flex flex-row p-2 mb-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
-                    :class="orgType === 'district' && !isEmptyDistrictSupportCategories ? 'mt-4' : ''"
-                    :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
-                    :disabled="exportLoading"
-                    label="Export To Pdf"
-                    data-html2canvas-ignore="true"
-                    @click="handleExportToPdf"
-                  />
-                </div>
-              </template>
-            </ReportHeader>
-            <div v-if="isLoadingAssignments || isLoadingDistrictSupportCategories" class="loading-wrapper">
-              <AppSpinner style="margin: 1rem 0rem" />
-              <div class="text-sm font-light text-gray-600 uppercase">Loading Overview Charts</div>
-            </div>
-            <div
-              v-if="
-                !isLoadingAssignments && !isLoadingDistrictSupportCategories && sortedAndFilteredTaskIds?.length > 0
-              "
-              class="py-3 mb-2 text-left"
-            >
-              <ScoreDistributionOverview
-                :task-ids="sortedAndFilteredTaskIds"
-                :runs-by-task-id="runsByTaskIdForDistributionChart"
-                :org-type="props.orgType"
-                :tasks-dictionary="tasksDictionary"
-              />
-              <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
+          <AtAGlanceCharts
+            v-if="orgData && administrationData"
+            id="at-a-glance-charts"
+            :org-type="props.orgType"
+            :org-name="_toUpper(orgData?.name)"
+            :administration-name="_toUpper(displayName)"
+            :report-view="reportView"
+            :report-views="reportViews"
+            :is-loading-assignments="isLoadingAssignments"
+            :is-loading-district-support-categories="isLoadingDistrictSupportCategories"
+            :is-empty-district-support-categories="isEmptyDistrictSupportCategories"
+            :sorted-and-filtered-task-ids="sortedAndFilteredTaskIds"
+            :runs-by-task-id-for-distribution-chart="runsByTaskIdForDistributionChart"
+            :tasks-dictionary="tasksDictionary"
+            :assigned-normed-task-ids="assignedNormedTaskIds"
+            :assigned-task-ids="assignedTaskIds"
+            @view-change="handleViewChange"
+          >
+            <template #export-buttons>
               <div
-                v-if="
-                  !isLoadingAssignments &&
-                  sortedAndFilteredTaskIds?.length > 0 &&
-                  !isEmptyDistrictSupportCategories &&
-                  props.orgType === 'district'
-                "
-                class="flex rounded flex-column align-items-center mt-3"
+                v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories"
+                class="flex gap-2 mr-5 flex-column"
               >
-                <p
-                  v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
-                  class="text-center text-sm font-bold px-4"
-                >
-                  In this district-level report, visualizations are available for foundational and comprehension
-                  assessments to give you clear, reliable insights on these skills.
-                </p>
-                <p class="text-center align-items-center text-sm font-bold px-4">
-                  View school-level or classroom-level reports to see student-level data and information about other
-                  assessments.
-                </p>
+                <PvButton
+                  v-if="orgType !== 'district'"
+                  class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
+                  :icon="!csvExportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
+                  label="Export Combined Reports"
+                  @click="exportData({ includeProgress: true })"
+                />
+                <PvButton
+                  v-if="orgType !== 'district' || !isEmptyDistrictSupportCategories"
+                  class="flex flex-row p-2 mb-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
+                  :class="orgType === 'district' && !isEmptyDistrictSupportCategories ? 'mt-4' : ''"
+                  :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
+                  :disabled="exportLoading"
+                  label="Export To Pdf"
+                  data-html2canvas-ignore="true"
+                  @click="handleExportToPdf"
+                />
               </div>
-            </div>
-            <div
-              v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories && isEmptyDistrictSupportCategories"
-              class="justify-content-center surface-100 p-2"
-            >
-              <p class="text-center text-sm font-bold px-4">
-                {{
-                  assignedNormedTaskIds.length === 0
-                    ? 'Visualizations are only available for foundational reading and comprehension assessments. If visualizations are not showing, your students were not assigned any of these assessments.'
-                    : 'Visualizations will appear once students complete our foundational or comprehension assessments.'
-                }}
-              </p>
-              <p class="text-center align-items-center text-sm font-bold px-4">
-                View school-level or classroom-level reports to see student-level data and information about other
-                assessments.
-              </p>
-            </div>
-          </div>
+            </template>
+          </AtAGlanceCharts>
         </section>
+
+        <!--
+          Off-screen twin of the at-a-glance charts, permanently rendered at the PDF capture
+          width. Chart.js bakes each canvas's pixel size into an inline style measured from its
+          real container, so a canvas sized for the live page overflows when html2canvas clones
+          the DOM into a differently-sized virtual window for export. Keeping a second copy that's
+          always laid out at PDF_CAPTURE_WINDOW_WIDTH means its charts are always correctly sized,
+          with no resize step (and no visible transition) needed at export time.
+        -->
+        <div aria-hidden="true" inert class="pdf-export-host" :style="{ width: `${PDF_CAPTURE_WINDOW_WIDTH}px` }">
+          <AtAGlanceCharts
+            v-if="orgData && administrationData"
+            id="at-a-glance-charts-export"
+            class="pdf-export-mode"
+            :org-type="props.orgType"
+            :org-name="_toUpper(orgData?.name)"
+            :administration-name="_toUpper(displayName)"
+            :report-view="reportView"
+            :report-views="reportViews"
+            :is-loading-assignments="isLoadingAssignments"
+            :is-loading-district-support-categories="isLoadingDistrictSupportCategories"
+            :is-empty-district-support-categories="isEmptyDistrictSupportCategories"
+            :sorted-and-filtered-task-ids="sortedAndFilteredTaskIds"
+            :runs-by-task-id-for-distribution-chart="runsByTaskIdForDistributionChart"
+            :tasks-dictionary="tasksDictionary"
+            :assigned-normed-task-ids="assignedNormedTaskIds"
+            :assigned-task-ids="assignedTaskIds"
+          />
+        </div>
 
         <!-- Loading data spinner -->
         <div v-if="isLoadingAssignments || isFetchingAssignments" class="my-4 loading-container">
@@ -359,7 +340,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, toValue, watch } from 'vue';
+import { computed, ref, onMounted, nextTick, toValue, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
@@ -382,7 +363,6 @@ import PvTabList from 'primevue/tablist';
 import PvTab from 'primevue/tab';
 import PvTabPanels from 'primevue/tabpanels';
 import PvProgressBar from 'primevue/progressbar';
-import ReportHeader from '@/components/ReportHeader.vue';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
@@ -409,15 +389,18 @@ import {
   excludeFromScoringTasks,
   includeReliabilityFlagsOnExport,
   addElementToPdf,
+  waitForElementRendered,
+  PDF_CAPTURE_WINDOW_WIDTH,
   getScoreValue,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
   roamAlpacaSubskills,
   getTagColor,
-  roamFluencyTasks,
+  roamFluencySubskills,
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
+  roamFluencySubskillHeadersNonResponse,
   isTaskNormed,
   previouslyUnnormedTasks,
 } from '@/helpers/reports';
@@ -425,7 +408,7 @@ import { i18n } from '@/translations/i18n';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
 import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
-import { CSV_EXPORT_STATIC_COLUMNS, CSV_EXPORT_COMPOSITE_SCORE_COLUMNS } from '@/constants/csvExport';
+import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '@/constants/levanteTasks';
@@ -433,7 +416,7 @@ import _startCase from 'lodash/startCase';
 import AppDialog from '@/components/Dialog/Dialog.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { getStudentExternalId } from '@/helpers/getStudentExternalId';
-import ScoreDistributionOverview from '@/components/reports/ScoreDistributionOverview.vue';
+import AtAGlanceCharts from '@/components/reports/AtAGlanceCharts.vue';
 const { userCan, Permissions } = usePermissions();
 
 let TaskReport;
@@ -566,28 +549,36 @@ const handleExportToPdf = async () => {
   const doc = new jsPDF();
   let yCounter = 10; // yCounter tracks the y position in the PDF
 
-  // Add At a Glance Charts and report header to the PDF
-  const atAGlanceCharts = document.getElementById('at-a-glance-charts');
+  // Add At a Glance Charts and report header to the PDF. Captured from the permanently
+  // off-screen "-export" twin (see template) rather than the live, visible element, since that
+  // twin is always laid out at PDF_CAPTURE_WINDOW_WIDTH and its charts are always sized to match
+  // — nothing needs to be resized on the fly here.
+  const atAGlanceCharts = document.getElementById('at-a-glance-charts-export');
   if (atAGlanceCharts !== null) {
-    atAGlanceCharts.classList.add('pdf-export-mode');
+    await waitForElementRendered(atAGlanceCharts);
     yCounter = await addElementToPdf(atAGlanceCharts, doc, yCounter);
-    atAGlanceCharts.classList.remove('pdf-export-mode');
   }
 
   // Initialize to first tab
   activeTabIndex.value = 0;
 
-  for (const [i, taskId] of sortedTaskIds.value.entries()) {
+  for (const [i, taskId] of sortedAndFilteredSubscoreTaskIds.value.entries()) {
     activeTabIndex.value = i;
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await nextTick();
 
     // Add Task Description and Task Chart to document
+    console.log('looking for description element for ', taskId);
     const tabViewDesc = document.getElementById('tab-view-description-' + taskId);
+    console.log('found', tabViewDesc);
     const tabViewChart = document.getElementById('tab-view-chart-' + taskId);
+
+    // Wait for element to be rendered before capturing it for PDF export.
+    await waitForElementRendered(tabViewChart || tabViewDesc);
+
     const chartHeight =
       tabViewChart &&
-      (await html2canvas(document.getElementById('tab-view-chart-' + taskId)).then(
-        (canvas) => canvas.height * returnScaleFactor(canvas.width),
+      (await html2canvas(tabViewChart).then((canvas) =>
+        canvas.width ? canvas.height * returnScaleFactor(canvas.width) : 0,
       ));
 
     if (tabViewDesc !== null) {
@@ -890,8 +881,17 @@ const getScoresAndSupportFromAssessment = ({ grade, assessment, taskId, optional
         const numAttempted = _get(assessment, 'scores.computed.composite.numAttempted');
         const oldNumAttempted = _get(assessment, 'scores.computed.composite.totalNumAttempted');
         rawScore = _get(assessment, 'scores.computed.composite.rawScore');
-        // If numAttempted, set as assessed
-        tag_color = oldNumAttempted || numAttempted ? '#A4DDED' : '#EEEEF0';
+        const hasSubskills = _get(assessment, 'scores.computed')
+          ? Object.keys(_get(assessment, 'scores.computed')).some((key) => roamFluencySubskills[key])
+          : false;
+
+        // Show assessed color for new fluency (1.3.6+) subskills, even with 0 attempts.
+        // Covers students timing out on the first test question.
+        if (assessment?.completedOn && hasSubskills) {
+          tag_color = '#A4DDED';
+        } else {
+          tag_color = oldNumAttempted || numAttempted ? '#A4DDED' : '#EEEEF0';
+        }
       }
     }
   } else {
@@ -956,7 +956,6 @@ const computeAssignmentAndRunData = computed(() => {
     const runsByTaskIdAcc = {};
     // compositeFoundationalRunsAcc holds a support-level run per assignment with a foundational composite score
     const compositeFoundationalRunsAcc = [];
-
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
       const grade = String(assignment.userData?.grade);
@@ -1144,6 +1143,64 @@ const computeAssignmentAndRunData = computed(() => {
             const { fc, fr } = currRowScores[taskId];
             const totalRawScore = (fc?.rawScore ?? 0) + (fr?.rawScore ?? 0);
             currRowScores[taskId].rawScore = totalRawScore === 0 ? null : totalRawScore;
+          } else {
+            const scores = _get(assessment, 'scores.computed');
+            // Verify non-response modality scores (1.3.6+) by confirming that at least one subskill is present
+            const hasSubskills = scores ? Object.keys(scores).some((key) => roamFluencySubskills[key]) : false;
+
+            // Since we filter out empty subskills, we need a state that maintains we're dealing with new fluency scores (formatting)
+            // We do not show Symbolic Comp (recruitment=magpiPilot, 1.3.11+) scores
+            currRowScores[taskId].useSubskillFormat = hasSubskills || _has(scores, 'symbolicComp');
+
+            const timedOutWithAttempts = currRowScores[taskId].numAttempted === 0 && assessment?.completedOn;
+
+            if (hasSubskills && (currRowScores[taskId].numAttempted > 0 || timedOutWithAttempts)) {
+              const allIncorrectSkills = [];
+              const subsetIncorrectSkills = [];
+
+              Object.keys(roamFluencySubskills).forEach((subskill) => {
+                const subskillInfo = _get(assessment, `scores.computed.${subskill}`);
+                if (subskillInfo && subskillInfo.numAttempted > 0) {
+                  currRowScores[taskId][subskill] = {
+                    percentCorrect: `${Math.round(subskillInfo.subPercentCorrect * 100)}%`,
+                    ...subskillInfo,
+                    rawScore: parseFloat(Number(subskillInfo.rawScore).toFixed(2)),
+                  };
+                  const subskillIncorrectSkills = _get(
+                    assessment,
+                    `scores.computed.composite.incorrectSkills.${subskill}`,
+                  );
+                  if (subskillIncorrectSkills) {
+                    const parsedIncorrectSkills = subskillIncorrectSkills.split(',').map((s) => s.trim());
+                    if (taskId === 'fluency-calf' || subskill === 'addition' || subskill === 'subtraction') {
+                      allIncorrectSkills.push(...parsedIncorrectSkills);
+                    } else {
+                      // For fluency-arf, multiplication and division skills are considered the same for counting purposes
+                      subsetIncorrectSkills.push(...parsedIncorrectSkills);
+                    }
+                  }
+                }
+              });
+
+              if (taskId === 'fluency-arf') {
+                allIncorrectSkills.push(...new Set(subsetIncorrectSkills));
+              }
+
+              // subPercentCorrect field is returned starting 1.3.9
+              // Writes percentCorrect to top-level for main score report tooltip and composite for subscore tooltip
+              currRowScores[taskId].composite = {
+                totalIncorrectSkills: allIncorrectSkills.length != 0 ? allIncorrectSkills.length : null,
+                percentCorrect: `${Math.round(scores.composite?.subPercentCorrect * 100)}%`,
+                ...scores.composite,
+                rawScore: parseFloat(Number(scores.composite?.rawScore).toFixed(2)),
+              };
+              currRowScores[taskId].percentCorrect = `${Math.round(scores.composite?.subPercentCorrect * 100)}%`;
+            }
+
+            // Non-response modality scores (1.3.6+) can return decimal rawScore for main score report
+            if (currRowScores[taskId].rawScore != undefined && currRowScores[taskId].numAttempted > 0) {
+              currRowScores[taskId].rawScore = parseFloat(Number(currRowScores[taskId].rawScore).toFixed(2));
+            }
           }
 
           scoreFilterTags += ' Assessed ';
@@ -1257,6 +1314,16 @@ const computeAssignmentAndRunData = computed(() => {
           }
         }
 
+        const testNumAttempted = _get(assessment, 'scores.raw.composite.test.numAttempted');
+        // Hide when only practice questions are completed and not timed out, which is considered completed
+        // Setting these to empty object hides the tag and tooltips
+        if (
+          (testNumAttempted === undefined || testNumAttempted === 0) &&
+          assignment.progress[assessment.taskId.replace(/-/g, '_')] !== 'completed'
+        ) {
+          Object.assign(currRowScores[taskId], {});
+        }
+
         // Logic to update runsByTaskIdAcc
         const run = {
           // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
@@ -1358,19 +1425,6 @@ const computeAssignmentAndRunData = computed(() => {
       return Object.keys(taskInfoById).includes(taskId);
     });
 
-    // We only want to display the ROAM Tasks if the recruitment param is responseModality
-    // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
-    // Response modality admins who switch mid-way will no longer see the subscore tables
-    const assessments = administrationData.value.assessments;
-    for (const assessment of assessments) {
-      if (roamFluencyTasks.includes(assessment.taskId)) {
-        const recruitment = assessment.params.recruitment;
-        if (recruitment !== 'responseModality') {
-          delete filteredRunsByTaskId[assessment.taskId];
-        }
-      }
-    }
-
     return {
       runsByTaskId: filteredRunsByTaskId,
       assignmentTableData: assignmentTableDataAcc,
@@ -1436,7 +1490,8 @@ const viewOptions = ref([
  */
 
 const createExportData = ({ rows, includeProgress = false }) => {
-  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate, compositeScore }) => {
+  // const computedExportData = _map(rows, ({ user, scores, startDate, completionDate, compositeScore }) => {
+  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate }) => {
     let tableRow = {
       Username: user?.username,
       Email: user?.email, // This will only be used when exporting all rows
@@ -1452,12 +1507,12 @@ const createExportData = ({ rows, includeProgress = false }) => {
     tableRow['Start Date'] = startDate ? new Date(startDate).toLocaleDateString('en-US') : null;
     tableRow['Completion Date'] = completionDate ? new Date(completionDate).toLocaleDateString('en-US') : null;
 
-    if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
-      tableRow['Composite Score - Percentile'] = compositeScore?.percentile;
-      tableRow['Composite Score - Standard'] = compositeScore?.standardScore;
-      tableRow['Composite Score - Raw'] = compositeScore?.rawScore;
-      tableRow['Composite Score - Support Level'] = compositeScore?.supportLevel;
-    }
+    // if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+    //   tableRow['Composite Score - Percentile'] = compositeScore?.percentile;
+    //   tableRow['Composite Score - Standard'] = compositeScore?.standardScore;
+    //   tableRow['Composite Score - Raw'] = compositeScore?.rawScore;
+    //   tableRow['Composite Score - Support Level'] = compositeScore?.supportLevel;
+    // }
 
     if (props.orgType === 'district') {
       tableRow['School'] = user?.schoolName;
@@ -1484,33 +1539,43 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskName} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        const setSubscore = (field, score) => {
-          // Response modality prod data only uses new field names (ver 1.2.23+)
-          let result = '';
-          let total = 0;
-          if (score.fr) {
-            const frScore = score.fr[field] ?? 0;
-            result += `Free Response: ${frScore}`;
-            total += frScore;
-          }
+        const hasSubskills = scores ? Object.keys(scores[taskId]).some((key) => roamFluencySubskills[key]) : false;
+        // Non-response modality (1.3.6+)
+        if (hasSubskills) {
+          tableRow[`${taskName} - Raw Score`] = score.rawScore;
 
-          if (score.fc) {
-            const fcScore = score.fc[field] ?? 0;
-            result += `${result ? '\n' : ''}Multiple Choice: ${fcScore}`;
-            total += fcScore;
-          }
+          Object.entries(roamFluencySubskillHeadersNonResponse).forEach(([property, propertyHeader]) => {
+            tableRow[`${taskName} - ${propertyHeader}`] = score[property];
+          });
+        } else {
+          const setSubscore = (field, score) => {
+            // Response modality prod data only uses new field names (ver 1.2.23+)
+            let result = '';
+            let total = 0;
+            if (score.fr) {
+              const frScore = score.fr[field] ?? 0;
+              result += `Free Response: ${frScore}`;
+              total += frScore;
+            }
 
-          if (score.fr || score.fc) result += `\nTotal: ${total}`;
+            if (score.fc) {
+              const fcScore = score.fc[field] ?? 0;
+              result += `${result ? '\n' : ''}Multiple Choice: ${fcScore}`;
+              total += fcScore;
+            }
 
-          // If result is an empty string, handle a non-response modality score
-          return result || score[field];
-        };
+            if (score.fr || score.fc) result += `\nTotal: ${total}`;
 
-        tableRow[`${taskName} - Raw Score`] = score.rawScore;
+            // If result is an empty string, handle a non-response modality score
+            return result || score[field];
+          };
 
-        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-          tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
-        });
+          tableRow[`${taskName} - Raw Score`] = score.rawScore;
+
+          Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+            tableRow[`${taskName} - ${propertyHeader}`] = setSubscore(property, score);
+          });
+        }
       } else if (rawOnlyTasks.includes(taskId) && !isTaskNormed(taskId, getScoringVersions.value[taskId])) {
         tableRow[`${taskName} - Raw`] = score.rawScore;
       } else if (tasksToDisplayGradeEstimate.includes(taskId)) {
@@ -1622,9 +1687,9 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   // Define the static columns
   const staticColumns = [...CSV_EXPORT_STATIC_COLUMNS];
 
-  if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
-    staticColumns.push(...CSV_EXPORT_COMPOSITE_SCORE_COLUMNS);
-  }
+  // if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+  //   staticColumns.push(...CSV_EXPORT_COMPOSITE_SCORE_COLUMNS);
+  // }
 
   if (orgData.value?.clever === true) {
     staticColumns.push('State ID');
@@ -1923,7 +1988,7 @@ const scoreReportColumns = computed(() => {
       header: 'Composite Score',
       dataType: 'text',
       sort: true,
-      hidden: false,
+      hidden: true,
       tag: viewMode.value !== 'color',
       emptyTag: viewMode.value === 'color',
       tagColor: 'compositeScore.tagColor',
@@ -2117,7 +2182,7 @@ const sortedAndFilteredSubscoreTaskIds = computed(() => {
   // Show all available subscore tables, including unnormed assessments like roam and phonics
   // Some tasks require a scoring version to be available
   const availableTaskIds = Object.keys(computeAssignmentAndRunData.value?.runsByTaskId);
-  return availableTaskIds
+  const filteredTaskIds = availableTaskIds
     .filter((taskId) => {
       if (previouslyUnnormedTasks.includes(taskId)) {
         return getScoringVersions.value[taskId] && getScoringVersions.value[taskId] >= 1;
@@ -2125,6 +2190,8 @@ const sortedAndFilteredSubscoreTaskIds = computed(() => {
       return true;
     })
     .sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order);
+
+  return filteredTaskIds;
 });
 
 let unsubscribe;
@@ -2147,6 +2214,13 @@ onMounted(async () => {
 </script>
 
 <style lang="scss">
+.pdf-export-host {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  pointer-events: none;
+}
+
 .overview-wrapper {
   display: flex;
   flex-direction: column;
