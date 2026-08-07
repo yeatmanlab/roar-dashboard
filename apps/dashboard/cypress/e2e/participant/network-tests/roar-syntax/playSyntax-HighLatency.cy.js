@@ -4,8 +4,8 @@ import { isCurrentVersion } from '../../../../support/utils';
 const app = 'core-tasks';
 const administration = 'Cypress Test Roar Syntax';
 
-describe('ROAR - Syntax Play Through', () => {
-  it('Plays the Roar Syntax/Core Tasks Game in a simulated high latency network', () => {
+describe('ROAR - Picture Syntax Play Through', () => {
+  it('Plays the Roar Picture Syntax/Core Tasks Game in a simulated high latency network', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
