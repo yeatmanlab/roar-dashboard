@@ -1,6 +1,6 @@
 import { taskStore } from '../../../taskStore';
 import { jsPsych } from '../../taskSetup';
-import { isEnglish } from './checkLocale';
+import { isLanguageAllowedDownex } from './checkLocale';
 
 export const checkFallbackCriteria = (filterInputTrials: boolean = false) => {
   const data = jsPsych.data.get().filter({ assessment_stage: 'test_response' }).last(4);
@@ -11,5 +11,5 @@ export const checkFallbackCriteria = (filterInputTrials: boolean = false) => {
   }
 
   const numIncorrect = incorrectTrials.count();
-  return numIncorrect >= 2 && isEnglish(taskStore().language);
+  return numIncorrect >= 2 && isLanguageAllowedDownex(taskStore().language);
 };

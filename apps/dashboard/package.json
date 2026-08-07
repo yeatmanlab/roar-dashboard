@@ -23,7 +23,7 @@
     "@bdelab/roar-firekit": "9.17.0",
     "@roar-platform/roam-apps": "1.3.21",
     "@roar-platform/roar-letter": "4.1.1",
-    "@roar-platform/roar-levante-tasks": "1.0.6",
+    "@roar-platform/roar-levante-tasks": "1.1.0",
     "@roar-platform/roar-multichoice": "2.3.1",
     "@roar-platform/roar-readaloud": "1.4.2",
     "@roar-platform/roar-sre": "3.2.4",

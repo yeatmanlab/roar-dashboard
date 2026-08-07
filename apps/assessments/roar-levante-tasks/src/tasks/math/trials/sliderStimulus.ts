@@ -110,7 +110,7 @@ export const slider = (
     `;
     },
     labels: () => (trial || taskStore().nextStimulus).item,
-    // button_label: 'OK',
+    button_label: () => taskStore().translations.continueButtonText,
     require_movement: () => (trial || taskStore().nextStimulus).trialType === 'Number Line Slider',
     // slider_width: 800,
     min: () => (trial || taskStore().nextStimulus).item[0],
