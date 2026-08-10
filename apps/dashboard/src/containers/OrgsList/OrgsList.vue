@@ -393,8 +393,9 @@ const transformForExport = (targetOrgs) =>
     }
 
     if (activeOrgType.value !== 'groups' && activeOrgType.value !== 'families') {
-      sharedFields['Clever'] = _get(org, 'clever');
-      sharedFields['ClassLink'] = _get(org, 'classlink');
+      // Force boolean values to strings for CSV export
+      sharedFields['Clever'] = _get(org, 'clever') ? 'TRUE' : 'FALSE';
+      sharedFields['ClassLink'] = _get(org, 'classlink') ? 'TRUE' : 'FALSE';
     }
 
     return sharedFields;
@@ -413,7 +414,7 @@ const getExportFilename = () => {
   return `roar-orgs-${parentOrgName}${activeOrgType.value}`;
 };
 const exportAll = () => {
-  exportCsv(transformForExport(orgData.value), `${getExportFilename()}.csv`);
+  exportCsv(transformForExport(orgData.value ?? []), `${getExportFilename()}.csv`);
 };
 
 const exportSelected = (selectedOrgs) => {
