@@ -73,8 +73,22 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
   if (!binsObj || typeof binsObj !== 'object') return rows;
 
   for (const [binLabel, payload] of Object.entries(binsObj)) {
-    const [a, b] = String(binLabel).split('-').map(Number);
-    const value = Number.isFinite(a) && Number.isFinite(b) ? (a + b) / 2 : NaN;
+    // Handle both range bins (e.g., "90-99") and single-value bins (e.g., "100").
+    // The original code assumed every bin would be a range. When a 7th grader scored exactly 100,
+    // the backend created a single-value bin "100". When split('-'), this only returns ['100'],
+    // so b becomes undefined. The midpoint calculation would fail and return NaN, causing the
+    // bin to be skipped. Now we check: if both a and b exist, use the midpoint; if only a exists,
+    // use that value directly. Example: raw: {100: {grades: {7: 1}}} instead of {90-99: {grades: {7: 1}}}
+    const parts = String(binLabel).split('-').map(Number);
+    const [a, b] = parts;
+    let value;
+    if (Number.isFinite(a) && Number.isFinite(b)) {
+      value = (a + b) / 2;
+    } else if (Number.isFinite(a)) {
+      value = a;
+    } else {
+      value = NaN;
+    }
     if (!Number.isFinite(value)) continue;
 
     if (facet === 'grade') {
@@ -141,12 +155,12 @@ const getBinSize = (scoreMode, taskId) => {
     else if (taskId === 'sre') return props.taskScoringVersions[taskId] >= 5 ? 65 : 10;
     else if (taskId === 'sre-es') return 10;
     else if (taskId === 'letter') return 10;
-    else if (taskId === 'swr') return 50;
-    else if (taskId === 'swr-es') return 50;
-    else if (taskId === 'cva') return 45;
-    else if (taskId === 'trog') return 75;
-    else if (taskId === 'roar-inference') return 50;
-    else if (taskId === 'morphology') return 45;
+    else if (taskId === 'swr') return 100;
+    else if (taskId === 'swr-es') return 100;
+    else if (taskId === 'cva') return 100;
+    else if (taskId === 'trog') return 100;
+    else if (taskId === 'roar-inference') return 100;
+    else if (taskId === 'morphology') return 100;
   }
   return 10;
 };
@@ -161,10 +175,10 @@ const getRangeLow = (scoreMode, taskId) => {
     else if (taskId === 'letter') return 0;
     else if (taskId === 'swr') return 100;
     else if (taskId === 'swr-es') return 100;
-    else if (taskId === 'cva') return 287;
-    else if (taskId === 'trog') return 53;
-    else if (taskId === 'roar-inference') return 300;
-    else if (taskId === 'morphology') return 280;
+    else if (taskId === 'cva') return 100;
+    else if (taskId === 'trog') return 100;
+    else if (taskId === 'roar-inference') return 100;
+    else if (taskId === 'morphology') return 100;
   }
   return 0;
 };
@@ -179,10 +193,10 @@ const getRangeHigh = (scoreMode, taskId) => {
     else if (taskId === 'letter') return 100;
     else if (taskId === 'swr') return 900;
     else if (taskId === 'swr-es') return 900;
-    else if (taskId === 'cva') return 753;
-    else if (taskId === 'trog') return 800;
-    else if (taskId === 'roar-inference') return 793;
-    else if (taskId === 'morphology') return 720;
+    else if (taskId === 'cva') return 900;
+    else if (taskId === 'trog') return 900;
+    else if (taskId === 'roar-inference') return 900;
+    else if (taskId === 'morphology') return 900;
   }
   return 100;
 };
