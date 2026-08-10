@@ -267,6 +267,15 @@ const { data: orgData } = useQuery({
 
 const remove = (org, orgKey) => {
   selectedOrgs[orgKey] = selectedOrgs[orgKey].filter((_org) => _org.id !== org.id);
+
+  // Also remove any child orgs
+  if (orgKey === 'districts') {
+    selectedOrgs.schools = selectedOrgs.schools.filter((s) => s.districtId !== org.id);
+    selectedOrgs.classes = selectedOrgs.classes.filter((c) => c.districtId !== org.id);
+  }
+  if (orgKey === 'schools') {
+    selectedOrgs.classes = selectedOrgs.classes.filter((c) => c.schoolId !== org.id);
+  }
 };
 
 let unsubscribe;
@@ -292,6 +301,49 @@ watch(allSchools, (newValue) => {
 });
 
 const emit = defineEmits(['selection']);
+
+// Auto-populate a class or school's parent org (district or school) when a new class or school is selected but the parent hasn't been selected yet.
+const populateAncestorOrgs = (ancestorOrgType) => {
+  const ancestorOrgs = ancestorOrgType === 'districts' ? allDistricts.value : allSchools.value;
+
+  const newOrg = selectedOrgs[activeOrgType.value]?.[selectedOrgs[activeOrgType.value].length - 1];
+
+  const ancestorOrgAlreadySelected = selectedOrgs[ancestorOrgType].some(
+    (org) => org.id === newOrg[ancestorOrgType.slice(0, -1) + 'Id'],
+  );
+  if (!ancestorOrgAlreadySelected) {
+    const ancestorOrg = ancestorOrgs.find((org) => org.id === newOrg[ancestorOrgType.slice(0, -1) + 'Id']);
+    if (ancestorOrg) {
+      selectedOrgs[ancestorOrgType].push({
+        id: ancestorOrg.id,
+        name: ancestorOrg.name,
+        ...(ancestorOrgType === 'schools' ? { districtId: selectedDistrict.value } : {}),
+      });
+      const idx = selectedOrgs[activeOrgType.value].length - 1;
+      selectedOrgs[activeOrgType.value][idx] = {
+        ...selectedOrgs[activeOrgType.value][idx],
+        [ancestorOrgType.slice(0, -1) + 'Id']: ancestorOrg.id,
+      };
+    }
+  }
+};
+
+watch(
+  () => selectedOrgs.schools.length,
+  (newLen, oldLen) => {
+    if (newLen <= oldLen) return;
+    populateAncestorOrgs('districts');
+  },
+);
+
+watch(
+  () => selectedOrgs.classes.length,
+  (newLen, oldLen) => {
+    if (newLen <= oldLen) return;
+    populateAncestorOrgs('districts');
+    populateAncestorOrgs('schools');
+  },
+);
 
 watch(selectedOrgs, (newValue) => {
   emit('selection', newValue);
