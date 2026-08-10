@@ -50,6 +50,7 @@
                 multiple
                 :meta-key-selection="false"
                 option-label="name"
+                data-key="id"
                 class="w-full"
                 list-style="max-height:20rem"
               >
@@ -265,17 +266,10 @@ const { data: orgData } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+// Cascade-deleting child orgs is handled by the districts/schools length watchers below,
+// so this covers both chip removal and unchecking directly in the Listbox.
 const remove = (org, orgKey) => {
   selectedOrgs[orgKey] = selectedOrgs[orgKey].filter((_org) => _org.id !== org.id);
-
-  // Also remove any child orgs
-  if (orgKey === 'districts') {
-    selectedOrgs.schools = selectedOrgs.schools.filter((s) => s.districtId !== org.id);
-    selectedOrgs.classes = selectedOrgs.classes.filter((c) => c.districtId !== org.id);
-  }
-  if (orgKey === 'schools') {
-    selectedOrgs.classes = selectedOrgs.classes.filter((c) => c.schoolId !== org.id);
-  }
 };
 
 let unsubscribe;
@@ -342,6 +336,32 @@ watch(
     if (newLen <= oldLen) return;
     populateAncestorOrgs('districts');
     populateAncestorOrgs('schools');
+  },
+);
+
+// Cascade-delete child orgs whenever a district or school is removed
+let previousDistrictIds = selectedOrgs.districts.map((d) => d.id);
+watch(
+  () => selectedOrgs.districts.map((d) => d.id),
+  (newIds) => {
+    const removedIds = previousDistrictIds.filter((id) => !newIds.includes(id));
+    removedIds.forEach((districtId) => {
+      selectedOrgs.schools = selectedOrgs.schools.filter((s) => s.districtId !== districtId);
+      selectedOrgs.classes = selectedOrgs.classes.filter((c) => c.districtId !== districtId);
+    });
+    previousDistrictIds = newIds;
+  },
+);
+
+let previousSchoolIds = selectedOrgs.schools.map((s) => s.id);
+watch(
+  () => selectedOrgs.schools.map((s) => s.id),
+  (newIds) => {
+    const removedIds = previousSchoolIds.filter((id) => !newIds.includes(id));
+    removedIds.forEach((schoolId) => {
+      selectedOrgs.classes = selectedOrgs.classes.filter((c) => c.schoolId !== schoolId);
+    });
+    previousSchoolIds = newIds;
   },
 );
 

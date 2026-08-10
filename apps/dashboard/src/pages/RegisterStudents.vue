@@ -627,12 +627,8 @@ const readyToProgress = (targetStep) => {
   // Step 6: check that organization requirements have been met
   if (targetStep === '7') {
     if (usingOrgPicker.value) {
-      // Check that selectedOrgs has district, school and class populated OR group OR family populated
-      return (
-        (!_isEmpty(selectedOrgs.value.districts) && !_isEmpty(selectedOrgs.value.schools)) ||
-        !_isEmpty(selectedOrgs.value.groups) ||
-        !_isEmpty(selectedOrgs.value.families)
-      );
+      // Check that selectedOrgs has a matching district/school pair populated OR group OR family populated
+      return eduOrgsSelected.value || !_isEmpty(selectedOrgs.value.groups) || !_isEmpty(selectedOrgs.value.families);
     } else {
       // Check that mappedColumns.organizations has all the required fields not null
       return (
@@ -711,7 +707,9 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
 
 const eduOrgsSelected = computed(() => {
   if (usingOrgPicker.value) {
-    return !_isEmpty(selectedOrgs.value.districts) && !_isEmpty(selectedOrgs.value.schools);
+    return selectedOrgs.value.schools.some((school) =>
+      selectedOrgs.value.districts.some((district) => district.id === school.districtId),
+    );
   } else {
     return (
       !_isEmpty(mappedColumns.value.organizations.districts) && !_isEmpty(mappedColumns.value.organizations.schools)
