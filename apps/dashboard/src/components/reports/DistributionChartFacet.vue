@@ -73,6 +73,12 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
   if (!binsObj || typeof binsObj !== 'object') return rows;
 
   for (const [binLabel, payload] of Object.entries(binsObj)) {
+    // Handle both range bins (e.g., "90-99") and single-value bins (e.g., "100").
+    // The original code assumed every bin would be a range. When a 7th grader scored exactly 100,
+    // the backend created a single-value bin "100". When split('-'), this only returns ['100'],
+    // so b becomes undefined. The midpoint calculation would fail and return NaN, causing the
+    // bin to be skipped. Now we check: if both a and b exist, use the midpoint; if only a exists,
+    // use that value directly. Example: raw: {100: {grades: {7: 1}}} instead of {90-99: {grades: {7: 1}}}
     const parts = String(binLabel).split('-').map(Number);
     const [a, b] = parts;
     let value;
