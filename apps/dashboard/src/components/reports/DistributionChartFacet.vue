@@ -141,12 +141,12 @@ const getBinSize = (scoreMode, taskId) => {
     else if (taskId === 'sre') return props.taskScoringVersions[taskId] >= 5 ? 65 : 10;
     else if (taskId === 'sre-es') return 10;
     else if (taskId === 'letter') return 10;
-    else if (taskId === 'swr') return 50;
-    else if (taskId === 'swr-es') return 50;
-    else if (taskId === 'cva') return 45;
-    else if (taskId === 'trog') return 75;
-    else if (taskId === 'roar-inference') return 50;
-    else if (taskId === 'morphology') return 45;
+    else if (taskId === 'swr') return 100;
+    else if (taskId === 'swr-es') return 100;
+    else if (taskId === 'cva') return 100;
+    else if (taskId === 'trog') return 100;
+    else if (taskId === 'roar-inference') return 100;
+    else if (taskId === 'morphology') return 100;
   }
   return 10;
 };
@@ -161,10 +161,10 @@ const getRangeLow = (scoreMode, taskId) => {
     else if (taskId === 'letter') return 0;
     else if (taskId === 'swr') return 100;
     else if (taskId === 'swr-es') return 100;
-    else if (taskId === 'cva') return 287;
-    else if (taskId === 'trog') return 53;
-    else if (taskId === 'roar-inference') return 300;
-    else if (taskId === 'morphology') return 280;
+    else if (taskId === 'cva') return 100;
+    else if (taskId === 'trog') return 100;
+    else if (taskId === 'roar-inference') return 100;
+    else if (taskId === 'morphology') return 100;
   }
   return 0;
 };
@@ -179,10 +179,10 @@ const getRangeHigh = (scoreMode, taskId) => {
     else if (taskId === 'letter') return 100;
     else if (taskId === 'swr') return 900;
     else if (taskId === 'swr-es') return 900;
-    else if (taskId === 'cva') return 753;
-    else if (taskId === 'trog') return 800;
-    else if (taskId === 'roar-inference') return 793;
-    else if (taskId === 'morphology') return 720;
+    else if (taskId === 'cva') return 900;
+    else if (taskId === 'trog') return 900;
+    else if (taskId === 'roar-inference') return 900;
+    else if (taskId === 'morphology') return 900;
   }
   return 100;
 };
