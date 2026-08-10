@@ -661,13 +661,14 @@ const orgCache = ref({
 // Helper function to get org ID (uses cache if available)
 const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchool = null) => {
   if (!orgName) return null;
-
+  const normalize = (s) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+  const cleanOrgInput = normalize(orgName);
   const cacheKey =
     orgType === 'schools'
-      ? `${orgName}-${selectedDistrict}`
+      ? `${cleanOrgInput}-${selectedDistrict}`
       : orgType === 'classes'
-        ? `${orgName}-${selectedSchool}`
-        : orgName;
+        ? `${cleanOrgInput}-${selectedSchool}`
+        : cleanOrgInput;
 
   // Check cache first
   if (orgCache.value[orgType].has(cacheKey)) {
@@ -689,18 +690,18 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
 
     // Cache orgs in case we need them for a subsequent call
     userAdminOrgs.forEach((org) => {
+      const cleanOrgDb = normalize(org.name);
       const cacheKey =
         orgType === 'schools'
-          ? `${org.name}-${selectedDistrict}`
+          ? `${cleanOrgDb}-${selectedDistrict}`
           : orgType === 'classes'
-            ? `${org.name}-${selectedSchool}`
-            : org.name;
+            ? `${cleanOrgDb}-${selectedSchool}`
+            : cleanOrgDb;
       orgCache.value[orgType].set(cacheKey, org.id);
     });
 
-    const normalize = (s) => s.trim().toLowerCase().replace(/\s+/g, ' ');
     // Find org with name orgName
-    const org = userAdminOrgs.find((o) => normalize(o.name) === normalize(orgName));
+    const org = userAdminOrgs.find((o) => normalize(o.name) === cleanOrgInput);
     return org?.id;
   } catch (error) {
     console.error(`Error fetching ${orgType} ID for ${orgName}:`, error);
