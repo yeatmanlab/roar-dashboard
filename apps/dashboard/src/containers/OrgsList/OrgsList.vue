@@ -310,7 +310,7 @@ const activeOrgType = computed(() => {
 
 const globalFilterFields = computed(() => {
   const sharedFilterFields = ['name', 'abbreviation', 'address.formattedAddress'];
-  if (activeOrgType.value === 'districts') {
+  if (activeOrgType.value === ORG_TYPES.DISTRICTS) {
     sharedFilterFields.push('ncesId', 'mdrNumber');
   }
   return sharedFilterFields;
@@ -387,12 +387,12 @@ const transformForExport = (targetOrgs) =>
       Tags: _get(org, 'tags', []).join(', ').trim(),
     };
 
-    if (activeOrgType.value === 'districts') {
+    if (activeOrgType.value === ORG_TYPES.DISTRICTS) {
       sharedFields['MdrNumber'] = _get(org, 'mdrNumber');
       sharedFields['NcesId'] = _get(org, 'ncesId');
     }
 
-    if (activeOrgType.value !== 'groups' && activeOrgType.value !== 'families') {
+    if (activeOrgType.value !== ORG_TYPES.GROUPS && activeOrgType.value !== ORG_TYPES.FAMILIES) {
       // Force boolean values to strings for CSV export
       sharedFields['Clever'] = _get(org, 'clever') ? 'TRUE' : 'FALSE';
       sharedFields['ClassLink'] = _get(org, 'classlink') ? 'TRUE' : 'FALSE';
@@ -403,10 +403,10 @@ const transformForExport = (targetOrgs) =>
 
 const getExportFilename = () => {
   let parentOrgName = '';
-  if (activeOrgType.value === 'classes') {
+  if (activeOrgType.value === ORG_TYPES.CLASSES) {
     const school = allSchools.value?.find((s) => s.id === selectedSchool.value);
     parentOrgName = school?.name ? `${_kebabCase(school.name)}-` : '';
-  } else if (activeOrgType.value === 'schools') {
+  } else if (activeOrgType.value === ORG_TYPES.SCHOOLS) {
     const district = allDistricts.value?.find((d) => d.id === selectedDistrict.value);
     parentOrgName = district?.name ? `${_kebabCase(district.name)}-` : '';
   }
