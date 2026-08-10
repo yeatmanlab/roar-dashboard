@@ -208,11 +208,11 @@ export const taskDisplayNames = {
     order: 30,
   },
   trog: {
-    name: 'Syntax',
-    publicName: 'ROAR - Syntax',
-    studentFacingName: 'Syntax',
-    extendedTitle: 'ROAR - Syntax',
-    extendedName: 'Syntax',
+    name: 'Picture Syntax',
+    publicName: 'ROAR - Picture Syntax',
+    studentFacingName: 'Picture Syntax',
+    extendedTitle: 'ROAR -Picture Syntax',
+    extendedName: 'Picture Syntax',
     order: 15,
   },
   roarInference: {
@@ -361,7 +361,7 @@ export const descriptionsByTaskId = {
     description: ' measures synonym knowledge in the context of a sentence.',
   },
   trog: {
-    header: 'Syntax',
+    header: 'Picture Syntax',
     description:
       ' measures receptive comprehension of English syntax - how word order, phrases, and clauses contribute to meaning.',
   },
@@ -374,13 +374,52 @@ export const descriptionsByTaskId = {
 
 const pageWidth = 190; // Set page width for calculations
 const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
+
+// Width html2canvas lays its cloned document out at when capturing elements for PDF export,
+// so exports look the same regardless of the exporting user's actual window size.
+export const PDF_CAPTURE_WINDOW_WIDTH = 1300;
+
+/**
+ * Polls an element until it has a non-zero rendered size, or the timeout elapses.
+ *
+ * html2canvas silently produces a 0x0 canvas when it captures an element that hasn't
+ * finished rendering. That 0x0 element results in the function returnScaleFactor returning
+ * an Infinity/NaN height, which is sent to the jsPDF function addImage. This causes internal
+ * errors in jsPDF.
+ *
+ * @param {HTMLElement} element - Element expected to become visible/sized
+ * @param {Object} [options]
+ * @param {number} [options.timeout=3000] - Max time to wait in ms
+ * @param {number} [options.interval=50] - Poll interval in ms
+ * @returns {Promise<boolean>} Resolves true once the element has a non-zero size, false if it timed out
+ */
+export const waitForElementRendered = async (element, { timeout = 3000, interval = 50 } = {}) => {
+  if (!element) return false;
+
+  const hasSize = () => element.offsetWidth > 0 && element.offsetHeight > 0;
+  const start = Date.now();
+  while (!hasSize() && Date.now() - start < timeout) {
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  return hasSize();
+};
+
 // Helper function to add an element to a document and perform page break logic
 export const addElementToPdf = async (element, document, yCounter, offset = 0) => {
-  await html2canvas(element, { windowWidth: 1300, scale: 2 }).then(function (canvas) {
+  await html2canvas(element, { windowWidth: PDF_CAPTURE_WINDOW_WIDTH, scale: 2 }).then(function (canvas) {
+    // A 0-width/height canvas means the element wasn't actually rendered when captured.
+    // Skip it rather than feeding jsPDF an Infinity/NaN dimension, which crashes deep
+    // inside its internal coordinate scaling instead of failing where the bad value originated.
+    if (!canvas.width || !canvas.height) {
+      console.warn('Skipping PDF export for element with zero-size canvas capture.', element?.id);
+      return;
+    }
+
     const imgData = canvas.toDataURL('image/jpeg', 0.7, { willReadFrequently: true });
     const scaledCanvasHeight = canvas.height * returnScaleFactor(canvas.width);
+    const safeOffset = Number.isFinite(offset) ? offset : 0;
     // Add a new page for each task if there is no more space in the page for task desc and graph
-    if (yCounter + scaledCanvasHeight + offset > 287) {
+    if (yCounter + scaledCanvasHeight + safeOffset > 287) {
       document.addPage();
       yCounter = 10;
     } else {
@@ -465,7 +504,7 @@ export const includeReliabilityFlagsOnExport = [
   'Sentence',
   'Palabra',
   'Frase',
-  'Syntax',
+  'Picture Syntax',
   'Inference',
   'Morphology',
   'Written Vocab',
@@ -804,7 +843,7 @@ export function getGradeWithSuffix(grade) {
  * @returns {string} The CSS color variable to use for the dial.
  */
 export const getDialColor = (grade, percentile, rawScore, taskId, optional = null, scoringVersion = null) => {
-  if (taskId === 'letter' || taskId === 'letter-en-ca' || taskId === 'phonics') {
+  if ((taskId === 'letter' && !scoringVersion) || taskId === 'letter-en-ca' || taskId === 'phonics') {
     return '#3b82f6'; // blue-500
   }
 
@@ -1536,8 +1575,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId === 'morphology') {
     if (scoringVersion >= 1) {
       return {
-        min: 280,
-        max: 720,
+        min: 100,
+        max: 900,
       };
     }
     // Percent
@@ -1548,8 +1587,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId === 'cva') {
     if (scoringVersion >= 1) {
       return {
-        min: 287,
-        max: 753,
+        min: 100,
+        max: 900,
       };
     }
     // Percent
@@ -1560,8 +1599,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId === 'roar-inference') {
     if (scoringVersion >= 1) {
       return {
-        min: 300,
-        max: 793,
+        min: 100,
+        max: 900,
       };
     }
     // Percent
@@ -1572,8 +1611,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId === 'trog') {
     if (scoringVersion >= 1) {
       return {
-        min: 53,
-        max: 800,
+        min: 100,
+        max: 900,
       };
     }
     // Percent
@@ -1892,7 +1931,7 @@ export const taskInfoById = {
   cva: {
     header: '`ROAR - Written Vocabulary',
     color: '#52627E',
-    subheader: 'CVA Assessment',
+    subheader: 'Written Vocabulary',
     desc:
       'Written Vocabulary evaluates a student’s knowledge of academic vocabulary through their ability to identify words with similar ' +
       'meanings in context. Vocabulary knowledge is a critical component of reading comprehension, as students must understand the ' +
@@ -1908,7 +1947,7 @@ export const taskInfoById = {
   morphology: {
     header: 'ROAR - Morphology',
     color: '#52627E',
-    subheader: 'Morphology Assessment',
+    subheader: 'Morphology',
     desc:
       'Morphology measures a student’s ability to use morphological information, such as prefixes and suffixes, to signal the meaning ' +
       'and grammatical function of words in a sentence. Morphological awareness supports reading comprehension by helping students to ' +
@@ -1923,7 +1962,7 @@ export const taskInfoById = {
   'roar-inference': {
     header: 'ROAR - Inference',
     color: '#52627E',
-    subheader: 'Inference Assessment',
+    subheader: 'Inference',
     desc:
       'Inference evaluates a student’s ability to make meaning beyond information that is explicitly stated in a text. The ability to ' +
       'make inferences is an important component of reading comprehension, as readers must integrate statements in a passage with their ' +
@@ -1938,11 +1977,11 @@ export const taskInfoById = {
       'are likely sufficient to support successful understanding of grade-level texts and continued growth in reading comprehension.',
   },
   trog: {
-    header: 'ROAR - Syntax',
+    header: 'ROAR - Picture Syntax',
     color: '#52627E',
-    subheader: 'TROG Assessment',
+    subheader: 'Picture Syntax',
     desc:
-      'Syntax evaluates a student’s understanding of English sentence structure and how grammatical relationships contribute to meaning. ' +
+      'Picture Syntax evaluates a student’s understanding of English sentence structure and how grammatical relationships contribute to meaning. ' +
       'Syntactic knowledge supports reading comprehension by helping students interpret how word order, phrases, and clauses work together ' +
       'to convey ideas within a sentence. This assessment measures a student’s ability to use syntactic structures to understand meaning ' +
       'in context, providing insight into their comprehension of English language structures. The student’s score will range between ' +

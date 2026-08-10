@@ -7,10 +7,10 @@
       <div v-for="taskId of foundationalTaskIds" :key="taskId" class="chart-row">
         <div class="chart-label text-gray-600">
           <span class="whitespace-nowrap text-lg font-bold">{{
-            tasksDictionary?.[taskId]?.nameTechnical ?? taskId
+            tasksDictionary?.[taskId]?.technicalName ?? taskId
           }}</span>
-          <span v-if="tasksDictionary?.[taskId]?.nameSimple" class="text-sm font-light uppercase">
-            ({{ tasksDictionary?.[taskId]?.nameSimple }})</span
+          <span v-if="tasksDictionary?.[taskId]?.publicName" class="text-sm font-light uppercase">
+            ({{ tasksDictionary?.[taskId]?.publicName }})</span
           >
         </div>
         <PvChart
@@ -33,10 +33,9 @@
         </div>
       </div>
 
-      <div v-if="compositeFoundational" class="chart-row">
+      <!-- <div v-if="compositeFoundational" class="chart-row">
         <div class="chart-label text-gray-600">
           <span class="whitespace-nowrap text-lg font-bold">Foundational Skills Composite</span>
-          <!-- <span class="text-sm font-light uppercase"> (Composite Score)</span> -->
         </div>
         <PvChart
           v-if="!isChartEmpty(compositeFoundational)"
@@ -57,7 +56,7 @@
           The Foundational Skills Composite reflects overall performance on foundational reading skills, including
           phonological awareness, letter knowledge, word reading, and sentence reading.
         </div>
-      </div>
+      </div> -->
     </div>
 
     <hr v-if="spanishFoundationalTaskIds.length > 0" class="divider" />
@@ -69,10 +68,10 @@
       <div v-for="taskId of spanishFoundationalTaskIds" :key="taskId" class="chart-row">
         <div class="chart-label text-gray-600">
           <span class="whitespace-nowrap text-lg font-bold">{{
-            tasksDictionary?.[taskId]?.nameTechnical ?? taskId
+            tasksDictionary?.[taskId]?.technicalName ?? taskId
           }}</span>
-          <span v-if="tasksDictionary?.[taskId]?.nameSimple" class="text-sm font-light uppercase">
-            ({{ tasksDictionary?.[taskId]?.nameSimple }})</span
+          <span v-if="tasksDictionary?.[taskId]?.publicName" class="text-sm font-light uppercase">
+            ({{ tasksDictionary?.[taskId]?.publicName }})</span
           >
         </div>
         <PvChart
@@ -105,10 +104,10 @@
       <div v-for="taskId of comprehensionTaskIds" :key="taskId" class="chart-row">
         <div class="chart-label text-gray-600">
           <span class="whitespace-nowrap text-lg font-bold">{{
-            tasksDictionary?.[taskId]?.nameTechnical ?? taskId
+            tasksDictionary?.[taskId]?.technicalName ?? taskId
           }}</span>
-          <span v-if="tasksDictionary?.[taskId]?.nameSimple" class="text-sm font-light uppercase">
-            ({{ tasksDictionary?.[taskId]?.nameSimple }})</span
+          <span v-if="tasksDictionary?.[taskId]?.publicName" class="text-sm font-light uppercase">
+            ({{ tasksDictionary?.[taskId]?.publicName }})</span
           >
         </div>
         <PvChart
@@ -155,42 +154,23 @@
 <script setup>
 import { computed } from 'vue';
 import PvChart from 'primevue/chart';
-import {
-  setDistributionChartData,
-  setDistributionChartOptions,
-  mapSupportLevelCounts,
-  aggregateSupportLevelRuns,
-} from '@/helpers/plotting';
-import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
+import { setDistributionChartData, setDistributionChartOptions } from '@/helpers/plotting';
+import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
 import { descriptionsByTaskId } from '@/helpers/reports';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 const props = defineProps({
   taskIds: {
     type: Array,
     required: true,
   },
-  /**
-   * Backend-aggregated support-level distributions from the score-overview
-   * endpoint, keyed by task slug and shaped
-   * `{ needsExtraSupport: { count }, developingSkill: { count }, achievedSkill: { count } }`.
-   * Already scoped to the report's org/class/group by the server.
-   */
-  supportLevelsByTaskId: {
+  runsByTaskId: {
     type: Object,
-    required: false,
-    default: () => ({}),
+    required: true,
   },
-  /**
-   * Runs backing the foundational-composite row, which has no equivalent in the
-   * score-overview endpoint and so is still derived client-side. Either shape is
-   * accepted — an array of runs at school/class/group scope, or the pre-aggregated
-   * `{ below: { total }, ... }` object at district scope — and
-   * {@link aggregateSupportLevelRuns} distinguishes them, so no scope prop is needed.
-   */
-  compositeFoundationalRuns: {
-    type: [Array, Object],
-    required: false,
-    default: null,
+  orgType: {
+    type: String,
+    required: true,
   },
   tasksDictionary: {
     type: Object,
@@ -214,16 +194,56 @@ const comprehensionTaskIds = computed(() => {
   return props.taskIds.filter((id) => comprehension.includes(id));
 });
 
-const compositeFoundational = computed(() => aggregateSupportLevelRuns(props.compositeFoundationalRuns));
+// const compositeFoundational = computed(() => {
+//   const composite = props.runsByTaskId?.['compositeFoundational'];
+//   if (!composite) return null;
 
-// Server-aggregated counts, mapped from the endpoint's support-level names to the
-// chart's below/some/above vocabulary. The endpoint already aggregates across the
-// report's scope, so there is no district-vs-school branch to make here.
-const supportLevelCountsByTaskId = computed(() =>
-  Object.fromEntries(
-    props.taskIds.map((taskId) => [taskId, mapSupportLevelCounts(props.supportLevelsByTaskId?.[taskId])]),
-  ),
-);
+//   if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
+//     return {
+//       below: composite.below?.total ?? 0,
+//       some: composite.some?.total ?? 0,
+//       above: composite.above?.total ?? 0,
+//     };
+//   }
+
+//   const counts = { below: 0, some: 0, above: 0 };
+//   for (const run of composite) {
+//     const supportLevel = run.scores?.support_level;
+//     if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.below++;
+//     else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.some++;
+//     else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.above++;
+//   }
+//   return counts;
+// });
+
+const supportLevelCountsByTaskId = computed(() => {
+  const result = {};
+  for (const taskId of props.taskIds) {
+    const runs = props.runsByTaskId?.[taskId];
+    if (!runs) {
+      result[taskId] = { below: 0, some: 0, above: 0 };
+      continue;
+    }
+
+    if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
+      result[taskId] = {
+        below: runs.below?.total ?? 0,
+        some: runs.some?.total ?? 0,
+        above: runs.above?.total ?? 0,
+      };
+    } else {
+      const counts = { below: 0, some: 0, above: 0 };
+      for (const run of runs) {
+        const supportLevel = run.scores?.support_level;
+        if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.below++;
+        else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.some++;
+        else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.above++;
+      }
+      result[taskId] = counts;
+    }
+  }
+  return result;
+});
 
 const isChartEmpty = (chartData) => {
   return !chartData || (chartData.below === 0 && chartData.some === 0 && chartData.above === 0);
@@ -247,13 +267,13 @@ const chartOptionsByTaskId = computed(() => {
   return result;
 });
 
-const compositeFoundationalChartData = computed(() =>
-  compositeFoundational.value ? setDistributionChartData(compositeFoundational.value) : null,
-);
+// const compositeFoundationalChartData = computed(() =>
+//   compositeFoundational.value ? setDistributionChartData(compositeFoundational.value) : null,
+// );
 
-const compositeFoundationalChartOptions = computed(() =>
-  compositeFoundational.value ? setDistributionChartOptions(compositeFoundational.value) : null,
-);
+// const compositeFoundationalChartOptions = computed(() =>
+//   compositeFoundational.value ? setDistributionChartOptions(compositeFoundational.value) : null,
+// );
 
 const grayChartData = computed(() => ({
   labels: [''],
@@ -302,7 +322,8 @@ const grayChartOptions = computed(() => {
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
   align-items: center;
-  height: 2rem;
+  min-height: 2rem;
+  row-gap: 0.5rem;
 }
 
 .chart-section-header {
@@ -361,7 +382,11 @@ const grayChartOptions = computed(() => {
 
   .chart-row {
     grid-template-columns: 1fr;
-    row-gap: 0.25rem;
+    row-gap: 0.5rem;
+  }
+
+  .chart-label {
+    margin-top: 0;
   }
 
   .info-icon,

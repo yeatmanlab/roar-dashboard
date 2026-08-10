@@ -29,6 +29,7 @@
             :task-scoring-versions="getScoringVersions"
             :page-limit="pageLimit"
             :allow-filtering="true"
+            :allow-export-p-d-f="false"
             :reset-filters="resetFilters"
             :lazy-pre-sorting="orderBy"
             @export-selected="exportSelected"
