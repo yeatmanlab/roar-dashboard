@@ -85,6 +85,7 @@
   </div>
 </template>
 <script setup>
+import { getGrade } from '@bdelab/roar-utils';
 import { ref, watch, computed } from 'vue';
 import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
@@ -262,12 +263,17 @@ async function validityCheck(row) {
       errors.push('Username is required');
     }
   }
+
   if (!_get(row, 'grade')) {
     errors.push('Grade is required');
+  } else if (!getGrade(_get(row, 'grade'))) {
+    errors.push('Grade is invalid');
   }
+
   if (!_get(row, 'dob')) {
     errors.push('Date of Birth is required');
   }
+
   // check that password is valid
   if (!isPasswordValid(row['password'])) {
     errors.push('Password must be at least 6 characters long and contain at least one letter');
@@ -276,22 +282,26 @@ async function validityCheck(row) {
   // If not using the org picker, check that a district and school, or a group are selected
   if (!props.usingOrgPicker) {
     if (!(_get(row, 'districts') && _get(row, 'schools')) && !_get(row, 'groups')) {
-      errors.push('District, School, or Group is required');
+      errors.push('District & School or Group is required');
     }
 
     if (props.resolveOrgId) {
       if (_get(row, 'districts') && _get(row, 'schools')) {
-        const districtId = await props.resolveOrgId(_get(row, 'districts'));
-        const schoolId = await props.resolveOrgId(_get(row, 'schools'));
-        if (!districtId || !schoolId) {
-          errors.push('District and School must be valid');
+        const districtId = await props.resolveOrgId('districts', _get(row, 'districts'));
+        if (!districtId) {
+          errors.push('District is invalid');
+        } else {
+          const schoolId = await props.resolveOrgId('schools', _get(row, 'schools'), districtId);
+          if (!schoolId) {
+            errors.push('School is invalid');
+          }
         }
       }
 
       if (_get(row, 'groups')) {
-        const groupId = await props.resolveOrgId(_get(row, 'groups'));
+        const groupId = await props.resolveOrgId('groups', _get(row, 'groups'));
         if (!groupId) {
-          errors.push('Group must be valid');
+          errors.push('Group is invalid');
         }
       }
     }
