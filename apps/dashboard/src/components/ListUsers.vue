@@ -207,69 +207,53 @@ const tableData = computed(() =>
   })),
 );
 
+// Sort and filter are enabled by default
 const columns = ref([
   {
     field: 'username',
     header: 'Username',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'email',
     header: 'Email',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'name.first',
     header: 'First Name',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'name.last',
     header: 'Last Name',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'studentData.state_id',
     header: 'State Id',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'studentData.grade',
     header: 'Grade',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'studentData.gender',
     header: 'Gender',
     dataType: 'text',
     sort: false,
-    filter: true,
   },
   {
     field: 'studentData.dob',
     header: 'Date of Birth',
     dataType: 'date',
-    sort: true,
-    filter: true,
   },
   {
     field: 'userType',
     header: 'User Type',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'archived',
