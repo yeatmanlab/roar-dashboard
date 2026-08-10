@@ -73,8 +73,16 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
   if (!binsObj || typeof binsObj !== 'object') return rows;
 
   for (const [binLabel, payload] of Object.entries(binsObj)) {
-    const [a, b] = String(binLabel).split('-').map(Number);
-    const value = Number.isFinite(a) && Number.isFinite(b) ? (a + b) / 2 : NaN;
+    const parts = String(binLabel).split('-').map(Number);
+    const [a, b] = parts;
+    let value;
+    if (Number.isFinite(a) && Number.isFinite(b)) {
+      value = (a + b) / 2;
+    } else if (Number.isFinite(a)) {
+      value = a;
+    } else {
+      value = NaN;
+    }
     if (!Number.isFinite(value)) continue;
 
     if (facet === 'grade') {
