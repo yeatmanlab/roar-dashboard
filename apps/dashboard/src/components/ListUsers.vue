@@ -172,7 +172,6 @@ const initialized = ref(false);
 const toast = useToast();
 
 const page = ref(0);
-const orderBy = ref(null);
 
 const props = defineProps({
   orgType: {
@@ -193,7 +192,7 @@ const {
   isLoading,
   isFetching,
   data: users,
-} = useOrgUsersQuery(props.orgType, props.orgId, page, orderBy, {
+} = useOrgUsersQuery(props.orgType, props.orgId, page, null, {
   enabled: initialized,
 });
 
@@ -203,74 +202,58 @@ const tableData = computed(() =>
     studentData: {
       ...user.studentData,
       // Normalize so sort works properly
-      grade: user.studentData?.grade != null ? String(user.studentData.grade) : user.studentData?.grade,
+      grade: user.studentData?.grade == null ? user.studentData?.grade : String(user.studentData.grade),
     },
   })),
 );
 
+// Sort and filter are enabled by default
 const columns = ref([
   {
     field: 'username',
     header: 'Username',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'email',
     header: 'Email',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'name.first',
     header: 'First Name',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'name.last',
     header: 'Last Name',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'studentData.state_id',
     header: 'State Id',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'studentData.grade',
     header: 'Grade',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'studentData.gender',
     header: 'Gender',
     dataType: 'text',
     sort: false,
-    filter: true,
   },
   {
     field: 'studentData.dob',
     header: 'Date of Birth',
     dataType: 'date',
-    sort: true,
-    filter: true,
   },
   {
     field: 'userType',
     header: 'User Type',
     dataType: 'text',
-    sort: true,
-    filter: true,
   },
   {
     field: 'archived',

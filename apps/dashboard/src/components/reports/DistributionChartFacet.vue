@@ -90,13 +90,14 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
       }
     } else {
       const schools = payload?.schools ?? {};
+      const binGrades = payload?.grades ?? {};
+
       for (const school of Object.values(schools)) {
         const name = school?.name ?? 'Unknown school';
-        const grades = school?.grades ?? {};
 
-        // If grade breakdown is available, expand by grade; otherwise use total count
-        if (Object.keys(grades).length > 0) {
-          for (const [gradeKey, countRaw] of Object.entries(grades)) {
+        // For school view, break down by individual grades from bin level
+        if (Object.keys(binGrades).length > 0) {
+          for (const [gradeKey, countRaw] of Object.entries(binGrades)) {
             const count = Number(countRaw) || 0;
             for (let i = 0; i < count; i++) {
               rows.push({
@@ -202,12 +203,14 @@ const computedRuns = computed(() => {
       for (const levelKey of levels) {
         const binsObj = props?.runs?.[levelKey]?.[modeKey];
         if (binsObj) {
-          rows.push(...makeRunsFromBins({ binsObj, facet, scoreKey, levelKey }));
+          rows.push(...makeRunsFromBins({ binsObj, facet, scoreKey }));
         }
       }
     } else {
       // fallback to flat shape: props.runs.percentile / props.runs.raw (no color by level)
-      rows.push(...makeRunsFromBins({ binsObj: props?.runs?.[modeKey], facet, scoreKey }));
+      rows.push(
+        ...makeRunsFromBins({ binsObj: props?.runs?.[modeKey], facet, scoreKey, scoreMode: scoreMode.value.name }),
+      );
     }
 
     // Filter grades for percentile view (only grades < 6)
@@ -368,7 +371,7 @@ const handleModeChange = () => {
 };
 
 onMounted(() => {
-  draw(); // Call your function when the component is mounted
+  draw();
 });
 </script>
 
