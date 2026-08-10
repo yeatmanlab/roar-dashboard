@@ -172,7 +172,6 @@ const initialized = ref(false);
 const toast = useToast();
 
 const page = ref(0);
-const orderBy = ref(null);
 
 const props = defineProps({
   orgType: {
@@ -193,7 +192,7 @@ const {
   isLoading,
   isFetching,
   data: users,
-} = useOrgUsersQuery(props.orgType, props.orgId, page, orderBy, {
+} = useOrgUsersQuery(props.orgType, props.orgId, page, null, {
   enabled: initialized,
 });
 
