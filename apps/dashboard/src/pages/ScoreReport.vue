@@ -567,9 +567,7 @@ const handleExportToPdf = async () => {
     await nextTick();
 
     // Add Task Description and Task Chart to document
-    console.log('looking for description element for ', taskId);
     const tabViewDesc = document.getElementById('tab-view-description-' + taskId);
-    console.log('found', tabViewDesc);
     const tabViewChart = document.getElementById('tab-view-chart-' + taskId);
 
     // Wait for element to be rendered before capturing it for PDF export.
@@ -793,7 +791,12 @@ const assignedNormedTaskIds = computed(() => assignedTaskIds.value.filter((id) =
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
-    const engagementFlagExists = Object.keys(assessment.engagementFlags).some((flag) =>
+    // engagementFlags may arrive as an array (backend / normalized rows) or a legacy
+    // Firestore object map (raw assessment) — normalize before reading.
+    const engagementFlags = Array.isArray(assessment.engagementFlags)
+      ? assessment.engagementFlags
+      : Object.keys(assessment.engagementFlags ?? {});
+    const engagementFlagExists = engagementFlags.some((flag) =>
       includedValidityFlags[assessment.taskId]?.includes(flag),
     );
     if (support_level === 'Optional') {
@@ -1595,10 +1598,14 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
       // Add reliability information
       if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
-        const engagementFlags = Object.keys(score.engagementFlags);
+        // engagementFlags may arrive as an array (backend / normalized rows) or a legacy
+        // Firestore object map (raw assessment) — normalize before reading.
+        const engagementFlags = Array.isArray(score.engagementFlags)
+          ? score.engagementFlags
+          : Object.keys(score.engagementFlags ?? {});
         if (engagementFlags.length > 0) {
           if (includedValidityFlags[taskId]) {
-            const filteredFlags = Object.keys(score.engagementFlags).filter((flag) =>
+            const filteredFlags = engagementFlags.filter((flag) =>
               includedValidityFlags[taskId].includes(flag),
             );
             tableRow[`${taskName} - Reliability`] =
