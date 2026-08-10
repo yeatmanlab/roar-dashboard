@@ -202,7 +202,7 @@ const tableData = computed(() =>
     studentData: {
       ...user.studentData,
       // Normalize so sort works properly
-      grade: user.studentData?.grade != null ? String(user.studentData.grade) : user.studentData?.grade,
+      grade: user.studentData?.grade == null ? user.studentData?.grade : String(user.studentData.grade),
     },
   })),
 );
