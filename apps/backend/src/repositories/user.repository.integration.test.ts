@@ -13,7 +13,6 @@ import { OrgFactory } from '../test-support/factories/org.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
 import { UserGroupFactory } from '../test-support/factories/user-group.factory';
 import { GroupFactory } from '../test-support/factories/group.factory';
-import { UserGroupFactory } from '../test-support/factories/user-group.factory';
 import { FamilyFactory } from '../test-support/factories/family.factory';
 import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
 import { UserRole } from '../enums/user-role.enum';
@@ -278,7 +277,7 @@ describe('UserRepository', () => {
       expect(result).toBe(false);
     });
   });
-  
+
   describe('findByEmails', () => {
     it('returns users matching the emails, case-insensitively', async () => {
       const user = await UserFactory.create({ email: 'Found.User@example.org' });

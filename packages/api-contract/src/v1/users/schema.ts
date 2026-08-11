@@ -194,12 +194,7 @@ export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
  * - `unenroll: true` routes an existing user to the unenroll bin.
  *
  * The server classifies create / update / unenroll by matching `email` against existing users —
- * the client never declares the bin.
- *
- * @NOTE Parity gap to verify against the legacy `batchImportUpdate` cloud function before merge:
- *   the single-create schema requires `email` and has no `username`. If the cloud function imports
- *   username-only students (synthesizing an email), this schema must grow `username` and thread it
- *   through the create path. Tracked as part of the batchImportUpdate parity review.
+ * the client never declares the bin. Emails are generated from the username if not provided upon importing on the client-side.
  */
 export const ImportUserRowSchema = CreateUserRequestBodySchema.omit({ password: true })
   .extend({
