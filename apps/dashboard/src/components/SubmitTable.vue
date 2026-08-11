@@ -266,7 +266,7 @@ async function validityCheck(row) {
 
   if (!_get(row, 'grade')) {
     errors.push('Grade is required');
-  } else if (!getGrade(_get(row, 'grade'))) {
+  } else if (Number.isNaN(getGrade(_get(row, 'grade')))) {
     errors.push('Grade is invalid');
   }
 
