@@ -51,14 +51,14 @@ const routes = [
     name: 'SWR-ES',
     component: () => import('../components/tasks/TaskSWR.vue'),
     props: { taskId: 'swr-es', language: 'es' },
-    meta: { pageTitle: 'SWR (ES)' },
+    meta: { pageTitle: 'SWR-ES' },
   },
   {
     path: GAME_ROUTES.SWR_PT,
     name: 'SWR-PT',
     component: () => import('../components/tasks/TaskSWR.vue'),
     props: { taskId: 'swr-pt', language: 'pt' },
-    meta: { pageTitle: 'SWR (PT)' },
+    meta: { pageTitle: 'SWR-PT' },
   },
   {
     path: GAME_ROUTES.PA,
@@ -79,7 +79,7 @@ const routes = [
     name: 'PA-PT',
     component: () => import('../components/tasks/TaskPA.vue'),
     props: { taskId: 'pa-pt', language: 'pt' },
-    meta: { pageTitle: 'PA (PT)' },
+    meta: { pageTitle: 'PA-PT' },
   },
   {
     path: GAME_ROUTES.SRE,
@@ -100,7 +100,7 @@ const routes = [
     name: 'SRE-PT',
     component: () => import('../components/tasks/TaskSRE.vue'),
     props: { taskId: 'sre-pt', language: 'pt' },
-    meta: { pageTitle: 'SRE (PT)' },
+    meta: { pageTitle: 'SRE-PT' },
   },
   {
     path: GAME_ROUTES.LETTER,
@@ -170,14 +170,14 @@ const routes = [
     name: 'Fluency-ARF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-arf-es', language: 'es' },
-    meta: { pageTitle: 'ROAM-ARF ES' },
+    meta: { pageTitle: 'ROAM-ARF-ES' },
   },
   {
     path: GAME_ROUTES.FLUENCY_ARF_PT,
     name: 'Fluency-ARF-PT',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-arf-pt', language: 'pt' },
-    meta: { pageTitle: 'ROAM-ARF PT' },
+    meta: { pageTitle: 'ROAM-ARF-PT' },
   },
   {
     path: GAME_ROUTES.FLUENCY_CALF,
@@ -191,14 +191,14 @@ const routes = [
     name: 'Fluency-CALF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-calf-es', language: 'es' },
-    meta: { pageTitle: 'ROAM-CALF ES' },
+    meta: { pageTitle: 'ROAM-CALF-ES' },
   },
   {
     path: GAME_ROUTES.FLUENCY_CALF_PT,
     name: 'Fluency-CALF-PT',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'fluency-calf-pt', language: 'pt' },
-    meta: { pageTitle: 'ROAM-CALF PT' },
+    meta: { pageTitle: 'ROAM-CALF-PT' },
   },
   {
     path: GAME_ROUTES.ROAM_ALPACA,
@@ -212,14 +212,14 @@ const routes = [
     name: 'Fluency-Alpaca-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'roam-alpaca-es', language: 'es' },
-    meta: { pageTitle: 'ROAM-Alpaca ES' },
+    meta: { pageTitle: 'ROAM-Alpaca-ES' },
   },
   {
     path: GAME_ROUTES.ROAM_ALPACA_PT,
     name: 'Fluency-Alpaca-PT',
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: { taskId: 'roam-alpaca-pt', language: 'pt' },
-    meta: { pageTitle: 'ROAM-Alpaca PT' },
+    meta: { pageTitle: 'ROAM-Alpaca-PT' },
   },
   {
     path: GAME_ROUTES.CORE_TASKS,
@@ -235,7 +235,7 @@ const routes = [
     component: () => import('../components/tasks/TaskLevante.vue'),
     // Allow passing taskId as a route parameter
     props: (route) => ({ ...route.params, language: 'pt' }),
-    meta: { pageTitle: 'Core Tasks (PT)' },
+    meta: { pageTitle: 'Core Tasks-PT' },
   },
   {
     path: GAME_ROUTES.SYMBOL_SEARCH,
@@ -249,7 +249,7 @@ const routes = [
     name: 'Symbol Search-PT',
     component: () => import('../components/tasks/TaskRan.vue'),
     props: { taskId: 'symbol-search-pt', language: 'pt' },
-    meta: { pageTitle: 'Symbol Search (PT)' },
+    meta: { pageTitle: 'Symbol Search-PT' },
   },
   {
     path: GAME_ROUTES.RAN,
@@ -284,7 +284,7 @@ const routes = [
     name: 'MP-PT',
     component: () => import('../components/tasks/TaskRoav.vue'),
     props: { taskId: 'roav-mp-pt', language: 'pt' },
-    meta: { pageTitle: 'MP (PT)' },
+    meta: { pageTitle: 'MP-PT' },
   },
   {
     path: GAME_ROUTES.ROAV_RVP,
@@ -298,7 +298,7 @@ const routes = [
     name: 'RVP-PT',
     component: () => import('../components/tasks/TaskRoav.vue'),
     props: { taskId: 'roav-rvp-pt', language: 'pt' },
-    meta: { pageTitle: 'RVP (PT)' },
+    meta: { pageTitle: 'RVP-PT' },
   },
   {
     path: GAME_ROUTES.ROAR_READALOUD,
@@ -349,7 +349,7 @@ const routes = [
       language: 'es',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'SWR (ES)', permission: Permissions.Tasks.LAUNCH },
+    meta: { pageTitle: 'SWR-ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.SWR_PT,
@@ -360,7 +360,7 @@ const routes = [
       language: 'pt',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'SWR (PT)', permission: Permissions.Tasks.LAUNCH },
+    meta: { pageTitle: 'SWR-PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.PA,
@@ -528,7 +528,7 @@ const routes = [
       language: 'es',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'ROAM-ARF ES', permission: Permissions.Tasks.LAUNCH },
+    meta: { pageTitle: 'ROAM-ARF-ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_ARF_PT,
@@ -539,7 +539,7 @@ const routes = [
       language: 'pt',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'ROAM-ARF PT', permission: Permissions.Tasks.LAUNCH },
+    meta: { pageTitle: 'ROAM-ARF-PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_CALF,
@@ -561,7 +561,7 @@ const routes = [
       language: 'es',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'ROAM-CALF ES', permission: Permissions.Tasks.LAUNCH },
+    meta: { pageTitle: 'ROAM-CALF-ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.FLUENCY_CALF_PT,
@@ -572,7 +572,7 @@ const routes = [
       language: 'pt',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'ROAM-CALF PT', permission: Permissions.Tasks.LAUNCH },
+    meta: { pageTitle: 'ROAM-CALF-PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAM_ALPACA,
@@ -594,7 +594,7 @@ const routes = [
       language: 'es',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'ROAM-Alpaca ES', permission: Permissions.Tasks.LAUNCH },
+    meta: { pageTitle: 'ROAM-Alpaca-ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAM_ALPACA_PT,
@@ -605,7 +605,7 @@ const routes = [
       language: 'pt',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'ROAM-Alpaca PT', permission: Permissions.Tasks.LAUNCH },
+    meta: { pageTitle: 'ROAM-Alpaca-PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.CORE_TASKS,
@@ -627,7 +627,7 @@ const routes = [
       language: 'pt',
       launchId: route.params.launchId,
     }),
-    meta: { pageTitle: 'Core Tasks (PT)', permission: Permissions.Tasks.LAUNCH },
+    meta: { pageTitle: 'Core Tasks-PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.RAN,
@@ -667,7 +667,7 @@ const routes = [
       launchId: route.params.launchId,
     }),
     meta: {
-      pageTitle: 'Symbol Search (PT)',
+      pageTitle: 'Symbol Search-PT',
       permission: Permissions.Tasks.LAUNCH,
     },
   },
