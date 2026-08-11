@@ -270,6 +270,18 @@ function getPercentileRange(percentile: number): string {
   return '0-10';
 }
 
+/**
+ * Generates a map of score ranges as human-readable strings.
+ *
+ * Creates ranges by stepping from min to max with the given divisor as the step size.
+ * Each range is represented as "start-end" (e.g., "10-20") or as a single value (e.g., "30")
+ * if the start and end are the same. Ensures the final range includes max.
+ *
+ * @param min - The minimum value of the range
+ * @param max - The maximum value of the range (exclusive in loop, but included in final range)
+ * @param divisor - The step size between range starts
+ * @returns A map with numeric indices as keys and range strings as values (e.g., { 0: "0-10", 1: "10-20", 2: "20" })
+ */
 function generateScoreRangeMap(min: number, max: number, divisor: number): Record<number, string> {
   const rangeMap: Record<number, string> = {};
   let index = 0;
