@@ -23,8 +23,8 @@
     >
       <ScoreDistributionOverview
         :task-ids="sortedAndFilteredTaskIds"
-        :runs-by-task-id="runsByTaskIdForDistributionChart"
-        :org-type="orgType"
+        :support-levels-by-task-id="supportLevelsByTaskId"
+        :composite-foundational-runs="null"
         :tasks-dictionary="tasksDictionary"
       />
       <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
@@ -69,10 +69,12 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import ReportHeader from '@/components/ReportHeader.vue';
 import ScoreDistributionOverview from '@/components/reports/ScoreDistributionOverview.vue';
+import { SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
 
-defineProps({
+const props = defineProps({
   orgType: {
     type: String,
     required: true,
@@ -128,4 +130,40 @@ defineProps({
 });
 
 defineEmits(['view-change']);
+
+// Transform runs-based data into the support-level format expected by ScoreDistributionOverview
+const supportLevelsByTaskId = computed(() => {
+  const result = {};
+  for (const taskId of props.sortedAndFilteredTaskIds) {
+    const runs = props.runsByTaskIdForDistributionChart?.[taskId];
+    if (!runs) {
+      result[taskId] = { needsExtraSupport: { count: 0 }, developingSkill: { count: 0 }, achievedSkill: { count: 0 } };
+      continue;
+    }
+
+    if (props.orgType === 'district') {
+      // District-aggregated format
+      result[taskId] = {
+        needsExtraSupport: { count: runs.below?.total ?? 0 },
+        developingSkill: { count: runs.some?.total ?? 0 },
+        achievedSkill: { count: runs.above?.total ?? 0 },
+      };
+    } else {
+      // Individual runs format (school/class/group scope)
+      const counts = { needsExtraSupport: 0, developingSkill: 0, achievedSkill: 0 };
+      for (const run of runs) {
+        const supportLevel = run.scores?.support_level;
+        if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT) counts.needsExtraSupport++;
+        else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL) counts.developingSkill++;
+        else if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL) counts.achievedSkill++;
+      }
+      result[taskId] = {
+        needsExtraSupport: { count: counts.needsExtraSupport },
+        developingSkill: { count: counts.developingSkill },
+        achievedSkill: { count: counts.achievedSkill },
+      };
+    }
+  }
+  return result;
+});
 </script>

@@ -1605,9 +1605,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
           : Object.keys(score.engagementFlags ?? {});
         if (engagementFlags.length > 0) {
           if (includedValidityFlags[taskId]) {
-            const filteredFlags = engagementFlags.filter((flag) =>
-              includedValidityFlags[taskId].includes(flag),
-            );
+            const filteredFlags = engagementFlags.filter((flag) => includedValidityFlags[taskId].includes(flag));
             tableRow[`${taskName} - Reliability`] =
               filteredFlags.length === 0 ? 'Unreliable' : `Unreliable: ${filteredFlags.map(_lowerCase).join(', ')}`;
           } else {

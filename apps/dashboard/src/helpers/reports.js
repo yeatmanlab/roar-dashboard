@@ -211,7 +211,7 @@ export const taskDisplayNames = {
     name: 'Picture Syntax',
     publicName: 'ROAR - Picture Syntax',
     studentFacingName: 'Picture Syntax',
-    extendedTitle: 'ROAR -Picture Syntax',
+    extendedTitle: 'ROAR - Picture Syntax',
     extendedName: 'Picture Syntax',
     order: 15,
   },
