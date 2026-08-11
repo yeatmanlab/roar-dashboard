@@ -106,7 +106,7 @@ const columns = [
   },
   {
     field: 'scores.trog.percentile',
-    header: 'ROAR - Syntax',
+    header: 'ROAR - Picture Syntax',
     filterField: 'scores.trog.tags',
     dataType: 'score',
     sort: true,
