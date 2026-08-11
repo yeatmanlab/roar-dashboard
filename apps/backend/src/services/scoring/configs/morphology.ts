@@ -43,5 +43,15 @@ export default {
       { minVersion: 0, fieldName: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_SCORE },
     ],
   },
-  classification: { type: 'none' as const },
+  classification: {
+    type: 'percentile-then-rawscore' as const,
+    percentileCutoffs: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, cutoffs: { achieved: 40, developing: 20 } }],
+    rawScoreThresholds: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, thresholds: { above: 527, some: 467 } }],
+  },
+  displayCategory: [{ minVersion: 0, category: 'normed' }],
+  displayRanges: {
+    percentile: { min: 0, max: 99 },
+    standardScore: { min: 0, max: 180 },
+    rawScore: { min: 100, max: 900 },
+  },
 } as const;
