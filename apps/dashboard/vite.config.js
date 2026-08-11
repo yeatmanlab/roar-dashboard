@@ -139,7 +139,8 @@ const buildFirebaseConfig = (mode = 'development') => {
   const cspObj = JSON.parse(cspTemplate);
 
   // Append the ROAR backend origin to connect-src so the ts-rest API client can reach it.
-  // Derives the origin from VITE_ROAR_API_BASE_URL (which includes the /v1 path prefix).
+  // Derives the origin from VITE_ROAR_API_BASE_URL, which is itself an origin in deployed builds
+  // but may be relative locally, hence the try/catch.
   const roarApiBaseUrl = process.env.VITE_ROAR_API_BASE_URL;
   if (roarApiBaseUrl) {
     try {

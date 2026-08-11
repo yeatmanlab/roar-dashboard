@@ -132,10 +132,9 @@ jobs:
       DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
       DOTENV_CONFIG_PATH: apps/backend/.env.test
       GCLOUD_PROJECT: demo-roar
-      # Points the dashboard bundle at the backend seeded below rather than the shared dev
-      # API. Includes the /v1 prefix: ts-rest contract paths are version-less, so the
-      # backend's `app.use('/v1', router)` mount only lines up if the base URL carries it.
-      VITE_ROAR_API_BASE_URL: http://127.0.0.1:4000/v1
+      # Points the dashboard bundle at the backend seeded below rather than the shared dev API.
+      # Origin only — the version prefix comes from the contract.
+      VITE_ROAR_API_BASE_URL: http://127.0.0.1:4000
 
     steps:
       - name: Checkout repository
