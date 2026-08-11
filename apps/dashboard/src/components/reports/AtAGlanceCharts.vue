@@ -142,11 +142,11 @@ const supportLevelsByTaskId = computed(() => {
     }
 
     if (props.orgType === 'district') {
-      // District-aggregated format
+      // District-aggregated format from backend support-categories endpoint
       result[taskId] = {
-        needsExtraSupport: { count: runs.below?.total ?? 0 },
-        developingSkill: { count: runs.some?.total ?? 0 },
-        achievedSkill: { count: runs.above?.total ?? 0 },
+        needsExtraSupport: { count: runs.needsExtraSupport?.total ?? 0 },
+        developingSkill: { count: runs.developingSkill?.total ?? 0 },
+        achievedSkill: { count: runs.achievedSkill?.total ?? 0 },
       };
     } else {
       // Individual runs format (school/class/group scope)
