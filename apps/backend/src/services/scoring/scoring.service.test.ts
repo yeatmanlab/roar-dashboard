@@ -351,22 +351,22 @@ describe('getSupportLevel', () => {
       ).toBeNull();
     });
 
-    it('letter returns achievedSkill', () => {
+    it('letter returns null', () => {
       expect(
         getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'letter', scoringVersion: null }),
-      ).toBe('achievedSkill');
+      ).toBeNull();
     });
 
-    it('letter-es returns achievedSkill', () => {
+    it('letter-es returns null', () => {
       expect(
         getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'letter-es', scoringVersion: null }),
-      ).toBe('achievedSkill');
+      ).toBeNull();
     });
 
-    it('letter-en-ca returns achievedSkill', () => {
+    it('letter-en-ca returns null', () => {
       expect(
         getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'letter-en-ca', scoringVersion: null }),
-      ).toBe('achievedSkill');
+      ).toBeNull();
     });
   });
 });
@@ -400,16 +400,14 @@ describe('getRawScoreThreshold', () => {
     expect(getRawScoreThreshold('sre-es', null)).toBeNull();
   });
 
-  it('returns pa legacy thresholds', () => {
+  it('returns pa thresholds (version-independent)', () => {
     expect(getRawScoreThreshold('pa', null)).toEqual({ above: 55, some: 45 });
-    expect(getRawScoreThreshold('pa', 3)).toEqual({ above: 55, some: 45 });
-  });
-
-  it('returns pa updated thresholds for v >= 5', () => {
-    expect(getRawScoreThreshold('pa', 5)).toEqual({ above: 480, some: 420 });
+    expect(getRawScoreThreshold('pa', 99)).toEqual({ above: 55, some: 45 });
   });
 
   it('returns null for unknown tasks', () => {
+    expect(getRawScoreThreshold('letter', null)).toBeNull();
+    expect(getRawScoreThreshold('morphology', null)).toBeNull();
     expect(getRawScoreThreshold('unknown-task', null)).toBeNull();
   });
 });
@@ -436,6 +434,8 @@ describe('getSupportThreshold', () => {
   });
 
   it('returns null for tasks without a percentile-then-rawscore classification', () => {
+    expect(getSupportThreshold('letter', null)).toBeNull();
+    expect(getSupportThreshold('morphology', null)).toBeNull();
     expect(getSupportThreshold('unknown-task', null)).toBeNull();
   });
 });

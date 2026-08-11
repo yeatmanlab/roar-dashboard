@@ -64,12 +64,10 @@ export default {
   classification: {
     type: 'percentile-then-rawscore' as const,
     percentileCutoffs: [
-      { minVersion: SRE_SCORING_VERSION.V5, cutoffs: { achieved: 40, developing: 20 } },
       { minVersion: SRE_SCORING_VERSION.V4, cutoffs: { achieved: 40, developing: 20 } },
       { minVersion: 0, cutoffs: { achieved: 50, developing: 25 } },
     ],
     rawScoreThresholds: [
-      { minVersion: SRE_SCORING_VERSION.V5, thresholds: { above: 487, some: 427 } },
       { minVersion: SRE_SCORING_VERSION.V4, thresholds: { above: 41, some: 23 } },
       { minVersion: 0, thresholds: { above: 70, some: 47 } },
     ],
@@ -78,6 +76,6 @@ export default {
   displayRanges: {
     percentile: { min: 0, max: 99 },
     standardScore: { min: 0, max: 180 },
-    rawScore: { min: 300, max: 967 },
+    rawScore: { min: 0, max: 130 },
   },
 } as const;

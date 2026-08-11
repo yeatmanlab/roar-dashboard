@@ -135,9 +135,9 @@ describe('scoring config validation', () => {
       expect(config?.classification.type).toBe('assessment-computed');
     });
 
-    it('letter uses percentile-then-rawscore', () => {
+    it('letter uses none', () => {
       const config = getScoringConfig('letter');
-      expect(config?.classification.type).toBe('percentile-then-rawscore');
+      expect(config?.classification.type).toBe('none');
     });
 
     it('letter-es shares config with letter', () => {
@@ -148,12 +148,12 @@ describe('scoring config validation', () => {
       expect(getScoringConfig('letter-en-ca')).toBe(getScoringConfig('letter'));
     });
 
-    it('morphology uses percentile-then-rawscore', () => {
-      expect(getScoringConfig('morphology')?.classification.type).toBe('percentile-then-rawscore');
+    it('morphology uses none', () => {
+      expect(getScoringConfig('morphology')?.classification.type).toBe('none');
     });
 
-    it('cva uses percentile-then-rawscore', () => {
-      expect(getScoringConfig('cva')?.classification.type).toBe('percentile-then-rawscore');
+    it('cva uses none', () => {
+      expect(getScoringConfig('cva')?.classification.type).toBe('none');
     });
   });
 });

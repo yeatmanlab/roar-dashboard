@@ -3,7 +3,6 @@ import {
   PA_SCORE_DOMAINS,
   PA_TASK_ID,
   PA_SUBSCORE_DEFS,
-  PA_SCORING_VERSION,
 } from '@roar-platform/assessment-schema/roar-pa';
 
 export default {
@@ -62,14 +61,10 @@ export default {
   classification: {
     type: 'percentile-then-rawscore',
     percentileCutoffs: [
-      { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, cutoffs: { achieved: 40, developing: 20 } },
       { minVersion: 4, cutoffs: { achieved: 40, developing: 20 } },
       { minVersion: 0, cutoffs: { achieved: 50, developing: 25 } },
     ],
-    rawScoreThresholds: [
-      { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, thresholds: { above: 480, some: 420 } },
-      { minVersion: 0, thresholds: { above: 55, some: 45 } },
-    ],
+    rawScoreThresholds: [{ minVersion: 0, thresholds: { above: 55, some: 45 } }],
   },
   // Ordered subscore-table columns (replaces the old record-shaped block).
   // FSM/LSM/DEL are the per-subtask sub-skill columns surfaced by the
@@ -127,6 +122,6 @@ export default {
   displayRanges: {
     percentile: { min: 0, max: 99 },
     standardScore: { min: 0, max: 180 },
-    rawScore: { min: 40, max: 733 },
+    rawScore: { min: 0, max: 57 },
   },
 } as const;
