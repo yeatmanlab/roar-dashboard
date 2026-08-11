@@ -353,19 +353,19 @@ describe('getSupportLevel', () => {
 
     it('letter returns achievedSkill', () => {
       expect(
-        getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'letter', scoringVersion: null }),
+        getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'letter', scoringVersion: 1 }),
       ).toBe('achievedSkill');
     });
 
     it('letter-es returns achievedSkill', () => {
       expect(
-        getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'letter-es', scoringVersion: null }),
+        getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'letter-es', scoringVersion: 1 }),
       ).toBe('achievedSkill');
     });
 
     it('letter-en-ca returns achievedSkill', () => {
       expect(
-        getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'letter-en-ca', scoringVersion: null }),
+        getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'letter-en-ca', scoringVersion: 1 }),
       ).toBe('achievedSkill');
     });
   });
@@ -402,10 +402,11 @@ describe('getRawScoreThreshold', () => {
 
   it('returns pa legacy thresholds', () => {
     expect(getRawScoreThreshold('pa', null)).toEqual({ above: 55, some: 45 });
-    expect(getRawScoreThreshold('pa', 3)).toEqual({ above: 55, some: 45 });
+    expect(getRawScoreThreshold('pa', 2)).toEqual({ above: 55, some: 45 });
   });
 
-  it('returns pa updated thresholds for v >= 5', () => {
+  it('returns pa updated thresholds for v >= 3', () => {
+    expect(getRawScoreThreshold('pa', 3)).toEqual({ above: 480, some: 420 });
     expect(getRawScoreThreshold('pa', 5)).toEqual({ above: 480, some: 420 });
   });
 
@@ -553,8 +554,8 @@ describe('resolveScoreFieldNames', () => {
     const result = resolveScoreFieldNames('letter', 1);
     expect(result.percentileFieldNames).toContain('totalPercentCorrect');
     expect(result.percentileDisplayFieldNames).toContain('totalPercentCorrect');
-    expect(result.standardScoreFieldNames).toEqual([]);
-    expect(result.standardScoreDisplayFieldNames).toEqual([]);
+    expect(result.standardScoreFieldNames).toContain('standardScore');
+    expect(result.standardScoreDisplayFieldNames).toContain('standardScore');
     expect(result.rawScoreFieldNames).toContain('totalCorrect');
   });
 
