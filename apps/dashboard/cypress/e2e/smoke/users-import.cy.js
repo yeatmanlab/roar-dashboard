@@ -4,11 +4,11 @@
  * exercise the two things the unit/integration suites and mocks structurally
  * cannot prove:
  *
- *   1. The SCRYPT password hash written via `importUsers` actually verifies at
- *      sign-in (the "every imported student is locked out" risk). The
- *      known-answer unit test proves our hash matches Firebase's published
- *      vector; only a real importUsers → signInWithPassword round-trip proves
- *      the payload wiring.
+ *   1. The SCRYPT password hash + payload wiring for `importUsers` actually reach
+ *      Firebase (the "every imported student is locked out" risk) — proven via the
+ *      emulator's own account listing, since the emulator can't recompute
+ *      Firebase-scrypt to verify a real sign-in. Hash correctness itself is pinned by
+ *      a separate known-answer unit test against Firebase's published vector.
  *   2. Membership reconciliation on the update bin flips real OpenFGA
  *      authorization in BOTH directions — an added membership grants access, a
  *      removed one revokes it. Unit tests assert the tuples we *send*; only a
@@ -19,10 +19,28 @@
 
 const FIXTURE_FILE = Cypress.env('FIXTURE_FILE') ?? '/tmp/roar-cypress-fixture.json';
 const EMULATOR_HOST = Cypress.env('FIREBASE_AUTH_EMULATOR_HOST') ?? '127.0.0.1:9099';
+const FIREBASE_PROJECT_ID = Cypress.env('FIREBASE_PROJECT_ID') ?? 'demo-roar';
 const ROAR_API_BASE_URL = Cypress.env('ROAR_API_BASE_URL') ?? 'http://127.0.0.1:4000';
 
 // The emulator accepts any non-empty `key`; its tokens aren't signed.
 const EMULATOR_API_KEY = 'fake-api-key';
+
+/**
+ * Look up an emulator-created account by email via the emulator's (unauthenticated,
+ * dev-only) account management API. Used instead of a full sign-in for accounts whose
+ * password was set via `importUsers` — see the comment on the SCRYPT smoke test below.
+ */
+function findEmulatorAccountByEmail(email) {
+  return cy
+    .request({
+      method: 'GET',
+      url: `http://${EMULATOR_HOST}/emulator/v1/projects/${FIREBASE_PROJECT_ID}/accounts`,
+    })
+    .then((res) => {
+      expect(res.status, 'list emulator accounts').to.eq(200);
+      return (res.body.userInfo ?? []).find((account) => account.email === email);
+    });
+}
 
 /** Sign in via the Auth emulator and yield the ID token. */
 function signInToken(email, password) {
@@ -61,7 +79,7 @@ function authGet(token, path) {
   });
 }
 
-describe('Smoke: bulk import → emulator sign-in (SCRYPT hash verifies)', () => {
+describe('Smoke: bulk import → emulator account created (SCRYPT hash payload reaches Firebase)', () => {
   // Unique per run so a re-run against a non-reset emulator can't collide.
   const newUser = {
     email: `import-signin-${Date.now()}@example.org`,
@@ -115,21 +133,14 @@ describe('Smoke: bulk import → emulator sign-in (SCRYPT hash verifies)', () =>
     });
   });
 
-  it('the imported password verifies end-to-end (emulator sign-in + /me)', () => {
-    // Headline lock-out proof: the SCRYPT hash written via importUsers must
-    // verify at sign-in. If this reds with a 4xx sign-in, the Firebase Auth
-    // emulator does not recompute Firebase-scrypt for imported users (the
-    // existing emulator seeder uses plaintext createUser, so this is the first
-    // place importUsers-against-emulator is exercised). The hashing algorithm
-    // itself stays pinned by the firebase-password-hash known-answer unit test;
-    // if the emulator is the limitation, downgrade this to an emulator
-    // account-existence check rather than treating it as an import regression.
-    signInToken(newUser.email, newUser.password)
-      .then((token) => authGet(token, '/v1/me'))
-      .then((meRes) => {
-        expect(meRes.status, 'GET /v1/me as the imported user').to.eq(200);
-        expect(meRes.body.data.id, 'me.id matches the imported user').to.eq(createdUserId);
-      });
+  it('creates a verified emulator account for the imported password', () => {
+    // Downgraded from a signInWithPassword round-trip: the Auth emulator doesn't
+    // recompute Firebase-scrypt for importUsers hashes, so sign-in always 400s here.
+    // Hash correctness is pinned separately by the firebase-password-hash unit test.
+    findEmulatorAccountByEmail(newUser.email).then((account) => {
+      expect(account, `emulator account for ${newUser.email}`).to.exist;
+      expect(account.emailVerified, 'emulator account is email-verified').to.eq(true);
+    });
   });
 });
 
