@@ -28,7 +28,7 @@ export default {
   displayRanges: {
     percentile: { min: 0, max: 99 },
     standardScore: { min: 0, max: 180 },
-    rawScore: { min: 0, max: 130 },
+    rawScore: { min: 0, max: 140 },
     percentCorrect: { min: 0, max: 100 },
   },
 } as const;
