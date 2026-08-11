@@ -195,12 +195,60 @@ describe('getSupportLevel', () => {
       );
     });
 
+    it('swr v1 uses legacy [50, 25] cutoffs', () => {
+      expect(getSupportLevel({ grade: '3', percentile: 50, rawScore: 500, taskSlug: 'swr', scoringVersion: 1 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 30, rawScore: 500, taskSlug: 'swr', scoringVersion: 1 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 25, rawScore: 500, taskSlug: 'swr', scoringVersion: 1 })).toBe(
+        'needsExtraSupport',
+      );
+    });
+
+    it('sre v1 uses legacy [50, 25] cutoffs', () => {
+      expect(getSupportLevel({ grade: '3', percentile: 50, rawScore: 50, taskSlug: 'sre', scoringVersion: 1 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 30, rawScore: 50, taskSlug: 'sre', scoringVersion: 1 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 25, rawScore: 50, taskSlug: 'sre', scoringVersion: 1 })).toBe(
+        'needsExtraSupport',
+      );
+    });
+
+    it('sre v3 uses legacy [50, 25] cutoffs', () => {
+      expect(getSupportLevel({ grade: '3', percentile: 50, rawScore: 50, taskSlug: 'sre', scoringVersion: 3 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 30, rawScore: 50, taskSlug: 'sre', scoringVersion: 3 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 25, rawScore: 50, taskSlug: 'sre', scoringVersion: 3 })).toBe(
+        'needsExtraSupport',
+      );
+    });
+
     it('sre with scoringVersion >= 4 uses updated cutoffs', () => {
       expect(getSupportLevel({ grade: '3', percentile: 40, rawScore: 50, taskSlug: 'sre', scoringVersion: 4 })).toBe(
         'achievedSkill',
       );
       expect(getSupportLevel({ grade: '3', percentile: 21, rawScore: 50, taskSlug: 'sre', scoringVersion: 4 })).toBe(
         'developingSkill',
+      );
+    });
+
+    it('sre v5 uses updated [40, 20] cutoffs', () => {
+      expect(getSupportLevel({ grade: '3', percentile: 40, rawScore: 50, taskSlug: 'sre', scoringVersion: 5 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 25, rawScore: 50, taskSlug: 'sre', scoringVersion: 5 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 20, rawScore: 50, taskSlug: 'sre', scoringVersion: 5 })).toBe(
+        'needsExtraSupport',
       );
     });
 
@@ -215,10 +263,58 @@ describe('getSupportLevel', () => {
         'achievedSkill',
       );
     });
+
+    it('cva with scoringVersion >= 1 uses [40, 20] cutoffs', () => {
+      expect(getSupportLevel({ grade: '3', percentile: 40, rawScore: 500, taskSlug: 'cva', scoringVersion: 1 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 30, rawScore: 500, taskSlug: 'cva', scoringVersion: 1 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 20, rawScore: 500, taskSlug: 'cva', scoringVersion: 1 })).toBe(
+        'needsExtraSupport',
+      );
+    });
+
+    it('roar-inference with scoringVersion >= 1 uses [40, 20] cutoffs', () => {
+      expect(
+        getSupportLevel({ grade: '3', percentile: 40, rawScore: 500, taskSlug: 'roar-inference', scoringVersion: 1 }),
+      ).toBe('achievedSkill');
+      expect(
+        getSupportLevel({ grade: '3', percentile: 30, rawScore: 500, taskSlug: 'roar-inference', scoringVersion: 1 }),
+      ).toBe('developingSkill');
+      expect(
+        getSupportLevel({ grade: '3', percentile: 20, rawScore: 500, taskSlug: 'roar-inference', scoringVersion: 1 }),
+      ).toBe('needsExtraSupport');
+    });
+
+    it('morphology with scoringVersion >= 1 uses [40, 20] cutoffs', () => {
+      expect(
+        getSupportLevel({ grade: '3', percentile: 40, rawScore: 500, taskSlug: 'morphology', scoringVersion: 1 }),
+      ).toBe('achievedSkill');
+      expect(
+        getSupportLevel({ grade: '3', percentile: 30, rawScore: 500, taskSlug: 'morphology', scoringVersion: 1 }),
+      ).toBe('developingSkill');
+      expect(
+        getSupportLevel({ grade: '3', percentile: 20, rawScore: 500, taskSlug: 'morphology', scoringVersion: 1 }),
+      ).toBe('needsExtraSupport');
+    });
+
+    it('trog with scoringVersion >= 1 uses [40, 20] cutoffs', () => {
+      expect(getSupportLevel({ grade: '3', percentile: 40, rawScore: 500, taskSlug: 'trog', scoringVersion: 1 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 30, rawScore: 500, taskSlug: 'trog', scoringVersion: 1 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 20, rawScore: 500, taskSlug: 'trog', scoringVersion: 1 })).toBe(
+        'needsExtraSupport',
+      );
+    });
   });
 
   describe('raw score classification (grades >= 6)', () => {
-    it('swr legacy: above=550, some=400', () => {
+    it('swr legacy (v0-v6): above=550, some=400', () => {
       expect(
         getSupportLevel({ grade: '8', percentile: null, rawScore: 550, taskSlug: 'swr', scoringVersion: null }),
       ).toBe('achievedSkill');
@@ -228,6 +324,13 @@ describe('getSupportLevel', () => {
       expect(
         getSupportLevel({ grade: '8', percentile: null, rawScore: 400, taskSlug: 'swr', scoringVersion: null }),
       ).toBe('needsExtraSupport');
+      // v1 and v6 also use legacy thresholds
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 550, taskSlug: 'swr', scoringVersion: 1 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 550, taskSlug: 'swr', scoringVersion: 6 })).toBe(
+        'achievedSkill',
+      );
     });
 
     it('swr updated (v>=7): above=513, some=413', () => {
@@ -242,7 +345,7 @@ describe('getSupportLevel', () => {
       );
     });
 
-    it('sre legacy: above=70, some=47', () => {
+    it('sre legacy (v0-v3): above=70, some=47', () => {
       expect(
         getSupportLevel({ grade: '8', percentile: null, rawScore: 70, taskSlug: 'sre', scoringVersion: null }),
       ).toBe('achievedSkill');
@@ -252,6 +355,13 @@ describe('getSupportLevel', () => {
       expect(
         getSupportLevel({ grade: '8', percentile: null, rawScore: 47, taskSlug: 'sre', scoringVersion: null }),
       ).toBe('needsExtraSupport');
+      // v1 and v3 also use legacy thresholds
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 70, taskSlug: 'sre', scoringVersion: 1 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 70, taskSlug: 'sre', scoringVersion: 3 })).toBe(
+        'achievedSkill',
+      );
     });
 
     it('sre updated (v>=4): above=41, some=23', () => {
@@ -266,7 +376,19 @@ describe('getSupportLevel', () => {
       );
     });
 
-    it('pa: above=55, some=45 (no version dependency)', () => {
+    it('sre v5: above=487, some=427', () => {
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 487, taskSlug: 'sre', scoringVersion: 5 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 450, taskSlug: 'sre', scoringVersion: 5 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 427, taskSlug: 'sre', scoringVersion: 5 })).toBe(
+        'needsExtraSupport',
+      );
+    });
+
+    it('pa legacy (v0-v2): above=55, some=45', () => {
       expect(
         getSupportLevel({ grade: '8', percentile: null, rawScore: 55, taskSlug: 'pa', scoringVersion: null }),
       ).toBe('achievedSkill');
@@ -275,6 +397,106 @@ describe('getSupportLevel', () => {
       ).toBe('developingSkill');
       expect(
         getSupportLevel({ grade: '8', percentile: null, rawScore: 45, taskSlug: 'pa', scoringVersion: null }),
+      ).toBe('needsExtraSupport');
+    });
+
+    it('pa v3-v4: above=480, some=420', () => {
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 480, taskSlug: 'pa', scoringVersion: 3 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 450, taskSlug: 'pa', scoringVersion: 3 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 420, taskSlug: 'pa', scoringVersion: 3 })).toBe(
+        'needsExtraSupport',
+      );
+      // v4 also uses the same thresholds
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 480, taskSlug: 'pa', scoringVersion: 4 })).toBe(
+        'achievedSkill',
+      );
+    });
+
+    it('pa v5: above=480, some=420', () => {
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 480, taskSlug: 'pa', scoringVersion: 5 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 450, taskSlug: 'pa', scoringVersion: 5 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 420, taskSlug: 'pa', scoringVersion: 5 })).toBe(
+        'needsExtraSupport',
+      );
+    });
+
+    it('cva: above=520, some=447', () => {
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 520, taskSlug: 'cva', scoringVersion: 1 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 480, taskSlug: 'cva', scoringVersion: 1 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 447, taskSlug: 'cva', scoringVersion: 1 })).toBe(
+        'needsExtraSupport',
+      );
+    });
+
+    it('roar-inference: above=533, some=473', () => {
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 533, taskSlug: 'roar-inference', scoringVersion: 1 }),
+      ).toBe('achievedSkill');
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 500, taskSlug: 'roar-inference', scoringVersion: 1 }),
+      ).toBe('developingSkill');
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 473, taskSlug: 'roar-inference', scoringVersion: 1 }),
+      ).toBe('needsExtraSupport');
+    });
+
+    it('swr-es (v>=1): above=547, some=447', () => {
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 547, taskSlug: 'swr-es', scoringVersion: 1 }),
+      ).toBe('achievedSkill');
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 500, taskSlug: 'swr-es', scoringVersion: 1 }),
+      ).toBe('developingSkill');
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 447, taskSlug: 'swr-es', scoringVersion: 1 }),
+      ).toBe('needsExtraSupport');
+    });
+
+    it('sre-es (v>=1): above=25, some=12', () => {
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 25, taskSlug: 'sre-es', scoringVersion: 1 }),
+      ).toBe('achievedSkill');
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 18, taskSlug: 'sre-es', scoringVersion: 1 }),
+      ).toBe('developingSkill');
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 12, taskSlug: 'sre-es', scoringVersion: 1 }),
+      ).toBe('needsExtraSupport');
+    });
+
+    it('morphology (v>=1): above=527, some=467', () => {
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 527, taskSlug: 'morphology', scoringVersion: 1 }),
+      ).toBe('achievedSkill');
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 500, taskSlug: 'morphology', scoringVersion: 1 }),
+      ).toBe('developingSkill');
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 467, taskSlug: 'morphology', scoringVersion: 1 }),
+      ).toBe('needsExtraSupport');
+    });
+
+    it('trog (v>=1): above=540, some=487', () => {
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 540, taskSlug: 'trog', scoringVersion: 1 }),
+      ).toBe('achievedSkill');
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 510, taskSlug: 'trog', scoringVersion: 1 }),
+      ).toBe('developingSkill');
+      expect(
+        getSupportLevel({ grade: '8', percentile: null, rawScore: 487, taskSlug: 'trog', scoringVersion: 1 }),
       ).toBe('needsExtraSupport');
     });
 
@@ -372,12 +594,13 @@ describe('getSupportLevel', () => {
 });
 
 describe('getRawScoreThreshold', () => {
-  it('returns swr legacy thresholds', () => {
+  it('returns swr legacy thresholds for v0-v6', () => {
     expect(getRawScoreThreshold('swr', null)).toEqual({ above: 550, some: 400 });
+    expect(getRawScoreThreshold('swr', 1)).toEqual({ above: 550, some: 400 });
     expect(getRawScoreThreshold('swr', 6)).toEqual({ above: 550, some: 400 });
   });
 
-  it('returns swr updated thresholds', () => {
+  it('returns swr updated thresholds for v>=7', () => {
     expect(getRawScoreThreshold('swr', 7)).toEqual({ above: 513, some: 413 });
   });
 
@@ -387,12 +610,18 @@ describe('getRawScoreThreshold', () => {
     expect(getRawScoreThreshold('swr-es', 0)).toBeNull();
   });
 
-  it('returns sre legacy thresholds', () => {
+  it('returns sre legacy thresholds for v0-v3', () => {
     expect(getRawScoreThreshold('sre', null)).toEqual({ above: 70, some: 47 });
+    expect(getRawScoreThreshold('sre', 1)).toEqual({ above: 70, some: 47 });
+    expect(getRawScoreThreshold('sre', 3)).toEqual({ above: 70, some: 47 });
   });
 
-  it('returns sre updated thresholds', () => {
+  it('returns sre updated thresholds for v4', () => {
     expect(getRawScoreThreshold('sre', 4)).toEqual({ above: 41, some: 23 });
+  });
+
+  it('returns sre v5 thresholds', () => {
+    expect(getRawScoreThreshold('sre', 5)).toEqual({ above: 487, some: 427 });
   });
 
   it('returns sre-es thresholds only for v >= 1', () => {
@@ -407,7 +636,28 @@ describe('getRawScoreThreshold', () => {
 
   it('returns pa updated thresholds for v >= 3', () => {
     expect(getRawScoreThreshold('pa', 3)).toEqual({ above: 480, some: 420 });
+    expect(getRawScoreThreshold('pa', 4)).toEqual({ above: 480, some: 420 });
     expect(getRawScoreThreshold('pa', 5)).toEqual({ above: 480, some: 420 });
+  });
+
+  it('returns cva thresholds for v >= 1', () => {
+    expect(getRawScoreThreshold('cva', 1)).toEqual({ above: 520, some: 447 });
+    expect(getRawScoreThreshold('cva', null)).toBeNull();
+  });
+
+  it('returns roar-inference thresholds for v >= 1', () => {
+    expect(getRawScoreThreshold('roar-inference', 1)).toEqual({ above: 533, some: 473 });
+    expect(getRawScoreThreshold('roar-inference', null)).toBeNull();
+  });
+
+  it('returns morphology thresholds for v >= 1', () => {
+    expect(getRawScoreThreshold('morphology', 1)).toEqual({ above: 527, some: 467 });
+    expect(getRawScoreThreshold('morphology', null)).toBeNull();
+  });
+
+  it('returns trog thresholds for v >= 1', () => {
+    expect(getRawScoreThreshold('trog', 1)).toEqual({ above: 540, some: 487 });
+    expect(getRawScoreThreshold('trog', null)).toBeNull();
   });
 
   it('returns null for unknown tasks', () => {
@@ -569,6 +819,34 @@ describe('resolveScoreFieldNames', () => {
     const result = resolveScoreFieldNames('sre-es', 3);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.rawScoreFieldNames).toContain('sreScore');
+  });
+
+  it('resolves cva fields', () => {
+    const result = resolveScoreFieldNames('cva', 3);
+    expect(result.percentileFieldNames).toContain('percentile');
+    expect(result.standardScoreFieldNames).toContain('standardScore');
+    expect(result.rawScoreFieldNames).toContain('totalCorrect');
+  });
+
+  it('resolves roar-inference fields', () => {
+    const result = resolveScoreFieldNames('roar-inference', 3);
+    expect(result.percentileFieldNames).toContain('percentile');
+    expect(result.standardScoreFieldNames).toContain('standardScore');
+    expect(result.rawScoreFieldNames).toContain('roarScore');
+  });
+
+  it('resolves morphology fields', () => {
+    const result = resolveScoreFieldNames('morphology', 3);
+    expect(result.percentileFieldNames).toContain('percentile');
+    expect(result.standardScoreFieldNames).toContain('standardScore');
+    expect(result.rawScoreFieldNames).toContain('totalCorrect');
+  });
+
+  it('resolves trog fields', () => {
+    const result = resolveScoreFieldNames('trog', 3);
+    expect(result.percentileFieldNames).toContain('percentile');
+    expect(result.standardScoreFieldNames).toContain('standardScore');
+    expect(result.rawScoreFieldNames).toContain('roarScore');
   });
 
   it('returns empty arrays for unknown task', () => {
