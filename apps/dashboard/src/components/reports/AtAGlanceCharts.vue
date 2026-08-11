@@ -24,7 +24,7 @@
       <ScoreDistributionOverview
         :task-ids="sortedAndFilteredTaskIds"
         :support-levels-by-task-id="supportLevelsByTaskId"
-        :composite-foundational-runs="null"
+        :composite-foundational-runs="compositeFoundationalRuns"
         :tasks-dictionary="tasksDictionary"
       />
       <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
@@ -166,4 +166,7 @@ const supportLevelsByTaskId = computed(() => {
   }
   return result;
 });
+
+// Extract composite foundational runs from the runs data
+const compositeFoundationalRuns = computed(() => props.runsByTaskIdForDistributionChart?.compositeFoundational ?? null);
 </script>

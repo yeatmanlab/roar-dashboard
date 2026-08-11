@@ -57,31 +57,23 @@
               </PvFloatLabel>
             </div>
           </div>
-          <div v-if="activeOrgType === ORG_TYPES.GROUPS" class="mx-2">
-            <PvToggleButton
-              v-model="hideSubgroups"
-              off-label="Hide Subgroups"
-              on-label="Show Subgroups"
-              class="p-2 rounded"
-            />
-          </div>
+          <!--
+            The table is gated by the outer `v-if="claimsLoaded"` (PvTabView). Once
+            claims are loaded `tableData` is always an array (empty while loading), so
+            the table renders and surfaces its own loading state via `:loading`.
+          -->
           <RoarDataTable
-            v-if="showTable"
             :key="tableKey"
-            allow-global-filter
-            :allow-export-pdf="false"
             :columns="tableColumns"
             :data="tableData"
             sortable
             :loading="isLoading || isFetching"
-            :global-filter-fields="globalFilterFields"
+            :allow-filtering="false"
             @export-all="exportAll"
-            @export-selected="exportSelected"
             @show-activation-code="showCode"
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
           />
-          <AppSpinner v-else-if="!tableData" />
         </PvTabPanel>
       </PvTabView>
       <AppSpinner v-else />
@@ -139,7 +131,18 @@
     :is-enabled="isEditModalEnabled"
     @modal-closed="closeEditModal"
   >
-    <EditOrgsForm :org-id="currentEditOrgId" :org-type="activeOrgType" @update:org-data="localOrgData = $event" />
+    <!--
+      Key on (orgType, orgId) so the form remounts whenever either changes. The
+      modal host (RoarModal) stays mounted, so without this the form would
+      capture the org type at its first mount and dispatch a stale by-id read
+      after a tab switch. Remounting also resets local form state per open.
+    -->
+    <EditOrgsForm
+      :key="`${activeOrgType}:${currentEditOrgId}`"
+      :org-id="currentEditOrgId"
+      :org-type="activeOrgType"
+      @update:org-data="localOrgData = $event"
+    />
     <template #footer>
       <div>
         <div class="flex gap-2">
@@ -199,7 +202,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import * as Sentry from '@sentry/vue';
-import { storeToRefs } from 'pinia';
+import { StatusCodes } from 'http-status-codes';
 import { useToast } from 'primevue/usetoast';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
@@ -209,24 +212,26 @@ import PvInputText from 'primevue/inputtext';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
 import PvToast from 'primevue/toast';
-import PvToggleButton from 'primevue/togglebutton';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _cloneDeep from 'lodash/cloneDeep';
-import _kebabCase from 'lodash/kebabCase';
 import { useAuthStore } from '@/store/auth';
-import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
+import { getRoarApiClient } from '@/clients/roar-api';
+import { exportCsv } from '@/helpers/query/utils';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
-import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
+import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
+import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
 import EditOrgsForm from '@/components/EditOrgsForm.vue';
 import RoarModal from '@/components/modals/RoarModal.vue';
 import Dialog from '@/components/Dialog';
 import OrgExportModal from './components/OrgExportModal.vue';
 import { useOrgExportOrchestrator } from './composables/useOrgExportOrchestrator';
 import { useOrgTableColumns } from './composables/useOrgTableColumns';
+import useUpdateOrgMutation from '@/composables/mutations/useUpdateOrgMutation';
+import { parseGooglePlaceToLocation } from '@/helpers/parseGooglePlaceToLocation';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable';
 import { ORG_TYPES } from '@/constants/orgTypes';
@@ -235,7 +240,6 @@ import { usePermissions } from '@/composables/usePermissions';
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
-const orderBy = ref(orderByDefault);
 let activationCode = ref(null);
 const isDialogVisible = ref(false);
 const toast = useToast();
@@ -243,8 +247,8 @@ const isEditModalEnabled = ref(false);
 const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
-const hideSubgroups = ref(false);
 const { userCan, Permissions } = usePermissions();
+const { mutateAsync: updateOrg } = useUpdateOrgMutation();
 
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
@@ -261,7 +265,6 @@ const schoolPlaceholder = computed(() => {
 });
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 
 const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
@@ -270,13 +273,14 @@ const { data: userClaims } = useUserClaimsQuery({
 const { isSuperAdmin } = useUserType(userClaims);
 const adminOrgs = computed(() => userClaims?.value?.claims?.minimalAdminOrgs);
 
+// The Families tab was intentionally dropped during the ts-rest backend
+// migration — families have no list endpoint and aren't admin-managed here.
 const orgHeaders = computed(() => {
   const headers = {
     districts: { header: 'Districts', id: 'districts' },
     schools: { header: 'Schools', id: 'schools' },
     classes: { header: 'Classes', id: 'classes' },
     groups: { header: 'Groups', id: 'groups' },
-    families: { header: 'Families', id: 'families' },
   };
 
   if (isSuperAdmin.value) return headers;
@@ -297,23 +301,12 @@ const orgHeaders = computed(() => {
   if ((adminOrgs.value?.groups ?? []).length > 0) {
     result.groups = { header: 'Groups', id: 'groups' };
   }
-  if ((adminOrgs.value?.families ?? []).length > 0) {
-    result.families = { header: 'Families', id: 'families' };
-  }
   return result;
 });
 
 const activeIndex = ref(0);
 const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
-});
-
-const globalFilterFields = computed(() => {
-  const sharedFilterFields = ['name', 'abbreviation', 'address.formattedAddress'];
-  if (activeOrgType.value === ORG_TYPES.DISTRICTS) {
-    sharedFilterFields.push('ncesId', 'mdrNumber');
-  }
-  return sharedFilterFields;
 });
 
 // Use export orchestrator composable (must be after activeOrgType is defined)
@@ -330,14 +323,22 @@ const {
   exportModalMessage,
   exportModalSeverity,
   EXPORT_PHASE,
-} = useOrgExportOrchestrator(activeOrgType, orderBy);
+} = useOrgExportOrchestrator(activeOrgType);
 
 // Use table columns composable (must be after activeOrgType is defined)
 const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, Permissions);
 
 const claimsLoaded = computed(() => !!userClaims?.value?.claims);
 
-const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
+// Table data is sourced from the same migrated, page-walking composables that
+// back OrgPicker — one per org type. Each composable walks the backend
+// pagination and returns the full set (equivalent to the legacy
+// page-size-100000 fetch), so the table never needs server-side pagination.
+const {
+  isLoading: isLoadingDistricts,
+  isFetching: isFetchingDistricts,
+  data: allDistricts,
+} = useDistrictsListQuery({
   enabled: claimsLoaded,
 });
 
@@ -345,16 +346,88 @@ const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && !!selectedDistrict.value;
 });
 
-const { isLoading: isLoadingSchools, data: allSchools } = useDistrictSchoolsQuery(selectedDistrict, {
+const {
+  isLoading: isLoadingSchools,
+  isFetching: isFetchingSchools,
+  data: allSchools,
+} = useDistrictSchoolsQuery(selectedDistrict, {
   enabled: schoolQueryEnabled,
 });
 
+const classQueryEnabled = computed(() => {
+  return claimsLoaded.value && !!selectedSchool.value;
+});
+
 const {
-  isLoading,
-  isFetching,
-  data: orgData,
-} = useOrgsTableQuery(activeOrgType, selectedDistrict, selectedSchool, orderBy, {
-  enabled: claimsLoaded,
+  isLoading: isLoadingClasses,
+  isFetching: isFetchingClasses,
+  data: allClasses,
+} = useSchoolClassesQuery(selectedSchool, {
+  enabled: classQueryEnabled,
+});
+
+// Gated to the Groups tab (in addition to the composable's internal token gate)
+// so the list isn't fetched while the user is on another tab — mirrors OrgPicker.
+const groupsQueryEnabled = computed(() => {
+  return claimsLoaded.value && activeOrgType.value === ORG_TYPES.GROUPS;
+});
+
+const {
+  isLoading: isLoadingGroups,
+  isFetching: isFetchingGroups,
+  data: allGroups,
+} = useGroupsListQuery({
+  enabled: groupsQueryEnabled,
+});
+
+// The org set backing the active tab's table. Each underlying composable only
+// fetches once its parent id / token is available, so this stays minimal —
+// districts and schools reuse the data already fetched for the selectors.
+const orgData = computed(() => {
+  switch (activeOrgType.value) {
+    case ORG_TYPES.DISTRICTS:
+      return allDistricts.value ?? [];
+    case ORG_TYPES.SCHOOLS:
+      return allSchools.value ?? [];
+    case ORG_TYPES.CLASSES:
+      return allClasses.value ?? [];
+    case ORG_TYPES.GROUPS:
+      return allGroups.value ?? [];
+    default:
+      return [];
+  }
+});
+
+// Loading / fetching state for the active tab's underlying query, so the table
+// spinner reflects only the query that feeds it.
+const isLoading = computed(() => {
+  switch (activeOrgType.value) {
+    case ORG_TYPES.DISTRICTS:
+      return isLoadingDistricts.value;
+    case ORG_TYPES.SCHOOLS:
+      return isLoadingSchools.value;
+    case ORG_TYPES.CLASSES:
+      return isLoadingClasses.value;
+    case ORG_TYPES.GROUPS:
+      return isLoadingGroups.value;
+    default:
+      return false;
+  }
+});
+
+const isFetching = computed(() => {
+  switch (activeOrgType.value) {
+    case ORG_TYPES.DISTRICTS:
+      return isFetchingDistricts.value;
+    case ORG_TYPES.SCHOOLS:
+      return isFetchingSchools.value;
+    case ORG_TYPES.CLASSES:
+      return isFetchingClasses.value;
+    case ORG_TYPES.GROUPS:
+      return isFetchingGroups.value;
+    default:
+      return false;
+  }
 });
 
 function copyToClipboard(text) {
@@ -378,49 +451,6 @@ function copyToClipboard(text) {
     });
 }
 
-const transformForExport = (targetOrgs) =>
-  targetOrgs.map((org) => {
-    const sharedFields = {
-      Name: _get(org, 'name'),
-      Abbreviation: _get(org, 'abbreviation'),
-      Address: _get(org, 'address.formattedAddress'),
-      Tags: _get(org, 'tags', []).join(', ').trim(),
-    };
-
-    if (activeOrgType.value === ORG_TYPES.DISTRICTS) {
-      sharedFields['MdrNumber'] = _get(org, 'mdrNumber');
-      sharedFields['NcesId'] = _get(org, 'ncesId');
-    }
-
-    if (activeOrgType.value !== ORG_TYPES.GROUPS && activeOrgType.value !== ORG_TYPES.FAMILIES) {
-      // Force boolean values to strings for CSV export
-      sharedFields['Clever'] = _get(org, 'clever') ? 'TRUE' : 'FALSE';
-      sharedFields['ClassLink'] = _get(org, 'classlink') ? 'TRUE' : 'FALSE';
-    }
-
-    return sharedFields;
-  });
-
-const getExportFilename = () => {
-  let parentOrgName = '';
-  if (activeOrgType.value === ORG_TYPES.CLASSES) {
-    const school = allSchools.value?.find((s) => s.id === selectedSchool.value);
-    parentOrgName = school?.name ? `${_kebabCase(school.name)}-` : '';
-  } else if (activeOrgType.value === ORG_TYPES.SCHOOLS) {
-    const district = allDistricts.value?.find((d) => d.id === selectedDistrict.value);
-    parentOrgName = district?.name ? `${_kebabCase(district.name)}-` : '';
-  }
-
-  return `roar-orgs-${parentOrgName}${activeOrgType.value}`;
-};
-const exportAll = () => {
-  exportCsv(transformForExport(orgData.value ?? []), `${getExportFilename()}.csv`);
-};
-
-const exportSelected = (selectedOrgs) => {
-  exportCsv(transformForExport(selectedOrgs), `${getExportFilename()}-selected.csv`);
-};
-
 const tableData = computed(() => {
   if (isLoading.value) return [];
   const tableData = orgData?.value?.map((org) => {
@@ -428,8 +458,6 @@ const tableData = computed(() => {
     return {
       ...orgInfo,
       isExporting: exportingOrgId.value === org.id,
-      classlink: !!orgInfo.classlink,
-      clever: !!orgInfo.clever,
       routeParams: {
         orgType: activeOrgType.value,
         orgId: org.id,
@@ -438,18 +466,50 @@ const tableData = computed(() => {
       },
     };
   });
-  if (activeOrgType.value === ORG_TYPES.GROUPS && !hideSubgroups.value) {
-    return tableData.filter((org) => !org.parentOrgId && !org.parentOrgType);
-  }
-
   return tableData;
 });
 
+// The org-data computed already holds the full set for the active tab (the
+// migrated composables walk every page), so the CSV is built from that rather
+// than re-fetching. Export the raw mapped org rows — not `tableData`, which
+// injects UI-only keys (`isExporting`, `routeParams`) that shouldn't leak to CSV.
+const exportAll = () => {
+  exportCsv(orgData.value ?? [], `roar-${activeOrgType.value}.csv`);
+};
+
+// Invitation (activation) codes were intentionally dropped for districts,
+// schools, and classes during the ts-rest backend migration — only groups
+// expose an invitation-code endpoint. The SignUp Code action is gated to the
+// Groups tab, so this only fires for groups; the org-type guard is a defensive
+// backstop in case a non-group action ever reaches here.
 const showCode = async (selectedOrg) => {
-  const orgInfo = await fetchDocById(activeOrgType.value, selectedOrg.id);
-  if (orgInfo?.currentActivationCode) {
-    activationCode.value = orgInfo.currentActivationCode;
-    isDialogVisible.value = true;
+  if (activeOrgType.value !== ORG_TYPES.GROUPS) return;
+
+  try {
+    const res = await getRoarApiClient().groups.getInvitationCode({
+      params: { groupId: selectedOrg.id },
+    });
+
+    if (res.status === StatusCodes.OK) {
+      activationCode.value = res.body.data.code;
+      isDialogVisible.value = true;
+      return;
+    }
+
+    toast.add({
+      severity: TOAST_SEVERITIES.ERROR,
+      summary: 'No invitation code',
+      detail: 'No valid invitation code is available for this group.',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+  } catch (error) {
+    toast.add({
+      severity: TOAST_SEVERITIES.ERROR,
+      summary: 'Unexpected error',
+      detail: `Failed to fetch the invitation code: ${error.message}`,
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+    Sentry.captureException(error);
   }
 };
 
@@ -467,40 +527,89 @@ const closeDialog = () => {
   isDialogVisible.value = false;
 };
 
-const updateOrgData = async () => {
-  isSubmitting.value = true;
-  await roarfirekit.value
-    .createOrg(
-      activeOrgType.value,
-      localOrgData.value,
-      _get(localOrgData.value, 'testData', false),
-      _get(localOrgData.value, 'demoData', false),
-      currentEditOrgId.value,
-    )
-    .then(() => {
-      closeEditModal();
-      toast.add({
-        severity: TOAST_SEVERITIES.SUCCESS,
-        summary: 'Updated',
-        detail: 'Organization data updated successfully!',
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-    })
-    .catch((error) => {
-      toast.add({
-        severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Unexpected error',
-        detail: `Unexpected error occurred: ${error.message}`,
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
-      Sentry.captureException(error);
-    })
-    .finally(() => {
-      isSubmitting.value = false;
-    });
+/**
+ * Build the PATCH body for an org update, including only the fields that are
+ * valid for the given org type (per each resource's `Update<Resource>Request`
+ * schema) and only when present/changed.
+ *
+ * - `name`: sent for every org type when present.
+ * - `abbreviation`: districts, schools, and groups only — classes have no
+ *   abbreviation column, so it is never sent for them.
+ * - `location`: districts, schools, and groups only, and only when the user
+ *   picked a new address (`localOrgData.address` is the object `setAddress`
+ *   builds). It is converted to the backend's structured `location` shape via
+ *   `parseGooglePlaceToLocation`. Classes are excluded because their `location`
+ *   is a free-text room label (a string), not a structured address object.
+ * - `identifiers.ncesId`: districts only (the edit form surfaces it for districts), when present.
+ *
+ * The retired `tags`, `testData`, and `demoData` fields are never sent.
+ *
+ * @param {string} orgType - The active (plural) org type.
+ * @param {Object} orgData - The edited local org data from EditOrgsForm.
+ * @returns {Object} The PATCH body for the resource's update endpoint.
+ */
+const buildOrgUpdateBody = (orgType, orgData) => {
+  const body = {};
+
+  if (orgData?.name) body.name = orgData.name;
+
+  // Abbreviation: every org type except classes.
+  if (orgType !== ORG_TYPES.CLASSES && orgData?.abbreviation) {
+    body.abbreviation = orgData.abbreviation;
+  }
+
+  // Structured location: only for org types whose location is an address
+  // object (districts, schools, groups), and only when the user picked a new
+  // place. Classes carry a free-text location string, so they are excluded.
+  const supportsStructuredLocation =
+    orgType === ORG_TYPES.DISTRICTS || orgType === ORG_TYPES.SCHOOLS || orgType === ORG_TYPES.GROUPS;
+  if (supportsStructuredLocation && orgData?.address) {
+    const location = parseGooglePlaceToLocation(orgData.address);
+    if (Object.keys(location).length > 0) body.location = location;
+  }
+
+  // NCES identifier: districts only. The edit form only surfaces the NCES input
+  // for districts (`showNcesId`), so sending it for schools would silently
+  // re-submit a seeded value the user never saw or touched.
+  if (orgType === ORG_TYPES.DISTRICTS && orgData?.ncesId) {
+    body.identifiers = { ncesId: orgData.ncesId };
+  }
+
+  return body;
 };
 
-const showTable = computed(() => !!tableData.value);
+const updateOrgData = async () => {
+  const body = buildOrgUpdateBody(activeOrgType.value, localOrgData.value);
+
+  // Nothing the form can edit changed — close without firing a no-op PATCH (an
+  // empty body would otherwise be rejected by the strict update schema).
+  if (Object.keys(body).length === 0) {
+    closeEditModal();
+    return;
+  }
+
+  isSubmitting.value = true;
+  try {
+    await updateOrg({ orgType: activeOrgType.value, orgId: currentEditOrgId.value, body });
+    closeEditModal();
+    toast.add({
+      severity: TOAST_SEVERITIES.SUCCESS,
+      summary: 'Updated',
+      detail: 'Organization data updated successfully!',
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+  } catch (error) {
+    toast.add({
+      severity: TOAST_SEVERITIES.ERROR,
+      summary: 'Unexpected error',
+      detail: `Unexpected error occurred: ${error.message}`,
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+    Sentry.captureException(error);
+  } finally {
+    isSubmitting.value = false;
+  }
+};
 
 let unsubscribe;
 const initTable = () => {
@@ -509,11 +618,11 @@ const initTable = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) initTable();
+  if (state.accessToken) initTable();
 });
 
 onMounted(() => {
-  if (roarfirekit.value.restConfig?.()) initTable();
+  if (authStore.isAuthReady) initTable();
 });
 
 watch(allDistricts, (newValue) => {
