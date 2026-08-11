@@ -62,11 +62,18 @@ function getResponseHeaders() {
  * It is worth noting that any fork of the project not using the env-configs submodule can safely use a regular dotenv
  * file at the root of the project, as Vite will automatically load it.
  *
+ * Values already present in the real environment take precedence over the files loaded here.
+ *
+ * @param {string} mode - The Vite mode being built (development, test, staging, production)
  * @returns {void}
  */
 const loadDotenvFiles = (mode) => {
   let envFilePaths = [];
   const allowOverride = !mode.includes('production') && !mode.includes('staging');
+
+  // A value already in the real environment (CI job env, exported shell var) outranks the checked-in defaults below.
+  // dotenvx's override:true would otherwise discard it, so snapshot here and re-assert once every file has loaded.
+  const presetEnv = { ...process.env };
 
   // 1. Load from the env-configs submodule (encrypted, shared across team).
   const modeEnvFilePath = path.resolve(__dirname, `./env-configs/.env.${mode}`);
@@ -89,6 +96,9 @@ const loadDotenvFiles = (mode) => {
       config({ path: [appRootEnvFile], override: true });
     }
   }
+
+  // 3. Re-assert the explicit environment, which outranks all of the above.
+  Object.assign(process.env, presetEnv);
 };
 
 const buildFirebaseConfig = (mode = 'development') => {

@@ -13,6 +13,7 @@ The dashboard talks to the ROAR backend exclusively through the typed ts-rest cl
 ### How the client works
 
 - **Lazy initialization.** The client is created on the first `getRoarApiClient()` call, not at module load. It throws if `VITE_ROAR_API_BASE_URL` is unset — add the variable to `.env.development` / `.env.production` (and the CI/preview environment) before wiring a new deployment.
+- **The base URL must include `/v1`.** Contract paths are version-less (`MeContract` is `pathPrefix: '/me'` + `path: '/'` → `/me/`), while the backend mounts every route under `app.use('/v1', router)`. The version prefix lives in the environment variable and nowhere else, so `https://api-staging.roar.education` produces a 404 on every call and `https://api-staging.roar.education/v1` is correct. The client passes the value through untouched — never append `/v1` at a call site.
 - **Auth headers.** Every request reads `authStore.accessToken` synchronously and sends it as a `Bearer` token. Composables must still gate on the token's existence (see [frontend-composable-patterns](frontend-composable-patterns.md)) — the client doesn't wait for auth.
 - **Built-in 401 retry.** On a 401 with error code `auth/token-expired`, the client forces a token refresh via `authStore.forceIdTokenRefresh()` and retries the request once. A 401 that reaches your composable means that retry already failed — treat it as terminal (`isTerminalAuthError`), don't retry again.
 - **Typed resources.** Endpoints are addressed via contract router names: `client.tasks.list(...)`, `client.tasks.listTaskVariants(...)`, `client.taskVariants.list(...)`, `client.taskBundles.list(...)`, `client.me.get(...)`, etc. Check `packages/api-contract/src/v1/index.ts` for the resource map.
@@ -20,7 +21,8 @@ The dashboard talks to the ROAR backend exclusively through the typed ts-rest cl
 ### Incorrect
 
 ```javascript
-// Hand-rolled fetch — loses contract typing, auth header injection, and the 401 retry
+// Hand-rolled fetch — loses contract typing, auth header injection, and the 401 retry.
+// It also double-counts the version: the base URL already ends in /v1.
 const res = await fetch(
   `${import.meta.env.VITE_ROAR_API_BASE_URL}/v1/tasks?page=1`,
   {
