@@ -91,8 +91,10 @@ import { computed, ref, onMounted, onUnmounted, watch, nextTick, toValue } from 
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useI18n } from 'vue-i18n';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
-import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useUserProfileQuery from '@/composables/queries/useUserProfileQuery';
+import useAdministrationQuery from '@/composables/queries/useAdministrationQuery';
+import useAdministrationTaskVariantsQuery from '@/composables/queries/useAdministrationTaskVariantsQuery';
+import useTaskVariantParametersQuery from '@/composables/queries/useTaskVariantParametersQuery';
 import useAdministrationIndividualScoreReportQuery from '@/composables/queries/useAdministrationIndividualScoreReportQuery';
 import useGuardianStudentReportQuery from '@/composables/queries/useGuardianStudentReportQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
@@ -144,19 +146,30 @@ const isLoading = computed(
     isLoadingTasksDictionary.value ||
     isLoadingReport.value ||
     isLoadingGuardian.value ||
-    isLoadingAdministrationData.value,
+    isLoadingAdministrationData.value ||
+    isLoadingAdministrationTaskVariants.value ||
+    isLoadingTaskVariantParameters.value,
 );
 
-const { data: studentData, isLoading: isLoadingStudentData } = useUserDataQuery(props.userId, {
+const { data: studentData, isLoading: isLoadingStudentData } = useUserProfileQuery(props.userId, {
   enabled: initialized,
 });
 
-const { data: administrationData, isLoading: isLoadingAdministrationData } = useAdministrationsQuery(
-  [props.administrationId],
-  {
-    enabled: initialized,
-    select: (data) => data[0],
-  },
+const { data: administrationData, isLoading: isLoadingAdministrationData } = useAdministrationQuery(
+  props.administrationId,
+  { enabled: initialized },
+);
+
+const { data: administrationTaskVariants, isLoading: isLoadingAdministrationTaskVariants } =
+  useAdministrationTaskVariantsQuery(props.administrationId, { enabled: initialized });
+
+// The task-variants endpoint doesn't expose scoringVersion (it's a variant param, not a column
+// on administration_task_variants/task_variants), so it's fetched separately per variant — see
+// getScoringVersions below.
+const variantIds = computed(() => administrationTaskVariants.value?.map((variant) => variant.id) ?? []);
+const { data: taskVariantParameters, isLoading: isLoadingTaskVariantParameters } = useTaskVariantParametersQuery(
+  variantIds,
+  { enabled: initialized },
 );
 
 // Administrator path: administration-scoped individual report (scores, support level, tags,
@@ -228,14 +241,21 @@ const tasksListArray = computed(() =>
 const studentFirstName = computed(() => getStudentDisplayName(studentData).firstName);
 const studentLastName = computed(() => getStudentDisplayName(studentData).lastName);
 const studentGrade = computed(() => toValue(studentData)?.studentData?.grade);
+// Map of taskSlug -> scoringVersion, built from each variant's `scoringVersion` parameter.
+// Mirrors the backend's own extractScoringVersions (report.service.ts): a scoringVersion is
+// always a non-negative integer in the JSON config, so a non-integer value (missing param,
+// corrupt data) is treated as "version unknown" (null) rather than coerced.
 const getScoringVersions = computed(() => {
-  const scoringVersions = Object.fromEntries(
-    administrationData.value?.assessments?.map((assessment) => [
-      assessment.taskId,
-      assessment?.params?.scoringVersion ?? null,
-    ]),
+  const variants = taskVariantParameters.value;
+  if (!variants?.length) return {};
+
+  return Object.fromEntries(
+    variants.map((variant) => {
+      const rawValue = variant.parameters?.find((param) => param.name === 'scoringVersion')?.value;
+      const version = typeof rawValue === 'number' ? rawValue : Number(rawValue);
+      return [variant.taskSlug, Number.isInteger(version) ? version : null];
+    }),
   );
-  return scoringVersions;
 });
 
 const { locale } = useI18n();
