@@ -113,6 +113,7 @@ import { SummaryScreen, SummaryPrint } from './components/Summary';
 import { ScoreListScreen, ScoreListPrint } from './components/ScoreList';
 import { SupportScreen, SupportPrint } from './components/Support';
 import EmptyState from './components/EmptyState.vue';
+import { useScoringVersions } from './composables/useScoringVersions';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { formatListArray } from '@/helpers/formatListArray';
 import { getStudentExternalId } from '@/helpers/getStudentExternalId';
@@ -241,22 +242,7 @@ const tasksListArray = computed(() =>
 const studentFirstName = computed(() => getStudentDisplayName(studentData).firstName);
 const studentLastName = computed(() => getStudentDisplayName(studentData).lastName);
 const studentGrade = computed(() => toValue(studentData)?.studentData?.grade);
-// Map of taskSlug -> scoringVersion, built from each variant's `scoringVersion` parameter.
-// Mirrors the backend's own extractScoringVersions (report.service.ts): a scoringVersion is
-// always a non-negative integer in the JSON config, so a non-integer value (missing param,
-// corrupt data) is treated as "version unknown" (null) rather than coerced.
-const getScoringVersions = computed(() => {
-  const variants = taskVariantParameters.value;
-  if (!variants?.length) return {};
-
-  return Object.fromEntries(
-    variants.map((variant) => {
-      const rawValue = variant.parameters?.find((param) => param.name === 'scoringVersion')?.value;
-      const version = typeof rawValue === 'number' ? rawValue : Number(rawValue);
-      return [variant.taskSlug, Number.isInteger(version) ? version : null];
-    }),
-  );
-});
+const { getScoringVersions } = useScoringVersions(taskVariantParameters);
 
 const { locale } = useI18n();
 
