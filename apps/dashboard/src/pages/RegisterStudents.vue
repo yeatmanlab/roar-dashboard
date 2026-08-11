@@ -658,6 +658,11 @@ const orgCache = ref({
   families: new Map(),
 });
 
+// Tracks in-flight orgFetchAll calls, keyed by (orgType, selectedDistrict, selectedSchool),
+// so concurrent lookups that would otherwise all miss orgCache before the first one resolves
+// coalesce into a single Firestore query instead of one per row.
+const pendingOrgFetches = new Map();
+
 // Helper function to get org ID (uses cache if available)
 const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchool = null) => {
   if (!orgName) return null;
@@ -677,16 +682,25 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
 
   // If not in cache, fetch and cache the result
   try {
-    // Fetch user's available orgs of type orgType
-    const userAdminOrgs = await orgFetchAll(
-      orgType,
-      selectedDistrict,
-      selectedSchool,
-      orderByDefault,
-      isSuperAdmin,
-      adminOrgs,
-      ['id', 'name', 'districtId', 'schoolId', 'schools', 'classes'],
-    );
+    const fetchKey = `${orgType}-${selectedDistrict}-${selectedSchool}`;
+    let fetchPromise = pendingOrgFetches.get(fetchKey);
+    if (!fetchPromise) {
+      // Fetch user's available orgs of type orgType
+      fetchPromise = orgFetchAll(orgType, selectedDistrict, selectedSchool, orderByDefault, isSuperAdmin, adminOrgs, [
+        'id',
+        'name',
+        'districtId',
+        'schoolId',
+        'schools',
+        'classes',
+      ]).finally(() => {
+        // Only coalesce while in flight; let it be retried/refetched after settling.
+        pendingOrgFetches.delete(fetchKey);
+      });
+      pendingOrgFetches.set(fetchKey, fetchPromise);
+    }
+
+    const userAdminOrgs = await fetchPromise;
 
     // Cache orgs in case we need them for a subsequent call
     userAdminOrgs.forEach((org) => {
