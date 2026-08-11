@@ -17,25 +17,29 @@
           @view-change="handleViewChange"
         />
 
-        <template v-if="studentRows.length">
-          <ProgressStatsOverview v-if="adminStats" :admin-stats="adminStats" :tasks-dictionary="tasksDictionary" />
+        <div v-if="assignmentData?.length">
+          <ProgressStatsOverview
+            v-if="adminStats"
+            :admin-stats="adminStats"
+            :administration-data="administrationData"
+            :tasks-dictionary="tasksDictionary"
+          />
 
           <RoarDataTable
             v-if="progressReportColumns?.length ?? 0 > 0"
             :data="filteredTableData"
             :columns="progressReportColumns"
             :total-records="filteredTableData?.length"
-            :loading="isLoadingProgress || isFetchingProgress"
+            :loading="isLoadingAssignments || isFetchingAssignments"
             :task-scoring-versions="getScoringVersions"
             :page-limit="pageLimit"
-            :allow-filtering="true"
-            :allow-export-p-d-f="false"
+            :allow-export-pdf="false"
             :reset-filters="resetFilters"
             :lazy-pre-sorting="orderBy"
             @export-selected="exportSelected"
             @export-all="exportAll"
           />
-        </template>
+        </div>
       </template>
     </section>
   </main>
@@ -43,15 +47,16 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useAdministrationQuery from '@/composables/queries/useAdministrationQuery';
-import useAdministrationProgressQuery from '@/composables/queries/useAdministrationProgressQuery';
-import useAdministrationProgressOverviewQuery from '@/composables/queries/useAdministrationProgressOverviewQuery';
+import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useAdministrationsStatsQuery from '@/composables/queries/useAdministrationsStatsQuery';
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
+import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import { getTitle } from '@/helpers/query/administrations';
@@ -65,6 +70,7 @@ import { REPORT_VIEWS, DEFAULT_ORDER_BY, DISTRICT_ORDER_BY_PREFIX, DEFAULT_PAGE_
 
 const router = useRouter();
 const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -101,9 +107,22 @@ const { data: userClaims } = useUserClaimsQuery({
 
 const { isSuperAdmin } = useUserType(userClaims);
 
-const { data: administrationData } = useAdministrationQuery(props.administrationId, {
+const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
   enabled: initialized,
+  select: (data) => data[0],
 });
+
+const { data: adminStats } = useAdministrationsStatsQuery(
+  [props.administrationId],
+  props.orgId,
+  props.orgType,
+  null, // taskIds - not needed since we're using fetchAllTaskIds
+  true, // fetchAllTaskIds - get stats for all tasks in the administration
+  {
+    enabled: initialized,
+    select: (data) => data[0],
+  },
+);
 
 const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
   enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
@@ -115,28 +134,15 @@ const { data: orgData } = useOrgQuery(props.orgType, [props.orgId], {
 });
 
 const {
-  isLoading: isLoadingProgress,
-  isFetching: isFetchingProgress,
-  data: progressData,
-} = useAdministrationProgressQuery(props.administrationId, props.orgType, props.orgId, {
+  isLoading: isLoadingAssignments,
+  isFetching: isFetchingAssignments,
+  data: assignmentData,
+} = useAdministrationAssignmentsQuery(props.administrationId, props.orgType, props.orgId, {
   enabled: initialized,
 });
 
-const { data: adminStats } = useAdministrationProgressOverviewQuery(
-  props.administrationId,
-  props.orgType,
-  props.orgId,
-  {
-    enabled: initialized,
-  },
-);
-
-// Domain data derived from the progress response
-const studentRows = computed(() => progressData.value?.students ?? []);
-const reportTasks = computed(() => progressData.value?.tasks ?? []);
-
 // Computed values
-const isLoading = computed(() => isLoadingProgress.value || isLoadingTasksDictionary.value);
+const isLoading = computed(() => isLoadingAssignments.value || isLoadingTasksDictionary.value);
 
 const displayName = computed(() => {
   if (administrationData.value) {
@@ -145,13 +151,22 @@ const displayName = computed(() => {
   return '';
 });
 
+const schoolNameDictionary = computed(() => {
+  if (districtSchoolsData.value) {
+    return districtSchoolsData.value.reduce((acc, school) => {
+      acc[school.id] = school.name;
+      return acc;
+    }, {});
+  }
+  return {};
+});
+
 // Composables
-const { computedProgressData } = useProgressData(studentRows);
+const { computedProgressData } = useProgressData(assignmentData, schoolNameDictionary);
 
 const { progressReportColumns } = useProgressColumns(
   administrationData,
-  studentRows,
-  reportTasks,
+  assignmentData,
   tasksDictionary,
   districtSchoolsData,
   authStore,
@@ -161,7 +176,6 @@ const { progressReportColumns } = useProgressColumns(
 
 const { exportSelected, exportAll } = useProgressExport(
   computedProgressData,
-  reportTasks,
   tasksDictionary,
   administrationData,
   orgData,
@@ -204,10 +218,10 @@ const refresh = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) refresh();
+  if (state.roarfirekit.restConfig?.()) refresh();
 });
 
 onMounted(async () => {
-  if (authStore.isAuthReady) refresh();
+  if (roarfirekit.value.restConfig?.()) refresh();
 });
 </script>
