@@ -68,12 +68,15 @@
           <RoarDataTable
             v-if="showTable"
             :key="tableKey"
+            allow-global-filter
+            :allow-export-pdf="false"
             :columns="tableColumns"
             :data="tableData"
             sortable
             :loading="isLoading || isFetching"
-            :allow-filtering="false"
+            :global-filter-fields="globalFilterFields"
             @export-all="exportAll"
+            @export-selected="exportSelected"
             @show-activation-code="showCode"
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
@@ -210,8 +213,8 @@ import PvToggleButton from 'primevue/togglebutton';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _cloneDeep from 'lodash/cloneDeep';
+import _kebabCase from 'lodash/kebabCase';
 import { useAuthStore } from '@/store/auth';
-import { orgFetchAll } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
@@ -305,6 +308,14 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
+const globalFilterFields = computed(() => {
+  const sharedFilterFields = ['name', 'abbreviation', 'address.formattedAddress'];
+  if (activeOrgType.value === ORG_TYPES.DISTRICTS) {
+    sharedFilterFields.push('ncesId', 'mdrNumber');
+  }
+  return sharedFilterFields;
+});
+
 // Use export orchestrator composable (must be after activeOrgType is defined)
 const {
   modalState,
@@ -367,16 +378,47 @@ function copyToClipboard(text) {
     });
 }
 
-const exportAll = async () => {
-  const exportData = await orgFetchAll(
-    activeOrgType,
-    selectedDistrict,
-    selectedSchool,
-    orderBy,
-    isSuperAdmin,
-    adminOrgs,
-  );
-  exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
+const transformForExport = (targetOrgs) =>
+  targetOrgs.map((org) => {
+    const sharedFields = {
+      Name: _get(org, 'name'),
+      Abbreviation: _get(org, 'abbreviation'),
+      Address: _get(org, 'address.formattedAddress'),
+      Tags: _get(org, 'tags', []).join(', ').trim(),
+    };
+
+    if (activeOrgType.value === ORG_TYPES.DISTRICTS) {
+      sharedFields['MdrNumber'] = _get(org, 'mdrNumber');
+      sharedFields['NcesId'] = _get(org, 'ncesId');
+    }
+
+    if (activeOrgType.value !== ORG_TYPES.GROUPS && activeOrgType.value !== ORG_TYPES.FAMILIES) {
+      // Force boolean values to strings for CSV export
+      sharedFields['Clever'] = _get(org, 'clever') ? 'TRUE' : 'FALSE';
+      sharedFields['ClassLink'] = _get(org, 'classlink') ? 'TRUE' : 'FALSE';
+    }
+
+    return sharedFields;
+  });
+
+const getExportFilename = () => {
+  let parentOrgName = '';
+  if (activeOrgType.value === ORG_TYPES.CLASSES) {
+    const school = allSchools.value?.find((s) => s.id === selectedSchool.value);
+    parentOrgName = school?.name ? `${_kebabCase(school.name)}-` : '';
+  } else if (activeOrgType.value === ORG_TYPES.SCHOOLS) {
+    const district = allDistricts.value?.find((d) => d.id === selectedDistrict.value);
+    parentOrgName = district?.name ? `${_kebabCase(district.name)}-` : '';
+  }
+
+  return `roar-orgs-${parentOrgName}${activeOrgType.value}`;
+};
+const exportAll = () => {
+  exportCsv(transformForExport(orgData.value ?? []), `${getExportFilename()}.csv`);
+};
+
+const exportSelected = (selectedOrgs) => {
+  exportCsv(transformForExport(selectedOrgs), `${getExportFilename()}-selected.csv`);
 };
 
 const tableData = computed(() => {
@@ -386,6 +428,8 @@ const tableData = computed(() => {
     return {
       ...orgInfo,
       isExporting: exportingOrgId.value === org.id,
+      classlink: !!orgInfo.classlink,
+      clever: !!orgInfo.clever,
       routeParams: {
         orgType: activeOrgType.value,
         orgId: org.id,
