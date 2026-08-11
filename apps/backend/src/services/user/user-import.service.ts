@@ -118,7 +118,8 @@ function failed(index: number, classification: Classification, code: string, mes
 /** Map an ApiError (or unknown error) to a safe per-row failure outcome. */
 function toFailedOutcome(index: number, classification: Classification, error: unknown): ImportRowOutcome {
   if (error instanceof ApiError) {
-    return failed(index, classification, error.code, error.message);
+    // error.code is technically never undefined, but fall back to INTERNAL to satisfy the schema
+    return failed(index, classification, error.code ?? ApiErrorCode.INTERNAL, error.message);
   }
   return failed(index, classification, ApiErrorCode.INTERNAL, ApiErrorMessage.INTERNAL_SERVER_ERROR);
 }
