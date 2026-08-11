@@ -30,13 +30,22 @@
 
         <RoarDataTable
           v-if="users"
+          allow-global-filter
+          :allow-export-pdf="false"
           :columns="columns"
-          :data="users"
+          :data="tableData"
           :loading="isLoading || isFetching"
-          :allow-export="false"
-          :allow-filtering="false"
-          @sort="onSort($event)"
+          :global-filter-fields="[
+            'username',
+            'email',
+            'name.first',
+            'name.last',
+            'studentData.state_id',
+            'studentData.grade',
+          ]"
           @edit-button="onEditButtonClick($event)"
+          @export-all="exportAll"
+          @export-selected="exportSelected"
         />
       </div>
       <AppSpinner v-else />
@@ -143,10 +152,12 @@ import { required, sameAs, minLength } from '@vuelidate/validators';
 import { useToast } from 'primevue/usetoast';
 import PvButton from 'primevue/button';
 import PvPassword from 'primevue/password';
-import _isEmpty from 'lodash/isEmpty';
+import _kebabCase from 'lodash/kebabCase';
+import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import useOrgUsersQuery from '@/composables/queries/useOrgUsersQuery';
 import { singularizeFirestoreCollection } from '@/helpers';
+import { exportCsv } from '@/helpers/query/utils';
 import AppSpinner from './AppSpinner.vue';
 import EditUsersForm from './EditUsersForm.vue';
 import RoarModal from './modals/RoarModal.vue';
@@ -161,7 +172,6 @@ const initialized = ref(false);
 const toast = useToast();
 
 const page = ref(0);
-const orderBy = ref(null);
 
 const props = defineProps({
   orgType: {
@@ -182,64 +192,68 @@ const {
   isLoading,
   isFetching,
   data: users,
-} = useOrgUsersQuery(props.orgType, props.orgId, page, orderBy, {
+} = useOrgUsersQuery(props.orgType, props.orgId, page, null, {
   enabled: initialized,
 });
 
+const tableData = computed(() =>
+  (users.value ?? []).map((user) => ({
+    ...user,
+    studentData: {
+      ...user.studentData,
+      // Normalize so sort works properly
+      grade: user.studentData?.grade == null ? user.studentData?.grade : String(user.studentData.grade),
+    },
+  })),
+);
+
+// Sort and filter are enabled by default
 const columns = ref([
   {
     field: 'username',
     header: 'Username',
-    dataType: 'string',
-    sort: false,
+    dataType: 'text',
   },
   {
     field: 'email',
     header: 'Email',
-    dataType: 'string',
-    sort: false,
+    dataType: 'text',
   },
   {
     field: 'name.first',
     header: 'First Name',
-    dataType: 'string',
-    sort: false,
+    dataType: 'text',
   },
   {
     field: 'name.last',
     header: 'Last Name',
-    dataType: 'string',
-    sort: false,
+    dataType: 'text',
   },
   {
     field: 'studentData.state_id',
     header: 'State Id',
-    dataType: 'string',
-    sort: false,
+    dataType: 'text',
   },
   {
     field: 'studentData.grade',
     header: 'Grade',
-    dataType: 'string',
-    sort: false,
+    dataType: 'text',
   },
   {
     field: 'studentData.gender',
     header: 'Gender',
-    dataType: 'string',
+    dataType: 'text',
     sort: false,
   },
   {
     field: 'studentData.dob',
     header: 'Date of Birth',
     dataType: 'date',
-    sort: false,
   },
   {
     field: 'userType',
     header: 'User Type',
-    dataType: 'string',
-    sort: false,
+    dataType: 'text',
   },
   {
     field: 'archived',
@@ -315,12 +329,26 @@ const closeModal = () => {
   localUserData.value = null;
 };
 
-const onSort = (event) => {
-  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
-    field: { fieldPath: item.field },
-    direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
+const transformForExport = (targetUsers) =>
+  targetUsers.map((user) => ({
+    Username: _get(user, 'username'),
+    Email: _get(user, 'email'),
+    FirstName: _get(user, 'name.first'),
+    LastName: _get(user, 'name.last'),
+    StateId: _get(user, 'studentData.state_id'),
+    Grade: _get(user, 'studentData.grade'),
+    Gender: _get(user, 'studentData.gender'),
+    DateOfBirth: _get(user, 'studentData.dob'),
+    UserType: _get(user, 'userType'),
+    Archived: _get(user, 'archived'),
   }));
-  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : null;
+
+const exportAll = () => {
+  exportCsv(transformForExport(users.value), `roar-users-${_kebabCase(props.orgName)}.csv`);
+};
+
+const exportSelected = (selectedUsers) => {
+  exportCsv(transformForExport(selectedUsers), `roar-users-${_kebabCase(props.orgName)}-selected.csv`);
 };
 
 // +-----------------+

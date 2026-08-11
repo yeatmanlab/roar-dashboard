@@ -9,6 +9,13 @@
         <div class="flex flex-row flex-wrap gap-2 pb-2" aria-label="Filter Options">
           <slot name="filterbar"></slot>
 
+          <div v-if="allowGlobalFilter" class="pb-2">
+            <PvFloatLabel>
+              <PvInputText id="data-table__global-filter" v-model="globalFilterQuery" />
+              <label for="data-table__global-filter">Search</label>
+            </PvFloatLabel>
+          </div>
+
           <PvFloatLabel>
             <PvMultiSelect
               id="data-table__select-columns"
@@ -54,6 +61,7 @@
           <PvButton
             v-if="allowExportCSV"
             v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
+            :disabled="loading"
             icon="pi pi-file-excel"
             label="Export All (CSV)"
             class="text-white border-none bg-primary border-round hover:bg-red-900"
@@ -71,21 +79,21 @@
             icon="pi pi-file-excel"
             label="Export Selected (CSV)"
             :badge="`${selectedRows.length}/${totalRecords ?? data.length}`"
-            :disabled="selectedRows.length === 0"
+            :disabled="loading || selectedRows.length === 0"
             class="text-white border-none bg-primary border-round hover:bg-red-900"
             data-cy="data-table__export-selected-btn"
             @click="exportCSV(true, $event)"
           />
 
           <PvButton
-            v-if="allowExportPDF"
+            v-if="allowExportPdf"
             v-tooltip.bottom="
               `Export PDF reports for ${selectedRows.length} selected student${selectedRows.length > 1 ? 's' : ''}`
             "
             label="Export Selected (PDF)"
             icon="pi pi-file-pdf"
             :badge="`${selectedRows.length}/${totalRecords ?? data.length}`"
-            :disabled="selectedRows.length === 0"
+            :disabled="loading || selectedRows.length === 0"
             class="text-white border-none bg-primary border-round hover:bg-red-900"
             data-cy="data-table__export-pdf-btn"
             @click="exportPdfReports($event)"
@@ -114,6 +122,7 @@
             :multi-sort-meta="lazyPreSorting"
             show-gridlines
             filter-display="menu"
+            :global-filter-fields="globalFilterFields"
             paginator
             :rows="pageLimit"
             :always-show-paginator="true"
@@ -464,7 +473,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvButton from 'primevue/button';
 import PvDatePicker from 'primevue/datepicker';
@@ -494,7 +503,7 @@ import { ORG_EXPORT_EVENTS } from '@/containers/OrgsList/constants/exportConstan
 /*
 Using the DataTable
 Required Props: columns, data
-Optional Props: allowExportCSV (default: true), allowExportPDF (default: true), exportFilename (default: 'datatable-export')
+Optional Props: allowExportCSV (default: true), allowExportPdf (default: true), exportFilename (default: 'datatable-export')
 
 Columns:
 Array of objects consisting of a field and header at minimum.
@@ -519,6 +528,7 @@ Array of objects consisting of a field and header at minimum.
 */
 const rowViewMode = ref('Expand View');
 const countForVisualize = ref(false); //for starting compress
+const globalFilterQuery = ref(null);
 const toggleView = () => {
   compressedRows.value = !compressedRows.value;
   increasePadding();
@@ -528,8 +538,10 @@ const props = defineProps({
   columns: { type: Array, required: true },
   data: { type: Array, required: true },
   allowExportCSV: { type: Boolean, default: true },
-  allowExportPDF: { type: Boolean, default: true },
+  allowExportPdf: { type: Boolean, default: true },
   exportFilename: { type: String, default: 'datatable-export' },
+  allowGlobalFilter: { type: Boolean, default: false },
+  globalFilterFields: { type: Array, required: false, default: () => [] },
   pageLimit: { type: Number, default: 15 },
   totalRecords: { type: Number, required: false, default: 0 },
   loading: { type: Boolean, default: false },
@@ -542,6 +554,10 @@ const props = defineProps({
   groupheaders: { type: Boolean, default: false },
   testId: { type: String, default: 'roar-data-table' },
   taskScoringVersions: { type: Object, required: false, default: () => ({}) },
+});
+
+watch(globalFilterQuery, (val) => {
+  refFilters.value.global.value = val;
 });
 
 const inputColumns = ref(props.columns);
@@ -652,6 +668,7 @@ function increasePadding() {
 }
 
 // Generate filters and options objects
+// @TODO: Seems like PrimeVue Column dataType can only be text, numeric, date, or boolean. Verify and clean up unused fields.
 const dataTypesToFilterMatchMode = {
   NUMERIC: FilterMatchMode.EQUALS,
   NUMBER: FilterMatchMode.EQUALS,
@@ -700,6 +717,11 @@ const computedFilters = computed(() => {
       };
     }
   });
+
+  if (props.allowGlobalFilter) {
+    filters['global'] = { value: null, matchMode: FilterMatchMode.CONTAINS };
+  }
+
   return { computedOptions: options, computedFilters: filters };
 });
 
@@ -708,6 +730,7 @@ const refFilters = ref(computedFilters.value.computedFilters);
 
 const resetFilters = () => {
   refFilters.value = computedFilters.value.computedFilters;
+  globalFilterQuery.value = null;
   // emit('reset-filters');
 };
 

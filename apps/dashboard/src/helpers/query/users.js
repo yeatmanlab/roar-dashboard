@@ -136,7 +136,7 @@ export const fetchUsersByOrg = async (orgType, orgId, pageLimit, page, orderBy, 
     pageLimit: toValue(pageLimit),
     page: toValue(page),
     paginate: true,
-    select: ['username', 'name', 'studentData', 'userType', 'archived'],
+    select: ['username', 'name', 'studentData', 'userType', 'archived', 'email'],
     orderBy: toValue(orderBy),
     restrictToActiveUsers: restrictToActiveUsers,
   });
