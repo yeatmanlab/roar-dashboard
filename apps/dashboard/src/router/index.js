@@ -1063,6 +1063,13 @@ router.beforeEach(async (to, from, next) => {
     'SignIn',
   ];
 
+  // Manage page-signin class for layout styling
+  if (to.name === 'SignIn') {
+    document.body.classList.add('page-signin');
+  } else if (from.name === 'SignIn') {
+    document.body.classList.remove('page-signin');
+  }
+
   const inMaintenanceMode = false;
 
   if (inMaintenanceMode && to.name !== 'Maintenance') {
