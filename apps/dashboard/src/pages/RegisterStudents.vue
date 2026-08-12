@@ -854,11 +854,32 @@ const submit = async () => {
   for (const student of mappedStudents.value) {
     importRows.push(await transformStudentData(student));
   }
+
+  // A row with no resolvable org/family membership fails the backend's `memberships.min(1)`
+  // check. Since rows are batched, one such row would otherwise fail the entire chunk it's
+  // in, along with every valid row batched alongside it.
+  // TODO: this is a stopgap. Once project/backend-refactor is updated with main, port the
+  // stricter pre-submit org-resolution validation from enh/csv-uploader-1 (PR #2123, async
+  // `resolveOrgId` checks in SubmitTable.vue) so invalid rows are flagged before Submit is
+  // even enabled.
+  const rowsToSubmit = [];
+  for (const row of importRows) {
+    if (row.memberships.length === 0) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: `User ${row.email} skipped: no valid district, school, class, group, or family was found.`,
+        life: 5000,
+      });
+    } else {
+      rowsToSubmit.push(row);
+    }
+  }
   submitting.value = SubmitStatus.SUBMITTING;
 
   // Chunk under the endpoint's 100-row cap (50 keeps headroom) and submit each chunk.
   const client = getRoarApiClient();
-  const chunkedUsers = _chunk(importRows, 50);
+  const chunkedUsers = _chunk(rowsToSubmit, 50);
   for (const chunk of chunkedUsers) {
     const response = await client.users.bulkImport({ body: { users: chunk } });
 
