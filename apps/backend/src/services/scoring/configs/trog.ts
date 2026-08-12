@@ -10,12 +10,14 @@ export default {
     rawScore: [{ minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.ROAR_SCORE }],
   },
   classification: {
-    type: 'none' as const,
+    type: 'percentile-then-rawscore' as const,
+    percentileCutoffs: [{ minVersion: 0, cutoffs: { achieved: 40, developing: 20 } }],
+    rawScoreThresholds: [{ minVersion: 0, thresholds: { above: 540, some: 487 } }],
   },
   displayCategory: [{ minVersion: 0, category: 'normed' }],
   displayRanges: {
     percentile: { min: 0, max: 99 },
     standardScore: { min: 0, max: 180 },
-    rawScore: { min: 0, max: 130 },
+    rawScore: { min: 100, max: 900 },
   },
 } as const;
