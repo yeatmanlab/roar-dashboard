@@ -6,8 +6,16 @@ vi.mock('./parse-allowed-origins', () => ({
   parseAllowedOrigins: vi.fn(() => ['https://allowed.example.com']),
 }));
 
+// Mirrors what parsePreviewOrigins builds for a single site, so this file tests the
+// wiring of string + RegExp entries into `cors` rather than the pattern itself —
+// pattern behaviour is covered in parse-preview-origins.test.ts.
+vi.mock('./parse-preview-origins', () => ({
+  parsePreviewOrigins: vi.fn(() => [/^https:\/\/preview-site--[a-z0-9-]+\.web\.app$/]),
+}));
+
 const ALLOWED_ORIGIN = 'https://allowed.example.com';
 const DISALLOWED_ORIGIN = 'https://evil.example.com';
+const PREVIEW_ORIGIN = 'https://preview-site--pr123-branch-a1b2c3d4.web.app';
 
 let app: ReturnType<typeof express>;
 
@@ -65,5 +73,43 @@ describe('CORS middleware', () => {
       .set('Access-Control-Request-Method', 'POST');
 
     expect(res.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  describe('Firebase preview channels', () => {
+    it('returns CORS headers for a matching preview origin', async () => {
+      const res = await request(app).get('/test').set('Origin', PREVIEW_ORIGIN);
+
+      expect(res.headers['access-control-allow-origin']).toBe(PREVIEW_ORIGIN);
+      expect(res.headers['access-control-allow-credentials']).toBe('true');
+    });
+
+    it('returns 204 for preflight from a matching preview origin', async () => {
+      const res = await request(app)
+        .options('/test')
+        .set('Origin', PREVIEW_ORIGIN)
+        .set('Access-Control-Request-Method', 'POST');
+
+      expect(res.status).toBe(204);
+      expect(res.headers['access-control-allow-origin']).toBe(PREVIEW_ORIGIN);
+    });
+
+    it('does not return CORS headers for a preview origin of another site', async () => {
+      const res = await request(app).get('/test').set('Origin', 'https://other-site--x.web.app');
+
+      expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    });
+
+    // Guards the anchoring end-to-end, not just at the pattern level.
+    it('does not return CORS headers for a suffixed attacker domain', async () => {
+      const res = await request(app).get('/test').set('Origin', 'https://preview-site--x.web.app.evil.com');
+
+      expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    });
+
+    it('still exact-matches ALLOWED_ORIGINS entries alongside preview patterns', async () => {
+      const res = await request(app).get('/test').set('Origin', ALLOWED_ORIGIN);
+
+      expect(res.headers['access-control-allow-origin']).toBe(ALLOWED_ORIGIN);
+    });
   });
 });
