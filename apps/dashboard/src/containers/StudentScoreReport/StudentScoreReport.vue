@@ -91,8 +91,10 @@ import { computed, ref, onMounted, onUnmounted, watch, nextTick, toValue } from 
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useI18n } from 'vue-i18n';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
-import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useUserProfileQuery from '@/composables/queries/useUserProfileQuery';
+import useAdministrationQuery from '@/composables/queries/useAdministrationQuery';
+import useAdministrationTaskVariantsQuery from '@/composables/queries/useAdministrationTaskVariantsQuery';
+import useTaskVariantParametersQuery from '@/composables/queries/useTaskVariantParametersQuery';
 import useAdministrationIndividualScoreReportQuery from '@/composables/queries/useAdministrationIndividualScoreReportQuery';
 import useGuardianStudentReportQuery from '@/composables/queries/useGuardianStudentReportQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
@@ -111,6 +113,7 @@ import { SummaryScreen, SummaryPrint } from './components/Summary';
 import { ScoreListScreen, ScoreListPrint } from './components/ScoreList';
 import { SupportScreen, SupportPrint } from './components/Support';
 import EmptyState from './components/EmptyState.vue';
+import { useScoringVersions } from './composables/useScoringVersions';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { formatListArray } from '@/helpers/formatListArray';
 import { getStudentExternalId } from '@/helpers/getStudentExternalId';
@@ -144,19 +147,30 @@ const isLoading = computed(
     isLoadingTasksDictionary.value ||
     isLoadingReport.value ||
     isLoadingGuardian.value ||
-    isLoadingAdministrationData.value,
+    isLoadingAdministrationData.value ||
+    isLoadingAdministrationTaskVariants.value ||
+    isLoadingTaskVariantParameters.value,
 );
 
-const { data: studentData, isLoading: isLoadingStudentData } = useUserDataQuery(props.userId, {
+const { data: studentData, isLoading: isLoadingStudentData } = useUserProfileQuery(props.userId, {
   enabled: initialized,
 });
 
-const { data: administrationData, isLoading: isLoadingAdministrationData } = useAdministrationsQuery(
-  [props.administrationId],
-  {
-    enabled: initialized,
-    select: (data) => data[0],
-  },
+const { data: administrationData, isLoading: isLoadingAdministrationData } = useAdministrationQuery(
+  props.administrationId,
+  { enabled: initialized },
+);
+
+const { data: administrationTaskVariants, isLoading: isLoadingAdministrationTaskVariants } =
+  useAdministrationTaskVariantsQuery(props.administrationId, { enabled: initialized });
+
+// The task-variants endpoint doesn't expose scoringVersion (it's a variant param, not a column
+// on administration_task_variants/task_variants), so it's fetched separately per variant — see
+// getScoringVersions below.
+const variantIds = computed(() => administrationTaskVariants.value?.map((variant) => variant.id) ?? []);
+const { data: taskVariantParameters, isLoading: isLoadingTaskVariantParameters } = useTaskVariantParametersQuery(
+  variantIds,
+  { enabled: initialized },
 );
 
 // Administrator path: administration-scoped individual report (scores, support level, tags,
@@ -228,15 +242,7 @@ const tasksListArray = computed(() =>
 const studentFirstName = computed(() => getStudentDisplayName(studentData).firstName);
 const studentLastName = computed(() => getStudentDisplayName(studentData).lastName);
 const studentGrade = computed(() => toValue(studentData)?.studentData?.grade);
-const getScoringVersions = computed(() => {
-  const scoringVersions = Object.fromEntries(
-    administrationData.value?.assessments?.map((assessment) => [
-      assessment.taskId,
-      assessment?.params?.scoringVersion ?? null,
-    ]),
-  );
-  return scoringVersions;
-});
+const { getScoringVersions } = useScoringVersions(taskVariantParameters);
 
 const { locale } = useI18n();
 
