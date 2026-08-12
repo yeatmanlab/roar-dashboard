@@ -26,18 +26,19 @@ const ROAR_API_BASE_URL = Cypress.env('ROAR_API_BASE_URL') ?? 'http://127.0.0.1:
 const EMULATOR_API_KEY = 'fake-api-key';
 
 /**
- * Look up an emulator-created account by email via the emulator's (unauthenticated,
- * dev-only) account management API. Used instead of a full sign-in for accounts whose
- * password was set via `importUsers` — see the comment on the SCRYPT smoke test below.
+ * Look up an emulator-created account by email via the Identity Toolkit accounts:query
+ * endpoint. The emulator can't verify a real sign-in for importUsers-hashed passwords, so
+ * this checks the account was created instead of asserting a signInWithPassword round-trip.
  */
 function findEmulatorAccountByEmail(email) {
   return cy
     .request({
-      method: 'GET',
-      url: `http://${EMULATOR_HOST}/emulator/v1/projects/${FIREBASE_PROJECT_ID}/accounts`,
+      method: 'POST',
+      url: `http://${EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/accounts:query?key=${EMULATOR_API_KEY}`,
+      body: {},
     })
     .then((res) => {
-      expect(res.status, 'list emulator accounts').to.eq(200);
+      expect(res.status, 'query emulator accounts').to.eq(200);
       return (res.body.userInfo ?? []).find((account) => account.email === email);
     });
 }
@@ -134,9 +135,10 @@ describe('Smoke: bulk import → emulator account created (SCRYPT hash payload r
   });
 
   it('creates a verified emulator account for the imported password', () => {
-    // Downgraded from a signInWithPassword round-trip: the Auth emulator doesn't
-    // recompute Firebase-scrypt for importUsers hashes, so sign-in always 400s here.
-    // Hash correctness is pinned separately by the firebase-password-hash unit test.
+    // Downgraded from a signInWithPassword round-trip: the Auth emulator uses its own
+    // fake hash for sign-in (not real Firebase-scrypt), so it can't verify importUsers
+    // hashes and sign-in always 400s here. Hash correctness is pinned separately by the
+    // firebase-password-hash unit test.
     findEmulatorAccountByEmail(newUser.email).then((account) => {
       expect(account, `emulator account for ${newUser.email}`).to.exist;
       expect(account.emailVerified, 'emulator account is email-verified').to.eq(true);
