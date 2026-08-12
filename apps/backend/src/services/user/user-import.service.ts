@@ -78,6 +78,13 @@ interface ImportRowMembership {
   enrollmentEnd?: string | undefined;
 }
 
+/**
+ * The subset of membership fields `authorizeRow` actually needs. Loose enough to accept both a
+ * declared row's memberships and `getActiveMembershipsWithRoles`' DB-sourced shape, since unenroll
+ * rows authorize against the latter rather than the former (see `authorizeUnenrollRow`).
+ */
+type MembershipForAuthCheck = { entityType: EntityType; entityId: string; role: string };
+
 /** A single import row. Mirrors the single-create payload plus `unenroll` and an optional password. */
 export interface ImportUserRowInput {
   email: string;
@@ -157,14 +164,17 @@ export function UserImportService({
   }
 
   /**
-   * Authorize a row's memberships, mirroring single-create's authorization. Super admins bypass FGA;
+   * Authorize a set of memberships, mirroring single-create's authorization. Super admins bypass FGA;
    * non-super-admins must hold `can_create_users` on every membership target (class memberships are
    * checked against the parent school). Throws `ApiError` (FORBIDDEN / UNPROCESSABLE_ENTITY) on deny.
    *
    * The same permission gates create, update, and unenroll — matching the legacy cloud function,
-   * which validates the requester's org coverage identically for all three.
+   * which validates the requester's org coverage identically for all three. For create/update rows
+   * this is called with the row's declared `memberships` (what's about to be granted). For unenroll
+   * rows it's called with the target user's actual current memberships fetched from the DB (see
+   * processUnenrollBin), since that — not whatever the row declares — is what unenrolling affects.
    */
-  async function authorizeRow(authContext: AuthContext, memberships: ImportRowMembership[]): Promise<void> {
+  async function authorizeRow(authContext: AuthContext, memberships: MembershipForAuthCheck[]): Promise<void> {
     const { userId, isSuperAdmin } = authContext;
 
     if (isSuperAdmin) return;
@@ -512,8 +522,14 @@ export function UserImportService({
    * Ending the DB enrollment does not expire the FGA tuple's stored grant window, so explicit cleanup
    * is required for the user to actually lose access. Matches the legacy `batchImportUpdate`, which
    * unenrolls a user from every org and archives them regardless of which memberships the row names.
+   *
+   * Authorization happens here rather than in `bulkImport`'s Phase 1: since unenrolling acts on the
+   * user's actual current memberships and not on anything the row declares, permission is checked
+   * against that same DB-fetched list, immediately before it's used to end the enrollments — reusing
+   * the lookup rather than issuing a second query.
    */
   async function processUnenrollBin(
+    authContext: AuthContext,
     rows: { index: number; user: User }[],
     outcomes: ImportRowOutcome[],
   ): Promise<void> {
@@ -521,6 +537,8 @@ export function UserImportService({
       try {
         // Capture the tuples to delete before ending the enrollments (afterward they read inactive).
         const memberships = await userRepository.getActiveMembershipsWithRoles(user.id);
+
+        await authorizeRow(authContext, memberships);
 
         await userRepository.runTransaction({
           fn: async (tx) => {
@@ -689,11 +707,15 @@ export function UserImportService({
     const outcomes: ImportRowOutcome[] = new Array(rows.length);
 
     // ── Phase 1: per-row authorization (before any external writes) ──────────────
+    // Unenroll rows are authorized later, against the target user's actual current memberships
+    // (see processUnenrollBin) — `row.memberships` isn't what an unenroll acts on, and may be empty.
     const authorized: { index: number; row: ImportUserRowInput }[] = [];
     for (let index = 0; index < rows.length; index++) {
       const row = rows[index]!;
       try {
-        await authorizeRow(authContext, row.memberships);
+        if (!row.unenroll) {
+          await authorizeRow(authContext, row.memberships);
+        }
         authorized.push({ index, row });
       } catch (error) {
         outcomes[index] = toFailedOutcome(index, preRoutingClassification(row), error);
@@ -740,7 +762,7 @@ export function UserImportService({
     await processCreateBin(authContext, createRows, outcomes);
 
     // ── Phase 4: unenroll bin ────────────────────────────────────────────────────
-    await processUnenrollBin(unenrollRows, outcomes);
+    await processUnenrollBin(authContext, unenrollRows, outcomes);
 
     // ── Phase 5: update bin ──────────────────────────────────────────────────────
     // Updates profile + auth fields. Membership reconciliation is deferred (see processUpdateBin).

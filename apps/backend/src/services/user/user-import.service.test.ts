@@ -388,6 +388,67 @@ describe('UserImportService.bulkImport', () => {
       expect(results[0]!.status).toBe('failed');
       expect(results[1]!.status).toBe('ok');
     });
+
+    describe('authorization against actual memberships', () => {
+      it('accepts a row with no declared memberships and authorizes against the DB-fetched ones', async () => {
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+          { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+        ]);
+
+        const results = await buildService().bulkImport(partnerAdmin, [
+          makeRow({ email: 'leaver@example.org', unenroll: true, memberships: [] }),
+        ]);
+
+        expect(mockAuthz.requirePermission).toHaveBeenCalledWith(
+          partnerAdmin.userId,
+          expect.any(String),
+          'school:school-9',
+        );
+        expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+      });
+
+      it('rejects an unenroll row with no permission over the user’s actual memberships, without mutating anything', async () => {
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+          { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+        ]);
+        mockAuthz.requirePermission.mockRejectedValue(forbidden());
+
+        const results = await buildService().bulkImport(partnerAdmin, [
+          makeRow({ email: 'leaver@example.org', unenroll: true, memberships: [] }),
+        ]);
+
+        expect(results[0]!).toMatchObject({
+          status: 'failed',
+          classification: 'unenrolled',
+          error: { code: ApiErrorCode.AUTH_FORBIDDEN },
+        });
+        expect(mockUserRepository.endAllEnrollments).not.toHaveBeenCalled();
+        expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
+        expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      });
+
+      it('ignores a declared membership the requester lacks permission over, since it is not what gets unenrolled', async () => {
+        // The row declares a membership the partner admin can't touch, but that's irrelevant —
+        // the user's actual membership (school-9) is what's checked and what's removed.
+        mockUserRepository.findClassParentSchool.mockResolvedValue('locked-out-school');
+        mockAuthz.requirePermission.mockImplementation(async (_userId, _relation, object: string) => {
+          if (object === 'school:locked-out-school') throw forbidden();
+        });
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+          { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+        ]);
+
+        const results = await buildService().bulkImport(partnerAdmin, [
+          makeRow({
+            email: 'leaver@example.org',
+            unenroll: true,
+            memberships: [{ entityType: EntityType.CLASS, entityId: 'class-locked', role: UserRole.STUDENT }],
+          }),
+        ]);
+
+        expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+      });
+    });
   });
 
   describe('update bin', () => {
