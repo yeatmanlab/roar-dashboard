@@ -1,8 +1,8 @@
 /**
  * Backend-only e2e proofs for POST /v1/users/import against the seeded local
- * stack (Postgres + OpenFGA + Firebase Auth emulator + server-test.ts). These
- * exercise the two things the unit/integration suites and mocks structurally
- * cannot prove:
+ * stack (Postgres + OpenFGA + Firebase Auth emulator + a seeded server.ts).
+ * These exercise the two things the unit/integration suites and mocks
+ * structurally cannot prove:
  *
  *   1. The SCRYPT password hash + payload wiring for `importUsers` actually reach
  *      Firebase (the "every imported student is locked out" risk) — proven via the
