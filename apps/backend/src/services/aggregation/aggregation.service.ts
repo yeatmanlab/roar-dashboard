@@ -270,64 +270,81 @@ function getPercentileRange(percentile: number): string {
   return '0-10';
 }
 
-function getRawScoreRange(taskSlug: string, rawScore: number): string | null {
-  const ranges: Record<string, Array<[number, number]>> = {
-    swr: [
-      [0, 50],
-      [50, 100],
-      [100, 150],
-      [150, 200],
-      [200, 250],
-      [250, 300],
-      [300, 350],
-      [350, 400],
-      [400, 450],
-      [450, 500],
-      [500, 550],
-      [550, 600],
-      [600, 650],
-      [650, 700],
-    ],
-    pa: [
-      [0, 10],
-      [10, 20],
-      [20, 30],
-      [30, 40],
-      [40, 50],
-      [50, 60],
-      [60, 70],
-    ],
-    sre: [
-      [0, 10],
-      [10, 20],
-      [20, 30],
-      [30, 40],
-      [40, 50],
-    ],
-    cva: [
-      [0, 10],
-      [10, 20],
-      [20, 30],
-      [30, 40],
-      [40, 50],
-      [50, 60],
-      [60, 70],
-      [70, 80],
-      [80, 90],
-      [90, 100],
-    ],
-  };
+/**
+ * Generates a map of score ranges as human-readable strings.
+ *
+ * Creates ranges by stepping from min to max with the given divisor as the step size.
+ * Each range is represented as "start-end" (e.g., "10-20") or as a single value (e.g., "30")
+ * if the start and end are the same. Ensures the final range includes max.
+ *
+ * @param min - The minimum value of the range
+ * @param max - The maximum value of the range (exclusive in loop, but included in final range)
+ * @param divisor - The step size between range starts
+ * @returns A map with numeric indices as keys and range strings as values (e.g., { 0: "0-10", 1: "10-20", 2: "20" })
+ */
+function generateScoreRangeMap(min: number, max: number, divisor: number): Record<number, string> {
+  const rangeMap: Record<number, string> = {};
+  let index = 0;
 
-  const taskRanges = ranges[taskSlug];
-  if (!taskRanges) return null;
+  for (let start = min; start < max; start += divisor) {
+    const end = Math.min(start + divisor, max);
+    rangeMap[index] = start === end ? `${start}` : `${start}-${end}`;
+    index++;
+  }
 
-  for (const [min, max] of taskRanges) {
-    if (rawScore >= min && rawScore < max) {
-      return `${min}-${max}`;
+  if (index > 0) {
+    const lastRangeStr = rangeMap[index - 1];
+    if (lastRangeStr !== undefined) {
+      const lastEnd = parseInt(lastRangeStr.split('-').pop() || lastRangeStr);
+      if (lastEnd < max) {
+        rangeMap[index] = `${max}`;
+      }
     }
   }
 
-  return null;
+  return rangeMap;
+}
+
+const SWR_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
+const SWR_ES_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
+const PA_RANGE_MAP = generateScoreRangeMap(40, 733, 50);
+const LETTER_RANGE_MAP = generateScoreRangeMap(0, 100, 10);
+const SRE_RANGE_MAP = generateScoreRangeMap(300, 967, 50);
+const SRE_ES_RANGE_MAP = generateScoreRangeMap(0, 140, 10);
+const CVA_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
+const TROG_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
+const ROAR_INFERENCE_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
+const MORPHOLOGY_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
+const COMPOSITE_FOUNDATIONAL_RANGE_MAP = generateScoreRangeMap(-100, 967, 100);
+
+function getRawScoreRange(taskSlug: string, rawScore: number): string | null {
+  const scoreRangeMaps: Record<string, Record<number, string>> = {
+    swr: SWR_RANGE_MAP,
+    'swr-es': SWR_ES_RANGE_MAP,
+    pa: PA_RANGE_MAP,
+    letter: LETTER_RANGE_MAP,
+    sre: SRE_RANGE_MAP,
+    'sre-es': SRE_ES_RANGE_MAP,
+    cva: CVA_RANGE_MAP,
+    trog: TROG_RANGE_MAP,
+    'roar-inference': ROAR_INFERENCE_RANGE_MAP,
+    morphology: MORPHOLOGY_RANGE_MAP,
+    'composite-foundational': COMPOSITE_FOUNDATIONAL_RANGE_MAP,
+  };
+
+  const rangeMap = scoreRangeMaps[taskSlug];
+  if (!rangeMap) return null;
+
+  return (
+    Object.values(rangeMap).find((rangeStr) => {
+      const parts = rangeStr.split('-').map(Number);
+      const min = parts[0];
+      const max = parts[1];
+      if (min === undefined) return false;
+      const upper = max !== undefined && !isNaN(max) ? max : min;
+      return rawScore >= min && rawScore <= upper;
+    }) ?? null
+  );
 }
 
 function aggregateToScoreRange(
