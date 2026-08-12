@@ -29,12 +29,16 @@ const EMULATOR_API_KEY = 'fake-api-key';
  * Look up an emulator-created account by email via the Identity Toolkit accounts:query
  * endpoint. The emulator can't verify a real sign-in for importUsers-hashed passwords, so
  * this checks the account was created instead of asserting a signInWithPassword round-trip.
+ *
+ * Project-scoped account queries require the emulator's admin bypass (`Authorization:
+ * Bearer owner`) rather than the `?key=` used for regular auth calls.
  */
 function findEmulatorAccountByEmail(email) {
   return cy
     .request({
       method: 'POST',
-      url: `http://${EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/accounts:query?key=${EMULATOR_API_KEY}`,
+      url: `http://${EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/accounts:query`,
+      headers: { Authorization: 'Bearer owner' },
       body: {},
     })
     .then((res) => {
