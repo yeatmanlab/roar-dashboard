@@ -30,7 +30,9 @@ export default {
     rawScore: [{ minVersion: 0, fieldName: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT }],
   },
   classification: {
-    type: 'none',
+    type: 'percentile-then-rawscore' as const,
+    percentileCutoffs: [{ minVersion: 0, cutoffs: { achieved: 40, developing: 20 } }],
+    rawScoreThresholds: [{ minVersion: 0, thresholds: { above: 95, some: 95 } }],
   },
   subscores: [
     // Per-subtask subScore columns (domain-indexed), grouping from roar-letter.
@@ -70,7 +72,6 @@ export default {
   displayCategory: [{ minVersion: 0, category: 'percentCorrect' }],
   displayRanges: {
     percentCorrect: { min: 0, max: 100 },
-    // Raw-score breakdown range, matching the dashboard's getRawScoreRange for letter.
-    rawScore: { min: 0, max: 90 },
+    rawScore: { min: 0, max: 100 },
   },
 };
