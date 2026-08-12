@@ -13,8 +13,16 @@ import { UserRole } from '../../enums/user-role.enum';
 import { UserType } from '../../enums/user-type.enum';
 import { EntityType } from '../../types/entity-type';
 import { FGA_CONDITION_ACTIVE_MEMBERSHIP } from '../authorization/fga-constants';
+import { getFirebaseScryptParamsFromEnv } from './utils/firebase-password-hash';
 import type { FirebaseScryptParams } from './utils/firebase-password-hash';
 import type { CoreTransaction } from '../../db/clients';
+
+// Real hashPasswordForImport is kept intact (every create-bin test hashes for real); only the
+// env-reading path is mocked, so a test can force the "missing config" throw on demand.
+vi.mock('./utils/firebase-password-hash', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./utils/firebase-password-hash')>();
+  return { ...actual, getFirebaseScryptParamsFromEnv: vi.fn(actual.getFirebaseScryptParamsFromEnv) };
+});
 
 // Public Firebase scrypt test-vector params — fine for tests (no real secrets needed).
 const SCRYPT_PARAMS: FirebaseScryptParams = {
@@ -57,6 +65,16 @@ describe('UserImportService.bulkImport', () => {
       authorizationService: mockAuthz,
       firebaseAuth: mockFirebaseAuth,
       scryptParams: SCRYPT_PARAMS,
+    });
+
+  // Omits scryptParams so the service falls through to getFirebaseScryptParamsFromEnv() — used
+  // to exercise the "missing config" failure path without touching real env vars.
+  const buildServiceWithoutScryptParams = () =>
+    UserImportService({
+      userService: mockUserService,
+      userRepository: mockUserRepository,
+      authorizationService: mockAuthz,
+      firebaseAuth: mockFirebaseAuth,
     });
 
   beforeEach(() => {
@@ -245,6 +263,21 @@ describe('UserImportService.bulkImport', () => {
       // Matched the existing user (routed to update), rather than treated as a new create.
       expect(results[0]!.classification).toBe('updated');
     });
+
+    it('fails every already-authorized row, without throwing, when the email lookup fails', async () => {
+      mockUserRepository.findByEmails.mockRejectedValue(new Error('db down'));
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'a@example.org' }),
+        makeRow({ email: 'b@example.org', unenroll: true }),
+      ]);
+
+      expect(results).toMatchObject([
+        { status: 'failed', classification: 'created', error: { code: ApiErrorCode.EXTERNAL_SERVICE_FAILED } },
+        { status: 'failed', classification: 'unenrolled', error: { code: ApiErrorCode.EXTERNAL_SERVICE_FAILED } },
+      ]);
+      expect(importUsers).not.toHaveBeenCalled();
+    });
   });
 
   describe('authorization', () => {
@@ -320,6 +353,27 @@ describe('UserImportService.bulkImport', () => {
       // Each bin routes and processes independently in one request.
       expect(results[1]!).toMatchObject({ classification: 'updated', status: 'ok' });
       expect(results[2]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+    });
+
+    it('scopes a create-bin config failure to create rows, leaving the unenroll bin unaffected', async () => {
+      vi.mocked(getFirebaseScryptParamsFromEnv).mockImplementationOnce(() => {
+        throw new Error('Missing Firebase scrypt configuration: FIREBASE_SCRYPT_SIGNER_KEY');
+      });
+      mockUserRepository.findByEmails.mockResolvedValue([UserFactory.build({ email: 'unenroll-me@example.org' })]);
+
+      const results = await buildServiceWithoutScryptParams().bulkImport(superAdmin, [
+        makeRow({ email: 'new@example.org' }),
+        makeRow({ email: 'unenroll-me@example.org', unenroll: true }),
+      ]);
+
+      expect(results[0]!).toMatchObject({
+        classification: 'created',
+        status: 'failed',
+        error: { code: ApiErrorCode.INTERNAL },
+      });
+      // The unenroll bin runs independently and is unaffected by the create bin's config failure.
+      expect(results[1]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+      expect(importUsers).not.toHaveBeenCalled();
     });
   });
 

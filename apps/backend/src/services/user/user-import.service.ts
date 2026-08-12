@@ -286,7 +286,28 @@ export function UserImportService({
       candidates.push(candidate);
     }
 
-    const params = getScryptParams();
+    // Config, not a per-row concern — but it must not throw past this function. An unhandled
+    // throw here would propagate out of processCreateBin and abort bulkImport entirely, taking
+    // down the unenroll/update bins with it even though their rows already passed authorization
+    // and classification. Scoping the failure to the create bin's own rows instead.
+    let params: FirebaseScryptParams;
+    try {
+      params = getScryptParams();
+    } catch (error) {
+      logger.error(
+        { err: error, context: { count: candidates.length } },
+        'Missing/invalid Firebase scrypt configuration',
+      );
+      for (const candidate of candidates) {
+        outcomes[candidate.index] = failed(
+          candidate.index,
+          CLASSIFICATION.CREATED,
+          ApiErrorCode.INTERNAL,
+          ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        );
+      }
+      return;
+    }
 
     // Batch Firebase existence check — one getUsers call for the whole batch (≤100). importUsers
     // bypasses uniqueness validation, so we must pre-check; batching avoids per-row round-trips.
@@ -725,7 +746,27 @@ export function UserImportService({
     if (authorized.length === 0) return outcomes;
 
     // ── Phase 2: classify by email existence (single batched lookup) ─────────────
-    const existing = await userRepository.findByEmails(authorized.map((a) => a.row.email));
+    let existing: Awaited<ReturnType<typeof userRepository.findByEmails>>;
+    try {
+      existing = await userRepository.findByEmails(authorized.map((a) => a.row.email));
+    } catch (error) {
+      // Without knowing which emails already exist, none of Phase 2's classification can safely
+      // proceed — an unhandled throw here would otherwise abort bulkImport for every already-
+      // authorized row, not just fail this lookup's own row.
+      logger.error(
+        { err: error, context: { count: authorized.length } },
+        'Failed to look up existing users during import',
+      );
+      for (const { index, row } of authorized) {
+        outcomes[index] = failed(
+          index,
+          preRoutingClassification(row),
+          ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        );
+      }
+      return outcomes;
+    }
     const existingByEmail = new Map<string, (typeof existing)[number]>();
     for (const user of existing) {
       if (user.email) existingByEmail.set(user.email.toLowerCase(), user);
