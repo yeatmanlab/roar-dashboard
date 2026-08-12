@@ -28,6 +28,15 @@ const previewOrigins = parsePreviewOrigins(process.env.ALLOWED_FIREBASE_ASSESSME
  * CI on pull request — so this is a staging-only affordance, kept out of
  * production by omitting the variable there rather than by anything in this file.
  *
+ * That exclusion cannot be enforced locally: the Cloud Run module sets
+ * NODE_ENV=production on the staging and production services alike, and no other
+ * environment discriminator reaches this container, so a NODE_ENV check here would
+ * disable preview origins in staging — the only place they are meant to work —
+ * while every test in this repo still passed. The guard therefore lives in
+ * infrastructure, which does know which stack it is deploying: services/backend-api
+ * /config.ts forces the site list empty for prod, covered by a test asserting it
+ * stays empty even when the stack config supplies one.
+ *
  * NOTE: CORS is a browser-side enforcement mechanism only. Non-browser clients
  * (curl, server-to-server) receive full responses regardless of origin.
  * AuthGuardMiddleware is the actual server-side access control.
