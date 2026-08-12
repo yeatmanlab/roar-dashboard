@@ -138,14 +138,15 @@ describe('Smoke: bulk import → emulator account created (SCRYPT hash payload r
     });
   });
 
-  it('creates a verified emulator account for the imported password', () => {
+  it('creates an emulator account with the imported password hash', () => {
     // Downgraded from a signInWithPassword round-trip: the Auth emulator uses its own
     // fake hash for sign-in (not real Firebase-scrypt), so it can't verify importUsers
     // hashes and sign-in always 400s here. Hash correctness is pinned separately by the
-    // firebase-password-hash unit test.
+    // firebase-password-hash unit test. This checks the hash payload itself reached the
+    // emulator, rather than emailVerified — importUsers never sets that field here.
     findEmulatorAccountByEmail(newUser.email).then((account) => {
       expect(account, `emulator account for ${newUser.email}`).to.exist;
-      expect(account.emailVerified, 'emulator account is email-verified').to.eq(true);
+      expect(account.passwordHash, 'emulator account has a stored password hash').to.exist;
     });
   });
 });
