@@ -729,7 +729,7 @@ export function UserImportService({
           entry.index,
           CLASSIFICATION.UNENROLLED,
           ApiErrorCode.RESOURCE_NOT_FOUND,
-          ApiErrorMessage.UNPROCESSABLE_ENTITY,
+          ApiErrorMessage.NOT_FOUND,
         );
       } else {
         createRows.push(entry);
