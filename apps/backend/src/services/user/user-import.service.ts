@@ -403,7 +403,20 @@ export function UserImportService({
         continue;
       }
 
-      const { passwordHash, passwordSalt } = await hashPasswordForImport(row.password, params);
+      let passwordHash: Buffer;
+      let passwordSalt: Buffer;
+      try {
+        ({ passwordHash, passwordSalt } = await hashPasswordForImport(row.password, params));
+      } catch (error) {
+        logger.error({ err: error, context: { email: row.email } }, 'Password hashing failed during import');
+        outcomes[index] = failed(
+          index,
+          CLASSIFICATION.CREATED,
+          ApiErrorCode.INTERNAL,
+          ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        );
+        continue;
+      }
       prepared.push({ index, row, firebaseUid: randomUUID(), assessmentPid, passwordHash, passwordSalt });
     }
 

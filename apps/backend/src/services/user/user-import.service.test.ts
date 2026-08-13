@@ -13,15 +13,19 @@ import { UserRole } from '../../enums/user-role.enum';
 import { UserType } from '../../enums/user-type.enum';
 import { EntityType } from '../../types/entity-type';
 import { FGA_CONDITION_ACTIVE_MEMBERSHIP } from '../authorization/fga-constants';
-import { getFirebaseScryptParamsFromEnv } from './utils/firebase-password-hash';
+import { getFirebaseScryptParamsFromEnv, hashPasswordForImport } from './utils/firebase-password-hash';
 import type { FirebaseScryptParams } from './utils/firebase-password-hash';
 import type { CoreTransaction } from '../../db/clients';
 
-// Real hashPasswordForImport is kept intact (every create-bin test hashes for real); only the
-// env-reading path is mocked, so a test can force the "missing config" throw on demand.
+// Both wrap the real implementation by default (every create-bin test hashes for real), so a test
+// can force either the "missing config" throw or a per-row hashing throw on demand.
 vi.mock('./utils/firebase-password-hash', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./utils/firebase-password-hash')>();
-  return { ...actual, getFirebaseScryptParamsFromEnv: vi.fn(actual.getFirebaseScryptParamsFromEnv) };
+  return {
+    ...actual,
+    getFirebaseScryptParamsFromEnv: vi.fn(actual.getFirebaseScryptParamsFromEnv),
+    hashPasswordForImport: vi.fn(actual.hashPasswordForImport),
+  };
 });
 
 // Public Firebase scrypt test-vector params — fine for tests (no real secrets needed).
@@ -374,6 +378,33 @@ describe('UserImportService.bulkImport', () => {
       // The unenroll bin runs independently and is unaffected by the create bin's config failure.
       expect(results[1]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
       expect(importUsers).not.toHaveBeenCalled();
+    });
+
+    it('fails only the row whose password hashing throws, letting the rest of the batch continue', async () => {
+      // hashPasswordForImport has its own try/catch with `continue` (matching existsByUniqueFields
+      // right above it) — one row's hash failing must not abort the loop for the other candidates,
+      // nor affect a different bin in the same request.
+      vi.mocked(hashPasswordForImport).mockRejectedValueOnce(new Error('unexpected hashing failure'));
+      mockUserRepository.findByEmails.mockResolvedValue([UserFactory.build({ email: 'unenroll-me@example.org' })]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'bad-hash@example.org' }),
+        makeRow({ email: 'good-hash@example.org' }),
+        makeRow({ email: 'unenroll-me@example.org', unenroll: true }),
+      ]);
+
+      expect(results[0]!).toMatchObject({
+        classification: 'created',
+        status: 'failed',
+        error: { code: ApiErrorCode.INTERNAL },
+      });
+      // A sibling row in the SAME bin still succeeds — the failure doesn't abort the rest of the loop.
+      expect(results[1]!).toMatchObject({ classification: 'created', status: 'ok' });
+      // A different bin in the same request is unaffected too.
+      expect(results[2]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+      // Only the successfully-hashed row reaches the batched importUsers call.
+      expect(importUsers).toHaveBeenCalledTimes(1);
+      expect(importUsers.mock.calls[0]![0]).toHaveLength(1);
     });
   });
 
