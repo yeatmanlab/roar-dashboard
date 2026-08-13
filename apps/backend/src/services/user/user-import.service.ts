@@ -179,6 +179,19 @@ export function UserImportService({
 
     if (isSuperAdmin) return;
 
+    // No memberships to check means nothing to authorize against — fail closed rather than fall
+    // through both loops and return as if authorized. Reachable via processUnenrollBin, where
+    // memberships come from the target's actual (possibly empty) current enrollments, not a
+    // schema-validated row.
+    if (memberships.length === 0) {
+      logger.warn({ userId }, 'Non-super-admin attempted to authorize a row with no checkable memberships');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId },
+      });
+    }
+
     // Guard against a non-super-admin creating a platform_admin.
     for (const m of memberships) {
       if (m.entityType !== EntityType.FAMILY && m.role === UserRole.PLATFORM_ADMIN) {

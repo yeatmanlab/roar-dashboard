@@ -512,6 +512,26 @@ describe('UserImportService.bulkImport', () => {
         expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
       });
 
+      it('rejects an unenroll row when the target has zero active memberships, without mutating anything', async () => {
+        // Empty memberships must fail closed, not fall through both loops in authorizeRow and
+        // return as if authorized — a non-super-admin has nothing checkable to authorize against.
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([]);
+
+        const results = await buildService().bulkImport(partnerAdmin, [
+          makeRow({ email: 'leaver@example.org', unenroll: true, memberships: [] }),
+        ]);
+
+        expect(results[0]!).toMatchObject({
+          status: 'failed',
+          classification: 'unenrolled',
+          error: { code: ApiErrorCode.AUTH_FORBIDDEN },
+        });
+        expect(mockAuthz.requirePermission).not.toHaveBeenCalled();
+        expect(mockUserRepository.endAllEnrollments).not.toHaveBeenCalled();
+        expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
+        expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      });
+
       it('ignores a declared membership the requester lacks permission over, since it is not what gets unenrolled', async () => {
         // The row declares a membership the partner admin can't touch, but that's irrelevant —
         // the user's actual membership (school-9) is what's checked and what's removed.
