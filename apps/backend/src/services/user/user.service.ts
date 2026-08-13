@@ -1343,6 +1343,9 @@ export function UserService({
           // No Firebase account to attach a credential to. Treat as an
           // unprocessable request (422) rather than 404/500 — the user exists
           // but the operation is semantically invalid for this target.
+          // TODO: once rostering sync + SSO login exist, an SSO-only user could have a non-null
+          // authId with authProvider never including 'password' — this check should key off
+          // authProvider, not authId, or it'll accept password resets for SSO-only accounts.
           logger.warn({ userId, id }, 'Password update requested for user with no Firebase account');
           throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
             statusCode: StatusCodes.UNPROCESSABLE_ENTITY,

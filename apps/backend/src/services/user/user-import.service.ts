@@ -671,6 +671,22 @@ export function UserImportService({
           continue;
         }
 
+        // No Firebase account to attach a password to — matches single-update's 422. Checked
+        // before any DB write so a rejection can't leave a partial update.
+        // TODO: once rostering sync + SSO login exist, an SSO-only user could have a non-null
+        // authId with authProvider never including 'password' — this check should key off
+        // authProvider, not authId, or it'll accept password resets for SSO-only accounts.
+        if (row.password && !user.authId) {
+          logger.warn({ userId: user.id }, 'Password update requested for user with no Firebase account (import)');
+          outcomes[index] = failed(
+            index,
+            CLASSIFICATION.UPDATED,
+            ApiErrorCode.RESOURCE_UNPROCESSABLE,
+            ApiErrorMessage.UNPROCESSABLE_ENTITY,
+          );
+          continue;
+        }
+
         // Reconcile memberships with replace-semantics per provided entity type. Read the current
         // set first (snapshot), then update profile fields + reconcile in one transaction.
         const currentMemberships = await userRepository.getActiveMembershipsWithRoles(user.id);

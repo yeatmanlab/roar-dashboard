@@ -575,6 +575,36 @@ describe('UserImportService.bulkImport', () => {
       expect(updateUser).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ password: 'newpass123' }));
     });
 
+    it('rejects a password reset for a user with no linked Firebase account, without writing anything', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([existing({ authId: null })]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'updatee@example.org', password: 'newpass123' }),
+      ]);
+
+      expect(results[0]!).toMatchObject({
+        classification: 'updated',
+        status: 'failed',
+        error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+      });
+      expect(mockUserRepository.runTransaction).not.toHaveBeenCalled();
+      expect(mockUserRepository.update).not.toHaveBeenCalled();
+      expect(updateUser).not.toHaveBeenCalled();
+    });
+
+    it('still updates profile fields for a user with no linked Firebase account when no password is sent', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([existing({ authId: null })]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'updatee@example.org', password: undefined }),
+      ]);
+
+      expect(results[0]!).toMatchObject({ classification: 'updated', status: 'ok' });
+      expect(mockUserRepository.update).toHaveBeenCalled();
+      // displayName sync is skipped silently — nothing to sync to without a Firebase account.
+      expect(updateUser).not.toHaveBeenCalled();
+    });
+
     it('skips the Firebase write when neither name nor password changed', async () => {
       // The existing user already matches the row's name (Ada Lovelace), and no password is sent.
       mockUserRepository.findByEmails.mockResolvedValue([
