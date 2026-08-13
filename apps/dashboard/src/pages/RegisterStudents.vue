@@ -383,8 +383,7 @@ import PvFileUpload from 'primevue/fileupload';
 import PvToggleSwitch from 'primevue/toggleswitch';
 import { csvFileToJson } from '@/helpers';
 import csvRowToImportRow from '@/helpers/csvRowToImportRow';
-import { getRoarApiClient } from '@/clients/roar-api';
-import { StatusCodes } from 'http-status-codes';
+import useBulkImportUsersMutation from '@/composables/mutations/useBulkImportUsersMutation';
 import { orgFetchAll } from '@/helpers/query/orgs';
 import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
@@ -423,6 +422,7 @@ const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const { userCan, Permissions } = usePermissions();
+const bulkImportUsersMutation = useBulkImportUsersMutation();
 
 const SubmitStatus = {
   IDLE: 'idle',
@@ -864,7 +864,7 @@ const submit = async () => {
   // even enabled.
   const rowsToSubmit = [];
   for (const row of importRows) {
-    if (row.memberships.length === 0) {
+    if (!row.unenroll && row.memberships.length === 0) {
       toast.add({
         severity: 'error',
         summary: 'Error',
@@ -878,39 +878,37 @@ const submit = async () => {
   submitting.value = SubmitStatus.SUBMITTING;
 
   // Chunk under the endpoint's 100-row cap (50 keeps headroom) and submit each chunk.
-  const client = getRoarApiClient();
   const chunkedUsers = _chunk(rowsToSubmit, 50);
   for (const chunk of chunkedUsers) {
-    const response = await client.users.bulkImport({ body: { users: chunk } });
+    try {
+      const results = await bulkImportUsersMutation.mutateAsync({ users: chunk });
 
-    if (response.status !== StatusCodes.OK) {
+      // The endpoint returns a per-row multi-status body; map each result back to its row's email.
+      for (const rowResult of results) {
+        const email = chunk[rowResult.index]?.email;
+        if (rowResult.status === 'ok') {
+          toast.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: `User ${email} ${rowResult.classification}.`,
+            life: 3000,
+          });
+        } else {
+          toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: `User ${email} failed: ${rowResult.error.message}`,
+            life: 5000,
+          });
+        }
+      }
+    } catch (error) {
       toast.add({
         severity: 'error',
         summary: 'Error',
-        detail: `A batch of ${chunk.length} users failed to process (status ${response.status}).`,
+        detail: `A batch of ${chunk.length} users failed to process (status ${error.status}).`,
         life: 5000,
       });
-      continue;
-    }
-
-    // The endpoint returns a per-row multi-status body; map each result back to its row's email.
-    for (const rowResult of response.body.data.results) {
-      const email = chunk[rowResult.index]?.email;
-      if (rowResult.status === 'ok') {
-        toast.add({
-          severity: 'success',
-          summary: 'Success',
-          detail: `User ${email} ${rowResult.classification}.`,
-          life: 3000,
-        });
-      } else {
-        toast.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: `User ${email} failed: ${rowResult.error.message}`,
-          life: 5000,
-        });
-      }
     }
   }
   submitting.value = SubmitStatus.COMPLETE;
