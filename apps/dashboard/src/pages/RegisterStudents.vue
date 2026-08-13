@@ -903,10 +903,13 @@ const submit = async () => {
         }
       }
     } catch (error) {
+      // Non-200 responses carry `error.status`; a network-level throw (e.g. a timeout)
+      // won't, so fall back to the error message rather than reporting "status undefined".
+      const reason = error.status ? `status ${error.status}` : error.message;
       toast.add({
         severity: 'error',
         summary: 'Error',
-        detail: `A batch of ${chunk.length} users failed to process (status ${error.status}).`,
+        detail: `A batch of ${chunk.length} users failed to process (${reason}).`,
         life: 5000,
       });
     }
