@@ -711,11 +711,16 @@ export function UserImportService({
         // Sync FGA after the DB commit. Revoke first, then grant: deleteTuples is best-effort (never
         // throws), while writeTuplesOrThrow throws on failure. Running the revocation first means a
         // failed grant-write can only ever leave the user under-granted (the DB membership exists but
-        // FGA hasn't caught up yet — the backfill job reconciles it), never over-granted with a stale
-        // tuple for a membership that was just removed. Added tuples carry the active_membership
-        // condition, identical to single-create. Build first, then guard on the tuple count: an
-        // admin-tier class membership reconciles in the DB but maps to zero FGA tuples (it cascades
-        // via the org hierarchy), so add and delete stay symmetric — neither touches FGA.
+        // FGA hasn't caught up yet), never over-granted with a stale tuple for a membership that was
+        // just removed. Added tuples carry the active_membership condition, identical to single-create.
+        // Build first, then guard on the tuple count: an admin-tier class membership reconciles in the
+        // DB but maps to zero FGA tuples (it cascades via the org hierarchy), so add and delete stay
+        // symmetric — neither touches FGA.
+        //
+        // TODO: the DB write above is not rolled back if writeTuplesOrThrow fails below — the row is
+        // reported `failed`, but a retry won't re-attempt the missing tuple (the diff against fresh
+        // DB state shows no delta). deleteTuples never throws, so a failed deletion is reported `ok`
+        // with no way to currently detect it. Both rely on manually running the syncFga backfill.
         const removalTuples = buildMembershipDeletionTuples(user.id, reconciled.removed);
         if (removalTuples.length > 0) {
           await authorizationService.deleteTuples(removalTuples);
