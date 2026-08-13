@@ -48,7 +48,10 @@ export default {
     percentileCutoffs: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, cutoffs: { achieved: 40, developing: 20 } }],
     rawScoreThresholds: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, thresholds: { above: 527, some: 467 } }],
   },
-  displayCategory: [{ minVersion: 0, category: 'normed' }],
+  displayCategory: [
+    { minVersion: MULTICHOICE_SCORING_VERSION.V1, category: 'normed' },
+    { minVersion: 0, category: 'rawOnly' },
+  ],
   displayRanges: {
     percentile: { min: 0, max: 99 },
     standardScore: { min: 0, max: 180 },

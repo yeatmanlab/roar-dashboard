@@ -212,14 +212,16 @@ export function AggregationService({
 
       // Aggregate score ranges
       if (enrichedRun.percentile !== null) {
-        const percentileRange = getPercentileRange(enrichedRun.percentile);
-        aggregateToScoreRange(
-          taskCounts.percentile,
-          percentileRange,
-          (schoolId) => schoolNameMap.get(schoolId) || schoolId,
-          enrichedRun.schoolIds,
-          gradeKey,
-        );
+        const percentileRange = getPercentileRange(enrichedRun.taskSlug, enrichedRun.percentile);
+        if (percentileRange) {
+          aggregateToScoreRange(
+            taskCounts.percentile,
+            percentileRange,
+            (schoolId) => schoolNameMap.get(schoolId) || schoolId,
+            enrichedRun.schoolIds,
+            gradeKey,
+          );
+        }
       }
 
       if (enrichedRun.rawScore !== null) {
@@ -258,18 +260,6 @@ export function AggregationService({
   return { aggregateSupportCategories };
 }
 
-function getPercentileRange(percentile: number): string {
-  if (percentile >= 80) return '80-100';
-  if (percentile >= 70) return '70-80';
-  if (percentile >= 60) return '60-70';
-  if (percentile >= 50) return '50-60';
-  if (percentile >= 40) return '40-50';
-  if (percentile >= 30) return '30-40';
-  if (percentile >= 20) return '20-30';
-  if (percentile >= 10) return '10-20';
-  return '0-10';
-}
-
 /**
  * Generates a map of score ranges as human-readable strings.
  *
@@ -305,6 +295,7 @@ function generateScoreRangeMap(min: number, max: number, divisor: number): Recor
   return rangeMap;
 }
 
+// Raw score ranges
 const SWR_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
 const SWR_ES_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
 const PA_RANGE_MAP = generateScoreRangeMap(40, 733, 50);
@@ -316,6 +307,22 @@ const TROG_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
 const ROAR_INFERENCE_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
 const MORPHOLOGY_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
 const COMPOSITE_FOUNDATIONAL_RANGE_MAP = generateScoreRangeMap(-100, 967, 100);
+
+// Percentile ranges (0-99 for most normed tasks)
+const PERCENTILE_RANGE_MAP = generateScoreRangeMap(0, 99, 10);
+
+function findRangeInMap(rangeMap: Record<number, string>, score: number): string | null {
+  return (
+    Object.values(rangeMap).find((rangeStr) => {
+      const parts = rangeStr.split('-').map(Number);
+      const min = parts[0];
+      const max = parts[1];
+      if (min === undefined) return false;
+      const upper = max !== undefined && !isNaN(max) ? max : min;
+      return score >= min && score <= upper;
+    }) ?? null
+  );
+}
 
 function getRawScoreRange(taskSlug: string, rawScore: number): string | null {
   const scoreRangeMaps: Record<string, Record<number, string>> = {
@@ -334,17 +341,27 @@ function getRawScoreRange(taskSlug: string, rawScore: number): string | null {
 
   const rangeMap = scoreRangeMaps[taskSlug];
   if (!rangeMap) return null;
+  return findRangeInMap(rangeMap, rawScore);
+}
 
-  return (
-    Object.values(rangeMap).find((rangeStr) => {
-      const parts = rangeStr.split('-').map(Number);
-      const min = parts[0];
-      const max = parts[1];
-      if (min === undefined) return false;
-      const upper = max !== undefined && !isNaN(max) ? max : min;
-      return rawScore >= min && rawScore <= upper;
-    }) ?? null
-  );
+function getPercentileRange(taskSlug: string, percentile: number): string | null {
+  // Task-specific percentile range maps for normed tasks
+  const percentileRangeMaps: Record<string, Record<number, string>> = {
+    swr: PERCENTILE_RANGE_MAP,
+    'swr-es': PERCENTILE_RANGE_MAP,
+    pa: PERCENTILE_RANGE_MAP,
+    letter: PERCENTILE_RANGE_MAP,
+    sre: PERCENTILE_RANGE_MAP,
+    'sre-es': PERCENTILE_RANGE_MAP,
+    cva: PERCENTILE_RANGE_MAP,
+    trog: PERCENTILE_RANGE_MAP,
+    'roar-inference': PERCENTILE_RANGE_MAP,
+    morphology: PERCENTILE_RANGE_MAP,
+  };
+
+  const rangeMap = percentileRangeMaps[taskSlug];
+  if (!rangeMap) return null;
+  return findRangeInMap(rangeMap, percentile);
 }
 
 function aggregateToScoreRange(
