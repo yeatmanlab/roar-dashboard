@@ -1,20 +1,27 @@
-import { LEVANTE_NORMED_TASK_IDS, LEVANTE_SCORE_NAMES } from '@roar-platform/assessment-schema/roar-levante-tasks';
+import {
+  LEVANTE_NORMED_TASK_IDS,
+  LEVANTE_SCORE_NAMES,
+  LEVANTE_SCORING_VERSION,
+} from '@roar-platform/assessment-schema/roar-levante-tasks';
 
 export default {
   taskSlugs: [LEVANTE_NORMED_TASK_IDS.TROG],
   scoreFields: {
-    percentile: [{ minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.PERCENTILE }],
-    percentileDisplay: [{ minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.PERCENTILE }],
-    standardScore: [{ minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.STANDARD_SCORE }],
-    standardScoreDisplay: [{ minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.STANDARD_SCORE }],
+    percentile: [{ minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.PERCENTILE }],
+    percentileDisplay: [{ minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.PERCENTILE }],
+    standardScore: [{ minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.STANDARD_SCORE }],
+    standardScoreDisplay: [{ minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.STANDARD_SCORE }],
     rawScore: [{ minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.ROAR_SCORE }],
   },
   classification: {
     type: 'percentile-then-rawscore' as const,
-    percentileCutoffs: [{ minVersion: 0, cutoffs: { achieved: 40, developing: 20 } }],
-    rawScoreThresholds: [{ minVersion: 0, thresholds: { above: 540, some: 487 } }],
+    percentileCutoffs: [{ minVersion: LEVANTE_SCORING_VERSION.V1, cutoffs: { achieved: 40, developing: 20 } }],
+    rawScoreThresholds: [{ minVersion: LEVANTE_SCORING_VERSION.V1, thresholds: { above: 540, some: 487 } }],
   },
-  displayCategory: [{ minVersion: 0, category: 'normed' }],
+  displayCategory: [
+    { minVersion: LEVANTE_SCORING_VERSION.V1, category: 'normed' },
+    { minVersion: 0, category: 'rawOnly' },
+  ],
   displayRanges: {
     percentile: { min: 0, max: 99 },
     standardScore: { min: 0, max: 180 },
