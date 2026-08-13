@@ -60,6 +60,10 @@ describe('csvRowToImportRow', () => {
   it('does not write an omitted middle name', () => {
     expect(csvRowToImportRow({ first: 'Ada', last: 'L' }).name).not.toHaveProperty('middle');
   });
+
+  it('maps a present middle name', () => {
+    expect(csvRowToImportRow({ first: 'Ada', middle: 'Augusta', last: 'L' }).name.middle).toBe('Augusta');
+  });
 });
 
 describe('toBoolean', () => {
