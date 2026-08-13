@@ -22,15 +22,28 @@ import {
 export default {
   taskSlugs: ['letter', 'letter-es', 'letter-en-ca'],
   scoreFields: {
-    percentile: [{ minVersion: 0, fieldName: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT }],
-    percentileDisplay: [{ minVersion: 0, fieldName: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT }],
-    // Letter has no standard score — preserve the base config's null fields.
-    standardScore: [{ minVersion: 0, fieldName: null }],
-    standardScoreDisplay: [{ minVersion: 0, fieldName: null }],
+    percentile: [
+      { minVersion: 1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.PERCENTILE },
+      { minVersion: 0, fieldName: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT },
+    ],
+    percentileDisplay: [
+      { minVersion: 1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.PERCENTILE },
+      { minVersion: 0, fieldName: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT },
+    ],
+    standardScore: [
+      { minVersion: 1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.STANDARD_SCORE },
+      { minVersion: 0, fieldName: null },
+    ],
+    standardScoreDisplay: [
+      { minVersion: 1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.STANDARD_SCORE },
+      { minVersion: 0, fieldName: null },
+    ],
     rawScore: [{ minVersion: 0, fieldName: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT }],
   },
   classification: {
-    type: 'none',
+    type: 'percentile-then-rawscore' as const,
+    percentileCutoffs: [{ minVersion: 1, cutoffs: { achieved: 40, developing: 20 } }],
+    rawScoreThresholds: [{ minVersion: 1, thresholds: { above: 95, some: 95 } }],
   },
   subscores: [
     // Per-subtask subScore columns (domain-indexed), grouping from roar-letter.
@@ -67,10 +80,12 @@ export default {
       domain: LETTER_SUBSCORE_DEFS.letterSounds.domain,
     },
   ],
-  displayCategory: [{ minVersion: 0, category: 'percentCorrect' }],
+  displayCategory: [
+    { minVersion: 1, category: 'normed' },
+    { minVersion: 0, category: 'percentCorrect' },
+  ],
   displayRanges: {
     percentCorrect: { min: 0, max: 100 },
-    // Raw-score breakdown range, matching the dashboard's getRawScoreRange for letter.
-    rawScore: { min: 0, max: 90 },
+    rawScore: { min: 0, max: 100 },
   },
 };

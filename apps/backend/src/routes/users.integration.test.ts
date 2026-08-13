@@ -2870,6 +2870,178 @@ describe('POST /v1/users', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// POST /v1/users/import
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('POST /v1/users/import', () => {
+  // Cast to access vi.fn() mock methods — these are vi.fn() at runtime because
+  // firebase-admin/auth is mocked globally in vitest.setup.ts.
+  const mockAuth = FirebaseAuthClient as unknown as {
+    importUsers: ReturnType<typeof vi.fn>;
+    getUsers: ReturnType<typeof vi.fn>;
+  };
+
+  // Monotonic counter for unique test emails — avoids collisions across test runs.
+  let importEmailSeq = 0;
+  const makeImportEmail = (suffix: string) => `import-${++importEmailSeq}-${suffix}@test.example.com`;
+
+  beforeEach(() => {
+    // Happy-path defaults: nobody exists in Firebase yet, importUsers succeeds. Individual
+    // tests override these before calling expectRoute where a different outcome is needed.
+    mockAuth.getUsers.mockResolvedValue({ users: [], notFound: [] });
+    mockAuth.importUsers.mockResolvedValue({ successCount: 1, failureCount: 0, errors: [] });
+  });
+
+  describe('enroll (create) rows', () => {
+    it('creates a new user with the declared memberships and returns an ok/created result', async () => {
+      const email = makeImportEmail('create-ok');
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              password: 'Password123!',
+              name: { first: 'Enrolled', last: 'Student' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'created' });
+      expect(res.body.data.summary).toMatchObject({ total: 1, created: 1, failed: 0 });
+
+      // Confirm the membership was actually persisted, not just reported as ok.
+      const userId: string = res.body.data.results[0].id;
+      const memberships = await userRepository.getUserEntityMemberships(userId);
+      expect(memberships.some((m) => m.entityId === baseFixture.district.id)).toBe(true);
+    });
+
+    it('creates multiple users across district, school, and class memberships in one request', async () => {
+      const districtEmail = makeImportEmail('create-district');
+      const schoolEmail = makeImportEmail('create-school');
+
+      mockAuth.importUsers.mockResolvedValue({ successCount: 2, failureCount: 0, errors: [] });
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email: districtEmail,
+              password: 'Password123!',
+              name: { first: 'District', last: 'Enrollee' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+            {
+              email: schoolEmail,
+              password: 'Password123!',
+              name: { first: 'School', last: 'Enrollee' },
+              memberships: [
+                { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
+                { entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' },
+              ],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results).toHaveLength(2);
+      expect(res.body.data.results.every((r: { status: string }) => r.status === 'ok')).toBe(true);
+      expect(res.body.data.summary).toMatchObject({ total: 2, created: 2, failed: 0 });
+    });
+
+    it('rejects an enroll row a non-privileged requester cannot create, without touching Firebase', async () => {
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.student)
+        .withBody({
+          users: [
+            {
+              email: makeImportEmail('create-forbidden'),
+              password: 'Password123!',
+              name: { first: 'Blocked', last: 'Enrollee' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({
+        status: 'failed',
+        error: { code: ApiErrorCode.AUTH_FORBIDDEN },
+      });
+      expect(mockAuth.importUsers).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('request validation', () => {
+    it('returns 400 when a create row has an empty memberships array', async () => {
+      await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email: 'import-empty-memberships@test.example.com',
+              password: 'Password123!',
+              name: { first: 'Test', last: 'User' },
+              memberships: [],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('accepts an unenroll row with an empty memberships array', async () => {
+      // Zod-level acceptance only — the row targets a non-existent user, so it's still expected
+      // to route to a 404 (not-found) outcome inside the 200 batch response, not a validation error.
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email: 'import-unenroll-no-memberships@test.example.com',
+              name: { first: 'Test', last: 'User' },
+              unenroll: true,
+              memberships: [],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({
+        status: 'failed',
+        error: { code: ApiErrorCode.RESOURCE_NOT_FOUND },
+      });
+    });
+
+    it('accepts an unenroll row that omits memberships entirely', async () => {
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email: 'import-unenroll-omitted-memberships@test.example.com',
+              name: { first: 'Test', last: 'User' },
+              unenroll: true,
+            },
+          ],
+        })
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      // memberships is a required key on the schema (just no longer required to be non-empty) —
+      // omitting it entirely is still a shape violation, distinct from sending `memberships: []`.
+      // ts-rest's default requestValidationErrorHandler responds with the raw Zod error for body
+      // validation failures (`{ name: 'ZodError', issues: [...] }`), not our ApiError envelope —
+      // there's no top-level `error` key here.
+      expect(res.body.name).toBe('ZodError');
+      expect(res.body.issues.some((issue: { path: string[] }) => issue.path.includes('memberships'))).toBe(true);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // GET /v1/users/:userId/administrations/:administrationId
 // ═══════════════════════════════════════════════════════════════════════════
 

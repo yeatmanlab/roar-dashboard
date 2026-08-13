@@ -13,8 +13,20 @@ import { UserRole } from '../../enums/user-role.enum';
 import { UserType } from '../../enums/user-type.enum';
 import { EntityType } from '../../types/entity-type';
 import { FGA_CONDITION_ACTIVE_MEMBERSHIP } from '../authorization/fga-constants';
+import { getFirebaseScryptParamsFromEnv, hashPasswordForImport } from './utils/firebase-password-hash';
 import type { FirebaseScryptParams } from './utils/firebase-password-hash';
 import type { CoreTransaction } from '../../db/clients';
+
+// Both wrap the real implementation by default (every create-bin test hashes for real), so a test
+// can force either the "missing config" throw or a per-row hashing throw on demand.
+vi.mock('./utils/firebase-password-hash', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./utils/firebase-password-hash')>();
+  return {
+    ...actual,
+    getFirebaseScryptParamsFromEnv: vi.fn(actual.getFirebaseScryptParamsFromEnv),
+    hashPasswordForImport: vi.fn(actual.hashPasswordForImport),
+  };
+});
 
 // Public Firebase scrypt test-vector params — fine for tests (no real secrets needed).
 const SCRYPT_PARAMS: FirebaseScryptParams = {
@@ -57,6 +69,16 @@ describe('UserImportService.bulkImport', () => {
       authorizationService: mockAuthz,
       firebaseAuth: mockFirebaseAuth,
       scryptParams: SCRYPT_PARAMS,
+    });
+
+  // Omits scryptParams so the service falls through to getFirebaseScryptParamsFromEnv() — used
+  // to exercise the "missing config" failure path without touching real env vars.
+  const buildServiceWithoutScryptParams = () =>
+    UserImportService({
+      userService: mockUserService,
+      userRepository: mockUserRepository,
+      authorizationService: mockAuthz,
+      firebaseAuth: mockFirebaseAuth,
     });
 
   beforeEach(() => {
@@ -245,6 +267,21 @@ describe('UserImportService.bulkImport', () => {
       // Matched the existing user (routed to update), rather than treated as a new create.
       expect(results[0]!.classification).toBe('updated');
     });
+
+    it('fails every already-authorized row, without throwing, when the email lookup fails', async () => {
+      mockUserRepository.findByEmails.mockRejectedValue(new Error('db down'));
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'a@example.org' }),
+        makeRow({ email: 'b@example.org', unenroll: true }),
+      ]);
+
+      expect(results).toMatchObject([
+        { status: 'failed', classification: 'created', error: { code: ApiErrorCode.EXTERNAL_SERVICE_FAILED } },
+        { status: 'failed', classification: 'unenrolled', error: { code: ApiErrorCode.EXTERNAL_SERVICE_FAILED } },
+      ]);
+      expect(importUsers).not.toHaveBeenCalled();
+    });
   });
 
   describe('authorization', () => {
@@ -321,6 +358,54 @@ describe('UserImportService.bulkImport', () => {
       expect(results[1]!).toMatchObject({ classification: 'updated', status: 'ok' });
       expect(results[2]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
     });
+
+    it('scopes a create-bin config failure to create rows, leaving the unenroll bin unaffected', async () => {
+      vi.mocked(getFirebaseScryptParamsFromEnv).mockImplementationOnce(() => {
+        throw new Error('Missing Firebase scrypt configuration: FIREBASE_SCRYPT_SIGNER_KEY');
+      });
+      mockUserRepository.findByEmails.mockResolvedValue([UserFactory.build({ email: 'unenroll-me@example.org' })]);
+
+      const results = await buildServiceWithoutScryptParams().bulkImport(superAdmin, [
+        makeRow({ email: 'new@example.org' }),
+        makeRow({ email: 'unenroll-me@example.org', unenroll: true }),
+      ]);
+
+      expect(results[0]!).toMatchObject({
+        classification: 'created',
+        status: 'failed',
+        error: { code: ApiErrorCode.INTERNAL },
+      });
+      // The unenroll bin runs independently and is unaffected by the create bin's config failure.
+      expect(results[1]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+      expect(importUsers).not.toHaveBeenCalled();
+    });
+
+    it('fails only the row whose password hashing throws, letting the rest of the batch continue', async () => {
+      // hashPasswordForImport has its own try/catch with `continue` (matching existsByUniqueFields
+      // right above it) — one row's hash failing must not abort the loop for the other candidates,
+      // nor affect a different bin in the same request.
+      vi.mocked(hashPasswordForImport).mockRejectedValueOnce(new Error('unexpected hashing failure'));
+      mockUserRepository.findByEmails.mockResolvedValue([UserFactory.build({ email: 'unenroll-me@example.org' })]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'bad-hash@example.org' }),
+        makeRow({ email: 'good-hash@example.org' }),
+        makeRow({ email: 'unenroll-me@example.org', unenroll: true }),
+      ]);
+
+      expect(results[0]!).toMatchObject({
+        classification: 'created',
+        status: 'failed',
+        error: { code: ApiErrorCode.INTERNAL },
+      });
+      // A sibling row in the SAME bin still succeeds — the failure doesn't abort the rest of the loop.
+      expect(results[1]!).toMatchObject({ classification: 'created', status: 'ok' });
+      // A different bin in the same request is unaffected too.
+      expect(results[2]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+      // Only the successfully-hashed row reaches the batched importUsers call.
+      expect(importUsers).toHaveBeenCalledTimes(1);
+      expect(importUsers.mock.calls[0]![0]).toHaveLength(1);
+    });
   });
 
   describe('unenroll bin', () => {
@@ -388,6 +473,87 @@ describe('UserImportService.bulkImport', () => {
       expect(results[0]!.status).toBe('failed');
       expect(results[1]!.status).toBe('ok');
     });
+
+    describe('authorization against actual memberships', () => {
+      it('accepts a row with no declared memberships and authorizes against the DB-fetched ones', async () => {
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+          { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+        ]);
+
+        const results = await buildService().bulkImport(partnerAdmin, [
+          makeRow({ email: 'leaver@example.org', unenroll: true, memberships: [] }),
+        ]);
+
+        expect(mockAuthz.requirePermission).toHaveBeenCalledWith(
+          partnerAdmin.userId,
+          expect.any(String),
+          'school:school-9',
+        );
+        expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+      });
+
+      it('rejects an unenroll row with no permission over the user’s actual memberships, without mutating anything', async () => {
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+          { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+        ]);
+        mockAuthz.requirePermission.mockRejectedValue(forbidden());
+
+        const results = await buildService().bulkImport(partnerAdmin, [
+          makeRow({ email: 'leaver@example.org', unenroll: true, memberships: [] }),
+        ]);
+
+        expect(results[0]!).toMatchObject({
+          status: 'failed',
+          classification: 'unenrolled',
+          error: { code: ApiErrorCode.AUTH_FORBIDDEN },
+        });
+        expect(mockUserRepository.endAllEnrollments).not.toHaveBeenCalled();
+        expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
+        expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      });
+
+      it('rejects an unenroll row when the target has zero active memberships, without mutating anything', async () => {
+        // Empty memberships must fail closed, not fall through both loops in authorizeRow and
+        // return as if authorized — a non-super-admin has nothing checkable to authorize against.
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([]);
+
+        const results = await buildService().bulkImport(partnerAdmin, [
+          makeRow({ email: 'leaver@example.org', unenroll: true, memberships: [] }),
+        ]);
+
+        expect(results[0]!).toMatchObject({
+          status: 'failed',
+          classification: 'unenrolled',
+          error: { code: ApiErrorCode.AUTH_FORBIDDEN },
+        });
+        expect(mockAuthz.requirePermission).not.toHaveBeenCalled();
+        expect(mockUserRepository.endAllEnrollments).not.toHaveBeenCalled();
+        expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
+        expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      });
+
+      it('ignores a declared membership the requester lacks permission over, since it is not what gets unenrolled', async () => {
+        // The row declares a membership the partner admin can't touch, but that's irrelevant —
+        // the user's actual membership (school-9) is what's checked and what's removed.
+        mockUserRepository.findClassParentSchool.mockResolvedValue('locked-out-school');
+        mockAuthz.requirePermission.mockImplementation(async (_userId, _relation, object: string) => {
+          if (object === 'school:locked-out-school') throw forbidden();
+        });
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+          { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+        ]);
+
+        const results = await buildService().bulkImport(partnerAdmin, [
+          makeRow({
+            email: 'leaver@example.org',
+            unenroll: true,
+            memberships: [{ entityType: EntityType.CLASS, entityId: 'class-locked', role: UserRole.STUDENT }],
+          }),
+        ]);
+
+        expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+      });
+    });
   });
 
   describe('update bin', () => {
@@ -427,6 +593,36 @@ describe('UserImportService.bulkImport', () => {
       await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org', password: 'newpass123' })]);
 
       expect(updateUser).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ password: 'newpass123' }));
+    });
+
+    it('rejects a password reset for a user with no linked Firebase account, without writing anything', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([existing({ authId: null })]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'updatee@example.org', password: 'newpass123' }),
+      ]);
+
+      expect(results[0]!).toMatchObject({
+        classification: 'updated',
+        status: 'failed',
+        error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+      });
+      expect(mockUserRepository.runTransaction).not.toHaveBeenCalled();
+      expect(mockUserRepository.update).not.toHaveBeenCalled();
+      expect(updateUser).not.toHaveBeenCalled();
+    });
+
+    it('still updates profile fields for a user with no linked Firebase account when no password is sent', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([existing({ authId: null })]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'updatee@example.org', password: undefined }),
+      ]);
+
+      expect(results[0]!).toMatchObject({ classification: 'updated', status: 'ok' });
+      expect(mockUserRepository.update).toHaveBeenCalled();
+      // displayName sync is skipped silently — nothing to sync to without a Firebase account.
+      expect(updateUser).not.toHaveBeenCalled();
     });
 
     it('skips the Firebase write when neither name nor password changed', async () => {

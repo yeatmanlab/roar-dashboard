@@ -78,6 +78,13 @@ interface ImportRowMembership {
   enrollmentEnd?: string | undefined;
 }
 
+/**
+ * The subset of membership fields `authorizeRow` actually needs. Loose enough to accept both a
+ * declared row's memberships and `getActiveMembershipsWithRoles`' DB-sourced shape, since unenroll
+ * rows authorize against the latter rather than the former (see `authorizeUnenrollRow`).
+ */
+type MembershipForAuthCheck = { entityType: EntityType; entityId: string; role: string };
+
 /** A single import row. Mirrors the single-create payload plus `unenroll` and an optional password. */
 export interface ImportUserRowInput {
   email: string;
@@ -157,17 +164,33 @@ export function UserImportService({
   }
 
   /**
-   * Authorize a row's memberships, mirroring single-create's authorization. Super admins bypass FGA;
+   * Authorize a set of memberships, mirroring single-create's authorization. Super admins bypass FGA;
    * non-super-admins must hold `can_create_users` on every membership target (class memberships are
    * checked against the parent school). Throws `ApiError` (FORBIDDEN / UNPROCESSABLE_ENTITY) on deny.
    *
    * The same permission gates create, update, and unenroll — matching the legacy cloud function,
-   * which validates the requester's org coverage identically for all three.
+   * which validates the requester's org coverage identically for all three. For create/update rows
+   * this is called with the row's declared `memberships` (what's about to be granted). For unenroll
+   * rows it's called with the target user's actual current memberships fetched from the DB (see
+   * processUnenrollBin), since that — not whatever the row declares — is what unenrolling affects.
    */
-  async function authorizeRow(authContext: AuthContext, memberships: ImportRowMembership[]): Promise<void> {
+  async function authorizeRow(authContext: AuthContext, memberships: MembershipForAuthCheck[]): Promise<void> {
     const { userId, isSuperAdmin } = authContext;
 
     if (isSuperAdmin) return;
+
+    // No memberships to check means nothing to authorize against — fail closed rather than fall
+    // through both loops and return as if authorized. Reachable via processUnenrollBin, where
+    // memberships come from the target's actual (possibly empty) current enrollments, not a
+    // schema-validated row.
+    if (memberships.length === 0) {
+      logger.warn({ userId }, 'Non-super-admin attempted to authorize a row with no checkable memberships');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId },
+      });
+    }
 
     // Guard against a non-super-admin creating a platform_admin.
     for (const m of memberships) {
@@ -276,7 +299,28 @@ export function UserImportService({
       candidates.push(candidate);
     }
 
-    const params = getScryptParams();
+    // Config, not a per-row concern — but it must not throw past this function. An unhandled
+    // throw here would propagate out of processCreateBin and abort bulkImport entirely, taking
+    // down the unenroll/update bins with it even though their rows already passed authorization
+    // and classification. Scoping the failure to the create bin's own rows instead.
+    let params: FirebaseScryptParams;
+    try {
+      params = getScryptParams();
+    } catch (error) {
+      logger.error(
+        { err: error, context: { count: candidates.length } },
+        'Missing/invalid Firebase scrypt configuration',
+      );
+      for (const candidate of candidates) {
+        outcomes[candidate.index] = failed(
+          candidate.index,
+          CLASSIFICATION.CREATED,
+          ApiErrorCode.INTERNAL,
+          ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        );
+      }
+      return;
+    }
 
     // Batch Firebase existence check — one getUsers call for the whole batch (≤100). importUsers
     // bypasses uniqueness validation, so we must pre-check; batching avoids per-row round-trips.
@@ -372,7 +416,20 @@ export function UserImportService({
         continue;
       }
 
-      const { passwordHash, passwordSalt } = await hashPasswordForImport(row.password, params);
+      let passwordHash: Buffer;
+      let passwordSalt: Buffer;
+      try {
+        ({ passwordHash, passwordSalt } = await hashPasswordForImport(row.password, params));
+      } catch (error) {
+        logger.error({ err: error, context: { email: row.email } }, 'Password hashing failed during import');
+        outcomes[index] = failed(
+          index,
+          CLASSIFICATION.CREATED,
+          ApiErrorCode.INTERNAL,
+          ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        );
+        continue;
+      }
       prepared.push({ index, row, firebaseUid: randomUUID(), assessmentPid, passwordHash, passwordSalt });
     }
 
@@ -512,8 +569,14 @@ export function UserImportService({
    * Ending the DB enrollment does not expire the FGA tuple's stored grant window, so explicit cleanup
    * is required for the user to actually lose access. Matches the legacy `batchImportUpdate`, which
    * unenrolls a user from every org and archives them regardless of which memberships the row names.
+   *
+   * Authorization happens here rather than in `bulkImport`'s Phase 1: since unenrolling acts on the
+   * user's actual current memberships and not on anything the row declares, permission is checked
+   * against that same DB-fetched list, immediately before it's used to end the enrollments — reusing
+   * the lookup rather than issuing a second query.
    */
   async function processUnenrollBin(
+    authContext: AuthContext,
     rows: { index: number; user: User }[],
     outcomes: ImportRowOutcome[],
   ): Promise<void> {
@@ -521,6 +584,8 @@ export function UserImportService({
       try {
         // Capture the tuples to delete before ending the enrollments (afterward they read inactive).
         const memberships = await userRepository.getActiveMembershipsWithRoles(user.id);
+
+        await authorizeRow(authContext, memberships);
 
         await userRepository.runTransaction({
           fn: async (tx) => {
@@ -619,6 +684,22 @@ export function UserImportService({
           continue;
         }
 
+        // No Firebase account to attach a password to — matches single-update's 422. Checked
+        // before any DB write so a rejection can't leave a partial update.
+        // TODO: once rostering sync + SSO login exist, an SSO-only user could have a non-null
+        // authId with authProvider never including 'password' — this check should key off
+        // authProvider, not authId, or it'll accept password resets for SSO-only accounts.
+        if (row.password && !user.authId) {
+          logger.warn({ userId: user.id }, 'Password update requested for user with no Firebase account (import)');
+          outcomes[index] = failed(
+            index,
+            CLASSIFICATION.UPDATED,
+            ApiErrorCode.RESOURCE_UNPROCESSABLE,
+            ApiErrorMessage.UNPROCESSABLE_ENTITY,
+          );
+          continue;
+        }
+
         // Reconcile memberships with replace-semantics per provided entity type. Read the current
         // set first (snapshot), then update profile fields + reconcile in one transaction.
         const currentMemberships = await userRepository.getActiveMembershipsWithRoles(user.id);
@@ -643,11 +724,16 @@ export function UserImportService({
         // Sync FGA after the DB commit. Revoke first, then grant: deleteTuples is best-effort (never
         // throws), while writeTuplesOrThrow throws on failure. Running the revocation first means a
         // failed grant-write can only ever leave the user under-granted (the DB membership exists but
-        // FGA hasn't caught up yet — the backfill job reconciles it), never over-granted with a stale
-        // tuple for a membership that was just removed. Added tuples carry the active_membership
-        // condition, identical to single-create. Build first, then guard on the tuple count: an
-        // admin-tier class membership reconciles in the DB but maps to zero FGA tuples (it cascades
-        // via the org hierarchy), so add and delete stay symmetric — neither touches FGA.
+        // FGA hasn't caught up yet), never over-granted with a stale tuple for a membership that was
+        // just removed. Added tuples carry the active_membership condition, identical to single-create.
+        // Build first, then guard on the tuple count: an admin-tier class membership reconciles in the
+        // DB but maps to zero FGA tuples (it cascades via the org hierarchy), so add and delete stay
+        // symmetric — neither touches FGA.
+        //
+        // TODO: the DB write above is not rolled back if writeTuplesOrThrow fails below — the row is
+        // reported `failed`, but a retry won't re-attempt the missing tuple (the diff against fresh
+        // DB state shows no delta). deleteTuples never throws, so a failed deletion is reported `ok`
+        // with no way to currently detect it. Both rely on manually running the syncFga backfill.
         const removalTuples = buildMembershipDeletionTuples(user.id, reconciled.removed);
         if (removalTuples.length > 0) {
           await authorizationService.deleteTuples(removalTuples);
@@ -689,11 +775,15 @@ export function UserImportService({
     const outcomes: ImportRowOutcome[] = new Array(rows.length);
 
     // ── Phase 1: per-row authorization (before any external writes) ──────────────
+    // Unenroll rows are authorized later, against the target user's actual current memberships
+    // (see processUnenrollBin) — `row.memberships` isn't what an unenroll acts on, and may be empty.
     const authorized: { index: number; row: ImportUserRowInput }[] = [];
     for (let index = 0; index < rows.length; index++) {
       const row = rows[index]!;
       try {
-        await authorizeRow(authContext, row.memberships);
+        if (!row.unenroll) {
+          await authorizeRow(authContext, row.memberships);
+        }
         authorized.push({ index, row });
       } catch (error) {
         outcomes[index] = toFailedOutcome(index, preRoutingClassification(row), error);
@@ -703,7 +793,27 @@ export function UserImportService({
     if (authorized.length === 0) return outcomes;
 
     // ── Phase 2: classify by email existence (single batched lookup) ─────────────
-    const existing = await userRepository.findByEmails(authorized.map((a) => a.row.email));
+    let existing: Awaited<ReturnType<typeof userRepository.findByEmails>>;
+    try {
+      existing = await userRepository.findByEmails(authorized.map((a) => a.row.email));
+    } catch (error) {
+      // Without knowing which emails already exist, none of Phase 2's classification can safely
+      // proceed — an unhandled throw here would otherwise abort bulkImport for every already-
+      // authorized row, not just fail this lookup's own row.
+      logger.error(
+        { err: error, context: { count: authorized.length } },
+        'Failed to look up existing users during import',
+      );
+      for (const { index, row } of authorized) {
+        outcomes[index] = failed(
+          index,
+          preRoutingClassification(row),
+          ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        );
+      }
+      return outcomes;
+    }
     const existingByEmail = new Map<string, (typeof existing)[number]>();
     for (const user of existing) {
       if (user.email) existingByEmail.set(user.email.toLowerCase(), user);
@@ -729,7 +839,7 @@ export function UserImportService({
           entry.index,
           CLASSIFICATION.UNENROLLED,
           ApiErrorCode.RESOURCE_NOT_FOUND,
-          ApiErrorMessage.UNPROCESSABLE_ENTITY,
+          ApiErrorMessage.NOT_FOUND,
         );
       } else {
         createRows.push(entry);
@@ -740,7 +850,7 @@ export function UserImportService({
     await processCreateBin(authContext, createRows, outcomes);
 
     // ── Phase 4: unenroll bin ────────────────────────────────────────────────────
-    await processUnenrollBin(unenrollRows, outcomes);
+    await processUnenrollBin(authContext, unenrollRows, outcomes);
 
     // ── Phase 5: update bin ──────────────────────────────────────────────────────
     // Updates profile + auth fields. Membership reconciliation is deferred (see processUpdateBin).

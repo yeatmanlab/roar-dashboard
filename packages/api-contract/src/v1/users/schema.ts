@@ -187,21 +187,37 @@ export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
 /**
  * Per-row body for POST /users/import (bulk create / update / unenroll).
  *
- * Intentionally the single-create row shape (`CreateUserRequestBodySchema`) with two changes:
+ * Intentionally the single-create row shape (`CreateUserRequestBodySchema`) with three changes:
  * - `password` is optional here and validated per-bin during processing (required for create
  *   rows, optional for update rows, ignored for unenroll rows). The client cannot know which bin
  *   a row lands in until the server matches it by email, so the schema cannot require it.
  * - `unenroll: true` routes an existing user to the unenroll bin.
+ * - `memberships` is only required to be non-empty for create/update rows. Unenrolling acts on
+ *   the target user's actual current memberships (resolved server-side after matching by email),
+ *   not whatever this array declares, so an unenroll-only row can omit it.
  *
  * The server classifies create / update / unenroll by matching `email` against existing users —
  * the client never declares the bin. Emails are generated from the username if not provided upon importing on the client-side.
  */
-export const ImportUserRowSchema = CreateUserRequestBodySchema.omit({ password: true })
+export const ImportUserRowSchema = CreateUserRequestBodySchema.omit({ password: true, memberships: true })
   .extend({
     password: z.string().min(8).optional(),
     unenroll: z.boolean().optional(),
+    memberships: z.array(UserMembershipSchema),
   })
-  .strict();
+  .strict()
+  .superRefine((row, ctx) => {
+    if (!row.unenroll && row.memberships.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.too_small,
+        minimum: 1,
+        type: 'array',
+        inclusive: true,
+        path: ['memberships'],
+        message: 'memberships must contain at least 1 element(s) unless unenroll is true',
+      });
+    }
+  });
 
 export type ImportUserRow = z.infer<typeof ImportUserRowSchema>;
 
