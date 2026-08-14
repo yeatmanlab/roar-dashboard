@@ -84,6 +84,7 @@ export const SCORE_FIELD_TYPES = [
   'standardScore',
   'standardScoreDisplay',
   'rawScore',
+  'correctIncorrectDifference',
 ] as const;
 
 const ScoreFieldTypeSchema = z.enum(SCORE_FIELD_TYPES);
@@ -247,15 +248,23 @@ const SubscoresSchema = z.array(SubscoreColumnSchema).min(1);
  * Moves the dashboard's `getScoreToDisplay` + percent-correct/raw-only branching
  * into config so the frontend paints `display` without knowing scoring versions.
  *
- * - `normed`        — percentile (grades below `percentileBelowGrade`) else
- *                     standard score; falls back to raw when the resolved
- *                     version has no normed fields (e.g. swr-es v0).
- * - `percentCorrect`— the task's `percentile` field holds a percent-correct value
- *                     (letter/phonics: `TOTAL_PERCENT_CORRECT`).
- * - `rawOnly`       — raw score only.
- * - `gradeEstimate` — raw score primary (grade-estimate tasks, e.g. roam-alpaca).
+ * - `normed`                    — percentile (grades below `percentileBelowGrade`) else
+ *                                 standard score; falls back to raw when the resolved
+ *                                 version has no normed fields (e.g. swr-es v0).
+ * - `percentCorrect`            — the task's `percentile` field holds a percent-correct value
+ *                                 (letter/phonics: `TOTAL_PERCENT_CORRECT`).
+ * - `rawOnly`                   — raw score only.
+ * - `gradeEstimate`             — raw score primary (grade-estimate tasks, e.g. roam-alpaca).
+ * - `correctIncorrectDifference`— raw score representing the difference between correct and
+ *                                 incorrect responses (e.g. sre-es at earlier versions).
  */
-export const DISPLAY_CATEGORIES = ['normed', 'percentCorrect', 'rawOnly', 'gradeEstimate'] as const;
+export const DISPLAY_CATEGORIES = [
+  'normed',
+  'percentCorrect',
+  'rawOnly',
+  'gradeEstimate',
+  'correctIncorrectDifference',
+] as const;
 
 const DisplayCategorySchema = z.enum(DISPLAY_CATEGORIES);
 
