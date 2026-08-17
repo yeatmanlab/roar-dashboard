@@ -169,7 +169,7 @@ describe('<RoarDataTable />', () => {
   it('Mocks filtering by support level Pink.', () => {
     const task = 'trog';
     const tag = 'Needs Extra Support';
-    const assessment = 'ROAR - Syntax';
+    const assessment = 'ROAR - Picture Syntax';
     const category = 'Pink';
     const column = ['Username'];
 

@@ -36,7 +36,6 @@
       <div v-if="compositeFoundational" class="chart-row">
         <div class="chart-label text-gray-600">
           <span class="whitespace-nowrap text-lg font-bold">Foundational Skills Composite</span>
-          <!-- <span class="text-sm font-light uppercase"> (Composite Score)</span> -->
         </div>
         <PvChart
           v-if="!isChartEmpty(compositeFoundational)"
@@ -302,7 +301,8 @@ const grayChartOptions = computed(() => {
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
   align-items: center;
-  height: 2rem;
+  min-height: 2rem;
+  row-gap: 0.5rem;
 }
 
 .chart-section-header {
@@ -361,7 +361,11 @@ const grayChartOptions = computed(() => {
 
   .chart-row {
     grid-template-columns: 1fr;
-    row-gap: 0.25rem;
+    row-gap: 0.5rem;
+  }
+
+  .chart-label {
+    margin-top: 0;
   }
 
   .info-icon,
