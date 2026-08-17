@@ -1971,7 +1971,10 @@ const scoreReportColumns = computed(() => {
   const isAdministrationOpen = administrationData.value?.dateClosed
     ? new Date(administrationData.value?.dateClosed) > new Date()
     : false;
-  if (userCan(Permissions.Tasks.LAUNCH) && isAdministrationOpen) {
+  // Temporarily hidden until ScoreReport routeParams.userId emits the Postgres UUID (#2083).
+  // The current Firestore assignment path supplies roarUid, which is not safe for /v1/user/:userId/runs.
+  const scoreReportLauncherUsesPostgresUserId = false;
+  if (scoreReportLauncherUsesPostgresUserId && userCan(Permissions.Tasks.LAUNCH) && isAdministrationOpen) {
     tableColumns.push({
       header: 'Launch Student',
       launcher: true,
