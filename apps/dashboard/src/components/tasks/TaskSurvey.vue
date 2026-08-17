@@ -7,14 +7,14 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, watch, ref } from 'vue';
+import { onMounted, onBeforeUnmount, watch, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { SURVEY_TASK_ID } from '@roar-platform/assessment-schema/roar-survey';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import { getRoarApiClient } from '@/clients/roar-api';
+import useMeQuery from '@/composables/queries/useMeQuery';
 import { version } from '@roar-platform/roar-survey/package.json';
 import SurveyRunner from '@roar-platform/roar-survey';
 
@@ -32,6 +32,14 @@ const { isAuthReady } = storeToRefs(authStore);
 const sdkInitialized = ref(false);
 const surveyJson = ref(null);
 const taskStarted = ref(false);
+
+// Resolve the participant's ROAR (Postgres) user id. A proxy launch (`launchId`, set by
+// StudentCardSimple when a parent launches a child) already carries that id, so `/me` is
+// skipped; the self path resolves it from `/me`. Run creation targets this participant via
+// POST /v1/user/:userId/runs, which the backend authorizes with `can_create_run_for_child`
+// (proxy) or self.
+const { data: me } = useMeQuery({ enabled: computed(() => isAuthReady.value && !props.launchId) });
+const participantId = computed(() => props.launchId ?? me.value?.id);
 
 let unsubscribe;
 const init = () => {
@@ -54,9 +62,9 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isAuthReady],
-  async ([newIsAuthReady]) => {
-    if (newIsAuthReady && !taskStarted.value) {
+  [isAuthReady, participantId],
+  async ([newIsAuthReady, newParticipantId]) => {
+    if (newIsAuthReady && newParticipantId && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
@@ -72,19 +80,7 @@ async function startTask(selectedAdmin) {
     // `GET /users/:userId/administrations?embed=tasks,progress`, and the chosen one is held
     // in the game store. The administration and variant are therefore read from
     // `selectedAdmin` rather than re-fetched here.
-    const roarApiClient = getRoarApiClient();
-    const meRes = await roarApiClient.me.get();
-
-    if (meRes.status !== 200)
-      throw new Error(`Failed to resolve current user from ROAR backend (status ${meRes.status}).`);
-
-    // Proxy-launch path: `props.launchId` is the participant's ROAR (Postgres) user UUID
-    // (set by StudentCardSimple when a parent launches a child), so it is the participant
-    // identity directly. On the self path (`launchId` null) we use the launching user's own
-    // `/me` ID. Run creation targets this participant via POST /v1/user/:userId/runs, which
-    // the backend authorizes with `can_create_run_for_child` (proxy) or self.
-    const participantId = props.launchId ?? meRes.body.data.id;
-
+    //
     // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
     // router passes as `taskId` — GameTabs routes to `/game/<slug>`.
     const administration = selectedAdmin.value;
@@ -99,7 +95,7 @@ async function startTask(selectedAdmin) {
           getToken: () => Promise.resolve(authStore.accessToken),
           refreshToken: () => authStore.forceIdTokenRefresh(),
         },
-        participant: { participantId },
+        participant: { participantId: participantId.value },
       },
       {
         variantId: surveyTaskVariant.variantId,
