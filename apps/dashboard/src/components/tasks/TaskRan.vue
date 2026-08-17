@@ -127,7 +127,7 @@ async function startTask(selectedAdmin) {
     };
 
     // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
-    // router passes as `taskId` — GameTabs routes to `/game/<slug>`.
+    // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
     const administration = selectedAdmin.value;
     const ranTaskVariant = (administration?.tasks ?? []).find((task) => task.taskSlug === props.taskId);
 
