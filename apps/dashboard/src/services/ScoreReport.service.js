@@ -257,15 +257,9 @@ const ScoreReportService = (() => {
   };
 
   const getScoreToDisplay = (taskId, grade, rawOnlyTasks, scoringVersion) => {
-    // Unnormed tasks with individual score report cards (percentile field is set to percent correct)
-    const alwaysDisplaysPercentile = ['phonics', 'letter', 'letter-es', 'letter-en-ca'];
-
-    if (rawOnlyTasks.includes(taskId) && !isTaskNormed(taskId, scoringVersion)) {
-      return SCORE_TYPES.RAW_SCORE;
-    }
-
-    if (alwaysDisplaysPercentile.includes(taskId)) {
-      return SCORE_TYPES.PERCENTILE_SCORE;
+    if (!isTaskNormed(taskId, scoringVersion)) {
+      // PERCENTILE_SCORE applies to phonics, letter,  letter-es, letter-en-ca
+      return rawOnlyTasks.includes(taskId) ? SCORE_TYPES.RAW_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
     }
 
     return grade >= 6 ? SCORE_TYPES.STANDARD_SCORE : SCORE_TYPES.PERCENTILE_SCORE;
