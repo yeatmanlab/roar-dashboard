@@ -37,7 +37,12 @@ const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit } = storeToRefs(authStore);
+// `isAuthReady` (an access token is present) rather than the legacy `isFirekitInit`
+// (`roarfirekit.initialized`): this component no longer touches roarfirekit, and the token
+// is what the SDK and the query composables below actually authenticate with. The token is
+// captured after firekit's admin auth initializes, so gating on firekit could let the task
+// start before a token exists — and would strand it permanently once firekit is removed.
+const { isAuthReady } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -92,11 +97,11 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isFirekitInit, isLoadingUserData, participantId],
-  async ([newFirekitInitValue, newLoadingUserData, newParticipantId]) => {
+  [isAuthReady, isLoadingUserData, participantId],
+  async ([newIsAuthReady, newLoadingUserData, newParticipantId]) => {
     // `participantId` is part of the gate because a disabled student-data query reports
     // `isLoading === false` — on its own it would let the task start before the id resolves.
-    if (newFirekitInitValue && !newLoadingUserData && newParticipantId && !taskStarted.value) {
+    if (newIsAuthReady && !newLoadingUserData && newParticipantId && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
