@@ -8,7 +8,7 @@
     </div>
   </div>
   <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
-    <div v-if="hasSchoolFacets" class="mb-3" data-html2canvas-ignore="true">
+    <div v-if="orgType === 'district'" class="mb-3" data-html2canvas-ignore="true">
       <div class="flex uppercase text-xs font-light justify-content-center align-items-center">view rows by</div>
       <PvSelectButton
         v-model="facetMode"
@@ -26,7 +26,7 @@
           :org-type="orgType"
           :org-id="orgId"
           :task-id="taskId"
-          :facets="facets"
+          :runs="runs"
           :facet-mode="facetMode"
         />
       </div>
@@ -37,24 +37,98 @@
           :org-type="orgType"
           :org-id="orgId"
           :task-id="taskId"
-          :facets="facets"
+          :runs="runs"
           :facet-mode="facetMode"
           :min-grade-by-runs="minGradeByRuns"
+          :task-scoring-versions="taskScoringVersions"
         />
       </div>
     </div>
   </div>
   <div v-if="orgType !== 'district'" class="my-2 mx-4">
     <SubscoreTable
-      v-if="tasksWithSubscores.includes(taskId) && taskUuid && !isLoadingTasksDictionary"
-      :task-id="taskId"
-      :task-uuid="taskUuid"
-      :task-name="tasksDictionary[taskId]?.nameSimple ?? taskId"
+      v-if="taskId === 'phonics' && !isLoadingTasksDictionary"
+      task-id="phonics"
+      :task-name="tasksDictionary['phonics']?.publicName"
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
       :administration-name="administrationInfo.name ?? undefined"
       :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
+    />
+    <!-- <SubscoreTable
+      v-if="
+        taskId === 'letter' &&
+        !isLoadingTasksDictionary &&
+        taskScoringVersions[taskId] &&
+        taskScoringVersions[taskId] >= 1
+      "
+      task-id="letter"
+      :task-name="tasksDictionary['letter']?.publicName"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
+    /> -->
+    <!-- <SubscoreTable
+      v-if="taskId === 'letter-en-ca' && !isLoadingTasksDictionary"
+      task-id="letter-en-ca"
+      :task-name="tasksDictionary['letter-en-ca']?.publicName"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
+    /> -->
+    <SubscoreTable
+      v-if="taskId === 'pa' && !isLoadingTasksDictionary"
+      task-id="pa"
+      :task-name="tasksDictionary['pa']?.publicName"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
+    />
+    <SubscoreTable
+      v-if="taskId === 'fluency-calf' && !isLoadingTasksDictionary"
+      task-id="fluency-calf"
+      :task-name="tasksDictionary['fluency-calf']?.publicName"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
+      :recruitment-type="getRecruitment()"
+    />
+    <SubscoreTable
+      v-if="taskId === 'fluency-arf' && !isLoadingTasksDictionary"
+      task-id="fluency-arf"
+      :task-name="tasksDictionary['fluency-arf']?.publicName"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
+      :recruitment-type="getRecruitment()"
+    />
+    <SubscoreTable
+      v-if="taskId === 'roam-alpaca' && !isLoadingTasksDictionary"
+      task-id="roam-alpaca"
+      :task-name="tasksDictionary['roam-alpaca']?.publicName"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
     />
   </div>
 </template>
@@ -86,6 +160,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  computedTableData: {
+    type: Array,
+    required: true,
+  },
   orgType: {
     type: String,
     required: true,
@@ -102,17 +180,9 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  taskUuid: {
-    // Task UUID for the subscores endpoint (path param); resolved upstream from
-    // the report's task metadata. Empty until that loads.
-    type: String,
-    default: '',
-  },
-  facets: {
-    // Per-task facet aggregation from `getScoreFacets`; null while loading.
-    type: Object,
-    required: false,
-    default: null,
+  runs: {
+    type: Array,
+    required: true,
   },
   taskScoringVersions: {
     type: Object,
@@ -128,39 +198,28 @@ const facetModes = [
   { name: 'School', key: 'schoolName' },
 ];
 
-// Tasks with a registered backend subscore schema — only these render a subscore
-// table. Others (e.g. SWR/SRE) have no subscore schema and 400 from the endpoint.
-//
-// `letter` / `letter-en-ca` are deliberately excluded: #1910 disabled their subscore
-// tables on main pending normed letter subscores (the markup there is commented out
-// behind a `scoringVersion >= 1` gate). The backend does declare subscore columns for
-// them, so re-enabling is a one-line change once those norms land.
-const tasksWithSubscores = ['phonics', 'pa', 'fluency-calf', 'fluency-arf', 'roam-alpaca'];
-
-// Kindergarten / "0" sort as grade 0; everything else is its numeric grade.
-const gradeNumeric = (grade) => (grade === '0' || grade === 'Kindergarten' ? 0 : Number(grade));
-
-// Lowest grade present in the task's grade facets — drives whether the facet chart
-// offers the Raw/Percentile toggle (percentile is meaningful for early grades only).
 const minGradeByRuns = computed(() => {
-  const grades = (props.facets?.scoreBinsByGrade ?? [])
-    .map((entry) => gradeNumeric(entry.grade))
-    .filter((n) => Number.isFinite(n));
-  return grades.length ? Math.min(...grades) : 0;
+  if (props.orgType === 'district') {
+    // For district, props.runs is an object with support categories
+    // We need to extract all grade values from the nested structure
+    if (!props.runs || typeof props.runs !== 'object') {
+      return 0;
+    }
+    const allGrades = [];
+    Object.values(props.runs).forEach((category) => {
+      if (category && typeof category === 'object' && category.grades) {
+        allGrades.push(...Object.keys(category.grades));
+      }
+    });
+    return allGrades.length > 0 ? Math.min(...allGrades.map(Number)) : 0;
+  }
+  return Math.min(
+    ...props.runs.filter((run) => run.scores.rawScore || run.scores.stdPercentile).map((run) => run.grade),
+  );
 });
 
-// The school-facet toggle is shown only when the backend supplies school facets,
-// which happens at district scope (empty arrays elsewhere). This replaces the prior
-// explicit `orgType === 'district'` check — the data drives the UI.
-const hasSchoolFacets = computed(() => (props.facets?.supportLevelBySchool?.length ?? 0) > 0);
-
-/**
- * The administration-level `recruitment` param for this task, which distinguishes the
- * two ROAM fluency variants. Optional-chained throughout: `assessments` is absent while
- * the administration query resolves, and non-fluency tasks have no `recruitment` at all.
- */
 const getRecruitment = () => {
-  return props.administrationInfo?.assessments?.find((task) => task.taskId === props.taskId)?.params?.recruitment;
+  return props.administrationInfo.assessments.find((task) => task.taskId === props.taskId)?.params?.recruitment;
 };
 
 const taskInfo = computed(() => {
