@@ -27,15 +27,26 @@ const formEmail = ref();
 const localStorageEmail = ref();
 
 let unsubscribe = () => {};
+let routed = false;
 
-const routeHome = () => {
+const routeHome = ({ replace = false } = {}) => {
+  if (routed) return;
+  routed = true;
   unsubscribe();
-  router.push({ name: 'Home' });
+  const route = { name: 'Home' };
+  if (replace) {
+    router.replace(route);
+  } else {
+    router.push(route);
+  }
 };
 
 const loginFromEmailLink = async (email) => {
   const emailLink = window.location.href;
-  await authStore.signInWithEmailLink({ email, emailLink }).catch((error) => {
+  try {
+    await authStore.signInWithEmailLink({ email, emailLink });
+    routeHome();
+  } catch (error) {
     if (error.code === 'auth/invalid-action-code') {
       unsubscribe();
       setTimeout(() => {
@@ -45,7 +56,7 @@ const loginFromEmailLink = async (email) => {
       unsubscribe();
       throw error;
     }
-  });
+  }
 };
 
 unsubscribe = authStore.$subscribe((_, state) => {
@@ -55,14 +66,8 @@ unsubscribe = authStore.$subscribe((_, state) => {
 onMounted(async () => {
   localStorageEmail.value = window.localStorage.getItem('emailForSignIn');
 
-  if (authStore.isAuthReady) {
-    routeHome();
-    return;
-  }
-
   if (!getAuthService().isSignInWithEmailLink(window.location.href)) {
-    unsubscribe();
-    router.replace({ name: 'Home' });
+    routeHome({ replace: true });
     return;
   }
 

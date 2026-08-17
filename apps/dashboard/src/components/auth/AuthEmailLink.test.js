@@ -53,13 +53,17 @@ function createFirekitSpy() {
   };
 }
 
-function mountAuthEmailLink({ signInWithEmailLink: signInWithEmailLinkImplementation = vi.fn() } = {}) {
+function mountAuthEmailLink({
+  accessToken = null,
+  signInWithEmailLink: signInWithEmailLinkImplementation = vi.fn(),
+} = {}) {
   const pinia = createPinia();
   setActivePinia(pinia);
 
   const authStore = useAuthStore();
   const firekitSpy = createFirekitSpy();
   authStore.roarfirekit = firekitSpy.firekit;
+  authStore.accessToken = accessToken;
   const signInWithEmailLink = vi
     .spyOn(authStore, 'signInWithEmailLink')
     .mockImplementation((...args) => signInWithEmailLinkImplementation(authStore, ...args));
@@ -96,9 +100,28 @@ describe('AuthEmailLink', () => {
   it('completes a stored-email link through the store action and routes home', async () => {
     window.localStorage.setItem('emailForSignIn', email);
     const { signInWithEmailLink, wrapper } = mountAuthEmailLink({
-      signInWithEmailLink: async (authStore) => {
-        authStore.accessToken = 'signed-in-token';
-      },
+      signInWithEmailLink: async () => {},
+    });
+
+    try {
+      await flushPromises();
+
+      expect(mocks.isSignInWithEmailLink).toHaveBeenCalledWith(window.location.href);
+      expect(signInWithEmailLink).toHaveBeenCalledWith({
+        email,
+        emailLink: window.location.href,
+      });
+      expect(mocks.routerPush).toHaveBeenCalledWith({ name: 'Home' });
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it('still consumes a valid email link when an auth session already exists', async () => {
+    window.localStorage.setItem('emailForSignIn', email);
+    const { signInWithEmailLink, wrapper } = mountAuthEmailLink({
+      accessToken: 'existing-session-token',
+      signInWithEmailLink: async () => {},
     });
 
     try {
@@ -140,9 +163,7 @@ describe('AuthEmailLink', () => {
   it('does not use firekit or Firestore while completing the email link', async () => {
     window.localStorage.setItem('emailForSignIn', email);
     const { firekitSpy, wrapper } = mountAuthEmailLink({
-      signInWithEmailLink: async (authStore) => {
-        authStore.accessToken = 'signed-in-token';
-      },
+      signInWithEmailLink: async () => {},
     });
 
     try {
