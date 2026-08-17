@@ -1,5 +1,6 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { ref } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
@@ -7,7 +8,7 @@ import TaskSurvey from './TaskSurvey.vue';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 
 const mocks = vi.hoisted(() => ({
-  getRoarApiClient: vi.fn(),
+  useParticipantId: vi.fn(),
   getVariantById: vi.fn(),
   initFirekitCompat: vi.fn(),
   routerGo: vi.fn(),
@@ -18,8 +19,8 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ go: mocks.routerGo, push: mocks.routerPush }),
 }));
 
-vi.mock('@/clients/roar-api', () => ({
-  getRoarApiClient: mocks.getRoarApiClient,
+vi.mock('@/composables/useParticipantId', () => ({
+  default: mocks.useParticipantId,
 }));
 
 vi.mock('@roar-platform/assessment-sdk/compat/firekit', () => ({
@@ -69,9 +70,10 @@ describe('TaskSurvey', () => {
     // using the `survey` key the seeded variant carries.
     mocks.getVariantById.mockResolvedValue({ variantParams: { survey: 'survey-file' } });
     globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue({ pages: [] }) });
-    mocks.getRoarApiClient.mockReturnValue({
-      me: { get: vi.fn().mockResolvedValue({ status: 200, body: { data: { id: PARENT_USER_ID } } }) },
-    });
+    // Mirrors `useParticipantId`: the proxy id wins, otherwise the launching
+    // user's own `/me` id. The resolution itself is covered by that composable's
+    // own unit tests, so here it only has to supply the id the component consumes.
+    mocks.useParticipantId.mockImplementation((launchId) => ref(launchId ?? PARENT_USER_ID));
 
     const authStore = useAuthStore();
     authStore.accessToken = 'test-token';
@@ -109,6 +111,10 @@ describe('TaskSurvey', () => {
         expect.objectContaining({ participant: { participantId: PARENT_USER_ID } }),
         expect.anything(),
       );
+
+      // The component's side of the contract: hand the launch prop to the
+      // composable and use what it returns, rather than resolving identity itself.
+      expect(mocks.useParticipantId).toHaveBeenCalledWith(CHILD_USER_ID);
 
       wrapper.unmount();
     });
