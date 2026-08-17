@@ -293,6 +293,17 @@ const routes = [
     meta: { pageTitle: 'SWR (ES)', permission: Permissions.Tasks.LAUNCH },
   },
   {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SWR_PT,
+    name: 'Launch SWR-PT',
+    component: () => import('../components/tasks/TaskSWR.vue'),
+    props: (route) => ({
+      taskId: 'swr-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'SWR (PT)', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.PA,
     name: 'Launch PA',
     component: () => import('../components/tasks/TaskPA.vue'),
@@ -318,6 +329,17 @@ const routes = [
     meta: { pageTitle: 'PA-ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.PA_PT,
+    name: 'Launch PA-PT',
+    component: () => import('../components/tasks/TaskPA.vue'),
+    props: (route) => ({
+      taskId: 'pa-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'PA-PT', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.SRE,
     name: 'Launch SRE',
     component: () => import('../components/tasks/TaskSRE.vue'),
@@ -338,6 +360,17 @@ const routes = [
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'SRE-ES', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SRE_PT,
+    name: 'Launch SRE-PT',
+    component: () => import('../components/tasks/TaskSRE.vue'),
+    props: (route) => ({
+      taskId: 'sre-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'SRE-PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.LETTER,
@@ -520,6 +553,16 @@ const routes = [
     meta: { pageTitle: 'Core Tasks', permission: Permissions.Tasks.LAUNCH },
   },
   {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.CORE_TASKS_PT,
+    name: 'Launch Core Tasks PT',
+    component: () => import('../components/tasks/TaskLevante.vue'),
+    props: (route) => ({
+      taskId: route.params.taskId,
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'Core Tasks PT', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.RAN,
     name: 'Launch RAN',
     component: () => import('../components/tasks/TaskRan.vue'),
@@ -532,6 +575,28 @@ const routes = [
       pageTitle: 'RAN',
       permission: Permissions.Tasks.LAUNCH,
     },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SYMBOL_SEARCH,
+    name: 'Launch Symbol Search',
+    component: () => import('../components/tasks/TaskRan.vue'),
+    props: (route) => ({
+      taskId: 'symbol-search',
+      language: 'en',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'Symbol Search', permission: Permissions.Tasks.LAUNCH },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SYMBOL_SEARCH_PT,
+    name: 'Launch Symbol Search PT',
+    component: () => import('../components/tasks/TaskRan.vue'),
+    props: (route) => ({
+      taskId: 'symbol-search-pt',
+      language: 'pt',
+      launchId: route.params.launchId,
+    }),
+    meta: { pageTitle: 'Symbol Search PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.CROWDING,
@@ -608,6 +673,19 @@ const routes = [
     },
   },
   {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAV_MP_PT,
+    name: 'Launch Roav - MP PT',
+    component: () => import('../components/tasks/TaskRoav.vue'),
+    props: (route) => ({
+      taskId: 'roav-mp-pt',
+      launchId: route.params.launchId,
+    }),
+    meta: {
+      pageTitle: 'ROAR MP PT',
+      permission: Permissions.Tasks.LAUNCH,
+    },
+  },
+  {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAV_RVP,
     name: 'Launch Roav - RVP',
     component: () => import('../components/tasks/TaskRoav.vue'),
@@ -617,6 +695,19 @@ const routes = [
     }),
     meta: {
       pageTitle: 'ROAR RVP',
+      permission: Permissions.Tasks.LAUNCH,
+    },
+  },
+  {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAV_RVP_PT,
+    name: 'Launch Roav - RVP PT',
+    component: () => import('../components/tasks/TaskRoav.vue'),
+    props: (route) => ({
+      taskId: 'roav-rvp-pt',
+      launchId: route.params.launchId,
+    }),
+    meta: {
+      pageTitle: 'ROAR RVP PT',
       permission: Permissions.Tasks.LAUNCH,
     },
   },
