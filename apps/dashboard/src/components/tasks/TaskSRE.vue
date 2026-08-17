@@ -14,7 +14,7 @@ import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk
 import { SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import useMeQuery from '@/composables/queries/useMeQuery';
+import useParticipantId from '@/composables/useParticipantId';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import { version } from '@roar-platform/roar-sre/package.json';
 
@@ -53,17 +53,10 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.accessToken) init();
 });
 
-// Resolve the participant's ROAR (Postgres) user id, which every per-user backend read is
-// keyed on. A proxy launch (`launchId`, set by StudentCardSimple when a parent launches a
-// child) already carries that id, so `/me` is skipped; the self path resolves it from `/me`.
-// Run creation targets this participant via POST /v1/user/:userId/runs, which the backend
-// authorizes with `can_create_run_for_child` (proxy) or self.
-//
-// `useUserStudentDataQuery` falls back to the Firestore `authStore.roarUid` for a falsy
-// argument, which the uuid-typed `GET /users/:id` would reject — so its query stays gated
-// until this id is known.
-const { data: me } = useMeQuery({ enabled: computed(() => initialized.value && !props.launchId) });
-const participantId = computed(() => props.launchId ?? me.value?.id);
+// Resolves the proxy-launch id or the launching user's own `/me` id. The student-data query
+// below is gated on it because `useUserStudentDataQuery` falls back to the Firestore
+// `authStore.roarUid` for a falsy argument, which the uuid-typed `GET /users/:id` rejects.
+const participantId = useParticipantId(props.launchId);
 
 const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(participantId, {
   enabled: computed(() => initialized.value && Boolean(participantId.value)),

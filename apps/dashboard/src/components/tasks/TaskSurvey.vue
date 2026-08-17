@@ -7,14 +7,14 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, watch, ref, computed } from 'vue';
+import { onMounted, onBeforeUnmount, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { SURVEY_TASK_ID } from '@roar-platform/assessment-schema/roar-survey';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import useMeQuery from '@/composables/queries/useMeQuery';
+import useParticipantId from '@/composables/useParticipantId';
 import { version } from '@roar-platform/roar-survey/package.json';
 import SurveyRunner from '@roar-platform/roar-survey';
 
@@ -33,13 +33,9 @@ const sdkInitialized = ref(false);
 const surveyJson = ref(null);
 const taskStarted = ref(false);
 
-// Resolve the participant's ROAR (Postgres) user id. A proxy launch (`launchId`, set by
-// StudentCardSimple when a parent launches a child) already carries that id, so `/me` is
-// skipped; the self path resolves it from `/me`. Run creation targets this participant via
-// POST /v1/user/:userId/runs, which the backend authorizes with `can_create_run_for_child`
-// (proxy) or self.
-const { data: me } = useMeQuery({ enabled: computed(() => isAuthReady.value && !props.launchId) });
-const participantId = computed(() => props.launchId ?? me.value?.id);
+// Resolves the proxy-launch id or the launching user's own `/me` id. The watcher below is
+// gated on it so the survey never starts without a participant identity to attribute it to.
+const participantId = useParticipantId(props.launchId);
 
 let unsubscribe;
 const init = () => {
