@@ -289,6 +289,7 @@ const DisplayRangesSchema = z.object({
   standardScore: ScoreRangeSchema.optional(),
   rawScore: ScoreRangeSchema.optional(),
   percentCorrect: ScoreRangeSchema.optional(),
+  correctIncorrectDifference: ScoreRangeSchema.optional(),
 });
 
 // --- Top-level scoring config ---
