@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 
-// The preview pattern mirrors what toPreviewOriginPattern builds for one site, so
+// The preview pattern mirrors what toPreviewOriginPatterns builds for one site, so
 // this file tests the wiring of string + RegExp entries into `cors` rather than the
 // pattern itself — pattern behaviour is covered in parse-preview-origins.test.ts.
 vi.mock('./parse-allowed-origins', () => ({

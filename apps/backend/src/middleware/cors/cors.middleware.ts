@@ -11,7 +11,7 @@ const { origins, previewPatterns } = parseAllowedOrigins(process.env.ALLOWED_ORI
  *
  * - Exact origin matching for ordinary entries (no wildcards)
  * - Anchored patterns for Firebase preview channels, built in
- *   {@link toPreviewOriginPattern} from `https://<site>--*.web.app` entries — the
+ *   {@link toPreviewOriginPatterns} from `https://<site>--*.web.app` entries — the
  *   one place regex matching is permitted here, because a preview URL's channel
  *   segment is not knowable in advance. Each pattern pins its site ID as a
  *   literal prefix, so the relaxation is scoped to sites ROAR owns and cannot
