@@ -39,9 +39,9 @@ export default defineConfig(({ mode }) => ({
   define:
     mode !== 'lib'
       ? {
-          // Default to '/v1' so dev builds use relative URLs proxied by Vite.
-          // Set ROAR_API_BASE_URL for production — full URL including /v1.
-          ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || '/v1'),
+          // Default to '' so dev builds emit relative URLs, which Vite proxies. The
+          // version prefix comes from the contract, so ROAR_API_BASE_URL is an origin with no path.
+          ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || ''),
           'process.env.FIREBASE_AUTH_EMULATOR_HOST': JSON.stringify(process.env.FIREBASE_AUTH_EMULATOR_HOST || ''),
         }
       : {},

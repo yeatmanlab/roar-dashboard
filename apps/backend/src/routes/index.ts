@@ -50,5 +50,8 @@ export function registerAllRoutes(app: Express) {
   registerUserRoutes(router);
   registerSystemRoutes(router);
 
+  // Sub-contracts carry no version prefix, so it is applied here. Clients get an equivalent prefix
+  // from the composed contract, but the two are defined independently: the mount point is ours to
+  // choose, so the backend keeps its own constant rather than importing the contract's.
   app.use(`/${API_VERSION.V1}`, router);
 }
