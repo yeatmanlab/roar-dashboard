@@ -42,8 +42,6 @@ export const GAME_ROUTES = {
   RAN: '/game/ran',
   SYMBOL_SEARCH: '/game/symbol-search',
   SYMBOL_SEARCH_PT: '/game/symbol-search-pt',
-  CROWDING: '/game/crowding',
-  ROAV_MEP: '/game/roav-mep',
   ROAR_READALOUD: '/game/roar-readaloud',
   SURVEY: '/game/roar-survey',
 };
