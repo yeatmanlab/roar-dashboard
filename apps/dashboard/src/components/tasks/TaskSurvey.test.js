@@ -69,6 +69,7 @@ describe('TaskSurvey', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     globalThis.alert = vi.fn();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
 
     // Survey has no student-data query; it pulls its questions from GCS instead,
     // using the `survey` key the seeded variant carries.
