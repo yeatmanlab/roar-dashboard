@@ -115,14 +115,8 @@ async function startTask(selectedAdmin) {
 
     const roarApiClient = getRoarApiClient();
 
-    const [taskRes, meRes] = await Promise.all([
-      roarApiClient.tasks.get({ params: { taskId: props.taskId } }),
-      roarApiClient.me.get(),
-    ]);
+    const meRes = await roarApiClient.me.get();
 
-    if (taskRes.status !== 200) {
-      throw new Error(`ROAM task "${props.taskId}" not found in the ROAR backend (status ${taskRes.status}).`);
-    }
     if (meRes.status !== 200) {
       throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
     }
@@ -138,29 +132,13 @@ async function startTask(selectedAdmin) {
     }
     const participantId = meRes.body.data.id;
 
-    const adminsRes = await roarApiClient.users.listUserAdministrations({
-      params: { userId: participantId },
-      query: { embed: 'tasks', perPage: 50 },
-    });
+    // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
+    // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
+    const administration = selectedAdmin.value;
+    const roamTaskVariant = (administration?.tasks ?? []).find((task) => task.taskSlug === props.taskId);
 
-    if (adminsRes.status !== 200) {
-      throw new Error(`Failed to fetch administrations from the ROAR backend (status ${adminsRes.status}).`);
-    }
-
-    const roamTaskUuid = taskRes.body.data.id;
-    const backendAdmins = adminsRes.body.data.items;
-
-    const matchedAdmin =
-      backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
-      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === roamTaskUuid));
-
-    if (!matchedAdmin) {
-      throw new Error(`No administration containing the "${props.taskId}" task found in the ROAR backend.`);
-    }
-
-    const roamTaskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === roamTaskUuid);
     if (!roamTaskVariant) {
-      throw new Error(`No task variant for "${props.taskId}" found in the matched administration.`);
+      throw new Error(`No ${props.taskId} task variant found in the selected administration.`);
     }
 
     initFirekitCompat(
@@ -175,7 +153,7 @@ async function startTask(selectedAdmin) {
       {
         variantId: roamTaskVariant.variantId,
         taskVersion: version,
-        administrationId: matchedAdmin.id,
+        administrationId: administration.id,
         isAnonymous: false,
       },
     );
