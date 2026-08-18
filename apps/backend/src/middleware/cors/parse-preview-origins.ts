@@ -10,12 +10,19 @@
  * then be dropped here, silently narrowing the allowlist in a way nothing
  * surfaces until a preview request is refused.
  *
+ * The site portion rejects consecutive hyphens, unlike a general origin host
+ * (which permits them for punycode). Firebase splits site from channel at the
+ * *first* `--`, so `https://foo--bar--*.web.app` does not describe a site called
+ * `foo--bar` — no such site ID is valid — it describes site `foo` with channels
+ * beginning `bar--`. Accepting it would move the literal site prefix to a site
+ * ROAR may not own, and `.web.app` is open registration.
+ *
  * The site ID is captured so it can be interpolated into the anchored matcher
- * below. Because the grammar admits only lowercase alphanumerics and hyphens,
- * the captured value cannot carry regex metacharacters — validating before
- * interpolating is what makes the `new RegExp()` call safe.
+ * below. Because the grammar admits only lowercase alphanumerics and single
+ * hyphens, the captured value cannot carry regex metacharacters — validating
+ * before interpolating is what makes the `new RegExp()` call safe.
  */
-const PREVIEW_ORIGIN_PATTERN = /^https:\/\/([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)--\*\.web\.app$/;
+const PREVIEW_ORIGIN_PATTERN = /^https:\/\/([a-z0-9]+(?:-[a-z0-9]+)*)--\*\.web\.app$/;
 
 /**
  * Escapes regex metacharacters so an interpolated value is matched literally.

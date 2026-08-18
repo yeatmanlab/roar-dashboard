@@ -130,6 +130,10 @@ describe('toPreviewOriginPatterns', () => {
       ['a wildcard suffix rather than a channel', `https://${SITE}*.web.app`],
       ['a partial channel wildcard', `https://${SITE}--pr*.web.app`],
       ['a doubled wildcard', `https://${SITE}--*--*.web.app`],
+      // Firebase splits site from channel at the first "--", so this is site
+      // "foo" with channels beginning "bar--", not a site called "foo--bar".
+      ['consecutive hyphens in the site', 'https://foo--bar--*.web.app'],
+      ['a punycode-style site', 'https://xn--bcher-kva--*.web.app'],
       ['an uppercase site', `https://GSE-roar-admin-word--*.web.app`],
       ['a bare site ID', SITE],
       ['a literal origin', `https://${SITE}.web.app`],
