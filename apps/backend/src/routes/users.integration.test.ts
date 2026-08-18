@@ -1295,9 +1295,8 @@ describe('GET /v1/users/:userId/administrations', () => {
         const { FamilyFactory } = await import('../test-support/factories/family.factory');
         const { TaskFactory } = await import('../test-support/factories/task.factory');
         const { TaskVariantFactory } = await import('../test-support/factories/task-variant.factory');
-        const { AdministrationTaskVariantFactory } = await import(
-          '../test-support/factories/administration-task-variant.factory'
-        );
+        const { AdministrationTaskVariantFactory } =
+          await import('../test-support/factories/administration-task-variant.factory');
         const { RunFactory } = await import('../test-support/factories/run.factory');
         const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
 
@@ -1591,9 +1590,8 @@ describe('GET /v1/users/:userId/administrations', () => {
       const { AdministrationOrgFactory } = await import('../test-support/factories/administration-org.factory');
       const { TaskFactory } = await import('../test-support/factories/task.factory');
       const { TaskVariantFactory } = await import('../test-support/factories/task-variant.factory');
-      const { AdministrationTaskVariantFactory } = await import(
-        '../test-support/factories/administration-task-variant.factory'
-      );
+      const { AdministrationTaskVariantFactory } =
+        await import('../test-support/factories/administration-task-variant.factory');
       const { RunFactory } = await import('../test-support/factories/run.factory');
       const { writeFgaAdministrationAssignment } = await import('../test-support/fga/fga-test-tuples.helper');
       const { TASKS_EXCLUDED_FROM_RETAKE } = await import('../constants/tasks-excluded-from-retake');
@@ -1812,9 +1810,8 @@ describe('GET /v1/users/:userId/administrations', () => {
       const { AdministrationOrgFactory } = await import('../test-support/factories/administration-org.factory');
       const { TaskFactory } = await import('../test-support/factories/task.factory');
       const { TaskVariantFactory } = await import('../test-support/factories/task-variant.factory');
-      const { AdministrationTaskVariantFactory } = await import(
-        '../test-support/factories/administration-task-variant.factory'
-      );
+      const { AdministrationTaskVariantFactory } =
+        await import('../test-support/factories/administration-task-variant.factory');
       const { writeFgaAdministrationAssignment } = await import('../test-support/fga/fga-test-tuples.helper');
 
       // Self-contained district-level administration the student can access via

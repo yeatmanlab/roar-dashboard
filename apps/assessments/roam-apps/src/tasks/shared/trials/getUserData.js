@@ -202,7 +202,7 @@ const ifConsentForm = {
     Boolean(
       (store.session.get('config').recruitment === 'otherLabs' ||
         store.session.get('config').recruitment === 'prolific') &&
-        store.session.get('config').consent,
+      store.session.get('config').consent,
     ),
 };
 
@@ -294,8 +294,8 @@ const ifGetSurvey = {
     Boolean(
       (store.session.get('config').recruitment === 'otherLabs' ||
         store.session.get('config').recruitment === 'prolific') &&
-        store.session.get('config').consent &&
-        store.session.get('config').taskName !== 'response-modality-study',
+      store.session.get('config').consent &&
+      store.session.get('config').taskName !== 'response-modality-study',
     ),
 };
 
