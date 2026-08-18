@@ -6,7 +6,7 @@
   </div>
 </template>
 <script setup>
-import { onMounted, watch, ref, computed, onBeforeUnmount } from 'vue';
+import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
@@ -51,10 +51,8 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.accessToken) init();
 });
 
-// launchId path throws immediately in startTask (proxy-launch not yet supported),
-// so skip the query entirely when launchId is set to avoid a pointless loading delay.
 const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
-  enabled: computed(() => initialized.value && !props.launchId),
+  enabled: initialized,
 });
 
 // The following code intercepts the back button and instead forces a refresh.
@@ -121,16 +119,12 @@ async function startTask(selectedAdmin) {
       throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
     }
 
-    // Proxy-launch path (launchId set) requires resolving the participant's Postgres UUID from
-    // the launch record — props.launchId is an assignment/launch ID, not a user ID. Passing it
-    // as participantId would silently create runs under the wrong ID. Fail loudly until this
-    // is properly implemented.
-    if (props.launchId) {
-      throw new Error(
-        'Proxy-launch path is not yet supported for Levante tasks. Resolve the participant Postgres UUID before enabling this path.',
-      );
-    }
-    const participantId = meRes.body.data.id;
+    // Proxy-launch path: `props.launchId` is the participant's ROAR (Postgres) user UUID
+    // (set by StudentCardSimple when a parent launches a child), so it is the participant
+    // identity directly. On the self path (`launchId` null) we use the launching user's own
+    // `/me` ID. Run creation targets this participant via POST /v1/user/:userId/runs, which
+    // the backend authorizes with `can_create_run_for_child` (proxy) or self.
+    const participantId = props.launchId ?? meRes.body.data.id;
 
     // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
     // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
