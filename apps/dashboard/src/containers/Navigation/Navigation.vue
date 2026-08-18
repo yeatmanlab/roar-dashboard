@@ -81,8 +81,6 @@ const navbarBlacklist = [
   'RAN',
   'Symbol Search',
   'Symbol Search-PT',
-  'Crowding',
-  'MEP',
   'ROAV-MP',
   'ROAV-MP-PT',
   'ROAV-RVP',
@@ -113,8 +111,6 @@ const navbarBlacklist = [
   'Launch RAN',
   'Launch Symbol Search',
   'Launch Symbol Search-PT',
-  'Launch Crowding',
-  'Launch MEP',
   'AuthNycps',
   'InitiateAuthNycps',
 ];
