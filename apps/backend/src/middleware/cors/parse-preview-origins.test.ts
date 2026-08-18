@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { isPreviewOriginEntry, toPreviewOriginPattern } from './parse-preview-origins';
+import { isPreviewOriginEntry, toPreviewOriginPatterns } from './parse-preview-origins';
 
 const SITE = 'gse-roar-admin-staging-word';
 const ENTRY = `https://${SITE}--*.web.app`;
 
 /** The pattern under test, built from a well-formed entry. */
-const pattern = toPreviewOriginPattern(ENTRY)!;
+const pattern = toPreviewOriginPatterns([ENTRY]).patterns[0]!;
 
 /** Mirrors how `cors` matches: RegExp.test against the caller's Origin header. */
 const allows = (origin: string): boolean => pattern.test(origin);
@@ -28,10 +28,12 @@ describe('isPreviewOriginEntry', () => {
   });
 });
 
-describe('toPreviewOriginPattern', () => {
+describe('toPreviewOriginPatterns', () => {
   describe('accepted form', () => {
-    it('builds a pattern from the wildcard form', () => {
-      expect(toPreviewOriginPattern(ENTRY)).toBeInstanceOf(RegExp);
+    it('builds one pattern per well-formed entry and rejects nothing', () => {
+      const result = toPreviewOriginPatterns([ENTRY, 'https://gse-roar-admin-math--*.web.app']);
+      expect(result.patterns).toHaveLength(2);
+      expect(result.rejected).toEqual([]);
     });
 
     it('matches a preview URL produced by the CI default channel naming', () => {
@@ -101,6 +103,20 @@ describe('toPreviewOriginPattern', () => {
     });
   });
 
+  // The nullable predecessor of this function produced a `null` in the same
+  // expression that feeds the CORS `origin` option, where a null origin is itself
+  // a hazard. Nothing here may create one.
+  it('never yields a null or undefined pattern, even from a mixed batch', () => {
+    const { patterns, rejected } = toPreviewOriginPatterns([
+      ENTRY,
+      'https://*.web.app',
+      `https://${SITE}--pr*.web.app`,
+    ]);
+    expect(patterns).toHaveLength(1);
+    expect(patterns.every((p) => p instanceof RegExp)).toBe(true);
+    expect(rejected).toHaveLength(2);
+  });
+
   // Mirrors the rejection table for VALID_PREVIEW_ORIGIN_PATTERN in roar-iac. The
   // two grammars are kept identical on purpose: were this one stricter, an entry
   // could pass validation at plan time and then be dropped here, narrowing the
@@ -120,8 +136,8 @@ describe('toPreviewOriginPattern', () => {
       ['plaintext http', `http://${SITE}--*.web.app`],
       ['a trailing slash', `https://${SITE}--*.web.app/`],
       ['regex metacharacters', '.*'],
-    ])('returns null for %s', (_shape, entry) => {
-      expect(toPreviewOriginPattern(entry)).toBeNull();
+    ])('rejects %s without producing a pattern', (_shape, entry) => {
+      expect(toPreviewOriginPatterns([entry])).toEqual({ patterns: [], rejected: [entry] });
     });
   });
 });

@@ -1,5 +1,5 @@
 import { logger } from '../../logger';
-import { isPreviewOriginEntry, toPreviewOriginPattern } from './parse-preview-origins';
+import { isPreviewOriginEntry, toPreviewOriginPatterns } from './parse-preview-origins';
 
 const DEFAULT_ORIGIN = 'https://localhost:5173';
 
@@ -76,26 +76,20 @@ export function parseAllowedOrigins(raw: string | undefined): AllowedOrigins {
   }
 
   const origins: string[] = [];
-  const previewPatterns: RegExp[] = [];
-  const malformedPreviews: string[] = [];
+  const previewEntries: string[] = [];
   const nullOrigins: string[] = [];
 
   for (const entry of entries) {
     if (entry.toLowerCase() === NULL_ORIGIN) {
       nullOrigins.push(entry);
-      continue;
-    }
-    if (!isPreviewOriginEntry(entry)) {
-      origins.push(entry);
-      continue;
-    }
-    const pattern = toPreviewOriginPattern(entry);
-    if (pattern) {
-      previewPatterns.push(pattern);
+    } else if (isPreviewOriginEntry(entry)) {
+      previewEntries.push(entry);
     } else {
-      malformedPreviews.push(entry);
+      origins.push(entry);
     }
   }
+
+  const { patterns: previewPatterns, rejected: malformedPreviews } = toPreviewOriginPatterns(previewEntries);
 
   // Warn rather than throw: one bad entry must not take the service down. Logged
   // because the allowlist is now narrower than whoever configured it intended,
