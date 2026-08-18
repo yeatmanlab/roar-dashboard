@@ -157,7 +157,7 @@ module.exports = async (env, args) => {
     plugins: [
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
-        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || '/v1'),
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || ''),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
