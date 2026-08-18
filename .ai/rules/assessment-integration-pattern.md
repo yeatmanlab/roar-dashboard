@@ -40,7 +40,7 @@ external: [
 
 The **standalone** build injects two globals via webpack's `DefinePlugin`, which `serve.js` and the shared helpers read:
 
-- `ROAR_API_BASE_URL` — defaults to `/v1`, which the dev server proxies to `BACKEND_URL` (`http://localhost:4000`). In staging/production it is the real API origin.
+- `ROAR_API_BASE_URL` — an origin with no path; the version prefix comes from the contract. Defaults to `''`, so dev builds emit relative URLs that the dev server proxies to `BACKEND_URL` (`http://localhost:4000`) on `/v1`. In staging/production it is the real API origin.
 - `ROAR_DB` — `development` | `staging` | `production`. Guards dev-only affordances such as the variant picker, and the guard is eliminated at build time in production.
 
 Both globals must be declared readonly in `eslint.config.mjs`, or lint fails on undefined globals.
