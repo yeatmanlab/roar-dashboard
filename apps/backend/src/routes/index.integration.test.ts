@@ -11,6 +11,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';
 import request from 'supertest';
+import { ApiContractV1, MeContract } from '@roar-platform/api-contract';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { version } from '../../package.json';
 
@@ -74,6 +75,35 @@ describe('authentication guard', () => {
 
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Contract path alignment
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('contract path alignment', () => {
+  /**
+   * The composed contract applies the version prefix itself, while the backend registers the
+   * unprefixed sub-contracts and mounts them under a prefix it defines independently. Nothing
+   * makes the two agree at compile time, and every other test in this suite hardcodes '/v1', so
+   * all of them would keep passing if the contract's prefix drifted. Derive the path from the
+   * contract instead, which is what a client actually requests.
+   */
+  it('serves clients at the path the contract advertises, not the unprefixed one', async () => {
+    // A 401 from the auth guard proves the route matched. A prefix mismatch would miss every
+    // handler and fall through to the catch-all below instead.
+    const advertised = await request(app).get(ApiContractV1.me.get.path);
+
+    expect(advertised.status).toBe(401);
+    expect(advertised.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+
+    // The sub-contract path is what the backend registers before mounting. If it were reachable
+    // on its own, the prefix would not be load-bearing and the assertion above would prove little.
+    const unprefixed = await request(app).get(MeContract.get.path);
+
+    expect(unprefixed.status).toBe(404);
+    expect(unprefixed.body.error.code).toBe(ApiErrorCode.REQUEST_INVALID);
   });
 });
 
