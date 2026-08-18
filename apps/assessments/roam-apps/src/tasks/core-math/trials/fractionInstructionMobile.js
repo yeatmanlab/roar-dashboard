@@ -4,19 +4,22 @@ import { mediaAssets } from '../../..';
 import { jsPsych } from '../../taskSetup';
 import i18next from 'i18next';
 import store from 'store2';
-// import {SimpleKeyboard} from 'simple-keyboard';
-import { isMobile } from './trialHelpers';
+import { SimpleKeyboard } from 'simple-keyboard';
+import { getClickSource } from '../../shared/helpers';
 //import "simple-keyboard/build/css/index.css";
 
 let rt = [];
 let key = [];
+let clickSourceList = [];
 let textboxVal = [];
-//let startTime;
+let startTime;
 //let finalRT;
 //let textbox_value = null;
 let source;
 
-/*const storeKeyRT = (keyName) => {
+// e is only passed by onKeyPress below (the on-screen virtual keypad), so
+// clickSourceList fills in per keystroke with which pointer type was used.
+const storeKeyRT = (keyName, e) => {
   const endTime = performance.now();
   const response_time = Math.round(endTime - startTime);
   if (keyName === '{enter}') {
@@ -27,7 +30,10 @@ let source;
     key.push(keyName);
   }
   rt.push(response_time);
-};*/
+  if (e) {
+    clickSourceList.push(getClickSource(e));
+  }
+};
 
 // Fixed item, displays instructions for fraction problems
 const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
@@ -100,11 +106,13 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
       //initialise variables for trial
       rt = [];
       key = [];
+      clickSourceList = [];
       textboxVal = [];
-      //startTime = performance.now(); //get initial time
+      startTime = performance.now(); //get initial time
     },
     on_load: () => {
-      // let currentIdx = 0;
+      // responseFormat deleted since it's not used here
+      let currentIdx = 0;
       let currentInput = document.getElementById('question_input_key_0');
       currentInput.classList.add('focused');
 
@@ -114,9 +122,10 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         elements[i].style.fontSize = '3.5vh';
       }
 
-      // const decimalKey = store.session.get('decimalKey');
+      const decimalKey = store.session.get('decimalKey');
 
-      /*const keyboard = new SimpleKeyboard({
+      // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
+      const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`],
         },
@@ -125,8 +134,8 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
           '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
           '{empty}': ' ', // Prevents rendering key value
         },
-        onChange: (input) => onChange(input),
-        onKeyPress: (button) => onKeyPress(button),
+        onChange: onChange,
+        onKeyPress: (button, e) => onKeyPress(button, e),
       });
 
       document.querySelectorAll('.response-box-mobile').forEach((el) => {
@@ -138,15 +147,15 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         });
       });
 
-      function onChange(input) {
+      function onChange() {
         if (currentIdx >= 0) {
           textboxVal[currentIdx] = document.getElementById('question_input_key_' + currentIdx).textContent;
         }
       }
 
-      function onKeyPress(button) {
+      function onKeyPress(button, e) {
         if (!currentInput) return;
-        storeKeyRT(button);
+        storeKeyRT(button, e);
         if (button === '{bksp}') {
           currentInput.textContent = currentInput.textContent.slice(0, -1);
         } else if (button === '{enter}') {
@@ -154,7 +163,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         } else {
           currentInput.textContent += button;
         }
-      }*/
+      }
 
       async function replayAudio() {
         // pause audio
@@ -189,6 +198,7 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         let response;
         let target = Number(stimulus.target[i]);
         if (Object.hasOwn(textboxVal, i)) {
+          //.hasOwnProperty replaced with Object.hasOwn (modern recommended form)
           response = Number(textboxVal[i]);
           if (textboxVal[i] === null || textboxVal[i] === '') {
             response = '';
@@ -232,7 +242,9 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         response_key_list: key,
         response_time_list: rt,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source_list: clickSourceList,
       });
       store.session.set('fractionInstructionDone', true);
     },
@@ -314,11 +326,13 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       //initialise variables for trial
       rt = [];
       key = [];
+      clickSourceList = [];
       textboxVal = [];
-      //startTime = performance.now(); //get initial time
+      startTime = performance.now(); //get initial time
     },
     on_load: () => {
-      //let currentIdx = 0;
+      //responseFormat deleted because it is not used
+      let currentIdx = 0;
       let currentInput = document.getElementById('question_input_key_0');
       currentInput.classList.add('focused');
 
@@ -328,9 +342,9 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         elements[i].style.fontSize = '3.5vh';
       }
 
-      //const decimalKey = store.session.get('decimalKey');
+      const decimalKey = store.session.get('decimalKey');
 
-      /*
+      // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
       const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`],
@@ -340,8 +354,8 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
           '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
           '{empty}': ' ', // Prevents rendering key value
         },
-        onChange: (input) => onChange(input),
-        onKeyPress: (button) => onKeyPress(button),
+        onChange: onChange,
+        onKeyPress: (button, e) => onKeyPress(button, e),
       });
 
       document.querySelectorAll('.response-box-mobile').forEach((el) => {
@@ -353,15 +367,15 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         });
       });
 
-      function onChange(input) {
+      function onChange() {
         if (currentIdx >= 0) {
           textboxVal[currentIdx] = document.getElementById('question_input_key_' + currentIdx).textContent;
         }
       }
 
-      function onKeyPress(button) {
+      function onKeyPress(button, e) {
         if (!currentInput) return;
-        storeKeyRT(button);
+        storeKeyRT(button, e);
         if (button === '{bksp}') {
           currentInput.textContent = currentInput.textContent.slice(0, -1);
         } else if (button === '{enter}') {
@@ -369,7 +383,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         } else {
           currentInput.textContent += button;
         }
-      }*/
+      }
 
       async function replayAudio() {
         // pause audio
@@ -404,6 +418,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         let response;
         let target = Number(stimulus.target[i]);
         if (Object.hasOwn(textboxVal, i)) {
+          //.hasOwnProperty replaced with Object.hasOwn (modern recommended version)
           response = Number(textboxVal[i]);
           if (textboxVal[i] === null || textboxVal[i] === '') {
             response = '';
@@ -449,7 +464,9 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         response_key_list: key,
         response_time_list: rt,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source_list: clickSourceList,
       });
     },
   };
@@ -535,9 +552,9 @@ const feedbackCorrect = {
       elements[i].style.fontSize = '3.5vh';
     }
 
-    /*
     const decimalKey = store.session.get('decimalKey');
 
+    // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
     const keyboard = new SimpleKeyboard({
       layout: {
         default: ['1 2 3 4 5 6 7 8 9 0', `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`],
@@ -547,7 +564,7 @@ const feedbackCorrect = {
         '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
         '{empty}': ' ', // Prevents rendering key value
       },
-    });*/
+    });
   },
 };
 
