@@ -198,7 +198,6 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         let response;
         let target = Number(stimulus.target[i]);
         if (Object.hasOwn(textboxVal, i)) {
-          //.hasOwnProperty replaced with Object.hasOwn (modern recommended form)
           response = Number(textboxVal[i]);
           if (textboxVal[i] === null || textboxVal[i] === '') {
             response = '';
@@ -418,7 +417,6 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         let response;
         let target = Number(stimulus.target[i]);
         if (Object.hasOwn(textboxVal, i)) {
-          //.hasOwnProperty replaced with Object.hasOwn (modern recommended version)
           response = Number(textboxVal[i]);
           if (textboxVal[i] === null || textboxVal[i] === '') {
             response = '';
