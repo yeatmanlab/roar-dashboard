@@ -7,6 +7,10 @@ import { useGameStore } from '@/store/game';
 import TaskSurvey from './TaskSurvey.vue';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 
+// TaskSurvey is spelled out rather than using `describeTaskProxyLaunch`: it has no
+// student-data query (surveys take no grade/DOB), no task launcher, and it fetches
+// its questions from GCS — so it shares the participant contract but not the shape
+// the shared suite asserts.
 const mocks = vi.hoisted(() => ({
   useParticipantId: vi.fn(),
   getVariantById: vi.fn(),

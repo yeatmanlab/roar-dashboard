@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import TaskRoam from './TaskRoam.vue';
+import TaskLetter from './TaskLetter.vue';
 import { describeTaskProxyLaunch } from '@/test-support/taskProxyLaunch';
 
 // `vi.mock` is file-local and its paths must be literals, so each spec declares
@@ -17,20 +17,13 @@ vi.mock('@roar-platform/assessment-sdk/compat/firekit', () => ({
   initFirekitCompat: vi.fn(),
 }));
 
-vi.mock('@roar-platform/roam-apps', () => ({
-  TaskLauncher: vi.fn().mockImplementation(() => ({ run: vi.fn().mockResolvedValue(undefined) })),
+vi.mock('@roar-platform/roar-letter', () => ({
+  default: vi.fn().mockImplementation(() => ({ run: vi.fn().mockResolvedValue(undefined) })),
 }));
 
 describeTaskProxyLaunch({
-  name: 'TaskRoam',
-  component: TaskRoam,
-  taskSlug: 'fluency-arf',
-});
-
-// ROAM is language-as-task — each language is a distinct slug — so the suffixed
-// variant has to resolve through the same contract as the base slug.
-describeTaskProxyLaunch({
-  name: 'TaskRoam (Spanish)',
-  component: TaskRoam,
-  taskSlug: 'fluency-arf-es',
+  name: 'TaskLetter',
+  component: TaskLetter,
+  taskSlug: 'letter',
+  props: { language: 'en' },
 });
