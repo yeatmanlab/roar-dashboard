@@ -18,6 +18,17 @@
 const PREVIEW_ORIGIN_PATTERN = /^https:\/\/([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)--\*\.web\.app$/;
 
 /**
+ * Escapes regex metacharacters so an interpolated value is matched literally.
+ *
+ * Unreachable today by construction: {@link PREVIEW_ORIGIN_PATTERN} captures only
+ * lowercase alphanumerics and hyphens, none of which are metacharacters. It is
+ * here so the safety of the `new RegExp()` below is a property of that call
+ * rather than of a grammar three lines away — if the capture group is ever
+ * widened, a configured origin cannot become a pattern.
+ */
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
  * True when an entry is *intended* as a preview origin, whether or not it is
  * well-formed.
  *
@@ -59,5 +70,5 @@ export function toPreviewOriginPattern(entry: string): RegExp | null {
   if (!match) {
     return null;
   }
-  return new RegExp(`^https://${match[1]}--[a-z0-9-]+\\.web\\.app$`);
+  return new RegExp(`^https://${escapeRegExp(match[1]!)}--[a-z0-9-]+\\.web\\.app$`);
 }

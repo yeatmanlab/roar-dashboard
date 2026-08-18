@@ -3,6 +3,18 @@ import { isPreviewOriginEntry, toPreviewOriginPattern } from './parse-preview-or
 
 const DEFAULT_ORIGIN = 'https://localhost:5173';
 
+/**
+ * The `null` origin, which browsers send from sandboxed iframes, `data:` URLs, and
+ * some redirect chains. Never a legitimate ROAR caller, and with `credentials: true`
+ * trusting it would let any such context make authenticated cross-origin requests.
+ *
+ * roar-iac's origin pattern already rejects it at plan time. Repeating the check here
+ * costs nothing and is the right layer for it: unlike the production preview gate,
+ * this is a property of the value rather than a per-stack policy, so it holds for
+ * every caller in every environment.
+ */
+const NULL_ORIGIN = 'null';
+
 /** The CORS allowlist, split by how each entry has to be matched. */
 export interface AllowedOrigins {
   /** Origins matched exactly (the `cors` package compares these with `===`). */
@@ -65,9 +77,14 @@ export function parseAllowedOrigins(raw: string | undefined): AllowedOrigins {
 
   const origins: string[] = [];
   const previewPatterns: RegExp[] = [];
-  const rejected: string[] = [];
+  const malformedPreviews: string[] = [];
+  const nullOrigins: string[] = [];
 
   for (const entry of entries) {
+    if (entry.toLowerCase() === NULL_ORIGIN) {
+      nullOrigins.push(entry);
+      continue;
+    }
     if (!isPreviewOriginEntry(entry)) {
       origins.push(entry);
       continue;
@@ -76,17 +93,25 @@ export function parseAllowedOrigins(raw: string | undefined): AllowedOrigins {
     if (pattern) {
       previewPatterns.push(pattern);
     } else {
-      rejected.push(entry);
+      malformedPreviews.push(entry);
     }
   }
 
-  // Warn rather than throw: one malformed entry must not take the service down.
-  // Logged because the allowlist is now narrower than whoever configured it
-  // intended, which is otherwise invisible until a preview request is refused.
-  if (rejected.length > 0) {
+  // Warn rather than throw: one bad entry must not take the service down. Logged
+  // because the allowlist is now narrower than whoever configured it intended,
+  // which is otherwise invisible until a request is refused.
+  if (malformedPreviews.length > 0) {
     logger.warn(
-      { rejected },
+      { rejected: malformedPreviews },
       'Ignoring malformed ALLOWED_ORIGINS preview entries; expected the form https://<site>--*.web.app',
+    );
+  }
+
+  // Separate warning: this one is a security-relevant value rather than a typo.
+  if (nullOrigins.length > 0) {
+    logger.warn(
+      { rejected: nullOrigins },
+      'Refusing to trust the "null" origin from ALLOWED_ORIGINS; it is sent by sandboxed iframes and data: URLs',
     );
   }
 

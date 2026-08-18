@@ -93,6 +93,37 @@ describe('parseAllowedOrigins', () => {
     });
   });
 
+  // Flagged by the CORS security scanner as a class of hazard, and reachable here:
+  // "null" is not a wildcard, so nothing else in this module would have stopped it.
+  describe('the null origin', () => {
+    it('refuses to trust a literal null entry', () => {
+      const result = parseAllowedOrigins('null');
+      expect(result.origins).toEqual([]);
+      expect(result.previewPatterns).toEqual([]);
+    });
+
+    it('refuses it case-insensitively', () => {
+      expect(parseAllowedOrigins('NULL').origins).toEqual([]);
+    });
+
+    it('keeps the rest of the allowlist intact', () => {
+      expect(parseAllowedOrigins('https://roar.education,null').origins).toEqual(['https://roar.education']);
+    });
+
+    it('warns separately from a malformed preview entry', () => {
+      parseAllowedOrigins('null');
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ rejected: ['null'] }),
+        expect.stringMatching(/null.*origin/i),
+      );
+    });
+
+    // A host that merely contains "null" is a normal origin and must survive.
+    it('does not touch an origin whose host contains null', () => {
+      expect(parseAllowedOrigins('https://nullisland.example.com').origins).toEqual(['https://nullisland.example.com']);
+    });
+  });
+
   describe('fallback to default', () => {
     it('falls back when undefined', () => {
       const result = parseAllowedOrigins(undefined);
