@@ -17,22 +17,41 @@ export * from './common/index';
 
 const c = initContract();
 
-export const ApiContractV1 = c.router({
-  me: MeContract,
-  administrations: AdministrationsContract,
-  agreements: AgreementsContract,
-  runs: RunsContract,
-  districts: DistrictsContract,
-  schools: SchoolsContract,
-  groups: GroupsContract,
-  tasks: TasksContract,
-  taskVariants: TaskVariantsContract,
-  taskBundles: TaskBundlesContract,
-  classes: ClassesContract,
-  users: UsersContract,
-  system: SystemContract,
-  families: FamiliesContract,
-});
+/**
+ * Path prefix this version of the API is served under.
+ *
+ * Each version directory declares its own prefix rather than sharing a registry, so a new version
+ * is added by creating `src/<version>/` and nothing else, and retiring one is a directory delete.
+ *
+ * The prefix belongs to the contract rather than to deployment configuration: which version a
+ * caller speaks is decided by the contract it compiled against, not by where the API is hosted.
+ * Clients receive it automatically through the composed contract below, which is why
+ * `ROAR_API_BASE_URL` / `VITE_ROAR_API_BASE_URL` are plain origins with no path.
+ *
+ * The backend serves these routes under an equivalent prefix that it defines independently, since
+ * where it mounts the router is its own concern.
+ */
+const V1_PATH_PREFIX = '/v1';
+
+export const ApiContractV1 = c.router(
+  {
+    me: MeContract,
+    administrations: AdministrationsContract,
+    agreements: AgreementsContract,
+    runs: RunsContract,
+    districts: DistrictsContract,
+    schools: SchoolsContract,
+    groups: GroupsContract,
+    tasks: TasksContract,
+    taskVariants: TaskVariantsContract,
+    taskBundles: TaskBundlesContract,
+    classes: ClassesContract,
+    users: UsersContract,
+    system: SystemContract,
+    families: FamiliesContract,
+  },
+  { pathPrefix: V1_PATH_PREFIX },
+);
 
 export * from './me/index';
 export * from './administrations/index';
