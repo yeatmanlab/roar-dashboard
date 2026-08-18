@@ -73,36 +73,25 @@ async function startTask(selectedAdmin) {
       );
     }
 
+    // The participant's administrations — each with its tasks' `variantId` embedded — are
+    // already fetched by HomeParticipant via
+    // `GET /users/:userId/administrations?embed=tasks,progress`, and the chosen one is held
+    // in the game store. The administration and variant are therefore read from
+    // `selectedAdmin` rather than re-fetched here.
     const roarApiClient = getRoarApiClient();
-    const [taskRes, meRes] = await Promise.all([
-      roarApiClient.tasks.get({ params: { taskId: props.taskId } }), // tasks.get accepts UUID or slug
-      roarApiClient.me.get(),
-    ]);
+    const meRes = await roarApiClient.me.get();
 
-    if (taskRes.status !== 200)
-      throw new Error(`roar-survey task not found in ROAR backend (status ${taskRes.status}).`);
     if (meRes.status !== 200)
       throw new Error(`Failed to resolve current user from ROAR backend (status ${meRes.status}).`);
 
     const participantId = meRes.body.data.id;
-    const surveyTaskUuid = taskRes.body.data.id;
 
-    const adminsRes = await roarApiClient.users.listUserAdministrations({
-      params: { userId: participantId },
-      query: { embed: 'tasks', perPage: 50 },
-    });
+    // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
+    // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
+    const administration = selectedAdmin.value;
+    const surveyTaskVariant = (administration?.tasks ?? []).find((task) => task.taskSlug === props.taskId);
 
-    if (adminsRes.status !== 200) throw new Error(`Failed to fetch administrations (status ${adminsRes.status}).`);
-
-    const backendAdmins = adminsRes.body.data.items;
-    const matchedAdmin =
-      backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
-      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === surveyTaskUuid));
-
-    if (!matchedAdmin) throw new Error('No administration containing roar-survey found in ROAR backend.');
-
-    const surveyTaskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === surveyTaskUuid);
-    if (!surveyTaskVariant) throw new Error('No roar-survey task variant found in the matched administration.');
+    if (!surveyTaskVariant) throw new Error(`No ${props.taskId} task variant found in the selected administration.`);
 
     initFirekitCompat(
       {
@@ -116,7 +105,7 @@ async function startTask(selectedAdmin) {
       {
         variantId: surveyTaskVariant.variantId,
         taskVersion: version,
-        administrationId: matchedAdmin.id,
+        administrationId: administration.id,
         isAnonymous: false,
       },
     );
