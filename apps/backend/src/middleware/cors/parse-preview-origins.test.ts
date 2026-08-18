@@ -1,155 +1,127 @@
 import { describe, it, expect } from 'vitest';
-import { logger } from '../../logger';
-import { parsePreviewOrigins } from './parse-preview-origins';
+import { isPreviewOriginEntry, toPreviewOriginPattern } from './parse-preview-origins';
 
 const SITE = 'gse-roar-admin-staging-word';
+const ENTRY = `https://${SITE}--*.web.app`;
 
-/** True when any produced pattern accepts the origin, mirroring how `cors` matches. */
-const allows = (patterns: RegExp[], origin: string): boolean => patterns.some((p) => p.test(origin));
+/** The pattern under test, built from a well-formed entry. */
+const pattern = toPreviewOriginPattern(ENTRY)!;
 
-describe('parsePreviewOrigins', () => {
-  describe('parsing', () => {
-    it('parses a single site ID', () => {
-      expect(parsePreviewOrigins(SITE)).toHaveLength(1);
-    });
+/** Mirrors how `cors` matches: RegExp.test against the caller's Origin header. */
+const allows = (origin: string): boolean => pattern.test(origin);
 
-    it('parses comma-separated site IDs', () => {
-      expect(parsePreviewOrigins(`${SITE},gse-roar-admin-staging-math`)).toHaveLength(2);
-    });
-
-    it('trims whitespace around entries', () => {
-      const patterns = parsePreviewOrigins(`  ${SITE} , gse-roar-admin-staging-math  `);
-      expect(patterns).toHaveLength(2);
-      expect(allows(patterns, `https://${SITE}--pr1-a1b2c3d4.web.app`)).toBe(true);
-    });
-
-    it('deduplicates repeated site IDs', () => {
-      expect(parsePreviewOrigins(`${SITE},${SITE}`)).toHaveLength(1);
-    });
-
-    it('filters empty entries from trailing commas', () => {
-      expect(parsePreviewOrigins(`${SITE},,,gse-roar-admin-staging-math,`)).toHaveLength(2);
-    });
+describe('isPreviewOriginEntry', () => {
+  it('treats an entry carrying a wildcard as a preview entry', () => {
+    expect(isPreviewOriginEntry(ENTRY)).toBe(true);
   });
 
-  // Absence is the correct production state, so unlike parseAllowedOrigins this
-  // must never throw and must never fall back to a default.
-  describe('empty input', () => {
-    it('returns an empty array when undefined', () => {
-      expect(parsePreviewOrigins(undefined)).toEqual([]);
-    });
-
-    it('returns an empty array when empty', () => {
-      expect(parsePreviewOrigins('')).toEqual([]);
-    });
-
-    it('returns an empty array when whitespace-only', () => {
-      expect(parsePreviewOrigins('   ,  ,  ')).toEqual([]);
-    });
-
-    it('does not throw in production when unset', () => {
-      expect(() => parsePreviewOrigins(undefined)).not.toThrow();
-    });
+  // Classification is by wildcard presence, not by the full grammar, so a
+  // malformed attempt is reported as a bad preview entry rather than silently
+  // registered as a literal origin that could never match.
+  it('treats a malformed wildcard entry as a preview entry', () => {
+    expect(isPreviewOriginEntry(`https://${SITE}--pr*.web.app`)).toBe(true);
   });
 
-  describe('matching', () => {
-    const patterns = parsePreviewOrigins(SITE);
+  it('treats an ordinary origin as a literal', () => {
+    expect(isPreviewOriginEntry(`https://${SITE}.web.app`)).toBe(false);
+    expect(isPreviewOriginEntry('https://roar.education')).toBe(false);
+  });
+});
+
+describe('toPreviewOriginPattern', () => {
+  describe('accepted form', () => {
+    it('builds a pattern from the wildcard form', () => {
+      expect(toPreviewOriginPattern(ENTRY)).toBeInstanceOf(RegExp);
+    });
 
     it('matches a preview URL produced by the CI default channel naming', () => {
-      expect(allows(patterns, `https://${SITE}--pr123-fix-some-thing-a1b2c3d4.web.app`)).toBe(true);
+      expect(allows(`https://${SITE}--pr123-fix-some-thing-a1b2c3d4.web.app`)).toBe(true);
     });
 
     it('matches a short channel segment', () => {
-      expect(allows(patterns, `https://${SITE}--x.web.app`)).toBe(true);
+      expect(allows(`https://${SITE}--x.web.app`)).toBe(true);
     });
 
     it('matches regardless of channel naming scheme', () => {
-      expect(allows(patterns, `https://${SITE}--release-2026-08-12-9f8e7d6c.web.app`)).toBe(true);
+      expect(allows(`https://${SITE}--release-2026-08-12-9f8e7d6c.web.app`)).toBe(true);
     });
   });
 
   describe('rejects origins that must not be trusted', () => {
-    const patterns = parsePreviewOrigins(SITE);
-
     // Anchor regression: without a trailing $, an attacker-controlled parent
     // domain would match and CORS would be silently bypassed.
     it('rejects a suffixed attacker domain', () => {
-      expect(allows(patterns, `https://${SITE}--x.web.app.evil.com`)).toBe(false);
+      expect(allows(`https://${SITE}--x.web.app.evil.com`)).toBe(false);
     });
 
     // Prefix regression: without a leading ^, any host ending in the pattern matches.
     it('rejects an attacker-controlled prefix', () => {
-      expect(allows(patterns, `https://evil.com/https://${SITE}--x.web.app`)).toBe(false);
+      expect(allows(`https://evil.com/https://${SITE}--x.web.app`)).toBe(false);
     });
 
     // The site ID must stay a literal — .web.app is open registration, so a
     // wildcarded site portion would trust any Firebase user on the internet.
     it('rejects a different site', () => {
-      expect(allows(patterns, 'https://evil-site--x.web.app')).toBe(false);
+      expect(allows('https://evil-site--x.web.app')).toBe(false);
     });
 
     it('rejects a site that merely starts with the allowed ID', () => {
-      expect(allows(patterns, `https://${SITE}-evil--x.web.app`)).toBe(false);
+      expect(allows(`https://${SITE}-evil--x.web.app`)).toBe(false);
     });
 
-    it('rejects the live origin, which belongs in ALLOWED_ORIGINS', () => {
-      expect(allows(patterns, `https://${SITE}.web.app`)).toBe(false);
+    it('rejects the live origin, which needs its own literal entry', () => {
+      expect(allows(`https://${SITE}.web.app`)).toBe(false);
     });
 
     it('rejects a missing channel segment', () => {
-      expect(allows(patterns, `https://${SITE}--.web.app`)).toBe(false);
+      expect(allows(`https://${SITE}--.web.app`)).toBe(false);
     });
 
     it('rejects an uppercase channel segment', () => {
-      expect(allows(patterns, `https://${SITE}--PR1.web.app`)).toBe(false);
+      expect(allows(`https://${SITE}--PR1.web.app`)).toBe(false);
     });
 
     it('rejects a non-web.app domain', () => {
-      expect(allows(patterns, `https://${SITE}--x.firebaseapp.com`)).toBe(false);
+      expect(allows(`https://${SITE}--x.firebaseapp.com`)).toBe(false);
     });
 
     it('rejects plaintext http', () => {
-      expect(allows(patterns, `http://${SITE}--x.web.app`)).toBe(false);
+      expect(allows(`http://${SITE}--x.web.app`)).toBe(false);
     });
 
     // The dot before web.app is escaped; an unescaped one would match any character.
     it('rejects a substituted separator before web.app', () => {
-      expect(allows(patterns, `https://${SITE}--xXweb.app`)).toBe(false);
+      expect(allows(`https://${SITE}--xXweb.app`)).toBe(false);
+    });
+
+    // The literal "*" is a config marker, never part of the compiled pattern, so
+    // it must not match an Origin header either.
+    it('rejects the configured entry itself as an origin', () => {
+      expect(allows(ENTRY)).toBe(false);
     });
   });
 
-  describe('malformed entries', () => {
-    it('skips an entry carrying a scheme', () => {
-      expect(parsePreviewOrigins(`https://${SITE}`)).toEqual([]);
-    });
-
-    it('skips an entry carrying a domain', () => {
-      expect(parsePreviewOrigins(`${SITE}.web.app`)).toEqual([]);
-    });
-
-    it('skips an entry carrying a preview suffix', () => {
-      expect(parsePreviewOrigins(`${SITE}--pr1-abc`)).toEqual([]);
-    });
-
-    it('skips an entry with regex metacharacters rather than compiling them', () => {
-      expect(parsePreviewOrigins('.*')).toEqual([]);
-      expect(parsePreviewOrigins('gse-roar.*')).toEqual([]);
-    });
-
-    it('keeps valid entries alongside malformed ones', () => {
-      const patterns = parsePreviewOrigins(`${SITE},not a site id,gse-roar-admin-staging-math`);
-      expect(patterns).toHaveLength(2);
-      expect(allows(patterns, `https://${SITE}--x.web.app`)).toBe(true);
-    });
-
-    it('warns so a silently narrowed allowlist is visible', () => {
-      parsePreviewOrigins(`${SITE},https://evil.com`);
-      expect(logger.warn).toHaveBeenCalledOnce();
-    });
-
-    it('does not warn when every entry is valid', () => {
-      parsePreviewOrigins(SITE);
-      expect(logger.warn).not.toHaveBeenCalled();
+  // Mirrors the rejection table for VALID_PREVIEW_ORIGIN_PATTERN in roar-iac. The
+  // two grammars are kept identical on purpose: were this one stricter, an entry
+  // could pass validation at plan time and then be dropped here, narrowing the
+  // allowlist with nothing to show for it until a preview request was refused.
+  describe('rejected entry forms', () => {
+    it.each([
+      ['a bare wildcard host', 'https://*.web.app'],
+      ['a wildcard subdomain', 'https://*.roar.education'],
+      ['a wildcard inside the site ID', 'https://gse-roar-*-word--*.web.app'],
+      ['a wildcard channel on a non-Firebase domain', 'https://word--*.roar.education'],
+      ['a wildcard suffix rather than a channel', `https://${SITE}*.web.app`],
+      ['a partial channel wildcard', `https://${SITE}--pr*.web.app`],
+      ['a doubled wildcard', `https://${SITE}--*--*.web.app`],
+      ['an uppercase site', `https://GSE-roar-admin-word--*.web.app`],
+      ['a bare site ID', SITE],
+      ['a literal origin', `https://${SITE}.web.app`],
+      ['plaintext http', `http://${SITE}--*.web.app`],
+      ['a trailing slash', `https://${SITE}--*.web.app/`],
+      ['regex metacharacters', '.*'],
+    ])('returns null for %s', (_shape, entry) => {
+      expect(toPreviewOriginPattern(entry)).toBeNull();
     });
   });
 });

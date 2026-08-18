@@ -2,15 +2,14 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 
+// The preview pattern mirrors what toPreviewOriginPattern builds for one site, so
+// this file tests the wiring of string + RegExp entries into `cors` rather than the
+// pattern itself — pattern behaviour is covered in parse-preview-origins.test.ts.
 vi.mock('./parse-allowed-origins', () => ({
-  parseAllowedOrigins: vi.fn(() => ['https://allowed.example.com']),
-}));
-
-// Mirrors what parsePreviewOrigins builds for a single site, so this file tests the
-// wiring of string + RegExp entries into `cors` rather than the pattern itself —
-// pattern behaviour is covered in parse-preview-origins.test.ts.
-vi.mock('./parse-preview-origins', () => ({
-  parsePreviewOrigins: vi.fn(() => [/^https:\/\/preview-site--[a-z0-9-]+\.web\.app$/]),
+  parseAllowedOrigins: vi.fn(() => ({
+    origins: ['https://allowed.example.com'],
+    previewPatterns: [/^https:\/\/preview-site--[a-z0-9-]+\.web\.app$/],
+  })),
 }));
 
 const ALLOWED_ORIGIN = 'https://allowed.example.com';
