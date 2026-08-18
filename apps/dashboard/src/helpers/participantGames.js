@@ -48,6 +48,15 @@ function toGame(task, matchedTask) {
     // GameTabs routes and translates by the task's slug (`/game/<slug>`), so
     // expose the catalog slug as the game's `taskId`. Fall back to the API
     // UUID if the catalog has no match (defensive — keeps the tab rendering).
+    //
+    // The fallback keeps the tab visible but not navigable: `getRoutePath` tests
+    // LEVANTE_TASKS membership against the slug, so a UUID always takes the
+    // `/game/<uuid>` branch, which matches no route (every non-Levante game route
+    // is a static path). Task components consequently never receive a UUID as
+    // `taskId`, which is why they match an administration's embedded `taskSlug`
+    // against it directly. Both behaviours assume the catalog resolves every task
+    // an administration references; if that assumption ever breaks, fix it here
+    // rather than adding UUID tolerance downstream.
     taskId: matchedTask?.slug ?? task.taskId,
     orderIndex: task.orderIndex,
     optional: task.optional,
