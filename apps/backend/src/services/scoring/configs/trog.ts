@@ -7,8 +7,14 @@ import {
 export default {
   taskSlugs: [LEVANTE_NORMED_TASK_IDS.TROG],
   scoreFields: {
-    percentile: [{ minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.PERCENTILE }],
-    percentileDisplay: [{ minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.PERCENTILE }],
+    percentile: [
+      { minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.PERCENTILE },
+      { minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.TOTAL_PERCENT_CORRECT },
+    ],
+    percentileDisplay: [
+      { minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.PERCENTILE },
+      { minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.TOTAL_PERCENT_CORRECT },
+    ],
     standardScore: [{ minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.STANDARD_SCORE }],
     standardScoreDisplay: [{ minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.STANDARD_SCORE }],
     rawScore: [{ minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.ROAR_SCORE }],
@@ -20,10 +26,11 @@ export default {
   },
   displayCategory: [
     { minVersion: LEVANTE_SCORING_VERSION.V1, category: 'normed' },
-    { minVersion: 0, category: 'rawOnly' },
+    { minVersion: 0, category: 'percentCorrect' },
   ],
   displayRanges: {
     percentile: { min: 0, max: 99 },
+    percentCorrect: { min: 0, max: 100 },
     standardScore: { min: 0, max: 180 },
     rawScore: { min: 100, max: 900 },
   },
