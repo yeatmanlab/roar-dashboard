@@ -100,6 +100,17 @@ runs:
           # firebase.json, so .firebaserc has to sit beside it in app/ — a repository-root
           # copy is not found from here.
           cp "$FIREBASE_RC_PATH" app/.firebaserc
+          # Mirror of the site-mode guard below. A target the config doesn't declare would
+          # otherwise fail as "Hosting site or target ... not detected in firebase.json" from
+          # the deploy step — after the build and GCP auth, and without naming the input to fix.
+          # Skipped when no target is given, since a blank target deploys every target in .firebaserc.
+          if [ -n "$FIREBASE_HOSTING_SITE" ]; then
+            declared_target=$(jq -r '.hosting.target // "<none>"' app/firebase.json)
+            if [ "$declared_target" != "$FIREBASE_HOSTING_SITE" ]; then
+              echo "::error::${{ inputs.firebase-config-path }} declares hosting target '$declared_target', but firebase-hosting-site is '$FIREBASE_HOSTING_SITE'. Set \"target\" in the hosting config to match, or unset firebase-rc-path to deploy by site ID."
+              exit 1
+            fi
+          fi
           echo "Deploying to Firebase Hosting target: $FIREBASE_HOSTING_SITE"
         elif [ -n "$FIREBASE_HOSTING_SITE" ]; then
           # Site mode. Inject the site ID directly. Mutually exclusive with target mode:
