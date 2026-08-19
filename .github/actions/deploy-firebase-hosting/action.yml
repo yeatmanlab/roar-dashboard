@@ -36,7 +36,11 @@ inputs:
     description: "Path to the firebase.json config file, relative to the repository root."
     required: true
   firebase-hosting-site:
-    description: "Firebase Hosting site ID to deploy to (e.g. roar-phoneme-staging). Required when the Firebase project hosts multiple sites."
+    description: "Firebase Hosting site ID to deploy to (e.g. roar-dashboard-staging), or — when firebase-rc-path is set — the .firebaserc hosting target name (e.g. roar-pa). Required when the Firebase project hosts multiple sites."
+    required: false
+    default: ""
+  firebase-rc-path:
+    description: "Path to a .firebaserc file, relative to the repository root. Set this to resolve the Hosting site from a per-project target map instead of a literal site ID; firebase-hosting-site then names the target."
     required: false
     default: ""
 
@@ -75,18 +79,35 @@ runs:
     # Note: As the project relies on two simultaneous Firebase projects and the configs are stored in the /firebase
     # directory, we prepare the deployment by ensuring that the Firebase config and dist directory are located on the
     # same path. Otherwise, the firebaseextended/action-hosting-deploy action fails to deploy the application.
-    # Note: When a named Hosting site is requested via the firebase-hosting-site input, we inject it as the "site"
-    # key of the hosting config so the Firebase CLI deploys to that site instead of the project's default site. The
-    # input is read through an environment variable as it can carry runtime-derived values (e.g. step outputs).
+    # Note: Deploying to something other than the project's default Hosting site works one of two ways.
+    # With firebase-rc-path set (target mode), we place that .firebaserc next to firebase.json and
+    # firebase-hosting-site names a target the CLI resolves per project. Without it (site mode), we inject
+    # firebase-hosting-site as the "site" key of the hosting config. Inputs are read through environment
+    # variables as they can carry runtime-derived values (e.g. step outputs).
     - name: Prepare deployment
       shell: bash
       env:
         FIREBASE_HOSTING_SITE: ${{ inputs.firebase-hosting-site }}
+        FIREBASE_RC_PATH: ${{ inputs.firebase-rc-path }}
       run: |
         mkdir app
         cp -r ${{ inputs.dist-path }} app/dist
         cp ${{ inputs.firebase-config-path }} app/firebase.json
-        if [ -n "$FIREBASE_HOSTING_SITE" ]; then
+        if [ -n "$FIREBASE_RC_PATH" ]; then
+          # Target mode. The site ID lives in .firebaserc keyed by project, so the same
+          # target name resolves to the staging or production site depending on which
+          # project we deploy to. The CLI locates the project root by the directory holding
+          # firebase.json, so .firebaserc has to sit beside it in app/ — a repository-root
+          # copy is not found from here.
+          cp "$FIREBASE_RC_PATH" app/.firebaserc
+          echo "Deploying to Firebase Hosting target: $FIREBASE_HOSTING_SITE"
+        elif [ -n "$FIREBASE_HOSTING_SITE" ]; then
+          # Site mode. Inject the site ID directly. Mutually exclusive with target mode:
+          # firebase-tools rejects a hosting config that carries both "site" and "target".
+          if jq -e '.hosting.target' app/firebase.json > /dev/null; then
+            echo "::error::${{ inputs.firebase-config-path }} declares a hosting target, so the site ID cannot be injected. Pass firebase-rc-path and set firebase-hosting-site to the target name."
+            exit 1
+          fi
           jq --arg site "$FIREBASE_HOSTING_SITE" '.hosting.site = $site' app/firebase.json > app/firebase.tmp.json
           mv app/firebase.tmp.json app/firebase.json
           echo "Deploying to named Firebase Hosting site: $FIREBASE_HOSTING_SITE"
