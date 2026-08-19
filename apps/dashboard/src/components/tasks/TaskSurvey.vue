@@ -14,7 +14,7 @@ import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk
 import { SURVEY_TASK_ID } from '@roar-platform/assessment-schema/roar-survey';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import { getRoarApiClient } from '@/clients/roar-api';
+import useParticipantId from '@/composables/useParticipantId';
 import { version } from '@roar-platform/roar-survey/package.json';
 import SurveyRunner from '@roar-platform/roar-survey';
 
@@ -32,6 +32,10 @@ const { isAuthReady } = storeToRefs(authStore);
 const sdkInitialized = ref(false);
 const surveyJson = ref(null);
 const taskStarted = ref(false);
+
+// Resolves the proxy-launch id or the launching user's own `/me` id. The watcher below is
+// gated on it so the survey never starts without a participant identity to attribute it to.
+const participantId = useParticipantId(props.launchId);
 
 let unsubscribe;
 const init = () => {
@@ -54,9 +58,9 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isAuthReady],
-  async ([newIsAuthReady]) => {
-    if (newIsAuthReady && !taskStarted.value) {
+  [isAuthReady, participantId],
+  async ([newIsAuthReady, newParticipantId]) => {
+    if (newIsAuthReady && newParticipantId && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
@@ -72,19 +76,7 @@ async function startTask(selectedAdmin) {
     // `GET /users/:userId/administrations?embed=tasks,progress`, and the chosen one is held
     // in the game store. The administration and variant are therefore read from
     // `selectedAdmin` rather than re-fetched here.
-    const roarApiClient = getRoarApiClient();
-    const meRes = await roarApiClient.me.get();
-
-    if (meRes.status !== 200)
-      throw new Error(`Failed to resolve current user from ROAR backend (status ${meRes.status}).`);
-
-    // Proxy-launch path: `props.launchId` is the participant's ROAR (Postgres) user UUID
-    // (set by StudentCardSimple when a parent launches a child), so it is the participant
-    // identity directly. On the self path (`launchId` null) we use the launching user's own
-    // `/me` ID. Run creation targets this participant via POST /v1/user/:userId/runs, which
-    // the backend authorizes with `can_create_run_for_child` (proxy) or self.
-    const participantId = props.launchId ?? meRes.body.data.id;
-
+    //
     // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
     // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
     const administration = selectedAdmin.value;
@@ -99,7 +91,7 @@ async function startTask(selectedAdmin) {
           getToken: () => Promise.resolve(authStore.accessToken),
           refreshToken: () => authStore.forceIdTokenRefresh(),
         },
-        participant: { participantId },
+        participant: { participantId: participantId.value },
       },
       {
         variantId: surveyTaskVariant.variantId,

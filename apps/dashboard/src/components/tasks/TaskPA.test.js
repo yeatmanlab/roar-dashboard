@@ -8,7 +8,7 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ go: vi.fn(), push: vi.fn() }),
 }));
 
-vi.mock('@/clients/roar-api', () => ({ getRoarApiClient: vi.fn() }));
+vi.mock('@/composables/useParticipantId', () => ({ default: vi.fn() }));
 
 vi.mock('@/composables/queries/useUserStudentDataQuery', () => ({ default: vi.fn() }));
 
@@ -26,5 +26,4 @@ describeTaskProxyLaunch({
   component: TaskPA,
   taskSlug: 'pa',
   props: { language: 'en' },
-  readiness: 'firekit',
 });
