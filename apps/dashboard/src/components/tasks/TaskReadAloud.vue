@@ -6,7 +6,7 @@
   </div>
 </template>
 <script setup>
-import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
+import { onMounted, watch, ref, computed, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
@@ -14,7 +14,7 @@ import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk
 import { READALOUD_TASK_ID } from '@roar-platform/assessment-schema/roar-readaloud';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import { getRoarApiClient } from '@/clients/roar-api';
+import useParticipantId from '@/composables/useParticipantId';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import { version } from '@roar-platform/roar-readaloud/package.json';
 
@@ -53,8 +53,13 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.accessToken) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
-  enabled: initialized,
+// Resolves the proxy-launch id or the launching user's own `/me` id. The student-data query
+// below is gated on it because `useUserStudentDataQuery` falls back to the Firestore
+// `authStore.roarUid` for a falsy argument, which the uuid-typed `GET /users/:id` rejects.
+const participantId = useParticipantId(props.launchId);
+
+const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(participantId, {
+  enabled: computed(() => initialized.value && Boolean(participantId.value)),
 });
 
 // The following code intercepts the back button and instead forces a refresh.
@@ -80,9 +85,11 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isAuthReady, isLoadingUserData],
-  async ([newIsAuthReady, newLoadingUserData]) => {
-    if (newIsAuthReady && !newLoadingUserData && !taskStarted.value) {
+  [isAuthReady, isLoadingUserData, participantId],
+  async ([newIsAuthReady, newLoadingUserData, newParticipantId]) => {
+    // `participantId` is part of the gate because a disabled student-data query reports
+    // `isLoading === false` — on its own it would let the task start before the id resolves.
+    if (newIsAuthReady && !newLoadingUserData && newParticipantId && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
@@ -121,21 +128,7 @@ async function startTask(selectedAdmin) {
     // `GET /users/:userId/administrations?embed=tasks,progress`, and the chosen one is
     // held in the game store. The administration and variant are therefore read from
     // `selectedAdmin` rather than re-fetched here.
-    const roarApiClient = getRoarApiClient();
-
-    const meRes = await roarApiClient.me.get();
-
-    if (meRes.status !== 200) {
-      throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
-    }
-
-    // Proxy-launch path: `props.launchId` is the participant's ROAR (Postgres) user UUID
-    // (set by StudentCardSimple when a parent launches a child), so it is the participant
-    // identity directly. On the self path (`launchId` null) we use the launching user's own
-    // `/me` ID. Run creation targets this participant via POST /v1/user/:userId/runs, which
-    // the backend authorizes with `can_create_run_for_child` (proxy) or self.
-    const participantId = props.launchId ?? meRes.body.data.id;
-
+    //
     // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
     // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
     const administration = selectedAdmin.value;
@@ -152,7 +145,7 @@ async function startTask(selectedAdmin) {
           getToken: () => Promise.resolve(authStore.accessToken),
           refreshToken: () => authStore.forceIdTokenRefresh(),
         },
-        participant: { participantId },
+        participant: { participantId: participantId.value },
       },
       {
         variantId: taskVariant.variantId,
