@@ -4,7 +4,7 @@ import { ref, toValue } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import { getRoarApiClient } from '@/clients/roar-api';
+import useParticipantId from '@/composables/useParticipantId';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 
@@ -34,11 +34,8 @@ export const VARIANT_ID = 'task-variant-uuid';
  * @param {String} options.taskSlug – Catalog slug the router passes as `taskId`;
  *   the component matches it against the administration's embedded `taskSlug`.
  * @param {Object} [options.props] – Extra props the route supplies (e.g. `language`).
- * @param {'token'|'firekit'} [options.readiness] – Which store signal gates this
- *   component's start watcher. `TaskPA` still waits on the legacy `isFirekitInit`;
- *   every other component waits on `isAuthReady`.
  */
-export function describeTaskProxyLaunch({ name, component, taskSlug, props = {}, readiness = 'token' }) {
+export function describeTaskProxyLaunch({ name, component, taskSlug, props = {} }) {
   describe(`${name} proxy-launch contract`, () => {
     // The component must resolve the same store instances the test seeds, so the
     // active pinia and the one installed on the mount have to be identical.
@@ -76,18 +73,16 @@ export function describeTaskProxyLaunch({ name, component, taskSlug, props = {},
         data: ref({ studentData: { dob: '2015-04-01', grade: '5' } }),
       });
       vi.mocked(getVariantById).mockResolvedValue({ variantParams: { someParam: true } });
-      vi.mocked(getRoarApiClient).mockReturnValue({
-        me: { get: vi.fn().mockResolvedValue({ status: 200, body: { data: { id: PARENT_USER_ID } } }) },
-      });
+      // Mirrors `useParticipantId`: the selected child wins, otherwise the launching
+      // user's own `/me` id. That resolution has its own unit tests, so here the mock
+      // only has to supply the id the component consumes.
+      vi.mocked(useParticipantId).mockImplementation((launchId) => ref(launchId ?? PARENT_USER_ID));
 
       const authStore = useAuthStore();
-      // The access token gates `init()` and therefore the student-data query,
-      // regardless of which signal the start watcher itself reads.
+      // Every component's start watcher and student-data query gate on the access
+      // token; `TaskPA` moved off the legacy `isFirekitInit` signal in #2117.
       authStore.accessToken = 'test-token';
       authStore.firebaseUser = { uid: 'parent-firebase-uid' };
-      if (readiness === 'firekit') {
-        authStore.roarfirekit = { initialized: true };
-      }
     });
 
     describe('proxy launch', () => {
