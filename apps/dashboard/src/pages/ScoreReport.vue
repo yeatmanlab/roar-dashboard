@@ -8,104 +8,79 @@
             <div class="text-sm font-light text-gray-600 uppercase">Loading Org Info</div>
           </div>
 
-          <div v-if="orgData && administrationData" id="at-a-glance-charts">
-            <ReportHeader
-              :org-type="props.orgType"
-              :org-name="_toUpper(orgData?.name)"
-              :administration-name="_toUpper(displayName)"
-              report-type="Score"
-              :report-view="reportView"
-              :report-views="reportViews"
-              @view-change="handleViewChange"
-            >
-              <template #export-buttons>
-                <div
-                  v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories"
-                  class="flex gap-2 mr-5 flex-column"
-                >
-                  <PvButton
-                    v-if="orgType !== 'district'"
-                    class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
-                    :icon="!csvExportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
-                    label="Export Combined Reports"
-                    @click="exportData({ includeProgress: true })"
-                  />
-                  <PvButton
-                    v-if="orgType !== 'district' || !isEmptyDistrictSupportCategories"
-                    class="flex flex-row p-2 mb-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
-                    :class="orgType === 'district' && !isEmptyDistrictSupportCategories ? 'mt-4' : ''"
-                    :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
-                    :disabled="exportLoading"
-                    label="Export To Pdf"
-                    data-html2canvas-ignore="true"
-                    @click="handleExportToPdf"
-                  />
-                </div>
-              </template>
-            </ReportHeader>
-            <div
-              v-if="isLoadingAssignments || isLoadingDistrictSupportCategories || isLoadingScoreOverview"
-              class="loading-wrapper"
-            >
-              <AppSpinner style="margin: 1rem 0rem" />
-              <div class="text-sm font-light text-gray-600 uppercase">Loading Overview Charts</div>
-            </div>
-            <div
-              v-if="
-                !isLoadingAssignments &&
-                !isLoadingDistrictSupportCategories &&
-                !isLoadingScoreOverview &&
-                sortedAndFilteredTaskIds?.length > 0
-              "
-              class="py-3 mb-2 text-left"
-            >
-              <ScoreDistributionOverview
-                :task-ids="sortedAndFilteredTaskIds"
-                :support-levels-by-task-id="scoreOverviewBySlug"
-                :composite-foundational-runs="compositeFoundationalRunsForChart"
-                :tasks-dictionary="tasksDictionary"
-              />
-              <!-- One/all of word, sentence, phoneme have been taken, but additionally they have other assessments that do not show charts (we want to say we only show charts for validated assessments)  -->
+          <AtAGlanceCharts
+            v-if="orgData && administrationData"
+            id="at-a-glance-charts"
+            :org-type="props.orgType"
+            :org-name="_toUpper(orgData?.name)"
+            :administration-name="_toUpper(displayName)"
+            :report-view="reportView"
+            :report-views="reportViews"
+            :is-loading-assignments="isLoadingAssignments"
+            :is-loading-district-support-categories="isLoadingDistrictSupportCategories"
+            :is-empty-district-support-categories="isEmptyDistrictSupportCategories"
+            :sorted-and-filtered-task-ids="sortedAndFilteredTaskIds"
+            :runs-by-task-id-for-distribution-chart="runsByTaskIdForDistributionChart"
+            :tasks-dictionary="tasksDictionary"
+            :assigned-normed-task-ids="assignedNormedTaskIds"
+            :assigned-task-ids="assignedTaskIds"
+            @view-change="handleViewChange"
+          >
+            <template #export-buttons>
               <div
-                v-if="
-                  !isLoadingAssignments &&
-                  sortedAndFilteredTaskIds?.length > 0 &&
-                  !isEmptyDistrictSupportCategories &&
-                  props.orgType === 'district'
-                "
-                class="flex rounded flex-column align-items-center mt-3"
+                v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories"
+                class="flex gap-2 mr-5 flex-column"
               >
-                <p
-                  v-if="assignedNormedTaskIds && assignedTaskIds.length > assignedNormedTaskIds.length"
-                  class="text-center text-sm font-bold px-4"
-                >
-                  In this district-level report, visualizations are available for foundational and comprehension
-                  assessments to give you clear, reliable insights on these skills.
-                </p>
-                <p class="text-center align-items-center text-sm font-bold px-4">
-                  View school-level or classroom-level reports to see student-level data and information about other
-                  assessments.
-                </p>
+                <PvButton
+                  v-if="orgType !== 'district'"
+                  class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
+                  :icon="!csvExportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
+                  label="Export Combined Reports"
+                  @click="exportData({ includeProgress: true })"
+                />
+                <PvButton
+                  v-if="orgType !== 'district' || !isEmptyDistrictSupportCategories"
+                  class="flex flex-row p-2 mb-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
+                  :class="orgType === 'district' && !isEmptyDistrictSupportCategories ? 'mt-4' : ''"
+                  :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
+                  :disabled="exportLoading"
+                  label="Export To Pdf"
+                  data-html2canvas-ignore="true"
+                  @click="handleExportToPdf"
+                />
               </div>
-            </div>
-            <div
-              v-if="!isLoadingAssignments && !isLoadingDistrictSupportCategories && isEmptyDistrictSupportCategories"
-              class="justify-content-center surface-100 p-2"
-            >
-              <p class="text-center text-sm font-bold px-4">
-                {{
-                  assignedNormedTaskIds.length === 0
-                    ? 'Visualizations are only available for foundational reading and comprehension assessments. If visualizations are not showing, your students were not assigned any of these assessments.'
-                    : 'Visualizations will appear once students complete our foundational or comprehension assessments.'
-                }}
-              </p>
-              <p class="text-center align-items-center text-sm font-bold px-4">
-                View school-level or classroom-level reports to see student-level data and information about other
-                assessments.
-              </p>
-            </div>
-          </div>
+            </template>
+          </AtAGlanceCharts>
         </section>
+
+        <!--
+          Off-screen twin of the at-a-glance charts, permanently rendered at the PDF capture
+          width. Chart.js bakes each canvas's pixel size into an inline style measured from its
+          real container, so a canvas sized for the live page overflows when html2canvas clones
+          the DOM into a differently-sized virtual window for export. Keeping a second copy that's
+          always laid out at PDF_CAPTURE_WINDOW_WIDTH means its charts are always correctly sized,
+          with no resize step (and no visible transition) needed at export time.
+        -->
+        <div aria-hidden="true" inert class="pdf-export-host" :style="{ width: `${PDF_CAPTURE_WINDOW_WIDTH}px` }">
+          <AtAGlanceCharts
+            v-if="orgData && administrationData"
+            id="at-a-glance-charts-export"
+            class="pdf-export-mode"
+            :org-type="props.orgType"
+            :org-name="_toUpper(orgData?.name)"
+            :administration-name="_toUpper(displayName)"
+            :report-view="reportView"
+            :report-views="reportViews"
+            :is-loading-assignments="isLoadingAssignments"
+            :is-loading-district-support-categories="isLoadingDistrictSupportCategories"
+            :is-empty-district-support-categories="isEmptyDistrictSupportCategories"
+            :sorted-and-filtered-task-ids="sortedAndFilteredTaskIds"
+            :runs-by-task-id-for-distribution-chart="runsByTaskIdForDistributionChart"
+            :tasks-dictionary="tasksDictionary"
+            :assigned-normed-task-ids="assignedNormedTaskIds"
+            :assigned-task-ids="assignedTaskIds"
+          />
+        </div>
 
         <!-- Loading data spinner -->
         <div v-if="isLoadingAssignments || isFetchingAssignments" class="my-4 loading-container">
@@ -285,12 +260,10 @@
           <div class="text-sm font-light text-gray-600 uppercase">Loading Task Reports</div>
         </div>
         <template v-if="!isLoadingAssignments && !isLoadingTasksDictionary && !isLoadingDistrictSupportCategories">
-          <!-- lazy: only the active tab's TaskReport mounts, so subscore tables fetch on demand
-               (one cached request per opened tab) instead of all firing on report open. -->
-          <PvTabs v-model:value="activeTabIndex" lazy>
+          <PvTabs v-model:value="activeTabIndex">
             <PvTabList>
               <PvTab v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="i" class="text-base">
-                {{ tasksDictionary[taskId]?.nameSimple ?? taskId }}
+                {{ tasksDictionary[taskId]?.publicName ?? taskId }}
               </PvTab>
             </PvTabList>
 
@@ -299,11 +272,15 @@
                 <div :id="'tab-view-' + taskId">
                   <TaskReport
                     v-if="taskId"
+                    :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
                     :task-id="taskId"
                     :initialized="initialized"
                     :administration-id="administrationId"
-                    :facets="facetsByTask[taskId]"
-                    :task-uuid="taskUuidBySlug[taskId]"
+                    :runs="
+                      orgType === 'district'
+                        ? aggregatedDistrictSupportCategories?.[taskId]
+                        : computeAssignmentAndRunData.runsByTaskId?.[taskId]
+                    "
                     :org-type="orgType"
                     :org-id="orgId"
                     :org-info="orgData"
@@ -363,7 +340,8 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, toValue, watch } from 'vue';
+import { computed, ref, onMounted, nextTick, toValue, watch } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -385,15 +363,11 @@ import PvTabList from 'primevue/tablist';
 import PvTab from 'primevue/tab';
 import PvTabPanels from 'primevue/tabpanels';
 import PvProgressBar from 'primevue/progressbar';
-import ReportHeader from '@/components/ReportHeader.vue';
 import { useAuthStore } from '@/store/auth';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
-import useAdministrationScoreOverviewQuery from '@/composables/queries/useAdministrationScoreOverviewQuery';
-import useAdministrationScoreStudentsQuery from '@/composables/queries/useAdministrationScoreStudentsQuery';
-import useAdministrationScoreFacetsQuery from '@/composables/queries/useAdministrationScoreFacetsQuery';
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
@@ -415,13 +389,14 @@ import {
   excludeFromScoringTasks,
   includeReliabilityFlagsOnExport,
   addElementToPdf,
+  waitForElementRendered,
+  PDF_CAPTURE_WINDOW_WIDTH,
   getScoreValue,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
   roamAlpacaSubskills,
   getTagColor,
   roamFluencySubskills,
-  roamFluencyTasks,
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
@@ -433,7 +408,7 @@ import { i18n } from '@/translations/i18n';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
 import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
-import { CSV_EXPORT_STATIC_COLUMNS, CSV_EXPORT_COMPOSITE_SCORE_COLUMNS } from '@/constants/csvExport';
+import { CSV_EXPORT_STATIC_COLUMNS } from '@/constants/csvExport';
 import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { LEVANTE_TASK_IDS_NO_SCORES } from '@/constants/levanteTasks';
@@ -441,13 +416,14 @@ import _startCase from 'lodash/startCase';
 import AppDialog from '@/components/Dialog/Dialog.vue';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { getStudentExternalId } from '@/helpers/getStudentExternalId';
-import ScoreDistributionOverview from '@/components/reports/ScoreDistributionOverview.vue';
+import AtAGlanceCharts from '@/components/reports/AtAGlanceCharts.vue';
 const { userCan, Permissions } = usePermissions();
 
 let TaskReport;
 
 const router = useRouter();
 const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -486,48 +462,6 @@ const {
   isFetching: isFetchingDistrictSupportCategories,
 } = useDistrictSupportCategoriesQuery(props.orgId, props.administrationId, {
   enabled: computed(() => initialized.value && props.orgType === 'district'),
-});
-
-// Server-computed support-level distributions per task: the source of the "at a glance"
-// chart values, already scoped to this org/class/group. Keyed by task slug to match the
-// slug-based `sortedAndFilteredTaskIds` the chart iterates.
-//
-// The foundational-composite row is the one part the endpoint can't supply — it has no
-// composite equivalent — so that row alone stays client-derived via
-// `compositeFoundationalRunsForChart` below.
-const { data: scoreOverviewData, isLoading: isLoadingScoreOverview } = useAdministrationScoreOverviewQuery(
-  props.administrationId,
-  props.orgType,
-  props.orgId,
-  { enabled: initialized },
-);
-const scoreOverviewBySlug = computed(() =>
-  Object.fromEntries((scoreOverviewData.value?.tasks ?? []).map((task) => [task.taskSlug, task.supportLevels])),
-);
-
-// Server-computed distribution facets per task (support-level + score bins, faceted by
-// grade and school) — the source for the per-task TaskReport distribution charts at ALL
-// scopes. This replaces both the client-side facet binning (non-district) and the Firestore
-// `aggregatedDistrictSupportCategories` feed (district); the charts no longer distinguish
-// scope. School facets are populated at district scope only (empty arrays elsewhere).
-const { data: scoreFacetsData } = useAdministrationScoreFacetsQuery(
-  props.administrationId,
-  props.orgType,
-  props.orgId,
-  { enabled: initialized },
-);
-const facetsByTask = computed(() =>
-  Object.fromEntries((scoreFacetsData.value?.tasks ?? []).map((task) => [task.taskSlug, task])),
-);
-
-// Slug → task UUID, from the backend report task metadata. The subscores endpoint
-// is keyed by UUID; the report iterates tasks by slug. Merged from the facets and
-// students responses so every scored task resolves regardless of which loaded first.
-const taskUuidBySlug = computed(() => {
-  const map = {};
-  for (const task of scoreFacetsData.value?.tasks ?? []) map[task.taskSlug] = task.taskId;
-  for (const task of studentScoresData.value?.tasks ?? []) map[task.taskSlug] = task.taskId;
-  return map;
 });
 
 const getScoringVersions = computed(() => {
@@ -615,28 +549,34 @@ const handleExportToPdf = async () => {
   const doc = new jsPDF();
   let yCounter = 10; // yCounter tracks the y position in the PDF
 
-  // Add At a Glance Charts and report header to the PDF
-  const atAGlanceCharts = document.getElementById('at-a-glance-charts');
+  // Add At a Glance Charts and report header to the PDF. Captured from the permanently
+  // off-screen "-export" twin (see template) rather than the live, visible element, since that
+  // twin is always laid out at PDF_CAPTURE_WINDOW_WIDTH and its charts are always sized to match
+  // — nothing needs to be resized on the fly here.
+  const atAGlanceCharts = document.getElementById('at-a-glance-charts-export');
   if (atAGlanceCharts !== null) {
-    atAGlanceCharts.classList.add('pdf-export-mode');
+    await waitForElementRendered(atAGlanceCharts);
     yCounter = await addElementToPdf(atAGlanceCharts, doc, yCounter);
-    atAGlanceCharts.classList.remove('pdf-export-mode');
   }
 
   // Initialize to first tab
   activeTabIndex.value = 0;
 
-  for (const [i, taskId] of sortedTaskIds.value.entries()) {
+  for (const [i, taskId] of sortedAndFilteredSubscoreTaskIds.value.entries()) {
     activeTabIndex.value = i;
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await nextTick();
 
     // Add Task Description and Task Chart to document
     const tabViewDesc = document.getElementById('tab-view-description-' + taskId);
     const tabViewChart = document.getElementById('tab-view-chart-' + taskId);
+
+    // Wait for element to be rendered before capturing it for PDF export.
+    await waitForElementRendered(tabViewChart || tabViewDesc);
+
     const chartHeight =
       tabViewChart &&
-      (await html2canvas(document.getElementById('tab-view-chart-' + taskId)).then(
-        (canvas) => canvas.height * returnScaleFactor(canvas.width),
+      (await html2canvas(tabViewChart).then((canvas) =>
+        canvas.width ? canvas.height * returnScaleFactor(canvas.width) : 0,
       ));
 
     if (tabViewDesc !== null) {
@@ -1134,11 +1074,7 @@ const computeAssignmentAndRunData = computed(() => {
           optional: isOptional,
           supportLevel: support_level,
           reliable: assessment.reliable,
-          // engagementFlags is normalized to an array of flag-name strings (matching the
-          // backend score shape); legacy Firestore data carries it as an object map.
-          engagementFlags: Array.isArray(assessment.engagementFlags)
-            ? assessment.engagementFlags
-            : Object.keys(assessment.engagementFlags ?? {}),
+          engagementFlags: assessment.engagementFlags ?? [],
           tagColor: tagColor,
           percentile: percentile,
           percentileString: percentileString,
@@ -1492,30 +1428,6 @@ const computeAssignmentAndRunData = computed(() => {
       return Object.keys(taskInfoById).includes(taskId);
     });
 
-    // DIVERGENCE FROM main (deliberate — do not delete when merging main).
-    //
-    // #1695 removed this filter on main because it also taught SubscoreTable to build
-    // non-response-modality columns client-side, so those tables render correctly there.
-    // This branch renders subscore columns from the backend instead, and
-    // `services/scoring/configs/fluency.ts` declares only the response-modality columns
-    // (`freeResponse` / `multipleChoice`) — non-response-modality runs score by operation
-    // and have no FR/FC domain scores. Dropping the filter here would surface a subscore
-    // tab whose every cell is blank.
-    //
-    // Keeping the filter preserves the pre-merge behavior: no subscore tab for these
-    // administrations. Remove it once `fluency.ts` declares non-response-modality columns
-    // and the subscores endpoint selects a column set from `recruitment`.
-    //
-    // Response modality admins who switch mid-way will no longer see the subscore tables.
-    const assessments = administrationData.value?.assessments ?? [];
-    for (const assessment of assessments) {
-      if (roamFluencyTasks.includes(assessment.taskId)) {
-        if (assessment.params?.recruitment !== 'responseModality') {
-          delete filteredRunsByTaskId[assessment.taskId];
-        }
-      }
-    }
-
     return {
       runsByTaskId: filteredRunsByTaskId,
       assignmentTableData: assignmentTableDataAcc,
@@ -1524,132 +1436,25 @@ const computeAssignmentAndRunData = computed(() => {
   }
 });
 
-// --- Backend per-student scores (the score-report table's core score source) ---
-// The table's core per-task scores (rawScore / percentile / standardScore / supportLevel
-// + reliability) come from the backend; the frontend owns presentation (color per level,
-// number formatting). The per-task "special" fields (percentCorrect, gradeEstimate, ROAM
-// fr/fc, …) and the CSV/PDF export still derive from `computeAssignmentAndRunData` — a
-// deferred follow-up. There is no student table at district scope, so the query is off there.
-const { data: studentScoresData } = useAdministrationScoreStudentsQuery(
-  props.administrationId,
-  props.orgType,
-  props.orgId,
-  { enabled: computed(() => initialized.value && props.orgType !== 'district') },
-);
+// runsByTaskId for the ScoreDistributionOverview chart, including the foundational composite score
+// (kept separate from computeAssignmentAndRunData.runsByTaskId since 'compositeFoundational' is not a real taskId
+// and would break taskId-keyed logic like sortedTaskIds and CSV export).
+const runsByTaskIdForDistributionChart = computed(() => {
+  if (props.orgType === 'district') return aggregatedDistrictSupportCategories.value;
 
-// The frontend owns the color for each backend support-level enum (`reliable: false` plus a
-// recognized engagement flag fades the color). The backend is the source of truth for the
-// level itself; `optional` / `null` levels keep the client-derived cell.
-const SUPPORT_LEVEL_DISPLAY = {
-  needsExtraSupport: { label: 'Needs Extra Support', color: SCORE_SUPPORT_LEVEL_COLORS.BELOW, faded: '#d6b8c7' },
-  developingSkill: { label: 'Developing Skill', color: SCORE_SUPPORT_LEVEL_COLORS.SOME, faded: '#e8dbb5' },
-  achievedSkill: { label: 'Achieved Skill', color: SCORE_SUPPORT_LEVEL_COLORS.ABOVE, faded: '#c0d9bd' },
-};
+  const { runsByTaskId, compositeFoundationalRuns } = computeAssignmentAndRunData.value;
+  if (!compositeFoundationalRuns?.length) return runsByTaskId;
 
-// Non-normed tasks whose columns show task-specific values (percent correct, grade estimate,
-// correct/incorrect difference, raw-only) rather than the normed percentile/standard/raw the
-// backend overlay supplies. listStudents maps their `percentile`/`rawScore` to task-specific
-// numbers, so these keep their client-computed cells entirely (deferred follow-up).
-const SPECIAL_TASK_SLUGS = new Set([
-  ...tasksToDisplayPercentCorrect,
-  ...tasksToDisplayTotalCorrect,
-  ...tasksToDisplayGradeEstimate,
-  ...tasksToDisplayCorrectIncorrectDifference,
-  ...rawOnlyTasks,
-]);
-
-// Backend scores re-keyed: userId → { taskSlug → entry }. The table columns are slug-based,
-// while the response keys `scores` by task UUID.
-const backendScoresByUser = computed(() => {
-  const data = studentScoresData.value;
-  if (!data) return {};
-  const slugByUuid = Object.fromEntries(data.tasks.map((task) => [task.taskId, task.taskSlug]));
-  const byUser = {};
-  for (const row of data.students) {
-    const slugScores = {};
-    for (const [taskUuid, entry] of Object.entries(row.scores)) {
-      slugScores[slugByUuid[taskUuid] ?? taskUuid] = entry;
-    }
-    byUser[row.user.userId] = slugScores;
-  }
-  return byUser;
-});
-
-/**
- * Overlay the backend per-student core scores onto the client-computed table rows.
- *
- * For each task the backend scores, the numeric fields (rawScore / percentile /
- * standardScore) and the support-level classification + color are taken from the backend;
- * the frontend formats them. Fields the backend leaves null (e.g. percentile for non-normed
- * tasks) and the per-task "special" fields keep the client value, so the special-task
- * columns and the CSV/PDF export are unaffected (deferred follow-up).
- */
-const tableDataWithBackendScores = computed(() => {
-  const clientRows = computeAssignmentAndRunData.value.assignmentTableData;
-  const byUser = backendScoresByUser.value;
-  if (!clientRows.length || Object.keys(byUser).length === 0) return clientRows;
-
-  return clientRows.map((row) => {
-    const backendScores = byUser[row.user.userId];
-    if (!backendScores) return row;
-
-    const mergedScores = {};
-    for (const [slug, clientScore] of Object.entries(row.scores)) {
-      const entry = backendScores[slug];
-      // Special (non-normed) tasks keep their client-computed cell: listStudents maps their
-      // `percentile`/`rawScore` to task-specific values that don't belong in the normed
-      // columns, and those cells + the CSV export stay client-side (deferred follow-up).
-      if (!entry || SPECIAL_TASK_SLUGS.has(slug)) {
-        mergedScores[slug] = clientScore;
-        continue;
-      }
-
-      const merged = { ...clientScore };
-      if (entry.rawScore != null) merged.rawScore = entry.rawScore;
-      // Only the numeric `percentile` (the table cell) comes from the backend; keep the
-      // client's `percentileString`, which carries the >99 / <1 display cap the CSV export uses.
-      if (entry.percentile != null) merged.percentile = entry.percentile;
-      if (entry.standardScore != null) merged.standardScore = entry.standardScore;
-      if (entry.reliable != null) merged.reliable = entry.reliable;
-      if (entry.engagementFlags) merged.engagementFlags = entry.engagementFlags;
-
-      const levelInfo = entry.supportLevel ? SUPPORT_LEVEL_DISPLAY[entry.supportLevel] : null;
-      if (levelInfo) {
-        merged.supportLevel = levelInfo.label;
-        const faded =
-          entry.reliable === false &&
-          (entry.engagementFlags ?? []).some((flag) => includedValidityFlags[slug]?.includes(flag));
-        merged.tagColor = faded ? levelInfo.faded : levelInfo.color;
-      }
-
-      mergedScores[slug] = merged;
-    }
-
-    return { ...row, scores: mergedScores };
-  });
-});
-
-// Runs backing the ScoreDistributionOverview chart's foundational-composite row. The
-// per-task rows come from the backend score-overview endpoint (`scoreOverviewBySlug`);
-// the composite is the only row without a server equivalent, so it stays client-derived
-// until the overview endpoint grows one. Kept out of
-// `computeAssignmentAndRunData.runsByTaskId` because 'compositeFoundational' is not a real
-// taskId and would break taskId-keyed logic like sortedTaskIds and CSV export.
-const compositeFoundationalRunsForChart = computed(() => {
-  if (props.orgType === SINGULAR_ORG_TYPES.DISTRICTS) {
-    return aggregatedDistrictSupportCategories.value?.compositeFoundational ?? null;
-  }
-
-  return computeAssignmentAndRunData.value.compositeFoundationalRuns ?? null;
+  return { ...runsByTaskId, compositeFoundational: compositeFoundationalRuns };
 });
 
 // This composable manages the data which is passed into the FilterBar component slot for filtering
 const filteredTableData = ref([]);
 
 watch(
-  tableDataWithBackendScores,
+  computeAssignmentAndRunData,
   (newValue) => {
-    filteredTableData.value = newValue;
+    filteredTableData.value = newValue.assignmentTableData;
   },
   { immediate: true, deep: true },
 );
@@ -1688,7 +1493,8 @@ const viewOptions = ref([
  */
 
 const createExportData = ({ rows, includeProgress = false }) => {
-  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate, compositeScore }) => {
+  // const computedExportData = _map(rows, ({ user, scores, startDate, completionDate, compositeScore }) => {
+  const computedExportData = _map(rows, ({ user, scores, startDate, completionDate }) => {
     let tableRow = {
       Username: user?.username,
       Email: user?.email, // This will only be used when exporting all rows
@@ -1704,12 +1510,12 @@ const createExportData = ({ rows, includeProgress = false }) => {
     tableRow['Start Date'] = startDate ? new Date(startDate).toLocaleDateString('en-US') : null;
     tableRow['Completion Date'] = completionDate ? new Date(completionDate).toLocaleDateString('en-US') : null;
 
-    if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
-      tableRow['Composite Score - Percentile'] = compositeScore?.percentile;
-      tableRow['Composite Score - Standard'] = compositeScore?.standardScore;
-      tableRow['Composite Score - Raw'] = compositeScore?.rawScore;
-      tableRow['Composite Score - Support Level'] = compositeScore?.supportLevel;
-    }
+    // if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+    //   tableRow['Composite Score - Percentile'] = compositeScore?.percentile;
+    //   tableRow['Composite Score - Standard'] = compositeScore?.standardScore;
+    //   tableRow['Composite Score - Raw'] = compositeScore?.rawScore;
+    //   tableRow['Composite Score - Support Level'] = compositeScore?.supportLevel;
+    // }
 
     if (props.orgType === 'district') {
       tableRow['School'] = user?.schoolName;
@@ -1721,7 +1527,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
     for (const taskId in scores) {
       const score = scores[taskId];
-      const taskName = tasksDictionary.value[taskId]?.nameSimple ?? taskId;
+      const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
 
       // Add task-specific score information
       if (tasksToDisplayPercentCorrect.includes(taskId) && !isTaskNormed(taskId, getScoringVersions.value[taskId])) {
@@ -1792,10 +1598,14 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
       // Add reliability information
       if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
-        const engagementFlags = score.engagementFlags;
+        // engagementFlags may arrive as an array (backend / normalized rows) or a legacy
+        // Firestore object map (raw assessment) — normalize before reading.
+        const engagementFlags = Array.isArray(score.engagementFlags)
+          ? score.engagementFlags
+          : Object.keys(score.engagementFlags ?? {});
         if (engagementFlags.length > 0) {
           if (includedValidityFlags[taskId]) {
-            const filteredFlags = score.engagementFlags.filter((flag) => includedValidityFlags[taskId].includes(flag));
+            const filteredFlags = engagementFlags.filter((flag) => includedValidityFlags[taskId].includes(flag));
             tableRow[`${taskName} - Reliability`] =
               filteredFlags.length === 0 ? 'Unreliable' : `Unreliable: ${filteredFlags.map(_lowerCase).join(', ')}`;
           } else {
@@ -1882,9 +1692,9 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   // Define the static columns
   const staticColumns = [...CSV_EXPORT_STATIC_COLUMNS];
 
-  if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
-    staticColumns.push(...CSV_EXPORT_COMPOSITE_SCORE_COLUMNS);
-  }
+  // if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+  //   staticColumns.push(...CSV_EXPORT_COMPOSITE_SCORE_COLUMNS);
+  // }
 
   if (orgData.value?.clever === true) {
     staticColumns.push('State ID');
@@ -1935,7 +1745,7 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
         .filter((assessment) => excludeFromScoringTasks.includes(assessment.taskId))
         .map((assessment) => assessment.taskId);
       unscoredTaskIds.forEach((taskId) => {
-        const taskName = tasksDictionary.value[taskId]?.nameSimple ?? taskId;
+        const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
         reorderedRow[`${taskName} - Progress`] =
           row[`${taskId} - Progress`] !== undefined ? row[`${taskId} - Progress`] : null;
       });
@@ -2161,7 +1971,10 @@ const scoreReportColumns = computed(() => {
   const isAdministrationOpen = administrationData.value?.dateClosed
     ? new Date(administrationData.value?.dateClosed) > new Date()
     : false;
-  if (userCan(Permissions.Tasks.LAUNCH) && isAdministrationOpen) {
+  // Temporarily hidden until ScoreReport routeParams.userId emits the Postgres UUID (#2083).
+  // The current Firestore assignment path supplies roarUid, which is not safe for /v1/user/:userId/runs.
+  const scoreReportLauncherUsesPostgresUserId = false;
+  if (scoreReportLauncherUsesPostgresUserId && userCan(Permissions.Tasks.LAUNCH) && isAdministrationOpen) {
     tableColumns.push({
       header: 'Launch Student',
       launcher: true,
@@ -2183,7 +1996,7 @@ const scoreReportColumns = computed(() => {
       header: 'Composite Score',
       dataType: 'text',
       sort: true,
-      hidden: false,
+      hidden: true,
       tag: viewMode.value !== 'color',
       emptyTag: viewMode.value === 'color',
       tagColor: 'compositeScore.tagColor',
@@ -2292,7 +2105,7 @@ const scoreReportColumns = computed(() => {
 
     tableColumns.push({
       field: colField,
-      header: tasksDictionary.value[taskId]?.nameSimple ?? taskId,
+      header: tasksDictionary.value[taskId]?.publicName ?? taskId,
       filterField: `scores.${taskId}.tags`,
       dataType: 'score',
       sort: true,
@@ -2399,16 +2212,23 @@ const refresh = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) refresh();
+  if (state.roarfirekit.restConfig?.()) refresh();
 });
 
 onMounted(async () => {
   TaskReport = (await import('@/components/reports/tasks/TaskReport.vue')).default;
-  if (authStore.isAuthReady) refresh();
+  if (roarfirekit.value.restConfig?.()) refresh();
 });
 </script>
 
 <style lang="scss">
+.pdf-export-host {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  pointer-events: none;
+}
+
 .overview-wrapper {
   display: flex;
   flex-direction: column;

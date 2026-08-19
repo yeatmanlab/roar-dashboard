@@ -14,7 +14,7 @@ import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk
 import { READALOUD_TASK_ID } from '@roar-platform/assessment-schema/roar-readaloud';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import { getRoarApiClient } from '@/clients/roar-api';
+import useParticipantId from '@/composables/useParticipantId';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import { version } from '@roar-platform/roar-readaloud/package.json';
 
@@ -53,10 +53,13 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.accessToken) init();
 });
 
-// launchId path throws immediately in startTask (proxy-launch not yet supported),
-// so skip the query entirely when launchId is set to avoid a pointless loading delay.
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
-  enabled: computed(() => initialized.value && !props.launchId),
+// Resolves the proxy-launch id or the launching user's own `/me` id. The student-data query
+// below is gated on it because `useUserStudentDataQuery` falls back to the Firestore
+// `authStore.roarUid` for a falsy argument, which the uuid-typed `GET /users/:id` rejects.
+const participantId = useParticipantId(props.launchId);
+
+const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(participantId, {
+  enabled: computed(() => initialized.value && Boolean(participantId.value)),
 });
 
 // The following code intercepts the back button and instead forces a refresh.
@@ -82,9 +85,11 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isAuthReady, isLoadingUserData],
-  async ([newIsAuthReady, newLoadingUserData]) => {
-    if (newIsAuthReady && !newLoadingUserData && !taskStarted.value) {
+  [isAuthReady, isLoadingUserData, participantId],
+  async ([newIsAuthReady, newLoadingUserData, newParticipantId]) => {
+    // `participantId` is part of the gate because a disabled student-data query reports
+    // `isLoading === false` — on its own it would let the task start before the id resolves.
+    if (newIsAuthReady && !newLoadingUserData && newParticipantId && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
@@ -117,64 +122,20 @@ async function startTask(selectedAdmin) {
     };
 
     // Initialize the new assessment SDK for the dashboard execution path (mirrors TaskMultichoice).
-    // Resolve the task UUID and the current user's Postgres UUID, then match the selected
-    // administration and its read-aloud variant before initializing the SDK compat facade.
     //
-    // NOTE: Until the dashboard migrates its administration queries to the new REST API,
-    // selectedAdmin.value.id is a Firestore document ID and will not match any administration
-    // in the new backend. The fallback (matching by task UUID within embedded tasks) is used
-    // until that migration is complete.
-    const roarApiClient = getRoarApiClient();
+    // The participant's administrations — each with its tasks' `variantId` embedded —
+    // are already fetched by HomeParticipant via
+    // `GET /users/:userId/administrations?embed=tasks,progress`, and the chosen one is
+    // held in the game store. The administration and variant are therefore read from
+    // `selectedAdmin` rather than re-fetched here.
+    //
+    // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
+    // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
+    const administration = selectedAdmin.value;
+    const taskVariant = (administration?.tasks ?? []).find((task) => task.taskSlug === props.taskId);
 
-    const [taskRes, meRes] = await Promise.all([
-      roarApiClient.tasks.get({ params: { taskId: props.taskId } }),
-      roarApiClient.me.get(),
-    ]);
-
-    if (taskRes.status !== 200) {
-      throw new Error(`read-aloud task not found in the ROAR backend (status ${taskRes.status}).`);
-    }
-    if (meRes.status !== 200) {
-      throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
-    }
-
-    // Proxy-launch path (launchId set) requires resolving the participant's Postgres UUID from
-    // the launch record — props.launchId is an assignment/launch ID, not a user ID. Fail loudly
-    // until this is properly implemented.
-    if (props.launchId) {
-      throw new Error(
-        'Proxy-launch path is not yet supported for Read Aloud. Resolve the participant Postgres UUID before enabling this path.',
-      );
-    }
-    const participantId = meRes.body.data.id;
-
-    // Fetch the participant's administrations from the ROAR Postgres backend.
-    const adminsRes = await roarApiClient.users.listUserAdministrations({
-      params: { userId: participantId },
-      query: { embed: 'tasks', perPage: 50 },
-    });
-
-    if (adminsRes.status !== 200) {
-      throw new Error(`Failed to fetch administrations from the ROAR backend (status ${adminsRes.status}).`);
-    }
-
-    const taskUuid = taskRes.body.data.id;
-    const backendAdmins = adminsRes.body.data.items;
-
-    // TODO: Remove this matching step once the frontend has fully integrated with the ROAR Postgres backend.
-    // Until then, match the Postgres backend admin to the selected admin from Firestore.
-    // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1839
-    const matchedAdmin =
-      backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
-      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === taskUuid));
-
-    if (!matchedAdmin) {
-      throw new Error('No administration containing the read-aloud task found in the ROAR backend.');
-    }
-
-    const taskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === taskUuid);
     if (!taskVariant) {
-      throw new Error('No read-aloud task variant found in the matched administration.');
+      throw new Error(`No ${props.taskId} task variant found in the selected administration.`);
     }
 
     initFirekitCompat(
@@ -184,12 +145,12 @@ async function startTask(selectedAdmin) {
           getToken: () => Promise.resolve(authStore.accessToken),
           refreshToken: () => authStore.forceIdTokenRefresh(),
         },
-        participant: { participantId },
+        participant: { participantId: participantId.value },
       },
       {
         variantId: taskVariant.variantId,
         taskVersion: version,
-        administrationId: matchedAdmin.id,
+        administrationId: administration.id,
         isAnonymous: false,
       },
     );

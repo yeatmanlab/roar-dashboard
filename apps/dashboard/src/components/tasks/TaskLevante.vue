@@ -13,7 +13,7 @@ import _get from 'lodash/get';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import { getRoarApiClient } from '@/clients/roar-api';
+import useParticipantId from '@/composables/useParticipantId';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import { version } from '@roar-platform/roar-levante-tasks/package.json';
 
@@ -51,10 +51,13 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.accessToken) init();
 });
 
-// launchId path throws immediately in startTask (proxy-launch not yet supported),
-// so skip the query entirely when launchId is set to avoid a pointless loading delay.
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
-  enabled: computed(() => initialized.value && !props.launchId),
+// Resolves the proxy-launch id or the launching user's own `/me` id. The student-data query
+// below is gated on it because `useUserStudentDataQuery` falls back to the Firestore
+// `authStore.roarUid` for a falsy argument, which the uuid-typed `GET /users/:id` rejects.
+const participantId = useParticipantId(props.launchId);
+
+const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(participantId, {
+  enabled: computed(() => initialized.value && Boolean(participantId.value)),
 });
 
 // The following code intercepts the back button and instead forces a refresh.
@@ -80,9 +83,11 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isAuthReady, isLoadingUserData],
-  async ([newIsAuthReady, newLoadingUserData]) => {
-    if (newIsAuthReady && !newLoadingUserData && !taskStarted.value) {
+  [isAuthReady, isLoadingUserData, participantId],
+  async ([newIsAuthReady, newLoadingUserData, newParticipantId]) => {
+    // `participantId` is part of the gate because a disabled student-data query reports
+    // `isLoading === false` — on its own it would let the task start before the id resolves.
+    if (newIsAuthReady && !newLoadingUserData && newParticipantId && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
@@ -113,54 +118,13 @@ async function startTask(selectedAdmin) {
       birthYear: userDateObj.getFullYear(),
     };
 
-    const roarApiClient = getRoarApiClient();
+    // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
+    // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
+    const administration = selectedAdmin.value;
+    const levanteTaskVariant = (administration?.tasks ?? []).find((task) => task.taskSlug === props.taskId);
 
-    const [taskRes, meRes] = await Promise.all([
-      roarApiClient.tasks.get({ params: { taskId: props.taskId } }),
-      roarApiClient.me.get(),
-    ]);
-
-    if (taskRes.status !== 200) {
-      throw new Error(`Levante task "${props.taskId}" not found in the ROAR backend (status ${taskRes.status}).`);
-    }
-    if (meRes.status !== 200) {
-      throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
-    }
-
-    // Proxy-launch path (launchId set) requires resolving the participant's Postgres UUID from
-    // the launch record — props.launchId is an assignment/launch ID, not a user ID. Passing it
-    // as participantId would silently create runs under the wrong ID. Fail loudly until this
-    // is properly implemented.
-    if (props.launchId) {
-      throw new Error(
-        'Proxy-launch path is not yet supported for Levante tasks. Resolve the participant Postgres UUID before enabling this path.',
-      );
-    }
-    const participantId = meRes.body.data.id;
-
-    const adminsRes = await roarApiClient.users.listUserAdministrations({
-      params: { userId: participantId },
-      query: { embed: 'tasks', perPage: 50 },
-    });
-
-    if (adminsRes.status !== 200) {
-      throw new Error(`Failed to fetch administrations from the ROAR backend (status ${adminsRes.status}).`);
-    }
-
-    const levanteTaskUuid = taskRes.body.data.id;
-    const backendAdmins = adminsRes.body.data.items;
-
-    const matchedAdmin =
-      backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
-      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === levanteTaskUuid));
-
-    if (!matchedAdmin) {
-      throw new Error(`No administration containing the "${props.taskId}" task found in the ROAR backend.`);
-    }
-
-    const levanteTaskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === levanteTaskUuid);
     if (!levanteTaskVariant) {
-      throw new Error(`No task variant for "${props.taskId}" found in the matched administration.`);
+      throw new Error(`No ${props.taskId} task variant found in the selected administration.`);
     }
 
     initFirekitCompat(
@@ -170,12 +134,12 @@ async function startTask(selectedAdmin) {
           getToken: () => Promise.resolve(authStore.accessToken),
           refreshToken: () => authStore.forceIdTokenRefresh(),
         },
-        participant: { participantId },
+        participant: { participantId: participantId.value },
       },
       {
         variantId: levanteTaskVariant.variantId,
         taskVersion: version,
-        administrationId: matchedAdmin.id,
+        administrationId: administration.id,
         isAnonymous: false,
       },
     );
