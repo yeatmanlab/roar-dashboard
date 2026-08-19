@@ -265,20 +265,6 @@ const routes = [
     meta: { pageTitle: 'RAN' },
   },
   {
-    path: GAME_ROUTES.CROWDING,
-    name: 'Crowding',
-    component: () => import('../components/tasks/TaskCrowding.vue'),
-    props: { taskId: 'crowding', language: 'en' },
-    meta: { pageTitle: 'Crowding' },
-  },
-  {
-    path: GAME_ROUTES.ROAV_MEP,
-    name: 'MEP',
-    component: () => import('../components/tasks/TaskMEP.vue'),
-    props: { taskId: 'roav-mep', language: 'en' },
-    meta: { pageTitle: 'MEP' },
-  },
-  {
     path: GAME_ROUTES.ROAV_MP,
     name: 'MP',
     component: () => import('../components/tasks/TaskRoav.vue'),
@@ -668,28 +654,6 @@ const routes = [
       pageTitle: 'Symbol Search-PT',
       permission: Permissions.Tasks.LAUNCH,
     },
-  },
-  {
-    path: APP_ROUTES.LAUNCH + GAME_ROUTES.CROWDING,
-    name: 'Launch Crowding',
-    component: () => import('../components/tasks/TaskCrowding.vue'),
-    props: (route) => ({
-      taskId: 'crowding',
-      language: 'en',
-      launchId: route.params.launchId,
-    }),
-    meta: { pageTitle: 'Crowding', permission: Permissions.Tasks.LAUNCH },
-  },
-  {
-    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAV_MEP,
-    name: 'Launch MEP',
-    component: () => import('../components/tasks/TaskMEP.vue'),
-    props: (route) => ({
-      taskId: 'roav-mep',
-      language: 'en',
-      launchId: route.params.launchId,
-    }),
-    meta: { pageTitle: 'MEP', permission: Permissions.Tasks.LAUNCH },
   },
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.PHONICS,
