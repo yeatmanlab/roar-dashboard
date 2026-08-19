@@ -207,7 +207,7 @@ export type SupportLevelValue = z.infer<typeof SupportLevelValueSchema>;
  * display category yet (the frontend keeps its legacy path for those).
  */
 export const ScoreDisplaySchema = z.object({
-  scoreType: z.enum(['percentile', 'standardScore', 'rawScore', 'percentCorrect']),
+  scoreType: z.enum(['percentile', 'standardScore', 'rawScore', 'percentCorrect', 'correctIncorrectDifference']),
   value: z.number().nullable(),
   label: z.string(),
   range: z.object({ min: z.number(), max: z.number() }).nullable(),
