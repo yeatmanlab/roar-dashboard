@@ -24,11 +24,11 @@ export default {
   scoreFields: {
     percentile: [
       { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.PERCENTILE },
-      { minVersion: 0, fieldName: null },
+      { minVersion: 0, fieldName: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_PERCENT_CORRECT },
     ],
     percentileDisplay: [
       { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.PERCENTILE },
-      { minVersion: 0, fieldName: null },
+      { minVersion: 0, fieldName: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_PERCENT_CORRECT },
     ],
     standardScore: [
       { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.STANDARD_SCORE },
@@ -50,10 +50,11 @@ export default {
   },
   displayCategory: [
     { minVersion: MULTICHOICE_SCORING_VERSION.V1, category: 'normed' },
-    { minVersion: 0, category: 'rawOnly' },
+    { minVersion: 0, category: 'percentCorrect' },
   ],
   displayRanges: {
     percentile: { min: 0, max: 99 },
+    percentCorrect: { min: 0, max: 100 },
     standardScore: { min: 0, max: 180 },
     rawScore: { min: 100, max: 900 },
   },

@@ -50,7 +50,12 @@ export interface RawScoreThreshold {
 /**
  * The score types a task can surface as its primary display.
  */
-export type DisplayScoreType = 'percentile' | 'standardScore' | 'rawScore' | 'percentCorrect';
+export type DisplayScoreType =
+  | 'percentile'
+  | 'standardScore'
+  | 'rawScore'
+  | 'percentCorrect'
+  | 'correctIncorrectDifference';
 
 /**
  * Per-task display descriptor — what the frontend paints without knowing
