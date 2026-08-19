@@ -28,7 +28,7 @@
             :loading="isLoadingProgress || isFetchingProgress"
             :task-scoring-versions="getScoringVersions"
             :page-limit="pageLimit"
-            :allow-filtering="true"
+            :allow-export-pdf="false"
             :reset-filters="resetFilters"
             :lazy-pre-sorting="orderBy"
             @export-selected="exportSelected"
