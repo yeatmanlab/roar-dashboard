@@ -50,7 +50,6 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { TERMS_OF_SERVICE_DOCUMENT_PATH } from '@/constants/auth';
@@ -63,11 +62,4 @@ import SignInContainer from '@/containers/SignIn/SignIn.vue';
 
 const authStore = useAuthStore();
 const { spinner: storeSpinner } = storeToRefs(authStore);
-
-onMounted(() => {
-  document.body.classList.add('page-signin');
-});
-onBeforeUnmount(() => {
-  document.body.classList.remove('page-signin');
-});
 </script>
