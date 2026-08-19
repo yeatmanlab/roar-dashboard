@@ -772,10 +772,10 @@ describe('resolveScoreFieldNames', () => {
       expect(result.rawScoreFieldNames).toEqual(['sreScore']);
     });
 
-    it('swr-es v0 returns empty arrays for normed fields (unnormed version)', () => {
+    it('swr-es v0 returns percent-correct for score fields (unnormed version)', () => {
       const result = resolveScoreFieldNames('swr-es', 3, null);
-      expect(result.percentileFieldNames).toEqual([]);
-      expect(result.percentileDisplayFieldNames).toEqual([]);
+      expect(result.percentileFieldNames).toEqual(['percentCorrect']);
+      expect(result.percentileDisplayFieldNames).toEqual(['percentCorrect']);
       expect(result.standardScoreFieldNames).toEqual([]);
       expect(result.standardScoreDisplayFieldNames).toEqual([]);
       expect(result.rawScoreFieldNames).toEqual(['roarScore']);
