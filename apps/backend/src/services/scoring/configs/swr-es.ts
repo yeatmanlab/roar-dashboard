@@ -3,8 +3,14 @@ import { SWR_SCORE_NAMES, SWR_TASK_IDS, SWR_SCORING_VERSION } from '@roar-platfo
 export default {
   taskSlugs: [SWR_TASK_IDS.ES],
   scoreFields: {
-    percentile: [{ minVersion: SWR_SCORING_VERSION.V1, fieldName: SWR_SCORE_NAMES.PERCENTILE }],
-    percentileDisplay: [{ minVersion: SWR_SCORING_VERSION.V1, fieldName: SWR_SCORE_NAMES.PERCENTILE }],
+    percentile: [
+      { minVersion: SWR_SCORING_VERSION.V1, fieldName: SWR_SCORE_NAMES.PERCENTILE },
+      { minVersion: 0, fieldName: SWR_SCORE_NAMES.PERCENT_CORRECT },
+    ],
+    percentileDisplay: [
+      { minVersion: SWR_SCORING_VERSION.V1, fieldName: SWR_SCORE_NAMES.PERCENTILE },
+      { minVersion: 0, fieldName: SWR_SCORE_NAMES.PERCENT_CORRECT },
+    ],
     standardScore: [{ minVersion: SWR_SCORING_VERSION.V1, fieldName: SWR_SCORE_NAMES.STANDARD_SCORE }],
     standardScoreDisplay: [{ minVersion: SWR_SCORING_VERSION.V1, fieldName: SWR_SCORE_NAMES.STANDARD_SCORE }],
     rawScore: [{ minVersion: 0, fieldName: SWR_SCORE_NAMES.RAW_SCORE }],
