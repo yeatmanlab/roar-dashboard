@@ -883,16 +883,25 @@ const assignmentMetadataByUserKey = computed(() => {
   }, {});
 });
 
+const hasAssignmentMetadataOverlay = computed(() => Object.keys(assignmentMetadataByUserKey.value).length > 0);
+
 const formatBackendScoreTags = (score, tagColor, assignmentProgress) => {
   let scoreFilterTags = score.optional ? ' Optional ' : ' Required ';
   scoreFilterTags += score.reliable === false ? ' Unreliable ' : ' Reliable ';
 
-  if (assignmentProgress?.completed ?? score.completed) {
+  // The scores endpoint only tells us whether a completed run exists. The
+  // Started/Assigned split comes from the assignment overlay, which is not
+  // available at district scope.
+  if (assignmentProgress) {
+    if (assignmentProgress.completed) {
+      scoreFilterTags += ' Completed ';
+    } else if (assignmentProgress.started) {
+      scoreFilterTags += ' Started ';
+    } else {
+      scoreFilterTags += ' Assigned ';
+    }
+  } else if (score.completed) {
     scoreFilterTags += ' Completed ';
-  } else if (assignmentProgress?.started) {
-    scoreFilterTags += ' Started ';
-  } else {
-    scoreFilterTags += ' Assigned ';
   }
 
   if (score.completed || score.rawScore != null || score.percentile != null || score.standardScore != null) {
@@ -933,7 +942,7 @@ const mapBackendScoreRows = (rows) => {
       );
       const percentile = score.percentile != null ? _round(score.percentile) : null;
 
-      if (score.completed) {
+      if (assignmentProgress?.completed ?? score.completed) {
         numAssessmentsCompleted += 1;
       }
 
@@ -1557,25 +1566,27 @@ const scoreReportColumns = computed(() => {
     headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
   });
 
-  tableColumns.push({
-    field: 'startDate',
-    header: 'Start Date',
-    dataType: 'date',
-    sort: true,
-    filter: false,
-    hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
-    headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
-  });
+  if (hasAssignmentMetadataOverlay.value) {
+    tableColumns.push({
+      field: 'startDate',
+      header: 'Start Date',
+      dataType: 'date',
+      sort: true,
+      filter: false,
+      hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
+      headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+    });
 
-  tableColumns.push({
-    field: 'completionDate',
-    header: 'Completion Date',
-    dataType: 'date',
-    sort: true,
-    filter: false,
-    hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
-    headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
-  });
+    tableColumns.push({
+      field: 'completionDate',
+      header: 'Completion Date',
+      dataType: 'date',
+      sort: true,
+      filter: false,
+      hidden: true, // Column is hidden by default, available via the Show/Hide Columns menu
+      headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+    });
+  }
 
   tableColumns.push({
     field: 'user.studentId',
@@ -1609,7 +1620,7 @@ const scoreReportColumns = computed(() => {
       pinned: true,
     });
   }
-  if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+  if (hasAssignmentMetadataOverlay.value && userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
     tableColumns.push({
       field:
         viewMode.value === 'raw'
