@@ -747,6 +747,12 @@ export function UserImportService({
         // it stamps end dates across four junction tables and archives the user.
         // Fails more safely: if the DB write fails, the user is under-granted (rows intact, access gone)
         // rather than unenrolled-but-still-authorized.
+        //
+        // TODO: reordering only fixes the DB-fails case — it does not make the revocation reliable.
+        // deleteTuples swallows errors (never throws), so a failed delete falls through to the DB
+        // write below, ending the enrollments while the tuples still grant access: over-granted, and
+        // reported `ok`. Same gap as the addition path in processUpdateBin; both need a throwing
+        // variant in AuthorizationService and until then rely on manually running the syncFga backfill.
         const deletionTuples = buildMembershipDeletionTuples(user.id, memberships);
         if (deletionTuples.length > 0) {
           await authorizationService.deleteTuples(deletionTuples);
