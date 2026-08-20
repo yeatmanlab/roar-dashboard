@@ -779,10 +779,15 @@ function returnColorByReliability(score, taskId, supportLevel, tagColor) {
   const engagementFlagExists = (score.engagementFlags ?? []).some((flag) =>
     includedValidityFlags[taskId]?.includes(flag),
   );
-  if (supportLevel === 'Optional') return '#a1d8e3';
-  if (supportLevel === 'Needs Extra Support' && engagementFlagExists) return '#d6b8c7';
-  if (supportLevel === 'Developing Skill' && engagementFlagExists) return '#e8dbb5';
-  if (supportLevel === 'Achieved Skill' && engagementFlagExists) return '#c0d9bd';
+  if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT && engagementFlagExists) {
+    return SCORE_SUPPORT_LEVEL_COLORS.BELOW_UNRELIABLE;
+  }
+  if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL && engagementFlagExists) {
+    return SCORE_SUPPORT_LEVEL_COLORS.SOME_UNRELIABLE;
+  }
+  if (supportLevel === SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL && engagementFlagExists) {
+    return SCORE_SUPPORT_LEVEL_COLORS.ABOVE_UNRELIABLE;
+  }
   return tagColor;
 }
 
@@ -790,7 +795,7 @@ const SUPPORT_LEVEL_DISPLAY = Object.freeze({
   achievedSkill: SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL,
   developingSkill: SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL,
   needsExtraSupport: SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT,
-  optional: 'Optional',
+  optional: SCORE_SUPPORT_SKILL_LEVELS.OPTIONAL,
 });
 
 const SUPPORT_LEVEL_COLOR = Object.freeze({
