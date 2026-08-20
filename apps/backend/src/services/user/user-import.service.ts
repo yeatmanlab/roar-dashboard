@@ -57,7 +57,10 @@ import {
  * Auth (displayName / password) when they changed.
  *
  * Authorization mirrors single-create and is applied per row: super admin, or `can_create_users` on
- * every membership target (the legacy uses the same coarse permission for all three bins).
+ * every membership target (the legacy uses the same coarse permission for all three bins). Create
+ * rows are checked against the memberships they declare; update and unenroll rows against the
+ * target user's current memberships, since the row's declared set says nothing about the
+ * requester's rights over an existing user.
  */
 
 const CLASSIFICATION = {
@@ -744,8 +747,12 @@ export function UserImportService({
    * Profile fields and membership reconciliation run in one transaction; FGA tuples are then synced
    * (written for added memberships, best-effort deleted for removed). Rostering-ended (archived) users
    * are rejected (not-found), matching the canonical single-update.
+   *
+   * Authorizes each row against the target's current memberships (like the unenroll bin), since
+   * Phase 1's check covers only the orgs the row declares.
    */
   async function processUpdateBin(
+    authContext: AuthContext,
     rows: { index: number; row: ImportUserRowInput; user: User }[],
     outcomes: ImportRowOutcome[],
   ): Promise<void> {
@@ -782,6 +789,11 @@ export function UserImportService({
         // Reconcile memberships with replace-semantics per provided entity type. Read the current
         // set first (snapshot), then update profile fields + reconcile in one transaction.
         const currentMemberships = await userRepository.getActiveMembershipsWithRoles(user.id);
+
+        // Authorize against the target's actual orgs, not the row's declared ones — the target is
+        // named by email, so Phase 1 proves nothing about the requester's rights over this user.
+        // Covers the pending removals too (a subset of these), and runs before the transaction.
+        await authorizeRow(authContext, currentMemberships);
         const desiredMemberships = row.memberships.map((m) => ({
           entityType: m.entityType,
           entityId: m.entityId,
@@ -970,7 +982,7 @@ export function UserImportService({
 
     // ── Phase 5: update bin ──────────────────────────────────────────────────────
     // Updates profile + auth fields. Membership reconciliation is deferred (see processUpdateBin).
-    await processUpdateBin(updateRows, outcomes);
+    await processUpdateBin(authContext, updateRows, outcomes);
 
     return outcomes;
   }

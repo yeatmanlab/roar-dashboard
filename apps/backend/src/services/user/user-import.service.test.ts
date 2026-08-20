@@ -12,7 +12,7 @@ import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 import { UserRole } from '../../enums/user-role.enum';
 import { UserType } from '../../enums/user-type.enum';
 import { EntityType } from '../../types/entity-type';
-import { FGA_CONDITION_ACTIVE_MEMBERSHIP } from '../authorization/fga-constants';
+import { FGA_CONDITION_ACTIVE_MEMBERSHIP, FgaRelation } from '../authorization/fga-constants';
 import { getFirebaseScryptParamsFromEnv, hashPasswordForImport } from './utils/firebase-password-hash';
 import type { FirebaseScryptParams } from './utils/firebase-password-hash';
 import type { CoreTransaction } from '../../db/clients';
@@ -959,6 +959,141 @@ describe('UserImportService.bulkImport', () => {
       expect(mockAuthz.writeTuplesOrThrow).not.toHaveBeenCalled();
       expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
       expect(results[0]!.status).toBe('ok');
+    });
+
+    describe('partial updates', () => {
+      it('writes only the name when the row carries no optional fields', async () => {
+        await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+        const updateData = mockUserRepository.update.mock.calls[0]![0].data;
+        expect(Object.keys(updateData).sort()).toEqual(['nameFirst', 'nameLast']);
+      });
+
+      it('writes a provided field without touching the omitted ones', async () => {
+        await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org', grade: '5' })]);
+
+        const updateData = mockUserRepository.update.mock.calls[0]![0].data;
+        expect(updateData).toMatchObject({ grade: '5' });
+        expect(updateData).not.toHaveProperty('dob');
+        expect(updateData).not.toHaveProperty('stateId');
+      });
+
+      it('clears a field when the row sends an explicit null', async () => {
+        await buildService().bulkImport(superAdmin, [
+          makeRow({ email: 'updatee@example.org', dob: null, grade: null }),
+        ]);
+
+        const updateData = mockUserRepository.update.mock.calls[0]![0].data;
+        expect(updateData).toMatchObject({ dob: null, grade: null });
+      });
+
+      it('omits every demographic column when the row carries no demographics', async () => {
+        await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+        const updateData = mockUserRepository.update.mock.calls[0]![0].data;
+        for (const column of ['statusEll', 'statusFrl', 'statusIep', 'gender', 'race', 'homeLanguage']) {
+          expect(updateData).not.toHaveProperty(column);
+        }
+      });
+
+      it('writes the demographic columns the row does carry', async () => {
+        await buildService().bulkImport(superAdmin, [
+          makeRow({ email: 'updatee@example.org', demographics: { gender: 'female' } }),
+        ]);
+
+        const updateData = mockUserRepository.update.mock.calls[0]![0].data;
+        expect(updateData).toMatchObject({ gender: 'female' });
+      });
+    });
+
+    describe('target-user authorization', () => {
+      // The row declares school-1 (which the requester controls); the target actually belongs to
+      // school-99. Phase 1 only sees the declared org, so the target's orgs must be checked too.
+      const targetOrgs = [{ entityType: EntityType.SCHOOL, entityId: 'school-99', role: UserRole.STUDENT }];
+
+      it("authorizes against the target's current memberships, not the row's declared ones", async () => {
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue(targetOrgs);
+
+        await buildService().bulkImport(partnerAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+        expect(mockAuthz.requirePermission).toHaveBeenCalledWith(
+          partnerAdmin.userId,
+          FgaRelation.CAN_CREATE_USERS,
+          'school:school-99',
+        );
+      });
+
+      it('fails the row when the requester has no rights over the target', async () => {
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue(targetOrgs);
+        mockAuthz.requirePermission.mockImplementation(async (_userId, _relation, object) => {
+          if (object === 'school:school-99') throw forbidden();
+        });
+
+        const results = await buildService().bulkImport(partnerAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+        expect(results[0]!).toMatchObject({
+          classification: 'updated',
+          status: 'failed',
+          error: { code: ApiErrorCode.AUTH_FORBIDDEN },
+        });
+      });
+
+      it('denies before any write, so the profile and password are left untouched', async () => {
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue(targetOrgs);
+        mockAuthz.requirePermission.mockImplementation(async (_userId, _relation, object) => {
+          if (object === 'school:school-99') throw forbidden();
+        });
+
+        await buildService().bulkImport(partnerAdmin, [
+          makeRow({ email: 'updatee@example.org', password: 'attacker-chosen' }),
+        ]);
+
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+        expect(mockUserRepository.reconcileMemberships).not.toHaveBeenCalled();
+        expect(updateUser).not.toHaveBeenCalled();
+      });
+
+      it('fails closed when the target has no active memberships to check', async () => {
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([]);
+
+        const results = await buildService().bulkImport(partnerAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+        expect(results[0]!).toMatchObject({ status: 'failed', error: { code: ApiErrorCode.AUTH_FORBIDDEN } });
+      });
+
+      it('fails only the denied row, leaving the rest of the batch to update', async () => {
+        mockUserRepository.findByEmails.mockResolvedValue([
+          existing({ id: 'user-allowed', email: 'allowed@example.org' }),
+          existing({ id: 'user-denied', email: 'denied@example.org' }),
+        ]);
+        mockUserRepository.getActiveMembershipsWithRoles.mockImplementation(async (userId) => [
+          {
+            entityType: EntityType.SCHOOL,
+            entityId: userId === 'user-denied' ? 'school-99' : 'school-1',
+            role: UserRole.STUDENT,
+          },
+        ]);
+        mockAuthz.requirePermission.mockImplementation(async (_userId, _relation, object) => {
+          if (object === 'school:school-99') throw forbidden();
+        });
+
+        const results = await buildService().bulkImport(partnerAdmin, [
+          makeRow({ email: 'allowed@example.org' }),
+          makeRow({ email: 'denied@example.org' }),
+        ]);
+
+        expect(results[0]!.status).toBe('ok');
+        expect(results[1]!).toMatchObject({ status: 'failed', error: { code: ApiErrorCode.AUTH_FORBIDDEN } });
+        expect(mockUserRepository.update).toHaveBeenCalledTimes(1);
+      });
+
+      it('allows a super admin regardless of the target’s memberships', async () => {
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue(targetOrgs);
+
+        const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+        expect(results[0]!.status).toBe('ok');
+      });
     });
   });
 });
