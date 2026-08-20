@@ -441,12 +441,16 @@ describe('UserRepository', () => {
     });
   });
 
-  describe('getOrgHierarchyParents', () => {
+  describe('resolveDeclaredEntities', () => {
+    const NO_IDS = { districts: [], schools: [], classes: [], groups: [], families: [] };
+    const UNKNOWN_ID = '00000000-0000-0000-0000-000000000000';
+
     it('resolves parent district for schools and parent school/district for classes', async () => {
-      const result = await repository.getOrgHierarchyParents(
-        [baseFixture.schoolA.id, baseFixture.schoolB.id],
-        [baseFixture.classInSchoolA.id],
-      );
+      const result = await repository.resolveDeclaredEntities({
+        ...NO_IDS,
+        schools: [baseFixture.schoolA.id, baseFixture.schoolB.id],
+        classes: [baseFixture.classInSchoolA.id],
+      });
 
       expect(result.schools.get(baseFixture.schoolA.id)).toEqual({ districtId: baseFixture.district.id });
       expect(result.schools.get(baseFixture.schoolB.id)).toEqual({ districtId: baseFixture.district.id });
@@ -456,19 +460,34 @@ describe('UserRepository', () => {
       });
     });
 
+    it('resolves districts, groups, and families as existence-only sets', async () => {
+      const result = await repository.resolveDeclaredEntities({
+        ...NO_IDS,
+        districts: [baseFixture.district.id],
+        groups: [baseFixture.group.id],
+      });
+
+      expect(result.districts.has(baseFixture.district.id)).toBe(true);
+      expect(result.groups.has(baseFixture.group.id)).toBe(true);
+    });
+
     it('resolves orgs across separate district branches independently', async () => {
-      const result = await repository.getOrgHierarchyParents([], [baseFixture.classInDistrictB.id]);
+      const result = await repository.resolveDeclaredEntities({
+        ...NO_IDS,
+        classes: [baseFixture.classInDistrictB.id],
+      });
 
       expect(result.classes.get(baseFixture.classInDistrictB.id)).toMatchObject({
         districtId: baseFixture.districtB.id,
       });
     });
 
-    it('omits a district id passed in the schools list (wrong org type)', async () => {
-      const result = await repository.getOrgHierarchyParents([baseFixture.district.id], []);
+    it('omits a district id passed in the schools list, and vice versa (wrong org type)', async () => {
+      const asSchool = await repository.resolveDeclaredEntities({ ...NO_IDS, schools: [baseFixture.district.id] });
+      expect(asSchool.schools.size).toBe(0);
 
-      expect(result.schools.has(baseFixture.district.id)).toBe(false);
-      expect(result.schools.size).toBe(0);
+      const asDistrict = await repository.resolveDeclaredEntities({ ...NO_IDS, districts: [baseFixture.schoolA.id] });
+      expect(asDistrict.districts.size).toBe(0);
     });
 
     it('omits a rostered-out school', async () => {
@@ -478,7 +497,7 @@ describe('UserRepository', () => {
         rosteringEnded: new Date(),
       });
 
-      const result = await repository.getOrgHierarchyParents([school.id], []);
+      const result = await repository.resolveDeclaredEntities({ ...NO_IDS, schools: [school.id] });
 
       expect(result.schools.has(school.id)).toBe(false);
     });
@@ -490,22 +509,47 @@ describe('UserRepository', () => {
         rosteringEnded: new Date(),
       });
 
-      const result = await repository.getOrgHierarchyParents([], [cls.id]);
+      const result = await repository.resolveDeclaredEntities({ ...NO_IDS, classes: [cls.id] });
 
       expect(result.classes.has(cls.id)).toBe(false);
     });
 
-    it('omits unknown ids and returns empty maps when given no ids', async () => {
-      const unknown = await repository.getOrgHierarchyParents(
-        ['00000000-0000-0000-0000-000000000000'],
-        ['00000000-0000-0000-0000-000000000000'],
-      );
+    it('omits a rostered-out group', async () => {
+      const group = await GroupFactory.create({ rosteringEnded: new Date() });
+
+      const result = await repository.resolveDeclaredEntities({ ...NO_IDS, groups: [group.id] });
+
+      expect(result.groups.has(group.id)).toBe(false);
+    });
+
+    it('omits a rostered-out family', async () => {
+      const family = await FamilyFactory.create({ rosteringEnded: new Date() });
+
+      const result = await repository.resolveDeclaredEntities({ ...NO_IDS, families: [family.id] });
+
+      expect(result.families.has(family.id)).toBe(false);
+    });
+
+    it('omits unknown ids and returns empty results when given no ids', async () => {
+      const unknown = await repository.resolveDeclaredEntities({
+        districts: [UNKNOWN_ID],
+        schools: [UNKNOWN_ID],
+        classes: [UNKNOWN_ID],
+        groups: [UNKNOWN_ID],
+        families: [UNKNOWN_ID],
+      });
+      expect(unknown.districts.size).toBe(0);
       expect(unknown.schools.size).toBe(0);
       expect(unknown.classes.size).toBe(0);
+      expect(unknown.groups.size).toBe(0);
+      expect(unknown.families.size).toBe(0);
 
-      const empty = await repository.getOrgHierarchyParents([], []);
+      const empty = await repository.resolveDeclaredEntities(NO_IDS);
+      expect(empty.districts.size).toBe(0);
       expect(empty.schools.size).toBe(0);
       expect(empty.classes.size).toBe(0);
+      expect(empty.groups.size).toBe(0);
+      expect(empty.families.size).toBe(0);
     });
   });
 

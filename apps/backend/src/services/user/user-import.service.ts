@@ -139,8 +139,8 @@ function preRoutingClassification(row: ImportUserRowInput): Classification {
   return row.unenroll ? CLASSIFICATION.UNENROLLED : CLASSIFICATION.CREATED;
 }
 
-/** Resolved parentage for the schools and classes declared across a batch. */
-type OrgHierarchyParents = Awaited<ReturnType<UserRepository['getOrgHierarchyParents']>>;
+/** The active entities behind the membership IDs declared across a batch. */
+type DeclaredEntities = Awaited<ReturnType<UserRepository['resolveDeclaredEntities']>>;
 
 /**
  * Per-request memo for the repeated lookups in `authorizeRow`. Created per `bulkImport` call, never
@@ -170,10 +170,11 @@ function unresolvedEntity(context: Record<string, unknown>): ApiError {
 }
 
 /**
- * Verify that a row's declared orgs are mutually consistent: each declared school sits under a
- * declared district, and each declared class sits under a declared school and district. FGA
- * authorizes each membership independently, so this validation is required. Unresolved IDs (missing, wrong
- * org type, rostered out) fail here too, since they're absent from `parents`.
+ * Verify that a row's declared memberships reference live entities, and that the orgs among them
+ * are mutually consistent: each declared school sits under a declared district, and each declared
+ * class sits under a declared school and district. FGA authorizes each membership independently and
+ * the FK constraints only require each entity to exist, so neither catches a mismatch — and neither
+ * catches a rostered-out entity at all, since its row is still present.
  *
  * Only pairs the row actually declares are compared, and declared orgs act as an allowlist — so a
  * class-only row passes, as does a row naming two schools and a class in either one.
@@ -185,16 +186,28 @@ function unresolvedEntity(context: Record<string, unknown>): ApiError {
  * `platform_admin` (see the `district` type in `packages/authz/authorization-model.fga`).
  *
  * @param row - The import row to validate.
- * @param parents - Batch-resolved parentage from `getOrgHierarchyParents`.
- * @throws {ApiError} UNPROCESSABLE_ENTITY if a declared org is unresolved or inconsistent.
+ * @param declared - Batch-resolved entities from `resolveDeclaredEntities`.
+ * @throws {ApiError} UNPROCESSABLE_ENTITY if a declared entity is unresolved or inconsistent.
  * @throws {ApiError} INTERNAL_SERVER_ERROR if a resolved school has no parent district.
  */
-function validateRowHierarchy(row: ImportUserRowInput, parents: OrgHierarchyParents): void {
+function validateRowOrgs(row: ImportUserRowInput, declared: DeclaredEntities): void {
   const districts = declaredIds(row, EntityType.DISTRICT);
   const schools = declaredIds(row, EntityType.SCHOOL);
 
+  // Existence-only types: nothing to compare a parent against, but a missing or rostered-out entity
+  // would otherwise reach the FK constraint (or, for a rostered-out one, succeed outright).
+  for (const districtId of districts) {
+    if (!declared.districts.has(districtId)) throw unresolvedEntity({ districtId });
+  }
+  for (const groupId of declaredIds(row, EntityType.GROUP)) {
+    if (!declared.groups.has(groupId)) throw unresolvedEntity({ groupId });
+  }
+  for (const familyId of declaredIds(row, EntityType.FAMILY)) {
+    if (!declared.families.has(familyId)) throw unresolvedEntity({ familyId });
+  }
+
   for (const schoolId of schools) {
-    const school = parents.schools.get(schoolId);
+    const school = declared.schools.get(schoolId);
     if (!school) throw unresolvedEntity({ schoolId });
 
     // Every school is created with a parent district (school.service.ts), but `orgs.parentOrgId`
@@ -215,7 +228,7 @@ function validateRowHierarchy(row: ImportUserRowInput, parents: OrgHierarchyPare
   }
 
   for (const classId of declaredIds(row, EntityType.CLASS)) {
-    const declaredClass = parents.classes.get(classId);
+    const declaredClass = declared.classes.get(classId);
     if (!declaredClass) throw unresolvedEntity({ classId });
 
     if (schools.size > 0 && !schools.has(declaredClass.schoolId)) {
@@ -902,28 +915,40 @@ export function UserImportService({
     const outcomes: ImportRowOutcome[] = new Array(rows.length);
     const caches: AuthorizeCaches = { permissions: new Map(), classParents: new Map() };
 
-    // ── Phase 0: batch-resolve declared org parentage (one round-trip) ───────────
+    // ── Phase 0: batch-resolve the declared membership entities (one round-trip) ─
     // A CSV batch typically names the same district/school on every row, so the distinct ID set is
     // O(1) where the row count is O(100). Resolving it once here keeps Phase 1 free of per-row
     // queries (performance-avoid-quadratic). Unenroll rows are excluded: they act on the target's
     // actual memberships, not whatever the row declares.
-    const declaredSchoolIds = new Set<string>();
-    const declaredClassIds = new Set<string>();
+    const declared: Record<EntityType, Set<string>> = {
+      [EntityType.DISTRICT]: new Set(),
+      [EntityType.SCHOOL]: new Set(),
+      [EntityType.CLASS]: new Set(),
+      [EntityType.GROUP]: new Set(),
+      [EntityType.FAMILY]: new Set(),
+    };
     for (const row of rows) {
       if (row.unenroll) continue;
-      for (const id of declaredIds(row, EntityType.SCHOOL)) declaredSchoolIds.add(id);
-      for (const id of declaredIds(row, EntityType.CLASS)) declaredClassIds.add(id);
+      for (const membership of row.memberships) {
+        declared[membership.entityType].add(membership.entityId);
+      }
     }
 
-    let hierarchyParents: OrgHierarchyParents;
+    let declaredEntities: DeclaredEntities;
     try {
-      hierarchyParents = await userRepository.getOrgHierarchyParents([...declaredSchoolIds], [...declaredClassIds]);
+      declaredEntities = await userRepository.resolveDeclaredEntities({
+        districts: [...declared[EntityType.DISTRICT]],
+        schools: [...declared[EntityType.SCHOOL]],
+        classes: [...declared[EntityType.CLASS]],
+        groups: [...declared[EntityType.GROUP]],
+        families: [...declared[EntityType.FAMILY]],
+      });
     } catch (error) {
-      // Without the parentage map no row can be validated. Failing every row is the safe response —
-      // skipping validation would silently persist the inconsistent memberships this guards against.
+      // Without the resolved entities no row can be validated. Failing every row is the safe
+      // response — skipping validation would silently persist the memberships this guards against.
       logger.error(
-        { err: error, context: { schools: declaredSchoolIds.size, classes: declaredClassIds.size } },
-        'Failed to resolve declared org hierarchy during import',
+        { err: error, context: { schools: declared[EntityType.SCHOOL].size } },
+        'Failed to resolve declared membership entities during import',
       );
       for (let index = 0; index < rows.length; index++) {
         outcomes[index] = failed(
@@ -936,9 +961,9 @@ export function UserImportService({
       return outcomes;
     }
 
-    // ── Phase 1: per-row hierarchy validation + authorization (before any external writes) ──────
-    // Hierarchy runs first: it's the cheaper check, and an inconsistent row is a 422 the operator
-    // can act on rather than a 403 that reads as a permissions problem.
+    // ── Phase 1: per-row org validation + authorization (before any external writes) ────────────
+    // Validation runs first: it's the cheaper check, and an invalid row is a 422 the operator can
+    // act on rather than a 403 that reads as a permissions problem.
     // Unenroll rows are authorized later, against the target user's actual current memberships
     // (see processUnenrollBin) — `row.memberships` isn't what an unenroll acts on, and may be empty.
     const authorized: { index: number; row: ImportUserRowInput }[] = [];
@@ -946,7 +971,7 @@ export function UserImportService({
       const row = rows[index]!;
       try {
         if (!row.unenroll) {
-          validateRowHierarchy(row, hierarchyParents);
+          validateRowOrgs(row, declaredEntities);
           await authorizeRow(authContext, row.memberships, caches);
         }
         authorized.push({ index, row });

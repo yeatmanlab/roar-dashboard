@@ -4,7 +4,7 @@ import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup, NewUserFami
 import { EntityType } from '../types/entity-type';
 import type { UserMembershipDetail } from '../types/user';
 import type { UserFamilyRole } from '../enums/user-family-role.enum';
-import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes, groups } from '../db/schema';
+import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes, groups, families } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type { CoreTransaction } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
@@ -261,52 +261,83 @@ export class UserRepository extends BaseRepository<User, typeof users> {
   }
 
   /**
-   * Resolve the parentage of the given schools and classes in one round-trip.
+   * Resolve the active entities behind a set of declared membership IDs, in one round-trip.
    *
-   * Powers bulk-import hierarchy validation, where a batch typically declares the same
-   * district/school across every row — so the distinct ID set is O(1) where the row count is
-   * O(100). Callers pass the deduplicated IDs for the whole batch and validate each row against
-   * the returned maps in memory rather than querying per row.
+   * Powers bulk-import validation, where a batch typically declares the same handful of orgs across
+   * every row — so the distinct ID set is O(1) where the row count is O(100). Callers pass the
+   * deduplicated IDs for the whole batch and validate each row against the result in memory rather
+   * than querying per row.
    *
-   * Absence from a returned map means "doesn't exist, is the wrong org type, or is rostered out",
-   * with no distinction between them — the same contract as {@link findClassParentSchool}, and for
-   * the same reason: callers return 422 either way, and distinguishing them would disclose which
+   * Absence from a returned set or map means "doesn't exist, is the wrong org type, or is rostered
+   * out", with no distinction between them — the same contract as {@link findClassParentSchool}, and
+   * for the same reason: callers return 422 either way, and distinguishing them would disclose which
    * IDs exist.
    *
-   * The `orgType` filter on the schools query is load-bearing: it makes a district UUID passed in
-   * a school slot a miss rather than a false match.
+   * Schools and classes additionally carry their parents so callers can check containment. Districts,
+   * groups, and families are existence-only — neither has a parent an import row can contradict.
    *
-   * @param schoolIds - Deduplicated school org IDs to resolve. Pass an empty array to skip.
-   * @param classIds - Deduplicated class IDs to resolve. Pass an empty array to skip.
-   * @returns Maps keyed by ID. `schools` carries the parent district (nullable — `parentOrgId` has
-   *   no NOT NULL backing it, so a parentless school is possible and the caller must handle it).
-   *   `classes` carries the parent school and district, both non-null in the schema.
+   * The `orgType` filters are load-bearing: they make a district UUID passed in a school slot (or
+   * vice versa) a miss rather than a false match.
+   *
+   * @param ids - Deduplicated IDs per entity type. Empty arrays skip their query entirely.
+   * @returns Sets for existence-only types; maps carrying parentage for schools and classes.
+   *   `schools.districtId` is nullable — `orgs.parentOrgId` has no NOT NULL backing it, so a
+   *   parentless school is possible and the caller must handle it.
    */
-  async getOrgHierarchyParents(
-    schoolIds: string[],
-    classIds: string[],
-  ): Promise<{
+  async resolveDeclaredEntities(ids: {
+    districts: string[];
+    schools: string[];
+    classes: string[];
+    groups: string[];
+    families: string[];
+  }): Promise<{
+    districts: Set<string>;
     schools: Map<string, { districtId: string | null }>;
     classes: Map<string, { schoolId: string; districtId: string }>;
+    groups: Set<string>;
+    families: Set<string>;
   }> {
-    const [schoolRows, classRows] = await Promise.all([
-      schoolIds.length > 0
+    const [districtRows, schoolRows, classRows, groupRows, familyRows] = await Promise.all([
+      ids.districts.length > 0
+        ? this.db
+            .select({ id: orgs.id })
+            .from(orgs)
+            .where(
+              and(inArray(orgs.id, ids.districts), eq(orgs.orgType, OrgType.DISTRICT), isNull(orgs.rosteringEnded)),
+            )
+        : Promise.resolve([]),
+      ids.schools.length > 0
         ? this.db
             .select({ id: orgs.id, districtId: orgs.parentOrgId })
             .from(orgs)
-            .where(and(inArray(orgs.id, schoolIds), eq(orgs.orgType, OrgType.SCHOOL), isNull(orgs.rosteringEnded)))
+            .where(and(inArray(orgs.id, ids.schools), eq(orgs.orgType, OrgType.SCHOOL), isNull(orgs.rosteringEnded)))
         : Promise.resolve([]),
-      classIds.length > 0
+      ids.classes.length > 0
         ? this.db
             .select({ id: classes.id, schoolId: classes.schoolId, districtId: classes.districtId })
             .from(classes)
-            .where(and(inArray(classes.id, classIds), isNull(classes.rosteringEnded)))
+            .where(and(inArray(classes.id, ids.classes), isNull(classes.rosteringEnded)))
+        : Promise.resolve([]),
+      ids.groups.length > 0
+        ? this.db
+            .select({ id: groups.id })
+            .from(groups)
+            .where(and(inArray(groups.id, ids.groups), isNull(groups.rosteringEnded)))
+        : Promise.resolve([]),
+      ids.families.length > 0
+        ? this.db
+            .select({ id: families.id })
+            .from(families)
+            .where(and(inArray(families.id, ids.families), isNull(families.rosteringEnded)))
         : Promise.resolve([]),
     ]);
 
     return {
+      districts: new Set(districtRows.map((row) => row.id)),
       schools: new Map(schoolRows.map((row) => [row.id, { districtId: row.districtId }])),
       classes: new Map(classRows.map((row) => [row.id, { schoolId: row.schoolId, districtId: row.districtId }])),
+      groups: new Set(groupRows.map((row) => row.id)),
+      families: new Set(familyRows.map((row) => row.id)),
     };
   }
 
