@@ -33,7 +33,6 @@ import { EntityType } from '../types/entity-type';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
-import { FOUNDATIONAL_COMPOSITE_SLUGS } from '../constants/foundational-composite';
 import { COMPOSITE_RUN_TASK_ID } from '../constants/run';
 import { SCORE_DOMAIN, SCORE_NAME } from '../constants/run-scores';
 import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
@@ -106,8 +105,6 @@ export interface ReportTaskMeta {
   /** optional_if condition — null means required for all assigned students */
   conditionsRequirements: Condition | null;
 }
-
-const FOUNDATIONAL_COMPOSITE_TASK_SLUGS: ReadonlySet<string> = new Set(FOUNDATIONAL_COMPOSITE_SLUGS);
 
 /**
  * Raw progress data for a single student from the database.
@@ -2136,6 +2133,7 @@ export class ReportRepository {
    * @param sortField - Optional dynamic score-field sort
    * @param scoreFieldFilters - Optional dynamic score-field filters
    * @param scoringRulesByVariant - Resolved scoring rules per variant for supportLevel CASE generation
+   * @param includeFoundationalCompositeScores - Whether the unfiltered administration includes a foundational task
    * @returns Paginated student rows with run metadata and score values
    */
   async getStudentScores(
@@ -2149,6 +2147,7 @@ export class ReportRepository {
     scoreFieldFilters?: StudentScoresFieldFilter[],
     scoringRulesByVariant?: Map<string, ResolvedScoringRules>,
     includeUnenrolledStudents = false,
+    includeFoundationalCompositeScores = false,
   ): Promise<PaginatedResult<StudentScoreQueryRow>> {
     const { page, perPage } = options;
     const offset = (page - 1) * perPage;
@@ -2438,9 +2437,7 @@ export class ReportRepository {
       }
     }
 
-    const hasFoundationalCompositeTask = taskMetas.some((task) => FOUNDATIONAL_COMPOSITE_TASK_SLUGS.has(task.taskSlug));
-
-    if (hasFoundationalCompositeTask) {
+    if (includeFoundationalCompositeScores) {
       const compositeScoreRows = await this.db
         .select({
           userId: fdwRuns.userId,

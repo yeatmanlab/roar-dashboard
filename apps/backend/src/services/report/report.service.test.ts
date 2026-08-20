@@ -2939,10 +2939,28 @@ describe('ReportService', () => {
         ],
       });
 
-      // After #1792, getStudentScores args are: administrationId, scope, admin, taskMetas, options, filterCondition, sortField, scoreFieldFilters, scoringRulesByVariant, includeUnenrolledStudents
+      // getStudentScores args are: administrationId, scope, admin, taskMetas, options, filterCondition, sortField,
+      // scoreFieldFilters, scoringRulesByVariant, includeUnenrolledStudents, includeFoundationalCompositeScores.
       const taskMetasArg = mockReportRepository.getStudentScores.mock.calls[0]![3];
       const seenIds = new Set(taskMetasArg.map((t) => t.taskId));
       expect(seenIds).toEqual(new Set([TASK_ID_1, TASK_ID_3]));
+    });
+
+    it('keeps foundational composite enabled when taskId filter excludes foundational tasks', async () => {
+      setupDefaultStudentScoresMocks();
+
+      const service = createService();
+      await service.listStudentScores(superAdminAuth, testAdministrationId, {
+        ...baseQuery,
+        filter: [{ field: 'taskId', operator: 'in', value: TASK_ID_4 }],
+      });
+
+      const callArgs = mockReportRepository.getStudentScores.mock.calls[0]!;
+      const taskMetasArg = callArgs[3];
+      const includeFoundationalCompositeScoresArg = callArgs[10];
+
+      expect(taskMetasArg.map((task) => task.taskId)).toEqual([TASK_ID_4]);
+      expect(includeFoundationalCompositeScoresArg).toBe(true);
     });
 
     it('returns 400 when taskId filter references a UUID not assigned to the administration', async () => {

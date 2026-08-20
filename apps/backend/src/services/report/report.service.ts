@@ -52,6 +52,7 @@ import {
   SortOrder,
 } from '@roar-platform/api-contract';
 import { PROGRESS_STATUS_PRIORITY } from '../../constants/progress-status';
+import { FOUNDATIONAL_COMPOSITE_SLUGS } from '../../constants/foundational-composite';
 import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -119,6 +120,8 @@ const PROGRESS_SORT_COLUMNS: Record<ProgressStudentsSortField, Column> = {
   'user.username': users.username,
   'user.grade': users.grade,
 };
+
+const FOUNDATIONAL_COMPOSITE_TASK_SLUGS: ReadonlySet<string> = new Set(FOUNDATIONAL_COMPOSITE_SLUGS);
 
 /** Map filter field strings to Drizzle column references for progress students. */
 const PROGRESS_FILTER_FIELDS: Record<ProgressStudentsFilterField, PgColumn> = {
@@ -948,6 +951,9 @@ export function ReportService({
       // 2. Get task metadata and apply taskId filter (multi-entry union,
       //    validates unknowns as 400 — see `applyTaskIdFilter`).
       const allTaskMetas = await reportRepository.getTaskMetadata(administrationId);
+      const includeFoundationalCompositeScores = allTaskMetas.some((task) =>
+        FOUNDATIONAL_COMPOSITE_TASK_SLUGS.has(task.taskSlug),
+      );
       const taskMetas = applyTaskIdFilter(allTaskMetas, filter);
 
       // 3. Build per-task primary variant map (lowest-orderIndex variant of each task)
@@ -1046,6 +1052,7 @@ export function ReportService({
         scoreFieldFilters,
         scoringRulesByVariant,
         includeUnenrolledStudents,
+        includeFoundationalCompositeScores,
       );
 
       // 11. Build response — dedupe per taskId, classify, set optional/completed
