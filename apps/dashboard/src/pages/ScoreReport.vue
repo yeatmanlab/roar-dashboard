@@ -400,6 +400,7 @@ import {
   previouslyUnnormedTasks,
   getTagColor,
   PA_SUBTASK_I18N_KEYS,
+  getFoundationalCompositeSupportLevel,
 } from '@/helpers/reports';
 import {
   SCORE_SUPPORT_LEVEL_COLORS,
@@ -1208,6 +1209,50 @@ const applyBackendSpecialFields = (scoreRow, taskId, userId) => {
   }
 };
 
+const mapBackendFoundationalCompositeScore = (user, foundationalComposite) => {
+  if (!foundationalComposite) return null;
+
+  const compositeRawScore = foundationalComposite.roarScore ?? null;
+  const compositeStandard = foundationalComposite.standardScore ?? null;
+  let compositePercentile = foundationalComposite.percentile;
+
+  if (compositePercentile != null && typeof compositePercentile !== 'string') {
+    compositePercentile = _round(compositePercentile);
+  } else if (compositePercentile == null) {
+    compositePercentile = null;
+  }
+
+  const { support_level: compositeSupportLevel, tag_color: compositeTagColor } = getFoundationalCompositeSupportLevel(
+    user.grade,
+    foundationalComposite,
+  );
+
+  return {
+    rawScore: compositeRawScore,
+    percentile: compositePercentile,
+    standardScore: compositeStandard,
+    displayValue: compositePercentile ?? compositeRawScore,
+    supportLevel: compositeSupportLevel,
+    tagColor: compositeTagColor,
+  };
+};
+
+const buildBackendFoundationalCompositeRun = (user, compositeScore, foundationalComposite) => {
+  if (!compositeScore) return null;
+
+  return {
+    grade: getGrade(user.grade),
+    scores: {
+      support_level: compositeScore.supportLevel,
+      stdPercentile: foundationalComposite?.percentile ?? null,
+      rawScore: compositeScore.rawScore,
+    },
+    taskId: 'compositeFoundational',
+    user: { grade: user.grade, schoolName: user.schoolName ?? '0 Unknown School' },
+    tag_color: compositeScore.tagColor,
+  };
+};
+
 const formatBackendScoreTags = (score, tagColor, progressEntry) => {
   let scoreFilterTags = score.optional ? ' Optional ' : ' Required ';
   scoreFilterTags += score.reliable === false ? ' Unreliable ' : ' Reliable ';
@@ -1240,12 +1285,15 @@ const formatBackendScoreTags = (score, tagColor, progressEntry) => {
 const mapBackendScoreRows = (rows) => {
   const assignmentTableDataAcc = [];
   const runsByTaskIdAcc = {};
+  const compositeFoundationalRunsAcc = [];
 
-  for (const { user, scores } of rows) {
+  for (const { user, scores, foundationalComposite } of rows) {
     const firstNameOrUsername = user.firstName ?? user.username ?? 'user';
     const currRowScores = {};
     let numAssessmentsCompleted = 0;
     const progressMetadata = backendProgressByUserId.value[user.userId];
+    const compositeScore = mapBackendFoundationalCompositeScore(user, foundationalComposite);
+    const compositeRun = buildBackendFoundationalCompositeRun(user, compositeScore, foundationalComposite);
 
     for (const [scoreTaskId, score] of Object.entries(scores ?? {})) {
       const taskId = scoreTaskSlugById.value[scoreTaskId] ?? scoreTaskId;
@@ -1300,6 +1348,10 @@ const mapBackendScoreRows = (rows) => {
       }
     }
 
+    if (compositeRun) {
+      compositeFoundationalRunsAcc.push(compositeRun);
+    }
+
     assignmentTableDataAcc.push({
       user: {
         username: user.username,
@@ -1323,7 +1375,7 @@ const mapBackendScoreRows = (rows) => {
         orgType: props.orgType,
         userId: user.userId,
       },
-      compositeScore: null,
+      compositeScore,
       startDate: progressMetadata?.startDate ?? null,
       completionDate: progressMetadata?.completionDate ?? null,
       scores: currRowScores,
@@ -1352,7 +1404,7 @@ const mapBackendScoreRows = (rows) => {
   return {
     runsByTaskId: _pickBy(runsByTaskIdAcc, (scores, taskId) => Object.keys(taskInfoById).includes(taskId)),
     assignmentTableData: assignmentTableDataAcc,
-    compositeFoundationalRuns: [],
+    compositeFoundationalRuns: compositeFoundationalRunsAcc,
   };
 };
 
@@ -1910,6 +1962,24 @@ const scoreReportColumns = computed(() => {
       routeIcon: 'pi pi-arrow-right border-none text-primary hover:text-white',
       sort: false,
       pinned: true,
+    });
+  }
+  if (userCan(Permissions.Reports.Score.READ_COMPOSITE)) {
+    tableColumns.push({
+      field:
+        viewMode.value === 'raw'
+          ? 'compositeScore.rawScore'
+          : viewMode.value === 'standard'
+            ? 'compositeScore.standardScore'
+            : 'compositeScore.displayValue',
+      header: 'Composite Score',
+      dataType: 'text',
+      sort: true,
+      hidden: true,
+      tag: viewMode.value !== 'color',
+      emptyTag: viewMode.value === 'color',
+      tagColor: 'compositeScore.tagColor',
+      headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
     });
   }
   // Apply a border-right to the last column currently in the tableColumns object

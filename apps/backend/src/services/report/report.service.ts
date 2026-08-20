@@ -25,6 +25,7 @@ import type {
   StudentScoresResult,
   ServiceStudentScoreRow,
   ServiceStudentScoreEntry,
+  ServiceFoundationalCompositeScore,
   ServiceSupportLevelValue,
   IndividualStudentReportInput,
   IndividualStudentReportResult,
@@ -109,6 +110,7 @@ import { getGradeAsNumber, getGradesInRange } from '../../utils/get-grade-as-num
 import { conditionToSql } from '../../utils/condition-to-sql';
 import type { Condition, ConditionEvaluationUser } from '../../types/condition';
 import type { AuthContext } from '../../types/auth-context';
+import { SCORE_NAME } from '../../constants/run-scores';
 
 /** Map sortBy field strings to Drizzle column references for progress students. */
 const PROGRESS_SORT_COLUMNS: Record<ProgressStudentsSortField, Column> = {
@@ -3160,6 +3162,25 @@ function assembleStudentScoreRow(
       schoolName: scopeType === EntityType.DISTRICT ? (schoolNamesByUser?.get(row.userId) ?? null) : null,
     },
     scores,
+    foundationalComposite: buildFoundationalCompositeScore(row.foundationalCompositeScores),
+  };
+}
+
+function buildFoundationalCompositeScore(scoreMap: Map<string, string>): ServiceFoundationalCompositeScore | null {
+  const thetaEstimate = parseScoreValue(scoreMap.get(SCORE_NAME.THETA_ESTIMATE));
+  const roarScore = parseScoreValue(scoreMap.get(SCORE_NAME.ROAR_SCORE));
+  const percentile = parseScoreValue(scoreMap.get(SCORE_NAME.PERCENTILE));
+  const standardScore = parseScoreValue(scoreMap.get(SCORE_NAME.STANDARD_SCORE));
+
+  if (thetaEstimate === null && roarScore === null && percentile === null && standardScore === null) {
+    return null;
+  }
+
+  return {
+    thetaEstimate,
+    roarScore,
+    percentile,
+    standardScore,
   };
 }
 

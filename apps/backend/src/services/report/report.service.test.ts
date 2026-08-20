@@ -2789,6 +2789,7 @@ describe('ReportService', () => {
         homeLanguage: null,
         runs: new Map(),
         scores: new Map(),
+        foundationalCompositeScores: new Map(),
         ...overrides,
       };
     }
@@ -3142,6 +3143,30 @@ describe('ReportService', () => {
       const entry = result.items[0]!.scores[TASK_ID_1]!;
       expect(entry.percentile).toBe(91);
       expect(entry.rawScore).toBe(512);
+    });
+
+    it('maps foundational composite run scores onto the student row', async () => {
+      const row = buildQueryRow({
+        userId: 'student-1',
+        grade: '3',
+        foundationalCompositeScores: new Map([
+          ['thetaEstimate', '1.234'],
+          ['roarScore', '488.6'],
+          ['percentile', '>99'],
+          ['standardScore', '112.4'],
+        ]),
+      });
+      setupDefaultStudentScoresMocks([row], 1);
+
+      const service = createService();
+      const result = await service.listStudentScores(superAdminAuth, testAdministrationId, baseQuery);
+
+      expect(result.items[0]!.foundationalComposite).toEqual({
+        thetaEstimate: 1.234,
+        roarScore: 488.6,
+        percentile: 99,
+        standardScore: 112.4,
+      });
     });
 
     it('uses first variant with completed scores in multi-variant tasks (per-row dedup)', async () => {
