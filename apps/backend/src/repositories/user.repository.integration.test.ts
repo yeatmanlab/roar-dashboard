@@ -345,7 +345,6 @@ describe('UserRepository', () => {
             [{ orgId: baseFixture.district.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
             [],
             [],
-            [],
             tx,
           ),
       });
@@ -379,7 +378,6 @@ describe('UserRepository', () => {
             [],
             [{ classId: baseFixture.classInSchoolA.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
             [{ groupId: group.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
-            [],
             tx,
           ),
       });
@@ -394,10 +392,9 @@ describe('UserRepository', () => {
       expect(groupMembership).toBeDefined();
     });
 
-    it('creates user row with org, class, group, and family memberships atomically', async () => {
+    it('creates user row with org, class, and group memberships atomically', async () => {
       const email = `create-all-types-${Date.now()}@example.com`;
       const group = await GroupFactory.create();
-      const family = await FamilyFactory.create();
 
       const result = await repository.runTransaction({
         fn: (tx) =>
@@ -413,7 +410,6 @@ describe('UserRepository', () => {
             [{ orgId: baseFixture.district.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
             [{ classId: baseFixture.classInSchoolA.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
             [{ groupId: group.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
-            [{ familyId: family.id, role: 'child', joinedOn: enrollmentStart, leftOn: null }],
             tx,
           ),
       });
@@ -425,7 +421,8 @@ describe('UserRepository', () => {
       expect(entityTypes.has('district')).toBe(true);
       expect(entityTypes.has('class')).toBe(true);
       expect(entityTypes.has('group')).toBe(true);
-      expect(entityTypes.has('family')).toBe(true);
+      // Family membership is written by FamilyRepository, never by this method.
+      expect(entityTypes.has('family')).toBe(false);
     });
 
     it('rolls back the entire transaction when a membership entityId is invalid', async () => {
@@ -444,7 +441,6 @@ describe('UserRepository', () => {
                 userType: UserType.STUDENT,
               },
               [{ orgId: '00000000-0000-0000-0000-000000000099', role: UserRole.STUDENT as UserRole, enrollmentStart }],
-              [],
               [],
               [],
               tx,
@@ -477,7 +473,6 @@ describe('UserRepository', () => {
                 nameLast: 'Email',
                 userType: UserType.STUDENT,
               },
-              [],
               [],
               [],
               [],
