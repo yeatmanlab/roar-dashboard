@@ -6,8 +6,8 @@
 # the repository-root .firebaserc is gitignored. Run this to use the Firebase CLI locally
 # (firebase deploy --only hosting:roar-pa, firebase hosting:channel:create, ...).
 #
-# Site IDs are <project-id>-<suffix>; assessment-hosting.json holds only the suffixes, so
-# the project IDs are passed in rather than committed.
+# Site IDs are <project-id>-<suffix>; apps/assessments/hosting-targets.json holds only
+# the suffixes, so the project IDs are passed in rather than committed.
 # –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
 
 set -euo pipefail
