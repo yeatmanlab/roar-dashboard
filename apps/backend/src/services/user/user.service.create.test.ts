@@ -34,7 +34,6 @@ import { createMockClassRepository } from '../../test-support/repositories/class
 import { createMockRosterProviderIdRepository } from '../../test-support/repositories/roster-provider-id.repository';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { GroupFactory } from '../../test-support/factories/group.factory';
-import { FamilyFactory } from '../../test-support/factories/family.factory';
 import { createMockAuthorizationService } from '../../test-support/services/authorization.service';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { EntityType } from '../../types/entity-type';
@@ -42,7 +41,6 @@ import { UserRole } from '../../enums/user-role.enum';
 import { UserType } from '../../enums/user-type.enum';
 import { FgaRelation } from '../authorization/fga-constants';
 import { logger } from '../../logger';
-import { UserFamilyRole } from '../../enums/user-family-role.enum';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -139,7 +137,6 @@ describe('UserService.create', () => {
     mockClassRepo.getDistinctRootOrgIds.mockResolvedValue([{ id: districtId }]);
     mockSchoolRepo.getDistinctRootOrgIds.mockResolvedValue([{ id: districtId }]);
     mockGroupRepo.getActiveById.mockResolvedValue(GroupFactory.build());
-    mockFamilyRepo.getActiveById.mockResolvedValue(FamilyFactory.build());
     mockUserRepo.createWithMemberships.mockResolvedValue({ id: newUserId });
     mockUserRepo.delete.mockResolvedValue(undefined);
     mockUserRepo.runTransaction.mockImplementation(async ({ fn }) => fn({} as CoreTransaction));
@@ -236,18 +233,6 @@ describe('UserService.create', () => {
       expect(mockUserRepo.createWithMemberships).not.toHaveBeenCalled();
     });
 
-    it('family membership skips FGA check entirely', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: false });
-      const body = {
-        ...validBody,
-        memberships: [{ entityType: EntityType.FAMILY, entityId: 'family-uuid', role: UserFamilyRole.PARENT }],
-      };
-
-      await service.create(authContext, body);
-
-      expect(mockAuthzService.requirePermission).not.toHaveBeenCalled();
-    });
-
     it('super admin: class with non-existent classId → 422 before any writes', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const body = {
@@ -300,24 +285,9 @@ describe('UserService.create', () => {
       expect(mockAuth.createUser).not.toHaveBeenCalled();
     });
 
-    it('super admin: non-existent family entityId → 422 before Firebase call', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
-      const familyId = 'family-uuid-1';
-      const body = {
-        ...validBody,
-        memberships: [{ entityType: EntityType.FAMILY, entityId: familyId, role: UserFamilyRole.CHILD }],
-      };
-      mockFamilyRepo.getActiveById.mockResolvedValue(null);
-
-      await expect(service.create(authContext, body)).rejects.toMatchObject({
-        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-      });
-      expect(mockAuth.createUser).not.toHaveBeenCalled();
-    });
-
     it('non-super-admin: non-existent district entityId → 422 before Firebase call (defense-in-depth)', async () => {
-      // verifyMembershipEntityExists is called for all non-class, non-family memberships
-      // even when the FGA check would likely catch it anyway. Defense-in-depth.
+      // verifyMembershipEntityExists is called for all non-class memberships even when the
+      // FGA check would likely catch it anyway. Defense-in-depth.
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
       mockDistrictRepo.getActiveById.mockResolvedValue(null);
 
@@ -327,20 +297,22 @@ describe('UserService.create', () => {
       expect(mockAuth.createUser).not.toHaveBeenCalled();
     });
 
-    it('non-super-admin: non-existent family entityId → 422 before Firebase call (defense-in-depth)', async () => {
-      // Family entities have no FGA check, so verifyMembershipEntityExists is the only guard.
+    it('every membership in the body reaches an FGA permission check', async () => {
+      // `CreateUserMemberships` is org-scoped, so there is no membership shape that can
+      // reach the DB write without a requirePermission call. This pins that invariant:
+      // if a future change reintroduces an unauthorized branch, the counts diverge.
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
-      const familyId = 'family-uuid-1';
       const body = {
         ...validBody,
-        memberships: [{ entityType: EntityType.FAMILY, entityId: familyId, role: UserFamilyRole.CHILD }],
+        memberships: [
+          { entityType: EntityType.DISTRICT, entityId: districtId, role: UserRole.ADMINISTRATOR },
+          { entityType: EntityType.GROUP, entityId: groupId, role: UserRole.STUDENT },
+        ],
       };
-      mockFamilyRepo.getActiveById.mockResolvedValue(null);
 
-      await expect(service.create(authContext, body)).rejects.toMatchObject({
-        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-      });
-      expect(mockAuth.createUser).not.toHaveBeenCalled();
+      await service.create(authContext, body);
+
+      expect(mockAuthzService.requirePermission).toHaveBeenCalledTimes(body.memberships.length);
     });
   });
 
@@ -616,7 +588,6 @@ describe('UserService.create', () => {
         expect.anything(), // orgMemberships
         expect.anything(), // classMemberships
         expect.anything(), // groupMemberships
-        expect.anything(), // familyMemberships
         expect.anything(), // tx
       );
     });
@@ -676,24 +647,20 @@ describe('UserService.create', () => {
       );
     });
 
-    it('multiple family memberships → first family ID used as partnerId (first-wins)', async () => {
-      // Families are flat; no hierarchy to validate. First in request order wins.
+    it('no resolvable provider → 404', async () => {
+      // The resolution chain is district evidence, then group. With neither present there is
+      // no partnerId to record, so the create fails before the write transaction opens.
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
-      const firstFamilyId = 'family-uuid-1';
-      const secondFamilyId = 'family-uuid-2';
       const body = {
         ...validBody,
-        memberships: [
-          { entityType: EntityType.FAMILY, entityId: firstFamilyId, role: UserFamilyRole.PARENT },
-          { entityType: EntityType.FAMILY, entityId: secondFamilyId, role: UserFamilyRole.PARENT },
-        ],
+        memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT }],
       };
+      mockUserRepo.findClassParentSchool.mockResolvedValue(schoolId);
+      mockClassRepo.getDistinctRootOrgIds.mockResolvedValue([]);
 
-      await service.create(authContext, body);
-
-      expect(mockRosterProviderRepo.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ partnerId: firstFamilyId }) }),
-      );
+      await expect(service.create(authContext, body)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+      });
     });
   });
 });
