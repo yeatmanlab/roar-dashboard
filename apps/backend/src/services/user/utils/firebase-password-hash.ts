@@ -126,6 +126,10 @@ export function getFirebaseScryptParamsFromEnv(env: NodeJS.ProcessEnv = process.
     throw new Error('FIREBASE_SCRYPT_ROUNDS and FIREBASE_SCRYPT_MEM_COST must be integers');
   }
 
+  if (rounds <= 0 || memoryCost <= 0) {
+    throw new Error('FIREBASE_SCRYPT_ROUNDS and FIREBASE_SCRYPT_MEM_COST must be positive integers');
+  }
+
   return {
     signerKey: Buffer.from(signerKeyB64, 'base64'),
     saltSeparator: Buffer.from(saltSeparatorB64, 'base64'),

@@ -363,7 +363,7 @@ export function UserImportService({
           index,
           CLASSIFICATION.CREATED,
           ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          'Password is required to create a user',
+          ApiErrorMessage.REQUEST_VALIDATION_FAILED,
         );
         continue;
       }
