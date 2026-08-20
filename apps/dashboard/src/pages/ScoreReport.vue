@@ -374,6 +374,7 @@ import { getTitle } from '@/helpers/query/administrations';
 import {
   taskDisplayNames,
   taskInfoById,
+  getFoundationalCompositeSupportLevel,
   tasksToDisplayGraphs,
   rawOnlyTasks,
   tasksToDisplayPercentCorrect,
@@ -791,10 +792,112 @@ const scoreTaskSlugById = computed(() => {
 
 const scoreReportSourceRows = computed(() => scoreStudentsData.value?.students ?? []);
 
-const formatBackendScoreTags = (score, tagColor) => {
+const getAssignmentMetadataKey = (user) => {
+  if (user?.assessmentPid) return `pid:${user.assessmentPid}`;
+  if (user?.username) return `username:${user.username}`;
+  if (user?.email) return `email:${user.email}`;
+  return null;
+};
+
+const assignmentMetadataByUserKey = computed(() => {
+  if (!assignmentData.value) return {};
+
+  return assignmentData.value.reduce((acc, { assignment, user }) => {
+    const key = getAssignmentMetadataKey({
+      assessmentPid: assignment.userData?.assessmentPid ?? user?.assessmentPid,
+      username: user?.username,
+      email: user?.email,
+    });
+    if (!key) return acc;
+
+    const grade = String(assignment.userData?.grade);
+    let compositeScore =
+      assignment.compositeScore != null
+        ? { rawScore: assignment.compositeScore, percentile: null, displayValue: assignment.compositeScore }
+        : null;
+    let compositeRun = null;
+
+    if (assignment.foundationalComposite) {
+      const { support_level: compositeSupportLevel, tag_color: compositeTagColor } =
+        getFoundationalCompositeSupportLevel(grade, assignment.foundationalComposite);
+      const compositeRawScore = assignment.foundationalComposite.roarScore ?? null;
+      const compositeStandard = assignment.foundationalComposite.standardScore ?? null;
+      let compositePercentile = assignment.foundationalComposite.percentile;
+
+      if (compositePercentile != null && typeof compositePercentile !== 'string') {
+        compositePercentile = _round(compositePercentile);
+      } else if (compositePercentile == null) {
+        compositePercentile = null;
+      }
+
+      compositeScore = {
+        rawScore: compositeRawScore,
+        percentile: compositePercentile,
+        standardScore: compositeStandard,
+        displayValue: compositePercentile ?? compositeRawScore,
+        supportLevel: compositeSupportLevel,
+        tagColor: compositeTagColor,
+      };
+
+      compositeRun = {
+        grade: getGrade(grade),
+        scores: {
+          support_level: compositeSupportLevel,
+          stdPercentile: assignment.foundationalComposite.percentile ?? null,
+          rawScore: compositeRawScore,
+        },
+        taskId: 'compositeFoundational',
+        user: { grade, schoolName: user?.schoolName ?? '0 Unknown School' },
+        tag_color: compositeTagColor,
+      };
+    }
+
+    acc[key] = {
+      taskProgress: Object.fromEntries(
+        (assignment.assessments ?? []).map((assessment) => [
+          assessment.taskId,
+          {
+            started: assessment.startedOn != null,
+            completed: assessment.completedOn != null,
+          },
+        ]),
+      ),
+      startDate:
+        assignment.assessments?.reduce((earliest, assessment) => {
+          if (!assessment.startedOn) return earliest;
+          if (!earliest) return assessment.startedOn;
+          return assessment.startedOn < earliest ? assessment.startedOn : earliest;
+        }, null) ?? null,
+      completionDate: assignment.completed
+        ? (assignment.assessments?.reduce((latest, assessment) => {
+            if (!assessment.completedOn) return latest;
+            if (!latest) return assessment.completedOn;
+            return assessment.completedOn > latest ? assessment.completedOn : latest;
+          }, null) ?? null)
+        : null,
+      compositeScore,
+      compositeRun,
+    };
+
+    return acc;
+  }, {});
+});
+
+const formatBackendScoreTags = (score, tagColor, assignmentProgress) => {
   let scoreFilterTags = score.optional ? ' Optional ' : ' Required ';
   scoreFilterTags += score.reliable === false ? ' Unreliable ' : ' Reliable ';
-  scoreFilterTags += score.completed ? ' Completed Assessed ' : ' Assigned ';
+
+  if (assignmentProgress?.completed ?? score.completed) {
+    scoreFilterTags += ' Completed ';
+  } else if (assignmentProgress?.started) {
+    scoreFilterTags += ' Started ';
+  } else {
+    scoreFilterTags += ' Assigned ';
+  }
+
+  if (score.completed || score.rawScore != null || score.percentile != null || score.standardScore != null) {
+    scoreFilterTags += ' Assessed ';
+  }
 
   if (tagColor === SCORE_SUPPORT_LEVEL_COLORS.ABOVE) {
     scoreFilterTags += ' Green ';
@@ -810,14 +913,17 @@ const formatBackendScoreTags = (score, tagColor) => {
 const mapBackendScoreRows = (rows) => {
   const assignmentTableDataAcc = [];
   const runsByTaskIdAcc = {};
+  const compositeFoundationalRunsAcc = [];
 
   for (const { user, scores } of rows) {
     const firstNameOrUsername = user.firstName ?? user.username ?? 'user';
     const currRowScores = {};
     let numAssessmentsCompleted = 0;
+    const assignmentMetadata = assignmentMetadataByUserKey.value[getAssignmentMetadataKey(user)];
 
     for (const [scoreTaskId, score] of Object.entries(scores ?? {})) {
       const taskId = scoreTaskSlugById.value[scoreTaskId] ?? scoreTaskId;
+      const assignmentProgress = assignmentMetadata?.taskProgress?.[taskId];
       const supportLevel = SUPPORT_LEVEL_DISPLAY[score.supportLevel] ?? null;
       const tagColor = returnColorByReliability(
         score,
@@ -841,7 +947,7 @@ const mapBackendScoreRows = (rows) => {
         percentileString: percentile,
         rawScore: score.rawScore,
         standardScore: score.standardScore,
-        tags: formatBackendScoreTags(score, tagColor),
+        tags: formatBackendScoreTags(score, tagColor, assignmentProgress),
       };
 
       const run = {
@@ -866,6 +972,10 @@ const mapBackendScoreRows = (rows) => {
       }
     }
 
+    if (assignmentMetadata?.compositeRun) {
+      compositeFoundationalRunsAcc.push(assignmentMetadata.compositeRun);
+    }
+
     assignmentTableDataAcc.push({
       user: {
         username: user.username,
@@ -888,9 +998,9 @@ const mapBackendScoreRows = (rows) => {
         orgType: props.orgType,
         userId: user.userId,
       },
-      compositeScore: null,
-      startDate: null,
-      completionDate: null,
+      compositeScore: assignmentMetadata?.compositeScore ?? null,
+      startDate: assignmentMetadata?.startDate ?? null,
+      completionDate: assignmentMetadata?.completionDate ?? null,
       scores: currRowScores,
       numAssessmentsCompleted,
     });
@@ -917,7 +1027,7 @@ const mapBackendScoreRows = (rows) => {
   return {
     runsByTaskId: _pickBy(runsByTaskIdAcc, (scores, taskId) => Object.keys(taskInfoById).includes(taskId)),
     assignmentTableData: assignmentTableDataAcc,
-    compositeFoundationalRuns: [],
+    compositeFoundationalRuns: compositeFoundationalRunsAcc,
   };
 };
 
