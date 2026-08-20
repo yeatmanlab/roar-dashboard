@@ -33,6 +33,7 @@ import { EntityType } from '../types/entity-type';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
+import { FOUNDATIONAL_COMPOSITE_SLUGS } from '../constants/foundational-composite';
 import { COMPOSITE_RUN_TASK_ID } from '../constants/run';
 import { SCORE_DOMAIN, SCORE_NAME } from '../constants/run-scores';
 import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
@@ -105,6 +106,8 @@ export interface ReportTaskMeta {
   /** optional_if condition — null means required for all assigned students */
   conditionsRequirements: Condition | null;
 }
+
+const FOUNDATIONAL_COMPOSITE_TASK_SLUGS: ReadonlySet<string> = new Set(FOUNDATIONAL_COMPOSITE_SLUGS);
 
 /**
  * Raw progress data for a single student from the database.
@@ -2435,38 +2438,42 @@ export class ReportRepository {
       }
     }
 
-    const compositeScoreRows = await this.db
-      .select({
-        userId: fdwRuns.userId,
-        scoreName: fdwRunScores.name,
-        scoreValue: fdwRunScores.value,
-      })
-      .from(fdwRuns)
-      .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
-      .where(
-        and(
-          eq(fdwRuns.administrationId, administrationId),
-          inArray(fdwRuns.userId, studentIds),
-          eq(fdwRuns.taskId, COMPOSITE_RUN_TASK_ID),
-          isNull(fdwRuns.deletedAt),
-          isNull(fdwRuns.abortedAt),
-          eq(fdwRuns.useForReporting, true),
-          eq(fdwRunScores.domain, SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL),
-          inArray(fdwRunScores.name, [
-            SCORE_NAME.THETA_ESTIMATE,
-            SCORE_NAME.ROAR_SCORE,
-            SCORE_NAME.PERCENTILE,
-            SCORE_NAME.STANDARD_SCORE,
-          ]),
-        ),
-      )
-      .orderBy(asc(fdwRuns.createdAt));
+    const hasFoundationalCompositeTask = taskMetas.some((task) => FOUNDATIONAL_COMPOSITE_TASK_SLUGS.has(task.taskSlug));
 
-    for (const row of compositeScoreRows) {
-      if (!foundationalCompositeScoresByStudent.has(row.userId)) {
-        foundationalCompositeScoresByStudent.set(row.userId, new Map());
+    if (hasFoundationalCompositeTask) {
+      const compositeScoreRows = await this.db
+        .select({
+          userId: fdwRuns.userId,
+          scoreName: fdwRunScores.name,
+          scoreValue: fdwRunScores.value,
+        })
+        .from(fdwRuns)
+        .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
+        .where(
+          and(
+            eq(fdwRuns.administrationId, administrationId),
+            inArray(fdwRuns.userId, studentIds),
+            eq(fdwRuns.taskId, COMPOSITE_RUN_TASK_ID),
+            isNull(fdwRuns.deletedAt),
+            isNull(fdwRuns.abortedAt),
+            eq(fdwRuns.useForReporting, true),
+            eq(fdwRunScores.domain, SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL),
+            inArray(fdwRunScores.name, [
+              SCORE_NAME.THETA_ESTIMATE,
+              SCORE_NAME.ROAR_SCORE,
+              SCORE_NAME.PERCENTILE,
+              SCORE_NAME.STANDARD_SCORE,
+            ]),
+          ),
+        )
+        .orderBy(asc(fdwRuns.createdAt));
+
+      for (const row of compositeScoreRows) {
+        if (!foundationalCompositeScoresByStudent.has(row.userId)) {
+          foundationalCompositeScoresByStudent.set(row.userId, new Map());
+        }
+        foundationalCompositeScoresByStudent.get(row.userId)!.set(row.scoreName, row.scoreValue);
       }
-      foundationalCompositeScoresByStudent.get(row.userId)!.set(row.scoreName, row.scoreValue);
     }
 
     // 9. Assemble result rows

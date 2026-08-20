@@ -2698,6 +2698,14 @@ describe('GET /v1/administrations/:id/reports/scores/students', () => {
     });
 
     it('returns foundationalComposite from the synthetic composite run scores', async () => {
+      const foundationalTask = await TaskFactory.create({ slug: 'pa', name: 'Phonological Awareness' });
+      const foundationalVariant = await TaskVariantFactory.create({ taskId: foundationalTask.id });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        taskVariantId: foundationalVariant.id,
+        orderIndex: 99,
+      });
+
       const run = await RunFactory.create({
         userId: baseFixture.grade5Student.id,
         administrationId: baseFixture.administrationAssignedToDistrict.id,

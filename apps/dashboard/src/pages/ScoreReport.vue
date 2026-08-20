@@ -1214,13 +1214,8 @@ const mapBackendFoundationalCompositeScore = (user, foundationalComposite) => {
 
   const compositeRawScore = foundationalComposite.roarScore ?? null;
   const compositeStandard = foundationalComposite.standardScore ?? null;
-  let compositePercentile = foundationalComposite.percentile;
-
-  if (compositePercentile != null && typeof compositePercentile !== 'string') {
-    compositePercentile = _round(compositePercentile);
-  } else if (compositePercentile == null) {
-    compositePercentile = null;
-  }
+  const compositePercentile =
+    foundationalComposite.percentile != null ? _round(foundationalComposite.percentile) : null;
 
   const { support_level: compositeSupportLevel, tag_color: compositeTagColor } = getFoundationalCompositeSupportLevel(
     user.grade,
