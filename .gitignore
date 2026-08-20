@@ -30,6 +30,10 @@ certs
 !.env.example
 !.env.test.example
 
+# Firebase
+# Generated from apps/assessments/hosting-targets.json by `npm run hosting:rc`; carries project IDs.
+.firebaserc
+
 # Test coverage
 coverage
 
