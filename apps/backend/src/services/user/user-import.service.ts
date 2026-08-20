@@ -151,6 +151,31 @@ type AuthorizeCaches = {
   classParents: Map<string, Promise<string | null>>;
 };
 
+/**
+ * Predict which current memberships `reconcileMemberships` will end, so they can be revoked in FGA
+ * before the DB write commits.
+ *
+ * Mirrors the repository's replace-semantics exactly: only entity types the desired set mentions are
+ * reconciled, and within those, any current entity the desired set omits is ended. Kept in step with
+ * `UserRepository.reconcileMemberships` — if that grouping changes, this must too.
+ */
+function predictEndedMemberships(
+  desired: MembershipForAuthCheck[],
+  current: MembershipForAuthCheck[],
+): MembershipForAuthCheck[] {
+  const desiredByType = new Map<EntityType, Set<string>>();
+  for (const membership of desired) {
+    const ids = desiredByType.get(membership.entityType) ?? new Set<string>();
+    ids.add(membership.entityId);
+    desiredByType.set(membership.entityType, ids);
+  }
+
+  return current.filter((membership) => {
+    const desiredIds = desiredByType.get(membership.entityType);
+    return desiredIds !== undefined && !desiredIds.has(membership.entityId);
+  });
+}
+
 /** Collect the entity IDs a row declares for one entity type. */
 function declaredIds(row: ImportUserRowInput, entityType: EntityType): Set<string> {
   const ids = new Set<string>();
@@ -692,8 +717,9 @@ export function UserImportService({
   }
 
   /**
-   * Process the unenroll bin: per row, end ALL of the user's enrollments and archive them
-   * (`rosteringEnded`) in one transaction, then best-effort delete their FGA membership tuples.
+   * Process the unenroll bin: per row, delete the user's FGA membership tuples, then end ALL of
+   * their enrollments and archive them (`rosteringEnded`) in one transaction. On DB failure the
+   * tuples are restored.
    *
    * Ending the DB enrollment does not expire the FGA tuple's stored grant window, so explicit cleanup
    * is required for the user to actually lose access. Matches the legacy `batchImportUpdate`, which
@@ -717,18 +743,41 @@ export function UserImportService({
 
         await authorizeRow(authContext, memberships, caches);
 
-        await userRepository.runTransaction({
-          fn: async (tx) => {
-            await userRepository.endAllEnrollments(user.id, tx);
-            await userRepository.archiveUser(user.id, tx);
-          },
-        });
+        // Revoke in FGA *before* the DB write (Saga pattern). Unenroll's DB write has no clean undo —
+        // it stamps end dates across four junction tables and archives the user.
+        // Fails more safely: if the DB write fails, the user is under-granted (rows intact, access gone)
+        // rather than unenrolled-but-still-authorized.
+        const deletionTuples = buildMembershipDeletionTuples(user.id, memberships);
+        if (deletionTuples.length > 0) {
+          await authorizationService.deleteTuples(deletionTuples);
+        }
 
-        // Best-effort: deleteTuples is fire-and-forget (logs on failure, never throws), so a stale
-        // tuple can't fail the row after the DB state has already committed.
-        const tuples = buildMembershipDeletionTuples(user.id, memberships);
-        if (tuples.length > 0) {
-          await authorizationService.deleteTuples(tuples);
+        try {
+          await userRepository.runTransaction({
+            fn: async (tx) => {
+              await userRepository.endAllEnrollments(user.id, tx);
+              await userRepository.archiveUser(user.id, tx);
+            },
+          });
+        } catch (dbError) {
+          if (deletionTuples.length > 0) {
+            logger.error(
+              { err: dbError, context: { userId: user.id, tuples: deletionTuples.length } },
+              'Unenroll DB write failed after FGA revocation — compensating by restoring the tuples',
+            );
+
+            try {
+              await authorizationService.writeTuplesOrThrow(buildMembershipAdditionTuples(user.id, memberships));
+              logger.info({ userId: user.id }, 'Compensation successful: FGA membership tuples restored');
+            } catch (compensateError) {
+              logger.error(
+                { err: compensateError, context: { userId: user.id } },
+                'Compensation failed: user retains enrollments with no FGA tuples. Manual syncFga required.',
+              );
+            }
+          }
+
+          throw dbError;
         }
 
         outcomes[index] = ok(index, CLASSIFICATION.UNENROLLED, user.id);
@@ -854,33 +903,87 @@ export function UserImportService({
           removed: { entityType: EntityType; entityId: string; role: string }[];
         } = { added: [], removed: [] };
 
-        await userRepository.runTransaction({
-          fn: async (tx) => {
-            await userRepository.update({ id: user.id, data: toUpdateUserFields(row), transaction: tx });
-            reconciled = await userRepository.reconcileMemberships(user.id, desiredMemberships, currentMemberships, tx);
-          },
-        });
-
-        // Sync FGA after the DB commit. Revoke first, then grant: deleteTuples is best-effort (never
-        // throws), while writeTuplesOrThrow throws on failure. Running the revocation first means a
-        // failed grant-write can only ever leave the user under-granted (the DB membership exists but
-        // FGA hasn't caught up yet), never over-granted with a stale tuple for a membership that was
-        // just removed. Added tuples carry the active_membership condition, identical to single-create.
-        // Build first, then guard on the tuple count: an admin-tier class membership reconciles in the
-        // DB but maps to zero FGA tuples (it cascades via the org hierarchy), so add and delete stay
-        // symmetric — neither touches FGA.
-        //
-        // TODO: the DB write above is not rolled back if writeTuplesOrThrow fails below — the row is
-        // reported `failed`, but a retry won't re-attempt the missing tuple (the diff against fresh
-        // DB state shows no delta). deleteTuples never throws, so a failed deletion is reported `ok`
-        // with no way to currently detect it. Both rely on manually running the syncFga backfill.
-        const removalTuples = buildMembershipDeletionTuples(user.id, reconciled.removed);
+        // Revoke in FGA *before* the DB write (Saga pattern). Unenroll's DB write has no clean undo —
+        // it stamps end dates across four junction tables and archives the user.
+        // Fails more safely: if the DB write fails, the user is under-granted (rows intact, access gone)
+        // rather than unenrolled-but-still-authorized.
+        const predictedRemovals = predictEndedMemberships(desiredMemberships, currentMemberships);
+        const removalTuples = buildMembershipDeletionTuples(user.id, predictedRemovals);
         if (removalTuples.length > 0) {
           await authorizationService.deleteTuples(removalTuples);
         }
+
+        try {
+          await userRepository.runTransaction({
+            fn: async (tx) => {
+              await userRepository.update({ id: user.id, data: toUpdateUserFields(row), transaction: tx });
+              reconciled = await userRepository.reconcileMemberships(
+                user.id,
+                desiredMemberships,
+                currentMemberships,
+                tx,
+              );
+            },
+          });
+        } catch (dbError) {
+          if (removalTuples.length > 0) {
+            logger.error(
+              { err: dbError, context: { userId: user.id, tuples: removalTuples.length } },
+              'Update DB write failed after FGA revocation — compensating by restoring the tuples',
+            );
+
+            try {
+              await authorizationService.writeTuplesOrThrow(buildMembershipAdditionTuples(user.id, predictedRemovals));
+              logger.info({ userId: user.id }, 'Compensation successful: revoked membership tuples restored');
+            } catch (compensateError) {
+              logger.error(
+                { err: compensateError, context: { userId: user.id } },
+                'Compensation failed: user retains memberships with no FGA tuples. Manual syncFga required.',
+              );
+            }
+          }
+
+          throw dbError;
+        }
+
+        // Grants stay *after* the DB commit: writing a tuple first would leave access granted with no
+        // membership backing it if the write failed (fail-open), where this order can only ever leave
+        // the user under-granted.
+        //
+        // TODO: deleteTuples never throws, so a failed *revocation* above is still reported `ok` with
+        // a stale tuple left granting access — over-granted and silent, unlike the grant path here.
+        // Detecting it needs a throwing variant in AuthorizationService; until then it relies on
+        // manually running the syncFga backfill.
         const additionTuples = buildMembershipAdditionTuples(user.id, reconciled.added);
         if (additionTuples.length > 0) {
-          await authorizationService.writeTuplesOrThrow(additionTuples);
+          try {
+            await authorizationService.writeTuplesOrThrow(additionTuples);
+          } catch (fgaError) {
+            // Compensate the committed reconcile (Saga pattern). Without this the membership rows
+            // persist with no tuple granting them, and a retry can't repair it: the next reconcile
+            // diffs against the committed state and sees no delta, so the tuple is never re-attempted.
+            logger.error(
+              { err: fgaError, context: { userId: user.id, added: reconciled.added.length } },
+              'FGA write failed after membership reconcile — compensating by reverting the reconcile',
+            );
+
+            try {
+              await userRepository.runTransaction({
+                fn: (tx) => userRepository.revertReconciledMemberships(user.id, reconciled, tx),
+              });
+              // Revocations already applied above are left as-is: re-adding those tuples to match the
+              // restored rows would re-grant access this row was ending, and the restored rows read
+              // inactive-then-active only after a successful retry. Under-granted, never over-granted.
+              logger.info({ userId: user.id }, 'Compensation successful: membership reconcile reverted');
+            } catch (compensateError) {
+              logger.error(
+                { err: compensateError, context: { userId: user.id } },
+                'Compensation failed: memberships persist without FGA tuples. Manual syncFga required.',
+              );
+            }
+
+            throw fgaError;
+          }
         }
 
         // The DB writes commit before the Firebase auth sync. If the auth call fails the row is

@@ -732,6 +732,50 @@ describe('UserImportService.bulkImport', () => {
       mockUserRepository.findByEmails.mockResolvedValue([existingUser('leaver@example.org')]);
     });
 
+    it('revokes the FGA tuples before ending the enrollments', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+      ]);
+
+      await buildService().bulkImport(superAdmin, [makeRow({ email: 'leaver@example.org', unenroll: true })]);
+
+      // Unenroll's DB write has no clean undo, so the revocation must land first — a failed DB write
+      // then leaves the user under-granted rather than unenrolled-but-still-authorized.
+      const deleteOrder = mockAuthz.deleteTuples.mock.invocationCallOrder[0]!;
+      const txOrder = mockUserRepository.runTransaction.mock.invocationCallOrder[0]!;
+      expect(deleteOrder).toBeLessThan(txOrder);
+    });
+
+    it('restores the revoked tuples when the DB write fails', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+      ]);
+      mockUserRepository.runTransaction.mockRejectedValueOnce(new Error('db down'));
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'leaver@example.org', unenroll: true }),
+      ]);
+
+      expect(mockAuthz.writeTuplesOrThrow).toHaveBeenCalledWith([
+        expect.objectContaining({ relation: UserRole.STUDENT, object: 'school:school-9' }),
+      ]);
+      expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'failed' });
+    });
+
+    it('still fails the row when restoring the tuples also fails', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+      ]);
+      mockUserRepository.runTransaction.mockRejectedValueOnce(new Error('db down'));
+      mockAuthz.writeTuplesOrThrow.mockRejectedValueOnce(new Error('fga down'));
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'leaver@example.org', unenroll: true }),
+      ]);
+
+      expect(results[0]!.status).toBe('failed');
+    });
+
     it('ends enrollments, archives, and deletes the FGA membership tuples, returning ok', async () => {
       mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
         { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
@@ -993,6 +1037,11 @@ describe('UserImportService.bulkImport', () => {
     it('reconciles memberships and syncs FGA tuples with the right shapes', async () => {
       const user = existing();
       mockUserRepository.findByEmails.mockResolvedValue([user]);
+      // Removals are predicted from the current-vs-desired diff, so this mock must agree with the
+      // reconcile result below: currently in school-1, row asks for school-2.
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-1', role: UserRole.STUDENT },
+      ]);
       mockUserRepository.reconcileMemberships.mockResolvedValue({
         added: [{ entityType: EntityType.SCHOOL, entityId: 'school-2', role: 'student' }],
         removed: [{ entityType: EntityType.SCHOOL, entityId: 'school-1', role: 'student' }],
@@ -1023,13 +1072,21 @@ describe('UserImportService.bulkImport', () => {
     });
 
     it('revokes before granting so a failed grant-write cannot strand a removed tuple', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-1', role: UserRole.STUDENT },
+      ]);
       mockUserRepository.reconcileMemberships.mockResolvedValue({
         added: [{ entityType: EntityType.SCHOOL, entityId: 'school-2', role: 'student' }],
         removed: [{ entityType: EntityType.SCHOOL, entityId: 'school-1', role: 'student' }],
       });
       mockAuthz.writeTuplesOrThrow.mockRejectedValueOnce(new Error('fga down'));
 
-      const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({
+          email: 'updatee@example.org',
+          memberships: [{ entityType: EntityType.SCHOOL, entityId: 'school-2', role: UserRole.STUDENT }],
+        }),
+      ]);
 
       // The revocation must have run (and run first) even though the grant-write threw — otherwise the
       // removed membership would stay authorized in FGA.
@@ -1038,6 +1095,115 @@ describe('UserImportService.bulkImport', () => {
       const writeOrder = mockAuthz.writeTuplesOrThrow.mock.invocationCallOrder[0]!;
       expect(deleteOrder).toBeLessThan(writeOrder);
       expect(results[0]!.status).toBe('failed');
+    });
+
+    describe('revocation before the DB write', () => {
+      beforeEach(() => {
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+          { entityType: EntityType.SCHOOL, entityId: 'school-1', role: UserRole.STUDENT },
+        ]);
+      });
+
+      const rowMovingToSchool2 = () =>
+        makeRow({
+          email: 'updatee@example.org',
+          memberships: [{ entityType: EntityType.SCHOOL, entityId: 'school-2', role: UserRole.STUDENT }],
+        });
+
+      it('revokes the predicted removals before committing the reconcile', async () => {
+        await buildService().bulkImport(superAdmin, [rowMovingToSchool2()]);
+
+        const deleteOrder = mockAuthz.deleteTuples.mock.invocationCallOrder[0]!;
+        const txOrder = mockUserRepository.runTransaction.mock.invocationCallOrder[0]!;
+        expect(deleteOrder).toBeLessThan(txOrder);
+      });
+
+      it('restores the revoked tuples when the DB write fails', async () => {
+        mockUserRepository.runTransaction.mockRejectedValueOnce(new Error('db down'));
+
+        const results = await buildService().bulkImport(superAdmin, [rowMovingToSchool2()]);
+
+        expect(mockAuthz.writeTuplesOrThrow).toHaveBeenCalledWith([
+          expect.objectContaining({ relation: 'student', object: 'school:school-1' }),
+        ]);
+        expect(results[0]!.status).toBe('failed');
+      });
+
+      it('does not revoke anything when the row removes no membership', async () => {
+        await buildService().bulkImport(superAdmin, [
+          makeRow({
+            email: 'updatee@example.org',
+            memberships: [{ entityType: EntityType.SCHOOL, entityId: 'school-1', role: UserRole.STUDENT }],
+          }),
+        ]);
+
+        expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      });
+
+      it('leaves untouched entity types alone (replace-semantics is per declared type)', async () => {
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+          { entityType: EntityType.SCHOOL, entityId: 'school-1', role: UserRole.STUDENT },
+          { entityType: EntityType.GROUP, entityId: 'group-1', role: UserRole.STUDENT },
+        ]);
+
+        await buildService().bulkImport(superAdmin, [rowMovingToSchool2()]);
+
+        // The row declares only a school, so the group membership is not reconciled and must not be
+        // revoked — matching UserRepository.reconcileMemberships' per-type grouping.
+        expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([expect.objectContaining({ object: 'school:school-1' })]);
+      });
+    });
+
+    describe('compensation on a failed grant-write', () => {
+      const reconciled = {
+        added: [{ entityType: EntityType.SCHOOL, entityId: 'school-2', role: 'student' }],
+        removed: [{ entityType: EntityType.SCHOOL, entityId: 'school-1', role: 'student' }],
+      };
+
+      it('reverts the committed reconcile when writeTuplesOrThrow fails', async () => {
+        mockUserRepository.reconcileMemberships.mockResolvedValue(reconciled);
+        mockAuthz.writeTuplesOrThrow.mockRejectedValueOnce(new Error('fga down'));
+
+        const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+        expect(mockUserRepository.revertReconciledMemberships).toHaveBeenCalledWith(
+          expect.any(String),
+          reconciled,
+          expect.anything(),
+        );
+        expect(results[0]!.status).toBe('failed');
+      });
+
+      it('does not revert when the grant-write succeeds', async () => {
+        mockUserRepository.reconcileMemberships.mockResolvedValue(reconciled);
+
+        const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+        expect(mockUserRepository.revertReconciledMemberships).not.toHaveBeenCalled();
+        expect(results[0]!.status).toBe('ok');
+      });
+
+      it('still fails the row when the compensation itself throws', async () => {
+        mockUserRepository.reconcileMemberships.mockResolvedValue(reconciled);
+        mockAuthz.writeTuplesOrThrow.mockRejectedValueOnce(new Error('fga down'));
+        mockUserRepository.revertReconciledMemberships.mockRejectedValueOnce(new Error('db down'));
+
+        const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+        // Compensation failure must not mask the row outcome or abort the batch — it's logged for
+        // manual syncFga instead.
+        expect(results[0]!.status).toBe('failed');
+      });
+
+      it('does not revert when there were no additions to grant', async () => {
+        mockUserRepository.reconcileMemberships.mockResolvedValue({ added: [], removed: reconciled.removed });
+
+        const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
+
+        expect(mockAuthz.writeTuplesOrThrow).not.toHaveBeenCalled();
+        expect(mockUserRepository.revertReconciledMemberships).not.toHaveBeenCalled();
+        expect(results[0]!.status).toBe('ok');
+      });
     });
 
     it('uses the family relation when reconciliation adds a family membership', async () => {

@@ -631,6 +631,49 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     return { added, removed };
   }
 
+  /**
+   * Undo a {@link reconcileMemberships} result: end what it added, re-open what it ended.
+   *
+   * Compensation for a caller whose reconcile has already committed but whose downstream write (an
+   * FGA tuple sync) then failed — without it the user keeps a membership no tuple grants, and a
+   * retry can't detect the drift because the next reconcile diffs against the committed state.
+   *
+   * Two deliberate imprecisions, both erring toward less access:
+   * - A re-opened membership gets a fresh `enrollmentStart`. `reconciled.removed` carries only the
+   *   entity and role, so the original start date isn't recoverable here.
+   * - An undone addition is *ended*, not deleted, since the original add may itself have reactivated
+   *   a previously-ended row. The membership reads inactive either way.
+   *
+   * @param userId - The user whose memberships were reconciled.
+   * @param reconciled - The `{ added, removed }` result to invert.
+   * @param transaction - Transaction to run the writes in; the caller owns its lifecycle.
+   */
+  async revertReconciledMemberships(
+    userId: string,
+    reconciled: {
+      added: { entityType: EntityType; entityId: string; role: string }[];
+      removed: { entityType: EntityType; entityId: string; role: string }[];
+    },
+    transaction: CoreTransaction,
+  ): Promise<void> {
+    const now = new Date();
+
+    for (const membership of reconciled.added) {
+      await this.endMembershipRow(membership.entityType, userId, membership.entityId, now, transaction);
+    }
+
+    for (const membership of reconciled.removed) {
+      await this.upsertMembershipRow(
+        membership.entityType,
+        userId,
+        membership.entityId,
+        membership.role,
+        now,
+        transaction,
+      );
+    }
+  }
+
   /** End a single membership row (stamp the end date) for the given entity type. */
   private async endMembershipRow(
     entityType: EntityType,
