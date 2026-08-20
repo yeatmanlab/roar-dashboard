@@ -33,7 +33,7 @@ import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { COMPOSITE_RUN_TASK_ID, COMPOSITE_RUN_TASK_VARIANT_ID, COMPOSITE_RUN_TASK_VERSION } from '../constants/run';
-import { SCORE_DOMAIN, SCORE_NAME, SCORE_TYPE } from '../constants/run-scores';
+import { ASSESSMENT_STAGE, SCORE_DOMAIN, SCORE_NAME, SCORE_TYPE } from '../constants/run-scores';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -3586,6 +3586,7 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
         domain: 'default',
         name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT,
         value: '33',
+        assessmentStage: ASSESSMENT_STAGE.TEST,
       });
       await RunScoreFactory.create({
         runId: run.id,
@@ -3593,6 +3594,7 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
         domain: 'default',
         name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED,
         value: '40',
+        assessmentStage: ASSESSMENT_STAGE.TEST,
       });
       await RunScoreFactory.create({
         runId: run.id,
