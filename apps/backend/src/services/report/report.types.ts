@@ -251,7 +251,7 @@ export type ServiceSupportLevelValue = 'achievedSkill' | 'developingSkill' | 'ne
  * Absent on tasks whose config declares no display category.
  */
 export interface ServiceScoreDisplay {
-  scoreType: 'percentile' | 'standardScore' | 'rawScore' | 'percentCorrect';
+  scoreType: 'percentile' | 'standardScore' | 'rawScore' | 'percentCorrect' | 'correctIncorrectDifference';
   value: number | null;
   label: string;
   range: { min: number; max: number } | null;
