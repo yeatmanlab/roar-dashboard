@@ -63,12 +63,12 @@ git subtree add --prefix=apps/assessments/<name> \
 
 Then **delete secrets** — do this before anything else, and verify with the scan below:
 
-| File                           | Why                                                                           |
-| ------------------------------ | ----------------------------------------------------------------------------- |
-| `serve/firebaseConfig.js`      | Firebase API keys and project IDs — replaced by `../../shared/firebaseConfig` |
-| `.firebaserc`                  | Firebase project aliases — the root `.firebaserc` owns hosting targets now    |
-| `.firebase/`                   | Hosting cache                                                                 |
-| `cypress/support/devFirebase*` | Dev credentials, if present                                                   |
+| File                           | Why                                                                                 |
+| ------------------------------ | ----------------------------------------------------------------------------------- |
+| `serve/firebaseConfig.js`      | Firebase API keys and project IDs — replaced by `../../shared/firebaseConfig`       |
+| `.firebaserc`                  | Firebase project aliases — `apps/assessments/hosting-targets.json` owns targets now |
+| `.firebase/`                   | Hosting cache                                                                       |
+| `cypress/support/devFirebase*` | Dev credentials, if present                                                         |
 
 **Delete what the monorepo now owns:**
 
@@ -83,7 +83,7 @@ Then **delete secrets** — do this before anything else, and verify with the sc
 
 **Keep** `LICENSE`, `firebase.json`, `cypress.config.js`, `webpack.config.cjs`, and any data files the source imports (CSV corpora, IRT hyperparameters). A deleted corpus fails at runtime, not build time.
 
-Add `"target": "<name>"` to the kept `firebase.json`'s `hosting` block, and register that same target under **both** projects in the root `.firebaserc`. The deploy resolves the Hosting site from that pair — the target name is the directory name, and which project it resolves against decides staging versus production.
+Add `"target": "<name>"` to the kept `firebase.json`'s `hosting` block, and add the matching entry to `apps/assessments/hosting-targets.json` as `"<name>": "<site-id-suffix>"`. The deploy resolves the Hosting site from that pair: the target name is the directory name, and the project the deploy authenticates against decides whether the suffix resolves to the staging or the production site (`<project-id>-<suffix>`). Only the suffix is committed — the project IDs come from the deploy credentials.
 
 ### 1b. Greenfield: scaffold instead
 
@@ -291,7 +291,7 @@ Nothing here changes how the assessment behaves; it changes whether the platform
 - **Your example params are now CI infrastructure.** They seed the stack the specs run against. If they're wrong, e2e fails here rather than in Phase 2.
 - **Inherited specs rarely survive contact.** Specs that came along in the subtree were written against the old standalone Firebase stack. Re-write them against the local stack or delete them — don't leave them failing.
 
-**External provisioning** is not code and blocks the first deploy — do it out of band: create the Firebase Hosting sites named in `.firebaserc` (one per project), and confirm the Sentry project and `SENTRY_AUTH_TOKEN`. Site IDs must be valid hostname labels and globally unique across Firebase; the 30-character maximum in Firebase's docs is not enforced on creation.
+**External provisioning** is not code and blocks the first deploy — do it out of band: create the two Firebase Hosting sites the assessment's `hosting-targets.json` suffix implies, `<project-id>-<suffix>` on each project, and confirm the Sentry project and `SENTRY_AUTH_TOKEN`. Site IDs must be valid hostname labels and globally unique across Firebase; the 30-character maximum in Firebase's docs is not enforced on creation.
 
 **Phase 5 is done when** a CI run shows the assessment in the detect-changes matrix, its e2e leg either passes or deliberately skips, and the release/publish entries are in place.
 
