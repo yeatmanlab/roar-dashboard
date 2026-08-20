@@ -841,7 +841,7 @@ export function UserService({
    * 2. Deduplicate all district IDs into a single set.
    * 3. Exactly one distinct district → return it.
    * 4. More than one distinct district → throw 422.
-   * 5. No district evidence at all → return `undefined` (caller falls through to group/family).
+   * 5. No district evidence at all → return `undefined` (caller falls through to group).
    *
    * @param memberships The user's membership information from the request body
    * @returns The resolved district ID, or `undefined` if no district evidence exists

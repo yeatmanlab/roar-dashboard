@@ -647,20 +647,21 @@ describe('UserService.create', () => {
       );
     });
 
-    it('no resolvable provider → 404', async () => {
-      // The resolution chain is district evidence, then group. With neither present there is
-      // no partnerId to record, so the create fails before the write transaction opens.
+    it('empty memberships → 404 from the end of the resolution chain', async () => {
+      // Covers the final `throw` in resolveRootOrgProviderFromMemberships, which an empty
+      // array is now the only way to reach: a district membership resolves immediately,
+      // school and class either resolve or throw their own orphaned-root 404 inside
+      // resolveDistrictProvider, and a group is picked up by the group fall-through.
+      // The contract's `.min(1)` blocks this over HTTP, so this pins the service-level
+      // guard against a caller that reaches the service directly — without it, a user
+      // would be written with no partnerId.
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
-      const body = {
-        ...validBody,
-        memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT }],
-      };
-      mockUserRepo.findClassParentSchool.mockResolvedValue(schoolId);
-      mockClassRepo.getDistinctRootOrgIds.mockResolvedValue([]);
+      const body = { ...validBody, memberships: [] };
 
       await expect(service.create(authContext, body)).rejects.toMatchObject({
         statusCode: StatusCodes.NOT_FOUND,
       });
+      expect(mockUserRepo.createWithMemberships).not.toHaveBeenCalled();
     });
   });
 });

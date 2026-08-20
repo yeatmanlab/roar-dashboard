@@ -80,8 +80,9 @@ export type OrgMembership = z.infer<typeof OrgMembershipSchema>;
 /**
  * Response membership shapes for `GET /users/:userId/memberships`.
  *
- * Distinct from the create-body `UserMembershipSchema` above: this read shape
- * carries the member's `role`, and class rows can additionally carry the parent
+ * Distinct from the create-body `OrgMembershipSchema` above: this read shape covers
+ * family memberships as well as org ones — a family membership can be read back even
+ * though it cannot be created here — and class rows can additionally carry the parent
  * `schoolId` / `districtId` so a consumer can resolve a student's current
  * school(s) without a separate lookup (a student has no school-level membership
  * row of their own — their school is the parent of their class).
