@@ -92,7 +92,7 @@ function resolveStorageBucket(): FirebaseStorage {
   }
 
   const env = getApp().options.projectId === ADMIN_RECORDINGS_PROD_PROJECT_ID ? 'prod' : 'staging';
-  return getStorage(getApp(), `gs://roar-admin-recordings-${env}`);
+  return getStorage(getApp(), `gs://roar-${env}-admin-recordings-bucket`);
 }
 
 /**
