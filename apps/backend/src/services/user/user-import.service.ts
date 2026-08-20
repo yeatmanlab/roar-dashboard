@@ -142,6 +142,15 @@ function preRoutingClassification(row: ImportUserRowInput): Classification {
 /** Resolved parentage for the schools and classes declared across a batch. */
 type OrgHierarchyParents = Awaited<ReturnType<UserRepository['getOrgHierarchyParents']>>;
 
+/**
+ * Per-request memo for the repeated lookups in `authorizeRow`. Created per `bulkImport` call, never
+ * at module or service scope — a permission revoked between requests must not read as still granted.
+ */
+type AuthorizeCaches = {
+  permissions: Map<string, Promise<void>>;
+  classParents: Map<string, Promise<string | null>>;
+};
+
 /** Collect the entity IDs a row declares for one entity type. */
 function declaredIds(row: ImportUserRowInput, entityType: EntityType): Set<string> {
   const ids = new Set<string>();
@@ -256,7 +265,11 @@ export function UserImportService({
    * rows it's called with the target user's actual current memberships fetched from the DB (see
    * processUnenrollBin), since that — not whatever the row declares — is what unenrolling affects.
    */
-  async function authorizeRow(authContext: AuthContext, memberships: MembershipForAuthCheck[]): Promise<void> {
+  async function authorizeRow(
+    authContext: AuthContext,
+    memberships: MembershipForAuthCheck[],
+    caches: AuthorizeCaches,
+  ): Promise<void> {
     const { userId, isSuperAdmin } = authContext;
 
     if (isSuperAdmin) return;
@@ -286,9 +299,30 @@ export function UserImportService({
       }
     }
 
+    // Both lookups are memoized per request: a batch names the same few orgs on every row, so the
+    // distinct set is O(1) in the row count. Promises are cached rather than values, so rows share
+    // one in-flight call. Cached rejections are safe to replay — the key covers everything the
+    // resulting ApiError reports.
+    //
+    // Class parents are resolved here rather than reused from Phase 0's `getOrgHierarchyParents`
+    // map, so a declared class is looked up twice per batch (once each). Kept separate on purpose:
+    // the update and unenroll bins authorize against the target's *current* memberships, which can
+    // include classes no row declared and the map therefore doesn't cover.
     for (const membership of memberships) {
+      // FAMILY memberships intentionally skip the FGA check, matching single-create's outstanding
+      // authorization gap (roar-project-management#1774).
+      if (membership.entityType === EntityType.FAMILY) continue;
+
+      let object: string;
+
       if (membership.entityType === EntityType.CLASS) {
-        const schoolId = await userRepository.findClassParentSchool(membership.entityId);
+        let parent = caches.classParents.get(membership.entityId);
+        if (!parent) {
+          parent = userRepository.findClassParentSchool(membership.entityId);
+          caches.classParents.set(membership.entityId, parent);
+        }
+
+        const schoolId = await parent;
         if (!schoolId) {
           throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
             statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
@@ -296,20 +330,20 @@ export function UserImportService({
             context: { userId, classId: membership.entityId },
           });
         }
-        await authorizationService.requirePermission(
-          userId,
-          FgaRelation.CAN_CREATE_USERS,
-          `${FgaType.SCHOOL}:${schoolId}`,
-        );
-      } else if (membership.entityType !== EntityType.FAMILY) {
-        await authorizationService.requirePermission(
-          userId,
-          FgaRelation.CAN_CREATE_USERS,
-          `${ENTITY_TYPE_TO_FGA_TYPE[membership.entityType]}:${membership.entityId}`,
-        );
+
+        object = `${FgaType.SCHOOL}:${schoolId}`;
+      } else {
+        object = `${ENTITY_TYPE_TO_FGA_TYPE[membership.entityType]}:${membership.entityId}`;
       }
-      // FAMILY memberships intentionally skip the FGA check here, matching single-create's
-      // outstanding authorization gap (roar-project-management#1774).
+
+      const key = `${userId}|${object}`;
+      let check = caches.permissions.get(key);
+      if (!check) {
+        check = authorizationService.requirePermission(userId, FgaRelation.CAN_CREATE_USERS, object);
+        caches.permissions.set(key, check);
+      }
+
+      await check;
     }
   }
 
@@ -661,13 +695,14 @@ export function UserImportService({
     authContext: AuthContext,
     rows: { index: number; user: User }[],
     outcomes: ImportRowOutcome[],
+    caches: AuthorizeCaches,
   ): Promise<void> {
     for (const { index, user } of rows) {
       try {
         // Capture the tuples to delete before ending the enrollments (afterward they read inactive).
         const memberships = await userRepository.getActiveMembershipsWithRoles(user.id);
 
-        await authorizeRow(authContext, memberships);
+        await authorizeRow(authContext, memberships, caches);
 
         await userRepository.runTransaction({
           fn: async (tx) => {
@@ -755,6 +790,7 @@ export function UserImportService({
     authContext: AuthContext,
     rows: { index: number; row: ImportUserRowInput; user: User }[],
     outcomes: ImportRowOutcome[],
+    caches: AuthorizeCaches,
   ): Promise<void> {
     for (const { index, row, user } of rows) {
       try {
@@ -793,7 +829,7 @@ export function UserImportService({
         // Authorize against the target's actual orgs, not the row's declared ones — the target is
         // named by email, so Phase 1 proves nothing about the requester's rights over this user.
         // Covers the pending removals too (a subset of these), and runs before the transaction.
-        await authorizeRow(authContext, currentMemberships);
+        await authorizeRow(authContext, currentMemberships, caches);
         const desiredMemberships = row.memberships.map((m) => ({
           entityType: m.entityType,
           entityId: m.entityId,
@@ -864,6 +900,7 @@ export function UserImportService({
    */
   async function bulkImport(authContext: AuthContext, rows: ImportUserRowInput[]): Promise<ImportRowOutcome[]> {
     const outcomes: ImportRowOutcome[] = new Array(rows.length);
+    const caches: AuthorizeCaches = { permissions: new Map(), classParents: new Map() };
 
     // ── Phase 0: batch-resolve declared org parentage (one round-trip) ───────────
     // A CSV batch typically names the same district/school on every row, so the distinct ID set is
@@ -910,7 +947,7 @@ export function UserImportService({
       try {
         if (!row.unenroll) {
           validateRowHierarchy(row, hierarchyParents);
-          await authorizeRow(authContext, row.memberships);
+          await authorizeRow(authContext, row.memberships, caches);
         }
         authorized.push({ index, row });
       } catch (error) {
@@ -978,11 +1015,11 @@ export function UserImportService({
     await processCreateBin(authContext, createRows, outcomes);
 
     // ── Phase 4: unenroll bin ────────────────────────────────────────────────────
-    await processUnenrollBin(authContext, unenrollRows, outcomes);
+    await processUnenrollBin(authContext, unenrollRows, outcomes, caches);
 
     // ── Phase 5: update bin ──────────────────────────────────────────────────────
     // Updates profile + auth fields. Membership reconciliation is deferred (see processUpdateBin).
-    await processUpdateBin(authContext, updateRows, outcomes);
+    await processUpdateBin(authContext, updateRows, outcomes, caches);
 
     return outcomes;
   }

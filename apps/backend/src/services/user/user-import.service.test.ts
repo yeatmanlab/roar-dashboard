@@ -297,13 +297,53 @@ describe('UserImportService.bulkImport', () => {
 
   describe('authorization', () => {
     it('fails a row the partner admin cannot create, but continues the batch', async () => {
-      mockAuthz.requirePermission.mockRejectedValueOnce(forbidden()).mockResolvedValue(undefined);
+      // Rows must name different orgs to get different verdicts — permission checks are memoized
+      // per request, so two rows on the same org necessarily share one answer.
+      mockAuthz.requirePermission.mockImplementation(async (_userId, _relation, object) => {
+        if (object === 'school:school-denied') throw forbidden();
+      });
 
-      const rows = [makeRow({ email: 'denied@example.org' }), makeRow({ email: 'allowed@example.org' })];
+      const rows = [
+        makeRow({
+          email: 'denied@example.org',
+          memberships: [{ entityType: EntityType.SCHOOL, entityId: 'school-denied', role: UserRole.STUDENT }],
+        }),
+        makeRow({ email: 'allowed@example.org' }),
+      ];
       const results = await buildService().bulkImport(partnerAdmin, rows);
 
       expect(results[0]!).toMatchObject({ status: 'failed', error: { code: ApiErrorCode.AUTH_FORBIDDEN } });
       expect(results[1]!.status).toBe('ok');
+    });
+
+    it('checks each distinct org once per request, however many rows name it', async () => {
+      const rows = [
+        makeRow({ email: 'a@example.org' }),
+        makeRow({ email: 'b@example.org' }),
+        makeRow({ email: 'c@example.org' }),
+      ];
+
+      await buildService().bulkImport(partnerAdmin, rows);
+
+      // All three rows declare school-1 — one FGA check, not three.
+      expect(mockAuthz.requirePermission).toHaveBeenCalledTimes(1);
+      expect(mockAuthz.requirePermission).toHaveBeenCalledWith(
+        partnerAdmin.userId,
+        FgaRelation.CAN_CREATE_USERS,
+        'school:school-1',
+      );
+    });
+
+    it('resolves a class parent once per request, however many rows name it', async () => {
+      const classRow = (email: string) =>
+        makeRow({
+          email,
+          memberships: [{ entityType: EntityType.CLASS, entityId: 'class-9', role: UserRole.STUDENT }],
+        });
+
+      await buildService().bulkImport(partnerAdmin, [classRow('a@example.org'), classRow('b@example.org')]);
+
+      expect(mockUserRepository.findClassParentSchool).toHaveBeenCalledTimes(1);
     });
 
     it('bypasses FGA for super admins', async () => {
