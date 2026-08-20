@@ -9,6 +9,7 @@ import { CoreDbClient } from '../db/clients';
 import type { CoreTransaction } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { UserRole } from '../enums/user-role.enum';
+import { OrgType } from '../enums/org-type.enum';
 import { BaseRepository } from './base.repository';
 import { isEnrollmentActive, isActiveInFamily } from './utils/enrollment.utils';
 import { logger } from '../logger';
@@ -257,6 +258,56 @@ export class UserRepository extends BaseRepository<User, typeof users> {
       .where(and(eq(classes.id, classId), isNull(classes.rosteringEnded)))
       .limit(1);
     return row?.schoolId ?? null;
+  }
+
+  /**
+   * Resolve the parentage of the given schools and classes in one round-trip.
+   *
+   * Powers bulk-import hierarchy validation, where a batch typically declares the same
+   * district/school across every row — so the distinct ID set is O(1) where the row count is
+   * O(100). Callers pass the deduplicated IDs for the whole batch and validate each row against
+   * the returned maps in memory rather than querying per row.
+   *
+   * Absence from a returned map means "doesn't exist, is the wrong org type, or is rostered out",
+   * with no distinction between them — the same contract as {@link findClassParentSchool}, and for
+   * the same reason: callers return 422 either way, and distinguishing them would disclose which
+   * IDs exist.
+   *
+   * The `orgType` filter on the schools query is load-bearing: it makes a district UUID passed in
+   * a school slot a miss rather than a false match.
+   *
+   * @param schoolIds - Deduplicated school org IDs to resolve. Pass an empty array to skip.
+   * @param classIds - Deduplicated class IDs to resolve. Pass an empty array to skip.
+   * @returns Maps keyed by ID. `schools` carries the parent district (nullable — `parentOrgId` has
+   *   no NOT NULL backing it, so a parentless school is possible and the caller must handle it).
+   *   `classes` carries the parent school and district, both non-null in the schema.
+   */
+  async getOrgHierarchyParents(
+    schoolIds: string[],
+    classIds: string[],
+  ): Promise<{
+    schools: Map<string, { districtId: string | null }>;
+    classes: Map<string, { schoolId: string; districtId: string }>;
+  }> {
+    const [schoolRows, classRows] = await Promise.all([
+      schoolIds.length > 0
+        ? this.db
+            .select({ id: orgs.id, districtId: orgs.parentOrgId })
+            .from(orgs)
+            .where(and(inArray(orgs.id, schoolIds), eq(orgs.orgType, OrgType.SCHOOL), isNull(orgs.rosteringEnded)))
+        : Promise.resolve([]),
+      classIds.length > 0
+        ? this.db
+            .select({ id: classes.id, schoolId: classes.schoolId, districtId: classes.districtId })
+            .from(classes)
+            .where(and(inArray(classes.id, classIds), isNull(classes.rosteringEnded)))
+        : Promise.resolve([]),
+    ]);
+
+    return {
+      schools: new Map(schoolRows.map((row) => [row.id, { districtId: row.districtId }])),
+      classes: new Map(classRows.map((row) => [row.id, { schoolId: row.schoolId, districtId: row.districtId }])),
+    };
   }
 
   /**

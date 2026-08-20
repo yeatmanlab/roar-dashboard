@@ -16,6 +16,7 @@ export function createMockUserRepository(): MockedObject<UserRepository> {
     getUserMembershipsDetailed: vi.fn(),
     hasPlatformAdminRole: vi.fn(),
     findClassParentSchool: vi.fn(),
+    getOrgHierarchyParents: vi.fn(),
     createWithMemberships: vi.fn(),
     existsByUniqueFields: vi.fn(),
     findByEmails: vi.fn(),

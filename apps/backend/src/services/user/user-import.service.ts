@@ -136,6 +136,85 @@ function preRoutingClassification(row: ImportUserRowInput): Classification {
   return row.unenroll ? CLASSIFICATION.UNENROLLED : CLASSIFICATION.CREATED;
 }
 
+/** Resolved parentage for the schools and classes declared across a batch. */
+type OrgHierarchyParents = Awaited<ReturnType<UserRepository['getOrgHierarchyParents']>>;
+
+/** Collect the entity IDs a row declares for one entity type. */
+function declaredIds(row: ImportUserRowInput, entityType: EntityType): Set<string> {
+  const ids = new Set<string>();
+  for (const membership of row.memberships) {
+    if (membership.entityType === entityType) ids.add(membership.entityId);
+  }
+  return ids;
+}
+
+/** A row declared an org that doesn't exist, is the wrong type, or is rostered out. */
+function unresolvedEntity(context: Record<string, unknown>): ApiError {
+  return new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+    statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+    code: ApiErrorCode.RESOURCE_NOT_FOUND,
+    context,
+  });
+}
+
+/**
+ * Verify that a row's declared orgs are mutually consistent: each declared school sits under a
+ * declared district, and each declared class sits under a declared school and district. FGA
+ * authorizes each membership independently, so this validation is required. Unresolved IDs (missing, wrong
+ * org type, rostered out) fail here too, since they're absent from `parents`.
+ *
+ * Only pairs the row actually declares are compared, and declared orgs act as an allowlist — so a
+ * class-only row passes, as does a row naming two schools and a class in either one.
+ *
+ * Which combinations are *required* is not enforced. The dashboard's CSV upload
+ * (`RegisterStudents.vue`) requires district+school[+class], group, or family because it resolves
+ * org names in that order — a name-resolution constraint, not a data invariant. Tightening it here
+ * would also have to handle non-student users: a district-only row is legitimate for a
+ * `platform_admin` (see the `district` type in `packages/authz/authorization-model.fga`).
+ *
+ * @param row - The import row to validate.
+ * @param parents - Batch-resolved parentage from `getOrgHierarchyParents`.
+ * @throws {ApiError} UNPROCESSABLE_ENTITY if a declared org is unresolved or inconsistent.
+ * @throws {ApiError} INTERNAL_SERVER_ERROR if a resolved school has no parent district.
+ */
+function validateRowHierarchy(row: ImportUserRowInput, parents: OrgHierarchyParents): void {
+  const districts = declaredIds(row, EntityType.DISTRICT);
+  const schools = declaredIds(row, EntityType.SCHOOL);
+
+  for (const schoolId of schools) {
+    const school = parents.schools.get(schoolId);
+    if (!school) throw unresolvedEntity({ schoolId });
+
+    // Every school is created with a parent district (school.service.ts), but `orgs.parentOrgId`
+    // is nullable with no CHECK backing it — so a parentless school is corrupt data, not a bad
+    // row. Reporting 422 here would send the operator hunting for a typo that doesn't exist.
+    if (school.districtId === null) {
+      logger.error({ schoolId }, 'School has no parent district — orgs hierarchy invariant violated');
+      throw new ApiError('Failed to validate organization hierarchy', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { schoolId },
+      });
+    }
+
+    if (districts.size > 0 && !districts.has(school.districtId)) {
+      throw unresolvedEntity({ schoolId, parentDistrictId: school.districtId });
+    }
+  }
+
+  for (const classId of declaredIds(row, EntityType.CLASS)) {
+    const declaredClass = parents.classes.get(classId);
+    if (!declaredClass) throw unresolvedEntity({ classId });
+
+    if (schools.size > 0 && !schools.has(declaredClass.schoolId)) {
+      throw unresolvedEntity({ classId, parentSchoolId: declaredClass.schoolId });
+    }
+    if (districts.size > 0 && !districts.has(declaredClass.districtId)) {
+      throw unresolvedEntity({ classId, parentDistrictId: declaredClass.districtId });
+    }
+  }
+}
+
 export function UserImportService({
   userService = UserService(),
   userRepository = new UserRepository(),
@@ -774,7 +853,43 @@ export function UserImportService({
   async function bulkImport(authContext: AuthContext, rows: ImportUserRowInput[]): Promise<ImportRowOutcome[]> {
     const outcomes: ImportRowOutcome[] = new Array(rows.length);
 
-    // ── Phase 1: per-row authorization (before any external writes) ──────────────
+    // ── Phase 0: batch-resolve declared org parentage (one round-trip) ───────────
+    // A CSV batch typically names the same district/school on every row, so the distinct ID set is
+    // O(1) where the row count is O(100). Resolving it once here keeps Phase 1 free of per-row
+    // queries (performance-avoid-quadratic). Unenroll rows are excluded: they act on the target's
+    // actual memberships, not whatever the row declares.
+    const declaredSchoolIds = new Set<string>();
+    const declaredClassIds = new Set<string>();
+    for (const row of rows) {
+      if (row.unenroll) continue;
+      for (const id of declaredIds(row, EntityType.SCHOOL)) declaredSchoolIds.add(id);
+      for (const id of declaredIds(row, EntityType.CLASS)) declaredClassIds.add(id);
+    }
+
+    let hierarchyParents: OrgHierarchyParents;
+    try {
+      hierarchyParents = await userRepository.getOrgHierarchyParents([...declaredSchoolIds], [...declaredClassIds]);
+    } catch (error) {
+      // Without the parentage map no row can be validated. Failing every row is the safe response —
+      // skipping validation would silently persist the inconsistent memberships this guards against.
+      logger.error(
+        { err: error, context: { schools: declaredSchoolIds.size, classes: declaredClassIds.size } },
+        'Failed to resolve declared org hierarchy during import',
+      );
+      for (let index = 0; index < rows.length; index++) {
+        outcomes[index] = failed(
+          index,
+          preRoutingClassification(rows[index]!),
+          ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        );
+      }
+      return outcomes;
+    }
+
+    // ── Phase 1: per-row hierarchy validation + authorization (before any external writes) ──────
+    // Hierarchy runs first: it's the cheaper check, and an inconsistent row is a 422 the operator
+    // can act on rather than a 403 that reads as a permissions problem.
     // Unenroll rows are authorized later, against the target user's actual current memberships
     // (see processUnenrollBin) — `row.memberships` isn't what an unenroll acts on, and may be empty.
     const authorized: { index: number; row: ImportUserRowInput }[] = [];
@@ -782,6 +897,7 @@ export function UserImportService({
       const row = rows[index]!;
       try {
         if (!row.unenroll) {
+          validateRowHierarchy(row, hierarchyParents);
           await authorizeRow(authContext, row.memberships);
         }
         authorized.push({ index, row });

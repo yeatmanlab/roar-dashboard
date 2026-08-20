@@ -50,6 +50,8 @@ const makeRow = (overrides: Partial<ImportUserRowInput> = {}): ImportUserRowInpu
 
 const forbidden = () => new ApiError(ApiErrorMessage.FORBIDDEN, { statusCode: 403, code: ApiErrorCode.AUTH_FORBIDDEN });
 
+const DEFAULT_DISTRICT_ID = 'district-1';
+
 describe('UserImportService.bulkImport', () => {
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
   let mockUserService: ReturnType<typeof createMockUserService>;
@@ -91,6 +93,15 @@ describe('UserImportService.bulkImport', () => {
     mockUserRepository.findByEmails.mockResolvedValue([]);
     mockUserRepository.existsByUniqueFields.mockResolvedValue(false);
     mockUserRepository.findClassParentSchool.mockResolvedValue('school-parent');
+    // Default to a consistent hierarchy: every requested school/class resolves, and a requested
+    // class hangs off the batch's first declared school so single-school rows validate. Tests that
+    // need an inconsistent or unresolved org override this.
+    mockUserRepository.getOrgHierarchyParents.mockImplementation(async (schoolIds, classIds) => ({
+      schools: new Map(schoolIds.map((id) => [id, { districtId: DEFAULT_DISTRICT_ID }])),
+      classes: new Map(
+        classIds.map((id) => [id, { schoolId: schoolIds[0] ?? 'school-parent', districtId: DEFAULT_DISTRICT_ID }]),
+      ),
+    }));
     mockAuthz.requirePermission.mockResolvedValue(undefined);
     getUsers.mockResolvedValue({ users: [], notFound: [] });
     importUsers.mockResolvedValue({ successCount: 0, failureCount: 0, errors: [] });
@@ -335,6 +346,189 @@ describe('UserImportService.bulkImport', () => {
 
       expect(mockAuthz.requirePermission).not.toHaveBeenCalled();
       expect(results[0]!.status).toBe('ok');
+    });
+  });
+
+  describe('hierarchy validation', () => {
+    const schoolMembership = (entityId: string) => ({
+      entityType: EntityType.SCHOOL,
+      entityId,
+      role: UserRole.STUDENT,
+    });
+    const classMembership = (entityId: string) => ({
+      entityType: EntityType.CLASS,
+      entityId,
+      role: UserRole.STUDENT,
+    });
+    const districtMembership = (entityId: string) => ({
+      entityType: EntityType.DISTRICT,
+      entityId,
+      role: UserRole.STUDENT,
+    });
+
+    it('resolves the whole batch in one query, deduplicating repeated org IDs', async () => {
+      const rows = [
+        makeRow({ email: 'a@example.org', memberships: [schoolMembership('school-1'), classMembership('class-1')] }),
+        makeRow({ email: 'b@example.org', memberships: [schoolMembership('school-1'), classMembership('class-1')] }),
+      ];
+
+      await buildService().bulkImport(superAdmin, rows);
+
+      expect(mockUserRepository.getOrgHierarchyParents).toHaveBeenCalledTimes(1);
+      expect(mockUserRepository.getOrgHierarchyParents).toHaveBeenCalledWith(['school-1'], ['class-1']);
+    });
+
+    it('rejects a class whose parent school is not the declared school', async () => {
+      mockUserRepository.getOrgHierarchyParents.mockResolvedValue({
+        schools: new Map([['school-1', { districtId: DEFAULT_DISTRICT_ID }]]),
+        classes: new Map([['class-9', { schoolId: 'school-other', districtId: DEFAULT_DISTRICT_ID }]]),
+      });
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ memberships: [schoolMembership('school-1'), classMembership('class-9')] }),
+      ]);
+
+      expect(results[0]!).toMatchObject({
+        status: 'failed',
+        error: { code: ApiErrorCode.RESOURCE_NOT_FOUND, message: ApiErrorMessage.UNPROCESSABLE_ENTITY },
+      });
+      // Hierarchy runs before authorization, so the FGA check is never reached.
+      expect(mockAuthz.requirePermission).not.toHaveBeenCalled();
+      expect(importUsers).not.toHaveBeenCalled();
+    });
+
+    it('rejects a school whose parent district is not the declared district', async () => {
+      mockUserRepository.getOrgHierarchyParents.mockResolvedValue({
+        schools: new Map([['school-1', { districtId: 'district-other' }]]),
+        classes: new Map(),
+      });
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ memberships: [districtMembership(DEFAULT_DISTRICT_ID), schoolMembership('school-1')] }),
+      ]);
+
+      expect(results[0]!).toMatchObject({ status: 'failed', error: { code: ApiErrorCode.RESOURCE_NOT_FOUND } });
+    });
+
+    it('rejects a class whose parent district is not the declared district', async () => {
+      mockUserRepository.getOrgHierarchyParents.mockResolvedValue({
+        schools: new Map(),
+        classes: new Map([['class-9', { schoolId: 'school-1', districtId: 'district-other' }]]),
+      });
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ memberships: [districtMembership(DEFAULT_DISTRICT_ID), classMembership('class-9')] }),
+      ]);
+
+      expect(results[0]!).toMatchObject({ status: 'failed', error: { code: ApiErrorCode.RESOURCE_NOT_FOUND } });
+    });
+
+    it('rejects an unresolved school (missing, wrong org type, or rostered out)', async () => {
+      mockUserRepository.getOrgHierarchyParents.mockResolvedValue({
+        schools: new Map(),
+        classes: new Map(),
+      });
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ memberships: [schoolMembership('school-gone')] }),
+      ]);
+
+      expect(results[0]!).toMatchObject({
+        status: 'failed',
+        error: { code: ApiErrorCode.RESOURCE_NOT_FOUND, message: ApiErrorMessage.UNPROCESSABLE_ENTITY },
+      });
+    });
+
+    it('rejects an unresolved class (missing or rostered out)', async () => {
+      mockUserRepository.getOrgHierarchyParents.mockResolvedValue({
+        schools: new Map(),
+        classes: new Map(),
+      });
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ memberships: [classMembership('class-gone')] }),
+      ]);
+
+      expect(results[0]!).toMatchObject({ status: 'failed', error: { code: ApiErrorCode.RESOURCE_NOT_FOUND } });
+    });
+
+    it('accepts a class belonging to either of several declared schools', async () => {
+      mockUserRepository.getOrgHierarchyParents.mockResolvedValue({
+        schools: new Map([
+          ['school-1', { districtId: DEFAULT_DISTRICT_ID }],
+          ['school-2', { districtId: DEFAULT_DISTRICT_ID }],
+        ]),
+        classes: new Map([['class-9', { schoolId: 'school-2', districtId: DEFAULT_DISTRICT_ID }]]),
+      });
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({
+          memberships: [schoolMembership('school-1'), schoolMembership('school-2'), classMembership('class-9')],
+        }),
+      ]);
+
+      expect(results[0]!.status).toBe('ok');
+    });
+
+    it('accepts a class-only row (nothing declared to compare the parent against)', async () => {
+      mockUserRepository.getOrgHierarchyParents.mockResolvedValue({
+        schools: new Map(),
+        classes: new Map([['class-9', { schoolId: 'school-unrelated', districtId: 'district-unrelated' }]]),
+      });
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ memberships: [classMembership('class-9')] }),
+      ]);
+
+      expect(results[0]!.status).toBe('ok');
+    });
+
+    it('does not validate declared orgs on unenroll rows', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([UserFactory.build({ email: 'leaver@example.org' })]);
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+      ]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'leaver@example.org', unenroll: true, memberships: [schoolMembership('school-nonexistent')] }),
+      ]);
+
+      expect(mockUserRepository.getOrgHierarchyParents).toHaveBeenCalledWith([], []);
+      expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+    });
+
+    it('fails the row with a 500-tier error when a resolved school has no parent district', async () => {
+      mockUserRepository.getOrgHierarchyParents.mockResolvedValue({
+        schools: new Map([['school-1', { districtId: null }]]),
+        classes: new Map(),
+      });
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ memberships: [schoolMembership('school-1')] }),
+      ]);
+
+      // Corrupt data, not a bad row — reported as an internal failure so the operator isn't sent
+      // hunting for a typo that doesn't exist.
+      expect(results[0]!).toMatchObject({
+        status: 'failed',
+        error: { code: ApiErrorCode.DATABASE_QUERY_FAILED },
+      });
+    });
+
+    it('fails every row when the hierarchy lookup itself throws', async () => {
+      mockUserRepository.getOrgHierarchyParents.mockRejectedValue(new Error('db down'));
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'a@example.org' }),
+        makeRow({ email: 'b@example.org' }),
+      ]);
+
+      expect(results).toHaveLength(2);
+      expect(results.every((r) => r.status === 'failed' && r.error.code === ApiErrorCode.EXTERNAL_SERVICE_FAILED)).toBe(
+        true,
+      );
+      expect(mockUserRepository.findByEmails).not.toHaveBeenCalled();
+      expect(importUsers).not.toHaveBeenCalled();
     });
   });
 

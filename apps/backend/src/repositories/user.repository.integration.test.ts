@@ -10,12 +10,14 @@ import { baseFixture } from '../test-support/fixtures';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { OrgFactory } from '../test-support/factories/org.factory';
+import { ClassFactory } from '../test-support/factories/class.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
 import { UserGroupFactory } from '../test-support/factories/user-group.factory';
 import { GroupFactory } from '../test-support/factories/group.factory';
 import { FamilyFactory } from '../test-support/factories/family.factory';
 import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
 import { UserRole } from '../enums/user-role.enum';
+import { OrgType } from '../enums/org-type.enum';
 import { EntityType } from '../types/entity-type';
 import { UserType } from '../enums/user-type.enum';
 import { AuthProvider } from '../enums/auth-provider.enum';
@@ -436,6 +438,74 @@ describe('UserRepository', () => {
       const result = await repository.findClassParentSchool('00000000-0000-0000-0000-000000000000');
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('getOrgHierarchyParents', () => {
+    it('resolves parent district for schools and parent school/district for classes', async () => {
+      const result = await repository.getOrgHierarchyParents(
+        [baseFixture.schoolA.id, baseFixture.schoolB.id],
+        [baseFixture.classInSchoolA.id],
+      );
+
+      expect(result.schools.get(baseFixture.schoolA.id)).toEqual({ districtId: baseFixture.district.id });
+      expect(result.schools.get(baseFixture.schoolB.id)).toEqual({ districtId: baseFixture.district.id });
+      expect(result.classes.get(baseFixture.classInSchoolA.id)).toEqual({
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+    });
+
+    it('resolves orgs across separate district branches independently', async () => {
+      const result = await repository.getOrgHierarchyParents([], [baseFixture.classInDistrictB.id]);
+
+      expect(result.classes.get(baseFixture.classInDistrictB.id)).toMatchObject({
+        districtId: baseFixture.districtB.id,
+      });
+    });
+
+    it('omits a district id passed in the schools list (wrong org type)', async () => {
+      const result = await repository.getOrgHierarchyParents([baseFixture.district.id], []);
+
+      expect(result.schools.has(baseFixture.district.id)).toBe(false);
+      expect(result.schools.size).toBe(0);
+    });
+
+    it('omits a rostered-out school', async () => {
+      const school = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        parentOrgId: baseFixture.district.id,
+        rosteringEnded: new Date(),
+      });
+
+      const result = await repository.getOrgHierarchyParents([school.id], []);
+
+      expect(result.schools.has(school.id)).toBe(false);
+    });
+
+    it('omits a rostered-out class', async () => {
+      const cls = await ClassFactory.create({
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+        rosteringEnded: new Date(),
+      });
+
+      const result = await repository.getOrgHierarchyParents([], [cls.id]);
+
+      expect(result.classes.has(cls.id)).toBe(false);
+    });
+
+    it('omits unknown ids and returns empty maps when given no ids', async () => {
+      const unknown = await repository.getOrgHierarchyParents(
+        ['00000000-0000-0000-0000-000000000000'],
+        ['00000000-0000-0000-0000-000000000000'],
+      );
+      expect(unknown.schools.size).toBe(0);
+      expect(unknown.classes.size).toBe(0);
+
+      const empty = await repository.getOrgHierarchyParents([], []);
+      expect(empty.schools.size).toBe(0);
+      expect(empty.classes.size).toBe(0);
     });
   });
 
