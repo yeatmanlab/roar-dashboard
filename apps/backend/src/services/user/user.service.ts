@@ -799,8 +799,8 @@ export function UserService({
    * create all Firebase accounts in a single `importUsers` call (one round-trip, no per-account
    * rate limit) and then persist each one here, reusing the same compensation guarantees.
    *
-   * The caller owns authorization, uniqueness pre-checks, and Firebase account creation. On any DB
-   * or FGA failure this compensates by deleting the FGA tuples, the DB rows, and — since the caller
+   * The caller owns authorization, uniqueness pre-checks, and Firebase account creation ({@link bulkImportUsers}).
+   * On any DB or FGA failure this compensates by deleting the FGA tuples, the DB rows, and — since the caller
    * created it — the Firebase account, so a failed row leaves no orphan in any system.
    *
    * @param authContext - Requesting user's auth context (for logging/compensation context).

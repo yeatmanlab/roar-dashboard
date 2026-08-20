@@ -91,7 +91,6 @@ export const UsersContract = c.router(
         200: SuccessEnvelopeSchema(ImportUsersResponseSchema),
         400: ErrorEnvelopeSchema,
         401: ErrorEnvelopeSchema,
-        403: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
@@ -103,7 +102,8 @@ export const UsersContract = c.router(
         'per-row outcomes (including failures) live in `results`, never in the HTTP status code. ' +
         'Returns a 400 if the request body is missing, empty, over 100 rows, or malformed. ' +
         'Returns a 401 if the requesting user is not authenticated. ' +
-        'Returns a 403 if the requesting user is not authorized to import users. ' +
+        'Authorization is evaluated per row, not per request: a caller lacking permission over a ' +
+        "row's target surfaces as that row's failed outcome in `results`, never as an HTTP status. " +
         'Per-row and per-bin failures (including lookup and configuration errors) are always ' +
         'reported as failed outcomes in `results`, not a 500 — the 500 response exists only as a ' +
         'defensive fallback for truly unanticipated failures.',
