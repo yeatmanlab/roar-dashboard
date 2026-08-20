@@ -1408,11 +1408,7 @@ const mapBackendScoreRows = (rows) => {
   };
 };
 
-const backendScoreReportData = computed(() => {
-  return scoreReportSourceRows.value.length > 0
-    ? mapBackendScoreRows(scoreReportSourceRows.value)
-    : { assignmentTableData: [], runsByTaskId: {}, compositeFoundationalRuns: [] };
-});
+const backendScoreReportData = computed(() => mapBackendScoreRows(scoreReportSourceRows.value));
 
 const scoreReportTableData = computed(() => backendScoreReportData.value.assignmentTableData);
 
