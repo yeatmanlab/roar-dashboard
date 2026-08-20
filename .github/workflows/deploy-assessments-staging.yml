@@ -79,4 +79,4 @@ jobs:
           dist-path: apps/assessments/${{ matrix.assessment }}/dist
           firebase-config-path: apps/assessments/${{ matrix.assessment }}/firebase.json
           firebase-hosting-site: ${{ matrix.assessment }}
-          firebase-rc-path: .firebaserc
+          hosting-suffix-map-path: apps/assessments/hosting-targets.json
