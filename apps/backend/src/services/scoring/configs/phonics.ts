@@ -40,6 +40,18 @@ export default {
     })),
     {
       kind: 'number' as const,
+      key: 'totalCorrect',
+      label: 'Num Correct',
+      name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT,
+    },
+    {
+      kind: 'number' as const,
+      key: 'totalNumAttempted',
+      label: 'Num Attempted',
+      name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED,
+    },
+    {
+      kind: 'number' as const,
       key: 'totalPercentCorrect',
       label: 'Total % Correct',
       name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT,

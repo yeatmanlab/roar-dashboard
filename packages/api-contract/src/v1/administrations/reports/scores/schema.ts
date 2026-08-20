@@ -235,6 +235,15 @@ export const StudentScoreEntrySchema = z.object({
 
 export type StudentScoreEntry = z.infer<typeof StudentScoreEntrySchema>;
 
+export const FoundationalCompositeScoreSchema = z.object({
+  thetaEstimate: z.number().nullable(),
+  roarScore: z.number().nullable(),
+  percentile: z.number().nullable(),
+  standardScore: z.number().nullable(),
+});
+
+export type FoundationalCompositeScore = z.infer<typeof FoundationalCompositeScoreSchema>;
+
 /**
  * A student row in the score report, keyed by taskId.
  *
@@ -244,6 +253,7 @@ export type StudentScoreEntry = z.infer<typeof StudentScoreEntrySchema>;
 export const StudentScoreRowSchema = z.object({
   user: ReportUserInfoSchema,
   scores: z.record(z.string().uuid(), StudentScoreEntrySchema),
+  foundationalComposite: FoundationalCompositeScoreSchema.nullable().optional(),
 });
 
 export type StudentScoreRow = z.infer<typeof StudentScoreRowSchema>;

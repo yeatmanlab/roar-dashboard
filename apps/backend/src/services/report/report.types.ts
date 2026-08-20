@@ -273,10 +273,18 @@ export interface ServiceStudentScoreEntry {
   display?: ServiceScoreDisplay;
 }
 
+export interface ServiceFoundationalCompositeScore {
+  thetaEstimate: number | null;
+  roarScore: number | null;
+  percentile: number | null;
+  standardScore: number | null;
+}
+
 /** A student row in score results. */
 export interface ServiceStudentScoreRow {
   user: ServiceUserInfo;
   scores: Record<string, ServiceStudentScoreEntry>;
+  foundationalComposite?: ServiceFoundationalCompositeScore | null;
 }
 
 /** Return type for listStudentScores. */
