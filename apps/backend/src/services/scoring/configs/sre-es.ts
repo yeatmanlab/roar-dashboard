@@ -4,6 +4,8 @@ import {
   SRE_SCORING_VERSION,
 } from '@roar-platform/assessment-schema/roar-sre';
 
+const COMPOSITE_DOMAIN = 'composite';
+
 export default {
   taskSlugs: [SRE_TASK_IDS.ES],
   scoreFields: {
@@ -31,4 +33,34 @@ export default {
     rawScore: { min: 0, max: 140 },
     correctIncorrectDifference: { min: 0, max: 140 },
   },
+  subscores: [
+    {
+      kind: 'number' as const,
+      key: 'numCorrect',
+      label: 'Num Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: SRE_COMPOSITE_SCORE_NAMES.NUM_CORRECT,
+    },
+    {
+      kind: 'number' as const,
+      key: 'numIncorrect',
+      label: 'Num Incorrect',
+      domain: COMPOSITE_DOMAIN,
+      name: SRE_COMPOSITE_SCORE_NAMES.NUM_INCORRECT,
+    },
+    {
+      kind: 'number' as const,
+      key: 'numAttempted',
+      label: 'Num Attempted',
+      domain: COMPOSITE_DOMAIN,
+      name: SRE_COMPOSITE_SCORE_NAMES.NUM_ATTEMPTED,
+    },
+    {
+      kind: 'number' as const,
+      key: 'correctIncorrectDifference',
+      label: 'Correct/Incorrect Difference',
+      domain: COMPOSITE_DOMAIN,
+      name: SRE_COMPOSITE_SCORE_NAMES.SRE_SCORE,
+    },
+  ],
 } as const;
