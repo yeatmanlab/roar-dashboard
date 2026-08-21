@@ -1,0 +1,74 @@
+@use '../abstracts/' as *;
+
+.roar-inference-btn {
+  display: flex;
+  padding: 8px;
+  width: 50vh;
+  height: 15vh;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid black;
+  background: white;
+  border-radius: 32px;
+  // text
+  color: black;
+  font-size: 1rem;
+  font-style: normal;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+
+  &:hover {
+    background-color: gainsboro;
+  }
+
+  @include respond-to('very-large') {
+    width: 40vh;
+    height: 10vh;
+    font-size: 1.2rem;
+  }
+}
+
+.instruction-no-border {
+  display: flex;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  color: black;
+  padding-bottom: 0;
+  margin-left: 10%;
+  margin-right: 10%;
+  font-size: large;
+
+  p {
+    margin-bottom: 0;
+    text-align: left;
+  }
+
+  @include respond-to('huge') {
+    font-size: xx-large;
+    margin-left: 15%;
+    margin-right: 15%;
+  }
+}
+
+.roar-instruction-question {
+  display: flex;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  color: black;
+  font-size: large;
+  padding: 12px;
+  font-weight: bold;
+
+  @include respond-to('huge') {
+    font-size: xx-large;
+  }
+}
+
+.inference-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+}

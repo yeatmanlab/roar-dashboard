@@ -1,5 +1,6 @@
 # Logs
 *.log
+.local-dev-logs/
 
 # Cache
 .turbo
@@ -32,5 +33,12 @@ certs
 # Test coverage
 coverage
 
+# Cypress artifacts
+**/cypress/downloads
+
 # Other
 .DS_Store
+.firebase/
+
+# Local assessment environment config (copy from *.example.json to get started)
+taskVariantParameters.json

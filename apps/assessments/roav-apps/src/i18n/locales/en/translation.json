@@ -1,0 +1,765 @@
+{
+  "loading": "This experiment is loading...",
+  "progressBar": "Progress Complete",
+  "preloadTrial": {
+    "messageText": "Please wait while the experiment loads. This may take a few minutes."
+  },
+  "enter-full-screen": {
+    "prompt": "Switch to full screen mode",
+    "label-button": "GO"
+  },
+  "enter-landscape": {
+    "prompt": "Switch to landscape view",
+    "label-button": "GO"
+  },
+  "roav-rvp": {
+    "general": {
+      "stand": {
+        "label-button-next": "NEXT"
+      },
+      "game": {
+        "label-button-next": ""
+      }
+    },
+    "instruction": {
+      "intro": {
+        "game": {
+          "text1": "Welcome!",
+          "text2": "I am Luna the space cat.",
+          "text3": "Ready to play a fun game?",
+          "text4": "Press the <b>spaceship</b> to start!"
+        },
+        "stand": {
+          "text1": "Welcome!",
+          "text2": "In this activity, small pictures will appear briefly on the screen.",
+          "text3": "Then you will press the button that matches what you saw.",
+          "text4": "Press {{btn-start}}NEXT{{btn-end}} to begin."
+        }
+      },
+      "instr-task-1": {
+        "game": {
+          "text1": "Look at the stars",
+          "text2": "They make pictures that look like flowers and cars!",
+          "text3": "",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Get ready to watch!",
+          "text2": "Here is how the task will work.{{pause-medium}}",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "instr-task-2": {
+        "game": {
+          "text1": "Help me make a map of the sky!",
+          "text2": "Then I can find my way to Earth and visit you.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "instr-after-demo-1": {
+        "game": {
+          "text1": "Nicely done!",
+          "text2": "We added the first piece to our map!",
+          "text3": "Onwards!",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Nicely done!",
+          "text2": "Onwards!",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "practice-before-practice-av": {
+        "game": {
+          "text1": "Great job!",
+          "text2": "We will fly faster now.",
+          "text3": "Each time, tell me what was <b>above the blue line</b>.",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Great job!",
+          "text2": "The pictures will flash faster now.",
+          "text3": "Each time, press the button with the picture that was <b>above the blue line</b>.",
+          "text4": ""
+        }
+      },
+      "practice-before-practice": {
+        "game": {
+          "text1": "Keep going!",
+          "text2": "Ready to fly even faster?",
+          "text3": "Keep telling me what to add to our map.",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Ready to go even faster?",
+          "text2": "Keep showing what was <b>above the blue line</b>.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "practice-after-practice": {
+        "game": {
+          "text1": "Awesome job!",
+          "text2": "We landed on our first planet!",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "instr-take-best-guess": {
+        "game": {
+          "text1": "Do your best",
+          "text2": "Spotting stars can get really hard, but do not worry.",
+          "text3": "Just take your best guess!",
+          "text4": "Press the <b>spaceship</b> to play."
+        },
+        "stand": {
+          "text1": "Awesome job!",
+          "text2": "Spotting pictures can get really hard, but do not worry.",
+          "text3": "Just take your best guess!",
+          "text4": "Press {{btn-start}}NEXT{{btn-end}} to go on."
+        }
+      },
+      "test-keep-going": {
+        "game": {
+          "text1": "Nice work!",
+          "text2": "The map is filling up!",
+          "text3": "Keep going! {{pause-medium}}",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Nice work!",
+          "text2": "Keep going! {{pause-medium}}",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "test-keep-going-half": {
+        "game": {
+          "text1": "You are doing great!",
+          "text2": "Keep going! {{pause-medium}}",
+          "text3": "",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "You are doing great!",
+          "text2": "Keep going! {{pause-medium}}",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "test-keep-going-last": {
+        "game": {
+          "text1": "Nice work!",
+          "text2": "The map is almost ready!",
+          "text3": "Keep going! {{pause-medium}}",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Nice work!",
+          "text2": "You are almost done!",
+          "text3": "Keep going! {{pause-medium}}",
+          "text4": ""
+        }
+      },
+      "test-warn-fast": {
+        "game": {
+          "text1": "Flying faster now!",
+          "text2": "It will be tricky to see the stars.",
+          "text3": "It is okay to guess if you are not sure, just try your best. {{pause-medium}}",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Going faster now!",
+          "text2": "It will be tricky to see the pictures.",
+          "text3": "It is okay to guess if you are not sure, just try your best. {{pause-medium}}",
+          "text4": ""
+        }
+      },
+      "test-warn-fast-short": {
+        "game": {
+          "text1": "Flying faster now! {{pause-medium}}",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        },
+        "stand": {
+          "text1": "Going faster now! {{pause-medium}}",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "test-break-after-block-1": {
+        "game": {
+          "text1": "Awesome job!",
+          "text2": "We landed on another planet!",
+          "text3": "The stars look different here.",
+          "text4": "Rest for a moment if you like and press the <b>spaceship</b> to keep playing."
+        },
+        "stand": {
+          "text1": "Awesome job!",
+          "text2": "You are halfway done.",
+          "text3": "Rest for a moment if you like and press {{btn-start}}NEXT{{btn-end}} to go on.",
+          "text4": ""
+        }
+      },
+      "test-instr-before-block-2": {
+        "stand": {
+          "text1": "Get ready!",
+          "text2": "The pictures will look different now, but your task stays the same.",
+          "text3": "Keep showing what was <b>above the blue line</b>.",
+          "text4": ""
+        }
+      },
+      "end-screen": {
+        "game": {
+          "text1": "You did it!",
+          "text2": "You showed me the way to Earth!",
+          "text3": "Now I can visit you.",
+          "text4": "Press the <b>spaceship</b> to finish the game."
+        },
+        "stand": {
+          "text1": "Great job!",
+          "text2": "You are all done!",
+          "text3": "Thank you so much for completing our activity.",
+          "text4": "Press {{btn-start}}NEXT{{btn-end}} to save your work and exit."
+        }
+      }
+    },
+    "feedback-av": {
+      "def": {
+        "correct": {
+          "stand": {
+            "text1": "This is correct!",
+            "text2": "Awesome!",
+            "text3": ""
+          },
+          "game": {
+            "text1": "This is correct!",
+            "text2": "Awesome!",
+            "text3": ""
+          }
+        },
+        "incorrect": {
+          "stand": {
+            "text1": "Not quite right!",
+            "text2": "You will get it next time!",
+            "text3": ""
+          },
+          "game": {
+            "text1": "Almost, but not quite!",
+            "text2": "You will get it next time!",
+            "text3": ""
+          }
+        }
+      }
+    },
+    "rvp": {
+      "instr-demo-1-start": {
+        "mark-fix": {
+          "game": {
+            "text": "This is the cabin of my spaceship. Look straight at the mark so that we stay on course. The stars will appear on the screen."
+          },
+          "stand": {
+            "text": "Look straight at the mark. The pictures will appear on the screen."
+          }
+        }
+      },
+      "instr-demo-1-pos-0": {
+        "stim": {
+          "game": { "text": "Here they are! It looks like a tree on the left" },
+          "stand": { "text": "Here they are! It looks like a tree on the left" }
+        }
+      },
+      "instr-demo-1-pos-1": {
+        "stim": {
+          "game": { "text": "and a flower on the right." },
+          "stand": { "text": "and a flower on the right." }
+        }
+      },
+      "instr-demo-1-end": {
+        "stim": {
+          "game": {
+            "text": "Try to remember what you see! The stars appear for just a moment as we zoom by. When they disappear, the line will show what we need for the map."
+          },
+          "stand": {
+            "text": "Try to remember what you see! The pictures appear for just a moment. When they disappear, a line will appear under one of the spots."
+          }
+        },
+        "mark-targ": {
+          "game": {
+            "text": "Do you remember what was above the line? {{pause-long}}"
+          },
+          "stand": {
+            "text": "Do you remember what was above the line? {{pause-long}}"
+          }
+        },
+        "resp": {
+          "game": {
+            "text": "It looked like a flower, so press the flower button."
+          },
+          "stand": {
+            "text": "It looked like a flower, so press the flower button."
+          }
+        }
+      },
+
+      "instr-demo-2-start": {
+        "mark-fix": {
+          "game": { "text": "Look straight ahead." },
+          "stand": { "text": "Look straight ahead." }
+        },
+        "stim": {
+          "game": {
+            "text": "Remember what you see. There are four pictures this time. They look like"
+          },
+          "stand": {
+            "text": "Remember what you see. There are four pictures this time. They look like"
+          }
+        }
+      },
+      "instr-demo-2-pos-0": {
+        "stim": {
+          "game": { "text": "a rabbit" },
+          "stand": { "text": "a rabbit" }
+        }
+      },
+      "instr-demo-2-pos-1": {
+        "stim": {
+          "game": { "text": "a car" },
+          "stand": { "text": "a car" }
+        }
+      },
+      "instr-demo-2-pos-2": {
+        "stim": {
+          "game": { "text": "a butterfly" },
+          "stand": { "text": "a butterfly" }
+        }
+      },
+      "instr-demo-2-pos-3": {
+        "stim": {
+          "game": { "text": "and a duck" },
+          "stand": { "text": "and a duck" }
+        }
+      },
+      "instr-demo-2-end": {
+        "mark-targ": {
+          "game": {
+            "text": "Do you remember what was above the blue line?{{pause-long}}"
+          },
+          "stand": {
+            "text": "Do you remember what was above the blue line?{{pause-long}}"
+          }
+        },
+        "resp": {
+          "game": {
+            "text": "It looked like a rabbit, so press the rabbit button."
+          },
+          "stand": {
+            "text": "It looked like a rabbit, so press the rabbit button."
+          }
+        }
+      },
+      "practice-av": {
+        "mark-fix": {
+          "game": { "text": "Look carefully!" },
+          "stand": { "text": "Look carefully!" }
+        },
+        "resp": {
+          "game": { "text": "Press the picture that was above the blue line." },
+          "stand": { "text": "Press the picture that was above the blue line." }
+        }
+      }
+    }
+  },
+  "roav-mp": {
+    "general": {
+      "stand": {
+        "label-button-next": "NEXT"
+      },
+      "game": {
+        "label-button-next": ""
+      }
+    },
+    "instruction": {
+      "intro": {
+        "stand": {
+          "text1": "Welcome!",
+          "text2": "In this activity, you will watch moving dots.",
+          "text3": "You will decide whether they move <b>left</b> or <b>right</b>.",
+          "text4": "Press {{btn-start}}NEXT{{btn-end}} or <b>spacebar</b> to begin."
+        },
+        "game": {
+          "text1": "Welcome!",
+          "text2": "I am Beata the bee.",
+          "text3": "Ready to play a fun game?",
+          "text4": "Press the <b>binoculars</b> to start!"
+        }
+      },
+      "navigation-spacebar": {
+        "stand": {
+          "text1": "",
+          "text2": "You can use the <b>space bar</b> on your <b>keyboard</b> instead of the {{btn-start}}NEXT{{btn-end}} button.",
+          "text3": "Press the <b>space bar</b> or {{btn-start}}NEXT{{btn-end}} to continue.",
+          "text4": ""
+        }
+      },
+      "instr-task": {
+        "game": {
+          "text1": "I need your help!",
+          "text2": "My friends flew off and I could not keep up.",
+          "text3": "Can you help me find <b>which way</b> they went?",
+          "text4": ""
+        }
+      },
+      "instr-input-arrows": {
+        "stand": {
+          "text1": "{{text-only}}Use the keyboard to answer",
+          "text2": "You will use the <b>arrow keys</b> on your <b>keyboard</b> to indicate the direction of motion.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "instr-ready-to-watch-right": {
+        "stand": {
+          "text1": "Get ready to watch!",
+          "text2": "You are about to see moving dots.",
+          "text3": "Decide whether the motion is mostly <b>left</b> or <b>right</b>.",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Get ready to watch!",
+          "text2": "My bee friends are about to zoom by!",
+          "text3": "Will they fly to the <b>flowers</b> or the <b>beehives</b>?",
+          "text4": "Press the <b>binoculars</b> to see them go."
+        }
+      },
+      "alt-instr-ready-to-watch-right": {
+        "stand": {
+          "text1": "Get ready to watch!",
+          "text2": "You are about to see moving dots.",
+          "text3": "Decide whether the motion is mostly <b>left</b> or <b>right</b>.{{pause-medium}}",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Get ready to watch!",
+          "text2": "My bee friends are about to zoom by!",
+          "text3": "Will they fly to the <b>flowers</b> or the <b>beehives</b>?{{pause-medium}}",
+          "text4": ""
+        }
+      },
+      "instr-response-right": {
+        "stand": {
+          "text1": "Nicely done!",
+          "text2": "Watch the dots move again.",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Nicely done!",
+          "text2": "Press the <b>binoculars</b> to see the bees fly by again.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "alt-instr-response-right": {
+        "stand": {
+          "text1": "Nicely done!",
+          "text2": "Watch the dots move again.{{pause-medium}}",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Nicely done!",
+          "text2": "Get ready to see the bees fly by again.{{pause-medium}}",
+          "text3": "",
+          "text4": ""
+        }
+      },
+      "practice-ready-to-watch-feedback": {
+        "stand": {
+          "text1": "Keep going!",
+          "text2": "Each time, watch carefully and decide the main direction of motion.",
+          "text3": "Then press the <b>left</b> or <b>right arrow</b>.{{pause-medium}}",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Keep going!",
+          "text2": "My friends will keep zooming around!",
+          "text3": "Each time, watch carefully and show me which way they fly.{{pause-medium}}",
+          "text4": ""
+        }
+      },
+      "practice-ready-to-watch-no-feedback": {
+        "stand": {
+          "text1": "Now try it on your own{{pause-medium}}",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Nice work!",
+          "text2": "Now I will stop talking and focus on flying!",
+          "text3": "Keep telling me which way to go.{{pause-medium}}",
+          "text4": ""
+        }
+      },
+      "practice-reward-after-no-feedback": {
+        "game": {
+          "text1": "Awesome job!",
+          "text2": "We filled the entire honeycomb with golden honey!",
+          "text3": "If we fill one more, I will have enough honey for the whole winter!",
+          "text4": ""
+        }
+      },
+      "instr-take-best-guess": {
+        "stand": {
+          "text1": "Do your best",
+          "text2": "If it feels hard sometimes, do not worry!",
+          "text3": "Just take your best guess!",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Do your best",
+          "text2": "If it feels hard sometimes, do not worry!",
+          "text3": "Just take your best guess!",
+          "text4": "Press the <b>binoculars</b> to play!"
+        }
+      },
+      "test-break-after-block-1": {
+        "stand": {
+          "text1": "Awesome job!",
+          "text2": "Take a quick break if you like and press {{btn-start}}NEXT{{btn-end}} to continue.",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Awesome job!",
+          "text2": "The second honeycomb is filling up!",
+          "text3": "Take a quick break if you like and press the <b>binoculars</b> to keep playing.",
+          "text4": ""
+        }
+      },
+      "test-break-after-block-2": {
+        "stand": {
+          "text1": "Nicely done!",
+          "text2": "You are almost there!",
+          "text3": "Rest for a moment if you like and press {{btn-start}}NEXT{{btn-end}} to go on.",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Nicely done!",
+          "text2": "The honeycomb is almost full!",
+          "text3": "Rest for a moment if you like and press the <b>binoculars</b> to go on.",
+          "text4": ""
+        }
+      },
+      "end-screen": {
+        "stand": {
+          "text1": "Great job!",
+          "text2": "You are all done!",
+          "text3": "Thank you so much for completing our activity.",
+          "text4": "Press {{btn-start}}NEXT{{btn-end}} to save your work and exit."
+        },
+        "game": {
+          "text1": "You did it!",
+          "text2": "Look at all the honey we have now!",
+          "text3": "Thanks to you, I am ready for the winter!",
+          "text4": "Press the <b>binoculars</b> to finish the game."
+        }
+      },
+      "reminder": {
+        "stand": {
+          "text1": "Watch carefully!",
+          "text2": "Remember to press the <b>left arrow</b> for <b>left</b> motion and <b>right arrow</b> for <b>right</b> motion. ",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "Watch carefully!",
+          "text2": "Remember to tell me which way to fly by pressing the <b>buttons</b> or the <b>arrows</b>!",
+          "text3": "",
+          "text4": ""
+        }
+      }
+    },
+    "feedback-av": {
+      "def": {
+        "correct": {
+          "stand": {
+            "text1": "This is correct!",
+            "text2": "",
+            "text3": ""
+          },
+          "game": {
+            "text1": "This is correct!",
+            "text2": "Awesome!",
+            "text3": ""
+          }
+        },
+        "incorrect": {
+          "stand": {
+            "text1": "Not quite right!",
+            "text2": "",
+            "text3": ""
+          },
+          "game": {
+            "text1": "Almost, but not quite!",
+            "text2": "You will get it next time!",
+            "text3": ""
+          }
+        }
+      }
+    },
+    "instruction-input-lr": {
+      "instr-physical-keyboard": {
+        "stand": {
+          "text1": "",
+          "text2": "Does your device have a <b>physical</b> keyboard?",
+          "text3": "",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-right": {
+        "stand": {
+          "text1": "{{text-only}}Press the right arrow key",
+          "text2": "Find the <b>right arrow key</b> on your <b>keyboard</b>.",
+          "text3": "Press it to continue.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-right-incorrect-1": {
+        "stand": {
+          "text1": "Not quite correct",
+          "text2": "Try again.",
+          "text3": "Press the <b>right arrow key</b> on your <b>keyboard</b>.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-right-incorrect-2": {
+        "stand": {
+          "text1": "Still not quite correct",
+          "text2": "That is okay.",
+          "text3": "Press <b>any key</b> to continue.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-right-correct": {
+        "stand": {
+          "text1": "This is correct!",
+          "text2": "Press <b>any key</b> to continue.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-left": {
+        "stand": {
+          "text1": "{{text-only}}Press the left arrow key",
+          "text2": "Now find the <b>left arrow key</b> on your <b>keyboard</b>.",
+          "text3": "Press it to continue.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-left-incorrect-1": {
+        "stand": {
+          "text1": "Not quite correct",
+          "text2": "Try again.",
+          "text3": "Press the <b>left arrow key</b> on your <b>keyboard</b>.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-keyboard-left-correct": {
+        "stand": {
+          "text1": "This is correct!",
+          "text2": "Press <b>any key</b> to continue.",
+          "text3": "",
+          "text4": ""
+        }
+      },
+
+      "instr-input-buttons": {
+        "stand": {
+          "text1": "{{text-only}}Use buttons to answer",
+          "text2": "You will use the <b>on-screen buttons</b> to indicate the direction of motion.",
+          "text3": "Press the <b>left</b> or <b>right</b> button to continue.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-all": {
+        "stand": {
+          "text1": "{{text-only}}How to answer",
+          "text2": "To indicate the direction of motion, use the <b>arrows</b> on your <b>keyboard</b> or on <b>screen</b>.",
+          "text3": "Press the <b>left</b> or <b>right</b> arrow to continue.",
+          "text4": ""
+        }
+      },
+
+      "instr-input-buttons-fallback": {
+        "stand": {
+          "text1": "{{text-only}}Use on-screen buttons",
+          "text2": "You can use the <b>on-screen buttons</b> instead of the keyboard.",
+          "text3": "Press the <b>left</b> or <b>right</b> button to continue.",
+          "text4": ""
+        }
+      }
+    },
+
+    "rdk": {
+      "instr-demo-right": {
+        "stand": {
+          "text1": "",
+          "text2": "The dots are mostly moving <b>right</b>, so press the <b>right arrow</b>!",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "The bees are flying to the <b>flowers</b>, so press the <b>flower</b> button or the <b>right arrow</b> on your keyboard!",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        }
+      },
+
+      "instr-demo-left": {
+        "stand": {
+          "text1": "",
+          "text2": "The dots are mostly moving <b>left</b>, so press the <b>left arrow</b>!",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "The bees are flying to the <b>beehives</b>, so press the <b>beehive</b> button or the <b>left arrow</b> on your keyboard!",
+          "text2": "",
+          "text3": "",
+          "text4": ""
+        }
+      },
+
+      "practice-feedback": {
+        "stand": {
+          "text1": "",
+          "text2": "Press the <b>left arrow</b> for <b>left</b> motion and the <b>right arrow</b> for <b>right</b> motion.",
+          "text3": "",
+          "text4": ""
+        },
+        "game": {
+          "text1": "",
+          "text2": "",
+          "text3": "If the bees are flying to the <b>flowers</b>, press the <b>flower</b> button or the <b>right arrow</b>.",
+          "text4": "If they are flying to the <b>beehives</b>, press the <b>beehive</b> button or the <b>left arrow</b>. {{pause-long}}"
+        }
+      }
+    }
+  }
+}

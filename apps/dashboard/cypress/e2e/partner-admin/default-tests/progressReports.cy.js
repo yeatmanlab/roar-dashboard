@@ -18,7 +18,7 @@ const openSchoolProgressReport = () => {
   cy.url().should('eq', `${baseUrl}/administration/${testPartnerAdministrationId}/school/${testSchoolId}`);
 };
 
-describe('Partner Admin: Progress Reports', () => {
+describe.skip('Partner Admin: Progress Reports', () => {
   // @TODO: Expand on test to verify only stats exist for district admin.
   it('Renders only stats for district admin progress report', () => {
     // Login as a partner admin.

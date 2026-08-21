@@ -1,0 +1,55 @@
+@use 'vars' as *;
+
+// main body class, all pages have this class in the body
+.jspsych-display-element {
+  overscroll-behavior: none;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  margin: 0;
+  text-align: center;
+  touch-action: manipulation;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+
+  // all jspsych content has a division with this class
+  .jspsych-content-wrapper {
+    height: 100%;
+    width: 100%;
+
+    // nested division within the content wrapper
+    .jspsych-content {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+}
+
+.roav-container-viewport-adaptive {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: absolute; // fixed - can behave unexpectably withing scrollable containers
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+}
+
+.roav-container-viewport-fixed {
+  position: absolute !important;
+  top: 0px !important;
+  left: 0px !important;
+  height: var(--height-fs) !important;
+  width: var(--width-fs) !important;
+}

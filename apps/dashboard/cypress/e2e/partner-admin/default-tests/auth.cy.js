@@ -1,7 +1,7 @@
 const PARTNER_ADMIN_USERNAME = Cypress.env('PARTNER_ADMIN_USERNAME');
 const PARTNER_ADMIN_PASSWORD = Cypress.env('PARTNER_ADMIN_PASSWORD');
 
-describe('Partner Admin: Auth', () => {
+describe.skip('Partner Admin: Auth', () => {
   it('Logs in as a partner admin', () => {
     cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);
 

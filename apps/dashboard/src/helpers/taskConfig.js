@@ -1,0 +1,200 @@
+import _isEqual from 'lodash/isEqual';
+import { TASK_PARAMETER_TYPES } from '@/constants/tasks';
+
+/**
+ * Helpers for converting a task's `taskConfig` object to and from the
+ * row-based shape edited by `TaskParametersConfigurator`.
+ *
+ * Keys are preserved **verbatim** in both directions. The legacy
+ * `convertParamArrayToObject` helper camelCases keys, which silently rewrites
+ * any non-camelCase key on every round-trip (e.g. `max_attempts` →
+ * `maxAttempts`) — corrupting existing backend `taskConfig` data and defeating
+ * change detection. New keys are format-validated at the form layer instead.
+ */
+
+const EDITABLE_VALUE_TYPES = Object.values(TASK_PARAMETER_TYPES);
+
+/**
+ * Checks whether a taskConfig value can be edited in the configurator.
+ *
+ * @param {*} value – The taskConfig entry value.
+ * @returns {Boolean} true for string, number, and boolean values.
+ */
+export function isEditableTaskConfigValue(value) {
+  return EDITABLE_VALUE_TYPES.includes(typeof value);
+}
+
+/**
+ * Split a task's `taskConfig` into configurator rows and passthrough entries.
+ *
+ * Scalar entries (string/number/boolean) become editable rows. Everything
+ * else — `null`, arrays, nested objects — is returned as `passthrough` so it
+ * can be merged back verbatim on submit; the contract explicitly allows such
+ * values and the row editor cannot represent them.
+ *
+ * @param {*} taskConfig – The task's taskConfig value (jsonb, may be anything).
+ * @returns {{ editableRows: Array<Object>, passthrough: Object, canEdit: Boolean }}
+ *   `canEdit` is false when taskConfig is not a plain object (e.g. an array),
+ *   in which case the editor should be disabled entirely.
+ */
+export function splitTaskConfig(taskConfig) {
+  if (taskConfig === null || taskConfig === undefined) {
+    return { editableRows: [], passthrough: {}, canEdit: true };
+  }
+
+  if (typeof taskConfig !== 'object' || Array.isArray(taskConfig)) {
+    return { editableRows: [], passthrough: {}, canEdit: false };
+  }
+
+  const editableRows = [];
+  const passthrough = {};
+
+  for (const [name, value] of Object.entries(taskConfig)) {
+    if (isEditableTaskConfigValue(value)) {
+      editableRows.push({ name, value, type: typeof value });
+    } else {
+      passthrough[name] = value;
+    }
+  }
+
+  return { editableRows, passthrough, canEdit: true };
+}
+
+/**
+ * Build a `taskConfig` object from configurator rows and passthrough entries.
+ *
+ * Row names are used verbatim as keys (no camelCasing — see module JSDoc).
+ * Rows with a blank name are skipped. Passthrough entries are merged first so
+ * an edited row can never be silently shadowed by a preserved entry.
+ *
+ * @param {Array<Object>} rows – The configurator rows ({ name, value, type }).
+ * @param {Object} [passthrough={}] – Non-editable entries preserved from the original.
+ * @returns {Object} The combined taskConfig object.
+ */
+export function buildTaskConfigFromRows(rows, passthrough = {}) {
+  const config = { ...passthrough };
+
+  for (const row of rows) {
+    const name = typeof row.name === 'string' ? row.name.trim() : '';
+    if (!name) continue;
+    config[name] = row.value;
+  }
+
+  return config;
+}
+
+/**
+ * Split a task variant's `parameters` array into configurator rows and
+ * passthrough entries.
+ *
+ * Mirrors `splitTaskConfig`, but for the contract's variant parameter shape —
+ * an array of `{ name, value }` entries where values may be any JSON value.
+ * Scalar values become editable rows; `null`, arrays, and nested objects are
+ * preserved verbatim as passthrough entries.
+ *
+ * @param {*} parameters – The variant's parameters array (may be anything).
+ * @returns {{ editableRows: Array<Object>, passthrough: Array<Object>, canEdit: Boolean }}
+ *   `canEdit` is false when parameters is not an array.
+ */
+export function splitVariantParameters(parameters) {
+  if (parameters === null || parameters === undefined) {
+    return { editableRows: [], passthrough: [], canEdit: true };
+  }
+
+  if (!Array.isArray(parameters)) {
+    return { editableRows: [], passthrough: [], canEdit: false };
+  }
+
+  const editableRows = [];
+  const passthrough = [];
+
+  for (const { name, value } of parameters) {
+    if (isEditableTaskConfigValue(value)) {
+      editableRows.push({ name, value, type: typeof value });
+    } else {
+      passthrough.push({ name, value });
+    }
+  }
+
+  return { editableRows, passthrough, canEdit: true };
+}
+
+/**
+ * Build a variant `parameters` array from configurator rows and passthrough entries.
+ *
+ * Row names are used verbatim (no camelCasing); rows with a blank name are
+ * skipped. Passthrough entries come first, followed by the edited rows.
+ *
+ * @param {Array<Object>} rows – The configurator rows ({ name, value, type }).
+ * @param {Array<Object>} [passthrough=[]] – Non-editable entries preserved from the original.
+ * @returns {Array<Object>} The combined parameters array of { name, value } entries.
+ */
+export function buildVariantParametersFromRows(rows, passthrough = []) {
+  const parameters = passthrough.map(({ name, value }) => ({ name, value }));
+
+  for (const row of rows) {
+    const name = typeof row.name === 'string' ? row.name.trim() : '';
+    if (!name) continue;
+    parameters.push({ name, value: row.value });
+  }
+
+  return parameters;
+}
+
+/**
+ * Convert a variant parameters array into a name → value map for
+ * order-insensitive change detection.
+ *
+ * The contract's PATCH semantics replace the entire parameters array, so the
+ * order of entries carries no meaning — comparing maps avoids false-positive
+ * diffs when the rebuilt array orders entries differently than the original.
+ *
+ * @param {Array<Object>} parameters – Parameters array of { name, value } entries.
+ * @returns {Object} A plain object keyed by parameter name.
+ */
+export function variantParametersToMap(parameters) {
+  const map = {};
+  for (const { name, value } of parameters ?? []) {
+    map[name] = value;
+  }
+  return map;
+}
+
+/**
+ * Build the diffed PATCH body for a variant update.
+ *
+ * Only changed fields are included — the contract rejects empty bodies, so
+ * callers short-circuit no-op submissions when this returns `{}`. Cleared
+ * nullable fields (name, description) are sent as null; fields that were never
+ * set and remain blank are omitted entirely (no ''→null churn). The parameters
+ * array replaces the variant's entire parameter set, so it's only included
+ * when actually changed; the comparison is by name → value map since entry
+ * order carries no meaning.
+ *
+ * @param {Object} variant – The original variant from the catalog.
+ * @param {Object} formModel – The edited form fields ({ name, description, status }).
+ * @param {Array<Object>} rows – The edited configurator rows ({ name, value, type }).
+ * @param {Array<Object>} [passthrough=[]] – Non-editable entries preserved from the original.
+ * @returns {Object} The PATCH body containing only changed fields.
+ */
+export function buildVariantPatchBody(variant, formModel, rows, passthrough = []) {
+  const body = {};
+
+  for (const field of ['name', 'description']) {
+    const trimmed = formModel[field].trim();
+    if (trimmed !== (variant[field] ?? '')) {
+      body[field] = trimmed === '' ? null : trimmed;
+    }
+  }
+
+  if (formModel.status !== variant.status) {
+    body.status = formModel.status;
+  }
+
+  const editedParameters = buildVariantParametersFromRows(rows, passthrough);
+  if (!_isEqual(variantParametersToMap(editedParameters), variantParametersToMap(variant.parameters))) {
+    body.parameters = editedParameters;
+  }
+
+  return body;
+}

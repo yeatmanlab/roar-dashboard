@@ -16,41 +16,88 @@ export default defineConfig({
         dir: 'dist',
         format: 'esm',
         sourcemap: 'inline',
-        preserveModules: true,
-        entryFileNames: '[name].js',
-        chunkFileNames: '[name].js',
         exports: 'auto',
       }
     : {
-        file: `dist/server.js`,
+        // Output to a directory with code splitting enabled.
+        // IMPORTANT: Do NOT use `file` + `inlineDynamicImports: true` here.
+        //
+        // server.ts uses a dynamic import to defer loading the application module
+        // until after initializeDatabasePools() completes. This ensures CoreDbClient and
+        // AssessmentDbClient are defined before any module-level service/repository
+        // instantiation occurs (e.g., `const userService = UserService()` in auth middleware).
+        //
+        // inlineDynamicImports collapses this boundary into a single file, causing all
+        // module-level code to execute at load time — before the DB clients are initialized.
+        // Code splitting preserves the dynamic imports as separate chunks, maintaining the
+        // correct initialization order.
+        dir: 'dist',
+        inlineDynamicImports: false,
         format: 'esm',
         sourcemap: true,
         exports: 'auto',
+        entryFileNames: '[name].js',
+        chunkFileNames: '[name]-[hash].js',
       },
   plugins: [
-    // Externalize Node deps to keep bundle fast and small. In dev we purposely do not externalize the local workspace
-    // package so that Rollup watches its source and triggers rebuilds automatically.
-    externals({ exclude: isDev ? ['@roar-dashboard/api-contract'] : [] }),
-
+    // Alias runs before externals so that workspace-package imports are rewritten to TS source
+    // paths before the externals plugin ever sees them. Without this ordering, externals would
+    // mark e.g. `@roar-platform/assessment-schema/pa` as external (it's a valid node_module
+    // symlink), and the alias would never get a chance to redirect it to the TS source.
     alias({
       entries: [
         // Convenience alias used across the backend source code
         { find: '@', replacement: new URL('./src', import.meta.url).pathname },
 
-        // In dev, point the local monorepo package to its src/ instead of dist/. This makes Rollup compile it with
-        // esbuild, watch for changes, and restart the server when internal package source files change. In production
-        // we externalize the package so that it is not included in the bundle and is instead loaded from node_modules.
-        // This approach is, somewhat unfortunately, more efficient than using turbo's watch mode.
+        // In dev, point @roar-platform/api-contract to its TS source so Rollup compiles it
+        // with esbuild and watches for changes. In production it resolves to its built dist/
+        // via normal node resolution (single `.` export, nodeResolve handles it fine).
         ...(isDev
           ? [
               {
-                find: '@roar-dashboard/api-contract',
+                find: '@roar-platform/api-contract',
                 replacement: new URL('../../packages/api-contract/src/index.ts', import.meta.url).pathname,
               },
             ]
           : []),
+
+        // @roar-platform/assessment-schema is always aliased because nodeResolve does
+        // not reliably follow subpath exports through workspace symlinks. A regex find
+        // handles the bare specifier and all subpath imports (e.g. /pa, /swr) in a
+        // single entry — new assessment subpaths work automatically without changes here.
+        //
+        // How the replacement works: the capture group `(\/[^/]+)?` is either the
+        // subpath (e.g. "/pa") or empty string, and `$1` splices it into the output
+        // path via standard JS regex replacement — giving e.g. `.../src/pa/index.ts`.
+        {
+          find: /^@roar-platform\/assessment-schema(\/[^/]+)?$/,
+          replacement:
+            new URL(
+              isDev ? '../../packages/assessment-schema/src' : '../../packages/assessment-schema/dist',
+              import.meta.url,
+            ).pathname + `$1/index.${isDev ? 'ts' : 'js'}`,
+        },
       ],
     }),
+
+    // In dev, externalize node_modules to keep rebuilds fast.
+    // In production, skip externals entirely so rollup bundles everything into a single server.js — no node_modules
+    // needed at runtime.
+    isDev &&
+      externals({
+        exclude: [
+          // Workspace packages — rewritten to TS source by the alias plugin above, then
+          // compiled by esbuild. Must be excluded from externalization so Rollup doesn't
+          // short-circuit them before the alias runs (alias is first, but externals would
+          // still match the resolved file path if we didn't exclude these).
+          '@roar-platform/api-contract',
+          '@roar-platform/assessment-schema',
+          // CJS packages — Node's ESM runtime can't load these as named-export
+          // imports, so we bundle them through the commonjs() plugin instead.
+          '@openfga/sdk',
+          'crc-32',
+        ],
+      }),
 
     nodeResolve({
       preferBuiltins: true,
@@ -71,9 +118,20 @@ export default defineConfig({
 
     isDev &&
       run({
-        execArgv: ['--enable-source-maps'],
+        execArgv: ['--enable-source-maps', '--use-system-ca'],
       }),
   ].filter(Boolean),
+
+  // Treat unresolved imports as build errors. Without this, rollup silently leaves the bare
+  // import in the output, which crashes at runtime in the distroless Docker container where
+  // no node_modules directory exists.
+  onLog(level, log, handler) {
+    if (log.code === 'UNRESOLVED_IMPORT') {
+      handler('error', log);
+      return;
+    }
+    handler(level, log);
+  },
 
   treeshake: isDev ? false : 'recommended',
 

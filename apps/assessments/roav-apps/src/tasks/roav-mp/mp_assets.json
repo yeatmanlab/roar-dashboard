@@ -1,0 +1,104 @@
+{
+  "default": {
+    "languageSpecific": {
+      "device": [],
+      "shared": [
+        "roav-mp-instruction-intro-game.mp3",
+        "roav-mp-instruction-instr-ready-to-watch-right-stand.mp3",
+        "roav-mp-instruction-instr-response-right-stand.mp3",
+        "roav-mp-instruction-alt-instr-ready-to-watch-right-stand.mp3",
+        "roav-mp-instruction-alt-instr-response-right-stand.mp3",
+        "roav-mp-instruction-instr-take-best-guess-stand.mp3",
+        "roav-mp-instruction-practice-ready-to-watch-feedback-stand.mp3",
+        "roav-mp-instruction-practice-ready-to-watch-no-feedback-stand.mp3",
+        "roav-mp-instruction-test-break-after-block-1-stand.mp3",
+        "roav-mp-instruction-test-break-after-block-2-stand.mp3",
+        "roav-mp-instruction-reminder-stand.mp3",
+        "roav-mp-feedback-av-def-correct-stand.mp3",
+        "roav-mp-feedback-av-def-incorrect-stand.mp3",
+        "roav-mp-rdk-practice-feedback-stand.mp3",
+        "roav-mp-instruction-end-screen-stand.mp3",
+        "roav-mp-instruction-instr-input-arrows-stand.mp3",
+        "roav-mp-instruction-intro-stand.mp3",
+        "roav-mp-instruction-navigation-spacebar-stand.mp3",
+        "roav-mp-instruction-instr-task-game.mp3",
+        "roav-mp-instruction-instr-ready-to-watch-right-game.mp3",
+        "roav-mp-instruction-instr-response-right-game.mp3",
+        "roav-mp-instruction-alt-instr-ready-to-watch-right-game.mp3",
+        "roav-mp-instruction-alt-instr-response-right-game.mp3",
+        "roav-mp-instruction-instr-take-best-guess-game.mp3",
+        "roav-mp-instruction-practice-ready-to-watch-feedback-game.mp3",
+        "roav-mp-instruction-practice-ready-to-watch-no-feedback-game.mp3",
+        "roav-mp-instruction-practice-reward-after-no-feedback-game.mp3",
+        "roav-mp-instruction-test-break-after-block-1-game.mp3",
+        "roav-mp-instruction-test-break-after-block-2-game.mp3",
+        "roav-mp-instruction-reminder-game.mp3",
+        "roav-mp-feedback-av-def-correct-game.mp3",
+        "roav-mp-feedback-av-def-incorrect-game.mp3",
+        "roav-mp-rdk-instr-demo-right-game.mp3",
+        "roav-mp-rdk-instr-demo-left-game.mp3",
+        "roav-mp-rdk-practice-feedback-game.mp3",
+        "roav-mp-instruction-end-screen-game.mp3",
+
+        "roav-mp-rdk-instr-demo-left-stand.mp3",
+        "roav-mp-rdk-instr-demo-right-stand.mp3",
+        "roav-mp-instruction-input-lr-instr-input-all-stand.mp3",
+        "roav-mp-instruction-input-lr-instr-input-buttons-fallback-stand.mp3",
+        "roav-mp-instruction-input-lr-instr-input-buttons-stand.mp3",
+        "roav-mp-instruction-input-lr-instr-physical-keyboard-stand.mp3",
+        "roav-mp-instruction-input-lr-instr-input-keyboard-left-correct-stand.mp3",
+        "roav-mp-instruction-input-lr-instr-input-keyboard-left-incorrect-1-stand.mp3",
+        "roav-mp-instruction-input-lr-instr-input-keyboard-left-stand.mp3",
+        "roav-mp-instruction-input-lr-instr-input-keyboard-right-correct-stand.mp3",
+        "roav-mp-instruction-input-lr-instr-input-keyboard-right-incorrect-1-stand.mp3",
+        "roav-mp-instruction-input-lr-instr-input-keyboard-right-incorrect-2-stand.mp3",
+        "roav-mp-instruction-input-lr-instr-input-keyboard-right-stand.mp3"
+      ]
+    },
+    "shared": [
+      "roav-mp-button-next-stand.webp",
+      "roav-mp-button-next-game.webp",
+
+      "roav-mp-bg-stand.webp",
+      "roav-mp-bg-game.webp",
+
+      "roav-mp-character-left-game.webp",
+      "roav-mp-character-objects-game.webp",
+      "roav-mp-character-others-flying-away-game.webp",
+
+      "roav-mp-characters-objects-left-right-game.webp",
+      "roav-mp-swarms-left-right-game.webp",
+
+      "roav-mp-character-reward-4-game.webp",
+      "roav-mp-character-reward-6-game.webp",
+      "roav-mp-character-reward-7-game.webp",
+      "roav-mp-character-reward-8-game.webp",
+
+      "roav-mp-rdk-button-left-stand.webp",
+      "roav-mp-rdk-button-right-stand.webp",
+      "roav-mp-rdk-button-left-game.webp",
+      "roav-mp-rdk-button-right-game.webp",
+      "roav-mp-rdk-button-key-right-game.webp",
+      "roav-mp-rdk-button-key-left-game.webp",
+      "roav-mp-rdk-button-key-right-stand.webp",
+      "roav-mp-rdk-button-key-left-stand.webp",
+
+      "roav-mp-feedback-av-def-correct-character-game.webp",
+      "roav-mp-feedback-av-def-incorrect-character-game.webp",
+
+      "roav-mp-null-audio-all.mp3",
+      "roav-mp-feedback-tone-correct-all.mp3",
+      "roav-mp-feedback-tone-incorrect-all.mp3",
+
+      "roav-mp-input-arrow-keys-stand.webp",
+      "roav-mp-key-spacebar-stand.webp",
+
+      "roav-mp-keyboard-stand.webp",
+      "roav-mp-button-no-stand.webp",
+      "roav-mp-button-yes-stand.webp",
+
+      "roav-mp-tech-icon-landscape-all.webp",
+      "roav-mp-tech-icon-fullscreen-all.webp"
+    ]
+  }
+}

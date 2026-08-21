@@ -1,0 +1,75 @@
+@use 'vars' as *;
+
+.roav-rvp-card-stim-resp {
+  position: fixed;
+  background: #ffffff;
+  border: 6px solid $roav-yellow;
+  border-radius: 20px;
+  box-sizing: border-box;
+  z-index: -10;
+}
+
+.roav-rvp-btns-resp-wrap {
+  position: absolute;
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+.roav-rvp-btn-resp {
+  border: 4px solid rgba(166, 166, 168, 0.87);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.roav-rvp-img-btn-resp {
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.roav-rvp-img-bg-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -20;
+}
+
+.roav-rvp-img-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.roav-rvp-stim-resp-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.roav-rvp-warn-timeout {
+  animation: warn-flash 1s ease-in-out infinite;
+}
+
+@keyframes warn-flash {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: #eaeaea;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.roav-rvp-stim-wrap {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+}

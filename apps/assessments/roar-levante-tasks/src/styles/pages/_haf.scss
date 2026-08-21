@@ -1,0 +1,84 @@
+@use '../abstracts/' as *;
+
+.haf-parent-container {
+  width: 100%;
+  max-width: 900px;
+}
+
+.haf-stimulus-holder {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.haf-stimulus-container {
+  border: 3px solid $border-accent;
+  border-radius: 32px;
+  display: flex;
+  justify-content: space-between;
+  background-color: #fff;
+  height: 40vh;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: $lev-spacing-xs + $lev-spacing-s;
+
+  .stimulus-left {
+    margin-top: auto;
+    margin-bottom: auto;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    @include respond-to('small') {
+      padding-left: 12px;
+      padding-right: 12px;
+      img {
+        width: 70px;
+        height: 70px;
+      }
+    }
+  }
+
+  .stimulus-right {
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-left: auto;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    @include respond-to('small') {
+      padding-left: 12px;
+      padding-right: 12px;
+      img {
+        width: 70px;
+        height: 70px;
+      }
+    }
+  }
+}
+
+.haf-fixation-container {
+  border: 3px solid $border-accent;
+  border-radius: 32px;
+  background-color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40vh;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: $lev-spacing-xs + $lev-spacing-s;
+  width: 100%;
+
+  .fixation {
+    font-size: 7vh;
+  }
+}
+
+.haf-cr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  p {
+    margin-top: 16px;
+  }
+}

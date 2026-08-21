@@ -1,0 +1,32 @@
+@use '../abstracts/' as *;
+
+.lev-corsi-override {
+  display: grid;
+  gap: 15px; /* adjust as needed for spacing between blocks */
+  position: relative;
+  width: 25rem;
+  height: 25rem;
+
+  @include respond-to('small-medium') {
+    padding: 1rem;
+  }
+
+  @include respond-to('very-large') {
+    padding: 0;
+  }
+
+  .lev-corsi-block-override {
+    width: 100%;
+    height: 100%;
+    border-radius: 2rem;
+    border: 6px solid rgba(162, 162, 162, 0.93);
+  }
+
+  &.display {
+    background-color: rgba(215, 215, 215, 0.93);
+  }
+
+  &.input {
+    background-color: #ffffffcc;
+  }
+}

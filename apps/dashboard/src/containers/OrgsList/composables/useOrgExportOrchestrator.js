@@ -6,12 +6,11 @@ import { WARNING_LEVELS, EXPORT_PHASE } from '../constants/exportConstants';
  * Orchestrator composable that connects export logic with modal state
  *
  * @param {Ref<string>} activeOrgType - The active organization type
- * @param {Ref<object>} orderBy - The ordering configuration for queries
  * @returns {object} Combined export and modal functionality
  */
-export function useOrgExportOrchestrator(activeOrgType, orderBy) {
+export function useOrgExportOrchestrator(activeOrgType) {
   // Get export logic
-  const exportLogic = useOrgExport(activeOrgType, orderBy);
+  const exportLogic = useOrgExport(activeOrgType);
 
   // Get modal state
   const modalState = useExportModal();

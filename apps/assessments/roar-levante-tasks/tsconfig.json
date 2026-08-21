@@ -1,0 +1,12 @@
+{
+  "extends": "@roar-platform/typescript-config/library.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    // TODO: enable these strict flags incrementally as the LEVANTE TypeScript is cleaned up
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false
+  },
+  "include": ["src/**/*", "serve/**/*", "types/**/*"]
+}

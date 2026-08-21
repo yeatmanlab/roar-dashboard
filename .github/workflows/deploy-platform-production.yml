@@ -1,0 +1,230 @@
+name: Deploy Platform to Production
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Release version (e.g., 3.27.0)"
+        type: string
+        required: true
+  push:
+    branches:
+      # TODO: Remove once backend refactor is complete and merged to main.
+      # Temporary fallback to allow continuous backend deployments during refactor.
+      # Once release.yml is active on main, this trigger will be removed.
+      - project/backend-refactor
+
+concurrency:
+  # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
+  # cancel-in-progress: false — never interrupt a running migration.
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Verify tag is on main
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  verify-tag:
+    name: Verify tag is on main
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        if: github.event_name == 'workflow_call'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify tags exist on main
+        if: github.event_name == 'workflow_call'
+        run: |
+          # Determine version
+          VERSION="${{ inputs.version }}"
+
+          # Verify platform tags exist and are on main
+          # Note: api-contract is independently versioned and may have a different version
+          for PREFIX in backend dashboard; do
+            TAG="${PREFIX}-v${VERSION}"
+            TAG_SHA=$(git rev-list -n1 "refs/tags/${TAG}" 2>/dev/null || true)
+            
+            if [ -z "$TAG_SHA" ]; then
+              echo "::error::Tag ${TAG} not found."
+              exit 1
+            fi
+            
+            if ! git merge-base --is-ancestor "$TAG_SHA" origin/main; then
+              echo "::error::Tag ${TAG} (${TAG_SHA}) is not on the main branch. Aborting."
+              exit 1
+            fi
+            
+            echo "✓ Tag ${TAG} verified on main"
+          done
+
+      - name: Log release components
+        if: github.event_name == 'workflow_call'
+        run: |
+          echo "Release Summary:"
+          echo "  Version: ${{ inputs.version }}"
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Production deployment approval
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  approval:
+    name: Request production deployment approval
+    needs: [verify-tag]
+    runs-on: ubuntu-latest
+    environment: platform:production
+    timeout-minutes: 15
+    steps:
+      - name: Approval granted
+        run: echo "Approval granted, proceeding with platform deployment to production."
+
+  # ––––––––––––––––––––––––––––––––––––– #
+  # Build backend Docker image
+  # ––––––––––––––––––––––––––––––––––––– #
+  build-backend:
+    name: Build backend Docker image
+    needs: [approval]
+    runs-on: ubuntu-latest
+    environment: platform:production
+    timeout-minutes: 10
+    outputs:
+      image-version: ${{ steps.docker-build.outputs.image-version }}
+      image-digest: ${{ steps.docker-build.outputs.image-digest }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build and push image
+        id: docker-build
+        uses: ./.github/actions/build-docker-image
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
+          region: ${{ secrets.GCP_BACKEND_REGION }}
+          project-id: ${{ secrets.GCP_PROJECT_ID }}
+          artifact-registry-repo: ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}
+          image-name: roar-backend
+          image-tag-rules: |
+            type=sha,prefix=
+          dockerfile: apps/backend/Dockerfile
+
+  # ––––––––––––––––––––––––––––––––––––– #
+  # Migrate databases
+  # ––––––––––––––––––––––––––––––––––––– #
+  migrate-db:
+    name: Migrate databases
+    needs: [build-backend]
+    runs-on: ubuntu-latest
+    environment: platform:production
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run core database migrations
+        uses: ./.github/actions/migrate-database
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_CORE_SERVICE_ACCOUNT }}
+          cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
+          database: core
+
+      - name: Run assessment database migrations
+        uses: ./.github/actions/migrate-database
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_ASSESSMENT_SERVICE_ACCOUNT }}
+          cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
+          database: assessment
+
+  # ––––––––––––––––––––––––––––––––––––– #
+  # Deploy Backend
+  # ––––––––––––––––––––––––––––––––––––– #
+  deploy-backend:
+    name: Deploy backend
+    needs: [build-backend, migrate-db]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.GH_IAC_DEPLOYER_APP_ID }}
+          private-key: ${{ secrets.GH_IAC_DEPLOYER_PRIVATE_KEY }}
+          owner: yeatmanlab
+          repositories: roar-iac
+
+      - name: Validate image digest format
+        run: |
+          DIGEST="${{ needs.build-backend.outputs.image-digest }}"
+          if [[ ! "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "::error::Invalid image digest: ${DIGEST}"
+            exit 1
+          fi
+          echo "Digest validated: ${DIGEST}"
+
+      - name: Dispatch deploy to roar-iac
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: yeatmanlab/roar-iac
+          event-type: deploy-backend-api
+          client-payload: >-
+            {
+              "image_digest": "${{ needs.build-backend.outputs.image-digest }}",
+              "source_ref": "${{ github.sha }}",
+              "target": "production"
+            }
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Deploy frontend
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  deploy-frontend:
+    name: Deploy frontend
+    needs: [deploy-backend]
+    runs-on: ubuntu-latest
+    environment: platform:production
+    timeout-minutes: 15
+    env:
+      DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build app
+        uses: ./.github/actions/build
+        with:
+          environment: production
+          github-pat: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Deploy app
+        uses: ./.github/actions/deploy-firebase-hosting
+        with:
+          firebase-channel: default
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          firebase-hosting-site: roar-dashboard-production
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
+          dist-path: build/apps/dashboard/dist
+          firebase-config-path: build/apps/dashboard/firebase/admin/firebase.json
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1.8.0
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          sourcemaps: ./app/dist/assets/*.js.map
+          # Push-triggered runs (temporary, during the backend refactor) have no release version,
+          # so fall back to the commit SHA. release.yml-driven runs pass an explicit version.
+          version: ${{ inputs.version || github.sha }}
+          # Don't fail the release when the previous release commit is unreachable (shallow checkout).
+          ignore_missing: true

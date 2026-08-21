@@ -1,0 +1,17 @@
+$font-size-xxl: 85px;
+$font-size-xl: 72px;
+$font-size-l: 64px;
+$font-size-lm: 56px;
+$font-size-m: 48px;
+$font-size-ms: 42px;
+$font-size-s: 40px;
+$font-size-xs: 32px;
+$font-size-xxs: 24px;
+$font-size-xxxs: 16px;
+$font-size-xs-em: clamp($font-size-xxxs, min(2vw, 3vh), $font-size-m);
+
+$font-weight-dark: 700;
+$font-weight-bold: 600;
+$font-weight-normal: 500;
+$font-weight-light: 400;
+$font-weight-extra-light: 300;

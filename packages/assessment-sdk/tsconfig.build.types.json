@@ -1,0 +1,9 @@
+{
+  "extends": "@roar-platform/typescript-config/library.types.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["**/*.test.ts", "**/*.test.js"]
+}

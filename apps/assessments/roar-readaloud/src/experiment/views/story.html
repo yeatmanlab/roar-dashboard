@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<style>
+        
+    body {
+        margin: 0;
+        min-height: 100vh;  /* Ensure body takes the full viewport height */
+        display: flex;      /* Enable Flexbox */
+        justify-content: center;  /* Center content horizontally */
+        align-items: center;      /* Center content vertically */
+        font-family: sans-serif;
+        overflow: hidden;
+    }
+
+    .character {
+      position: absolute;
+      top: 65%;
+      left: 70%;
+      margin-right: -50%;
+      transform: translate(-50%, -50%);
+      width: 45%;
+    }
+
+    .speechBubble {
+      border-style: solid;
+      border-width: 5px;
+      border-color: rgb(255, 232, 128);
+      border-radius: 10px;
+      text-align: center;
+      padding: 5vh;
+      background-color: rgb(253 246 234);
+    }
+
+    stim {
+      position: absolute;
+      height: auto;
+      cursor: pointer;
+    }
+
+    #instruction {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    #confirmContainer {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+  </style>
+
+
+<body>
+
+    <!-- Center Instructions Panel -->
+      <div id="storyContentArea">
+        <img id="bg" style="object-fit: contain; position: relative;">
+        <img id="char" class="character">
+        <div style="position: absolute; top: 40%; right: 50%;">
+          <h4 class="speechBubble" id="text"> </h4>
+        </div>
+      </div>
+
+    <!-- Audio Playing -->  
+      <audio id="voiceover"> </audio>
+    
+  </body>
+
+<script data-dynamic>
+
+  var counter = 0;
+
+  var testConfig = store.session.get('testConfig');
+
+  document.body.addEventListener('click', function() {
+      startNextView(); // Call startNextView function whenever a click is detected          
+  });
+
+  document.getElementById('voiceover').addEventListener('ended', function() {
+    voiceover.currentTime = 0; // Added this so the story will automatically progress once the audio ends, not only dependent on participant clicks
+    startNextView();
+  })
+
+
+    var calibrationText = "Darn, the radar is completely broken. <br> Let's fix it together! </br>"
+    var practiceText = "You are an expert engineer! <br> We can practice reading out </br> the number coordinates to Rantopia now."
+    var testText = "Amazing! Let's enter them for real. <br> Can you read me the number coordinates </br> as fast as you can?"
+    var testLower = "number";
+
+
+  function startNextView() {
+    counter++;
+    var char = document.getElementById('char');
+    var bg = document.getElementById('bg');
+    var text = document.getElementById('text');
+    var voiceover = document.getElementById('voiceover');
+
+    if (stage === "Introduction"){
+    console.log(stage, counter);
+    switch (counter) {
+        case 1:
+            char.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/racedriver-girl-default.png`;
+            bg.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/race-car-control.png`;
+            voiceover.src = `https://eyetrackingdata.blob.core.windows.net/public/Audios/car_introduction_1.mp3`;
+            text.innerHTML = `Hi! My name is Anna. <br> It's always great to meet a fellow race driver.`;
+            break;
+        case 2:
+            char.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/racedriver-girl-default.png`;
+            bg.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/race-car-control.png`;
+            voiceover.src = `https://eyetrackingdata.blob.core.windows.net/public/Audios/car_introduction_2.mp3`;
+            text.innerHTML = `Let's make sure you're ready to drive.<br>First I need to check that your head is in the right position.`;
+            break;
+        case 3:
+            char.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/racedriver-girl-default.png`;
+            bg.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/race-car-control.png`;
+            voiceover.src = `https://eyetrackingdata.blob.core.windows.net/public/Audios/car_introduction_3.mp3`;
+            text.innerHTML = `Can you do that for me?`;
+            break;
+        default:
+            // Reset or end
+            counter = 0; 
+            pageCompleted()
+      }
+    } else if (stage === "Calibration"){
+      console.log(stage, counter);
+      switch (counter) {
+        case 1:
+        char.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/racedriver-girl-default.png`;
+            bg.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/race-car-control.png`;
+              voiceover.src = `https://eyetrackingdata.blob.core.windows.net/public/Audios/car_calibration.mp3`;
+              text.innerHTML = `Great job! Your head is in position<br>Let's get you on the track.<br>`;
+              break;
+        default:
+            // Reset or end
+            counter = 0; 
+            pageCompleted()
+      }
+    } else if (stage === "Practice"){
+      console.log(stage, counter);
+      switch (counter) {
+        case 1:
+              char.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/racedriver-girl-default.png`;
+              bg.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/race-car-control.png`;
+              voiceover.src = `https://eyetrackingdata.blob.core.windows.net/public/Audios/car_practice.mp3`;
+              text.innerHTML = `Let's see how good you are at<br> spotting symbols on this track!<br>`;
+              break;
+        default:
+            // Reset or end
+            counter = 0; 
+            pageCompleted()
+      }
+    } else if (stage === "Test"){
+      console.log(stage, counter);
+      switch (counter) {
+        case 1:
+              char.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/racedriver-girl-default.png`;
+              bg.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/race-car-control.png`;
+              voiceover.src = `https://eyetrackingdata.blob.core.windows.net/public/Audios/car_test.mp3`;
+              text.innerHTML = `Wow you are really good! Let's<br> do the same test again for real.`;
+              break;
+        default:
+            // Reset or end
+            counter = 0; 
+            pageCompleted()
+      }
+    } else if (stage === "Ending"){
+      console.log(stage, counter);
+      switch (counter) {
+        case 1:
+              char.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/racedriver-girl-default.png`;
+              bg.src = `https://eyetrackingdata.blob.core.windows.net/public/Images/race-car-control.png`;
+              voiceover.src = `https://eyetrackingdata.blob.core.windows.net/public/Audios/car_ending.mp3`;
+              text.innerHTML = `You are an expert race car driver! <br> I'll see you on the track.`;
+              break;
+        default:
+            // Reset or end
+            counter = 0; 
+            pageCompleted()
+      }
+    }
+
+    // playing the voiceover 
+    if (voiceover.src !== ""){
+      voiceover.play(); 
+    }
+
+  }
+
+  function pageCompleted(){
+    const event = new Event('pageComplete');
+    document.dispatchEvent(event);
+  }
+  
+  </script>

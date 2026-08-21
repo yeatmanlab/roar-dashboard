@@ -1,0 +1,729 @@
+/**
+ * Base Fixture for Integration Tests
+ *
+ * Provides a comprehensive, realistic test dataset that is automatically
+ * seeded before each test file via `vitest.setup.ts`. The setup truncates
+ * all tables and re-seeds the base fixture per file for isolation.
+ *
+ * **Test Isolation:**
+ * The fixture is seeded once per test file in `beforeAll`. Tests must treat
+ * the fixture as **read-only**. To add data for a specific scenario, use
+ * factories to create additional entities — they will be cleaned up when
+ * the next test file truncates all tables.
+ *
+ * @example
+ * ```typescript
+ * import { baseFixture } from '../test-support/fixtures';
+ * import { UserFactory } from '../test-support/factories/user.factory';
+ * import { UserOrgFactory } from '../test-support/factories/user-org.factory';
+ *
+ * describe('MyRepository (integration)', () => {
+ *   // Use pre-seeded data directly
+ *   it('returns administrations for a school-level user', async () => {
+ *     const ids = await repo.getAccessibleAdministrationIds(baseFixture.schoolAStudent.id);
+ *     expect(ids).toContain(baseFixture.administrationAssignedToDistrict.id);
+ *     expect(ids).toContain(baseFixture.administrationAssignedToSchoolA.id);
+ *   });
+ *
+ *   // Append custom data when the base fixture isn't enough
+ *   it('handles a user assigned to multiple schools', async () => {
+ *     const crossSchoolUser = await UserFactory.create({ nameFirst: 'Cross' });
+ *     await UserOrgFactory.create({ userId: crossSchoolUser.id, orgId: baseFixture.schoolA.id });
+ *     await UserOrgFactory.create({ userId: crossSchoolUser.id, orgId: baseFixture.schoolB.id });
+ *
+ *     const ids = await repo.getAccessibleAdministrationIds(crossSchoolUser.id);
+ *     expect(ids).toContain(baseFixture.administrationAssignedToSchoolA.id);
+ *     expect(ids).toContain(baseFixture.administrationAssignedToSchoolB.id);
+ *   });
+ * });
+ * ```
+ */
+import type { Org, Class, Group, User, Administration, Task, TaskVariant } from '../../db/schema';
+import { OrgType } from '../../enums/org-type.enum';
+import { UserRole } from '../../enums/user-role.enum';
+import { UserType } from '../../enums/user-type.enum';
+import { OrgFactory } from '../factories/org.factory';
+import { ClassFactory } from '../factories/class.factory';
+import { GroupFactory } from '../factories/group.factory';
+import { UserFactory } from '../factories/user.factory';
+import { AdministrationFactory } from '../factories/administration.factory';
+import { UserOrgFactory } from '../factories/user-org.factory';
+import { UserClassFactory } from '../factories/user-class.factory';
+import { UserGroupFactory } from '../factories/user-group.factory';
+import { AdministrationOrgFactory } from '../factories/administration-org.factory';
+import { AdministrationClassFactory } from '../factories/administration-class.factory';
+import { AdministrationGroupFactory } from '../factories/administration-group.factory';
+import { TaskFactory } from '../factories/task.factory';
+import { TaskVariantFactory } from '../factories/task-variant.factory';
+import { AdministrationTaskVariantFactory } from '../factories/administration-task-variant.factory';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Types
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Base fixture containing a realistic org hierarchy with users and administrations.
+ *
+ * Hierarchy structure:
+ * ```
+ * district (District A)
+ * ├── schoolA
+ * │   └── classInSchoolA  (classAStudent, classATeacher, schoolAStudent, expired/future students)
+ * ├── schoolB
+ * │   └── classInSchoolB  (schoolBStudent)
+ * └── schoolC
+ *     └── classInSchoolC  (grade5Student, grade3Student, grade5EllStudent)
+ *
+ * districtB (District B - separate branch for cross-district isolation tests)
+ * └── schoolInDistrictB
+ *     └── classInDistrictB  (districtBStudent)
+ *
+ * group (standalone, no hierarchy)
+ * ```
+ *
+ * Students enroll at the CLASS level only; their school/district are derived from the class's
+ * org path at query time. Admins and teachers attach at their org level.
+ *
+ * User assignments:
+ * - districtAdmin: administrator at district level
+ * - schoolAAdmin: administrator at School A
+ * - schoolAPrincipal: principal at School A (school_admin_tier — inherits school→class)
+ * - schoolATeacher: teacher at School A (org level)
+ * - schoolAStudent: student in classInSchoolA (class level)
+ * - schoolBStudent: student in classInSchoolB (for cross-branch tests)
+ * - classAStudent: student in classInSchoolA (class level)
+ * - classATeacher: teacher in classInSchoolA (class level)
+ * - groupStudent: student in standalone group
+ * - unassignedUser: user with no assignments (edge case)
+ * - superAdmin: platform super admin (isSuperAdmin: true; bypasses FGA; no org/class/group assignment)
+ * - multiAssignedUser: user assigned to both district AND schoolA (deduplication tests)
+ * - districtBAdmin: administrator at districtB (for cross-district isolation tests)
+ * - districtBStudent: student in classInDistrictB (for cross-district isolation tests)
+ *
+ * Enrollment boundary test users:
+ * - expiredEnrollmentStudent: student in classInSchoolA with expired enrollment (enrollment date tests)
+ * - futureEnrollmentStudent: student in classInSchoolA with future enrollment (enrollment date tests)
+ * - expiredClassStudent: student in classInSchoolA with expired enrollment (enrollment date tests)
+ * - futureGroupStudent: student in group with future enrollment (enrollment date tests)
+ *
+ * Demographic test users (for task variant eligibility filtering):
+ * - grade5Student: grade 5 student in classInSchoolC (sees variantForGrade5 and variantForAllGrades)
+ * - grade3Student: grade 3 student in classInSchoolC (sees variantForGrade3 and variantForAllGrades)
+ * - grade5EllStudent: grade 5 ELL student in classInSchoolC (variantOptionalForEll is optional for them)
+ *
+ * Tasks and Task Variants (assigned to administrationAssignedToDistrict):
+ * - task: base task for testing
+ * - task2: second task for cross-task sort/filter testing
+ * - variantForAllGrades: no conditions (assigned to all students)
+ * - variantForGrade5: assigned only to grade 5 students
+ * - variantForGrade3: assigned only to grade 3 students
+ * - variantOptionalForEll: optional for ELL students
+ * - variantForTask2: no conditions, belongs to task2 (assigned to all students)
+ * - variantForTask2Grade5OptionalEll: both conditions, belongs to task2 (grade 5 only, optional for ELL)
+ *
+ * Administration assignments:
+ * - administrationAssignedToDistrict: visible to all users in district hierarchy
+ * - administrationAssignedToSchoolA: visible only to users in School A subtree
+ * - administrationAssignedToSchoolB: visible only to users in School B subtree
+ * - administrationAssignedToClassA: visible only to users in classInSchoolA
+ * - administrationAssignedToGroup: visible only to users in the standalone group
+ * - administrationAssignedToDistrictB: visible only to users in districtB branch
+ */
+export interface BaseFixture {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ORGANIZATION HIERARCHY
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** Root district org */
+  district: Org;
+
+  /** School A - child of district */
+  schoolA: Org;
+
+  /** School B - sibling of School A (for cross-branch tests) */
+  schoolB: Org;
+
+  /** School C - third school under District A; home to the demographic (grade/ELL) test cohort */
+  schoolC: Org;
+
+  /** Class in School A */
+  classInSchoolA: Class;
+
+  /** Class in School B */
+  classInSchoolB: Class;
+
+  /** Class in School C - holds the demographic (grade/ELL) test students */
+  classInSchoolC: Class;
+
+  /** Standalone group (no org hierarchy) */
+  group: Group;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // District B Branch (separate hierarchy for cross-district isolation tests)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** District B - separate root district (sibling to district, for isolation tests) */
+  districtB: Org;
+
+  /** School in District B */
+  schoolInDistrictB: Org;
+
+  /** Class in School in District B */
+  classInDistrictB: Class;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // USERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Platform-wide super admin (isSuperAdmin flag set; bypasses all access control).
+   * Intentionally unassigned to any org — the flag grants global access, and
+   * leaving it out of every org keeps org-scoped list tests unaffected.
+   */
+  superAdmin: User;
+
+  /** Administrator at district level */
+  districtAdmin: User;
+
+  /** Administrator at School A */
+  schoolAAdmin: User;
+
+  /** Principal at School A (school_admin_tier — inherits school→class but not district→school) */
+  schoolAPrincipal: User;
+
+  /** Teacher at School A (org assignment) */
+  schoolATeacher: User;
+
+  /** Student in classInSchoolA (class-level enrollment) */
+  schoolAStudent: User;
+
+  /** Student in classInSchoolB (class-level; for cross-branch tests) */
+  schoolBStudent: User;
+
+  /** Student in classInSchoolA (class assignment) */
+  classAStudent: User;
+
+  /** Teacher in classInSchoolA (class assignment) */
+  classATeacher: User;
+
+  /** Student in standalone group */
+  groupStudent: User;
+
+  /** User with no assignments (edge case) */
+  unassignedUser: User;
+
+  /** User assigned to multiple orgs - district AND schoolA (deduplication tests) */
+  multiAssignedUser: User;
+
+  /** Administrator at districtB (for cross-district isolation tests) */
+  districtBAdmin: User;
+
+  /** Student in classInDistrictB (class-level; for cross-district isolation tests) */
+  districtBStudent: User;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Enrollment Boundary Test Users
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Student in classInSchoolA with expired enrollment (enrollmentEnd in the past) */
+  expiredEnrollmentStudent: User;
+
+  /** Student in classInSchoolA with future enrollment (enrollmentStart in the future) */
+  futureEnrollmentStudent: User;
+
+  /** Student in classInSchoolA with expired enrollment */
+  expiredClassStudent: User;
+
+  /** Student in group with future enrollment */
+  futureGroupStudent: User;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Demographic Test Users (for task variant eligibility filtering)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Grade 5 student in classInSchoolC (sees variantForGrade5 and variantForAllGrades) */
+  grade5Student: User;
+
+  /** Grade 3 student in classInSchoolC (sees variantForGrade3 and variantForAllGrades) */
+  grade3Student: User;
+
+  /** Grade 5 ELL student in classInSchoolC (variantOptionalForEll is optional for them) */
+  grade5EllStudent: User;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TASKS & TASK VARIANTS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** Base task for testing task variant endpoints */
+  task: Task;
+
+  /** Second task for testing cross-task sort/filter combinations */
+  task2: Task;
+
+  /** Variant assigned to all grades (no conditions) - orderIndex: 0 */
+  variantForAllGrades: TaskVariant;
+
+  /** Variant assigned only to grade 5 students - orderIndex: 1 */
+  variantForGrade5: TaskVariant;
+
+  /** Variant assigned only to grade 3 students - orderIndex: 2 */
+  variantForGrade3: TaskVariant;
+
+  /** Variant that is optional for ELL students - orderIndex: 3 */
+  variantOptionalForEll: TaskVariant;
+
+  /** Variant for task2, assigned to all grades (no conditions) - orderIndex: 4 */
+  variantForTask2: TaskVariant;
+
+  /** Variant for task2, assigned to grade 5 and optional for ELL (both conditions) - orderIndex: 5 */
+  variantForTask2Grade5OptionalEll: TaskVariant;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ADMINISTRATIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** Administration assigned to district (visible to all in hierarchy) */
+  administrationAssignedToDistrict: Administration;
+
+  /** Administration assigned to School A only */
+  administrationAssignedToSchoolA: Administration;
+
+  /** Administration assigned to School B only */
+  administrationAssignedToSchoolB: Administration;
+
+  /** Administration assigned to classInSchoolA only */
+  administrationAssignedToClassA: Administration;
+
+  /** Administration assigned to standalone group only */
+  administrationAssignedToGroup: Administration;
+
+  /** Administration assigned to districtB (visible only to users in districtB branch) */
+  administrationAssignedToDistrictB: Administration;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Seeding Function
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Seeds a comprehensive base fixture for integration tests.
+ *
+ * Creates a realistic org hierarchy with users at various levels and
+ * administrations assigned at different points. Designed to cover all
+ * common authorization scenarios.
+ *
+ * **Important**: Called automatically by vitest.setup.ts in `beforeAll`.
+ * Tests should treat the returned fixture as read-only.
+ *
+ * @returns The seeded fixture with all entities
+ */
+export async function seedBaseFixture(): Promise<BaseFixture> {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Step 1: Create Org Hierarchy
+  // Orgs must be sequential — children depend on parent IDs.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const district = await OrgFactory.create({
+    name: 'Maple Grove Unified District',
+    orgType: OrgType.DISTRICT,
+  });
+
+  const districtB = await OrgFactory.create({
+    name: 'Cedar Falls Unified District',
+    orgType: OrgType.DISTRICT,
+  });
+
+  const [schoolA, schoolB, schoolInDistrictB, schoolC] = await Promise.all([
+    OrgFactory.create({ name: 'Maple Grove Elementary (School A)', orgType: OrgType.SCHOOL, parentOrgId: district.id }),
+    OrgFactory.create({
+      name: 'Birch Street Elementary (School B)',
+      orgType: OrgType.SCHOOL,
+      parentOrgId: district.id,
+    }),
+    OrgFactory.create({
+      name: 'Cedar Falls Elementary (School in District B)',
+      orgType: OrgType.SCHOOL,
+      parentOrgId: districtB.id,
+    }),
+    OrgFactory.create({
+      name: 'Maple Grove West Elementary (School C)',
+      orgType: OrgType.SCHOOL,
+      parentOrgId: district.id,
+    }),
+  ]);
+
+  const [classInSchoolA, classInSchoolB, classInDistrictB, classInSchoolC, group] = await Promise.all([
+    ClassFactory.create({
+      name: 'Maple Grove Elem — Grade 3 (Class A)',
+      schoolId: schoolA.id,
+      districtId: district.id,
+    }),
+    ClassFactory.create({
+      name: 'Birch Street Elem — Grade 4 (Class B)',
+      schoolId: schoolB.id,
+      districtId: district.id,
+    }),
+    ClassFactory.create({
+      name: 'Cedar Falls Elem — Grade 5 (Class in District B)',
+      schoolId: schoolInDistrictB.id,
+      districtId: districtB.id,
+    }),
+    ClassFactory.create({
+      name: 'Maple Grove West Elem — Demographics (Class C)',
+      schoolId: schoolC.id,
+      districtId: district.id,
+    }),
+    GroupFactory.create({ name: 'Maple Grove Summer Reading (Group)' }),
+  ]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Step 2: Create Users
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const [
+    superAdmin,
+    districtAdmin,
+    schoolAAdmin,
+    schoolAPrincipal,
+    schoolATeacher,
+    schoolAStudent,
+    schoolBStudent,
+    classAStudent,
+    classATeacher,
+    groupStudent,
+    unassignedUser,
+    multiAssignedUser,
+    districtBAdmin,
+    districtBStudent,
+    // Enrollment boundary test users
+    expiredEnrollmentStudent,
+    futureEnrollmentStudent,
+    expiredClassStudent,
+    futureGroupStudent,
+    // Demographic test users
+    grade5Student,
+    grade3Student,
+    grade5EllStudent,
+  ] = await Promise.all([
+    UserFactory.create({ nameFirst: 'Super', nameLast: 'Admin', userType: UserType.ADMIN, isSuperAdmin: true }),
+    UserFactory.create({ nameFirst: 'District', nameLast: 'Admin', userType: UserType.ADMIN }),
+    UserFactory.create({ nameFirst: 'School A', nameLast: 'Admin', userType: UserType.ADMIN }),
+    UserFactory.create({ nameFirst: 'School A', nameLast: 'Principal', userType: UserType.ADMIN }),
+    UserFactory.create({ nameFirst: 'School A', nameLast: 'Teacher', userType: UserType.EDUCATOR }),
+    UserFactory.create({ nameFirst: 'School A', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'School B', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Class A', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Class A', nameLast: 'Teacher', userType: UserType.EDUCATOR }),
+    UserFactory.create({ nameFirst: 'Group', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Unassigned', nameLast: 'User', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Multi-Org', nameLast: 'Admin', userType: UserType.ADMIN }),
+    UserFactory.create({ nameFirst: 'District B', nameLast: 'Admin', userType: UserType.ADMIN }),
+    UserFactory.create({ nameFirst: 'District B', nameLast: 'Student', userType: UserType.STUDENT }),
+    // Enrollment boundary test users
+    UserFactory.create({ nameFirst: 'Expired Org', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Future Org', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Expired Class', nameLast: 'Student', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Future Group', nameLast: 'Student', userType: UserType.STUDENT }),
+    // Demographic test users (for task variant eligibility filtering)
+    UserFactory.create({ nameFirst: 'Grade 5', nameLast: 'Student', userType: UserType.STUDENT, grade: '5' }),
+    UserFactory.create({ nameFirst: 'Grade 3', nameLast: 'Student', userType: UserType.STUDENT, grade: '3' }),
+    UserFactory.create({
+      nameFirst: 'Grade 5 ELL',
+      nameLast: 'Student',
+      userType: UserType.STUDENT,
+      grade: '5',
+      statusEll: 'active',
+    }),
+  ]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Step 3: Assign Users to Orgs/Classes/Groups
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Enrollment date helpers
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  await Promise.all([
+    // Org assignments (active enrollments - default enrollmentStart=now, enrollmentEnd=null)
+    UserOrgFactory.create({ userId: districtAdmin.id, orgId: district.id, role: UserRole.ADMINISTRATOR }),
+    UserOrgFactory.create({ userId: schoolAAdmin.id, orgId: schoolA.id, role: UserRole.ADMINISTRATOR }),
+    UserOrgFactory.create({ userId: schoolAPrincipal.id, orgId: schoolA.id, role: UserRole.PRINCIPAL }),
+    UserOrgFactory.create({ userId: schoolATeacher.id, orgId: schoolA.id, role: UserRole.TEACHER }),
+    // Students enroll at the class level; their school/district are derived from the class's
+    // org path at query time. (Admins/teachers below stay attached at their org level.)
+    UserClassFactory.create({ userId: schoolAStudent.id, classId: classInSchoolA.id, role: UserRole.STUDENT }),
+    UserClassFactory.create({ userId: schoolBStudent.id, classId: classInSchoolB.id, role: UserRole.STUDENT }),
+    // Class assignments (active enrollments)
+    UserClassFactory.create({ userId: classAStudent.id, classId: classInSchoolA.id, role: UserRole.STUDENT }),
+    UserClassFactory.create({ userId: classATeacher.id, classId: classInSchoolA.id, role: UserRole.TEACHER }),
+    // Group assignments (active enrollments)
+    UserGroupFactory.create({ userId: groupStudent.id, groupId: group.id, role: UserRole.STUDENT }),
+    // Multi-assigned user: assigned to both district AND schoolA
+    UserOrgFactory.create({ userId: multiAssignedUser.id, orgId: district.id, role: UserRole.ADMINISTRATOR }),
+    UserOrgFactory.create({ userId: multiAssignedUser.id, orgId: schoolA.id, role: UserRole.TEACHER }),
+    // District B users (for cross-district isolation tests)
+    UserOrgFactory.create({ userId: districtBAdmin.id, orgId: districtB.id, role: UserRole.ADMINISTRATOR }),
+    UserClassFactory.create({ userId: districtBStudent.id, classId: classInDistrictB.id, role: UserRole.STUDENT }),
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Enrollment boundary test users
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    // Expired class enrollment: started 30 days ago, ended 7 days ago
+    UserClassFactory.create({
+      userId: expiredEnrollmentStudent.id,
+      classId: classInSchoolA.id,
+      role: UserRole.STUDENT,
+      enrollmentStart: thirtyDaysAgo,
+      enrollmentEnd: sevenDaysAgo,
+    }),
+    // Future class enrollment: starts 7 days from now
+    UserClassFactory.create({
+      userId: futureEnrollmentStudent.id,
+      classId: classInSchoolA.id,
+      role: UserRole.STUDENT,
+      enrollmentStart: sevenDaysFromNow,
+      enrollmentEnd: thirtyDaysFromNow,
+    }),
+    // Expired class enrollment: started 30 days ago, ended 7 days ago
+    UserClassFactory.create({
+      userId: expiredClassStudent.id,
+      classId: classInSchoolA.id,
+      role: UserRole.STUDENT,
+      enrollmentStart: thirtyDaysAgo,
+      enrollmentEnd: sevenDaysAgo,
+    }),
+    // Future group enrollment: starts 7 days from now
+    UserGroupFactory.create({
+      userId: futureGroupStudent.id,
+      groupId: group.id,
+      role: UserRole.STUDENT,
+      enrollmentStart: sevenDaysFromNow,
+      enrollmentEnd: thirtyDaysFromNow,
+    }),
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Demographic test users (for task variant eligibility filtering)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    // Demographic students live in a dedicated class under the district (School C) so they
+    // exercise the district administration's grade/ELL eligibility without joining the
+    // School A / Class A scopes that other tests assert against.
+    UserClassFactory.create({ userId: grade5Student.id, classId: classInSchoolC.id, role: UserRole.STUDENT }),
+    UserClassFactory.create({ userId: grade3Student.id, classId: classInSchoolC.id, role: UserRole.STUDENT }),
+    UserClassFactory.create({ userId: grade5EllStudent.id, classId: classInSchoolC.id, role: UserRole.STUDENT }),
+  ]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Step 4: Create Administrations
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const [
+    administrationAssignedToDistrict,
+    administrationAssignedToSchoolA,
+    administrationAssignedToSchoolB,
+    administrationAssignedToClassA,
+    administrationAssignedToGroup,
+    administrationAssignedToDistrictB,
+  ] = await Promise.all([
+    AdministrationFactory.create({
+      name: 'Fall 2025 Universal Screener (District A)',
+      namePublic: 'Fall 2025 Reading Screener',
+      createdBy: districtAdmin.id,
+    }),
+    AdministrationFactory.create({
+      name: 'Winter Reading Benchmark (School A)',
+      namePublic: 'Winter Reading Benchmark',
+      createdBy: schoolAAdmin.id,
+    }),
+    AdministrationFactory.create({
+      name: 'Winter Reading Benchmark (School B)',
+      namePublic: 'Winter Reading Benchmark',
+      createdBy: districtAdmin.id,
+    }),
+    AdministrationFactory.create({
+      name: 'Grade 3 Progress Check (Class A)',
+      namePublic: 'Grade 3 Progress Check',
+      createdBy: classATeacher.id,
+    }),
+    AdministrationFactory.create({
+      name: 'Summer Reading Cohort Screener (Group)',
+      namePublic: 'Summer Reading Screener',
+      createdBy: districtAdmin.id,
+    }),
+    AdministrationFactory.create({
+      name: 'Fall 2025 Universal Screener (District B)',
+      namePublic: 'Fall 2025 Reading Screener',
+      createdBy: districtBAdmin.id,
+    }),
+  ]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Step 5: Assign Administrations to Orgs/Classes/Groups
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  await Promise.all([
+    AdministrationOrgFactory.create({ administrationId: administrationAssignedToDistrict.id, orgId: district.id }),
+    AdministrationOrgFactory.create({ administrationId: administrationAssignedToSchoolA.id, orgId: schoolA.id }),
+    AdministrationOrgFactory.create({ administrationId: administrationAssignedToSchoolB.id, orgId: schoolB.id }),
+    AdministrationClassFactory.create({
+      administrationId: administrationAssignedToClassA.id,
+      classId: classInSchoolA.id,
+    }),
+    AdministrationGroupFactory.create({ administrationId: administrationAssignedToGroup.id, groupId: group.id }),
+    AdministrationOrgFactory.create({ administrationId: administrationAssignedToDistrictB.id, orgId: districtB.id }),
+  ]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Step 6: Create Tasks & Task Variants
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const [task, task2] = await Promise.all([
+    TaskFactory.create({ name: 'Word' }),
+    TaskFactory.create({ name: 'Sentence' }),
+  ]);
+
+  const [
+    variantForAllGrades,
+    variantForGrade5,
+    variantForGrade3,
+    variantOptionalForEll,
+    variantForTask2,
+    variantForTask2Grade5OptionalEll,
+  ] = await Promise.all([
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word — All Grades' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word — Grade 5' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word — Grade 3' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word — ELL (Optional)' }),
+    TaskVariantFactory.create({ taskId: task2.id, name: 'Sentence — All Grades' }),
+    TaskVariantFactory.create({ taskId: task2.id, name: 'Sentence — Grade 5, ELL Optional' }),
+  ]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Step 7: Assign Task Variants to District Administration
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  await Promise.all([
+    // No conditions - assigned to all students
+    AdministrationTaskVariantFactory.create({
+      administrationId: administrationAssignedToDistrict.id,
+      taskVariantId: variantForAllGrades.id,
+      orderIndex: 0,
+    }),
+    // assigned_if: grade 5 only
+    AdministrationTaskVariantFactory.create({
+      administrationId: administrationAssignedToDistrict.id,
+      taskVariantId: variantForGrade5.id,
+      orderIndex: 1,
+      conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: '5' },
+    }),
+    // assigned_if: grade 3 only
+    AdministrationTaskVariantFactory.create({
+      administrationId: administrationAssignedToDistrict.id,
+      taskVariantId: variantForGrade3.id,
+      orderIndex: 2,
+      conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: '3' },
+    }),
+    // optional_if: ELL students (assigned to all, optional for ELL)
+    AdministrationTaskVariantFactory.create({
+      administrationId: administrationAssignedToDistrict.id,
+      taskVariantId: variantOptionalForEll.id,
+      orderIndex: 3,
+      conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' },
+    }),
+    // Task 2: no conditions - assigned to all students
+    AdministrationTaskVariantFactory.create({
+      administrationId: administrationAssignedToDistrict.id,
+      taskVariantId: variantForTask2.id,
+      orderIndex: 4,
+    }),
+    // Task 2: both conditionsAssignment (grade 5) AND conditionsRequirements (ELL optional)
+    AdministrationTaskVariantFactory.create({
+      administrationId: administrationAssignedToDistrict.id,
+      taskVariantId: variantForTask2Grade5OptionalEll.id,
+      orderIndex: 5,
+      conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: '5' },
+      conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' },
+    }),
+  ]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Validate & Return
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const fixture: BaseFixture = {
+    // Orgs (District A branch)
+    district,
+    schoolA,
+    schoolB,
+    schoolC,
+    classInSchoolA,
+    classInSchoolB,
+    classInSchoolC,
+    group,
+
+    // Orgs (District B branch - for cross-district isolation tests)
+    districtB,
+    schoolInDistrictB,
+    classInDistrictB,
+
+    // Users
+    superAdmin,
+    districtAdmin,
+    schoolAAdmin,
+    schoolAPrincipal,
+    schoolATeacher,
+    schoolAStudent,
+    schoolBStudent,
+    classAStudent,
+    classATeacher,
+    groupStudent,
+    unassignedUser,
+    multiAssignedUser,
+    districtBAdmin,
+    districtBStudent,
+
+    // Enrollment boundary test users
+    expiredEnrollmentStudent,
+    futureEnrollmentStudent,
+    expiredClassStudent,
+    futureGroupStudent,
+
+    // Demographic test users
+    grade5Student,
+    grade3Student,
+    grade5EllStudent,
+
+    // Tasks & Task Variants
+    task,
+    task2,
+    variantForAllGrades,
+    variantForGrade5,
+    variantForGrade3,
+    variantOptionalForEll,
+    variantForTask2,
+    variantForTask2Grade5OptionalEll,
+
+    // Administrations
+    administrationAssignedToDistrict,
+    administrationAssignedToSchoolA,
+    administrationAssignedToSchoolB,
+    administrationAssignedToClassA,
+    administrationAssignedToGroup,
+    administrationAssignedToDistrictB,
+  };
+
+  const missing = Object.entries(fixture)
+    .filter(([, value]) => !value?.id)
+    .map(([key]) => key);
+
+  if (missing.length > 0) {
+    throw new Error(`Base fixture seeding failed. Missing entities: ${missing.join(', ')}`);
+  }
+
+  return fixture;
+}

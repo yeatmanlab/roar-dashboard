@@ -1,0 +1,1 @@
+DROP INDEX "app"."classes_school_name_lower_uniqIdx";

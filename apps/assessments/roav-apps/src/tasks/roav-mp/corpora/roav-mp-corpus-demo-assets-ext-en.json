@@ -1,0 +1,9 @@
+{
+  "default": {
+    "languageSpecific": {
+      "device": [],
+      "shared": []
+    },
+    "shared": ["roav-mp-asset-ext-stand.webp", "roav-mp-asset-ext-game.webp"]
+  }
+}

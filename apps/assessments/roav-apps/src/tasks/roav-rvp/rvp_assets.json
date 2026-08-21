@@ -1,0 +1,120 @@
+{
+  "default": {
+    "languageSpecific": {
+      "device": [],
+      "shared": [
+        "roav-rvp-feedback-av-def-correct-game.mp3",
+        "roav-rvp-feedback-av-def-incorrect-game.mp3",
+
+        "roav-rvp-instruction-intro-game.mp3",
+        "roav-rvp-instruction-instr-task-1-game.mp3",
+        "roav-rvp-instruction-instr-task-2-game.mp3",
+        "roav-rvp-instruction-instr-after-demo-1-game.mp3",
+        "roav-rvp-instruction-practice-before-practice-av-game.mp3",
+        "roav-rvp-instruction-practice-before-practice-game.mp3",
+        "roav-rvp-instruction-practice-after-practice-game.mp3",
+        "roav-rvp-instruction-instr-take-best-guess-game.mp3",
+        "roav-rvp-instruction-test-keep-going-game.mp3",
+        "roav-rvp-instruction-test-keep-going-half-game.mp3",
+        "roav-rvp-instruction-test-keep-going-last-game.mp3",
+        "roav-rvp-instruction-test-warn-fast-game.mp3",
+        "roav-rvp-instruction-test-warn-fast-short-game.mp3",
+        "roav-rvp-instruction-test-break-after-block-1-game.mp3",
+        "roav-rvp-instruction-end-screen-game.mp3",
+
+        "roav-rvp-rvp-instr-demo-1-start-mark-fix-game.mp3",
+        "roav-rvp-rvp-instr-demo-1-pos-0-stim-game.mp3",
+        "roav-rvp-rvp-instr-demo-1-pos-1-stim-game.mp3",
+        "roav-rvp-rvp-instr-demo-1-end-stim-game.mp3",
+        "roav-rvp-rvp-instr-demo-1-end-mark-targ-game.mp3",
+        "roav-rvp-rvp-instr-demo-1-end-resp-game.mp3",
+        "roav-rvp-rvp-instr-demo-2-start-mark-fix-game.mp3",
+        "roav-rvp-rvp-instr-demo-2-start-stim-game.mp3",
+        "roav-rvp-rvp-instr-demo-2-pos-0-stim-game.mp3",
+        "roav-rvp-rvp-instr-demo-2-pos-1-stim-game.mp3",
+        "roav-rvp-rvp-instr-demo-2-pos-2-stim-game.mp3",
+        "roav-rvp-rvp-instr-demo-2-pos-3-stim-game.mp3",
+        "roav-rvp-rvp-instr-demo-2-end-mark-targ-game.mp3",
+        "roav-rvp-rvp-instr-demo-2-end-resp-game.mp3",
+        "roav-rvp-rvp-practice-av-mark-fix-game.mp3",
+        "roav-rvp-rvp-practice-av-resp-game.mp3",
+
+        "roav-rvp-general-stand.mp3",
+        "roav-rvp-instruction-intro-stand.mp3",
+        "roav-rvp-instruction-instr-task-1-stand.mp3",
+        "roav-rvp-instruction-instr-after-demo-1-stand.mp3",
+        "roav-rvp-instruction-practice-before-practice-av-stand.mp3",
+        "roav-rvp-instruction-practice-before-practice-stand.mp3",
+        "roav-rvp-instruction-instr-take-best-guess-stand.mp3",
+        "roav-rvp-instruction-test-keep-going-stand.mp3",
+        "roav-rvp-instruction-test-keep-going-half-stand.mp3",
+        "roav-rvp-instruction-test-keep-going-last-stand.mp3",
+        "roav-rvp-instruction-test-warn-fast-stand.mp3",
+        "roav-rvp-instruction-test-warn-fast-short-stand.mp3",
+        "roav-rvp-instruction-test-break-after-block-1-stand.mp3",
+        "roav-rvp-instruction-test-instr-before-block-2-stand.mp3",
+        "roav-rvp-instruction-end-screen-stand.mp3",
+
+        "roav-rvp-feedback-av-def-correct-stand.mp3",
+        "roav-rvp-feedback-av-def-incorrect-stand.mp3",
+
+        "roav-rvp-rvp-instr-demo-1-start-mark-fix-stand.mp3",
+        "roav-rvp-rvp-instr-demo-1-pos-0-stim-stand.mp3",
+        "roav-rvp-rvp-instr-demo-1-pos-1-stim-stand.mp3",
+        "roav-rvp-rvp-instr-demo-1-end-stim-stand.mp3",
+        "roav-rvp-rvp-instr-demo-1-end-mark-targ-stand.mp3",
+        "roav-rvp-rvp-instr-demo-1-end-resp-stand.mp3",
+        "roav-rvp-rvp-instr-demo-2-start-mark-fix-stand.mp3",
+        "roav-rvp-rvp-instr-demo-2-start-stim-stand.mp3",
+        "roav-rvp-rvp-instr-demo-2-pos-0-stim-stand.mp3",
+        "roav-rvp-rvp-instr-demo-2-pos-1-stim-stand.mp3",
+        "roav-rvp-rvp-instr-demo-2-pos-2-stim-stand.mp3",
+        "roav-rvp-rvp-instr-demo-2-pos-3-stim-stand.mp3",
+        "roav-rvp-rvp-instr-demo-2-end-mark-targ-stand.mp3",
+        "roav-rvp-rvp-instr-demo-2-end-resp-stand.mp3",
+        "roav-rvp-rvp-practice-av-mark-fix-stand.mp3",
+        "roav-rvp-rvp-practice-av-resp-stand.mp3"
+      ]
+    },
+    "shared": [
+      "roav-mp-null-audio-all.mp3",
+      "roav-mp-tech-icon-landscape-all.webp",
+      "roav-mp-tech-icon-fullscreen-all.webp",
+
+      "roav-rvp-feedback-av-def-correct-character-game.webp",
+      "roav-rvp-feedback-av-def-incorrect-character-game.webp",
+
+      "roav-rvp-button-next-game.webp",
+
+      "roav-rvp-character-left-game.webp",
+      "roav-rvp-warn-fast-game.webp",
+
+      "roav-rvp-bg-game.webp",
+      "roav-rvp-bg-blank-game.webp",
+      "roav-rvp-bg-opto-game.webp",
+      "roav-rvp-bg-pseudo-game.webp",
+
+      "roav-rvp-map-0-game.webp",
+      "roav-rvp-map-1-game.webp",
+      "roav-rvp-map-2-game.webp",
+      "roav-rvp-map-3-game.webp",
+      "roav-rvp-map-4-game.webp",
+      "roav-rvp-map-5-game.webp",
+      "roav-rvp-map-6-game.webp",
+
+      "roav-rvp-planet-glass-game.webp",
+      "roav-rvp-planet-crystal-game.webp",
+      "roav-rvp-planet-earth-game.webp",
+
+      "roav-rvp-feedback-tone-correct-all.mp3",
+      "roav-rvp-feedback-tone-incorrect-all.mp3",
+
+      "roav-rvp-bg-stand.webp",
+      "roav-rvp-bg-opto-stand.webp",
+      "roav-rvp-bg-pseudo-stand.webp",
+      "roav-rvp-bg-pseudo-blank.webp",
+
+      "roav-rvp-button-next-stand.webp"
+    ]
+  }
+}

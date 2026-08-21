@@ -1,0 +1,105 @@
+import {
+  CVA_TASK_ID,
+  MULTICHOICE_SCORING_VERSION,
+  MULTICHOICE_COMPOSITE_SCORE_NAMES,
+  MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES,
+} from '@roar-platform/assessment-schema/roar-multichoice';
+
+const COMPOSITE_DOMAIN = 'composite';
+
+/**
+ * CVA (written vocabulary) scoring config.
+ *
+ * CVA is one of the two tasks in the roar-multichoice assessment (the other is
+ * morphology), so its slug and score names come from the shared roar-multichoice module
+ * rather than being named here. A rename of any of these fields in assessment-schema is
+ * now a compile error here.
+ *
+ * Scoring is identical in shape to morphology — the two tasks share a scoring version pool
+ * and differ only in the normed lookup table they resolve against — but they are kept as
+ * separate configs so either can diverge without disturbing the other.
+ *
+ * The version split mirrors the assessment's two scoring modes:
+ * - V1 (adaptive) emits the composite score names. `percentile` and `standardScore` are
+ *   present only when the normed IRT lookup resolves, and `totalCorrect` is the raw score.
+ * - v0 (pre-versioning, non-adaptive) emits only aggregate counts from the test stage —
+ *   hence no normed scores, and the non-adaptive `subScore` as the raw score.
+ */
+export default {
+  taskSlugs: [CVA_TASK_ID],
+  scoreFields: {
+    percentile: [
+      { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.PERCENTILE },
+      { minVersion: 0, fieldName: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_PERCENT_CORRECT },
+    ],
+    percentileDisplay: [
+      { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.PERCENTILE },
+      { minVersion: 0, fieldName: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_PERCENT_CORRECT },
+    ],
+    standardScore: [
+      { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.STANDARD_SCORE },
+      { minVersion: 0, fieldName: null },
+    ],
+    standardScoreDisplay: [
+      { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.STANDARD_SCORE },
+      { minVersion: 0, fieldName: null },
+    ],
+    rawScore: [
+      { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT },
+      { minVersion: 0, fieldName: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_SCORE },
+    ],
+  },
+  classification: {
+    type: 'percentile-then-rawscore' as const,
+    percentileCutoffs: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, cutoffs: { achieved: 40, developing: 20 } }],
+    rawScoreThresholds: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, thresholds: { above: 520, some: 447 } }],
+  },
+  displayCategory: [
+    { minVersion: MULTICHOICE_SCORING_VERSION.V1, category: 'normed' },
+    { minVersion: 0, category: 'percentCorrect' },
+  ],
+  displayRanges: {
+    percentile: { min: 0, max: 99 },
+    percentCorrect: { min: 0, max: 100 },
+    standardScore: { min: 0, max: 180 },
+    rawScore: { min: 100, max: 900 },
+  },
+  subscores: [
+    {
+      kind: 'number' as const,
+      key: 'numCorrect',
+      label: 'Num Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT,
+    },
+    {
+      kind: 'number' as const,
+      key: 'numAttempted',
+      label: 'Num Attempted',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED,
+    },
+    {
+      kind: 'number' as const,
+      key: 'percentCorrect',
+      label: 'Percent Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT,
+      round: true,
+    },
+    {
+      kind: 'number' as const,
+      key: 'subScore',
+      label: 'Num Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_SCORE,
+    },
+    {
+      kind: 'number' as const,
+      key: 'subPercentCorrect',
+      label: 'Percent Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_PERCENT_CORRECT,
+    },
+  ],
+} as const;

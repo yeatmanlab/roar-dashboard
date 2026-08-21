@@ -1,0 +1,100 @@
+{
+  "name": "@roar-platform/assessment-schema",
+  "version": "0.1.0",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "packages/assessment-schema"
+  },
+  "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./roar-pa": {
+      "types": "./dist/roar-pa/index.d.ts",
+      "import": "./dist/roar-pa/index.js",
+      "default": "./dist/roar-pa/index.js"
+    },
+    "./roar-swr": {
+      "types": "./dist/roar-swr/index.d.ts",
+      "import": "./dist/roar-swr/index.js",
+      "default": "./dist/roar-swr/index.js"
+    },
+    "./roar-sre": {
+      "types": "./dist/roar-sre/index.d.ts",
+      "import": "./dist/roar-sre/index.js",
+      "default": "./dist/roar-sre/index.js"
+    },
+    "./roar-letter": {
+      "types": "./dist/roar-letter/index.d.ts",
+      "import": "./dist/roar-letter/index.js",
+      "default": "./dist/roar-letter/index.js"
+    },
+    "./roar-multichoice": {
+      "types": "./dist/roar-multichoice/index.d.ts",
+      "import": "./dist/roar-multichoice/index.js",
+      "default": "./dist/roar-multichoice/index.js"
+    },
+    "./roar-survey": {
+      "types": "./dist/roar-survey/index.d.ts",
+      "import": "./dist/roar-survey/index.js",
+      "default": "./dist/roar-survey/index.js"
+    },
+    "./roar-levante-tasks": {
+      "types": "./dist/roar-levante-tasks/index.d.ts",
+      "import": "./dist/roar-levante-tasks/index.js",
+      "default": "./dist/roar-levante-tasks/index.js"
+    },
+    "./roar-readaloud": {
+      "types": "./dist/roar-readaloud/index.d.ts",
+      "import": "./dist/roar-readaloud/index.js",
+      "default": "./dist/roar-readaloud/index.js"
+    },
+    "./roav-apps": {
+      "types": "./dist/roav-apps/index.d.ts",
+      "import": "./dist/roav-apps/index.js",
+      "default": "./dist/roav-apps/index.js"
+    },
+    "./roav-ran": {
+      "types": "./dist/roav-ran/index.d.ts",
+      "import": "./dist/roav-ran/index.js",
+      "default": "./dist/roav-ran/index.js"
+    },
+    "./roam-apps": {
+      "types": "./dist/roam-apps/index.d.ts",
+      "import": "./dist/roam-apps/index.js",
+      "default": "./dist/roam-apps/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@roar-platform/api-contract": "^0.1.0"
+  },
+  "devDependencies": {
+    "@roar-platform/eslint-config": "*",
+    "@roar-platform/typescript-config": "*",
+    "typescript": "^5.0.0",
+    "vitest": "^3.2.4"
+  }
+}

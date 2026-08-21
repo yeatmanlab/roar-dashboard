@@ -1,0 +1,64 @@
+{
+  "progressBar": "Progress Complete",
+  "fullScreenTrial": {
+    "prompt": "Switching to full screen mode.",
+    "buttonText": "Go"
+  },
+  "instructions": {
+    "intro": {
+      "header": "Welcome to ROAR Multichoice!",
+      "topText": "In this activity, you're going to help me complete some sentences.",
+      "bottomText": ""
+    },
+    "instructions": {
+      "header": "What word completes the sentence?",
+      "topText": "Choose the best option to fill in the blank.",
+      "bottomText": ""
+    },
+    "practice": {
+      "header": "Let's practice!",
+      "topText": "Remember, your job is to choose the right word that fills in the blank.",
+      "bottomText": ""
+    },
+    "postPractice": {
+      "header": "Great job!",
+      "topText": "Now you're ready to try on your own. Try your best to choose the word that completes the sentence.",
+      "bottomText": ""
+    },
+    "practiceCorrect": {
+      "header": "That's right!",
+      "topText": "",
+      "bottomText": ""
+    },
+    "break1": {
+      "header": "Keep up the good work!",
+      "topText": "",
+      "bottomText": ""
+    },
+    "break2": {
+      "header": "You are doing great!",
+      "topText": "",
+      "bottomText": ""
+    },
+    "break3": {
+      "header": "Let's keep going.",
+      "topText": "",
+      "bottomText": ""
+    },
+    "break4": {
+      "header": "You are an expert at this!",
+      "topText": "",
+      "bottomText": ""
+    },
+    "break5": {
+      "header": "You can do it!",
+      "topText": "",
+      "bottomText": ""
+    },
+    "ending": {
+      "header": "You're all done! Thank you for helping me find those words!",
+      "topText": "",
+      "bottomText": ""
+    }
+  }
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "variantName": "Survey — MRQ Audio (current)",
+    "params": {
+      "survey": "surveyMRQAudio_vfinal"
+    }
+  },
+  {
+    "variantName": "Survey — Signature",
+    "params": {
+      "survey": "signature"
+    }
+  },
+  {
+    "variantName": "Survey — Workshop Teacher",
+    "params": {
+      "survey": "workshop teacher survey"
+    }
+  },
+  {
+    "variantName": "Survey — default",
+    "params": {
+      "survey": "survey"
+    }
+  }
+]

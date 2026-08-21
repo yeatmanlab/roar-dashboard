@@ -1,0 +1,62 @@
+[
+  {
+    "variantName": "read-aloud-2025-10-03-A-v3",
+    "params": {
+      "deviceConfigFile": "devices_default",
+      "sequentialStimulus": false,
+      "storeAudio": false,
+      "storeVideo": true,
+      "taskName": "roar-readaloud",
+      "testConfigFile": "read-aloud-2025-08-01-A"
+    }
+  },
+  {
+    "variantName": "read-aloud-2025-08-01-A-video",
+    "params": {
+      "deviceConfigFile": "devices_default",
+      "sequentialStimulus": false,
+      "storeVideo": true,
+      "taskName": "roar-readaloud",
+      "testConfigFile": "read-aloud-2025-08-01-A"
+    }
+  },
+  {
+    "variantName": "read-aloud-2025-08-01-A-audio",
+    "params": {
+      "deviceConfigFile": "devices_default",
+      "sequentialStimulus": false,
+      "storeVideo": false,
+      "taskName": "roar-readaloud",
+      "testConfigFile": "read-aloud-2025-08-01-A"
+    }
+  },
+  {
+    "variantName": "read-aloud-2024-12-29-A",
+    "params": {
+      "bEyeTracking": true,
+      "bViewingDistancePage": false,
+      "buttonLayout": null,
+      "calibrationType": "short",
+      "consent": false,
+      "deviceConfigFile": "devices_default",
+      "keyHelpers": true,
+      "numOfPracticeTrials": null,
+      "numberOfTrials": null,
+      "practiceCorpus": null,
+      "sequentialPractice": true,
+      "sequentialStimulus": true,
+      "skipInstructions": true,
+      "stimulusBlocks": null,
+      "stimulusCorpus": null,
+      "storeAudio": false,
+      "storeVideo": true,
+      "story": false,
+      "storyCorpus": null,
+      "taskName": "roar-readaloud",
+      "testConfigFile": "read-aloud-2024-12-29-A",
+      "viewType": "detailed",
+      "viewingDistance": 50,
+      "visibleEyeTracking": false
+    }
+  }
+]

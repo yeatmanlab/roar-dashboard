@@ -1,0 +1,131 @@
+sentence,answer,direction,itemId
+Los submarinos pueden sumergirse bajo el agua.,TRUE,right,ai_a_1
+Los murciélagos vuelan de noche.,TRUE,right,ai_a_2
+Las olas del mar rompen en la playa.,TRUE,right,ai_a_3
+Las iguanas son reptiles verdes.,TRUE,right,ai_a_4
+La lluvia cae del cielo regando la tierra y nutriendo las plantas.,TRUE,right,ai_a_5
+Los pescadores usan anzuelos.,TRUE,right,ai_a_6
+Las ballenas nadan en el océano.,TRUE,right,ai_a_7
+Los números no son letras.,TRUE,right,ai_a_8
+Los leones rugen en la selva.,TRUE,right,ai_a_9
+Las pelotas rebotan en el suelo.,TRUE,right,ai_a_10
+Los girasoles siguen al sol.,TRUE,right,ai_a_11
+Los nadadores practican en la piscina para mejorar sus habilidades.,TRUE,right,ai_a_12
+Las luciérnagas brillan en la oscuridad.,TRUE,right,ai_a_13
+"Las verduras, como las zanahorias, son saludables y nutritivas.",TRUE,right,ai_a_14
+Los desiertos tienen poca agua.,TRUE,right,ai_a_15
+Las manzanas son verdes.,TRUE,right,ai_a_16
+Los relojes marcan la hora del día.,TRUE,right,ai_a_17
+"La letra ""A"" es la primera del alfabeto.",TRUE,right,ai_a_18
+Los exploradores descubren nuevos lugares en emocionantes aventuras.,TRUE,right,ai_a_19
+Los búhos cazan de noche.,TRUE,right,ai_a_20
+Los perros tienen hocicos.,TRUE,right,ai_a_21
+Los jugadores de fútbol patean el balón.,TRUE,right,ai_a_22
+Los taxis llevan a las personas a destinos.,TRUE,right,ai_a_23
+Los bailarines se mueven al ritmo de la música.,TRUE,right,ai_a_24
+Los helados son postres fríos y deliciosos que todos disfrutan.,TRUE,right,ai_a_25
+Los bosques están llenos de árboles.,TRUE,right,ai_a_26
+Las estrellas brillan en el cielo.,TRUE,right,ai_a_27
+Los artistas pintan cuadros coloridos expresando su creatividad única.,TRUE,right,ai_a_28
+"La ""B"" sigue a la letra ""A"".",TRUE,right,ai_a_29
+Los científicos hacen experimentos.,TRUE,right,ai_a_30
+Las orugas se convierten en mariposas.,TRUE,right,ai_a_31
+Los niños juegan en el parque.,TRUE,right,ai_a_32
+Los libros tienen letras y palabras.,TRUE,right,ai_a_33
+Los ratones tienen colas largas.,TRUE,right,ai_a_34
+Los huracanes son fuertes tormentas.,TRUE,right,ai_a_35
+Los murciélagos son nocturnos.,TRUE,right,ai_a_36
+Los músicos crean hermosas melodías con instrumentos diversos.,TRUE,right,ai_a_37
+Las serpientes mudan su piel.,TRUE,right,ai_a_38
+Las tormentas eléctricas traen relámpagos y truenos durante la lluvia.,TRUE,right,ai_a_39
+Las bicicletas son una forma ecológica y saludable de transporte.,TRUE,right,ai_a_40
+"La ""Z"" es la última letra del alfabeto.",TRUE,right,ai_a_41
+Las manzanas son frutas de colores variados.,TRUE,right,ai_a_42
+Los pintores crean obras de arte.,TRUE,right,ai_a_43
+Las flores crecen en primavera.,TRUE,right,ai_a_44
+Las arañas tejen telarañas intrincadas.,TRUE,right,ai_a_45
+Las abejas recolectan néctar de las flores.,TRUE,right,ai_a_46
+Los caballos galopan en los campos.,TRUE,right,ai_a_47
+Las palabras están formadas por letras.,TRUE,right,ai_a_48
+El viento mueve las ramas de los árboles.,TRUE,right,ai_a_49
+La luna brilla en la noche.,TRUE,right,ai_a_50
+Las nevadas cubren todo de blanco.,TRUE,right,ai_a_51
+Los carros van por la carretera.,TRUE,right,ai_a_52
+Las cometas vuelan alto.,TRUE,right,ai_a_53
+Las luces iluminan la habitación.,TRUE,right,ai_a_54
+Los libros contienen conocimiento y cuentan historias cautivadoras.,TRUE,right,ai_a_55
+Los tigres tienen rayas.,TRUE,right,ai_a_56
+Los monos saltan entre las ramas.,TRUE,right,ai_a_57
+Los médicos usan batas blancas.,TRUE,right,ai_a_58
+Los barcos navegan en océanos y mares explorando rutas acuáticas.,TRUE,right,ai_a_59
+Las bicicletas tienen dos ruedas.,TRUE,right,ai_a_60
+Las mariposas revolotean en el aire.,TRUE,right,ai_a_61
+El sol brilla en el cielo durante el día ofreciendo luz natural.,TRUE,right,ai_a_62
+Los coches tienen ruedas para moverse.,TRUE,right,ai_a_63
+Las sillas proporcionan comodidad y apoyo al sentarse en ellas.,TRUE,right,ai_a_64
+Las zanahorias son vegetales anaranjados.,TRUE,right,ai_a_65
+Los perros son científicos.,FALSE,left,ai_a_66
+Un helicóptero tiene ruedas para rodar.,FALSE,left,ai_a_67
+Las montañas son planas en la cima.,FALSE,left,ai_a_68
+Las piedras flotan en el agua.,FALSE,left,ai_a_69
+Un carpintero cocina deliciosos pasteles.,FALSE,left,ai_a_70
+Las bicicletas tienen alas para volar.,FALSE,left,ai_a_71
+Las computadoras bailan al ritmo de la música.,FALSE,left,ai_a_72
+Todos los ríos son completamente rectos.,FALSE,left,ai_a_73
+Los libros tienen alas para volar.,FALSE,left,ai_a_74
+Las zanahorias brillan en la oscuridad.,FALSE,left,ai_a_75
+Las vacaciones escolares duran todo el año.,FALSE,left,ai_a_76
+Los tornados son suaves brisas de verano.,FALSE,left,ai_a_77
+Los relojes miden la temperatura.,FALSE,left,ai_a_78
+Los pájaros construyen castillos en los árboles.,FALSE,left,ai_a_79
+Los pingüinos construyen iglús en la playa para vivir.,FALSE,left,ai_a_80
+Las ballenas son pájaros.,FALSE,left,ai_a_81
+Los pájaros tocan la guitarra.,FALSE,left,ai_a_82
+Los jugadores de fútbol juegan con pelotas de algodón.,FALSE,left,ai_a_83
+Las zanahorias son micrófonos que cantan canciones al crecer.,FALSE,left,ai_a_84
+Los leones son vegetarianos y aman las ensaladas verdes.,FALSE,left,ai_a_85
+Los chefs cocinan con gorros de baño.,FALSE,left,ai_a_86
+Los peces usan sombreros.,FALSE,left,ai_a_87
+Los caramelos crecen en árboles.,FALSE,left,ai_a_88
+Los elefantes bailan ballet en espectáculos nocturnos secretos.,FALSE,left,ai_a_89
+Los leones son animales acuáticos.,FALSE,left,ai_a_90
+Los gorilas comen helado en invierno.,FALSE,left,ai_a_91
+Los árboles tocan música.,FALSE,left,ai_a_92
+Las ranas navegan por los océanos en botes de papel.,FALSE,left,ai_a_93
+Las maletas tienen vida propia y viajan por el mundo solas.,FALSE,left,ai_a_94
+Los artistas pintan con lápices gigantes.,FALSE,left,ai_a_95
+Las serpientes tienen alas para volar.,FALSE,left,ai_a_96
+Las tormentas de nieve ocurren en el verano.,FALSE,left,ai_a_97
+Los unicornios son animales reales.,FALSE,left,ai_a_98
+Las rocas son siempre suaves al tacto.,FALSE,left,ai_a_99
+Los leones comen pizza en la selva.,FALSE,left,ai_a_100
+Las hormigas escriben poesía.,FALSE,left,ai_a_101
+Los pájaros viven bajo el agua.,FALSE,left,ai_a_102
+Un submarino viaja por las nubes.,FALSE,left,ai_a_103
+Las galletas son naves espaciales que exploran la galaxia.,FALSE,left,ai_a_104
+Los músicos tocan instrumentos con las orejas.,FALSE,left,ai_a_105
+Las serpientes comen helado.,FALSE,left,ai_a_106
+Los científicos estudian el comportamiento de los unicornios.,FALSE,left,ai_a_107
+Los tiburones viven en el desierto.,FALSE,left,ai_a_108
+El arco iris tiene solo un color.,FALSE,left,ai_a_109
+Los pingüinos son espías secretos.,FALSE,left,ai_a_110
+Un panadero puede volar en su bicicleta.,FALSE,left,ai_a_111
+Los tigres son expertos en cocina y preparan banquetes exquisitos.,FALSE,left,ai_a_112
+Las sillas hablan en voz alta.,FALSE,left,ai_a_113
+Las motocicletas navegan en el mar.,FALSE,left,ai_a_114
+Los coches son submarinos.,FALSE,left,ai_a_115
+Los camiones bailan en la carretera.,FALSE,left,ai_a_116
+Agosto es el último mes del año.,FALSE,left,ai_a_117
+Los gatos ladran como los perros.,FALSE,left,ai_a_118
+Las letras bailan en el teclado.,FALSE,left,ai_a_119
+Los huracanes solo ocurren en invierno.,FALSE,left,ai_a_120
+Los lápices son máquinas del tiempo.,FALSE,left,ai_a_121
+Los ríos fluyen hacia atrás.,FALSE,left,ai_a_122
+Los peces viven en volcanes.,FALSE,left,ai_a_123
+Las tortugas corren maratones.,FALSE,left,ai_a_124
+Los tiburones son arquitectos que diseñan puentes sobre océanos.,FALSE,left,ai_a_125
+Las jirafas tienen cuellos cortos.,FALSE,left,ai_a_126
+Los elefantes tienen plumas.,FALSE,left,ai_a_127
+Las arañas tejen con hilos de oro.,FALSE,left,ai_a_128
+Los caballos son astronautas.,FALSE,left,ai_a_129
+Los árboles son abogados.,FALSE,left,ai_a_130

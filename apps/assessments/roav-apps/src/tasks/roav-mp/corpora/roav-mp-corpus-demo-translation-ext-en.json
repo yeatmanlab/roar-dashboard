@@ -1,0 +1,20 @@
+{
+  "roav-mp": {
+    "instruction": {
+      "translation-ext": {
+        "stand": {
+          "text1": "CORPUS-DEMO",
+          "text2": "STAND",
+          "text3": "TRANSLATION EXT (EN)",
+          "text4": ""
+        },
+        "game": {
+          "text1": "CORPUS-DEMO",
+          "text2": "GAME",
+          "text3": "TRANSLATION EXT (EN)",
+          "text4": ""
+        }
+      }
+    }
+  }
+}

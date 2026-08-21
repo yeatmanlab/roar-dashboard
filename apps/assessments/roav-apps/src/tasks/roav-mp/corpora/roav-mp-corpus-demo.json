@@ -1,0 +1,17 @@
+{
+  "nameCorpus": "corpus-demo",
+  "trials": [
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "translation-ext",
+      "params": {
+        "keyImgCharacter": ["", "", "asset-ext"]
+      }
+    },
+    {
+      "nameTrial": "t_instructionGeneral",
+      "tagReq": "intro",
+      "params": { "animateBtn": true }
+    }
+  ]
+}

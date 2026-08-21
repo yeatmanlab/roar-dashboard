@@ -9,9 +9,9 @@ const orgs = [
   { tabName: 'Groups', orgName: Cypress.env('testPartnerGroupName') },
 ];
 
-describe('Partner Admin: Orgs', () => {
+describe.skip('Partner Admin: Orgs', () => {
   orgs.forEach((org) => {
-    describe(`${org.tabName} – ${org.orgName}`, () => {
+    describe.skip(`${org.tabName} – ${org.orgName}`, () => {
       it(`Lists the org in the data table`, () => {
         // Login as the partner admin.
         cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);

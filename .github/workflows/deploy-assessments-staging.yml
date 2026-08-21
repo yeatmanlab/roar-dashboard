@@ -1,0 +1,87 @@
+name: Deploy Assessments to Staging
+
+on:
+  push:
+    branches:
+      # TODO: Remove once backend refactor is complete
+      - project/backend-refactor
+      - main
+
+  workflow_dispatch:
+    inputs:
+      assessment:
+        description: "Assessment to deploy (e.g. roar-pa). Leave empty to detect from changed files."
+        required: false
+
+concurrency:
+  # Queue concurrent runs — never interrupt an in-flight deploy.
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Detect which assessments need to be deployed
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  detect-assessment-changes:
+    name: Detect changed assessments
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        id: detect
+        uses: ./.github/actions/detect-assessment-changes
+        with:
+          assessment: ${{ inputs.assessment }}
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Build and deploy each changed assessment
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  deploy:
+    name: Deploy ${{ matrix.assessment }} to staging
+    needs: [detect-assessment-changes]
+    if: needs.detect-assessment-changes.outputs.matrix != '[]'
+    runs-on: ubuntu-latest
+    environment: assessments:staging
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        assessment: ${{ fromJson(needs.detect-assessment-changes.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Read hosting site name
+        id: hosting
+        run: |
+          site=$(jq -r '.roar.hosting.staging' apps/assessments/${{ matrix.assessment }}/package.json)
+          echo "site=$site" >> $GITHUB_OUTPUT
+
+      - name: Build assessment
+        uses: ./.github/actions/build-assessment
+        with:
+          assessment: ${{ matrix.assessment }}
+          build-script: build:staging
+          roar-api-base-url: ${{ secrets.ROAR_API_BASE_URL }}
+
+      - name: Deploy to Firebase Hosting
+        uses: ./.github/actions/deploy-firebase-hosting
+        with:
+          firebase-channel: default
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
+          dist-path: apps/assessments/${{ matrix.assessment }}/dist
+          firebase-config-path: apps/assessments/${{ matrix.assessment }}/firebase.json
+          firebase-hosting-site: ${{ steps.hosting.outputs.site }}

@@ -1,0 +1,131 @@
+sentence,answer,direction,difficulty,itemId
+Ants are small.,TRUE,right,,aiV1P2_1
+All kids shrink.,FALSE,left,,aiV1P2_2
+The sun rises every day.,TRUE,right,,aiV1P2_3
+People use phones to swim.,FALSE,left,,aiV1P2_4
+Balloons are filled with rocks.,FALSE,left,,aiV1P2_5
+People turn pages to read books.,TRUE,right,,aiV1P2_6
+We say thank you to be polite.,TRUE,right,,aiV1P2_7
+Everyone feels sad sometimes.,TRUE,right,,aiV1P2_8
+Ducks dislike swimming.,FALSE,left,,aiV1P2_9
+Bicycles have thirty wheels and make people invisible.,FALSE,left,,aiV1P2_10
+A pillow is for swimming.,FALSE,left,,aiV1P2_11
+Water is wet and clear.,TRUE,right,,aiV1P2_12
+The sky is blue.,TRUE,right,,aiV1P2_13
+A wallet holds vegetables.,FALSE,left,,aiV1P2_14
+Mountains are very tall.,TRUE,right,,aiV1P2_15
+Rubber bands cannot stretch.,FALSE,left,,aiV1P2_16
+Most flowers release invisible smoke.,FALSE,left,,aiV1P2_17
+A refrigerator warms food.,FALSE,left,,aiV1P2_18
+All people have a name.,TRUE,right,,aiV1P2_19
+Corn grows in a volcano.,FALSE,left,,aiV1P2_20
+Cakes are sweet.,TRUE,right,,aiV1P2_21
+Mice have giant tails.,FALSE,left,,aiV1P2_22
+A kitten is a baby cat.,TRUE,right,,aiV1P2_23
+A doorbell rings when pressed.,TRUE,right,,aiV1P2_24
+Everyone likes to feel loved.,TRUE,right,,aiV1P2_25
+Families can have pets.,TRUE,right,,aiV1P2_26
+A chair is for people to hover.,FALSE,left,,aiV1P2_27
+Kangaroos are animals with strong legs and can hop very far.,TRUE,right,,aiV1P2_28
+Showers are for getting clean.,TRUE,right,,aiV1P2_29
+People use maps to eat food.,FALSE,left,,aiV1P2_30
+Books have no pages.,FALSE,left,,aiV1P2_31
+Deserts are icy and snowy places with constant rainfall.,FALSE,left,,aiV1P2_32
+Fish breathe through gills.,TRUE,right,,aiV1P2_33
+"People walk, run, and jump to move and get exercise.",TRUE,right,,aiV1P2_34
+Streets are for swimming and flying.,FALSE,left,,aiV1P2_35
+A ball is flat and sticks.,FALSE,left,,aiV1P2_36
+A fence generates electricity.,FALSE,left,,aiV1P2_37
+We wear belts to hold pants up.,TRUE,right,,aiV1P2_38
+Jellyfish cannot sting.,FALSE,left,,aiV1P2_39
+We ride bikes for fun or exercise.,TRUE,right,,aiV1P2_40
+Lollipops are vegetables on a stick.,FALSE,left,,aiV1P2_41
+People live in houses.,TRUE,right,,aiV1P2_42
+A year has eleven months.,FALSE,left,,aiV1P2_43
+Children go to school.,TRUE,right,,aiV1P2_44
+Monkeys run underground.,FALSE,left,,aiV1P2_45
+People wear sandals when it's cold.,FALSE,left,,aiV1P2_46
+Children like singing songs.,TRUE,right,,aiV1P2_47
+Insects have no legs.,FALSE,left,,aiV1P2_48
+Shoes can have laces or straps.,TRUE,right,,aiV1P2_49
+You have to swallow a door.,FALSE,left,,aiV1P2_50
+Water boils when it's cold.,FALSE,left,,aiV1P2_51
+People brush their teeth.,TRUE,right,,aiV1P2_52
+Children often take turns during games or sharing toys.,TRUE,right,,aiV1P2_53
+"Rivers, lakes, and oceans are large bodies of water.",TRUE,right,,aiV1P2_54
+Puppies are baby dogs.,TRUE,right,,aiV1P2_55
+People use money to buy things.,TRUE,right,,aiV1P2_56
+Fish drive cars and have wheels and headlights.,FALSE,left,,aiV1P2_57
+Snakes fly in the sky.,FALSE,left,,aiV1P2_58
+Seashells come in many shapes and colors and can be found at the beach.,TRUE,right,,aiV1P2_59
+Mail gets buried under houses.,FALSE,left,,aiV1P2_60
+Windows let light in.,TRUE,right,,aiV1P2_61
+Gifts are given on special occasions like birthdays and holidays.,TRUE,right,,aiV1P2_62
+Horses can run and carry people or things on their backs.,TRUE,right,,aiV1P2_63
+People clap their feet.,FALSE,left,,aiV1P2_64
+Crayons are used for building houses.,FALSE,left,,aiV1P2_65
+Hands can hold objects.,TRUE,right,,aiV1P2_66
+"Farm animals like cows, pigs, and chickens provide us with food.",TRUE,right,,aiV1P2_67
+The ocean is small and shallow.,FALSE,left,,aiV1P2_68
+Children play in the playground.,TRUE,right,,aiV1P2_69
+Most people have two legs.,TRUE,right,,aiV1P2_70
+We use napkins to paint our faces.,FALSE,left,,aiV1P2_71
+Telephone conversations prevent people from talking at all.,FALSE,left,,aiV1P2_72
+We eat dinner in the evening.,TRUE,right,,aiV1P2_73
+A turtle has a cape.,FALSE,left,,aiV1P2_74
+Ropes are used for eating.,FALSE,left,,aiV1P2_75
+Vaccines help to protect us.,TRUE,right,,aiV1P2_76
+Children take naps during the day to rest and recharge.,TRUE,right,,aiV1P2_77
+A teacher helps us learn.,TRUE,right,,aiV1P2_78
+Zebras have polka dots and live underground.,FALSE,left,,aiV1P2_79
+Plants need water and sunlight.,TRUE,right,,aiV1P2_80
+Dogs plant flowers.,FALSE,left,,aiV1P2_81
+Apples can be blue and grow underground.,FALSE,left,,aiV1P2_82
+Beds are for dancing.,FALSE,left,,aiV1P2_83
+We drink from hats.,FALSE,left,,aiV1P2_84
+Ants are gigantic.,FALSE,left,,aiV1P2_85
+Rainbows have one color.,FALSE,left,,aiV1P2_86
+Penguins can fly.,FALSE,left,,aiV1P2_87
+Dogs can bark.,TRUE,right,,aiV1P2_88
+We cook food in ovens.,TRUE,right,,aiV1P2_89
+The sun sets every evening.,TRUE,right,,aiV1P2_90
+Birds have scales.,FALSE,left,,aiV1P2_91
+Whales are reptiles.,FALSE,left,,aiV1P2_92
+We put on pajamas before bed.,TRUE,right,,aiV1P2_93
+Bears are tiny and weak.,FALSE,left,,aiV1P2_94
+"Music can be played on instruments like drums, guitars, and pianos.",TRUE,right,,aiV1P2_95
+Children play in the stratosphere.,FALSE,left,,aiV1P2_96
+Airplanes fly in the sky.,TRUE,right,,aiV1P2_97
+We eat with telephones.,FALSE,left,,aiV1P2_98
+Ice cream is hot and sour.,FALSE,left,,aiV1P2_99
+Pizzas have different toppings.,TRUE,right,,aiV1P2_100
+Butterflies start as rocks.,FALSE,left,,aiV1P2_101
+You go to sleep at night.,TRUE,right,,aiV1P2_102
+A car horn honks loudly.,TRUE,right,,aiV1P2_103
+Frogs are green and can jump and swim in water.,TRUE,right,,aiV1P2_104
+Cats have wheels.,FALSE,left,,aiV1P2_105
+A caterpillar becomes a rhino.,FALSE,left,,aiV1P2_106
+People laugh when things are funny.,TRUE,right,,aiV1P2_107
+People have different hair colors.,TRUE,right,,aiV1P2_108
+The moon can't be seen at night and stays in one shape.,FALSE,left,,aiV1P2_109
+People eat with their mouths.,TRUE,right,,aiV1P2_110
+People need rocks to fly. ,FALSE,left,,aiV1P2_111
+People eat rocks to live.,FALSE,left,,aiV1P2_112
+Bread is a rare food.,FALSE,left,,aiV1P2_113
+We walk with our hands.,FALSE,left,,aiV1P2_114
+Snowflakes are black and rough.,FALSE,left,,aiV1P2_115
+Trains swim on train tracks.,FALSE,left,,aiV1P2_116
+A train goes on roads.,FALSE,left,,aiV1P2_117
+"The seasons are spring, summer, autumn, and winter, each with unique features.",TRUE,right,,aiV1P2_118
+Elephants are blue and small.,FALSE,left,,aiV1P2_119
+People feel hot in the sun.,TRUE,right,,aiV1P2_120
+Strawberry is a red fruit.,TRUE,right,,aiV1P2_121
+Doctors help us when we are sick.,TRUE,right,,aiV1P2_122
+We all live on Mars.,FALSE,left,,aiV1P2_123
+Drums produce images when hit.,FALSE,left,,aiV1P2_124
+Blankets are for snuggling.,TRUE,right,,aiV1P2_125
+Fruits and vegetables help our bodies to grow and stay strong.,TRUE,right,,aiV1P2_126
+A doll can be fun to play with.,TRUE,right,,aiV1P2_127
+Nurses take care of patients.,TRUE,right,,aiV1P2_128
+People drink water when thirsty.,TRUE,right,,aiV1P2_129
+Cats meow and purr when happy.,TRUE,right,,aiV1P2_130
