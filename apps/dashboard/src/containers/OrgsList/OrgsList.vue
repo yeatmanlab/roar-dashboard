@@ -57,6 +57,14 @@
               </PvFloatLabel>
             </div>
           </div>
+          <div v-if="activeOrgType === ORG_TYPES.GROUPS" class="mx-2">
+            <PvToggleButton
+              v-model="hideSubgroups"
+              off-label="Hide Subgroups"
+              on-label="Show Subgroups"
+              class="p-2 rounded"
+            />
+          </div>
           <!--
             The table is gated by the outer `v-if="claimsLoaded"` (PvTabView). Once
             claims are loaded `tableData` is always an array (empty while loading), so
@@ -64,12 +72,15 @@
           -->
           <RoarDataTable
             :key="tableKey"
+            allow-global-filter
+            :allow-export-pdf="false"
             :columns="tableColumns"
             :data="tableData"
             sortable
             :loading="isLoading || isFetching"
-            :allow-filtering="false"
+            :global-filter-fields="globalFilterFields"
             @export-all="exportAll"
+            @export-selected="exportSelected"
             @show-activation-code="showCode"
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
             @edit-button="onEditButtonClick($event)"
@@ -212,9 +223,11 @@ import PvInputText from 'primevue/inputtext';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
 import PvToast from 'primevue/toast';
+import PvToggleButton from 'primevue/togglebutton';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _cloneDeep from 'lodash/cloneDeep';
+import _kebabCase from 'lodash/kebabCase';
 import { useAuthStore } from '@/store/auth';
 import { getRoarApiClient } from '@/clients/roar-api';
 import { exportCsv } from '@/helpers/query/utils';
@@ -247,6 +260,7 @@ const isEditModalEnabled = ref(false);
 const currentEditOrgId = ref(null);
 const localOrgData = ref(null);
 const isSubmitting = ref(false);
+const hideSubgroups = ref(false);
 const { userCan, Permissions } = usePermissions();
 const { mutateAsync: updateOrg } = useUpdateOrgMutation();
 
@@ -307,6 +321,14 @@ const orgHeaders = computed(() => {
 const activeIndex = ref(0);
 const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
+});
+
+const globalFilterFields = computed(() => {
+  const sharedFilterFields = ['name', 'abbreviation', 'addressLine1', 'city', 'stateProvince', 'postalCode', 'country'];
+  if (activeOrgType.value === ORG_TYPES.DISTRICTS || activeOrgType.value === ORG_TYPES.SCHOOLS) {
+    sharedFilterFields.push('ncesId', 'mdrNumber');
+  }
+  return sharedFilterFields;
 });
 
 // Use export orchestrator composable (must be after activeOrgType is defined)
@@ -451,9 +473,62 @@ function copyToClipboard(text) {
     });
 }
 
+const formatAddress = (org) =>
+  [
+    _get(org, 'addressLine1'),
+    _get(org, 'addressLine2'),
+    _get(org, 'city'),
+    _get(org, 'stateProvince'),
+    _get(org, 'postalCode'),
+    _get(org, 'country'),
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+const transformForExport = (targetOrgs) =>
+  targetOrgs.map((org) => {
+    const sharedFields = {
+      Name: _get(org, 'name'),
+      Abbreviation: _get(org, 'abbreviation'),
+      Address: formatAddress(org),
+    };
+
+    if (activeOrgType.value === ORG_TYPES.DISTRICTS || activeOrgType.value === ORG_TYPES.SCHOOLS) {
+      sharedFields['MdrNumber'] = _get(org, 'mdrNumber');
+      sharedFields['NcesId'] = _get(org, 'ncesId');
+    }
+
+    if (activeOrgType.value === ORG_TYPES.CLASSES) {
+      sharedFields['Class Type'] = _get(org, 'classType');
+      sharedFields['Grades'] = (_get(org, 'grades') ?? []).join(', ');
+    }
+
+    return sharedFields;
+  });
+
+const getExportFilename = () => {
+  let parentOrgName = '';
+  if (activeOrgType.value === ORG_TYPES.CLASSES) {
+    const school = allSchools.value?.find((s) => s.id === selectedSchool.value);
+    parentOrgName = school?.name ? `${_kebabCase(school.name)}-` : '';
+  } else if (activeOrgType.value === ORG_TYPES.SCHOOLS) {
+    const district = allDistricts.value?.find((d) => d.id === selectedDistrict.value);
+    parentOrgName = district?.name ? `${_kebabCase(district.name)}-` : '';
+  }
+
+  return `roar-orgs-${parentOrgName}${activeOrgType.value}`;
+};
+const exportAll = () => {
+  exportCsv(transformForExport(orgData.value ?? []), `${getExportFilename()}.csv`);
+};
+
+const exportSelected = (selectedOrgs) => {
+  exportCsv(transformForExport(selectedOrgs), `${getExportFilename()}-selected.csv`);
+};
+
 const tableData = computed(() => {
   if (isLoading.value) return [];
-  const tableData = orgData?.value?.map((org) => {
+  const rows = orgData?.value?.map((org) => {
     const orgInfo = _cloneDeep(org);
     return {
       ...orgInfo,
@@ -466,16 +541,12 @@ const tableData = computed(() => {
       },
     };
   });
-  return tableData;
-});
+  if (activeOrgType.value === ORG_TYPES.GROUPS && !hideSubgroups.value) {
+    return rows.filter((org) => !org.parentOrgId && !org.parentOrgType);
+  }
 
-// The org-data computed already holds the full set for the active tab (the
-// migrated composables walk every page), so the CSV is built from that rather
-// than re-fetching. Export the raw mapped org rows — not `tableData`, which
-// injects UI-only keys (`isExporting`, `routeParams`) that shouldn't leak to CSV.
-const exportAll = () => {
-  exportCsv(orgData.value ?? [], `roar-${activeOrgType.value}.csv`);
-};
+  return rows;
+});
 
 // Invitation (activation) codes were intentionally dropped for districts,
 // schools, and classes during the ts-rest backend migration — only groups

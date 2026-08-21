@@ -1679,7 +1679,7 @@ describe('firekit compat', () => {
 
       getFirekitCompat()._getStorageBucket();
 
-      expect(getStorage).toHaveBeenCalledWith(expect.anything(), 'gs://roar-admin-recordings-prod');
+      expect(getStorage).toHaveBeenCalledWith(expect.anything(), 'gs://roar-prod-admin-recordings-bucket');
     });
 
     it('uses the staging recordings bucket when projectId is not gse-roar-admin', () => {
@@ -1690,7 +1690,7 @@ describe('firekit compat', () => {
 
       getFirekitCompat()._getStorageBucket();
 
-      expect(getStorage).toHaveBeenCalledWith(expect.anything(), 'gs://roar-admin-recordings-staging');
+      expect(getStorage).toHaveBeenCalledWith(expect.anything(), 'gs://roar-staging-admin-recordings-bucket');
     });
   });
 });

@@ -1,6 +1,6 @@
 import { eq, and, or, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup, NewUserFamily } from '../db/schema';
+import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup } from '../db/schema';
 import { EntityType } from '../types/entity-type';
 import type { UserMembershipDetail } from '../types/user';
 import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes, groups } from '../db/schema';
@@ -261,15 +261,17 @@ export class UserRepository extends BaseRepository<User, typeof users> {
   /**
    * Create a user row and all junction-table memberships in a single DB transaction.
    *
-   * Inserts the `users` row and all `user_orgs`, `user_classes`, `user_groups`, and
-   * `user_families` rows within the supplied transaction.
+   * Inserts the `users` row and all `user_orgs`, `user_classes`, and `user_groups` rows
+   * within the supplied transaction. Family membership is deliberately out of scope —
+   * `user_families` rows are written by `FamilyRepository`, whose callers authorize
+   * against the family being written to.
    *
    * The caller is responsible for managing the transaction lifecycle. Use
    * `runTransaction` to open one:
    *
    * ```typescript
    * await repository.runTransaction({
-   *   fn: (tx) => repository.createWithMemberships(userData, orgs, classes, groups, families, tx),
+   *   fn: (tx) => repository.createWithMemberships(userData, orgs, classes, groups, tx),
    * });
    * ```
    *
@@ -279,7 +281,6 @@ export class UserRepository extends BaseRepository<User, typeof users> {
    * @param orgMemberships - Rows to insert into `user_orgs`
    * @param classMemberships - Rows to insert into `user_classes`
    * @param groupMemberships - Rows to insert into `user_groups`
-   * @param familyMemberships - Rows to insert into `user_families`
    * @param transaction - The active transaction to execute writes within
    * @returns The newly created user's ID
    */
@@ -288,7 +289,6 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     orgMemberships: Omit<NewUserOrg, 'userId'>[],
     classMemberships: Omit<NewUserClass, 'userId'>[],
     groupMemberships: Omit<NewUserGroup, 'userId'>[],
-    familyMemberships: Omit<NewUserFamily, 'userId'>[],
     transaction: CoreTransaction,
   ): Promise<{ id: string }> {
     const [created] = await transaction.insert(users).values(userData).returning({ id: users.id });
@@ -309,10 +309,6 @@ export class UserRepository extends BaseRepository<User, typeof users> {
 
     if (groupMemberships.length > 0) {
       await transaction.insert(userGroups).values(groupMemberships.map((m) => ({ ...m, userId })));
-    }
-
-    if (familyMemberships.length > 0) {
-      await transaction.insert(userFamilies).values(familyMemberships.map((m) => ({ ...m, userId })));
     }
 
     return { id: userId };
