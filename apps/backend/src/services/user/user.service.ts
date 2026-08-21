@@ -1,5 +1,5 @@
 import type { AuthContext } from '../../types/auth-context';
-import type { User, NewUserAgreement, NewUserOrg, NewUserClass, NewUserGroup, NewUserFamily } from '../../db/schema';
+import type { User, NewUserAgreement, NewUserOrg, NewUserClass, NewUserGroup } from '../../db/schema';
 import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
 import type { TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
@@ -36,7 +36,6 @@ import {
   schoolMembershipTuple,
   classMembershipTuple,
   groupMembershipTuple,
-  familyMembershipTuple,
 } from '../authorization/helpers/fga-tuples';
 import { UserType } from '../../enums/user-type.enum';
 import { AuthProvider } from '../../enums/auth-provider.enum';
@@ -94,28 +93,24 @@ interface CreateUserIdentifiers {
   pid?: string | undefined;
 }
 
-/** Interface for user membership fields in the create user payload. */
+/**
+ * Interface for user membership fields in the create user payload.
+ *
+ * Org-scoped only. Family memberships are not accepted by this endpoint: every
+ * membership here is authorized with `can_create_users` against the org it names,
+ * and a family is not an org — it sits outside the hierarchy that permission
+ * traverses. Family membership is created through the families endpoints
+ * (`POST /families`, `POST /families/:familyId/users`), which authorize the caller
+ * against the family itself. Narrowing the type here is what makes the omission
+ * enforceable rather than a convention.
+ */
 interface CreateUserMemberships {
-  entityType: EntityType;
+  entityType: Exclude<EntityType, 'family'>;
   entityId: string;
-  role: UserRole | UserFamilyRole;
+  role: UserRole;
   enrollmentStart?: string | undefined;
   enrollmentEnd?: string | undefined;
 }
-
-/**
- * Narrowed membership types used only in the create function for type-safe mapping.
- * The flat CreateUserMemberships interface is kept for controller compatibility —
- * Zod's z.union() inference flattens the discriminated union before it reaches the service.
- */
-type OrgMembership = CreateUserMemberships & {
-  entityType: Exclude<EntityType, 'family'>;
-  role: UserRole;
-};
-type FamilyMembership = CreateUserMemberships & {
-  entityType: 'family';
-  role: UserFamilyRole;
-};
 
 /**
  * Fields for creating a single user.
@@ -403,14 +398,21 @@ export function UserService({
     // returns null for a non-existent class, and the FGA model requires district/school/group
     // to have tuples so requirePermission throws 403 for missing entities.
     //
+    // Every membership type reaching here is org-scoped, so every branch below ends in a
+    // requirePermission call. `CreateUserMemberships` excludes family for exactly this
+    // reason — a family membership has no org to authorize against, so it would fall
+    // through every branch unchecked.
+    //
     // Super admins skip FGA but get explicit entity existence checks for all membership
     // types — without this, an invalid ID would only fail at the DB FK constraint after
     // Firebase has already created an account that then needs compensating deletion.
 
     if (!isSuperAdmin) {
-      // Guard against a current platform admin creating a new platform admin account
+      // Guard against a current platform admin creating a new platform admin account.
+      // Covers every membership in the body: `CreateUserMemberships` is org-scoped, so
+      // there is no longer a membership shape that skips this check.
       for (const m of memberships) {
-        if (isOrgMembership(m) && m.role === UserRole.PLATFORM_ADMIN) {
+        if (m.role === UserRole.PLATFORM_ADMIN) {
           logger.warn(
             { userId, attemptedRole: m.role, entityType: m.entityType, entityId: m.entityId },
             'Non-super-admin attempted to create platform_admin via user creation',
@@ -445,7 +447,7 @@ export function UserService({
               FgaRelation.CAN_CREATE_USERS,
               `${FgaType.SCHOOL}:${schoolId}`,
             );
-          } else if (membership.entityType !== EntityType.FAMILY) {
+          } else {
             // Defense-in-depth: verify entity exists and is active regardless of FGA tuple state.
             // FGA enforces this transitively only if the rostering-end flow deletes the relevant tuples.
             const exists = await verifyMembershipEntityExists(membership.entityType, membership.entityId);
@@ -465,25 +467,6 @@ export function UserService({
               FgaRelation.CAN_CREATE_USERS,
               `${ENTITY_TYPE_TO_FGA_TYPE[membership.entityType]}:${membership.entityId}`,
             );
-          } else {
-            // FAMILY: verify the family exists and is active before attempting the DB insert.
-            // Fixes the existence gap from issue #1774 — an invalid or rostered-out familyId would
-            // otherwise only fail at the FK constraint after Firebase account creation.
-            const exists = await verifyMembershipEntityExists(EntityType.FAMILY, membership.entityId);
-            if (!exists) {
-              logger.warn(
-                { userId, familyId: membership.entityId },
-                'Family not found or rostered out during user create pre-flight',
-              );
-              throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
-                statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-                code: ApiErrorCode.RESOURCE_NOT_FOUND,
-                context: { userId, familyId: membership.entityId },
-              });
-            }
-            // TODO: Authorization gap still outstanding (issue #1774):
-            // call authorizationService.requirePermission(userId, CAN_CREATE_CHILD, `family:${membership.entityId}`).
-            // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1774
           }
         }),
       );
@@ -613,7 +596,6 @@ export function UserService({
       const enrollmentStart = new Date();
 
       const orgMemberships: Omit<NewUserOrg, 'userId'>[] = body.memberships
-        .filter(isOrgMembership)
         .filter((m) => m.entityType === EntityType.DISTRICT || m.entityType === EntityType.SCHOOL)
         .map((m) => ({
           orgId: m.entityId,
@@ -623,7 +605,6 @@ export function UserService({
         }));
 
       const classMemberships: Omit<NewUserClass, 'userId'>[] = body.memberships
-        .filter(isOrgMembership)
         .filter((m) => m.entityType === EntityType.CLASS)
         .map((m) => ({
           classId: m.entityId,
@@ -633,22 +614,12 @@ export function UserService({
         }));
 
       const groupMemberships: Omit<NewUserGroup, 'userId'>[] = body.memberships
-        .filter(isOrgMembership)
         .filter((m) => m.entityType === EntityType.GROUP)
         .map((m) => ({
           groupId: m.entityId,
           role: m.role,
           enrollmentStart: m.enrollmentStart ? new Date(m.enrollmentStart) : enrollmentStart,
           enrollmentEnd: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
-        }));
-
-      const familyMemberships: Omit<NewUserFamily, 'userId'>[] = body.memberships
-        .filter(isFamilyMembership)
-        .map((m) => ({
-          familyId: m.entityId,
-          role: m.role,
-          joinedOn: m.enrollmentStart ? new Date(m.enrollmentStart) : enrollmentStart,
-          leftOn: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
         }));
 
       // Resolve the root org partner ID before opening the write transaction.
@@ -682,7 +653,6 @@ export function UserService({
             orgMemberships,
             classMemberships,
             groupMemberships,
-            familyMemberships,
             tx,
           );
 
@@ -992,17 +962,22 @@ export function UserService({
   /**
    * Verifies that a membership entity exists and is active (not rostered out).
    *
+   * Org-scoped only, mirroring `CreateUserMemberships` — the create endpoint is the sole
+   * caller and does not accept family memberships.
+   *
    * @param entityType The type of the membership entity to verify.
    * @param entityId The ID of the membership entity to verify.
    * @returns A promise that resolves to `true` if the entity exists and is active, `false` otherwise.
    */
-  async function verifyMembershipEntityExists(entityType: EntityType, entityId: string): Promise<boolean> {
+  async function verifyMembershipEntityExists(
+    entityType: Exclude<EntityType, 'family'>,
+    entityId: string,
+  ): Promise<boolean> {
     if (entityType === EntityType.DISTRICT) return (await districtRepository.getActiveById({ id: entityId })) !== null;
     if (entityType === EntityType.SCHOOL) return (await schoolRepository.getActiveById({ id: entityId })) !== null;
     // findClassParentSchool returns null if the class or its parent school is rostered out
     if (entityType === EntityType.CLASS) return (await userRepository.findClassParentSchool(entityId)) !== null;
-    if (entityType === EntityType.GROUP) return (await groupRepository.getActiveById({ id: entityId })) !== null;
-    return (await familyRepository.getActiveById({ id: entityId })) !== null;
+    return (await groupRepository.getActiveById({ id: entityId })) !== null;
   }
 
   /**
@@ -1017,13 +992,12 @@ export function UserService({
    *    + school ltree roots (all resolved in parallel).
    * 2. If the combined set has exactly one district → return it.
    * 3. If the combined set has more than one distinct district → throw 422.
-   * 4. If no district evidence → fall through to group, then family.
+   * 4. If no district evidence → fall through to group.
    *
-   * Group and family fall-through use first-wins semantics: when multiple group or
-   * family memberships are present and no district evidence exists, the first ID in
-   * request order is returned. Groups and families are flat (non-hierarchical) so
-   * there is no "root" to validate uniqueness against. Callers should not rely on
-   * which entry wins when order is ambiguous.
+   * Group fall-through uses first-wins semantics: when multiple group memberships are
+   * present and no district evidence exists, the first ID in request order is returned.
+   * Groups are flat (non-hierarchical) so there is no "root" to validate uniqueness
+   * against. Callers should not rely on which entry wins when order is ambiguous.
    *
    * @param memberships The user's membership information from the request body
    * @returns The resolved root org provider ID
@@ -1036,12 +1010,9 @@ export function UserService({
     const resolvedDistrict = await resolveDistrictProvider(memberships);
     if (resolvedDistrict) return resolvedDistrict;
 
-    // No district evidence — fall through to group, then family
+    // No district evidence — fall through to group
     const resolvedGroup = resolveGroupProvider(memberships);
     if (resolvedGroup) return resolvedGroup;
-
-    const resolvedFamily = resolveFamilyProvider(memberships);
-    if (resolvedFamily) return resolvedFamily;
 
     throw new ApiError(ApiErrorMessage.NOT_FOUND, {
       statusCode: StatusCodes.NOT_FOUND,
@@ -1068,7 +1039,7 @@ export function UserService({
    * 2. Deduplicate all district IDs into a single set.
    * 3. Exactly one distinct district → return it.
    * 4. More than one distinct district → throw 422.
-   * 5. No district evidence at all → return `undefined` (caller falls through to group/family).
+   * 5. No district evidence at all → return `undefined` (caller falls through to group).
    *
    * @param memberships The user's membership information from the request body
    * @returns The resolved district ID, or `undefined` if no district evidence exists
@@ -1150,40 +1121,6 @@ export function UserService({
   }
 
   /**
-   * Resolve the root org provider from family memberships.
-   *
-   * Uses first-wins semantics: when multiple family memberships are present,
-   * the first ID in request order is returned. Families are flat (non-hierarchical)
-   * so there is no root to validate uniqueness against.
-   *
-   * @param memberships The user's membership information from the request body
-   * @returns The first family ID found, or `undefined` if no family memberships exist
-   */
-  function resolveFamilyProvider(memberships: CreateUserMemberships[]): string | undefined {
-    return memberships.find(({ entityType }) => entityType === EntityType.FAMILY)?.entityId;
-  }
-
-  /**
-   * Type guard for `OrgMembership`.
-   *
-   * @param m The membership to check.
-   * @returns `true` if the membership is an `OrgMembership`, `false` otherwise.
-   */
-  function isOrgMembership(m: CreateUserMemberships): m is OrgMembership {
-    return m.entityType !== EntityType.FAMILY;
-  }
-
-  /**
-   * Type guard for `FamilyMembership`.
-   *
-   * @param m The membership to check.
-   * @returns `true` if the membership is a `FamilyMembership`, `false` otherwise.
-   */
-  function isFamilyMembership(m: CreateUserMemberships): m is FamilyMembership {
-    return m.entityType === EntityType.FAMILY;
-  }
-
-  /**
    * Delete a Firebase auth account as a saga compensation step.
    *
    * Failures are logged with full context but not re-thrown — the caller surfaces
@@ -1218,24 +1155,19 @@ export function UserService({
     const now = new Date();
 
     for (const m of memberships) {
-      const isOrgMember = isOrgMembership(m);
-      const isFamilyMember = isFamilyMembership(m);
-
       const start = m.enrollmentStart ? new Date(m.enrollmentStart) : now;
       const end = m.enrollmentEnd ? new Date(m.enrollmentEnd) : null;
 
-      if (isOrgMember && m.entityType === EntityType.DISTRICT) {
+      if (m.entityType === EntityType.DISTRICT) {
         tuples.push(districtMembershipTuple(newUserId, m.entityId, m.role, start, end));
-      } else if (isOrgMember && m.entityType === EntityType.SCHOOL) {
+      } else if (m.entityType === EntityType.SCHOOL) {
         tuples.push(schoolMembershipTuple(newUserId, m.entityId, m.role, start, end));
-      } else if (isOrgMember && m.entityType === EntityType.CLASS) {
+      } else if (m.entityType === EntityType.CLASS) {
         if (FGA_CLASS_VALID_ROLES.has(m.role)) {
           tuples.push(classMembershipTuple(newUserId, m.entityId, m.role, start, end));
         }
-      } else if (isOrgMember && m.entityType === EntityType.GROUP) {
+      } else {
         tuples.push(groupMembershipTuple(newUserId, m.entityId, m.role, start, end));
-      } else if (isFamilyMember) {
-        tuples.push(familyMembershipTuple(newUserId, m.entityId, m.role, start, end));
       }
     }
 
