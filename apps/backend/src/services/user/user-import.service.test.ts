@@ -394,17 +394,6 @@ describe('UserImportService.bulkImport', () => {
         'school:school-parent',
       );
     });
-
-    it('skips the FGA check for family memberships (matching single-create)', async () => {
-      const rows = [
-        makeRow({ memberships: [{ entityType: EntityType.FAMILY, entityId: 'fam-1', role: UserRole.STUDENT }] }),
-      ];
-
-      const results = await buildService().bulkImport(partnerAdmin, rows);
-
-      expect(mockAuthz.requirePermission).not.toHaveBeenCalled();
-      expect(results[0]!.status).toBe('ok');
-    });
   });
 
   describe('declared org validation', () => {
@@ -536,37 +525,6 @@ describe('UserImportService.bulkImport', () => {
       ]);
 
       expect(results[0]!).toMatchObject({ status: 'failed', error: { code: ApiErrorCode.RESOURCE_NOT_FOUND } });
-    });
-
-    it('rejects an unresolved family', async () => {
-      mockUserRepository.resolveDeclaredEntities.mockResolvedValue(resolved({}));
-
-      const results = await buildService().bulkImport(superAdmin, [
-        makeRow({
-          memberships: [{ entityType: EntityType.FAMILY, entityId: 'fam-gone', role: UserRole.STUDENT }],
-        }),
-      ]);
-
-      expect(results[0]!).toMatchObject({ status: 'failed', error: { code: ApiErrorCode.RESOURCE_NOT_FOUND } });
-    });
-
-    it('accepts a group-only and a family-only row when both resolve', async () => {
-      mockUserRepository.resolveDeclaredEntities.mockResolvedValue(
-        resolved({ groups: ['group-1'], families: ['fam-1'] }),
-      );
-
-      const results = await buildService().bulkImport(superAdmin, [
-        makeRow({
-          email: 'grouped@example.org',
-          memberships: [{ entityType: EntityType.GROUP, entityId: 'group-1', role: UserRole.STUDENT }],
-        }),
-        makeRow({
-          email: 'family@example.org',
-          memberships: [{ entityType: EntityType.FAMILY, entityId: 'fam-1', role: UserRole.STUDENT }],
-        }),
-      ]);
-
-      expect(results.every((r) => r.status === 'ok')).toBe(true);
     });
 
     it('accepts a class belonging to either of several declared schools', async () => {

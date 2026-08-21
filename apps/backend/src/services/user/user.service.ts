@@ -769,6 +769,8 @@ export function UserService({
    * create all Firebase accounts in a single `importUsers` call (one round-trip, no per-account
    * rate limit) and then persist each one here, reusing the same compensation guarantees.
    *
+   * Does not create family memberships - those are created through the families endpoints.
+   *
    * The caller owns authorization, uniqueness pre-checks, and Firebase account creation ({@link bulkImportUsers}).
    * On any DB or FGA failure this compensates by deleting the FGA tuples, the DB rows, and — since the caller
    * created it — the Firebase account, so a failed row leaves no orphan in any system.
@@ -795,7 +797,6 @@ export function UserService({
       const enrollmentStart = new Date();
 
       const orgMemberships: Omit<NewUserOrg, 'userId'>[] = memberships
-        .filter(isOrgMembership)
         .filter((m) => m.entityType === EntityType.DISTRICT || m.entityType === EntityType.SCHOOL)
         .map((m) => ({
           orgId: m.entityId,
@@ -805,7 +806,6 @@ export function UserService({
         }));
 
       const classMemberships: Omit<NewUserClass, 'userId'>[] = memberships
-        .filter(isOrgMembership)
         .filter((m) => m.entityType === EntityType.CLASS)
         .map((m) => ({
           classId: m.entityId,
@@ -815,7 +815,6 @@ export function UserService({
         }));
 
       const groupMemberships: Omit<NewUserGroup, 'userId'>[] = memberships
-        .filter(isOrgMembership)
         .filter((m) => m.entityType === EntityType.GROUP)
         .map((m) => ({
           groupId: m.entityId,
@@ -823,13 +822,6 @@ export function UserService({
           enrollmentStart: m.enrollmentStart ? new Date(m.enrollmentStart) : enrollmentStart,
           enrollmentEnd: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
         }));
-
-      const familyMemberships: Omit<NewUserFamily, 'userId'>[] = memberships.filter(isFamilyMembership).map((m) => ({
-        familyId: m.entityId,
-        role: m.role,
-        joinedOn: m.enrollmentStart ? new Date(m.enrollmentStart) : enrollmentStart,
-        leftOn: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
-      }));
 
       const resolvedRootOrgProvider = await resolveRootOrgProviderFromMemberships(memberships);
 
@@ -860,7 +852,6 @@ export function UserService({
             orgMemberships,
             classMemberships,
             groupMemberships,
-            familyMemberships,
             tx,
           );
 

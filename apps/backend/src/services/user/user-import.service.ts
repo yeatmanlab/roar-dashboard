@@ -72,11 +72,9 @@ const CLASSIFICATION = {
 type Classification = (typeof CLASSIFICATION)[keyof typeof CLASSIFICATION];
 
 interface ImportRowMembership {
-  entityType: EntityType;
+  entityType: Exclude<EntityType, 'family'>;
   entityId: string;
-  // Org roles use UserRole; family memberships use UserFamilyRole (parent/child). The flat union
-  // mirrors how the contract's discriminated membership union is inferred at the service boundary.
-  role: UserRole | UserFamilyRole;
+  role: UserRole;
   enrollmentStart?: string | undefined;
   enrollmentEnd?: string | undefined;
 }
