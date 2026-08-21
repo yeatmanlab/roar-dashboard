@@ -1,5 +1,7 @@
 import { SWR_SCORE_NAMES, SWR_TASK_IDS, SWR_SCORING_VERSION } from '@roar-platform/assessment-schema/roar-swr';
 
+const COMPOSITE_DOMAIN = 'composite';
+
 export default {
   taskSlugs: [SWR_TASK_IDS.ES],
   scoreFields: {
@@ -33,4 +35,27 @@ export default {
     rawScore: { min: 100, max: 900 },
     percentCorrect: { min: 0, max: 100 },
   },
+  subscores: [
+    {
+      kind: 'number' as const,
+      key: 'numCorrect',
+      label: 'Num Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: SWR_SCORE_NAMES.NUM_CORRECT,
+    },
+    {
+      kind: 'number' as const,
+      key: 'numAttempted',
+      label: 'Num Attempted',
+      domain: COMPOSITE_DOMAIN,
+      name: SWR_SCORE_NAMES.NUM_ATTEMPTED,
+    },
+    {
+      kind: 'number' as const,
+      key: 'percentCorrect',
+      label: 'Percent Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: SWR_SCORE_NAMES.PERCENT_CORRECT,
+    },
+  ],
 } as const;
