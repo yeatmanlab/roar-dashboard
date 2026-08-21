@@ -88,7 +88,7 @@ export const initializeClowder = async (config: Record<string, any>) => {
         // When catName (trial_type) is not found in irtHyperparams, use composite for params other than scale & transformation
         ...(irtHyperparams[catName] ? irtHyperparams[catName] : irtHyperparams['composite']),
         // Pass randomSeed if we want to show the same randomized order of items.
-        randomSeed,
+        ...(randomSeed != null ? { randomSeed } : {}),
       },
     ]),
   );

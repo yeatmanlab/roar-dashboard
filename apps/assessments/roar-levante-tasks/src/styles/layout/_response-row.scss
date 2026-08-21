@@ -58,6 +58,15 @@
       justify-content: center;
       row-gap: 10px;
     }
+
+    &.wide-buttons {
+      @include respond-to('large') {
+        display: grid;
+        grid-template-columns: auto auto;
+        justify-content: center;
+        row-gap: 10px;
+      }
+    }
   }
 
   &.multi-stack {
