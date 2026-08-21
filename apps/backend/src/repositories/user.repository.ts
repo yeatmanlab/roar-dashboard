@@ -4,7 +4,7 @@ import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup } from '../d
 import { EntityType } from '../types/entity-type';
 import type { UserMembershipDetail } from '../types/user';
 import type { UserFamilyRole } from '../enums/user-family-role.enum';
-import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes, groups, families } from '../db/schema';
+import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes, groups } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type { CoreTransaction } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
@@ -273,8 +273,10 @@ export class UserRepository extends BaseRepository<User, typeof users> {
    * for the same reason: callers return 422 either way, and distinguishing them would disclose which
    * IDs exist.
    *
-   * Schools and classes additionally carry their parents so callers can check containment. Districts,
-   * groups, and families are existence-only — neither has a parent an import row can contradict.
+   * Schools and classes additionally carry their parents so callers can check containment. Districts
+   * and groups are existence-only — neither has a parent an import row can contradict. Families are
+   * absent entirely: an import row cannot declare a family membership (the contract's
+   * `OrgMembershipSchema` rejects one), so there is never a family ID to resolve.
    *
    * The `orgType` filters are load-bearing: they make a district UUID passed in a school slot (or
    * vice versa) a miss rather than a false match.
@@ -289,15 +291,13 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     schools: string[];
     classes: string[];
     groups: string[];
-    families: string[];
   }): Promise<{
     districts: Set<string>;
     schools: Map<string, { districtId: string | null }>;
     classes: Map<string, { schoolId: string; districtId: string }>;
     groups: Set<string>;
-    families: Set<string>;
   }> {
-    const [districtRows, schoolRows, classRows, groupRows, familyRows] = await Promise.all([
+    const [districtRows, schoolRows, classRows, groupRows] = await Promise.all([
       ids.districts.length > 0
         ? this.db
             .select({ id: orgs.id })
@@ -324,12 +324,6 @@ export class UserRepository extends BaseRepository<User, typeof users> {
             .from(groups)
             .where(and(inArray(groups.id, ids.groups), isNull(groups.rosteringEnded)))
         : Promise.resolve([]),
-      ids.families.length > 0
-        ? this.db
-            .select({ id: families.id })
-            .from(families)
-            .where(and(inArray(families.id, ids.families), isNull(families.rosteringEnded)))
-        : Promise.resolve([]),
     ]);
 
     return {
@@ -337,7 +331,6 @@ export class UserRepository extends BaseRepository<User, typeof users> {
       schools: new Map(schoolRows.map((row) => [row.id, { districtId: row.districtId }])),
       classes: new Map(classRows.map((row) => [row.id, { schoolId: row.schoolId, districtId: row.districtId }])),
       groups: new Set(groupRows.map((row) => row.id)),
-      families: new Set(familyRows.map((row) => row.id)),
     };
   }
 

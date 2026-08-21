@@ -10,6 +10,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 import { UserRole } from '../../enums/user-role.enum';
+import { UserFamilyRole } from '../../enums/user-family-role.enum';
 import { UserType } from '../../enums/user-type.enum';
 import { EntityType } from '../../types/entity-type';
 import { FGA_CONDITION_ACTIVE_MEMBERSHIP, FgaRelation } from '../authorization/fga-constants';
@@ -58,13 +59,11 @@ const resolved = (overrides: {
   schools?: [string, { districtId: string | null }][];
   classes?: [string, { schoolId: string; districtId: string }][];
   groups?: string[];
-  families?: string[];
 }) => ({
   districts: new Set(overrides.districts ?? []),
   schools: new Map(overrides.schools ?? []),
   classes: new Map(overrides.classes ?? []),
   groups: new Set(overrides.groups ?? []),
-  families: new Set(overrides.families ?? []),
 });
 
 describe('UserImportService.bulkImport', () => {
@@ -118,7 +117,6 @@ describe('UserImportService.bulkImport', () => {
         ids.classes.map((id) => [id, { schoolId: ids.schools[0] ?? 'school-parent', districtId: DEFAULT_DISTRICT_ID }]),
       ),
       groups: new Set(ids.groups),
-      families: new Set(ids.families),
     }));
     mockAuthz.requirePermission.mockResolvedValue(undefined);
     getUsers.mockResolvedValue({ users: [], notFound: [] });
@@ -427,7 +425,6 @@ describe('UserImportService.bulkImport', () => {
         schools: ['school-1'],
         classes: ['class-1'],
         groups: [],
-        families: [],
       });
     });
 
@@ -574,7 +571,6 @@ describe('UserImportService.bulkImport', () => {
         schools: [],
         classes: [],
         groups: [],
-        families: [],
       });
       expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
     });
@@ -717,6 +713,42 @@ describe('UserImportService.bulkImport', () => {
       expect(mockAuthz.writeTuplesOrThrow).toHaveBeenCalledWith([
         expect.objectContaining({ relation: UserRole.STUDENT, object: 'school:school-9' }),
       ]);
+      expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'failed' });
+    });
+
+    // The only path that reaches the family branch of the tuple builders: an import row cannot
+    // declare a family membership (the contract's OrgMembershipSchema rejects it), but the target's
+    // *current* memberships come from the DB and may include a family row written by the families
+    // endpoints. Dropping the family case would revoke the tuple here and then fail to restore it,
+    // silently stripping a parent's access to their own child while the row still reports a
+    // compensated failure.
+    it('revokes and restores a family tuple alongside the org ones when the DB write fails', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.TEACHER },
+        { entityType: EntityType.FAMILY, entityId: 'fam-1', role: UserFamilyRole.PARENT },
+      ]);
+      mockUserRepository.runTransaction.mockRejectedValueOnce(new Error('db down'));
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'leaver@example.org', unenroll: true }),
+      ]);
+
+      // Revoked with the family relation against the family type, not an org type.
+      expect(mockAuthz.deleteTuples).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.objectContaining({ relation: UserFamilyRole.PARENT, object: 'family:fam-1' })]),
+      );
+
+      // Restored with the active_membership condition, same as the org tuples alongside it.
+      expect(mockAuthz.writeTuplesOrThrow).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            relation: UserFamilyRole.PARENT,
+            object: 'family:fam-1',
+            condition: expect.objectContaining({ name: FGA_CONDITION_ACTIVE_MEMBERSHIP }),
+          }),
+          expect.objectContaining({ relation: UserRole.TEACHER, object: 'school:school-9' }),
+        ]),
+      );
       expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'failed' });
     });
 
@@ -870,6 +902,49 @@ describe('UserImportService.bulkImport', () => {
           }),
         ]);
 
+        expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+      });
+
+      it('does not demand an org permission over a family membership the target holds', async () => {
+        // A row can't declare a family membership, but the target's DB-sourced memberships can
+        // include one written by the families endpoints. Families authorize through the family
+        // itself (can_create_child), not can_create_users on an org, so authorizeRow skips them —
+        // otherwise every import touching a user with a family would 403 for want of a permission
+        // no caller can hold.
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+          { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+          { entityType: EntityType.FAMILY, entityId: 'fam-1', role: UserFamilyRole.CHILD },
+        ]);
+
+        const results = await buildService().bulkImport(partnerAdmin, [
+          makeRow({ email: 'leaver@example.org', unenroll: true, memberships: [] }),
+        ]);
+
+        expect(mockAuthz.requirePermission).toHaveBeenCalledWith(
+          partnerAdmin.userId,
+          expect.any(String),
+          'school:school-9',
+        );
+        expect(mockAuthz.requirePermission).not.toHaveBeenCalledWith(
+          expect.anything(),
+          expect.anything(),
+          'family:fam-1',
+        );
+        expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+      });
+
+      it('authorizes a target whose only membership is a family one against nothing, and still succeeds', async () => {
+        // Every membership is skipped, so no FGA call is made at all. The row is not rejected: the
+        // length-0 fail-closed guard runs before the skip loop and this list isn't empty.
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+          { entityType: EntityType.FAMILY, entityId: 'fam-1', role: UserFamilyRole.PARENT },
+        ]);
+
+        const results = await buildService().bulkImport(partnerAdmin, [
+          makeRow({ email: 'leaver@example.org', unenroll: true, memberships: [] }),
+        ]);
+
+        expect(mockAuthz.requirePermission).not.toHaveBeenCalled();
         expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
       });
     });
@@ -1110,6 +1185,33 @@ describe('UserImportService.bulkImport', () => {
         // revoked — matching UserRepository.reconcileMemberships' per-type grouping.
         expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([expect.objectContaining({ object: 'school:school-1' })]);
       });
+
+      it('leaves an existing family membership untouched while replacing the org one', async () => {
+        // The same per-type rule, applied to the one entity type a row can no longer declare. A
+        // family membership is always in `current` and never in `desired`, so it can't be predicted
+        // as a removal — a routine roster update must not strip a parent's access to their child.
+        mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+          { entityType: EntityType.SCHOOL, entityId: 'school-1', role: UserRole.STUDENT },
+          { entityType: EntityType.FAMILY, entityId: 'fam-1', role: UserFamilyRole.CHILD },
+        ]);
+
+        const results = await buildService().bulkImport(superAdmin, [rowMovingToSchool2()]);
+
+        expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([expect.objectContaining({ object: 'school:school-1' })]);
+        expect(mockAuthz.deleteTuples).not.toHaveBeenCalledWith(
+          expect.arrayContaining([expect.objectContaining({ object: 'family:fam-1' })]),
+        );
+
+        // The family row reaches the reconcile as `current` — proving it wasn't filtered out
+        // upstream — but never as `desired`, which is what makes it survive.
+        expect(mockUserRepository.reconcileMemberships).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.not.arrayContaining([expect.objectContaining({ entityType: EntityType.FAMILY })]),
+          expect.arrayContaining([expect.objectContaining({ entityType: EntityType.FAMILY })]),
+          expect.anything(),
+        );
+        expect(results[0]!).toMatchObject({ classification: 'updated', status: 'ok' });
+      });
     });
 
     describe('compensation on a failed grant-write', () => {
@@ -1162,26 +1264,6 @@ describe('UserImportService.bulkImport', () => {
         expect(mockUserRepository.revertReconciledMemberships).not.toHaveBeenCalled();
         expect(results[0]!.status).toBe('ok');
       });
-    });
-
-    it('uses the family relation when reconciliation adds a family membership', async () => {
-      const user = existing();
-      mockUserRepository.findByEmails.mockResolvedValue([user]);
-      mockUserRepository.reconcileMemberships.mockResolvedValue({
-        added: [{ entityType: EntityType.FAMILY, entityId: 'fam-1', role: 'parent' }],
-        removed: [],
-      });
-
-      await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
-
-      expect(mockAuthz.writeTuplesOrThrow).toHaveBeenCalledWith([
-        {
-          user: `user:${user.id}`,
-          relation: 'parent',
-          object: 'family:fam-1',
-          condition: expect.objectContaining({ name: FGA_CONDITION_ACTIVE_MEMBERSHIP }),
-        },
-      ]);
     });
 
     it('writes and deletes no FGA tuple for an admin-tier class membership (add/delete symmetry)', async () => {

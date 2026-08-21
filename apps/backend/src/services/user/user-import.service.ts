@@ -225,9 +225,6 @@ function validateRowOrgs(row: ImportUserRowInput, declared: DeclaredEntities): v
   for (const groupId of declaredIds(row, EntityType.GROUP)) {
     if (!declared.groups.has(groupId)) throw unresolvedEntity({ groupId });
   }
-  for (const familyId of declaredIds(row, EntityType.FAMILY)) {
-    if (!declared.families.has(familyId)) throw unresolvedEntity({ familyId });
-  }
 
   for (const schoolId of schools) {
     const school = declared.schools.get(schoolId);
@@ -682,6 +679,9 @@ export function UserImportService({
    * Build the FGA membership tuples to write for newly-added memberships, carrying the
    * `active_membership` condition (grant window starting now). Mirrors single-create's
    * buildMembershipTuples — class tuples are only written for FGA-valid roles.
+   *
+   * Family memberships are included because this function is used to rebuild
+   * existing memberships when rolling back failed unenrollment.
    */
   function buildMembershipAdditionTuples(
     userId: string,
@@ -1027,12 +1027,11 @@ export function UserImportService({
     // O(1) where the row count is O(100). Resolving it once here keeps Phase 1 free of per-row
     // queries (performance-avoid-quadratic). Unenroll rows are excluded: they act on the target's
     // actual memberships, not whatever the row declares.
-    const declared: Record<EntityType, Set<string>> = {
-      [EntityType.DISTRICT]: new Set(),
-      [EntityType.SCHOOL]: new Set(),
-      [EntityType.CLASS]: new Set(),
-      [EntityType.GROUP]: new Set(),
-      [EntityType.FAMILY]: new Set(),
+    const declared: Record<OrgEntityType, Set<string>> = {
+      [OrgEntityType.DISTRICT]: new Set(),
+      [OrgEntityType.SCHOOL]: new Set(),
+      [OrgEntityType.CLASS]: new Set(),
+      [OrgEntityType.GROUP]: new Set(),
     };
     for (const row of rows) {
       if (row.unenroll) continue;
@@ -1048,7 +1047,6 @@ export function UserImportService({
         schools: [...declared[EntityType.SCHOOL]],
         classes: [...declared[EntityType.CLASS]],
         groups: [...declared[EntityType.GROUP]],
-        families: [...declared[EntityType.FAMILY]],
       });
     } catch (error) {
       // Without the resolved entities no row can be validated. Failing every row is the safe

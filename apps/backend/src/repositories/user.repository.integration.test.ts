@@ -442,7 +442,7 @@ describe('UserRepository', () => {
   });
 
   describe('resolveDeclaredEntities', () => {
-    const NO_IDS = { districts: [], schools: [], classes: [], groups: [], families: [] };
+    const NO_IDS = { districts: [], schools: [], classes: [], groups: [] };
     const UNKNOWN_ID = '00000000-0000-0000-0000-000000000000';
 
     it('resolves parent district for schools and parent school/district for classes', async () => {
@@ -460,7 +460,7 @@ describe('UserRepository', () => {
       });
     });
 
-    it('resolves districts, groups, and families as existence-only sets', async () => {
+    it('resolves districts and groups as existence-only sets', async () => {
       const result = await repository.resolveDeclaredEntities({
         ...NO_IDS,
         districts: [baseFixture.district.id],
@@ -522,34 +522,23 @@ describe('UserRepository', () => {
       expect(result.groups.has(group.id)).toBe(false);
     });
 
-    it('omits a rostered-out family', async () => {
-      const family = await FamilyFactory.create({ rosteringEnded: new Date() });
-
-      const result = await repository.resolveDeclaredEntities({ ...NO_IDS, families: [family.id] });
-
-      expect(result.families.has(family.id)).toBe(false);
-    });
-
     it('omits unknown ids and returns empty results when given no ids', async () => {
       const unknown = await repository.resolveDeclaredEntities({
         districts: [UNKNOWN_ID],
         schools: [UNKNOWN_ID],
         classes: [UNKNOWN_ID],
         groups: [UNKNOWN_ID],
-        families: [UNKNOWN_ID],
       });
       expect(unknown.districts.size).toBe(0);
       expect(unknown.schools.size).toBe(0);
       expect(unknown.classes.size).toBe(0);
       expect(unknown.groups.size).toBe(0);
-      expect(unknown.families.size).toBe(0);
 
       const empty = await repository.resolveDeclaredEntities(NO_IDS);
       expect(empty.districts.size).toBe(0);
       expect(empty.schools.size).toBe(0);
       expect(empty.classes.size).toBe(0);
       expect(empty.groups.size).toBe(0);
-      expect(empty.families.size).toBe(0);
     });
   });
 
