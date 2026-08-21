@@ -32,6 +32,8 @@ import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
+import { COMPOSITE_RUN_TASK_ID, COMPOSITE_RUN_TASK_VARIANT_ID, COMPOSITE_RUN_TASK_VERSION } from '../constants/run';
+import { ASSESSMENT_STAGE, SCORE_DOMAIN, SCORE_NAME, SCORE_TYPE } from '../constants/run-scores';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -2695,6 +2697,70 @@ describe('GET /v1/administrations/:id/reports/scores/students', () => {
       }
     });
 
+    it('returns foundationalComposite from the synthetic composite run scores', async () => {
+      const foundationalTask = await TaskFactory.create({ slug: 'pa', name: 'Phonological Awareness' });
+      const foundationalVariant = await TaskVariantFactory.create({ taskId: foundationalTask.id });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        taskVariantId: foundationalVariant.id,
+        orderIndex: 99,
+      });
+
+      const run = await RunFactory.create({
+        userId: baseFixture.grade5Student.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        taskId: COMPOSITE_RUN_TASK_ID,
+        taskVariantId: COMPOSITE_RUN_TASK_VARIANT_ID,
+        taskVersion: COMPOSITE_RUN_TASK_VERSION,
+        useForReporting: true,
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.THETA_ESTIMATE,
+        value: '1.234',
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.ROAR_SCORE,
+        value: '488.6',
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.PERCENTILE,
+        value: '>99',
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.STANDARD_SCORE,
+        value: '112.4',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const studentRow = res.body.data.items.find(
+        (item: { user: { userId: string } }) => item.user.userId === baseFixture.grade5Student.id,
+      );
+      expect(studentRow?.foundationalComposite).toEqual({
+        thetaEstimate: 1.234,
+        roarScore: 488.6,
+        percentile: 99,
+        standardScore: 112.4,
+      });
+    });
+
     it('filters tasks via taskId filter', async () => {
       authenticateAs(tiers.superAdmin);
       const res = await request(app)
@@ -3524,7 +3590,23 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
       });
       await RunScoreFactory.create({
         runId: run.id,
-        type: 'computed',
+        type: SCORE_TYPE.RAW,
+        domain: 'default',
+        name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT,
+        value: '33',
+        assessmentStage: ASSESSMENT_STAGE.TEST,
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: SCORE_TYPE.RAW,
+        domain: 'default',
+        name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED,
+        value: '40',
+        assessmentStage: ASSESSMENT_STAGE.TEST,
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: SCORE_TYPE.COMPUTED,
         domain: 'default',
         name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT,
         value: '82.6',
@@ -3546,9 +3628,14 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
       expect(data.task.taskId).toBe(phonicsTaskId);
       expect(data.task.taskSlug).toBe('phonics');
 
-      // Columns: the 9 phonics sub-skills (canonical order) + totalPercentCorrect.
+      // Columns: the 9 phonics sub-skills (canonical order) + aggregate score columns.
       const columnKeys = data.subscoreColumns.map((c: { key: string }) => c.key);
-      expect(columnKeys).toEqual([...PHONICS_SUBSKILL_KEYS, 'totalPercentCorrect']);
+      expect(columnKeys).toEqual([
+        ...PHONICS_SUBSKILL_KEYS,
+        'totalCorrect',
+        'totalNumAttempted',
+        'totalPercentCorrect',
+      ]);
 
       // The seeded student appears with the expected cell values.
       const studentRow = data.items.find(
@@ -3557,6 +3644,8 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
       expect(studentRow).toBeDefined();
       expect(studentRow.subscores[SEEDED_SKILL]).toBe('7/10');
       expect(studentRow.subscores[UNSEEDED_SKILL]).toBeNull();
+      expect(studentRow.subscores.totalCorrect).toBe(33);
+      expect(studentRow.subscores.totalNumAttempted).toBe(40);
       // number column with round: true (82.6 -> 83)
       expect(studentRow.subscores.totalPercentCorrect).toBe(83);
     });
