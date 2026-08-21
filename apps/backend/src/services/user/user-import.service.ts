@@ -9,7 +9,7 @@ import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import type { UserFamilyRole } from '../../enums/user-family-role.enum';
-import { EntityType } from '../../types/entity-type';
+import { EntityType, OrgEntityType } from '../../types/entity-type';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -72,7 +72,7 @@ const CLASSIFICATION = {
 type Classification = (typeof CLASSIFICATION)[keyof typeof CLASSIFICATION];
 
 interface ImportRowMembership {
-  entityType: Exclude<EntityType, 'family'>;
+  entityType: OrgEntityType;
   entityId: string;
   role: UserRole;
   enrollmentStart?: string | undefined;

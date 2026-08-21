@@ -7,7 +7,7 @@ import { RosteringProvider } from '../../enums/rostering-provider.enum';
 import { RosteringEntityType } from '../../enums/rostering-entity-type.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { UserFamilyRole } from '../../enums/user-family-role.enum';
-import { EntityType } from '../../types/entity-type';
+import { EntityType, OrgEntityType } from '../../types/entity-type';
 import type { UserMembershipDetail } from '../../types/user';
 import { StatusCodes } from 'http-status-codes';
 import { AgreementType } from '../../enums/agreement-type.enum';
@@ -105,7 +105,7 @@ interface CreateUserIdentifiers {
  * enforceable rather than a convention.
  */
 interface CreateUserMemberships {
-  entityType: Exclude<EntityType, 'family'>;
+  entityType: OrgEntityType;
   entityId: string;
   role: UserRole;
   enrollmentStart?: string | undefined;
@@ -960,10 +960,7 @@ export function UserService({
    * @param entityId The ID of the membership entity to verify.
    * @returns A promise that resolves to `true` if the entity exists and is active, `false` otherwise.
    */
-  async function verifyMembershipEntityExists(
-    entityType: Exclude<EntityType, 'family'>,
-    entityId: string,
-  ): Promise<boolean> {
+  async function verifyMembershipEntityExists(entityType: OrgEntityType, entityId: string): Promise<boolean> {
     if (entityType === EntityType.DISTRICT) return (await districtRepository.getActiveById({ id: entityId })) !== null;
     if (entityType === EntityType.SCHOOL) return (await schoolRepository.getActiveById({ id: entityId })) !== null;
     // findClassParentSchool returns null if the class or its parent school is rostered out

@@ -193,7 +193,8 @@ export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
  *   rows, optional for update rows, ignored for unenroll rows). The client cannot know which bin
  *   a row lands in until the server matches it by email, so the schema cannot require it.
  * - `unenroll: true` routes an existing user to the unenroll bin.
- * - `memberships` is only required to be non-empty for create/update rows. Unenrolling acts on
+ * - `memberships` is org-scoped only, like single-create, and is only required to be non-empty for
+ *   create/update rows. Unenrolling acts on
  *   the target user's actual current memberships (resolved server-side after matching by email),
  *   not whatever this array declares, so an unenroll-only row can omit it.
  *
@@ -204,7 +205,7 @@ export const ImportUserRowSchema = CreateUserRequestBodySchema.omit({ password: 
   .extend({
     password: z.string().min(8).optional(),
     unenroll: z.boolean().optional(),
-    memberships: z.array(UserMembershipSchema),
+    memberships: z.array(OrgMembershipSchema),
   })
   .strict()
   .superRefine((row, ctx) => {
