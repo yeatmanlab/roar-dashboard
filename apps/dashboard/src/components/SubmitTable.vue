@@ -85,6 +85,7 @@
   </div>
 </template>
 <script setup>
+import { getGrade } from '@bdelab/roar-utils';
 import { ref, watch, computed } from 'vue';
 import PvColumn from 'primevue/column';
 import PvDataTable from 'primevue/datatable';
@@ -115,6 +116,10 @@ const props = defineProps({
     type: String,
     default: 'idle',
   },
+  resolveOrgId: {
+    type: Function,
+    default: null,
+  },
 });
 const tableColumns = ref([]);
 const editingRows = ref([]);
@@ -142,6 +147,7 @@ watch(
     console.log('watch students', props.students);
     if (_isEmpty(props.students)) return;
     tableColumns.value = generateColumns(props.students[0]);
+    // Fire-and-forget: no need for await because ref is updated immediately and no downstream dependencies
     validateAllStudents();
   },
   { immediate: true, deep: true },
@@ -173,12 +179,12 @@ function findMappedColumn(column) {
 }
 
 // Handle row edit save
-function onCellEditSave(event) {
+async function onCellEditSave(event) {
   let { data, newValue, field } = event;
 
-  data[field] = newValue;
+  data[field] = typeof newValue === 'string' ? newValue.trim() : newValue;
 
-  validateStudent(data);
+  await validateStudent(data);
 }
 
 function deleteStudent(data) {
@@ -221,17 +227,15 @@ watch(
 );
 
 // Function to validate all students
-function validateAllStudents() {
+async function validateAllStudents() {
   if (_isEmpty(props.students)) return;
-  props.students.forEach((student) => {
-    validateStudent(student);
-  });
+  await Promise.all(props.students.map((student) => validateStudent(student)));
 }
 
 // Function to validate a single student
-function validateStudent(student) {
+async function validateStudent(student) {
   try {
-    const result = validityCheck(student);
+    const result = await validityCheck(student);
     validationResults.value[student['rowKey']] = result;
     return result;
   } catch (error) {
@@ -245,7 +249,7 @@ function validateStudent(student) {
 }
 
 // Validate a given row
-function validityCheck(row) {
+async function validityCheck(row) {
   const errors = [];
   // check that required fields are filled out
   if (props.usingEmail) {
@@ -259,12 +263,19 @@ function validityCheck(row) {
       errors.push('Username is required');
     }
   }
+
   if (!_get(row, 'grade')) {
     errors.push('Grade is required');
+  } else if (Number.isNaN(getGrade(_get(row, 'grade')))) {
+    errors.push('Grade is invalid');
   }
+
   if (!_get(row, 'dob')) {
     errors.push('Date of Birth is required');
+  } else if (!isDobValid(row['dob'])) {
+    errors.push('Date of Birth must be a valid date in MM/DD/YYYY format');
   }
+
   // check that password is valid
   if (!isPasswordValid(row['password'])) {
     errors.push('Password must be at least 6 characters long and contain at least one letter');
@@ -273,11 +284,33 @@ function validityCheck(row) {
   // If not using the org picker, check that a district and school, or a group are selected
   if (!props.usingOrgPicker) {
     if (!(_get(row, 'districts') && _get(row, 'schools')) && !_get(row, 'groups')) {
-      errors.push('District, School, or Group is required');
+      errors.push('District & School or Group is required');
+    }
+
+    if (props.resolveOrgId) {
+      if (_get(row, 'districts') && _get(row, 'schools')) {
+        const districtId = await props.resolveOrgId('districts', _get(row, 'districts'));
+        if (!districtId) {
+          errors.push('District is invalid');
+        } else {
+          const schoolId = await props.resolveOrgId('schools', _get(row, 'schools'), districtId);
+          if (!schoolId) {
+            errors.push('School is invalid');
+          }
+        }
+      }
+
+      if (_get(row, 'groups')) {
+        const groupId = await props.resolveOrgId('groups', _get(row, 'groups'));
+        if (!groupId) {
+          errors.push('Group is invalid');
+        }
+      }
     }
   }
   return { valid: _isEmpty(errors), errors };
 }
+
 function isEmailValid(email) {
   if (!email) return false;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -286,5 +319,27 @@ function isEmailValid(email) {
 function isPasswordValid(password) {
   if (!password) return false;
   return password.length >= 6 && /[a-zA-Z]/.test(password);
+}
+
+function isDobValid(dob) {
+  // Requires a 4-digit year to avoid ambiguous 2-digit-year parsing (e.g. 1/2/12)
+  // Expects MM/DD/YYYY or MM-DD-YYYY (e.g. 2/1/2020, 2-1-2020, 02/01/2020)
+  const DOB_REGEX = /^(\d{1,2})([/-])(\d{1,2})\2(\d{4})$/;
+  const match = DOB_REGEX.exec(String(dob).trim());
+  if (!match) return null;
+
+  const [, monthStr, , dayStr, yearStr] = match;
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  const year = Number(yearStr);
+
+  const date = new Date(year, month - 1, day);
+  // Reject dates like 2/30/2020 that overflow into the next month
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null;
+  }
+  if (date > new Date()) return null;
+
+  return date;
 }
 </script>
