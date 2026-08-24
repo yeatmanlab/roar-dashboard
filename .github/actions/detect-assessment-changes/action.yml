@@ -33,6 +33,11 @@ runs:
             - 'apps/assessments/shared/**'
             - 'packages/assessment-sdk/**'
             - 'packages/assessment-schema/**'
+            # Hosting target map. A renamed suffix has to redeploy, or the new site stays
+            # empty while the old one keeps serving — a failure nothing surfaces until
+            # someone reports a blank assessment. Fanning out to all assessments is wasteful
+            # when an entry is only added, which is the price for having no silent no-deploy.
+            - 'apps/assessments/hosting-targets.json'
 
           # Per-assessment filters.
           # When adding a new assessment, add an entry here (e.g. roar-swr):
