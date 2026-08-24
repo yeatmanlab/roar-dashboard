@@ -22,12 +22,6 @@
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
-  "roar": {
-    "hosting": {
-      "staging": "roar-survey-monorepo-abc",
-      "production": "roar-survey-monorepo"
-    }
-  },
   "peerDependencies": {
     "vue": "^3.0.0"
   },
