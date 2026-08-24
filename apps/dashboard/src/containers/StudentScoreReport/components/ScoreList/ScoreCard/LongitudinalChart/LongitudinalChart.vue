@@ -56,6 +56,7 @@ import {
   tasksToDisplayPercentCorrect,
   tasksToDisplayTotalCorrect,
   tasksToDisplayGradeEstimate,
+  isTaskNormed,
 } from '@/helpers/reports';
 
 const canvasRef = ref(null);
@@ -94,7 +95,7 @@ const showSupportLevels = computed(() => {
     Object.values(SCORE_SUPPORT_LEVEL_COLORS).includes(point.color),
   );
 
-  return !isDisplayTask && hasSupportLevels;
+  return (!isDisplayTask || isTaskNormed(props.taskId, props.taskScoringVersion)) && hasSupportLevels;
 });
 
 const WINDOW_DAYS = 7 * 24 * 60 * 60 * 1000;

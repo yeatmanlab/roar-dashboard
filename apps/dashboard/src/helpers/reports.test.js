@@ -3,6 +3,8 @@ import {
   taskDisplayNames,
   addElementToPdf,
   getSupportLevel,
+  getFoundationalCompositeSupportLevel,
+  sanitizeScoreValue,
   getScoreValue,
   getRawScoreThreshold,
   getRawScoreRange,
@@ -14,6 +16,8 @@ import {
   getPaSkillsToWorkOn,
   PA_SKILL_THRESHOLD,
   PA_SKILL_LEGACY_THRESHOLD,
+  replaceDocLinks,
+  isTaskNormed,
 } from './reports';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
@@ -196,6 +200,125 @@ describe('reports', () => {
           tag_color: null,
         });
       });
+    });
+  });
+
+  describe('getFoundationalCompositeSupportLevel', () => {
+    it('should return null support level when foundationalComposite is missing', () => {
+      const result = getFoundationalCompositeSupportLevel(3, undefined);
+      expect(result).toEqual({ support_level: null, tag_color: null });
+    });
+
+    it('should return null support level when percentile is missing for a percentile-based grade', () => {
+      const result = getFoundationalCompositeSupportLevel(3, { roarScore: 500 });
+      expect(result).toEqual({ support_level: null, tag_color: null });
+    });
+
+    it('should return Achieved Skill for percentile >= 40 (grade < 6)', () => {
+      const result = getFoundationalCompositeSupportLevel(3, { percentile: 40 });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
+
+    it('should return Developing Skill for percentile between 20 and 40 (grade < 6)', () => {
+      const result = getFoundationalCompositeSupportLevel(3, { percentile: 30 });
+      expect(result).toEqual({ support_level: 'Developing Skill', tag_color: '#edc037' });
+    });
+
+    it('should return Needs Extra Support for percentile <= 20 (grade < 6)', () => {
+      const result = getFoundationalCompositeSupportLevel(3, { percentile: 20 });
+      expect(result).toEqual({ support_level: 'Needs Extra Support', tag_color: '#c93d82' });
+    });
+
+    it('should use raw score for grades above 9 (no upper grade cutoff)', () => {
+      const result = getFoundationalCompositeSupportLevel(10, { roarScore: 500 });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
+
+    it('should return null support level when raw score is missing for a raw-score-based grade', () => {
+      const result = getFoundationalCompositeSupportLevel(7, { percentile: 50 });
+      expect(result).toEqual({ support_level: null, tag_color: null });
+    });
+
+    it('should return Achieved Skill for roarScore >= 487 (grades 6-9)', () => {
+      const result = getFoundationalCompositeSupportLevel(7, { roarScore: 487 });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
+
+    it('should return Developing Skill for roarScore between 447 and 487 (grades 6-9)', () => {
+      const result = getFoundationalCompositeSupportLevel(7, { roarScore: 460 });
+      expect(result).toEqual({ support_level: 'Developing Skill', tag_color: '#edc037' });
+    });
+
+    it('should return Needs Extra Support for roarScore <= 447 (grades 6-9)', () => {
+      const result = getFoundationalCompositeSupportLevel(7, { roarScore: 447 });
+      expect(result).toEqual({ support_level: 'Needs Extra Support', tag_color: '#c93d82' });
+    });
+
+    it('should not fall back to thetaEstimate when roarScore is missing (grades 6-9)', () => {
+      const result = getFoundationalCompositeSupportLevel(7, { thetaEstimate: 500 });
+      expect(result).toEqual({ support_level: null, tag_color: null });
+    });
+
+    it('should use raw score when grade is missing/invalid', () => {
+      const result = getFoundationalCompositeSupportLevel(undefined, { roarScore: 500 });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
+
+    it('should handle a percentile formatted with a "<" prefix (grade < 6)', () => {
+      const result = getFoundationalCompositeSupportLevel(3, { percentile: '<1' });
+      expect(result).toEqual({ support_level: 'Needs Extra Support', tag_color: '#c93d82' });
+    });
+
+    it('should handle a percentile formatted with a ">" prefix (grade < 6)', () => {
+      const result = getFoundationalCompositeSupportLevel(3, { percentile: '>99' });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
+
+    it('should handle a roarScore formatted with a ">" prefix (grades 6-9)', () => {
+      const result = getFoundationalCompositeSupportLevel(7, { roarScore: '>487' });
+      expect(result).toEqual({ support_level: 'Achieved Skill', tag_color: '#008000' });
+    });
+  });
+
+  describe('sanitizeScoreValue', () => {
+    it('should strip a leading "<" and return a number', () => {
+      expect(sanitizeScoreValue('<1')).toBe(1);
+    });
+
+    it('should strip a leading ">" and return a number', () => {
+      expect(sanitizeScoreValue('>99')).toBe(99);
+    });
+
+    it('should parse a decimal value after stripping "<" or ">"', () => {
+      expect(sanitizeScoreValue('>99.5')).toBe(99.5);
+    });
+
+    it('should return the original number unchanged when given a number', () => {
+      expect(sanitizeScoreValue(75)).toBe(75);
+    });
+
+    it('should return the original string unchanged when it contains no "<" or ">"', () => {
+      expect(sanitizeScoreValue('75')).toBe('75');
+    });
+
+    it('should return 0 unchanged', () => {
+      expect(sanitizeScoreValue(0)).toBe(0);
+    });
+
+    it('should return undefined unchanged', () => {
+      expect(sanitizeScoreValue(undefined)).toBe(undefined);
+    });
+
+    it('should return null unchanged', () => {
+      expect(sanitizeScoreValue(null)).toBe(null);
+    });
+
+    it('should return NaN when the remaining value is not numeric', () => {
+      expect(sanitizeScoreValue('<abc')).toBeNaN();
+    });
+
+    it('should strip both "<" and ">" if a string somehow contains both', () => {
+      expect(sanitizeScoreValue('<>50')).toBe(50);
     });
   });
 
@@ -507,8 +630,9 @@ describe('reports', () => {
 
         expect(getScoreValue(scoresObject, 'phonics', 2, 'percentile')).toBe(88);
         expect(getScoreValue(scoresObject, 'phonics', 2, 'percentileDisplay')).toBe(88);
-        expect(getScoreValue(scoresObject, 'phonics', 2, 'standardScore')).toBe(88);
-        expect(getScoreValue(scoresObject, 'phonics', 2, 'standardScoreDisplay')).toBe(88);
+        // Phonics has no standard score concept
+        expect(getScoreValue(scoresObject, 'phonics', 2, 'standardScore')).toBe(undefined);
+        expect(getScoreValue(scoresObject, 'phonics', 2, 'standardScoreDisplay')).toBe(undefined);
         expect(getScoreValue(scoresObject, 'phonics', 2, 'rawScore')).toBe(132);
       });
     });
@@ -616,33 +740,90 @@ describe('reports', () => {
   });
 
   describe('getRawScoreRange', () => {
-    it('should return correct range for swr', () => {
-      const result = getRawScoreRange('swr');
-      expect(result).toEqual({
-        min: 100,
-        max: 900,
+    describe('swr', () => {
+      it('returns the standard score range regardless of scoring version', () => {
+        expect(getRawScoreRange('swr')).toEqual({ min: 100, max: 900 });
+        expect(getRawScoreRange('swr', 7)).toEqual({ min: 100, max: 900 });
       });
     });
 
-    it('should return correct range for letter', () => {
-      const result = getRawScoreRange('letter');
-      expect(result).toEqual({
-        min: 0,
-        max: 90,
+    describe('swr-es', () => {
+      it('returns null when no scoring version is provided (unnormed)', () => {
+        expect(getRawScoreRange('swr-es')).toBeNull();
+      });
+
+      it('returns the standard score range once scoringVersion >= 1', () => {
+        expect(getRawScoreRange('swr-es', 1)).toEqual({ min: 100, max: 900 });
       });
     });
 
-    it('should return correct range for phonics', () => {
-      const result = getRawScoreRange('phonics');
-      expect(result).toEqual({
-        min: 0,
-        max: 150,
+    describe('letter', () => {
+      it('returns the legacy range when scoringVersion is below 1', () => {
+        expect(getRawScoreRange('letter')).toEqual({ min: 0, max: 90 });
+        expect(getRawScoreRange('letter', 0)).toEqual({ min: 0, max: 90 });
+      });
+
+      it('returns the updated range once scoringVersion >= 1', () => {
+        expect(getRawScoreRange('letter', 1)).toEqual({ min: 0, max: 100 });
       });
     });
 
-    it('should return null for unknown task', () => {
-      const result = getRawScoreRange('unknown');
-      expect(result).toBeNull();
+    describe('phonics', () => {
+      it('returns a fixed range regardless of scoring version', () => {
+        expect(getRawScoreRange('phonics')).toEqual({ min: 0, max: 150 });
+        expect(getRawScoreRange('phonics', 5)).toEqual({ min: 0, max: 150 });
+      });
+    });
+
+    describe('pa', () => {
+      it('returns the legacy range when scoringVersion is below 4', () => {
+        expect(getRawScoreRange('pa')).toEqual({ min: 0, max: 57 });
+        expect(getRawScoreRange('pa', 3)).toEqual({ min: 0, max: 57 });
+      });
+
+      it('returns the v5 range once scoringVersion >= 4', () => {
+        expect(getRawScoreRange('pa', 4)).toEqual({ min: 40, max: 733 });
+        expect(getRawScoreRange('pa', 5)).toEqual({ min: 40, max: 733 });
+      });
+    });
+
+    describe('sre', () => {
+      it('returns the legacy range when scoringVersion is below 5', () => {
+        expect(getRawScoreRange('sre')).toEqual({ min: 0, max: 130 });
+        expect(getRawScoreRange('sre', 4)).toEqual({ min: 0, max: 130 });
+      });
+
+      it('returns the updated range once scoringVersion >= 5', () => {
+        expect(getRawScoreRange('sre', 5)).toEqual({ min: 300, max: 967 });
+      });
+    });
+
+    describe('sre-es', () => {
+      it('returns null when no scoring version is provided (unnormed)', () => {
+        expect(getRawScoreRange('sre-es')).toBeNull();
+      });
+
+      it('returns a fixed range once scoringVersion >= 1', () => {
+        expect(getRawScoreRange('sre-es', 1)).toEqual({ min: 0, max: 140 });
+      });
+    });
+
+    describe.each([['morphology'], ['cva'], ['roar-inference'], ['trog']])('%s', (taskId) => {
+      it('returns a percent range when scoringVersion is below 1', () => {
+        expect(getRawScoreRange(taskId)).toEqual({ min: 0, max: 100 });
+        expect(getRawScoreRange(taskId, 0)).toEqual({ min: 0, max: 100 });
+      });
+
+      it('returns a standard score range once scoringVersion >= 1', () => {
+        expect(getRawScoreRange(taskId, 1)).toEqual({ min: 100, max: 900 });
+      });
+    });
+
+    describe('unrecognized task id', () => {
+      it('returns null regardless of scoring version', () => {
+        expect(getRawScoreRange('unknown')).toBeNull();
+        expect(getRawScoreRange('unknown', 5)).toBeNull();
+      });
     });
   });
 
@@ -713,22 +894,75 @@ describe('reports', () => {
       expect(replaceScoreRange(alpacaDesc, 'roam-alpaca', 5)).toBe(alpacaDesc);
     });
 
-    it('should return original cutoff for swr if scoring version is not 7', () => {
-      const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 6);
-      expect(swrDesc).not.toMatch(/{{.*}}/);
-      expect(swrDesc).toMatch(/75%/);
+    describe('swr (minimum scoringVersion: 6)', () => {
+      it('should replace RAW_SCORE_RANGE with 100-900 for any scoring version', () => {
+        const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 6);
+        expect(swrDesc).not.toMatch(/{{.*}}/);
+        expect(swrDesc).toMatch(/100-900/);
+      });
+
+      it('should use 75% cutoff for swr at scoring version 6 (minimum)', () => {
+        const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 6);
+        expect(swrDesc).not.toMatch(/{{.*}}/);
+        expect(swrDesc).toMatch(/75%/);
+      });
+
+      it('should use 80% cutoff for swr at scoring version 7', () => {
+        const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 7);
+        expect(swrDesc).not.toMatch(/{{.*}}/);
+        expect(swrDesc).toMatch(/80%/);
+      });
     });
 
-    it('should return new cutoff for swr if scoring version is 7', () => {
-      const swrDesc = replaceScoreRange(taskInfoById['swr']?.desc, 'swr', 7);
-      expect(swrDesc).not.toMatch(/{{.*}}/);
-      expect(swrDesc).toMatch(/80%/);
+    describe('sre (minimum scoringVersion: 3)', () => {
+      it('should replace RAW_SCORE_RANGE with 0-130 at scoring version 3 (minimum)', () => {
+        const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 3);
+        expect(sreDesc).not.toMatch(/{{RAW_SCORE_RANGE}}/);
+        expect(sreDesc).toMatch(/0-130/);
+      });
+
+      it('should replace RAW_SCORE_RANGE with 0-130 at scoring version 4', () => {
+        const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 4);
+        expect(sreDesc).not.toMatch(/{{RAW_SCORE_RANGE}}/);
+        expect(sreDesc).toMatch(/0-130/);
+      });
+
+      it('should replace RAW_SCORE_RANGE with 300-967 at scoring version 5', () => {
+        const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 5);
+        expect(sreDesc).not.toMatch(/{{RAW_SCORE_RANGE}}/);
+        expect(sreDesc).toMatch(/300-967/);
+      });
+
+      it('should use 75% cutoff for sre at scoring version 3 (minimum)', () => {
+        const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 3);
+        expect(sreDesc).not.toMatch(/{{SUPPORT_RANGE}}/);
+        expect(sreDesc).toMatch(/75%/);
+      });
+
+      it('should use 80% cutoff for sre at scoring version 4', () => {
+        const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 4);
+        expect(sreDesc).not.toMatch(/{{SUPPORT_RANGE}}/);
+        expect(sreDesc).toMatch(/80%/);
+      });
+
+      it('should replace both placeholders with no remaining templates', () => {
+        const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 3);
+        expect(sreDesc).not.toMatch(/{{.*}}/);
+      });
     });
 
-    it('should return new cutoff for sre if scoring version is 4', () => {
-      const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 4);
-      expect(sreDesc).not.toMatch(/{{.*}}/);
-      expect(sreDesc).toMatch(/80%/);
+    describe('pa (minimum scoringVersion: 3)', () => {
+      it('should replace RAW_SCORE_RANGE with 0-57 at scoring version 3 (minimum)', () => {
+        const paDesc = replaceScoreRange(taskInfoById['pa']?.desc, 'pa', 3);
+        expect(paDesc).not.toMatch(/{{.*}}/);
+        expect(paDesc).toMatch(/0-57/);
+      });
+
+      it('should replace RAW_SCORE_RANGE with 40-733 at scoring version 4', () => {
+        const paDesc = replaceScoreRange(taskInfoById['pa']?.desc, 'pa', 4);
+        expect(paDesc).not.toMatch(/{{.*}}/);
+        expect(paDesc).toMatch(/40-733/);
+      });
     });
   });
 
@@ -865,6 +1099,75 @@ describe('reports', () => {
       expect(getDistributionChartPath('3', { swr: 7, sre: 4 }, 'en')).toMatch(
         /distribution-chart-elementary-v2-en\.webp$/,
       );
+    });
+
+    describe('edge cases around isTaskNormed / updatedNormVersions membership', () => {
+      it('should ignore tasks not in updatedNormVersions regardless of their version (e.g. phonics, letter-es)', () => {
+        expect(
+          getDistributionChartPath(3, { swr: 7, sre: 4, phonics: 99, 'letter-es': 99, 'pa-es': 99 }, 'en'),
+        ).toMatch(/distribution-chart-elementary-v2-en\.webp$/);
+      });
+
+      it('should still return no-cutoffs for mixed versions even with unrelated unlisted tasks present', () => {
+        expect(getDistributionChartPath(3, { swr: 6, sre: 4, phonics: 99, 'letter-es': 99 }, 'en')).toMatch(
+          /distribution-chart-no-cutoffs-en\.webp$/,
+        );
+      });
+
+      it('should treat unversioned-normed tasks (swr/sre/pa) as applicable even with null scoringVersion', () => {
+        expect(getDistributionChartPath(3, { pa: null }, 'en')).toMatch(/distribution-chart-elementary-v1-en\.webp$/);
+      });
+
+      it('should treat unversioned-normed tasks (swr/sre/pa) as applicable even with undefined scoringVersion', () => {
+        expect(getDistributionChartPath(3, { swr: undefined }, 'en')).toMatch(
+          /distribution-chart-elementary-v1-en\.webp$/,
+        );
+      });
+
+      it('should return no-cutoffs when one task has updated norms and another has an undefined scoringVersion', () => {
+        // swr:7 meets its updated-norm threshold; sre:undefined normalizes to old norms -> mixed result
+        expect(getDistributionChartPath(3, { swr: 7, sre: undefined }, 'en')).toMatch(
+          /distribution-chart-no-cutoffs-en\.webp$/,
+        );
+      });
+
+      it('should exclude a previously-unnormed task with scoringVersion exactly 0', () => {
+        expect(getDistributionChartPath(3, { swr: 7, letter: 0 }, 'en')).toMatch(
+          /distribution-chart-elementary-v2-en\.webp$/,
+        );
+      });
+
+      it('should include a previously-unnormed task once scoringVersion reaches its own updated-norm threshold', () => {
+        // letter's updatedNormVersions threshold is 1, same as its isTaskNormed threshold
+        expect(getDistributionChartPath(3, { letter: 1 }, 'en')).toMatch(/distribution-chart-elementary-v2-en\.webp$/);
+      });
+
+      it('should return v1 when both swr and sre are undefined', () => {
+        expect(getDistributionChartPath(3, { swr: undefined, sre: undefined }, 'en')).toMatch(
+          /distribution-chart-elementary-v1-en\.webp$/,
+        );
+      });
+
+      it('should exclude a previously-unnormed task with an undefined scoringVersion, even alongside an updated task', () => {
+        expect(getDistributionChartPath(3, { swr: 7, letter: undefined }, 'en')).toMatch(
+          /distribution-chart-elementary-v2-en\.webp$/,
+        );
+      });
+
+      it('should return no-cutoffs when swr is undefined and a previously-unnormed task is now normed', () => {
+        // swr:undefined normalizes to old norms; letter:1 meets its own updated-norm threshold -> mixed result
+        expect(getDistributionChartPath(3, { swr: undefined, letter: 1 }, 'en')).toMatch(
+          /distribution-chart-no-cutoffs-en\.webp$/,
+        );
+      });
+
+      it('should not let an unnormed, undefined previously-unnormed task affect an undefined swr result', () => {
+        // letter:undefined is still unnormed, so it's excluded from applicableTasks entirely,
+        // leaving only swr:undefined -> normalizes to old norms -> v1
+        expect(getDistributionChartPath(3, { swr: undefined, letter: undefined }, 'en')).toMatch(
+          /distribution-chart-elementary-v1-en\.webp$/,
+        );
+      });
     });
   });
 
@@ -1011,6 +1314,84 @@ describe('reports', () => {
         };
         expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM']);
       });
+    });
+  });
+
+  describe('replaceDocLinks', () => {
+    const DOC_LINK_SENTINEL = 'Check here for definitions of each Problem Type and associated terminology.';
+
+    it('should return empty string for falsy desc', () => {
+      expect(replaceDocLinks(null, 'fluency-arf')).toBe('');
+      expect(replaceDocLinks(undefined, 'fluency-arf')).toBe('');
+      expect(replaceDocLinks('', 'fluency-arf')).toBe('');
+    });
+
+    it.each(['fluency-arf', 'fluency-calf'])(
+      'should replace doc link sentinel with bold anchor link for %s',
+      (taskId) => {
+        const result = replaceDocLinks(DOC_LINK_SENTINEL, taskId);
+        expect(result).toContain('<span class="font-bold">');
+        expect(result).toContain('href="/docs/roam-arfcalf-subscores-explainer.pdf"');
+        expect(result).not.toContain(DOC_LINK_SENTINEL);
+      },
+    );
+
+    it('should not replace doc link sentinel for other task IDs', () => {
+      const result = replaceDocLinks(DOC_LINK_SENTINEL, 'swr');
+      expect(result).toBe(DOC_LINK_SENTINEL);
+    });
+
+    it('should not replace unrelated text for fluency-arf', () => {
+      const result = replaceDocLinks('Some other description text.', 'fluency-arf');
+      expect(result).toBe('Some other description text.');
+    });
+  });
+
+  describe('isTaskNormed', () => {
+    it.each(['swr', 'sre', 'pa'])(
+      'returns true for unversioned normed task "%s" regardless of scoringVersion',
+      (taskId) => {
+        expect(isTaskNormed(taskId)).toBe(true);
+        expect(isTaskNormed(taskId, 0)).toBe(true);
+        expect(isTaskNormed(taskId, 5)).toBe(true);
+      },
+    );
+
+    it.each(['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'roar-inference', 'trog'])(
+      'returns false for previously-unnormed task "%s" when scoringVersion is null',
+      (taskId) => {
+        expect(isTaskNormed(taskId)).toBe(false);
+      },
+    );
+
+    it.each(['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'roar-inference', 'trog'])(
+      'returns false for previously-unnormed task "%s" when scoringVersion is below 1',
+      (taskId) => {
+        expect(isTaskNormed(taskId, 0)).toBe(false);
+      },
+    );
+
+    it.each(['swr-es', 'sre-es', 'letter', 'morphology', 'cva', 'roar-inference', 'trog'])(
+      'returns true for previously-unnormed task "%s" once scoringVersion reaches 1',
+      (taskId) => {
+        expect(isTaskNormed(taskId, 1)).toBe(true);
+        expect(isTaskNormed(taskId, 5)).toBe(true);
+      },
+    );
+
+    it('returns false for a task that is neither unversioned-normed nor previously-unnormed', () => {
+      expect(isTaskNormed('unknown-task')).toBe(false);
+      expect(isTaskNormed('unknown-task', 10)).toBe(false);
+    });
+
+    it('returns false when taskId is null or undefined', () => {
+      expect(isTaskNormed(null)).toBe(false);
+      expect(isTaskNormed(undefined)).toBe(false);
+      expect(isTaskNormed(null, 5)).toBe(false);
+    });
+
+    it('defaults scoringVersion to null when not provided', () => {
+      expect(isTaskNormed('letter')).toBe(false);
     });
   });
 });

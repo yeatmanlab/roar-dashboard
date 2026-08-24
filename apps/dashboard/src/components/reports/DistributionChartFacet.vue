@@ -62,6 +62,10 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  taskScoringVersions: {
+    type: Object,
+    required: true,
+  },
 });
 
 const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
@@ -69,8 +73,22 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
   if (!binsObj || typeof binsObj !== 'object') return rows;
 
   for (const [binLabel, payload] of Object.entries(binsObj)) {
-    const [a, b] = String(binLabel).split('-').map(Number);
-    const value = Number.isFinite(a) && Number.isFinite(b) ? (a + b) / 2 : NaN;
+    // Handle both range bins (e.g., "90-99") and single-value bins (e.g., "100").
+    // The original code assumed every bin would be a range. When a 7th grader scored exactly 100,
+    // the backend created a single-value bin "100". When split('-'), this only returns ['100'],
+    // so b becomes undefined. The midpoint calculation would fail and return NaN, causing the
+    // bin to be skipped. Now we check: if both a and b exist, use the midpoint; if only a exists,
+    // use that value directly. Example: raw: {100: {grades: {7: 1}}} instead of {90-99: {grades: {7: 1}}}
+    const parts = String(binLabel).split('-').map(Number);
+    const [a, b] = parts;
+    let value;
+    if (Number.isFinite(a) && Number.isFinite(b)) {
+      value = (a + b) / 2;
+    } else if (Number.isFinite(a)) {
+      value = a;
+    } else {
+      value = NaN;
+    }
     if (!Number.isFinite(value)) continue;
 
     if (facet === 'grade') {
@@ -86,14 +104,31 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
       }
     } else {
       const schools = payload?.schools ?? {};
+      const binGrades = payload?.grades ?? {};
+
       for (const school of Object.values(schools)) {
         const name = school?.name ?? 'Unknown school';
-        const count = Number(school?.count) || 0;
-        for (let i = 0; i < count; i++) {
-          rows.push({
-            user: { schoolName: name },
-            scores: { [scoreKey]: value },
-          });
+
+        // For school view, break down by individual grades from bin level
+        if (Object.keys(binGrades).length > 0) {
+          for (const [gradeKey, countRaw] of Object.entries(binGrades)) {
+            const count = Number(countRaw) || 0;
+            for (let i = 0; i < count; i++) {
+              rows.push({
+                grade: String(gradeKey),
+                user: { schoolName: name },
+                scores: { [scoreKey]: value },
+              });
+            }
+          }
+        } else {
+          const count = Number(school?.count) || 0;
+          for (let i = 0; i < count; i++) {
+            rows.push({
+              user: { schoolName: name },
+              scores: { [scoreKey]: value },
+            });
+          }
         }
       }
     }
@@ -116,9 +151,16 @@ const getBinSize = (scoreMode, taskId) => {
   if (scoreMode === 'Percentile') {
     return 10;
   } else if (scoreMode === 'Raw Score') {
-    if (taskId === 'pa') return 5;
-    else if (taskId === 'sre') return 10;
-    else if (taskId === 'swr') return 50;
+    if (taskId === 'pa') return props.taskScoringVersions[taskId] >= 4 ? 70 : 5;
+    else if (taskId === 'sre') return props.taskScoringVersions[taskId] >= 5 ? 65 : 10;
+    else if (taskId === 'sre-es') return 10;
+    else if (taskId === 'letter') return 10;
+    else if (taskId === 'swr') return 100;
+    else if (taskId === 'swr-es') return 100;
+    else if (taskId === 'cva') return 100;
+    else if (taskId === 'trog') return 100;
+    else if (taskId === 'roar-inference') return 100;
+    else if (taskId === 'morphology') return 100;
   }
   return 10;
 };
@@ -127,9 +169,16 @@ const getRangeLow = (scoreMode, taskId) => {
   if (scoreMode === 'Percentile') {
     return 0;
   } else if (scoreMode === 'Raw Score') {
-    if (taskId === 'pa') return 0;
-    else if (taskId === 'sre') return 0;
+    if (taskId === 'pa') return props.taskScoringVersions[taskId] >= 4 ? 40 : 0;
+    else if (taskId === 'sre') return props.taskScoringVersions[taskId] >= 5 ? 300 : 0;
+    else if (taskId === 'sre-es') return 0;
+    else if (taskId === 'letter') return 0;
     else if (taskId === 'swr') return 100;
+    else if (taskId === 'swr-es') return 100;
+    else if (taskId === 'cva') return 100;
+    else if (taskId === 'trog') return 100;
+    else if (taskId === 'roar-inference') return 100;
+    else if (taskId === 'morphology') return 100;
   }
   return 0;
 };
@@ -138,9 +187,16 @@ const getRangeHigh = (scoreMode, taskId) => {
   if (scoreMode === 'Percentile') {
     return 100;
   } else if (scoreMode === 'Raw Score') {
-    if (taskId === 'pa') return 57;
-    else if (taskId === 'sre') return 130;
+    if (taskId === 'pa') return props.taskScoringVersions[taskId] >= 4 ? 733 : 57;
+    else if (taskId === 'sre') return props.taskScoringVersions[taskId] >= 5 ? 967 : 130;
+    else if (taskId === 'sre-es') return 140;
+    else if (taskId === 'letter') return 100;
     else if (taskId === 'swr') return 900;
+    else if (taskId === 'swr-es') return 900;
+    else if (taskId === 'cva') return 900;
+    else if (taskId === 'trog') return 900;
+    else if (taskId === 'roar-inference') return 900;
+    else if (taskId === 'morphology') return 900;
   }
   return 100;
 };
@@ -161,12 +217,19 @@ const computedRuns = computed(() => {
       for (const levelKey of levels) {
         const binsObj = props?.runs?.[levelKey]?.[modeKey];
         if (binsObj) {
-          rows.push(...makeRunsFromBins({ binsObj, facet, scoreKey, levelKey }));
+          rows.push(...makeRunsFromBins({ binsObj, facet, scoreKey }));
         }
       }
     } else {
       // fallback to flat shape: props.runs.percentile / props.runs.raw (no color by level)
-      rows.push(...makeRunsFromBins({ binsObj: props?.runs?.[modeKey], facet, scoreKey }));
+      rows.push(
+        ...makeRunsFromBins({ binsObj: props?.runs?.[modeKey], facet, scoreKey, scoreMode: scoreMode.value.name }),
+      );
+    }
+
+    // Filter grades for percentile view (only grades < 6)
+    if (scoreMode.value.name === 'Percentile') {
+      return rows.filter((row) => Number(row.grade) < 6);
     }
 
     return rows;
@@ -267,16 +330,7 @@ const distributionChartFacet = computed(() => {
           format: '.0f',
         },
       },
-      tooltip: [
-        {
-          field: `scores.${scoreMode.value.key}`,
-          title: `${scoreMode.value.name}`,
-          type: 'quantitative',
-          format: `.0f`,
-        },
-        props.facetMode.name === 'Grade' ? { field: 'grade', title: 'Student Grade' } : {},
-        { aggregate: 'count', title: 'Student Count' },
-      ],
+      tooltip: [{ aggregate: 'count', title: 'Student Count' }],
     },
     resolve: {
       scale: {
@@ -331,7 +385,7 @@ const handleModeChange = () => {
 };
 
 onMounted(() => {
-  draw(); // Call your function when the component is mounted
+  draw();
 });
 </script>
 
