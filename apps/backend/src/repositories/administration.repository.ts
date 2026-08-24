@@ -46,6 +46,11 @@ import {
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { withFgaFilterIds } from './utils/fga-filter-ids.utils';
+/*
+ * The only remaining exemption from the repository-layer api-contract ratchet.
+ * Do not extend this block. New api-contract imports in this layer should fail the build.
+ */
+/* eslint-disable no-restricted-imports */
 import type {
   PaginationQuery,
   SortQuery,
@@ -56,6 +61,7 @@ import type {
   TreeParentEntityType,
 } from '@roar-platform/api-contract';
 import { SortOrder, TreeNodeEntityType } from '@roar-platform/api-contract';
+/* eslint-enable no-restricted-imports */
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { BaseGetAllParams, BasePaginatedQueryParams } from './interfaces/base.repository.interface';
@@ -63,6 +69,7 @@ import { isAncestorOrEqual } from './utils/is-ancestor-or-equal.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 import { OrgType } from '../enums/org-type.enum';
 import { TaskVariantStatus } from '../enums/task-variant-status.enum';
+import { assertUnreachable } from '../utils/assert-unreachable.util';
 
 /**
  * Explicit mapping from API sort field names to task variant columns.
@@ -268,7 +275,8 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * Internal method used by the list filter builder.
    *
    * @param status - The status filter (active, past, upcoming)
-   * @returns SQL condition or undefined if no filter
+   * @returns SQL condition, or undefined when no status filter was requested
+   * @throws {Error} If `status` is outside the known set — see `assertUnreachable`
    */
   private getStatusFilterCondition(status?: AdministrationStatus): SQL | undefined {
     if (!status) {
@@ -288,7 +296,11 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
         // dateStart > now
         return gt(administrations.dateStart, now);
       default:
-        return undefined;
+        // Returning undefined here would drop the WHERE clause entirely and list every
+        // administration the caller can see — a fail-open filter that looks like success.
+        // `AdministrationStatus` is owned by the api-contract, so a new member added there
+        // would pass Zod at the boundary; this call is what turns that into a build failure.
+        return assertUnreachable(status, 'Unsupported administration status filter');
     }
   }
 
@@ -1004,6 +1016,8 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * @param options - Pagination options
    * @param accessibleIds - Optional FGA-scoped entity IDs by type
    * @returns Paginated tree nodes
+   * @throws {Error} If a branching parent type arrives without a parentEntityId, or if
+   *   `parentEntityType` is outside the known set — see `assertUnreachable`
    */
   async getTreeNodes(
     administrationId: string,
@@ -1022,18 +1036,27 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    // District → schools
-    if (parentEntityType === TreeNodeEntityType.DISTRICT && parentEntityId) {
-      return this.getDistrictChildTreeNodes(administrationId, parentEntityId, options, accessibleIds?.schoolIds);
+    // District and school both branch on parentEntityId. AdministrationService rejects a
+    // parentEntityType without one (400), but that check is the only thing enforcing it —
+    // the contract declares both query params independently optional. Fail loudly rather
+    // than returning an empty page that reads as "this node has no children".
+    if (!parentEntityId) {
+      throw new Error(`Tree query for parent type ${parentEntityType} requires a parentEntityId`);
     }
 
-    // School → classes
-    if (parentEntityType === TreeNodeEntityType.SCHOOL && parentEntityId) {
-      return this.getSchoolChildTreeNodes(administrationId, parentEntityId, options, accessibleIds?.classIds);
+    switch (parentEntityType) {
+      // District → schools
+      case TreeNodeEntityType.DISTRICT:
+        return this.getDistrictChildTreeNodes(administrationId, parentEntityId, options, accessibleIds?.schoolIds);
+      // School → classes
+      case TreeNodeEntityType.SCHOOL:
+        return this.getSchoolChildTreeNodes(administrationId, parentEntityId, options, accessibleIds?.classIds);
+      default:
+        // An empty result here would render as a childless node rather than an error.
+        // `TreeParentEntityType` is owned by the api-contract, so this call is what makes
+        // a new member there a build failure instead of a silently truncated tree.
+        return assertUnreachable(parentEntityType, 'Unsupported tree parent entity type');
     }
-
-    // Shouldn't reach here if query validation is correct
-    return { items: [], totalItems: 0 };
   }
 
   /**
