@@ -1,6 +1,21 @@
 import { describe, it, expect } from 'vitest';
+import type { FilterOperator as ContractFilterOperator } from '@roar-platform/api-contract';
 import { FilterOperatorSchema } from '@roar-platform/api-contract';
 import { FilterOperator } from './filter';
+
+/**
+ * Compile-time half of the coverage check below.
+ *
+ * `buildOperatorCondition` switches over the backend union and closes its `default` with
+ * `satisfies never`, so the compiler already guarantees backend ⊆ implemented-in-SQL.
+ * This assertion supplies the other hop — contract ⊆ backend — so the end-to-end property
+ * (every operator the contract accepts is one the query builder honours) stays a build
+ * failure rather than a test failure. It lives here rather than in `types/filter.ts`
+ * because importing the contract there is exactly the coupling this module removed; test
+ * files are exempt from that rule for this reason.
+ */
+type Assert<T extends true> = T;
+export type ContractOperatorsAreSupported = Assert<ContractFilterOperator extends FilterOperator ? true : false>;
 
 describe('FilterOperator', () => {
   describe('coverage of the api-contract operator set', () => {
