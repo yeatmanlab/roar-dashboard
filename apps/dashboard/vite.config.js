@@ -226,8 +226,6 @@ export default defineConfig(({ mode }) => {
             utils: ['@bdelab/roar-utils'],
             vocab: ['@bdelab/roar-vocab'],
             ran: ['@bdelab/roav-ran'],
-            crowding: ['@bdelab/roav-crowding'],
-            'roav-mep': ['@bdelab/roav-mep'],
             'roar-readaloud': ['@bdelab/roar-readaloud'],
           },
         },
