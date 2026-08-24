@@ -47,21 +47,26 @@ import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { withFgaFilterIds } from './utils/fga-filter-ids.utils';
 /*
- * The only remaining exemption from the repository-layer api-contract ratchet.
- * Do not extend this block. New api-contract imports in this layer should fail the build.
+ * The five disabled names below are the only remaining exemptions from the
+ * repository-layer api-contract ratchet. Do not add more — new api-contract imports in
+ * this layer should fail the build. The unmarked names are allowlisted in
+ * eslint.config.mjs, so they carry no exemption and stay honest if that list changes.
  */
-/* eslint-disable no-restricted-imports */
 import type {
+  // eslint-disable-next-line no-restricted-imports
   PaginationQuery,
+  // eslint-disable-next-line no-restricted-imports
   SortQuery,
   AdministrationSortFieldType,
   AdministrationTaskVariantSortFieldType,
   AdministrationAgreementSortFieldType,
+  // eslint-disable-next-line no-restricted-imports
   AdministrationStatus,
+  // eslint-disable-next-line no-restricted-imports
   TreeParentEntityType,
 } from '@roar-platform/api-contract';
+// eslint-disable-next-line no-restricted-imports -- TreeNodeEntityType only; SortOrder is allowlisted
 import { SortOrder, TreeNodeEntityType } from '@roar-platform/api-contract';
-/* eslint-enable no-restricted-imports */
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { BaseGetAllParams, BasePaginatedQueryParams } from './interfaces/base.repository.interface';
