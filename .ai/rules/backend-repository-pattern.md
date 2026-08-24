@@ -136,19 +136,38 @@ The exception is an invariant the repository itself cannot satisfy: an unreachab
 
 ### Type ownership
 
-Repositories depend **downward** on `db/schema` — Drizzle entities are the layer's subject matter, and `BaseRepository<TEntity, TTable>` is built around them. Depending **upward** on `@roar-platform/api-contract` is the inversion, and an ESLint rule in `apps/backend/eslint.config.mjs` enforces it for `src/repositories/**`.
+Repositories depend **downward** on `db/schema` — Drizzle entities are the layer's subject matter, and `BaseRepository<TEntity, TTable>` is built around them. Depending **upward** on `@roar-platform/api-contract` is the inversion, and an ESLint rule in `apps/backend/eslint.config.mjs` enforces it for `src/repositories/**` and `src/types/**`.
 
 Where to reach instead:
 
 | Need | Source |
 |------|--------|
 | Domain enum (`GroupType`, `TaskVariantStatus`, `UserRole`, …) | `src/enums/*.enum.ts` — derived from the pgEnum via `pgEnumToConst`, and parity-tested against the contract schema |
-| Entity shape | `db/schema` |
+| Entity shape, or a projection of one | `db/schema` — `Pick<User, …>` rather than mirroring the contract's response schema |
 | Query/options and return shapes | Defined in the repository, or `repositories/interfaces/` |
 
 The enums are the important case: `db/schema/enums.ts` is the source of truth and the contract's Zod enums mirror it, so importing a domain enum from the contract takes the copy and leaves the original.
 
 Two exemptions are on the rule's allowlist. `SortOrder` is permanent — `asc`/`desc` is a SQL fact with two values and nothing to diverge from. The `*SortFieldType` unions are deferred, not blessed: each backs a `Record<…, Column>` whose exhaustiveness guarantees the contract can't expose a sort field the repository has no column for, so localising them means reproducing that guarantee.
+
+#### Shared types are covered too
+
+`src/types/` is under the same rule, because a barrel there that re-exports contract types launders the coupling: the repository imports from `../types/user`, lints clean, and depends on the contract anyway. That is how eight repositories stayed coupled while reporting clean.
+
+A shared type that mirrors a contract schema should derive from the schema instead — the two agree today because the contract was written from the columns, so deriving loses nothing and pins both sides to one source:
+
+```typescript
+// ❌ Laundered coupling — the repository can't see what it's really importing
+export type { EnrolledUserDemographics } from '@roar-platform/api-contract';
+export type EnrolledUserDemographicsEntity = EnrolledUserDemographics;
+
+// ✅ Same shape, one source of truth, and the column map in the query builder
+//    is now pinned to the same place via `satisfies Record<keyof …, Column>`
+export type EnrolledUserDemographicsColumn = 'userType' | 'statusEll' | /* … */;
+export type EnrolledUserDemographicsEntity = Pick<User, EnrolledUserDemographicsColumn>;
+```
+
+Where the backend implements a vocabulary the contract also names, the backend owns it and the parity test asserts a **subset**, not equality — every operator the contract exposes must be one the query builder can honour, but the backend may support more. See `types/filter.ts` and its test.
 
 ### Exhaustiveness over externally-owned unions
 
