@@ -27,12 +27,6 @@
     "registry": "https://registry.npmjs.org"
   },
   "type": "module",
-  "roar": {
-    "hosting": {
-      "staging": "roar-sentence-monorepo-abc",
-      "production": "roar-sentence-monorepo"
-    }
-  },
   "scripts": {
     "build": "rollup -c rollup.lib.config.mjs",
     "build:staging": "webpack --mode production --env dbmode=staging",
