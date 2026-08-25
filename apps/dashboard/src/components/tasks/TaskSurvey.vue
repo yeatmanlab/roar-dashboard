@@ -14,7 +14,7 @@ import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk
 import { SURVEY_TASK_ID } from '@roar-platform/assessment-schema/roar-survey';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import { getRoarApiClient } from '@/clients/roar-api';
+import useParticipantId from '@/composables/useParticipantId';
 import { version } from '@roar-platform/roar-survey/package.json';
 import SurveyRunner from '@roar-platform/roar-survey';
 
@@ -32,6 +32,10 @@ const { isAuthReady } = storeToRefs(authStore);
 const sdkInitialized = ref(false);
 const surveyJson = ref(null);
 const taskStarted = ref(false);
+
+// Resolves the proxy-launch id or the launching user's own `/me` id. The watcher below is
+// gated on it so the survey never starts without a participant identity to attribute it to.
+const participantId = useParticipantId(props.launchId);
 
 let unsubscribe;
 const init = () => {
@@ -54,9 +58,9 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isAuthReady],
-  async ([newIsAuthReady]) => {
-    if (newIsAuthReady && !taskStarted.value) {
+  [isAuthReady, participantId],
+  async ([newIsAuthReady, newParticipantId]) => {
+    if (newIsAuthReady && newParticipantId && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
@@ -67,42 +71,18 @@ watch(
 
 async function startTask(selectedAdmin) {
   try {
-    if (props.launchId) {
-      throw new Error(
-        'Proxy-launch path is not yet supported for roar-survey. Resolve the participant Postgres UUID before enabling this path.',
-      );
-    }
+    // The participant's administrations — each with its tasks' `variantId` embedded — are
+    // already fetched by HomeParticipant via
+    // `GET /users/:userId/administrations?embed=tasks,progress`, and the chosen one is held
+    // in the game store. The administration and variant are therefore read from
+    // `selectedAdmin` rather than re-fetched here.
+    //
+    // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
+    // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
+    const administration = selectedAdmin.value;
+    const surveyTaskVariant = (administration?.tasks ?? []).find((task) => task.taskSlug === props.taskId);
 
-    const roarApiClient = getRoarApiClient();
-    const [taskRes, meRes] = await Promise.all([
-      roarApiClient.tasks.get({ params: { taskId: props.taskId } }), // tasks.get accepts UUID or slug
-      roarApiClient.me.get(),
-    ]);
-
-    if (taskRes.status !== 200)
-      throw new Error(`roar-survey task not found in ROAR backend (status ${taskRes.status}).`);
-    if (meRes.status !== 200)
-      throw new Error(`Failed to resolve current user from ROAR backend (status ${meRes.status}).`);
-
-    const participantId = meRes.body.data.id;
-    const surveyTaskUuid = taskRes.body.data.id;
-
-    const adminsRes = await roarApiClient.users.listUserAdministrations({
-      params: { userId: participantId },
-      query: { embed: 'tasks', perPage: 50 },
-    });
-
-    if (adminsRes.status !== 200) throw new Error(`Failed to fetch administrations (status ${adminsRes.status}).`);
-
-    const backendAdmins = adminsRes.body.data.items;
-    const matchedAdmin =
-      backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
-      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === surveyTaskUuid));
-
-    if (!matchedAdmin) throw new Error('No administration containing roar-survey found in ROAR backend.');
-
-    const surveyTaskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === surveyTaskUuid);
-    if (!surveyTaskVariant) throw new Error('No roar-survey task variant found in the matched administration.');
+    if (!surveyTaskVariant) throw new Error(`No ${props.taskId} task variant found in the selected administration.`);
 
     initFirekitCompat(
       {
@@ -111,12 +91,12 @@ async function startTask(selectedAdmin) {
           getToken: () => Promise.resolve(authStore.accessToken),
           refreshToken: () => authStore.forceIdTokenRefresh(),
         },
-        participant: { participantId },
+        participant: { participantId: participantId.value },
       },
       {
         variantId: surveyTaskVariant.variantId,
         taskVersion: version,
-        administrationId: matchedAdmin.id,
+        administrationId: administration.id,
         isAnonymous: false,
       },
     );

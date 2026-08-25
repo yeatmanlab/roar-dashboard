@@ -14,7 +14,7 @@ import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk
 import { MORPHOLOGY_TASK_ID } from '@roar-platform/assessment-schema/roar-multichoice';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import { getRoarApiClient } from '@/clients/roar-api';
+import useParticipantId from '@/composables/useParticipantId';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import { version } from '@roar-platform/roar-multichoice/package.json';
 
@@ -29,7 +29,13 @@ const props = defineProps({
   launchId: { type: String, default: null },
 });
 
-let TaskLauncher;
+// Start loading the assessment bundle at setup rather than in onMounted. The
+// watcher below runs with `immediate: true`, so startTask can execute during
+// setup — before onMounted would have assigned the launcher.
+const taskLauncherPromise = import('@roar-platform/roar-multichoice').then((module) => module.default);
+// Mark the rejection handled so a failed import doesn't log `Uncaught (in promise)`
+// during the gap before startTask awaits it — that await still rejects into its catch.
+taskLauncherPromise.catch(() => {});
 
 const router = useRouter();
 const taskStarted = ref(false);
@@ -52,10 +58,13 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.accessToken) init();
 });
 
-// launchId path throws immediately in startTask (proxy-launch not yet supported),
-// so skip the query entirely when launchId is set to avoid a pointless loading delay.
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
-  enabled: computed(() => initialized.value && !props.launchId),
+// Resolves the proxy-launch id or the launching user's own `/me` id. The student-data query
+// below is gated on it because `useUserStudentDataQuery` falls back to the Firestore
+// `authStore.roarUid` for a falsy argument, which the uuid-typed `GET /users/:id` rejects.
+const participantId = useParticipantId(props.launchId);
+
+const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(participantId, {
+  enabled: computed(() => initialized.value && Boolean(participantId.value)),
 });
 
 // The following code intercepts the back button and instead forces a refresh.
@@ -68,13 +77,7 @@ window.addEventListener(
   { once: true },
 );
 
-onMounted(async () => {
-  try {
-    TaskLauncher = (await import('@roar-platform/roar-multichoice')).default;
-  } catch (error) {
-    console.error('An error occurred while importing the game module.', error);
-  }
-
+onMounted(() => {
   if (authStore.isAuthReady) init();
 });
 
@@ -87,9 +90,11 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isAuthReady, isLoadingUserData],
-  async ([newIsAuthReady, newLoadingUserData]) => {
-    if (newIsAuthReady && !newLoadingUserData && !taskStarted.value) {
+  [isAuthReady, isLoadingUserData, participantId],
+  async ([newIsAuthReady, newLoadingUserData, newParticipantId]) => {
+    // `participantId` is part of the gate because a disabled student-data query reports
+    // `isLoading === false` — on its own it would let the task start before the id resolves.
+    if (newIsAuthReady && !newLoadingUserData && newParticipantId && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
@@ -121,65 +126,20 @@ async function startTask(selectedAdmin) {
     };
 
     // Initialize the new assessment SDK for the dashboard execution path.
-    // Fetches the task UUID, the current user's Postgres UUID, and the participant's
-    // administrations in parallel to resolve the correct administrationId and variantId.
     //
-    // authStore.roarUid is a Firestore UID, not a Postgres UUID. GET /me resolves the
-    // Postgres UUID for the currently authenticated user (self-launch path); the
-    // proxy-launch path uses props.launchId directly (see below).
+    // The participant's administrations — each with its tasks' `variantId` embedded —
+    // are already fetched by HomeParticipant via
+    // `GET /users/:userId/administrations?embed=tasks,progress`, and the chosen one is
+    // held in the game store. The administration and variant are therefore read from
+    // `selectedAdmin` rather than re-fetched here.
     //
-    // NOTE: Until the dashboard migrates its administration queries to the new REST API,
-    // selectedAdmin.value.id is a Firestore document ID and will not match any administration
-    // in the new backend. The fallback (matching by task UUID within embedded tasks)
-    // is used until that migration is complete.
-    const roarApiClient = getRoarApiClient();
+    // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
+    // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
+    const administration = selectedAdmin.value;
+    const taskVariant = (administration?.tasks ?? []).find((task) => task.taskSlug === props.taskId);
 
-    const [taskRes, meRes] = await Promise.all([
-      roarApiClient.tasks.get({ params: { taskId: props.taskId } }),
-      roarApiClient.me.get(),
-    ]);
-
-    if (taskRes.status !== 200) {
-      throw new Error(`multichoice task not found in the ROAR backend (status ${taskRes.status}).`);
-    }
-    if (meRes.status !== 200) {
-      throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
-    }
-
-    // Proxy-launch path: `props.launchId` is the participant's ROAR (Postgres) user UUID
-    // (set by StudentCardSimple when a parent launches a child), so it is the participant
-    // identity directly. On the self path (`launchId` null) we use the launching user's own
-    // `/me` ID. Run creation targets this participant via POST /v1/user/:userId/runs, which
-    // the backend authorizes with `can_create_run_for_child` (proxy) or self.
-    const participantId = props.launchId ?? meRes.body.data.id;
-
-    // Fetch the participant's administrations from the ROAR POSTGRES backend.
-    const adminsRes = await roarApiClient.users.listUserAdministrations({
-      params: { userId: participantId },
-      query: { embed: 'tasks', perPage: 50 },
-    });
-
-    if (adminsRes.status !== 200) {
-      throw new Error(`Failed to fetch administrations from the ROAR backend (status ${adminsRes.status}).`);
-    }
-
-    const taskUuid = taskRes.body.data.id;
-    const backendAdmins = adminsRes.body.data.items;
-
-    // TODO: Remove this matching step once the frontend has fully integrated with the ROAR POSTGRES backend.
-    // Until then, we need to match the Postgres backend admin to the selected admin from Firestore.
-    // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1839
-    const matchedAdmin =
-      backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
-      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === taskUuid));
-
-    if (!matchedAdmin) {
-      throw new Error('No administration containing the multichoice task found in the ROAR backend.');
-    }
-
-    const taskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === taskUuid);
     if (!taskVariant) {
-      throw new Error('No multichoice task variant found in the matched administration.');
+      throw new Error(`No ${props.taskId} task variant found in the selected administration.`);
     }
 
     initFirekitCompat(
@@ -189,12 +149,12 @@ async function startTask(selectedAdmin) {
           getToken: () => Promise.resolve(authStore.accessToken),
           refreshToken: () => authStore.forceIdTokenRefresh(),
         },
-        participant: { participantId },
+        participant: { participantId: participantId.value },
       },
       {
         variantId: taskVariant.variantId,
         taskVersion: version,
-        administrationId: matchedAdmin.id,
+        administrationId: administration.id,
         isAnonymous: false,
       },
     );
@@ -204,6 +164,8 @@ async function startTask(selectedAdmin) {
     // (morphology vs. cva); props.task is the fallback for variants that predate the task field.
     const { variantParams } = await getVariantById(taskVariant.variantId);
     const gameParams = { task: props.task, ...variantParams };
+
+    const TaskLauncher = await taskLauncherPromise;
 
     const roarApp = new TaskLauncher(gameParams, userParams, 'jspsych-target');
 

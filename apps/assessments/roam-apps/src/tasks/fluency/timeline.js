@@ -7,8 +7,8 @@ import store from 'store2'; //storing session data
 // setup
 import { initTrialSaving, initTimeline } from '../shared/helpers';
 import { jsPsych } from '../taskSetup'; //initialised jspsych object
-import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/firekit';
 //import { preloadTrials } from "./helperFunctions"; //jspsych object for preloading media, function for initialising Cat class
+import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/firekit';
 import { intro, postPracticeReminder, preMainIntro, postRTControl } from './trials/introduction';
 import { ValidityEvaluator, createEvaluateValidity } from '@bdelab/roar-utils'; // for validity
 import { exitFullscreen } from '../shared/trials'; //jspsych object for exiting full screen
@@ -101,14 +101,14 @@ export default function buildFluencyTimeline(config) {
       timeline.push(reInitStore());
     }
   } else if (store.session.get('magpiPilot')) {
-    timeline.push(magpiPilotTimeline());
-    timeline.push(reInitStore());
     timeline.push(introARF);
     timeline.push(instructions(config.responseMode));
     timeline.push(runPractice('practice', 'practice', config.responseMode));
     timeline.push(postPracticeReminder(config.responseMode));
     timeline.push(preMainIntro);
     timeline.push(numberMainOuterLoop('stimulus', 'test', config.responseMode));
+    timeline.push(reInitStore());
+    timeline.push(magpiPilotTimeline());
     timeline.push(endScreen(config.responseMode, 0));
   } else {
     //introduction

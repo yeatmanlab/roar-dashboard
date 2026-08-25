@@ -1,7 +1,7 @@
 {
   "name": "@roar-platform/roav-ran",
   "description": "RAN (Rapid Automatized Naming) and Symbol Search — timed naming / visual-search assessments with gaze estimation and audio recording for ROAR",
-  "version": "2.0.1",
+  "version": "2.1.6",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
@@ -26,12 +26,6 @@
     "registry": "https://registry.npmjs.org"
   },
   "type": "module",
-  "roar": {
-    "hosting": {
-      "staging": "roar-ran-monorepo-abc",
-      "production": "roar-ran-monorepo"
-    }
-  },
   "scripts": {
     "build": "rollup -c rollup.lib.config.mjs",
     "build:staging": "webpack --mode production --env dbmode=staging",

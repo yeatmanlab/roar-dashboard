@@ -1,21 +1,63 @@
-import { LEVANTE_NORMED_TASK_IDS, LEVANTE_SCORE_NAMES } from '@roar-platform/assessment-schema/roar-levante-tasks';
+import {
+  LEVANTE_NORMED_TASK_IDS,
+  LEVANTE_SCORE_NAMES,
+  LEVANTE_SCORING_VERSION,
+} from '@roar-platform/assessment-schema/roar-levante-tasks';
+
+const COMPOSITE_DOMAIN = 'composite';
 
 export default {
   taskSlugs: [LEVANTE_NORMED_TASK_IDS.TROG],
   scoreFields: {
-    percentile: [{ minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.PERCENTILE }],
-    percentileDisplay: [{ minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.PERCENTILE }],
-    standardScore: [{ minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.STANDARD_SCORE }],
-    standardScoreDisplay: [{ minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.STANDARD_SCORE }],
+    percentile: [
+      { minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.PERCENTILE },
+      { minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.TOTAL_PERCENT_CORRECT },
+    ],
+    percentileDisplay: [
+      { minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.PERCENTILE },
+      { minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.TOTAL_PERCENT_CORRECT },
+    ],
+    standardScore: [{ minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.STANDARD_SCORE }],
+    standardScoreDisplay: [{ minVersion: LEVANTE_SCORING_VERSION.V1, fieldName: LEVANTE_SCORE_NAMES.STANDARD_SCORE }],
     rawScore: [{ minVersion: 0, fieldName: LEVANTE_SCORE_NAMES.ROAR_SCORE }],
   },
   classification: {
-    type: 'none' as const,
+    type: 'percentile-then-rawscore' as const,
+    percentileCutoffs: [{ minVersion: LEVANTE_SCORING_VERSION.V1, cutoffs: { achieved: 40, developing: 20 } }],
+    rawScoreThresholds: [{ minVersion: LEVANTE_SCORING_VERSION.V1, thresholds: { above: 540, some: 487 } }],
   },
-  displayCategory: [{ minVersion: 0, category: 'normed' }],
+  displayCategory: [
+    { minVersion: LEVANTE_SCORING_VERSION.V1, category: 'normed' },
+    { minVersion: 0, category: 'percentCorrect' },
+  ],
   displayRanges: {
     percentile: { min: 0, max: 99 },
+    percentCorrect: { min: 0, max: 100 },
     standardScore: { min: 0, max: 180 },
-    rawScore: { min: 0, max: 130 },
+    rawScore: { min: 100, max: 900 },
   },
+  subscores: [
+    {
+      kind: 'number' as const,
+      key: 'numCorrect',
+      label: 'Num Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: LEVANTE_SCORE_NAMES.TOTAL_CORRECT,
+    },
+    {
+      kind: 'number' as const,
+      key: 'numAttempted',
+      label: 'Num Attempted',
+      domain: COMPOSITE_DOMAIN,
+      name: LEVANTE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED,
+    },
+    {
+      kind: 'number' as const,
+      key: 'percentCorrect',
+      label: 'Percent Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: LEVANTE_SCORE_NAMES.TOTAL_PERCENT_CORRECT,
+      round: true,
+    },
+  ],
 } as const;

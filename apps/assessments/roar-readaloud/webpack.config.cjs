@@ -134,10 +134,10 @@ const webConfig = merge(commonConfig, {
           from: path.join(path.dirname(require.resolve('onnxruntime-web')), '*.wasm'),
           to: '[name][ext]',
         },
-        {
-          from: 'src/experiment/views/eyetracking_google.onnx',
-          to: 'views/eyetracking_google.onnx',
-        },
+        // The .onnx model is not copied here: views/worker.js references it via
+        // `new URL('./eyetracking_google.onnx', import.meta.url)`, which webpack treats as
+        // an asset reference and emits itself. A copy would produce a second, unreferenced
+        // duplicate. See roar-project-management#1981.
       ],
     }),
   ],
@@ -187,7 +187,7 @@ module.exports = async (env, args) => {
       new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
-        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL ?? '/v1'),
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL ?? ''),
         ...devFirebaseConfig,
       }),
       new webpack.ProvidePlugin({

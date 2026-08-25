@@ -26,9 +26,12 @@ const onnxRuntimeDist = dirname(require.resolve('onnxruntime-web'));
 // So the build emits a `dist/` directory (worker chunks + .wasm + the model) rather than a
 // single `dist/index.js`, and keeps the off-main-thread / wasm / binary-copy plugins.
 //
-// The model is fetched at runtime as the document-relative path
-// `tasks/shared/eyetracking_google.onnx` (see tasks/shared/views/worker.js and preloadView.js),
-// so it is copied to `dist/tasks/shared/` to match — not readaloud's `views/` layout.
+// The model is referenced as `new URL('./eyetracking_google.onnx', import.meta.url)` from
+// tasks/shared/views/{worker,preloadView}.js. Rollup leaves that expression intact, so it
+// resolves against the *emitted* module — `dist/worker.js` and `dist/index.js` — and the
+// model is copied to `dist/` alongside them. Consumers that understand the pattern (Vite in
+// the dashboard, webpack standalone) re-emit and rewrite it from there.
+// See roar-project-management#1981.
 export default defineConfig({
   input: 'src/experiment/index.js',
   output: {
@@ -79,7 +82,7 @@ export default defineConfig({
     copy({
       targets: [
         { src: `${onnxRuntimeDist}/*.wasm`, dest: 'dist' },
-        { src: 'src/experiment/tasks/shared/eyetracking_google.onnx', dest: 'dist/tasks/shared' },
+        { src: 'src/experiment/tasks/shared/views/eyetracking_google.onnx', dest: 'dist' },
       ],
     }),
   ],

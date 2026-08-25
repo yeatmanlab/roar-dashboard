@@ -70,9 +70,10 @@ export const UsersContract = c.router(
       summary: 'Create a new user',
       description:
         'Creates a new user with the provided information. ' +
+        'Memberships are org-scoped only (district, school, class, group). Family memberships are not accepted — use POST /families to register a family, or POST /families/:familyId/users to add members to an existing one. ' +
         'Treats rostered-out users as still occupying their unique fields; a re-register attempt with the same email or PID returns a conflict. ' +
         'Returns a 201 Created with the new user ID on success. ' +
-        'Returns a 400 if the request body is missing or contains invalid field values. ' +
+        'Returns a 400 if the request body is missing or contains invalid field values, including a family membership. ' +
         'Returns a 401 if the requesting user is not authenticated. ' +
         'Returns a 403 if the requesting user is not authorized to create users. ' +
         'Returns a 409 if a unique field (email or username) conflicts with any user (including rostered-out users). ' +

@@ -90,14 +90,14 @@
       "version-file": "package.json",
       "release-type": "node",
       "component": "roar-swr",
-      "release-as": "1.17.4"
+      "release-as": "1.17.5"
     },
     "apps/assessments/roar-sre": {
       "changelog-path": "CHANGELOG.md",
       "version-file": "package.json",
       "release-type": "node",
       "component": "roar-sre",
-      "release-as": "3.2.4"
+      "release-as": "3.3.0"
     },
     "apps/assessments/roar-letter": {
       "changelog-path": "CHANGELOG.md",
@@ -132,7 +132,7 @@
       "version-file": "package.json",
       "release-type": "node",
       "component": "roam-apps",
-      "release-as": "1.3.13"
+      "release-as": "1.3.21"
     },
     "apps/assessments/roar-readaloud": {
       "changelog-path": "CHANGELOG.md",
@@ -153,7 +153,7 @@
       "version-file": "package.json",
       "release-type": "node",
       "component": "roav-ran",
-      "release-as": "2.0.1"
+      "release-as": "2.1.6"
     }
   },
   "group-pull-request-title-pattern": "chore: release ${version}",
