@@ -132,6 +132,40 @@ subqueries.
 
 Repositories don't catch or throw errors — they let database errors bubble up to the service layer, which wraps them in `ApiError` with appropriate context. See `backend-error-handling.md`.
 
+The exception is an invariant the repository itself cannot satisfy: an unreachable branch, or a required argument the caller was supposed to have validated. Those throw a plain `Error`, because there is no meaningful HTTP mapping for "this should be impossible" — see exhaustiveness below.
+
+### Type ownership
+
+Repositories depend **downward** on `db/schema` — Drizzle entities are the layer's subject matter, and `BaseRepository<TEntity, TTable>` is built around them. Depending **upward** on `@roar-platform/api-contract` is the inversion, and an ESLint rule in `apps/backend/eslint.config.mjs` enforces it for `src/repositories/**`.
+
+Where to reach instead:
+
+| Need | Source |
+|------|--------|
+| Domain enum (`GroupType`, `TaskVariantStatus`, `UserRole`, …) | `src/enums/*.enum.ts` — derived from the pgEnum via `pgEnumToConst`, and parity-tested against the contract schema |
+| Entity shape | `db/schema` |
+| Query/options and return shapes | Defined in the repository, or `repositories/interfaces/` |
+
+The enums are the important case: `db/schema/enums.ts` is the source of truth and the contract's Zod enums mirror it, so importing a domain enum from the contract takes the copy and leaves the original.
+
+Two exemptions are on the rule's allowlist. `SortOrder` is permanent — `asc`/`desc` is a SQL fact with two values and nothing to diverge from. The `*SortFieldType` unions are deferred, not blessed: each backs a `Record<…, Column>` whose exhaustiveness guarantees the contract can't expose a sort field the repository has no column for, so localising them means reproducing that guarantee.
+
+### Exhaustiveness over externally-owned unions
+
+When a `switch` or `if`-chain branches on a union owned by another package, a `default` that returns a benign value is a fail-open path. The contract can grow a new member, Zod accepts it at the boundary, and the branch falls through — returning an unfiltered result set or an empty page that reads as success.
+
+Close it with `assertUnreachable` from `utils/assert-unreachable.util.ts`. The `never` parameter turns a widened union into a build failure, which is the actual protection; the throw is only the backstop.
+
+```typescript
+// ❌ Fail-open: drops the WHERE clause and lists everything the caller can see
+default:
+  return undefined;
+
+// ✅ Compile error the moment AdministrationStatus grows a member
+default:
+  return assertUnreachable(status, 'Unsupported administration status filter');
+```
+
 ### The principle
 
 Repositories are deliberately thin — they translate between the application and the database, nothing more. Authorization is expressed as SQL joins, not application logic, because the database is the only place where we can efficiently combine access filtering with data fetching in a single query. Error interpretation is left to services because a `null` result means different things in different contexts (404 for `getById`, empty list for `list`).
