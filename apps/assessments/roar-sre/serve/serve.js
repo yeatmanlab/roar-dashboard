@@ -6,6 +6,7 @@ import { SRE_LANGUAGES } from '@roar-platform/assessment-schema/roar-sre';
 import RoarSRE from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
+import { ROAR_DB_MODE, unresolvedDefaultVariantPolicy } from '../../shared/roarDbMode.js';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
@@ -34,6 +35,18 @@ const language = SRE_LANGUAGES[lngParam] ?? SRE_LANGUAGES.en;
 // The dev variant picker lists every published variant across all SRE language tasks.
 const PICKER_TASK_IDS = Object.values(SRE_LANGUAGES).map((l) => l.taskId);
 
+// Default variant per task, used when the URL supplies no `variantId`. Placeholder values
+// lifted from taskVariantParameters.example.json — researchers revise these per environment
+// as they re-create the variants. A task with no entry keeps the previous behaviour (oldest
+// published variant). See https://github.com/yeatmanlab/roar-project-management/issues/1828
+const DEFAULT_VARIANT_NAMES = {
+  [SRE_LANGUAGES.en.taskId]: 'English — age-based (v4, default)',
+  [SRE_LANGUAGES.es.taskId]: 'Spanish v1',
+  [SRE_LANGUAGES.pt.taskId]: 'Portuguese',
+  [SRE_LANGUAGES.de.taskId]: 'German',
+  // Italian is a translation stub in the example params and is deliberately not defaulted.
+};
+
 // App config
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -54,7 +67,12 @@ onAuthStateChanged(auth, async (user) => {
       // The variantId URL param wins; otherwise it falls back to the first published variant.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         { baseUrl, auth: authCallbacks },
-        { ...(variantId ? { variantId } : {}), taskId: language.taskId },
+        {
+          ...(variantId ? { variantId } : {}),
+          taskId: language.taskId,
+          defaultVariantName: DEFAULT_VARIANT_NAMES[language.taskId],
+          onUnresolvedDefault: unresolvedDefaultVariantPolicy(ROAR_DB),
+        },
       );
 
       const ctx = {
@@ -71,7 +89,7 @@ onAuthStateChanged(auth, async (user) => {
 
       // Dev/staging only: mount a variant switcher so reviewers can hop between published
       // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
-      if (ROAR_DB !== 'production') {
+      if (ROAR_DB !== ROAR_DB_MODE.PRODUCTION) {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,

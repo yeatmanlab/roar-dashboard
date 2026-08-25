@@ -6,6 +6,7 @@ import { READALOUD_TASK_ID } from '@roar-platform/assessment-schema/roar-readalo
 import ReadAloudTask from '../src/experiment/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
+import { ROAR_DB_MODE, unresolvedDefaultVariantPolicy } from '../../shared/roarDbMode.js';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
@@ -17,6 +18,14 @@ const urlParams = new URLSearchParams(queryString);
 const assessmentPid = urlParams.get('participant') ?? '';
 const variantId = urlParams.get('variantId');
 const taskVersion = urlParams.get('taskVersion') ?? '1.0';
+
+// Default variant per task, used when the URL supplies no `variantId`. Placeholder values
+// lifted from taskVariantParameters.example.json — researchers revise these per environment
+// as they re-create the variants. A task with no entry keeps the previous behaviour (oldest
+// published variant). See https://github.com/yeatmanlab/roar-project-management/issues/1828
+const DEFAULT_VARIANT_NAMES = {
+  [READALOUD_TASK_ID]: 'read-aloud-2025-10-03-A-v3',
+};
 
 // Demographics / lab identifiers — threaded through as run metadata (see startRun).
 const labId = urlParams.get('labId');
@@ -45,7 +54,12 @@ onAuthStateChanged(auth, async (user) => {
       // The variantId URL param wins; otherwise it falls back to the first published variant.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         { baseUrl, auth: authCallbacks },
-        { ...(variantId ? { variantId } : {}), taskId: READALOUD_TASK_ID },
+        {
+          ...(variantId ? { variantId } : {}),
+          taskId: READALOUD_TASK_ID,
+          defaultVariantName: DEFAULT_VARIANT_NAMES[READALOUD_TASK_ID],
+          onUnresolvedDefault: unresolvedDefaultVariantPolicy(ROAR_DB),
+        },
       );
 
       const ctx = {
@@ -62,7 +76,7 @@ onAuthStateChanged(auth, async (user) => {
 
       // Dev/staging only: mount a variant switcher so reviewers can hop between published
       // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
-      if (ROAR_DB !== 'production') {
+      if (ROAR_DB !== ROAR_DB_MODE.PRODUCTION) {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,

@@ -9,6 +9,7 @@ import {
 import { TaskLauncher } from '../src';
 import { getFirebaseConfig } from '../../shared/firebaseConfig.js';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
+import { ROAR_DB_MODE, unresolvedDefaultVariantPolicy } from '../../shared/roarDbMode.js';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
@@ -43,6 +44,22 @@ const taskId = urlParams.get('task') ?? 'egma-math';
 // The dev variant picker lists every published variant across all LEVANTE tasks.
 const PICKER_TASK_IDS = [...Object.values(LEVANTE_NORMED_TASK_IDS), ...Object.values(LEVANTE_PROVISIONAL_TASK_IDS)];
 
+// Default variant per task, used when the URL supplies no `variantId`. Placeholder values
+// lifted from taskVariantParameters.example.json — researchers revise these per environment
+// as they re-create the variants. A task with no entry keeps the previous behaviour (oldest
+// published variant). See https://github.com/yeatmanlab/roar-project-management/issues/1828
+const DEFAULT_VARIANT_NAMES = {
+  [LEVANTE_NORMED_TASK_IDS.TROG]: 'roar-syntax-2026-05-14-v4',
+  [LEVANTE_NORMED_TASK_IDS.ROAR_INFERENCE]: 'inference-school-2025-04-01-10min-1perstory-v7',
+  [LEVANTE_PROVISIONAL_TASK_IDS.EGMA_MATH]: 'Egma-Math-Default',
+  [LEVANTE_PROVISIONAL_TASK_IDS.MATRIX_REASONING]: 'Matrix-Reasoning-Default',
+  [LEVANTE_PROVISIONAL_TASK_IDS.MENTAL_ROTATION]: 'Mental-Rotation-Default',
+  [LEVANTE_PROVISIONAL_TASK_IDS.SAME_DIFFERENT_SELECTION]: 'Same-Different-Selection-Default',
+  [LEVANTE_PROVISIONAL_TASK_IDS.THEORY_OF_MIND]: 'Theory-of-Mind-Default',
+  // hearts-and-flowers, memory-game, vocab and intro have no constants in
+  // @roar-platform/assessment-schema, so they are left to the fallback for now.
+};
+
 // App config
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -62,7 +79,12 @@ onAuthStateChanged(auth, async (user) => {
       // The variantId URL param wins; otherwise falls back to the first published variant for taskId.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         { baseUrl, auth: authCallbacks },
-        { ...(variantId ? { variantId } : {}), taskId },
+        {
+          ...(variantId ? { variantId } : {}),
+          taskId,
+          defaultVariantName: DEFAULT_VARIANT_NAMES[taskId],
+          onUnresolvedDefault: unresolvedDefaultVariantPolicy(ROAR_DB),
+        },
       );
 
       const ctx = {
@@ -79,7 +101,7 @@ onAuthStateChanged(auth, async (user) => {
 
       // Dev/staging only: mount a variant switcher so reviewers can hop between published
       // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
-      if (ROAR_DB !== 'production') {
+      if (ROAR_DB !== ROAR_DB_MODE.PRODUCTION) {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,

@@ -5,6 +5,7 @@ import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk
 import { TaskLauncher } from '../src';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
+import { ROAR_DB_MODE, unresolvedDefaultVariantPolicy } from '../../shared/roarDbMode.js';
 import {
   ROAM_FLUENCY_ARF_TASK_IDS,
   ROAM_FLUENCY_CALF_TASK_IDS,
@@ -28,6 +29,21 @@ const taskId = urlParams.get('task') ?? 'fluency-arf';
 // All roam backend task slugs (language-suffixed). roam's tasks each hold only a few
 // variants, so the dev variant picker lists across all of them to surface every seeded
 // variant. Un-seeded slugs (e.g. a locale that wasn't seeded) are skipped by the picker.
+
+// Default variant per task, used when the URL supplies no `variantId`. Placeholder values
+// lifted from taskVariantParameters.example.json — researchers revise these per environment
+// as they re-create the variants. A task with no entry keeps the previous behaviour (oldest
+// published variant). See https://github.com/yeatmanlab/roar-project-management/issues/1828
+const DEFAULT_VARIANT_NAMES = {
+  [ROAM_FLUENCY_ARF_TASK_IDS.EN]: 'math-facts-2afc-school',
+  [ROAM_FLUENCY_ARF_TASK_IDS.ES]: 'un-dígito-school-nostory-keyboardPractice',
+  [ROAM_FLUENCY_ARF_TASK_IDS.PT]: 'pt-um-dígito-school-nostory-keyboardPractice',
+  [ROAM_FLUENCY_CALF_TASK_IDS.EN]: 'calculation-fluency-6afc-school-v0226',
+  [ROAM_FLUENCY_CALF_TASK_IDS.ES]: 'varios-dígitos-school-nostory-keyboardPractice',
+  [ROAM_FLUENCY_CALF_TASK_IDS.PT]: 'pt-vários-dígitos-school-nostory-keyboardPractice',
+  [ROAM_ALPACA_TASK_IDS.EN]: 'core-math-school-v0825',
+  [ROAM_ALPACA_TASK_IDS.PT]: 'pt-core-math-school-v0825',
+};
 const ROAM_TASK_IDS = [
   ...Object.values(ROAM_FLUENCY_ARF_TASK_IDS),
   ...Object.values(ROAM_FLUENCY_CALF_TASK_IDS),
@@ -60,7 +76,12 @@ onAuthStateChanged(auth, async (user) => {
       // The variantId URL param wins; otherwise falls back to the first published variant for taskId.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         { baseUrl, auth: authCallbacks },
-        { ...(variantId ? { variantId } : {}), taskId },
+        {
+          ...(variantId ? { variantId } : {}),
+          taskId,
+          defaultVariantName: DEFAULT_VARIANT_NAMES[taskId],
+          onUnresolvedDefault: unresolvedDefaultVariantPolicy(ROAR_DB),
+        },
       );
 
       const ctx = {
@@ -91,7 +112,7 @@ onAuthStateChanged(auth, async (user) => {
       // guard is eliminated at build). roam's tasks are language-suffixed and hold
       // only a few variants each, so the picker lists across all roam task slugs to
       // surface every seeded variant; selecting one reloads with its ?variantId=.
-      if (ROAR_DB !== 'production') {
+      if (ROAR_DB !== ROAR_DB_MODE.PRODUCTION) {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,
