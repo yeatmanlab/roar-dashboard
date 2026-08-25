@@ -5,6 +5,8 @@ import {
   MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES,
 } from '@roar-platform/assessment-schema/roar-multichoice';
 
+const COMPOSITE_DOMAIN = 'composite';
+
 /**
  * CVA (written vocabulary) scoring config.
  *
@@ -62,4 +64,42 @@ export default {
     standardScore: { min: 0, max: 180 },
     rawScore: { min: 100, max: 900 },
   },
+  subscores: [
+    {
+      kind: 'number' as const,
+      key: 'numCorrect',
+      label: 'Num Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT,
+    },
+    {
+      kind: 'number' as const,
+      key: 'numAttempted',
+      label: 'Num Attempted',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED,
+    },
+    {
+      kind: 'number' as const,
+      key: 'percentCorrect',
+      label: 'Percent Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT,
+      round: true,
+    },
+    {
+      kind: 'number' as const,
+      key: 'subScore',
+      label: 'Num Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_SCORE,
+    },
+    {
+      kind: 'number' as const,
+      key: 'subPercentCorrect',
+      label: 'Percent Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_PERCENT_CORRECT,
+    },
+  ],
 } as const;
