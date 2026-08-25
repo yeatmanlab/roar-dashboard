@@ -60,6 +60,29 @@ export default [
     },
   },
   {
+    // The same ratchet for src/types/.
+    // Test files are excluded — parity tests have to import both sides to compare them,
+    // exactly as the enum parity tests in src/enums/ do.
+    files: ['**/src/types/**/*.ts'],
+    ignores: ['**/*.test.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@roar-platform/api-contract',
+              // Narrower than the repository allowlist on purpose: only the two names shared types genuinely need.
+              allowImportNames: ['SortOrder', 'EnrolledUsersSortFieldType'],
+              message:
+                'Shared types should not re-export api-contract types — that hides the coupling from the repository and service rules. Derive from db/schema or src/enums/ instead. See roar-project-management#1733.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.test.ts', '**/*.integration.test.ts'],
     rules: {
       // toReturn() in route-test.helper.ts wraps expect() internally
