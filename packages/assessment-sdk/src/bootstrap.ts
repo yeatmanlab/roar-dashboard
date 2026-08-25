@@ -19,12 +19,20 @@ export type BootstrapContext = ApiClientConfig;
 /**
  * How to behave when `defaultVariantName` is supplied but matches no published variant.
  *
- * - `throw` — fail immediately (staging and production). A typo or a renamed variant should
+ * - `THROW` — fail immediately (staging and production). A typo or a renamed variant should
  *   surface at once rather than silently running a different configuration.
- * - `fallback` — warn and fall back to the oldest published variant (local dev). A
+ * - `FALLBACK` — warn and fall back to the oldest published variant (local dev). A
  *   researcher's own seed need not contain the canonical variant for the assessment to run.
+ *
+ * Exported as values so callers select a behaviour by constant rather than by string
+ * literal — the SDK defines the union, so it owns the vocabulary.
  */
-export type UnresolvedDefaultBehaviour = 'throw' | 'fallback';
+export const UnresolvedDefault = {
+  THROW: 'throw',
+  FALLBACK: 'fallback',
+} as const;
+
+export type UnresolvedDefaultBehaviour = (typeof UnresolvedDefault)[keyof typeof UnresolvedDefault];
 
 /**
  * Optional task/variant resolution for {@link bootstrapAnonymousSession}.
@@ -97,7 +105,7 @@ function selectVariantId(
   input: BootstrapAnonymousSessionInput,
   logger: Logger | undefined,
 ): string {
-  const { taskId, defaultVariantName, onUnresolvedDefault = 'throw' } = input;
+  const { taskId, defaultVariantName, onUnresolvedDefault = UnresolvedDefault.THROW } = input;
   const warn = logger?.warn.bind(logger) ?? console.warn;
 
   if (defaultVariantName) {
@@ -110,7 +118,7 @@ function selectVariantId(
     const available = published.map((variant) => variant.name).filter(Boolean);
     const availableList = available.length > 0 ? available.join(', ') : '(none published)';
 
-    if (onUnresolvedDefault === 'throw') {
+    if (onUnresolvedDefault === UnresolvedDefault.THROW) {
       throw new SDKError(
         `Default variant "${defaultVariantName}" not found for task ${taskId}. Published variants: ${availableList}`,
         { code: SdkErrorCode.BOOTSTRAP_FAILED },
