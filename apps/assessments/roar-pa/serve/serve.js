@@ -23,7 +23,7 @@ const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 // as they re-create the variants. A task with no entry keeps the previous behaviour (oldest
 // published variant). See https://github.com/yeatmanlab/roar-project-management/issues/1828
 const DEFAULT_VARIANT_NAMES = {
-  [pa.PA_TASK_ID]: 'English Fixed (v3)',
+  [pa.PA_TASK_ID]: 'English-Fixed-v3',
 };
 
 // User / participant params — game configuration comes from variant params fetched via SDK

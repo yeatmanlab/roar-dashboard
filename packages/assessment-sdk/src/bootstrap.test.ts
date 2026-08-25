@@ -136,50 +136,50 @@ describe('bootstrapAnonymousSession', () => {
       listTaskVariants.mockResolvedValue({ status: StatusCodes.OK, body: { data: { items } } });
 
     it('resolves the named variant rather than the oldest', async () => {
-      publish({ id: OTHER_VARIANT_ID, name: 'Old (v1)' }, { id: VARIANT_ID, name: 'English (v7)' });
+      publish({ id: OTHER_VARIANT_ID, name: 'Old (v1)' }, { id: VARIANT_ID, name: 'English-v7' });
 
       const result = await bootstrapAnonymousSession(ctx, {
         taskId: TASK_ID,
-        defaultVariantName: 'English (v7)',
+        defaultVariantName: 'English-v7',
       });
 
       expect(result.variantId).toBe(VARIANT_ID);
     });
 
     it('matches the name case-insensitively, mirroring the lower(name) unique index', async () => {
-      publish({ id: VARIANT_ID, name: 'English (v7)' });
+      publish({ id: VARIANT_ID, name: 'English-v7' });
 
       const result = await bootstrapAnonymousSession(ctx, {
         taskId: TASK_ID,
-        defaultVariantName: 'ENGLISH (V7)',
+        defaultVariantName: 'ENGLISH-V7',
       });
 
       expect(result.variantId).toBe(VARIANT_ID);
     });
 
     it('throws by default when the named variant is not published, listing what is', async () => {
-      publish({ id: OTHER_VARIANT_ID, name: 'Spanish (v1)' });
+      publish({ id: OTHER_VARIANT_ID, name: 'Spanish-v1' });
 
       await expect(
-        bootstrapAnonymousSession(ctx, { taskId: TASK_ID, defaultVariantName: 'English (v7)' }),
+        bootstrapAnonymousSession(ctx, { taskId: TASK_ID, defaultVariantName: 'English-v7' }),
       ).rejects.toMatchObject({
         code: SdkErrorCode.BOOTSTRAP_FAILED,
-        message: expect.stringContaining('Spanish (v1)'),
+        message: expect.stringContaining('Spanish-v1'),
       });
     });
 
     it('falls back with a warning when onUnresolvedDefault is fallback', async () => {
-      publish({ id: OTHER_VARIANT_ID, name: 'Spanish (v1)' }, { id: VARIANT_ID, name: 'Italian' });
+      publish({ id: OTHER_VARIANT_ID, name: 'Spanish-v1' }, { id: VARIANT_ID, name: 'Italian' });
       const warn = vi.fn();
 
       const result = await bootstrapAnonymousSession(
         { ...ctx, logger: { debug: vi.fn(), info: vi.fn(), warn, error: vi.fn() } },
-        { taskId: TASK_ID, defaultVariantName: 'English (v7)', onUnresolvedDefault: 'fallback' },
+        { taskId: TASK_ID, defaultVariantName: 'English-v7', onUnresolvedDefault: 'fallback' },
       );
 
       // Oldest published variant, i.e. the pre-existing behaviour.
       expect(result.variantId).toBe(OTHER_VARIANT_ID);
-      expect(warn).toHaveBeenCalledWith(expect.stringContaining('English (v7)'));
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('English-v7'));
     });
 
     it('warns when no name is declared and several variants are published', async () => {

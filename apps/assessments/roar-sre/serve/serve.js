@@ -40,8 +40,8 @@ const PICKER_TASK_IDS = Object.values(SRE_LANGUAGES).map((l) => l.taskId);
 // as they re-create the variants. A task with no entry keeps the previous behaviour (oldest
 // published variant). See https://github.com/yeatmanlab/roar-project-management/issues/1828
 const DEFAULT_VARIANT_NAMES = {
-  [SRE_LANGUAGES.en.taskId]: 'English — age-based (v4, default)',
-  [SRE_LANGUAGES.es.taskId]: 'Spanish v1',
+  [SRE_LANGUAGES.en.taskId]: 'English-age-based-v4-default',
+  [SRE_LANGUAGES.es.taskId]: 'Spanish-v1',
   [SRE_LANGUAGES.pt.taskId]: 'Portuguese',
   [SRE_LANGUAGES.de.taskId]: 'German',
   // Italian is a translation stub in the example params and is deliberately not defaulted.

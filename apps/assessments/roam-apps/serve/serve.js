@@ -37,11 +37,11 @@ const taskId = urlParams.get('task') ?? 'fluency-arf';
 // published variant). See https://github.com/yeatmanlab/roar-project-management/issues/1828
 const DEFAULT_VARIANT_NAMES = {
   [ROAM_FLUENCY_ARF_TASK_IDS.EN]: 'math-facts-2afc-school',
-  [ROAM_FLUENCY_ARF_TASK_IDS.ES]: 'un-dígito-school-nostory-keyboardPractice',
-  [ROAM_FLUENCY_ARF_TASK_IDS.PT]: 'pt-um-dígito-school-nostory-keyboardPractice',
+  [ROAM_FLUENCY_ARF_TASK_IDS.ES]: 'un-digito-school-nostory-keyboardPractice',
+  [ROAM_FLUENCY_ARF_TASK_IDS.PT]: 'pt-um-digito-school-nostory-keyboardPractice',
   [ROAM_FLUENCY_CALF_TASK_IDS.EN]: 'calculation-fluency-6afc-school-v0226',
-  [ROAM_FLUENCY_CALF_TASK_IDS.ES]: 'varios-dígitos-school-nostory-keyboardPractice',
-  [ROAM_FLUENCY_CALF_TASK_IDS.PT]: 'pt-vários-dígitos-school-nostory-keyboardPractice',
+  [ROAM_FLUENCY_CALF_TASK_IDS.ES]: 'varios-digitos-school-nostory-keyboardPractice',
+  [ROAM_FLUENCY_CALF_TASK_IDS.PT]: 'pt-varios-digitos-school-nostory-keyboardPractice',
   [ROAM_ALPACA_TASK_IDS.EN]: 'core-math-school-v0825',
   [ROAM_ALPACA_TASK_IDS.PT]: 'pt-core-math-school-v0825',
 };

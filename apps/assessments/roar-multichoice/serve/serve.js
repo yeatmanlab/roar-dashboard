@@ -30,8 +30,8 @@ const PICKER_TASK_IDS = [...MULTICHOICE_TASKS];
 // as they re-create the variants. A task with no entry keeps the previous behaviour (oldest
 // published variant). See https://github.com/yeatmanlab/roar-project-management/issues/1828
 const DEFAULT_VARIANT_NAMES = {
-  [MORPHOLOGY_TASK_ID]: 'Morphology — adaptive, school, 5 min (current)',
-  [CVA_TASK_ID]: 'Written Vocabulary — adaptive, grade-based secondary behavior, school, 5 min (current)',
+  [MORPHOLOGY_TASK_ID]: 'Morphology-adaptive-school-5-min-current',
+  [CVA_TASK_ID]: 'Written-Vocabulary-adaptive-grade-based-secondary-behavior-school-5-min-current',
 };
 
 // Participant / session

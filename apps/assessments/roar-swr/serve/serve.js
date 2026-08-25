@@ -40,8 +40,8 @@ const PICKER_TASK_IDS = Object.values(SWR_LANGUAGES).map((l) => l.taskId);
 // as they re-create the variants. A task with no entry keeps the previous behaviour (oldest
 // published variant). See https://github.com/yeatmanlab/roar-project-management/issues/1828
 const DEFAULT_VARIANT_NAMES = {
-  [SWR_LANGUAGES.en.taskId]: 'English (v7)',
-  [SWR_LANGUAGES.es.taskId]: 'Spanish (v1)',
+  [SWR_LANGUAGES.en.taskId]: 'English-v7',
+  [SWR_LANGUAGES.es.taskId]: 'Spanish-v1',
   [SWR_LANGUAGES.it.taskId]: 'Italian',
   [SWR_LANGUAGES.pt.taskId]: 'Portuguese',
   [SWR_LANGUAGES.de.taskId]: 'German',
