@@ -483,6 +483,36 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
     });
   });
 
+  describe('user.grade filter validation', () => {
+    it('returns 400 for the contains operator on the grade enum column', async () => {
+      // `contains` compiles to ILIKE, which has no operator against app.grade. The
+      // contract advertises the operator for user.grade, so this is well-formed input.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...defaultQuery(), filter: 'user.grade:contains:1' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 400 for a value outside the grade enum', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...defaultQuery(), filter: 'user.grade:eq:K2' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+  });
+
   describe('progress status sort and filter', () => {
     it('returns 200 when sorting by progress.<taskId>.status', async () => {
       authenticateAs(tiers.superAdmin);
