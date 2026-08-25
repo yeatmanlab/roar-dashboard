@@ -3697,5 +3697,27 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
         .set('Authorization', 'Bearer token');
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
+
+    it('rejects a user.grade filter the column type cannot evaluate with 400', async () => {
+      // Asserted on a task that reaches the query builder: with an unconfigured task
+      // this endpoint returns 400 before any filter is inspected, so the same
+      // assertion elsewhere would pass without exercising the guard at all.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, phonicsTaskId))
+        .query({
+          scopeType: 'district',
+          scopeId: baseFixture.district.id,
+          page: 1,
+          perPage: 25,
+          filter: 'user.grade:contains:1',
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
   });
 });
