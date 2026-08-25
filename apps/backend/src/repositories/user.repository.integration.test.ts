@@ -295,8 +295,8 @@ describe('UserRepository', () => {
     });
   });
 
-  describe('endAllEnrollments', () => {
-    it('ends every active org, class, group, and family enrollment for the user', async () => {
+  describe('endAllOrgEnrollments', () => {
+    it('ends every active org, class, and group enrollment but leaves the family membership active', async () => {
       const user = await UserFactory.create();
       const family = await FamilyFactory.create();
       const group = await GroupFactory.create();
@@ -311,16 +311,17 @@ describe('UserRepository', () => {
 
       expect(await repository.getUserEntityMemberships(user.id)).not.toHaveLength(0);
 
-      await repository.endAllEnrollments(user.id);
+      await repository.endAllOrgEnrollments(user.id);
 
-      // Every enrollment is now ended, so none are active.
-      expect(await repository.getUserEntityMemberships(user.id)).toHaveLength(0);
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toEqual([
+        { entityType: EntityType.FAMILY, entityId: family.id, role: 'parent' },
+      ]);
     });
 
     it('is a no-op for a user with no enrollments', async () => {
       const user = await UserFactory.create();
 
-      await expect(repository.endAllEnrollments(user.id)).resolves.toBeUndefined();
+      await expect(repository.endAllOrgEnrollments(user.id)).resolves.toBeUndefined();
       expect(await repository.getUserEntityMemberships(user.id)).toHaveLength(0);
     });
   });
@@ -339,7 +340,7 @@ describe('UserRepository', () => {
     it('excludes ended enrollments', async () => {
       const user = await UserFactory.create();
       await UserOrgFactory.create({ userId: user.id, orgId: baseFixture.district.id, role: UserRole.ADMINISTRATOR });
-      await repository.endAllEnrollments(user.id);
+      await repository.endAllOrgEnrollments(user.id);
 
       expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
     });
@@ -387,7 +388,7 @@ describe('UserRepository', () => {
       const user = await UserFactory.create();
       const group = await GroupFactory.create();
       await UserGroupFactory.create({ userId: user.id, groupId: group.id, role: UserRole.STUDENT });
-      await repository.endAllEnrollments(user.id);
+      await repository.endAllOrgEnrollments(user.id);
       expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
 
       const desired = [{ entityType: EntityType.GROUP, entityId: group.id, role: 'student' }];

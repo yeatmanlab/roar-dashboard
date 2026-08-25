@@ -454,18 +454,22 @@ export class UserRepository extends BaseRepository<User, typeof users> {
   }
 
   /**
-   * End all of a user's currently-active enrollments by stamping the end date on every open junction
-   * row across orgs, classes, groups, and families.
+   * End all of a user's currently-active org-scoped enrollments by stamping the end date on every
+   * open junction row across orgs, classes, and groups.
    *
    * Used by the bulk-import unenroll bin, which — matching the legacy `batchImportUpdate` — ends ALL
-   * of a user's enrollments (not just the memberships named in the request). Already-ended rows are
-   * left untouched so their original end date is preserved.
+   * of a user's org enrollments (not just the memberships named in the request). Already-ended rows
+   * are left untouched so their original end date is preserved.
    *
-   * @param userId - The user whose enrollments to end.
+   * `user_families` is deliberately excluded. The unenroll row is authorized against the target's
+   * org memberships only (families aren't checkable — see `authorizeRow`). Family membership is
+   * ended through the families endpoints.
+   *
+   * @param userId - The user whose org enrollments to end.
    * @param transaction - Optional transaction so the caller can archive the user and clean up FGA in
    *   the same unit of work.
    */
-  async endAllEnrollments(userId: string, transaction?: CoreTransaction): Promise<void> {
+  async endAllOrgEnrollments(userId: string, transaction?: CoreTransaction): Promise<void> {
     const db = transaction ?? this.db;
     const endedAt = new Date();
 
@@ -482,10 +486,6 @@ export class UserRepository extends BaseRepository<User, typeof users> {
       .update(userGroups)
       .set({ enrollmentEnd: endedAt })
       .where(and(eq(userGroups.userId, userId), isNull(userGroups.enrollmentEnd)));
-    await db
-      .update(userFamilies)
-      .set({ leftOn: endedAt })
-      .where(and(eq(userFamilies.userId, userId), isNull(userFamilies.leftOn)));
   }
 
   /**
@@ -540,7 +540,7 @@ export class UserRepository extends BaseRepository<User, typeof users> {
 
   /**
    * Archive a user by stamping `rosteringEnded`. Used by the bulk-import unenroll bin alongside
-   * {@link endAllEnrollments}; pass the same transaction so both land atomically.
+   * {@link endAllOrgEnrollments}; pass the same transaction so both land atomically.
    *
    * @param userId - The user to archive.
    * @param transaction - Optional transaction to run within.

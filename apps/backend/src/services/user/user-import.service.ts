@@ -297,6 +297,9 @@ export function UserImportService({
    * this is called with the row's declared `memberships` (what's about to be granted). For unenroll
    * rows it's called with the target user's actual current memberships fetched from the DB (see
    * processUnenrollBin), since that — not whatever the row declares — is what unenrolling affects.
+   *
+   * Family memberships are excluded from the check and don't count toward it: a target with no
+   * non-family membership is rejected rather than passing unauthorized.
    */
   async function authorizeRow(
     authContext: AuthContext,
@@ -307,12 +310,13 @@ export function UserImportService({
 
     if (isSuperAdmin) return;
 
-    // No memberships to check means nothing to authorize against — fail closed rather than fall
-    // through both loops and return as if authorized. Reachable via processUnenrollBin, where
-    // memberships come from the target's actual (possibly empty) current enrollments, not a
-    // schema-validated row.
-    if (memberships.length === 0) {
-      logger.warn({ userId }, 'Non-super-admin attempted to authorize a row with no checkable memberships');
+    const checkableMemberships = memberships.filter((m) => m.entityType !== EntityType.FAMILY);
+
+    if (checkableMemberships.length === 0) {
+      logger.warn(
+        { userId, totalMemberships: memberships.length },
+        'Non-super-admin attempted to authorize a row with no checkable memberships',
+      );
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
@@ -321,8 +325,8 @@ export function UserImportService({
     }
 
     // Guard against a non-super-admin creating a platform_admin.
-    for (const m of memberships) {
-      if (m.entityType !== EntityType.FAMILY && m.role === UserRole.PLATFORM_ADMIN) {
+    for (const m of checkableMemberships) {
+      if (m.role === UserRole.PLATFORM_ADMIN) {
         logger.warn({ userId, attemptedRole: m.role }, 'Non-super-admin attempted to import a platform_admin');
         throw new ApiError(ApiErrorMessage.FORBIDDEN, {
           statusCode: StatusCodes.FORBIDDEN,
@@ -341,11 +345,7 @@ export function UserImportService({
     // map, so a declared class is looked up twice per batch (once each). Kept separate on purpose:
     // the update and unenroll bins authorize against the target's *current* memberships, which can
     // include classes no row declared and the map therefore doesn't cover.
-    for (const membership of memberships) {
-      // FAMILY memberships intentionally skip the FGA check, matching single-create's outstanding
-      // authorization gap (roar-project-management#1774).
-      if (membership.entityType === EntityType.FAMILY) continue;
-
+    for (const membership of checkableMemberships) {
       let object: string;
 
       if (membership.entityType === EntityType.CLASS) {
@@ -741,8 +741,14 @@ export function UserImportService({
 
         await authorizeRow(authContext, memberships, caches);
 
+        // Unenroll acts on org memberships only. The row is authorized against those alone (families
+        // aren't checkable — see authorizeRow), so revoking the family tuple would sever a parent's
+        // access to their child on the strength of a school permission. Excluded from both the
+        // revocation and its compensation, matching endAllOrgEnrollments leaving user_families alone.
+        const orgMemberships = memberships.filter((m) => m.entityType !== EntityType.FAMILY);
+
         // Revoke in FGA *before* the DB write (Saga pattern). Unenroll's DB write has no clean undo —
-        // it stamps end dates across four junction tables and archives the user.
+        // it stamps end dates across three junction tables and archives the user.
         // Fails more safely: if the DB write fails, the user is under-granted (rows intact, access gone)
         // rather than unenrolled-but-still-authorized.
         //
@@ -751,7 +757,7 @@ export function UserImportService({
         // write below, ending the enrollments while the tuples still grant access: over-granted, and
         // reported `ok`. Same gap as the addition path in processUpdateBin; both need a throwing
         // variant in AuthorizationService and until then rely on manually running the syncFga backfill.
-        const deletionTuples = buildMembershipDeletionTuples(user.id, memberships);
+        const deletionTuples = buildMembershipDeletionTuples(user.id, orgMemberships);
         if (deletionTuples.length > 0) {
           await authorizationService.deleteTuples(deletionTuples);
         }
@@ -759,7 +765,7 @@ export function UserImportService({
         try {
           await userRepository.runTransaction({
             fn: async (tx) => {
-              await userRepository.endAllEnrollments(user.id, tx);
+              await userRepository.endAllOrgEnrollments(user.id, tx);
               await userRepository.archiveUser(user.id, tx);
             },
           });
@@ -771,7 +777,7 @@ export function UserImportService({
             );
 
             try {
-              await authorizationService.writeTuplesOrThrow(buildMembershipAdditionTuples(user.id, memberships));
+              await authorizationService.writeTuplesOrThrow(buildMembershipAdditionTuples(user.id, orgMemberships));
               logger.info({ userId: user.id }, 'Compensation successful: FGA membership tuples restored');
             } catch (compensateError) {
               logger.error(

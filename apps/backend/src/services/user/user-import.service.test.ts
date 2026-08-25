@@ -716,13 +716,10 @@ describe('UserImportService.bulkImport', () => {
       expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'failed' });
     });
 
-    // The only path that reaches the family branch of the tuple builders: an import row cannot
-    // declare a family membership (the contract's OrgMembershipSchema rejects it), but the target's
-    // *current* memberships come from the DB and may include a family row written by the families
-    // endpoints. Dropping the family case would revoke the tuple here and then fail to restore it,
-    // silently stripping a parent's access to their own child while the row still reports a
-    // compensated failure.
-    it('revokes and restores a family tuple alongside the org ones when the DB write fails', async () => {
+    // An import row cannot declare a family membership (the contract's OrgMembershipSchema rejects
+    // it), but the target's *current* memberships come from the DB and may include a family row.
+    // Org admins cannot unenroll users from family memberships.
+    it('leaves the family tuple in place while revoking and restoring the org ones', async () => {
       mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
         { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.TEACHER },
         { entityType: EntityType.FAMILY, entityId: 'fam-1', role: UserFamilyRole.PARENT },
@@ -733,22 +730,23 @@ describe('UserImportService.bulkImport', () => {
         makeRow({ email: 'leaver@example.org', unenroll: true }),
       ]);
 
-      // Revoked with the family relation against the family type, not an org type.
-      expect(mockAuthz.deleteTuples).toHaveBeenCalledWith(
-        expect.arrayContaining([expect.objectContaining({ relation: UserFamilyRole.PARENT, object: 'family:fam-1' })]),
+      expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([
+        expect.objectContaining({ relation: UserRole.TEACHER, object: 'school:school-9' }),
+      ]);
+      expect(mockAuthz.deleteTuples).not.toHaveBeenCalledWith(
+        expect.arrayContaining([expect.objectContaining({ object: 'family:fam-1' })]),
       );
 
-      // Restored with the active_membership condition, same as the org tuples alongside it.
-      expect(mockAuthz.writeTuplesOrThrow).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({
-            relation: UserFamilyRole.PARENT,
-            object: 'family:fam-1',
-            condition: expect.objectContaining({ name: FGA_CONDITION_ACTIVE_MEMBERSHIP }),
-          }),
-          expect.objectContaining({ relation: UserRole.TEACHER, object: 'school:school-9' }),
-        ]),
-      );
+      // Family tuples must not affect the org ones. Compensation restores exactly what was revoked
+      // — org only: FGA keys tuples by {user, relation, object}, so a family tuple that was never
+      // deleted would fail the batch and take the org restore down with it.
+      expect(mockAuthz.writeTuplesOrThrow).toHaveBeenCalledWith([
+        expect.objectContaining({
+          relation: UserRole.TEACHER,
+          object: 'school:school-9',
+          condition: expect.objectContaining({ name: FGA_CONDITION_ACTIVE_MEMBERSHIP }),
+        }),
+      ]);
       expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'failed' });
     });
 
@@ -775,7 +773,7 @@ describe('UserImportService.bulkImport', () => {
         makeRow({ email: 'leaver@example.org', unenroll: true }),
       ]);
 
-      expect(mockUserRepository.endAllEnrollments).toHaveBeenCalled();
+      expect(mockUserRepository.endAllOrgEnrollments).toHaveBeenCalled();
       expect(mockUserRepository.archiveUser).toHaveBeenCalled();
       expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([
         { user: expect.stringMatching(/^user:/), relation: UserRole.STUDENT, object: 'school:school-9' },
@@ -858,7 +856,7 @@ describe('UserImportService.bulkImport', () => {
           classification: 'unenrolled',
           error: { code: ApiErrorCode.AUTH_FORBIDDEN },
         });
-        expect(mockUserRepository.endAllEnrollments).not.toHaveBeenCalled();
+        expect(mockUserRepository.endAllOrgEnrollments).not.toHaveBeenCalled();
         expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
         expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
       });
@@ -878,7 +876,7 @@ describe('UserImportService.bulkImport', () => {
           error: { code: ApiErrorCode.AUTH_FORBIDDEN },
         });
         expect(mockAuthz.requirePermission).not.toHaveBeenCalled();
-        expect(mockUserRepository.endAllEnrollments).not.toHaveBeenCalled();
+        expect(mockUserRepository.endAllOrgEnrollments).not.toHaveBeenCalled();
         expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
         expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
       });
@@ -933,9 +931,10 @@ describe('UserImportService.bulkImport', () => {
         expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
       });
 
-      it('authorizes a target whose only membership is a family one against nothing, and still succeeds', async () => {
-        // Every membership is skipped, so no FGA call is made at all. The row is not rejected: the
-        // length-0 fail-closed guard runs before the skip loop and this list isn't empty.
+      it('rejects a target whose only membership is a family one', async () => {
+        // Families are filtered out before the fail-closed guard, so nothing checkable remains and
+        // the row is denied. Passing it would archive the user and stamp user_families.leftOn with
+        // no FGA check having run at all.
         mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
           { entityType: EntityType.FAMILY, entityId: 'fam-1', role: UserFamilyRole.PARENT },
         ]);
@@ -945,7 +944,11 @@ describe('UserImportService.bulkImport', () => {
         ]);
 
         expect(mockAuthz.requirePermission).not.toHaveBeenCalled();
-        expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
+        expect(results[0]!).toMatchObject({
+          status: 'failed',
+          error: { code: ApiErrorCode.AUTH_FORBIDDEN },
+        });
+        expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
       });
     });
   });
