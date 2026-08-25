@@ -1326,12 +1326,25 @@ describe('UserImportService.bulkImport', () => {
       });
 
       it('writes the demographic columns the row does carry', async () => {
+        mockUserRepository.findByEmails.mockResolvedValue([
+          existing({ gender: 'male', race: 'white', statusEll: 'EL', homeLanguage: 'spanish' }),
+        ]);
+
         await buildService().bulkImport(superAdmin, [
-          makeRow({ email: 'updatee@example.org', demographics: { gender: 'female' } }),
+          makeRow({
+            email: 'updatee@example.org',
+            demographics: { gender: null, race: 'asian', statusEll: 'EL' },
+          }),
         ]);
 
         const updateData = mockUserRepository.update.mock.calls[0]![0].data;
-        expect(updateData).toMatchObject({ gender: 'female' });
+        expect(updateData).toMatchObject({ gender: null, race: 'asian', statusEll: 'EL' });
+
+        // Demographics the row never mentions stay out of the write, so `homeLanguage`
+        // keeps its stored value
+        for (const column of ['statusFrl', 'statusIep', 'hispanicEthnicity', 'homeLanguage']) {
+          expect(updateData).not.toHaveProperty(column);
+        }
       });
     });
 

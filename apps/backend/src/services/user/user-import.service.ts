@@ -805,15 +805,16 @@ export function UserImportService({
       ...(row.name.middle !== undefined && { nameMiddle: row.name.middle }),
       ...(row.dob !== undefined && { dob: row.dob ?? null }),
       ...(row.grade !== undefined && { grade: row.grade ?? null }),
-      ...(row.demographics && {
-        statusEll: row.demographics.statusEll ?? null,
-        statusFrl: row.demographics.statusFrl ?? null,
-        statusIep: row.demographics.statusIep ?? null,
-        gender: row.demographics.gender ?? null,
-        race: row.demographics.race ?? null,
-        hispanicEthnicity: row.demographics.hispanicEthnicity ?? null,
-        homeLanguage: row.demographics.homeLanguage ?? null,
+      // Demographics are optional, so only write when provided.
+      ...(row.demographics?.statusEll !== undefined && { statusEll: row.demographics.statusEll }),
+      ...(row.demographics?.statusFrl !== undefined && { statusFrl: row.demographics.statusFrl }),
+      ...(row.demographics?.statusIep !== undefined && { statusIep: row.demographics.statusIep }),
+      ...(row.demographics?.gender !== undefined && { gender: row.demographics.gender }),
+      ...(row.demographics?.race !== undefined && { race: row.demographics.race }),
+      ...(row.demographics?.hispanicEthnicity !== undefined && {
+        hispanicEthnicity: row.demographics.hispanicEthnicity,
       }),
+      ...(row.demographics?.homeLanguage !== undefined && { homeLanguage: row.demographics.homeLanguage }),
       ...(row.identifiers?.stateId !== undefined && { stateId: row.identifiers.stateId }),
     };
   }

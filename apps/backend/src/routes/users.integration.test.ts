@@ -2985,6 +2985,90 @@ describe('POST /v1/users/import', () => {
     });
   });
 
+  describe('update rows', () => {
+    /** Create a user with every demographic populated, enrolled in the base district. */
+    const seedUserWithDemographics = async (email: string) => {
+      const user = await UserFactory.create({
+        email,
+        gender: 'male',
+        race: 'white',
+        statusEll: 'EL',
+        statusFrl: 'Free',
+        statusIep: 'yes',
+        hispanicEthnicity: true,
+        homeLanguage: 'spanish',
+      });
+      await UserOrgFactory.create({
+        userId: user.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.STUDENT,
+      });
+      return user;
+    };
+
+    it('updates one demographic and leaves the stored values of the others intact', async () => {
+      const email = makeImportEmail('update-partial-demographics');
+      const user = await seedUserWithDemographics(email);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'Updated', last: 'Student' },
+              demographics: { gender: 'female' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'updated' });
+
+      const updated = await userRepository.getById({ id: user.id });
+      expect(updated).toMatchObject({
+        gender: 'female',
+        race: 'white',
+        statusEll: 'EL',
+        statusFrl: 'Free',
+        statusIep: 'yes',
+        hispanicEthnicity: true,
+        homeLanguage: 'spanish',
+      });
+    });
+
+    it('clears only the demographic the row nulls, keeping the rest of the stored values', async () => {
+      const email = makeImportEmail('update-null-demographic');
+      const user = await seedUserWithDemographics(email);
+
+      await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'Updated', last: 'Student' },
+              demographics: { gender: null, race: 'asian' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      const updated = await userRepository.getById({ id: user.id });
+      expect(updated).toMatchObject({
+        gender: null,
+        race: 'asian',
+        statusEll: 'EL',
+        statusFrl: 'Free',
+        statusIep: 'yes',
+        hispanicEthnicity: true,
+        homeLanguage: 'spanish',
+      });
+    });
+  });
+
   describe('request validation', () => {
     it('returns 400 when a create row has an empty memberships array', async () => {
       await expectRoute('POST', '/v1/users/import')
