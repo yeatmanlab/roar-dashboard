@@ -63,7 +63,8 @@ onAuthStateChanged(auth, async (user) => {
       const authCallbacks = { getToken: () => user.getIdToken() };
 
       // Provision the anonymous ROAR user (and resolve a variant) via the SDK.
-      // The variantId URL param wins; otherwise it falls back to the first published variant.
+      // The variantId URL param wins; otherwise the task's entry in DEFAULT_VARIANT_NAMES is
+      // matched by name, falling back to the oldest published variant when there is none.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         { baseUrl, auth: authCallbacks },
         {

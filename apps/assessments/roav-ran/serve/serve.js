@@ -13,7 +13,8 @@ import 'regenerator-runtime/runtime';
 const queryString = new URL(window.location).search;
 const urlParams = new URLSearchParams(queryString);
 
-// Task selection: variantId wins; otherwise taskId resolves to the first published variant.
+// Task selection: variantId wins; otherwise taskId picks the task and DEFAULT_VARIANT_NAMES
+// supplies its default variant name.
 // roav-ran is English-only, so the task slug is used directly (no language suffix).
 const taskId = urlParams.get('task') ?? 'ran';
 
@@ -58,7 +59,8 @@ onAuthStateChanged(auth, async (user) => {
       const authCallbacks = { getToken: () => user.getIdToken() };
 
       // Provision the anonymous ROAR user and resolve a variant via the SDK.
-      // variantId wins; otherwise falls back to the first published variant for taskId.
+      // The variantId URL param wins; otherwise the task's entry in DEFAULT_VARIANT_NAMES is
+      // matched by name, falling back to the oldest published variant when there is none.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         { baseUrl, auth: authCallbacks },
         {

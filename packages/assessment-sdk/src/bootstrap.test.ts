@@ -218,5 +218,21 @@ describe('bootstrapAnonymousSession', () => {
       expect(result.variantId).toBe(VARIANT_ID);
       expect(listTaskVariants).not.toHaveBeenCalled();
     });
+    it('warns when the published-variant lookup was truncated', async () => {
+      // A name published beyond the first page cannot match, so the truncation must be
+      // visible rather than silently resolving to the oldest.
+      listTaskVariants.mockResolvedValue({
+        status: StatusCodes.OK,
+        body: { data: { items: [{ id: VARIANT_ID, name: 'Only page one' }], pagination: { totalPages: 2 } } },
+      });
+      const warn = vi.fn();
+
+      await bootstrapAnonymousSession(
+        { ...ctx, logger: { debug: vi.fn(), info: vi.fn(), warn, error: vi.fn() } },
+        { taskId: TASK_ID, defaultVariantName: 'Only page one' },
+      );
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('only the first page'));
+    });
   });
 });

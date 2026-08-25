@@ -208,8 +208,9 @@ export async function bootstrapAnonymousSession(
   // last resort.
   let resolvedVariantId = input.variantId;
   if (!resolvedVariantId && input.taskId) {
-    // Sorted oldest-first so items[0] remains the historical fallback. perPage covers every
-    // published variant a task realistically has, so the name match sees the full set.
+    // Sorted oldest-first so items[0] remains the historical fallback. A single page at the
+    // API maximum covers every published variant a task realistically has; the totalPages
+    // check below reports it if that ever stops being true.
     const variants = await client.tasks.listTaskVariants({
       params: { taskId: input.taskId },
       query: {
@@ -227,7 +228,20 @@ export async function bootstrapAnonymousSession(
       });
     }
 
-    resolvedVariantId = selectVariantId(variants.body.data.items, input, ctx.logger);
+    const { items, pagination } = variants.body.data;
+
+    // The lookup is a single page capped at the API maximum. If a task ever outgrows it, a
+    // name published beyond the first page would not match and resolution would quietly
+    // fall through to the oldest — so make the truncation visible rather than silent.
+    if (pagination && pagination.totalPages > 1) {
+      const warn = ctx.logger?.warn.bind(ctx.logger) ?? console.warn;
+      warn(
+        `[assessment-sdk] Task ${input.taskId} has more than ${PUBLISHED_VARIANT_LOOKUP_PER_PAGE} published ` +
+          `variants (${pagination.totalPages} pages); only the first page was searched for a default variant name.`,
+      );
+    }
+
+    resolvedVariantId = selectVariantId(items, input, ctx.logger);
   }
 
   return {

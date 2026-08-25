@@ -23,7 +23,8 @@ const assessmentPid = urlParams.get('PROLIFIC_PID') || urlParams.get('participan
 const variantId = urlParams.get('variantId');
 const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 
-// Task selection: variantId wins; otherwise taskId resolves to the first published variant for that task.
+// Task selection: variantId wins; otherwise taskId picks the task and DEFAULT_VARIANT_NAMES
+// supplies its default variant name.
 const taskId = urlParams.get('task') ?? 'fluency-arf';
 
 // All roam backend task slugs (language-suffixed). roam's tasks each hold only a few
@@ -73,7 +74,8 @@ onAuthStateChanged(auth, async (user) => {
       const authCallbacks = { getToken: () => user.getIdToken() };
 
       // Provision the anonymous ROAR user (and resolve a variant) via the SDK.
-      // The variantId URL param wins; otherwise falls back to the first published variant for taskId.
+      // The variantId URL param wins; otherwise the task's entry in DEFAULT_VARIANT_NAMES is
+      // matched by name, falling back to the oldest published variant when there is none.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         { baseUrl, auth: authCallbacks },
         {
