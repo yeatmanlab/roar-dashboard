@@ -71,7 +71,7 @@ describe('bootstrapAnonymousSession', () => {
 
     expect(listTaskVariants).toHaveBeenCalledWith({
       params: { taskId: TASK_ID },
-      query: { perPage: 1, sortBy: 'createdAt', sortOrder: 'asc', status: 'published' },
+      query: { perPage: 100, sortBy: 'createdAt', sortOrder: 'asc', status: 'published' },
     });
     expect(result).toEqual({ participantId: PARTICIPANT_ID, variantId: VARIANT_ID });
   });
@@ -125,6 +125,98 @@ describe('bootstrapAnonymousSession', () => {
 
     await expect(bootstrapAnonymousSession(ctx, { taskId: TASK_ID })).rejects.toMatchObject({
       code: SdkErrorCode.BOOTSTRAP_FAILED,
+    });
+  });
+
+  describe('defaultVariantName', () => {
+    const OTHER_VARIANT_ID = '33333333-3333-3333-3333-333333333333';
+
+    /** Oldest first, matching the query's `sortOrder: 'asc'`. */
+    const publish = (...items: { id: string; name: string | null }[]) =>
+      listTaskVariants.mockResolvedValue({ status: StatusCodes.OK, body: { data: { items } } });
+
+    it('resolves the named variant rather than the oldest', async () => {
+      publish({ id: OTHER_VARIANT_ID, name: 'Old (v1)' }, { id: VARIANT_ID, name: 'English (v7)' });
+
+      const result = await bootstrapAnonymousSession(ctx, {
+        taskId: TASK_ID,
+        defaultVariantName: 'English (v7)',
+      });
+
+      expect(result.variantId).toBe(VARIANT_ID);
+    });
+
+    it('matches the name case-insensitively, mirroring the lower(name) unique index', async () => {
+      publish({ id: VARIANT_ID, name: 'English (v7)' });
+
+      const result = await bootstrapAnonymousSession(ctx, {
+        taskId: TASK_ID,
+        defaultVariantName: 'ENGLISH (V7)',
+      });
+
+      expect(result.variantId).toBe(VARIANT_ID);
+    });
+
+    it('throws by default when the named variant is not published, listing what is', async () => {
+      publish({ id: OTHER_VARIANT_ID, name: 'Spanish (v1)' });
+
+      await expect(
+        bootstrapAnonymousSession(ctx, { taskId: TASK_ID, defaultVariantName: 'English (v7)' }),
+      ).rejects.toMatchObject({
+        code: SdkErrorCode.BOOTSTRAP_FAILED,
+        message: expect.stringContaining('Spanish (v1)'),
+      });
+    });
+
+    it('falls back with a warning when onUnresolvedDefault is fallback', async () => {
+      publish({ id: OTHER_VARIANT_ID, name: 'Spanish (v1)' }, { id: VARIANT_ID, name: 'Italian' });
+      const warn = vi.fn();
+
+      const result = await bootstrapAnonymousSession(
+        { ...ctx, logger: { debug: vi.fn(), info: vi.fn(), warn, error: vi.fn() } },
+        { taskId: TASK_ID, defaultVariantName: 'English (v7)', onUnresolvedDefault: 'fallback' },
+      );
+
+      // Oldest published variant, i.e. the pre-existing behaviour.
+      expect(result.variantId).toBe(OTHER_VARIANT_ID);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('English (v7)'));
+    });
+
+    it('warns when no name is declared and several variants are published', async () => {
+      publish({ id: OTHER_VARIANT_ID, name: 'Old (v1)' }, { id: VARIANT_ID, name: 'New (v2)' });
+      const warn = vi.fn();
+
+      const result = await bootstrapAnonymousSession(
+        { ...ctx, logger: { debug: vi.fn(), info: vi.fn(), warn, error: vi.fn() } },
+        { taskId: TASK_ID },
+      );
+
+      expect(result.variantId).toBe(OTHER_VARIANT_ID);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('No default variant declared'));
+    });
+
+    it('does not warn when no name is declared and only one variant is published', async () => {
+      publish({ id: VARIANT_ID, name: 'Only one' });
+      const warn = vi.fn();
+
+      const result = await bootstrapAnonymousSession(
+        { ...ctx, logger: { debug: vi.fn(), info: vi.fn(), warn, error: vi.fn() } },
+        { taskId: TASK_ID },
+      );
+
+      expect(result.variantId).toBe(VARIANT_ID);
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('is ignored when an explicit variantId is supplied', async () => {
+      const result = await bootstrapAnonymousSession(ctx, {
+        variantId: VARIANT_ID,
+        taskId: TASK_ID,
+        defaultVariantName: 'does-not-exist',
+      });
+
+      expect(result.variantId).toBe(VARIANT_ID);
+      expect(listTaskVariants).not.toHaveBeenCalled();
     });
   });
 });

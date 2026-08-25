@@ -4,6 +4,7 @@ import { createApiClient } from './receiver/roar-api';
 import type { ApiClientConfig } from './receiver/roar-api';
 import { SDKError } from './errors/sdk-error';
 import { SdkErrorCode } from './enums/sdk-error-code.enum';
+import type { Logger } from './command/command';
 
 /**
  * Configuration for {@link bootstrapAnonymousSession}.
@@ -16,15 +17,35 @@ import { SdkErrorCode } from './enums/sdk-error-code.enum';
 export type BootstrapContext = ApiClientConfig;
 
 /**
+ * How to behave when `defaultVariantName` is supplied but matches no published variant.
+ *
+ * - `throw` — fail immediately (staging and production). A typo or a renamed variant should
+ *   surface at once rather than silently running a different configuration.
+ * - `fallback` — warn and fall back to the oldest published variant (local dev). A
+ *   researcher's own seed need not contain the canonical variant for the assessment to run.
+ */
+export type UnresolvedDefaultBehaviour = 'throw' | 'fallback';
+
+/**
  * Optional task/variant resolution for {@link bootstrapAnonymousSession}.
  *
  * @property variantId - If provided, this variant is returned as-is without a lookup.
- * @property taskId - If provided (and `variantId` is not), bootstrap resolves the first
- *                    published variant for this task. Mirrors the historical serve.js fallback.
+ * @property taskId - If provided (and `variantId` is not), bootstrap resolves a published
+ *                    variant for this task — see `defaultVariantName`.
+ * @property defaultVariantName - Preferred variant, matched case-insensitively against the
+ *                    task's published variant names. `task_variants` is uniquely indexed on
+ *                    `(taskId, lower(name))`, so a name identifies at most one variant per
+ *                    task. When omitted, resolution falls back to the oldest published variant.
+ * @property onUnresolvedDefault - What to do when `defaultVariantName` matches nothing.
+ *                    Defaults to `throw`. Callers pass this in rather than the SDK inferring
+ *                    it: strictness is an environment policy, and the SDK is deliberately
+ *                    host-agnostic (it must not read build globals such as `ROAR_DB`).
  */
 export interface BootstrapAnonymousSessionInput {
   variantId?: string;
   taskId?: string;
+  defaultVariantName?: string;
+  onUnresolvedDefault?: UnresolvedDefaultBehaviour;
 }
 
 /**
@@ -39,6 +60,84 @@ export interface BootstrapAnonymousSessionResult {
 }
 
 /**
+ * Page size for the published-variant lookup.
+ *
+ * The name match needs the whole published set, not one row, so this is the contract's
+ * `perPage` maximum. The largest assessment currently declares eleven variants for a task,
+ * so a single page covers every real case.
+ */
+const PUBLISHED_VARIANT_LOOKUP_PER_PAGE = 100;
+
+/** A published variant as returned by `GET /tasks/:taskId/variants`. */
+interface PublishedVariant {
+  id: string;
+  name: string | null;
+}
+
+/**
+ * Pick which published variant a session should run.
+ *
+ * Resolution order:
+ * 1. `defaultVariantName`, matched case-insensitively — the caller's declared choice.
+ * 2. If that name matches nothing: throw, or warn and continue, per `onUnresolvedDefault`.
+ * 3. Oldest published variant, which is the behaviour that predates named defaults.
+ *
+ * A warning is also emitted when no name was declared and the task has more than one
+ * published variant, since the choice is then made by seeding order rather than intent.
+ *
+ * @param published - The task's published variants, oldest first
+ * @param input - The caller's resolution input
+ * @param logger - Optional logger from the bootstrap context; falls back to `console`
+ * @returns The id of the variant to run
+ * @throws {SDKError} BOOTSTRAP_FAILED if a declared name is unresolved under `throw`, or if
+ *   the task has no published variants at all
+ */
+function selectVariantId(
+  published: PublishedVariant[],
+  input: BootstrapAnonymousSessionInput,
+  logger: Logger | undefined,
+): string {
+  const { taskId, defaultVariantName, onUnresolvedDefault = 'throw' } = input;
+  const warn = logger?.warn.bind(logger) ?? console.warn;
+
+  if (defaultVariantName) {
+    const wanted = defaultVariantName.toLowerCase();
+    const match = published.find((variant) => variant.name?.toLowerCase() === wanted);
+    if (match) return match.id;
+
+    // Listing the real names is what makes this self-service: the caller sees what they
+    // could have meant instead of guessing at a rename or a typo.
+    const available = published.map((variant) => variant.name).filter(Boolean);
+    const availableList = available.length > 0 ? available.join(', ') : '(none published)';
+
+    if (onUnresolvedDefault === 'throw') {
+      throw new SDKError(
+        `Default variant "${defaultVariantName}" not found for task ${taskId}. Published variants: ${availableList}`,
+        { code: SdkErrorCode.BOOTSTRAP_FAILED },
+      );
+    }
+
+    warn(
+      `[assessment-sdk] Default variant "${defaultVariantName}" not found for task ${taskId}; ` +
+        `falling back to the oldest published variant. Published variants: ${availableList}`,
+    );
+  } else if (published.length > 1) {
+    warn(
+      `[assessment-sdk] No default variant declared for task ${taskId} and ${published.length} are ` +
+        `published; falling back to the oldest. Declare one in the assessment's serve.js to make this explicit.`,
+    );
+  }
+
+  const oldest = published[0]?.id;
+  if (!oldest) {
+    throw new SDKError(`No published variant found for task ${taskId}`, {
+      code: SdkErrorCode.BOOTSTRAP_FAILED,
+    });
+  }
+  return oldest;
+}
+
+/**
  * Bootstraps an anonymous assessment session.
  *
  * Solves the chicken-and-egg problem where {@link initAssessmentSdk} (and the Firekit compat
@@ -49,8 +148,8 @@ export interface BootstrapAnonymousSessionResult {
  *
  * Steps:
  * 1. Provision (or retrieve) the anonymous ROAR user via `POST /users/anonymous`, yielding the participantId.
- * 2. Optionally resolve a task variant — uses `variantId` directly if given, otherwise falls back
- *    to the first published variant for `taskId`.
+ * 2. Optionally resolve a task variant — uses `variantId` directly if given, otherwise matches
+ *    `defaultVariantName` against the task's published variants, falling back to the oldest.
  *
  * **Ordering is significant.** The variant lookup (`GET /tasks/:taskId/variants`) runs behind the
  * standard auth guard, which requires the caller's ROAR user record to already exist in the
@@ -60,7 +159,8 @@ export interface BootstrapAnonymousSessionResult {
  * participantId, so retrying a failed bootstrap is safe.
  *
  * @param ctx - baseUrl + auth callbacks (anonymous Firebase token), optional requestId/fetch/logger
- * @param input - Optional variant resolution (variantId or taskId)
+ * @param input - Optional variant resolution (variantId, or taskId plus an optional
+ *                declared default — see {@link BootstrapAnonymousSessionInput})
  * @returns The provisioned participantId and, when requested, the resolved variantId
  * @throws {SDKError} With code `BOOTSTRAP_FAILED` if provisioning or variant resolution fails
  *
@@ -95,18 +195,21 @@ export async function bootstrapAnonymousSession(
 
   const participantId = created.body.data.id;
 
-  // Step 2 (optional): resolve a task variant. An explicit variantId wins; otherwise fall
-  // back to the first published variant for the task.
-  // TODO: Replace the first-published fallback with a proper "default variant" concept once
-  // the task_variants schema supports marking a single variant as default per task.
-  // See: https://github.com/yeatmanlab/roar-project-management/issues/1828
+  // Step 2 (optional): resolve a task variant. An explicit variantId wins; otherwise the
+  // caller's declared default is matched by name, with the oldest published variant as the
+  // last resort.
   let resolvedVariantId = input.variantId;
   if (!resolvedVariantId && input.taskId) {
-    // Fetch the first published variant (default sort is createdAt asc, oldest first).
-    // If the default sort changes, this will silently pick a different variant.
+    // Sorted oldest-first so items[0] remains the historical fallback. perPage covers every
+    // published variant a task realistically has, so the name match sees the full set.
     const variants = await client.tasks.listTaskVariants({
       params: { taskId: input.taskId },
-      query: { perPage: 1, sortBy: 'createdAt', sortOrder: 'asc', status: 'published' },
+      query: {
+        perPage: PUBLISHED_VARIANT_LOOKUP_PER_PAGE,
+        sortBy: 'createdAt',
+        sortOrder: 'asc',
+        status: 'published',
+      },
     });
 
     if (variants.status !== StatusCodes.OK) {
@@ -116,12 +219,7 @@ export async function bootstrapAnonymousSession(
       });
     }
 
-    resolvedVariantId = variants.body.data.items[0]?.id;
-    if (!resolvedVariantId) {
-      throw new SDKError(`No published variant found for task ${input.taskId}`, {
-        code: SdkErrorCode.BOOTSTRAP_FAILED,
-      });
-    }
+    resolvedVariantId = selectVariantId(variants.body.data.items, input, ctx.logger);
   }
 
   return {
