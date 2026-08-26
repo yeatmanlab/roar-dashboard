@@ -3367,7 +3367,7 @@ describe('POST /v1/users/import', () => {
       });
     });
 
-    it('accepts an unenroll row that omits memberships entirely', async () => {
+    it('rejects an unenroll row that omits memberships entirely', async () => {
       const res = await expectRoute('POST', '/v1/users/import')
         .as(tiers.superAdmin)
         .withBody({
