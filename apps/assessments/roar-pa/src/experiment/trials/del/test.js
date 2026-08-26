@@ -15,6 +15,7 @@ import { delBreak } from './instructions';
 import '../../i18n';
 import { getStimulus, prompt2 } from '../test';
 import { jsPsych } from '../../jsPsych';
+import { SHORT_AUDIO_END_FALLBACK_MS } from '../../audioLifecycle';
 
 let source;
 
@@ -26,6 +27,7 @@ export const delTestTrials = {
       prompt: () => prompt2(),
       choices: [],
       trial_ends_after_audio: true,
+      trial_duration: SHORT_AUDIO_END_FALLBACK_MS,
       response_allowed_while_playing: false,
     },
     {
@@ -76,7 +78,12 @@ export const delTestTrials = {
       on_finish: (data) => {
         // pause audio
         if (source) {
-          source.stop();
+          try {
+            source.stop();
+          } catch {
+            // The source may already be stopped after a Safari lifecycle transition.
+          }
+          source = null;
         }
         saveTrialData(data, 'button');
         if (!store.session('config').isAdaptive) {
@@ -117,6 +124,7 @@ export const delTestTrials = {
       choices: [],
       response_allowed_while_playing: false,
       trial_ends_after_audio: true,
+      trial_duration: SHORT_AUDIO_END_FALLBACK_MS,
     },
     {
       timeline: [delBreak],

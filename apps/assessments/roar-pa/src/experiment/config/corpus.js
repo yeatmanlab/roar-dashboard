@@ -129,7 +129,7 @@ export function processCSV(config = {}) {
     ),
   };
 
-  if (userMode === "random") {
+  if (userMode === 'random') {
     corpus.test_FSM = _shuffle(corpus.test_FSM);
     corpus.test_LSM = _shuffle(corpus.test_LSM);
     corpus.test_DEL = _shuffle(corpus.test_DEL);

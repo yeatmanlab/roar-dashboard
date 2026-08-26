@@ -4,6 +4,7 @@ import { camelize } from '@bdelab/roar-utils';
 import { mediaAssets } from '../experiment';
 import { practiceStoppingRule, saveTrialData } from '../experimentHelpers';
 import { getTestTrials } from './test';
+import { SHORT_AUDIO_END_FALLBACK_MS } from '../audioLifecycle';
 
 export const writePracticeTrials = (block) => ({
   timeline: [
@@ -44,6 +45,7 @@ export const writePracticeTrials = (block) => ({
       choices: [],
       response_allowed_while_playing: false,
       trial_ends_after_audio: true,
+      trial_duration: SHORT_AUDIO_END_FALLBACK_MS,
       prompt: () => `
             <div id="jspsych-audio-button-response-stimulus">
               <img draggable="false" class = "testImageCenter" src="${store.session('feedbackImage')}" alt="reward">
