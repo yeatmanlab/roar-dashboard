@@ -3,6 +3,7 @@ import store from 'store2';
 import i18next from 'i18next';
 import { mediaAssets, paValidityEvaluator } from '../../experiment';
 import { updateProgressBarForLSMStart } from '../../experimentHelpers';
+import { AUDIO_END_FALLBACK_MS } from '../../audioLifecycle';
 import '../../i18n';
 
 // last sound matching (LSM) introduction, instruction, and end blocks
@@ -37,6 +38,7 @@ const lsmIntro2 = {
           <img draggable="false" class="instructionCanvas" src="${mediaAssets.images.bunny}" alt="canvas 1">
         </div>`,
   trial_ends_after_audio: true,
+  trial_duration: AUDIO_END_FALLBACK_MS,
   choices: [],
   response_allowed_while_playing: false,
 };
@@ -153,6 +155,7 @@ export const lsmEnd = {
         </div>`;
   },
   trial_ends_after_audio: true,
+  trial_duration: AUDIO_END_FALLBACK_MS,
   choices: [],
   response_allowed_while_playing: false,
 };
