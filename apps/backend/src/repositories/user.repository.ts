@@ -482,18 +482,32 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     const notYetEnded = (table: { enrollmentEnd: AnyColumn }) =>
       or(isNull(table.enrollmentEnd), gt(table.enrollmentEnd, sql`NOW()`));
 
+    /**
+     * Close the window, pulling a not-yet-started row's start back so it stays valid. Each table
+     * CHECKs `enrollmentStart < enrollmentEnd`, so stamping the end alone would be rejected for a
+     * future-dated start — and that's the row that most needs closing, since it would otherwise
+     * become active after the unenroll.
+     *
+     * `LEAST` only ever moves a start earlier, so an already-started enrollment keeps its original
+     * date. A future one loses its scheduled start, which is acceptable: it never happened.
+     */
+    const closedWindow = (table: { enrollmentStart: AnyColumn }) => ({
+      enrollmentEnd: endedAt,
+      enrollmentStart: sql`LEAST(${table.enrollmentStart}, ${endedAt}::timestamptz - interval '1 second')`,
+    });
+
     // Sequential (not Promise.all) so this is safe inside a single transaction/connection.
     await db
       .update(userOrgs)
-      .set({ enrollmentEnd: endedAt })
+      .set(closedWindow(userOrgs))
       .where(and(eq(userOrgs.userId, userId), notYetEnded(userOrgs)));
     await db
       .update(userClasses)
-      .set({ enrollmentEnd: endedAt })
+      .set(closedWindow(userClasses))
       .where(and(eq(userClasses.userId, userId), notYetEnded(userClasses)));
     await db
       .update(userGroups)
-      .set({ enrollmentEnd: endedAt })
+      .set(closedWindow(userGroups))
       .where(and(eq(userGroups.userId, userId), notYetEnded(userGroups)));
   }
 

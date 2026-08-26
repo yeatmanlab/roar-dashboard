@@ -195,7 +195,9 @@ export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
  * - `unenroll: true` routes an existing user to the unenroll bin.
  * - `memberships` is org-scoped only, like single-create, but only create/update rows must be
  *   non-empty: unenrolling acts on the target's current memberships, not what this array declares.
- *   An unenroll row may send `[]`; the key itself stays required.
+ *   An unenroll row may send `[]`; the key itself stays required. `enrollmentStart` / `enrollmentEnd`
+ *   are honoured on create rows only — an update row declaring either is rejected (422) rather than
+ *   having the window silently dropped, since membership reconciliation always writes an open one.
  *
  * The server classifies create / update / unenroll by matching `email` against existing users —
  * the client never declares the bin. Emails are generated from the username if not provided upon importing on the client-side.

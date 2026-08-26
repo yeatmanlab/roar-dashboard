@@ -3092,6 +3092,113 @@ describe('POST /v1/users/import', () => {
     return reads.flatMap((r) => r.tuples ?? []);
   };
 
+  /** A user_orgs row's raw enrollment window. No repository getter exposes it — they're active-only. */
+  const readOrgEnrollment = async (userId: string, orgId: string) => {
+    const { userOrgs } = await import('../db/schema');
+    const { and, eq } = await import('drizzle-orm');
+    const { CoreDbClient } = await import('../test-support/db');
+
+    const [row] = await CoreDbClient.select({
+      enrollmentStart: userOrgs.enrollmentStart,
+      enrollmentEnd: userOrgs.enrollmentEnd,
+    })
+      .from(userOrgs)
+      .where(and(eq(userOrgs.userId, userId), eq(userOrgs.orgId, orgId)));
+    return row ?? null;
+  };
+
+  describe('enrollment windows', () => {
+    const FUTURE_END = '2027-06-30T00:00:00.000Z';
+    const FUTURE_START = '2027-09-01T00:00:00.000Z';
+
+    it('honours a declared window on a create row', async () => {
+      const email = makeImportEmail('window-create');
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              password: 'Password123!',
+              name: { first: 'Windowed', last: 'Student' },
+              memberships: [
+                {
+                  entityType: 'district',
+                  entityId: baseFixture.district.id,
+                  role: 'student',
+                  enrollmentEnd: FUTURE_END,
+                },
+              ],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'created' });
+
+      // The create path passes the window through, which is what makes rejecting it on update rows
+      // (rather than dropping it) the consistent choice.
+      const userId: string = res.body.data.results[0].id;
+      const enrollment = await readOrgEnrollment(userId, baseFixture.district.id);
+      expect(enrollment!.enrollmentEnd?.toISOString()).toBe(FUTURE_END);
+    });
+
+    it.each([
+      ['enrollmentEnd', { enrollmentEnd: FUTURE_END }],
+      ['enrollmentStart', { enrollmentStart: FUTURE_START }],
+    ])('rejects an update row declaring %s, leaving the user unchanged', async (_label, window) => {
+      const email = makeImportEmail('window-update');
+      const user = await seedEnrolledUser(email);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'Rewindowed', last: 'Student' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student', ...window }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({
+        status: 'failed',
+        classification: 'updated',
+        error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+      });
+
+      // Rejected before any write: profile untouched and the existing window intact.
+      const unchanged = await userRepository.getById({ id: user.id });
+      expect(unchanged!.nameFirst).not.toBe('Rewindowed');
+      const enrollment = await readOrgEnrollment(user.id, baseFixture.district.id);
+      expect(enrollment!.enrollmentEnd).toBeNull();
+    });
+
+    it('accepts an update row whose memberships declare no window', async () => {
+      const email = makeImportEmail('window-update-none');
+      const user = await seedEnrolledUser(email);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'Plain', last: 'Update' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'updated' });
+      expect((await userRepository.getById({ id: user.id }))!.nameFirst).toBe('Plain');
+    });
+  });
+
   describe('FGA revocation against a real store', () => {
     // These assert the delete actually matched what was written. The tuples are written with an
     // `active_membership` condition and deleted by bare key, and the class-role skip has to agree

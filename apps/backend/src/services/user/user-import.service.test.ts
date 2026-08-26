@@ -1400,6 +1400,38 @@ describe('UserImportService.bulkImport', () => {
       expect(results[0]!.status).toBe('ok');
     });
 
+    describe('enrollment windows', () => {
+      const rowWith = (membership: Record<string, unknown>) =>
+        makeRow({
+          email: 'updatee@example.org',
+          memberships: [
+            { entityType: EntityType.SCHOOL, entityId: 'school-1', role: UserRole.STUDENT, ...membership },
+          ] as ImportUserRowInput['memberships'],
+        });
+
+      it.each([
+        ['enrollmentStart', { enrollmentStart: '2027-09-01T00:00:00.000Z' }],
+        ['enrollmentEnd', { enrollmentEnd: '2027-06-30T00:00:00.000Z' }],
+      ])('rejects an update row declaring %s instead of silently dropping it', async (_label, membership) => {
+        const results = await buildService().bulkImport(superAdmin, [rowWith(membership)]);
+
+        expect(results[0]!).toMatchObject({
+          status: 'failed',
+          classification: 'updated',
+          error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+        });
+        // Rejected before any write, so no partial update is left behind.
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+        expect(mockUserRepository.reconcileMemberships).not.toHaveBeenCalled();
+      });
+
+      it('accepts an update row whose memberships declare no window', async () => {
+        const results = await buildService().bulkImport(superAdmin, [rowWith({})]);
+
+        expect(results[0]!.status).toBe('ok');
+      });
+    });
+
     describe('partial updates', () => {
       it('writes only the name when the row carries no optional fields', async () => {
         await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);

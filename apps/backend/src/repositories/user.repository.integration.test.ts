@@ -297,18 +297,21 @@ describe('UserRepository', () => {
 
   describe('endAllOrgEnrollments', () => {
     /**
-     * Read a user_groups row's raw enrollmentEnd. No repository method exposes it — the membership
-     * getters are all active-only — and these tests assert on the stamped date itself.
+     * Read a user_groups row's raw enrollment window. No repository method exposes it — the
+     * membership getters are all active-only — and these tests assert on the stamped dates.
      */
-    const readGroupEnrollmentEnd = async (userId: string, groupId: string) => {
+    const readGroupEnrollment = async (userId: string, groupId: string) => {
       const { CoreDbClient } = await import('../db/clients');
       const { userGroups } = await import('../db/schema');
       const { and, eq } = await import('drizzle-orm');
 
-      const [row] = await CoreDbClient.select({ enrollmentEnd: userGroups.enrollmentEnd })
+      const [row] = await CoreDbClient.select({
+        enrollmentStart: userGroups.enrollmentStart,
+        enrollmentEnd: userGroups.enrollmentEnd,
+      })
         .from(userGroups)
         .where(and(eq(userGroups.userId, userId), eq(userGroups.groupId, groupId)));
-      return row?.enrollmentEnd ?? null;
+      return row ?? null;
     };
 
     it('ends every active org, class, and group enrollment but leaves the family membership active', async () => {
@@ -373,25 +376,35 @@ describe('UserRepository', () => {
 
       await repository.endAllOrgEnrollments(user.id);
 
-      // Stamped with an end date now, so the future start can never open a window.
+      // The window is closed and still valid: the start was pulled back ahead of the stamped end,
+      // since the table CHECKs enrollmentStart < enrollmentEnd.
       expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
-      expect(await readGroupEnrollmentEnd(user.id, group.id)).not.toBeNull();
+      const enrollment = await readGroupEnrollment(user.id, group.id);
+      expect(enrollment!.enrollmentEnd).not.toBeNull();
+      expect(enrollment!.enrollmentStart.getTime()).toBeLessThan(enrollment!.enrollmentEnd!.getTime());
+      expect(enrollment!.enrollmentStart.getTime()).toBeLessThan(nextWeek.getTime());
     });
 
     it('preserves the original end date on an already-ended row', async () => {
       const user = await UserFactory.create();
       const group = await GroupFactory.create();
+      const twoYearsAgo = new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000);
       const lastYear = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+      // The table CHECKs enrollmentStart < enrollmentEnd, so backdate the start too.
       await UserGroupFactory.create({
         userId: user.id,
         groupId: group.id,
         role: UserRole.STUDENT,
+        enrollmentStart: twoYearsAgo,
         enrollmentEnd: lastYear,
       });
 
       await repository.endAllOrgEnrollments(user.id);
 
-      expect((await readGroupEnrollmentEnd(user.id, group.id))?.getTime()).toBe(lastYear.getTime());
+      const enrollment = await readGroupEnrollment(user.id, group.id);
+      expect(enrollment!.enrollmentEnd?.getTime()).toBe(lastYear.getTime());
+      // The start is untouched too — LEAST only pulls back a start later than the new end.
+      expect(enrollment!.enrollmentStart.getTime()).toBe(twoYearsAgo.getTime());
     });
   });
 
