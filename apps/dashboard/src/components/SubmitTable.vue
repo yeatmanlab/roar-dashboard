@@ -184,6 +184,12 @@ async function onCellEditSave(event) {
 
   data[field] = typeof newValue === 'string' ? newValue.trim() : newValue;
 
+  // Can create user with either username or email, but not both
+  // If username is provided, generate email from it
+  if (field === 'username') {
+    data.email = `${data.username}@roar-auth.com`;
+  }
+
   await validateStudent(data);
 }
 
@@ -261,6 +267,8 @@ async function validityCheck(row) {
   } else {
     if (!_get(row, 'username')) {
       errors.push('Username is required');
+    } else if (!isUsernameValid(row['username'])) {
+      errors.push('Username is improperly formatted');
     }
   }
 
@@ -316,6 +324,14 @@ function isEmailValid(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
+
+function isUsernameValid(username) {
+  if (!username) return false;
+  // Username can only contain letters, numbers, underscores, and hyphens
+  const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+  return usernameRegex.test(username);
+}
+
 function isPasswordValid(password) {
   if (!password) return false;
   return password.length >= 6 && /[a-zA-Z]/.test(password);
