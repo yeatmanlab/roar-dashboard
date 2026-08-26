@@ -22,6 +22,19 @@ export const TASK_NAME_MAX_LENGTH = 255;
 export const TASK_DESCRIPTION_MAX_LENGTH = 1024;
 
 /**
+ * Task *variant* parameter name constraints, mirroring the API contract's
+ * TaskVariantParameterSchema (packages/api-contract/src/v1/tasks/schema.ts), which applies
+ * IDENTIFIER_WITH_UNDERSCORES server-side. Unlike taskConfig keys below, these are enforced
+ * by the backend, so a violation is a 400 rather than a style problem.
+ *
+ * Deliberately separate from TASK_PARAMETER_NAME_REGEX below despite being identical today:
+ * that one is a UI-only convention for taskConfig keys and may be relaxed without touching
+ * the contract. Sharing it would silently relax this one too.
+ */
+export const TASK_VARIANT_PARAMETER_NAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+export const TASK_VARIANT_PARAMETER_NAME_MAX_LENGTH = 255;
+
+/**
  * UI-only constraint on newly created taskConfig parameter names. Applied only to NEW
  * rows — existing backend keys are unconstrained server-side and must remain
  * loadable/editable as-is.

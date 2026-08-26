@@ -369,6 +369,65 @@ describe('CreateVariantForm — variant definition upload', () => {
     });
   });
 
+  describe('parameter names the API would reject', () => {
+    it('reports the bad key and leaves the form untouched, instead of loading and failing at submit', async () => {
+      // Before this check the upload reported success and submit went through, so the failure
+      // arrived as an opaque backend 400 — and in a batch, mixed into the summary alongside
+      // genuine 409 conflicts.
+      const wrapper = mountForm();
+      await uploadFile(wrapper, JSON.stringify([{ variantName: 'X', params: { 'scoring-version': 1 } }]));
+
+      expect(nameValue(wrapper)).toBe('');
+      expect(paramsText(wrapper)).toBe('');
+      expect(toastCalls.at(-1)).toMatchObject({
+        summary: 'Invalid variant definitions',
+        detail: expect.stringMatching(/parameter name "scoring-version" must start with a letter/),
+      });
+    });
+
+    it('never sends the invalid parameter, even if the form is submitted afterwards', async () => {
+      // Submitting the (now empty) form is still permitted — `name` is optional in the contract
+      // and an empty parameter list is valid — so the guarantee worth asserting is that the
+      // rejected key cannot reach the API, not that submit is blocked.
+      const wrapper = mountForm();
+      await uploadFile(wrapper, JSON.stringify([{ variantName: 'X', params: { 'scoring-version': 1 } }]));
+
+      await wrapper.find('form').trigger('submit');
+      await flushAsync();
+
+      const sent = mockAddVariant.mock.calls.flatMap(([payload]) => payload.body.parameters ?? []);
+      expect(sent).toEqual([]);
+    });
+  });
+
+  describe('duplicate names in one file', () => {
+    const DUPLICATES = JSON.stringify([
+      { variantName: 'English-v7', params: { lng: 'en', n: 1 } },
+      { variantName: 'English-v7', params: { lng: 'en', n: 2 } },
+    ]);
+
+    it('is rejected at upload, so the picker can never silently lose the second entry', async () => {
+      // The picker tracks created names case-insensitively, so without this rejection creating
+      // the first entry would drop both from the picker and the second would never be attempted.
+      const wrapper = mountForm();
+      await uploadFile(wrapper, DUPLICATES);
+
+      expect(nameValue(wrapper)).toBe('');
+      expect(paramsText(wrapper)).toBe('');
+      expect(toastCalls.at(-1)).toMatchObject({
+        summary: 'Invalid variant definitions',
+        detail: expect.stringMatching(/2 variants named "English-v7"/),
+      });
+    });
+
+    it('offers no picker options for a rejected file', async () => {
+      const wrapper = mountForm();
+      await uploadFile(wrapper, DUPLICATES);
+
+      expect(wrapper.find('[data-testid="dropdown-Variant to create"]').exists()).toBe(false);
+    });
+  });
+
   describe('status', () => {
     it('submits the status the definition declares, not the default', async () => {
       const wrapper = mountForm();

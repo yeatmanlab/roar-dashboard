@@ -83,6 +83,66 @@ describe('parseVariantDefinitions', () => {
     });
   });
 
+  describe('duplicate variant names', () => {
+    const dupes = (n, name = 'English-v7') =>
+      JSON.stringify(Array.from({ length: n }, () => ({ variantName: name, params: { lng: 'en' } })));
+
+    it('rejects two entries claiming the same name', () => {
+      // Unsatisfiable, not merely redundant: task_variants is unique on (taskId, lower(name)),
+      // and this upload targets one task.
+      expect(() => parseVariantDefinitions(dupes(2))).toThrow(
+        /This file has 2 variants named "English-v7"\. A task cannot have two variants with the same name/,
+      );
+    });
+
+    it.each([2, 3, 5, 11])('reports the actual number of clashing entries (%i)', (n) => {
+      expect(() => parseVariantDefinitions(dupes(n))).toThrow(new RegExp(`has ${n} variants named`));
+    });
+
+    it('treats names differing only by case as the same, listing both spellings', () => {
+      const text = JSON.stringify([
+        { variantName: 'English-v7', params: { lng: 'en' } },
+        { variantName: 'english-v7', params: { lng: 'en' } },
+      ]);
+      expect(() => parseVariantDefinitions(text)).toThrow(/differ only by case: "English-v7", "english-v7"/);
+    });
+
+    it('catches a duplicate that is only equal after trimming', () => {
+      const text = JSON.stringify([
+        { variantName: 'English-v7', params: { lng: 'en' } },
+        { variantName: '  English-v7  ', params: { lng: 'en' } },
+      ]);
+      expect(() => parseVariantDefinitions(text)).toThrow(/2 variants named "English-v7"/);
+    });
+
+    it('accepts distinct names for the same task', () => {
+      const text = JSON.stringify([
+        { variantName: 'English-Fixed-v3', params: { lng: 'en' } },
+        { variantName: 'English-Adaptive-v5', params: { lng: 'en' } },
+      ]);
+      expect(parseVariantDefinitions(text)).toHaveLength(2);
+    });
+
+    it('reports a cross-task file as cross-task, not as a duplicate name', () => {
+      // The same name under two tasks is legal in the database; the reason to reject is that the
+      // form cannot create for two tasks. That is the more useful message.
+      const text = JSON.stringify([
+        { variantName: 'Default', params: { lng: 'en' } },
+        { variantName: 'Default', params: { lng: 'es' } },
+      ]);
+      expect(() => parseVariantDefinitions(text)).toThrow(/belong to different tasks/);
+    });
+
+    it('reports a per-entry problem as itself, not as a spurious duplicate', () => {
+      // Both names are invalid and identical; the useful error is the type problem.
+      const text = JSON.stringify([
+        { variantName: 5, params: { lng: 'en' } },
+        { variantName: 5, params: { lng: 'en' } },
+      ]);
+      expect(() => parseVariantDefinitions(text)).toThrow(/"variantName" must be a non-empty string/);
+    });
+  });
+
   describe('null and empty values', () => {
     it('drops null and undefined params, matching the seed', () => {
       // A parameter with no value is not a configuration choice, and nulls are common in
@@ -108,6 +168,65 @@ describe('parseVariantDefinitions', () => {
     it('rejects a non-empty nested array', () => {
       const text = variant({ variantName: 'Nested', params: { blocks: [1, 2] } });
       expect(() => parseVariantDefinitions(text)).toThrow(/Variant: parameter "blocks" is a nested array/);
+    });
+  });
+
+  describe('parameter name validation', () => {
+    it('rejects a hyphenated parameter name, naming the offending key', () => {
+      // The contract applies IDENTIFIER_WITH_UNDERSCORES to variant parameter names, so this
+      // would otherwise load "successfully" and fail as an opaque 400 at submit time.
+      expect(() => parseVariantDefinitions(variant({ variantName: 'X', params: { 'scoring-version': 7 } }))).toThrow(
+        /parameter name "scoring-version" must start with a letter/,
+      );
+    });
+
+    it('rejects a parameter name starting with a digit', () => {
+      expect(() => parseVariantDefinitions(variant({ variantName: 'X', params: { '2ndAttempt': 1 } }))).toThrow(
+        /parameter name "2ndAttempt" must start with a letter/,
+      );
+    });
+
+    it.each([
+      ['a space', 'scoring version'],
+      ['a dot', 'scoring.version'],
+      ['an accent', 'dígito'],
+      ['empty', ''],
+    ])('rejects %s', (_label, key) => {
+      expect(() => parseVariantDefinitions(variant({ variantName: 'X', params: { [key]: 1 } }))).toThrow(
+        /must start with a letter and contain only letters, numbers, and underscores/,
+      );
+    });
+
+    it('accepts underscores, digits and mixed case', () => {
+      const text = variant({ variantName: 'X', params: { scoring_version_2: 1, isAdaptive: true, N: 3 } });
+      expect(parseVariantDefinitions(text)[0].rows.map((r) => r.name)).toEqual([
+        'scoring_version_2',
+        'isAdaptive',
+        'N',
+      ]);
+    });
+
+    it('rejects a name over the length limit', () => {
+      const text = variant({ variantName: 'X', params: { [`a${'b'.repeat(255)}`]: 1 } });
+      expect(() => parseVariantDefinitions(text)).toThrow(/must be 255 characters or fewer/);
+    });
+
+    it('does not name-check a dropped parameter, since it never reaches the API', () => {
+      // Real definitions carry nulls and empty containers under keys that were never intended
+      // as parameters; rejecting those would block a file the API would accept.
+      const text = variant({
+        variantName: 'X',
+        params: { 'legacy-key': null, 'another-bad': {}, 'third-bad': [], keep: 1 },
+      });
+      expect(parseVariantDefinitions(text)[0].rows).toEqual([{ name: 'keep', type: 'number', value: 1, isNew: true }]);
+    });
+
+    it('labels the offending entry in a batch', () => {
+      const text = JSON.stringify([
+        { variantName: 'Fine', params: { lng: 'en', ok: 1 } },
+        { variantName: 'Broken', params: { lng: 'en', 'not-ok': 1 } },
+      ]);
+      expect(() => parseVariantDefinitions(text)).toThrow(/Variant 2: parameter name "not-ok"/);
     });
   });
 

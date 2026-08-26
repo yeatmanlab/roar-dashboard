@@ -1,4 +1,11 @@
-import { TASK_PARAMETER_TYPES, TASK_NAME_REGEX, TASK_NAME_MAX_LENGTH, TASK_VARIANT_STATUSES } from '@/constants/tasks';
+import {
+  TASK_PARAMETER_TYPES,
+  TASK_NAME_REGEX,
+  TASK_NAME_MAX_LENGTH,
+  TASK_VARIANT_PARAMETER_NAME_REGEX,
+  TASK_VARIANT_PARAMETER_NAME_MAX_LENGTH,
+  TASK_VARIANT_STATUSES,
+} from '@/constants/tasks';
 
 /** The parameter data types the configurator (and this importer) accept. */
 const ALLOWED_TYPES = Object.values(TASK_PARAMETER_TYPES); // ['string', 'number', 'boolean']
@@ -18,6 +25,11 @@ const ALLOWED_STATUSES = Object.values(TASK_VARIANT_STATUSES); // ['draft', 'pub
  * It exists only so the configurator can render the right input, so it is inferred from the
  * value via `typeof`, which is exactly what `ALLOWED_TYPES` enumerates.
  *
+ * A kept parameter's name is validated against the contract's rule for variant parameter names,
+ * for the same reason `variantName` is: the backend enforces it, and reporting it against the file
+ * beats an opaque 400 at submit time. Dropped parameters are not name-checked — they never reach
+ * the API, so their keys cannot fail there.
+ *
  * Null and undefined values are dropped rather than imported: a parameter with no value is not
  * a configuration choice, and the platform stores only parameters with explicit values. Empty
  * objects and arrays are dropped on the same grounds — they carry no configuration and the
@@ -27,7 +39,8 @@ const ALLOWED_STATUSES = Object.values(TASK_VARIANT_STATUSES); // ['draft', 'pub
  * @param {object} params - The variant's `params` object from the file
  * @param {string} label - Prefix for error messages
  * @returns {Array<{ name: string, type: string, value: (string|number|boolean), isNew: boolean }>}
- * @throws {Error} If a value's type cannot be represented by the configurator
+ * @throws {Error} If a parameter name is one the API would reject, or a value's type cannot be
+ *   represented by the configurator
  */
 function toConfiguratorRows(params, label) {
   const rows = [];
@@ -41,6 +54,20 @@ function toConfiguratorRows(params, label) {
       throw new Error(
         `${label}: parameter "${name}" is a nested ${Array.isArray(value) ? 'array' : 'object'}, ` +
           `which the parameter configurator cannot represent. Remove it or flatten it before importing.`,
+      );
+    }
+
+    if (name.length > TASK_VARIANT_PARAMETER_NAME_MAX_LENGTH) {
+      throw new Error(
+        `${label}: parameter name "${name}" must be ${TASK_VARIANT_PARAMETER_NAME_MAX_LENGTH} characters or fewer.`,
+      );
+    }
+
+    // Mirrors the contract's IDENTIFIER_WITH_UNDERSCORES rule on variant parameter names.
+    if (!TASK_VARIANT_PARAMETER_NAME_REGEX.test(name)) {
+      throw new Error(
+        `${label}: parameter name "${name}" must start with a letter and contain only letters, ` +
+          `numbers, and underscores.`,
       );
     }
 
@@ -95,6 +122,47 @@ function assertSingleTask(entries) {
 }
 
 /**
+ * Assert no two definitions claim the same variant name.
+ *
+ * `task_variants_task_name_unique_idx` is unique on `(taskId, lower(name))`, so within the one
+ * task this upload targets a repeated name is not merely redundant — it is unsatisfiable, and the
+ * second create is guaranteed to conflict.
+ *
+ * Left unchecked it also loses data silently: the form tracks created names case-insensitively,
+ * so creating the first of two identically-named definitions drops *both* from the picker, and
+ * the second is never attempted. (The batch path does attempt both, but reports the result as a
+ * conflict, which reads as "this variant already exists" rather than "your file names it twice".)
+ *
+ * Runs on validated, trimmed names so that a per-entry problem is reported as itself rather than
+ * as a spurious duplicate.
+ *
+ * @param {Array<{ variantName: string }>} definitions - Parsed definitions
+ * @throws {Error} If two or more definitions share a name, ignoring case and surrounding space
+ */
+function assertNoDuplicateNames(definitions) {
+  const byKey = new Map();
+  for (const { variantName } of definitions) {
+    const key = variantName.toLowerCase();
+    byKey.set(key, [...(byKey.get(key) ?? []), variantName]);
+  }
+
+  for (const spellings of byKey.values()) {
+    if (spellings.length < 2) continue;
+
+    const distinct = [...new Set(spellings)];
+    const found =
+      distinct.length === 1
+        ? `${spellings.length} variants named "${distinct[0]}"`
+        : `${spellings.length} variants whose names differ only by case: ${distinct.map((n) => `"${n}"`).join(', ')}`;
+
+    throw new Error(
+      `This file has ${found}. A task cannot have two variants with the same name, so upload one ` +
+        `of them or rename the others.`,
+    );
+  }
+}
+
+/**
  * Parse and validate uploaded task-variant definitions.
  *
  * Accepts one or more variant definitions, either bare or wrapped in an array:
@@ -116,14 +184,16 @@ function assertSingleTask(entries) {
  * near-identical apart from one parameter. {@link assertSingleTask} rejects a cross-task batch;
  * several variants of one task are accepted together.
  *
- * `variantName` is validated against `TASK_NAME_REGEX` so a name the API would reject is
- * reported against the file rather than surfacing as a backend 400 after the form is filled in.
+ * `variantName` and every kept parameter name are validated against the rules the API enforces,
+ * so a name the API would reject is reported against the file rather than surfacing as a backend
+ * 400 after the form is filled in.
  *
  * @param {string} text - The raw file contents (e.g. from `FileReader.readAsText`).
  * @returns {Array<{ variantName: string, status?: string, rows: Array<{ name: string, type: string, value: (string|number|boolean), isNew: boolean }> }>}
  *   One entry per variant, in file order, each with its configurator rows and, when the
  *   definition declared one, its status.
- * @throws {Error} On invalid JSON, a cross-task file, or any invalid field.
+ * @throws {Error} On invalid JSON, a cross-task file, a repeated variant name, or any invalid
+ *   field.
  */
 export function parseVariantDefinitions(text) {
   let parsed;
@@ -149,7 +219,7 @@ export function parseVariantDefinitions(text) {
     assertSingleTask(entries);
   }
 
-  return entries.map(({ variantName, params, status }, index) => {
+  const definitions = entries.map(({ variantName, params, status }, index) => {
     const label = entries.length > 1 ? `Variant ${index + 1}` : 'Variant';
 
     if (typeof variantName !== 'string' || variantName.trim() === '') {
@@ -190,4 +260,8 @@ export function parseVariantDefinitions(text) {
       rows: toConfiguratorRows(params, label),
     };
   });
+
+  assertNoDuplicateNames(definitions);
+
+  return definitions;
 }
