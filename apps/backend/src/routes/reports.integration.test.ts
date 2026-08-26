@@ -2431,6 +2431,50 @@ describe('GET /v1/administrations/:id/reports/scores/facets', () => {
       expect(res.body.data.totalStudents).toBeGreaterThan(0);
     });
   });
+
+  describe('user.grade filter validation', () => {
+    // The contract aliases SCORE_FACETS_FILTER_FIELDS to SCORE_OVERVIEW_FILTER_FIELDS, so a
+    // filter accepted by overview must behave identically here. Facets applies user filters in
+    // JS rather than SQL (it needs the unfiltered population first), so without explicit
+    // validation the same query string that 400s on overview returned 200 with a silently
+    // wrong or empty aggregation.
+    it('returns 400 for the contains operator on the grade enum column', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreFacetsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...facetsQuery(), filter: 'user.grade:contains:1' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 400 for a value outside the grade enum', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreFacetsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...facetsQuery(), filter: 'user.grade:eq:K2' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('still accepts a valid grade filter and narrows the aggregation', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreFacetsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...facetsQuery(), filter: 'user.grade:eq:3' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.totalStudents).toBeGreaterThan(0);
+    });
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

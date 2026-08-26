@@ -53,7 +53,8 @@ import {
 } from '@roar-platform/api-contract';
 import { PROGRESS_STATUS_PRIORITY } from '../../constants/progress-status';
 import { FOUNDATIONAL_COMPOSITE_SLUGS } from '../../constants/foundational-composite';
-import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
+import { assertFiltersSupported, buildFilterConditions } from '../../utils/build-filter-conditions.util';
+import { assertUnreachable } from '../../utils/assert-unreachable.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
@@ -144,6 +145,23 @@ const GRADE_AWARE_FIELDS: ReadonlySet<string> = new Set(['user.grade']);
 const SCORE_OVERVIEW_USER_FILTER_FIELDS: Record<string, PgColumn> = {
   'user.grade': users.grade,
 };
+
+/**
+ * Filter fields the score facets endpoint applies to students.
+ *
+ * The contract aliases `SCORE_FACETS_FILTER_FIELDS` to `SCORE_OVERVIEW_FILTER_FIELDS`, so the
+ * same map serves both endpoints. Named separately so that splitting the contract's alias has an
+ * obvious place to land here.
+ */
+const SCORE_FACETS_USER_FILTER_FIELDS: Record<string, PgColumn> = SCORE_OVERVIEW_USER_FILTER_FIELDS;
+
+/**
+ * The one facets filter field `studentMatchesUserFilter` knows how to apply.
+ *
+ * Kept next to the map above so the two are read together: a field added to the map without a
+ * predicate here throws rather than silently matching no students.
+ */
+const FACETS_GRADE_FILTER_FIELD = 'user.grade';
 
 /**
  * Map sortBy field strings to Drizzle column references for student scores.
@@ -851,11 +869,16 @@ export function ReportService({
       const scoreRows = await reportRepository.getCompletedRunScores(administrationId, studentIds, taskVariantIds);
       const scoresByStudentTask = buildScoreLookup(scoreRows);
 
-      // 7. Apply user-level filters in JS. The contract restricts userFilters
-      //    to `user.grade` (via `SCORE_FACETS_FILTER_FIELDS`), so the JS
-      //    predicate only needs to handle that field — defensive default
-      //    rejects unknown fields if they somehow slip through.
+      // 7. Apply user-level filters in JS. This endpoint needs the unfiltered
+      //    population for `totalStudents`, so the filter cannot be pushed into
+      //    the SQL that fetched it. Validate through the same guard the SQL
+      //    paths use, or a filter the contract advertises for both would 400 on
+      //    overview and return a silently wrong aggregation here.
       const userFilters = filter.filter((f) => f.field !== 'taskId');
+      assertFiltersSupported(userFilters, SCORE_FACETS_USER_FILTER_FIELDS, {
+        gradeAwareFields: GRADE_AWARE_FIELDS,
+      });
+
       const filteredStudents =
         userFilters.length > 0
           ? students.filter((s) => userFilters.every((f) => studentMatchesUserFilter(s, f)))
@@ -2509,7 +2532,14 @@ function assignBin(value: number, bins: { binStart: number; binEnd: number }[]):
  *   the SQL path which throws when `getGradesInRange` returns null
  */
 function studentMatchesUserFilter(student: StudentOverviewRow, filter: ParsedFilter): boolean {
-  if (filter.field !== 'user.grade') return false;
+  if (filter.field !== FACETS_GRADE_FILTER_FIELD) {
+    // `assertFiltersSupported` has already rejected anything outside
+    // SCORE_FACETS_USER_FILTER_FIELDS, so reaching here means the contract grew a field this
+    // predicate never learned to apply. Returning false would silently empty the aggregation
+    // for every student, which reads as a legitimate zero-state.
+    throw new Error(`No facets filter predicate for field: ${filter.field}`);
+  }
+
   const grade = student.grade;
   if (grade === null) return false;
 
@@ -2525,6 +2555,9 @@ function studentMatchesUserFilter(student: StudentOverviewRow, filter: ParsedFil
         .filter((v) => v.length > 0)
         .includes(grade);
     case 'contains':
+      // Unreachable for the enum-backed grade column — `assertFiltersSupported` rejects
+      // `contains` against it. Kept so the switch stays exhaustive over the contract's
+      // operator union, and correct if a text-backed field is ever added here.
       return grade.toLowerCase().includes(filter.value.toLowerCase());
     case 'gte':
     case 'lte': {
@@ -2538,7 +2571,9 @@ function studentMatchesUserFilter(student: StudentOverviewRow, filter: ParsedFil
       return allowed.includes(grade);
     }
     default:
-      return false;
+      // A new operator in the contract's union is a build failure here rather than a filter
+      // that silently matches nothing.
+      return assertUnreachable(filter.operator, `Unsupported facets filter operator: ${filter.operator}`);
   }
 }
 

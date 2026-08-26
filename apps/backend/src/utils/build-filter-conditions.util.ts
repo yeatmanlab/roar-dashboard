@@ -66,22 +66,8 @@ export function buildFilterConditions(
   const conditions: SQL[] = [];
 
   for (const filter of filters) {
-    const column = allowedFields[filter.field];
-    if (!column) {
-      throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: {
-          field: filter.field,
-          allowedFields: Object.keys(allowedFields),
-          reason: 'Filter field is not in the allowed set',
-        },
-      });
-    }
-
-    const isGradeAware = options?.gradeAwareFields?.has(filter.field) ?? false;
-    const condition = buildOperatorCondition(column, filter.field, filter.operator, filter.value, isGradeAware);
-    conditions.push(condition);
+    const { column, isGradeAware } = resolveValidatedColumn(filter, allowedFields, options);
+    conditions.push(buildOperatorCondition(column, filter.operator, filter.value, isGradeAware));
   }
 
   if (conditions.length === 1) return conditions[0]!;
@@ -164,6 +150,94 @@ function assertColumnAcceptsFilter(
 }
 
 /**
+ * Splits a filter's raw value into the discrete values it will be compared against.
+ *
+ * Only `in` carries multiple values. Empty segments are dropped so `'3,,4'` compares against
+ * two grades rather than three, one of which is the empty string.
+ *
+ * @param operator - The filter's operator
+ * @param value - The filter's raw value
+ * @returns The values the expression compares against
+ */
+function splitFilterValues(operator: ParsedFilter['operator'], value: string): string[] {
+  return operator === 'in'
+    ? value
+        .split(',')
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0)
+    : [value];
+}
+
+/**
+ * Resolves a filter's column and validates the expression against it.
+ *
+ * The single place where a filter is checked against the allowed field set and the column's
+ * Postgres type, so every caller enforces the same rule.
+ *
+ * @param filter - The parsed filter expression
+ * @param allowedFields - Field-name-to-column map for the endpoint
+ * @param options - Grade-aware field set
+ * @returns The resolved column and whether the field uses grade-aware range semantics
+ * @throws {ApiError} BAD_REQUEST if the field is not allowed, or the column cannot evaluate the expression
+ */
+function resolveValidatedColumn(
+  filter: ParsedFilter,
+  allowedFields: FilterFieldMap,
+  options?: FilterBuildOptions,
+): { column: PgColumn; isGradeAware: boolean } {
+  const column = allowedFields[filter.field];
+  if (!column) {
+    throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      context: {
+        field: filter.field,
+        allowedFields: Object.keys(allowedFields),
+        reason: 'Filter field is not in the allowed set',
+      },
+    });
+  }
+
+  const isGradeAware = options?.gradeAwareFields?.has(filter.field) ?? false;
+  assertColumnAcceptsFilter(
+    column,
+    filter.field,
+    filter.operator,
+    splitFilterValues(filter.operator, filter.value),
+    isGradeAware,
+  );
+
+  return { column, isGradeAware };
+}
+
+/**
+ * Validates filter expressions without building SQL from them.
+ *
+ * For endpoints that apply a filter in application code rather than in a `WHERE` clause, and so
+ * have no `buildFilterConditions` call to validate through. The score facets endpoint is the case
+ * that motivated this: it needs the unfiltered population to report `totalStudents`, so it
+ * materialises every student and filters in JS afterwards.
+ *
+ * Routing those endpoints through the same guard is what keeps them from drifting. A filter the
+ * contract advertises for both is then accepted or rejected identically whichever path serves it,
+ * instead of one returning 400 and the other a silently wrong aggregation.
+ *
+ * @param filters - Parsed filter expressions to validate
+ * @param allowedFields - Field-name-to-column map for the endpoint
+ * @param options - Grade-aware field set
+ * @throws {ApiError} BAD_REQUEST if any filter is not allowed or its column cannot evaluate it
+ */
+export function assertFiltersSupported(
+  filters: ParsedFilter[],
+  allowedFields: FilterFieldMap,
+  options?: FilterBuildOptions,
+): void {
+  for (const filter of filters) {
+    resolveValidatedColumn(filter, allowedFields, options);
+  }
+}
+
+/**
  * Builds a single Drizzle SQL condition for one filter expression.
  *
  * @param column - The Drizzle column to filter on
@@ -176,20 +250,12 @@ function assertColumnAcceptsFilter(
  */
 function buildOperatorCondition(
   column: PgColumn,
-  field: string,
   operator: ParsedFilter['operator'],
   value: string,
   gradeAware: boolean,
 ): SQL {
-  const values =
-    operator === 'in'
-      ? value
-          .split(',')
-          .map((v) => v.trim())
-          .filter((v) => v.length > 0)
-      : [value];
-
-  assertColumnAcceptsFilter(column, field, operator, values, gradeAware);
+  // Already validated by `resolveValidatedColumn`.
+  const values = splitFilterValues(operator, value);
 
   switch (operator) {
     case 'eq':

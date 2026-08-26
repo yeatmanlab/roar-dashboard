@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { FilterFieldMap } from './build-filter-conditions.util';
-import { buildFilterConditions } from './build-filter-conditions.util';
+import { assertFiltersSupported, buildFilterConditions } from './build-filter-conditions.util';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import type { ParsedFilter } from '../types/filter';
 import { users } from '../db/schema';
@@ -270,5 +270,76 @@ describe('buildFilterConditions', () => {
         }),
       );
     });
+  });
+});
+
+describe('assertFiltersSupported', () => {
+  const gradeAwareOptions = { gradeAwareFields: new Set(['user.grade']) };
+
+  /**
+   * The point of this entry point is that it cannot drift from the SQL path, so the tests assert
+   * agreement rather than restating the rules. Anything `buildFilterConditions` rejects must be
+   * rejected here, and anything it accepts must be accepted here.
+   */
+  const CASES: ReadonlyArray<{ label: string; filter: ParsedFilter }> = [
+    { label: 'contains on an enum column', filter: { field: 'user.grade', operator: 'contains', value: '1' } },
+    { label: 'eq outside the enum', filter: { field: 'user.grade', operator: 'eq', value: 'K2' } },
+    { label: 'neq outside the enum', filter: { field: 'user.grade', operator: 'neq', value: 'K2' } },
+    { label: 'in with one bad member', filter: { field: 'user.grade', operator: 'in', value: '3,K2' } },
+    { label: 'eq on a malformed uuid', filter: { field: 'user.id', operator: 'eq', value: 'not-a-uuid' } },
+    { label: 'an unknown field', filter: { field: 'user.nope', operator: 'eq', value: '3' } },
+    { label: 'eq inside the enum', filter: { field: 'user.grade', operator: 'eq', value: '3' } },
+    { label: 'in with all good members', filter: { field: 'user.grade', operator: 'in', value: '3,4' } },
+    { label: 'contains on a text column', filter: { field: 'user.firstName', operator: 'contains', value: 'ab' } },
+    { label: 'grade-aware gte outside the enum', filter: { field: 'user.grade', operator: 'gte', value: '14' } },
+    { label: 'eq on a valid uuid', filter: { field: 'user.id', operator: 'eq', value: VALID_UUID } },
+  ];
+
+  it.each(CASES)('agrees with buildFilterConditions on $label', ({ filter }) => {
+    const sqlThrew = (() => {
+      try {
+        buildFilterConditions([filter], TEST_FIELD_MAP, gradeAwareOptions);
+        return false;
+      } catch {
+        return true;
+      }
+    })();
+
+    const assertThrew = (() => {
+      try {
+        assertFiltersSupported([filter], TEST_FIELD_MAP, gradeAwareOptions);
+        return false;
+      } catch {
+        return true;
+      }
+    })();
+
+    expect(assertThrew).toBe(sqlThrew);
+  });
+
+  it('throws the same 400 shape the SQL path throws', () => {
+    // Parity of outcome is not enough — the facets endpoint surfaces this error to the client,
+    // so the status and code have to match too.
+    const filter: ParsedFilter = { field: 'user.grade', operator: 'contains', value: '1' };
+
+    expect(() => assertFiltersSupported([filter], TEST_FIELD_MAP, gradeAwareOptions)).toThrowError(
+      expect.objectContaining({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      }),
+    );
+  });
+
+  it('accepts an empty filter list', () => {
+    expect(() => assertFiltersSupported([], TEST_FIELD_MAP)).not.toThrow();
+  });
+
+  it('validates every filter, not just the first', () => {
+    const filters: ParsedFilter[] = [
+      { field: 'user.grade', operator: 'eq', value: '3' },
+      { field: 'user.grade', operator: 'eq', value: 'K2' },
+    ];
+
+    expect(() => assertFiltersSupported(filters, TEST_FIELD_MAP, gradeAwareOptions)).toThrow();
   });
 });
