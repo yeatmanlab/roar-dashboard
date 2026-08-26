@@ -483,6 +483,36 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
     });
   });
 
+  describe('user.grade filter validation', () => {
+    it('returns 400 for the contains operator on the grade enum column', async () => {
+      // `contains` compiles to ILIKE, which has no operator against app.grade. The
+      // contract advertises the operator for user.grade, so this is well-formed input.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...defaultQuery(), filter: 'user.grade:contains:1' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 400 for a value outside the grade enum', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...defaultQuery(), filter: 'user.grade:eq:K2' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+  });
+
   describe('progress status sort and filter', () => {
     it('returns 200 when sorting by progress.<taskId>.status', async () => {
       authenticateAs(tiers.superAdmin);
@@ -2401,6 +2431,50 @@ describe('GET /v1/administrations/:id/reports/scores/facets', () => {
       expect(res.body.data.totalStudents).toBeGreaterThan(0);
     });
   });
+
+  describe('user.grade filter validation', () => {
+    // The contract aliases SCORE_FACETS_FILTER_FIELDS to SCORE_OVERVIEW_FILTER_FIELDS, so a
+    // filter accepted by overview must behave identically here. Facets applies user filters in
+    // JS rather than SQL (it needs the unfiltered population first), so without explicit
+    // validation the same query string that 400s on overview returned 200 with a silently
+    // wrong or empty aggregation.
+    it('returns 400 for the contains operator on the grade enum column', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreFacetsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...facetsQuery(), filter: 'user.grade:contains:1' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 400 for a value outside the grade enum', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreFacetsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...facetsQuery(), filter: 'user.grade:eq:K2' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('still accepts a valid grade filter and narrows the aggregation', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreFacetsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...facetsQuery(), filter: 'user.grade:eq:3' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.totalStudents).toBeGreaterThan(0);
+    });
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -3666,6 +3740,28 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
         })
         .set('Authorization', 'Bearer token');
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('rejects a user.grade filter the column type cannot evaluate with 400', async () => {
+      // Asserted on a task that reaches the query builder: with an unconfigured task
+      // this endpoint returns 400 before any filter is inspected, so the same
+      // assertion elsewhere would pass without exercising the guard at all.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, phonicsTaskId))
+        .query({
+          scopeType: 'district',
+          scopeId: baseFixture.district.id,
+          page: 1,
+          perPage: 25,
+          filter: 'user.grade:contains:1',
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
     });
   });
 });
