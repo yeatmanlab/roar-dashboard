@@ -296,6 +296,21 @@ describe('UserRepository', () => {
   });
 
   describe('endAllOrgEnrollments', () => {
+    /**
+     * Read a user_groups row's raw enrollmentEnd. No repository method exposes it — the membership
+     * getters are all active-only — and these tests assert on the stamped date itself.
+     */
+    const readGroupEnrollmentEnd = async (userId: string, groupId: string) => {
+      const { CoreDbClient } = await import('../db/clients');
+      const { userGroups } = await import('../db/schema');
+      const { and, eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select({ enrollmentEnd: userGroups.enrollmentEnd })
+        .from(userGroups)
+        .where(and(eq(userGroups.userId, userId), eq(userGroups.groupId, groupId)));
+      return row?.enrollmentEnd ?? null;
+    };
+
     it('ends every active org, class, and group enrollment but leaves the family membership active', async () => {
       const user = await UserFactory.create();
       const family = await FamilyFactory.create();
@@ -323,6 +338,60 @@ describe('UserRepository', () => {
 
       await expect(repository.endAllOrgEnrollments(user.id)).resolves.toBeUndefined();
       expect(await repository.getUserEntityMemberships(user.id)).toHaveLength(0);
+    });
+
+    it('ends a row whose enrollmentEnd is in the future', async () => {
+      // Active per isEnrollmentActive, but not open-ended — matching only `enrollmentEnd IS NULL`
+      // left it in place, and the FGA backfill would re-derive a currently-valid grant from it.
+      const user = await UserFactory.create();
+      const group = await GroupFactory.create();
+      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+        enrollmentEnd: nextWeek,
+      });
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(1);
+
+      await repository.endAllOrgEnrollments(user.id);
+
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
+    });
+
+    it('ends a row whose enrollmentStart is in the future', async () => {
+      // Not active yet, so it would have become active after the unenroll.
+      const user = await UserFactory.create();
+      const group = await GroupFactory.create();
+      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: nextWeek,
+      });
+
+      await repository.endAllOrgEnrollments(user.id);
+
+      // Stamped with an end date now, so the future start can never open a window.
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
+      expect(await readGroupEnrollmentEnd(user.id, group.id)).not.toBeNull();
+    });
+
+    it('preserves the original end date on an already-ended row', async () => {
+      const user = await UserFactory.create();
+      const group = await GroupFactory.create();
+      const lastYear = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+        enrollmentEnd: lastYear,
+      });
+
+      await repository.endAllOrgEnrollments(user.id);
+
+      expect((await readGroupEnrollmentEnd(user.id, group.id))?.getTime()).toBe(lastYear.getTime());
     });
   });
 
