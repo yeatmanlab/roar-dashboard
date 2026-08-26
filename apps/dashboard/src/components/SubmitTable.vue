@@ -324,7 +324,7 @@ function isUsernameValid(username) {
   // Username can only contain letters, numbers, underscores, hyphens, and periods
   // Must start and end with alphanumeric characters
   // No consecutive special characters
-  const usernameRegex = /^[a-zA-Z0-9]+([_.-]?[a-zA-Z0-9]+)*$/;
+  const usernameRegex = /^[a-zA-Z0-9]+(?:[_.-][a-zA-Z0-9]+)*$/;
   return usernameRegex.test(username);
 }
 
