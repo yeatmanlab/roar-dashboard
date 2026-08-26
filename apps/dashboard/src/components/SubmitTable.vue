@@ -184,12 +184,6 @@ async function onCellEditSave(event) {
 
   data[field] = typeof newValue === 'string' ? newValue.trim() : newValue;
 
-  // Can create user with either username or email, but not both
-  // If username is provided, generate email from it
-  if (field === 'username') {
-    data.email = `${data.username}@roar-auth.com`;
-  }
-
   await validateStudent(data);
 }
 
@@ -327,8 +321,10 @@ function isEmailValid(email) {
 
 function isUsernameValid(username) {
   if (!username) return false;
-  // Username can only contain letters, numbers, underscores, and hyphens
-  const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+  // Username can only contain letters, numbers, underscores, hyphens, and periods
+  // Must start and end with alphanumeric characters
+  // No consecutive special characters
+  const usernameRegex = /^[a-zA-Z0-9]+([_.-]?[a-zA-Z0-9]+)*$/;
   return usernameRegex.test(username);
 }
 
