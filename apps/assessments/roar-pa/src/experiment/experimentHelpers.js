@@ -9,6 +9,7 @@ import { camelize } from '@bdelab/roar-utils';
 import { pa } from '@roar-platform/assessment-schema';
 import { jsPsych } from './jsPsych';
 import { mediaAssets, paValidityEvaluator } from './experiment';
+import { unlockAssessmentAudio } from './audioLifecycle';
 import './i18n';
 import irtHyperparameters from './config/corpus/en/irt_hyperparameters.csv';
 
@@ -386,12 +387,32 @@ export const audioSetup = {
     displayElement.innerHTML = `<h1> ${i18next.t('audioSetup')} </h1> 
       <img draggable="false" class="instructionCanvasNS" src="${mediaAssets.images.goBlink}" alt="canvas 1">`;
 
-    function initAudioFiles() {
-      jsPsych.pluginAPI.audioContext();
+    let audioSetupComplete = false;
+    let initAudioFiles;
+
+    function completeAudioSetup() {
+      if (audioSetupComplete) return;
+
+      audioSetupComplete = true;
+      document.removeEventListener('pointerup', initAudioFiles);
+      document.removeEventListener('touchend', initAudioFiles);
+      document.removeEventListener('click', initAudioFiles);
       done();
     }
 
-    document.addEventListener('click', initAudioFiles, { once: true });
+    initAudioFiles = async () => {
+      if (audioSetupComplete) return;
+
+      const audioUnlocked = await unlockAssessmentAudio();
+
+      if (audioUnlocked) {
+        completeAudioSetup();
+      }
+    };
+
+    document.addEventListener('pointerup', initAudioFiles);
+    document.addEventListener('touchend', initAudioFiles);
+    document.addEventListener('click', initAudioFiles);
 
     // Hide sentry feedback report button
     if (sentryFeedback) {
