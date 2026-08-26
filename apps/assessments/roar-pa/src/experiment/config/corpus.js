@@ -8,7 +8,7 @@ import { standardizeItemComponent } from '../experimentHelpers';
 const { PA_TRIAL_TYPES, PA_CATS, PA_CORPUS_TYPES } = pa;
 
 export function processCSV(config = {}) {
-  const { isAdaptive, numTestItems } = config;
+  const { isAdaptive, numTestItems, userMode } = config;
   const csvAssets = {
     test: isAdaptive
       ? corpusTranslations[i18next.language].testCatFoundational
@@ -129,7 +129,7 @@ export function processCSV(config = {}) {
     ),
   };
 
-  if (i18next.language === 'es') {
+  if (userMode === "random") {
     corpus.test_FSM = _shuffle(corpus.test_FSM);
     corpus.test_LSM = _shuffle(corpus.test_LSM);
     corpus.test_DEL = _shuffle(corpus.test_DEL);
