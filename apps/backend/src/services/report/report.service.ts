@@ -2518,9 +2518,15 @@ function assignBin(value: number, bins: { binStart: number; binEnd: number }[]):
 /**
  * JS-side filter predicate. The contract restricts user filters on the
  * facets endpoint to `user.grade` (via `SCORE_FACETS_FILTER_FIELDS`), so
- * this only needs to handle that field — defensive default rejects
- * unknowns. Mirrors the SQL semantics in `buildFilterConditions` /
- * `getGradesInRange` so a request returning row R via this endpoint
+ * this only needs to handle that field — an unhandled field or operator
+ * *throws* rather than returning false, because silently matching no
+ * students would surface as a legitimate zero-state aggregation.
+ *
+ * Whether the filter is valid at all is not this function's concern:
+ * `assertFiltersSupported` has already applied the same field and
+ * column-type checks the SQL paths go through. What remains here is
+ * matching the SQL *matching* semantics in `buildFilterConditions` /
+ * `getGradesInRange`, so a request returning row R via this endpoint
  * also returns row R via the overview / students endpoints when the same
  * `user.grade` filter is applied.
  *
@@ -2528,8 +2534,11 @@ function assignBin(value: number, bins: { binStart: number; binEnd: number }[]):
  * - `in` drops empty values after trim, matching `buildOperatorCondition`
  *   which uses `inArray` with the empties filtered out
  * - invalid `gte`/`lte` reference grades (e.g., `Foobar`) throw
- *   `BAD_REQUEST` rather than silently dropping every student — matches
- *   the SQL path which throws when `getGradesInRange` returns null
+ *   `BAD_REQUEST` rather than silently dropping every student — matching
+ *   the SQL path, which throws when `getGradesInRange` returns null. One
+ *   asymmetry remains: this throw is reached per student and only after the
+ *   null-grade short-circuit above, so an invalid reference goes unreported
+ *   when every student in scope has a null grade.
  */
 function studentMatchesUserFilter(student: StudentOverviewRow, filter: ParsedFilter): boolean {
   if (filter.field !== FACETS_GRADE_FILTER_FIELD) {
