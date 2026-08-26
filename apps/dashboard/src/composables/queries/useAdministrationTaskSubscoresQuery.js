@@ -15,7 +15,67 @@ const MAX_RETRIES = 3;
  * pagination and aggregates every page into a single result (mirrors
  * `useAdministrationScoreStudentsQuery`).
  */
-const SUBSCORES_PER_PAGE = 100;
+export const SUBSCORES_PER_PAGE = 100;
+
+export const getAdministrationTaskSubscoresQueryKey = (administrationId, taskId, scopeType, scopeId) => [
+  ADMINISTRATION_TASK_SUBSCORES_QUERY_KEY,
+  administrationId,
+  taskId,
+  scopeType,
+  scopeId,
+];
+
+export const shouldRetryAdministrationTaskSubscoresQuery = (failureCount, error) => {
+  if (isRosteringEndedError(error) || isTerminalAuthError(error) || error?.status === StatusCodes.BAD_REQUEST) {
+    return false;
+  }
+  return failureCount < MAX_RETRIES;
+};
+
+export const fetchAdministrationTaskSubscores = async ({ administrationId, taskId, scopeType, scopeId }) => {
+  const client = getRoarApiClient();
+  const students = [];
+  let task;
+  let subscoreColumns = [];
+  let pagination;
+  let page = 1;
+  let totalPages = 1;
+
+  // Follow the response's pagination so a scope that outgrows one page is
+  // fetched completely rather than silently truncated.
+  do {
+    const result = await client.administrations.scoreReports.listTaskSubscores({
+      params: { id: toValue(administrationId), taskId: toValue(taskId) },
+      query: {
+        page,
+        perPage: SUBSCORES_PER_PAGE,
+        scopeType: toValue(scopeType),
+        scopeId: toValue(scopeId),
+      },
+    });
+
+    if (result.status !== StatusCodes.OK) {
+      // Non-200 ts-rest results are surfaced as thrown errors so TanStack routes
+      // them through `error`. The thrown shape carries the ts-rest response so
+      // downstream error handlers can introspect it.
+      const error = new Error(`Failed to fetch task subscores with status ${result.status}`);
+      error.status = result.status;
+      error.body = result.body;
+      throw error;
+    }
+
+    // Unwrap the success envelope: { data: { task, subscoreColumns, items, pagination } }.
+    // task/subscoreColumns are identical across pages — keep the latest.
+    students.push(...result.body.data.items);
+    task = result.body.data.task;
+    subscoreColumns = result.body.data.subscoreColumns;
+    pagination = result.body.data.pagination;
+    totalPages = result.body.data.pagination.totalPages;
+    page += 1;
+  } while (page <= totalPages);
+
+  return { task, subscoreColumns, students, pagination };
+};
 
 /**
  * Administration per-task subscores query.
@@ -67,62 +127,14 @@ const useAdministrationTaskSubscoresQuery = (
   const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
-    queryKey: [ADMINISTRATION_TASK_SUBSCORES_QUERY_KEY, administrationId, taskId, scopeType, scopeId],
-    queryFn: async () => {
-      const client = getRoarApiClient();
-      const students = [];
-      let task;
-      let subscoreColumns = [];
-      let pagination;
-      let page = 1;
-      let totalPages = 1;
-
-      // Follow the response's pagination so a scope that outgrows one page is
-      // fetched completely rather than silently truncated.
-      do {
-        const result = await client.administrations.scoreReports.listTaskSubscores({
-          params: { id: toValue(administrationId), taskId: toValue(taskId) },
-          query: {
-            page,
-            perPage: SUBSCORES_PER_PAGE,
-            scopeType: toValue(scopeType),
-            scopeId: toValue(scopeId),
-          },
-        });
-
-        if (result.status !== StatusCodes.OK) {
-          // Non-200 ts-rest results are surfaced as thrown errors so TanStack routes
-          // them through `error`. The thrown shape carries the ts-rest response so
-          // downstream error handlers can introspect it.
-          const error = new Error(`Failed to fetch task subscores with status ${result.status}`);
-          error.status = result.status;
-          error.body = result.body;
-          throw error;
-        }
-
-        // Unwrap the success envelope: { data: { task, subscoreColumns, items, pagination } }.
-        // task/subscoreColumns are identical across pages — keep the latest.
-        students.push(...result.body.data.items);
-        task = result.body.data.task;
-        subscoreColumns = result.body.data.subscoreColumns;
-        pagination = result.body.data.pagination;
-        totalPages = result.body.data.pagination.totalPages;
-        page += 1;
-      } while (page <= totalPages);
-
-      return { task, subscoreColumns, students, pagination };
-    },
+    queryKey: getAdministrationTaskSubscoresQueryKey(administrationId, taskId, scopeType, scopeId),
+    queryFn: () => fetchAdministrationTaskSubscores({ administrationId, taskId, scopeType, scopeId }),
     ...options,
     enabled: isQueryEnabled,
     // Terminal auth, rostering-ended, and 400 (task has no subscore schema /
     // invalid request) are not transient — retrying just delays the error UX.
     // Placed after `...options` so a caller-supplied `retry` can't override it.
-    retry: (failureCount, error) => {
-      if (isRosteringEndedError(error) || isTerminalAuthError(error) || error?.status === StatusCodes.BAD_REQUEST) {
-        return false;
-      }
-      return failureCount < MAX_RETRIES;
-    },
+    retry: shouldRetryAdministrationTaskSubscoresQuery,
   });
 };
 

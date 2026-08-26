@@ -1,6 +1,6 @@
 import { eq, and, or, isNull, inArray, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup, NewUserFamily } from '../db/schema';
+import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup } from '../db/schema';
 import { EntityType } from '../types/entity-type';
 import type { UserMembershipDetail } from '../types/user';
 import type { UserFamilyRole } from '../enums/user-family-role.enum';
@@ -9,6 +9,7 @@ import { CoreDbClient } from '../db/clients';
 import type { CoreTransaction } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { UserRole } from '../enums/user-role.enum';
+import { OrgType } from '../enums/org-type.enum';
 import { BaseRepository } from './base.repository';
 import { isEnrollmentActive, isActiveInFamily } from './utils/enrollment.utils';
 import { logger } from '../logger';
@@ -260,17 +261,93 @@ export class UserRepository extends BaseRepository<User, typeof users> {
   }
 
   /**
+   * Resolve the active entities behind a set of declared membership IDs, in one round-trip.
+   *
+   * Powers bulk-import validation, where a batch typically declares the same handful of orgs across
+   * every row — so the distinct ID set is O(1) where the row count is O(100). Callers pass the
+   * deduplicated IDs for the whole batch and validate each row against the result in memory rather
+   * than querying per row.
+   *
+   * Absence from a returned set or map means "doesn't exist, is the wrong org type, or is rostered
+   * out", with no distinction between them — the same contract as {@link findClassParentSchool}, and
+   * for the same reason: callers return 422 either way, and distinguishing them would disclose which
+   * IDs exist.
+   *
+   * Schools and classes additionally carry their parents so callers can check containment. Districts
+   * and groups are existence-only — neither has a parent an import row can contradict. Families are
+   * absent entirely: an import row cannot declare a family membership (the contract's
+   * `OrgMembershipSchema` rejects one), so there is never a family ID to resolve.
+   *
+   * The `orgType` filters are load-bearing: they make a district UUID passed in a school slot (or
+   * vice versa) a miss rather than a false match.
+   *
+   * @param ids - Deduplicated IDs per entity type. Empty arrays skip their query entirely.
+   * @returns Sets for existence-only types; maps carrying parentage for schools and classes.
+   *   `schools.districtId` is nullable — `orgs.parentOrgId` has no NOT NULL backing it, so a
+   *   parentless school is possible and the caller must handle it.
+   */
+  async resolveDeclaredEntities(ids: {
+    districts: string[];
+    schools: string[];
+    classes: string[];
+    groups: string[];
+  }): Promise<{
+    districts: Set<string>;
+    schools: Map<string, { districtId: string | null }>;
+    classes: Map<string, { schoolId: string; districtId: string }>;
+    groups: Set<string>;
+  }> {
+    const [districtRows, schoolRows, classRows, groupRows] = await Promise.all([
+      ids.districts.length > 0
+        ? this.db
+            .select({ id: orgs.id })
+            .from(orgs)
+            .where(
+              and(inArray(orgs.id, ids.districts), eq(orgs.orgType, OrgType.DISTRICT), isNull(orgs.rosteringEnded)),
+            )
+        : Promise.resolve([]),
+      ids.schools.length > 0
+        ? this.db
+            .select({ id: orgs.id, districtId: orgs.parentOrgId })
+            .from(orgs)
+            .where(and(inArray(orgs.id, ids.schools), eq(orgs.orgType, OrgType.SCHOOL), isNull(orgs.rosteringEnded)))
+        : Promise.resolve([]),
+      ids.classes.length > 0
+        ? this.db
+            .select({ id: classes.id, schoolId: classes.schoolId, districtId: classes.districtId })
+            .from(classes)
+            .where(and(inArray(classes.id, ids.classes), isNull(classes.rosteringEnded)))
+        : Promise.resolve([]),
+      ids.groups.length > 0
+        ? this.db
+            .select({ id: groups.id })
+            .from(groups)
+            .where(and(inArray(groups.id, ids.groups), isNull(groups.rosteringEnded)))
+        : Promise.resolve([]),
+    ]);
+
+    return {
+      districts: new Set(districtRows.map((row) => row.id)),
+      schools: new Map(schoolRows.map((row) => [row.id, { districtId: row.districtId }])),
+      classes: new Map(classRows.map((row) => [row.id, { schoolId: row.schoolId, districtId: row.districtId }])),
+      groups: new Set(groupRows.map((row) => row.id)),
+    };
+  }
+
+  /**
    * Create a user row and all junction-table memberships in a single DB transaction.
    *
-   * Inserts the `users` row and all `user_orgs`, `user_classes`, `user_groups`, and
-   * `user_families` rows within the supplied transaction.
+   * Inserts the `users` row and all `user_orgs`, `user_classes`, and `user_groups` rows
+   * within the supplied transaction. Family membership is deliberately out of scope —
+   * `user_families` rows are written by `FamilyRepository`, whose callers authorize
+   * against the family being written to.
    *
    * The caller is responsible for managing the transaction lifecycle. Use
    * `runTransaction` to open one:
    *
    * ```typescript
    * await repository.runTransaction({
-   *   fn: (tx) => repository.createWithMemberships(userData, orgs, classes, groups, families, tx),
+   *   fn: (tx) => repository.createWithMemberships(userData, orgs, classes, groups, tx),
    * });
    * ```
    *
@@ -280,7 +357,6 @@ export class UserRepository extends BaseRepository<User, typeof users> {
    * @param orgMemberships - Rows to insert into `user_orgs`
    * @param classMemberships - Rows to insert into `user_classes`
    * @param groupMemberships - Rows to insert into `user_groups`
-   * @param familyMemberships - Rows to insert into `user_families`
    * @param transaction - The active transaction to execute writes within
    * @returns The newly created user's ID
    */
@@ -289,7 +365,6 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     orgMemberships: Omit<NewUserOrg, 'userId'>[],
     classMemberships: Omit<NewUserClass, 'userId'>[],
     groupMemberships: Omit<NewUserGroup, 'userId'>[],
-    familyMemberships: Omit<NewUserFamily, 'userId'>[],
     transaction: CoreTransaction,
   ): Promise<{ id: string }> {
     const [created] = await transaction.insert(users).values(userData).returning({ id: users.id });
@@ -310,10 +385,6 @@ export class UserRepository extends BaseRepository<User, typeof users> {
 
     if (groupMemberships.length > 0) {
       await transaction.insert(userGroups).values(groupMemberships.map((m) => ({ ...m, userId })));
-    }
-
-    if (familyMemberships.length > 0) {
-      await transaction.insert(userFamilies).values(familyMemberships.map((m) => ({ ...m, userId })));
     }
 
     return { id: userId };
@@ -383,18 +454,22 @@ export class UserRepository extends BaseRepository<User, typeof users> {
   }
 
   /**
-   * End all of a user's currently-active enrollments by stamping the end date on every open junction
-   * row across orgs, classes, groups, and families.
+   * End all of a user's currently-active org-scoped enrollments by stamping the end date on every
+   * open junction row across orgs, classes, and groups.
    *
    * Used by the bulk-import unenroll bin, which — matching the legacy `batchImportUpdate` — ends ALL
-   * of a user's enrollments (not just the memberships named in the request). Already-ended rows are
-   * left untouched so their original end date is preserved.
+   * of a user's org enrollments (not just the memberships named in the request). Already-ended rows
+   * are left untouched so their original end date is preserved.
    *
-   * @param userId - The user whose enrollments to end.
+   * `user_families` is deliberately excluded. The unenroll row is authorized against the target's
+   * org memberships only (families aren't checkable — see `authorizeRow`). Family membership is
+   * ended through the families endpoints.
+   *
+   * @param userId - The user whose org enrollments to end.
    * @param transaction - Optional transaction so the caller can archive the user and clean up FGA in
    *   the same unit of work.
    */
-  async endAllEnrollments(userId: string, transaction?: CoreTransaction): Promise<void> {
+  async endAllOrgEnrollments(userId: string, transaction?: CoreTransaction): Promise<void> {
     const db = transaction ?? this.db;
     const endedAt = new Date();
 
@@ -411,10 +486,6 @@ export class UserRepository extends BaseRepository<User, typeof users> {
       .update(userGroups)
       .set({ enrollmentEnd: endedAt })
       .where(and(eq(userGroups.userId, userId), isNull(userGroups.enrollmentEnd)));
-    await db
-      .update(userFamilies)
-      .set({ leftOn: endedAt })
-      .where(and(eq(userFamilies.userId, userId), isNull(userFamilies.leftOn)));
   }
 
   /**
@@ -469,7 +540,7 @@ export class UserRepository extends BaseRepository<User, typeof users> {
 
   /**
    * Archive a user by stamping `rosteringEnded`. Used by the bulk-import unenroll bin alongside
-   * {@link endAllEnrollments}; pass the same transaction so both land atomically.
+   * {@link endAllOrgEnrollments}; pass the same transaction so both land atomically.
    *
    * @param userId - The user to archive.
    * @param transaction - Optional transaction to run within.
@@ -547,6 +618,49 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     }
 
     return { added, removed };
+  }
+
+  /**
+   * Undo a {@link reconcileMemberships} result: end what it added, re-open what it ended.
+   *
+   * Compensation for a caller whose reconcile has already committed but whose downstream write (an
+   * FGA tuple sync) then failed — without it the user keeps a membership no tuple grants, and a
+   * retry can't detect the drift because the next reconcile diffs against the committed state.
+   *
+   * Two deliberate imprecisions, both erring toward less access:
+   * - A re-opened membership gets a fresh `enrollmentStart`. `reconciled.removed` carries only the
+   *   entity and role, so the original start date isn't recoverable here.
+   * - An undone addition is *ended*, not deleted, since the original add may itself have reactivated
+   *   a previously-ended row. The membership reads inactive either way.
+   *
+   * @param userId - The user whose memberships were reconciled.
+   * @param reconciled - The `{ added, removed }` result to invert.
+   * @param transaction - Transaction to run the writes in; the caller owns its lifecycle.
+   */
+  async revertReconciledMemberships(
+    userId: string,
+    reconciled: {
+      added: { entityType: EntityType; entityId: string; role: string }[];
+      removed: { entityType: EntityType; entityId: string; role: string }[];
+    },
+    transaction: CoreTransaction,
+  ): Promise<void> {
+    const now = new Date();
+
+    for (const membership of reconciled.added) {
+      await this.endMembershipRow(membership.entityType, userId, membership.entityId, now, transaction);
+    }
+
+    for (const membership of reconciled.removed) {
+      await this.upsertMembershipRow(
+        membership.entityType,
+        userId,
+        membership.entityId,
+        membership.role,
+        now,
+        transaction,
+      );
+    }
   }
 
   /** End a single membership row (stamp the end date) for the given entity type. */

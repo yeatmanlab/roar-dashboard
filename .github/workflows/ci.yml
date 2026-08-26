@@ -132,8 +132,8 @@ jobs:
       DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
       DOTENV_CONFIG_PATH: apps/backend/.env.test
       GCLOUD_PROJECT: demo-roar
-      # The dashboard bakes this into its bundle at build time so it can
-      # reach the locally-running backend.
+      # Points the dashboard bundle at the backend seeded below rather than the shared dev API.
+      # Origin only — the version prefix comes from the contract.
       VITE_ROAR_API_BASE_URL: http://127.0.0.1:4000
       # Firebase scrypt parameters for the bulk-import create bin. These are the
       # PUBLIC values from Firebase's own documentation/known-answer test vector
@@ -450,12 +450,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Read hosting site name
-        id: hosting
-        run: |
-          site=$(jq -r '.roar.hosting.staging' apps/assessments/${{ matrix.assessment }}/package.json)
-          echo "site=$site" >> "$GITHUB_OUTPUT"
-
       - name: Build assessment
         uses: ./.github/actions/build-assessment
         with:
@@ -465,7 +459,7 @@ jobs:
 
       # The assessment firebase.json hardcodes sentry_environment=production in its
       # Report-To/CSP headers; retag it to the PR so preview Sentry events group
-      # separately from production issues. Mirrors deploy-assessment.yml.
+      # separately from production issues.
       - name: Set Sentry environment for preview
         run: |
           sed -i "s|sentry_environment=production|sentry_environment=pr-${{ github.event.pull_request.number }}|g" \
@@ -481,7 +475,8 @@ jobs:
         with:
           firebase-channel: preview
           expires: 7d
-          firebase-hosting-site: ${{ steps.hosting.outputs.site }}
+          firebase-hosting-site: ${{ matrix.assessment }}
+          hosting-suffix-map-path: apps/assessments/hosting-targets.json
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
           gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}

@@ -40,7 +40,7 @@ external: [
 
 The **standalone** build injects two globals via webpack's `DefinePlugin`, which `serve.js` and the shared helpers read:
 
-- `ROAR_API_BASE_URL` — defaults to `/v1`, which the dev server proxies to `BACKEND_URL` (`http://localhost:4000`). In staging/production it is the real API origin.
+- `ROAR_API_BASE_URL` — an origin with no path; the version prefix comes from the contract. Defaults to `''`, so dev builds emit relative URLs that the dev server proxies to `BACKEND_URL` (`http://localhost:4000`) on `/v1`. In staging/production it is the real API origin.
 - `ROAR_DB` — `development` | `staging` | `production`. Guards dev-only affordances such as the variant picker, and the guard is eliminated at build time in production.
 
 Both globals must be declared readonly in `eslint.config.mjs`, or lint fails on undefined globals.
@@ -73,7 +73,7 @@ The variant is the source of truth for game parameters. URL params are the fallb
 
 ### The package manifest
 
-Beyond the standard fields, an assessment's `package.json` carries three things the platform reads:
+Beyond the standard fields, an assessment's `package.json` carries two things the platform reads:
 
 ```jsonc
 {
@@ -84,13 +84,6 @@ Beyond the standard fields, an assessment's `package.json` carries three things 
     "type": "git",
     "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
     "directory": "apps/assessments/roar-multichoice",
-  },
-  // Firebase Hosting site names, read by the deploy workflow.
-  "roar": {
-    "hosting": {
-      "staging": "roar-multichoice-monorepo-abc",
-      "production": "roar-multichoice-monorepo",
-    },
   },
   // Only the library build ships to npm — never the standalone site.
   "files": ["dist/index.js", "dist/index.js.map", "package.json"],
@@ -194,6 +187,8 @@ That grep is the checklist's source of truth, and it's how you verify you missed
 | Dashboard | `package.json`                                                          | Dep pinned to the **exact** workspace version                                                                             |
 | Dashboard | `vite.config.js`                                                        | `manualChunks` entry                                                                                                      |
 | Dashboard | `firebase/admin/csp.template.json`                                      | Allowlist the GCS asset bucket in **both `img-src` and `media-src`**                                                      |
+| Hosting   | `apps/assessments/hosting-targets.json`                                 | One entry, `"<name>": "<site-id-suffix>"` — the suffix is the tail of the Hosting site ID                                 |
+| Hosting   | `apps/assessments/<name>/firebase.json`                                 | `"target": "<name>"` in the `hosting` block, matching the `hosting-targets.json` key                                      |
 | Repo      | `.github/CODEOWNERS`                                                    | Per-assessment block — lands with the code in Phase 1, not with CI                                                        |
 | CI        | `.github/actions/detect-assessment-changes/action.yml`                  | Paths filter **and** the hardcoded fallback matrix — two edits in one file                                                |
 | CI        | `.github/workflows/deploy-assessments-production.yml`                   | Fallback matrix                                                                                                           |
@@ -201,6 +196,10 @@ That grep is the checklist's source of truth, and it's how you verify you missed
 | Release   | `.release-please.json` + `.release-please-manifest.json`                | Package block and version                                                                                                 |
 
 The duplicated matrices are what gets missed. `detect-assessment-changes` lists assessments **twice** — once as a `dorny/paths-filter` filter, once as a hardcoded JSON array used when a shared dependency changes — and `deploy-assessments-production.yml` carries a third copy. Miss the fallback arrays and the assessment deploys on its own changes but silently stops deploying when `packages/assessment-sdk` or `apps/assessments/shared/` changes: exactly the case where a redeploy matters most.
+
+Hosting resolution avoids that shape deliberately. `apps/assessments/hosting-targets.json` maps each assessment's target name — its directory name, and so the CI matrix value — to the **suffix** of its site ID, once. The deploy action expands that into a `.firebaserc` target map at deploy time using the project ID from the deploy credentials, so the same entry resolves to `<project-id>-<suffix>` on staging or production without the file listing either project. `.firebaserc` is therefore generated and gitignored, the way `apps/dashboard/firebase/admin/firebase.json` is; run `npm run hosting:rc -- <staging-project-id> <production-project-id>` to materialize a local one for CLI use. Omit the `hosting-targets.json` entry and the deploy fails before GCP auth, naming the missing key — the action guards for it rather than letting the CLI report `Hosting site or target <name> not detected in firebase.json` after the build.
+
+`hosting-targets.json` is in the `shared` paths filter, so editing it redeploys **every** assessment. That is deliberate: a renamed suffix has to redeploy, or the new site stays empty while the old one keeps serving.
 
 `roam-apps` is the current worked example of _migrated but not integrated_. It landed the code and stopped there: the directory exists, it's symlinked at `@roar-platform/roam-apps`, and it has a CODEOWNERS block — the Phase 1 set, exactly. Everything downstream is still missing. It has no schema namespace and no seed config; the dashboard still imports `@bdelab/roam-apps` from the registry (reading its version out of `package-lock.json`, the legacy pattern); and it's absent from `detect-assessment-changes`, the production deploy matrix, `PUBLISHABLE_WORKSPACES`, and both release-please files. A directory under `apps/assessments/` proves only that Phase 1 happened.
 

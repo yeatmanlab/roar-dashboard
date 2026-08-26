@@ -2165,21 +2165,8 @@ describe('POST /v1/users', () => {
     ],
   });
 
-  let sharedFamily: { id: string };
-
-  const validBodyForFamilyInDistrict = (suffix: string) => ({
-    email: makeEmail(suffix),
-    password: 'Password123!',
-    name: { first: 'Test', last: 'User' },
-    memberships: [
-      { entityType: EntityType.DISTRICT, entityId: baseFixture.district.id, role: 'student' },
-      { entityType: EntityType.FAMILY, entityId: sharedFamily.id, role: 'parent' },
-    ],
-  });
-
   beforeAll(async () => {
     const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
-    const { FamilyFactory } = await import('../test-support/factories/family.factory');
     const { UserGroupFactory } = await import('../test-support/factories/user-group.factory');
     const { GroupFactory } = await import('../test-support/factories/group.factory');
 
@@ -2207,7 +2194,6 @@ describe('POST /v1/users', () => {
     });
     groupPlatformAdmin = { id: groupPlatformAdminUser.id, authId: groupPlatformAdminUser.authId! };
 
-    sharedFamily = await FamilyFactory.create();
     otherGroup = await GroupFactory.create();
 
     // Re-sync FGA tuples to pick up all new memberships
@@ -2323,19 +2309,6 @@ describe('POST /v1/users', () => {
       expect(groupMembership).toBeDefined();
     });
 
-    it('super admin can create a user in a family', async () => {
-      const body = validBodyForFamilyInDistrict('superadmin-family');
-      const res = await expectRoute('POST', '/v1/users').as(tiers.superAdmin).withBody(body).toReturn(201);
-
-      expect(res.body.data.id).toBeDefined();
-
-      const memberships = await userRepository.getUserEntityMemberships(res.body.data.id);
-      const districtMembership = memberships.find((m) => m.entityId === baseFixture.district.id);
-      const familyMembership = memberships.find((m) => m.entityId === sharedFamily.id);
-      expect(districtMembership).toBeDefined();
-      expect(familyMembership).toBeDefined();
-    });
-
     it('platform_admin cannot create a user in another district', async () => {
       // platformAdmin has can_create_users on baseFixture.district, not districtB
       const body = {
@@ -2416,20 +2389,6 @@ describe('POST /v1/users', () => {
         .toReturn(StatusCodes.FORBIDDEN);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-
-    it('platform_admin can create a user with both district and family memberships', async () => {
-      // Family is explicitly excluded from FGA can_create_users checks — the district
-      // membership passes authorization and the family membership is written without an
-      // additional FGA check (known gap, tracked separately).
-      const body = validBodyForFamilyInDistrict('platform-admin-family');
-      const res = await expectRoute('POST', '/v1/users').as(platformAdmin).withBody(body).toReturn(201);
-
-      expect(res.body.data.id).toBeDefined();
-
-      const memberships = await userRepository.getUserEntityMemberships(res.body.data.id);
-      expect(memberships.find((m) => m.entityId === baseFixture.district.id)).toBeDefined();
-      expect(memberships.find((m) => m.entityId === sharedFamily.id)).toBeDefined();
     });
 
     it('admin tier (administrator role) cannot create users — no can_create_users in FGA', async () => {
@@ -2554,11 +2513,9 @@ describe('POST /v1/users', () => {
       let rosteringEndedClass: { id: string };
       let activeClassInRosteredOutSchool: { id: string };
       let rosteringEndedGroup: { id: string };
-      let rosteringEndedFamily: { id: string };
 
       beforeAll(async () => {
         const { GroupFactory } = await import('../test-support/factories/group.factory');
-        const { FamilyFactory } = await import('../test-support/factories/family.factory');
 
         rosteringEndedDistrict = await OrgFactory.create({ orgType: OrgType.DISTRICT, rosteringEnded });
 
@@ -2586,7 +2543,6 @@ describe('POST /v1/users', () => {
         });
 
         rosteringEndedGroup = await GroupFactory.create({ rosteringEnded });
-        rosteringEndedFamily = await FamilyFactory.create({ rosteringEnded });
       });
 
       it('returns 422 when district is rostered out', async () => {
@@ -2648,18 +2604,6 @@ describe('POST /v1/users', () => {
           .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
         expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
       });
-
-      it('returns 422 when family is rostered out', async () => {
-        const body = {
-          ...validBodyForDistrict('rostered-family'),
-          memberships: [{ entityType: 'family', entityId: rosteringEndedFamily.id, role: 'parent' }],
-        };
-        const res = await expectRoute('POST', '/v1/users')
-          .as(tiers.superAdmin)
-          .withBody(body)
-          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
-        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
-      });
     });
   });
 
@@ -2697,6 +2641,87 @@ describe('POST /v1/users', () => {
       await expectRoute('POST', '/v1/users')
         .as(tiers.superAdmin)
         .withBody({ ...validBodyForDistrict('short-pass'), password: '1234567' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+  });
+
+  // ── Family memberships are not accepted (#2129) ───────────────────────────
+  //
+  // Every membership this endpoint accepts is authorized with `can_create_users`
+  // against the org it names. A family is not an org, so a family membership had no
+  // authorization check at all — any authenticated caller could name a family UUID
+  // and be written into it with `role: 'parent'`, which the FGA model grants full
+  // authority over every child in that family. The contract now rejects family
+  // memberships outright; family membership is created through the families
+  // endpoints, which authorize against the family itself.
+
+  describe('family memberships', () => {
+    it('rejects a family membership from a super admin', async () => {
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const family = await FamilyFactory.create();
+
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('family-super-admin'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'family', entityId: family.id, role: 'parent' }],
+        })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('rejects a student naming their own family with role parent (privilege escalation)', async () => {
+      // The exact escalation from #2129: a child reads its family UUID from GET /me,
+      // then posts a parent membership on it to mint an account with guardian authority
+      // over every child in the family.
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: tiers.student.id, familyId: family.id, role: 'child' });
+
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.student)
+        .withBody({
+          email: makeEmail('family-self-escalation'),
+          password: 'Password123!',
+          name: { first: 'Sock', last: 'Puppet' },
+          memberships: [{ entityType: 'family', entityId: family.id, role: 'parent' }],
+        })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('rejects a family membership mixed with an authorized org membership', async () => {
+      // The org half would pass authorization on its own; the request must still fail
+      // rather than silently creating the user without the family membership.
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const family = await FamilyFactory.create();
+
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('family-mixed'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [
+            { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
+            { entityType: 'family', entityId: family.id, role: 'parent' },
+          ],
+        })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('rejects a family membership naming a non-existent family', async () => {
+      // Rejected on shape, before any existence lookup — so a caller cannot use the
+      // response to probe which family UUIDs exist.
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('family-nonexistent'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'family', entityId: '00000000-0000-0000-0000-000000000000', role: 'child' }],
+        })
         .toReturn(StatusCodes.BAD_REQUEST);
     });
   });
@@ -2834,22 +2859,6 @@ describe('POST /v1/users', () => {
         .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
     });
 
-    it('family-only membership → partnerId is the family ID (direct fallback)', async () => {
-      // Family memberships fall through all org/class/school/group branches and resolve
-      // to the family ID directly. sharedFamily is set up in the POST /v1/users beforeAll.
-      const res = await expectRoute('POST', '/v1/users')
-        .as(tiers.superAdmin)
-        .withBody({
-          email: makeEmail('resolver-family'),
-          password: 'Password123!',
-          name: { first: 'Test', last: 'User' },
-          memberships: [{ entityType: 'family', entityId: sharedFamily.id, role: 'parent' }],
-        })
-        .toReturn(StatusCodes.CREATED);
-
-      expect(await getPartnerId(res.body.data.id)).toBe(sharedFamily.id);
-    });
-
     it('school memberships spanning two districts → 422 (cross-district ambiguity)', async () => {
       // schoolA is under district; schoolInDistrictB is under districtB.
       // Symmetric to the class cross-district case — the same multi-root guard fires.
@@ -2973,6 +2982,90 @@ describe('POST /v1/users/import', () => {
         error: { code: ApiErrorCode.AUTH_FORBIDDEN },
       });
       expect(mockAuth.importUsers).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('update rows', () => {
+    /** Create a user with every demographic populated, enrolled in the base district. */
+    const seedUserWithDemographics = async (email: string) => {
+      const user = await UserFactory.create({
+        email,
+        gender: 'male',
+        race: 'white',
+        statusEll: 'EL',
+        statusFrl: 'Free',
+        statusIep: 'yes',
+        hispanicEthnicity: true,
+        homeLanguage: 'spanish',
+      });
+      await UserOrgFactory.create({
+        userId: user.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.STUDENT,
+      });
+      return user;
+    };
+
+    it('updates one demographic and leaves the stored values of the others intact', async () => {
+      const email = makeImportEmail('update-partial-demographics');
+      const user = await seedUserWithDemographics(email);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'Updated', last: 'Student' },
+              demographics: { gender: 'female' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'updated' });
+
+      const updated = await userRepository.getById({ id: user.id });
+      expect(updated).toMatchObject({
+        gender: 'female',
+        race: 'white',
+        statusEll: 'EL',
+        statusFrl: 'Free',
+        statusIep: 'yes',
+        hispanicEthnicity: true,
+        homeLanguage: 'spanish',
+      });
+    });
+
+    it('clears only the demographic the row nulls, keeping the rest of the stored values', async () => {
+      const email = makeImportEmail('update-null-demographic');
+      const user = await seedUserWithDemographics(email);
+
+      await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'Updated', last: 'Student' },
+              demographics: { gender: null, race: 'asian' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      const updated = await userRepository.getById({ id: user.id });
+      expect(updated).toMatchObject({
+        gender: null,
+        race: 'asian',
+        statusEll: 'EL',
+        statusFrl: 'Free',
+        statusIep: 'yes',
+        hispanicEthnicity: true,
+        homeLanguage: 'spanish',
+      });
     });
   });
 

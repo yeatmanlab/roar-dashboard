@@ -62,31 +62,27 @@ const membershipBase = {
 /**
  * Membership schema for org/class/group entities.
  * Uses the full OneRoster user role set — 'child' is not a valid org role.
+ *
+ * Family memberships are deliberately absent: `POST /users` accepts org-scoped
+ * memberships only. Family membership is created through the families endpoints
+ * (`POST /families`, `POST /families/:familyId/users`), which authorize the caller
+ * against the family they are writing to. See the `create` description in
+ * `contract.ts` for the rationale.
  */
-const OrgMembershipSchema = z.object({
+export const OrgMembershipSchema = z.object({
   ...membershipBase,
   entityType: z.enum(['district', 'school', 'class', 'group']),
   role: UserRoleSchema,
 });
 
-/**
- * Membership schema for family entities.
- * Only 'parent' and 'child' are valid family roles.
- */
-const FamilyMembershipSchema = z.object({
-  ...membershipBase,
-  entityType: z.literal('family'),
-  role: UserFamilyRoleSchema,
-});
-
-export const UserMembershipSchema = z.union([OrgMembershipSchema, FamilyMembershipSchema]);
-export type UserMembership = z.infer<typeof UserMembershipSchema>;
+export type OrgMembership = z.infer<typeof OrgMembershipSchema>;
 
 /**
  * Response membership shapes for `GET /users/:userId/memberships`.
  *
- * Distinct from the create-body `UserMembershipSchema` above: this read shape
- * carries the member's `role`, and class rows can additionally carry the parent
+ * Distinct from the create-body `OrgMembershipSchema` above: this read shape covers
+ * family memberships as well as org ones — a family membership can be read back even
+ * though it cannot be created here — and class rows can additionally carry the parent
  * `schoolId` / `districtId` so a consumer can resolve a student's current
  * school(s) without a separate lookup (a student has no school-level membership
  * row of their own — their school is the parent of their class).
@@ -160,6 +156,11 @@ const CreateUserIdentifiersSchema = z.object({
  * userType defaults to 'student' when omitted. Pass an explicit value when
  * creating admin or staff accounts.
  *
+ * `memberships` is org-scoped only (`OrgMembershipSchema`). Family memberships are
+ * rejected here: this endpoint authorizes each membership against the org it names,
+ * and a family is not an org — it has no hierarchy to authorize against. Family
+ * membership is created through the families endpoints instead.
+ *
  * Unknown fields in the request body will be rejected with a validation error.
  */
 export const CreateUserRequestBodySchema = z
@@ -172,7 +173,7 @@ export const CreateUserRequestBodySchema = z
     grade: UserGradeSchema.nullable().optional(),
     demographics: CreateUserDemographicsSchema.optional(),
     identifiers: CreateUserIdentifiersSchema.optional(),
-    memberships: z.array(UserMembershipSchema).min(1),
+    memberships: z.array(OrgMembershipSchema).min(1),
   })
   .strict();
 
@@ -192,7 +193,8 @@ export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
  *   rows, optional for update rows, ignored for unenroll rows). The client cannot know which bin
  *   a row lands in until the server matches it by email, so the schema cannot require it.
  * - `unenroll: true` routes an existing user to the unenroll bin.
- * - `memberships` is only required to be non-empty for create/update rows. Unenrolling acts on
+ * - `memberships` is org-scoped only, like single-create, and is only required to be non-empty for
+ *   create/update rows. Unenrolling acts on
  *   the target user's actual current memberships (resolved server-side after matching by email),
  *   not whatever this array declares, so an unenroll-only row can omit it.
  *
@@ -203,7 +205,7 @@ export const ImportUserRowSchema = CreateUserRequestBodySchema.omit({ password: 
   .extend({
     password: z.string().min(8).optional(),
     unenroll: z.boolean().optional(),
-    memberships: z.array(UserMembershipSchema),
+    memberships: z.array(OrgMembershipSchema),
   })
   .strict()
   .superRefine((row, ctx) => {
