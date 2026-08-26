@@ -26,6 +26,7 @@ import { delIntroductionTrials, delIntroductionTrialsNS, delEnd } from './trials
 import { delPracticeTrials } from './trials/del/practice';
 import { exitFullscreen } from './trials/fullScreen';
 import { writePracticeTrials } from './trials/practice';
+import { installAssessmentLifecycleGuards } from './audioLifecycle';
 import enPractice from './config/corpus/en/practice.csv';
 import enTest from './config/corpus/en/test.csv';
 import enPracticeCat from './config/corpus/en/practice-cat.csv';
@@ -159,6 +160,7 @@ export function buildExperiment(config) {
 
   // Initialize jsPsych and timeline
   initRoarJsPsych(config);
+  installAssessmentLifecycleGuards();
   const initialTimeline = initRoarTimeline(config);
 
   const timeline = [preloadTrials.fsm, audioSetup, ...initialTimeline.timeline];
