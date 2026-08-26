@@ -4,6 +4,7 @@ import { camelize } from '@bdelab/roar-utils';
 import { getTestTrials } from '../test';
 import { practiceStoppingRule, saveTrialData } from '../../experimentHelpers';
 import { mediaAssets } from '../../experiment';
+import { PRACTICE_FEEDBACK_AUDIO_FALLBACK_MS } from '../../audioLifecycle';
 
 export const delPracticeTrials = {
   timeline: [
@@ -52,6 +53,7 @@ export const delPracticeTrials = {
             }" alt="reward">`,
       choices: [],
       trial_ends_after_audio: true,
+      trial_duration: PRACTICE_FEEDBACK_AUDIO_FALLBACK_MS,
       response_allowed_while_playing: false,
     },
   ],
