@@ -97,7 +97,7 @@
       "version-file": "package.json",
       "release-type": "node",
       "component": "roar-sre",
-      "release-as": "3.3.0"
+      "release-as": "3.3.1"
     },
     "apps/assessments/roar-letter": {
       "changelog-path": "CHANGELOG.md",
