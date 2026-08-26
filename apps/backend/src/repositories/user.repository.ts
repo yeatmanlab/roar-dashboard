@@ -1,4 +1,5 @@
-import { eq, and, or, isNull, inArray, sql } from 'drizzle-orm';
+import { eq, and, or, gt, isNull, inArray, sql } from 'drizzle-orm';
+import type { AnyColumn } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup } from '../db/schema';
 import { EntityType } from '../types/entity-type';
@@ -454,12 +455,16 @@ export class UserRepository extends BaseRepository<User, typeof users> {
   }
 
   /**
-   * End all of a user's currently-active org-scoped enrollments by stamping the end date on every
-   * open junction row across orgs, classes, and groups.
+   * End all of a user's org-scoped enrollments by stamping the end date on every junction row across
+   * orgs, classes, and groups that has not already ended.
    *
    * Used by the bulk-import unenroll bin, which — matching the legacy `batchImportUpdate` — ends ALL
-   * of a user's org enrollments (not just the memberships named in the request). Already-ended rows
-   * are left untouched so their original end date is preserved.
+   * of a user's org enrollments (not just the memberships named in the request). Rows whose end date
+   * has already passed are left untouched so their original end date is preserved.
+   *
+   * Open-ended rows aren't enough: a future end date is still active per {@link isEnrollmentActive},
+   * and a future start date becomes active later. Either surviving the unenroll lets the FGA backfill
+   * — which reads these rows unfiltered — re-grant an archived user.
    *
    * `user_families` is deliberately excluded. The unenroll row is authorized against the target's
    * org memberships only (families aren't checkable — see `authorizeRow`). Family membership is
@@ -473,19 +478,37 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     const db = transaction ?? this.db;
     const endedAt = new Date();
 
+    /** Rows still to be ended: no end date, or one that hasn't passed yet. */
+    const notYetEnded = (table: { enrollmentEnd: AnyColumn }) =>
+      or(isNull(table.enrollmentEnd), gt(table.enrollmentEnd, sql`NOW()`));
+
+    /**
+     * Close the window, pulling a not-yet-started row's start back so it stays valid. Each table
+     * CHECKs `enrollmentStart < enrollmentEnd`, so stamping the end alone would be rejected for a
+     * future-dated start — and that's the row that most needs closing, since it would otherwise
+     * become active after the unenroll.
+     *
+     * `LEAST` only ever moves a start earlier, so an already-started enrollment keeps its original
+     * date. A future one loses its scheduled start, which is acceptable: it never happened.
+     */
+    const closedWindow = (table: { enrollmentStart: AnyColumn }) => ({
+      enrollmentEnd: endedAt,
+      enrollmentStart: sql`LEAST(${table.enrollmentStart}, ${endedAt}::timestamptz - interval '1 second')`,
+    });
+
     // Sequential (not Promise.all) so this is safe inside a single transaction/connection.
     await db
       .update(userOrgs)
-      .set({ enrollmentEnd: endedAt })
-      .where(and(eq(userOrgs.userId, userId), isNull(userOrgs.enrollmentEnd)));
+      .set(closedWindow(userOrgs))
+      .where(and(eq(userOrgs.userId, userId), notYetEnded(userOrgs)));
     await db
       .update(userClasses)
-      .set({ enrollmentEnd: endedAt })
-      .where(and(eq(userClasses.userId, userId), isNull(userClasses.enrollmentEnd)));
+      .set(closedWindow(userClasses))
+      .where(and(eq(userClasses.userId, userId), notYetEnded(userClasses)));
     await db
       .update(userGroups)
-      .set({ enrollmentEnd: endedAt })
-      .where(and(eq(userGroups.userId, userId), isNull(userGroups.enrollmentEnd)));
+      .set(closedWindow(userGroups))
+      .where(and(eq(userGroups.userId, userId), notYetEnded(userGroups)));
   }
 
   /**

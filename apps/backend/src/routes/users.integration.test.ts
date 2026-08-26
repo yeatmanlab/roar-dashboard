@@ -76,7 +76,7 @@ import { RosteringProvider } from '../enums/rostering-provider.enum';
 import { RosteringEntityType } from '../enums/rostering-entity-type.enum';
 import { FgaClient } from '../clients/fga.client';
 import { FgaType } from '../services/authorization/fga-constants';
-import { writeFgaAdministrationAssignment } from '../test-support/fga/fga-test-tuples.helper';
+import { writeFgaAdministrationAssignment, writeFgaOrgMembership } from '../test-support/fga/fga-test-tuples.helper';
 import type { Condition } from '../types/condition';
 import { Operator } from '../types/condition';
 
@@ -3069,6 +3069,371 @@ describe('POST /v1/users/import', () => {
     });
   });
 
+  /** Seed a district-enrolled user with the matching FGA membership tuple. */
+  const seedEnrolledUser = async (email: string) => {
+    const user = await UserFactory.create({ email });
+    await UserOrgFactory.create({
+      userId: user.id,
+      orgId: baseFixture.district.id,
+      role: UserRole.STUDENT,
+    });
+    await writeFgaOrgMembership(user.id, baseFixture.district.id, UserRole.STUDENT, FgaType.DISTRICT);
+    return user;
+  };
+
+  /** Every membership tuple FGA holds for a user, across all membership-bearing object types. */
+  const readMembershipTuples = async (userId: string) => {
+    const fga = FgaClient.getClient();
+    const reads = await Promise.all(
+      [FgaType.DISTRICT, FgaType.SCHOOL, FgaType.CLASS, FgaType.GROUP, FgaType.FAMILY].map((type) =>
+        fga.read({ user: `${FgaType.USER}:${userId}`, object: `${type}:` }),
+      ),
+    );
+    return reads.flatMap((r) => r.tuples ?? []);
+  };
+
+  /** A user_orgs row's raw enrollment window. No repository getter exposes it — they're active-only. */
+  const readOrgEnrollment = async (userId: string, orgId: string) => {
+    const { userOrgs } = await import('../db/schema');
+    const { and, eq } = await import('drizzle-orm');
+    const { CoreDbClient } = await import('../test-support/db');
+
+    const [row] = await CoreDbClient.select({
+      enrollmentStart: userOrgs.enrollmentStart,
+      enrollmentEnd: userOrgs.enrollmentEnd,
+    })
+      .from(userOrgs)
+      .where(and(eq(userOrgs.userId, userId), eq(userOrgs.orgId, orgId)));
+    return row ?? null;
+  };
+
+  describe('enrollment windows', () => {
+    const FUTURE_END = '2027-06-30T00:00:00.000Z';
+    const FUTURE_START = '2027-09-01T00:00:00.000Z';
+
+    it('honours a declared window on a create row', async () => {
+      const email = makeImportEmail('window-create');
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              password: 'Password123!',
+              name: { first: 'Windowed', last: 'Student' },
+              memberships: [
+                {
+                  entityType: 'district',
+                  entityId: baseFixture.district.id,
+                  role: 'student',
+                  enrollmentEnd: FUTURE_END,
+                },
+              ],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'created' });
+
+      // The create path passes the window through, which is what makes rejecting it on update rows
+      // (rather than dropping it) the consistent choice.
+      const userId: string = res.body.data.results[0].id;
+      const enrollment = await readOrgEnrollment(userId, baseFixture.district.id);
+      expect(enrollment!.enrollmentEnd?.toISOString()).toBe(FUTURE_END);
+    });
+
+    it.each([
+      ['enrollmentEnd', { enrollmentEnd: FUTURE_END }],
+      ['enrollmentStart', { enrollmentStart: FUTURE_START }],
+    ])('rejects an update row declaring %s, leaving the user unchanged', async (_label, window) => {
+      const email = makeImportEmail('window-update');
+      const user = await seedEnrolledUser(email);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'Rewindowed', last: 'Student' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student', ...window }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({
+        status: 'failed',
+        classification: 'updated',
+        error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+      });
+
+      // Rejected before any write: profile untouched and the existing window intact.
+      const unchanged = await userRepository.getById({ id: user.id });
+      expect(unchanged!.nameFirst).not.toBe('Rewindowed');
+      const enrollment = await readOrgEnrollment(user.id, baseFixture.district.id);
+      expect(enrollment!.enrollmentEnd).toBeNull();
+    });
+
+    it('accepts an update row whose memberships declare no window', async () => {
+      const email = makeImportEmail('window-update-none');
+      const user = await seedEnrolledUser(email);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'Plain', last: 'Update' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'updated' });
+      expect((await userRepository.getById({ id: user.id }))!.nameFirst).toBe('Plain');
+    });
+  });
+
+  describe('FGA revocation against a real store', () => {
+    // These assert the delete actually matched what was written. The tuples are written with an
+    // `active_membership` condition and deleted by bare key, and the class-role skip has to agree
+    // with what single-create wrote — both are properties of the FGA server, not of our types.
+    // A mismatch used to be swallowed and reported `ok`; deleteTuplesOrThrow now fails the row,
+    // so a shape drift would surface here as a failing unenroll rather than in production.
+
+    it('removes the membership tuples when a row unenrolls a user', async () => {
+      const email = makeImportEmail('unenroll-fga');
+      const user = await seedEnrolledUser(email);
+      expect(await readMembershipTuples(user.id)).toHaveLength(1);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [{ email, name: { first: 'Departing', last: 'Student' }, unenroll: true, memberships: [] }],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'unenrolled' });
+
+      const archived = await userRepository.getById({ id: user.id });
+      expect(archived!.rosteringEnded).not.toBeNull();
+      expect(await userRepository.getUserEntityMemberships(user.id)).toHaveLength(0);
+      expect(await readMembershipTuples(user.id)).toHaveLength(0);
+    });
+
+    it('swaps the tuples when an update row replaces one org membership with another', async () => {
+      const email = makeImportEmail('update-fga-swap');
+      const user = await seedEnrolledUser(email);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'Moved', last: 'Student' },
+              // Declares a school instead of the seeded district, so the district membership is a
+              // predicted removal and gets revoked before the reconcile commits.
+              memberships: [
+                { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
+                { entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' },
+              ],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'updated' });
+
+      // The school grant was added; the district grant it kept is still present.
+      const objects = (await readMembershipTuples(user.id)).map((t) => t.key?.object);
+      expect(objects).toContain(`${FgaType.SCHOOL}:${baseFixture.schoolA.id}`);
+      expect(objects).toContain(`${FgaType.DISTRICT}:${baseFixture.district.id}`);
+    });
+
+    it('revokes the tuple for a membership an update row drops', async () => {
+      const email = makeImportEmail('update-fga-drop');
+      const user = await UserFactory.create({ email });
+      await UserOrgFactory.create({ userId: user.id, orgId: baseFixture.schoolA.id, role: UserRole.STUDENT });
+      await writeFgaOrgMembership(user.id, baseFixture.schoolA.id, UserRole.STUDENT, FgaType.SCHOOL);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'Reassigned', last: 'Student' },
+              // Same entity type, different id — replace-semantics ends schoolA and adds schoolB.
+              memberships: [{ entityType: 'school', entityId: baseFixture.schoolB.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'updated' });
+
+      const objects = (await readMembershipTuples(user.id)).map((t) => t.key?.object);
+      expect(objects).toContain(`${FgaType.SCHOOL}:${baseFixture.schoolB.id}`);
+      expect(objects).not.toContain(`${FgaType.SCHOOL}:${baseFixture.schoolA.id}`);
+    });
+  });
+
+  describe('duplicate emails', () => {
+    it('leaves the user untouched when an unenroll and an update name the same email', async () => {
+      const email = makeImportEmail('dup-unenroll-update');
+      const user = await seedEnrolledUser(email);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            { email, name: { first: 'Gone', last: 'Student' }, unenroll: true, memberships: [] },
+            {
+              // Same address, different casing — the match is case-insensitive.
+              email: email.toUpperCase(),
+              name: { first: 'Resurrected', last: 'Student' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({
+        status: 'failed',
+        classification: 'unenrolled',
+        error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+      });
+      expect(res.body.data.results[1]).toMatchObject({
+        status: 'failed',
+        // The bin the row would have gone to, since the email resolves to an existing user.
+        classification: 'updated',
+        error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+      });
+      expect(res.body.data.summary).toMatchObject({ total: 2, updated: 0, unenrolled: 0, failed: 2 });
+
+      // Neither intent was guessed at: not archived, not renamed, membership and grant intact.
+      const untouched = await userRepository.getById({ id: user.id });
+      expect(untouched!.rosteringEnded).toBeNull();
+      expect(untouched!.nameFirst).not.toBe('Resurrected');
+      expect(await userRepository.getUserEntityMemberships(user.id)).toHaveLength(1);
+      expect(await readMembershipTuples(user.id)).toHaveLength(1);
+    });
+
+    it('applies neither of two update rows for the same user', async () => {
+      const email = makeImportEmail('dup-update-update');
+      const user = await seedEnrolledUser(email);
+      const originalName = user.nameFirst;
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'First', last: 'Wins' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+            {
+              email,
+              name: { first: 'Second', last: 'Loses' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.summary).toMatchObject({ total: 2, updated: 0, failed: 2 });
+      expect(
+        res.body.data.results.every(
+          (r: { status: string; error: { code: string } }) =>
+            r.status === 'failed' && r.error.code === ApiErrorCode.RESOURCE_UNPROCESSABLE,
+        ),
+      ).toBe(true);
+
+      const unchanged = await userRepository.getById({ id: user.id });
+      expect(unchanged!.nameFirst).toBe(originalName);
+    });
+
+    it('creates neither of two create rows for the same email, importing no account', async () => {
+      const email = makeImportEmail('dup-create-create');
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              password: 'Password123!',
+              name: { first: 'First', last: 'Enrollee' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+            {
+              email: email.toUpperCase(),
+              password: 'Password123!',
+              name: { first: 'Second', last: 'Enrollee' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      // No existing user behind the email, so both rejected rows report the create bin.
+      expect(res.body.data.results[0]).toMatchObject({
+        status: 'failed',
+        classification: 'created',
+        error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+      });
+      expect(res.body.data.results[1]).toMatchObject({ status: 'failed', classification: 'created' });
+
+      // Nothing reached Firebase, and no user was persisted for the email.
+      expect(mockAuth.importUsers).not.toHaveBeenCalled();
+      expect(await userRepository.findByEmails([email])).toHaveLength(0);
+    });
+
+    it('processes the unique rows in a batch that also contains a duplicated email', async () => {
+      const dupEmail = makeImportEmail('dup-mixed-dup');
+      const uniqueEmail = makeImportEmail('dup-mixed-unique');
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email: dupEmail,
+              password: 'Password123!',
+              name: { first: 'Dup', last: 'One' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+            {
+              email: uniqueEmail,
+              password: 'Password123!',
+              name: { first: 'Unique', last: 'Enrollee' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+            {
+              email: dupEmail,
+              password: 'Password123!',
+              name: { first: 'Dup', last: 'Two' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      // The conflict is scoped to the duplicated email — the unrelated row still lands.
+      expect(res.body.data.summary).toMatchObject({ total: 3, created: 1, failed: 2 });
+      expect(res.body.data.results[1]).toMatchObject({ status: 'ok', classification: 'created' });
+      expect(await userRepository.findByEmails([dupEmail])).toHaveLength(0);
+      expect(await userRepository.findByEmails([uniqueEmail])).toHaveLength(1);
+    });
+  });
+
   describe('request validation', () => {
     it('returns 400 when a create row has an empty memberships array', async () => {
       await expectRoute('POST', '/v1/users/import')
@@ -3109,7 +3474,7 @@ describe('POST /v1/users/import', () => {
       });
     });
 
-    it('accepts an unenroll row that omits memberships entirely', async () => {
+    it('rejects an unenroll row that omits memberships entirely', async () => {
       const res = await expectRoute('POST', '/v1/users/import')
         .as(tiers.superAdmin)
         .withBody({

@@ -153,14 +153,33 @@ describe('UserImportService.bulkImport', () => {
       expect(options.hash.memoryCost).toBe(14);
     });
 
-    it('marks a within-batch duplicate email as a conflict, processing the first occurrence', async () => {
+    it('fails every copy of a within-batch duplicate email, importing none of them', async () => {
       const rows = [makeRow({ email: 'dup@example.org' }), makeRow({ email: 'DUP@example.org' })];
 
       const results = await buildService().bulkImport(superAdmin, rows);
 
-      expect(results[0]!.status).toBe('ok');
-      expect(results[1]!).toMatchObject({ status: 'failed', error: { code: ApiErrorCode.RESOURCE_CONFLICT } });
+      expect(results).toMatchObject([
+        { status: 'failed', classification: 'created', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+        { status: 'failed', classification: 'created', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+      ]);
+      expect(importUsers).not.toHaveBeenCalled();
+    });
+
+    it('imports the unique rows in a batch that also contains a duplicated email', async () => {
+      const rows = [
+        makeRow({ email: 'dup@example.org' }),
+        makeRow({ email: 'unique@example.org' }),
+        makeRow({ email: 'DUP@example.org' }),
+      ];
+
+      const results = await buildService().bulkImport(superAdmin, rows);
+
+      expect(results[0]!.status).toBe('failed');
+      expect(results[1]!.status).toBe('ok');
+      expect(results[2]!.status).toBe('failed');
+      // Only the unique row reaches Firebase.
       expect(importUsers.mock.calls[0]![0]).toHaveLength(1);
+      expect(importUsers.mock.calls[0]![0][0]).toMatchObject({ email: 'unique@example.org' });
     });
 
     it('fails a create row that is missing a password and excludes it from importUsers', async () => {
@@ -293,6 +312,50 @@ describe('UserImportService.bulkImport', () => {
 
       // Matched the existing user (routed to update), rather than treated as a new create.
       expect(results[0]!.classification).toBe('updated');
+    });
+
+    it('leaves the user untouched when an unenroll row and an update row name the same email', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([UserFactory.build({ email: 'exists@example.org' })]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'exists@example.org', unenroll: true }),
+        makeRow({ email: 'EXISTS@example.org' }),
+      ]);
+
+      expect(results).toMatchObject([
+        { status: 'failed', classification: 'unenrolled', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+        { status: 'failed', classification: 'updated', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+      ]);
+      // Neither intent was guessed at: no archive, and no update against a pre-archive snapshot.
+      expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
+      expect(mockUserRepository.endAllOrgEnrollments).not.toHaveBeenCalled();
+      expect(mockUserRepository.update).not.toHaveBeenCalled();
+      expect(mockUserRepository.reconcileMemberships).not.toHaveBeenCalled();
+    });
+
+    it('fails both copies of a duplicate email for an existing user, classified as updates', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([UserFactory.build({ email: 'exists@example.org' })]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'exists@example.org' }),
+        makeRow({ email: 'exists@example.org' }),
+      ]);
+
+      expect(results).toMatchObject([
+        // The bin each row would have been routed to, not the pre-routing guess.
+        { status: 'failed', classification: 'updated', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+        { status: 'failed', classification: 'updated', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+      ]);
+      expect(mockUserRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('looks up a repeated email only once', async () => {
+      await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'dup@example.org' }),
+        makeRow({ email: 'DUP@example.org' }),
+      ]);
+
+      expect(mockUserRepository.findByEmails).toHaveBeenCalledWith(['dup@example.org']);
     });
 
     it('fails every already-authorized row, without throwing, when the email lookup fails', async () => {
@@ -695,7 +758,7 @@ describe('UserImportService.bulkImport', () => {
 
       // Unenroll's DB write has no clean undo, so the revocation must land first — a failed DB write
       // then leaves the user under-granted rather than unenrolled-but-still-authorized.
-      const deleteOrder = mockAuthz.deleteTuples.mock.invocationCallOrder[0]!;
+      const deleteOrder = mockAuthz.deleteTuplesOrThrow.mock.invocationCallOrder[0]!;
       const txOrder = mockUserRepository.runTransaction.mock.invocationCallOrder[0]!;
       expect(deleteOrder).toBeLessThan(txOrder);
     });
@@ -730,10 +793,10 @@ describe('UserImportService.bulkImport', () => {
         makeRow({ email: 'leaver@example.org', unenroll: true }),
       ]);
 
-      expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([
+      expect(mockAuthz.deleteTuplesOrThrow).toHaveBeenCalledWith([
         expect.objectContaining({ relation: UserRole.TEACHER, object: 'school:school-9' }),
       ]);
-      expect(mockAuthz.deleteTuples).not.toHaveBeenCalledWith(
+      expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalledWith(
         expect.arrayContaining([expect.objectContaining({ object: 'family:fam-1' })]),
       );
 
@@ -775,20 +838,20 @@ describe('UserImportService.bulkImport', () => {
 
       expect(mockUserRepository.endAllOrgEnrollments).toHaveBeenCalled();
       expect(mockUserRepository.archiveUser).toHaveBeenCalled();
-      expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([
+      expect(mockAuthz.deleteTuplesOrThrow).toHaveBeenCalledWith([
         { user: expect.stringMatching(/^user:/), relation: UserRole.STUDENT, object: 'school:school-9' },
       ]);
       expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
     });
 
-    it('skips deleteTuples when the user has no active memberships', async () => {
+    it('skips the FGA revocation when the user has no active memberships', async () => {
       mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([]);
 
       const results = await buildService().bulkImport(superAdmin, [
         makeRow({ email: 'leaver@example.org', unenroll: true }),
       ]);
 
-      expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalled();
       expect(results[0]!.status).toBe('ok');
     });
 
@@ -802,7 +865,7 @@ describe('UserImportService.bulkImport', () => {
 
       // The admin-tier class tuple was never written (it cascades via the org hierarchy), so deletion
       // must skip it — only the school tuple is removed.
-      const deleted = mockAuthz.deleteTuples.mock.calls[0]![0];
+      const deleted = mockAuthz.deleteTuplesOrThrow.mock.calls[0]![0];
       expect(deleted).toHaveLength(1);
       expect(deleted[0]).toMatchObject({ object: 'school:school-9' });
     });
@@ -821,6 +884,33 @@ describe('UserImportService.bulkImport', () => {
 
       expect(results[0]!.status).toBe('failed');
       expect(results[1]!.status).toBe('ok');
+    });
+
+    it('fails the row without ending enrollments when the FGA revocation throws', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+      ]);
+      mockAuthz.deleteTuplesOrThrow.mockRejectedValueOnce(new Error('fga down'));
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'leaver@example.org', unenroll: true }),
+      ]);
+
+      expect(results[0]!.status).toBe('failed');
+      expect(mockUserRepository.runTransaction).not.toHaveBeenCalled();
+      expect(mockUserRepository.endAllOrgEnrollments).not.toHaveBeenCalled();
+      expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
+    });
+
+    it('does not attempt compensation when the revocation itself failed', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+      ]);
+      mockAuthz.deleteTuplesOrThrow.mockRejectedValueOnce(new Error('fga down'));
+
+      await buildService().bulkImport(superAdmin, [makeRow({ email: 'leaver@example.org', unenroll: true })]);
+
+      expect(mockAuthz.writeTuplesOrThrow).not.toHaveBeenCalled();
     });
 
     describe('authorization against actual memberships', () => {
@@ -858,7 +948,7 @@ describe('UserImportService.bulkImport', () => {
         });
         expect(mockUserRepository.endAllOrgEnrollments).not.toHaveBeenCalled();
         expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
-        expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+        expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalled();
       });
 
       it('rejects an unenroll row when the target has zero active memberships, without mutating anything', async () => {
@@ -878,7 +968,7 @@ describe('UserImportService.bulkImport', () => {
         expect(mockAuthz.requirePermission).not.toHaveBeenCalled();
         expect(mockUserRepository.endAllOrgEnrollments).not.toHaveBeenCalled();
         expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
-        expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+        expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalled();
       });
 
       it('ignores a declared membership the requester lacks permission over, since it is not what gets unenrolled', async () => {
@@ -1101,7 +1191,7 @@ describe('UserImportService.bulkImport', () => {
         },
       ]);
       // Removed membership → key-only deletion tuple (no condition; FGA deletes by key).
-      expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([
+      expect(mockAuthz.deleteTuplesOrThrow).toHaveBeenCalledWith([
         { user: `user:${user.id}`, relation: 'student', object: 'school:school-1' },
       ]);
       expect(results[0]!).toMatchObject({ classification: 'updated', status: 'ok' });
@@ -1126,8 +1216,8 @@ describe('UserImportService.bulkImport', () => {
 
       // The revocation must have run (and run first) even though the grant-write threw — otherwise the
       // removed membership would stay authorized in FGA.
-      expect(mockAuthz.deleteTuples).toHaveBeenCalled();
-      const deleteOrder = mockAuthz.deleteTuples.mock.invocationCallOrder[0]!;
+      expect(mockAuthz.deleteTuplesOrThrow).toHaveBeenCalled();
+      const deleteOrder = mockAuthz.deleteTuplesOrThrow.mock.invocationCallOrder[0]!;
       const writeOrder = mockAuthz.writeTuplesOrThrow.mock.invocationCallOrder[0]!;
       expect(deleteOrder).toBeLessThan(writeOrder);
       expect(results[0]!.status).toBe('failed');
@@ -1149,7 +1239,7 @@ describe('UserImportService.bulkImport', () => {
       it('revokes the predicted removals before committing the reconcile', async () => {
         await buildService().bulkImport(superAdmin, [rowMovingToSchool2()]);
 
-        const deleteOrder = mockAuthz.deleteTuples.mock.invocationCallOrder[0]!;
+        const deleteOrder = mockAuthz.deleteTuplesOrThrow.mock.invocationCallOrder[0]!;
         const txOrder = mockUserRepository.runTransaction.mock.invocationCallOrder[0]!;
         expect(deleteOrder).toBeLessThan(txOrder);
       });
@@ -1165,6 +1255,19 @@ describe('UserImportService.bulkImport', () => {
         expect(results[0]!.status).toBe('failed');
       });
 
+      it('fails the row without committing the reconcile when the revocation throws', async () => {
+        mockAuthz.deleteTuplesOrThrow.mockRejectedValueOnce(new Error('fga down'));
+
+        const results = await buildService().bulkImport(superAdmin, [rowMovingToSchool2()]);
+
+        expect(results[0]!.status).toBe('failed');
+        expect(mockUserRepository.runTransaction).not.toHaveBeenCalled();
+        expect(mockUserRepository.reconcileMemberships).not.toHaveBeenCalled();
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+        // Nothing was revoked, so there is nothing to restore.
+        expect(mockAuthz.writeTuplesOrThrow).not.toHaveBeenCalled();
+      });
+
       it('does not revoke anything when the row removes no membership', async () => {
         await buildService().bulkImport(superAdmin, [
           makeRow({
@@ -1173,7 +1276,7 @@ describe('UserImportService.bulkImport', () => {
           }),
         ]);
 
-        expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+        expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalled();
       });
 
       it('leaves untouched entity types alone (replace-semantics is per declared type)', async () => {
@@ -1186,7 +1289,9 @@ describe('UserImportService.bulkImport', () => {
 
         // The row declares only a school, so the group membership is not reconciled and must not be
         // revoked — matching UserRepository.reconcileMemberships' per-type grouping.
-        expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([expect.objectContaining({ object: 'school:school-1' })]);
+        expect(mockAuthz.deleteTuplesOrThrow).toHaveBeenCalledWith([
+          expect.objectContaining({ object: 'school:school-1' }),
+        ]);
       });
 
       it('leaves an existing family membership untouched while replacing the org one', async () => {
@@ -1200,8 +1305,10 @@ describe('UserImportService.bulkImport', () => {
 
         const results = await buildService().bulkImport(superAdmin, [rowMovingToSchool2()]);
 
-        expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([expect.objectContaining({ object: 'school:school-1' })]);
-        expect(mockAuthz.deleteTuples).not.toHaveBeenCalledWith(
+        expect(mockAuthz.deleteTuplesOrThrow).toHaveBeenCalledWith([
+          expect.objectContaining({ object: 'school:school-1' }),
+        ]);
+        expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalledWith(
           expect.arrayContaining([expect.objectContaining({ object: 'family:fam-1' })]),
         );
 
@@ -1280,7 +1387,7 @@ describe('UserImportService.bulkImport', () => {
       const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
 
       expect(mockAuthz.writeTuplesOrThrow).not.toHaveBeenCalled();
-      expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalled();
       expect(results[0]!.status).toBe('ok');
     });
 
@@ -1289,8 +1396,40 @@ describe('UserImportService.bulkImport', () => {
 
       expect(mockUserRepository.reconcileMemberships).toHaveBeenCalled();
       expect(mockAuthz.writeTuplesOrThrow).not.toHaveBeenCalled();
-      expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalled();
       expect(results[0]!.status).toBe('ok');
+    });
+
+    describe('enrollment windows', () => {
+      const rowWith = (membership: Record<string, unknown>) =>
+        makeRow({
+          email: 'updatee@example.org',
+          memberships: [
+            { entityType: EntityType.SCHOOL, entityId: 'school-1', role: UserRole.STUDENT, ...membership },
+          ] as ImportUserRowInput['memberships'],
+        });
+
+      it.each([
+        ['enrollmentStart', { enrollmentStart: '2027-09-01T00:00:00.000Z' }],
+        ['enrollmentEnd', { enrollmentEnd: '2027-06-30T00:00:00.000Z' }],
+      ])('rejects an update row declaring %s instead of silently dropping it', async (_label, membership) => {
+        const results = await buildService().bulkImport(superAdmin, [rowWith(membership)]);
+
+        expect(results[0]!).toMatchObject({
+          status: 'failed',
+          classification: 'updated',
+          error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+        });
+        // Rejected before any write, so no partial update is left behind.
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+        expect(mockUserRepository.reconcileMemberships).not.toHaveBeenCalled();
+      });
+
+      it('accepts an update row whose memberships declare no window', async () => {
+        const results = await buildService().bulkImport(superAdmin, [rowWith({})]);
+
+        expect(results[0]!.status).toBe('ok');
+      });
     });
 
     describe('partial updates', () => {

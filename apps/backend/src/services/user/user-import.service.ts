@@ -50,7 +50,7 @@ import {
  * compensation as single-create. Passwords are SCRYPT-hashed for `importUsers`.
  *
  * **Unenroll bin** (implemented): ends all of a user's enrollments and archives them
- * (`rosteringEnded`) in one transaction, then best-effort deletes their FGA membership tuples.
+ * (`rosteringEnded`) in one transaction. Failed FGA revocation fails the entire process.
  *
  * **Update bin** (implemented): updates an existing user's profile fields, reconciles their
  * memberships (replace-semantics per the legacy, with FGA tuple add/delete sync), and syncs Firebase
@@ -430,23 +430,9 @@ export function UserImportService({
   ): Promise<void> {
     if (rows.length === 0) return;
 
-    // Within-batch email uniqueness — importUsers does not validate it.
-    const seenEmails = new Set<string>();
-    const candidates: { index: number; row: ImportUserRowInput }[] = [];
-    for (const candidate of rows) {
-      const key = candidate.row.email.toLowerCase();
-      if (seenEmails.has(key)) {
-        outcomes[candidate.index] = failed(
-          candidate.index,
-          CLASSIFICATION.CREATED,
-          ApiErrorCode.RESOURCE_CONFLICT,
-          ApiErrorMessage.CONFLICT,
-        );
-        continue;
-      }
-      seenEmails.add(key);
-      candidates.push(candidate);
-    }
+    // Every row here already has a distinct lowercased email — duplicates are rejected during
+    // classification, before binning.
+    const candidates = rows;
 
     // Config, not a per-row concern — but it must not throw past this function. An unhandled
     // throw here would propagate out of processCreateBin and abort bulkImport entirely, taking
@@ -519,7 +505,7 @@ export function UserImportService({
 
       const assessmentPid = row.identifiers?.pid ?? generateAssessmentPid({ userId: row.email });
 
-      // Within-batch PID uniqueness (email is already deduped above; importUsers validates neither).
+      // Within-batch PID uniqueness (email is deduped before binning; importUsers validates neither).
       if (seenPids.has(assessmentPid)) {
         outcomes[index] = failed(
           index,
@@ -751,15 +737,9 @@ export function UserImportService({
         // it stamps end dates across three junction tables and archives the user.
         // Fails more safely: if the DB write fails, the user is under-granted (rows intact, access gone)
         // rather than unenrolled-but-still-authorized.
-        //
-        // TODO: reordering only fixes the DB-fails case — it does not make the revocation reliable.
-        // deleteTuples swallows errors (never throws), so a failed delete falls through to the DB
-        // write below, ending the enrollments while the tuples still grant access: over-granted, and
-        // reported `ok`. Same gap as the addition path in processUpdateBin; both need a throwing
-        // variant in AuthorizationService and until then rely on manually running the syncFga backfill.
         const deletionTuples = buildMembershipDeletionTuples(user.id, orgMemberships);
         if (deletionTuples.length > 0) {
-          await authorizationService.deleteTuples(deletionTuples);
+          await authorizationService.deleteTuplesOrThrow(deletionTuples);
         }
 
         try {
@@ -852,9 +832,9 @@ export function UserImportService({
    * (replace-semantics per provided entity type — end removed, add/reactivate new, leave unchanged),
    * and sync Firebase Auth (displayName / password) only when those actually changed.
    *
-   * Profile fields and membership reconciliation run in one transaction; FGA tuples are then synced
-   * (written for added memberships, best-effort deleted for removed). Rostering-ended (archived) users
-   * are rejected (not-found), matching the canonical single-update.
+   * Removed memberships are revoked in FGA before the transaction and added ones granted after it,
+   * both throwing on failure so a row is never reported `ok` with the two stores out of step.
+   * Rostering-ended (archived) users are rejected (not-found), matching the canonical single-update.
    *
    * Authorizes each row against the target's current memberships (like the unenroll bin), since
    * Phase 1's check covers only the orgs the row declares.
@@ -895,6 +875,19 @@ export function UserImportService({
           continue;
         }
 
+        // Create-only: `upsertMembershipRow` always starts now with no end date. Rejected rather
+        // than dropped, which would grant access earlier or for longer than the row asked for.
+        if (row.memberships.some((m) => m.enrollmentStart !== undefined || m.enrollmentEnd !== undefined)) {
+          logger.warn({ userId: user.id }, 'Enrollment window declared on an import update row (unsupported)');
+          outcomes[index] = failed(
+            index,
+            CLASSIFICATION.UPDATED,
+            ApiErrorCode.RESOURCE_UNPROCESSABLE,
+            ApiErrorMessage.UNPROCESSABLE_ENTITY,
+          );
+          continue;
+        }
+
         // Reconcile memberships with replace-semantics per provided entity type. Read the current
         // set first (snapshot), then update profile fields + reconcile in one transaction.
         const currentMemberships = await userRepository.getActiveMembershipsWithRoles(user.id);
@@ -921,7 +914,7 @@ export function UserImportService({
         const predictedRemovals = predictEndedMemberships(desiredMemberships, currentMemberships);
         const removalTuples = buildMembershipDeletionTuples(user.id, predictedRemovals);
         if (removalTuples.length > 0) {
-          await authorizationService.deleteTuples(removalTuples);
+          await authorizationService.deleteTuplesOrThrow(removalTuples);
         }
 
         try {
@@ -960,11 +953,6 @@ export function UserImportService({
         // Grants stay *after* the DB commit: writing a tuple first would leave access granted with no
         // membership backing it if the write failed (fail-open), where this order can only ever leave
         // the user under-granted.
-        //
-        // TODO: deleteTuples never throws, so a failed *revocation* above is still reported `ok` with
-        // a stale tuple left granting access — over-granted and silent, unlike the grant path here.
-        // Detecting it needs a throwing variant in AuthorizationService; until then it relies on
-        // manually running the syncFga backfill.
         const additionTuples = buildMembershipAdditionTuples(user.id, reconciled.added);
         if (additionTuples.length > 0) {
           try {
@@ -1097,7 +1085,14 @@ export function UserImportService({
     // ── Phase 2: classify by email existence (single batched lookup) ─────────────
     let existing: Awaited<ReturnType<typeof userRepository.findByEmails>>;
     try {
-      existing = await userRepository.findByEmails(authorized.map((a) => a.row.email));
+      // Deduped so a repeated email costs one lookup. Keyed on lowercase email.
+      const emailsToLookUp = new Map<string, string>();
+      for (const { row } of authorized) {
+        const key = row.email.toLowerCase();
+        if (!emailsToLookUp.has(key)) emailsToLookUp.set(key, row.email);
+      }
+
+      existing = await userRepository.findByEmails([...emailsToLookUp.values()]);
     } catch (error) {
       // Without knowing which emails already exist, none of Phase 2's classification can safely
       // proceed — an unhandled throw here would otherwise abort bulkImport for every already-
@@ -1125,9 +1120,34 @@ export function UserImportService({
     const updateRows: { index: number; row: ImportUserRowInput; user: User }[] = [];
     const unenrollRows: { index: number; row: ImportUserRowInput; user: User }[] = [];
 
+    // A repeated email is an ambiguous instruction — two rows can name opposite intents (unenroll
+    // and update), and picking one by row order decides a user's fate on spreadsheet ordering. So
+    // every copy is rejected and the user is left untouched for the operator to resolve. Counted in
+    // a pre-pass because the first copy isn't identifiable as one until a later row repeats it.
+    const emailCounts = new Map<string, number>();
+    for (const { row } of authorized) {
+      const emailKey = row.email.toLowerCase();
+      emailCounts.set(emailKey, (emailCounts.get(emailKey) ?? 0) + 1);
+    }
+
     for (const entry of authorized) {
-      const user = existingByEmail.get(entry.row.email.toLowerCase());
+      const emailKey = entry.row.email.toLowerCase();
+      const user = existingByEmail.get(emailKey);
       const unenroll = Boolean(entry.row.unenroll);
+
+      // Rejected here because this is the first point that knows whether the email exists.
+      // Tradeoff: a duplicate that also fails Phase 1 reports that 422/403 instead of this conflict.
+      if ((emailCounts.get(emailKey) ?? 0) > 1) {
+        // Unprocessable rather than conflict: the repetition is in the request, and the email may
+        // name no stored user at all.
+        outcomes[entry.index] = failed(
+          entry.index,
+          unenroll ? CLASSIFICATION.UNENROLLED : user ? CLASSIFICATION.UPDATED : CLASSIFICATION.CREATED,
+          ApiErrorCode.RESOURCE_UNPROCESSABLE,
+          ApiErrorMessage.UNPROCESSABLE_ENTITY,
+        );
+        continue;
+      }
 
       if (user && unenroll) {
         unenrollRows.push({ ...entry, user });

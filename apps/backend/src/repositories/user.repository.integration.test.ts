@@ -296,6 +296,24 @@ describe('UserRepository', () => {
   });
 
   describe('endAllOrgEnrollments', () => {
+    /**
+     * Read a user_groups row's raw enrollment window. No repository method exposes it — the
+     * membership getters are all active-only — and these tests assert on the stamped dates.
+     */
+    const readGroupEnrollment = async (userId: string, groupId: string) => {
+      const { CoreDbClient } = await import('../db/clients');
+      const { userGroups } = await import('../db/schema');
+      const { and, eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select({
+        enrollmentStart: userGroups.enrollmentStart,
+        enrollmentEnd: userGroups.enrollmentEnd,
+      })
+        .from(userGroups)
+        .where(and(eq(userGroups.userId, userId), eq(userGroups.groupId, groupId)));
+      return row ?? null;
+    };
+
     it('ends every active org, class, and group enrollment but leaves the family membership active', async () => {
       const user = await UserFactory.create();
       const family = await FamilyFactory.create();
@@ -323,6 +341,70 @@ describe('UserRepository', () => {
 
       await expect(repository.endAllOrgEnrollments(user.id)).resolves.toBeUndefined();
       expect(await repository.getUserEntityMemberships(user.id)).toHaveLength(0);
+    });
+
+    it('ends a row whose enrollmentEnd is in the future', async () => {
+      // Active per isEnrollmentActive, but not open-ended — matching only `enrollmentEnd IS NULL`
+      // left it in place, and the FGA backfill would re-derive a currently-valid grant from it.
+      const user = await UserFactory.create();
+      const group = await GroupFactory.create();
+      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+        enrollmentEnd: nextWeek,
+      });
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(1);
+
+      await repository.endAllOrgEnrollments(user.id);
+
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
+    });
+
+    it('ends a row whose enrollmentStart is in the future', async () => {
+      // Not active yet, so it would have become active after the unenroll.
+      const user = await UserFactory.create();
+      const group = await GroupFactory.create();
+      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: nextWeek,
+      });
+
+      await repository.endAllOrgEnrollments(user.id);
+
+      // The window is closed and still valid: the start was pulled back ahead of the stamped end,
+      // since the table CHECKs enrollmentStart < enrollmentEnd.
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
+      const enrollment = await readGroupEnrollment(user.id, group.id);
+      expect(enrollment!.enrollmentEnd).not.toBeNull();
+      expect(enrollment!.enrollmentStart.getTime()).toBeLessThan(enrollment!.enrollmentEnd!.getTime());
+      expect(enrollment!.enrollmentStart.getTime()).toBeLessThan(nextWeek.getTime());
+    });
+
+    it('preserves the original end date on an already-ended row', async () => {
+      const user = await UserFactory.create();
+      const group = await GroupFactory.create();
+      const twoYearsAgo = new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000);
+      const lastYear = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+      // The table CHECKs enrollmentStart < enrollmentEnd, so backdate the start too.
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: twoYearsAgo,
+        enrollmentEnd: lastYear,
+      });
+
+      await repository.endAllOrgEnrollments(user.id);
+
+      const enrollment = await readGroupEnrollment(user.id, group.id);
+      expect(enrollment!.enrollmentEnd?.getTime()).toBe(lastYear.getTime());
+      // The start is untouched too — LEAST only pulls back a start later than the new end.
+      expect(enrollment!.enrollmentStart.getTime()).toBe(twoYearsAgo.getTime());
     });
   });
 
