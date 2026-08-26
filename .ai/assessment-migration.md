@@ -63,12 +63,12 @@ git subtree add --prefix=apps/assessments/<name> \
 
 Then **delete secrets** — do this before anything else, and verify with the scan below:
 
-| File                           | Why                                                                           |
-| ------------------------------ | ----------------------------------------------------------------------------- |
-| `serve/firebaseConfig.js`      | Firebase API keys and project IDs — replaced by `../../shared/firebaseConfig` |
-| `.firebaserc`                  | Firebase project aliases                                                      |
-| `.firebase/`                   | Hosting cache                                                                 |
-| `cypress/support/devFirebase*` | Dev credentials, if present                                                   |
+| File                           | Why                                                                                 |
+| ------------------------------ | ----------------------------------------------------------------------------------- |
+| `serve/firebaseConfig.js`      | Firebase API keys and project IDs — replaced by `../../shared/firebaseConfig`       |
+| `.firebaserc`                  | Firebase project aliases — `apps/assessments/hosting-targets.json` owns targets now |
+| `.firebase/`                   | Hosting cache                                                                       |
+| `cypress/support/devFirebase*` | Dev credentials, if present                                                         |
 
 **Delete what the monorepo now owns:**
 
@@ -83,6 +83,8 @@ Then **delete secrets** — do this before anything else, and verify with the sc
 
 **Keep** `LICENSE`, `firebase.json`, `cypress.config.js`, `webpack.config.cjs`, and any data files the source imports (CSV corpora, IRT hyperparameters). A deleted corpus fails at runtime, not build time.
 
+Add `"target": "<name>"` to the kept `firebase.json`'s `hosting` block, and add the matching entry to `apps/assessments/hosting-targets.json` as `"<name>": "<site-id-suffix>"`. The deploy resolves the Hosting site from that pair: the target name is the directory name, and the project the deploy authenticates against decides whether the suffix resolves to the staging or the production site (`<project-id>-<suffix>`). Only the suffix is committed — the project IDs come from the deploy credentials.
+
 ### 1b. Greenfield: scaffold instead
 
 Copy the tooling from the closest existing assessment — `roar-multichoice` for a single jsPsych bundle, `roar-levante-tasks` or `roam-apps` for a multi-task battery, `roar-survey` for a Vue/vite app. Skip the subtree and secret-deletion steps entirely; everything below applies unchanged.
@@ -91,7 +93,7 @@ Copy the tooling from the closest existing assessment — `roar-multichoice` for
 
 Create these, mirroring an existing assessment:
 
-1. **`package.json`** — rewrite. `name` → `@roar-platform/<dir>`; keep the upstream `version`; fixed `main`/`module`/`exports`/`files` → `./dist/index.js`; add `repository` (with `directory`), `publishConfig`, and `roar.hosting`. Use the standard script set. **Remove every lifecycle hook** (`prepublishOnly`, `pre/postversion`, `prepackage`) — release-please and the release workflow own that now.
+1. **`package.json`** — rewrite. `name` → `@roar-platform/<dir>`; keep the upstream `version`; fixed `main`/`module`/`exports`/`files` → `./dist/index.js`; add `repository` (with `directory`) and `publishConfig`. Use the standard script set. **Remove every lifecycle hook** (`prepublishOnly`, `pre/postversion`, `prepackage`) — release-please and the release workflow own that now.
 2. **`rollup.lib.config.mjs`** — library build; externalize the SDK, schema, and `@sentry/*`.
 3. **`turbo.json`** — `extends: ["//"]`, declare `build.outputs` and any env vars. Turbo runs `envMode: strict`, so an env var not declared in `env` or `passThroughEnv` **is not visible to the build** and fails silently rather than loudly.
 4. **`eslint.config.mjs`** — extend `@roar-platform/eslint-config`; declare `ROAR_DB` and `ROAR_API_BASE_URL` as readonly globals.
@@ -289,7 +291,7 @@ Nothing here changes how the assessment behaves; it changes whether the platform
 - **Your example params are now CI infrastructure.** They seed the stack the specs run against. If they're wrong, e2e fails here rather than in Phase 2.
 - **Inherited specs rarely survive contact.** Specs that came along in the subtree were written against the old standalone Firebase stack. Re-write them against the local stack or delete them — don't leave them failing.
 
-**External provisioning** is not code and blocks the first deploy — do it out of band: create the Firebase Hosting sites named in `roar.hosting`, and confirm the Sentry project and `SENTRY_AUTH_TOKEN`.
+**External provisioning** is not code and blocks the first deploy — do it out of band: create the two Firebase Hosting sites the assessment's `hosting-targets.json` suffix implies, `<project-id>-<suffix>` on each project, and confirm the Sentry project and `SENTRY_AUTH_TOKEN`. Site IDs must be valid hostname labels and globally unique across Firebase; the 30-character maximum in Firebase's docs is not enforced on creation.
 
 **Phase 5 is done when** a CI run shows the assessment in the detect-changes matrix, its e2e leg either passes or deliberately skips, and the release/publish entries are in place.
 
