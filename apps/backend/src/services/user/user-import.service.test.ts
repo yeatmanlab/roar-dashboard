@@ -153,14 +153,33 @@ describe('UserImportService.bulkImport', () => {
       expect(options.hash.memoryCost).toBe(14);
     });
 
-    it('marks a within-batch duplicate email as a conflict, processing the first occurrence', async () => {
+    it('fails every copy of a within-batch duplicate email, importing none of them', async () => {
       const rows = [makeRow({ email: 'dup@example.org' }), makeRow({ email: 'DUP@example.org' })];
 
       const results = await buildService().bulkImport(superAdmin, rows);
 
-      expect(results[0]!.status).toBe('ok');
-      expect(results[1]!).toMatchObject({ status: 'failed', error: { code: ApiErrorCode.RESOURCE_CONFLICT } });
+      expect(results).toMatchObject([
+        { status: 'failed', classification: 'created', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+        { status: 'failed', classification: 'created', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+      ]);
+      expect(importUsers).not.toHaveBeenCalled();
+    });
+
+    it('imports the unique rows in a batch that also contains a duplicated email', async () => {
+      const rows = [
+        makeRow({ email: 'dup@example.org' }),
+        makeRow({ email: 'unique@example.org' }),
+        makeRow({ email: 'DUP@example.org' }),
+      ];
+
+      const results = await buildService().bulkImport(superAdmin, rows);
+
+      expect(results[0]!.status).toBe('failed');
+      expect(results[1]!.status).toBe('ok');
+      expect(results[2]!.status).toBe('failed');
+      // Only the unique row reaches Firebase.
       expect(importUsers.mock.calls[0]![0]).toHaveLength(1);
+      expect(importUsers.mock.calls[0]![0][0]).toMatchObject({ email: 'unique@example.org' });
     });
 
     it('fails a create row that is missing a password and excludes it from importUsers', async () => {
@@ -293,6 +312,50 @@ describe('UserImportService.bulkImport', () => {
 
       // Matched the existing user (routed to update), rather than treated as a new create.
       expect(results[0]!.classification).toBe('updated');
+    });
+
+    it('leaves the user untouched when an unenroll row and an update row name the same email', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([UserFactory.build({ email: 'exists@example.org' })]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'exists@example.org', unenroll: true }),
+        makeRow({ email: 'EXISTS@example.org' }),
+      ]);
+
+      expect(results).toMatchObject([
+        { status: 'failed', classification: 'unenrolled', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+        { status: 'failed', classification: 'updated', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+      ]);
+      // Neither intent was guessed at: no archive, and no update against a pre-archive snapshot.
+      expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
+      expect(mockUserRepository.endAllOrgEnrollments).not.toHaveBeenCalled();
+      expect(mockUserRepository.update).not.toHaveBeenCalled();
+      expect(mockUserRepository.reconcileMemberships).not.toHaveBeenCalled();
+    });
+
+    it('fails both copies of a duplicate email for an existing user, classified as updates', async () => {
+      mockUserRepository.findByEmails.mockResolvedValue([UserFactory.build({ email: 'exists@example.org' })]);
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'exists@example.org' }),
+        makeRow({ email: 'exists@example.org' }),
+      ]);
+
+      expect(results).toMatchObject([
+        // The bin each row would have been routed to, not the pre-routing guess.
+        { status: 'failed', classification: 'updated', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+        { status: 'failed', classification: 'updated', error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE } },
+      ]);
+      expect(mockUserRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('looks up a repeated email only once', async () => {
+      await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'dup@example.org' }),
+        makeRow({ email: 'DUP@example.org' }),
+      ]);
+
+      expect(mockUserRepository.findByEmails).toHaveBeenCalledWith(['dup@example.org']);
     });
 
     it('fails every already-authorized row, without throwing, when the email lookup fails', async () => {

@@ -430,23 +430,9 @@ export function UserImportService({
   ): Promise<void> {
     if (rows.length === 0) return;
 
-    // Within-batch email uniqueness — importUsers does not validate it.
-    const seenEmails = new Set<string>();
-    const candidates: { index: number; row: ImportUserRowInput }[] = [];
-    for (const candidate of rows) {
-      const key = candidate.row.email.toLowerCase();
-      if (seenEmails.has(key)) {
-        outcomes[candidate.index] = failed(
-          candidate.index,
-          CLASSIFICATION.CREATED,
-          ApiErrorCode.RESOURCE_CONFLICT,
-          ApiErrorMessage.CONFLICT,
-        );
-        continue;
-      }
-      seenEmails.add(key);
-      candidates.push(candidate);
-    }
+    // Every row here already has a distinct lowercased email — duplicates are rejected during
+    // classification, before binning.
+    const candidates = rows;
 
     // Config, not a per-row concern — but it must not throw past this function. An unhandled
     // throw here would propagate out of processCreateBin and abort bulkImport entirely, taking
@@ -519,7 +505,7 @@ export function UserImportService({
 
       const assessmentPid = row.identifiers?.pid ?? generateAssessmentPid({ userId: row.email });
 
-      // Within-batch PID uniqueness (email is already deduped above; importUsers validates neither).
+      // Within-batch PID uniqueness (email is deduped before binning; importUsers validates neither).
       if (seenPids.has(assessmentPid)) {
         outcomes[index] = failed(
           index,
@@ -1097,7 +1083,14 @@ export function UserImportService({
     // ── Phase 2: classify by email existence (single batched lookup) ─────────────
     let existing: Awaited<ReturnType<typeof userRepository.findByEmails>>;
     try {
-      existing = await userRepository.findByEmails(authorized.map((a) => a.row.email));
+      // Deduped so a repeated email costs one lookup. Keyed on lowercase email.
+      const emailsToLookUp = new Map<string, string>();
+      for (const { row } of authorized) {
+        const key = row.email.toLowerCase();
+        if (!emailsToLookUp.has(key)) emailsToLookUp.set(key, row.email);
+      }
+
+      existing = await userRepository.findByEmails([...emailsToLookUp.values()]);
     } catch (error) {
       // Without knowing which emails already exist, none of Phase 2's classification can safely
       // proceed — an unhandled throw here would otherwise abort bulkImport for every already-
@@ -1125,9 +1118,34 @@ export function UserImportService({
     const updateRows: { index: number; row: ImportUserRowInput; user: User }[] = [];
     const unenrollRows: { index: number; row: ImportUserRowInput; user: User }[] = [];
 
+    // A repeated email is an ambiguous instruction — two rows can name opposite intents (unenroll
+    // and update), and picking one by row order decides a user's fate on spreadsheet ordering. So
+    // every copy is rejected and the user is left untouched for the operator to resolve. Counted in
+    // a pre-pass because the first copy isn't identifiable as one until a later row repeats it.
+    const emailCounts = new Map<string, number>();
+    for (const { row } of authorized) {
+      const emailKey = row.email.toLowerCase();
+      emailCounts.set(emailKey, (emailCounts.get(emailKey) ?? 0) + 1);
+    }
+
     for (const entry of authorized) {
-      const user = existingByEmail.get(entry.row.email.toLowerCase());
+      const emailKey = entry.row.email.toLowerCase();
+      const user = existingByEmail.get(emailKey);
       const unenroll = Boolean(entry.row.unenroll);
+
+      // Rejected here because this is the first point that knows whether the email exists.
+      // Tradeoff: a duplicate that also fails Phase 1 reports that 422/403 instead of this conflict.
+      if ((emailCounts.get(emailKey) ?? 0) > 1) {
+        // Unprocessable rather than conflict: the repetition is in the request, and the email may
+        // name no stored user at all.
+        outcomes[entry.index] = failed(
+          entry.index,
+          unenroll ? CLASSIFICATION.UNENROLLED : user ? CLASSIFICATION.UPDATED : CLASSIFICATION.CREATED,
+          ApiErrorCode.RESOURCE_UNPROCESSABLE,
+          ApiErrorMessage.UNPROCESSABLE_ENTITY,
+        );
+        continue;
+      }
 
       if (user && unenroll) {
         unenrollRows.push({ ...entry, user });

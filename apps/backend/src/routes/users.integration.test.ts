@@ -76,7 +76,7 @@ import { RosteringProvider } from '../enums/rostering-provider.enum';
 import { RosteringEntityType } from '../enums/rostering-entity-type.enum';
 import { FgaClient } from '../clients/fga.client';
 import { FgaType } from '../services/authorization/fga-constants';
-import { writeFgaAdministrationAssignment } from '../test-support/fga/fga-test-tuples.helper';
+import { writeFgaAdministrationAssignment, writeFgaOrgMembership } from '../test-support/fga/fga-test-tuples.helper';
 import type { Condition } from '../types/condition';
 import { Operator } from '../types/condition';
 
@@ -3066,6 +3066,179 @@ describe('POST /v1/users/import', () => {
         hispanicEthnicity: true,
         homeLanguage: 'spanish',
       });
+    });
+  });
+
+  describe('duplicate emails', () => {
+    /** Seed a district-enrolled user with the matching FGA membership tuple. */
+    const seedEnrolledUser = async (email: string) => {
+      const user = await UserFactory.create({ email });
+      await UserOrgFactory.create({
+        userId: user.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.STUDENT,
+      });
+      await writeFgaOrgMembership(user.id, baseFixture.district.id, UserRole.STUDENT, FgaType.DISTRICT);
+      return user;
+    };
+
+    /** Every membership tuple FGA holds for a user, across all membership-bearing object types. */
+    const readMembershipTuples = async (userId: string) => {
+      const fga = FgaClient.getClient();
+      const reads = await Promise.all(
+        [FgaType.DISTRICT, FgaType.SCHOOL, FgaType.CLASS, FgaType.GROUP, FgaType.FAMILY].map((type) =>
+          fga.read({ user: `${FgaType.USER}:${userId}`, object: `${type}:` }),
+        ),
+      );
+      return reads.flatMap((r) => r.tuples ?? []);
+    };
+
+    it('leaves the user untouched when an unenroll and an update name the same email', async () => {
+      const email = makeImportEmail('dup-unenroll-update');
+      const user = await seedEnrolledUser(email);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            { email, name: { first: 'Gone', last: 'Student' }, unenroll: true, memberships: [] },
+            {
+              // Same address, different casing — the match is case-insensitive.
+              email: email.toUpperCase(),
+              name: { first: 'Resurrected', last: 'Student' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({
+        status: 'failed',
+        classification: 'unenrolled',
+        error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+      });
+      expect(res.body.data.results[1]).toMatchObject({
+        status: 'failed',
+        // The bin the row would have gone to, since the email resolves to an existing user.
+        classification: 'updated',
+        error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+      });
+      expect(res.body.data.summary).toMatchObject({ total: 2, updated: 0, unenrolled: 0, failed: 2 });
+
+      // Neither intent was guessed at: not archived, not renamed, membership and grant intact.
+      const untouched = await userRepository.getById({ id: user.id });
+      expect(untouched!.rosteringEnded).toBeNull();
+      expect(untouched!.nameFirst).not.toBe('Resurrected');
+      expect(await userRepository.getUserEntityMemberships(user.id)).toHaveLength(1);
+      expect(await readMembershipTuples(user.id)).toHaveLength(1);
+    });
+
+    it('applies neither of two update rows for the same user', async () => {
+      const email = makeImportEmail('dup-update-update');
+      const user = await seedEnrolledUser(email);
+      const originalName = user.nameFirst;
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'First', last: 'Wins' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+            {
+              email,
+              name: { first: 'Second', last: 'Loses' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.summary).toMatchObject({ total: 2, updated: 0, failed: 2 });
+      expect(
+        res.body.data.results.every(
+          (r: { status: string; error: { code: string } }) =>
+            r.status === 'failed' && r.error.code === ApiErrorCode.RESOURCE_UNPROCESSABLE,
+        ),
+      ).toBe(true);
+
+      const unchanged = await userRepository.getById({ id: user.id });
+      expect(unchanged!.nameFirst).toBe(originalName);
+    });
+
+    it('creates neither of two create rows for the same email, importing no account', async () => {
+      const email = makeImportEmail('dup-create-create');
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              password: 'Password123!',
+              name: { first: 'First', last: 'Enrollee' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+            {
+              email: email.toUpperCase(),
+              password: 'Password123!',
+              name: { first: 'Second', last: 'Enrollee' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      // No existing user behind the email, so both rejected rows report the create bin.
+      expect(res.body.data.results[0]).toMatchObject({
+        status: 'failed',
+        classification: 'created',
+        error: { code: ApiErrorCode.RESOURCE_UNPROCESSABLE },
+      });
+      expect(res.body.data.results[1]).toMatchObject({ status: 'failed', classification: 'created' });
+
+      // Nothing reached Firebase, and no user was persisted for the email.
+      expect(mockAuth.importUsers).not.toHaveBeenCalled();
+      expect(await userRepository.findByEmails([email])).toHaveLength(0);
+    });
+
+    it('processes the unique rows in a batch that also contains a duplicated email', async () => {
+      const dupEmail = makeImportEmail('dup-mixed-dup');
+      const uniqueEmail = makeImportEmail('dup-mixed-unique');
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email: dupEmail,
+              password: 'Password123!',
+              name: { first: 'Dup', last: 'One' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+            {
+              email: uniqueEmail,
+              password: 'Password123!',
+              name: { first: 'Unique', last: 'Enrollee' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+            {
+              email: dupEmail,
+              password: 'Password123!',
+              name: { first: 'Dup', last: 'Two' },
+              memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      // The conflict is scoped to the duplicated email — the unrelated row still lands.
+      expect(res.body.data.summary).toMatchObject({ total: 3, created: 1, failed: 2 });
+      expect(res.body.data.results[1]).toMatchObject({ status: 'ok', classification: 'created' });
+      expect(await userRepository.findByEmails([dupEmail])).toHaveLength(0);
+      expect(await userRepository.findByEmails([uniqueEmail])).toHaveLength(1);
     });
   });
 
