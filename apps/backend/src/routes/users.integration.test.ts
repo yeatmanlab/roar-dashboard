@@ -3069,30 +3069,115 @@ describe('POST /v1/users/import', () => {
     });
   });
 
-  describe('duplicate emails', () => {
-    /** Seed a district-enrolled user with the matching FGA membership tuple. */
-    const seedEnrolledUser = async (email: string) => {
+  /** Seed a district-enrolled user with the matching FGA membership tuple. */
+  const seedEnrolledUser = async (email: string) => {
+    const user = await UserFactory.create({ email });
+    await UserOrgFactory.create({
+      userId: user.id,
+      orgId: baseFixture.district.id,
+      role: UserRole.STUDENT,
+    });
+    await writeFgaOrgMembership(user.id, baseFixture.district.id, UserRole.STUDENT, FgaType.DISTRICT);
+    return user;
+  };
+
+  /** Every membership tuple FGA holds for a user, across all membership-bearing object types. */
+  const readMembershipTuples = async (userId: string) => {
+    const fga = FgaClient.getClient();
+    const reads = await Promise.all(
+      [FgaType.DISTRICT, FgaType.SCHOOL, FgaType.CLASS, FgaType.GROUP, FgaType.FAMILY].map((type) =>
+        fga.read({ user: `${FgaType.USER}:${userId}`, object: `${type}:` }),
+      ),
+    );
+    return reads.flatMap((r) => r.tuples ?? []);
+  };
+
+  describe('FGA revocation against a real store', () => {
+    // These assert the delete actually matched what was written. The tuples are written with an
+    // `active_membership` condition and deleted by bare key, and the class-role skip has to agree
+    // with what single-create wrote — both are properties of the FGA server, not of our types.
+    // A mismatch used to be swallowed and reported `ok`; deleteTuplesOrThrow now fails the row,
+    // so a shape drift would surface here as a failing unenroll rather than in production.
+
+    it('removes the membership tuples when a row unenrolls a user', async () => {
+      const email = makeImportEmail('unenroll-fga');
+      const user = await seedEnrolledUser(email);
+      expect(await readMembershipTuples(user.id)).toHaveLength(1);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [{ email, name: { first: 'Departing', last: 'Student' }, unenroll: true, memberships: [] }],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'unenrolled' });
+
+      const archived = await userRepository.getById({ id: user.id });
+      expect(archived!.rosteringEnded).not.toBeNull();
+      expect(await userRepository.getUserEntityMemberships(user.id)).toHaveLength(0);
+      expect(await readMembershipTuples(user.id)).toHaveLength(0);
+    });
+
+    it('swaps the tuples when an update row replaces one org membership with another', async () => {
+      const email = makeImportEmail('update-fga-swap');
+      const user = await seedEnrolledUser(email);
+
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'Moved', last: 'Student' },
+              // Declares a school instead of the seeded district, so the district membership is a
+              // predicted removal and gets revoked before the reconcile commits.
+              memberships: [
+                { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
+                { entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' },
+              ],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'updated' });
+
+      // The school grant was added; the district grant it kept is still present.
+      const objects = (await readMembershipTuples(user.id)).map((t) => t.key?.object);
+      expect(objects).toContain(`${FgaType.SCHOOL}:${baseFixture.schoolA.id}`);
+      expect(objects).toContain(`${FgaType.DISTRICT}:${baseFixture.district.id}`);
+    });
+
+    it('revokes the tuple for a membership an update row drops', async () => {
+      const email = makeImportEmail('update-fga-drop');
       const user = await UserFactory.create({ email });
-      await UserOrgFactory.create({
-        userId: user.id,
-        orgId: baseFixture.district.id,
-        role: UserRole.STUDENT,
-      });
-      await writeFgaOrgMembership(user.id, baseFixture.district.id, UserRole.STUDENT, FgaType.DISTRICT);
-      return user;
-    };
+      await UserOrgFactory.create({ userId: user.id, orgId: baseFixture.schoolA.id, role: UserRole.STUDENT });
+      await writeFgaOrgMembership(user.id, baseFixture.schoolA.id, UserRole.STUDENT, FgaType.SCHOOL);
 
-    /** Every membership tuple FGA holds for a user, across all membership-bearing object types. */
-    const readMembershipTuples = async (userId: string) => {
-      const fga = FgaClient.getClient();
-      const reads = await Promise.all(
-        [FgaType.DISTRICT, FgaType.SCHOOL, FgaType.CLASS, FgaType.GROUP, FgaType.FAMILY].map((type) =>
-          fga.read({ user: `${FgaType.USER}:${userId}`, object: `${type}:` }),
-        ),
-      );
-      return reads.flatMap((r) => r.tuples ?? []);
-    };
+      const res = await expectRoute('POST', '/v1/users/import')
+        .as(tiers.superAdmin)
+        .withBody({
+          users: [
+            {
+              email,
+              name: { first: 'Reassigned', last: 'Student' },
+              // Same entity type, different id — replace-semantics ends schoolA and adds schoolB.
+              memberships: [{ entityType: 'school', entityId: baseFixture.schoolB.id, role: 'student' }],
+            },
+          ],
+        })
+        .toReturn(StatusCodes.OK);
 
+      expect(res.body.data.results[0]).toMatchObject({ status: 'ok', classification: 'updated' });
+
+      const objects = (await readMembershipTuples(user.id)).map((t) => t.key?.object);
+      expect(objects).toContain(`${FgaType.SCHOOL}:${baseFixture.schoolB.id}`);
+      expect(objects).not.toContain(`${FgaType.SCHOOL}:${baseFixture.schoolA.id}`);
+    });
+  });
+
+  describe('duplicate emails', () => {
     it('leaves the user untouched when an unenroll and an update name the same email', async () => {
       const email = makeImportEmail('dup-unenroll-update');
       const user = await seedEnrolledUser(email);

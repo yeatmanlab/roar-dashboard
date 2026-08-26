@@ -758,7 +758,7 @@ describe('UserImportService.bulkImport', () => {
 
       // Unenroll's DB write has no clean undo, so the revocation must land first — a failed DB write
       // then leaves the user under-granted rather than unenrolled-but-still-authorized.
-      const deleteOrder = mockAuthz.deleteTuples.mock.invocationCallOrder[0]!;
+      const deleteOrder = mockAuthz.deleteTuplesOrThrow.mock.invocationCallOrder[0]!;
       const txOrder = mockUserRepository.runTransaction.mock.invocationCallOrder[0]!;
       expect(deleteOrder).toBeLessThan(txOrder);
     });
@@ -793,10 +793,10 @@ describe('UserImportService.bulkImport', () => {
         makeRow({ email: 'leaver@example.org', unenroll: true }),
       ]);
 
-      expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([
+      expect(mockAuthz.deleteTuplesOrThrow).toHaveBeenCalledWith([
         expect.objectContaining({ relation: UserRole.TEACHER, object: 'school:school-9' }),
       ]);
-      expect(mockAuthz.deleteTuples).not.toHaveBeenCalledWith(
+      expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalledWith(
         expect.arrayContaining([expect.objectContaining({ object: 'family:fam-1' })]),
       );
 
@@ -838,20 +838,20 @@ describe('UserImportService.bulkImport', () => {
 
       expect(mockUserRepository.endAllOrgEnrollments).toHaveBeenCalled();
       expect(mockUserRepository.archiveUser).toHaveBeenCalled();
-      expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([
+      expect(mockAuthz.deleteTuplesOrThrow).toHaveBeenCalledWith([
         { user: expect.stringMatching(/^user:/), relation: UserRole.STUDENT, object: 'school:school-9' },
       ]);
       expect(results[0]!).toMatchObject({ classification: 'unenrolled', status: 'ok' });
     });
 
-    it('skips deleteTuples when the user has no active memberships', async () => {
+    it('skips the FGA revocation when the user has no active memberships', async () => {
       mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([]);
 
       const results = await buildService().bulkImport(superAdmin, [
         makeRow({ email: 'leaver@example.org', unenroll: true }),
       ]);
 
-      expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalled();
       expect(results[0]!.status).toBe('ok');
     });
 
@@ -865,7 +865,7 @@ describe('UserImportService.bulkImport', () => {
 
       // The admin-tier class tuple was never written (it cascades via the org hierarchy), so deletion
       // must skip it — only the school tuple is removed.
-      const deleted = mockAuthz.deleteTuples.mock.calls[0]![0];
+      const deleted = mockAuthz.deleteTuplesOrThrow.mock.calls[0]![0];
       expect(deleted).toHaveLength(1);
       expect(deleted[0]).toMatchObject({ object: 'school:school-9' });
     });
@@ -884,6 +884,33 @@ describe('UserImportService.bulkImport', () => {
 
       expect(results[0]!.status).toBe('failed');
       expect(results[1]!.status).toBe('ok');
+    });
+
+    it('fails the row without ending enrollments when the FGA revocation throws', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+      ]);
+      mockAuthz.deleteTuplesOrThrow.mockRejectedValueOnce(new Error('fga down'));
+
+      const results = await buildService().bulkImport(superAdmin, [
+        makeRow({ email: 'leaver@example.org', unenroll: true }),
+      ]);
+
+      expect(results[0]!.status).toBe('failed');
+      expect(mockUserRepository.runTransaction).not.toHaveBeenCalled();
+      expect(mockUserRepository.endAllOrgEnrollments).not.toHaveBeenCalled();
+      expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
+    });
+
+    it('does not attempt compensation when the revocation itself failed', async () => {
+      mockUserRepository.getActiveMembershipsWithRoles.mockResolvedValue([
+        { entityType: EntityType.SCHOOL, entityId: 'school-9', role: UserRole.STUDENT },
+      ]);
+      mockAuthz.deleteTuplesOrThrow.mockRejectedValueOnce(new Error('fga down'));
+
+      await buildService().bulkImport(superAdmin, [makeRow({ email: 'leaver@example.org', unenroll: true })]);
+
+      expect(mockAuthz.writeTuplesOrThrow).not.toHaveBeenCalled();
     });
 
     describe('authorization against actual memberships', () => {
@@ -921,7 +948,7 @@ describe('UserImportService.bulkImport', () => {
         });
         expect(mockUserRepository.endAllOrgEnrollments).not.toHaveBeenCalled();
         expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
-        expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+        expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalled();
       });
 
       it('rejects an unenroll row when the target has zero active memberships, without mutating anything', async () => {
@@ -941,7 +968,7 @@ describe('UserImportService.bulkImport', () => {
         expect(mockAuthz.requirePermission).not.toHaveBeenCalled();
         expect(mockUserRepository.endAllOrgEnrollments).not.toHaveBeenCalled();
         expect(mockUserRepository.archiveUser).not.toHaveBeenCalled();
-        expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+        expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalled();
       });
 
       it('ignores a declared membership the requester lacks permission over, since it is not what gets unenrolled', async () => {
@@ -1164,7 +1191,7 @@ describe('UserImportService.bulkImport', () => {
         },
       ]);
       // Removed membership → key-only deletion tuple (no condition; FGA deletes by key).
-      expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([
+      expect(mockAuthz.deleteTuplesOrThrow).toHaveBeenCalledWith([
         { user: `user:${user.id}`, relation: 'student', object: 'school:school-1' },
       ]);
       expect(results[0]!).toMatchObject({ classification: 'updated', status: 'ok' });
@@ -1189,8 +1216,8 @@ describe('UserImportService.bulkImport', () => {
 
       // The revocation must have run (and run first) even though the grant-write threw — otherwise the
       // removed membership would stay authorized in FGA.
-      expect(mockAuthz.deleteTuples).toHaveBeenCalled();
-      const deleteOrder = mockAuthz.deleteTuples.mock.invocationCallOrder[0]!;
+      expect(mockAuthz.deleteTuplesOrThrow).toHaveBeenCalled();
+      const deleteOrder = mockAuthz.deleteTuplesOrThrow.mock.invocationCallOrder[0]!;
       const writeOrder = mockAuthz.writeTuplesOrThrow.mock.invocationCallOrder[0]!;
       expect(deleteOrder).toBeLessThan(writeOrder);
       expect(results[0]!.status).toBe('failed');
@@ -1212,7 +1239,7 @@ describe('UserImportService.bulkImport', () => {
       it('revokes the predicted removals before committing the reconcile', async () => {
         await buildService().bulkImport(superAdmin, [rowMovingToSchool2()]);
 
-        const deleteOrder = mockAuthz.deleteTuples.mock.invocationCallOrder[0]!;
+        const deleteOrder = mockAuthz.deleteTuplesOrThrow.mock.invocationCallOrder[0]!;
         const txOrder = mockUserRepository.runTransaction.mock.invocationCallOrder[0]!;
         expect(deleteOrder).toBeLessThan(txOrder);
       });
@@ -1228,6 +1255,19 @@ describe('UserImportService.bulkImport', () => {
         expect(results[0]!.status).toBe('failed');
       });
 
+      it('fails the row without committing the reconcile when the revocation throws', async () => {
+        mockAuthz.deleteTuplesOrThrow.mockRejectedValueOnce(new Error('fga down'));
+
+        const results = await buildService().bulkImport(superAdmin, [rowMovingToSchool2()]);
+
+        expect(results[0]!.status).toBe('failed');
+        expect(mockUserRepository.runTransaction).not.toHaveBeenCalled();
+        expect(mockUserRepository.reconcileMemberships).not.toHaveBeenCalled();
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+        // Nothing was revoked, so there is nothing to restore.
+        expect(mockAuthz.writeTuplesOrThrow).not.toHaveBeenCalled();
+      });
+
       it('does not revoke anything when the row removes no membership', async () => {
         await buildService().bulkImport(superAdmin, [
           makeRow({
@@ -1236,7 +1276,7 @@ describe('UserImportService.bulkImport', () => {
           }),
         ]);
 
-        expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+        expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalled();
       });
 
       it('leaves untouched entity types alone (replace-semantics is per declared type)', async () => {
@@ -1249,7 +1289,9 @@ describe('UserImportService.bulkImport', () => {
 
         // The row declares only a school, so the group membership is not reconciled and must not be
         // revoked — matching UserRepository.reconcileMemberships' per-type grouping.
-        expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([expect.objectContaining({ object: 'school:school-1' })]);
+        expect(mockAuthz.deleteTuplesOrThrow).toHaveBeenCalledWith([
+          expect.objectContaining({ object: 'school:school-1' }),
+        ]);
       });
 
       it('leaves an existing family membership untouched while replacing the org one', async () => {
@@ -1263,8 +1305,10 @@ describe('UserImportService.bulkImport', () => {
 
         const results = await buildService().bulkImport(superAdmin, [rowMovingToSchool2()]);
 
-        expect(mockAuthz.deleteTuples).toHaveBeenCalledWith([expect.objectContaining({ object: 'school:school-1' })]);
-        expect(mockAuthz.deleteTuples).not.toHaveBeenCalledWith(
+        expect(mockAuthz.deleteTuplesOrThrow).toHaveBeenCalledWith([
+          expect.objectContaining({ object: 'school:school-1' }),
+        ]);
+        expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalledWith(
           expect.arrayContaining([expect.objectContaining({ object: 'family:fam-1' })]),
         );
 
@@ -1343,7 +1387,7 @@ describe('UserImportService.bulkImport', () => {
       const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
 
       expect(mockAuthz.writeTuplesOrThrow).not.toHaveBeenCalled();
-      expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalled();
       expect(results[0]!.status).toBe('ok');
     });
 
@@ -1352,7 +1396,7 @@ describe('UserImportService.bulkImport', () => {
 
       expect(mockUserRepository.reconcileMemberships).toHaveBeenCalled();
       expect(mockAuthz.writeTuplesOrThrow).not.toHaveBeenCalled();
-      expect(mockAuthz.deleteTuples).not.toHaveBeenCalled();
+      expect(mockAuthz.deleteTuplesOrThrow).not.toHaveBeenCalled();
       expect(results[0]!.status).toBe('ok');
     });
 
