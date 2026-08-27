@@ -7,7 +7,7 @@ import { logger } from './logger';
 // mirroring cors.middleware.test.ts. The real cors / security-headers / request-logger
 // middleware (and their wiring in app.ts) are still exercised end-to-end.
 vi.mock('./middleware/cors/parse-allowed-origins', () => ({
-  parseAllowedOrigins: vi.fn(() => ['https://allowed.example.com']),
+  parseAllowedOrigins: vi.fn(() => ({ origins: ['https://allowed.example.com'], previewPatterns: [] })),
 }));
 
 const ALLOWED_ORIGIN = 'https://allowed.example.com';
