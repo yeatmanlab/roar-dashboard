@@ -52,11 +52,11 @@
         </p>
       </div>
 
-      <!-- Bulk import: upload a JSON array of { name, type, value } to replace the rows below. -->
+      <!-- Import variant definitions as JSON, for one task at a time. -->
       <div class="flex flex-column gap-1 my-3">
         <PvButton
           type="button"
-          label="Upload parameters (JSON)"
+          label="Upload variant definitions (JSON)"
           icon="pi pi-upload"
           outlined
           data-testid="create-variant-form__params-upload"
@@ -64,8 +64,9 @@
           @click="paramsFileInput?.click()"
         />
         <small id="params-upload-hint" class="text-gray-500">
-          Replaces the rows below with a JSON array of
-          <code>{ "name": "…", "type": "string" | "number" | "boolean", "value": … }</code>.
+          Accepts JSON variant definitions — <code>{ "variantName": "…", "params": { … } }</code>, or an array of them.
+          Fills the name and the rows below; parameter types are inferred from their values. All definitions must belong
+          to the same task, since variants are created under the task selected above.
         </small>
         <input
           ref="paramsFileInput"
@@ -75,6 +76,38 @@
           data-testid="create-variant-form__params-file"
           @change="handleParamsFileUpload"
         />
+      </div>
+
+      <!-- Shown while several definitions were loaded and any remain uncreated; created ones drop out. -->
+      <div
+        v-if="uploadedVariants.length > 1 && remainingVariants.length > 0"
+        class="my-3 flex flex-column gap-2"
+        data-testid="create-variant-form__uploaded-variant-picker"
+      >
+        <Dropdown
+          v-model="selectedUploadedName"
+          :data="uploadedVariantOptions"
+          label="Variant to create"
+          placeholder="Select a variant to create"
+          label-key="name"
+          value-key="id"
+        />
+        <div v-if="remainingVariants.length > 1" class="flex flex-column gap-1">
+          <PvButton
+            type="button"
+            :label="`Create all ${remainingVariants.length} remaining`"
+            icon="pi pi-list-check"
+            outlined
+            :loading="isCreatingAll"
+            :disabled="isCreatingAll || !userCan(Permissions.Tasks.CREATE)"
+            data-testid="create-variant-form__create-all"
+            @click="createAllVariants()"
+          />
+          <small class="text-gray-500">
+            Creates each remaining definition, using the status it declares or the one selected above. Descriptions are
+            not applied.
+          </small>
+        </div>
       </div>
 
       <TaskParametersConfigurator v-model="paramsModel" />
@@ -109,8 +142,8 @@ import Dropdown from '@/components/Form/Dropdown';
 import TextInput from '@/components/Form/TextInput';
 import TaskParametersConfigurator from '@/components/TaskParametersConfigurator/TaskParametersConfigurator.vue';
 import { buildVariantParametersFromRows } from '@/helpers/taskConfig';
-import { parseVariantParametersJson } from '@/helpers/parseVariantParametersFile';
-import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { parseVariantDefinitions } from '@/helpers/parseVariantDefinitions';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION, TOAST_LONG_LIFE_DURATION } from '@/constants/toasts';
 import {
   TASK_DESCRIPTION_MAX_LENGTH,
   TASK_NAME_MAX_LENGTH,
@@ -160,13 +193,84 @@ const paramsModel = reactive([]);
 // parameters drafted for one task can't silently carry over to another.
 watch(selectedTaskId, () => {
   paramsModel.splice(0, paramsModel.length);
+  uploadedVariants.value = [];
+  selectedUploadedName.value = null;
+  createdNames.value = new Set();
 });
 
-// ─── Bulk parameter upload ───────────────────────────────────────────────────
-// Lets the user upload a JSON array of { name, type, value } instead of adding
-// each parameter row by hand. Uploading REPLACES the current rows (the file is
-// the full parameter set).
+// ─── Variant definition upload ───────────────────────────────────────────────
+// Accepts `{ variantName, params }` definitions so the name and parameter rows
+// come from the upload instead of being retyped. Applying one REPLACES the
+// current name and rows.
+//
+// The parser rejects a batch whose definitions span several tasks, since the form
+// creates under whichever task is selected. Several variants of one task are
+// fine, and offer a picker so the researcher can work down the batch without
+// re-uploading.
 const paramsFileInput = ref(null);
+const uploadedVariants = ref([]);
+const selectedUploadedName = ref(null);
+const isCreatingAll = ref(false);
+
+// Names created during this session, so a definition drops out of the picker once
+// it exists rather than sitting there inviting a duplicate-name conflict.
+const createdNames = ref(new Set());
+
+/** Loaded definitions that have not been created yet. */
+const remainingVariants = computed(() =>
+  uploadedVariants.value.filter((variant) => !createdNames.value.has(variant.variantName.toLowerCase())),
+);
+
+/** Dropdown options for the definitions still to be created. */
+const uploadedVariantOptions = computed(() =>
+  remainingVariants.value.map((variant) => ({ id: variant.variantName, name: variant.variantName })),
+);
+
+/**
+ * Record a created variant, releasing the upload once nothing is left to create.
+ *
+ * @param {string} name - The variant name that was created
+ * @returns {void}
+ */
+function markVariantCreated(name) {
+  createdNames.value = new Set(createdNames.value).add(name.toLowerCase());
+  if (remainingVariants.value.length === 0) {
+    uploadedVariants.value = [];
+    createdNames.value = new Set();
+    selectedUploadedName.value = null;
+  }
+}
+
+/**
+ * Apply an uploaded variant definition to the form, replacing the name and the rows.
+ *
+ * A definition that declares a `status` moves the dropdown to it, so the selection stays visible
+ * and overridable rather than being applied invisibly at submit time. A definition that declares
+ * none leaves whatever is already selected.
+ *
+ * @param {{ variantName: string, status?: string, rows: Array<object> }} variant - Parsed variant to apply
+ * @returns {void}
+ */
+function applyUploadedVariant(variant) {
+  formModel.name = variant.variantName;
+  if (variant.status) formModel.status = variant.status;
+  paramsModel.splice(0, paramsModel.length, ...variant.rows);
+  toast.add({
+    severity: TOAST_SEVERITIES.SUCCESS,
+    summary: 'Variant loaded',
+    detail: `Loaded "${variant.variantName}" with ${variant.rows.length} parameter${
+      variant.rows.length === 1 ? '' : 's'
+    }.`,
+    life: TOAST_DEFAULT_LIFE_DURATION,
+  });
+}
+
+// Selecting a different variant from the picker re-applies it over the form.
+watch(selectedUploadedName, (name) => {
+  if (!name) return;
+  const variant = uploadedVariants.value.find((candidate) => candidate.variantName === name);
+  if (variant) applyUploadedVariant(variant);
+});
 
 const handleParamsFileUpload = (event) => {
   const file = event.target.files?.[0];
@@ -175,20 +279,27 @@ const handleParamsFileUpload = (event) => {
   const reader = new FileReader();
   reader.onload = () => {
     try {
-      const rows = parseVariantParametersJson(String(reader.result));
-      paramsModel.splice(0, paramsModel.length, ...rows);
-      toast.add({
-        severity: TOAST_SEVERITIES.SUCCESS,
-        summary: 'Parameters loaded',
-        detail: `Loaded ${rows.length} parameter${rows.length === 1 ? '' : 's'} from file.`,
-        life: TOAST_DEFAULT_LIFE_DURATION,
-      });
+      const variants = parseVariantDefinitions(String(reader.result));
+      uploadedVariants.value = variants;
+      selectedUploadedName.value = null;
+      createdNames.value = new Set();
+
+      if (variants.length === 1) {
+        applyUploadedVariant(variants[0]);
+      } else {
+        toast.add({
+          severity: TOAST_SEVERITIES.INFO,
+          summary: 'Select a variant',
+          detail: `${variants.length} variants were loaded for this task. Choose which one to create.`,
+          life: TOAST_LONG_LIFE_DURATION,
+        });
+      }
     } catch (error) {
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Invalid parameters file',
+        summary: 'Invalid variant definitions',
         detail: error.message,
-        life: TOAST_DEFAULT_LIFE_DURATION,
+        life: TOAST_LONG_LIFE_DURATION,
       });
     } finally {
       // Reset so re-selecting the same file re-fires `change`.
@@ -228,10 +339,14 @@ const v$ = useVuelidate(formRules, formModel);
 function resetForm() {
   Object.assign(formModel, initialFormState);
   paramsModel.splice(0, paramsModel.length);
+  // The loaded definitions are deliberately kept: a researcher creates several
+  // variants of one task in turn, and dropping the picker here would force a
+  // re-upload per variant. Only the applied selection is released.
+  selectedUploadedName.value = null;
   v$.value.$reset();
 }
 
-const { mutate: addVariant } = useAddTaskVariantMutation();
+const { mutate: addVariant, mutateAsync: addVariantAsync } = useAddTaskVariantMutation();
 
 /**
  * Handle form submission
@@ -242,6 +357,67 @@ const { mutate: addVariant } = useAddTaskVariantMutation();
  *
  * @returns {void}
  */
+/**
+ * Create every remaining loaded definition for the selected task, in order.
+ *
+ * Sequential rather than concurrent so a failure is attributable to one definition, and it
+ * continues past failures rather than abandoning the batch — a definition that already exists
+ * comes back as a 409, and that should not stop the ones that do not. The outcome is reported
+ * as a summary, and each success drops out of the picker.
+ *
+ * Names and parameters come from the upload. `status` comes from the definition when it declares
+ * one and from the form otherwise — a single dropdown cannot express a batch where some variants
+ * publish and others stay draft. Description is deliberately not applied, since it is free text
+ * with no per-definition source.
+ *
+ * @returns {Promise<void>}
+ */
+async function createAllVariants() {
+  if (isCreatingAll.value || !selectedTaskId.value) return;
+
+  isCreatingAll.value = true;
+  const pending = [...remainingVariants.value];
+  const failures = [];
+  let createdCount = 0;
+
+  for (const variant of pending) {
+    try {
+      await addVariantAsync({
+        taskId: selectedTaskId.value,
+        body: {
+          status: variant.status ?? formModel.status,
+          parameters: buildVariantParametersFromRows(variant.rows),
+          name: variant.variantName,
+        },
+      });
+      createdCount += 1;
+      markVariantCreated(variant.variantName);
+    } catch (error) {
+      failures.push(`${variant.variantName}: ${error?.body?.error?.message ?? error.message}`);
+    }
+  }
+
+  isCreatingAll.value = false;
+
+  if (failures.length === 0) {
+    resetForm();
+    toast.add({
+      severity: TOAST_SEVERITIES.SUCCESS,
+      summary: 'Variants created',
+      detail: `Created ${createdCount} variant${createdCount === 1 ? '' : 's'}.`,
+      life: TOAST_DEFAULT_LIFE_DURATION,
+    });
+    return;
+  }
+
+  toast.add({
+    severity: TOAST_SEVERITIES.WARNING,
+    summary: `Created ${createdCount} of ${pending.length}`,
+    detail: `Not created — ${failures.join('; ')}`,
+    life: TOAST_LONG_LIFE_DURATION,
+  });
+}
+
 const handleSubmit = async () => {
   const isFormValid = await v$.value.$validate();
 
@@ -270,6 +446,7 @@ const handleSubmit = async () => {
     { taskId: selectedTaskId.value, body },
     {
       onSuccess: () => {
+        if (name) markVariantCreated(name);
         toast.add({
           severity: TOAST_SEVERITIES.SUCCESS,
           summary: 'Hoorah!',
