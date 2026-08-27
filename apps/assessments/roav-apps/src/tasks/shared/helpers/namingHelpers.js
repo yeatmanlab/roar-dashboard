@@ -8,6 +8,15 @@ const prefixTextAsset = 'text';
 
 export const TAG_REQ_DEF = 'def';
 
+// it is NameModule rather than NameTask, but called name task everywhere
+export const NameTask = {
+  SHARED: 'shared',
+  ET: 'et',
+  MP: 'roav-mp',
+  RVP: 'roav-rvp',
+  CR: 'roav-cr',
+};
+
 export const ModeGame = {
   GAME: 'game',
   STANDARD: 'stand',
@@ -65,10 +74,16 @@ export const TypeKey = {
   SPACEBAR: ' ',
 };
 
-export const composeKeyAsset = (tagTrial, tagReq, descr, modeGame) => {
+export const TypeSize = {
+  SMALL: 'small',
+  MEDIUM: 'medium',
+  LARGE: 'large',
+};
+
+export const composeKeyAsset = (tagTrial, tagReq, descr, modeGame, nameTask) => {
   const modeGameRes = modeGame ?? sessionGet(SK.MODE_GAME);
-  const nameTask = sessionGet(SK.NAME_TASK);
-  let keyAsset = camelCase(nameTask);
+  const nameTaskRes = nameTask ?? sessionGet(SK.NAME_TASK);
+  let keyAsset = camelCase(nameTaskRes);
   keyAsset += upperFirst(camelCase(tagTrial));
   keyAsset += upperFirst(camelCase(tagReq));
   keyAsset += upperFirst(camelCase(descr));
@@ -76,10 +91,10 @@ export const composeKeyAsset = (tagTrial, tagReq, descr, modeGame) => {
   return keyAsset;
 };
 
-export const composeKeyText = (tagTrial, tagReq, descr, modeGame) => {
+export const composeKeyText = (tagTrial, tagReq, descr, modeGame, nameTask) => {
   const modeGameRes = modeGame ?? sessionGet(SK.MODE_GAME);
-  const nameTask = sessionGet(SK.NAME_TASK);
-  let keyText = `${nameTask}`;
+  const nameTaskRes = nameTask ?? sessionGet(SK.NAME_TASK);
+  let keyText = `${nameTaskRes}`;
   if (tagTrial) {
     keyText += `.${tagTrial}`;
   }
@@ -93,8 +108,8 @@ export const composeKeyText = (tagTrial, tagReq, descr, modeGame) => {
   return keyText;
 };
 
-export const fetchText = (tagTrial, tagReq, descr, modeGame) => {
-  const keyText = composeKeyText(tagTrial, tagReq, descr, modeGame);
+export const fetchText = (tagTrial, tagReq, descr, modeGame, nameTask) => {
+  const keyText = composeKeyText(tagTrial, tagReq, descr, modeGame, nameTask);
   const text = i18next.t(keyText, {
     interpolation: { escapeValue: false }, // to stop < and > from being overriden
     'audio-only': '',

@@ -1,0 +1,23 @@
+{
+  "paramsDecor": {
+    "typeDecor": "stripes-lr",
+    "widthStripe": 5,
+    "clrStripe": "#0000ff"
+  },
+  "collectSnapshotsCalibr": true,
+  "typeModelCalibr": "at-crops-bbs",
+  "paramsSnapshotCalibr": {
+    "saveLandmarks": false,
+    "saveCoordsHead": false,
+    "saveImgNativeEye": false,
+    "saveImgScaledEye": false
+  },
+  "collectSnapshotsCr": true,
+  "typeModelCr": "at-crops-bbs",
+  "paramsSnapshotCr": {
+    "saveLandmarks": false,
+    "saveCoordsHead": false,
+    "saveImgNativeEye": false,
+    "saveImgScaledEye": false
+  }
+}

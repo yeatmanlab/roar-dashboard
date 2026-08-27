@@ -317,7 +317,8 @@ export const t_plotSummary = () => ({
   type: jsPsychHtmlButtonResponse,
   stimulus: `
       <div id="plot" style="width:60svw; height:40svh; margin:0 auto 20svh;"></div>`,
-  choices: ['Continue'],
+  choices: ['NEXT'],
+  button_html: ["<button class='shared-tech-button-medium'>%choice%</button>"],
   on_load: () => {
     const infos = summary.getInfos();
     const params = summary.getParams();

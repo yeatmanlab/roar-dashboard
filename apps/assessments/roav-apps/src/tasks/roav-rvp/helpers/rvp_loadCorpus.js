@@ -28,7 +28,7 @@ const loadSvgStim = async (configsStim, bucketURI) => {
 };
 
 export const rvp_loadCorpus = async (nameTask, assets, bucketURI) => {
-  sessionSet(SK.URI_BUCKET, bucketURI);
+  // sessionSet(SK.URI_BUCKET, bucketURI);
   await loadCorpus(nameTask, assets, bucketURI);
   const locConfig = `${bucketURI}/${LOC_CONFIG_DEF}`;
   const config = sessionGet(SK.CONFIG);

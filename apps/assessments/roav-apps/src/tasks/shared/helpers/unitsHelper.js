@@ -21,14 +21,14 @@ export const UnitTime = {
   MS: 'ms',
 };
 
-export const degToPxFromWidth = (deg, distViewCm, widthScreenCm, widthScreenPx) => {
-  const lenCm = 2 * distViewCm * Math.tan((deg * Math.PI) / 180 / 2);
+export const degToPxFromWidth = (deg, vdCm, widthScreenCm, widthScreenPx) => {
+  const lenCm = 2 * vdCm * Math.tan((deg * Math.PI) / 180 / 2);
   const lenPx = (lenCm * widthScreenPx) / widthScreenCm;
   return lenPx;
 };
 
-export const degToPxFromDiag = (deg, distViewCm, diagScreenCm, widthScreenPx, heightScreenPx) => {
-  const lenCm = 2 * distViewCm * Math.tan((deg * Math.PI) / 180 / 2);
+export const degToPxFromDiag = (deg, vdCm, diagScreenCm, widthScreenPx, heightScreenPx) => {
+  const lenCm = 2 * vdCm * Math.tan((deg * Math.PI) / 180 / 2);
   const diagScreenPx = Math.sqrt(widthScreenPx * widthScreenPx + heightScreenPx * heightScreenPx);
   const lenPx = (lenCm * diagScreenPx) / diagScreenCm;
   return lenPx;

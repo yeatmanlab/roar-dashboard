@@ -1,5 +1,5 @@
 import type { RoavAppsTaskId } from './config.js';
-import { ROAV_MP_TASK_ID, ROAV_RVP_TASK_ID } from './config.js';
+import { ROAV_MP_TASK_ID, ROAV_RVP_TASK_ID, ROAV_CR_TASK_ID } from './config.js';
 
 /**
  * Task family strings for roav-apps. For these tasks the family string and the task ID
@@ -7,7 +7,11 @@ import { ROAV_MP_TASK_ID, ROAV_RVP_TASK_ID } from './config.js';
  */
 export type RoavAppsTask = RoavAppsTaskId;
 
-export const ROAV_APPS_TASKS = [ROAV_MP_TASK_ID, ROAV_RVP_TASK_ID] as const satisfies readonly RoavAppsTask[];
+export const ROAV_APPS_TASKS = [
+  ROAV_MP_TASK_ID,
+  ROAV_RVP_TASK_ID,
+  ROAV_CR_TASK_ID,
+] as const satisfies readonly RoavAppsTask[];
 
 type RoavAppsVariantEntry = {
   task: RoavAppsTask;
@@ -21,4 +25,5 @@ type RoavAppsVariantEntry = {
 export const ROAV_APPS_VARIANTS = {
   [ROAV_MP_TASK_ID]: { task: ROAV_MP_TASK_ID, taskId: ROAV_MP_TASK_ID },
   [ROAV_RVP_TASK_ID]: { task: ROAV_RVP_TASK_ID, taskId: ROAV_RVP_TASK_ID },
+  [ROAV_CR_TASK_ID]: { task: ROAV_CR_TASK_ID, taskId: ROAV_CR_TASK_ID },
 } as const satisfies Record<RoavAppsTask, RoavAppsVariantEntry>;

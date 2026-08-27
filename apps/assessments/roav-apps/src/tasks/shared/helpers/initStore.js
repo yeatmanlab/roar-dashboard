@@ -6,6 +6,8 @@ export const clearStoreOnTimelineStartDef = () => {
   sessionSet(SK.FPS, undefined);
   sessionSet(SK.WIDTH_WINDOW_FS, undefined);
   sessionSet(SK.HEIGHT_WINDOW_FS, undefined);
+  sessionSet(SK.WIDTH_SCREEN_CM, null);
+  sessionSet(SK.HEIGHT_SCREEN_CM, null);
 
   sessionSet(SK.ALLOW_MODE_INPUT_ALL, undefined);
   sessionSet(SK.MODE_INPUT_TARGET, undefined);
@@ -32,6 +34,9 @@ export const clearStoreOnTimelineStartDef = () => {
   sessionSet(SK.CNT_CORR_GLOBAL, 0);
 
   sessionSet(SK.IND_BLOCK, 0);
+
+  // measures
+  sessionSet(SK.SCREEN_CALIBRATED, false);
 };
 
 export const clearStoreOnAppStartDef = () => {
@@ -42,6 +47,8 @@ export const clearStoreOnAppStartDef = () => {
   sessionSet(SK.MODE_SEQ, undefined);
   sessionSet(SK.MODE_ADAPT_BLOCK, undefined);
   sessionSet(SK.MODE_ADAPT_STIM, undefined);
+
+  sessionSet(SK.SCREEN_CALIBRATE, false);
 
   sessionSet(SK.CONFIG_BLOCK, {});
 };
