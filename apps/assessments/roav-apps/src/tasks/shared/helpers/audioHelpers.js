@@ -1,10 +1,10 @@
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
-import jsPsychHtmlButtonResponse from "@jspsych/plugin-html-button-response";
-import i18next from "i18next";
+import jsPsychHtmlButtonResponse from '@jspsych/plugin-html-button-response';
+import i18next from 'i18next';
 import { mediaAssets } from './mediaAssets';
 import { jsPsych } from './taskSetup';
 import { wrapAsJsPsychTrial } from './jspsychHelpers';
-import { DURATIONS, RATE_AUDIO_LOW } from "./constants";
+import { DURATIONS, RATE_AUDIO_LOW } from './constants';
 
 export const stopAudioPlugin = () => {
   const ctx = jsPsych.pluginAPI.audioContext();
@@ -130,27 +130,21 @@ export const hasAudio = (keyAudio) => mediaAssets.audio?.[keyAudio] != null;
 // ===========================================================
 
 const RESPONSE_BUTTON_SELECTOR =
-  ".jspsych-audio-multi-response-button, .jspsych-audio-button-response-button, .jspsych-html-multi-response-button";
+  '.jspsych-audio-multi-response-button, .jspsych-audio-button-response-button, .jspsych-html-multi-response-button';
 const TRANSIENT_INPUT_SUPPRESSION_MS = 1000;
 
 let guardsInstalled = false;
 let suppressResponseInputUntil = 0;
 let shouldResumeCurrentAudio = false;
 
-const now = () =>
-  typeof performance !== "undefined" && performance.now
-    ? performance.now()
-    : Date.now();
+const now = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
 
 const suppressTransientResponseInput = () => {
-  suppressResponseInputUntil = Math.max(
-    suppressResponseInputUntil,
-    now() + TRANSIENT_INPUT_SUPPRESSION_MS,
-  );
+  suppressResponseInputUntil = Math.max(suppressResponseInputUntil, now() + TRANSIENT_INPUT_SUPPRESSION_MS);
 };
 
 const getElementFromEventTarget = (target) => {
-  if (typeof Element !== "undefined" && target instanceof Element) {
+  if (typeof Element !== 'undefined' && target instanceof Element) {
     return target;
   }
 
@@ -163,15 +157,11 @@ const isAssessmentResponseButtonEvent = (event) => {
 };
 
 const blockTransientResponseInput = (event) => {
-  if (
-    now() > suppressResponseInputUntil ||
-    !isAssessmentResponseButtonEvent(event)
-  )
-    return;
+  if (now() > suppressResponseInputUntil || !isAssessmentResponseButtonEvent(event)) return;
 
   event.preventDefault();
   event.stopPropagation();
-  if (typeof event.stopImmediatePropagation === "function") {
+  if (typeof event.stopImmediatePropagation === 'function') {
     event.stopImmediatePropagation();
   }
 };
@@ -181,7 +171,7 @@ const resumeAudioContextSimple = () => {
   try {
     const context = jsPsych.pluginAPI.audioContext();
 
-    if (context?.state !== "running" && typeof context?.resume === "function") {
+    if (context?.state !== 'running' && typeof context?.resume === 'function') {
       context.resume().catch(() => null);
     }
   } catch {
@@ -195,7 +185,7 @@ const resumeAudioContext = () => {
   try {
     const context = jsPsych.pluginAPI.audioContext();
     if (!context) return null;
-    if (typeof context.resume === "function") {
+    if (typeof context.resume === 'function') {
       context.resume().catch(() => null);
     }
     playSilentBuffer(context);
@@ -209,22 +199,17 @@ const getCurrentTrialAudioElement = async () => {
   const currentTrial = jsPsych.getCurrentTrial();
 
   if (
-    (currentTrial?.type?.info?.name !== "audio-button-response" &&
-      currentTrial?.type?.info?.name !== "audio-multi-response" &&
-      currentTrial?.type?.info?.name !== "audio-keyboard-response") ||
-    typeof currentTrial.stimulus !== "string"
+    (currentTrial?.type?.info?.name !== 'audio-button-response' &&
+      currentTrial?.type?.info?.name !== 'audio-multi-response' &&
+      currentTrial?.type?.info?.name !== 'audio-keyboard-response') ||
+    typeof currentTrial.stimulus !== 'string'
   ) {
     return null;
   }
 
-  const audioBuffer = await jsPsych.pluginAPI.getAudioBuffer(
-    currentTrial.stimulus,
-  );
+  const audioBuffer = await jsPsych.pluginAPI.getAudioBuffer(currentTrial.stimulus);
 
-  if (
-    typeof HTMLAudioElement !== "undefined" &&
-    audioBuffer instanceof HTMLAudioElement
-  ) {
+  if (typeof HTMLAudioElement !== 'undefined' && audioBuffer instanceof HTMLAudioElement) {
     return audioBuffer;
   }
 
@@ -234,9 +219,9 @@ const getCurrentTrialAudioElement = async () => {
 export const unlockAudioContext = () => {
   const ctx = jsPsych.pluginAPI.audioContext();
   if (ctx) {
-    if (ctx.state !== "running") {
+    if (ctx.state !== 'running') {
       const p = ctx.resume();
-      if (p && typeof p.catch === "function") p.catch(() => {});
+      if (p && typeof p.catch === 'function') p.catch(() => {});
     }
     playSilentBuffer(ctx);
   }
@@ -244,7 +229,7 @@ export const unlockAudioContext = () => {
   const a = new Audio(mediaAssets.audio.roavMpNullAudioAll);
   a.playsInline = true;
   const playPromise = a.play();
-  if (playPromise && typeof playPromise.then === "function") {
+  if (playPromise && typeof playPromise.then === 'function') {
     playPromise
       .then(() => {
         a.pause();
@@ -284,24 +269,15 @@ const resumeCurrentAudioElement = async () => {
 };
 
 const resumeAudioWhenActive = () => {
-  if (document.visibilityState === "hidden") return;
+  if (document.visibilityState === 'hidden') return;
 
   window.setTimeout(resumeAudioContext, 0);
   window.setTimeout(resumeAudioContext, DURATIONS.AUDIO_CONTEXT_RESUME_RETRY);
-  window.setTimeout(
-    resumeAudioContext,
-    DURATIONS.AUDIO_CONTEXT_RESUME_RETRY_LONG,
-  );
+  window.setTimeout(resumeAudioContext, DURATIONS.AUDIO_CONTEXT_RESUME_RETRY_LONG);
 
   window.setTimeout(resumeCurrentAudioElement, 0);
-  window.setTimeout(
-    resumeCurrentAudioElement,
-    DURATIONS.AUDIO_CONTEXT_RESUME_RETRY,
-  );
-  window.setTimeout(
-    resumeCurrentAudioElement,
-    DURATIONS.AUDIO_CONTEXT_RESUME_RETRY_LONG,
-  );
+  window.setTimeout(resumeCurrentAudioElement, DURATIONS.AUDIO_CONTEXT_RESUME_RETRY);
+  window.setTimeout(resumeCurrentAudioElement, DURATIONS.AUDIO_CONTEXT_RESUME_RETRY_LONG);
 };
 
 const handleBrowserLifecycleTransition = () => {
@@ -323,32 +299,24 @@ const handleVisibilityChange = () => {
 };
 
 export const installAssessmentLifecycleGuards = () => {
-  if (
-    guardsInstalled ||
-    typeof window === "undefined" ||
-    typeof document === "undefined"
-  )
-    return;
+  if (guardsInstalled || typeof window === 'undefined' || typeof document === 'undefined') return;
 
   guardsInstalled = true;
 
-  document.addEventListener("visibilitychange", handleVisibilityChange);
-  window.addEventListener("pagehide", handleBrowserLifecycleTransition);
-  window.addEventListener("pageshow", handleBrowserLifecycleTransition);
-  window.addEventListener("focus", handleBrowserLifecycleTransition);
-  window.addEventListener(
-    "orientationchange",
-    handleBrowserLifecycleTransition,
-  );
-  window.addEventListener("resize", handleBrowserLifecycleTransition);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('pagehide', handleBrowserLifecycleTransition);
+  window.addEventListener('pageshow', handleBrowserLifecycleTransition);
+  window.addEventListener('focus', handleBrowserLifecycleTransition);
+  window.addEventListener('orientationchange', handleBrowserLifecycleTransition);
+  window.addEventListener('resize', handleBrowserLifecycleTransition);
 
-  document.addEventListener("touchstart", resumeAudioContext, true);
-  document.addEventListener("touchstart", resumeCurrentAudioElement, true);
-  document.addEventListener("click", resumeAudioContext, true);
-  document.addEventListener("click", resumeCurrentAudioElement, true);
-  document.addEventListener("click", blockTransientResponseInput, true);
-  document.addEventListener("touchend", blockTransientResponseInput, true);
-  document.addEventListener("pointerup", blockTransientResponseInput, true);
+  document.addEventListener('touchstart', resumeAudioContext, true);
+  document.addEventListener('touchstart', resumeCurrentAudioElement, true);
+  document.addEventListener('click', resumeAudioContext, true);
+  document.addEventListener('click', resumeCurrentAudioElement, true);
+  document.addEventListener('click', blockTransientResponseInput, true);
+  document.addEventListener('touchend', blockTransientResponseInput, true);
+  document.addEventListener('pointerup', blockTransientResponseInput, true);
 };
 // @fix-freeze-audio - end
 
@@ -363,14 +331,12 @@ export const t_enableAudio = () => ({
     const html = `
           <div class="roav-card-sys">
             <div>
-              <img src="${
-                mediaAssets.images.sharedTechIconAudioAll
-              }" class="roav-card-sys-img-small">
+              <img src="${mediaAssets.images.sharedTechIconAudioAll}" class="roav-card-sys-img-small">
             </div>
             <br>
             <br>
             <div>
-              <h2>${i18next.t("enable-audio.prompt")}</h2>
+              <h2>${i18next.t('enable-audio.prompt')}</h2>
             </div>
             <br>
             <br>
@@ -378,7 +344,7 @@ export const t_enableAudio = () => ({
     return html;
   },
   button_html: '<button class="roav-button-sys-large">%choice%</button>',
-  choices: [i18next.t("enable-audio.label-button")],
+  choices: [i18next.t('enable-audio.label-button')],
   response_allowed_while_playing: true,
   on_finish: () => {
     jsPsych.pluginAPI.audioContext();

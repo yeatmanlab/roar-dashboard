@@ -39,7 +39,7 @@ import {
   t_setEnableTrialsByValidation,
 } from './validityHelpers';
 import { t_saveConfig } from './configHelpers';
-import { t_enableAudio } from "../helpers/audioHelpers";
+import { t_enableAudio } from '../helpers/audioHelpers';
 export const mapTrials = {
   t_instructionGeneral,
   t_instructionInputLR,

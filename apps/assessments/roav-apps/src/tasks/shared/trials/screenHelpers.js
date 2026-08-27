@@ -10,8 +10,8 @@ import { sessionGet } from '../helpers/sessionHelpers';
 import { SESSION_KEYS as SK } from '../helpers/sessionKeys';
 import { wrapAsJsPsychTrial } from '../helpers/jspsychHelpers';
 import { AssessmentStage } from '../helpers/namingHelpers';
-import { unlockAudioContext } from "../helpers/audioHelpers";
-import { DURATIONS } from "../helpers/constants";
+import { unlockAudioContext } from '../helpers/audioHelpers';
+import { DURATIONS } from '../helpers/constants';
 
 const sentryFeedback = document.querySelector('#sentry-feedback');
 const DURATION_ENTER_FULL_SCREEN = 250;
@@ -191,12 +191,7 @@ const t_enterFullscreenCompat = (unlockAudio) => ({
   },
 });
 
-const resizeDetectedConditional = (
-  widthFsIn,
-  heightFsIn,
-  scaleWidthIn,
-  scaleHeightIn,
-) => {
+const resizeDetectedConditional = (widthFsIn, heightFsIn, scaleWidthIn, scaleHeightIn) => {
   const widthFs = widthFsIn ?? sessionGet(SK.WIDTH_WINDOW_FS);
   const heightFs = heightFsIn ?? sessionGet(SK.HEIGHT_WINDOW_FS);
   const scaleWidth = scaleWidthIn ?? SCALE_REQUEST_FULLSCREEN;
@@ -271,7 +266,8 @@ export const t_enterFullscreen = (unlockAudio) => ({
 
 export const t_trialEnterFullscreenConditional = (widthFsIn, heightFsIn, scaleWidthIn, scaleHeightIn) => ({
   timeline: [t_enterFullscreen(false)],
-  conditional_function: () => !document.hidden && resizeDetectedConditional(widthFsIn, heightFsIn, scaleWidthIn, scaleHeightIn),
+  conditional_function: () =>
+    !document.hidden && resizeDetectedConditional(widthFsIn, heightFsIn, scaleWidthIn, scaleHeightIn),
 });
 
 export const t_exitFullscreen = () => ({
@@ -446,12 +442,7 @@ export const createHelperFullscreenConditional = (
           if (document.hidden) {
             return;
           }
-          resizeDetected = resizeDetectedConditional(
-            widthFs,
-            heightFs,
-            scaleWidth,
-            scaleHeight,
-          );
+          resizeDetected = resizeDetectedConditional(widthFs, heightFs, scaleWidth, scaleHeight);
           if (resizeDetected) {
             removeEventListeners();
             funcOnResize();

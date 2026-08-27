@@ -788,7 +788,8 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
   const trialMarkTarg = () => {
     return {
       type: jsPsychAudioMultiResponse,
-      trial_duration: () => (hasAudio(info.keyAudioMarkTarg) ? params.durationAudioEndFallback : params.durationMarkTarg),
+      trial_duration: () =>
+        hasAudio(info.keyAudioMarkTarg) ? params.durationAudioEndFallback : params.durationMarkTarg,
       stimulus: () => mediaAssets.audio[info.keyAudioMarkTarg] ?? mediaAssets.audio.roavMpNullAudioAll,
       prompt: () => htmlLayout(params, info, StageTrial.MARK_TARG),
       response_ends_trial: true,

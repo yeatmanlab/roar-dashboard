@@ -2,7 +2,7 @@ import { initJsPsych } from 'jspsych';
 import '../../../i18n/i18n'; // get i18next class as defined in i18n.js to get the text for progress bar
 import { sessionGet } from './sessionHelpers';
 import { SESSION_KEYS as SK } from './sessionKeys';
-import { DURATIONS, RATE_AUDIO_LOW } from "./constants";
+import { DURATIONS, RATE_AUDIO_LOW } from './constants';
 
 const redirectInfo = {
   cdm: 'https://stanford-cogsci.org:8880/landing_page.html',
@@ -13,15 +13,11 @@ const redirectInfo = {
 
 // eslint-disable-next-line no-unused-vars
 const isIPadSafari = () => {
-  if (typeof navigator === "undefined") return false;
-  const userAgent = navigator.userAgent || "";
-  const platform = navigator.platform || "";
-  const isIPad =
-    /iPad/.test(userAgent) ||
-    (platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const isSafari =
-    /Safari/.test(userAgent) &&
-    !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS/.test(userAgent);
+  if (typeof navigator === 'undefined') return false;
+  const userAgent = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  const isIPad = /iPad/.test(userAgent) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isSafari = /Safari/.test(userAgent) && !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS/.test(userAgent);
   return isIPad && isSafari;
 };
 // @fix-freeze-audio - end
@@ -47,11 +43,10 @@ export const jsPsych = initJsPsych({
   },
 });
 
-
 // @fix-freeze-audio — begin
 
 // closing context before unload (Safari might leak it across reload)
-window.addEventListener("beforeunload", () => {
+window.addEventListener('beforeunload', () => {
   const ctx = jsPsych.pluginAPI.audioContext();
   try {
     ctx?.suspend?.();

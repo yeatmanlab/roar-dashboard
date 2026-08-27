@@ -34,7 +34,7 @@ export const t_timelineDef = () => {
   arrTrials.push(
     // @fix-freeze-audio - white background
     tr.t_collectDataMonitor({
-      keyImgBg: "",
+      keyImgBg: '',
     }),
   );
 
