@@ -10,6 +10,8 @@ import { sessionGet } from '../helpers/sessionHelpers';
 import { SESSION_KEYS as SK } from '../helpers/sessionKeys';
 import { wrapAsJsPsychTrial } from '../helpers/jspsychHelpers';
 import { AssessmentStage } from '../helpers/namingHelpers';
+import { unlockAudioContext } from "../helpers/audioHelpers";
+import { DURATIONS } from "../helpers/constants";
 
 const sentryFeedback = document.querySelector('#sentry-feedback');
 const DURATION_ENTER_FULL_SCREEN = 250;
@@ -114,36 +116,6 @@ const enterFullscreenCompat = () => {
   }
 };
 
-const unlockAudioContext = () => {
-  const ctx = jsPsych.pluginAPI.audioContext();
-  if (ctx) {
-    if (ctx.state !== 'running') {
-      const p = ctx.resume();
-      if (p && typeof p.catch === 'function') p.catch(() => {});
-    }
-    try {
-      const src = ctx.createBufferSource();
-      src.buffer = ctx.createBuffer(1, 1, ctx.sampleRate || 22050);
-      src.connect(ctx.destination);
-      src.start(0);
-    } catch (_) {
-      /* empty */
-    }
-  }
-
-  const a = new Audio(mediaAssets.audio.roavMpNullAudioAll);
-  a.playsInline = true;
-  const playPromise = a.play();
-  if (playPromise && typeof playPromise.then === 'function') {
-    playPromise
-      .then(() => {
-        a.pause();
-        a.currentTime = 0;
-      })
-      .catch(() => {});
-  }
-};
-
 const t_enterFullscreenPlugin = (unlockAudio) => ({
   type: jsPsychFullScreen,
   fullscreen_mode: true,
@@ -175,10 +147,6 @@ const t_enterFullscreenPlugin = (unlockAudio) => ({
         'click',
         (e) => {
           if (!e.isTrusted) return;
-          document.addEventListener('fullscreenchange', unlockAudioContext, {
-            once: true,
-          });
-          document.addEventListener('webkitfullscreenchange', unlockAudioContext, { once: true });
           unlockAudioContext();
         },
         { capture: true, once: true },
@@ -213,12 +181,6 @@ const t_enterFullscreenCompat = (unlockAudio) => ({
       (e) => {
         if (unlockAudio) {
           if (!e.isTrusted) return;
-          document.addEventListener('fullscreenchange', unlockAudioContext, {
-            once: true,
-          });
-          document.addEventListener('webkitfullscreenchange', unlockAudioContext, {
-            once: true,
-          });
 
           unlockAudioContext();
         }
@@ -229,8 +191,49 @@ const t_enterFullscreenCompat = (unlockAudio) => ({
   },
 });
 
+const resizeDetectedConditional = (
+  widthFsIn,
+  heightFsIn,
+  scaleWidthIn,
+  scaleHeightIn,
+) => {
+  const widthFs = widthFsIn ?? sessionGet(SK.WIDTH_WINDOW_FS);
+  const heightFs = heightFsIn ?? sessionGet(SK.HEIGHT_WINDOW_FS);
+  const scaleWidth = scaleWidthIn ?? SCALE_REQUEST_FULLSCREEN;
+  const scaleHeight = scaleHeightIn ?? SCALE_REQUEST_FULLSCREEN;
+
+  const width = Math.max(window.innerWidth, window.innerHeight);
+  const height = Math.min(window.innerWidth, window.innerHeight);
+  return width < scaleWidth * widthFs || height < scaleHeight * heightFs;
+};
+
 export const t_enterFullscreen = (unlockAudio) => ({
   timeline: [
+    // @fix-freeze-audio - begin
+    // Adressing BUG that Safari has on iPad
+    // On resize, iPad Safari intermittently leaves context in incorrect state
+    // reporting fullscreen while the window is minimized
+    // This can create a series of full screen prompts (especially, during trials
+    // with frequent re-checks, such as RVP or RDK)
+    // This new trial exits stale fullscreen before re-entry
+    {
+      type: jsPsychCallFunction,
+      async: true,
+      func: (done) => {
+        if (document.fullscreenElement && resizeDetectedConditional()) {
+          document
+            .exitFullscreen()
+            .then(() => done())
+            // eslint-disable-next-line no-unused-vars
+            .catch((err) => {
+              done();
+            });
+        } else {
+          done();
+        }
+      },
+    },
+    // @fix-freeze-audio - end
     {
       timeline: [t_enterFullscreenPlugin(unlockAudio)],
       conditional_function: () => !isFullscreenBlockedByJsPsych(),
@@ -266,20 +269,9 @@ export const t_enterFullscreen = (unlockAudio) => ({
   ],
 });
 
-const resizeDetectedConditional = (widthFsIn, heightFsIn, scaleWidthIn, scaleHeightIn) => {
-  const widthFs = widthFsIn ?? sessionGet(SK.WIDTH_WINDOW_FS);
-  const heightFs = heightFsIn ?? sessionGet(SK.HEIGHT_WINDOW_FS);
-  const scaleWidth = scaleWidthIn ?? SCALE_REQUEST_FULLSCREEN;
-  const scaleHeight = scaleHeightIn ?? SCALE_REQUEST_FULLSCREEN;
-
-  const width = Math.max(window.innerWidth, window.innerHeight);
-  const height = Math.min(window.innerWidth, window.innerHeight);
-  return width < scaleWidth * widthFs || height < scaleHeight * heightFs;
-};
-
 export const t_trialEnterFullscreenConditional = (widthFsIn, heightFsIn, scaleWidthIn, scaleHeightIn) => ({
   timeline: [t_enterFullscreen(false)],
-  conditional_function: () => resizeDetectedConditional(widthFsIn, heightFsIn, scaleWidthIn, scaleHeightIn),
+  conditional_function: () => !document.hidden && resizeDetectedConditional(widthFsIn, heightFsIn, scaleWidthIn, scaleHeightIn),
 });
 
 export const t_exitFullscreen = () => ({
@@ -398,11 +390,22 @@ export const createHelperOrientation = (onOrientationChange) => {
     if (rotationDetected) {
       return;
     }
+    // @fix-freeze-audio - begin
+    // letting context settle after minimize / restore
+    // iPad Safari reports incorrect values while settling
     if (!isOrientationLandscape()) {
-      rotationDetected = true;
-      removeEventListeners();
-      onOrientationChange();
+      setTimeout(() => {
+        if (rotationDetected) {
+          return;
+        }
+        if (!isOrientationLandscape()) {
+          rotationDetected = true;
+          removeEventListeners();
+          onOrientationChange();
+        }
+      }, DURATIONS.DELAY_RECHECK_ROTATION_RESIZE);
     }
+    // @fix-freeze-audio - end
   };
 
   return {
@@ -433,11 +436,29 @@ export const createHelperFullscreenConditional = (
     resizeDetected = false;
     callbackOnResize = () => {
       if (resizeDetected) return;
+      if (document.hidden) return; // @fix-freeze-audio
       resizeDetected = resizeDetectedConditional(widthFs, heightFs, scaleWidth, scaleHeight);
+      // @fix-freeze-audio - begin
+      // letting context settle after minimize / restore
+      // iPad Safari reports incorrect values while settling
       if (resizeDetected) {
-        removeEventListeners();
-        funcOnResize();
+        setTimeout(() => {
+          if (document.hidden) {
+            return;
+          }
+          resizeDetected = resizeDetectedConditional(
+            widthFs,
+            heightFs,
+            scaleWidth,
+            scaleHeight,
+          );
+          if (resizeDetected) {
+            removeEventListeners();
+            funcOnResize();
+          }
+        }, DURATIONS.DELAY_RECHECK_ROTATION_RESIZE);
       }
+      // @fix-freeze-audio - end
     };
     window.addEventListener('resize', callbackOnResize);
     document.addEventListener('fullscreenchange', callbackOnResize);

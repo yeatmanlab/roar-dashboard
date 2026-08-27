@@ -19,6 +19,7 @@ import taskConfig from './tasks/taskConfig';
 import { initMediaAssets } from './tasks/shared/helpers/mediaAssets';
 import { sessionSet } from './tasks/shared/helpers/sessionHelpers';
 import { SESSION_KEYS as SK } from './tasks/shared/helpers/sessionKeys';
+import { installAssessmentLifecycleGuards } from "./tasks/shared/helpers/audioHelpers";
 
 export class TaskLauncher {
   constructor(gameParams, userParams, displayElement) {
@@ -28,6 +29,7 @@ export class TaskLauncher {
   }
 
   async init() {
+    installAssessmentLifecycleGuards(); // @fix-freeze-audio
     initSentry();
     wireScoreAdapter();
     // Operator/participant-supplied context (PID + demographics from the launch URL) is

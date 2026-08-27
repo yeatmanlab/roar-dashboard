@@ -39,7 +39,7 @@ import {
   t_setEnableTrialsByValidation,
 } from './validityHelpers';
 import { t_saveConfig } from './configHelpers';
-
+import { t_enableAudio } from "../helpers/audioHelpers";
 export const mapTrials = {
   t_instructionGeneral,
   t_instructionInputLR,
@@ -65,6 +65,7 @@ export const mapTrials = {
   t_enterFullscreen,
   t_exitFullscreen,
   t_enterLandscape,
+  t_enableAudio,
   t_initModeInputTarget,
   t_setModeInputTarget,
   t_updateModeInputTarget,

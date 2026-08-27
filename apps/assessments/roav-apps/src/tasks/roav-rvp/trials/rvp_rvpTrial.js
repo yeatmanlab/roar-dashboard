@@ -100,6 +100,7 @@ const metaparamsRvpDef = {
   durationGap: 1200,
   durationResp: RVP.DURATION_RESP_TEST_MAX,
   durationWarnTimeout: 3000,
+  durationAudioEndFallback: DURATIONS.AUDIO_END_FALLBACK_MEDIUM, // @fix-freeze-audio
 
   distViewCm: 100, // 50
   widthScreenCm: 30, // 30 cm is ~ 13.6 in; chromebooks are 11.6 or 13.3 in (?)
@@ -739,7 +740,7 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
   const trialMarkFix = () => {
     return {
       type: jsPsychAudioMultiResponse,
-      trial_duration: () => (hasAudio(info.keyAudioMarkFix) ? DURATIONS.WAIT_FOR_RESPONSE : params.durationMarkFix),
+      trial_duration: () => (hasAudio(info.keyAudioMarkFix) ? params.durationAudioEndFallback : params.durationMarkFix),
       stimulus: () => mediaAssets.audio[info.keyAudioMarkFix] ?? mediaAssets.audio.roavMpNullAudioAll,
       prompt: () => htmlLayout(params, info, StageTrial.MARK_FIX),
       response_ends_trial: true,
@@ -763,7 +764,7 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
   const trialStim = () => {
     return {
       type: jsPsychAudioMultiResponse,
-      trial_duration: () => (hasAudio(info.keyAudioStim) ? DURATIONS.WAIT_FOR_RESPONSE : params.durationStim),
+      trial_duration: () => (hasAudio(info.keyAudioStim) ? params.durationAudioEndFallback : params.durationStim),
       stimulus: () => mediaAssets.audio[info.keyAudioStim] ?? mediaAssets.audio.roavMpNullAudioAll,
       prompt: () => htmlLayout(params, info, StageTrial.STIM),
       response_ends_trial: true,
@@ -787,7 +788,7 @@ export const t_rvp = (paramsTrialIn = {}, tagReq = TAG_REQ_DEF) => {
   const trialMarkTarg = () => {
     return {
       type: jsPsychAudioMultiResponse,
-      trial_duration: () => (hasAudio(info.keyAudioMarkTarg) ? DURATIONS.WAIT_FOR_RESPONSE : params.durationMarkTarg),
+      trial_duration: () => (hasAudio(info.keyAudioMarkTarg) ? params.durationAudioEndFallback : params.durationMarkTarg),
       stimulus: () => mediaAssets.audio[info.keyAudioMarkTarg] ?? mediaAssets.audio.roavMpNullAudioAll,
       prompt: () => htmlLayout(params, info, StageTrial.MARK_TARG),
       response_ends_trial: true,

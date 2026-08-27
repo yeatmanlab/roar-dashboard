@@ -145,6 +145,15 @@
   object-fit: contain;
 }
 
+.roav-card-sys-img-small {
+  display: block;
+  max-width: 20vw;
+  max-height: 15vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
 // ============================================
 // LOG (DEBUGGING) CARD
 // ============================================
