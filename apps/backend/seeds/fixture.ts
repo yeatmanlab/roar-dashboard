@@ -522,25 +522,25 @@ export async function seedDevFixture(): Promise<BaseFixture> {
     syntaxVariant,
     inferenceVariant,
   ] = await Promise.all([
-    TaskVariantFactory.create({ id: DEV_IDS.variantAllGrades, taskId: task.id, name: 'Word — All Grades' }),
-    TaskVariantFactory.create({ id: DEV_IDS.variantGrade5, taskId: task.id, name: 'Word — Grade 5' }),
-    TaskVariantFactory.create({ id: DEV_IDS.variantGrade3, taskId: task.id, name: 'Word — Grade 3' }),
-    TaskVariantFactory.create({ id: DEV_IDS.variantOptionalEll, taskId: task.id, name: 'Word — ELL (Optional)' }),
-    TaskVariantFactory.create({ id: DEV_IDS.variantTask2, taskId: task2.id, name: 'Sentence — All Grades' }),
+    TaskVariantFactory.create({ id: DEV_IDS.variantAllGrades, taskId: task.id, name: 'Word-All-Grades' }),
+    TaskVariantFactory.create({ id: DEV_IDS.variantGrade5, taskId: task.id, name: 'Word-Grade-5' }),
+    TaskVariantFactory.create({ id: DEV_IDS.variantGrade3, taskId: task.id, name: 'Word-Grade-3' }),
+    TaskVariantFactory.create({ id: DEV_IDS.variantOptionalEll, taskId: task.id, name: 'Word-ELL-Optional' }),
+    TaskVariantFactory.create({ id: DEV_IDS.variantTask2, taskId: task2.id, name: 'Sentence-All-Grades' }),
     TaskVariantFactory.create({
       id: DEV_IDS.variantTask2Grade5Ell,
       taskId: task2.id,
-      name: 'Sentence — Grade 5, ELL Optional',
+      name: 'Sentence-Grade-5-ELL-Optional',
     }),
-    TaskVariantFactory.create({ id: DEV_IDS.variantPhoneme, taskId: phonemeTask.id, name: 'Phoneme (Standard)' }),
-    TaskVariantFactory.create({ id: DEV_IDS.variantLetter, taskId: letterTask.id, name: 'Letter (Standard)' }),
+    TaskVariantFactory.create({ id: DEV_IDS.variantPhoneme, taskId: phonemeTask.id, name: 'Phoneme-Standard' }),
+    TaskVariantFactory.create({ id: DEV_IDS.variantLetter, taskId: letterTask.id, name: 'Letter-Standard' }),
     TaskVariantFactory.create({
       id: DEV_IDS.variantMorphology,
       taskId: morphologyTask.id,
-      name: 'Morphology (Standard)',
+      name: 'Morphology-Standard',
     }),
-    TaskVariantFactory.create({ id: DEV_IDS.variantSyntax, taskId: syntaxTask.id, name: 'Syntax (Standard)' }),
-    TaskVariantFactory.create({ id: DEV_IDS.variantInference, taskId: inferenceTask.id, name: 'Inference (Standard)' }),
+    TaskVariantFactory.create({ id: DEV_IDS.variantSyntax, taskId: syntaxTask.id, name: 'Syntax-Standard' }),
+    TaskVariantFactory.create({ id: DEV_IDS.variantInference, taskId: inferenceTask.id, name: 'Inference-Standard' }),
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════
