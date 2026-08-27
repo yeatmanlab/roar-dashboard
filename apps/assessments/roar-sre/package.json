@@ -1,7 +1,7 @@
 {
   "name": "@roar-platform/roar-sre",
   "description": "Sentence Reading Efficiency — a timed comprehension assessment for ROAR",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yeatmanlab/roar-dashboard.git",
@@ -27,12 +27,6 @@
     "registry": "https://registry.npmjs.org"
   },
   "type": "module",
-  "roar": {
-    "hosting": {
-      "staging": "roar-sentence-monorepo-abc",
-      "production": "roar-sentence-monorepo"
-    }
-  },
   "scripts": {
     "build": "rollup -c rollup.lib.config.mjs",
     "build:staging": "webpack --mode production --env dbmode=staging",

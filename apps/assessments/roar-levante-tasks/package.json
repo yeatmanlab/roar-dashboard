@@ -21,12 +21,6 @@
     "registry": "https://registry.npmjs.org"
   },
   "type": "module",
-  "roar": {
-    "hosting": {
-      "staging": "roar-levante-tasks-monorepo-abc",
-      "production": "roar-levante-tasks-monorepo"
-    }
-  },
   "scripts": {
     "build": "rollup -c rollup.lib.config.mjs",
     "build:staging": "webpack --mode production --env dbmode=staging",

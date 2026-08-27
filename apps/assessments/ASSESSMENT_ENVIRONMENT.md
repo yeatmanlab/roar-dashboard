@@ -150,7 +150,7 @@ The file is a JSON array; each entry defines one variant to seed:
 ```json
 [
   {
-    "variantName": "English (v7)",
+    "variantName": "English-v7",
     "params": {
       "lng": "en",
       "scoringVersion": 7,

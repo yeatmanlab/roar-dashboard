@@ -21,6 +21,7 @@ import { StatusCodes } from 'http-status-codes';
 import { authenticateAs, createTestApp, createTierUsers } from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
+import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { TaskFactory } from '../test-support/factories/task.factory';
 import { TaskVariantFactory } from '../test-support/factories/task-variant.factory';
 import { TaskVariantParameterFactory } from '../test-support/factories/task-variant-parameter.factory';
@@ -260,6 +261,20 @@ describe('GET /v1/task-variants', () => {
       expect(ids).toContain(variantA.id);
       expect(ids.every((id: string) => id !== taskB.id)).toBe(true);
     });
+
+    it('supports the contains operator on a text column', async () => {
+      // Guards the column-type check against over-rejecting: contains is valid here,
+      // and task.slug is the text-typed counterpart to the uuid task.id.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(PATH)
+        .query({ 'filter[]': `task.slug:contains:${baseFixture.task.slug.slice(0, 3)}` })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const slugs = res.body.data.items.map((v: { taskSlug: string }) => v.taskSlug);
+      expect(slugs).toContain(baseFixture.task.slug);
+    });
   });
 
   describe('error handling', () => {
@@ -288,6 +303,34 @@ describe('GET /v1/task-variants', () => {
         .set('Authorization', 'Bearer token');
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 for the contains operator on a uuid column', async () => {
+      // `contains` compiles to ILIKE, which has no operator against uuid. The contract
+      // advertises the operator for task.id, so this is well-formed input.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(PATH)
+        .query({ 'filter[]': 'task.id:contains:ab' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 400 for a malformed uuid filter value', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(PATH)
+        .query({ 'filter[]': 'task.id:eq:not-a-uuid' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
     });
   });
 });
