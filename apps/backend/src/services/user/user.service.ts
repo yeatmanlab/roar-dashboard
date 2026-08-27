@@ -7,7 +7,7 @@ import { RosteringProvider } from '../../enums/rostering-provider.enum';
 import { RosteringEntityType } from '../../enums/rostering-entity-type.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { UserFamilyRole } from '../../enums/user-family-role.enum';
-import { EntityType } from '../../types/entity-type';
+import { EntityType, OrgEntityType } from '../../types/entity-type';
 import type { UserMembershipDetail } from '../../types/user';
 import { StatusCodes } from 'http-status-codes';
 import { AgreementType } from '../../enums/agreement-type.enum';
@@ -105,7 +105,7 @@ interface CreateUserIdentifiers {
  * enforceable rather than a convention.
  */
 interface CreateUserMemberships {
-  entityType: Exclude<EntityType, 'family'>;
+  entityType: OrgEntityType;
   entityId: string;
   role: UserRole;
   enrollmentStart?: string | undefined;
@@ -762,6 +762,195 @@ export function UserService({
   }
 
   /**
+   * Persist a user whose Firebase Auth account already exists.
+   *
+   * Runs the identical DB-transaction + FGA-tuple saga as `create()` steps 4–5, but takes a
+   * pre-created `firebaseUid` instead of calling `createUser`. This lets the bulk-import create bin
+   * create all Firebase accounts in a single `importUsers` call (one round-trip, no per-account
+   * rate limit) and then persist each one here, reusing the same compensation guarantees.
+   *
+   * Does not create family memberships - those are created through the families endpoints.
+   *
+   * The caller owns authorization, uniqueness pre-checks, and Firebase account creation ({@link bulkImportUsers}).
+   * On any DB or FGA failure this compensates by deleting the FGA tuples, the DB rows, and — since the caller
+   * created it — the Firebase account, so a failed row leaves no orphan in any system.
+   *
+   * @param authContext - Requesting user's auth context (for logging/compensation context).
+   * @param body - The user fields + memberships (same shape as `create`).
+   * @param firebaseUid - The pre-created Firebase Auth UID to store as the user's authId.
+   * @returns The new user's id.
+   * @throws {ApiError} CONFLICT on a unique-field collision, UNPROCESSABLE_ENTITY on a bad
+   *   membership reference, or INTERNAL_SERVER_ERROR on DB/FGA failure — after compensation.
+   */
+  async function createWithImportedAuth(
+    authContext: AuthContext,
+    body: CreateUserData,
+    firebaseUid: string,
+  ): Promise<{ id: string }> {
+    const { demographics, dob, grade, email, identifiers, memberships, name, userType } = body;
+    const { userId } = authContext;
+
+    const assessmentPid = identifiers?.pid ?? generateAssessmentPid({ userId: email });
+
+    let newUserId!: string;
+    try {
+      const enrollmentStart = new Date();
+
+      const orgMemberships: Omit<NewUserOrg, 'userId'>[] = memberships
+        .filter((m) => m.entityType === EntityType.DISTRICT || m.entityType === EntityType.SCHOOL)
+        .map((m) => ({
+          orgId: m.entityId,
+          role: m.role,
+          enrollmentStart: m.enrollmentStart ? new Date(m.enrollmentStart) : enrollmentStart,
+          enrollmentEnd: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
+        }));
+
+      const classMemberships: Omit<NewUserClass, 'userId'>[] = memberships
+        .filter((m) => m.entityType === EntityType.CLASS)
+        .map((m) => ({
+          classId: m.entityId,
+          role: m.role,
+          enrollmentStart: m.enrollmentStart ? new Date(m.enrollmentStart) : enrollmentStart,
+          enrollmentEnd: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
+        }));
+
+      const groupMemberships: Omit<NewUserGroup, 'userId'>[] = memberships
+        .filter((m) => m.entityType === EntityType.GROUP)
+        .map((m) => ({
+          groupId: m.entityId,
+          role: m.role,
+          enrollmentStart: m.enrollmentStart ? new Date(m.enrollmentStart) : enrollmentStart,
+          enrollmentEnd: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
+        }));
+
+      const resolvedRootOrgProvider = await resolveRootOrgProviderFromMemberships(memberships);
+
+      newUserId = await userRepository.runTransaction({
+        fn: async (tx) => {
+          const result = await userRepository.createWithMemberships(
+            {
+              authId: firebaseUid,
+              authProvider: [AuthProvider.PASSWORD],
+              email: email,
+              nameFirst: name.first,
+              nameMiddle: name.middle ?? null,
+              nameLast: name.last,
+              dob: dob ?? null,
+              grade: grade ?? null,
+              assessmentPid,
+              userType: userType,
+              statusEll: demographics?.statusEll ?? null,
+              statusFrl: demographics?.statusFrl ?? null,
+              statusIep: demographics?.statusIep ?? null,
+              gender: demographics?.gender ?? null,
+              race: demographics?.race ?? null,
+              hispanicEthnicity: demographics?.hispanicEthnicity ?? null,
+              homeLanguage: demographics?.homeLanguage ?? null,
+              stateId: identifiers?.stateId ?? null,
+              isSuperAdmin: false,
+            },
+            orgMemberships,
+            classMemberships,
+            groupMemberships,
+            tx,
+          );
+
+          await rosterProviderIdRepository.create({
+            data: {
+              providerType: RosteringProvider.DASHBOARD,
+              providerId: result.id,
+              partnerId: resolvedRootOrgProvider,
+              entityType: RosteringEntityType.USER,
+              entityId: result.id,
+            },
+            transaction: tx,
+          });
+
+          return result.id;
+        },
+      });
+    } catch (error) {
+      // The DB transaction rolled back atomically; only the caller-created Firebase account needs
+      // compensating deletion.
+      await compensateDeleteFirebaseUser(firebaseUid, userId, email, 'import persistence DB failure');
+
+      if (error instanceof ApiError) throw error;
+
+      const dbError = unwrapDrizzleError(error);
+
+      if (isUniqueViolation(dbError)) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, email },
+          cause: error,
+        });
+      }
+
+      if (isForeignKeyViolation(dbError)) {
+        throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, email },
+          cause: error,
+        });
+      }
+
+      logger.error({ err: error, context: { userId, email } }, 'DB write failed during imported-auth user create');
+      throw new ApiError('Failed to create user record', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, email, firebaseUid },
+        cause: error,
+      });
+    }
+
+    const fgaTuples = buildMembershipTuples(newUserId, memberships);
+
+    try {
+      await authorizationService.writeTuplesOrThrow(fgaTuples);
+    } catch (error) {
+      logger.error(
+        { err: error, context: { userId, newUserId, email, firebaseUid } },
+        'FGA write failed during imported-auth user create — beginning compensation',
+      );
+
+      const deleteTuples: TupleKeyWithoutCondition[] = fgaTuples.map(({ user, relation, object }) => ({
+        user,
+        relation,
+        object,
+      }));
+      await authorizationService.deleteTuples(deleteTuples);
+
+      try {
+        await userRepository.runTransaction({
+          fn: async (tx) => {
+            await rosterProviderIdRepository.deleteByEntityId(newUserId, tx);
+            await userRepository.delete({ id: newUserId, transaction: tx });
+          },
+        });
+      } catch (dbDeleteError) {
+        logger.error(
+          { err: dbDeleteError, context: { userId, newUserId, firebaseUid } },
+          'DB delete compensation failed after FGA write failure — manual cleanup required',
+        );
+      }
+
+      await compensateDeleteFirebaseUser(firebaseUid, userId, email, 'import FGA write failure');
+
+      throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        context: { userId, newUserId, email, firebaseUid },
+        cause: error,
+      });
+    }
+
+    logger.info({ userId, newUserId, email }, 'Created user (imported auth)');
+    return { id: newUserId };
+  }
+
+  /**
    * Verifies that a membership entity exists and is active (not rostered out).
    *
    * Org-scoped only, mirroring `CreateUserMemberships` — the create endpoint is the sole
@@ -771,10 +960,7 @@ export function UserService({
    * @param entityId The ID of the membership entity to verify.
    * @returns A promise that resolves to `true` if the entity exists and is active, `false` otherwise.
    */
-  async function verifyMembershipEntityExists(
-    entityType: Exclude<EntityType, 'family'>,
-    entityId: string,
-  ): Promise<boolean> {
+  async function verifyMembershipEntityExists(entityType: OrgEntityType, entityId: string): Promise<boolean> {
     if (entityType === EntityType.DISTRICT) return (await districtRepository.getActiveById({ id: entityId })) !== null;
     if (entityType === EntityType.SCHOOL) return (await schoolRepository.getActiveById({ id: entityId })) !== null;
     // findClassParentSchool returns null if the class or its parent school is rostered out
@@ -1077,6 +1263,9 @@ export function UserService({
           // No Firebase account to attach a credential to. Treat as an
           // unprocessable request (422) rather than 404/500 — the user exists
           // but the operation is semantically invalid for this target.
+          // TODO: once rostering sync + SSO login exist, an SSO-only user could have a non-null
+          // authId with authProvider never including 'password' — this check should key off
+          // authProvider, not authId, or it'll accept password resets for SSO-only accounts.
           logger.warn({ userId, id }, 'Password update requested for user with no Firebase account');
           throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
             statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
@@ -1611,5 +1800,6 @@ export function UserService({
     getUnsignedTosAgreements,
     getFamilies,
     createAnonymousUser,
+    createWithImportedAuth,
   };
 }

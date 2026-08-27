@@ -6,6 +6,8 @@ import {
   CreateUserRequestBodySchema,
   CreateUserResponseSchema,
   UpdateUserRequestBodySchema,
+  ImportUsersRequestSchema,
+  ImportUsersResponseSchema,
   RecordUserAgreementRequestBodySchema,
   RecordUserAgreementResponseSchema,
   UserMembershipsResponseSchema,
@@ -80,6 +82,32 @@ export const UsersContract = c.router(
         'Returns a 422 if the request body is well-formed but contains semantically invalid data (e.g., invalid grade level). ' +
         'Returns a 429 if the user creation rate limit has been exceeded. ' +
         'Returns a 500 if an internal server error occurs.',
+    },
+    bulkImport: {
+      method: 'POST',
+      path: '/import',
+      contentType: 'application/json',
+      body: ImportUsersRequestSchema,
+      responses: {
+        200: SuccessEnvelopeSchema(ImportUsersResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Bulk create, update, and unenroll users',
+      description:
+        'Processes up to 100 rows, classifying each by email into create, update, or unenroll and ' +
+        'applying it against Firebase Auth, Postgres, and OpenFGA with per-row atomicity. ' +
+        'Always returns 200 with a multi-status body for any well-formed, authenticated request — ' +
+        'per-row outcomes (including failures) live in `results`, never in the HTTP status code. ' +
+        'Returns a 400 if the request body is missing, empty, over 100 rows, or malformed. ' +
+        'Returns a 401 if the requesting user is not authenticated. ' +
+        'Authorization is evaluated per row, not per request: a caller lacking permission over a ' +
+        "row's target surfaces as that row's failed outcome in `results`, never as an HTTP status. " +
+        'Per-row and per-bin failures (including lookup and configuration errors) are always ' +
+        'reported as failed outcomes in `results`, not a 500 — the 500 response exists only as a ' +
+        'defensive fallback for truly unanticipated failures.',
     },
     update: {
       method: 'PATCH',
