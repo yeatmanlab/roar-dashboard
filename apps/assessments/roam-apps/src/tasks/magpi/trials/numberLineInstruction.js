@@ -6,7 +6,6 @@ import { jsPsych } from '../../taskSetup';
 import _round from 'lodash/round';
 import i18next from 'i18next';
 import { playAudio, stopAudio, initializeNumberLine, setMarkerFromValue } from './numberLineSlider';
-import { isMobile } from '../../fluency/helpers';
 
 const delayAfterPlayback = () => {
   let timerForceId = setTimeout(() => {
@@ -273,6 +272,7 @@ const instructionIntro1 = () => {
 
 const instructionIntro2 = () => {
   let handleContinueClick;
+  let clickSourceList;
 
   let stim = {
     type: jsPsychHtmlButtonResponse,
@@ -333,6 +333,7 @@ const instructionIntro2 = () => {
       const minValue = 0;
       const maxValue = store.session.get('blockType');
       let currentValue = minValue;
+      clickSourceList = [];
       const step = store.session.get('blockStepInstruction')[maxValue];
       const line = document.getElementById('line');
       const marker = document.getElementById('marker');
@@ -364,6 +365,9 @@ const instructionIntro2 = () => {
           continueText.classList.remove('hidden');
           continueBtn.classList.remove('go-button-hidden');
           playAudio('numLinePracticeDone');
+        },
+        onInteraction: (pointerType) => {
+          clickSourceList.push(pointerType || 'unknown');
         },
       });
     },
@@ -403,7 +407,9 @@ const instructionIntro2 = () => {
         percent_error: perError,
         item: store.session.get('blockType'),
         target: target,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source_list: clickSourceList,
       });
     },
   };

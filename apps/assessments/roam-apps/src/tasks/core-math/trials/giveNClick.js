@@ -4,7 +4,8 @@ import { mediaAssets } from '../../..';
 import jsPsychHtmlButtonResponse from '@jspsych/plugin-html-button-response';
 import { validityEvaluator, catIRT } from '../timeline';
 import { startTimer } from '../helpers/updateCountDown';
-import { addResponse, endGame, updateSkillScores, scaleTheta, isMobile } from './trialHelpers';
+import { addResponse, endGame, updateSkillScores, scaleTheta } from './trialHelpers';
+import { trackClickSourceList } from '../../shared/helpers';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
 
 // store dragging time for each apple
@@ -59,7 +60,7 @@ export const giveNClick = (corpusName, assessment_stage_val) => {
               <p>${store.session.get('nextStimulus').item}</p>
             </div>
           </div>
-        <div class="giveN-container">
+        <div class="giveN-container" id="giveN-container">
           <div class="source-container" id="source-container">
             <img class="source" id="apple1" src=${
               mediaAssets.images.apple
@@ -158,6 +159,9 @@ export const giveNClick = (corpusName, assessment_stage_val) => {
           btn.style.pointerEvents = 'auto';
         }, 1000);
       }
+
+      //track click sources
+      trackClickSourceList('giveN-container');
 
       // Select the image element that you want to move
       const images = document.querySelectorAll('.source');
@@ -281,7 +285,9 @@ export const giveNClick = (corpusName, assessment_stage_val) => {
         response_key_list: null,
         response_time_list: null,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source_list: store.session.get('clickSourceList'),
       });
 
       // update trial count
