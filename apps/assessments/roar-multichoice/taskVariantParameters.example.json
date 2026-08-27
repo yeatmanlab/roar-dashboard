@@ -1,6 +1,6 @@
 [
   {
-    "variantName": "Morphology — adaptive, school, 5 min (current)",
+    "variantName": "Morphology-adaptive-school-5-min-current",
     "params": {
       "task": "morphology",
       "isAdaptive": true,
@@ -23,7 +23,7 @@
     }
   },
   {
-    "variantName": "Morphology — non-adaptive, school, 5 min",
+    "variantName": "Morphology-non-adaptive-school-5-min",
     "params": {
       "task": "morphology",
       "stimulusCorpus": "morphology-items-2025-08-22-v1",
@@ -39,7 +39,7 @@
     }
   },
   {
-    "variantName": "Written Vocabulary — adaptive, grade-based secondary behavior, school, 5 min (current)",
+    "variantName": "Written-Vocabulary-adaptive-grade-based-secondary-behavior-school-5-min-current",
     "params": {
       "task": "cva",
       "isAdaptive": true,
@@ -62,7 +62,7 @@
     }
   },
   {
-    "variantName": "Written Vocabulary — adaptive, force secondary behavior, school, 5 min",
+    "variantName": "Written-Vocabulary-adaptive-force-secondary-behavior-school-5-min",
     "params": {
       "task": "cva",
       "isAdaptive": true,
@@ -86,7 +86,7 @@
     }
   },
   {
-    "variantName": "Written Vocabulary — adaptive, force non-secondary behavior, school, 5 min",
+    "variantName": "Written-Vocabulary-adaptive-force-non-secondary-behavior-school-5-min",
     "params": {
       "task": "cva",
       "isAdaptive": true,
@@ -110,7 +110,7 @@
     }
   },
   {
-    "variantName": "Written Vocabulary — non-adaptive, elementary, school, 5 min",
+    "variantName": "Written-Vocabulary-non-adaptive-elementary-school-5-min",
     "params": {
       "task": "cva",
       "stimulusCorpus": "cva-elementary-cat-2025-08-22",
@@ -126,7 +126,7 @@
     }
   },
   {
-    "variantName": "Written Vocabulary — non-adaptive, secondary, school, 5 min",
+    "variantName": "Written-Vocabulary-non-adaptive-secondary-school-5-min",
     "params": {
       "task": "cva",
       "stimulusCorpus": "cva-secondary-2025-08-22-v2",
