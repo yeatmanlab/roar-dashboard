@@ -595,12 +595,12 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     variantForTask2,
     variantForTask2Grade5OptionalEll,
   ] = await Promise.all([
-    TaskVariantFactory.create({ taskId: task.id, name: 'Word — All Grades' }),
-    TaskVariantFactory.create({ taskId: task.id, name: 'Word — Grade 5' }),
-    TaskVariantFactory.create({ taskId: task.id, name: 'Word — Grade 3' }),
-    TaskVariantFactory.create({ taskId: task.id, name: 'Word — ELL (Optional)' }),
-    TaskVariantFactory.create({ taskId: task2.id, name: 'Sentence — All Grades' }),
-    TaskVariantFactory.create({ taskId: task2.id, name: 'Sentence — Grade 5, ELL Optional' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word-All-Grades' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word-Grade-5' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word-Grade-3' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Word-ELL-Optional' }),
+    TaskVariantFactory.create({ taskId: task2.id, name: 'Sentence-All-Grades' }),
+    TaskVariantFactory.create({ taskId: task2.id, name: 'Sentence-Grade-5-ELL-Optional' }),
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
