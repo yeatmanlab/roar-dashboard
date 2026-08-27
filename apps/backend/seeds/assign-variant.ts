@@ -8,7 +8,7 @@
  *
  * Usage:
  *   npm run dev:assign:variant -- --administration <uuid> --slug swr
- *   npm run dev:assign:variant -- --administration <uuid> --slug swr --variant 'English (v7)'
+ *   npm run dev:assign:variant -- --administration <uuid> --slug swr --variant 'English-v7'
  *
  * Without `--variant`, the task must have exactly one variant, so the choice is
  * unambiguous. Idempotent — re-running is a no-op.

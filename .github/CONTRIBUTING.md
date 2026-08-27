@@ -393,7 +393,7 @@ disappear — while leaving the variant row and any runs that reference it intac
 config's default:
 
 ```bash
-npm run dev:assign:variant -- --administration <uuid> --slug swr --variant 'English (v7)'
+npm run dev:assign:variant -- --administration <uuid> --slug swr --variant 'English-v7'
 ```
 
 `--variant` is optional when the task has exactly one. Both commands are
