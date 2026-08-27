@@ -128,7 +128,7 @@
   },
   "sentryForm": {
     "formTitle": "Relatório de erro do ROAR",
-    "buttonLabel": "Contactar con soporte",
+    "buttonLabel": "Enviar uma solicitação",
     "submitButtonLabel": "Enviar relatório de problema",
     "cancelButtonLabel": "Cancelar",
     "namePlaceholder": "Seu nome (opcional)",
