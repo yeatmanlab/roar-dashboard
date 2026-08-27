@@ -91,5 +91,5 @@ export const swrConfig: TaskSeedConfig = {
   },
 
   // English, short-adaptive, scoring version 7.
-  defaultVariant: 'English (v7)',
+  defaultVariant: 'English-v7',
 };

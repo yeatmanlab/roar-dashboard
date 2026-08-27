@@ -1,6 +1,6 @@
 [
   {
-    "variantName": "English (v7)",
+    "variantName": "English-v7",
     "params": {
       "lng": "en",
       "scoringVersion": 7,
@@ -17,7 +17,7 @@
     }
   },
   {
-    "variantName": "Spanish (v1)",
+    "variantName": "Spanish-v1",
     "params": {
       "lng": "es",
       "scoringVersion": 1,
