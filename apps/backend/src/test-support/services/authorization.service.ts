@@ -11,6 +11,7 @@ export function createMockAuthorizationService(): MockedObject<ReturnType<typeof
     writeTuples: vi.fn().mockResolvedValue(undefined),
     writeTuplesOrThrow: vi.fn().mockResolvedValue(undefined),
     deleteTuples: vi.fn().mockResolvedValue(undefined),
+    deleteTuplesOrThrow: vi.fn().mockResolvedValue(undefined),
     hasPermission: vi.fn().mockResolvedValue(false),
     requirePermission: vi.fn().mockResolvedValue(undefined),
     listAccessibleObjects: vi.fn().mockResolvedValue([]),

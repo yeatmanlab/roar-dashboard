@@ -110,6 +110,10 @@ const symInstructions = {
     if (store.session.get('grade') < 2) {
       paraText = `${i18next.t('magpiPilot.symbolicComp.instructions.text1K')}`;
     }
+    let image = mediaAssets.images.instructionsSymMagpi;
+    if (store.session.get('desktopTouchScreen')) {
+      image = mediaAssets.images.instructionsSymMagpiMobile;
+    }
 
     return (
       `
@@ -118,7 +122,7 @@ const symInstructions = {
         <p class="instructions-text">` +
       paraText +
       `</p>
-        <img class="img-border" src="${mediaAssets.images.instructionsSymMagpi}" style="width: 50%;" alt="response">
+        <img class="img-border-height" src="${image}" style="width: 50%;" alt="response">
         <p class="instructions-text">${i18next.t('magpiPilot.symbolicComp.instructions.text2')}</p>
       </div>
       `

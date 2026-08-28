@@ -5,7 +5,6 @@ import { startTimer } from '../../core-math/helpers/updateCountDown';
 import { jsPsych } from '../../taskSetup';
 import _round from 'lodash/round';
 import i18next from 'i18next';
-import { isMobile } from '../../fluency/helpers';
 
 let source = null;
 export async function playAudio(audioFile, onEnded = null) {
@@ -50,7 +49,19 @@ export function setMarkerFromValue(value, step, minValue, maxValue, marker) {
   marker.style.left = `${percent * 100}%`;
 }
 
-export function initializeNumberLine({ line, marker, minValue, maxValue, step, onChange, onFirstInteraction }) {
+// onInteraction : Reports the pointerType ("touch" | "mouse" | "pen") of every pointerdown
+// that starts a slider interaction, so callers can log which input method
+// was used to set the marker's position — see click_source_list.
+export function initializeNumberLine({
+  line,
+  marker,
+  minValue,
+  maxValue,
+  step,
+  onChange,
+  onFirstInteraction,
+  onInteraction,
+}) {
   let dragging = false;
   let hasInteracted = false;
 
@@ -83,10 +94,12 @@ export function initializeNumberLine({ line, marker, minValue, maxValue, step, o
   }
 
   line.addEventListener('pointerdown', (e) => {
+    onInteraction?.(e.pointerType);
     moveMarker(e.clientX);
   });
 
   marker.addEventListener('pointerdown', (e) => {
+    onInteraction?.(e.pointerType);
     dragging = true;
     marker.classList.add('dragging');
     marker.setPointerCapture(e.pointerId);
@@ -114,6 +127,7 @@ export function initializeNumberLine({ line, marker, minValue, maxValue, step, o
 export const numberLineSlider = (assessment_stage_val) => {
   let currentValue;
   let handleContinueClick;
+  let clickSourceList;
 
   let stim = {
     type: jsPsychHtmlButtonResponse,
@@ -166,6 +180,7 @@ export const numberLineSlider = (assessment_stage_val) => {
       const minValue = currentItem.lower;
       const maxValue = currentItem.upper;
       currentValue = minValue;
+      clickSourceList = [];
       const step = currentItem.slider_step;
 
       let markerMoved = false;
@@ -179,6 +194,9 @@ export const numberLineSlider = (assessment_stage_val) => {
         onChange: (value) => {
           currentValue = value;
           markerMoved = true;
+        },
+        onInteraction: (pointerType) => {
+          clickSourceList.push(pointerType || 'unknown');
         },
       });
 
@@ -242,7 +260,9 @@ export const numberLineSlider = (assessment_stage_val) => {
         percent_error: perError,
         item: stimulus.item,
         target: stimulus.target,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source_list: clickSourceList,
       });
 
       // update trial count

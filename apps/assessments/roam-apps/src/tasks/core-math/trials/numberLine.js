@@ -4,7 +4,8 @@ import { jsPsych } from '../../taskSetup';
 import { mediaAssets } from '../../..';
 import { startTimer } from '../helpers/updateCountDown';
 import { validityEvaluator, catIRT } from '../timeline';
-import { addResponse, endGame, updateSkillScores, scaleTheta, isMobile } from './trialHelpers';
+import { addResponse, endGame, updateSkillScores, scaleTheta } from './trialHelpers';
+import { trackClickSource } from '../../shared/helpers';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
 
 let source;
@@ -64,6 +65,9 @@ export const numberLine = (corpusName, assessment_stage_val) => {
     on_load: () => {
       // add css class to create line
       document.getElementById('jspsych-html-button-response-btngroup').classList.add(`number-line`);
+
+      //track click source
+      trackClickSource('jspsych-html-button-response-btngroup');
 
       //set the timer only for the default usermode
       if (store.session.get('config').userMode === 'default') {
@@ -205,7 +209,9 @@ export const numberLine = (corpusName, assessment_stage_val) => {
         response_key_list: null,
         response_time_list: null,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source: store.session.get('clickSource'),
       });
 
       // update trial count

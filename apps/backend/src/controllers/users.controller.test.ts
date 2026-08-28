@@ -4,20 +4,23 @@ import type {
   CreateUserRequestBody,
   UpdateUserRequestBody,
   AdministrationsListQuery,
+  ImportUsersRequest,
 } from '@roar-platform/api-contract';
 import { UserFactory, AuthContextFactory } from '../test-support/factories/user.factory';
 import { AdministrationWithEmbedsFactory } from '../test-support/factories/administration.factory';
 import { AgreementFactory } from '../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import { createMockUserService } from '../test-support/services/user.service';
+import { createMockUserImportService } from '../test-support/services/user-import.service';
 import { createMockAdministrationService } from '../test-support/services/administration.service';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../enums/api-error-message.enum';
 
-// Mock the UserService module
+// Mock the UserService and UserImportService module
 vi.mock('../services/user', () => ({
   UserService: vi.fn(),
+  UserImportService: vi.fn(),
 }));
 
 // Mock the AdministrationService module
@@ -32,7 +35,7 @@ vi.mock('../services/report/report.service', () => ({
   ReportService: vi.fn(),
 }));
 
-import { UserService } from '../services/user';
+import { UserService, UserImportService } from '../services/user';
 import { AdministrationService } from '../services/administration/administration.service';
 import { ReportService } from '../services/report/report.service';
 
@@ -68,6 +71,8 @@ describe('UsersController', () => {
   const mockListUserAdministrationAgreements = vi.fn();
   const mockListUserMemberships = vi.fn();
   const mockGetGuardianStudentReport = vi.fn();
+  const mockCreateWithImportedAuth = vi.fn();
+  const mockBulkImport = vi.fn();
   const mockAuthContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
 
   beforeEach(() => {
@@ -80,7 +85,13 @@ describe('UsersController', () => {
     mockUserService.update = mockUpdate;
     mockUserService.recordUserAgreement = mockRecordUserAgreement;
     mockUserService.listUserMemberships = mockListUserMemberships;
+    mockUserService.createWithImportedAuth = mockCreateWithImportedAuth;
     vi.mocked(UserService).mockReturnValue(mockUserService);
+
+    // Setup the mock UserImportService
+    const mockUserImportService = createMockUserImportService();
+    mockUserImportService.bulkImport = mockBulkImport;
+    vi.mocked(UserImportService).mockReturnValue(mockUserImportService);
 
     // Setup the mock AdministrationService
     const mockAdministrationService = createMockAdministrationService();
@@ -756,6 +767,104 @@ describe('UsersController', () => {
       const { UsersController: Controller } = await import('./users.controller');
 
       await expect(Controller.create(authContext, validBody)).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('bulkImport', () => {
+    const authContext = AuthContextFactory.build({ userId: 'admin-123', isSuperAdmin: true });
+    const importRow: ImportUsersRequest['users'][number] = {
+      email: 'imported@example.com',
+      name: { first: 'Jane', last: 'Doe' },
+      userType: 'student',
+      memberships: [{ entityId: 'org-uuid-123', entityType: 'school', role: 'student' }],
+    };
+    const validBody: ImportUsersRequest = { users: [importRow] };
+
+    function expectOkImportResponse(result: {
+      status: number;
+      body: { data: { results: unknown[]; summary: unknown } } | { error: unknown };
+    }) {
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(result.body).toHaveProperty('data');
+      return (result.body as { data: { results: unknown[]; summary: unknown } }).data;
+    }
+
+    it('should return 200 with per-row results and a summary tallying each bin', async () => {
+      mockBulkImport.mockResolvedValue([
+        { index: 0, classification: 'created', status: 'ok', id: 'user-1' },
+        { index: 1, classification: 'updated', status: 'ok', id: 'user-2' },
+        { index: 2, classification: 'unenrolled', status: 'ok', id: 'user-3' },
+        {
+          index: 3,
+          classification: 'created',
+          status: 'failed',
+          error: { code: ApiErrorCode.REQUEST_INVALID, message: ApiErrorMessage.UNPROCESSABLE_ENTITY },
+        },
+      ]);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.bulkImport(authContext, validBody);
+
+      const data = expectOkImportResponse(result);
+      expect(data.results).toHaveLength(4);
+      expect(data.summary).toEqual({
+        total: 4,
+        created: 1,
+        updated: 1,
+        unenrolled: 1,
+        failed: 1,
+      });
+    });
+
+    it('should delegate to the service with the correct arguments', async () => {
+      mockBulkImport.mockResolvedValue([]);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      await Controller.bulkImport(authContext, validBody);
+
+      expect(mockBulkImport).toHaveBeenCalledWith(authContext, validBody.users);
+      expect(mockBulkImport).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return an empty summary when there are no rows to report', async () => {
+      mockBulkImport.mockResolvedValue([]);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.bulkImport(authContext, validBody);
+
+      const data = expectOkImportResponse(result);
+      expect(data.results).toEqual([]);
+      expect(data.summary).toEqual({
+        total: 0,
+        created: 0,
+        updated: 0,
+        unenrolled: 0,
+        failed: 0,
+      });
+    });
+
+    it('should return 500 when the whole request fails before per-row processing', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockBulkImport.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.bulkImport(authContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody.message).toBe(ApiErrorMessage.INTERNAL_SERVER_ERROR);
+      expect(errorBody.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Unexpected error');
+      mockBulkImport.mockRejectedValue(unexpectedError);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await expect(Controller.bulkImport(authContext, validBody)).rejects.toThrow('Unexpected error');
     });
   });
 

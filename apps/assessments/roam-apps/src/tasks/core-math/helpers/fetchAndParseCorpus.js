@@ -14,6 +14,7 @@ import 'katex/dist/katex.min.css'; //katex css
 import 'simple-keyboard/build/css/index.css'; //simple keyboard css
 import { getCorpusNumLine } from '../../magpi/helpers';
 import i18next from 'i18next';
+import { deviceType, primaryInput } from 'detect-it';
 
 let increment_list = [];
 
@@ -182,6 +183,11 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
   let stimulusArray = [];
   let itemType = [];
   let subSkillRange = {};
+
+  store.session.set('deviceType', deviceType);
+  store.session.set('primaryInput', primaryInput);
+  // desktop device that has a touch screen
+  store.session.set('desktopTouchScreen', deviceType === 'hybrid' && primaryInput === 'mouse');
 
   // get language for url
   let lng = getLanguage(i18next.language);
@@ -529,10 +535,24 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
   assets.default.languageSpecific.shared.push('core-math-end-screen' + suffix + '.mp3');
 
   //speaker button instruction
-  if (grade > 4) {
-    assets.default.languageSpecific.device.push('core-math-response.gif');
+  if (store.session.get('desktopTouchScreen')) {
+    assets.default.languageSpecific.device.push('navigation-instruction-mobile.mp3');
+    assets.default.languageSpecific.device.push('core-math-response-mobile.mp3');
+    assets.default.languageSpecific.device.push('core-math-speaker-mobile.gif');
+    if (grade > 4) {
+      assets.default.languageSpecific.device.push('core-math-response-mobile.gif');
+    } else {
+      assets.default.languageSpecific.device.push('core-math-response-k4-mobile.gif');
+    }
   } else {
-    assets.default.languageSpecific.device.push('core-math-response-k4.gif');
+    assets.default.languageSpecific.device.push('navigation-instruction.mp3');
+    assets.default.languageSpecific.device.push('core-math-response.mp3');
+    assets.default.languageSpecific.device.push('core-math-speaker.gif');
+    if (grade > 4) {
+      assets.default.languageSpecific.device.push('core-math-response.gif');
+    } else {
+      assets.default.languageSpecific.device.push('core-math-response-k4.gif');
+    }
   }
 
   addItemSpecificAudio(checkStimulusArray, assets);
