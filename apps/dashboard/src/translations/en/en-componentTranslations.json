@@ -125,7 +125,7 @@
   },
   "sentryForm": {
     "formTitle": "ROAR Bug Report",
-    "buttonLabel": "Report an Issue",
+    "buttonLabel": "Submit a Request",
     "submitButtonLabel": "Submit Issue Report",
     "cancelButtonLabel": "Cancel",
     "namePlaceholder": "Your Name (optional)",
