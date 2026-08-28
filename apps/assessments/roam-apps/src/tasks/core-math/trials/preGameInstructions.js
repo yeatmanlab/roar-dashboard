@@ -9,21 +9,37 @@ import { isMobile } from './trialHelpers';
 const mouseInstructions = {
   type: jsPsychAudioMultiResponse,
   stimulus: () => {
-    return mediaAssets.audio.coreMathResponse;
+    if (store.session.get('desktopTouchScreen')) {
+      return mediaAssets.audio.coreMathResponseMobile;
+    } else {
+      return mediaAssets.audio.coreMathResponse;
+    }
   },
   prompt: () => {
-    let mouseImage = mediaAssets.images.coreMathResponseK4;
-    if (store.session.get('grade') > 4) {
-      mouseImage = mediaAssets.images.coreMathResponse;
+    let mouseImage = null;
+    if (store.session.get('desktopTouchScreen')) {
+      mouseImage = mediaAssets.images.coreMathResponseK4Mobile;
+      if (store.session.get('grade') > 4) {
+        mouseImage = mediaAssets.images.coreMathResponseMobile;
+      }
+    } else {
+      mouseImage = mediaAssets.images.coreMathResponseK4;
+      if (store.session.get('grade') > 4) {
+        mouseImage = mediaAssets.images.coreMathResponse;
+      }
     }
-    let responseMode = isMobile ? 'instructions.core-math.finger' : 'instructions.core-math.mouse';
+
+    let responseMode =
+      isMobile || store.session.get('desktopTouchScreen')
+        ? 'instructions.core-math.finger'
+        : 'instructions.core-math.mouse';
     return `
       <div class="jspsych-content-modified">
         <h2 class="title">${i18next.t('instructions.text1')}</h2>
         <p class="instructions-text">${i18next.t('instructions.core-math.text2', {
           mode: `${i18next.t(responseMode)}`,
         })}</p>
-        <img class="img-border" src="${mouseImage}" style=""alt="response">
+        <img class="img-border-height" src="${mouseImage}" style=""alt="response">
       </div>
       `;
   },
@@ -49,11 +65,15 @@ const audioInstructions = {
     return mediaAssets.audio.coreMathSpeaker;
   },
   prompt: () => {
+    let image = mediaAssets.images.coreMathSpeaker;
+    if (store.session.get('desktopTouchScreen')) {
+      image = mediaAssets.images.coreMathSpeakerMobile;
+    }
     return `
       <div class="jspsych-content-modified">
         <h2 class="title">${i18next.t('instructions.text1')}</h2>
         <p class="instructions-text">${i18next.t('instructions.core-math.text6')}</p>
-        <img class="img-border" src="${mediaAssets.images.coreMathSpeaker}" alt="response">
+        <img class="img-border-width" src="${image}" alt="response">
       </div>
       `;
   },

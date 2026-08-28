@@ -1,10 +1,9 @@
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import store from 'store2';
 import { mediaAssets } from '../../..';
-import { updateProgressBar } from '../../shared/helpers';
+import { updateProgressBar, trackClickSource } from '../../shared/helpers';
 import { jsPsych } from '../../taskSetup';
 import i18next from 'i18next';
-import { isMobile } from '../../fluency/helpers';
 
 export const symComp = (assessment_stage_val) => {
   return {
@@ -21,6 +20,9 @@ export const symComp = (assessment_stage_val) => {
     },
     on_load: () => {
       document.getElementById('jspsych-audio-multi-response-btngroup').classList.add(`num-comp-btn-layout`);
+
+      //track click source
+      trackClickSource('jspsych-audio-multi-response-btngroup');
 
       //disable on load to prevent double clicking
       let buttons = document.querySelectorAll('.jspsych-audio-multi-response-button');
@@ -71,7 +73,9 @@ export const symComp = (assessment_stage_val) => {
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
         bin_description: stimulus.bin_description,
         distance: stimulus.distance,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source: store.session.get('clickSource'),
       });
 
       // progress bar
@@ -109,6 +113,9 @@ export const practiceFeedbackIncorrect = (corpusName, assessment_stage_val) => {
 
     on_load: () => {
       document.getElementById('jspsych-audio-multi-response-btngroup').classList.add(`num-comp-btn-layout`);
+
+      //track click source
+      trackClickSource('jspsych-audio-multi-response-btngroup');
 
       //disable on load to prevent double clicking
       let buttons = document.querySelectorAll('.jspsych-audio-multi-response-button');
@@ -179,7 +186,9 @@ export const practiceFeedbackIncorrect = (corpusName, assessment_stage_val) => {
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
         bin_description: stimulus.bin_description,
         distance: stimulus.distance,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source: store.session.get('clickSource'),
       });
     },
   };

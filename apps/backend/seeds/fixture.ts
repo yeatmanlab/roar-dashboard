@@ -292,6 +292,9 @@ export async function seedDevFixture(): Promise<BaseFixture> {
     UserFactory.create({
       id: DEV_IDS.schoolAAdmin,
       authId: DEV_IDS.schoolAAdminAuth,
+      // Matches the emulator/fixture email so backend email lookups find this user —
+      // validated by users-import.cy.js's "reconcile moves the admin..." test.
+      email: DEV_USERS.schoolAAdmin.email,
       nameFirst: 'School A',
       nameLast: 'Admin',
       userType: UserType.ADMIN,

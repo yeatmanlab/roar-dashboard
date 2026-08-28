@@ -23,6 +23,7 @@ import {
   transformFluencyPractice,
 } from '../../shared/helpers/downloadCSV';
 import { getCorpusSymComp } from '../../magpi/helpers';
+import { deviceType, primaryInput } from 'detect-it';
 
 export let clowder;
 
@@ -62,6 +63,12 @@ export const fetchAndParseCorpusFluency = async (task, assets) => {
   let grade = getGrade(store.session.get('config').userMetadata.grade);
   store.session.set('isK2', grade < 3 || grade === undefined);
   store.session.set('grade', grade);
+
+  //set device type
+  store.session.set('deviceType', deviceType);
+  store.session.set('primaryInput', primaryInput);
+  // desktop device that has a touch screen
+  store.session.set('desktopTouchScreen', deviceType === 'hybrid' && primaryInput === 'mouse');
 
   // get language for url
   let lng = getLanguage(i18next.language);
@@ -249,7 +256,11 @@ export const fetchAndParseCorpusFluency = async (task, assets) => {
       assets.default.languageSpecific.shared.push(assetList[i]);
     }
 
-    assets.default.languageSpecific.device.push('instructions-sym-magpi.gif');
+    if (store.session.get('desktopTouchScreen')) {
+      assets.default.languageSpecific.device.push('instructions-sym-magpi-mobile.gif');
+    } else {
+      assets.default.languageSpecific.device.push('instructions-sym-magpi.gif');
+    }
   }
   //To maintain the corpus structure when run normally as 1 task
   /*if (corpusAll.length === 1) {
@@ -271,9 +282,27 @@ export const fetchAndParseCorpusFluency = async (task, assets) => {
     responseMode + '-game-end.mp3',
   ];
   if (taskName === 'fluency-arf' && responseMode === 'afc') {
-    assetListDevice.push('instructions-fluency-2afc.mp3');
+    if (store.session.get('desktopTouchScreen')) {
+      assetListDevice.push('instructions-fluency-2afc-mobile.mp3');
+      assetListDevice.push('instructions-2afc-mobile.gif');
+    } else {
+      assetListDevice.push('instructions-fluency-2afc.mp3');
+      assetListDevice.push('instructions-2afc.gif');
+    }
   } else if (taskName === 'fluency-calf' && responseMode === 'afc') {
-    assetListDevice.push('instructions-fluency-6afc.mp3');
+    if (store.session.get('desktopTouchScreen')) {
+      assetListDevice.push('instructions-fluency-6afc-mobile.mp3');
+      assetListDevice.push('core-math-response-mobile.gif');
+    } else {
+      assetListDevice.push('instructions-fluency-6afc.mp3');
+      assetListDevice.push('core-math-response.gif');
+    }
+  }
+
+  if (store.session.get('desktopTouchScreen')) {
+    assetListDevice.push('navigation-instruction-mobile.mp3');
+  } else {
+    assetListDevice.push('navigation-instruction.mp3');
   }
 
   if (config.recruitment === 'demo') {

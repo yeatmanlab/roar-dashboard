@@ -186,6 +186,107 @@ export const CreateUserResponseSchema = z.object({
 export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
 
 /**
+ * Per-row body for POST /users/import (bulk create / update / unenroll).
+ *
+ * Intentionally the single-create row shape (`CreateUserRequestBodySchema`) with three changes:
+ * - `password` is optional here and validated per-bin during processing (required for create
+ *   rows, optional for update rows, ignored for unenroll rows). The client cannot know which bin
+ *   a row lands in until the server matches it by email, so the schema cannot require it.
+ * - `unenroll: true` routes an existing user to the unenroll bin.
+ * - `memberships` is org-scoped only, like single-create, but only create/update rows must be
+ *   non-empty: unenrolling acts on the target's current memberships, not what this array declares.
+ *   An unenroll row may send `[]`; the key itself stays required. `enrollmentStart` / `enrollmentEnd`
+ *   are honoured on create rows only — an update row declaring either is rejected (422) rather than
+ *   having the window silently dropped, since membership reconciliation always writes an open one.
+ *
+ * The server classifies create / update / unenroll by matching `email` against existing users —
+ * the client never declares the bin. Emails are generated from the username if not provided upon importing on the client-side.
+ */
+export const ImportUserRowSchema = CreateUserRequestBodySchema.omit({ password: true, memberships: true })
+  .extend({
+    password: z.string().min(8).optional(),
+    unenroll: z.boolean().optional(),
+    memberships: z.array(OrgMembershipSchema),
+  })
+  .strict()
+  .superRefine((row, ctx) => {
+    if (!row.unenroll && row.memberships.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.too_small,
+        minimum: 1,
+        type: 'array',
+        inclusive: true,
+        path: ['memberships'],
+        message: 'memberships must contain at least 1 element(s) unless unenroll is true',
+      });
+    }
+  });
+
+export type ImportUserRow = z.infer<typeof ImportUserRowSchema>;
+
+/**
+ * Request body for POST /users/import. Capped at 100 rows — the dashboard chunks at 50 and
+ * Firebase `importUsers` accepts up to 1,000, so 100 sits comfortably between the two.
+ */
+export const ImportUsersRequestSchema = z.object({
+  users: z.array(ImportUserRowSchema).min(1).max(100),
+});
+
+export type ImportUsersRequest = z.infer<typeof ImportUsersRequestSchema>;
+
+/** The bin the server routed a row to (past tense — reflects the outcome). */
+export const ImportClassificationSchema = z.enum(['created', 'updated', 'unenrolled']);
+
+export type ImportClassification = z.infer<typeof ImportClassificationSchema>;
+
+/**
+ * Per-row result, discriminated on `status`. Successful rows carry the resulting user `id`;
+ * failed rows carry a safe `{ code, message }` (from the `ApiErrorCode` / `ApiErrorMessage`
+ * enums on the server). `classification` is the bin the row was routed to, even on failure, so
+ * the operator can see which path went wrong.
+ */
+export const ImportUserResultSchema = z.discriminatedUnion('status', [
+  z.object({
+    index: z.number().int().nonnegative(),
+    classification: ImportClassificationSchema,
+    status: z.literal('ok'),
+    id: z.string().uuid(),
+  }),
+  z.object({
+    index: z.number().int().nonnegative(),
+    classification: ImportClassificationSchema,
+    status: z.literal('failed'),
+    error: z.object({
+      code: z.string(),
+      message: z.string(),
+    }),
+  }),
+]);
+
+export type ImportUserResult = z.infer<typeof ImportUserResultSchema>;
+
+export const ImportUsersSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
+  created: z.number().int().nonnegative(),
+  updated: z.number().int().nonnegative(),
+  unenrolled: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+});
+
+export type ImportUsersSummary = z.infer<typeof ImportUsersSummarySchema>;
+
+/**
+ * Multi-status response for POST /users/import. The endpoint returns 200 for any well-formed,
+ * authenticated request; per-row outcomes live in `results`, and `summary` totals each bin.
+ */
+export const ImportUsersResponseSchema = z.object({
+  results: z.array(ImportUserResultSchema),
+  summary: ImportUsersSummarySchema,
+});
+
+export type ImportUsersResponse = z.infer<typeof ImportUsersResponseSchema>;
+
+/**
  * Request body schema for PATCH /users/:id
  *
  * All fields are optional — only provided fields are updated (partial update semantics).

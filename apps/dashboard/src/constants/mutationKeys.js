@@ -15,3 +15,4 @@ export const TOGGLE_REGISTERED_TASKS_MUTATION_KEY = 'toggle-registered-tasks';
 export const TOGGLE_REGISTERED_VARIANTS_MUTATION_KEY = 'toggle-registered-variants';
 export const USER_CREATE_MUTATION_KEY = 'user-create';
 export const USER_UPDATE_MUTATION_KEY = 'user-update';
+export const USER_BULK_IMPORT_MUTATION_KEY = 'user-bulk-import';
