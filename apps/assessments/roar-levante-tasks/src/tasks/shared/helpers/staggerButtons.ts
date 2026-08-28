@@ -100,7 +100,15 @@ const showStaggeredBtnAndPlaySound = (
         onComplete?.();
       } else {
         //recurse
-        showStaggeredBtnAndPlaySound(index + 1, btnList, audioList, pageState, onComplete, currentTrialId, pulseButtons);
+        showStaggeredBtnAndPlaySound(
+          index + 1,
+          btnList,
+          audioList,
+          pageState,
+          onComplete,
+          currentTrialId,
+          pulseButtons,
+        );
       }
     },
   };
