@@ -21,7 +21,7 @@ function handleInstructions() {
     const corsiBlocks = content.find('.jspsych-corsi-block');
 
     if (corsiBlocks.length === 0) {
-      cy.contains('OK').click();
+      cy.contains('OK').should('not.be.disabled').click();
     }
   });
   return;
