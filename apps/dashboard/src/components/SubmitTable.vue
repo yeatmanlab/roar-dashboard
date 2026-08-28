@@ -95,6 +95,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
 import InputText from 'primevue/inputtext';
 import PvButton from 'primevue/button';
+import { isEmailValid, isUsernameValid, isPasswordValid, isDobValid } from '@/helpers/userFieldValidators';
 const props = defineProps({
   students: {
     type: Object,
@@ -311,47 +312,5 @@ async function validityCheck(row) {
     }
   }
   return { valid: _isEmpty(errors), errors };
-}
-
-function isEmailValid(email) {
-  if (!email) return false;
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-function isUsernameValid(username) {
-  if (!username) return false;
-  // Username can only contain letters, numbers, underscores, hyphens, and periods
-  // Must start and end with alphanumeric characters
-  // No consecutive special characters
-  const usernameRegex = /^[a-zA-Z0-9]+([_.-]?[a-zA-Z0-9]+)*$/;
-  return usernameRegex.test(username);
-}
-
-function isPasswordValid(password) {
-  if (!password) return false;
-  return password.length >= 6 && /[a-zA-Z]/.test(password);
-}
-
-function isDobValid(dob) {
-  // Requires a 4-digit year to avoid ambiguous 2-digit-year parsing (e.g. 1/2/12)
-  // Expects MM/DD/YYYY or MM-DD-YYYY (e.g. 2/1/2020, 2-1-2020, 02/01/2020)
-  const DOB_REGEX = /^(\d{1,2})([/-])(\d{1,2})\2(\d{4})$/;
-  const match = DOB_REGEX.exec(String(dob).trim());
-  if (!match) return null;
-
-  const [, monthStr, , dayStr, yearStr] = match;
-  const month = Number(monthStr);
-  const day = Number(dayStr);
-  const year = Number(yearStr);
-
-  const date = new Date(year, month - 1, day);
-  // Reject dates like 2/30/2020 that overflow into the next month
-  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-    return null;
-  }
-  if (date > new Date()) return null;
-
-  return date;
 }
 </script>

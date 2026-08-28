@@ -555,6 +555,8 @@ const rules = {
   students: {
     $each: helpers.forEach({
       activationCode: {},
+      // TODO: enforce the same username format rules as SubmitTable's isUsernameValid —
+      // this becomes `${studentUsername}@roar-auth.com`, so bad formats fail at signup.
       studentUsername: { required },
       password: { required, minLength: minLength(6) },
       confirmPassword: { required },
