@@ -145,12 +145,12 @@ FROM app_assessment_fdw.runs r
 JOIN app.users u ON u.id = r.user_id
 JOIN app.task_variants tv ON tv.id = r.task_variant_id
 JOIN app.tasks t ON t.id = tv.task_id
-WHERE t.slug = 'pa'          -- the task slug, e.g. 'pa', 'swr', 'sre'
+WHERE t.slug = 'swr'         -- English only; LIKE 'swr%' for all five SWR tasks
   AND r.deleted_at IS NULL
 ORDER BY r.created_at DESC;
 ```
 
-> **Multi-task / multi-language slugs.** Language-as-task assessments use language-suffixed slugs (`swr`, `swr-es`), and multi-task assessments have several slugs. Match with `t.slug LIKE 'swr%'`, or list the exact slugs, rather than a single `=` — otherwise you'll silently miss runs.
+> **Multi-task / multi-language slugs.** Language-as-task assessments use language-suffixed slugs — SWR alone is five tasks (`swr`, `swr-es`, `swr-it`, `swr-pt`, `swr-de`) — and multi-task assessments have several slugs. Match with `t.slug LIKE 'swr%'`, or list the exact slugs, rather than a single `=` — otherwise you'll silently miss runs.
 
 **Trial-level data for a specific run** — run in `roar_assessment`:
 

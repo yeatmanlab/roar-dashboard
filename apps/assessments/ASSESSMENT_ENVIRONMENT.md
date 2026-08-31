@@ -4,13 +4,13 @@ A local developer environment for running ROAR assessments against a real Postgr
 
 This is the **setup and operations** guide: how to install, start, stop, seed, and troubleshoot the environment. For querying the data you produce (runs, trials, scores, metadata) and the day-to-day research loop, see the companion **[Research Guide](./ASSESSMENT_RESEARCH_GUIDE.md)**.
 
-> **The environment is shared across all assessments.** Each assessment lives in its own directory (e.g. `apps/assessments/roar-pa/`) and runs its own dev server, but the Firebase emulators (Auth + Storage), backend, and PostgreSQL databases are one shared Docker stack. Only the assessment dev server differs — they all run on the same port (http://localhost:8000), one at a time.
+> **The environment is shared across all assessments.** Each assessment lives in its own directory (e.g. `apps/assessments/roar-swr/`) and runs its own dev server, but the Firebase emulators (Auth + Storage), backend, and PostgreSQL databases are one shared Docker stack. Only the assessment dev server differs — they all run on the same port (http://localhost:8000), one at a time.
 
 ---
 
 ## TL;DR
 
-From the assessment's directory (e.g. `apps/assessments/roar-pa/`):
+From the assessment's directory (e.g. `apps/assessments/roar-swr/`):
 
 ```bash
 npm run setup    # First time only: check prerequisites, install, build, create config
@@ -40,7 +40,7 @@ After that, `npm start` is all you need for day-to-day work. Everything else is 
 Run once from the assessment directory, before your first `npm start`:
 
 ```bash
-cd apps/assessments/roar-pa
+cd apps/assessments/roar-swr
 npm run setup
 ```
 
@@ -164,7 +164,7 @@ The keys in `params` map directly to the URL parameters the assessment dev serve
 
 ### How seeding works
 
-When the stack first comes up, a one-shot migration container runs the database migrations and then seeds this assessment's task(s) and variants. It's driven by the assessment's directory name — `roar-pa` → the `roar-pa` seed config — so **an unregistered assessment fails the migration container** rather than the dev server, naming the tasks it knows about.
+When the stack first comes up, a one-shot migration container runs the database migrations and then seeds this assessment's task(s) and variants. It's driven by the assessment's directory name — `roar-swr` → the `roar-swr` seed config — so **an unregistered assessment fails the migration container** rather than the dev server, naming the tasks it knows about.
 
 Each assessment has a seed config in `apps/backend/seeds/configs/<name>.config.ts` that defines:
 
@@ -181,9 +181,11 @@ Variants are seeded as `published` and matched by name, so seeding is **idempote
 Opening the dev server without a `variantId` in the URL used to run whichever variant happened to be seeded first. Each assessment now declares a **preferred default variant per task, by name**, in its `serve/serve.js`:
 
 ```javascript
-// apps/assessments/roar-pa/serve/serve.js
+// apps/assessments/roar-swr/serve/serve.js — one entry per language task
 const DEFAULT_VARIANT_NAMES = {
-  [pa.PA_TASK_ID]: "English-Fixed-v3",
+  [SWR_LANGUAGES.en.taskId]: "English-v7",
+  [SWR_LANGUAGES.es.taskId]: "Spanish-v1",
+  // …it, pt, de
 };
 ```
 
