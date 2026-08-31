@@ -36,6 +36,7 @@ const paramsDef = (tagReq) => ({
   modeGameSkipResponse: ModeGame.NONE,
 
   durationTrial: DURATIONS.INSTRUCTION,
+  durationAudioEndFallback: DURATIONS.AUDIO_END_FALLBACK_LONG, // @fix-freeze-audio
 
   on_load_ext: null, // hooks for augmenting layout as needed
   on_finish_ext: null,
@@ -83,6 +84,12 @@ export const t_instructionGeneral = (paramsIn = {}, tagReq = 'def') => {
                 // eslint-disable-next-line no-param-reassign
                 trial.trial_duration = params.durationTrial;
               }
+              // @fix-freeze-audio - begin
+              else {
+                // eslint-disable-next-line no-param-reassign
+                trial.trial_duration = params.durationAudioEndFallback;
+              }
+              // @fix-freeze-audio - end
             },
             on_load: () => {
               scrollToTop();
