@@ -12,7 +12,6 @@ import { updateProgressBar, dashToCamelCase } from '../../shared/helpers';
 import i18next from 'i18next';
 import { validityEvaluator } from '../timeline';
 import { pushSkill } from './trialDefinitions';
-import { isMobile } from '../helpers';
 
 let rt = [];
 let key = [];
@@ -186,7 +185,8 @@ export const numberMainTimerDesktop = (corpusName, assessment_stage_val) => {
         //group: store.session.get("config").group,
         response_key_list: key,
         response_time_list: rt,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
       });
 
       // progress bar
@@ -213,7 +213,6 @@ export const numberMainTimerDesktop = (corpusName, assessment_stage_val) => {
         }
 
         updateProgressBar();
-        // feed response to fluencyValidityEvaluator for evaluation per trial
         // feed response to fluencyValidityEvaluator for evaluation per trial
         if (store.session.get('evaluateValidity')) {
           validityEvaluator.addResponseData(data.rt, response_val, store.session.get('dataCorrect'));
@@ -445,7 +444,8 @@ export const practiceFeedbackIncorrectDesktop = (corpusName, assessment_stage_va
           //group: store.session.get("config").group,
           response_key_list: key,
           response_time_list: rt,
-          is_mobile: isMobile,
+          device_type: store.session.get('deviceType'),
+          primary_input: store.session.get('primaryInput'),
         });
       } else {
         store.session.transact('correctCount', (oldVal) => oldVal + 1);

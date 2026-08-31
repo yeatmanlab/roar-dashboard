@@ -60,5 +60,5 @@ export const paConfig: TaskSeedConfig = {
   },
 
   // English, fixed forms, scoring version 3.
-  defaultVariant: 'English Fixed (v3)',
+  defaultVariant: 'English-Fixed-v3',
 };
