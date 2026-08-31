@@ -53,6 +53,7 @@ const paramsDef = (tagReq) => ({
   modeKeyboardYesNo: false,
 
   durationTrial: DURATIONS.INSTRUCTION,
+  durationAudioEndFallback: DURATIONS.AUDIO_END_FALLBACK_LONG, // @fix-freeze-audio
   modeGameTrial: ModeGame.STANDARD,
   modeInputTargetAnswerTrial: ModeInput.KEYBOARD,
   modeInputTargetTrial: ModeInput.KEYBOARD,
@@ -222,6 +223,12 @@ export const t_instructionInputLR = (paramsIn = {}, tagReq = 'def') => {
                 // eslint-disable-next-line no-param-reassign
                 trial.trial_duration = params.durationTrial;
               }
+              // @fix-freeze-audio - begin
+              else {
+                // eslint-disable-next-line no-param-reassign
+                trial.trial_duration = params.durationAudioEndFallback;
+              }
+              // @fix-freeze-audio - end
               sessionSet(SK.DATA_CORRECT, false);
             },
             on_load: () => {
