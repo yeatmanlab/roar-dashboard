@@ -277,6 +277,8 @@ The environment doesn't need to be stopped first — the rebuild only updates th
 
 **A code change isn't taking effect.** Host library change → `npm run update`; backend/migration/Dockerfile change → `npm run rebuild`. See [Updating after a pull](#updating-after-a-pull).
 
+**"Failed to bind host port 9000/9099/9199" — or the Firebase emulator container never starts.** Another Firebase emulator already holds those ports. The usual culprit is a persistent platform-dev stack (its auth emulator publishes 9099) or a hand-started `firebase emulators:start`; this stack publishes all three on the host, so the two cannot run at once. Stop the other emulator, then `npm start`. One wrinkle if the first attempt already created the container: starting it again can leave it running with no published ports (`docker port firebase-emulator` prints nothing, and the emulator is unreachable from the host even though the container reports healthy). Recreate it rather than restarting it — `docker compose -f docker-compose.assessment.yml up -d --force-recreate firebase-emulator`.
+
 **Stale containers / name or port conflicts on start.** `npm start` force-removes known stale containers before bringing the stack up, but if it's still wedged, `npm stop` (deletes data) then `npm start` gives a clean slate.
 
 **`docker stop` fails with "permission denied" (Linux/AppArmor).** `npm stop` falls back to direct process kills and, if those are blocked too, prints the exact `sudo kill` command to run. Run it, then re-run `npm stop`.
