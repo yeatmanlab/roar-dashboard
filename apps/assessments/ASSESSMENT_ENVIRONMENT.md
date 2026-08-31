@@ -180,11 +180,13 @@ Variants are seeded as `published` and matched by name, so seeding is **idempote
 
 Opening the dev server without a `variantId` in the URL used to run whichever variant happened to be seeded first. Each assessment now declares a **preferred default variant per task, by name**, in its `serve/serve.js`:
 
+<!-- This snippet mirrors serve.js verbatim, including its quote style. -->
+<!-- prettier-ignore -->
 ```javascript
 // apps/assessments/roar-swr/serve/serve.js — one entry per language task
 const DEFAULT_VARIANT_NAMES = {
-  [SWR_LANGUAGES.en.taskId]: "English-v7",
-  [SWR_LANGUAGES.es.taskId]: "Spanish-v1",
+  [SWR_LANGUAGES.en.taskId]: 'English-v7',
+  [SWR_LANGUAGES.es.taskId]: 'Spanish-v1',
   // …it, pt, de
 };
 ```
