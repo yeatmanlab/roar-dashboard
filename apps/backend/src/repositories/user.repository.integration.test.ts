@@ -10,12 +10,15 @@ import { baseFixture } from '../test-support/fixtures';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { OrgFactory } from '../test-support/factories/org.factory';
+import { ClassFactory } from '../test-support/factories/class.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
-import { GroupFactory } from '../test-support/factories/group.factory';
 import { UserGroupFactory } from '../test-support/factories/user-group.factory';
+import { GroupFactory } from '../test-support/factories/group.factory';
 import { FamilyFactory } from '../test-support/factories/family.factory';
 import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
 import { UserRole } from '../enums/user-role.enum';
+import { OrgType } from '../enums/org-type.enum';
+import { EntityType } from '../types/entity-type';
 import { UserType } from '../enums/user-type.enum';
 import { AuthProvider } from '../enums/auth-provider.enum';
 import { UserRepository } from './user.repository';
@@ -277,6 +280,236 @@ describe('UserRepository', () => {
     });
   });
 
+  describe('findByEmails', () => {
+    it('returns users matching the emails, case-insensitively', async () => {
+      const user = await UserFactory.create({ email: 'Found.User@example.org' });
+
+      const result = await repository.findByEmails(['found.user@EXAMPLE.org', 'missing@example.org']);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(user.id);
+    });
+
+    it('returns an empty array for empty input', async () => {
+      expect(await repository.findByEmails([])).toEqual([]);
+    });
+  });
+
+  describe('endAllOrgEnrollments', () => {
+    /**
+     * Read a user_groups row's raw enrollment window. No repository method exposes it — the
+     * membership getters are all active-only — and these tests assert on the stamped dates.
+     */
+    const readGroupEnrollment = async (userId: string, groupId: string) => {
+      const { CoreDbClient } = await import('../db/clients');
+      const { userGroups } = await import('../db/schema');
+      const { and, eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select({
+        enrollmentStart: userGroups.enrollmentStart,
+        enrollmentEnd: userGroups.enrollmentEnd,
+      })
+        .from(userGroups)
+        .where(and(eq(userGroups.userId, userId), eq(userGroups.groupId, groupId)));
+      return row ?? null;
+    };
+
+    it('ends every active org, class, and group enrollment but leaves the family membership active', async () => {
+      const user = await UserFactory.create();
+      const family = await FamilyFactory.create();
+      const group = await GroupFactory.create();
+      await UserOrgFactory.create({ userId: user.id, orgId: baseFixture.district.id, role: UserRole.ADMINISTRATOR });
+      await UserGroupFactory.create({ userId: user.id, groupId: group.id, role: UserRole.STUDENT });
+      await UserClassFactory.create({
+        userId: user.id,
+        classId: baseFixture.classInSchoolA.id,
+        role: UserRole.TEACHER,
+      });
+      await UserFamilyFactory.create({ userId: user.id, familyId: family.id, role: 'parent' });
+
+      expect(await repository.getUserEntityMemberships(user.id)).not.toHaveLength(0);
+
+      await repository.endAllOrgEnrollments(user.id);
+
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toEqual([
+        { entityType: EntityType.FAMILY, entityId: family.id, role: 'parent' },
+      ]);
+    });
+
+    it('is a no-op for a user with no enrollments', async () => {
+      const user = await UserFactory.create();
+
+      await expect(repository.endAllOrgEnrollments(user.id)).resolves.toBeUndefined();
+      expect(await repository.getUserEntityMemberships(user.id)).toHaveLength(0);
+    });
+
+    it('ends a row whose enrollmentEnd is in the future', async () => {
+      // Active per isEnrollmentActive, but not open-ended — matching only `enrollmentEnd IS NULL`
+      // left it in place, and the FGA backfill would re-derive a currently-valid grant from it.
+      const user = await UserFactory.create();
+      const group = await GroupFactory.create();
+      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+        enrollmentEnd: nextWeek,
+      });
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(1);
+
+      await repository.endAllOrgEnrollments(user.id);
+
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
+    });
+
+    it('ends a row whose enrollmentStart is in the future', async () => {
+      // Not active yet, so it would have become active after the unenroll.
+      const user = await UserFactory.create();
+      const group = await GroupFactory.create();
+      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: nextWeek,
+      });
+
+      await repository.endAllOrgEnrollments(user.id);
+
+      // The window is closed and still valid: the start was pulled back ahead of the stamped end,
+      // since the table CHECKs enrollmentStart < enrollmentEnd.
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
+      const enrollment = await readGroupEnrollment(user.id, group.id);
+      expect(enrollment!.enrollmentEnd).not.toBeNull();
+      expect(enrollment!.enrollmentStart.getTime()).toBeLessThan(enrollment!.enrollmentEnd!.getTime());
+      expect(enrollment!.enrollmentStart.getTime()).toBeLessThan(nextWeek.getTime());
+    });
+
+    it('preserves the original end date on an already-ended row', async () => {
+      const user = await UserFactory.create();
+      const group = await GroupFactory.create();
+      const twoYearsAgo = new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000);
+      const lastYear = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+      // The table CHECKs enrollmentStart < enrollmentEnd, so backdate the start too.
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: twoYearsAgo,
+        enrollmentEnd: lastYear,
+      });
+
+      await repository.endAllOrgEnrollments(user.id);
+
+      const enrollment = await readGroupEnrollment(user.id, group.id);
+      expect(enrollment!.enrollmentEnd?.getTime()).toBe(lastYear.getTime());
+      // The start is untouched too — LEAST only pulls back a start later than the new end.
+      expect(enrollment!.enrollmentStart.getTime()).toBe(twoYearsAgo.getTime());
+    });
+  });
+
+  describe('getActiveMembershipsWithRoles', () => {
+    it('returns active memberships with their roles', async () => {
+      const user = await UserFactory.create();
+      await UserOrgFactory.create({ userId: user.id, orgId: baseFixture.district.id, role: UserRole.ADMINISTRATOR });
+
+      const result = await repository.getActiveMembershipsWithRoles(user.id);
+
+      const districtMembership = result.find((m) => m.entityId === baseFixture.district.id);
+      expect(districtMembership).toMatchObject({ entityType: 'district', role: UserRole.ADMINISTRATOR });
+    });
+
+    it('excludes ended enrollments', async () => {
+      const user = await UserFactory.create();
+      await UserOrgFactory.create({ userId: user.id, orgId: baseFixture.district.id, role: UserRole.ADMINISTRATOR });
+      await repository.endAllOrgEnrollments(user.id);
+
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
+    });
+  });
+
+  describe('archiveUser', () => {
+    it('stamps rosteringEnded on the user', async () => {
+      const user = await UserFactory.create();
+      expect((await repository.getById({ id: user.id }))!.rosteringEnded).toBeNull();
+
+      await repository.archiveUser(user.id);
+
+      expect((await repository.getById({ id: user.id }))!.rosteringEnded).not.toBeNull();
+    });
+  });
+
+  describe('reconcileMemberships', () => {
+    it('ends removed, adds new, and leaves unchanged memberships (per provided type)', async () => {
+      const user = await UserFactory.create();
+      const groupKept = await GroupFactory.create();
+      const groupRemoved = await GroupFactory.create();
+      const groupAdded = await GroupFactory.create();
+      await UserGroupFactory.create({ userId: user.id, groupId: groupKept.id, role: UserRole.STUDENT });
+      await UserGroupFactory.create({ userId: user.id, groupId: groupRemoved.id, role: UserRole.STUDENT });
+
+      const current = await repository.getActiveMembershipsWithRoles(user.id);
+      const desired = [
+        { entityType: EntityType.GROUP, entityId: groupKept.id, role: 'student' },
+        { entityType: EntityType.GROUP, entityId: groupAdded.id, role: 'student' },
+      ];
+
+      const result = await repository.runTransaction({
+        fn: (tx) => repository.reconcileMemberships(user.id, desired, current, tx),
+      });
+
+      expect(result.removed.map((m) => m.entityId)).toEqual([groupRemoved.id]);
+      expect(result.added.map((m) => m.entityId)).toEqual([groupAdded.id]);
+
+      const afterIds = (await repository.getActiveMembershipsWithRoles(user.id)).map((m) => m.entityId);
+      expect(afterIds).toEqual(expect.arrayContaining([groupKept.id, groupAdded.id]));
+      expect(afterIds).not.toContain(groupRemoved.id);
+    });
+
+    it('reactivates a previously-ended membership via upsert', async () => {
+      const user = await UserFactory.create();
+      const group = await GroupFactory.create();
+      await UserGroupFactory.create({ userId: user.id, groupId: group.id, role: UserRole.STUDENT });
+      await repository.endAllOrgEnrollments(user.id);
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(0);
+
+      const desired = [{ entityType: EntityType.GROUP, entityId: group.id, role: 'student' }];
+      await repository.runTransaction({
+        fn: (tx) => repository.reconcileMemberships(user.id, desired, [], tx),
+      });
+
+      expect(await repository.getActiveMembershipsWithRoles(user.id)).toHaveLength(1);
+    });
+
+    it('reconciles family memberships via the joinedOn/leftOn columns', async () => {
+      // Families use joinedOn/leftOn (not enrollmentStart/enrollmentEnd), so exercise that branch of
+      // endMembershipRow and upsertMembershipRow directly.
+      const user = await UserFactory.create();
+      const familyKept = await FamilyFactory.create();
+      const familyRemoved = await FamilyFactory.create();
+      const familyAdded = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: user.id, familyId: familyKept.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: user.id, familyId: familyRemoved.id, role: 'parent' });
+
+      const current = await repository.getActiveMembershipsWithRoles(user.id);
+      const desired = [
+        { entityType: EntityType.FAMILY, entityId: familyKept.id, role: 'parent' },
+        { entityType: EntityType.FAMILY, entityId: familyAdded.id, role: 'parent' },
+      ];
+
+      const result = await repository.runTransaction({
+        fn: (tx) => repository.reconcileMemberships(user.id, desired, current, tx),
+      });
+
+      expect(result.removed.map((m) => m.entityId)).toEqual([familyRemoved.id]);
+      expect(result.added.map((m) => m.entityId)).toEqual([familyAdded.id]);
+
+      const afterIds = (await repository.getActiveMembershipsWithRoles(user.id)).map((m) => m.entityId);
+      expect(afterIds).toEqual(expect.arrayContaining([familyKept.id, familyAdded.id]));
+      expect(afterIds).not.toContain(familyRemoved.id);
+    });
+  });
+
   describe('findClassParentSchool', () => {
     it('returns the parent school id for a class that exists', async () => {
       const result = await repository.findClassParentSchool(baseFixture.classInSchoolA.id);
@@ -288,6 +521,107 @@ describe('UserRepository', () => {
       const result = await repository.findClassParentSchool('00000000-0000-0000-0000-000000000000');
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('resolveDeclaredEntities', () => {
+    const NO_IDS = { districts: [], schools: [], classes: [], groups: [] };
+    const UNKNOWN_ID = '00000000-0000-0000-0000-000000000000';
+
+    it('resolves parent district for schools and parent school/district for classes', async () => {
+      const result = await repository.resolveDeclaredEntities({
+        ...NO_IDS,
+        schools: [baseFixture.schoolA.id, baseFixture.schoolB.id],
+        classes: [baseFixture.classInSchoolA.id],
+      });
+
+      expect(result.schools.get(baseFixture.schoolA.id)).toEqual({ districtId: baseFixture.district.id });
+      expect(result.schools.get(baseFixture.schoolB.id)).toEqual({ districtId: baseFixture.district.id });
+      expect(result.classes.get(baseFixture.classInSchoolA.id)).toEqual({
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+    });
+
+    it('resolves districts and groups as existence-only sets', async () => {
+      const result = await repository.resolveDeclaredEntities({
+        ...NO_IDS,
+        districts: [baseFixture.district.id],
+        groups: [baseFixture.group.id],
+      });
+
+      expect(result.districts.has(baseFixture.district.id)).toBe(true);
+      expect(result.groups.has(baseFixture.group.id)).toBe(true);
+    });
+
+    it('resolves orgs across separate district branches independently', async () => {
+      const result = await repository.resolveDeclaredEntities({
+        ...NO_IDS,
+        classes: [baseFixture.classInDistrictB.id],
+      });
+
+      expect(result.classes.get(baseFixture.classInDistrictB.id)).toMatchObject({
+        districtId: baseFixture.districtB.id,
+      });
+    });
+
+    it('omits a district id passed in the schools list, and vice versa (wrong org type)', async () => {
+      const asSchool = await repository.resolveDeclaredEntities({ ...NO_IDS, schools: [baseFixture.district.id] });
+      expect(asSchool.schools.size).toBe(0);
+
+      const asDistrict = await repository.resolveDeclaredEntities({ ...NO_IDS, districts: [baseFixture.schoolA.id] });
+      expect(asDistrict.districts.size).toBe(0);
+    });
+
+    it('omits a rostered-out school', async () => {
+      const school = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        parentOrgId: baseFixture.district.id,
+        rosteringEnded: new Date(),
+      });
+
+      const result = await repository.resolveDeclaredEntities({ ...NO_IDS, schools: [school.id] });
+
+      expect(result.schools.has(school.id)).toBe(false);
+    });
+
+    it('omits a rostered-out class', async () => {
+      const cls = await ClassFactory.create({
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+        rosteringEnded: new Date(),
+      });
+
+      const result = await repository.resolveDeclaredEntities({ ...NO_IDS, classes: [cls.id] });
+
+      expect(result.classes.has(cls.id)).toBe(false);
+    });
+
+    it('omits a rostered-out group', async () => {
+      const group = await GroupFactory.create({ rosteringEnded: new Date() });
+
+      const result = await repository.resolveDeclaredEntities({ ...NO_IDS, groups: [group.id] });
+
+      expect(result.groups.has(group.id)).toBe(false);
+    });
+
+    it('omits unknown ids and returns empty results when given no ids', async () => {
+      const unknown = await repository.resolveDeclaredEntities({
+        districts: [UNKNOWN_ID],
+        schools: [UNKNOWN_ID],
+        classes: [UNKNOWN_ID],
+        groups: [UNKNOWN_ID],
+      });
+      expect(unknown.districts.size).toBe(0);
+      expect(unknown.schools.size).toBe(0);
+      expect(unknown.classes.size).toBe(0);
+      expect(unknown.groups.size).toBe(0);
+
+      const empty = await repository.resolveDeclaredEntities(NO_IDS);
+      expect(empty.districts.size).toBe(0);
+      expect(empty.schools.size).toBe(0);
+      expect(empty.classes.size).toBe(0);
+      expect(empty.groups.size).toBe(0);
     });
   });
 

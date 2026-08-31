@@ -12,10 +12,13 @@ export function createMockUserService(): MockedObject<ReturnType<typeof UserServ
     getById: vi.fn(),
     listUserMemberships: vi.fn(),
     create: vi.fn(),
+    createWithImportedAuth: vi.fn(),
     update: vi.fn(),
     recordUserAgreement: vi.fn(),
     getUnsignedTosAgreements: vi.fn(),
-  } as MockedObject<ReturnType<typeof UserService>>;
+    getFamilies: vi.fn(),
+    createAnonymousUser: vi.fn(),
+  } satisfies MockedObject<ReturnType<typeof UserService>>;
 }
 
 export type MockedUserService = ReturnType<typeof createMockUserService>;

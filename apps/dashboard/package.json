@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@bdelab/roar-firekit": "9.17.0",
-    "@roar-platform/roam-apps": "1.3.21",
+    "@roar-platform/roam-apps": "1.3.22",
     "@roar-platform/roar-letter": "4.1.1",
     "@roar-platform/roar-levante-tasks": "1.0.6",
     "@roar-platform/roar-multichoice": "2.3.1",
@@ -29,7 +29,7 @@
     "@roar-platform/roar-sre": "3.3.1",
     "@roar-platform/roar-survey": "0.2.2",
     "@roar-platform/roar-swr": "1.17.5",
-    "@roar-platform/roav-apps": "1.0.1",
+    "@roar-platform/roav-apps": "1.1.3",
     "@roar-platform/roav-ran": "2.1.6",
     "@bdelab/roar-utils": "^1.2.8",
     "@dotenvx/dotenvx": "^1.24.4",

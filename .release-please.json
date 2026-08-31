@@ -132,7 +132,7 @@
       "version-file": "package.json",
       "release-type": "node",
       "component": "roam-apps",
-      "release-as": "1.3.21"
+      "release-as": "1.3.22"
     },
     "apps/assessments/roar-readaloud": {
       "changelog-path": "CHANGELOG.md",
@@ -146,7 +146,7 @@
       "version-file": "package.json",
       "release-type": "node",
       "component": "roav-apps",
-      "release-as": "1.0.1"
+      "release-as": "1.1.3"
     },
     "apps/assessments/roav-ran": {
       "changelog-path": "CHANGELOG.md",

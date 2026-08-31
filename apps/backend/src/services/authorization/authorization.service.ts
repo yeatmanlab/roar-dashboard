@@ -17,6 +17,9 @@ import { FgaType } from './fga-constants';
  * logged but not thrown, because the Postgres write has already succeeded and the
  * backfill endpoint (#06) will reconcile stale tuples.
  *
+ * The `*OrThrow` variants propagate failures instead, for Sagas where the caller
+ * compensates rather than waiting on the backfill.
+ *
  * Permission checks (`hasPermission`, `requirePermission`, `hasAnyPermission`,
  * `listAccessibleObjects`, `listAccessibleObjectsStreamed`) propagate errors to
  * callers — they are used in request-time authorization and must fail visibly.
@@ -87,6 +90,31 @@ export function AuthorizationService({
       logger.debug({ tupleCount: tuples.length }, 'FGA tuples deleted successfully');
     } catch (error) {
       logger.error({ err: error, tupleCount: tuples.length }, 'Failed to delete FGA tuples');
+    }
+  }
+
+  /**
+   * Delete tuples from the FGA store, throwing on failure.
+   *
+   * Unlike `deleteTuples`, this method propagates errors to callers. Use this when a revocation
+   * must succeed for the operation to be valid.
+   *
+   * @param tuples - Array of TupleKeyWithoutCondition objects to delete
+   * @throws {ApiError} EXTERNAL_SERVICE_UNAVAILABLE if the FGA delete fails
+   */
+  async function deleteTuplesOrThrow(tuples: TupleKeyWithoutCondition[]): Promise<void> {
+    if (tuples.length === 0) return;
+    try {
+      await client.deleteTuples(tuples);
+      logger.debug({ tupleCount: tuples.length }, 'FGA tuples deleted successfully');
+    } catch (error) {
+      logger.error({ err: error, tupleCount: tuples.length }, 'Failed to delete FGA tuples');
+      throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        context: { tupleCount: tuples.length },
+        cause: error,
+      });
     }
   }
 
@@ -282,6 +310,7 @@ export function AuthorizationService({
     writeTuples,
     writeTuplesOrThrow,
     deleteTuples,
+    deleteTuplesOrThrow,
     hasPermission,
     requirePermission,
     listAccessibleObjects,
