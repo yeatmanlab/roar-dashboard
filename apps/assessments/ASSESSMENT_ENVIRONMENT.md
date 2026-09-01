@@ -4,13 +4,13 @@ A local developer environment for running ROAR assessments against a real Postgr
 
 This is the **setup and operations** guide: how to install, start, stop, seed, and troubleshoot the environment. For querying the data you produce (runs, trials, scores, metadata) and the day-to-day research loop, see the companion **[Research Guide](./ASSESSMENT_RESEARCH_GUIDE.md)**.
 
-> **The environment is shared across all assessments.** Each assessment lives in its own directory (e.g. `apps/assessments/roar-pa/`) and runs its own dev server, but the Firebase emulators (Auth + Storage), backend, and PostgreSQL databases are one shared Docker stack. Only the assessment dev server differs — they all run on the same port (http://localhost:8000), one at a time.
+> **The environment is shared across all assessments.** Each assessment lives in its own directory (e.g. `apps/assessments/roar-swr/`) and runs its own dev server, but the Firebase emulators (Auth + Storage), backend, and PostgreSQL databases are one shared Docker stack. Only the assessment dev server differs — they all run on the same port (http://localhost:8000), one at a time.
 
 ---
 
 ## TL;DR
 
-From the assessment's directory (e.g. `apps/assessments/roar-pa/`):
+From the assessment's directory (e.g. `apps/assessments/roar-swr/`):
 
 ```bash
 npm run setup    # First time only: check prerequisites, install, build, create config
@@ -40,7 +40,7 @@ After that, `npm start` is all you need for day-to-day work. Everything else is 
 Run once from the assessment directory, before your first `npm start`:
 
 ```bash
-cd apps/assessments/roar-pa
+cd apps/assessments/roar-swr
 npm run setup
 ```
 
@@ -120,7 +120,7 @@ Run all of these from the assessment's directory. This is the whole surface — 
 | Assessment dev server                           | http://localhost:8000 |
 | PostgreSQL                                      | localhost:5433        |
 
-The services start in dependency order: database (healthy) → migrations + task seed (completed) → Firebase emulators (healthy) → backend (healthy) → the dev server on your host. Storage only matters for assessments that record audio/video (e.g. Read Aloud) — see the Research Guide's [Viewing recordings](./ASSESSMENT_RESEARCH_GUIDE.md#viewing-recordings-audiovideo-assessments).
+The services start in dependency order: the database comes up first and the one-shot migration + task seed container waits for it to report healthy. The Firebase emulators have no dependency of their own, so they start alongside those two. The backend waits for **both** — the seed to complete and the emulators to be healthy — and the dev server on your host starts last. Storage only matters for assessments that record audio/video (e.g. Read Aloud) — see the Research Guide's [Viewing recordings](./ASSESSMENT_RESEARCH_GUIDE.md#viewing-recordings-audiovideo-assessments).
 
 ### Two databases
 
@@ -164,7 +164,7 @@ The keys in `params` map directly to the URL parameters the assessment dev serve
 
 ### How seeding works
 
-When the stack first comes up, a one-shot migration container runs the database migrations and then seeds this assessment's task(s) and variants. It's driven by the assessment's directory name — `roar-pa` → the `roar-pa` seed config — so **an unregistered assessment fails the migration container** rather than the dev server, naming the tasks it knows about.
+When the stack first comes up, a one-shot migration container runs the database migrations and then seeds this assessment's task(s) and variants. It's driven by the assessment's directory name — `roar-swr` → the `roar-swr` seed config — so **an unregistered assessment fails the migration container** rather than the dev server, naming the tasks it knows about.
 
 Each assessment has a seed config in `apps/backend/seeds/configs/<name>.config.ts` that defines:
 
@@ -174,7 +174,43 @@ Each assessment has a seed config in `apps/backend/seeds/configs/<name>.config.t
 
 **Validation runs at seed time.** Seeding fails with a descriptive error if `taskVariantParameters.json` is missing, contains an unknown parameter key, or has an invalid value — the rules come from that config, not from a generic schema.
 
-Variants are seeded as `published` and matched by name, so seeding is **idempotent and additive**: a variant that already exists is skipped, and a new entry is added alongside the existing ones. To target a specific variant when playing the assessment, pass `variantId=<id>` in the dev server URL — or use the [variant picker](./ASSESSMENT_RESEARCH_GUIDE.md#switching-variants-the-variant-picker).
+Variants are seeded as `published` and matched by name, so seeding is **idempotent and additive**: a variant that already exists is skipped, and a new entry is added alongside the existing ones. To target a specific variant when playing the assessment, pass `variantId=<id>` in the dev server URL — or use the [variant picker](./ASSESSMENT_RESEARCH_GUIDE.md#switching-variants-the-variant-picker). With no `variantId`, the assessment loads its declared default — see [Choosing which variant loads by default](#choosing-which-variant-loads-by-default).
+
+### Choosing which variant loads by default
+
+Opening the dev server without a `variantId` in the URL used to run whichever variant happened to be seeded first. Each assessment now declares a **preferred default variant per task, by name**, in its `serve/serve.js`:
+
+<!-- This snippet mirrors serve.js verbatim, including its quote style. -->
+<!-- prettier-ignore -->
+```javascript
+// apps/assessments/roar-swr/serve/serve.js — one entry per language task
+const DEFAULT_VARIANT_NAMES = {
+  [SWR_LANGUAGES.en.taskId]: 'English-v7',
+  [SWR_LANGUAGES.es.taskId]: 'Spanish-v1',
+  // …it, pt, de
+};
+```
+
+Resolution order when the page loads:
+
+1. **`variantId` in the URL** wins, and is used directly with no lookup.
+2. Otherwise the task's **`DEFAULT_VARIANT_NAMES` entry**, matched **case-insensitively** against the task's published variant names. `task_variants` is uniquely indexed on `(taskId, lower(name))`, so a name identifies at most one variant per task.
+3. Otherwise — no entry for that task — the **oldest published variant**, the behaviour that predates named defaults. The SDK warns in the browser console when it takes this path and the task has more than one published variant, since the choice is then made by seeding order rather than by intent.
+
+**Set your own default by editing that map.** The committed values are placeholders lifted from `taskVariantParameters.example.json`. If you seed variants under names of your own, revise `DEFAULT_VARIANT_NAMES` to match — otherwise your declared default won't resolve.
+
+**When a declared default doesn't resolve**, what happens depends on the build. The policy comes from `unresolvedDefaultVariantPolicy` in `apps/assessments/shared/roarDbMode.js`:
+
+| Build                | Behaviour                                                                                                    |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Local development    | **Warns** in the browser console and falls back to the oldest published variant                              |
+| Staging / production | **Throws** — a typo or a renamed variant fails loudly rather than silently running a different configuration |
+
+Local leniency is deliberate: your own seed need not contain the canonical variant for the assessment you're working on. But it also means a mismatch is **quiet** — you still get a run, just not the one you meant. Both the warning and the error list every published variant name for the task, so **check the browser console** whenever the assessment isn't running the variant you expected.
+
+> **Keep variant names simple.** Defaults are matched by name, and names are also passed on the command line (`npm run dev:assign:variant -- --variant 'English-v7'`). Hyphenated ASCII names avoid quoting and URL-encoding friction — which is why the committed examples use `English-v7` rather than `English (v7)`.
+
+> **Two different "defaults" — don't confuse them.** `DEFAULT_VARIANT_NAMES` in `serve/serve.js` is the one standalone play resolves, and the one this section is about. Separately, four seed configs (`roar-pa`, `roar-swr`, `roar-sre`, `roar-letter`) declare a `defaultVariant`, which the seeder assigns to the **dashboard's** dev launch-sandbox administration — irrelevant to playing at `localhost:8000`. Renaming your variants makes the seeder warn that the config's `defaultVariant` isn't in your parameters file; that warning is about the sandbox assignment, not about which variant your dev server will load.
 
 ### Adding or changing variants without losing data
 
@@ -239,7 +275,13 @@ The environment doesn't need to be stopped first — the rebuild only updates th
 
 **Want a clean slate but keep your seeded variants?** Truncate the run tables (`TRUNCATE app.runs CASCADE` in `roar_assessment`) instead of `npm restart` — it clears your generated runs/trials/scores in one step without re-seeding. See the Research Guide's [Resetting your generated data](./ASSESSMENT_RESEARCH_GUIDE.md#resetting-your-generated-data).
 
+**Seeding printed "Launch sandbox administration not found."** Benign, and expected in this environment. Four assessments (`roar-pa`, `roar-swr`, `roar-sre`, `roar-letter`) declare a `defaultVariant` in their seed config, which the seeder tries to assign to the dashboard's dev launch-sandbox administration. That fixture isn't seeded here, so the assignment is skipped and the message says so — the message even names this stack as the expected case. Your variants are still seeded and playable.
+
+**Seeding warned that a `defaultVariant` "is not in the parameters file."** Also benign for standalone play. It means your `taskVariantParameters.json` no longer contains the variant the seed config names, so the launch-sandbox assignment was skipped. It does not affect which variant `localhost:8000` loads — see [Choosing which variant loads by default](#choosing-which-variant-loads-by-default).
+
 **A code change isn't taking effect.** Host library change → `npm run update`; backend/migration/Dockerfile change → `npm run rebuild`. See [Updating after a pull](#updating-after-a-pull).
+
+**"Failed to bind host port 9000/9099/9199" — or the Firebase emulator container never starts.** Another Firebase emulator already holds those ports. The usual culprit is a persistent platform-dev stack (its auth emulator publishes 9099) or a hand-started `firebase emulators:start`; this stack publishes all three on the host, so the two cannot run at once. Stop the other emulator, then `npm start`. One wrinkle if the first attempt already created the container: starting it again can leave it running with no published ports (`docker port firebase-emulator` prints nothing, and the emulator is unreachable from the host even though the container reports healthy). Recreate it rather than restarting it — `docker compose -f docker-compose.assessment.yml up -d --force-recreate firebase-emulator`.
 
 **Stale containers / name or port conflicts on start.** `npm start` force-removes known stale containers before bringing the stack up, but if it's still wedged, `npm stop` (deletes data) then `npm start` gives a clean slate.
 
