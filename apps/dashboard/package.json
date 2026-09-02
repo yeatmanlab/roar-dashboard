@@ -33,7 +33,7 @@
     "@bdelab/roar-utils": "^1.2.8",
     "@bdelab/roar-vocab": "1.8.0",
     "@bdelab/roav-apps": "1.1.3",
-    "@bdelab/roav-ran": "2.1.6",
+    "@bdelab/roav-ran": "2.1.7",
     "@dotenvx/dotenvx": "^1.24.4",
     "@primevue/core": "^4.2.4",
     "@primevue/themes": "^4.2.4",
