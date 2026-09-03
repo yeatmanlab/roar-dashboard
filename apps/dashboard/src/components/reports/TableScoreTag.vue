@@ -155,9 +155,6 @@ function handleToolTip(_taskId, _toolTip, _colData) {
     } else if (tasksToDisplayGradeEstimate.includes(_taskId)) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
-      if (_colData.scores?.[_taskId]?.gradeEstimate) {
-        _toolTip += 'Grade Estimate: ' + _colData.scores?.[_taskId]?.gradeEstimate + '\n';
-      }
     } else if (
       rawOnlyTasks.includes(_taskId) &&
       _colData.scores?.[_taskId]?.rawScore !== undefined &&
@@ -201,9 +198,6 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData, _subski
     }
     _toolTip += 'Num Correct: ' + (subskillInfo?.rawScore || 0) + '\n';
     _toolTip += 'Num Attempted: ' + (subskillInfo?.numAttempted || 0) + '\n';
-    if (subskillInfo?.gradeEstimate) {
-      _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate + '\n';
-    }
   } else if (roamFluencyTasks.includes(_taskId)) {
     // Non-response modality (1.3.6+)
     if (_subskillProperty !== 'totalIncorrectSkills') {
