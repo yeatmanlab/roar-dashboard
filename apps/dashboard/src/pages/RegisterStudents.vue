@@ -358,6 +358,7 @@
               :using-org-picker="usingOrgPicker"
               :using-email="usingEmail"
               :submit-status="submitting"
+              :resolve-org-id="getOrgId"
               @validation-update="handleValidationUpdate"
               @delete-student="removeUser"
             >
@@ -657,16 +658,22 @@ const orgCache = ref({
   families: new Map(),
 });
 
+// Tracks in-flight orgFetchAll calls, keyed by (orgType, selectedDistrict, selectedSchool),
+// so concurrent lookups that would otherwise all miss orgCache before the first one resolves
+// coalesce into a single Firestore query instead of one per row.
+const pendingOrgFetches = new Map();
+
 // Helper function to get org ID (uses cache if available)
 const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchool = null) => {
   if (!orgName) return null;
-
+  const normalize = (s) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+  const cleanOrgInput = normalize(orgName);
   const cacheKey =
     orgType === 'schools'
-      ? `${orgName}-${selectedDistrict}`
+      ? `${cleanOrgInput}-${selectedDistrict}`
       : orgType === 'classes'
-        ? `${orgName}-${selectedSchool}`
-        : orgName;
+        ? `${cleanOrgInput}-${selectedSchool}`
+        : cleanOrgInput;
 
   // Check cache first
   if (orgCache.value[orgType].has(cacheKey)) {
@@ -675,30 +682,40 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
 
   // If not in cache, fetch and cache the result
   try {
-    // Fetch user's available orgs of type orgType
-    const userAdminOrgs = await orgFetchAll(
-      orgType,
-      selectedDistrict,
-      selectedSchool,
-      orderByDefault,
-      isSuperAdmin,
-      adminOrgs,
-      ['id', 'name', 'districtId', 'schoolId', 'schools', 'classes'],
-    );
+    const fetchKey = `${orgType}-${selectedDistrict}-${selectedSchool}`;
+    let fetchPromise = pendingOrgFetches.get(fetchKey);
+    if (!fetchPromise) {
+      // Fetch user's available orgs of type orgType
+      fetchPromise = orgFetchAll(orgType, selectedDistrict, selectedSchool, orderByDefault, isSuperAdmin, adminOrgs, [
+        'id',
+        'name',
+        'districtId',
+        'schoolId',
+        'schools',
+        'classes',
+      ]).finally(() => {
+        // Only coalesce while in flight; let it be retried/refetched after settling.
+        pendingOrgFetches.delete(fetchKey);
+      });
+      pendingOrgFetches.set(fetchKey, fetchPromise);
+    }
+
+    const userAdminOrgs = await fetchPromise;
 
     // Cache orgs in case we need them for a subsequent call
     userAdminOrgs.forEach((org) => {
+      const cleanOrgDb = normalize(org.name);
       const cacheKey =
         orgType === 'schools'
-          ? `${org.name}-${selectedDistrict}`
+          ? `${cleanOrgDb}-${selectedDistrict}`
           : orgType === 'classes'
-            ? `${org.name}-${selectedSchool}`
-            : org.name;
+            ? `${cleanOrgDb}-${selectedSchool}`
+            : cleanOrgDb;
       orgCache.value[orgType].set(cacheKey, org.id);
     });
 
     // Find org with name orgName
-    const org = userAdminOrgs.find((o) => o.name.trim().toLowerCase() === orgName.trim().toLowerCase());
+    const org = userAdminOrgs.find((o) => normalize(o.name) === cleanOrgInput);
     return org?.id;
   } catch (error) {
     console.error(`Error fetching ${orgType} ID for ${orgName}:`, error);
