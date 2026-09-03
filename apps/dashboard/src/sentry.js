@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/vue';
 import { captureConsoleIntegration, contextLinesIntegration, extraErrorDataIntegration } from '@sentry/integrations';
 import { i18n, languageOptions } from './translations/i18n';
 import router from './router';
+import { REPORT_ISSUE_URL } from './constants/externalLinks';
 // Workaround for using i18n-vue in plain JavaScript; this is a temporary solution until a more robust bug report component is implemented
 const language = i18n.global.locale.value;
 const regex = /https:\/\/roar-staging(--pr\d+-\w+)?\.web\.app/;
@@ -65,6 +66,20 @@ export function initSentry(app) {
         }
       `;
       host.shadowRoot.appendChild(style);
+
+      // TODO: Decide on how to handle Sentry alongside Zendesk.
+      // In the interim: Intercept the feedback button click during the capture phase, before it reaches Sentry's
+      // click handler on the button, so the built-in feedback form never opens. This keeps the button's
+      // appearance (rendered by Sentry) unchanged while redirecting users to our external ticket form.
+      host.addEventListener(
+        'click',
+        (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          window.open(REPORT_ISSUE_URL, '_blank', 'noopener,noreferrer');
+        },
+        true,
+      );
     }, 1000);
   }
 }
