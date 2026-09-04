@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+      crossorigin="anonymous"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- <script data-dynamic src="./RAN.js"></script> -->
+  </head>
+
+  <style>
+    html,
+    body {
+      height: 100%; /* Ensures the full height of the document is 100% of the viewport */
+      margin: 0; /* Removes default margin */
+      padding: 0; /* Removes default padding */
+      display: flex; /* Uses flexbox to center children */
+      justify-content: center; /* Centers children horizontally */
+      align-items: center; /* Centers children vertically */
+      font-family: sans-serif;
+    }
+
+    #canvas-container {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    #headCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      /* border-radius: 50%; */
+      /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); */
+      object-fit: cover;
+    }
+
+    #instruction {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #confirmContainer {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #fixationStim {
+      top: 50%;
+      left: 50%;
+      transform: translate(
+        -50%,
+        -50%
+      ); /* This will center the element both horizontally and vertically */
+      position: absolute;
+    }
+
+
+    #PeripheralStim {
+      top: 50%;
+      display: flex;
+      transform: translate(
+        -50%,
+        -50%
+      ); /* This will center the element both horizontally and vertically */
+      position: absolute;
+    }
+
+    #BorderStim {
+      top: 50%;
+      display: flex;
+      transform: translate(
+        -50%,
+        -50%
+      ); /* This will center the element both horizontally and vertically */
+      position: absolute;
+    }
+
+
+    #leftPeripheralStim {
+      top: 50%;
+      display: flex;
+      transform: translate(
+        -50%,
+        -50%
+      ); /* This will center the element both horizontally and vertically */
+      position: absolute;
+    }
+
+    #rightPeripheralStim {
+      top: 50%;
+      display: flex;
+      transform: translate(
+        -50%,
+        -50%
+      ); /* This will center the element both horizontally and vertically */
+      position: absolute;
+    }
+
+    #container_options {
+      bottom: 0%;
+      left: 50%;
+      transform: translate(
+        -50%,
+        -50%
+      ); /* This will center the element both horizontally and vertically */
+      position: absolute;
+      width: 80%;
+      display: flex; /* Enables flexbox */
+      flex-direction: column; /* Stacks child elements vertically */
+      justify-content: center; /* Centers children vertically in the container */
+      align-items: center; /* Aligns children horizontally in the center */
+    }
+
+    .row {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    /* Styling for the fade-in animation */
+    .fadeIn {
+      animation: fadeIn 0.5s forwards;
+    }
+    /* Keyframes for the fade-in animation */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    #startTestButton {
+    background-color: #4CAF50; /* Change to a green color */
+    border: none;
+    color: white;
+    padding: 12px 24px; /* Slightly bigger */
+    font-size: 18px; /* Slightly bigger font */
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+  }
+
+  #startTestButton:hover {
+    background-color: #45a049; /* Darker shade for hover effect */
+  }
+  </style>
+
+  <body>
+    <div id="progressBarContainer" style="width: 75%; height: 15px; background-color: lightgray; position: relative; margin: 5px auto; visibility: hidden;">
+      <div id="progressBar" style="width: 0%; height: 100%; background-color: gray;"></div>
+  </div>
+
+  
+    <div
+      id="grid-container"
+      style="position: absolute; width: 100%; height: 100%; opacity: 0"
+    ></div>
+
+    <!-- Center Instructions Panel -->
+    <div id="instructionsContentArea">
+      <div class="row gap-2" id="instruction">
+        <div class="col">
+          <div class="card" style="width: 45rem; height: 39rem">
+            <div class="card-body" id="cardthing" style="text-align: center">
+              <h3 class="card-title" id="instructionTitle"></h3>
+              <h4 class="card-text" id="instructionSubtitle"></h4>
+              <h4 class="card-text" id="instructionDescription"></h4>
+              <div style="text-align: center; margin-bottom: 3vh">
+                <img
+                  id="explanationGif"
+                  src="https://eyetrackingdata.blob.core.windows.net/public/Images/squareAddition_white.png"
+                  width="350px"
+                />
+              </div>
+              <!-- <div class="btn-group" role="group" aria-label="Basic example" style="margin-bottom: 2vh;"> -->
+              <!-- <button type="button" class="btn btn-primary" id="giveAccessButton" onclick="giveAccess()">Give Access to Mic/Camera</button> -->
+              <!-- <br> -->
+              <button
+                type="button"
+                class="btn btn-primary"
+                id="startTestButton"
+                onclick="pre_startTest()"
+                style="display: none;"
+              >
+                Start
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+    class="container"
+    id="container_options"
+    style="bottom: 0px; opacity: 0; visibility: hidden;"
+  >
+    <h1 id="answerTitle">Select Answer</h1>
+    <div class="row" id="row1"></div>
+  </div>
+  <div
+  id="BorderStim"
+  class="column"
+  style="opacity: 0;"
+  ></div>
+
+  <div
+  id="PeripheralStim"
+  class="column"
+  style="opacity: 0;"
+></div>
+
+
+
+
+    <div
+      id="fixationStim"
+      class="column"
+      style="opacity: 0; display: flex"
+    >
+      <img
+        id="fixationImg"
+        src="https://eyetrackingdata.blob.core.windows.net/public/Images/squareAddition.png"
+        style="width: 100%; height: 100%"
+      />
+    </div>
+
+
+
+
+    <div class="panel-block" style="display: block" ;>
+      <video class="inputVideo" style="display: none"></video>
+    </div>
+
+    <audio autoplay id="voiceover"> </audio>
+
+    <div id="finishButtonContainer" style="position: fixed; bottom: 100px; right: 100px; z-index: 1;">
+      <button type="button" id="finishButton" 
+          style="
+          width: 150px; 
+          height: 150px; 
+          background-color: transparent; 
+          border: none; 
+          outline: none; 
+          cursor: pointer; 
+          position: relative;
+          padding: 0;
+          background-image: url('https://eyetrackingdata.blob.core.windows.net/public/Images/goButton_gray.png');
+          background-size: cover;
+          background-position: center;
+          display: none; /* Hides the button initially */
+
+          " 
+          onclick="nextArrow()">
+          
+      </button>
+  </div>
+    <script data-dynamic>
+
+
+      // ----------- var -------------------
+      var voiceover = document.getElementById('voiceover');
+      var desktop = document.documentElement;
+      var camera_stream;
+      var audioRecorder;
+      var videoRecorder;
+      var videoChunks = [];
+      // document.body.addEventListener('click', function() {
+      //   voiceover.pause();
+      //   voiceover.currentTime = 0; // Stop the voiceover whenever a click is detected
+      // });
+
+
+      var desktop = document.documentElement;
+      var canvasContainer = document.getElementById("canvas-container");
+      var fixationStim = document.getElementById("fixationStim");
+      var PeripheralStim = document.getElementById("PeripheralStim");
+      var BorderStim = document.getElementById("BorderStim");
+      var inputVideo = document.getElementsByClassName("inputVideo")[0];
+      var _parentDir = store.session.get("id");
+      var testConfig = store.session.get("testConfig");
+      var deviceConfig =
+        store.session.get("deviceConfig") ?? defaultDeviceConfig;
+      var participantConfig =
+        store.session.get("participantConfig") ?? defaultParticipantConfig;
+      var x_coef =
+        store.session.get("x_coef") !== null
+          ? store.session.get("x_coef")
+          : -3.49; // Default value can be 0 or any other default you choose
+      var x_intercept =
+        store.session.get("x_intercept") !== null
+          ? store.session.get("x_intercept")
+          : 45; // Default value can be 0
+      var y_coef =
+        store.session.get("y_coef") !== null ? store.session.get("y_coef") : 0; // Default value can be 0
+      var y_intercept =
+        store.session.get("y_intercept") !== null
+          ? store.session.get("y_intercept")
+          : 0; // Default value can be 0
+      var canvasContour = participantConfig["canvasContour"];
+      var fixationPosition = 0;
+
+      var distance = testConfig.distance_cm;
+      var logmar = testConfig.size_logmar;
+      var answers = testConfig.stimulus;
+      var multiple = testConfig.multiple_arcmin_to_deg;
+      var eccentricity = testConfig.eccentricity_deg;
+      var PixelsPerDegree = get_PixelsPerDegree(
+        distance,
+        deviceConfig.screenWidthPX,
+        deviceConfig.screenWidth,
+      );
+      var stimulusSize = get_stimulusSize(logmar, multiple, PixelsPerDegree)
+      var lowestSpacingDegPossible = get_lowestSpacingDeg(
+        stimulusSize,
+        PixelsPerDegree,
+        (minSpacingMultiple = 1.2),
+      );
+      var quest;
+      var condition;
+      var historyofResults = [];
+      var time = 0;
+      var shuffledStim = [];
+      var continueProcessing = true;
+
+      var _videoURL = "";
+      var count_initTrials = 0;
+
+      var diff = 0;
+      var diffs = []; //storing eye movement data
+      var recalibrate = false;
+      var eyeMoved = false;
+      var count_eyeMoved = 0;
+      var horizontalSpacing_deg = 0;
+      var oldtempStim;
+
+      var pos;
+      var block;
+
+      var clickedTests = store.session.get('clickedTests') || [];
+      if (type!=='Practice') {
+      clickedTests.push(testConfig['testname'])
+      }
+
+      function toggleButtonState(isEnabled) {
+        const button = document.getElementById('finishButton');
+    
+        if (isEnabled) {
+            // Change to enabled image
+            button.style.backgroundImage = "url('https://eyetrackingdata.blob.core.windows.net/public/Images/goButton_yellow.png')";
+            button.disabled = false;  // Enable the button if it was disabled
+            button.style.cursor = 'pointer';  // Change cursor to indicate it's clickable
+        } else {
+            // Change to disabled image
+            button.style.backgroundImage = "url('https://eyetrackingdata.blob.core.windows.net/public/Images/goButton_gray.png')";
+            button.disabled = true;  // Disable the button
+            button.style.cursor = 'not-allowed';  // Change cursor to indicate it's not clickable
+        }
+    }
+
+
+      store.session.set('clickedTests',clickedTests)
+
+      async function pre_startTest(){
+        totalStim = shuffledStim.length
+        document.getElementById("progressBarContainer").style.visibility = 'visible'; // To show
+        await startTest(deviceConfig.bEyeTracking)
+        await startMonitoring();
+      }
+      totalStim = 0
+      async function init_newTrial() {
+        // clearTimeout(buttonTimeout) and toggleButtonState(false) to reset button state between trials
+        clearTimeout(buttonTimeout);
+        clearTimeout(globalSpeechTimer);
+        stimulusVisible = false;
+        startTime = null;
+        toggleButtonState(false);
+        document.getElementById("finishButton").style.display = "block";
+        //container_options.style.visibility = "visible"
+        container_options.style.opacity = "0.0";
+        BorderStim.style.opacity = "0.0"
+        console.log(shuffledStim)
+        // Reintroduce noAudioCount < 5 if want to end early after 5 failed attempts
+        if (shuffledStim.length > 0) {
+        updateProgressBar(totalStim-shuffledStim.length, totalStim);
+        await startRecording();
+        condition = get_nextCondition();
+        word = condition
+        newTrial(word);
+        count_initTrials++;
+        } else {
+          pageCompleted();
+
+        }
+      }
+
+      async function startMonitoring() {
+          // Ensure the video element has the stream assigned
+          // console.log(inputVideo.srcObject)
+          if (camera_stream) {
+              // Now monitor the microphone using the stream
+              monitorMicrophone(camera_stream);
+          } else {
+              console.error("No stream found in inputVideo.srcObject");
+          }
+      }
+
+
+
+      async function monitorMicrophone(stream) {
+    try {
+        // Check if the stream contains audio tracks
+        const audioTracks = stream.getAudioTracks();
+        if (audioTracks.length === 0) {
+            console.error("No audio track available in the stream.");
+            return;
+        }
+
+        // Create an AudioContext to process the audio from the stream
+        const audioContext = new AudioContext();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(stream);
+
+        // Connect the microphone source to the analyser
+        source.connect(analyser);
+
+        // Configure the analyser
+        analyser.fftSize = 2048;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        // Time-tracking variables
+        let startTime = null;  // Time when volume first exceeds the threshold
+        const requiredTime = 150;  // 100ms required to detect speech
+
+        // Function to process the microphone input
+        function processAudio() {
+            analyser.getByteFrequencyData(dataArray);
+
+            // Calculate the average volume level
+            const avgVolume = dataArray.reduce((a, b) => a + b) / bufferLength;
+
+            // If average volume is above background noise, track how long it stays above
+            if (stimulusVisible && avgVolume > (4*deviceConfig.backgroundNoise)) {
+                // Start tracking time if not already started
+                if (startTime === null) {
+                    startTime = performance.now();  // Record the time when the threshold is crossed
+                } else {
+                    const elapsedTime = performance.now() - startTime;
+                    if (elapsedTime >= requiredTime) {
+                        console.log("Speech detected for over 150ms");
+                        noAudioCount = 0
+                        clearTimeout(globalSpeechTimer);          
+                        onSpeechDetected(); // Enable button
+                        startTime = null;  // Reset the timer after detection
+                    }
+                }
+            } else {
+                if (!stimulusVisible) {
+                  // Reset button timer between trials. (mainly prevent button from being enabled during fixation stimulus) 
+                  clearTimeout(buttonTimeout)
+                }
+                // Reset the timer if the volume drops below the threshold
+                startTime = null;
+            }
+
+            // Keep calling this function continuously
+            requestAnimationFrame(processAudio);
+        }
+
+        // Start processing the microphone input
+        processAudio();
+
+    } catch (err) {
+        console.error('Error analyzing the microphone stream:', err);
+    }
+}
+
+
+// Function to handle detected speech
+function onSpeechDetected() {
+    console.log("Processing speech...");
+    // Only enable button on first detection per trial
+    // Otherwise delay might enable button in the following trial unexpectedly
+    if (!isButtonEnabled) {
+      isButtonEnabled = true;
+      // Delay enabling button to prevent user from clicking in the middle of recording
+      buttonTimeout = setTimeout(() => {
+        toggleButtonState(true)
+    }, 1200)
+    }
+    // Perform actions when speech is detected
+}
+
+
+
+
+      var globalSpeechTimer; // Global timer reference
+      var buttonTimeout; // Global timeout reference
+      var noAudioCount = 0
+      var stimulusVisible = false;
+      var isButtonEnabled = false;
+      function newTrial(
+        word,
+        targetOnset = 0.6,
+        maskOnset = 0.84,
+        respOnset = 0.94,
+        horizontalSpacing_deg = 0.58
+      ) {
+        toggleButtonState(false)
+        isButtonEnabled = false;
+        container_options.style.opacity = "0";
+        console.log("horizontalSpacing_deg", horizontalSpacing_deg);
+        // Show the center stimulus
+        fixationStim.style.opacity = "1";
+        tempAnswers = word
+        
+
+        var tempStim = stimulusTemplate(tempAnswers);
+        // if (oldtempStim) {
+        // // // Remove the old stimulus from PeripheralStim
+        // PeripheralStim.removeChild(oldtempStim);
+        // }
+
+        // Append the new stimulus to PeripheralStim
+        PeripheralStim.innerhtml = ""
+        BorderStim.innerHTML= ""
+        PeripheralStim.innerHTML = tempStim.container.outerHTML
+        BorderStim.innerHTML = tempStim.borderContainer.outerHTML
+
+
+        // (tempStim);
+        // oldtempStim = tempStim
+
+        // diffs = [];
+
+        // setTimeout(
+        //   () => {
+        //     recalibrate = true;
+        //   },
+        //   (timeTillStim / 2) * 1000,
+        // );
+
+        // Show left and right stimuli after 'timeTillStim' seconds
+        // Start a global timer to call speechDetected() after 7 seconds, enabling button
+        globalSpeechTimer = setTimeout(() => {
+          noAudioCount = noAudioCount + 1
+          onSpeechDetected();
+        }, 7000);
+
+        setTimeout(() => {
+          recalibrate = false;
+          fixationStim.style.opacity = "0";
+          PeripheralStim.style.opacity = "1";
+ 
+          time = new Date().getTime();
+          stimulusVisible = true;
+          // After 'stimTime' seconds, show the response
+          // setTimeout(responseBar, 0.24 * 1000);
+        }, targetOnset * 2000);
+      }
+
+      function recordAnswer(filename, uploadUrl){
+        timeEnd = new Date().getTime();
+        // var index = testConfig.blocks.indexOf(block);
+        // var zeta = {a: testConfig.discriminability[index], b: testConfig.difficulty[index], c: 1/testConfig.stimulus.length, d: 1}
+        // cat.updateAbilityEstimate([zeta], [Number(tempAnswers[pos] === filename)]);
+
+        historyofResults.push({
+          stim: tempAnswers,
+          // posCue: pos,
+          // blocks: block,
+          // difficulty: zeta,
+          // currentTheta: cat.theta,
+          // currentSeMeasurement: cat.seMeasurement,
+          // numItems: cat.nItems,
+          // correct: Number(tempAnswers[pos] === filename),
+          time: timeEnd - time,
+          ability: 0,
+          video_url: _videoURL,
+          uploadUrl: uploadUrl,
+        });
+      }
+
+      // Initialize the progress bar
+      function updateProgressBar(currentItem, totalItems) {
+          var progressBar = document.getElementById("progressBar");
+          // Calculate the width percentage based on the current item and total items
+          var progressPercentage = (currentItem / totalItems) * 100;
+          // Update the width of the progress bar
+          progressBar.style.width = progressPercentage + "%";
+      }
+
+
+
+      function pageCompleted() {
+        console.log("pageCompleted__")
+        count_initTrials = 0;
+        continueProcessing = false;
+        const event = new Event("pageComplete");
+        document.dispatchEvent(event);
+      }
+
+    </script>
+  </body>
+</html>

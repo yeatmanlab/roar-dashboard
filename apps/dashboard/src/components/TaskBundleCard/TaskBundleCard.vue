@@ -46,7 +46,7 @@
               scrollable
               scroll-height="300px"
             >
-              <PvColumn field="task.publicName" header="Task Name"></PvColumn>
+              <PvColumn field="task.name" header="Task Name"></PvColumn>
               <PvColumn field="variant.id" header="Variant ID"></PvColumn>
               <PvColumn field="variant.name" header="Variant Name"></PvColumn>
             </PvDataTable>
@@ -78,7 +78,7 @@
         scrollable
         scroll-height="300px"
       >
-        <PvColumn field="task.publicName" header="Task Name"></PvColumn>
+        <PvColumn field="task.name" header="Task Name"></PvColumn>
         <PvColumn field="variant.id" header="Variant ID"></PvColumn>
         <PvColumn field="variant.name" header="Variant Name"></PvColumn>
       </PvDataTable>
@@ -120,14 +120,29 @@ const toggle = (event) => {
 };
 
 const taskList = computed(() => {
-  return props.group.data.variants.map((variant) => taskDisplayNames[variant.taskId]?.publicName ?? variant.taskId);
+  return props.group.data.variants.map((variant) => {
+    // Prefer the curated production display name, then the live catalog's task name or
+    // slug — this covers locally-seeded tasks (and any new task not yet in the static
+    // dictionary), whose ids would otherwise render as raw UUIDs. Fall back to the id
+    // only when nothing resolves.
+    const catalogTask = props.allVariants[variant.taskId]?.[0]?.task;
+    return taskDisplayNames[variant.taskId]?.publicName ?? catalogTask?.name ?? catalogTask?.slug ?? variant.taskId;
+  });
 });
 
 const variantData = computed(() => {
-  return props.group.data.variants.map((variant) => {
-    const taskInfo = props.allVariants[variant.taskId];
-    const variantInfo = taskInfo.find((taskVariant) => taskVariant.id === variant.variantId);
-    return variantInfo;
-  });
+  return (
+    props.group.data.variants
+      .map((variant) => {
+        const taskInfo = props.allVariants[variant.taskId];
+        // `taskInfo` is undefined when a bundle references a task that isn't in the
+        // variant catalog (e.g. locally-seeded bundles) — guard so the popover doesn't
+        // throw a TypeError on `.find`.
+        const variantInfo = taskInfo?.find((taskVariant) => taskVariant.id === variant.variantId);
+        return variantInfo;
+      })
+      // Drop variants not found in the catalog so the DataTable doesn't render blank rows.
+      .filter(Boolean)
+  );
 });
 </script>

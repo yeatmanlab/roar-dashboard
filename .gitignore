@@ -1,5 +1,6 @@
 # Logs
 *.log
+.local-dev-logs/
 
 # Cache
 .turbo
@@ -29,8 +30,19 @@ certs
 !.env.example
 !.env.test.example
 
+# Firebase
+# Generated from apps/assessments/hosting-targets.json by `npm run hosting:rc`; carries project IDs.
+.firebaserc
+
 # Test coverage
 coverage
 
+# Cypress artifacts
+**/cypress/downloads
+
 # Other
 .DS_Store
+.firebase/
+
+# Local assessment environment config (copy from *.example.json to get started)
+taskVariantParameters.json

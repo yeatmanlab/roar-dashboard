@@ -1,0 +1,264 @@
+@use 'vars' as *;
+
+// ============================================
+// JSPSYCH DEFAULT BUTTON
+// ============================================
+
+.jspsych-btn {
+  display: inline-block;
+  margin: 1vh;
+  font-size: 4vh;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  background-image: none;
+  border: 1vh solid transparent;
+  border-radius: 1vh;
+  color: $text-yellow;
+  background-color: $roav-blue;
+  border-color: $roav-blue-dark;
+}
+
+// ============================================
+// ROAV BUTTON
+// ============================================
+
+.roav-button img {
+  -webkit-user-drag: none; /* Safari/Chromium */
+  -webkit-user-select: none;
+  user-select: none;
+}
+.roav-button-img-disabled,
+.roav-button:disabled img {
+  filter: grayscale(0%) brightness(0.95);
+  pointer-events: none;
+}
+
+.roav-button-img-disabled-strong {
+  filter: grayscale(0%) brightness(0.6);
+  pointer-events: none;
+}
+
+img.roav-button-attention:not(:disabled) {
+  animation: roav-glow 1.5s ease-in-out infinite;
+}
+
+img.roav-button-attention-strong:not(:disabled) {
+  animation: roav-glow-strong 1.5s ease-in-out infinite;
+}
+
+@keyframes roav-glow {
+  0%,
+  100% {
+    box-shadow: 0 8px 8px $roav-glow-attention-neutral;
+  }
+  50% {
+    box-shadow:
+      0 8px 8px $roav-glow-attention-neutral,
+      0 0 10px $roav-glow-attention,
+      0 0 10px $roav-glow-attention,
+      0 0 10px $roav-glow-attention,
+      0 0 10px $roav-glow-attention;
+  }
+}
+
+@keyframes roav-glow-strong {
+  0%,
+  100% {
+    box-shadow: 0 8px 8px $roav-glow-attention-neutral;
+  }
+  50% {
+    box-shadow:
+      0 8px 8px $roav-glow-attention-neutral,
+      0 0 20px $roav-glow-attention-strong,
+      0 0 20px $roav-glow-attention-strong,
+      0 0 20px $roav-glow-attention-strong,
+      0 0 20px $roav-glow-attention-strong;
+  }
+}
+
+.roav-button:not(:disabled):active img {
+  box-shadow:
+    0 8px 8px $roav-glow-attention-neutral,
+    0 0 10px $roav-glow-attention,
+    0 0 10px $roav-glow-attention;
+}
+
+// ============================================
+// BUTTON NEXT
+// ============================================
+
+.roav-button-next-wrap {
+  display: flex;
+  width: 100%;
+  justify-self: stretch;
+  justify-content: center;
+  align-items: center;
+}
+
+.roav-button-next {
+  height: clamp(30px, 15vh, 15vh);
+  max-width: 80%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  position: relative; /* anchor for text */
+  z-index: 999;
+}
+
+.roav-button-next img {
+  height: auto;
+  width: auto;
+  max-height: 100%;
+  max-width: 100%;
+  display: block;
+  object-fit: contain;
+}
+// text on button next
+.roav-button-next-label-wrap {
+  padding: 0 2svh; // padding around the label inside button
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.roav-button-next-label {
+  font-size: 10svh; // var(--size-font, 10vh);
+  display: inline-block;
+  color: $roav-yellow;
+
+  .roav-mp-body & {
+    color: $roav-yellow;
+  }
+  .roav-rvp-body & {
+    color: $roav-yellow;
+  }
+}
+
+// ============================================
+// LEFT / RIGHT LARGE BUTTONS, FIXED SIZE
+// ============================================
+
+.roav-button-lr-large-fixed-game,
+.roav-button-lr-large-fixed-stand {
+  position: absolute;
+  top: calc(var(--height-fs) / 2);
+  transform: translateY(-50%);
+  line-height: 0;
+  box-shadow: none;
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: inline-block;
+  width: fit-content;
+  height: fit-content;
+  z-index: 100;
+}
+
+.roav-button-lr-large-fixed-game {
+  &.left {
+    left: calc(0.03 * var(--height-fs));
+  }
+  &.right {
+    right: calc(0.03 * var(--height-fs));
+  }
+}
+
+.roav-button-lr-large-fixed-stand {
+  &.left {
+    left: calc(0.025 * var(--height-fs));
+  }
+  &.right {
+    right: calc(0.025 * var(--height-fs));
+  }
+}
+
+.roav-button-lr-large-fixed-game img,
+.roav-button-lr-large-fixed-stand img {
+  display: block;
+  height: auto;
+  width: auto;
+  object-fit: contain;
+}
+
+.roav-button-lr-large-fixed-game img {
+  max-height: calc(0.8 * var(--height-fs));
+  max-width: calc((var(--width-fs) - var(--roav-mp-rdk-aperture)) / 2 - 0.06 * var(--height-fs));
+}
+
+.roav-button-lr-large-fixed-stand img {
+  max-height: calc(0.4 * var(--height-fs));
+  max-width: calc((var(--width-fs) - var(--roav-mp-rdk-aperture)) / 2 - 0.06 * var(--height-fs));
+}
+
+// ============================================
+// LEFT / RIGHT LARGE BUTTONS, ADAPTIVE SIZE
+// ============================================
+
+.roav-button-lr-large-adaptive-game,
+.roav-button-lr-large-adaptive-stand {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: inline-block;
+  width: auto;
+  height: auto;
+  line-height: 0;
+  z-index: 100;
+  box-shadow: none;
+
+  &.left {
+    left: 2svw;
+  }
+  &.right {
+    right: 2svw;
+  }
+}
+
+.roav-button-lr-large-adaptive-stand img {
+  display: block;
+  height: auto;
+  width: auto;
+  max-height: 40svh;
+  max-width: 25vw;
+  object-fit: contain;
+}
+
+.roav-button-lr-large-adaptive-game img {
+  display: block;
+  height: auto;
+  width: auto;
+  max-height: 80svh;
+  max-width: 25vw;
+  object-fit: contain;
+  margin-inline: auto; // centering
+}
+
+// ============================================
+// SYSTEM LARGE BUTTON
+// ============================================
+
+.roav-button-sys-large {
+  width: 23vw;
+  height: 20vh;
+  background-color: rgba(76, 101, 139, 1);
+  color: white;
+  border-radius: 1rem;
+  border: 0rem;
+  font-size: min(7vw, 5vw); // 3 vw
+  font-weight: bold;
+  cursor: pointer;
+}

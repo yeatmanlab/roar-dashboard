@@ -1,0 +1,8 @@
+# Ignore artifacts:
+build
+dist
+lib
+coverage
+node_modules
+.turbo
+*.html

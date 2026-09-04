@@ -8,10 +8,14 @@ import {
   pageTitlesPT,
   pageTitlesBR,
 } from '@/translations/exports';
-import { APP_ROUTES, GAME_ROUTES } from '@/constants/routes';
+import { APP_ROUTES, APP_ROUTE_NAMES, GAME_ROUTES } from '@/constants/routes';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
+import { ME_QUERY_KEY } from '@/constants/queryKeys';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
+import { useGlobalError } from '@/composables/useGlobalError';
+import { queryClient } from '@/queryClient';
 const { Permissions } = usePermissions();
 const { logNavEvent } = useSentryLogging();
 
@@ -127,7 +131,7 @@ const routes = [
     path: GAME_ROUTES.PHONICS,
     name: 'Phonics',
     component: () => import('../components/tasks/TaskLetter.vue'),
-    props: { taskId: 'phonics', language: 'en' },
+    props: { task: 'phonics', taskId: 'phonics', language: 'en' },
     meta: { pageTitle: 'Phonics' },
   },
   {
@@ -154,7 +158,9 @@ const routes = [
   {
     path: GAME_ROUTES.VOCAB,
     name: 'Vocab',
-    component: () => import('../components/tasks/TaskVocab.vue'),
+    // Vocab (LEVANTE Vocabulary Assessment) is a task within the roar-levante-tasks
+    // bundle, launched through TaskLevante with taskId 'vocab'.
+    component: () => import('../components/tasks/TaskLevante.vue'),
     props: { taskId: 'vocab', language: 'en' },
     meta: { pageTitle: 'Vocab' },
   },
@@ -162,63 +168,63 @@ const routes = [
     path: GAME_ROUTES.FLUENCY_ARF,
     name: 'Fluency-ARF',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'fluency-arf', language: 'en' },
+    props: { taskId: 'fluency-arf' },
     meta: { pageTitle: 'ROAM-ARF' },
   },
   {
     path: GAME_ROUTES.FLUENCY_ARF_ES,
     name: 'Fluency-ARF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'fluency-arf-es', language: 'es' },
+    props: { taskId: 'fluency-arf-es' },
     meta: { pageTitle: 'ROAM-ARF-ES' },
   },
   {
     path: GAME_ROUTES.FLUENCY_ARF_PT,
     name: 'Fluency-ARF-PT',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'fluency-arf-pt', language: 'pt' },
+    props: { taskId: 'fluency-arf-pt' },
     meta: { pageTitle: 'ROAM-ARF-PT' },
   },
   {
     path: GAME_ROUTES.FLUENCY_CALF,
     name: 'Fluency-CALF',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'fluency-calf', language: 'en' },
+    props: { taskId: 'fluency-calf' },
     meta: { pageTitle: 'ROAM-CALF' },
   },
   {
     path: GAME_ROUTES.FLUENCY_CALF_ES,
     name: 'Fluency-CALF-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'fluency-calf-es', language: 'es' },
+    props: { taskId: 'fluency-calf-es' },
     meta: { pageTitle: 'ROAM-CALF-ES' },
   },
   {
     path: GAME_ROUTES.FLUENCY_CALF_PT,
     name: 'Fluency-CALF-PT',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'fluency-calf-pt', language: 'pt' },
+    props: { taskId: 'fluency-calf-pt' },
     meta: { pageTitle: 'ROAM-CALF-PT' },
   },
   {
     path: GAME_ROUTES.ROAM_ALPACA,
     name: 'Fluency-Alpaca',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'roam-alpaca', language: 'en' },
+    props: { taskId: 'roam-alpaca' },
     meta: { pageTitle: 'ROAM-Alpaca' },
   },
   {
     path: GAME_ROUTES.ROAM_ALPACA_ES,
     name: 'Fluency-Alpaca-ES',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'roam-alpaca-es', language: 'es' },
+    props: { taskId: 'roam-alpaca-es' },
     meta: { pageTitle: 'ROAM-Alpaca-ES' },
   },
   {
     path: GAME_ROUTES.ROAM_ALPACA_PT,
     name: 'Fluency-Alpaca-PT',
     component: () => import('../components/tasks/TaskRoam.vue'),
-    props: { taskId: 'roam-alpaca-pt', language: 'pt' },
+    props: { taskId: 'roam-alpaca-pt' },
     meta: { pageTitle: 'ROAM-Alpaca-PT' },
   },
   {
@@ -262,7 +268,7 @@ const routes = [
     path: GAME_ROUTES.ROAV_MP,
     name: 'MP',
     component: () => import('../components/tasks/TaskRoav.vue'),
-    props: { taskId: 'roav-mp', language: 'en' },
+    props: { taskId: 'roav-mp' },
     meta: { pageTitle: 'MP' },
   },
   {
@@ -276,7 +282,7 @@ const routes = [
     path: GAME_ROUTES.ROAV_RVP,
     name: 'RVP',
     component: () => import('../components/tasks/TaskRoav.vue'),
-    props: { taskId: 'roav-rvp', language: 'en' },
+    props: { taskId: 'roav-rvp' },
     meta: { pageTitle: 'RVP' },
   },
   {
@@ -396,7 +402,7 @@ const routes = [
     meta: { pageTitle: 'SRE', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.SRE_ES,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SRE_ES,
     name: 'Launch SRE-ES',
     component: () => import('../components/tasks/TaskSRE.vue'),
     props: (route) => ({
@@ -407,7 +413,7 @@ const routes = [
     meta: { pageTitle: 'SRE-ES', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.SRE_PT,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.SRE_PT,
     name: 'Launch SRE-PT',
     component: () => import('../components/tasks/TaskSRE.vue'),
     props: (route) => ({
@@ -418,7 +424,7 @@ const routes = [
     meta: { pageTitle: 'SRE-PT', permission: Permissions.Tasks.LAUNCH },
   },
   {
-    path: '/launch/:launchId' + GAME_ROUTES.LETTER,
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.LETTER,
     name: 'Launch Letter',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: (route) => ({
@@ -486,7 +492,9 @@ const routes = [
   {
     path: APP_ROUTES.LAUNCH + GAME_ROUTES.VOCAB,
     name: 'Launch Vocab',
-    component: () => import('../components/tasks/TaskVocab.vue'),
+    // Vocab is launched via the roar-levante-tasks bundle through TaskLevante (see the
+    // non-launch Vocab route above).
+    component: () => import('../components/tasks/TaskLevante.vue'),
     props: (route) => ({
       taskId: 'vocab',
       language: 'en',
@@ -500,7 +508,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'fluency-arf',
-      language: 'en',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-ARF', permission: Permissions.Tasks.LAUNCH },
@@ -511,7 +518,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'fluency-arf-es',
-      language: 'es',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-ARF-ES', permission: Permissions.Tasks.LAUNCH },
@@ -522,7 +528,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'fluency-arf-pt',
-      language: 'pt',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-ARF-PT', permission: Permissions.Tasks.LAUNCH },
@@ -533,7 +538,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'fluency-calf',
-      language: 'en',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-CALF', permission: Permissions.Tasks.LAUNCH },
@@ -544,7 +548,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'fluency-calf-es',
-      language: 'es',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-CALF-ES', permission: Permissions.Tasks.LAUNCH },
@@ -555,7 +558,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'fluency-calf-pt',
-      language: 'pt',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-CALF-PT', permission: Permissions.Tasks.LAUNCH },
@@ -566,7 +568,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'roam-alpaca',
-      language: 'en',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-Alpaca', permission: Permissions.Tasks.LAUNCH },
@@ -577,7 +578,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'roam-alpaca-es',
-      language: 'es',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-Alpaca-ES', permission: Permissions.Tasks.LAUNCH },
@@ -588,7 +588,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoam.vue'),
     props: (route) => ({
       taskId: 'roam-alpaca-pt',
-      language: 'pt',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'ROAM-Alpaca-PT', permission: Permissions.Tasks.LAUNCH },
@@ -610,7 +609,6 @@ const routes = [
     component: () => import('../components/tasks/TaskLevante.vue'),
     props: (route) => ({
       taskId: route.params.taskId,
-      language: 'pt',
       launchId: route.params.launchId,
     }),
     meta: { pageTitle: 'Core Tasks-PT', permission: Permissions.Tasks.LAUNCH },
@@ -662,6 +660,7 @@ const routes = [
     name: 'Launch Phonics',
     component: () => import('../components/tasks/TaskLetter.vue'),
     props: (route) => ({
+      task: 'phonics',
       taskId: 'phonics',
       language: 'en',
       launchId: route.params.launchId,
@@ -701,7 +700,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoav.vue'),
     props: (route) => ({
       taskId: 'roav-mp',
-      language: 'en',
       launchId: route.params.launchId,
     }),
     meta: {
@@ -715,7 +713,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoav.vue'),
     props: (route) => ({
       taskId: 'roav-mp-pt',
-      language: 'pt',
       launchId: route.params.launchId,
     }),
     meta: {
@@ -729,7 +726,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoav.vue'),
     props: (route) => ({
       taskId: 'roav-rvp',
-      language: 'en',
       launchId: route.params.launchId,
     }),
     meta: {
@@ -743,7 +739,6 @@ const routes = [
     component: () => import('../components/tasks/TaskRoav.vue'),
     props: (route) => ({
       taskId: 'roav-rvp-pt',
-      language: 'pt',
       launchId: route.params.launchId,
     }),
     meta: {
@@ -981,6 +976,24 @@ const routes = [
     meta: { pageTitle: 'Enable Cookies' },
   },
   {
+    path: '/access-ended',
+    name: 'AccessEnded',
+    component: () => import('../pages/AccessEnded.vue'),
+    meta: { pageTitle: 'Access Ended' },
+  },
+  {
+    path: APP_ROUTES.SIGN_TOS,
+    name: 'SignTos',
+    component: () => import('../pages/SignTos.vue'),
+    meta: { pageTitle: 'Sign Terms of Service' },
+  },
+  {
+    path: '/error',
+    name: 'GenericError',
+    component: () => import('../pages/GenericError.vue'),
+    meta: { pageTitle: 'Error' },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../pages/NotFound.vue'),
@@ -1014,13 +1027,16 @@ export const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const store = useAuthStore();
   const { userCan } = usePermissions();
+  const { globalError, clearGlobalError } = useGlobalError();
 
   const allowedUnauthenticatedRoutes = [
+    'AccessEnded',
     'AuthClassLink',
     'AuthClever',
     'AuthEmailLink',
     'AuthEmailSent',
     'AuthNycps',
+    'GenericError',
     'InitiateAuthNycps',
     'Maintenance',
     'Register',
@@ -1042,6 +1058,30 @@ router.beforeEach(async (to, from, next) => {
   } else if (!inMaintenanceMode && to.name === 'Maintenance') {
     next({ name: 'Home' });
     return false;
+  }
+
+  // Handle global error state — route to error pages before auth check
+  if (globalError.value) {
+    if (globalError.value.type === GLOBAL_ERROR_TYPES.ROSTERING_ENDED && to.name !== APP_ROUTE_NAMES.ACCESS_ENDED) {
+      next({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
+      return;
+    }
+    if (globalError.value.type === GLOBAL_ERROR_TYPES.AUTH_EXPIRED && to.name !== APP_ROUTE_NAMES.SIGN_IN) {
+      // Clear the error before redirecting so we don't loop after successful sign-in
+      clearGlobalError();
+      next({ name: APP_ROUTE_NAMES.SIGN_IN });
+      return;
+    }
+    if (globalError.value.type === GLOBAL_ERROR_TYPES.SERVER_ERROR && to.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
+      next({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
+      return;
+    }
+  }
+
+  // If navigating to an error page but no error exists, redirect to home
+  if ((to.name === APP_ROUTE_NAMES.ACCESS_ENDED || to.name === APP_ROUTE_NAMES.GENERIC_ERROR) && !globalError.value) {
+    next({ name: APP_ROUTE_NAMES.HOME });
+    return;
   }
   // Check if user is signed in. If not, go to signin
   if (
@@ -1072,8 +1112,71 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
+  // Block all navigation when the user has unsigned TOS agreements except to
+  // the signing flow itself, SignIn (so the user can sign out if they don't
+  // want to accept), and the error pages (AccessEnded / GenericError). The
+  // error pages must be allowed through because the `meError` watcher in
+  // `App.vue` calls `router.replace()` to them when `/me` fails — without
+  // these in the allowlist, a user with both unsigned agreements (from a
+  // prior successful response) and a subsequent `/me` failure would enter a
+  // navigation loop: meError → router.replace(GenericError) → this guard
+  // redirects to SignTos → global-error guard redirects back to GenericError.
+  // Once `unsignedAgreements` is empty (via `useRecordUserAgreementMutation`
+  // invalidating `/me`), this guard releases entirely.
+  //
+  // Read the cached `/me` payload directly off the TanStack queryClient
+  // — `meData` no longer lives in the auth store. On the very first
+  // navigation after sign-in the cache is empty, so we await the in-flight
+  // `useMeQuery` (via `ensureQueryData`) up to a short timeout. The 5s race
+  // is a safety valve: if `/me` is unusually slow we'd rather let the
+  // navigation through and re-evaluate on the next one than freeze the
+  // router. App.vue's `AppSpinner` gates render on `isMeSettling` in the
+  // meantime, so the user never sees a flash of the wrong page.
+  let meData;
+  if (store.isAuthenticated) {
+    try {
+      meData = await Promise.race([
+        queryClient.ensureQueryData({
+          queryKey: [ME_QUERY_KEY],
+          staleTime: 60_000,
+        }),
+        new Promise((resolve) => setTimeout(() => resolve(undefined), 5000)),
+      ]);
+    } catch {
+      // ensureQueryData throws on terminal `/me` failures (rostering-ended,
+      // auth-expired). Those are surfaced via the QueryCache → globalError
+      // bridge, which the early-return guard above handles. Treat the
+      // payload as unavailable and let navigation continue.
+      meData = undefined;
+    }
+  }
+  if (!meData) {
+    meData = queryClient.getQueryData([ME_QUERY_KEY]);
+  }
+  const hasUnsignedTos = (meData?.unsignedAgreements?.length ?? 0) > 0;
+  if (
+    hasUnsignedTos &&
+    to.name !== APP_ROUTE_NAMES.SIGN_TOS &&
+    to.name !== APP_ROUTE_NAMES.SIGN_IN &&
+    to.name !== APP_ROUTE_NAMES.ACCESS_ENDED &&
+    to.name !== APP_ROUTE_NAMES.GENERIC_ERROR
+  ) {
+    next({ name: APP_ROUTE_NAMES.SIGN_TOS, query: { next: to.fullPath } });
+    return;
+  }
+
   // Prevent routing to routes that the user does not have permission to access.
-  if (Object.keys(to?.meta).includes('permission') && !userCan(to.meta.permission)) {
+  //
+  // Super admins bypass route-permission checks. Read the flag primarily from the
+  // `/me` payload already awaited above (the canonical backend source), keeping
+  // `store.isUserSuperAdmin` only as a fallback. That store getter derives from
+  // `authStore.userClaims`, which is populated by a *separate* async
+  // `resolveUserClaims('/me')` in App.vue that settles after the first navigation —
+  // the timing gap that bounced the first navigation (and made it work only on the
+  // second click) on the emulator stack, where super-admin is the sole route-access
+  // signal (the emulator token carries no role claim).
+  const isSuperAdmin = Boolean(meData?.isSuperAdmin) || store.isUserSuperAdmin;
+  if (Object.keys(to?.meta).includes('permission') && !isSuperAdmin && !userCan(to.meta.permission)) {
     logNavEvent(NAV_LOG_MESSAGES.FORBIDDEN_ROUTE, {
       level: 'warning',
       data: { permission: to.meta.permission, route: to.path },

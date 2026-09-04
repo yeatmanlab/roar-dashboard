@@ -3,6 +3,28 @@ import { mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
 import { ref } from 'vue';
 
+// Mock the broken @bdelab/roar-utils package
+vi.mock('@bdelab/roar-utils', () => ({
+  getGrade: (grade) => {
+    if (typeof grade === 'number') return grade;
+    if (!grade) return 0;
+    const gradeStr = String(grade).toLowerCase().trim();
+    if (/^\d+$/.test(gradeStr)) return parseInt(gradeStr, 10);
+    return 0;
+  },
+}));
+
+// Mock getStudentGradeLevel to use the mocked getGrade
+vi.mock('@/helpers/getStudentGradeLevel', () => ({
+  getStudentGradeLevel: (grade) => {
+    if (typeof grade === 'number') return grade;
+    if (!grade) return 0;
+    const gradeStr = String(grade).toLowerCase().trim();
+    if (/^\d+$/.test(gradeStr)) return parseInt(gradeStr, 10);
+    return 0;
+  },
+}));
+
 // Mock the ScoreCard component to avoid Chart.js dependencies
 vi.mock('./ScoreCard', () => ({
   default: {
@@ -46,8 +68,8 @@ vi.mock('./ScoreCard', () => ({
 }));
 
 // Mock the composable - needs to return computed refs or objects that behave like them
-vi.mock('./useScoreListData', () => ({
-  useScoreListData: vi.fn(() => {
+vi.mock('./useReportCardData', () => ({
+  useReportCardData: vi.fn(() => {
     const mockTask = {
       taskId: 'swr',
       scoreToDisplay: 'percentileScore',
@@ -99,26 +121,20 @@ describe('ScoreList.vue', () => {
   const defaultProps = {
     studentFirstName: 'John',
     studentGrade: '3',
-    taskData: {
-      swr: {
+    reportTasks: [
+      {
         taskId: 'swr',
-        scores: {
-          composite: {
-            rawScore: 50,
-            percentileScore: 75,
-            standardScore: 105,
-          },
-        },
+        taskSlug: 'swr',
+        scores: { rawScore: 50, percentile: 75, standardScore: 105 },
         optional: false,
         reliable: true,
       },
-    },
+    ],
     tasksDictionary: {
       swr: {
-        publicName: 'Single Word Reading',
+        nameSimple: 'Single Word Reading',
       },
     },
-    longitudinalData: {},
     expanded: false,
   };
 

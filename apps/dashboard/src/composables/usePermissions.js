@@ -2,6 +2,7 @@ import { PermissionsService, Permissions, UserRoles } from '@bdelab/roar-firekit
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import * as Sentry from '@sentry/vue';
+import { IS_FIREBASE_EMULATOR_ENABLED } from '@/constants/firebase';
 
 export function usePermissions() {
   const userCan = (permission) => {
@@ -20,6 +21,17 @@ export function usePermissions() {
     // Return false to prevent permission checks before authentication is complete.
     if (!accessToken.value) {
       return false;
+    }
+
+    // Local emulator mode: firekit's `setUidClaims` Cloud Function doesn't run, so
+    // the emulator-issued token carries no role claim and PermissionsService treats
+    // every user as `guest` — which would bounce super admins off admin routes.
+    // Grant the super admin (derived from /me; see resolveUserClaims) full access so
+    // those routes are reachable for local testing. Inert in deployed builds.
+    // TODO(firekit-removal): route permissions should come from the backend rather
+    // than firekit's token claims; this branch goes away with firekit.
+    if (IS_FIREBASE_EMULATOR_ENABLED && authStore.isUserSuperAdmin) {
+      return true;
     }
 
     return PermissionsService.canUser(accessToken.value, permission);

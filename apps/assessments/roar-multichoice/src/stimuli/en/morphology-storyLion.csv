@@ -1,0 +1,13 @@
+label,screenStyle,imageName,imageCharacter,imageAlt,audioName,audioGap,buttonName,duration,header1,text1
+intro,speechBubble,pointingLionAge12,,Lion gesturing,intro,50,,,Welcome to ROAR-Morphology!,"In this activity, you're going to help me complete some sentences."
+ins,captionBelowImage,clickButton,,Mouse pressing correct choice,ins,50,,,What word completes the sentence? ,Choose the best option to fill in the blank.
+surveyPractice,captionBelowImage,clickButton,,Lion gesturing,surveyPractice,50,,,Let's practice!,"Remember, your job is to choose the right word that fills in the blank."
+surveyPostPractice,speechBubble,pointingLionAge12,,Lion gesturing,surveyPostPractice,50,,,Great job!,Now you're ready to try on your own. Remember to read all the choices carefully.
+break1,speechBubble,pointingLionAge12,,Lion gesturing,break1,50,,,Keep up the good work!,
+break2,speechBubble,pointingLionAge12,,Lion gesturing,break2,50,,,You are doing great!,
+break3,speechBubble,pointingLionAge12,,Lion gesturing,break3,50,,,Let's keep going.,
+break4,speechBubble,pointingLionAge12,,Lion gesturing,break4,50,,,You are an expert at this!,
+break5,speechBubble,pointingLionAge12,,Lion gesturing,break5,50,,,You can do it!,
+break6,speechBubble,pointingLionAge12,,Lion gesturing,cvaKeepUpGood,50,,,Keep up the good work!,
+ending,speechBubble,pointingLionAge12,,Lion gesturing,allDone,50,,,You're all done! Press the arrow to finish.,
+practiceCorrect,speechBubble,pointingLionAge12,,Lion gesturing,thatsRight,50,,,That's right!,""

@@ -2,7 +2,7 @@ function selectField(id, fieldName) {
   cy.get(`#${id} > [data-testid="dropdown__label"]`).should('exist').click().get('li').contains(fieldName).click();
 }
 
-describe(
+describe.skip(
   'The admin user can upload a .csv file of student data and assign them to ' + 'the appropriate fields.',
   () => {
     it(

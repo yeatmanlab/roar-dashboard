@@ -1,0 +1,632 @@
+import { StatusCodes } from 'http-status-codes';
+import { EnrolledUsersEmbedOption } from '@roar-platform/api-contract';
+import type { CreateSchoolInput, SchoolWithCounts, UpdateSchoolInput } from '../../repositories/school.repository';
+import { SchoolRepository } from '../../repositories/school.repository';
+import { DistrictRepository } from '../../repositories/district.repository';
+import { ApiError } from '../../errors/api-error';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { logger } from '../../logger';
+import type { PaginatedResult } from '../../repositories/base.repository';
+import type { AuthContext } from '../../types/auth-context';
+import type { Class } from '../../db/schema';
+import type { EnrolledUserEntity, EnrolledUsersQuery, ListEnrolledUsersOptions } from '../../types/user';
+import { ClassRepository } from '../../repositories/class.repository';
+import type { ParsedFilter, FilterOperator } from '../../types/filter';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
+import { OrgType } from '../../enums/org-type.enum';
+
+/** Type safe constant for 'eq' filter operator */
+const EQ_OPERATOR: FilterOperator = 'eq';
+
+/**
+ * Options for listing schools
+ */
+export interface ListOptions {
+  page: number;
+  perPage: number;
+  sortBy: 'name' | 'abbreviation';
+  sortOrder: 'asc' | 'desc';
+  includeEnded?: boolean;
+  embedCounts?: boolean;
+}
+
+/**
+ * School with optional embeds
+ */
+export type SchoolWithEmbeds = SchoolWithCounts;
+
+/**
+ * Service-layer input for creating a school.
+ *
+ * Mirrors the API contract's CreateSchoolRequest shape (nested location and
+ * identifiers). The service flattens this into the repository's column-shaped
+ * CreateSchoolInput. Defined here rather than imported from the api-contract
+ * so the service stays decoupled from transport concerns
+ * (see backend-service-pattern.md "Service Type Independence").
+ */
+export interface CreateSchoolServiceInput {
+  districtId: string;
+  name: string;
+  abbreviation: string;
+  location?:
+    | {
+        addressLine1?: string | undefined;
+        addressLine2?: string | undefined;
+        city?: string | undefined;
+        stateProvince?: string | undefined;
+        postalCode?: string | undefined;
+        country?: string | undefined;
+      }
+    | undefined;
+  identifiers?:
+    | {
+        mdrNumber?: string | undefined;
+        ncesId?: string | undefined;
+        stateId?: string | undefined;
+        schoolNumber?: string | undefined;
+      }
+    | undefined;
+}
+
+/**
+ * Service-layer input for updating a school.
+ *
+ * Mirrors the API contract's UpdateSchoolRequest shape — a partial of the
+ * mutable school fields (nested location and identifiers). `districtId` is NOT
+ * part of this shape: a school cannot be re-parented after creation. Defined
+ * here rather than imported from the api-contract so the service stays
+ * decoupled from transport concerns
+ * (see backend-service-pattern.md "Service Type Independence").
+ */
+export interface UpdateSchoolServiceInput {
+  name?: string | undefined;
+  abbreviation?: string | undefined;
+  location?:
+    | {
+        addressLine1?: string | undefined;
+        addressLine2?: string | undefined;
+        city?: string | undefined;
+        stateProvince?: string | undefined;
+        postalCode?: string | undefined;
+        country?: string | undefined;
+      }
+    | undefined;
+  identifiers?:
+    | {
+        mdrNumber?: string | undefined;
+        ncesId?: string | undefined;
+        stateId?: string | undefined;
+        schoolNumber?: string | undefined;
+      }
+    | undefined;
+}
+
+/**
+ * Options for listing school classes
+ */
+export interface ListSchoolClassesOptions {
+  page: number;
+  perPage: number;
+  sortBy: 'name' | 'createdAt';
+  sortOrder: 'asc' | 'desc';
+  filter?: ParsedFilter[];
+}
+
+/**
+ * School Service
+ *
+ * Business logic layer for school operations.
+ * Handles authorization (super admin vs regular user) and delegates to repository.
+ */
+export function SchoolService({
+  schoolRepository = new SchoolRepository(),
+  classRepository = new ClassRepository(),
+  authorizationService = AuthorizationService(),
+  districtRepository = new DistrictRepository(),
+}: {
+  schoolRepository?: SchoolRepository;
+  classRepository?: ClassRepository;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
+  districtRepository?: DistrictRepository;
+} = {}) {
+  /**
+   * List schools accessible to a user with pagination and sorting.
+   *
+   * Authorization:
+   * - Super admins have unrestricted access to all schools
+   * - Regular users see only schools for which FGA grants can_list
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param options - Query options including pagination and sorting
+   * @returns Paginated result with schools
+   * @throws {ApiError} If the database query fails
+   */
+  async function list(authContext: AuthContext, options: ListOptions): Promise<PaginatedResult<SchoolWithEmbeds>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    let result: PaginatedResult<SchoolWithEmbeds>;
+
+    try {
+      // Transform API contract format to repository format
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        includeEnded: options.includeEnded ?? false,
+        embedCounts: options.embedCounts ?? false,
+      };
+
+      // Fetch schools based on user role and authorization
+      if (isSuperAdmin) {
+        result = await schoolRepository.listAll(queryParams);
+      } else {
+        // Resolve accessible school IDs from FGA, then fetch by those IDs
+        const fgaObjects = await authorizationService.listAccessibleObjects(
+          userId,
+          FgaRelation.CAN_LIST,
+          FgaType.SCHOOL,
+        );
+        const schoolIds = fgaObjects.map(extractFgaObjectId);
+
+        if (schoolIds.length === 0) {
+          return { items: [], totalItems: 0 };
+        }
+
+        result = await schoolRepository.listByIds(schoolIds, queryParams);
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      logger.error({ err: error, context: { userId } }, 'Failed to list schools');
+
+      throw new ApiError('Failed to retrieve schools', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
+        cause: error,
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Get a single school by ID.
+   *
+   * Authorization:
+   * - Super admins can retrieve any school
+   * - Regular users can only retrieve schools for which they are an active member
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param schoolId - UUID of the school to retrieve
+   * @returns The school if found and authorized
+   * @throws {ApiError} 404 if not found, 403 if unauthorized, 500 on database errors
+   */
+  async function getById(authContext: AuthContext, schoolId: string): Promise<SchoolWithEmbeds> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // 1. Look up unrestricted first — distinguishes 404 from 403
+      const school = await schoolRepository.getUnrestrictedById(schoolId);
+      if (!school) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, schoolId },
+        });
+      }
+
+      // 2. Super admins bypass access checks
+      if (isSuperAdmin) {
+        return school;
+      }
+
+      // 3. Check access via FGA
+      await authorizationService.requirePermission(userId, FgaRelation.CAN_READ, `${FgaType.SCHOOL}:${schoolId}`);
+
+      // 4. Check if school has ended rostering (business rule, not authorization)
+      // Return 404 instead of showing ended schools to regular users
+      if (school.rosteringEnded) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, schoolId },
+        });
+      }
+
+      return school;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      logger.error({ err: error, context: { schoolId, userId } }, 'Failed to retrieve school');
+
+      throw new ApiError('Failed to retrieve school', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { schoolId, userId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * Authorize sub-resource access (requires supervisory role via FGA).
+   *
+   * Checks that the school exists and the user has can_list_classes permission,
+   * which requires supervisory_tier_group in the FGA model.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param schoolId - The school ID to verify access for
+   * @throws {ApiError} NOT_FOUND if school doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks supervisory permission
+   */
+  async function authorizeSchoolSubResourceAccess(authContext: AuthContext, schoolId: string): Promise<void> {
+    const { userId } = authContext;
+
+    // Verify school exists (404 before 403)
+    const school = await schoolRepository.getUnrestrictedById(schoolId);
+    if (!school) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { userId, schoolId },
+      });
+    }
+
+    // FGA handles both access check and supervisory role requirement
+    await authorizationService.requirePermission(userId, FgaRelation.CAN_LIST_CLASSES, `${FgaType.SCHOOL}:${schoolId}`);
+  }
+
+  /**
+   * List classes in a school with access control.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all active classes in the school
+   * - Supervisory roles: sees all active classes in the school
+   * - Supervised roles: returns 403 Forbidden
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param schoolId - The school ID to list classes for
+   * @param options - Pagination, sorting, and filtering options
+   * @returns Paginated result with classes
+   * @throws {ApiError} NOT_FOUND if school doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks supervisory permission
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listSchoolClasses(
+    authContext: AuthContext,
+    schoolId: string,
+    options: ListSchoolClassesOptions,
+  ): Promise<PaginatedResult<Class>> {
+    const { userId } = authContext;
+
+    try {
+      // Validate filter operators — only 'eq' is supported for class filters
+      if (options.filter) {
+        for (const f of options.filter) {
+          if (f.operator !== EQ_OPERATOR) {
+            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+              statusCode: StatusCodes.BAD_REQUEST,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, field: f.field, operator: f.operator },
+            });
+          }
+        }
+      }
+
+      // Verify school access and user has supervisory role
+      await authorizeSchoolSubResourceAccess(authContext, schoolId);
+
+      // All authorized users (super admin and supervisory) can list classes
+      const result = await classRepository.listBySchoolId(schoolId, {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        ...(options.filter ? { filter: options.filter } : {}),
+      });
+
+      return result;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      logger.error({ err: error, context: { userId, schoolId, options } }, 'Failed to list school classes');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, schoolId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * Get users enrolled in a school.
+   *
+   * super_admin users can see all enrolled users.
+   * Other users can only see enrolled users if they have the `can_list_users` permission on the school.
+   *
+   * Returns all users who have an active enrollment in the specified school.
+   * Only includes users with active enrollments (enrollment_start <= now and
+   * enrollment_end is null or >= now).
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param schoolId - The school ID to get enrolled users for
+   * @param options - Pagination, sorting, and filtering options
+   * @returns Paginated result with users
+   * @throws {ApiError} NOT_FOUND if school doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the school
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listUsers(
+    authContext: AuthContext,
+    schoolId: string,
+    options: EnrolledUsersQuery,
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+    const { userId, isSuperAdmin } = authContext;
+    try {
+      // getUnrestrictedById: separates 404 from 403, guards orgType so a district ID
+      // won't masquerade as a school, and avoids firing a can_read FGA check when
+      // this endpoint gates on can_list_users. See listSchoolClasses for full rationale.
+      const school = await schoolRepository.getUnrestrictedById(schoolId);
+
+      if (!school) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, schoolId },
+        });
+      }
+
+      const queryParams: ListEnrolledUsersOptions = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: { field: options.sortBy, direction: options.sortOrder },
+        ...(options.role && { role: options.role }),
+        ...(options.grade && { grade: options.grade }),
+        embedDemographics: options.embed?.includes(EnrolledUsersEmbedOption.DEMOGRAPHICS) ?? false,
+      };
+
+      if (!isSuperAdmin) {
+        await authorizationService.requirePermission(
+          userId,
+          FgaRelation.CAN_LIST_USERS,
+          `${FgaType.SCHOOL}:${schoolId}`,
+        );
+      }
+      return await schoolRepository.getUsersBySchoolId(schoolId, queryParams);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, schoolId, options } }, 'Failed to list school users');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, schoolId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * Create a new school under an existing district.
+   *
+   * Restricted to super admins. Verifies the parent district exists, has
+   * `orgType='district'`, and is not rostered-ended; otherwise returns 422.
+   *
+   * The school's ltree `path` is computed by the BEFORE INSERT trigger from
+   * the parent district's `path`. `isRosteringRootOrg` is set to false
+   * (validate_org_hierarchy_fn requires non-root orgs to have it false).
+   *
+   * No FGA tuples are written by this endpoint. FGA tuples are user-to-org
+   * relationships and are written when users are assigned to the school
+   * via memberships.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param input - School fields the caller is allowed to set, including the
+   *   parent districtId
+   * @returns The new school id
+   * @throws {ApiError} 403 if the caller is not a super admin
+   * @throws {ApiError} 422 if districtId does not resolve to an active district
+   * @throws {ApiError} 500 if the database insert fails
+   */
+  async function create(authContext: AuthContext, input: CreateSchoolServiceInput): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    if (!isSuperAdmin) {
+      logger.warn({ userId }, 'Non-super admin attempted to create a school');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId },
+      });
+    }
+
+    try {
+      const parent = await districtRepository.getUnrestrictedById(input.districtId);
+
+      // 422 covers three failure modes for a body-referenced parent that the
+      // request couldn't be processed against: the row doesn't exist; the row
+      // exists but isn't a district; the row exists and is a district but its
+      // rostering ended in the past (treated as nonexistent for create
+      // purposes — we don't want to attach new schools to retired districts).
+      const districtIsActive =
+        parent !== null &&
+        parent.orgType === OrgType.DISTRICT &&
+        (parent.rosteringEnded === null || parent.rosteringEnded > new Date());
+
+      if (!districtIsActive) {
+        logger.warn(
+          {
+            userId,
+            districtId: input.districtId,
+            parentExists: parent !== null,
+            parentOrgType: parent?.orgType ?? null,
+            rosteringEnded: parent?.rosteringEnded ?? null,
+          },
+          'School create rejected: parent district did not resolve to an active district',
+        );
+        throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+          context: { userId, districtId: input.districtId },
+        });
+      }
+
+      const repoInput: CreateSchoolInput = {
+        parentOrgId: input.districtId,
+        name: input.name,
+        abbreviation: input.abbreviation,
+        ...(input.location?.addressLine1 !== undefined && { locationAddressLine1: input.location.addressLine1 }),
+        ...(input.location?.addressLine2 !== undefined && { locationAddressLine2: input.location.addressLine2 }),
+        ...(input.location?.city !== undefined && { locationCity: input.location.city }),
+        ...(input.location?.stateProvince !== undefined && { locationStateProvince: input.location.stateProvince }),
+        ...(input.location?.postalCode !== undefined && { locationPostalCode: input.location.postalCode }),
+        ...(input.location?.country !== undefined && { locationCountry: input.location.country }),
+        ...(input.identifiers?.mdrNumber !== undefined && { mdrNumber: input.identifiers.mdrNumber }),
+        ...(input.identifiers?.ncesId !== undefined && { ncesId: input.identifiers.ncesId }),
+        ...(input.identifiers?.stateId !== undefined && { stateId: input.identifiers.stateId }),
+        ...(input.identifiers?.schoolNumber !== undefined && { schoolNumber: input.identifiers.schoolNumber }),
+      };
+
+      return await schoolRepository.createSchool(repoInput);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, districtId: input.districtId } }, 'Failed to create school');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, districtId: input.districtId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * Update an existing school.
+   *
+   * Authorization (super-admin-only — matches create):
+   * 1. Existence check first — a missing school is a 404, not a 403.
+   * 2. Super-admin gate — non-super-admins are rejected with 403. The FGA model
+   *    defines `can_update: no_one` for orgs, so no role grants update; the
+   *    super-admin bypass IS the policy. No FGA `requirePermission` call is made.
+   *
+   * Only the mutable fields present in the input are applied; identity and
+   * hierarchy columns (orgType, parentOrgId/districtId, path) are not accepted
+   * and never touched.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param schoolId - UUID of the school to update
+   * @param input - The mutable school fields the caller is allowed to set
+   * @returns The updated school id
+   * @throws {ApiError} 404 if the school does not exist
+   * @throws {ApiError} 403 if the caller is not a super admin
+   * @throws {ApiError} 400 if no recognized mutable fields are present
+   * @throws {ApiError} 500 if the database update fails
+   */
+  async function update(
+    authContext: AuthContext,
+    schoolId: string,
+    input: UpdateSchoolServiceInput,
+  ): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // 1. Existence check first (404 before 403). getUnrestrictedById filters
+      // by orgType='school', so a district ID passed here returns null → 404.
+      const existing = await schoolRepository.getUnrestrictedById(schoolId);
+      if (!existing) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, schoolId },
+        });
+      }
+
+      // 2. Super-admin gate (can_update = no_one — the bypass is the policy)
+      if (!isSuperAdmin) {
+        logger.warn({ userId, schoolId }, 'Non-super admin attempted to update a school');
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, schoolId },
+        });
+      }
+
+      // Map the nested service input to the column-shaped repository partial.
+      // Only keys explicitly present in the input are included.
+      const updates: UpdateSchoolInput = {
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.abbreviation !== undefined && { abbreviation: input.abbreviation }),
+        ...(input.location?.addressLine1 !== undefined && { locationAddressLine1: input.location.addressLine1 }),
+        ...(input.location?.addressLine2 !== undefined && { locationAddressLine2: input.location.addressLine2 }),
+        ...(input.location?.city !== undefined && { locationCity: input.location.city }),
+        ...(input.location?.stateProvince !== undefined && { locationStateProvince: input.location.stateProvince }),
+        ...(input.location?.postalCode !== undefined && { locationPostalCode: input.location.postalCode }),
+        ...(input.location?.country !== undefined && { locationCountry: input.location.country }),
+        ...(input.identifiers?.mdrNumber !== undefined && { mdrNumber: input.identifiers.mdrNumber }),
+        ...(input.identifiers?.ncesId !== undefined && { ncesId: input.identifiers.ncesId }),
+        ...(input.identifiers?.stateId !== undefined && { stateId: input.identifiers.stateId }),
+        ...(input.identifiers?.schoolNumber !== undefined && { schoolNumber: input.identifiers.schoolNumber }),
+      };
+
+      // 400 when no recognized mutable fields are present (matches administrations'
+      // empty-body handling). This also covers a request whose only field is an empty
+      // nested location object: Zod accepts it (all nested address fields are
+      // optional) but it maps to no column updates.
+      if (Object.keys(updates).length === 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, schoolId, reason: 'No updatable fields provided' },
+        });
+      }
+
+      await schoolRepository.updateSchool(schoolId, updates);
+
+      logger.info({ userId, schoolId }, 'School updated successfully');
+
+      return { id: schoolId };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, schoolId } }, 'Failed to update school');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, schoolId },
+        cause: error,
+      });
+    }
+  }
+
+  return {
+    create,
+    list,
+    getById,
+    listSchoolClasses,
+    listUsers,
+    update,
+  };
+}
+
+export type ISchoolService = ReturnType<typeof SchoolService>;

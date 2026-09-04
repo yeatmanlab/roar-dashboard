@@ -1,0 +1,162 @@
+{
+  "bootstrap-sha": "446b0c3b5173b356a887ea302d6cc3c25651efae",
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "platform",
+      "components": ["backend", "dashboard"]
+    },
+    {
+      "type": "node-workspace"
+    }
+  ],
+  "changelog-sections": [
+    {
+      "type": "feat",
+      "section": "Features",
+      "hidden": false
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes",
+      "hidden": false
+    },
+    {
+      "type": "refactor",
+      "section": "Refactoring",
+      "hidden": false
+    },
+    {
+      "type": "perf",
+      "section": "Performance",
+      "hidden": false
+    },
+    {
+      "type": "docs",
+      "section": "Documentation",
+      "hidden": false
+    },
+    {
+      "type": "chore",
+      "section": "Miscellaneous",
+      "hidden": false
+    }
+  ],
+  "packages": {
+    "apps/backend": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "backend",
+      "release-as": "3.26.0"
+    },
+    "apps/dashboard": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "dashboard",
+      "release-as": "3.26.0"
+    },
+    "packages/api-contract": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "api-contract",
+      "release-as": "0.1.0"
+    },
+    "packages/assessment-sdk": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "assessment-sdk",
+      "release-as": "0.1.0"
+    },
+    "packages/assessment-schema": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "assessment-schema",
+      "release-as": "0.1.0"
+    },
+    "apps/assessments/roar-pa": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roar-pa",
+      "release-as": "5.3.17"
+    },
+    "apps/assessments/roar-swr": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roar-swr",
+      "release-as": "1.17.5"
+    },
+    "apps/assessments/roar-sre": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roar-sre",
+      "release-as": "3.3.1"
+    },
+    "apps/assessments/roar-letter": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roar-letter",
+      "release-as": "4.0.10"
+    },
+    "apps/assessments/roar-multichoice": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roar-multichoice",
+      "release-as": "2.2.1"
+    },
+    "apps/assessments/roar-survey": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roar-survey",
+      "release-as": "0.2.2"
+    },
+    "apps/assessments/roar-levante-tasks": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roar-levante-tasks",
+      "release-as": "1.0.6"
+    },
+    "apps/assessments/roam-apps": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roam-apps",
+      "release-as": "1.3.22"
+    },
+    "apps/assessments/roar-readaloud": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roar-readaloud",
+      "release-as": "1.4.2"
+    },
+    "apps/assessments/roav-apps": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roav-apps",
+      "release-as": "1.1.3"
+    },
+    "apps/assessments/roav-ran": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roav-ran",
+      "release-as": "2.1.6"
+    }
+  },
+  "group-pull-request-title-pattern": "chore: release ${version}",
+  "pull-request-title-pattern": "chore(${scope}): release ${version}",
+  "pull-request-header": "## Release Summary\n\nThis PR updates versions and changelogs for the following packages:\n\n- **backend**: Backend API service\n- **dashboard**: Frontend dashboard application\n- **api-contract**: Shared API contract and types (independent versioning)\n- **assessment-sdk**: Assessment client SDK (independent versioning)\n- **assessment-schema**: Configuration and scoring details for assessments (independent versioning)\n- **roar-pa**: ROAR - Phoneme Assessment (independent versioning)\n- **roar-swr**: ROAR - Single Word Recognition (independent versioning)\n- **roar-sre**: ROAR - Sentence Reading Efficiency (independent versioning)\n- **roar-letter**: ROAR - Letter (independent versioning)\n- **roar-multichoice**: ROAR - Multichoice (independent versioning)\n- **roar-survey**: ROAR - Survey (independent versioning)\n- **roar-levante-tasks**: ROAR LEVANTE Tasks (independent versioning)\n- **roam-apps**: ROAM Assessments (independent versioning)\n\n### Release Strategy\n\n- **Platform Release** (backend + dashboard): Shared version number, triggers production deployment\n- **Independent Releases** (api-contract + assessment-sdk + assessment-schema + ROAR assessments): Independent versioning, no production deployment\n\n### Approval Gates\n\n1. **Release PR**: Requires QA + Tech Lead review\n2. **Production Deployment**: Requires Tech Lead + Product Owner approval\n\n### Next Steps\n\n1. Review and approve this Release PR\n2. Merge to main\n3. Tags will be created automatically\n4. Production deployment will require additional approval\n\nSee [RELEASING.md](.github/RELEASING.md) for detailed release workflow documentation."
+}

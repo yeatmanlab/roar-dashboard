@@ -1,0 +1,31 @@
+import { vi } from 'vitest';
+import type { MockedObject } from 'vitest';
+import { createMockBaseRepositoryMethods } from './base.repository';
+import type { UserRepository } from '../../repositories/user.repository';
+
+/**
+ * Mock User Repository
+ * Returns a mocked version of UserRepository with all methods as vi.fn() mocks.
+ * This allows unit tests to avoid implementation details of the base repository (typedTable, db, etc.).
+ */
+export function createMockUserRepository(): MockedObject<UserRepository> {
+  return {
+    ...createMockBaseRepositoryMethods(),
+    findByAuthId: vi.fn(),
+    getUserEntityMemberships: vi.fn(),
+    getUserMembershipsDetailed: vi.fn(),
+    hasPlatformAdminRole: vi.fn(),
+    findClassParentSchool: vi.fn(),
+    resolveDeclaredEntities: vi.fn(),
+    revertReconciledMemberships: vi.fn(),
+    createWithMemberships: vi.fn(),
+    existsByUniqueFields: vi.fn(),
+    findByEmails: vi.fn(),
+    endAllOrgEnrollments: vi.fn(),
+    getActiveMembershipsWithRoles: vi.fn(),
+    archiveUser: vi.fn(),
+    reconcileMemberships: vi.fn(),
+  } as MockedObject<UserRepository>;
+}
+
+export type MockUserRepository = ReturnType<typeof createMockUserRepository>;

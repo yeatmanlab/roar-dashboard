@@ -7,7 +7,6 @@
 import { orgTypeEnum } from '../db/schema/enums';
 import { pgEnumToConst } from './utils';
 
-const OrgType = pgEnumToConst(orgTypeEnum);
+export const OrgType = pgEnumToConst(orgTypeEnum);
 
 export type OrgType = (typeof orgTypeEnum.enumValues)[number];
-export default OrgType;

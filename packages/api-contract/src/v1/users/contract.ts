@@ -1,23 +1,295 @@
-import { z } from 'zod';
 import { initContract } from '@ts-rest/core';
-import { User } from './schema';
+import { z } from 'zod';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
+import {
+  UserResponseSchema,
+  CreateUserRequestBodySchema,
+  CreateUserResponseSchema,
+  UpdateUserRequestBodySchema,
+  ImportUsersRequestSchema,
+  ImportUsersResponseSchema,
+  RecordUserAgreementRequestBodySchema,
+  RecordUserAgreementResponseSchema,
+  UserMembershipsResponseSchema,
+} from './schema';
+
+import {
+  AdministrationsListQuerySchema,
+  AdministrationsListResponseSchema,
+  AdministrationBaseSchema,
+  AdministrationAgreementsListQuerySchema,
+  UserAdministrationAgreementsListResponseSchema,
+} from '../administrations/schema';
+import { GuardianStudentReportContract } from './reports/scores/index';
 
 const c = initContract();
 
+/**
+ * Contract for the /users endpoints.
+ * Provides access to user related data that an authenticated user can view.
+ * Provides the ability to update user profile data for authorized users.
+ * Provides the ability to manage user agreements (consent records).
+ * Provides the ability to list administrations for a user.
+ */
 export const UsersContract = c.router(
   {
-    getById: {
+    get: {
       method: 'GET',
       path: '/:id',
-      pathParams: z.object({
-        id: z.string().uuid(),
-      }),
+      pathParams: z.object({ id: z.string().uuid() }),
       responses: {
-        200: SuccessEnvelopeSchema(User),
+        200: SuccessEnvelopeSchema(UserResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
+      summary: 'Get a user by ID',
+      description:
+        'Returns a single user by their ID. ' +
+        ' Returns a 401 if the requesting user is not authenticated. ' +
+        ' Returns a 403 if the requesting user is not authorized to view the requested user. ' +
+        ' Returns a 404 if the requested user is not found. ' +
+        ' Returns a 500 if an internal server error occurs.',
+    },
+    create: {
+      method: 'POST',
+      path: '/',
+      contentType: 'application/json',
+      body: CreateUserRequestBodySchema,
+      responses: {
+        201: SuccessEnvelopeSchema(CreateUserResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
+        422: ErrorEnvelopeSchema,
+        429: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Create a new user',
+      description:
+        'Creates a new user with the provided information. ' +
+        'Memberships are org-scoped only (district, school, class, group). Family memberships are not accepted — use POST /families to register a family, or POST /families/:familyId/users to add members to an existing one. ' +
+        'Treats rostered-out users as still occupying their unique fields; a re-register attempt with the same email or PID returns a conflict. ' +
+        'Returns a 201 Created with the new user ID on success. ' +
+        'Returns a 400 if the request body is missing or contains invalid field values, including a family membership. ' +
+        'Returns a 401 if the requesting user is not authenticated. ' +
+        'Returns a 403 if the requesting user is not authorized to create users. ' +
+        'Returns a 409 if a unique field (email or username) conflicts with any user (including rostered-out users). ' +
+        'Returns a 422 if the request body is well-formed but contains semantically invalid data (e.g., invalid grade level). ' +
+        'Returns a 429 if the user creation rate limit has been exceeded. ' +
+        'Returns a 500 if an internal server error occurs.',
+    },
+    bulkImport: {
+      method: 'POST',
+      path: '/import',
+      contentType: 'application/json',
+      body: ImportUsersRequestSchema,
+      responses: {
+        200: SuccessEnvelopeSchema(ImportUsersResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Bulk create, update, and unenroll users',
+      description:
+        'Processes up to 100 rows, classifying each by email into create, update, or unenroll and ' +
+        'applying it against Firebase Auth, Postgres, and OpenFGA with per-row atomicity. ' +
+        'Always returns 200 with a multi-status body for any well-formed, authenticated request — ' +
+        'per-row outcomes (including failures) live in `results`, never in the HTTP status code. ' +
+        'Returns a 400 if the request body is missing, empty, over 100 rows, or malformed. ' +
+        'Returns a 401 if the requesting user is not authenticated. ' +
+        'Authorization is evaluated per row, not per request: a caller lacking permission over a ' +
+        "row's target surfaces as that row's failed outcome in `results`, never as an HTTP status. " +
+        'Per-row and per-bin failures (including lookup and configuration errors) are always ' +
+        'reported as failed outcomes in `results`, not a 500 — the 500 response exists only as a ' +
+        'defensive fallback for truly unanticipated failures.',
+    },
+    update: {
+      method: 'PATCH',
+      path: '/:id',
+      pathParams: z.object({ id: z.string().uuid() }),
+      contentType: 'application/json',
+      body: UpdateUserRequestBodySchema,
+      responses: {
+        204: z.undefined(),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
+        422: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Update a user by ID',
+      description:
+        'Partially updates a user by their ID. ' +
+        'Only the fields present in the request body are updated — omitted fields are left unchanged. ' +
+        'Nullable fields may be explicitly set to null to clear their value. ' +
+        "When a password is supplied it updates the target user's Firebase Auth credential rather than the database. " +
+        'Returns a 204 No Content on success. ' +
+        'Returns a 400 if the request body is missing or contains invalid field values. ' +
+        'Returns a 401 if the requesting user is not authenticated. ' +
+        'Returns a 403 if the requesting user is not authorized to update the requested user. ' +
+        'Returns a 404 if the requested user is not found. ' +
+        'Returns a 409 if a unique field (email or username) conflicts with an existing user. ' +
+        'Returns a 422 if a password is supplied for a user with no linked Firebase account. ' +
+        'Returns a 500 if an internal server error occurs.',
+    },
+    recordUserAgreement: {
+      method: 'POST',
+      path: '/:userId/agreements',
+      pathParams: z.object({
+        userId: z.string().uuid(),
+      }),
+      body: RecordUserAgreementRequestBodySchema,
+      responses: {
+        201: SuccessEnvelopeSchema(RecordUserAgreementResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Record user agreement',
+      description:
+        "Records a user's consent to a specific agreement version. " +
+        'Users can consent for themselves, and guardians can consent for family members. ' +
+        'Returns 201 Created with the agreement ID. ' +
+        'Returns 400 if the request body is invalid. ' +
+        'Returns 401 if the user is not authenticated. ' +
+        'Returns 403 if the user lacks permission to consent for the target user. ' +
+        'Returns 404 if the user or agreement version does not exist. ' +
+        'Returns 409 if the user has already consented to the given agreement version. ' +
+        'Returns 500 if an internal server error occurs.',
+    },
+    listUserAdministrations: {
+      method: 'GET',
+      path: '/:userId/administrations',
+      pathParams: z.object({
+        userId: z.string().uuid(),
+      }),
+      query: AdministrationsListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationsListResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List administrations for a specified user',
+      description:
+        'Returns a paginated list of administrations the requester and specified user have access to. ' +
+        'Use ?status=active|past|upcoming to filter by date status. ' +
+        'Use ?embed=stats to include assignment stats. Use ?embed=tasks to include task variants. ' +
+        "Use ?embed=progress to attach the specified user's per-task run state " +
+        '(startedOn, completedOn, allowRetake) to each task; this implies tasks. ' +
+        'Returns 403 if the requester does not have access to any administrations for the specified user. ' +
+        'Returns 404 if the specified user does not exist.',
+    },
+    getUserAdministration: {
+      method: 'GET',
+      path: '/:userId/administrations/:administrationId',
+      pathParams: z.object({
+        userId: z.string().uuid(),
+        administrationId: z.string().uuid(),
+      }),
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationBaseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get a specific administration for a user',
+      description:
+        'Returns a specific administration for the specified user. ' +
+        'Returns 403 if the requester does not have access to the administration for the specified user. ' +
+        'Returns 404 if the specified user or administration does not exist.',
+    },
+    listUserAdministrationAgreements: {
+      method: 'GET',
+      path: '/:userId/administrations/:administrationId/agreements',
+      pathParams: z.object({
+        userId: z.string().uuid(),
+        administrationId: z.string().uuid(),
+      }),
+      query: AdministrationAgreementsListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(UserAdministrationAgreementsListResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: "List an administration's required agreements with signed status for a user",
+      description:
+        "Returns the administration's required agreements (consent or assent, based on the user's age; " +
+        'terms of service are excluded), each ' +
+        'annotated with whether the specified user has already signed it (any current version, cross-locale). ' +
+        'Lets the consent gate decide what the specified user must sign before assessments. ' +
+        'Use ?locale=<bcp47> to select the current version returned per agreement (defaults to en-US). ' +
+        'Returns 403 if the requester does not have access to the administration for the specified user. ' +
+        'Returns 404 if the specified user or administration does not exist, or the specified user lacks access to it.',
+    },
+    listUserMemberships: {
+      method: 'GET',
+      path: '/:userId/memberships',
+      pathParams: z.object({
+        userId: z.string().uuid(),
+      }),
+      responses: {
+        200: SuccessEnvelopeSchema(UserMembershipsResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: "List a user's active entity memberships",
+      description:
+        "Returns the specified user's active (current) org, class, group, and family memberships, each with the " +
+        "member's role. Class memberships can also include the parent schoolId and districtId so a caller can resolve " +
+        "the user's current school(s) without a separate lookup. Results are scoped to the requester's access: " +
+        'self, super admins, and a guardian of the user receive the full set (including family memberships and the ' +
+        'class parent IDs); a supervisory requester (administrator or educator) receives only the entities within ' +
+        'their reach, with class rows stripped of the parent school/district IDs, and no family memberships. ' +
+        'Returns 403 if the requester cannot access the specified user. ' +
+        'Returns 404 if the specified user does not exist.',
+    },
+    // Nest guardian / longitudinal score report sub-router under /users
+    scoreReports: GuardianStudentReportContract,
+    createAnonymous: {
+      method: 'POST',
+      path: '/anonymous',
+      body: c.noBody(),
+      responses: {
+        200: SuccessEnvelopeSchema(CreateUserResponseSchema),
+        401: ErrorEnvelopeSchema,
+        // 429 is intentionally absent: the project has no Express-level rate limiter yet.
+        // createAnonymousUser makes no Firebase Auth Admin API calls, so Firebase's own
+        // TOO_MANY_REQUESTS quota (which covers /users POST) cannot fire here. The endpoint
+        // is also idempotent — repeated calls for the same UID are DB no-ops. A server-side
+        // rate limiter (e.g. express-rate-limit) should be added before declaring 429 here.
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Register or retrieve anonymous guest user',
+      description:
+        'Creates a minimal ROAR user record for an anonymous Firebase user, or returns the existing record if one was already created. ' +
+        'Requires a valid Firebase anonymous ID token in the Authorization header. ' +
+        'The call is idempotent — repeated calls for the same Firebase UID return the same ROAR user ID. ' +
+        'Used by standalone assessment apps that support guest (anonymous) play.',
     },
   },
   { pathPrefix: '/users' },

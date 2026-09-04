@@ -1,5 +1,5 @@
 {
-  "name": "@roar-dashboard/prettier-config",
+  "name": "@roar-platform/prettier-config",
   "version": "0.0.0",
   "type": "module",
   "private": true,

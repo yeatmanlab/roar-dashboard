@@ -1,0 +1,857 @@
+/**
+ * Route integration tests for /v1/groups endpoints.
+ *
+ * Tests the full HTTP lifecycle: middleware → controller → service → repository → DB.
+ * Only Firebase token verification is mocked — everything else runs for real.
+ *
+ * Authorization is tested by permission tier (resolved via OpenFGA). The tier
+ * behavior varies by endpoint:
+ *   - superAdmin (isSuperAdmin=true) bypasses all access control everywhere.
+ *   - GET /groups (list): supervisory members (siteAdmin, admin, educator) get 200
+ *     with data; supervised tiers (student, caregiver) and non-members get an empty
+ *     result set, not 403.
+ *   - GET /groups/:groupId (read): supervisory members get 200; others get 403.
+ *   - The invitation-code endpoint is restricted to super admins only (others 403).
+ *
+ * Each endpoint section follows the structure:
+ *   1. Authorization — one spec per tier with status + content assertions
+ *   2. Error cases — 401 unauthenticated, 404 not found
+ */
+import { describe, it, expect, beforeAll } from 'vitest';
+import type express from 'express';
+import { StatusCodes } from 'http-status-codes';
+import { CoreDbClient } from '../db/clients';
+import { invitationCodes } from '../db/schema';
+import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { UserRole } from '../enums/user-role.enum';
+import {
+  createTestApp,
+  createRouteHelper,
+  createTierUsers,
+  createGroupTierUsers,
+} from '../test-support/route-test.helper';
+import type { TierUsers } from '../test-support/route-test.helper';
+import { baseFixture } from '../test-support/fixtures';
+import { UserFactory } from '../test-support/factories/user.factory';
+import { GroupFactory } from '../test-support/factories/group.factory';
+import { UserGroupFactory } from '../test-support/factories/user-group.factory';
+import { UserType } from '../enums/user-type.enum';
+import type { EnrolledUser } from '@roar-platform/api-contract';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Test setup
+// ═══════════════════════════════════════════════════════════════════════════
+
+let app: express.Application;
+let expectRoute: ReturnType<typeof createRouteHelper>;
+let tiers: TierUsers;
+let userGroupTiers: TierUsers;
+
+/** Group ID with a seeded invitation code for happy-path tests. */
+let testGroupId: string;
+let testUserGroupId: string;
+
+beforeAll(async () => {
+  // Route modules must be imported dynamically — they instantiate services at
+  // import time, which capture CoreDbClient by value. This must happen after
+  // vitest.setup.ts initializes the DB pools.
+  const { registerGroupsRoutes } = await import('./groups');
+  app = createTestApp(registerGroupsRoutes);
+  expectRoute = createRouteHelper(app);
+  tiers = await createTierUsers(baseFixture.district.id);
+
+  const testUserGroup = await GroupFactory.create({ name: 'Test User Group' });
+  testUserGroupId = testUserGroup.id;
+  userGroupTiers = await createGroupTierUsers(testUserGroupId);
+
+  // Seed a valid invitation code on the fixture group for happy-path tests
+  testGroupId = baseFixture.group.id;
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  await CoreDbClient.insert(invitationCodes).values({
+    groupId: testGroupId,
+    code: 'ROUTE-TEST-CODE',
+    validFrom: yesterday,
+    validTo: null,
+  });
+
+  // Re-sync FGA tuples to pick up tier users and group memberships created above
+  const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+  await syncFgaTuplesFromPostgres();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// POST /v1/groups
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('POST /v1/groups', () => {
+  const buildCreateGroupBody = (overrides: Record<string, unknown> = {}) => ({
+    name: 'Pilot Cohort',
+    abbreviation: 'PC1',
+    groupType: 'cohort',
+    ...overrides,
+  });
+
+  describe('authorization', () => {
+    it('superAdmin tier can create a group and gets 201 with the new id', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateGroupBody({ abbreviation: 'SUPER1' }))
+        .toReturn(StatusCodes.CREATED);
+
+      expect(res.body.data.id).toEqual(expect.any(String));
+    });
+
+    it('siteAdmin tier is forbidden from creating groups', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.siteAdmin)
+        .withBody(buildCreateGroupBody({ abbreviation: 'SITE1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('admin tier is forbidden from creating groups', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.admin)
+        .withBody(buildCreateGroupBody({ abbreviation: 'ADMIN1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator tier is forbidden from creating groups', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.educator)
+        .withBody(buildCreateGroupBody({ abbreviation: 'EDU1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('student tier is forbidden from creating groups', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.student)
+        .withBody(buildCreateGroupBody({ abbreviation: 'STU1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier is forbidden from creating groups', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.caregiver)
+        .withBody(buildCreateGroupBody({ abbreviation: 'CARE1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('persistence', () => {
+    it('inserted row contains the supplied fields', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateGroupBody({ name: 'Persist 1', abbreviation: 'PERSIST1' }))
+        .toReturn(StatusCodes.CREATED);
+
+      const id = res.body.data.id as string;
+
+      const { groups } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select().from(groups).where(eq(groups.id, id));
+      expect(row).toBeDefined();
+      expect(row!.name).toBe('Persist 1');
+      expect(row!.abbreviation).toBe('PERSIST1');
+      expect(row!.groupType).toBe('cohort');
+    });
+
+    it('forwards optional location fields to the column-shaped insert', async () => {
+      const body = buildCreateGroupBody({
+        name: 'Persist 2',
+        abbreviation: 'PERSIST2',
+        location: {
+          addressLine1: '1 Research Way',
+          city: 'Palo Alto',
+          stateProvince: 'CA',
+          postalCode: '94305',
+          country: 'US',
+        },
+      });
+
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.CREATED);
+
+      const id = res.body.data.id as string;
+
+      const { groups } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select().from(groups).where(eq(groups.id, id));
+      expect(row).toBeDefined();
+      expect(row!.locationAddressLine1).toBe('1 Research Way');
+      expect(row!.locationCity).toBe('Palo Alto');
+      expect(row!.locationStateProvince).toBe('CA');
+      expect(row!.locationPostalCode).toBe('94305');
+      expect(row!.locationCountry).toBe('US');
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .unauthenticated()
+        .withBody(buildCreateGroupBody({ abbreviation: 'UNAUTH' }))
+        .toReturn(StatusCodes.UNAUTHORIZED);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 400 when name is missing', async () => {
+      await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody({ abbreviation: 'NONAME', groupType: 'cohort' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when abbreviation is missing', async () => {
+      await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody({ name: 'No Abbreviation Group', groupType: 'cohort' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when groupType is missing', async () => {
+      await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody({ name: 'No Type Group', abbreviation: 'NOTYPE' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when groupType is not in the enum', async () => {
+      await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateGroupBody({ abbreviation: 'BADTYPE', groupType: 'not-a-type' }))
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when abbreviation exceeds 10 characters', async () => {
+      await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateGroupBody({ abbreviation: 'TOOLONGABBR1' }))
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when abbreviation contains non-alphanumeric characters', async () => {
+      await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateGroupBody({ abbreviation: 'GRP-001' }))
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/groups
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/groups', () => {
+  const path = () => '/v1/groups';
+
+  describe('authorization', () => {
+    it('superAdmin tier can list all groups', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.pagination).toBeDefined();
+      // Super admin sees every group, including the seeded fixture group
+      const ids = res.body.data.items.map((group: { id: string }) => group.id);
+      expect(ids).toContain(testUserGroupId);
+    });
+
+    // Users with a supervisory role on a group can list it (FGA can_list =
+    // supervisory_tier_group). These tiers are members of testUserGroup.
+    const supervisoryTierConfigs = [
+      { name: 'siteAdmin', getTier: () => userGroupTiers.siteAdmin },
+      { name: 'admin', getTier: () => userGroupTiers.admin },
+      { name: 'educator', getTier: () => userGroupTiers.educator },
+    ];
+
+    supervisoryTierConfigs.forEach(({ name: tierName, getTier }) => {
+      it(`${tierName} tier (group member) sees the groups it supervises`, async () => {
+        const res = await expectRoute('GET', path()).as(getTier()).toReturn(200);
+
+        expect(res.body.data.items).toBeInstanceOf(Array);
+        const ids = res.body.data.items.map((group: { id: string }) => group.id);
+        expect(ids).toContain(testUserGroupId);
+      });
+    });
+
+    // Supervised roles on a group do NOT get can_list — they see an empty set,
+    // not a 403.
+    const emptySetTierConfigs = [
+      { name: 'student (group member)', getTier: () => userGroupTiers.student },
+      { name: 'caregiver (group member)', getTier: () => userGroupTiers.caregiver },
+      // An org admin with no group membership at all also sees nothing.
+      { name: 'admin (no group membership)', getTier: () => tiers.admin },
+    ];
+
+    emptySetTierConfigs.forEach(({ name: tierName, getTier }) => {
+      it(`${tierName} receives an empty result set, not a 403`, async () => {
+        const res = await expectRoute('GET', path()).as(getTier()).toReturn(200);
+
+        expect(res.body.data.items).toBeInstanceOf(Array);
+        expect(res.body.data.items).toHaveLength(0);
+        expect(res.body.data.pagination.totalItems).toBe(0);
+      });
+    });
+  });
+
+  describe('query parameters', () => {
+    it('supports pagination with page and perPage parameters', async () => {
+      const res = await expectRoute('GET', `${path()}?page=1&perPage=1`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toHaveLength(1);
+      expect(res.body.data.pagination.page).toBe(1);
+      expect(res.body.data.pagination.perPage).toBe(1);
+      expect(res.body.data.pagination.totalItems).toBeGreaterThan(0);
+      expect(res.body.data.pagination.totalPages).toBeGreaterThan(0);
+    });
+
+    it('excludes rostering-ended groups by default and includes them with includeEnded=true', async () => {
+      // Use super admin so listAll (which bypasses FGA) isolates the includeEnded
+      // filter from access control.
+      const endedGroup = await GroupFactory.create({
+        name: 'Rostering Ended Group',
+        rosteringEnded: new Date('2000-01-01T00:00:00.000Z'),
+      });
+
+      const defaultRes = await expectRoute('GET', `${path()}?perPage=100`).as(tiers.superAdmin).toReturn(200);
+      expect(defaultRes.body.data.items.map((group: { id: string }) => group.id)).not.toContain(endedGroup.id);
+
+      const includedRes = await expectRoute('GET', `${path()}?perPage=100&includeEnded=true`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+      expect(includedRes.body.data.items.map((group: { id: string }) => group.id)).toContain(endedGroup.id);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', path()).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/groups/:groupId
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/groups/:groupId', () => {
+  const path = (groupId: string) => `/v1/groups/${groupId}`;
+
+  describe('authorization', () => {
+    it('superAdmin tier can read any group', async () => {
+      const res = await expectRoute('GET', path(testUserGroupId)).as(userGroupTiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.id).toBe(testUserGroupId);
+      expect(res.body.data.groupType).toBeDefined();
+    });
+
+    // Supervisory roles on a group can read it (FGA can_read = supervisory_tier_group).
+    const supervisoryTierConfigs = [
+      { name: 'siteAdmin', getTier: () => userGroupTiers.siteAdmin },
+      { name: 'admin', getTier: () => userGroupTiers.admin },
+      { name: 'educator', getTier: () => userGroupTiers.educator },
+    ];
+
+    supervisoryTierConfigs.forEach(({ name: tierName, getTier }) => {
+      it(`${tierName} tier (group member) can read the group`, async () => {
+        const res = await expectRoute('GET', path(testUserGroupId)).as(getTier()).toReturn(200);
+
+        expect(res.body.data.id).toBe(testUserGroupId);
+      });
+    });
+
+    // Supervised roles on a group are denied read access with a 403.
+    const forbiddenTierConfigs = [
+      { name: 'student (group member)', getTier: () => userGroupTiers.student },
+      { name: 'caregiver (group member)', getTier: () => userGroupTiers.caregiver },
+    ];
+
+    forbiddenTierConfigs.forEach(({ name: tierName, getTier }) => {
+      it(`${tierName} is forbidden from reading the group`, async () => {
+        const res = await expectRoute('GET', path(testUserGroupId)).as(getTier()).toReturn(403);
+
+        expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      });
+    });
+
+    it('returns 403 when the user has no membership in the group', async () => {
+      const res = await expectRoute('GET', path(testUserGroupId)).as(tiers.admin).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', path(testUserGroupId)).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 404 when the group does not exist', async () => {
+      const res = await expectRoute('GET', path('00000000-0000-0000-0000-000000000000'))
+        .as(tiers.superAdmin)
+        .toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/groups/:groupId/invitation-code
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/groups/:groupId/invitation-code', () => {
+  const path = () => `/v1/groups/${testGroupId}/invitation-code`;
+
+  describe('authorization', () => {
+    it('superAdmin tier can retrieve the invitation code', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.groupId).toBe(testGroupId);
+      expect(res.body.data.code).toBe('ROUTE-TEST-CODE');
+    });
+
+    it('siteAdmin tier is forbidden from retrieving invitation codes', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.siteAdmin).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('admin tier is forbidden from retrieving invitation codes', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.admin).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator tier is forbidden from retrieving invitation codes', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('student tier is forbidden from retrieving invitation codes', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.student).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier is forbidden from retrieving invitation codes', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.caregiver).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', path()).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 404 when group has no valid invitation code', async () => {
+      // Use a group with no invitation codes seeded — create a fresh group via the factory
+      const { GroupFactory } = await import('../test-support/factories/group.factory');
+      const emptyGroup = await GroupFactory.create({ name: 'No Codes Group' });
+
+      const res = await expectRoute('GET', `/v1/groups/${emptyGroup.id}/invitation-code`)
+        .as(tiers.superAdmin)
+        .toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/groups/:groupId/users
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/groups/:groupId/users', () => {
+  const testUserGroupParam = () => testUserGroupId;
+  const testUserGroupPath = () => `/v1/groups/${testUserGroupParam()}/users`;
+
+  describe('authorization', () => {
+    it('superAdmin tier can list users in a group', async () => {
+      await UserGroupFactory.create({
+        userId: baseFixture.expiredEnrollmentStudent.id,
+        groupId: testUserGroupId,
+        role: UserRole.STUDENT,
+        enrollmentStart: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        enrollmentEnd: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      });
+
+      await UserGroupFactory.create({
+        userId: baseFixture.groupStudent.id,
+        groupId: testUserGroupId,
+        role: UserRole.STUDENT,
+      });
+
+      const res = await expectRoute('GET', testUserGroupPath()).as(userGroupTiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.pagination).toBeDefined();
+
+      const userIds = res.body.data.items.map((user: { id: string }) => user.id);
+      // Super admin sees all active users in the group
+      expect(userIds).toContain(baseFixture.groupStudent.id);
+      // Expired enrollment should not be included
+      expect(userIds).not.toContain(baseFixture.expiredEnrollmentStudent.id);
+    });
+
+    const tierConfigs = [
+      { name: 'siteAdmin', getTier: () => userGroupTiers.siteAdmin },
+      { name: 'admin', getTier: () => userGroupTiers.admin },
+      { name: 'educator', getTier: () => userGroupTiers.educator },
+    ];
+
+    tierConfigs.forEach(({ name: tierName, getTier }) => {
+      it(`${tierName} tier can list users in a group`, async () => {
+        const tier = getTier(); // Get the actual tier at runtime
+        const res = await expectRoute('GET', testUserGroupPath()).as(tier).toReturn(200);
+
+        expect(res.body.data.items).toBeInstanceOf(Array);
+        expect(res.body.data.items.length).toBeGreaterThan(0);
+      });
+    });
+
+    const forbiddenTierConfigs = [
+      { name: 'student', getTier: () => userGroupTiers.student },
+      { name: 'caregiver', getTier: () => userGroupTiers.caregiver },
+    ];
+
+    forbiddenTierConfigs.forEach(({ name: tierName, getTier }) => {
+      it(`${tierName} tier is forbidden from listing users in groups`, async () => {
+        const tier = getTier();
+        const res = await expectRoute('GET', testUserGroupPath()).as(tier).toReturn(403);
+
+        expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      });
+    });
+  });
+
+  describe('query parameters', () => {
+    // Test group with multiple users of different grades and roles
+    let filterTestGroup: Awaited<ReturnType<typeof GroupFactory.create>>;
+
+    beforeAll(async () => {
+      // Create a dedicated group for filter tests
+      filterTestGroup = await GroupFactory.create({ name: 'Filter Test Group' });
+
+      // Create users with specific grades and enroll them
+      const usersToCreate = [
+        { grade: '5' as const, role: UserRole.STUDENT },
+        { grade: '5' as const, role: UserRole.STUDENT },
+        { grade: '3' as const, role: UserRole.STUDENT },
+        { grade: '7' as const, role: UserRole.STUDENT },
+        { grade: null, role: UserRole.ADMINISTRATOR },
+      ];
+
+      const createdUsers = await Promise.all(
+        usersToCreate.map(({ grade }) =>
+          UserFactory.create({ userType: grade ? UserType.STUDENT : UserType.ADMIN, grade }),
+        ),
+      );
+
+      await Promise.all(
+        createdUsers.map((user, i) =>
+          UserGroupFactory.create({ userId: user.id, groupId: filterTestGroup.id, role: usersToCreate[i]!.role }),
+        ),
+      );
+    });
+
+    const filterPath = () => `/v1/groups/${filterTestGroup.id}/users`;
+
+    it('filters users by role parameter', async () => {
+      const res = await expectRoute('GET', `${filterPath()}?role=student`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      res.body.data.items.forEach((user: EnrolledUser) => {
+        expect(user.roles).toContain('student');
+      });
+    });
+
+    it('filters users by single grade parameter', async () => {
+      const res = await expectRoute('GET', `${filterPath()}?grade=5`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      res.body.data.items.forEach((user: EnrolledUser) => {
+        expect(user.grade).toBe('5');
+      });
+    });
+
+    it('filters users by multiple grades with comma-separated values', async () => {
+      const res = await expectRoute('GET', `${filterPath()}?grade=3,7`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      res.body.data.items.forEach((user: EnrolledUser) => {
+        expect(['3', '7']).toContain(user.grade);
+      });
+    });
+
+    it('combines role and grade filters', async () => {
+      const res = await expectRoute('GET', `${filterPath()}?role=student&grade=5`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      res.body.data.items.forEach((user: EnrolledUser) => {
+        expect(user.roles).toContain('student');
+        expect(user.grade).toBe('5');
+      });
+    });
+
+    it('returns empty array when no users match filter', async () => {
+      const res = await expectRoute('GET', `${filterPath()}?grade=12`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.items).toHaveLength(0);
+    });
+
+    it('supports pagination with page and perPage parameters', async () => {
+      const paginationGroup = await GroupFactory.create({ name: 'Pagination Group' });
+
+      await Promise.all([
+        UserGroupFactory.create({
+          userId: userGroupTiers.student.id,
+          groupId: filterTestGroup.id,
+          role: UserRole.STUDENT,
+        }),
+        UserGroupFactory.create({
+          userId: userGroupTiers.admin.id,
+          groupId: paginationGroup.id,
+          role: UserRole.ADMINISTRATOR,
+        }),
+      ]);
+
+      // Re-sync FGA so the admin's membership on the new group is recognized
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+      await syncFgaTuplesFromPostgres();
+
+      const res = await expectRoute('GET', `/v1/groups/${paginationGroup.id}/users?page=1&perPage=1`)
+        .as(userGroupTiers.admin)
+        .toReturn(200);
+
+      expect(res.body.data.items).toHaveLength(1);
+      expect(res.body.data.pagination.page).toBe(1);
+      expect(res.body.data.pagination.perPage).toBe(1);
+      expect(res.body.data.pagination.totalItems).toBeGreaterThan(0);
+      expect(res.body.data.pagination.totalPages).toBeGreaterThan(0);
+    });
+  });
+
+  describe('demographics embed', () => {
+    // Dedicated group so the demographic assertions are isolated from the
+    // shared fixture. Super admin bypasses FGA, so no tuple re-sync is needed.
+    let demographicsGroup: Awaited<ReturnType<typeof GroupFactory.create>>;
+    let demographicsStudentId: string;
+
+    beforeAll(async () => {
+      demographicsGroup = await GroupFactory.create({ name: 'Route Demographics Group' });
+
+      const student = await UserFactory.create({
+        nameLast: 'RouteDemographicsStudent',
+        userType: UserType.STUDENT,
+        statusEll: 'Yes',
+        statusFrl: 'Free',
+        statusIep: 'No',
+        race: 'Asian',
+        hispanicEthnicity: true,
+        homeLanguage: 'Mandarin',
+      });
+      demographicsStudentId = student.id;
+
+      await UserGroupFactory.create({
+        userId: student.id,
+        groupId: demographicsGroup.id,
+        role: UserRole.STUDENT,
+      });
+    });
+
+    const demographicsPath = () => `/v1/groups/${demographicsGroup.id}/users`;
+
+    it('omits demographics from the base list (no embed)', async () => {
+      const res = await expectRoute('GET', demographicsPath()).as(tiers.superAdmin).toReturn(200);
+
+      const user = res.body.data.items.find((u: { id: string }) => u.id === demographicsStudentId);
+      expect(user).toBeDefined();
+      expect(user).not.toHaveProperty('demographics');
+      // No demographic PII leaks at the top level either.
+      expect(user).not.toHaveProperty('userType');
+      expect(user).not.toHaveProperty('statusEll');
+      expect(user).not.toHaveProperty('race');
+    });
+
+    it('includes the demographics sub-object when ?embed=demographics is requested', async () => {
+      const res = await expectRoute('GET', `${demographicsPath()}?embed=demographics`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      const user = res.body.data.items.find((u: { id: string }) => u.id === demographicsStudentId);
+      expect(user).toBeDefined();
+      expect(user.demographics).toEqual({
+        userType: UserType.STUDENT,
+        statusEll: 'Yes',
+        statusFrl: 'Free',
+        statusIep: 'No',
+        race: 'Asian',
+        hispanicEthnicity: true,
+        homeLanguage: 'Mandarin',
+      });
+    });
+
+    it('does not widen the result set when the embed is requested', async () => {
+      const withoutEmbed = await expectRoute('GET', demographicsPath()).as(tiers.superAdmin).toReturn(200);
+      const withEmbed = await expectRoute('GET', `${demographicsPath()}?embed=demographics`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      expect(withEmbed.body.data.pagination.totalItems).toBe(withoutEmbed.body.data.pagination.totalItems);
+      expect(withEmbed.body.data.items).toHaveLength(withoutEmbed.body.data.items.length);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', testUserGroupPath()).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 403 when user does not have access to group', async () => {
+      const res = await expectRoute('GET', testUserGroupPath()).as(tiers.admin).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 403 when user is admin of a different group', async () => {
+      const groupB = await GroupFactory.create({ name: 'Isolated Group B' });
+      const isolatedUser = await UserFactory.create({
+        nameFirst: 'Isolated',
+        nameLast: 'Admin',
+        email: 'isolated-admin@example.com',
+      });
+      await UserGroupFactory.create({
+        userId: isolatedUser.id,
+        groupId: groupB.id,
+        role: UserRole.ADMINISTRATOR,
+      });
+      const res = await expectRoute('GET', testUserGroupPath())
+        .as({ id: isolatedUser.id, authId: isolatedUser.authId! })
+        .toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 404 when group does not exist', async () => {
+      const res = await expectRoute('GET', '/v1/groups/00000000-0000-0000-0000-000000000000/users')
+        .as(tiers.admin)
+        .toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PATCH /v1/groups/:groupId
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('PATCH /v1/groups/:groupId', () => {
+  describe('authorization', () => {
+    it('superAdmin tier updates a field, gets 200, and the change persists', async () => {
+      // Create a dedicated group so we don't mutate fixture data
+      const group = await GroupFactory.create({ name: 'Patch Target Group' });
+
+      const res = await expectRoute('PATCH', `/v1/groups/${group.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ name: 'Patched Group Name', abbreviation: 'PATCHED1' })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(group.id);
+
+      // Assert the change persisted by re-fetching via the get endpoint
+      const getRes = await expectRoute('GET', `/v1/groups/${group.id}`).as(tiers.superAdmin).toReturn(200);
+      expect(getRes.body.data.name).toBe('Patched Group Name');
+      expect(getRes.body.data.abbreviation).toBe('PATCHED1');
+    });
+
+    it('admin tier is forbidden from updating groups', async () => {
+      const res = await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
+        .as(tiers.admin)
+        .withBody({ name: 'Should Not Apply' })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator tier is forbidden from updating groups', async () => {
+      const res = await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
+        .as(tiers.educator)
+        .withBody({ name: 'Should Not Apply' })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
+        .unauthenticated()
+        .withBody({ name: 'Nope' })
+        .toReturn(StatusCodes.UNAUTHORIZED);
+    });
+
+    it('returns 404 for a non-existent group (existence checked before authz)', async () => {
+      const res = await expectRoute('PATCH', '/v1/groups/00000000-0000-0000-0000-000000000000')
+        .as(tiers.superAdmin)
+        .withBody({ name: 'Nope' })
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 400 for an empty body (no mutable fields provided)', async () => {
+      const res = await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
+        .as(tiers.superAdmin)
+        .withBody({})
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      expect(res.body.error).toBeDefined();
+    });
+
+    it('returns 400 when the body contains only an immutable/unknown key', async () => {
+      // Unlike the empty-body case above (which clears validation and reaches the
+      // service's "no mutable fields" 400 → ApiError envelope), `.strict()` rejects
+      // unknown/immutable keys at ts-rest request-validation time. That 400 is ts-rest's
+      // own validation response, not the ApiError envelope, so we assert the status only —
+      // matching the districts/schools/classes immutable-key tests.
+      await expectRoute('PATCH', `/v1/groups/${baseFixture.group.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ id: '00000000-0000-0000-0000-000000000000' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+  });
+});

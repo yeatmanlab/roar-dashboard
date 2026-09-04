@@ -1,0 +1,59 @@
+import { StatusCodes } from 'http-status-codes';
+import { UserService } from '../services/user';
+import type { AuthContext } from '../types/auth-context';
+import { ApiError } from '../errors/api-error';
+import { toErrorResponse } from '../utils/to-error-response.util';
+
+const userService = UserService();
+
+/**
+ * MeController
+ *
+ * Handles HTTP concerns for the /me endpoint.
+ * Calls UserService for business logic and formats responses.
+ */
+export const MeController = {
+  /**
+   * Get the current authenticated user's profile, including unsigned TOS
+   * agreements and the caller's own active family memberships.
+   *
+   * @param authContext - The authenticated user's context from req.user
+   * @returns ts-rest response object with user profile, unsigned agreements, and families, or error
+   */
+  get: async (authContext: AuthContext) => {
+    try {
+      const [user, unsignedAgreements, families] = await Promise.all([
+        userService.getById(authContext, authContext.userId),
+        userService.getUnsignedTosAgreements(authContext.userId),
+        userService.getFamilies(authContext.userId),
+      ]);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            id: user.id,
+            userType: user.userType,
+            // `/me` is always the caller themselves, so the verified
+            // super-admin flag from the auth context is the canonical source.
+            isSuperAdmin: authContext.isSuperAdmin,
+            nameFirst: user.nameFirst,
+            nameLast: user.nameLast,
+            unsignedAgreements,
+            // Caller's own active family memberships ({ id, role }); empty when none.
+            families,
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+};

@@ -1,5 +1,19 @@
-import { Router, type Express } from 'express';
-import { registerUsersRoutes } from './users';
+import type { Express } from 'express';
+import { Router } from 'express';
+import { registerMeRoutes } from './me';
+import { registerAgreementsRoutes } from './agreements';
+import { registerAdministrationsRoutes } from './administrations';
+import { registerRunsRoutes } from './runs';
+import { registerDistrictsRoutes } from './districts';
+import { registerSchoolsRoutes } from './schools';
+import { registerGroupsRoutes } from './groups';
+import { registerFamiliesRoutes } from './families';
+import { registerTasksRoutes } from './task';
+import { registerTaskVariantsRoutes } from './task-variants';
+import { registerTaskBundlesRoutes } from './task-bundles';
+import { registerClassesRoutes } from './classes';
+import { registerUserRoutes } from './users';
+import { registerSystemRoutes } from './system';
 import { API_VERSION } from '../constants/api';
 import { API_ROUTES } from '../constants/api-routes';
 import { version } from '../../package.json';
@@ -21,7 +35,23 @@ export function registerAllRoutes(app: Express) {
     });
   });
 
-  registerUsersRoutes(router);
+  registerMeRoutes(router);
+  registerAgreementsRoutes(router);
+  registerAdministrationsRoutes(router);
+  registerRunsRoutes(router);
+  registerDistrictsRoutes(router);
+  registerSchoolsRoutes(router);
+  registerGroupsRoutes(router);
+  registerFamiliesRoutes(router);
+  registerTasksRoutes(router);
+  registerTaskVariantsRoutes(router);
+  registerTaskBundlesRoutes(router);
+  registerClassesRoutes(router);
+  registerUserRoutes(router);
+  registerSystemRoutes(router);
 
+  // Sub-contracts carry no version prefix, so it is applied here. Clients get an equivalent prefix
+  // from the composed contract, but the two are defined independently: the mount point is ours to
+  // choose, so the backend keeps its own constant rather than importing the contract's.
   app.use(`/${API_VERSION.V1}`, router);
 }

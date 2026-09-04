@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   sodipodi:docname="star.svg"
+   inkscape:version="1.0 (4035a4f, 2020-05-01)"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 996.46283 1003.1545"
+   height="1003.1545mm"
+   width="996.46283mm">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     inkscape:window-maximized="0"
+     inkscape:window-y="38"
+     inkscape:window-x="0"
+     inkscape:window-height="831"
+     inkscape:window-width="1252"
+     showgrid="false"
+     inkscape:document-rotation="0"
+     inkscape:current-layer="layer1"
+     inkscape:document-units="mm"
+     inkscape:cy="2230.4499"
+     inkscape:cx="505.05966"
+     inkscape:zoom="0.095507751"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     transform="translate(19.843662,-6.7292074)"
+     id="layer1"
+     inkscape:groupmode="layer"
+     inkscape:label="Layer 1">
+    <path
+       transform="matrix(4.1291337,0,0,4.370333,69.429244,-26.867765)"
+       inkscape:transform-center-y="-52.563295"
+       inkscape:transform-center-x="-0.064960872"
+       d="M 173.1131,236.6131 96.736452,183.61672 24.864055,236.55325 51.664927,147.53796 -20.8905,95.54154 72.049994,93.523448 99.080671,8.4513576 129.72018,96.219395 218.98149,95.638375 144.97725,151.9001 Z"
+       inkscape:randomized="0"
+       inkscape:rounded="0"
+       inkscape:flatsided="false"
+       sodipodi:arg2="1.61751"
+       sodipodi:arg1="0.94288149"
+       sodipodi:r2="49.110769"
+       sodipodi:r1="126.10818"
+       sodipodi:cy="134.55952"
+       sodipodi:cx="99.029762"
+       sodipodi:sides="5"
+       id="path833"
+       style="opacity:1;fill:#2e1376;fill-opacity:1;stroke:#ffffff;stroke-width:1.17702;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       sodipodi:type="star" />
+  </g>
+</svg>

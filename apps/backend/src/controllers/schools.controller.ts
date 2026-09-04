@@ -1,0 +1,346 @@
+import { StatusCodes } from 'http-status-codes';
+import type {
+  CreateSchoolServiceInput,
+  SchoolWithEmbeds,
+  UpdateSchoolServiceInput,
+} from '../services/school/school.service';
+import { SchoolService } from '../services/school/school.service';
+import type {
+  CreateSchoolRequest,
+  SchoolsListQuery,
+  SchoolDetail as ApiSchool,
+  SchoolClassesListQuery,
+  SchoolClass as ApiSchoolClass,
+  EnrolledUsersQuery,
+  UpdateSchoolRequest,
+} from '@roar-platform/api-contract';
+import { SchoolEmbedOption } from '@roar-platform/api-contract';
+import { ApiError } from '../errors/api-error';
+import { toErrorResponse } from '../utils/to-error-response.util';
+import type { AuthContext } from '../types/auth-context';
+import { handleUserSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
+import type { Class } from '../db/schema';
+import { OrgType } from '../enums/org-type.enum';
+
+const schoolService = SchoolService();
+
+/**
+ * Maps a database Class entity to the API schema.
+ * Converts Date fields to ISO strings.
+ */
+function transformSchoolClass(classEntity: Class): ApiSchoolClass {
+  return {
+    id: classEntity.id,
+    name: classEntity.name,
+    schoolId: classEntity.schoolId,
+    districtId: classEntity.districtId,
+    classType: classEntity.classType,
+    grades: classEntity.grades,
+    courseId: classEntity.courseId,
+    number: classEntity.number,
+    period: classEntity.period,
+    subjects: classEntity.subjects,
+    schoolLevels: classEntity.schoolLevels,
+    createdAt: classEntity.createdAt.toISOString(),
+    updatedAt: classEntity.updatedAt?.toISOString() ?? null,
+  };
+}
+
+/**
+ * Maps a database School entity to the base API schema.
+ * Converts Date fields to ISO strings and transforms location data to match the contract.
+ */
+function transformSchoolBase(school: SchoolWithEmbeds): ApiSchool {
+  // Transform PostgreSQL point to GeoJSON format if present
+  let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
+  const { locationLatLong } = school;
+  if (locationLatLong) {
+    // PostgreSQL point type: { x: longitude, y: latitude }
+    coordinates = {
+      type: 'Point',
+      coordinates: [locationLatLong.x, locationLatLong.y],
+    };
+  }
+
+  // Build location object only if at least one field is present
+  const location = {
+    ...(school.locationAddressLine1 && { addressLine1: school.locationAddressLine1 }),
+    ...(school.locationAddressLine2 && { addressLine2: school.locationAddressLine2 }),
+    ...(school.locationCity && { city: school.locationCity }),
+    ...(school.locationStateProvince && { stateProvince: school.locationStateProvince }),
+    ...(school.locationPostalCode && { postalCode: school.locationPostalCode }),
+    ...(school.locationCountry && { country: school.locationCountry }),
+    ...(coordinates && { coordinates }),
+  };
+
+  // Build identifiers object only if at least one field is present
+  const identifiers = {
+    ...(school.mdrNumber && { mdrNumber: school.mdrNumber }),
+    ...(school.ncesId && { ncesId: school.ncesId }),
+    ...(school.stateId && { stateId: school.stateId }),
+    ...(school.schoolNumber && { schoolNumber: school.schoolNumber }),
+  };
+
+  return {
+    id: school.id,
+    name: school.name,
+    abbreviation: school.abbreviation,
+    orgType: OrgType.SCHOOL,
+    parentOrgId: school.parentOrgId,
+    ...(Object.keys(location).length > 0 && { location }),
+    ...(Object.keys(identifiers).length > 0 && { identifiers }),
+    ...(school.rosteringEnded && { rosteringEnded: school.rosteringEnded.toISOString() }),
+  };
+}
+
+/**
+ * Maps a database School entity to the full API schema, attaching
+ * optional embed data (counts) when present.
+ */
+function transformSchool(school: SchoolWithEmbeds): ApiSchool {
+  const result: ApiSchool = transformSchoolBase(school);
+
+  // Include counts if embedded
+  if (school.counts) {
+    result.counts = school.counts;
+  }
+
+  return result;
+}
+
+/**
+ * SchoolsController
+ *
+ * Handles HTTP concerns for the /schools endpoints.
+ * Calls SchoolService for business logic and formats responses.
+ */
+export const SchoolsController = {
+  /**
+   * Create a new school under an existing district.
+   *
+   * Restricted to super admins (enforced in SchoolService). Returns the new
+   * school id only — clients that need the full entity should follow up with
+   * GET /schools/:schoolId.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param body - Request body with districtId and school fields
+   */
+  create: async (authContext: AuthContext, body: CreateSchoolRequest) => {
+    try {
+      const serviceInput: CreateSchoolServiceInput = {
+        districtId: body.districtId,
+        name: body.name,
+        abbreviation: body.abbreviation,
+        location: body.location,
+        identifiers: body.identifiers,
+      };
+
+      const { id } = await schoolService.create(authContext, serviceInput);
+
+      return {
+        status: StatusCodes.CREATED as const,
+        body: {
+          data: { id },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.FORBIDDEN,
+          StatusCodes.UNPROCESSABLE_ENTITY,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List schools with pagination and sorting.
+   *
+   * @param authContext - User's authentication context containing userId and super admin flag
+   * @param query - Query parameters including pagination and sorting
+   * @returns Paginated list of schools transformed to API response format
+   */
+  list: async (authContext: AuthContext, query: SchoolsListQuery) => {
+    try {
+      const { page, perPage, sortBy, sortOrder, includeEnded, embed } = query;
+
+      // Check if counts embed is requested
+      const embedCounts = embed?.includes(SchoolEmbedOption.COUNTS) ?? false;
+
+      const result = await schoolService.list(authContext, {
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+        ...(includeEnded !== undefined && { includeEnded }),
+        ...(embedCounts && { embedCounts }),
+      });
+
+      // Transform to API response format
+      const items = result.items.map(transformSchool);
+
+      const totalPages = Math.ceil(result.totalItems / perPage);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get a single school by ID.
+   *
+   * @param authContext - User's authentication context containing userId and super admin flag
+   * @param schoolId - UUID of the school to retrieve
+   * @returns School data transformed to API response format
+   */
+  getById: async (authContext: AuthContext, schoolId: string) => {
+    try {
+      const school = await schoolService.getById(authContext, schoolId);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformSchool(school),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update a school.
+   *
+   * Restricted to super admins (enforced in SchoolService). Returns the updated
+   * school id only — clients that need the full entity should follow up with
+   * GET /schools/:schoolId.
+   *
+   * @param authContext - User's authentication context
+   * @param schoolId - UUID of the school to update
+   * @param body - Request body with the mutable school fields
+   */
+  update: async (authContext: AuthContext, schoolId: string, body: UpdateSchoolRequest) => {
+    try {
+      const serviceInput: UpdateSchoolServiceInput = {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.abbreviation !== undefined && { abbreviation: body.abbreviation }),
+        ...(body.location !== undefined && { location: body.location }),
+        ...(body.identifiers !== undefined && { identifiers: body.identifiers }),
+      };
+
+      const { id } = await schoolService.update(authContext, schoolId, serviceInput);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: { id },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List classes in a school with pagination, sorting, and filtering.
+   *
+   * @param authContext - User's authentication context containing userId and super admin flag
+   * @param schoolId - UUID of the school to list classes for
+   * @param query - Query parameters including pagination, sorting, and filtering
+   * @returns Paginated list of classes transformed to API response format
+   */
+  listClasses: async (authContext: AuthContext, schoolId: string, query: SchoolClassesListQuery) => {
+    try {
+      const { page, perPage, sortBy, sortOrder, filter } = query;
+
+      const result = await schoolService.listSchoolClasses(authContext, schoolId, {
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+        filter,
+      });
+
+      const items = result.items.map(transformSchoolClass);
+      const totalPages = Math.ceil(result.totalItems / perPage);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Lists users in a school with pagination and filtering.
+   * @param authContext The authentication context.
+   * @param schoolId The ID of the school.
+   * @param query The query parameters for listing users.
+   * @returns The list of users in the school.
+   */
+  listUsers: async (authContext: AuthContext, schoolId: string, query: EnrolledUsersQuery) => {
+    try {
+      const { page, perPage } = query;
+
+      const result = await schoolService.listUsers(authContext, schoolId, query);
+      return handleUserSubResourceResponse(result, page, perPage);
+    } catch (error) {
+      return handleSubResourceError(error);
+    }
+  },
+};

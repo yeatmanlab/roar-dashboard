@@ -1,0 +1,561 @@
+sentence,answer,direction,difficulty,itemId,corpusId,form,itemNum,itemId_old
+Fish can sing.,FALSE,left,easy,aiv3_form1_1,aiv3,1,1,AI-pset-4-11
+Kids like to play games.,TRUE,right,easy,aiv3_form1_2,aiv3,1,2,AI-pset-45-8
+All dogs have wings.,FALSE,left,easy,aiv3_form1_3,aiv3,1,3,AI-pset-20-3
+Many kids love pizza.,TRUE,right,easy,aiv3_form1_4,aiv3,1,4,AI-pset-39-7
+Birds can be noisy.,TRUE,right,easy,aiv3_form1_5,aiv3,1,5,AI-pset-30-14
+Bubbles have roots.,FALSE,left,easy,aiv3_form1_6,aiv3,1,6,AI-pset-37-9
+Babies can feel sleepy.,TRUE,right,easy,aiv3_form1_7,aiv3,1,7,AI-pset-6-8
+People sometimes eat fruits.,TRUE,right,easy,aiv3_form1_8,aiv3,1,8,AI-pset-36-12
+Pigs adore skydiving.,FALSE,left,easy,aiv3_form1_9,aiv3,1,9,AI-pset-28-5
+Some trees love to run.,FALSE,left,easy,aiv3_form1_10,aiv3,1,10,AI-pset-32-10
+People sometimes eat chocolate.,TRUE,right,easy,aiv3_form1_11,aiv3,1,11,AI-pset-48-5
+We can buy books at a bookstore.,TRUE,right,easy,aiv3_form1_12,aiv3,1,12,AI-pset-40-7
+Boxes can be used to store items.,TRUE,right,easy,aiv3_form1_13,aiv3,1,13,AI-pset-50-13
+Shoes are made from clouds.,FALSE,left,easy,aiv3_form1_14,aiv3,1,14,AI-pset-36-13
+Apples grow on ocean floors.,FALSE,left,easy,aiv3_form1_15,aiv3,1,15,AI-pset-33-11
+All doors are made of chocolate.,FALSE,left,easy,aiv3_form1_16,aiv3,1,16,AI-pset-5-11
+Bears frequently play football.,FALSE,left,easy,aiv3_form1_17,aiv3,1,17,AI-pset-43-3
+Balloons can be filled with air.,TRUE,right,easy,aiv3_form1_18,aiv3,1,18,AI-pset-23-1
+People usually breathe with their lungs.,TRUE,right,easy,aiv3_form1_19,aiv3,1,19,AI-pset-48-11
+People can fly by flapping their arms.,FALSE,left,easy,aiv3_form1_20,aiv3,1,20,AI-pset-7-6
+A truck can be used to transport goods.,TRUE,right,easy,aiv3_form1_21,aiv3,1,21,AI-pset-28-6
+Honey is sweet and sticky and comes from bees.,TRUE,right,easy,aiv3_form1_22,aiv3,1,22,AI-pset-34-5
+Windows can be made of cheese.,FALSE,left,easy,aiv3_form1_23,aiv3,1,23,AI-pset-8-11
+People can purchase shoes at the shopping mall.,TRUE,right,easy,aiv3_form1_24,aiv3,1,24,AI-pset-39-1
+Lions can roar.,TRUE,right,medium,aiv3_form1_25,aiv3,1,25,AI-pset-26-8
+Socks should be worn on your ears.,FALSE,left,easy,aiv3_form1_26,aiv3,1,26,AI-pset-20-5
+An eagle is a bird.,TRUE,right,medium,aiv3_form1_27,aiv3,1,27,AI-pset-24-14
+Teenagers can be stubborn.,TRUE,right,medium,aiv3_form1_28,aiv3,1,28,AI-pset-49-11
+The wind likes to fry eggs.,FALSE,left,easy,aiv3_form1_29,aiv3,1,29,AI-pset-24-10
+A boat sails on the water.,TRUE,right,medium,aiv3_form1_30,aiv3,1,30,AI-pset-40-8
+Stormy nights are always sunny.,FALSE,left,easy,aiv3_form1_31,aiv3,1,31,AI-pset-31-1
+Some people get to work by unicorn.,FALSE,left,easy,aiv3_form1_32,aiv3,1,32,AI-pset-17-1
+Houses can walk.,FALSE,left,medium,aiv3_form1_33,aiv3,1,33,AI-pset-7-8
+Vegetables are nutritious food.,TRUE,right,medium,aiv3_form1_34,aiv3,1,34,AI-pset-48-9
+Lions are large predators.,TRUE,right,medium,aiv3_form1_35,aiv3,1,35,AI-pset-22-1
+Horses can read.,FALSE,left,medium,aiv3_form1_36,aiv3,1,36,AI-pset-41-1
+Pillows are made from ice.,FALSE,left,medium,aiv3_form1_37,aiv3,1,37,AI-pset-47-6
+Chairs can climb mountains.,FALSE,left,medium,aiv3_form1_38,aiv3,1,38,AI-pset-22-12
+Posters can hang on the wall.,TRUE,right,medium,aiv3_form1_39,aiv3,1,39,AI-pset-16-13
+Birds can breathe underwater.,FALSE,left,medium,aiv3_form1_40,aiv3,1,40,AI-pset-24-7
+A lamp reads books.,FALSE,left,medium,aiv3_form1_41,aiv3,1,41,AI-pset-39-14
+A jacket is usually warm.,TRUE,right,medium,aiv3_form1_42,aiv3,1,42,AI-pset-20-14
+Feathers are made of steel.,FALSE,left,medium,aiv3_form1_43,aiv3,1,43,AI-pset-43-2
+People often color with crayons.,TRUE,right,medium,aiv3_form1_44,aiv3,1,44,AI-pset-50-8
+Stars ride on the river.,FALSE,left,medium,aiv3_form1_45,aiv3,1,45,AI-pset-36-7
+Washing machines clean clothes.,TRUE,right,medium,aiv3_form1_46,aiv3,1,46,AI-pset-11-1
+Hats enjoy brewing coffee.,FALSE,left,medium,aiv3_form1_47,aiv3,1,47,AI-pset-27-6
+Bakers bake things in ovens.,TRUE,right,medium,aiv3_form1_48,aiv3,1,48,AI-pset-47-13
+Birds can knit sweaters.,FALSE,left,medium,aiv3_form1_49,aiv3,1,49,AI-pset-16-1
+Kids often eat cereal using a spoon.,TRUE,right,medium,aiv3_form1_50,aiv3,1,50,AI-pset-18-14
+People can buy computers at the bakery.,FALSE,left,medium,aiv3_form1_51,aiv3,1,51,AI-pset-42-13
+Sleep is important for the body and mind to rest and restore.,TRUE,right,medium,aiv3_form1_52,aiv3,1,52,AI-pset-23-9
+Mirrors enjoy eating toast.,FALSE,left,medium,aiv3_form1_53,aiv3,1,53,AI-pset-24-6
+We feel hot when fire is near.,TRUE,right,medium,aiv3_form1_54,aiv3,1,54,AI-pset-19-2
+Most fish wear hats when they go swimming.,FALSE,left,medium,aiv3_form1_55,aiv3,1,55,AI-pset-29-14
+Kittens are aged elephants and can be very moody.,FALSE,left,medium,aiv3_form1_56,aiv3,1,56,AI-pset-21-3
+People wear scarves to keep their necks warm.,TRUE,right,medium,aiv3_form1_57,aiv3,1,57,AI-pset-15-6
+Rain helps plants to grow and is part of the water cycle.,TRUE,right,medium,aiv3_form1_58,aiv3,1,58,AI-pset-34-1
+Mountains are home to sea creatures.,FALSE,left,medium,aiv3_form1_59,aiv3,1,59,AI-pset-16-3
+A dolphin has fins.,TRUE,right,hard,aiv3_form1_60,aiv3,1,60,AI-pset-28-11
+Running shoes help you run faster.,TRUE,right,hard,aiv3_form1_61,aiv3,1,61,AI-pset-8-10
+Tennis is a game you play with small mint candies.,FALSE,left,medium,aiv3_form1_62,aiv3,1,62,AI-pset-18-10
+Shoes should be worn on your feet.,TRUE,right,hard,aiv3_form1_63,aiv3,1,63,AI-pset-44-9
+Mechanics fix cars in garages.,TRUE,right,hard,aiv3_form1_64,aiv3,1,64,AI-pset-12-1
+Cats often have feathers.,FALSE,left,hard,aiv3_form1_65,aiv3,1,65,AI-pset-8-14
+Rain is sand that falls from clouds in the sky.,FALSE,left,hard,aiv3_form1_66,aiv3,1,66,AI-pset-2-12
+A number of people walk to work.,TRUE,right,hard,aiv3_form1_67,aiv3,1,67,AI-pset-30-3
+A motorcycle can be used to transport whales.,FALSE,left,hard,aiv3_form1_68,aiv3,1,68,AI-pset-43-12
+Sunglasses are useful for keeping people dry when it snows.,FALSE,left,hard,aiv3_form1_69,aiv3,1,69,AI-pset-1-10
+Curtains can hang in a window.,TRUE,right,hard,aiv3_form1_70,aiv3,1,70,AI-pset-21-14
+Dogs have tails.,TRUE,right,easy,aiv3_form2_1,aiv3,2,1,AI-pset-10-10
+All roses are purple.,FALSE,left,easy,aiv3_form2_2,aiv3,2,2,AI-pset-44-14
+Cats are living things.,TRUE,right,easy,aiv3_form2_3,aiv3,2,3,AI-pset-17-5
+Birds can fly in the sky.,TRUE,right,easy,aiv3_form2_4,aiv3,2,4,AI-pset-22-9
+All books are blue.,FALSE,left,easy,aiv3_form2_5,aiv3,2,5,AI-pset-30-7
+Books can fly around a room.,FALSE,left,easy,aiv3_form2_6,aiv3,2,6,AI-pset-46-6
+Some shirts have buttons.,TRUE,right,easy,aiv3_form2_7,aiv3,2,7,AI-pset-46-11
+Honey is made by cows.,FALSE,left,easy,aiv3_form2_8,aiv3,2,8,AI-pset-45-10
+Doors can open and close.,TRUE,right,easy,aiv3_form2_9,aiv3,2,9,AI-pset-44-10
+Flowers can be found in a garden.,TRUE,right,easy,aiv3_form2_10,aiv3,2,10,AI-pset-6-12
+Lemonade is always made of apples.,FALSE,left,easy,aiv3_form2_11,aiv3,2,11,AI-pset-31-11
+An apple has six legs.,FALSE,left,easy,aiv3_form2_12,aiv3,2,12,AI-pset-34-14
+Schools are floating in the air.,FALSE,left,easy,aiv3_form2_13,aiv3,2,13,AI-pset-2-1
+Summer days can be really hot.,TRUE,right,easy,aiv3_form2_14,aiv3,2,14,AI-pset-26-13
+Cups must have feathers.,FALSE,left,easy,aiv3_form2_15,aiv3,2,15,AI-pset-29-13
+Apple pie is always made from bananas.,FALSE,left,easy,aiv3_form2_16,aiv3,2,16,AI-pset-23-12
+People serve dinners on clouds.,FALSE,left,easy,aiv3_form2_17,aiv3,2,17,AI-pset-27-11
+Some drinks can be very cold.,TRUE,right,easy,aiv3_form2_18,aiv3,2,18,AI-pset-30-6
+A clock can hang on the wall.,TRUE,right,easy,aiv3_form2_19,aiv3,2,19,AI-pset-26-5
+Tigers enjoy knitting sweaters.,FALSE,left,easy,aiv3_form2_20,aiv3,2,20,AI-pset-1-13
+Most apartments have a kitchen.,TRUE,right,easy,aiv3_form2_21,aiv3,2,21,AI-pset-48-12
+Dolphins can be found in the desert.,FALSE,left,easy,aiv3_form2_22,aiv3,2,22,AI-pset-47-4
+Many children play games with toys.,TRUE,right,easy,aiv3_form2_23,aiv3,2,23,AI-pset-5-9
+Doors love using pink chalk.,FALSE,left,easy,aiv3_form2_24,aiv3,2,24,AI-pset-14-7
+A pair of socks is something you might wear.,TRUE,right,easy,aiv3_form2_25,aiv3,2,25,AI-pset-18-8
+Doctors are trained professionals who help us when we are sick.,TRUE,right,easy,aiv3_form2_26,aiv3,2,26,AI-pset-24-2
+Many librarians work inside a power plant.,FALSE,left,easy,aiv3_form2_27,aiv3,2,27,AI-pset-23-5
+Reading books is one way to learn new things at any age.,TRUE,right,easy,aiv3_form2_28,aiv3,2,28,AI-pset-49-2
+Rivers are known to save books in caves.,FALSE,left,easy,aiv3_form2_29,aiv3,2,29,AI-pset-31-12
+A car has four wheels.,TRUE,right,medium,aiv3_form2_30,aiv3,2,30,AI-pset-24-12
+Lollipops grow on trees.,FALSE,left,medium,aiv3_form2_31,aiv3,2,31,AI-pset-31-13
+Flowers have petals.,TRUE,right,medium,aiv3_form2_32,aiv3,2,32,AI-pset-3-4
+Birds can be different colors.,TRUE,right,medium,aiv3_form2_33,aiv3,2,33,AI-pset-44-13
+Dogs bark at strangers.,TRUE,right,medium,aiv3_form2_34,aiv3,2,34,AI-pset-1-8
+A car has four tires.,TRUE,right,medium,aiv3_form2_35,aiv3,2,35,AI-pset-27-2
+Clouds are birds.,FALSE,left,medium,aiv3_form2_36,aiv3,2,36,AI-pset-45-6
+A pillow can be extremely fluffy.,TRUE,right,medium,aiv3_form2_37,aiv3,2,37,AI-pset-17-2
+Most books are made of paper.,TRUE,right,medium,aiv3_form2_38,aiv3,2,38,AI-pset-18-5
+Libraries are where you borrow books.,TRUE,right,medium,aiv3_form2_39,aiv3,2,39,AI-pset-40-11
+Tables like to sing.,FALSE,left,medium,aiv3_form2_40,aiv3,2,40,AI-pset-40-4
+Chefs prepare meals in kitchens.,TRUE,right,medium,aiv3_form2_41,aiv3,2,41,AI-pset-39-5
+Plants have feathers.,FALSE,left,medium,aiv3_form2_42,aiv3,2,42,AI-pset-15-7
+Raincoats are used for protection against rain.,TRUE,right,medium,aiv3_form2_43,aiv3,2,43,AI-pset-37-8
+Every book is a butterfly.,FALSE,left,medium,aiv3_form2_44,aiv3,2,44,AI-pset-6-9
+Umbrellas are used to keep dry in the rain.,TRUE,right,medium,aiv3_form2_45,aiv3,2,45,AI-pset-44-11
+Couches help you dance better.,FALSE,left,medium,aiv3_form2_46,aiv3,2,46,AI-pset-37-2
+Blueberry pie is always made of oranges.,FALSE,left,medium,aiv3_form2_47,aiv3,2,47,AI-pset-31-14
+Eggs are boiled in wardrobes.,FALSE,left,medium,aiv3_form2_48,aiv3,2,48,AI-pset-42-9
+Every door is locked forever.,FALSE,left,medium,aiv3_form2_49,aiv3,2,49,AI-pset-38-9
+Boats are sailed by sailors.,TRUE,right,medium,aiv3_form2_50,aiv3,2,50,AI-pset-47-1
+Dancing for hours can be tiring.,TRUE,right,medium,aiv3_form2_51,aiv3,2,51,AI-pset-5-1
+Kids usually clean their faces with jam.,FALSE,left,medium,aiv3_form2_52,aiv3,2,52,AI-pset-40-12
+Chairs can heat up a room.,FALSE,left,medium,aiv3_form2_53,aiv3,2,53,AI-pset-37-1
+Most adults know how to use a washing machine.,TRUE,right,medium,aiv3_form2_54,aiv3,2,54,AI-pset-20-4
+Rainbows make the dishes sparkle.,FALSE,left,medium,aiv3_form2_55,aiv3,2,55,AI-pset-17-11
+Artists create works of art in studios.,TRUE,right,medium,aiv3_form2_56,aiv3,2,56,AI-pset-47-11
+Mountains walk during winter.,FALSE,left,medium,aiv3_form2_57,aiv3,2,57,AI-pset-4-7
+Shells can be found on the beach.,TRUE,right,hard,aiv3_form2_58,aiv3,2,58,AI-pset-50-6
+People serve dinner on tree branches.,FALSE,left,medium,aiv3_form2_59,aiv3,2,59,AI-pset-46-1
+Fish typically use hammers to build things.,FALSE,left,medium,aiv3_form2_60,aiv3,2,60,AI-pset-8-6
+People can become invisible when they close their eyes.,FALSE,left,medium,aiv3_form2_61,aiv3,2,61,AI-pset-33-3
+Some coats have hoods.,TRUE,right,hard,aiv3_form2_62,aiv3,2,62,AI-pset-38-13
+People occasionally eat cookies.,TRUE,right,hard,aiv3_form2_63,aiv3,2,63,AI-pset-10-2
+Tigers are tiny domestic dogs that are known for their checks.,FALSE,left,medium,aiv3_form2_64,aiv3,2,64,AI-pset-6-1
+Paper can be made from trees.,TRUE,right,hard,aiv3_form2_65,aiv3,2,65,AI-pset-5-2
+The letter Z is an animal.,FALSE,left,hard,aiv3_form2_66,aiv3,2,66,AI-pset-45-3
+Many buildings have chimneys on the roof.,TRUE,right,hard,aiv3_form2_67,aiv3,2,67,AI-pset-10-9
+Cycling is an activity that you do with a pen.,FALSE,left,hard,aiv3_form2_68,aiv3,2,68,AI-pset-8-7
+Bottles wear mittens to keep their water warm.,FALSE,left,hard,aiv3_form2_69,aiv3,2,69,AI-pset-26-7
+Robots are machines that can do tasks automatically.,TRUE,right,hard,aiv3_form2_70,aiv3,2,70,AI-pset-3-1
+Cows like to bark.,FALSE,left,easy,aiv3_form3_1,aiv3,3,1,AI-pset-47-12
+Fish like to walk on land.,FALSE,left,easy,aiv3_form3_2,aiv3,3,2,AI-pset-32-8
+Children can laugh a lot.,TRUE,right,easy,aiv3_form3_3,aiv3,3,3,AI-pset-27-14
+People can ride on clouds.,FALSE,left,easy,aiv3_form3_4,aiv3,3,4,AI-pset-50-9
+A librarian works in a library.,TRUE,right,easy,aiv3_form3_5,aiv3,3,5,AI-pset-2-9
+A kitten can be very playful.,TRUE,right,easy,aiv3_form3_6,aiv3,3,6,AI-pset-12-9
+The color of a banana is yellow.,TRUE,right,easy,aiv3_form3_7,aiv3,3,7,AI-pset-1-9
+Fish like to swim in water.,TRUE,right,easy,aiv3_form3_8,aiv3,3,8,AI-pset-31-10
+Frogs can sing opera.,FALSE,left,easy,aiv3_form3_9,aiv3,3,9,AI-pset-16-6
+Clouds float in the sky.,TRUE,right,easy,aiv3_form3_10,aiv3,3,10,AI-pset-25-2
+Summer is a type of soda.,FALSE,left,easy,aiv3_form3_11,aiv3,3,11,AI-pset-9-10
+Whales can fit in a fishbowl.,FALSE,left,easy,aiv3_form3_12,aiv3,3,12,AI-pset-26-14
+Sandwiches can perform ballet.,FALSE,left,easy,aiv3_form3_13,aiv3,3,13,AI-pset-25-10
+Fish can be found in a river.,TRUE,right,easy,aiv3_form3_14,aiv3,3,14,AI-pset-31-4
+Gloves can keep your hands warm.,TRUE,right,easy,aiv3_form3_15,aiv3,3,15,AI-pset-3-9
+Some children like to ride bikes.,TRUE,right,easy,aiv3_form3_16,aiv3,3,16,AI-pset-45-1
+Schools are places where children learn.,TRUE,right,easy,aiv3_form3_17,aiv3,3,17,AI-pset-41-6
+Oceans are full of bamboo.,FALSE,left,easy,aiv3_form3_18,aiv3,3,18,AI-pset-35-5
+The sun typically rises in the morning.,TRUE,right,easy,aiv3_form3_19,aiv3,3,19,AI-pset-34-8
+A dog may wag its tail when happy.,TRUE,right,easy,aiv3_form3_20,aiv3,3,20,AI-pset-10-5
+Submarines are operated by fish.,FALSE,left,easy,aiv3_form3_21,aiv3,3,21,AI-pset-14-12
+Elephants live underwater in the ocean.,FALSE,left,easy,aiv3_form3_22,aiv3,3,22,AI-pset-20-9
+"In fall, many leaves change colors and fall from the trees.",TRUE,right,easy,aiv3_form3_23,aiv3,3,23,AI-pset-50-11
+Butterflies are larger than buildings.,FALSE,left,easy,aiv3_form3_24,aiv3,3,24,AI-pset-4-2
+Birds have beaks.,TRUE,right,medium,aiv3_form3_25,aiv3,3,25,AI-pset-50-10
+Bicycles have pedals.,TRUE,right,medium,aiv3_form3_26,aiv3,3,26,AI-pset-36-2
+Lions compete in spelling bees.,FALSE,left,easy,aiv3_form3_27,aiv3,3,27,AI-pset-24-13
+Walls sometimes drink lemonade.,FALSE,left,easy,aiv3_form3_28,aiv3,3,28,AI-pset-22-3
+Birds chirp in the morning.,TRUE,right,medium,aiv3_form3_29,aiv3,3,29,AI-pset-44-5
+Fish can breathe underwater.,TRUE,right,medium,aiv3_form3_30,aiv3,3,30,AI-pset-29-10
+Birds like to build nests.,TRUE,right,medium,aiv3_form3_31,aiv3,3,31,AI-pset-1-2
+All panda bears swim in large oceans.,FALSE,left,easy,aiv3_form3_32,aiv3,3,32,AI-pset-16-7
+Plants often grow in a garden.,TRUE,right,medium,aiv3_form3_33,aiv3,3,33,AI-pset-43-6
+"When a traffic light is pink, you should start flying.",FALSE,left,easy,aiv3_form3_34,aiv3,3,34,AI-pset-44-1
+Many people like to cook food.,TRUE,right,medium,aiv3_form3_35,aiv3,3,35,AI-pset-21-2
+Oceans are always dry.,FALSE,left,medium,aiv3_form3_36,aiv3,3,36,AI-pset-1-3
+Birds enjoy flying in the sky.,TRUE,right,medium,aiv3_form3_37,aiv3,3,37,AI-pset-18-3
+Cats can play piano.,FALSE,left,medium,aiv3_form3_38,aiv3,3,38,AI-pset-12-4
+Kangaroos carry their young in pouches.,TRUE,right,medium,aiv3_form3_39,aiv3,3,39,AI-pset-35-11
+Cows lay eggs.,FALSE,left,medium,aiv3_form3_40,aiv3,3,40,AI-pset-10-4
+Buses are driven by drivers.,TRUE,right,medium,aiv3_form3_41,aiv3,3,41,AI-pset-21-8
+Leaves often fall in the autumn.,TRUE,right,medium,aiv3_form3_42,aiv3,3,42,AI-pset-24-4
+Cotton candy comes from sheep.,FALSE,left,medium,aiv3_form3_43,aiv3,3,43,AI-pset-25-11
+Refrigerators help to keep food items cold.,TRUE,right,medium,aiv3_form3_44,aiv3,3,44,AI-pset-22-4
+Cupboards can sing.,FALSE,left,medium,aiv3_form3_45,aiv3,3,45,AI-pset-17-9
+People generally paint their houses with paint.,TRUE,right,medium,aiv3_form3_46,aiv3,3,46,AI-pset-28-10
+Bracelets can be made of water.,FALSE,left,medium,aiv3_form3_47,aiv3,3,47,AI-pset-28-8
+Airplanes are crafted from leaves.,FALSE,left,medium,aiv3_form3_48,aiv3,3,48,AI-pset-50-7
+Salt is often salty to taste.,TRUE,right,medium,aiv3_form3_49,aiv3,3,49,AI-pset-22-10
+Books are made of one page.,FALSE,left,medium,aiv3_form3_50,aiv3,3,50,AI-pset-18-9
+Letters are used to make words and sentences.,TRUE,right,medium,aiv3_form3_51,aiv3,3,51,AI-pset-4-14
+Deserts are full of roses.,FALSE,left,medium,aiv3_form3_52,aiv3,3,52,AI-pset-49-9
+Students sometimes get praise when they are helpful to others.,TRUE,right,medium,aiv3_form3_53,aiv3,3,53,AI-pset-25-7
+Canes help people to walk.,TRUE,right,hard,aiv3_form3_54,aiv3,3,54,AI-pset-14-13
+Candy is always spicy to taste.,FALSE,left,medium,aiv3_form3_55,aiv3,3,55,AI-pset-9-13
+Most kittens know how to knit.,FALSE,left,medium,aiv3_form3_56,aiv3,3,56,AI-pset-9-1
+Everyone has a unique fingerprint.,TRUE,right,hard,aiv3_form3_57,aiv3,3,57,AI-pset-31-6
+Humans steer boats in the desert.,FALSE,left,medium,aiv3_form3_58,aiv3,3,58,AI-pset-33-8
+Fishing is an activity that you perform with a car.,FALSE,left,medium,aiv3_form3_59,aiv3,3,59,AI-pset-13-12
+Pillows can cool down a room.,FALSE,left,medium,aiv3_form3_60,aiv3,3,60,AI-pset-39-12
+Turtles have hard shells to protect themselves.,TRUE,right,hard,aiv3_form3_61,aiv3,3,61,AI-pset-9-14
+Cacti are common residents of the ocean.,FALSE,left,medium,aiv3_form3_62,aiv3,3,62,AI-pset-12-3
+People trade vegetables for books in most libraries.,FALSE,left,medium,aiv3_form3_63,aiv3,3,63,AI-pset-5-10
+Coffee is always cold.,FALSE,left,hard,aiv3_form3_64,aiv3,3,64,AI-pset-13-13
+Cookies usually sprout in a desert.,FALSE,left,hard,aiv3_form3_65,aiv3,3,65,AI-pset-6-3
+People often cut vegetables with knives.,TRUE,right,hard,aiv3_form3_66,aiv3,3,66,AI-pset-23-7
+Water is essential for every living thing on Earth.,TRUE,right,hard,aiv3_form3_67,aiv3,3,67,AI-pset-47-8
+People generally wash their hair with shampoo.,TRUE,right,hard,aiv3_form3_68,aiv3,3,68,AI-pset-34-7
+Summer is a kind of ice cream flavor.,FALSE,left,hard,aiv3_form3_69,aiv3,3,69,AI-pset-6-4
+Chefs bake cakes in the classroom.,FALSE,left,hard,aiv3_form3_70,aiv3,3,70,AI-pset-19-1
+Pizzas grow in soil.,FALSE,left,easy,aiv3_form4_1,aiv3,4,1,AI-pset-19-10
+Cows give us milk.,TRUE,right,easy,aiv3_form4_2,aiv3,4,2,AI-pset-43-7
+Elephants play basketball regularly.,FALSE,left,easy,aiv3_form4_3,aiv3,4,3,AI-pset-28-14
+People enjoy watching movies.,TRUE,right,easy,aiv3_form4_4,aiv3,4,4,AI-pset-49-14
+Giraffes are tall animals.,TRUE,right,easy,aiv3_form4_5,aiv3,4,5,AI-pset-3-12
+Whales are a type of bird.,FALSE,left,easy,aiv3_form4_6,aiv3,4,6,AI-pset-37-6
+Many children eat candy.,TRUE,right,easy,aiv3_form4_7,aiv3,4,7,AI-pset-38-2
+A motorcycle has two wheels.,TRUE,right,easy,aiv3_form4_8,aiv3,4,8,AI-pset-9-9
+Cats can speak French.,FALSE,left,easy,aiv3_form4_9,aiv3,4,9,AI-pset-2-7
+Nurses provide care in hospitals.,TRUE,right,easy,aiv3_form4_10,aiv3,4,10,AI-pset-19-9
+Snakes have four legs.,FALSE,left,easy,aiv3_form4_11,aiv3,4,11,AI-pset-14-9
+Students can study in the classroom.,TRUE,right,easy,aiv3_form4_12,aiv3,4,12,AI-pset-38-6
+Music comes out of instruments.,TRUE,right,easy,aiv3_form4_13,aiv3,4,13,AI-pset-32-3
+Rainbows can talk to people.,FALSE,left,easy,aiv3_form4_14,aiv3,4,14,AI-pset-10-7
+There are seven days in a week.,TRUE,right,easy,aiv3_form4_15,aiv3,4,15,AI-pset-33-4
+Some toddlers enjoy playing with toy cars.,TRUE,right,easy,aiv3_form4_16,aiv3,4,16,AI-pset-46-8
+Computers love to eat cookies.,FALSE,left,easy,aiv3_form4_17,aiv3,4,17,AI-pset-14-2
+Dolphins wear shoes when they swim.,FALSE,left,easy,aiv3_form4_18,aiv3,4,18,AI-pset-15-8
+"Butterflies have beautiful, colorful wings.",TRUE,right,easy,aiv3_form4_19,aiv3,4,19,AI-pset-2-4
+Most children know how to play a game.,TRUE,right,easy,aiv3_form4_20,aiv3,4,20,AI-pset-17-7
+A funny movie can make you feel better when you're upset.,TRUE,right,easy,aiv3_form4_21,aiv3,4,21,AI-pset-48-7
+Elephants have six legs.,FALSE,left,easy,aiv3_form4_22,aiv3,4,22,AI-pset-42-7
+Monkeys can drive cars on the road.,FALSE,left,easy,aiv3_form4_23,aiv3,4,23,AI-pset-16-5
+Doors like to grill cheese.,FALSE,left,easy,aiv3_form4_24,aiv3,4,24,AI-pset-44-8
+Lions regularly jump on trampolines.,FALSE,left,easy,aiv3_form4_25,aiv3,4,25,AI-pset-6-2
+Salads are healthy food.,TRUE,right,medium,aiv3_form4_26,aiv3,4,26,AI-pset-39-10
+Babies can cry often.,TRUE,right,medium,aiv3_form4_27,aiv3,4,27,AI-pset-7-11
+Ovens are where you store extra shoes.,FALSE,left,easy,aiv3_form4_28,aiv3,4,28,AI-pset-49-8
+A dog is a deer that barks.,FALSE,left,easy,aiv3_form4_29,aiv3,4,29,AI-pset-21-11
+Clouds carry umbrellas when it's sunny.,FALSE,left,easy,aiv3_form4_30,aiv3,4,30,AI-pset-15-12
+Lions have feathers.,FALSE,left,medium,aiv3_form4_31,aiv3,4,31,AI-pset-19-12
+Bikes have two wheels.,TRUE,right,medium,aiv3_form4_32,aiv3,4,32,AI-pset-2-3
+A baker works at a bakery.,TRUE,right,medium,aiv3_form4_33,aiv3,4,33,AI-pset-32-9
+An oven cooks food.,TRUE,right,medium,aiv3_form4_34,aiv3,4,34,AI-pset-31-7
+A bicycle needs wings to fly.,FALSE,left,medium,aiv3_form4_35,aiv3,4,35,AI-pset-15-5
+Chicks are young chickens.,TRUE,right,medium,aiv3_form4_36,aiv3,4,36,AI-pset-12-14
+Squares are round.,FALSE,left,medium,aiv3_form4_37,aiv3,4,37,AI-pset-13-9
+Lemons are often sour to taste.,TRUE,right,medium,aiv3_form4_38,aiv3,4,38,AI-pset-42-10
+Comedy movies often make people laugh.,TRUE,right,medium,aiv3_form4_39,aiv3,4,39,AI-pset-43-4
+Rainbows can appear after rain.,TRUE,right,medium,aiv3_form4_40,aiv3,4,40,AI-pset-22-14
+A triangle is round.,FALSE,left,medium,aiv3_form4_41,aiv3,4,41,AI-pset-8-4
+Pencils love to go swimming.,FALSE,left,medium,aiv3_form4_42,aiv3,4,42,AI-pset-20-1
+A zoo has more than one animal.,TRUE,right,medium,aiv3_form4_43,aiv3,4,43,AI-pset-20-6
+Jellyfish have feathers and can sing.,FALSE,left,medium,aiv3_form4_44,aiv3,4,44,AI-pset-17-6
+Ice normally feels warm.,FALSE,left,medium,aiv3_form4_45,aiv3,4,45,AI-pset-9-7
+A mug can be used to drink coffee.,TRUE,right,medium,aiv3_form4_46,aiv3,4,46,AI-pset-15-13
+Pianos are usually made of paper.,FALSE,left,medium,aiv3_form4_47,aiv3,4,47,AI-pset-35-7
+Corn grows tall in the field.,TRUE,right,medium,aiv3_form4_48,aiv3,4,48,AI-pset-3-2
+Chess is a game that you play with pieces.,TRUE,right,medium,aiv3_form4_49,aiv3,4,49,AI-pset-23-14
+Some people prefer writing with pens.,TRUE,right,medium,aiv3_form4_50,aiv3,4,50,AI-pset-33-6
+Chairs are used to make things wet.,FALSE,left,medium,aiv3_form4_51,aiv3,4,51,AI-pset-35-12
+Lamps enjoy eating shoes.,FALSE,left,medium,aiv3_form4_52,aiv3,4,52,AI-pset-16-10
+Some clouds have buckles.,FALSE,left,medium,aiv3_form4_53,aiv3,4,53,AI-pset-34-6
+Bowling balls are sold at the forest.,FALSE,left,medium,aiv3_form4_54,aiv3,4,54,AI-pset-50-5
+"Food can be cooked in a kitchen before eating,",TRUE,right,medium,aiv3_form4_55,aiv3,4,55,AI-pset-21-6
+The moon is round.,TRUE,right,hard,aiv3_form4_56,aiv3,4,56,AI-pset-9-12
+Lamps can cool down a room.,FALSE,left,medium,aiv3_form4_57,aiv3,4,57,AI-pset-41-10
+Notebooks wear scarves to keep their papers warm.,FALSE,left,medium,aiv3_form4_58,aiv3,4,58,AI-pset-10-13
+A chair has four legs.,TRUE,right,hard,aiv3_form4_59,aiv3,4,59,AI-pset-2-6
+Airplanes are flown by pilots.,TRUE,right,hard,aiv3_form4_60,aiv3,4,60,AI-pset-31-2
+Horses enjoy galloping freely.,TRUE,right,hard,aiv3_form4_61,aiv3,4,61,AI-pset-1-11
+Chairs like to munch on cushions.,FALSE,left,medium,aiv3_form4_62,aiv3,4,62,AI-pset-28-3
+Bakeries are where you buy bread.,TRUE,right,hard,aiv3_form4_63,aiv3,4,63,AI-pset-29-2
+Most people commute to work by broomstick.,FALSE,left,medium,aiv3_form4_64,aiv3,4,64,AI-pset-10-14
+Pencil cases wear gloves to keep their contents warm.,FALSE,left,medium,aiv3_form4_65,aiv3,4,65,AI-pset-49-6
+Pine trees grow in forests.,TRUE,right,hard,aiv3_form4_66,aiv3,4,66,AI-pset-48-13
+Cheese comes from milk and can be enjoyed in many ways.,TRUE,right,hard,aiv3_form4_67,aiv3,4,67,AI-pset-19-3
+Curtains sometimes drink tea.,FALSE,left,hard,aiv3_form4_68,aiv3,4,68,AI-pset-40-2
+Most people dig holes with spoons.,FALSE,left,hard,aiv3_form4_69,aiv3,4,69,AI-pset-7-4
+Jelly is a type of furniture that is made from fruit juice.,FALSE,left,hard,aiv3_form4_70,aiv3,4,70,AI-pset-46-4
+Birds have feathers.,TRUE,right,easy,aiv3_form5_1,aiv3,5,1,AI-pset-41-4
+Apples have ears.,FALSE,left,easy,aiv3_form5_2,aiv3,5,2,AI-pset-38-4
+Rainbows are black and white.,FALSE,left,easy,aiv3_form5_3,aiv3,5,3,AI-pset-46-12
+Schools are built on clouds.,FALSE,left,easy,aiv3_form5_4,aiv3,5,4,AI-pset-1-6
+Adults can feel happy.,TRUE,right,easy,aiv3_form5_5,aiv3,5,5,AI-pset-46-9
+Books are stored in microwaves.,FALSE,left,easy,aiv3_form5_6,aiv3,5,6,AI-pset-19-13
+Gorillas can live in volcanoes.,FALSE,left,easy,aiv3_form5_7,aiv3,5,7,AI-pset-27-10
+Humans need food for survival.,TRUE,right,easy,aiv3_form5_8,aiv3,5,8,AI-pset-27-13
+Socks grow in gardens.,FALSE,left,easy,aiv3_form5_9,aiv3,5,9,AI-pset-9-11
+A shirt is something you can wear.,TRUE,right,easy,aiv3_form5_10,aiv3,5,10,AI-pset-36-9
+Some children go to art classes.,TRUE,right,easy,aiv3_form5_11,aiv3,5,11,AI-pset-7-10
+Apples fall from trees.,TRUE,right,easy,aiv3_form5_12,aiv3,5,12,AI-pset-35-1
+Some fish like to climb trees.,FALSE,left,easy,aiv3_form5_13,aiv3,5,13,AI-pset-38-10
+Monkeys are very good at climbing trees.,TRUE,right,easy,aiv3_form5_14,aiv3,5,14,AI-pset-37-7
+Monkeys grow from seeds.,FALSE,left,easy,aiv3_form5_15,aiv3,5,15,AI-pset-11-5
+Some children like to read books.,TRUE,right,easy,aiv3_form5_16,aiv3,5,16,AI-pset-13-10
+Lions pilot planes.,FALSE,left,easy,aiv3_form5_17,aiv3,5,17,AI-pset-30-4
+A lamp can be very bright.,TRUE,right,easy,aiv3_form5_18,aiv3,5,18,AI-pset-3-8
+The letter A is a color.,FALSE,left,easy,aiv3_form5_19,aiv3,5,19,AI-pset-38-7
+Spiders teach at universities.,FALSE,left,easy,aiv3_form5_20,aiv3,5,20,AI-pset-38-12
+My bed enjoys making soup.,FALSE,left,easy,aiv3_form5_21,aiv3,5,21,AI-pset-30-1
+Sports can be played with a ball.,TRUE,right,easy,aiv3_form5_22,aiv3,5,22,AI-pset-29-9
+Buildings love to eat hot-dogs.,FALSE,left,easy,aiv3_form5_23,aiv3,5,23,AI-pset-47-9
+A cat is a pet that meows.,TRUE,right,easy,aiv3_form5_24,aiv3,5,24,AI-pset-26-11
+Cities can be very busy places with many people.,TRUE,right,easy,aiv3_form5_25,aiv3,5,25,AI-pset-2-11
+Planes are commonly made of fruits.,FALSE,left,easy,aiv3_form5_26,aiv3,5,26,AI-pset-32-4
+Trees can provide shade on a sunny day.,TRUE,right,easy,aiv3_form5_27,aiv3,5,27,AI-pset-17-14
+Winter often brings with it cold temperatures and sometimes snow.,TRUE,right,easy,aiv3_form5_28,aiv3,5,28,AI-pset-45-4
+Honey comes from bees.,TRUE,right,medium,aiv3_form5_29,aiv3,5,29,AI-pset-37-5
+Roads keep their books in a puddle.,FALSE,left,easy,aiv3_form5_30,aiv3,5,30,AI-pset-47-2
+A pigeon is a bird.,TRUE,right,medium,aiv3_form5_31,aiv3,5,31,AI-pset-34-9
+Toys can be made of plastic.,TRUE,right,medium,aiv3_form5_32,aiv3,5,32,AI-pset-10-12
+Shoes can talk.,FALSE,left,medium,aiv3_form5_33,aiv3,5,33,AI-pset-10-3
+A bicycle has two wheels.,TRUE,right,medium,aiv3_form5_34,aiv3,5,34,AI-pset-18-11
+Books are round.,FALSE,left,medium,aiv3_form5_35,aiv3,5,35,AI-pset-3-13
+All rivers are orange.,FALSE,left,medium,aiv3_form5_36,aiv3,5,36,AI-pset-33-5
+A lion is a big cat that roars.,TRUE,right,medium,aiv3_form5_37,aiv3,5,37,AI-pset-6-13
+Music can be played with instruments.,TRUE,right,medium,aiv3_form5_38,aiv3,5,38,AI-pset-11-12
+Helicopters enjoy drinking tea.,FALSE,left,medium,aiv3_form5_39,aiv3,5,39,AI-pset-6-11
+A bunny has scales.,FALSE,left,medium,aiv3_form5_40,aiv3,5,40,AI-pset-46-5
+Squares have four sides.,TRUE,right,medium,aiv3_form5_41,aiv3,5,41,AI-pset-40-6
+Butterflies were once pandas.,FALSE,left,medium,aiv3_form5_42,aiv3,5,42,AI-pset-15-9
+Ink is used to erase.,FALSE,left,medium,aiv3_form5_43,aiv3,5,43,AI-pset-49-5
+Stars are plucked from trees.,FALSE,left,medium,aiv3_form5_44,aiv3,5,44,AI-pset-21-5
+Books enjoy sipping water.,FALSE,left,medium,aiv3_form5_45,aiv3,5,45,AI-pset-21-4
+Ducks enjoy swimming in the pond.,TRUE,right,medium,aiv3_form5_46,aiv3,5,46,AI-pset-1-5
+Leaves can be different colors.,TRUE,right,medium,aiv3_form5_47,aiv3,5,47,AI-pset-43-11
+Fire helps to freeze things.,FALSE,left,medium,aiv3_form5_48,aiv3,5,48,AI-pset-48-3
+Many people like to plant flowers.,TRUE,right,medium,aiv3_form5_49,aiv3,5,49,AI-pset-29-7
+Frogs are known for their painting skills.,FALSE,left,medium,aiv3_form5_50,aiv3,5,50,AI-pset-32-5
+Ice cream typically melts in heat.,TRUE,right,medium,aiv3_form5_51,aiv3,5,51,AI-pset-40-1
+Astronauts work at the bottom of the ocean.,FALSE,left,medium,aiv3_form5_52,aiv3,5,52,AI-pset-18-1
+Ladders help you to reach higher shelves.,TRUE,right,medium,aiv3_form5_53,aiv3,5,53,AI-pset-39-8
+Cakes are often eaten at celebrations like birthdays.,TRUE,right,medium,aiv3_form5_54,aiv3,5,54,AI-pset-6-6
+Lots of pilots work in bakeries.,FALSE,left,medium,aiv3_form5_55,aiv3,5,55,AI-pset-3-7
+The sky is always purple and covered in stars during the day.,FALSE,left,medium,aiv3_form5_56,aiv3,5,56,AI-pset-29-11
+Many different species of fish live in the ocean.,TRUE,right,medium,aiv3_form5_57,aiv3,5,57,AI-pset-22-6
+Most folks play board games alone in the dark.,FALSE,left,medium,aiv3_form5_58,aiv3,5,58,AI-pset-11-10
+Kids often learn through playing and exploring.,TRUE,right,medium,aiv3_form5_59,aiv3,5,59,AI-pset-40-14
+Cacti grow in deserts.,TRUE,right,hard,aiv3_form5_60,aiv3,5,60,AI-pset-42-8
+You can buy flowers at the florist.,TRUE,right,hard,aiv3_form5_61,aiv3,5,61,AI-pset-20-13
+Cups keep their books in the cupboard.,FALSE,left,medium,aiv3_form5_62,aiv3,5,62,AI-pset-25-5
+Carrots are a kind of vegetable.,TRUE,right,hard,aiv3_form5_63,aiv3,5,63,AI-pset-13-1
+Dogs are fond of chewing bones.,TRUE,right,hard,aiv3_form5_64,aiv3,5,64,AI-pset-7-14
+Lamps love to jump.,FALSE,left,hard,aiv3_form5_65,aiv3,5,65,AI-pset-32-11
+All tulips are orange.,FALSE,left,hard,aiv3_form5_66,aiv3,5,66,AI-pset-40-3
+Carrots are a kind of fruit.,FALSE,left,hard,aiv3_form5_67,aiv3,5,67,AI-pset-34-13
+Most chocolates are white and salty.,FALSE,left,hard,aiv3_form5_68,aiv3,5,68,AI-pset-10-1
+Pilots fly planes while on duty.,TRUE,right,hard,aiv3_form5_69,aiv3,5,69,AI-pset-9-5
+"If a sign says 'no entry,' you shouldn't go that way.",TRUE,right,hard,aiv3_form5_70,aiv3,5,70,AI-pset-3-14
+Mountains can dance.,FALSE,left,easy,aiv3_form6_1,aiv3,6,1,AI-pset-23-10
+The snow is cold.,TRUE,right,easy,aiv3_form6_2,aiv3,6,2,AI-pset-31-9
+Dogs have seven tails.,FALSE,left,easy,aiv3_form6_3,aiv3,6,3,AI-pset-42-12
+Dogs have four legs.,TRUE,right,easy,aiv3_form6_4,aiv3,6,4,AI-pset-32-6
+Chairs are made of water.,FALSE,left,easy,aiv3_form6_5,aiv3,6,5,AI-pset-37-4
+Glasses help people to see.,TRUE,right,easy,aiv3_form6_6,aiv3,6,6,AI-pset-12-8
+Clouds swim in the ocean.,FALSE,left,easy,aiv3_form6_7,aiv3,6,7,AI-pset-4-12
+Pencils are crispy snacks.,FALSE,left,easy,aiv3_form6_8,aiv3,6,8,AI-pset-42-3
+Some books have pictures.,TRUE,right,easy,aiv3_form6_9,aiv3,6,9,AI-pset-9-3
+Sofas love to fly.,FALSE,left,easy,aiv3_form6_10,aiv3,6,10,AI-pset-11-8
+Flowers can be different colors.,TRUE,right,easy,aiv3_form6_11,aiv3,6,11,AI-pset-26-3
+Light bulbs are made of candy.,FALSE,left,easy,aiv3_form6_12,aiv3,6,12,AI-pset-34-10
+Cars enjoy drinking orange juice.,FALSE,left,easy,aiv3_form6_13,aiv3,6,13,AI-pset-4-8
+Mountains are bathed in the sink.,FALSE,left,easy,aiv3_form6_14,aiv3,6,14,AI-pset-27-8
+Books are made of many pages.,TRUE,right,easy,aiv3_form6_15,aiv3,6,15,AI-pset-2-13
+Bears listen with their paws.,FALSE,left,easy,aiv3_form6_16,aiv3,6,16,AI-pset-8-12
+Puppies ride the train to school.,FALSE,left,easy,aiv3_form6_17,aiv3,6,17,AI-pset-35-13
+Vitamins can help you feel healthier.,TRUE,right,easy,aiv3_form6_18,aiv3,6,18,AI-pset-50-3
+Artists paint beautiful paintings.,TRUE,right,easy,aiv3_form6_19,aiv3,6,19,AI-pset-1-7
+Every straw is an elephant.,FALSE,left,easy,aiv3_form6_20,aiv3,6,20,AI-pset-30-10
+Teenagers can play video games on a computer.,TRUE,right,easy,aiv3_form6_21,aiv3,6,21,AI-pset-12-12
+Basketball is a game that you play with a ball.,TRUE,right,easy,aiv3_form6_22,aiv3,6,22,AI-pset-41-8
+"When a traffic light is blue, you should begin to dance.",FALSE,left,easy,aiv3_form6_23,aiv3,6,23,AI-pset-41-12
+The sand on most beaches is made of cotton candy.,FALSE,left,easy,aiv3_form6_24,aiv3,6,24,AI-pset-28-7
+People usually brush their teeth with toothpaste.,TRUE,right,easy,aiv3_form6_25,aiv3,6,25,AI-pset-5-12
+Ovens are used to make things hot.,TRUE,right,easy,aiv3_form6_26,aiv3,6,26,AI-pset-10-6
+Snow is warm.,FALSE,left,medium,aiv3_form6_27,aiv3,6,27,AI-pset-7-12
+A kitten can read a book.,FALSE,left,medium,aiv3_form6_28,aiv3,6,28,AI-pset-50-4
+"Before crossing the street, it's wise to look both ways.",TRUE,right,easy,aiv3_form6_29,aiv3,6,29,AI-pset-19-7
+Turtles can speak English.,FALSE,left,medium,aiv3_form6_30,aiv3,6,30,AI-pset-40-13
+Sharks often play basketball.,FALSE,left,medium,aiv3_form6_31,aiv3,6,31,AI-pset-36-1
+Fish have fur on their bodies.,FALSE,left,medium,aiv3_form6_32,aiv3,6,32,AI-pset-43-9
+Pencils have leaves.,FALSE,left,medium,aiv3_form6_33,aiv3,6,33,AI-pset-29-3
+Chefs usually work in restaurants where they cook food.,TRUE,right,easy,aiv3_form6_34,aiv3,6,34,AI-pset-21-1
+Eggs are laid by cows.,FALSE,left,medium,aiv3_form6_35,aiv3,6,35,AI-pset-17-3
+Teachers mainly work in zoos.,FALSE,left,medium,aiv3_form6_36,aiv3,6,36,AI-pset-40-9
+Balls are made of music.,FALSE,left,medium,aiv3_form6_37,aiv3,6,37,AI-pset-39-3
+The color of grass is green.,TRUE,right,medium,aiv3_form6_38,aiv3,6,38,AI-pset-16-14
+A watermelon is round.,TRUE,right,medium,aiv3_form6_39,aiv3,6,39,AI-pset-47-14
+Some birds can fly.,TRUE,right,medium,aiv3_form6_40,aiv3,6,40,AI-pset-8-3
+Trains are delicious meals.,FALSE,left,medium,aiv3_form6_41,aiv3,6,41,AI-pset-33-1
+All giraffes have long necks.,TRUE,right,medium,aiv3_form6_42,aiv3,6,42,AI-pset-25-8
+Desks sometimes drink orange juice.,FALSE,left,medium,aiv3_form6_43,aiv3,6,43,AI-pset-36-11
+Some trees have branches.,TRUE,right,medium,aiv3_form6_44,aiv3,6,44,AI-pset-8-8
+Belts help to hold pants up.,TRUE,right,medium,aiv3_form6_45,aiv3,6,45,AI-pset-9-4
+A chef works at a restaurant.,TRUE,right,medium,aiv3_form6_46,aiv3,6,46,AI-pset-1-1
+Candies are usually made from sugar.,TRUE,right,medium,aiv3_form6_47,aiv3,6,47,AI-pset-35-14
+Many astronauts work in orchards.,FALSE,left,medium,aiv3_form6_48,aiv3,6,48,AI-pset-37-13
+Heaters can increase the temperature of a room.,TRUE,right,medium,aiv3_form6_49,aiv3,6,49,AI-pset-38-14
+Some cows enjoy watching television.,FALSE,left,medium,aiv3_form6_50,aiv3,6,50,AI-pset-47-5
+Stars shine in the night sky.,TRUE,right,medium,aiv3_form6_51,aiv3,6,51,AI-pset-19-4
+Snow helps to make things hot.,FALSE,left,medium,aiv3_form6_52,aiv3,6,52,AI-pset-13-3
+Trees often grow in a forest.,TRUE,right,medium,aiv3_form6_53,aiv3,6,53,AI-pset-4-4
+Zoos are places where we can see many different animals.,TRUE,right,medium,aiv3_form6_54,aiv3,6,54,AI-pset-46-7
+Firefighters put out fires while on duty.,TRUE,right,medium,aiv3_form6_55,aiv3,6,55,AI-pset-7-13
+Bowling balls are sold underwater.,FALSE,left,medium,aiv3_form6_56,aiv3,6,56,AI-pset-22-2
+Watches should be worn on your elbow.,FALSE,left,medium,aiv3_form6_57,aiv3,6,57,AI-pset-14-10
+Vegetables come in one color and are grown in the desert.,FALSE,left,medium,aiv3_form6_58,aiv3,6,58,AI-pset-20-10
+Kangaroos can leap long distances with their strong hind legs.,TRUE,right,medium,aiv3_form6_59,aiv3,6,59,AI-pset-37-14
+All dogs are brown.,FALSE,left,hard,aiv3_form6_60,aiv3,6,60,AI-pset-18-2
+Tour guides often offer tourists maps and information.,TRUE,right,medium,aiv3_form6_61,aiv3,6,61,AI-pset-44-6
+An earthquake can be very calming.,FALSE,left,hard,aiv3_form6_62,aiv3,6,62,AI-pset-8-2
+Cats like to chase mice.,TRUE,right,hard,aiv3_form6_63,aiv3,6,63,AI-pset-21-9
+Some pizzas are round.,TRUE,right,hard,aiv3_form6_64,aiv3,6,64,AI-pset-30-8
+Tigers like to live in space.,FALSE,left,hard,aiv3_form6_65,aiv3,6,65,AI-pset-44-4
+Pans are made of metal.,TRUE,right,hard,aiv3_form6_66,aiv3,6,66,AI-pset-14-4
+Drawers can be used to store clothes.,TRUE,right,hard,aiv3_form6_67,aiv3,6,67,AI-pset-36-10
+Fire helps to keep things warm.,TRUE,right,hard,aiv3_form6_68,aiv3,6,68,AI-pset-33-7
+Some children like to draw pictures before they go to bed.,TRUE,right,hard,aiv3_form6_69,aiv3,6,69,AI-pset-22-13
+Tables devour dinner plates for breakfast.,FALSE,left,hard,aiv3_form6_70,aiv3,6,70,AI-pset-45-5
+Children can be playful.,TRUE,right,easy,aiv3_form7_1,aiv3,7,1,AI-pset-25-14
+A kitten has a tail.,TRUE,right,easy,aiv3_form7_2,aiv3,7,2,AI-pset-33-12
+There are red roses.,TRUE,right,easy,aiv3_form7_3,aiv3,7,3,AI-pset-19-5
+Grass is always pink.,FALSE,left,easy,aiv3_form7_4,aiv3,7,4,AI-pset-36-3
+Pens can sing.,FALSE,left,easy,aiv3_form7_5,aiv3,7,5,AI-pset-42-6
+All butterflies have wings.,TRUE,right,easy,aiv3_form7_6,aiv3,7,6,AI-pset-37-10
+Many people like to watch movies.,TRUE,right,easy,aiv3_form7_7,aiv3,7,7,AI-pset-27-7
+Cats enjoy chasing mice.,TRUE,right,easy,aiv3_form7_8,aiv3,7,8,AI-pset-10-11
+Every car is a bird.,FALSE,left,easy,aiv3_form7_9,aiv3,7,9,AI-pset-27-9
+Plants need sunlight to grow.,TRUE,right,easy,aiv3_form7_10,aiv3,7,10,AI-pset-41-9
+An author is someone who writes books.,TRUE,right,easy,aiv3_form7_11,aiv3,7,11,AI-pset-38-5
+Candy is often sweet to taste.,TRUE,right,easy,aiv3_form7_12,aiv3,7,12,AI-pset-6-7
+Trees are always purple.,FALSE,left,easy,aiv3_form7_13,aiv3,7,13,AI-pset-16-12
+People wear jackets to keep their bodies warm.,TRUE,right,easy,aiv3_form7_14,aiv3,7,14,AI-pset-14-5
+Cars run on lemonade.,FALSE,left,easy,aiv3_form7_15,aiv3,7,15,AI-pset-33-10
+Windows can let fresh air into a room.,TRUE,right,easy,aiv3_form7_16,aiv3,7,16,AI-pset-50-12
+Bicycles love to eat pasta.,FALSE,left,easy,aiv3_form7_17,aiv3,7,17,AI-pset-48-2
+People hear with their fingers.,FALSE,left,easy,aiv3_form7_18,aiv3,7,18,AI-pset-12-6
+Sandwiches sprout on bushes.,FALSE,left,easy,aiv3_form7_19,aiv3,7,19,AI-pset-2-2
+Lockers can be used to keep personal belongings.,TRUE,right,easy,aiv3_form7_20,aiv3,7,20,AI-pset-41-11
+Heat comes from icebergs.,FALSE,left,easy,aiv3_form7_21,aiv3,7,21,AI-pset-3-3
+Mirrors are typically made of potatoes.,FALSE,left,easy,aiv3_form7_22,aiv3,7,22,AI-pset-41-7
+Firefighters often work in fire stations where they respond to emergencies.,TRUE,right,easy,aiv3_form7_23,aiv3,7,23,AI-pset-36-14
+Dogs have ears.,TRUE,right,medium,aiv3_form7_24,aiv3,7,24,AI-pset-20-7
+Cats are larger than cars.,FALSE,left,easy,aiv3_form7_25,aiv3,7,25,AI-pset-48-1
+Airplanes fly under the ground.,FALSE,left,easy,aiv3_form7_26,aiv3,7,26,AI-pset-15-1
+A bell can jump higher than mountains.,FALSE,left,easy,aiv3_form7_27,aiv3,7,27,AI-pset-2-14
+Clocks are passionate about purple pencils.,FALSE,left,easy,aiv3_form7_28,aiv3,7,28,AI-pset-25-3
+Elders can be wise.,TRUE,right,medium,aiv3_form7_29,aiv3,7,29,AI-pset-5-14
+Turtles can swim in water.,TRUE,right,medium,aiv3_form7_30,aiv3,7,30,AI-pset-34-4
+Trees love drawing with green crayons.,FALSE,left,easy,aiv3_form7_31,aiv3,7,31,AI-pset-2-8
+Stars can be eaten.,FALSE,left,medium,aiv3_form7_32,aiv3,7,32,AI-pset-19-11
+A triangle has three sides.,TRUE,right,medium,aiv3_form7_33,aiv3,7,33,AI-pset-20-12
+Trains move along tracks.,TRUE,right,medium,aiv3_form7_34,aiv3,7,34,AI-pset-43-8
+Eggs are laid by chickens.,TRUE,right,medium,aiv3_form7_35,aiv3,7,35,AI-pset-42-4
+Lions drive trains to work.,FALSE,left,medium,aiv3_form7_36,aiv3,7,36,AI-pset-26-9
+Sunflowers are typically yellow.,TRUE,right,medium,aiv3_form7_37,aiv3,7,37,AI-pset-23-4
+Laundry is washed in machines.,TRUE,right,medium,aiv3_form7_38,aiv3,7,38,AI-pset-34-11
+A chair eats dinner.,FALSE,left,medium,aiv3_form7_39,aiv3,7,39,AI-pset-29-4
+Dolphins have three tails.,FALSE,left,medium,aiv3_form7_40,aiv3,7,40,AI-pset-21-10
+Rivers are typically made of coffee.,FALSE,left,medium,aiv3_form7_41,aiv3,7,41,AI-pset-11-9
+Wallets can be used to store money.,TRUE,right,medium,aiv3_form7_42,aiv3,7,42,AI-pset-8-9
+Baseball is a sport you play with a bat.,TRUE,right,medium,aiv3_form7_43,aiv3,7,43,AI-pset-37-11
+Whales are very large animals that live in the ocean.,TRUE,right,medium,aiv3_form7_44,aiv3,7,44,AI-pset-30-2
+Juices come from rocks.,FALSE,left,medium,aiv3_form7_45,aiv3,7,45,AI-pset-18-12
+A watch goes on your foot.,FALSE,left,medium,aiv3_form7_46,aiv3,7,46,AI-pset-2-5
+Ovens can be used to bake food.,TRUE,right,medium,aiv3_form7_47,aiv3,7,47,AI-pset-49-1
+Lions live in grocery stores.,FALSE,left,medium,aiv3_form7_48,aiv3,7,48,AI-pset-26-1
+Money is used to buy goods and services.,TRUE,right,medium,aiv3_form7_49,aiv3,7,49,AI-pset-19-8
+A pair of glasses is something you can wear.,TRUE,right,medium,aiv3_form7_50,aiv3,7,50,AI-pset-15-4
+Giraffes have eight legs.,FALSE,left,medium,aiv3_form7_51,aiv3,7,51,AI-pset-39-4
+Ice turns into water when it melts.,TRUE,right,medium,aiv3_form7_52,aiv3,7,52,AI-pset-25-1
+Cats have whiskers.,TRUE,right,hard,aiv3_form7_53,aiv3,7,53,AI-pset-12-11
+Some bees collect pollen.,TRUE,right,hard,aiv3_form7_54,aiv3,7,54,AI-pset-45-2
+Raincoats make you freeze.,FALSE,left,medium,aiv3_form7_55,aiv3,7,55,AI-pset-5-5
+Walnut trees give us oranges.,FALSE,left,medium,aiv3_form7_56,aiv3,7,56,AI-pset-10-8
+Some lakes have laces.,FALSE,left,medium,aiv3_form7_57,aiv3,7,57,AI-pset-22-8
+A dishwasher is something you can wear like a bracelet.,FALSE,left,medium,aiv3_form7_58,aiv3,7,58,AI-pset-14-14
+People ride bikes on the trail.,TRUE,right,hard,aiv3_form7_59,aiv3,7,59,AI-pset-48-4
+Many children like eating apples.,TRUE,right,hard,aiv3_form7_60,aiv3,7,60,AI-pset-24-1
+Yellow is the color of violets and cherries.,FALSE,left,medium,aiv3_form7_61,aiv3,7,61,AI-pset-38-1
+Lemons have a sweet taste and can only be purple.,FALSE,left,medium,aiv3_form7_62,aiv3,7,62,AI-pset-30-12
+Animals are all the size of an elephant.,FALSE,left,medium,aiv3_form7_63,aiv3,7,63,AI-pset-45-11
+Pet shops are where one can buy pets.,TRUE,right,hard,aiv3_form7_64,aiv3,7,64,AI-pset-4-13
+Sugar tastes sour.,FALSE,left,hard,aiv3_form7_65,aiv3,7,65,AI-pset-49-12
+Spring mornings can be fresh and crisp.,TRUE,right,hard,aiv3_form7_66,aiv3,7,66,AI-pset-16-9
+Swans can swim well and have white feathers.,TRUE,right,hard,aiv3_form7_67,aiv3,7,67,AI-pset-14-6
+Most stars can be seen during the daytime.,FALSE,left,hard,aiv3_form7_68,aiv3,7,68,AI-pset-28-2
+Sunflowers grow from apple seeds.,FALSE,left,hard,aiv3_form7_69,aiv3,7,69,AI-pset-24-5
+Windy days are always still.,FALSE,left,hard,aiv3_form7_70,aiv3,7,70,AI-pset-30-13
+Dogs can be playful.,TRUE,right,easy,aiv3_form8_1,aiv3,8,1,AI-pset-15-11
+Milk is always green.,FALSE,left,easy,aiv3_form8_2,aiv3,8,2,AI-pset-46-13
+Monkeys like to eat bananas.,TRUE,right,easy,aiv3_form8_3,aiv3,8,3,AI-pset-4-6
+A teddy bear can be very soft.,TRUE,right,easy,aiv3_form8_4,aiv3,8,4,AI-pset-35-8
+All pencils are red.,FALSE,left,easy,aiv3_form8_5,aiv3,8,5,AI-pset-21-7
+Many people like to read books.,TRUE,right,easy,aiv3_form8_6,aiv3,8,6,AI-pset-38-3
+People enjoy eating fruits.,TRUE,right,easy,aiv3_form8_7,aiv3,8,7,AI-pset-42-2
+Rain makes the ground wet.,TRUE,right,easy,aiv3_form8_8,aiv3,8,8,AI-pset-15-10
+Cars are made of cheese.,FALSE,left,easy,aiv3_form8_9,aiv3,8,9,AI-pset-48-10
+Every shoe is a fish.,FALSE,left,easy,aiv3_form8_10,aiv3,8,10,AI-pset-32-2
+Dogs can wag their tail.,TRUE,right,easy,aiv3_form8_11,aiv3,8,11,AI-pset-23-3
+Beds love to swim.,FALSE,left,easy,aiv3_form8_12,aiv3,8,12,AI-pset-3-11
+A dog's fur can be very soft.,TRUE,right,easy,aiv3_form8_13,aiv3,8,13,AI-pset-28-1
+Bells ring to make sound.,TRUE,right,easy,aiv3_form8_14,aiv3,8,14,AI-pset-13-11
+A book may have a bookmark.,TRUE,right,easy,aiv3_form8_15,aiv3,8,15,AI-pset-16-8
+Birds often nest in trees.,TRUE,right,easy,aiv3_form8_16,aiv3,8,16,AI-pset-8-1
+Pizza has beans and jelly on it.,FALSE,left,easy,aiv3_form8_17,aiv3,8,17,AI-pset-4-10
+Every tree is a ballerina.,FALSE,left,easy,aiv3_form8_18,aiv3,8,18,AI-pset-41-2
+Kittens are young cats and can be very playful.,TRUE,right,easy,aiv3_form8_19,aiv3,8,19,AI-pset-42-11
+"People use pencils to write, draw, and doodle.",TRUE,right,easy,aiv3_form8_20,aiv3,8,20,AI-pset-29-1
+Some flowers like to sing.,FALSE,left,easy,aiv3_form8_21,aiv3,8,21,AI-pset-5-13
+Trees can move faster than cars.,FALSE,left,easy,aiv3_form8_22,aiv3,8,22,AI-pset-26-4
+Daisies grow under the sea.,FALSE,left,easy,aiv3_form8_23,aiv3,8,23,AI-pset-24-3
+Lions can be scary.,TRUE,right,medium,aiv3_form8_24,aiv3,8,24,AI-pset-11-2
+Cakes are yummy desserts.,TRUE,right,medium,aiv3_form8_25,aiv3,8,25,AI-pset-2-10
+A hat goes on your head.,TRUE,right,medium,aiv3_form8_26,aiv3,8,26,AI-pset-33-2
+Cups must have strings.,FALSE,left,easy,aiv3_form8_27,aiv3,8,27,AI-pset-15-2
+Every zoo has penguins on the roof.,FALSE,left,easy,aiv3_form8_28,aiv3,8,28,AI-pset-41-14
+Money usually grows in candy bars.,FALSE,left,easy,aiv3_form8_29,aiv3,8,29,AI-pset-35-2
+Dogs smell with their noses.,TRUE,right,medium,aiv3_form8_30,aiv3,8,30,AI-pset-28-13
+My shoes love to bake bread.,FALSE,left,easy,aiv3_form8_31,aiv3,8,31,AI-pset-3-6
+Some rabbits eat carrots.,TRUE,right,medium,aiv3_form8_32,aiv3,8,32,AI-pset-5-3
+Birds usually store books in nests.,FALSE,left,easy,aiv3_form8_33,aiv3,8,33,AI-pset-9-6
+Gifts can be wrapped in paper.,TRUE,right,medium,aiv3_form8_34,aiv3,8,34,AI-pset-37-12
+A tiger is a bird.,FALSE,left,medium,aiv3_form8_35,aiv3,8,35,AI-pset-1-12
+Hats grow on trees.,FALSE,left,medium,aiv3_form8_36,aiv3,8,36,AI-pset-7-9
+All elephants climb trees.,FALSE,left,medium,aiv3_form8_37,aiv3,8,37,AI-pset-45-13
+Bread is baked in ovens.,TRUE,right,medium,aiv3_form8_38,aiv3,8,38,AI-pset-44-3
+Snakes can slither on the ground.,TRUE,right,medium,aiv3_form8_39,aiv3,8,39,AI-pset-46-10
+There is only one kind of tree.,FALSE,left,medium,aiv3_form8_40,aiv3,8,40,AI-pset-28-9
+Books are made of paper.,TRUE,right,medium,aiv3_form8_41,aiv3,8,41,AI-pset-14-1
+All fish are scared of swimming.,FALSE,left,medium,aiv3_form8_42,aiv3,8,42,AI-pset-12-7
+A butterfly is a bird.,FALSE,left,medium,aiv3_form8_43,aiv3,8,43,AI-pset-5-8
+Bread is often made from wheat.,TRUE,right,medium,aiv3_form8_44,aiv3,8,44,AI-pset-49-7
+Gorillas are a type of flower.,FALSE,left,medium,aiv3_form8_45,aiv3,8,45,AI-pset-34-3
+Windows are made of ice cream.,FALSE,left,medium,aiv3_form8_46,aiv3,8,46,AI-pset-45-14
+Pumpkin pie is made from peaches.,FALSE,left,medium,aiv3_form8_47,aiv3,8,47,AI-pset-39-2
+Glasses help people taste colors.,FALSE,left,medium,aiv3_form8_48,aiv3,8,48,AI-pset-49-3
+People wear sunglasses to protect their eyes from the sun.,TRUE,right,medium,aiv3_form8_49,aiv3,8,49,AI-pset-9-8
+Many dogs drive trucks on the highway.,FALSE,left,medium,aiv3_form8_50,aiv3,8,50,AI-pset-43-10
+Ice cubes can sprint really fast.,FALSE,left,medium,aiv3_form8_51,aiv3,8,51,AI-pset-22-11
+Ice can always be very hot.,FALSE,left,medium,aiv3_form8_52,aiv3,8,52,AI-pset-29-12
+Nearly all bakeries have ovens.,TRUE,right,medium,aiv3_form8_53,aiv3,8,53,AI-pset-32-12
+Nests are built by birds to lay their eggs.,TRUE,right,medium,aiv3_form8_54,aiv3,8,54,AI-pset-41-3
+"Clouds in the sky can bring rain, snow, or shade.",TRUE,right,medium,aiv3_form8_55,aiv3,8,55,AI-pset-38-11
+Roads devour ice-cream cones.,FALSE,left,medium,aiv3_form8_56,aiv3,8,56,AI-pset-42-1
+Humans often prepare meals with vegetables.,TRUE,right,medium,aiv3_form8_57,aiv3,8,57,AI-pset-28-12
+Foggy mornings are always clear.,FALSE,left,medium,aiv3_form8_58,aiv3,8,58,AI-pset-43-1
+People can wear hats to protect their heads from the sun.,TRUE,right,medium,aiv3_form8_59,aiv3,8,59,AI-pset-5-4
+Ice turns into fire when it melts.,FALSE,left,medium,aiv3_form8_60,aiv3,8,60,AI-pset-44-2
+Rabbits have long ears.,TRUE,right,hard,aiv3_form8_61,aiv3,8,61,AI-pset-29-8
+Roads love to color with black crayons.,FALSE,left,medium,aiv3_form8_62,aiv3,8,62,AI-pset-3-5
+Rivers flow into seas.,TRUE,right,hard,aiv3_form8_63,aiv3,8,63,AI-pset-24-9
+Jewelry is often worn for decoration.,TRUE,right,hard,aiv3_form8_64,aiv3,8,64,AI-pset-35-10
+Spices make food flavorful.,TRUE,right,hard,aiv3_form8_65,aiv3,8,65,AI-pset-14-11
+Apples are always sour.,FALSE,left,hard,aiv3_form8_66,aiv3,8,66,AI-pset-39-13
+Swimming is a sport that you play with a bicycle.,FALSE,left,hard,aiv3_form8_67,aiv3,8,67,AI-pset-48-6
+Doctors often give patients medicine and advice.,TRUE,right,hard,aiv3_form8_68,aiv3,8,68,AI-pset-26-2
+Apples are tasty fruits that come in many varieties.,TRUE,right,hard,aiv3_form8_69,aiv3,8,69,AI-pset-7-1
+Sunflowers are tiny flowers that turn their roots to follow the moon.,FALSE,left,hard,aiv3_form8_70,aiv3,8,70,AI-pset-50-1

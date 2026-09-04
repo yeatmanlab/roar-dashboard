@@ -1,0 +1,145 @@
+{
+  "loading": "El experimento se está cargando...",
+  "labID": "ID del laboratorio",
+  "participantID": "ID del participante",
+  "progressBar": "Barra de progreso",
+  "buttonLabel": "Continuar",
+  "preloadTrial": {
+    "messageText": "Por favor, espera mientras se carga el juego. Esto puede tardar unos minutos."
+  },
+  "fullScreenTrial": {
+    "prompt": "El juego se va a cambiar a modo de pantalla completa. Presiona el botón para continuar.",
+    "buttonText": "Continuar"
+  },
+  "navigation": {
+    "continueButtonText": "Presiona <span class='yellow'>CUALQUIER TECLA</span> para {{action}}",
+    "continueButtonTextMobile": "Presiona <span class='yellow'>AQUÍ</span> para {{action}}"
+  },
+  "introTrials": {
+    "trial1": {
+      "header1": "¡Bienvenidos al mundo de Lexicalidad!",
+      "paragraph1": "Eres un mago que está buscando la puerta que te llevará de regreso a tu casa en la tierra. Para alcanzar la puerta, debes viajar por tierras gobernadas por guardianes mágicos.",
+      "paragraph2": "Para que los guardianes te dejen pasar por sus tierras, tienes que decirles la diferencia entre palabras inventadas y palabras reales.&nbsp;",
+      "header2": "¡Bienvenido a la actividad de Reconocimiento de Palabras Individuales!",
+      "paragraph3": "En esta actividad, verás palabras que aparecerán en la pantalla.",
+      "paragraph4": "Luego tendrás que diferenciar entre palabras inventadas y palabras reales.&nbsp;"
+    },
+    "trial2": {
+      "header": "Una palabra real o inventada aparecerá muy rápido en el centro de la pantalla.",
+      "paragraph1": "Las palabras inventadas pueden parecer palabras en Español, pero no significan nada en Español. Por ejemplo, “frup”, “rifli”, o “glizon” son palabras inventadas. <span class='orange'><b> Si ves una palabra inventada, presiona la TECLA DE FLECHA IZQUIERDA.</b></span>",
+      "paragraph2": "Las palabras reales serán las que tu reconozcas. Estas son palabras reales en Español como “es”, “y”, “cesta”, o “león”. <span class='blue'><b> Si ves una palabra real, presiona la TECLA DE FLECHA DERECHA.</b></span>"
+    },
+    "trial3": {
+      "header": "Repasemos cuál tecla presionamos para palabras inventadas y palabras reales.",
+      "paragraph1": "Trata de ser lo más preciso o precisa posible.",
+      "paragraph2": "Algunas palabras serán difíciles, y eso está bien. Si no estás seguro o segura, trata de hacer tu mejor esfuerzo."
+    },
+    "postPracticeTrial": {
+      "header1": "¡Buen trabajo! ¡Estás listo o lista para comenzar el viaje!",
+      "header2": "Buen trabajo, ¡Estás listo&#47;a para comenzar la actividad real!",
+      "paragraph1": "Ganarás monedas de oro a lo largo del camino.",
+      "paragraph2": "¡Buena suerte!"
+    }
+  },
+  "practiceFeedbackTrial": {
+    "paragraph1": "¡Presionaste la tecla de flecha {{direction}} que es para palabras {{typeWord}}!",
+    "paragraph2": "es una palabra {{typeWord}}. Presiona la tecla de flecha {{direction}} para continuar.",
+    "arrowChoicesImgAlt": "opcionesDeFlecha"
+  },
+  "gameBreakTrials": {
+    "midBlockTrials": {
+      "trial1": {
+        "header1": "¡Buen trabajo!",
+        "paragraph1": "Estás en la mitad del valle, y decides acampar cerca de un pueblo pequeño.",
+        "paragraph2": "¡En el pueblo, conoces a otro aventurero que se une a tu viaje!",
+        "header2": "¡Buen trabajo!",
+        "paragraph3": "Estás a la mitad del primer bloque.",
+        "paragraph4": "¡Siéntete libre de tomar un descanso corto y continuar cuando estés listo&#47;a!"
+      },
+      "trial2": {
+        "header1": "¡Maravilloso!",
+        "paragraph1": "¡Después de unos días de viaje, has llegado a un hotel!",
+        "paragraph2": "¡Ahí encuentras a otro aventurero que se une a tu viaje!",
+        "header2": "¡Excelente!",
+        "paragraph3": "Estás a la mitad del segundo bloque.",
+        "paragraph4": "¡Siéntete libre de tomar un descanso corto y continuar cuando estés listo&#47;a!"
+      },
+      "trial3": {
+        "header1": "¡Excelente trabajo!",
+        "paragraph1": "Estás en la mitad del valle, y decides acampar cerca de un pueblo pequeño.",
+        "paragraph2": "¡En el pueblo, conoces a otro aventurero que se une a tu viaje!",
+        "header2": "¡Fantástico!",
+        "paragraph3": "Estás a la mitad del tercer bloque.",
+        "paragraph4": "¡Siéntete libre de tomar un descanso corto y continuar cuando estés listo&#47;a!"
+      }
+    },
+    "postBlockTrials": {
+      "trial1": {
+        "header1": "¡Felicitaciones!",
+        "paragraph1": "Lograste cruzar el valle con la ayuda del guardián.",
+        "paragraph2": "¡Estás muy cerca de la puerta!",
+        "header2": "¡Felicidades!",
+        "paragraph3": "Has completado el primer bloque.",
+        "paragraph4": "¡Siéntete libre de tomar un descanso corto y continuar cuando estés listo&#47;a!"
+      },
+      "trial2": {
+        "header1": "¡Felicitaciones!",
+        "paragraph1": "Lograste cruzar el valle con la ayuda del guardián.",
+        "paragraph2": "¡Solo queda un valle más hasta que llegues a la puerta!",
+        "header2": "¡Felicidades!",
+        "paragraph3": "Has completado el segundo bloque.",
+        "paragraph4": "¡Siéntete libre de tomar un descanso corto y continuar cuando estés listo&#47;a!"
+      },
+      "trial3": {
+        "header1": "¡Felicitaciones!",
+        "paragraph1": "Lograste cruzar el valle con la ayuda del guardián.",
+        "paragraph2": "¡Estás muy cerca de la puerta!",
+        "header2": "¡Felicidades!",
+        "paragraph3": "Has completado un nuevo bloque bloque.",
+        "paragraph4": "¡Siéntete libre de tomar un descanso corto y continuar cuando estés listo&#47;a!"
+      }
+    },
+    "finalTrial": {
+      "header1": "¡Finalmente, encontraste al guardián y la puerta que te llevará de regreso a casa!",
+      "paragraph1": "Utiliza tus monedas para abrir la puerta.",
+      "paragraph2": "Te despides de tus nuevos amigos y dejas la tierra de Lexicalidad. ¡Hasta una próxima ocasión!",
+      "header2": "¡Felicidades!",
+      "paragraph3": "Has completado la actividad de Reconocimiento de Palabras Individuales!",
+      "paragraph4": "¡Gracias por tu increíble trabajo!"
+    }
+  },
+  "imagesAlt": {
+    "arrowKeys": "teclas de flecha",
+    "leftArrow": "flecha izquierda",
+    "rightArrow": "flecha derecha",
+    "valley": "imagen de fondo con arboles y lomas",
+    "adventurer1": "aventurero con arpa",
+    "adventurer2": "aventurero creando arcoiris",
+    "adventurer3": "aventurero creando formas de corazón",
+    "wizardCoin": "mago creando monedas",
+    "guardian1": "guardián anaranjado dinosaurio",
+    "guardian2": "guardián azulado dinosaurio",
+    "endingBackground": "paisajes con árboles",
+    "guardian3": "unicornio que guiña",
+    "endingGateCoinbag": "puerta con animación de bolsa de monedas",
+    "wizardWand": "mago ondeando una varita mágica",
+    "leftArrowIntro": "palabra inventada, presiona la tecla de flecha izquierda",
+    "rightArrowIntro": "palabra real, presiona la tecla de flecha derecha"
+  },
+  "terms": {
+    "__comment1__": "e.g. 'presione cualquier tecla para continuar/practicar/comenzar'",
+    "continue": "continuar",
+    "practice": "practicar",
+    "here": "aquí",
+    "begin": "comenzar",
+    "gold": "oro",
+    "left": "izquierda",
+    "right": "derecha",
+    "__comment2__": "i.e. 'bluzp es una palabra real/inventada'",
+    "real-singular": "real",
+    "real-plural": "reales",
+    "made-up-singular": "inventada",
+    "made-up-plural": "inventadas",
+    "save": "guardar tu trabajo"
+  }
+}

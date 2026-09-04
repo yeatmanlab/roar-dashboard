@@ -1,89 +1,66 @@
 <template>
-  <div v-if="!appKit || !userParams || !gameParams" class="text-center col-full">
+  <div v-if="!sdkInitialized || !surveyJson" class="text-center col-full">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
-  <SurveyRunner
-    v-else
-    :appkit="appKit"
-    :user-params="userParams"
-    :game-params="gameParams"
-    @complete-survey="handleCompleteSurvey"
-  />
+  <SurveyRunner v-else :survey-data="surveyJson" @complete-survey="handleCompleteSurvey" />
 </template>
+
 <script setup>
 import { onMounted, onBeforeUnmount, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import _get from 'lodash/get';
+import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { SURVEY_TASK_ID } from '@roar-platform/assessment-schema/roar-survey';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../../../package-lock.json';
-import SurveyRunner from '@bdelab/roar-survey';
+import useParticipantId from '@/composables/useParticipantId';
+import { version } from '@roar-platform/roar-survey/package.json';
+import SurveyRunner from '@roar-platform/roar-survey';
 
 const props = defineProps({
-  taskId: { type: String, required: true, default: 'swr' },
-  language: { type: String, required: true, default: 'en' },
-  launchId: { type: String, required: false, default: null },
+  taskId: { type: String, default: SURVEY_TASK_ID },
+  language: { type: String, default: 'en' },
+  launchId: { type: String, default: null },
 });
 
-const userParams = ref(null);
-const gameParams = ref(null);
-
-const taskId = props.taskId;
-const version = packageLockJson.packages['node_modules/@bdelab/roar-survey'].version;
 const router = useRouter();
-const taskStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+const { isAuthReady } = storeToRefs(authStore);
 
-const initialized = ref(false);
+const sdkInitialized = ref(false);
+const surveyJson = ref(null);
+const taskStarted = ref(false);
+
+// Resolves the proxy-launch id or the launching user's own `/me` id. The watcher below is
+// gated on it so the survey never starts without a participant identity to attribute it to.
+const participantId = useParticipantId(props.launchId);
+
 let unsubscribe;
-const appKit = ref(null);
 const init = () => {
   if (unsubscribe) unsubscribe();
-  initialized.value = true;
 };
-const handlePopState = () => {
-  router.go(0);
-};
+const handlePopState = () => router.go(0);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
-  enabled: initialized,
-});
-
-// The following code intercepts the back button and instead forces a refresh.
-// We add { once: true } to prevent an infinite loop.
-window.addEventListener(
-  'popstate',
-  () => {
-    handlePopState();
-  },
-  { once: true },
-);
+window.addEventListener('popstate', handlePopState, { once: true });
 
 onMounted(async () => {
-  if (roarfirekit.value.restConfig?.()) init();
+  if (authStore.isAuthReady) init();
 });
-
-// Declare interval at component scope
-let checkGameStarted;
 
 onBeforeUnmount(() => {
   window.removeEventListener('popstate', handlePopState);
-  if (checkGameStarted) clearInterval(checkGameStarted);
 });
 
 watch(
-  [isFirekitInit, isLoadingUserData],
-  async ([newFirekitInitValue, newLoadingUserData]) => {
-    if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
+  [isAuthReady, participantId],
+  async ([newIsAuthReady, newParticipantId]) => {
+    if (newIsAuthReady && newParticipantId && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
@@ -94,19 +71,51 @@ watch(
 
 async function startTask(selectedAdmin) {
   try {
-    appKit.value = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
+    // The participant's administrations — each with its tasks' `variantId` embedded — are
+    // already fetched by HomeParticipant via
+    // `GET /users/:userId/administrations?embed=tasks,progress`, and the chosen one is held
+    // in the game store. The administration and variant are therefore read from
+    // `selectedAdmin` rather than re-fetched here.
+    //
+    // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
+    // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
+    const administration = selectedAdmin.value;
+    const surveyTaskVariant = (administration?.tasks ?? []).find((task) => task.taskSlug === props.taskId);
 
-    const userDob = _get(userData.value, 'studentData.dob');
-    const userDateObj = new Date(userDob);
+    if (!surveyTaskVariant) throw new Error(`No ${props.taskId} task variant found in the selected administration.`);
 
-    userParams.value = {
-      grade: _get(userData.value, 'studentData.grade'),
-      birthMonth: userDateObj.getMonth() + 1,
-      birthYear: userDateObj.getFullYear(),
-      language: props.language,
-    };
+    initFirekitCompat(
+      {
+        baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
+        auth: {
+          getToken: () => Promise.resolve(authStore.accessToken),
+          refreshToken: () => authStore.forceIdTokenRefresh(),
+        },
+        participant: { participantId: participantId.value },
+      },
+      {
+        variantId: surveyTaskVariant.variantId,
+        taskVersion: version,
+        administrationId: administration.id,
+        isAnonymous: false,
+      },
+    );
 
-    gameParams.value = { ...appKit.value._taskInfo.variantParams };
+    // Source the survey's variant parameters from the assessment SDK now that
+    // initFirekitCompat has run. The seeded variant carries the required `survey`
+    // key (the GCS filename), which getVariantById round-trips verbatim.
+    const { variantParams } = await getVariantById(surveyTaskVariant.variantId);
+    const gameParams = { ...variantParams };
+
+    // Fetch survey JSON from GCS using the survey file name from variant params.
+    // The bucket URL matches src/constants/bucketBaseUrl.js in the assessment source.
+    const surveyFile = gameParams.survey ?? 'survey';
+    const bucketUrl = `https://storage.googleapis.com/roar-survey-app/${props.language}/`;
+    const response = await fetch(`${bucketUrl}${surveyFile}.json`);
+    if (!response.ok) throw new Error(`Survey fetch failed: ${response.statusText}`);
+    surveyJson.value = await response.json();
+
+    sdkInitialized.value = true;
   } catch (error) {
     console.error('An error occurred while starting the task:', error);
     alert(
@@ -115,17 +124,12 @@ async function startTask(selectedAdmin) {
   }
 }
 
-async function handleCompleteSurvey() {
+function handleCompleteSurvey() {
   try {
-    const { selectedAdmin } = storeToRefs(gameStore);
-    await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
     gameStore.requireHomeRefresh();
-    // if session is externally launched, return instead fo participant home
     if (props.launchId) {
       router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
-    }
-    // Navigate to home, but first set the refresh flag to true.
-    else {
+    } else {
       router.push({ name: 'Home' });
     }
   } catch (error) {
@@ -138,7 +142,7 @@ async function handleCompleteSurvey() {
 </script>
 
 <style>
-@import '@bdelab/roar-survey/lib/roar-survey.css';
+@import '@roar-platform/roar-survey/lib/roar-survey.css';
 .sd-root-modern__wrapper {
   margin: auto;
 }
