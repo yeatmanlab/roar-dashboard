@@ -38,7 +38,6 @@ export default defineConfig({
   // the vocabulary it was built and tested against — which is the intent of per-assessment
   // bundling in project-management#2016. Build-time range agreement is guarded by the parity
   // test in project-management#2171.
-  // Everything else (jspsych, firebase, @bdelab/*) is bundled for a self-contained package.
   external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@sentry\//],
   plugins: [
     postcss({

@@ -47,7 +47,6 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@roar-platform/assessment-schema": "^1.0.0",
     "@roar-platform/api-contract": "^1.0.0",
     "@ts-rest/core": "^3.52.1",
     "http-status-codes": "^2.3.0"
@@ -56,6 +55,7 @@
     "firebase": "^10.13.2"
   },
   "devDependencies": {
+    "@roar-platform/assessment-schema": "^1.0.0",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.4",
     "@vitest/coverage-v8": "^3.2.4",
