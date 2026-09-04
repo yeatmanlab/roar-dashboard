@@ -10,11 +10,11 @@ The package holds three kinds of content. They look similar but answer different
 conflating them is what made the dependency-declaration question in
 [#2168](https://github.com/yeatmanlab/roar-project-management/issues/2168) hard to answer.
 
-| Category              | Must a consumer be able to change it?                    | Where it lives                                   |
-| --------------------- | -------------------------------------------------------- | ------------------------------------------------ |
-| **Vocabulary**        | **No** — their data would stop correlating with ours     | Stays here, unconditionally                      |
-| **Reference data**    | Not the data; possibly the **origin** it is fetched from | Stays here, origin overridable                   |
-| **Deployment config** | **Yes, necessarily**                                     | Origin constants only; the rest is host-supplied |
+| Category              | Must a consumer be able to change it?                    | Where it lives                              |
+| --------------------- | -------------------------------------------------------- | ------------------------------------------- |
+| **Vocabulary**        | **No** — their data would stop correlating with ours     | Stays here, unconditionally                 |
+| **Reference data**    | Not the data; possibly the **origin** it is fetched from | Stays here, origin overridable              |
+| **Deployment config** | Yes — but see the limits below                           | Origin constants, overridable at build time |
 
 ### Vocabulary — the reason this package exists
 
@@ -43,9 +43,10 @@ PA_SCORE_TABLE_URL(PA_SCORING_VERSION.V5_ADAPTIVE, 'https://assets.example.org')
 // -> https://assets.example.org/roar-pa/scores/pa_lookup_v5.csv
 ```
 
-Bucket and filename structure is preserved, so a mirror only has to copy the tree.
+Bucket and filename structure is preserved, so a mirror only has to copy the tree. Note the
+override is a **build-time** seam — see the limits below.
 
-### Deployment config — what a host must be able to replace
+### Deployment config — ROAR's origins, and the limits of overriding them
 
 ROAR's asset origins, collected in [`src/constants/asset-origins.ts`](src/constants/asset-origins.ts):
 `GCS_ORIGIN` for the score tables, the ROAV stimuli bucket, and the ReadAloud corpora; and
@@ -53,7 +54,31 @@ ROAR's asset origins, collected in [`src/constants/asset-origins.ts`](src/consta
 Storage rather than GCS and so must stay independently overridable.
 
 Every builder that consumes them accepts an override parameter defaulting to the constant. There
-is deliberately **no** `setOrigin()` or other module-level mutable configuration — see below.
+is deliberately **no** `setOrigin()` or other module-level mutable configuration — see the
+invariants below.
+
+> [!IMPORTANT]
+> **This is a build-time seam, not runtime configuration, and it is not reachable by a consumer
+> of the published assessment packages.**
+>
+> Every caller of these builders lives inside an assessment's own source, and none of them passes
+> an `origin`. An assessment publishes only a prebuilt `dist/index.js`, so the default origin is
+> already compiled in — `roar-pa`'s bundle contains thousands of `storage.googleapis.com`
+> literals. Installing `@roar-platform/roar-pa` from npm therefore gives you ROAR's origins with
+> no way to change them short of rebuilding the assessment from source.
+>
+> Who _can_ use the override today:
+>
+> - **The backend**, which calls the builders directly at runtime — see
+>   `apps/backend/src/services/foundational-composite/composite-norm-table.ts`.
+> - **Anyone building the assessments from source**, who can pass an origin at the call sites.
+>
+> What this parameterisation actually buys, then, is a single source of truth (nine scattered URL
+> literals collapsed into one module), no ROAR infrastructure identifiers in a published package,
+> and an explicit record of which values an alternate deployment must replace. Making origins
+> injectable by a package consumer is a larger change: they would have to flow through the
+> assessment's runtime entry, the way `CommandContext.storageBucket` threads the recordings bucket
+> in the storage-seam work. That is deliberately out of scope here.
 
 ## Two invariants
 
