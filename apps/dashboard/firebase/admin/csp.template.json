@@ -15,7 +15,6 @@
     "https://www.gstatic.com/recaptcha/",
     "blob:"
   ],
-  "script-src-elem": ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
   "style-src": [
     "'self'",
     "'unsafe-inline'",
@@ -25,7 +24,6 @@
     "https://www.gstatic.com",
     "https://tagmanager.google.com"
   ],
-  "style-src-elem": ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://www.gstatic.com"],
   "img-src": [
     "'self'",
     "data:",
@@ -112,7 +110,6 @@
     "https://*.googleapis.com",
     "https://*.googletagmanager.com",
     "https://*.sentry.io",
-    "https://cdn.jsdelivr.net",
     "https://firestore.googleapis.com",
     "https://identitytoolkit.googleapis.com",
     "https://raw.githubusercontent.com/yeatmanlab/",
@@ -120,7 +117,6 @@
     "https://us-central1-__ASSESSMENT_PROJECT_ID__.cloudfunctions.net/",
     "https://eyetrackingdata.blob.core.windows.net"
   ],
-  "child-src": ["blob:"],
   "frame-src": [
     "'self'",
     "https://__ADMIN_PROJECT_ID__.firebaseapp.com/",
