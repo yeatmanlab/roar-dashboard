@@ -71,7 +71,10 @@
     </div>
 
     <!-- Divider (only on first screen, not on chooser) -->
-    <div v-if="!showPasswordField && !emailLinkSent && !hideProviders && !multipleProviders" class="divider w-full">
+    <div
+      v-if="!showPasswordField && !emailLinkSent && !hideProviders && !multipleProviders"
+      class="signin-divider w-full"
+    >
       <span class="text-sm">{{ $t('authSignIn.or') }}</span>
     </div>
 
