@@ -49,9 +49,7 @@
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "dependencies": {
     "@bdelab/roar-utils": "^1.0.18",
-    "@roar-platform/assessment-schema": "^0.1.0",
-    "@roar-platform/assessment-sdk": "^0.1.0",
-    "firebase": "^10.13.2",
+    "@roar-platform/assessment-sdk": "^1.0.0",
     "i18next": "^22.4.15",
     "i18next-browser-languagedetector": "^7.0.1",
     "lodash": "^4.17.21",
@@ -65,6 +63,7 @@
   "devDependencies": {
     "@babel/core": "^7.22.5",
     "@babel/preset-env": "^7.22.5",
+    "@roar-platform/assessment-schema": "^1.0.0",
     "@roar-platform/eslint-config": "*",
     "@roar-platform/prettier-config": "*",
     "@rollup/plugin-commonjs": "^28.0.6",
@@ -83,6 +82,7 @@
     "dotenv": "^16.4.5",
     "eslint": "^9.0.0",
     "file-loader": "^6.2.0",
+    "firebase": "^10.13.2",
     "globals": "^16.0.0",
     "html-loader": "^5.0.0",
     "html-webpack-plugin": "^5.5.0",
