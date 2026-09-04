@@ -1,4 +1,5 @@
 import { GCS_ORIGIN } from '../constants/asset-origins.js';
+
 /**
  * Foundational-composite norming config.
  *

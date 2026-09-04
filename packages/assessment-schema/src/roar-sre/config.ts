@@ -1,5 +1,4 @@
 import { GCS_ORIGIN } from '../constants/asset-origins.js';
-
 import { COMPOSITE_FOUNDATIONAL_DOMAIN } from '../constants/common-domains.js';
 
 /**

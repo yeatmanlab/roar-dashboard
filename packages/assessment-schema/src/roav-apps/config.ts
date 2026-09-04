@@ -1,4 +1,5 @@
 import { GCS_ORIGIN } from '../constants/asset-origins.js';
+
 /**
  * Canonical task IDs for the ROAV (Rapid Online Assessment of Vision) perception tasks.
  *

@@ -1,4 +1,5 @@
 import { GCS_ORIGIN, READALOUD_DEVICE_CONFIG_ORIGIN } from '../constants/asset-origins.js';
+
 export const READALOUD_TASK_ID = 'roar-readaloud' as const;
 export type ReadaloudTaskId = typeof READALOUD_TASK_ID;
 
