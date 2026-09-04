@@ -1,4 +1,22 @@
 /**
+ * Local Firebase emulator identifiers.
+ *
+ * **These look like deployment configuration but are shared vocabulary, and they stay here.**
+ *
+ * Their whole purpose is that two independent processes agree on the same local project:
+ * `apps/backend/src/clients/firebase-core.client.ts` initializes Firebase Admin with
+ * `FIREBASE_EMULATOR_PROJECT_ID`, and `apps/assessments/shared/firebaseConfig.js` initializes
+ * the client SDK with the same value. If they disagree, emulator auth silently fails to
+ * associate tokens with users — structurally the same class of cross-party agreement as a
+ * `tasks.slug`, which is why this belongs in the schema package rather than in per-host
+ * configuration.
+ *
+ * They are also not host-specific in the way ROAR's buckets and GCP projects are: an alternate
+ * host running the Firebase emulator suite would use these same conventional values, and one
+ * running no emulator never reads them at all. Nothing here names real ROAR infrastructure.
+ */
+
+/**
  * Firebase project ID used when running against the local Auth emulator.
  *
  * The emulator doesn't validate project IDs, but the Firebase SDK requires

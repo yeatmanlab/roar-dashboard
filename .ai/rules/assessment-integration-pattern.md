@@ -102,11 +102,11 @@ Beyond the standard fields, an assessment's `package.json` carries two things th
 
 The minimum is three files, and it is genuinely small — `roav-ran` and `roar-readaloud` are both at this tier:
 
-| File          | Holds                                                                                                                |
-| ------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `config.ts`   | Canonical task IDs, and URL builders for any external asset (GCS stimuli buckets, lookup-table CSVs, config corpora) |
-| `variants.ts` | Task entries — `name`, `nameSimple`, `nameTechnical` — consumed by the seed config                                   |
-| `index.ts`    | Re-exports                                                                                                           |
+| File          | Holds                                                                                                                               |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `config.ts`   | Canonical task IDs, scoring versions, and URL builders for external assets (GCS stimuli buckets, lookup-table CSVs, config corpora) |
+| `variants.ts` | Task entries — `name`, `nameSimple`, `nameTechnical` — consumed by the seed config                                                  |
+| `index.ts`    | Re-exports                                                                                                                          |
 
 ```typescript
 // config.ts — the task ID is the DB `tasks.slug`, so it must satisfy the check
@@ -115,12 +115,30 @@ The minimum is three files, and it is genuinely small — `roav-ran` and `roar-r
 export const SYMBOL_SEARCH_TASK_ID = "symbol-search" as const;
 export type SymbolSearchTaskId = typeof SYMBOL_SEARCH_TASK_ID;
 
-// Asset URLs belong here, not inlined in the assessment — the dashboard's CSP
-// allowlist and the assessment's fetches have to name the same bucket.
+// Asset URL *builders* belong here, not inlined in the assessment — the dashboard's
+// CSP allowlist and the assessment's fetches have to name the same bucket. But the
+// origin comes from constants/asset-origins.ts, and every builder takes an override
+// defaulting to it, so a host serving these assets itself is not bound to our buckets.
+import { GCS_ORIGIN } from "../constants/asset-origins.js";
+
 export const ROAV_APPS_BUCKET_NAME = "roav-mp" as const;
 export const ROAV_APPS_BUCKET_URL =
-  `https://storage.googleapis.com/${ROAV_APPS_BUCKET_NAME}` as const;
+  `${GCS_ORIGIN}/${ROAV_APPS_BUCKET_NAME}` as const;
+
+export function roavAppsBucketUri(
+  taskId: RoavAppsTaskId,
+  baseUrl: string = ROAV_APPS_BUCKET_URL,
+): string {
+  /* ... */
+}
 ```
+
+**Never put a ROAR infrastructure identifier in the namespace.** GCP project IDs and Firebase
+project names are deployment configuration, and this package publishes to npm. The one exception is `src/firebase-emulator.ts`, whose identifiers exist
+so the backend's Firebase Admin init and the assessments' client init agree on the same _local_
+emulator project; that is cross-party agreement, and the values are conventional emulator
+placeholders. See `packages/assessment-schema/README.md` for the full vocabulary / reference-data
+/ deployment-config split.
 
 **If the assessment produces scores, the namespace owns their vocabulary** — `domains.ts` (canonical `run_scores.domain` strings), `score-names.ts`, and `score-entries.ts` plus its test. This is true no matter _who_ computes them. The backend's scoring configs are consumers of that vocabulary, not a substitute for it: every config in `services/scoring/configs/` imports its task IDs and score names from here — none of them name anything itself — so a rename in the schema is a compile error in the backend rather than a silently mis-keyed score. `phonics.ts` says so in as many words. That's also why those configs are TypeScript and not JSON: a JSON config has no imports, so it could only ever hardcode.
 
