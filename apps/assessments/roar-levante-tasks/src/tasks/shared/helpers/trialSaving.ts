@@ -5,7 +5,6 @@ import { taskStore } from '../../../taskStore';
 import { recordCompletion } from './recordCompletion';
 import { Logger } from '../../../utils/logger';
 import { finishExperiment } from '../trials';
-import { shouldUseClowder } from './shouldUseClowder';
 import { ScoringHandler } from './scoringHandler';
 
 export const initTrialSaving = (config: Record<string, any>) => {
@@ -55,6 +54,19 @@ export const initTrialSaving = (config: Record<string, any>) => {
     }
 
     taskStore('totalTrialCount', taskStore().totalTrialCount + 1);
+
+    if (taskStore().inputCapability) {
+      let inputType;
+      if (taskStore().inputCapability.mouse) {
+        inputType = 'mouse/keyboard';
+      } else if (taskStore().inputCapability.touch) {
+        inputType = 'touch';
+      }
+
+      jsPsych.data.addDataToLastTrial({
+        inputType: inputType,
+      });
+    }
   });
 
   let scoringHandler: ScoringHandler | null = null;

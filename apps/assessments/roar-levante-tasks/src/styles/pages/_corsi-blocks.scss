@@ -11,7 +11,7 @@
     padding: 1rem;
   }
 
-  @include respond-to('very-large') {
+  @include respond-to('large-lower-bound') {
     padding: 0;
   }
 

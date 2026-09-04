@@ -8,7 +8,8 @@ import {
   getParticipantUtilityButtonsHtml,
   setupReplayAudio,
   setupFullscreenButton,
-  isEnglish,
+  isLanguageAllowedDownex,
+  enableOkButton,
 } from '../../shared/helpers';
 import { taskStore } from '../../../taskStore';
 
@@ -119,7 +120,7 @@ const instructions = instructionData.map((data) => {
 
       if (data.buttonText) {
         return [
-          `<button class="primary">
+          `<button class="primary" disabled>
                   ${t[data.buttonText]}
           </button>`,
         ];
@@ -136,6 +137,8 @@ const instructions = instructionData.map((data) => {
         onEnded: () => {
           if (!data.buttonText) {
             jsPsych.finishTrial();
+          } else {
+            enableOkButton();
           }
         },
       };
@@ -156,7 +159,7 @@ const instructions = instructionData.map((data) => {
       if (!setPromptDurations) {
         setPromptDurations = true;
 
-        const displayPromptDurations = isEnglish(taskStore().language)
+        const displayPromptDurations = isLanguageAllowedDownex(taskStore().language)
           ? {
               memoryGameInstruct7Downex: await PageAudioHandler.getAudioDuration(
                 mediaAssets.audio.memoryGameInstruct7Downex,
