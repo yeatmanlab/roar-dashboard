@@ -1,3 +1,5 @@
+import { GCS_ORIGIN } from '../constants/asset-origins.js';
+
 export const SWR_TASK_IDS = {
   EN: 'swr',
   ES: 'swr-es',
@@ -32,7 +34,11 @@ export type SwrScoringVersion = (typeof SWR_SCORING_VERSION)[keyof typeof SWR_SC
  * @param version - The scoring version
  * @returns The full GCS URL for the lookup table
  */
-export const SWR_SCORE_TABLE_URL = (taskId: 'swr' | 'swr-es', version: SwrScoringVersion): string => {
+export const SWR_SCORE_TABLE_URL = (
+  taskId: 'swr' | 'swr-es',
+  version: SwrScoringVersion,
+  origin: string = GCS_ORIGIN,
+): string => {
   const prefix = taskId.replace('-', '_');
-  return `https://storage.googleapis.com/roar-swr/scores/${prefix}_lookup_v${version}.csv`;
+  return `${origin}/roar-swr/scores/${prefix}_lookup_v${version}.csv`;
 };
