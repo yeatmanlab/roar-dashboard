@@ -24,9 +24,22 @@ export default defineConfig({
     format: 'es',
     sourcemap: true,
   },
-  // Workspace deps and peer deps are externalized — consumers provide these themselves.
+  // Externalized = emitted as a bare import specifier instead of being inlined, so the
+  // consumer's bundler resolves it. That is a bundler decision and is NOT the same claim as
+  // `peerDependencies`; the manifest is what states who must provide a package. Conflating
+  // the two is what produced the wrong proposal in project-management#2168.
+  //
+  // Everything the source actually imports (jspsych, i18next, etc.) is inlined. `firebase` is
+  // absent from the bundle because nothing under src/ imports it — it is a harness-only
+  // dependency (serve/, for anonymous Auth), not something this list externalizes.
+  //
+  // `assessment-schema` is deliberately *not* externalized. It is pure constants and pure
+  // functions, so duplicate copies behave identically, and inlining pins each assessment to
+  // the vocabulary it was built and tested against — which is the intent of per-assessment
+  // bundling in project-management#2016. Build-time range agreement is guarded by the parity
+  // test in project-management#2171.
   // Everything else (jspsych, firebase, @bdelab/*) is bundled for a self-contained package.
-  external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@roar-platform\/assessment-schema(\/.*)?$/, /^@sentry\//],
+  external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@sentry\//],
   plugins: [
     postcss({
       inject: true,
