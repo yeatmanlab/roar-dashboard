@@ -76,7 +76,7 @@ describe('ProviderButton.vue', () => {
 
     const img = wrapper.find('img');
     expect(img.classes()).toContain('p-1');
-    expect(img.classes()).toContain('w-1');
+    expect(img.classes()).toContain('provider-button-icon');
   });
 
   it('should display icon when icon is provided and no imgSrc', () => {
@@ -192,7 +192,7 @@ describe('ProviderButton.vue', () => {
     expect(wrapper.emitted('click')).toBeTruthy();
   });
 
-  it('should have icon with p-1 and w-1 classes', () => {
+  it('should have icon with p-1 and provider-button-icon classes', () => {
     const wrapper = mount(ProviderButton, {
       props: {
         label: 'GitHub',
@@ -205,7 +205,7 @@ describe('ProviderButton.vue', () => {
 
     const icon = wrapper.find('i');
     expect(icon.classes()).toContain('p-1');
-    expect(icon.classes()).toContain('w-1');
+    expect(icon.classes()).toContain('provider-button-icon');
   });
 
   it('should update label when prop changes', async () => {
