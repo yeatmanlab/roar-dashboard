@@ -1,6 +1,5 @@
 import { eq } from 'drizzle-orm';
 import { StatusCodes } from 'http-status-codes';
-import type { SyncFgaResponse } from '@roar-platform/api-contract';
 import { ClientWriteRequestOnDuplicateWrites } from '@openfga/sdk';
 import type { OpenFgaClient, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -38,10 +37,43 @@ import {
   administrationSchoolTuple,
   administrationClassTuple,
   administrationGroupTuple,
-} from '../../authorization/helpers/fga-tuples';
-import { FGA_CLASS_VALID_ROLES } from '../../authorization/fga-constants';
-import { categorizeFgaTuples, diffTuples } from './tuple-key.utils';
+} from '../helpers/fga-tuples';
+import { FGA_CLASS_VALID_ROLES } from '../fga-constants';
+import { SYNC_CATEGORIES, categorizeFgaTuples, diffTuples } from './tuple-key.utils';
 import type { SyncCategory, DiffResult } from './tuple-key.utils';
+
+/** Per-category write and delete counts from a sync operation. */
+export interface SyncCategoryCounts {
+  write: number;
+  delete: number;
+}
+
+/**
+ * Result of an FGA store sync — per-category and total write/delete counts.
+ *
+ * Owned by the module rather than the API contract: the sync runs via the
+ * sync-fga job entrypoint (`jobs/sync-fga/`), not behind an HTTP endpoint.
+ */
+export interface SyncFgaResponse {
+  dryRun: boolean;
+  categories: Record<SyncCategory, SyncCategoryCounts>;
+  totalWrites: number;
+  totalDeletes: number;
+}
+
+/**
+ * Human-readable labels for each sync category. The `satisfies` clause makes a
+ * missing member a compile error, so a new `SyncCategory` can never be
+ * silently skipped from the diff or apply loops.
+ */
+const SYNC_CATEGORY_LABELS = {
+  orgHierarchy: 'org hierarchy',
+  orgMemberships: 'org membership',
+  classMemberships: 'class membership',
+  groupMemberships: 'group membership',
+  familyMemberships: 'family membership',
+  administrationAssignments: 'administration assignment',
+} as const satisfies Record<SyncCategory, string>;
 
 /** Maximum tuples per FGA writeTuples / deleteTuples call. */
 const FGA_WRITE_BATCH_SIZE = 100;
@@ -440,41 +472,24 @@ export function AuthorizationModule({
         administrationAssignments: adminAssignments,
       };
 
-      const categoryNames: SyncCategory[] = [
-        'orgHierarchy',
-        'orgMemberships',
-        'classMemberships',
-        'groupMemberships',
-        'familyMemberships',
-        'administrationAssignments',
-      ];
-
-      const categories = {} as Record<SyncCategory, { write: number; delete: number }>;
+      const categories = {} as Record<SyncCategory, SyncCategoryCounts>;
       const diffs = {} as Record<SyncCategory, DiffResult>;
 
-      for (const name of categoryNames) {
+      for (const name of SYNC_CATEGORIES) {
         const diff = diffTuples(desiredByCategory[name], existingByCategory[name]);
         diffs[name] = diff;
         categories[name] = { write: diff.toWrite.length, delete: diff.toDelete.length };
       }
 
-      const totalWrites = categoryNames.reduce((sum, name) => sum + categories[name].write, 0);
-      const totalDeletes = categoryNames.reduce((sum, name) => sum + categories[name].delete, 0);
+      const totalWrites = SYNC_CATEGORIES.reduce((sum, name) => sum + categories[name].write, 0);
+      const totalDeletes = SYNC_CATEGORIES.reduce((sum, name) => sum + categories[name].delete, 0);
 
       logger.info({ categories, totalWrites, totalDeletes, dryRun, userId }, 'FGA sync diff counts');
 
       // 4. Execute deletes then writes per category
       if (!dryRun) {
-        const syncCategories = [
-          { name: 'orgHierarchy' as const, label: 'org hierarchy' },
-          { name: 'orgMemberships' as const, label: 'org membership' },
-          { name: 'classMemberships' as const, label: 'class membership' },
-          { name: 'groupMemberships' as const, label: 'group membership' },
-          { name: 'familyMemberships' as const, label: 'family membership' },
-          { name: 'administrationAssignments' as const, label: 'administration assignment' },
-        ] as const;
-
-        for (const { name, label } of syncCategories) {
+        for (const name of SYNC_CATEGORIES) {
+          const label = SYNC_CATEGORY_LABELS[name];
           const diff = diffs[name];
 
           try {
