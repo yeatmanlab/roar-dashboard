@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { FgaClient } from '../../clients/fga.client';
 import { createChildLogger } from '../../logger';
-import { AuthorizationModule } from '../../services/system/authorization/authorization.module';
+import { AuthorizationModule } from '../../services/authorization/sync/authorization.module';
 import { MONOREPO_ROOT } from '../paths';
 
 const logger = createChildLogger({}, { msgPrefix: '[fga-test] ' });

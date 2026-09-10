@@ -1,5 +1,5 @@
 import type { TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
-import { FgaType, FgaHierarchyRelation } from '../../authorization/fga-constants';
+import { FgaType, FgaHierarchyRelation } from '../fga-constants';
 
 /**
  * Canonical string serialization of a tuple key for Set-based diffing.
@@ -43,14 +43,17 @@ const GROUP_OBJECT_PREFIX = `${FgaType.GROUP}:`;
 const FAMILY_OBJECT_PREFIX = `${FgaType.FAMILY}:`;
 const ADMINISTRATION_OBJECT_PREFIX = `${FgaType.ADMINISTRATION}:`;
 
-/** The six sync categories. */
-export type SyncCategory =
-  | 'orgHierarchy'
-  | 'orgMemberships'
-  | 'classMemberships'
-  | 'groupMemberships'
-  | 'familyMemberships'
-  | 'administrationAssignments';
+/** The six sync categories, in sync/iteration order. */
+export const SYNC_CATEGORIES = [
+  'orgHierarchy',
+  'orgMemberships',
+  'classMemberships',
+  'groupMemberships',
+  'familyMemberships',
+  'administrationAssignments',
+] as const;
+
+export type SyncCategory = (typeof SYNC_CATEGORIES)[number];
 
 /**
  * Partition FGA tuples read from the store into the 6 sync categories.

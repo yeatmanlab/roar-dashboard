@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import type { SyncFgaResponse } from '@roar-platform/api-contract';
+import type { SyncFgaResponse } from '../../services/authorization/sync/authorization.module';
 import { FgaClient } from '../../clients/fga.client';
 import { logger } from '../../logger';
 import type { AuthContext } from '../../types/auth-context';
@@ -27,7 +27,7 @@ vi.mock('../../db/clients', () => ({
   closeDatabasePools: mockCloseDatabasePools,
 }));
 
-vi.mock('../../services/system/authorization/authorization.module', () => ({
+vi.mock('../../services/authorization/sync/authorization.module', () => ({
   AuthorizationModule: mockAuthorizationModule,
 }));
 
