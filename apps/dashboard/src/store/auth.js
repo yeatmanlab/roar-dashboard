@@ -6,6 +6,8 @@ import _union from 'lodash/union';
 import { initializeFirekit } from '@/firekit';
 import { APP_ROUTES } from '@/constants/routes';
 import { getAuthService } from '@/services/AuthService';
+import { queryClient } from '@/queryClient';
+import { ME_QUERY_KEY } from '@/constants/queryKeys';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -76,6 +78,28 @@ export const useAuthStore = () => {
         this.setAuthStateListener();
       },
 
+      /**
+       * Reset all cached state tied to the current identity.
+       *
+       * Clears the store's `userClaims` / `userData` copies and resets the
+       * `/me` cache entry. `resetQueries` (not `removeQueries`) is deliberate:
+       * `removeQueries` destroys the entry WITHOUT notifying mounted observers
+       * (verified against @tanstack/query-core 5.x — QueryObserver has no
+       * removal handler), so components would keep rendering the previous
+       * user's data; `resetQueries` notifies subscribers and refetches active
+       * observers. Clearing the store fields matters because
+       * `authStore.userClaims` is persisted to sessionStorage and is the
+       * router guard's super-admin fallback — leaving user A's
+       * `super_admin: true` in place would grant user B the fallback bypass.
+       */
+      resetIdentity() {
+        this.userClaims = null;
+        this.userData = null;
+        // Fire-and-forget: the reset itself is synchronous; the returned
+        // promise only tracks the refetch of active observers.
+        queryClient.resetQueries({ queryKey: [ME_QUERY_KEY] }).catch(() => {});
+      },
+
       async initFirekit() {
         try {
           // IMPORTANT: Firebase/Firekit objects must be wrapped with markRaw() to prevent Vue's
@@ -108,7 +132,18 @@ export const useAuthStore = () => {
        */
       setAuthStateListener() {
         const authService = getAuthService();
+        // Track the previous Firebase uid across listener invocations so we
+        // can tell user changes apart from token refreshes (which fire this
+        // listener too, with an unchanged uid).
+        let previousUid = this.firebaseUser?.uid;
         this.authStateListener = authService.onIdTokenChanged(async (user) => {
+          const incomingUid = user?.uid;
+          const uidChanged = incomingUid !== previousUid;
+          previousUid = incomingUid;
+
+          // Write the new identity FIRST, then reset — so the refetch that
+          // `resetQueries` triggers on active observers runs with the new
+          // token (or finds observers disabled on sign-out).
           if (user) {
             // Firebase User objects must use markRaw() to prevent Vue's reactivity
             // system from traversing internal auth provider state that references
@@ -118,6 +153,17 @@ export const useAuthStore = () => {
           } else {
             this.firebaseUser = null;
             this.accessToken = null;
+          }
+
+          if (uidChanged) {
+            // The `/me` cache entry is uid-less. A user switch that bypasses
+            // the sign-out mutation (e.g. auth-expired → SignIn → different
+            // user signs in) would otherwise serve user A's cached `/me` —
+            // super_admin included — to user B while the entry is still
+            // fresh. Reset on any uid change (A→B switches and A→null
+            // sign-outs alike); token refreshes keep the same uid and are
+            // deliberately left alone.
+            this.resetIdentity();
           }
         });
       },
@@ -135,6 +181,12 @@ export const useAuthStore = () => {
        * @param {{ email: string, password: string }} credentials
        */
       async logInWithEmailAndPassword({ email, password }) {
+        // Starting a new sign-in clears the previous identity's caches so no
+        // interleaving of the post-sign-in claims fetch and the auth listener
+        // can serve the previous user's cached /me to the new one (the
+        // listener race: `signIn().then(getUserClaims)` and `onIdTokenChanged`
+        // are unordered microtasks).
+        this.resetIdentity();
         const authService = getAuthService();
         return authService.signInWithEmailAndPassword(email, password);
       },
@@ -157,6 +209,9 @@ export const useAuthStore = () => {
        * @param {{ email: string, emailLink: string }} params
        */
       async signInWithEmailLink({ email, emailLink }) {
+        // See logInWithEmailAndPassword: clear the previous identity before
+        // starting a new sign-in to rule out the listener race.
+        this.resetIdentity();
         const authService = getAuthService();
         await authService.signInWithEmailLink(email, emailLink);
         window.localStorage.removeItem('emailForSignIn');
@@ -168,6 +223,9 @@ export const useAuthStore = () => {
        * @param {'google' | 'clever' | 'classlink' | 'nycps'} providerName
        */
       async signInWithPopup(providerName) {
+        // See logInWithEmailAndPassword: clear the previous identity before
+        // starting a new sign-in to rule out the listener race.
+        this.resetIdentity();
         this.ssoProvider = providerName;
         const authService = getAuthService();
         return authService.signInWithPopup(providerName);
@@ -179,6 +237,9 @@ export const useAuthStore = () => {
        * @param {'google' | 'clever' | 'classlink' | 'nycps'} providerName
        */
       async signInWithRedirect(providerName) {
+        // See logInWithEmailAndPassword: clear the previous identity before
+        // starting a new sign-in to rule out the listener race.
+        this.resetIdentity();
         this.ssoProvider = providerName;
         const authService = getAuthService();
         return authService.signInWithRedirect(providerName);
