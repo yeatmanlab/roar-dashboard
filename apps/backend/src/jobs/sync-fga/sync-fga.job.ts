@@ -13,7 +13,7 @@
  * user, and IAM on the Cloud Run Job execution is the real access control.
  */
 import 'dotenv/config';
-import type { SyncFgaResponse } from '@roar-platform/api-contract';
+import type { SyncFgaResponse } from '../../services/authorization/sync/authorization.module';
 import { FgaClient } from '../../clients/fga.client';
 import { initializeDatabasePools, closeDatabasePools } from '../../db/clients';
 import { logger } from '../../logger';
@@ -75,7 +75,7 @@ export async function main({ dryRun }: { dryRun: boolean }): Promise<SyncFgaResp
   try {
     // Dynamic import after pool init — the module graph instantiates
     // repositories at module level (same rationale as server.ts).
-    const { AuthorizationModule } = await import('../../services/system/authorization/authorization.module');
+    const { AuthorizationModule } = await import('../../services/authorization/sync/authorization.module');
 
     const module = AuthorizationModule();
     const result = await module.syncFgaStore(SYNC_JOB_AUTH_CONTEXT, { dryRun });
