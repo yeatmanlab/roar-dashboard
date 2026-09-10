@@ -45,7 +45,7 @@ export function meRetryPolicy(failureCount, error) {
  * shape carries the ts-rest response (`.status` / `.body`) so
  * `isRosteringEndedError` / `isTerminalAuthError` can introspect it downstream.
  *
- * @returns {Promise<object>} The `/me` `data` payload (id, userType, name, unsignedAgreements).
+ * @returns {Promise<object>} The `/me` `data` payload (id, userType, nameFirst, nameLast, unsignedAgreements).
  * @throws {Error} With `.status` and `.body` attached on non-200 responses.
  */
 export async function fetchMe() {
@@ -66,7 +66,7 @@ export async function fetchMe() {
  * `/me` query.
  *
  * Calls the backend `GET /me` endpoint to fetch the authenticated user's profile
- * (id, userType, name, unsignedAgreements). This is the canonical source of
+ * (id, userType, nameFirst, nameLast, unsignedAgreements). This is the canonical source of
  * truth for user identity and TOS status; it replaces the Firestore-based
  * user data fetch.
  *

@@ -13,6 +13,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import useUserType from '@/composables/useUserType';
+import useCurrentUser from '@/composables/useCurrentUser';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { getSidebarActions } from '@/router/sidebarActions';
@@ -42,6 +43,8 @@ const { data: userClaims } = useUserClaimsQuery({
 });
 
 const { isAdmin, isSuperAdmin, isLaunchAdmin } = useUserType(userClaims);
+
+const { data: currentUser } = useCurrentUser();
 
 // @TODO: Move the navbar blacklist to route meta definitions.
 const navbarBlacklist = [
@@ -142,7 +145,11 @@ const displayName = computed(() => {
 
   const displayName = authStore?.userData?.displayName;
   const username = authStore?.userData?.username;
-  const firstName = authStore?.userData?.name?.first;
+
+  // `/me` is the canonical source for the user's name. The `authStore.userData`
+  // fallbacks below are retained because `userData` is still tracked for
+  // migration (#2219) and stays correct should it ever be repopulated.
+  const firstName = currentUser.value?.nameFirst;
   const userType = isAdmin.value ? 'Admin' : 'User';
 
   return `${firstName || displayName || username || email || userType}`;
