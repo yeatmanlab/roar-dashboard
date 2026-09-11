@@ -50,15 +50,15 @@ export function addExperimenterButtons() {
   const popup = document.createElement('div');
   popup.id = 'exit-confirmation-popup';
   popup.classList.add('exit-confirmation-popup');
-  popup.textContent = taskStore().translations.generalConfirmExit || 'Are you sure you want to exit the game?';
+  popup.textContent = taskStore().translations.generalConfirmExit;
   popup.style.display = 'none';
 
   const popupButtonContainer = document.createElement('div');
   popupButtonContainer.id = 'exit-confirmation-popup-buttons';
   popupButtonContainer.classList.add('exit-confirmation-popup-buttons');
   popupButtonContainer.innerHTML = `
-        <button class="primary small">${taskStore().translations.yes || 'Yes'}</button>
-        <button class="primary small">${taskStore().translations.no || 'No'}</button>
+        <button class="primary small">${taskStore().translations.generalYes || 'Yes'}</button>
+        <button class="primary small">${taskStore().translations.generalNo || 'No'}</button>
     `;
   popup.appendChild(popupButtonContainer);
 

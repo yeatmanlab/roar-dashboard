@@ -10,11 +10,13 @@ import {
   camelize,
   enableOkButton,
   disableOkButton,
+  isTaskFinished,
   shouldTerminateCat,
   selectNextSequentialTrial,
   addExperimenterButtons,
   setupFullscreenButton,
   updateTheta,
+  wrapListeners,
 } from '../../shared/helpers';
 import { finishExperiment } from '../../shared/trials';
 import { taskStore } from '../../../taskStore';
@@ -153,7 +155,7 @@ export const afcMatch = (trial?: StimulusType) => {
     button_choices: () => {
       const stim = trial || taskStore().nextStimulus;
       if (stim.assessmentStage === 'instructions') {
-        return ['OK'];
+        return [taskStore().translations.continueButtonText];
       } else {
         const randomize = stim.answser ? 'yes' : 'no';
         // Randomize choices if there is an answer
@@ -164,7 +166,8 @@ export const afcMatch = (trial?: StimulusType) => {
     button_html: () => {
       const stim = trial || taskStore().nextStimulus;
       const buttonClass = stim.assessmentStage === 'instructions' ? 'primary' : 'image-medium';
-      return `<button class="${buttonClass}">%choice%</button>`;
+      const disabled = stim.assessmentStage === 'instructions' ? ' disabled' : '';
+      return `<button class="${buttonClass}"${disabled}>%choice%</button>`;
     },
     on_load: () => {
       // create img elements and arrange in grid as cards
@@ -180,6 +183,7 @@ export const afcMatch = (trial?: StimulusType) => {
           enabled: false,
           maxRepetitions: 2,
         },
+        ...(stim.assessmentStage === 'instructions' ? { onEnded: enableOkButton } : {}),
       };
       PageAudioHandler.playAudio(mediaAssets.audio[camelize(audioFile)], audioConfig);
 
@@ -194,6 +198,10 @@ export const afcMatch = (trial?: StimulusType) => {
         .filter((btn) => !!btn);
 
       let numberOfErrors = 0;
+
+      if (stim.assessmentStage === 'instructions') {
+        disableOkButton();
+      }
 
       if (stim.trialType !== 'instructions') {
         if (taskStore().version === 2) {
@@ -223,7 +231,7 @@ export const afcMatch = (trial?: StimulusType) => {
           // Add primary OK button under the other buttons
           const okButton = document.createElement('button');
           okButton.className = 'primary';
-          okButton.textContent = 'OK';
+          okButton.textContent = taskStore().translations.continueButtonText;
           okButton.style.marginTop = '16px';
           okButton.disabled = true;
           okButton.addEventListener('click', () => {
@@ -297,8 +305,10 @@ export const afcMatch = (trial?: StimulusType) => {
           // linear button layout
           buttonContainer.classList.add('lev-response-row', 'multi-4');
         }
-        responseBtns.forEach((card, i) =>
-          card.addEventListener('click', async (e) => {
+
+        let firstClick = true; // only need to reenable buttons on first click
+        responseBtns.forEach((card, i) => {
+          const handleCardSelect = async () => {
             const answer = ((card as HTMLButtonElement)?.firstChild as HTMLImageElement)?.alt;
 
             if (!card) {
@@ -329,9 +339,14 @@ export const afcMatch = (trial?: StimulusType) => {
               }
             }
 
-            setTimeout(() => enableBtns(responseBtns), 500);
-          }),
-        );
+            if (firstClick) {
+              await isTaskFinished(() => card.disabled, 10).then(() => enableBtns(responseBtns));
+              firstClick = false;
+            }
+          };
+
+          wrapListeners(card, handleCardSelect);
+        });
       }
 
       displayDebugInfo(stim);
@@ -411,7 +426,9 @@ export const afcMatch = (trial?: StimulusType) => {
           return trial.trialNumber === stim.trialNumber && trial.trialType === stim.trialType;
         });
 
-        selectNextSequentialTrial(nextTrials);
+        if (stim.assessmentStage !== 'practice_response') {
+          selectNextSequentialTrial(nextTrials);
+        }
       }
     },
   };

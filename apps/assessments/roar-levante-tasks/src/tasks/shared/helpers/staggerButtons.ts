@@ -8,13 +8,12 @@ let staggerEnabled = true;
 
 export const handleStaggeredButtons = async (
   pageState: PageStateHandler,
-  buttonContainer: HTMLDivElement,
+  buttons: HTMLButtonElement[],
   audioList: string[],
   currentTrialId?: string,
   disableButtons = true,
+  pulseButtons = false,
 ) => {
-  const parentResponseDiv = buttonContainer;
-  const i = 0;
   const stimulusDuration = await pageState.getStimulusDurationMs();
   const intialDelay = stimulusDuration + 300;
 
@@ -26,7 +25,7 @@ export const handleStaggeredButtons = async (
   }, stimulusDuration + 110);
 
   if (disableButtons) {
-    for (const jsResponseEl of parentResponseDiv.children) {
+    for (const jsResponseEl of buttons) {
       // disable the buttons so that they are not active during the animation
       jsResponseEl.classList.add(
         'lev-staggered-responses',
@@ -42,11 +41,12 @@ export const handleStaggeredButtons = async (
     setTimeout(() => {
       showStaggeredBtnAndPlaySound(
         0,
-        Array.from(parentResponseDiv?.children as HTMLCollectionOf<HTMLButtonElement>),
+        buttons,
         audioList,
         pageState,
         resolve, // Pass the resolve function to be called when animation completes
         currentTrialId,
+        pulseButtons,
       );
     }, intialDelay);
   });
@@ -59,6 +59,7 @@ const showStaggeredBtnAndPlaySound = (
   pageState: PageStateHandler,
   onComplete?: () => void,
   currentTrialId?: string,
+  pulseButtons: boolean = false,
 ) => {
   // check if the trial id has changed - we don't want overlap between trials
   const actualTrialId = taskStore().nextStimulus?.itemId;
@@ -68,6 +69,10 @@ const showStaggeredBtnAndPlaySound = (
 
   const btn = btnList[index];
   btn.classList.remove('lev-staggered-grayscale', 'lev-staggered-opacity');
+
+  if (pulseButtons) {
+    btn.style.animation = 'pulse 2s 0s 1';
+  }
 
   let audioAsset = mediaAssets.audio[camelize(audioList[index])];
   if (!audioAsset) {
@@ -95,7 +100,15 @@ const showStaggeredBtnAndPlaySound = (
         onComplete?.();
       } else {
         //recurse
-        showStaggeredBtnAndPlaySound(index + 1, btnList, audioList, pageState, onComplete, currentTrialId);
+        showStaggeredBtnAndPlaySound(
+          index + 1,
+          btnList,
+          audioList,
+          pageState,
+          onComplete,
+          currentTrialId,
+          pulseButtons,
+        );
       }
     },
   };

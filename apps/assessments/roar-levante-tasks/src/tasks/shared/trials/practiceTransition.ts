@@ -8,6 +8,7 @@ import {
   PageAudioHandler,
   camelize,
   setupFullscreenButton,
+  enableOkButton,
 } from '../helpers';
 import { taskStore } from '../../../taskStore';
 import { pulseOkButton } from '../helpers/pulseOkButton';
@@ -54,7 +55,7 @@ export const practiceTransition = (getPrompt?: () => string, forceRun = false) =
         button_choices: ['Continue'],
         button_html: () => {
           const t = taskStore().translations;
-          return `<button class="primary">${t.continueButtonText}</button>`;
+          return `<button class="primary" disabled>${t.continueButtonText}</button>`;
         },
         keyboard_choices: isKeyboardEnabled ? ['Enter'] : 'NO_KEYS',
         post_trial_gap: 350,
@@ -70,6 +71,7 @@ export const practiceTransition = (getPrompt?: () => string, forceRun = false) =
               maxRepetitions: 2,
             },
             onEnded: () => {
+              enableOkButton();
               pulseOkButton(3000, taskStore().totalTrialCount);
             },
           };

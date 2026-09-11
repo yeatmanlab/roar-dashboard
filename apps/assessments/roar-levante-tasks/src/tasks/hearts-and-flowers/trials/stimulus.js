@@ -74,6 +74,10 @@ export function stimulus(isPractice, stage, trialType, stimulusDuration, onTrial
       const stimulusPosition = jsPsych.timelineVariable('position');
       const stimulusType = jsPsych.timelineVariable('stimulus');
 
+      // Only hfV2 (non-practice) trials have a trial_duration and can actually time out;
+      // for other trials this just flags an absent response.
+      data.timedOut = data.button_response === null && data.keyboard_response === null;
+
       // get response position
       let response;
       if (data.button_response === 0 || data.button_response === 1) {
@@ -136,10 +140,19 @@ export function stimulus(isPractice, stage, trialType, stimulusDuration, onTrial
       const itemUid =
         'hf_' + `${trialType === 'hearts and flowers' ? 'heartsflowers' : trialType}` + '_' + stimulusType;
 
+      let responseData;
+      if (response === 0) {
+        responseData = ResponseSideType.Left;
+      } else if (response === 1) {
+        responseData = ResponseSideType.Right;
+      } else {
+        responseData = null;
+      }
+
       jsPsych.data.addDataToLastTrial({
         item: stimulusType,
         answer: validAnswer === 0 ? ResponseSideType.Left : ResponseSideType.Right,
-        response: response === 0 ? ResponseSideType.Left : ResponseSideType.Right,
+        response: responseData,
         responseLocation: response,
         itemUid: itemUid,
         presentationTime: hfV2 ? stimulusDuration : null,
