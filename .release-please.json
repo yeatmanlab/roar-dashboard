@@ -62,21 +62,21 @@
       "version-file": "package.json",
       "release-type": "node",
       "component": "api-contract",
-      "release-as": "0.1.0"
+      "release-as": "1.0.0"
     },
     "packages/assessment-sdk": {
       "changelog-path": "CHANGELOG.md",
       "version-file": "package.json",
       "release-type": "node",
       "component": "assessment-sdk",
-      "release-as": "0.1.0"
+      "release-as": "1.0.0"
     },
     "packages/assessment-schema": {
       "changelog-path": "CHANGELOG.md",
       "version-file": "package.json",
       "release-type": "node",
       "component": "assessment-schema",
-      "release-as": "0.1.0"
+      "release-as": "1.0.0"
     },
     "apps/assessments/roar-pa": {
       "changelog-path": "CHANGELOG.md",
@@ -104,14 +104,14 @@
       "version-file": "package.json",
       "release-type": "node",
       "component": "roar-letter",
-      "release-as": "4.0.10"
+      "release-as": "4.1.1"
     },
     "apps/assessments/roar-multichoice": {
       "changelog-path": "CHANGELOG.md",
       "version-file": "package.json",
       "release-type": "node",
       "component": "roar-multichoice",
-      "release-as": "2.2.1"
+      "release-as": "2.3.1"
     },
     "apps/assessments/roar-survey": {
       "changelog-path": "CHANGELOG.md",
