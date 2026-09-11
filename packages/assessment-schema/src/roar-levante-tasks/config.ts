@@ -1,3 +1,5 @@
+import { GCS_ORIGIN } from '../constants/asset-origins.js';
+
 /**
  * Canonical task IDs for the ROAR LEVANTE normed tasks.
  * These tasks write IRT-based scores (theta, roarScore, standardScore, percentile)
@@ -51,7 +53,11 @@ const LEVANTE_NORMED_TASK_TABLE_CONFIG: Record<LevanteNormedTaskId, { bucket: st
  * @param version - The scoring version
  * @returns The full GCS URL for the lookup table CSV
  */
-export const LEVANTE_SCORE_TABLE_URL = (taskId: LevanteNormedTaskId, version: LevanteScoringVersion): string => {
+export const LEVANTE_SCORE_TABLE_URL = (
+  taskId: LevanteNormedTaskId,
+  version: LevanteScoringVersion,
+  origin: string = GCS_ORIGIN,
+): string => {
   const { bucket, csvPrefix } = LEVANTE_NORMED_TASK_TABLE_CONFIG[taskId];
-  return `https://storage.googleapis.com/${bucket}/scores/${csvPrefix}_lookup_v${version}.csv`;
+  return `${origin}/${bucket}/scores/${csvPrefix}_lookup_v${version}.csv`;
 };

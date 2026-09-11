@@ -1,3 +1,5 @@
+import { GCS_ORIGIN } from '../constants/asset-origins.js';
+
 export const MORPHOLOGY_TASK_ID = 'morphology' as const;
 export type MorphologyTaskId = typeof MORPHOLOGY_TASK_ID;
 
@@ -22,5 +24,8 @@ export type MultichoiceScoringVersion = (typeof MULTICHOICE_SCORING_VERSION)[key
  * @param task - 'morphology' or 'cva'
  * @param version - The scoring version (from MULTICHOICE_SCORING_VERSION)
  */
-export const MULTICHOICE_SCORE_TABLE_URL = (task: 'morphology' | 'cva', version: MultichoiceScoringVersion): string =>
-  `https://storage.googleapis.com/roar-survey/scores/${task}_lookup_v${version}.csv`;
+export const MULTICHOICE_SCORE_TABLE_URL = (
+  task: 'morphology' | 'cva',
+  version: MultichoiceScoringVersion,
+  origin: string = GCS_ORIGIN,
+): string => `${origin}/roar-survey/scores/${task}_lookup_v${version}.csv`;
