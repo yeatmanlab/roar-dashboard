@@ -14,6 +14,15 @@ import {
 } from '../../../test-support/clients/fga.client';
 import { AuthContextFactory } from '../../../test-support/factories/user.factory';
 import { OrgType } from '../../../enums/org-type.enum';
+import {
+  userOrgs,
+  userClasses,
+  userGroups,
+  userFamilies,
+  administrationOrgs,
+  administrationClasses,
+  administrationGroups,
+} from '../../../db/schema/core';
 import { AuthorizationModule } from './authorization.module';
 
 // ── Mock DB ──────────────────────────────────────────────────────────────────
@@ -795,10 +804,9 @@ describe('AuthorizationModule', () => {
         return chain;
       }
 
+      const from = vi.fn().mockReturnValue(createRejectingChain());
       const db = {
-        select: vi.fn().mockReturnValue({
-          from: vi.fn().mockReturnValue(createRejectingChain()),
-        }),
+        select: vi.fn().mockReturnValue({ from }),
       };
 
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
@@ -814,6 +822,23 @@ describe('AuthorizationModule', () => {
         expect.objectContaining({ err: dbError }),
         expect.stringContaining('Failed to build'),
       );
+
+      // A failed builder stops the sync before later categories query. Identity
+      // comparison on the table objects keeps this independent of how many
+      // queries the first builder makes internally.
+      const queriedTables = from.mock.calls.map(([table]) => table);
+      const laterCategoryTables = [
+        userOrgs,
+        userClasses,
+        userGroups,
+        userFamilies,
+        administrationOrgs,
+        administrationClasses,
+        administrationGroups,
+      ];
+      for (const table of laterCategoryTables) {
+        expect(queriedTables).not.toContain(table);
+      }
     });
 
     it('wraps FGA write errors with EXTERNAL_SERVICE_FAILED', async () => {
