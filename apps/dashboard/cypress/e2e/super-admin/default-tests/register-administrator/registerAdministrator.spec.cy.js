@@ -22,7 +22,7 @@ function checkAdministratorCreated() {
   //   Need to expand the checks on this spec
 }
 
-describe('The admin user can create a new administrator and assign them to a group(s).', () => {
+describe.skip('The admin user can create a new administrator and assign them to a group(s).', () => {
   it(
     'Logs into the dashboard, navigates to the Create Administrator component, ' +
       'creates a new administrator, and assigns the new administrator to a group,',

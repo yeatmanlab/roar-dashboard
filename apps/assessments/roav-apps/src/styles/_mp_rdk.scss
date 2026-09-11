@@ -1,0 +1,60 @@
+@use 'vars' as *;
+
+:root {
+  --roav-mp-rdk-border-color-game: #baefff;
+  --roav-mp-rdk-border-color-stand: #ffffff;
+}
+
+$roav-mp-bg-trial-gap: #e0e0e0;
+
+.roav-mp-rdk-container-trial-gap {
+  background-color: $roav-mp-bg-trial-gap;
+  &.border-game {
+    background-color: var(--roav-mp-rdk-border-color-game) !important;
+  }
+  &.border-stand {
+    background-color: var(--roav-mp-rdk-border-color-stand) !important;
+  }
+}
+
+.roav-mp-rdk-div-overlay-fade {
+  position: absolute;
+  inset: 0;
+  background-color: $roav-mp-bg-trial-gap;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.roav-mp-rdk-text-wrap {
+  position: absolute;
+  top: calc(0.05 * var(--height-fs));
+  height: calc(0.1 * var(--height-fs));
+  width: calc(0.7 * var(--height-fs));
+  overflow: hidden;
+  border: 6px solid $roav-yellow;
+  border-radius: 20px;
+  z-index: 15;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+  &.game {
+    background-color: $roav-bg-card-game;
+  }
+  &.stand {
+    background-color: $roav-bg-card-stand;
+  }
+}
+
+.roav-mp-rdk-text {
+  white-space: nowrap;
+  font-size: calc(0.035 * var(--height-fs));
+  width: 100%;
+}
+
+.roav-mp-rdk-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}

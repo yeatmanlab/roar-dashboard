@@ -1,0 +1,8 @@
+{
+  "loading": "This experiment is loading...",
+  "progressBar": "Progress Complete",
+  "fullScreenTrial": {
+    "prompt": "Switching to full screen mode.",
+    "buttonText": "Go"
+  }
+}

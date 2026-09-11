@@ -4,9 +4,11 @@ import {
   setProgressChartOptions,
   setDistributionChartData,
   setDistributionChartOptions,
+  mapSupportLevelCounts,
+  aggregateSupportLevelRuns,
 } from './plotting';
 import { PROGRESS_COLORS } from '@/constants/completionStatus';
-import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
 
 global.document = {
   documentElement: {},
@@ -293,6 +295,91 @@ describe('plotting', () => {
         const result = labelFn(context);
 
         expect(result).toContain('33%');
+      });
+    });
+  });
+
+  describe('mapSupportLevelCounts', () => {
+    it('maps the score-overview support-level names onto the chart vocabulary', () => {
+      const supportLevels = {
+        needsExtraSupport: { count: 3 },
+        developingSkill: { count: 5 },
+        achievedSkill: { count: 7 },
+      };
+
+      expect(mapSupportLevelCounts(supportLevels)).toEqual({ below: 3, some: 5, above: 7 });
+    });
+
+    it('zeroes a task the endpoint returned no entry for', () => {
+      expect(mapSupportLevelCounts(undefined)).toEqual({ below: 0, some: 0, above: 0 });
+      expect(mapSupportLevelCounts(null)).toEqual({ below: 0, some: 0, above: 0 });
+    });
+
+    it('zeroes individual levels that are absent', () => {
+      expect(mapSupportLevelCounts({ developingSkill: { count: 2 } })).toEqual({
+        below: 0,
+        some: 2,
+        above: 0,
+      });
+    });
+
+    it('preserves a zero count rather than coercing it away', () => {
+      const supportLevels = {
+        needsExtraSupport: { count: 0 },
+        developingSkill: { count: 0 },
+        achievedSkill: { count: 4 },
+      };
+
+      expect(mapSupportLevelCounts(supportLevels)).toEqual({ below: 0, some: 0, above: 4 });
+    });
+  });
+
+  describe('aggregateSupportLevelRuns', () => {
+    it('returns null when there are no runs', () => {
+      expect(aggregateSupportLevelRuns(null)).toBeNull();
+      expect(aggregateSupportLevelRuns(undefined)).toBeNull();
+    });
+
+    it('counts an array of runs by support level', () => {
+      const runs = [
+        { scores: { support_level: SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT } },
+        { scores: { support_level: SCORE_SUPPORT_SKILL_LEVELS.NEEDS_EXTRA_SUPPORT } },
+        { scores: { support_level: SCORE_SUPPORT_SKILL_LEVELS.DEVELOPING_SKILL } },
+        { scores: { support_level: SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL } },
+      ];
+
+      expect(aggregateSupportLevelRuns(runs)).toEqual({ below: 2, some: 1, above: 1 });
+    });
+
+    it('skips runs with an absent or unrecognized support level', () => {
+      // Only classified runs count toward the distribution, matching the prior
+      // client-side aggregation — an unscored run must not inflate any bucket.
+      const runs = [
+        { scores: { support_level: SCORE_SUPPORT_SKILL_LEVELS.ACHIEVED_SKILL } },
+        { scores: { support_level: null } },
+        { scores: { support_level: 'Optional' } },
+        { scores: {} },
+        {},
+      ];
+
+      expect(aggregateSupportLevelRuns(runs)).toEqual({ below: 0, some: 0, above: 1 });
+    });
+
+    it('returns zeroes for an empty runs array', () => {
+      expect(aggregateSupportLevelRuns([])).toEqual({ below: 0, some: 0, above: 0 });
+    });
+
+    it('reads pre-aggregated district totals without iterating', () => {
+      const districtTotals = { below: { total: 4 }, some: { total: 5 }, above: { total: 6 } };
+
+      expect(aggregateSupportLevelRuns(districtTotals)).toEqual({ below: 4, some: 5, above: 6 });
+    });
+
+    it('zeroes district totals that are absent', () => {
+      expect(aggregateSupportLevelRuns({ some: { total: 2 } })).toEqual({
+        below: 0,
+        some: 2,
+        above: 0,
       });
     });
   });

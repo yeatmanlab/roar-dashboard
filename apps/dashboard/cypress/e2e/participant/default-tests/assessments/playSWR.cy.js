@@ -4,12 +4,13 @@ import { isCurrentVersion } from '../../../../support/utils';
 const app = '@bdelab/roar-swr';
 let isCurrentAppVersion;
 
-describe('Participant Assessment: ROAR SWR', () => {
+// SKIPPED until #1827: assessment play-through tests need reevaluation after monorepo migration
+describe.skip('Participant Assessment: ROAR SWR', () => {
   before(async () => {
     isCurrentAppVersion = await isCurrentVersion(app);
   });
 
-  describe('EN', () => {
+  describe.skip('EN', () => {
     it('Completes assessment with username/password authentication', () => {
       if (isCurrentAppVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
@@ -29,7 +30,7 @@ describe('Participant Assessment: ROAR SWR', () => {
     });
   });
 
-  describe('ES', () => {
+  describe.skip('ES', () => {
     const administration = Cypress.env('testSpanishRoarAppsAdministration');
     const language = 'es';
 

@@ -1,0 +1,11 @@
+{
+  "loading": "El experimento se está cargando...",
+  "progressBar": "Barra de progresso",
+  "preloadTrial": {
+    "messageText": "Por favor, espera mientras se carga el juego. Esto puede tardar unos minutos."
+  },
+  "fullScreenTrial": {
+    "prompt": "Cambiando a modo de pantalla completa.",
+    "buttonText": "Continuar"
+  }
+}

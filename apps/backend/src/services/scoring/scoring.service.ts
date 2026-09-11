@@ -1,0 +1,629 @@
+import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
+import type { ScoringConfig, FieldNameValue, SCORE_FIELD_TYPES, SubscoreColumn } from './scoring.config-schema';
+import { getScoringConfig } from './scoring.config-registry';
+import type {
+  SupportLevel,
+  ScoringInput,
+  RawScoreThreshold,
+  ScoreFieldResolution,
+  ScoreDisplay,
+  DisplayScoreType,
+} from './scoring.types';
+
+const ANGLE_BRACKET_PATTERN = /[<>]/g;
+const VALID_SUPPORT_LEVELS: ReadonlySet<string> = new Set(['achievedSkill', 'developingSkill', 'needsExtraSupport']);
+
+// --- Score value parsing ---
+
+/**
+ * Parse a raw score value from run_scores, handling angle bracket strings like ">99" or "<1".
+ *
+ * Percentile and standardScore fields in newer norming tables (swr v7+, sre v4+, and
+ * their Spanish variants) may be stored as strings with angle brackets. This utility
+ * strips those characters and returns a numeric value suitable for classification.
+ *
+ * @param value - Raw score value (may be a string with angle brackets, a number, null, or undefined)
+ * @returns Parsed numeric value, or null if the input is absent or unparseable
+ */
+export function parseScoreValue(value: string | number | null | undefined): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === 'number') {
+    return isNaN(value) ? null : value;
+  }
+  const stripped = value.replace(ANGLE_BRACKET_PATTERN, '');
+  const parsed = parseFloat(stripped);
+  return isNaN(parsed) ? null : parsed;
+}
+
+// --- Versioned array resolution ---
+
+/**
+ * Resolve from an ordered versioned array. Entries must be ordered by descending minVersion.
+ * Returns the value from the first entry where scoringVersion >= minVersion, or undefined.
+ */
+function resolveVersionedEntry<T extends { minVersion: number }>(entries: T[], scoringVersion: number): T | undefined {
+  return entries.find((entry) => scoringVersion >= entry.minVersion);
+}
+
+// --- Grade-conditional field resolution ---
+
+/**
+ * Resolve a field name value, handling strings, nulls, and grade-conditional objects.
+ *
+ * @param value - The field name value from config (string, null, or grade-conditional)
+ * @param gradeLevel - Numeric grade level, or null
+ * @returns The resolved field name string, or null
+ */
+function resolveFieldValue(value: FieldNameValue, gradeLevel: number | null): string | null {
+  if (value === null || typeof value === 'string') {
+    return value;
+  }
+
+  // Grade-conditional: evaluate conditions top-to-bottom
+  for (const condition of value.conditions) {
+    if ('gradeLt' in condition && gradeLevel !== null && gradeLevel < condition.gradeLt) {
+      return condition.value;
+    }
+    if ('gradeGte' in condition && (gradeLevel === null || gradeLevel >= condition.gradeGte)) {
+      return condition.value;
+    }
+  }
+
+  // No condition matched (shouldn't happen with valid config)
+  return null;
+}
+
+// --- Public API ---
+
+/**
+ * Classify a student's score into a support level for a given task.
+ *
+ * Algorithm:
+ * 1. Look up the task's scoring config
+ * 2. For assessment-computed tasks: validate and return the pre-computed support level
+ * 3. For percentile-then-rawscore tasks:
+ *    a. For grades below percentileBelowGrade (default 6, exclusive) with a percentile: use percentile cutoffs
+ *    b. Otherwise: use raw score thresholds
+ * 4. For none type: return null (no classification)
+ *
+ * @param input - Scoring input with grade, percentile, rawScore, taskSlug, scoringVersion
+ * @returns Support level classification, or null if classification is not possible
+ */
+export function getSupportLevel(input: ScoringInput): SupportLevel | null {
+  const { grade, percentile, rawScore, taskSlug, scoringVersion } = input;
+
+  const config = getScoringConfig(taskSlug);
+  if (!config) {
+    return null;
+  }
+
+  // Assessment-computed: validate the pre-computed support level from the assessment
+  if (config.classification.type === 'assessment-computed') {
+    const level = input.assessmentSupportLevel;
+    if (typeof level === 'string' && VALID_SUPPORT_LEVELS.has(level)) {
+      return level as SupportLevel;
+    }
+    return null;
+  }
+
+  // Only percentile-then-rawscore classification produces computed support levels.
+  // Tasks with type "none" (e.g., letter, phonics) display raw scores without support levels.
+  if (config.classification.type === 'none') {
+    return null;
+  }
+
+  // No score data at all — cannot classify
+  if (rawScore === null && percentile === null) {
+    return null;
+  }
+
+  const classification = config.classification;
+  const version = scoringVersion ?? 0;
+  const gradeLevel = getGradeAsNumber(grade);
+
+  // Try percentile-based classification (config-driven grade threshold).
+  // percentileBelowGrade defaults to 6 (exclusive); null means use percentile for all grades.
+  const maxGrade = classification.percentileBelowGrade;
+  const usePercentile = percentile !== null && (maxGrade === null || (gradeLevel !== null && gradeLevel < maxGrade));
+
+  if (usePercentile) {
+    const cutoffEntry = resolveVersionedEntry(classification.percentileCutoffs, version);
+    if (cutoffEntry) {
+      return classifyByThresholds(percentile!, cutoffEntry.cutoffs.achieved, cutoffEntry.cutoffs.developing);
+    }
+  }
+
+  // Fall back to raw score thresholds (grades >= maxGrade or no percentile)
+  if (rawScore !== null) {
+    const thresholdEntry = resolveVersionedEntry(classification.rawScoreThresholds, version);
+    if (thresholdEntry) {
+      return classifyByThresholds(rawScore, thresholdEntry.thresholds.above, thresholdEntry.thresholds.some);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Resolve a task's primary display descriptor (which score to surface, its
+ * value, label, and range) from config — moving the dashboard's
+ * `getScoreToDisplay` + percent-correct/raw-only/version branching server-side.
+ *
+ * Returns null for tasks whose config declares no `displayCategory` (the
+ * frontend keeps its legacy path for those until the config is authored).
+ *
+ * Algorithm:
+ * 1. Resolve the display category for the task's scoring version (versioned).
+ * 2. `percentCorrect` → the percent value lives in the `percentile` field.
+ *    `rawOnly`/`gradeEstimate` → raw score.
+ *    `normed` → percentile for grades below `percentileBelowGrade` (when a
+ *    percentile is present), else standard score, else raw (e.g. swr-es v0,
+ *    which has no normed fields at that version).
+ * 3. Attach the configured range for the resolved score type, if any.
+ *
+ * @param args.taskSlug - The task slug
+ * @param args.gradeLevel - Numeric grade level, or null
+ * @param args.scoringVersion - The scoring version, or null for legacy v0
+ * @param args.scores - The resolved { rawScore, percentile, standardScore } for the run
+ * @returns The display descriptor, or null when the task has no display config
+ */
+export function getScoreDisplay(args: {
+  taskSlug: string;
+  gradeLevel: number | null;
+  scoringVersion: number | null;
+  scores: { rawScore: number | null; percentile: number | null; standardScore: number | null };
+}): ScoreDisplay | null {
+  const { taskSlug, gradeLevel, scoringVersion, scores } = args;
+
+  const config = getScoringConfig(taskSlug);
+  if (!config?.displayCategory) {
+    return null;
+  }
+
+  const version = scoringVersion ?? 0;
+  const categoryEntry = resolveVersionedEntry(config.displayCategory, version);
+  if (!categoryEntry) {
+    return null;
+  }
+
+  let scoreType: DisplayScoreType;
+  let value: number | null;
+
+  switch (categoryEntry.category) {
+    case 'percentCorrect':
+      // For percent-correct tasks the percentile field carries the percent value.
+      scoreType = 'percentCorrect';
+      value = scores.percentile;
+      break;
+    case 'rawOnly':
+    case 'gradeEstimate':
+      scoreType = 'rawScore';
+      value = scores.rawScore;
+      break;
+    case 'correctIncorrectDifference':
+      scoreType = 'correctIncorrectDifference';
+      value = scores.rawScore;
+      break;
+    case 'normed': {
+      const percentileBelowGrade =
+        config.classification.type === 'percentile-then-rawscore' ? config.classification.percentileBelowGrade : 6;
+      const usePercentile =
+        scores.percentile !== null &&
+        (percentileBelowGrade === null || (gradeLevel !== null && gradeLevel < percentileBelowGrade));
+
+      if (usePercentile) {
+        scoreType = 'percentile';
+        value = scores.percentile;
+      } else if (scores.standardScore !== null) {
+        scoreType = 'standardScore';
+        value = scores.standardScore;
+      } else {
+        scoreType = 'rawScore';
+        value = scores.rawScore;
+      }
+      break;
+    }
+  }
+
+  return {
+    scoreType,
+    value,
+    label: scoreType,
+    range: config.displayRanges?.[scoreType] ?? null,
+  };
+}
+
+/**
+ * Get raw score thresholds for a task and scoring version.
+ *
+ * Use this to retrieve the threshold values themselves (e.g., for display in a score report).
+ * To classify a score into a support level, use {@link getSupportLevel} instead — it applies
+ * the full classification algorithm (percentile cutoffs first, then raw score fallback).
+ *
+ * @param taskSlug - The task slug (e.g., 'swr', 'sre')
+ * @param scoringVersion - The scoring version, or null for legacy
+ * @returns Raw score thresholds { above, some }, or null if unavailable
+ */
+export function getRawScoreThreshold(taskSlug: string, scoringVersion: number | null): RawScoreThreshold | null {
+  const config = getScoringConfig(taskSlug);
+  if (!config || config.classification.type !== 'percentile-then-rawscore') {
+    return null;
+  }
+
+  const version = scoringVersion ?? 0;
+  const entry = resolveVersionedEntry(config.classification.rawScoreThresholds, version);
+  if (!entry) {
+    return null;
+  }
+
+  return { above: entry.thresholds.above, some: entry.thresholds.some };
+}
+
+/**
+ * Get the "support range" percentage shown in a task's report description — the
+ * percentage of peers a needs-extra-support student scores below.
+ *
+ * This is the complement of the version-resolved `developing` percentile cutoff:
+ * {@link getSupportLevel} classifies a student `needsExtraSupport` at
+ * `percentile <= developing` (see `classifyByThresholds`), i.e. they score below
+ * `(100 - developing)%` of their peers. Returning it here moves the dashboard's
+ * version-keyed 80/75 literal (`replaceScoreRange` / `{{SUPPORT_RANGE}}`) into the
+ * backend so the frontend paints a value instead of branching on scoring versions.
+ *
+ * Returns null for tasks whose classification isn't `percentile-then-rawscore`
+ * (no percentile cutoff → no support range); those descriptions carry no
+ * `{{SUPPORT_RANGE}}` placeholder anyway.
+ *
+ * @param taskSlug - The task slug (e.g., 'sre', 'swr')
+ * @param scoringVersion - The scoring version, or null for legacy (treated as 0)
+ * @returns The support-range percentage (e.g. 80, 75), or null if unavailable
+ */
+export function getSupportThreshold(taskSlug: string, scoringVersion: number | null): number | null {
+  const config = getScoringConfig(taskSlug);
+  if (!config || config.classification.type !== 'percentile-then-rawscore') {
+    return null;
+  }
+
+  const version = scoringVersion ?? 0;
+  const entry = resolveVersionedEntry(config.classification.percentileCutoffs, version);
+  if (!entry) {
+    return null;
+  }
+
+  return 100 - entry.cutoffs.developing;
+}
+
+/**
+ * Resolve a single score field name for a specific task, field type, grade, and scoring version.
+ *
+ * @param taskSlug - The task slug
+ * @param gradeLevel - Numeric grade level, or null
+ * @param fieldType - One of the 5 score field types
+ * @param scoringVersion - The scoring version
+ * @returns The resolved field name, or null if not applicable
+ */
+export function resolveScoreFieldName(
+  taskSlug: string,
+  gradeLevel: number | null,
+  fieldType: (typeof SCORE_FIELD_TYPES)[number],
+  scoringVersion: number | null,
+): string | null {
+  const config = getScoringConfig(taskSlug);
+  if (!config) {
+    return null;
+  }
+
+  const fieldEntries = config.scoreFields[fieldType];
+  if (!fieldEntries) {
+    return null;
+  }
+
+  const version = scoringVersion ?? 0;
+  const entry = resolveVersionedEntry(fieldEntries, version);
+  if (!entry) {
+    return null;
+  }
+
+  return resolveFieldValue(entry.fieldName, gradeLevel);
+}
+
+/**
+ * Resolve score field names for a task, optionally filtered by scoring version.
+ *
+ * When scoringVersion is provided (including null for legacy v0), returns only
+ * the field names applicable to that specific version — prevents callers from
+ * looking up field names that don't exist in the norming tables for that version.
+ *
+ * When omitted, returns all possible field names across all versions (backward compat).
+ *
+ * @param taskSlug - The task slug
+ * @param gradeLevel - Numeric grade level, or null
+ * @param scoringVersion - When provided, resolve for this version only. Omit for all versions.
+ * @returns Resolved field names for percentile and raw score
+ */
+export function resolveScoreFieldNames(
+  taskSlug: string,
+  gradeLevel: number | null,
+  scoringVersion?: number | null,
+): ScoreFieldResolution {
+  const emptyResolution: ScoreFieldResolution = {
+    percentileFieldNames: [],
+    percentileDisplayFieldNames: [],
+    standardScoreFieldNames: [],
+    standardScoreDisplayFieldNames: [],
+    rawScoreFieldNames: [],
+  };
+
+  const config = getScoringConfig(taskSlug);
+  if (!config) {
+    return emptyResolution;
+  }
+
+  // When a scoring version is provided, resolve for that specific version only.
+  if (scoringVersion !== undefined) {
+    const version = scoringVersion ?? 0;
+    return {
+      percentileFieldNames: collectVersionSpecificFieldNames(taskSlug, 'percentile', gradeLevel, version),
+      percentileDisplayFieldNames: collectVersionSpecificFieldNames(taskSlug, 'percentileDisplay', gradeLevel, version),
+      standardScoreFieldNames: collectVersionSpecificFieldNames(taskSlug, 'standardScore', gradeLevel, version),
+      standardScoreDisplayFieldNames: collectVersionSpecificFieldNames(
+        taskSlug,
+        'standardScoreDisplay',
+        gradeLevel,
+        version,
+      ),
+      rawScoreFieldNames: collectVersionSpecificFieldNames(taskSlug, 'rawScore', gradeLevel, version),
+    };
+  }
+
+  return {
+    percentileFieldNames: collectAllFieldNames(config, 'percentile', gradeLevel),
+    percentileDisplayFieldNames: collectAllFieldNames(config, 'percentileDisplay', gradeLevel),
+    standardScoreFieldNames: collectAllFieldNames(config, 'standardScore', gradeLevel),
+    standardScoreDisplayFieldNames: collectAllFieldNames(config, 'standardScoreDisplay', gradeLevel),
+    rawScoreFieldNames: collectAllFieldNames(config, 'rawScore', gradeLevel),
+  };
+}
+
+/**
+ * Get the field name that contains a pre-computed support level for assessment-computed tasks.
+ * Returns null for tasks that don't use assessment-computed classification.
+ *
+ * @param taskSlug - The task slug (e.g., 'roam-alpaca')
+ * @returns The run_scores field name containing the support level, or null
+ */
+export function getSupportLevelFieldName(taskSlug: string): string | null {
+  const config = getScoringConfig(taskSlug);
+  if (!config || config.classification.type !== 'assessment-computed') {
+    return null;
+  }
+  return config.classification.supportLevelField ?? null;
+}
+
+/**
+ * Get the subscore declaration block for a task, or `null` for tasks without
+ * sub-skill breakdowns.
+ *
+ * The returned record is keyed by the response-side subscore key (e.g., `FSM`,
+ * `cvc`) and the value declares the `run_scores.name` values that hold the
+ * `correct`, `attempted`, and (optionally) `percentCorrect` counts.
+ *
+ * @param taskSlug - The task slug
+ * @returns The subscores config block, or `null` if absent
+ */
+export function getSubscoresConfig(taskSlug: string): ScoringConfig['subscores'] | null {
+  const config = getScoringConfig(taskSlug);
+  return config?.subscores ?? null;
+}
+
+/**
+ * Public column metadata (`{ key, label }`) for a task's subscore table, in
+ * declared order. Returns `null` for tasks without a subscores block.
+ *
+ * @param taskSlug - The task slug
+ * @returns Ordered public column metadata, or `null` if the task has no subscores
+ */
+export function getPublicSubscoreColumns(taskSlug: string): Array<{ key: string; label: string }> | null {
+  const columns = getSubscoresConfig(taskSlug);
+  if (!columns) return null;
+  return columns.map(({ key, label }) => ({ key, label }));
+}
+
+/**
+ * For a column key on a task, return the `run_scores.name` that carries the
+ * column's numeric representation — used by the repository to compile numeric
+ * sort/filter SQL on `subscores.<key>` paths.
+ *
+ * Returns `null` when the column has no numeric form: a `stringPassthrough`
+ * column, the computed `paSkillsToWorkOn` column, an `itemLevel` column without
+ * a `percentCorrectName`, or an unknown task/key combination.
+ *
+ * @param taskSlug - The task slug
+ * @param columnKey - The response-facing column key
+ * @returns The numeric `run_scores.name`, or `null` if not numerically sortable/filterable
+ */
+export function getNumericFieldForSubscore(
+  taskSlug: string,
+  columnKey: string,
+): { scoreName: string; scoreDomain?: string } | null {
+  const column = getSubscoresConfig(taskSlug)?.find((c) => c.key === columnKey);
+  if (!column) return null;
+  if (column.kind === 'itemLevel') {
+    if (!column.percentCorrectName) return null;
+    // Domain-bearing columns (PA) carry the domain so the repository can match
+    // (name, domain); distinct-name columns match on name alone.
+    return column.domain
+      ? { scoreName: column.percentCorrectName, scoreDomain: column.domain }
+      : { scoreName: column.percentCorrectName };
+  }
+  if (column.kind === 'number') {
+    // Domain-bearing number columns (roam-alpaca's per-subtask subPercentCorrect,
+    // shared across every subtask domain) carry the domain so the repository can
+    // match (name, domain); distinct-name columns match on name alone.
+    return column.domain ? { scoreName: column.name, scoreDomain: column.domain } : { scoreName: column.name };
+  }
+  return null;
+}
+
+/**
+ * Resolve one subscore column's display value for a single student row.
+ *
+ * - `itemLevel`         → `"correct/attempted"` (missing halves default to
+ *                         `"0"`; raw strings preserved so nuance like `">99"`
+ *                         survives display). `null` when both halves are absent.
+ * - `number`            → parsed number, optionally rounded; `null` when absent
+ *                         or non-numeric.
+ * - `stringPassthrough` → the raw string, or `null` when absent.
+ * - `paSkillsToWorkOn`  → comma-joined `paSkillsToWorkOn` list, or `null` when
+ *                         the list is empty/absent.
+ *
+ * @param args.column - The column definition to evaluate
+ * @param args.scoreMap - The student's `run_scores.name → value` map for the run
+ * @param args.paSkillsToWorkOn - PA-only precomputed skills-to-work-on list
+ * @returns The formatted cell value, or `null` when the source data is missing
+ */
+export function formatTaskSubscoreColumnValue(args: {
+  column: SubscoreColumn;
+  scoreMap: Map<string, string>;
+  /** Domain-indexed scores (domain -> name -> value) for tasks whose columns declare a `domain` (PA). */
+  domainScoreMap?: Map<string, Map<string, string>>;
+  paSkillsToWorkOn?: string[] | null;
+}): string | number | null {
+  const { column, scoreMap, domainScoreMap, paSkillsToWorkOn } = args;
+
+  switch (column.kind) {
+    case 'itemLevel': {
+      // Domain-bearing columns (PA's generic names under FSM/LSM/DEL/composite)
+      // look up via the domain map; distinct-name columns use the flat map.
+      const lookup: Map<string, string> | undefined =
+        column.domain && domainScoreMap ? domainScoreMap.get(column.domain) : scoreMap;
+      const correctRaw = lookup?.get(column.correctName);
+      const attemptedRaw = lookup?.get(column.attemptedName);
+      if (correctRaw === undefined && attemptedRaw === undefined) return null;
+      // Preserve raw strings so display nuance like ">99" / "<1" survives, and
+      // default missing halves to "0" so a partial row is still renderable.
+      return `${correctRaw ?? '0'}/${attemptedRaw ?? '0'}`;
+    }
+    case 'number': {
+      const lookup: Map<string, string> | undefined =
+        column.domain && domainScoreMap ? domainScoreMap.get(column.domain) : scoreMap;
+      const raw = lookup?.get(column.name);
+      if (raw === undefined) return null;
+      const numeric = Number(raw);
+      if (Number.isNaN(numeric)) return null;
+      return column.round ? Math.round(numeric) : numeric;
+    }
+    case 'stringPassthrough': {
+      const lookup: Map<string, string> | undefined =
+        column.domain && domainScoreMap ? domainScoreMap.get(column.domain) : scoreMap;
+      const raw = lookup?.get(column.name);
+      if (raw === undefined) return null;
+      return raw;
+    }
+    case 'paSkillsToWorkOn': {
+      if (!paSkillsToWorkOn || paSkillsToWorkOn.length === 0) return null;
+      return paSkillsToWorkOn.join(', ');
+    }
+    case 'letterToWorkOn': {
+      // Merge several domain-indexed comma-joined lists into one (e.g. letter's
+      // upperIncorrect + lowerIncorrect). Each source value is already a
+      // comma-joined list; concatenate the non-empty ones in declared order.
+      const parts: string[] = [];
+      for (const source of column.sources) {
+        const lookup: Map<string, string> | undefined =
+          source.domain && domainScoreMap ? domainScoreMap.get(source.domain) : scoreMap;
+        const raw = lookup?.get(source.name);
+        if (raw) parts.push(raw);
+      }
+      if (parts.length === 0) return null;
+      return parts.join(', ');
+    }
+  }
+}
+
+// --- PA-specific constants ---
+
+/**
+ * PA proficiency threshold (~78.9%) — a subscore is flagged as "needs work"
+ * when its `percentCorrect` is below this value.
+ *
+ * Ported from the legacy frontend constant in `apps/dashboard/src/helpers/reports.js`
+ * (`(15 / 19) * 100`). Lives in the backend scoring service so the
+ * individual-student-report endpoint can compute `skillsToWorkOn` server-side.
+ */
+export const PA_SKILL_THRESHOLD = (15 / 19) * 100;
+
+/**
+ * Legacy PA proficiency threshold for fixed-item (non-adaptive) PA assessments
+ * that only emit a `roarScore` correct count without a `percentCorrect`.
+ * A subscore is flagged as "needs work" when `roarScore < 15`.
+ *
+ * Ported from `PA_SKILL_LEGACY_THRESHOLD` in the legacy frontend helper. The
+ * backend service falls back to this only when `percentCorrect` is unavailable.
+ */
+export const PA_SKILL_LEGACY_THRESHOLD = 15;
+
+/**
+ * Canonical ordering of PA subscore keys. The response's `skillsToWorkOn` array
+ * preserves this order; the same keys appear as the response-side keys in the
+ * `subscores` map declared by `pa.json`'s `subscores` block.
+ */
+export const PA_SUBTASK_KEYS = ['FSM', 'LSM', 'DEL'] as const;
+
+export type PaSubtaskKey = (typeof PA_SUBTASK_KEYS)[number];
+
+// --- Internal helpers ---
+
+/**
+ * Resolve the single field name for a specific version, returning it as a singleton array.
+ */
+function collectVersionSpecificFieldNames(
+  taskSlug: string,
+  fieldType: (typeof SCORE_FIELD_TYPES)[number],
+  gradeLevel: number | null,
+  scoringVersion: number,
+): string[] {
+  const resolved = resolveScoreFieldName(taskSlug, gradeLevel, fieldType, scoringVersion);
+  return resolved !== null ? [resolved] : [];
+}
+
+/**
+ * Collect all unique, non-null field names across all version entries for a field type.
+ */
+function collectAllFieldNames(
+  config: ScoringConfig,
+  fieldType: (typeof SCORE_FIELD_TYPES)[number],
+  gradeLevel: number | null,
+): string[] {
+  const fieldEntries = config.scoreFields[fieldType];
+  if (!fieldEntries) {
+    return [];
+  }
+
+  const names = new Set<string>();
+  for (const entry of fieldEntries) {
+    const resolved = resolveFieldValue(entry.fieldName, gradeLevel);
+    if (resolved !== null) {
+      names.add(resolved);
+    }
+  }
+  return [...names];
+}
+
+/**
+ * Classify a numeric score against achieved/developing thresholds.
+ * - score >= achieved → achievedSkill
+ * - score > developing AND score < achieved → developingSkill
+ * - otherwise → needsExtraSupport
+ */
+function classifyByThresholds(score: number, achievedThreshold: number, developingThreshold: number): SupportLevel {
+  if (score >= achievedThreshold) {
+    return 'achievedSkill';
+  }
+  if (score > developingThreshold) {
+    return 'developingSkill';
+  }
+  return 'needsExtraSupport';
+}

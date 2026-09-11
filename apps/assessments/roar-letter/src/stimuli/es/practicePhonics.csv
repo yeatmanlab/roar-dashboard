@@ -1,0 +1,6 @@
+﻿target,distractor1,distractor2,distractor3,audioFile,audioUrl,a,b,c,d,corpusId,source
+dap,dip,dat,vap,dap,https://storage.googleapis.com/roar-ak/en/shared/dap.mp3,1,0,0.25,1,textSoundPseudo,yeatman
+fom,fum,fod,jom,fom,https://storage.googleapis.com/roar-ak/en/shared/fom.mp3,1,0,0.25,1,textSoundPseudo,yeatman
+lim,lam,liv,nim,lim,https://storage.googleapis.com/roar-ak/en/shared/lim.mp3,1,0,0.25,1,textSoundPseudo,yeatman
+nub,neb,nup,vub,nub,https://storage.googleapis.com/roar-ak/en/shared/nub.mp3,1,0,0.25,1,textSoundPseudo,yeatman
+ket,kot,kem,zet,ket,https://storage.googleapis.com/roar-ak/en/shared/ket.mp3,1,0,0.25,1,textSoundPseudo,yeatman

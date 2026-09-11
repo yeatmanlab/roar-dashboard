@@ -6,7 +6,6 @@
 import { userFamilyRoleEnum } from '../db/schema/enums';
 import { pgEnumToConst } from './utils';
 
-const UserFamilyRole = pgEnumToConst(userFamilyRoleEnum);
+export const UserFamilyRole = pgEnumToConst(userFamilyRoleEnum);
 
 export type UserFamilyRole = (typeof userFamilyRoleEnum.enumValues)[number];
-export default UserFamilyRole;

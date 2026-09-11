@@ -1,0 +1,116 @@
+sentence,answer,direction,itemId
+La sopa se toma con tenedor.,FALSE,left,lab_1
+Las manzanas son una fruta.,TRUE,right,lab_2
+Los peces viven fuera del agua.,FALSE,left,lab_3
+El agua es de color rojo.,FALSE,left,lab_4
+Los perros tienen cuatro patas.,TRUE,right,lab_5
+Los médicos trabajan en la panadería.,FALSE,left,lab_6
+Los árboles tienen ramas.,TRUE,right,lab_7
+Un cuadrado tiene cinco lados.,FALSE,left,lab_8
+A los niños y niñas les gusta jugar.,TRUE,right,lab_9
+El hielo es frío.,TRUE,right,lab_10
+El café es de color azul.,FALSE,left,lab_11
+El jugo de naranja se hace con peras.,FALSE,left,lab_12
+Los autobuses van por las carreteras.,TRUE,right,lab_13
+El fútbol se juega con una cuchara.,FALSE,left,lab_14
+Algunas mesas tienen cuatro patas.,TRUE,right,lab_15
+Puedo cortar una tela con un tenedor.,FALSE,left,lab_16
+Un celular necesita algo de pila para funcionar.,TRUE,right,lab_17
+Un martillo sirve para cocinar.,FALSE,left,lab_18
+El fuego es caliente.,TRUE,right,lab_19
+Las vacas producen leche.,TRUE,right,lab_20
+Las fresas son saladas.,FALSE,left,lab_21
+Una bicicleta tiene dos ruedas.,TRUE,right,lab_22
+Algunas personas caminan descalzas sobre la arena.,TRUE,right,lab_23
+Las botellas de plástico contaminan el mar.,TRUE,right,lab_24
+Los conejos son un tipo de pájaro.,FALSE,left,lab_25
+Los caballos tienen pelo.,TRUE,right,lab_26
+Cuando hace calor algunas personas comen helado.,TRUE,right,lab_27
+Los pescadores pescan ovejas en el mar.,FALSE,left,lab_28
+El sol sale por la noche.,FALSE,left,lab_29
+Las estrellas están en el cielo.,TRUE,right,lab_30
+Puedo oler una fruta con mis ojos.,FALSE,left,lab_31
+Una guitarra sirve para tocar una canción.,TRUE,right,lab_32
+Algunas personas mayores utilizan bastón.,TRUE,right,lab_33
+Las personas pueden caminar en las nubes.,FALSE,left,lab_34
+Los zapatos se ponen en la cabeza.,FALSE,left,lab_35
+Las motos sirven para volar.,FALSE,left,lab_36
+Las gallinas ponen huevos.,TRUE,right,lab_37
+Los guantes se usan en las manos.,TRUE,right,lab_38
+Las arañas tienen tres patas.,FALSE,left,lab_39
+El tren se mueve por el ferrocarril.,TRUE,right,lab_40
+Se necesita fuerza para cargar un saco de piedras.,TRUE,right,lab_41
+En muchos lugares los gallos cantan por las mañanas.,TRUE,right,lab_42
+El café se endulza con sal.,FALSE,left,lab_43
+Los patos van al colegio montados en jirafas.,FALSE,left,lab_44
+Hay muchos ríos que llegan hasta el mar.,TRUE,right,lab_45
+En la selva húmeda tropical llueve mucho.,TRUE,right,lab_46
+Hay personas que se bañan con agua fría.,TRUE,right,lab_47
+La mayoría de los búhos salen a volar en las noches.,TRUE,right,lab_48
+La cebolla es una fruta.,FALSE,left,lab_49
+Las rocas caminan solas en el desierto.,FALSE,left,lab_50
+Los libros se guardan en la nevera.,FALSE,left,lab_51
+Algunas personas comen pescado.,TRUE,right,lab_52
+El agua es importante para cultivar vegetales.,TRUE,right,lab_53
+La luna es una estrella.,FALSE,left,lab_54
+Las personas van al aeropuerto para viajar en tren.,FALSE,left,lab_55
+Un vaso con leche se puede beber con tenedor.,FALSE,left,lab_56
+Algunos pájaros se alimentan del néctar de las flores.,TRUE,right,lab_57
+Los gatos lamen sus patas para limpiarse.,TRUE,right,lab_58
+Las chanclas son unos buenos zapatos para usar en lugares fríos.,FALSE,left,lab_59
+Hay personas que se ponen muy felices cuando bailan.,TRUE,right,lab_60
+El trabajo del pintor es cantar canciones.,FALSE,left,lab_61
+"Después de llover, puede aparecer un arcoíris.",TRUE,right,lab_62
+Todos los pájaros tienen el mismo tamaño de pico.,FALSE,left,lab_63
+Algunos estudiantes van caminando al colegio.,TRUE,right,lab_64
+El aceite solamente se utiliza para freír naranjas.,FALSE,left,lab_65
+Los caballos siempre andan más rápido que los carros.,FALSE,left,lab_66
+La miel es ácida como el limón.,FALSE,left,lab_67
+La mayoría de celulares sirven para tomar fotos.,TRUE,right,lab_68
+Se puede hacer fuego con hielo.,FALSE,left,lab_69
+La ropa se limpia con barro.,FALSE,left,lab_70
+Los elefantes pasean en cocodrilo por la montaña.,FALSE,left,lab_71
+La leche se puede tomar fría o caliente.,TRUE,right,lab_72
+Los pingüinos viven en los desiertos.,FALSE,left,lab_73
+La mayoría de los murciélagos están despiertos durante el día.,FALSE,left,lab_74
+Las espinacas son de color rojo.,FALSE,left,lab_75
+Los barcos andan por el ferrocarril.,FALSE,left,lab_76
+Las palas sirven para sembrar.,TRUE,right,lab_77
+El rugido del león se puede oír desde muy lejos.,TRUE,right,lab_78
+Las vacas tienen tres ojos.,FALSE,left,lab_79
+Las burbujas se hacen con arena.,FALSE,left,lab_80
+Algunos animales duermen durante el día y están despiertos en la noche.,TRUE,right,lab_81
+En el desierto hace mucho calor.,TRUE,right,lab_82
+Algunos alimentos se transportan en costales.,TRUE,right,lab_83
+La lana de las ovejas sirve para hacer ropa.,TRUE,right,lab_84
+Las hormigas viven en el mar.,FALSE,left,lab_85
+Un lápiz sirve para tomarse una bebida.,FALSE,left,lab_86
+Existen rocas de diferentes formas y tamaños.,TRUE,right,lab_87
+Todos los artistas pintan con plátanos.,FALSE,left,lab_88
+Las luciérnagas emiten luz.,TRUE,right,lab_89
+Los perros siempre caminan en dos patas.,FALSE,left,lab_90
+Las velas sirven para alumbrar en la noche.,TRUE,right,lab_91
+Las vacas tienen manchas de colores verde y rojo.,FALSE,left,lab_92
+La nieve cae en lugares en donde hace mucho calor.,FALSE,left,lab_93
+En el mar viven animales de diferentes tamaños.,TRUE,right,lab_94
+Cuando hay mucho viento los conejos pueden volar.,FALSE,left,lab_95
+La ropa se seca más rápido cuando hace frío.,FALSE,left,lab_96
+Para escalar algunas montañas se necesita de un equipo especial.,TRUE,right,lab_97
+Los conejos saltan sobre sus patas.,TRUE,right,lab_98
+A los loros les gusta nadar con los tiburones.,FALSE,left,lab_99
+Los profesores enseñan a los estudiantes en el colegio.,TRUE,right,lab_100
+Leer libros nos ayuda a aprender cosas nuevas.,TRUE,right,lab_101
+Cuando llueve mucho los ríos tienen poca agua.,FALSE,left,lab_102
+Los candados sirven para cerrar puertas.,TRUE,right,lab_103
+El pan es un alimento que se puede comer a diferentes horas del día.,TRUE,right,lab_104
+Los calendarios sirven para recordar fechas importantes.,TRUE,right,lab_105
+Se puede tocar la espalda con la punta de la nariz.,FALSE,left,lab_106
+Los dientes se pueden limpiar con una zanahoria.,FALSE,left,lab_107
+Una botella de plástico se puede reutilizar.,TRUE,right,lab_108
+Las nubes se mueven por el viento.,TRUE,right,lab_109
+Los patos construyen sus casas en cima de los árboles.,FALSE,left,lab_110
+Las personas respiran mejor cuando el aire es limpio.,TRUE,right,lab_111
+La lluvia cae únicamente cuando hace mucho calor.,FALSE,left,lab_112
+Tomar agua nos quita la sed.,TRUE,right,lab_113
+Los conejos les cantan canciones para dormir a los tigres.,FALSE,left,lab_114
+Las personas sudan cuando hace mucho calor.,TRUE,right,lab_115

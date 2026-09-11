@@ -10,6 +10,7 @@ export const SCORE_SUPPORT_SKILL_LEVELS = Object.freeze({
   ACHIEVED_SKILL: 'Achieved Skill',
   DEVELOPING_SKILL: 'Developing Skill',
   NEEDS_EXTRA_SUPPORT: 'Needs Extra Support',
+  OPTIONAL: 'Optional',
 });
 
 /**
@@ -21,7 +22,9 @@ export const SCORE_SUPPORT_LEVEL_COLORS = Object.freeze({
   SOME: '#edc037', // yellow
   ASSESSED: '#3b82f6', // blue-500
   OPTIONAL: '#71717a', // gray-500
-  UNRELIABLE: '#d6b8c7', // pink-200
+  BELOW_UNRELIABLE: '#d6b8c7',
+  SOME_UNRELIABLE: '#e8dbb5',
+  ABOVE_UNRELIABLE: '#c0d9bd',
 });
 
 export const MATCHING_SUPPORT_LEVELS = {

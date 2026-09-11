@@ -24,11 +24,11 @@
       v-if="currentParentView.name === VIEWS.BY_STUDENT"
       :is-loading="isLoadingUserData"
       :parent-registration-complete="parentRegistrationComplete"
+      :family-id="familyId"
       :children-uids="childrenUids"
       :org-type="orgType"
       :org-id="orgId"
       :registration-error="registrationError"
-      :invitation-codes="userData?.invitationCodes || []"
       @refresh-registration="handleRefreshRegistration"
     />
 
@@ -39,20 +39,15 @@
 </template>
 
 <script setup>
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import { useTimeoutPoll } from '@vueuse/core';
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { pluralizeFirestoreCollection } from '@/helpers';
-import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes.js';
-import { useAuthStore } from '@/store/auth';
+import { ref, computed } from 'vue';
+import { useQueryClient } from '@tanstack/vue-query';
 import PvSelectButton from 'primevue/selectbutton';
 import HomeAdministrator from '@/pages/HomeAdministrator.vue';
 import HomeParentStudentView from '@/components/HomeParentStudentView.vue';
-import { useQueryClient } from '@tanstack/vue-query';
-import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
-
-const authStore = useAuthStore();
+import useMeQuery from '@/composables/queries/useMeQuery';
+import useFamilyUsersQuery from '@/composables/queries/useFamilyUsersQuery';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes.js';
+import { FAMILY_USERS_QUERY_KEY, ME_QUERY_KEY } from '@/constants/queryKeys';
 
 const VIEWS = Object.freeze({
   BY_STUDENT: 'Student',
@@ -60,101 +55,55 @@ const VIEWS = Object.freeze({
 });
 
 const currentParentView = ref({ name: VIEWS.BY_STUDENT });
-
 const parentViews = [{ name: VIEWS.BY_STUDENT }, { name: VIEWS.BY_ASSIGNMENT }];
-const { data: userClaims } = useUserClaimsQuery();
 
-// Parent registration status
-const parentRegistrationComplete = ref(false);
-const initialized = ref(false);
-const orgId = computed(() => {
-  const adminOrgs = userClaims.value?.claims?.adminOrgs ?? {};
-  const orgTypePluralized = pluralizeFirestoreCollection(orgType.value);
-  const orgTypeOrganizations = adminOrgs[orgTypePluralized] ?? [];
+// The caretaker's identity and family memberships come from the backend `/me`
+// endpoint — no Firestore user document and no firekit registration polling.
+const { data: me, isLoading: isLoadingMe } = useMeQuery();
 
-  return orgTypeOrganizations[0] ?? null;
-});
+// The parent dashboard is scoped to the family the caller is a `parent` of. A
+// ROAR@Home child is also a family member (role `child`); filtering on the
+// `parent` role distinguishes the caretaker's own family. The role strings are
+// the contract's UserFamilyRoleSchema values (`'parent' | 'child'`).
+const familyId = computed(() => me.value?.families?.find((family) => family.role === 'parent')?.id ?? null);
 
-// TODO: Set this dynamically in cases where this component is used for non-family adminstrators
-const orgType = ref(SINGULAR_ORG_TYPES.FAMILIES);
+// A caretaker who has a parent family is fully registered. The family is created
+// synchronously during registration (the family-registration saga), so there is
+// no eventual-consistency window to poll for as there was with firekit.
+const parentRegistrationComplete = computed(() => Boolean(familyId.value));
 
-const { data: userData, isLoading: isLoadingUserData } = useUserDataQuery(null, {
-  enabled: initialized,
-});
+// The family is the org context for the parent dashboard. `orgType` is constant;
+// `orgId` is the family UUID once `/me` resolves.
+const orgType = SINGULAR_ORG_TYPES.FAMILIES;
+const orgId = computed(() => familyId.value);
 
-// Get children UIDs from user data
-const childrenUids = computed(() => {
-  const uids = userData.value?.childrenUids || [];
-  return uids;
-});
+// The family's children, listed from `GET /v1/families/:familyId/users` filtered
+// to the `child` role. Each child's `id` is the ROAR (Postgres) UUID that the
+// per-user endpoints (and StudentCardSimple) key on — not a Firebase UID.
+const {
+  data: children,
+  isLoading: isLoadingChildren,
+  error: childrenError,
+} = useFamilyUsersQuery(familyId, { role: 'child' });
 
-const registrationError = ref(null);
-const registrationRetryCount = ref(0);
-const MAX_RETRIES = 3;
+const childrenUids = computed(() => (children.value ?? []).map((child) => child.id));
 
-const { isActive, pause, resume } = useTimeoutPoll(
-  async () => {
-    try {
-      parentRegistrationComplete.value = await authStore.verifyParentRegistration();
+// "Loading" until `/me` resolves, and — once a family is known — until its
+// children resolve.
+const isLoadingUserData = computed(() => isLoadingMe.value || (Boolean(familyId.value) && isLoadingChildren.value));
 
-      if (parentRegistrationComplete.value) {
-        initialized.value = true;
-        registrationError.value = null;
-        pause();
-      }
-    } catch (error) {
-      console.error('Registration verification failed:', error);
-      registrationRetryCount.value++;
-
-      if (registrationRetryCount.value >= MAX_RETRIES) {
-        console.error('Registration verification failed, maximum retries reached:', error);
-        registrationError.value = error instanceof Error ? error : new Error(String(error));
-        pause();
-      }
-    }
-  },
-  10000,
-  { immediate: false },
-);
+const registrationError = computed(() => childrenError.value ?? null);
 
 const queryClient = useQueryClient();
-// Handler for refreshing registration status after student enrollment
+
+// After a child is enrolled, refetch the family children (and `/me`, in case the
+// membership set changed) so the new card appears. The add-children mutation
+// already invalidates these keys; this keeps the explicit refresh contract with
+// the student view.
 const handleRefreshRegistration = () => {
-  registrationRetryCount.value = 0;
-  queryClient.invalidateQueries({ queryKey: [USER_DATA_QUERY_KEY] });
-  setTimeout(() => {
-    resume();
-  }, 15000);
+  queryClient.invalidateQueries({ queryKey: [FAMILY_USERS_QUERY_KEY] });
+  queryClient.invalidateQueries({ queryKey: [ME_QUERY_KEY] });
 };
-
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-
-  // Only start polling if registration check is needed
-  if (!authStore.userData?.initialized && authStore.userData?.registrations) {
-    resume();
-  }
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
-});
-
-onMounted(() => {
-  if (authStore.roarfirekit.restConfig?.()) init();
-
-  // Set registration complete if already initialized
-  if (authStore.userData?.initialized || !authStore.userData?.registrations) {
-    parentRegistrationComplete.value = true;
-  }
-});
-
-onBeforeUnmount(() => {
-  if (isActive.value) pause();
-  if (unsubscribe) unsubscribe();
-});
 </script>
 
 <style scoped>

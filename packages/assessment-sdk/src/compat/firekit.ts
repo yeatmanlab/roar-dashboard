@@ -1,0 +1,1136 @@
+import { getApp } from 'firebase/app';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import type { FirebaseStorage, StorageError } from 'firebase/storage';
+import type { CommandContext } from '../command/command';
+import { SDKError } from '../errors/sdk-error';
+import { SdkErrorCode } from '../enums/sdk-error-code.enum';
+import {
+  ASSESSMENT_STAGE_PRACTICE,
+  ASSESSMENT_STAGE_PRACTICE_RESPONSE,
+  ASSESSMENT_STAGE_TEST,
+  ASSESSMENT_STAGE_TEST_RESPONSE,
+} from '../enums';
+import type {
+  StartRunInput,
+  FinishRunInput,
+  AddInteractionInput,
+  AddInteractionOutput,
+  UpdateUserInput,
+  UpdateUserOutput,
+  TrialData,
+  RawScores,
+  ComputedScores,
+  WriteTrialOutput,
+  WriteTrialAssessmentStage,
+  WriteTrialCommandInput,
+} from '../types';
+import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL, RUN_EVENT_ENGAGEMENT } from '../types/run-event-status';
+import type { Json, ScoreEntry } from '@roar-platform/api-contract';
+import { Invoker } from '../command/invoker';
+import { RoarApi } from '../receiver/roar-api';
+import { StartRunCommand } from '../commands/start-run.command';
+import { AbortRunCommand } from '../commands/abort-run.command';
+import { FinishRunCommand } from '../commands/finish-run.command';
+import { WriteTrialCommand } from '../commands/write-trial.command';
+import { UpdateRunEngagementFlagsCommand } from '../commands/update-engagement-flags.command';
+import { GetTaskVariantCommand } from '../commands/get-variant-id.command';
+import { GetVariantByIdCommand } from '../commands/get-variant-by-id.command';
+import { UploadFileCommand } from '../commands/upload-file.command';
+import type { UploadFileOutput } from '../types/upload-file';
+import { UploadStatusEnum } from '../types/upload-file';
+
+type CompatTaskInfo = {
+  variantId: string;
+  taskVersion: string;
+  administrationId?: string;
+  isAnonymous?: boolean;
+};
+
+/**
+ * Firebase Storage emulator port. Must match `apps/assessments/shared/firebase.json`
+ * (`emulators.storage.port`). The Emulator UI that surfaces uploaded recordings runs
+ * separately on :9000 (:4000 is the ROAR backend).
+ */
+const STORAGE_EMULATOR_PORT = 9199;
+
+/**
+ * Firebase project id for the production admin recordings project. Anything else
+ * (e.g. `gse-roar-admin-staging`) resolves to the staging bucket.
+ */
+const ADMIN_RECORDINGS_PROD_PROJECT_ID = 'gse-roar-admin';
+
+/** `connectStorageEmulator` may be called at most once per storage instance. */
+let storageEmulatorConnected = false;
+
+/**
+ * Resolves the Firebase Storage bucket for recording uploads.
+ *
+ * - **Dev (Auth emulator running):** returns the default app's storage connected to the
+ *   local Storage emulator, so recordings land in the emulator (viewable in the Emulator
+ *   UI on :9000) instead of a real cloud bucket. The emulator host is derived from
+ *   `FIREBASE_AUTH_EMULATOR_HOST` (same host, storage port), reusing the signal every
+ *   assessment already injects — no new build-time env var required.
+ * - **Prod / staging:** returns the admin recordings bucket for the resolved environment
+ *   (`gse-roar-admin` → prod, otherwise staging).
+ *
+ * Resolved lazily (at first upload) rather than at facade init so that consumers which
+ * never upload — and test environments with no Firebase app — never call `getApp()`.
+ *
+ * @returns The Firebase Storage instance recordings are written to
+ */
+function resolveStorageBucket(): FirebaseStorage {
+  const authEmulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
+
+  if (authEmulatorHost) {
+    const storage = getStorage(getApp());
+    if (!storageEmulatorConnected) {
+      const host = authEmulatorHost.split(':')[0] || '127.0.0.1';
+      connectStorageEmulator(storage, host, STORAGE_EMULATOR_PORT);
+      storageEmulatorConnected = true;
+    }
+    return storage;
+  }
+
+  const env = getApp().options.projectId === ADMIN_RECORDINGS_PROD_PROJECT_ID ? 'prod' : 'staging';
+  return getStorage(getApp(), `gs://roar-${env}-admin-recordings-bucket`);
+}
+
+/**
+ * Test-only function to reset the Firekit compat singleton state.
+ * Clears the singleton instance and module-level state variables.
+ * @internal
+ */
+export function _resetFirekitCompat(): void {
+  FirekitFacade._resetInstance();
+}
+
+/**
+ * Default best-effort timeout (ms) for {@link FirekitFacade.flushUploads}. Once it elapses,
+ * flushUploads resolves even if uploads are still in flight — stragglers keep uploading in the
+ * background so a slow upload never blocks run-finish or page-unload indefinitely.
+ */
+const DEFAULT_FLUSH_TIMEOUT_MS = 30_000;
+
+/**
+ * FirekitFacade provides backward compatibility with legacy Firekit-based assessments.
+ *
+ * This is a Singleton pattern implementation that allows existing assessments
+ * to continue working with a familiar API while internally using the new SDK.
+ *
+ * **Usage:**
+ * - New assessments: Use the native SDK directly (Invoker, RoarApi, etc.)
+ * - Legacy assessments: Use FirekitFacade for drop-in compatibility
+ *
+ * The facade lazy-initializes on first call, allowing the host application
+ * to provide the CommandContext bridge without explicit SDK initialization.
+ *
+ * @example
+ * ```ts
+ * const facade = initFirekitCompat(ctx, { variantId: 'v1', taskVersion: '1.0' });
+ * const api = facade.getApi();
+ * const invoker = facade.getInvoker();
+ * ```
+ */
+export class FirekitFacade {
+  static #instance: FirekitFacade | undefined;
+  #ctx: CommandContext | undefined;
+  #api: RoarApi | undefined;
+  #invoker: Invoker | undefined;
+  #runId: string | undefined;
+  #taskInfo: CompatTaskInfo | undefined;
+  #interactionBuffer: AddInteractionInput[] = [];
+  #storageBucket: FirebaseStorage | undefined;
+  #uploadQueue: UploadFileOutput[] = [];
+  // Settle tracking for flushUploads(): a resolver + promise per in-flight upload task,
+  // populated on enqueue and resolved when the task completes or fails.
+  #pendingUploads = new Map<UploadFileOutput, { promise: Promise<void>; resolve: () => void }>();
+
+  private constructor() {}
+
+  /**
+   * Resets all state to initial values.
+   * Called during initialization to prevent state leakage between sessions.
+   * @internal
+   */
+  private _reset(): void {
+    this.#ctx = undefined;
+    this.#api = undefined;
+    this.#invoker = undefined;
+    this.#runId = undefined;
+    this.#taskInfo = undefined;
+    this.#interactionBuffer = [];
+    this.#storageBucket = undefined;
+  }
+
+  /**
+   * Returns the singleton instance of FirekitFacade.
+   * Creates it on first call.
+   *
+   * @returns FirekitFacade singleton instance
+   */
+  static getInstance(): FirekitFacade {
+    if (!FirekitFacade.#instance) {
+      FirekitFacade.#instance = new FirekitFacade();
+    }
+    return FirekitFacade.#instance;
+  }
+
+  /**
+   * Initializes the facade with SDK configuration.
+   * Called by initFirekitCompat() to set up the CommandContext.
+   * Resets instance state on re-initialization to prevent state leakage between tests or consumers.
+   *
+   * @param ctx - CommandContext with baseUrl, auth callbacks, and optional logger
+   * @param taskInfo - Task information including variantId, taskVersion, administrationId, and isAnonymous flag
+   */
+  initialize(ctx: CommandContext, taskInfo: CompatTaskInfo): void {
+    this._reset();
+    this.#ctx = ctx;
+    this.#api = new RoarApi(ctx);
+    this.#invoker = new Invoker(ctx);
+    this.#taskInfo = taskInfo;
+    // Storage is resolved lazily at first upload (see `_getStorageBucket`), not here —
+    // `initialize()` must not touch Firebase so consumers/tests without an app can init.
+  }
+
+  /**
+   * Returns the initialized CommandContext.
+   * Throws if initialize() has not been called.
+   *
+   * @returns CommandContext for use by legacy assessments
+   * @throws {SDKError} If facade not initialized
+   */
+  getContext(): CommandContext {
+    if (!this.#ctx) {
+      throw new SDKError('FirekitFacade not initialized. Call initFirekitCompat() first.');
+    }
+    return this.#ctx;
+  }
+
+  /**
+   * Returns the initialized RoarApi instance.
+   * Throws if initialize() has not been called.
+   *
+   * @returns RoarApi instance for making API requests
+   * @throws {SDKError} If facade not initialized
+   */
+  getApi(): RoarApi {
+    if (!this.#api) {
+      throw new SDKError('Firekit compat has not been initialized. Call initFirekitCompat() first.');
+    }
+    return this.#api;
+  }
+
+  /**
+   * Returns the initialized Invoker instance.
+   * Throws if initialize() has not been called.
+   *
+   * @returns Invoker instance for executing commands
+   * @throws {SDKError} If facade not initialized
+   */
+  getInvoker(): Invoker {
+    if (!this.#invoker) {
+      throw new SDKError('Firekit compat has not been initialized. Call initFirekitCompat() first.');
+    }
+    return this.#invoker;
+  }
+
+  /**
+   * Test-only method to reset the singleton instance.
+   * Used in tests to ensure clean state between test cases.
+   * @internal
+   */
+  static _resetInstance(): void {
+    FirekitFacade.#instance = undefined;
+  }
+
+  /**
+   * Lazily resolves and memoizes the storage bucket for recording uploads.
+   * Resolution is deferred to the first call (upload time) so `initialize()` stays
+   * Firebase-free. See {@link resolveStorageBucket} for the dev/prod/staging routing.
+   * @internal
+   */
+  _getStorageBucket(): FirebaseStorage {
+    try {
+      this.#storageBucket ??= resolveStorageBucket();
+    } catch (err) {
+      throw new SDKError('appkit.uploadFile requires an initialized Firebase app.', {
+        code: SdkErrorCode.UPLOAD_FILE_FAILED,
+        ...(err instanceof Error ? { cause: err } : {}),
+      });
+    }
+    return this.#storageBucket;
+  }
+
+  /**
+   * Internal getter for the current runId.
+   * @internal
+   */
+  _getRunId(): string | undefined {
+    return this.#runId;
+  }
+
+  /**
+   * Internal setter for the runId.
+   * @internal
+   */
+  _setRunId(runId: string | undefined): void {
+    this.#runId = runId;
+  }
+
+  /**
+   * Internal getter for task info.
+   * @internal
+   */
+  _getTaskInfo(): CompatTaskInfo | undefined {
+    return this.#taskInfo;
+  }
+
+  /**
+   * Atomically retrieves and clears the interaction buffer.
+   * This prevents race conditions when writeTrial() is called concurrently.
+   * @internal
+   * @returns Array of buffered interaction events
+   */
+  _drainInteractionBuffer(): AddInteractionInput[] {
+    const buffer = this.#interactionBuffer;
+    this.#interactionBuffer = [];
+    return buffer;
+  }
+
+  /**
+   * Adds an interaction event to the buffer.
+   * Interactions are accumulated and flushed when writeTrial() is called.
+   * @internal
+   * @param interaction - The interaction event to buffer
+   */
+  _pushInteraction(interaction: AddInteractionInput): void {
+    this.#interactionBuffer.push(interaction);
+  }
+
+  /**
+   * Internal getter for raw scores.
+   * Returns undefined by default; can be overridden by assessment-specific implementations.
+   * @internal
+   */
+  _getRawScores(): RawScores | undefined {
+    return undefined;
+  }
+
+  /**
+   * Internal getter for score adapter function.
+   * Returns undefined by default; can be overridden by assessment-specific implementations.
+   * @internal
+   */
+  _getScoreAdapter(): ((scores: ComputedScores) => ScoreEntry[]) | undefined {
+    return undefined;
+  }
+
+  /**
+   * Internal method to accumulate raw scores from a trial.
+   * Called by writeTrial() to build up raw scores for later score computation.
+   * Returns undefined by default; can be overridden by assessment-specific implementations.
+   * @internal
+   * @param _subtask - The subtask key (e.g., 'fsm', 'lsm', 'del')
+   * @param _stage - The assessment stage ('practice' or 'test')
+   * @param _correct - Whether the trial was correct (1 or 0)
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _accumulateRawScore(_subtask: string, _stage: string, _correct: number): void {
+    // Default implementation does nothing; can be overridden
+  }
+
+  /**
+   * Internal getter for logger.
+   * Returns the logger from the CommandContext if available.
+   * @internal
+   */
+  _getLogger() {
+    return this.#ctx?.logger;
+  }
+
+  /**
+   * Adds an upload task to the queue and immediately attempts to process it.
+   * @internal
+   * @param task - The upload task output to enqueue
+   */
+  _addUploadToQueue(task: UploadFileOutput) {
+    // Track a settle promise so flushUploads() can await this upload draining (success or failure).
+    let resolve!: () => void;
+    const promise = new Promise<void>((res) => {
+      resolve = res;
+    });
+    this.#pendingUploads.set(task, { promise, resolve });
+
+    this.#uploadQueue.push(task);
+    this._processUploadQueue();
+  }
+
+  /**
+   * Processes the upload queue by starting the next pending upload if the concurrency limit
+   * (3 simultaneous uploads) has not been reached.
+   *
+   * On completion, removes the task from the queue and recurses to start the next pending upload.
+   * On failure, logs a warning, removes the task, and recurses to continue draining the queue.
+   *
+   * Called automatically by `_addUploadToQueue` and after each upload completes or fails.
+   * Safe to call manually (e.g. in tests) — it is a no-op when the queue is empty or the
+   * concurrency limit is already reached.
+   * @internal
+   */
+  _processUploadQueue() {
+    const totalUploadingTasks = this.#uploadQueue.filter((task) => task.status === UploadStatusEnum.UPLOADING).length;
+    if (totalUploadingTasks >= 3) return;
+    const nextTask = this.#uploadQueue.find((task) => task.status === UploadStatusEnum.PENDING);
+
+    if (!nextTask) return;
+
+    nextTask.status = UploadStatusEnum.UPLOADING;
+
+    const activeTask = nextTask.upload();
+
+    activeTask.on(
+      'state_changed',
+      undefined,
+      (error: StorageError) => {
+        this._getLogger()?.warn({ err: error }, `Upload failed: ${nextTask.filename}`);
+        nextTask.status = UploadStatusEnum.FAILED;
+        const idx = this.#uploadQueue.indexOf(nextTask);
+        if (idx !== -1) this.#uploadQueue.splice(idx, 1);
+        this._settleUpload(nextTask);
+        this._processUploadQueue();
+      },
+      () => {
+        nextTask.status = UploadStatusEnum.COMPLETED;
+        const idx = this.#uploadQueue.indexOf(nextTask);
+        if (idx !== -1) this.#uploadQueue.splice(idx, 1);
+        this._settleUpload(nextTask);
+        this._processUploadQueue();
+      },
+    );
+  }
+
+  /**
+   * Resolves the settle promise tracked for a finished upload task (completed or failed) so
+   * flushUploads() can observe the queue draining. No-op if the task isn't tracked.
+   * @internal
+   */
+  private _settleUpload(task: UploadFileOutput): void {
+    const pending = this.#pendingUploads.get(task);
+    if (pending) {
+      this.#pendingUploads.delete(task);
+      pending.resolve();
+    }
+  }
+
+  /**
+   * Waits for all currently-outstanding uploads (queued or in flight) to settle — complete or
+   * fail — so a caller can drain the fire-and-forget upload queue before finishing a run or
+   * unloading the page. Best-effort: resolves after `timeoutMs` even if uploads are still in
+   * flight, so a slow upload never blocks indefinitely (stragglers keep uploading in the
+   * background). Resolves immediately when nothing is outstanding.
+   *
+   * @param timeoutMs - Max time to wait before resolving regardless (default 30s)
+   */
+  async flushUploads(timeoutMs: number = DEFAULT_FLUSH_TIMEOUT_MS): Promise<void> {
+    if (this.#pendingUploads.size === 0) return;
+
+    // Snapshot the outstanding settles; uploads enqueued after this call aren't awaited.
+    const drained = Promise.allSettled([...this.#pendingUploads.values()].map((pending) => pending.promise));
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timedOut = new Promise<void>((resolve) => {
+      timer = setTimeout(resolve, timeoutMs);
+    });
+    try {
+      await Promise.race([drained, timedOut]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+}
+
+/**
+ * Initializes the Firekit compatibility facade.
+ * Should be called once by the host application with the SDK configuration.
+ *
+ * @param ctx - CommandContext with baseUrl, auth callbacks, and optional logger
+ * @param taskInfo - Task information including variantId, taskVersion, administrationId, and isAnonymous flag
+ * @returns FirekitFacade singleton instance
+ *
+ * @example
+ * ```ts
+ * const firekit = initFirekitCompat(
+ *   {
+ *     baseUrl: 'https://api.example.com',
+ *     auth: { getToken: () => Promise.resolve(token) }
+ *   },
+ *   {
+ *     variantId: 'variant-123',
+ *     taskVersion: '1.0.0',
+ *     administrationId: 'admin-456',
+ *     isAnonymous: false
+ *   }
+ * );
+ * ```
+ */
+export function initFirekitCompat(ctx: CommandContext, taskInfo: CompatTaskInfo): FirekitFacade {
+  const facade = FirekitFacade.getInstance();
+  facade.initialize(ctx, taskInfo);
+  return facade;
+}
+
+/**
+ * Retrieves the Firekit facade singleton instance.
+ * Can be called from anywhere in the application. The instance is created on first call
+ * if it doesn't exist, but will not be properly initialized until initFirekitCompat() is called.
+ *
+ * @returns FirekitFacade singleton instance
+ */
+export function getFirekitCompat(): FirekitFacade {
+  return FirekitFacade.getInstance();
+}
+
+/**
+ * Firekit compatibility method for starting a new assessment run.
+ *
+ * This function initiates a new run in the ROAR backend system, supporting both
+ * anonymous and authenticated assessment modes. It serves as a drop-in replacement
+ * for the legacy Firekit `appkit.startRun()` method.
+ *
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
+ *
+ * **Validation:**
+ * - If `isAnonymous` is false, `administrationId` must be provided
+ *
+ * The created `runId` is stored internally on the facade for use by subsequent
+ * operations like `writeTrial()` and `finishRun()`.
+ *
+ * @param additionalRunMetadata - Optional custom metadata to include with the run.
+ *                                Can contain any key-value pairs for run customization.
+ *
+ * @returns Promise<void> - Resolves when the run is successfully created
+ *
+ * @throws {SDKError}
+ * - If the facade has not been initialized via `initFirekitCompat()`
+ * - If `administrationId` is required but missing
+ *
+ * @example
+ * ```ts
+ * // Anonymous run
+ * initFirekitCompat(ctx, {
+ *   variantId: 'variant-123',
+ *   taskVersion: '1.0.0',
+ *   isAnonymous: true
+ * });
+ *
+ * await startRun({ sessionId: 'session-456' });
+ *
+ * // Authenticated run
+ * initFirekitCompat(ctx, {
+ *   variantId: 'variant-123',
+ *   taskVersion: '1.0.0',
+ *   administrationId: 'admin-789',
+ *   isAnonymous: false
+ * });
+ *
+ * await startRun({ userId: 'user-123' });
+ * ```
+ */
+export async function startRun(additionalRunMetadata?: Record<string, unknown>): Promise<void> {
+  const facade = getFirekitCompat();
+  const taskInfo = facade._getTaskInfo();
+
+  if (!taskInfo) {
+    throw new SDKError('appkit.startRun requires initialization. Call initFirekitCompat() first.');
+  }
+
+  const isAnonymous = taskInfo.isAnonymous === true;
+
+  if (!isAnonymous && !taskInfo.administrationId) {
+    throw new SDKError('appkit.startRun requires administrationId when isAnonymous is false.');
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+  const ctx = facade.getContext();
+
+  const input: StartRunInput = isAnonymous
+    ? {
+        variantId: taskInfo.variantId,
+        taskVersion: taskInfo.taskVersion,
+        ...(additionalRunMetadata ? { metadata: additionalRunMetadata as Json } : {}),
+        isAnonymous: true,
+      }
+    : {
+        variantId: taskInfo.variantId,
+        taskVersion: taskInfo.taskVersion,
+        administrationId: taskInfo.administrationId as string,
+        ...(additionalRunMetadata ? { metadata: additionalRunMetadata as Json } : {}),
+        isAnonymous: false,
+      };
+
+  const cmd = new StartRunCommand(api, ctx.participant.participantId);
+  const result = await invoker.run(cmd, input);
+
+  facade._setRunId(result.runId);
+}
+
+/**
+ * Firekit compatibility method for finishing an assessment run.
+ *
+ * This function marks a run as complete in the ROAR backend system, serving as a drop-in
+ * replacement for the legacy Firekit `appkit.finishRun()` method.
+ *
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
+ * - `startRun()` must be called to create an active run
+ *
+ * **Behavior:**
+ * - Marks the run with a completion event in the backend
+ * - Includes any provided metadata in the request
+ * - Clears the internal runId after successful completion to prevent stale state
+ *
+ * @param finishingMetadata - Optional custom metadata to include with the completion event.
+ *                            Can contain any key-value pairs for run customization.
+ *
+ * @returns Promise<void> - Resolves when the run is successfully marked as complete
+ *
+ * @throws {SDKError}
+ * - If the facade has not been initialized via `initFirekitCompat()`
+ * - If no active run exists (i.e., `startRun()` has not been called)
+ * - If the backend request fails
+ *
+ * @example
+ * ```ts
+ * initFirekitCompat(ctx, {
+ *   variantId: 'variant-123',
+ *   taskVersion: '1.0.0',
+ *   isAnonymous: true
+ * });
+ *
+ * await startRun();
+ * // ... assessment logic ...
+ * await finishRun({ totalScore: 85, timeSpent: 300 });
+ * ```
+ */
+export async function finishRun(finishingMetadata?: Record<string, unknown>): Promise<void> {
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  if (!runId) {
+    throw new SDKError('appkit.finishRun requires an active run. Call appkit.startRun() first.');
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+  const ctx = facade.getContext();
+
+  const input: FinishRunInput = {
+    runId,
+    type: RUN_EVENT_COMPLETE,
+    ...(finishingMetadata ? { metadata: finishingMetadata as Json } : {}),
+  };
+
+  const cmd = new FinishRunCommand(api, ctx.participant.participantId);
+  await invoker.run(cmd, input);
+  facade._setRunId(undefined);
+}
+
+/**
+ * Firekit compatibility stub for aborting a run.
+ *
+ * From @bdelab/roar-firekit:
+ * ```ts
+ * abortRun() { […] }
+ * ```
+ *
+ * Preserves the legacy Firekit synchronous signature while issuing a best-effort
+ * asynchronous abort request to the backend when a run is active.
+ *
+ * @returns void
+ */
+export function abortRun(): void {
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  // No active run: preserve Firekit-like no-op behavior
+  if (!runId) return;
+
+  void (async () => {
+    const api = facade.getApi();
+    const invoker = facade.getInvoker();
+    const ctx = facade.getContext();
+
+    const cmd = new AbortRunCommand(api, ctx.participant.participantId);
+    await invoker.run(cmd, { runId, type: RUN_EVENT_ABORT });
+    facade._setRunId(undefined);
+  })().catch((err) => {
+    facade.getContext().logger?.warn?.('[firekit.abortRun] Failed to abort run on backend:', err);
+  });
+}
+
+/**
+ * Firekit compatibility method for updating engagement flags on a run.
+ *
+ * Marks a run with quality flags such as incomplete responses, response times that are too fast,
+ * accuracy that is too low, or insufficient number of responses. Optionally marks the run as reliable.
+ *
+ * **Breaking Change**: The `reliableByBlock` parameter from the original Firekit API is no longer supported.
+ * Use `markAsReliable` to mark the entire run as reliable instead.
+ *
+ * @param flagNames - Array of engagement flag names to set (e.g., 'incomplete', 'response_time_too_fast')
+ * @param markAsReliable - Flag to mark the run as reliable (defaults to false)
+ * @returns Promise that resolves when the engagement flags have been sent to the backend
+ * @throws {SDKError} If no active run exists
+ *
+ * @example
+ * ```typescript
+ * await updateEngagementFlags(['incomplete', 'response_time_too_fast'], true);
+ * ```
+ */
+export async function updateEngagementFlags(flagNames: string[], markAsReliable: boolean = false): Promise<void> {
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  if (!runId) {
+    throw new SDKError('appkit.updateEngagementFlags requires an active run. Call appkit.startRun() first.');
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+  const ctx = facade.getContext();
+
+  // Map snake_case Firekit flag names to camelCase SDK property names
+  const flagNameMap: Record<string, string> = {
+    incomplete: 'incomplete',
+    response_time_too_fast: 'responseTimeTooFast',
+    accuracy_too_low: 'accuracyTooLow',
+    not_enough_responses: 'notEnoughResponses',
+  };
+
+  const engagementFlags = Object.fromEntries(flagNames.map((flag) => [flagNameMap[flag] || flag, true]));
+
+  const cmd = new UpdateRunEngagementFlagsCommand(api, ctx.participant.participantId);
+
+  await invoker.run(cmd, {
+    runId,
+    type: RUN_EVENT_ENGAGEMENT,
+    engagementFlags,
+    reliableRun: markAsReliable,
+  });
+}
+
+/**
+ * Firekit compatibility method for buffering interaction events.
+ *
+ * From @bdelab/roar-firekit:
+ * addInteraction(interaction: InteractionEvent) { […] }
+ *
+ * Interactions are buffered in memory and later flushed with `writeTrial()`.
+ *
+ * @param interaction - The interaction event to record
+ * @returns void
+ */
+export function addInteraction(interaction: AddInteractionInput): AddInteractionOutput {
+  const facade = getFirekitCompat();
+  if (!facade._getTaskInfo()) {
+    throw new SDKError('appkit.addInteraction requires initialization. Call appkit.initFirekitCompat() first.');
+  }
+  if (!facade._getRunId()) {
+    throw new SDKError('appkit.addInteraction requires an active run. Call appkit.startRun() first.');
+  }
+  facade._pushInteraction(interaction);
+}
+
+/**
+ * Firekit compatibility stub for updating user data.
+ *
+ * From @bdelab/roar-firekit:
+ * async updateUser({ tasks, variants, assessmentPid, ...userMetadata }: UserUpdateInput): Promise<void> { […] }
+ *
+ * @deprecated This method is related to standalone apps and may be deprecated in the future.
+ * @param userUpdateData - User update data including tasks, variants, assessmentPid, and other metadata.
+ * @returns Promise<void>
+ * @throws {SDKError} Always, until implemented.
+ */
+export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOutput {
+  // Issue deprecation warning
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      '[DEPRECATION] updateUser() exists only for Firekit compatibility and will be removed in a future version.',
+    );
+  }
+
+  void userUpdateData;
+  throw new SDKError('appkit.updateUser not yet implemented');
+}
+
+/**
+ * Firekit compatibility method for writing trial data.
+ *
+ * From @bdelab/roar-firekit:
+ * ```ts
+ * async writeTrial(trialData: TrialData, computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>) { […] }
+ * ```
+ *
+ * Records a trial event for the active run in the ROAR assessment backend.
+ *
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
+ * - `startRun()` must be called to create an active run
+ *
+ * **Behavior:**
+ * - Validates required fields (assessmentStage, correct) to prevent silent failures
+ * - Coerces boolean correct values to numbers (true → 1, false → 0) for Firekit compatibility
+ * - Normalizes assessment stages and interaction events to backend format
+ * - Accumulates raw scores from trials (when subtask is provided)
+ * - Invokes optional computed score callback with accumulated raw scores
+ * - Converts computed scores to ScoreEntry[] and submits via the WriteTrialCommand
+ *
+ * **Required trial data fields:**
+ * - `assessmentStage` or `assessment_stage`: ASSESSMENT_STAGE_PRACTICE, ASSESSMENT_STAGE_PRACTICE_RESPONSE, ASSESSMENT_STAGE_TEST, or ASSESSMENT_STAGE_TEST_RESPONSE (supports both camelCase and snake_case for backward compatibility)
+ * - `correct`: 1 (correct), 0 (incorrect), or boolean (true/false)
+ *
+ * **Optional trial data fields:**
+ * - `response`: User's response
+ * - `rt`: Reaction time in milliseconds
+ * - `payload`: Custom JSON data
+ * - Any other assessment-specific fields
+ *
+ * @param trialData - Trial data object containing assessment-specific trial information
+ * @param computedScoreCallback - Optional callback function that receives accumulated raw scores and returns computed scores. When provided, the callback is invoked with raw scores accumulated from all trials, and the returned computed scores are converted to ScoreEntry[] and submitted with the trial event.
+ * @returns Promise<void> - Resolves when the trial event has been successfully submitted
+ *
+ * @throws {SDKError}
+ * - If no active run exists (call appkit.startRun() first)
+ * - If assessmentStage (or assessment_stage) is missing or not a string
+ * - If assessmentStage is not one of the valid values (ASSESSMENT_STAGE_PRACTICE, ASSESSMENT_STAGE_PRACTICE_RESPONSE, ASSESSMENT_STAGE_TEST, ASSESSMENT_STAGE_TEST_RESPONSE)
+ * - If correct is missing or not a number/boolean
+ * - If the backend request fails
+ *
+ * @example
+ * ```typescript
+ * // Basic trial submission
+ * const trialData = {
+ *   assessmentStage: 'test',
+ *   correct: 1,
+ *   response: 'A',
+ *   rt: 1500
+ * };
+ * await writeTrial(trialData);
+ *
+ * // With boolean correct value (legacy Firekit)
+ * await writeTrial({
+ *   assessmentStage: 'test',
+ *   correct: true,  // Coerced to 1
+ *   response: 'B',
+ *   rt: 1200
+ * });
+ *
+ * // With custom payload
+ * await writeTrial({
+ *   assessmentStage: 'practice',
+ *   correct: 0,
+ *   response: 'C',
+ *   rt: 2000,
+ *   payload: { difficulty: 'hard', hint_used: true }
+ * });
+ * ```
+ */
+export async function writeTrial(
+  trialData: TrialData,
+  computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
+): WriteTrialOutput {
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  if (!runId) {
+    throw new SDKError('appkit.writeTrial requires an active run. Call appkit.startRun() first.', {
+      code: SdkErrorCode.WRITE_TRIAL_FAILED,
+    });
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+  const ctx = facade.getContext();
+
+  // Validate required fields to prevent silent failures
+  const trialDataRecord = trialData as Record<string, unknown>;
+
+  // Support both camelCase (assessmentStage) and snake_case (assessment_stage) for backward compatibility
+  const assessmentStageValue = trialDataRecord['assessmentStage'] ?? trialDataRecord['assessment_stage'];
+  if (typeof assessmentStageValue !== 'string') {
+    throw new SDKError('writeTrial requires assessmentStage (or assessment_stage) in trial data.', {
+      code: SdkErrorCode.WRITE_TRIAL_FAILED,
+    });
+  }
+
+  const validStages = [
+    ASSESSMENT_STAGE_PRACTICE,
+    ASSESSMENT_STAGE_PRACTICE_RESPONSE,
+    ASSESSMENT_STAGE_TEST,
+    ASSESSMENT_STAGE_TEST_RESPONSE,
+  ] as const;
+  if (!validStages.includes(assessmentStageValue as (typeof validStages)[number])) {
+    throw new SDKError(
+      `writeTrial requires assessmentStage to be one of: ${validStages.join(', ')}. Got: ${assessmentStageValue}`,
+      {
+        code: SdkErrorCode.WRITE_TRIAL_FAILED,
+      },
+    );
+  }
+  const assessmentStage = assessmentStageValue as WriteTrialAssessmentStage;
+
+  if (typeof trialDataRecord['correct'] !== 'number' && typeof trialDataRecord['correct'] !== 'boolean') {
+    throw new SDKError('writeTrial requires correct in trial data.', {
+      code: SdkErrorCode.WRITE_TRIAL_FAILED,
+    });
+  }
+
+  // Coerce boolean correct values (legacy Firekit) to numbers
+  const correct =
+    typeof trialDataRecord['correct'] === 'boolean' ? (trialDataRecord['correct'] ? 1 : 0) : trialDataRecord['correct'];
+
+  // Accumulate raw scores from this trial for later score computation.
+  // Assessments with named subtasks (e.g. PA: 'fsm', 'lsm', 'del') pass the subtask
+  // key explicitly. Assessments without subtasks (e.g. SWR) fall back to 'composite'
+  // so that _accumulateRawScore and _getRawScores overrides still receive a call.
+  const subtask = (trialDataRecord['subtask'] as string | undefined) ?? 'composite';
+  facade._accumulateRawScore(subtask, assessmentStage, correct);
+
+  // Drain buffered interactions from addInteraction() calls
+  const bufferedInteractions = facade._drainInteractionBuffer();
+
+  const cmd = new WriteTrialCommand(api, ctx.participant.participantId);
+
+  // Invoke computed score callback if provided and map to ScoreEntry[] for persistence
+  let scores: ScoreEntry[] | undefined;
+  if (computedScoreCallback) {
+    try {
+      const rawScores = facade._getRawScores();
+      if (rawScores) {
+        const computedScores = await computedScoreCallback(rawScores);
+        if (computedScores) {
+          // Map computed scores to ScoreEntry[] using assessment-specific adapter
+          // For PA, this uses toPaScoreEntries; other assessments would have their own adapters
+          const scoreAdapter = facade._getScoreAdapter();
+          if (scoreAdapter) {
+            scores = scoreAdapter(computedScores);
+          }
+        }
+      }
+    } catch (error) {
+      // Log callback error but don't fail the trial write
+      // The trial data is still valuable even if score computation fails
+      const logger = facade._getLogger();
+      if (logger) {
+        logger.warn({ err: error }, 'Computed score callback failed; trial will be recorded without scores');
+      }
+    }
+  }
+
+  try {
+    await invoker.run(cmd, {
+      runId,
+      type: RUN_EVENT_TRIAL,
+      interactions: bufferedInteractions.length > 0 ? bufferedInteractions : undefined,
+      scores: scores && scores.length > 0 ? scores : undefined,
+      trial: {
+        assessmentStage,
+        ...trialData,
+        correct,
+      },
+    } as WriteTrialCommandInput);
+  } catch (error) {
+    // Restore interactions to buffer if writeTrial fails
+    bufferedInteractions.forEach((interaction) => facade._pushInteraction(interaction));
+    throw error;
+  }
+}
+
+/**
+ * Retrieves task variant parameters by variant ID.
+ *
+ * This function supports the new parameter-passing approach where the launcher
+ * passes only the variant_id, and the assessment app looks up the variant's
+ * parameters using this method.
+ *
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
+ *
+ * @param taskId - The UUID of the parent task
+ * @param variantId - The UUID of the variant to retrieve
+ * @returns Promise that resolves with the variant parameters (Record<string, unknown>)
+ * @throws {SDKError} If the facade has not been initialized
+ * @throws {SDKError} If the variant lookup fails
+ *
+ * @example
+ * ```ts
+ * initFirekitCompat(ctx, {
+ *   variantId: 'variant-123',
+ *   taskVersion: '1.0.0',
+ *   isAnonymous: true
+ * });
+ *
+ * const params = await getVariantParamsById('task-456', 'variant-456');
+ * console.log(params); // { difficulty: 'hard', timeLimit: 120, ... }
+ * ```
+ */
+export async function getVariantParamsById(taskId: string, variantId: string): Promise<Record<string, unknown>> {
+  const facade = getFirekitCompat();
+
+  if (!facade._getTaskInfo()) {
+    throw new SDKError('appkit.getVariantParamsById requires initialization. Call initFirekitCompat() first.');
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+
+  const cmd = new GetTaskVariantCommand(api);
+  const { variantParams } = await invoker.run(cmd, { taskId, variantId });
+  return variantParams;
+}
+
+/**
+ * Retrieves task variant parameters and the resolved task ID using only the variant UUID.
+ *
+ * Use this instead of `getVariantParamsById` when you have a variant ID but not the task ID —
+ * for example, when the launcher passes only `?variantId=` in the URL.
+ *
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
+ *
+ * @param variantId - The UUID of the variant to retrieve
+ * @returns Promise that resolves with `{ variantParams, taskId }`
+ * @throws {SDKError} If the facade has not been initialized
+ * @throws {SDKError} If the variant lookup fails
+ *
+ * @example
+ * ```ts
+ * initFirekitCompat(ctx, { variantId, taskVersion, isAnonymous: true });
+ * const { variantParams, taskId } = await getVariantById(variantId);
+ * ```
+ */
+export async function getVariantById(
+  variantId: string,
+): Promise<{ variantParams: Record<string, unknown>; taskId: string }> {
+  const facade = getFirekitCompat();
+
+  if (!facade._getTaskInfo()) {
+    throw new SDKError('appkit.getVariantById requires initialization. Call initFirekitCompat() first.');
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+
+  const cmd = new GetVariantByIdCommand(api);
+  return invoker.run(cmd, { variantId });
+}
+
+/**
+ * Creates a lazily-instantiated computedScoreCallback for an assessment's RoarScores class.
+ *
+ * Defers construction of `ScoresClass` until the first trial write, guaranteeing that
+ * `initStore()` has populated the session store before the constructor reads it.
+ *
+ * @param ScoresClass - Constructor for the assessment-specific RoarScores implementation
+ * @returns An async callback suitable for passing to `writeTrial`
+ *
+ * @example
+ * ```js
+ * import { makeLazyComputedCallback } from '@roar-platform/assessment-sdk/compat/firekit';
+ * import { RoarScores } from '../experiment/scores';
+ *
+ * const computedScoreCallback = makeLazyComputedCallback(RoarScores);
+ * ```
+ */
+export function makeLazyComputedCallback<T extends { computedScoreCallback: (rawScores: unknown) => Promise<unknown> }>(
+  ScoresClass: new () => T,
+): (rawScores: unknown) => Promise<unknown> {
+  let instance: T | null = null;
+  return async (rawScores) => {
+    if (!instance) instance = new ScoresClass();
+    return instance.computedScoreCallback(rawScores);
+  };
+}
+
+export async function uploadFile({
+  fileOrBlob,
+  filename,
+  taskId,
+  assessmentPid,
+  customMetadata,
+}: {
+  fileOrBlob: File | Blob;
+  filename: string;
+  taskId: string;
+  assessmentPid?: string;
+  customMetadata?: Record<string, string>;
+}): Promise<string> {
+  const facade = getFirekitCompat();
+  const invoker = facade.getInvoker();
+  const ctx = facade.getContext();
+  const storageBucket = facade._getStorageBucket();
+  const taskInfo = facade._getTaskInfo();
+  const runId = facade._getRunId();
+  let sanitizedCustomMetadata: Record<string, string> | undefined = { ...customMetadata };
+
+  if (!runId) {
+    throw new SDKError('appkit.uploadFile requires an active run. Call appkit.startRun() first.', {
+      code: SdkErrorCode.UPLOAD_FILE_FAILED,
+    });
+  }
+
+  // Anonymous runs aren't tied to an administration; use a sentinel segment for the path.
+  const administrationId = taskInfo?.isAnonymous ? 'test-administration' : taskInfo?.administrationId;
+  if (!administrationId) {
+    throw new SDKError('appkit.uploadFile requires an administrationId for non-anonymous runs.', {
+      code: SdkErrorCode.UPLOAD_FILE_FAILED,
+    });
+  }
+
+  if (customMetadata) {
+    if (typeof customMetadata !== 'object') {
+      facade._getLogger()?.warn('appkit.uploadFile: customMetadata is not an object and will be omitted.');
+      sanitizedCustomMetadata = undefined;
+    } else {
+      sanitizedCustomMetadata = Object.fromEntries(
+        Object.entries(customMetadata).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)]),
+      );
+    }
+  }
+
+  const input = {
+    filename,
+    fileOrBlob,
+    taskId,
+    runId,
+    administrationId,
+    ...(assessmentPid !== undefined ? { assessmentPid } : {}),
+    ...(customMetadata !== undefined && sanitizedCustomMetadata ? { customMetadata: sanitizedCustomMetadata } : {}),
+  };
+
+  // _getStorageBucket() resolves the bucket lazily: the local Storage emulator in dev, the
+  // admin recordings bucket in prod/staging (it throws via getApp if no Firebase app exists).
+  const cmd = new UploadFileCommand(ctx.participant.participantId, storageBucket);
+  const output = await invoker.run(cmd, input);
+
+  // Add to queue which kicks off the resumable upload process (fire-and-forget)
+  // The storage path is known immediately and is what the caller persists on the trial.
+  facade._addUploadToQueue(output);
+
+  return output.storagePath;
+}
+
+/**
+ * Waits for outstanding uploads to settle before resolving — see {@link FirekitFacade.flushUploads}.
+ * Call before finishRun()/page-unload so fire-and-forget recordings aren't dropped. Requires an
+ * initialized facade (like the other compat calls); resolves immediately if nothing is queued.
+ *
+ * @param timeoutMs - Max time to wait before resolving regardless (default 30s)
+ */
+export async function flushUploads(timeoutMs?: number): Promise<void> {
+  const facade = getFirekitCompat();
+  await facade.flushUploads(timeoutMs);
+}

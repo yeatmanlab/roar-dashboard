@@ -1,0 +1,479 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
+import type { AuthContext } from '../types/auth-context';
+import { SortOrder } from '@roar-platform/api-contract';
+import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../enums/api-error-message.enum';
+import { ApiError } from '../errors/api-error';
+import { EnrolledFamilyUserFactory } from '../test-support/factories/user.factory';
+import { FamilyFactory } from '../test-support/factories/family.factory';
+
+/**
+ * Type-safe assertion helper for success responses.
+ */
+function expectOkResponse<T>(result: { status: number; body: { data: T } | { error: unknown } }): T {
+  expect(result.status).toBe(StatusCodes.OK);
+  expect(result.body).toHaveProperty('data');
+  return (result.body as { data: T }).data;
+}
+
+/**
+ * Type-safe assertion helper for error responses.
+ */
+function expectErrorResponse(
+  result: { status: number; body: { data: unknown } | { error: unknown } },
+  expectedStatus: number,
+) {
+  expect(result.status).toBe(expectedStatus);
+  expect(result.body).toHaveProperty('error');
+  return (result.body as { error: unknown }).error;
+}
+
+// Mock the services before importing controller
+const mockListUsers = vi.fn();
+const mockCreate = vi.fn();
+const mockAddChildren = vi.fn();
+const mockGetById = vi.fn();
+vi.mock('../services/family/family.service', () => ({
+  FamilyService: vi.fn(),
+}));
+
+import { FamilyService } from '../services/family/family.service';
+
+describe('FamiliesController', () => {
+  const mockAuthContext: AuthContext = {
+    userId: 'test-user-id',
+    isSuperAdmin: true,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    vi.mocked(FamilyService).mockReturnValue({
+      addChildren: mockAddChildren,
+      create: mockCreate,
+      getById: mockGetById,
+      listUsers: mockListUsers,
+    });
+  });
+
+  describe('listUsers', () => {
+    it('should return paginated users with 200 status', async () => {
+      const mockUsers = EnrolledFamilyUserFactory.buildList(3);
+      mockListUsers.mockResolvedValue({
+        items: mockUsers,
+        totalItems: 3,
+      });
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'family-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(3);
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 3,
+        totalPages: 1,
+      });
+    });
+
+    it('should handle empty results', async () => {
+      mockListUsers.mockResolvedValue({
+        items: [],
+        totalItems: 0,
+      });
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'family-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toEqual([]);
+      expect(data.pagination.totalItems).toBe(0);
+      expect(data.pagination.totalPages).toBe(0);
+    });
+
+    it('should pass query parameters to service', async () => {
+      mockListUsers.mockResolvedValue({
+        items: [],
+        totalItems: 0,
+      });
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      await Controller.listUsers(mockAuthContext, 'family-456', {
+        page: 2,
+        perPage: 50,
+        sortBy: 'username',
+        sortOrder: SortOrder.DESC,
+        grade: ['5'],
+        role: 'parent',
+      });
+
+      expect(mockListUsers).toHaveBeenCalledWith(mockAuthContext, 'family-456', {
+        page: 2,
+        perPage: 50,
+        sortBy: 'username',
+        sortOrder: SortOrder.DESC,
+        grade: ['5'],
+        role: 'parent',
+      });
+    });
+
+    it('should handle ApiError with 404 Not Found', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockListUsers.mockRejectedValue(error);
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'nonexistent-family', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should handle ApiError with 403 Forbidden', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockListUsers.mockRejectedValue(error);
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'family-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should handle ApiError with 500 Internal Server Error', async () => {
+      const error = new ApiError('Database error', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockListUsers.mockRejectedValue(error);
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'family-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should rethrow non-ApiError errors', async () => {
+      const error = new Error('Unexpected error');
+      mockListUsers.mockRejectedValue(error);
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      await expect(
+        Controller.listUsers(mockAuthContext, 'family-123', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'nameLast',
+          sortOrder: SortOrder.ASC,
+        }),
+      ).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('create', () => {
+    const validBody = {
+      email: 'parent@example.com',
+      password: 'password123',
+      name: { first: 'Pat', last: 'Parent' },
+    };
+
+    it('returns 201 with the new family id on success', async () => {
+      mockCreate.mockResolvedValue({ id: 'family-new-1' });
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.create(validBody);
+
+      expect(result.status).toBe(StatusCodes.CREATED);
+      const data = (result.body as { data: { id: string } }).data;
+      expect(data).toEqual({ id: 'family-new-1' });
+      expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ email: validBody.email }));
+    });
+
+    it('passes the location through to the service', async () => {
+      mockCreate.mockResolvedValue({ id: 'family-new-1' });
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      await Controller.create({
+        ...validBody,
+        location: { city: 'Stanford', country: 'US' },
+      });
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ location: { city: 'Stanford', country: 'US' } }),
+      );
+    });
+
+    it('maps an ApiError 409 to a Conflict response', async () => {
+      mockCreate.mockRejectedValue(
+        new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.create(validBody);
+      expect(expectErrorResponse(result, StatusCodes.CONFLICT)).toBeDefined();
+    });
+
+    it('maps an ApiError 422 to an Unprocessable Entity response', async () => {
+      mockCreate.mockRejectedValue(
+        new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.create(validBody);
+      expect(expectErrorResponse(result, StatusCodes.UNPROCESSABLE_ENTITY)).toBeDefined();
+    });
+
+    it('maps an ApiError 429 to a Too Many Requests response', async () => {
+      mockCreate.mockRejectedValue(
+        new ApiError(ApiErrorMessage.RATE_LIMITED, {
+          statusCode: StatusCodes.TOO_MANY_REQUESTS,
+          code: ApiErrorCode.RATE_LIMITED,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.create(validBody);
+      expect(expectErrorResponse(result, StatusCodes.TOO_MANY_REQUESTS)).toBeDefined();
+    });
+
+    it('maps an ApiError 500 to an Internal Server Error response', async () => {
+      mockCreate.mockRejectedValue(
+        new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.create(validBody);
+      expect(expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR)).toBeDefined();
+    });
+
+    it('re-throws non-ApiError exceptions so the global error handler catches them', async () => {
+      const unexpected = new Error('Unexpected error');
+      mockCreate.mockRejectedValue(unexpected);
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      await expect(Controller.create(validBody)).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('getById', () => {
+    it('returns 200 with the transformed family (id + assembled location, no name)', async () => {
+      const family = FamilyFactory.build({
+        id: 'family-123',
+        locationCity: 'Stanford',
+        locationStateProvince: 'CA',
+        locationCountry: 'US',
+        locationLatLong: [-122.17, 37.43],
+      });
+      mockGetById.mockResolvedValue(family);
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'family-123');
+
+      const data = expectOkResponse(result);
+      expect(data).toEqual({
+        id: 'family-123',
+        location: {
+          city: 'Stanford',
+          stateProvince: 'CA',
+          country: 'US',
+          coordinates: { type: 'Point', coordinates: [-122.17, 37.43] },
+        },
+      });
+      // Families have no name — the response must not surface one.
+      expect(data).not.toHaveProperty('name');
+      expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, 'family-123');
+    });
+
+    it('omits location and rosteringEnded when the family has neither', async () => {
+      const family = FamilyFactory.build({ id: 'family-456' });
+      mockGetById.mockResolvedValue(family);
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'family-456');
+
+      const data = expectOkResponse(result);
+      expect(data).toEqual({ id: 'family-456' });
+      expect(data).not.toHaveProperty('location');
+      expect(data).not.toHaveProperty('rosteringEnded');
+    });
+
+    it('surfaces rosteringEnded as an ISO string when present', async () => {
+      const rosteringEnded = new Date('2025-01-15T00:00:00.000Z');
+      const family = FamilyFactory.build({ id: 'family-789', rosteringEnded });
+      mockGetById.mockResolvedValue(family);
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'family-789');
+
+      const data = expectOkResponse(result);
+      expect(data.rosteringEnded).toBe(rosteringEnded.toISOString());
+    });
+
+    it('maps an ApiError 404 to a Not Found response', async () => {
+      mockGetById.mockRejectedValue(
+        new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'missing-family');
+      expect(expectErrorResponse(result, StatusCodes.NOT_FOUND)).toBeDefined();
+    });
+
+    it('maps an ApiError 403 to a Forbidden response', async () => {
+      mockGetById.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'family-123');
+      expect(expectErrorResponse(result, StatusCodes.FORBIDDEN)).toBeDefined();
+    });
+
+    it('maps an ApiError 500 to an Internal Server Error response', async () => {
+      mockGetById.mockRejectedValue(
+        new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'family-123');
+      expect(expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR)).toBeDefined();
+    });
+
+    it('re-throws non-ApiError exceptions so the global error handler catches them', async () => {
+      mockGetById.mockRejectedValue(new Error('Unexpected error'));
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      await expect(Controller.getById(mockAuthContext, 'family-123')).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('addChildren', () => {
+    const validBody = {
+      children: [
+        {
+          email: 'child1@example.com',
+          password: 'Password123!',
+          name: { first: 'Kid', last: 'Doe' },
+          dob: '2015-01-01',
+          grade: '3' as const,
+          activationCode: 'CODE123',
+        },
+      ],
+    };
+
+    it('returns 201 with the new child ids on success', async () => {
+      mockAddChildren.mockResolvedValue({ ids: ['child-new-1'] });
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.addChildren(mockAuthContext, 'family-123', validBody);
+
+      expect(result.status).toBe(StatusCodes.CREATED);
+      const data = (result.body as { data: { ids: string[] } }).data;
+      expect(data).toEqual({ ids: ['child-new-1'] });
+      expect(mockAddChildren).toHaveBeenCalledWith(
+        mockAuthContext,
+        'family-123',
+        expect.objectContaining({ children: expect.any(Array) }),
+      );
+    });
+
+    it.each([
+      [StatusCodes.BAD_REQUEST, ApiErrorMessage.REQUEST_VALIDATION_FAILED, ApiErrorCode.REQUEST_VALIDATION_FAILED],
+      [StatusCodes.FORBIDDEN, ApiErrorMessage.FORBIDDEN, ApiErrorCode.AUTH_FORBIDDEN],
+      [StatusCodes.NOT_FOUND, ApiErrorMessage.NOT_FOUND, ApiErrorCode.RESOURCE_NOT_FOUND],
+      [StatusCodes.CONFLICT, ApiErrorMessage.CONFLICT, ApiErrorCode.RESOURCE_CONFLICT],
+      [StatusCodes.UNPROCESSABLE_ENTITY, ApiErrorMessage.UNPROCESSABLE_ENTITY, ApiErrorCode.RESOURCE_UNPROCESSABLE],
+      [StatusCodes.TOO_MANY_REQUESTS, ApiErrorMessage.RATE_LIMITED, ApiErrorCode.RATE_LIMITED],
+      [StatusCodes.INTERNAL_SERVER_ERROR, ApiErrorMessage.INTERNAL_SERVER_ERROR, ApiErrorCode.EXTERNAL_SERVICE_FAILED],
+    ])('maps ApiError %s to the corresponding response', async (status, message, code) => {
+      mockAddChildren.mockRejectedValue(new ApiError(message, { statusCode: status, code }));
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.addChildren(mockAuthContext, 'family-123', validBody);
+      expect(expectErrorResponse(result, status)).toBeDefined();
+    });
+
+    it('re-throws non-ApiError exceptions so the global error handler catches them', async () => {
+      mockAddChildren.mockRejectedValue(new Error('Unexpected error'));
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      await expect(Controller.addChildren(mockAuthContext, 'family-123', validBody)).rejects.toThrow(
+        'Unexpected error',
+      );
+    });
+  });
+});

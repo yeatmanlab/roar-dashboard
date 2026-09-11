@@ -1,0 +1,312 @@
+import { ref } from 'vue';
+import TaskParametersConfiguratorRow from './TaskParametersConfiguratorRow.vue';
+import { TASK_PARAMETER_DEFAULT_SHAPE } from '@/constants/tasks';
+
+const mockData = [
+  {
+    name: 'mock-param',
+    type: 'string',
+    value: 'mock-value',
+  },
+  {
+    name: 'mock-param-2',
+    type: 'boolean',
+    value: false,
+  },
+  {
+    name: 'mock-param-3',
+    type: 'number',
+    value: 5,
+  },
+];
+
+describe('<TaskParametersConfiguratorRow />', () => {
+  let mockModel;
+
+  beforeEach(() => {
+    mockModel = ref(structuredClone(mockData));
+  });
+
+  it('Renders the row with default attributes', () => {
+    mockModel = ref([TASK_PARAMETER_DEFAULT_SHAPE]);
+
+    cy.mount(TaskParametersConfiguratorRow, {
+      props: {
+        modelValue: mockModel.value,
+        rowIndex: 0,
+      },
+    });
+    cy.findByTestId('task-configurator-row').should('be.visible');
+    cy.findByTestId('task-configurator-row__name').should('be.visible');
+    cy.findByTestId('task-configurator-row__type').should('be.visible');
+    cy.findByTestId('task-configurator-row__value-string').should('be.visible');
+  });
+
+  it('Renders the row with pre-defined model value', () => {
+    cy.mount(TaskParametersConfiguratorRow, {
+      props: {
+        modelValue: mockModel.value,
+        rowIndex: 0,
+      },
+    });
+
+    cy.findByTestId('task-configurator-row__name').find('input').should('have.value', 'mock-param');
+    cy.findByTestId('task-configurator-row__type')
+      .findByTestId('dropdown__input-wrapper')
+      .should('contain.text', 'string');
+    cy.findByTestId('task-configurator-row__value-string').find('input').should('have.value', 'mock-value');
+  });
+
+  it('Renders the correct row model value', () => {
+    cy.mount(TaskParametersConfiguratorRow, {
+      props: {
+        modelValue: mockModel.value,
+        rowIndex: 1,
+      },
+    });
+
+    cy.findByTestId('task-configurator-row__name').find('input').should('have.value', 'mock-param-2');
+    cy.findByTestId('task-configurator-row__type')
+      .findByTestId('dropdown__input-wrapper')
+      .should('contain.text', 'boolean');
+    cy.findByTestId('task-configurator-row__value-bool')
+      .findByTestId('dropdown__input-wrapper')
+      .should('contain.text', 'false');
+  });
+
+  it('Lets users select the desired parameter type', () => {
+    cy.mount(TaskParametersConfiguratorRow, {
+      props: {
+        modelValue: mockModel.value,
+        rowIndex: 0,
+      },
+    });
+
+    cy.findByTestId('task-configurator-row__type').findByTestId('dropdown__input-wrapper').click();
+    cy.findAllByTestId('dropdown__item').should('be.visible').and('have.length', 3);
+
+    // Select boolean type
+    cy.findAllByTestId('dropdown__item').filter(':contains("boolean")').first().click({ force: true });
+    cy.findByTestId('task-configurator-row__type')
+      .findByTestId('dropdown__input-wrapper')
+      .should('contain.text', 'boolean');
+    cy.findByTestId('task-configurator-row__value-bool').should('be.visible');
+    cy.findByTestId('task-configurator-row__value-string').should('not.exist');
+    cy.findByTestId('task-configurator-row__value-number').should('not.exist');
+
+    // Select number type
+    cy.findByTestId('task-configurator-row__type').findByTestId('dropdown__input-wrapper').click();
+    cy.findAllByTestId('dropdown__item').filter(':contains("number")').first().click({ force: true });
+    cy.findByTestId('task-configurator-row__type')
+      .findByTestId('dropdown__input-wrapper')
+      .should('contain.text', 'number');
+    cy.findByTestId('task-configurator-row__value-number').should('be.visible');
+    cy.findByTestId('task-configurator-row__value-string').should('not.exist');
+    cy.findByTestId('task-configurator-row__value-bool').should('not.exist');
+
+    // Select string type
+    cy.findByTestId('task-configurator-row__type').findByTestId('dropdown__input-wrapper').click();
+    cy.findAllByTestId('dropdown__item').filter(':contains("string")').first().click({ force: true });
+    cy.findByTestId('task-configurator-row__type')
+      .findByTestId('dropdown__input-wrapper')
+      .should('contain.text', 'string');
+    cy.findByTestId('task-configurator-row__value-string').should('be.visible');
+    cy.findByTestId('task-configurator-row__value-number').should('not.exist');
+    cy.findByTestId('task-configurator-row__value-bool').should('not.exist');
+  });
+
+  it('Emits delete event when delete button is clicked', () => {
+    const removeRowSpy = cy.spy().as('removeRowSpy');
+
+    cy.mount(TaskParametersConfiguratorRow, {
+      props: {
+        modelValue: mockModel.value,
+        rowIndex: 0,
+        onRemoveRow: removeRowSpy,
+      },
+    });
+
+    cy.findByTestId('task-configurator-row__delete-btn').click();
+    cy.get('@removeRowSpy').should('have.been.calledOnce');
+  });
+
+  describe('Edit Mode', () => {
+    it('Disables the parameter name and type inputs when in edit mode', () => {
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+          editMode: true,
+        },
+      });
+
+      cy.findByTestId('task-configurator-row__name').find('input').should('be.disabled');
+      cy.findByTestId('task-configurator-row__type')
+        .findByTestId('dropdown__input-wrapper')
+        .should('have.css', 'pointer-events', 'none')
+        .click({ force: true });
+      cy.findAllByTestId('dropdown__item').should('not.exist');
+    });
+
+    it('Does not emit deletion event when feature is disabled', () => {
+      const removeRowSpy = cy.spy().as('removeRowSpy');
+
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+          onRemoveRow: removeRowSpy,
+          editMode: true,
+          disableDeletingExistingRows: true,
+        },
+      });
+
+      cy.findByTestId('task-configurator-row__delete-btn').should('be.disabled');
+      cy.findByTestId('task-configurator-row__delete-btn').click({ force: true });
+      cy.get('@removeRowSpy').should('not.have.been.calledOnce');
+    });
+  });
+
+  describe('Form Validation', () => {
+    it('Shows error message when name is empty', () => {
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+        },
+      });
+
+      cy.findByTestId('task-configurator-row__name').type('{selectAll}');
+      cy.findByTestId('task-configurator-row__name').type('{backspace}');
+      cy.findByTestId('task-configurator-row__name')
+        .siblings('[data-testid="textinput__errors"]')
+        .eq(0)
+        .should('be.visible')
+        .and('contain.text', 'Value is required');
+    });
+
+    it('Shows error message when a new row value is empty', () => {
+      // Seed a value so clearing it registers an edit and marks the field dirty.
+      // Vuelidate only surfaces $errors once a field is dirty, and backspacing an
+      // already-empty field is a no-op — so the row must start non-empty.
+      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, value: 'seedvalue', isNew: true }]);
+
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+        },
+      });
+
+      cy.findByTestId('task-configurator-row__value-string').type('{selectAll}');
+      cy.findByTestId('task-configurator-row__value-string').type('{backspace}');
+      cy.findByTestId('task-configurator-row__value-string')
+        .siblings('[data-testid="textinput__errors"]')
+        .eq(0)
+        .should('be.visible')
+        .and('contain.text', 'Value is required');
+    });
+
+    it('Allows an empty value on existing (non-new) rows', () => {
+      // taskConfig is arbitrary JSON — an existing task may legitimately store an
+      // empty-string value, so existing rows must not be blocked by the value validator.
+      mockModel = ref([{ name: 'mock-param', type: 'string', value: 'mock-value' }]);
+
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+        },
+      });
+
+      cy.findByTestId('task-configurator-row__value-string').type('{selectAll}');
+      cy.findByTestId('task-configurator-row__value-string').type('{backspace}');
+      cy.findByTestId('task-configurator-row__value-string')
+        .siblings('[data-testid="textinput__errors"]')
+        .should('not.exist');
+    });
+
+    it('Prevents using reserved parameter names', () => {
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+          validationKeyBlacklist: ['reserved-param'],
+        },
+      });
+
+      cy.findByTestId('task-configurator-row__name').type('{selectAll}');
+      cy.findByTestId('task-configurator-row__name').type('{backspace}');
+      cy.findByTestId('task-configurator-row__name').type('reserved-param');
+      cy.findByTestId('task-configurator-row__name')
+        .siblings('[data-testid="textinput__errors"]')
+        .eq(0)
+        .should('be.visible')
+        .and('contain.text', 'Parameter name is reserved');
+    });
+
+    it('Enforces the name format on new rows only', () => {
+      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, isNew: true }]);
+
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+        },
+      });
+
+      // Dashes are rejected on new rows (names become taskConfig keys verbatim).
+      cy.findByTestId('task-configurator-row__name').type('invalid-name');
+      cy.findByTestId('task-configurator-row__name')
+        .siblings('[data-testid="textinput__errors"]')
+        .eq(0)
+        .should('be.visible')
+        .and('contain.text', 'Must start with a letter');
+
+      // Underscore-style names are accepted.
+      cy.findByTestId('task-configurator-row__name').type('{selectAll}');
+      cy.findByTestId('task-configurator-row__name').type('{backspace}');
+      cy.findByTestId('task-configurator-row__name').type('valid_name_2');
+      cy.findByTestId('task-configurator-row__name').siblings('[data-testid="textinput__errors"]').should('not.exist');
+    });
+
+    it('Automatically clears error messages', () => {
+      // Use a new row so the value-required validator (new-rows-only) is exercised.
+      // Seed name + value so clearing each registers an edit and marks the field
+      // dirty — vuelidate won't surface $errors otherwise, and backspacing an
+      // already-empty field is a no-op.
+      mockModel = ref([{ ...TASK_PARAMETER_DEFAULT_SHAPE, name: 'seedname', value: 'seedvalue', isNew: true }]);
+
+      cy.mount(TaskParametersConfiguratorRow, {
+        props: {
+          modelValue: mockModel.value,
+          rowIndex: 0,
+        },
+      });
+
+      cy.findByTestId('task-configurator-row__name').type('{selectAll}');
+      cy.findByTestId('task-configurator-row__name').type('{backspace}');
+      cy.findByTestId('task-configurator-row__name')
+        .siblings('[data-testid="textinput__errors"]')
+        .eq(0)
+        .should('be.visible')
+        .and('contain.text', 'Value is required');
+
+      cy.findByTestId('task-configurator-row__name').type('mock_param_name');
+      cy.findByTestId('task-configurator-row__name').siblings('[data-testid="textinput__errors"]').should('not.exist');
+
+      cy.findByTestId('task-configurator-row__value-string').type('{selectAll}');
+      cy.findByTestId('task-configurator-row__value-string').type('{backspace}');
+      cy.findByTestId('task-configurator-row__value-string')
+        .siblings('[data-testid="textinput__errors"]')
+        .eq(0)
+        .should('be.visible')
+        .and('contain.text', 'Value is required');
+
+      cy.findByTestId('task-configurator-row__value-string').type('mock-name');
+      cy.findByTestId('task-configurator-row__value-string')
+        .siblings('[data-testid="textinput__errors"]')
+        .should('not.exist');
+    });
+  });
+});

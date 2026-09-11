@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const ErrorObjectSchema = z.object({
   message: z.string(),
   code: z.string().optional(),
+  traceId: z.string().optional(),
 });
 
 // Error envelope: { error: { message, code? } }

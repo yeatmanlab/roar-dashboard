@@ -1,0 +1,107 @@
+{
+  "preloadTrial": {
+    "messageText": "Aspetta il caricamento dell'esperimento. Potrebbero volerci alcuni minuti."
+  },
+  "fullScreenTrial": {
+    "prompt": "L'esperimento avverra&#39 a schermo intero. Premi il bottone per continuare.",
+    "buttonText": "Continua"
+  },
+  "navigation": {
+    "continueButtonText": "Premi <span class='yellow'>QUALSIASI TASTO</span> per {{action}}",
+    "continueButtonTextMobile": "Premi <span class='yellow'>QUI</span> per {{action}}"
+  },
+  "introTrials": {
+    "trial1": {
+      "header": "Benvenuto nel mondo di Lexicality!",
+      "paragraph1": "Sei un mago in cerca del portale che ti riportera&#39 a casa sulla Terra. Per raggiungere il portale pero&#39, dovrai viaggiare nelle terre dominate dai guardiani magici",
+      "paragraph2": "Affinche&#39 i guardiani ti lascino passare dovrai riuscire a distinguere tra una serie di parole inventate e di parole reali.&nbsp;"
+    },
+    "trial2": {
+      "header": "Parole inventate o reali compariranno velocemente al centro dello schermo.",
+      "paragraph1": "Le parole inventate potrebbero assomigliare a parole italiane, anche se non hanno alcun significato in italiano. Per esempio, cata, sagno o molpa, sono parole inventate. <span class='orange'><b> Se vedi una parola inventata, premi la FRECCIA SINISTRA.</b></span>",
+      "paragraph2": "Le parole reali saranno quelle che riconoscerai. Sono parole reali come porta, tra, fare o leone. <span class='blue'><b> Se vedi una parola reale, premi la FRECCIA DESTRA.</b></span>"
+    },
+    "trial3": {
+      "header": "Proviamo a rivedere quale tasto premere per le parole inventate e quale per le parole reali.",
+      "paragraph1": "Prova ad essere il piu&#39 accurato&#47;a possibile.",
+      "paragraph2": "Alcune parole saranno difficili, ma non ti scoraggiare. Se non sei sicuro&#47;a, dai la risposta che ritieni piu&#39 corretta!"
+    },
+    "postPracticeTrial": {
+      "header": "Ben fatto, sei pronto per iniziare il viaggio!",
+      "paragraph1": "Guadagnerai monete d&#39oro lungo il cammino."
+    }
+  },
+  "practiceFeedbackTrial": {
+    "paragraph1": "Hai premuto la freccia {{direction}} che e&#39 per le parole {{typeWord}}!",
+    "paragraph2": "e&#39 una parola {{typeWord}}. Premi la freccia {{direction}} per continuare.",
+    "arrowChoicesImgAlt": "arrowChoices"
+  },
+  "gameBreakTrials": {
+    "midBlockTrials": {
+      "trial1": {
+        "header": "Ben fatto!",
+        "paragraph1": "Sei a meta&#39 strada lungo la valle, e decidi di accamparti vicino ad un piccolo villaggio.",
+        "paragraph2": "Nel villaggio incontri un altro avventuriero che si unisce al tuo viaggio!"
+      },
+      "trial2": {
+        "header": "Fantastico!",
+        "paragraph1": "Dopo qualche giorno di viaggio, arrivi ad un rifugio!",
+        "paragraph2": "Qui incontri un altro avventuriero che si unisce al tuo viaggio!"
+      },
+      "trial3": {
+        "header": "Ben fatto!",
+        "paragraph1": "Sei a meta&#39 strada lungo la valle, e decidi di accamparti vicino ad un piccolo villaggio.",
+        "paragraph2": "Qui incontri un altro avventuriero che si unisce al tuo viaggio!"
+      }
+    },
+    "postBlockTrials": {
+      "trial1": {
+        "header": "Congratulazioni!",
+        "paragraph1": "Con l&#39aiuto del guardiano, sei riuscito a passare attraverso la valle.",
+        "paragraph2": "Ti stai avvicinando al portale!"
+      },
+      "trial2": {
+        "header": "Congratulazioni!",
+        "paragraph1": "Con l&#39aiuto del guardiano, sei riuscito a passare attraverso la valle.",
+        "paragraph2": "Ti manca solo un&#39altra valle per raggiungere il portale!"
+      }
+    },
+    "finalTrial": {
+      "header": "Finalmente trovi l'ultimo guardiano e il portale che ti riportera&#39 a casa!",
+      "paragraph1": "Usi le monete raccolte per aprire il portale.",
+      "paragraph2": "Saluti i tuoi nuovi amici e lasci il mondo di Lexicality. Alla prossima!"
+    }
+  },
+  "imagesAlt": {
+    "arrowKeys": "arrow keys",
+    "leftArrow": "left arrow",
+    "rightArrow": "right arrow",
+    "valley": "background image with hills and trees",
+    "adventurer1": "adventurer with harp",
+    "adventurer2": "adventuerer making rainbows",
+    "adventurer3": "adventurer making heart shapes",
+    "wizardCoin": "wizard making coins",
+    "guardian1": "orange dinosaur guardian",
+    "guardian2": "blue dragon guardian",
+    "endingBackground": "landscape with trees",
+    "guardian3": "winking unicorn",
+    "endingGateCoinbag": "gate with coinbag animation",
+    "wizardWand": "wizard waving a magic wand",
+    "leftArrowIntro": "made-up word, press the left arrow key",
+    "rightArrowIntro": "real Word, press the Right Arrow key"
+  },
+  "terms": {
+    "__comment1__": "ex. 'press any key to continue/practice/begin'",
+    "continue": "continue",
+    "practice": "practice",
+    "here": "here",
+    "begin": "begin",
+    "gold": "gold",
+    "left": "left",
+    "right": "right",
+    "__comment2__": "i.e. 'xop is a made-up/real word'",
+    "real": "real",
+    "made-up": "made-up",
+    "save": "save your work"
+  }
+}

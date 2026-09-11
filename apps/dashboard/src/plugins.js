@@ -11,6 +11,7 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
 import { definePreset } from '@primevue/themes';
 import Aura from '@primevue/themes/aura';
+import { queryClient } from '@/queryClient';
 
 const pinia = createPinia().use(piniaPluginPersistedState);
 const head = createHead();
@@ -54,19 +55,11 @@ const plugins = [
       ripple: true,
     },
   ],
-  [
-    VueQueryPlugin,
-    {
-      queryClientConfig: {
-        defaultOptions: {
-          queries: {
-            staleTime: window.Cypress ? 0 : 10 * 60 * 1000,
-            gcTime: window.Cypress ? 0 : 15 * 60 * 1000,
-          },
-        },
-      },
-    },
-  ],
+  // The QueryClient itself lives in `@/queryClient` so non-component code
+  // (the router's beforeEach guard) can read cached query data without
+  // going through Vue's composition API. See `@/queryClient.js` for the
+  // cache config and the terminal-error → globalError bridge.
+  [VueQueryPlugin, { queryClient }],
   [
     VueGoogleMaps,
     {

@@ -1,0 +1,787 @@
+import { eq, and, or, gt, isNull, inArray, sql } from 'drizzle-orm';
+import type { AnyColumn } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup } from '../db/schema';
+import { EntityType } from '../types/entity-type';
+import type { UserMembershipDetail } from '../types/user';
+import type { UserFamilyRole } from '../enums/user-family-role.enum';
+import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes, groups } from '../db/schema';
+import { CoreDbClient } from '../db/clients';
+import type { CoreTransaction } from '../db/clients';
+import type * as CoreDbSchema from '../db/schema/core';
+import { UserRole } from '../enums/user-role.enum';
+import { OrgType } from '../enums/org-type.enum';
+import { BaseRepository } from './base.repository';
+import { isEnrollmentActive, isActiveInFamily } from './utils/enrollment.utils';
+import { logger } from '../logger';
+
+/**
+ * Org types supported by the FGA model. Only `district` and `school` map to FGA
+ * object types today; other org types (national, state, local, department) are not
+ * yet used in ROAR and are skipped (logged) so a user gets a safe denial rather
+ * than a false grant.
+ */
+const FGA_SUPPORTED_ORG_TYPES: ReadonlySet<string> = new Set([EntityType.DISTRICT, EntityType.SCHOOL]);
+
+/**
+ * User Repository
+ *
+ * Provides data access methods for the users table using Drizzle ORM.
+ * Extends BaseRepository for standard CRUD operations.
+ * Uses CoreDbClient by default, but accepts a custom DB client for testing.
+ */
+export class UserRepository extends BaseRepository<User, typeof users> {
+  constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
+    super(db, users);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Custom methods (not part of BaseRepository)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Find a user by their Firebase authentication ID.
+   *
+   * @param authId - The Firebase UID to look up.
+   * @returns The user record if found, null otherwise.
+   */
+  async findByAuthId(authId: string): Promise<User | null> {
+    const [user] = await this.db.select().from(this.table).where(eq(users.authId, authId)).limit(1);
+
+    return user ?? null;
+  }
+
+  /**
+   * Get all active entity memberships for a user.
+   *
+   * Returns the IDs and entity types (district, school, class, group, family) that
+   * the user currently belongs to, filtered by active enrollment/membership status.
+   * Used by the service layer to batch-check FGA permissions across all entities.
+   *
+   * Org types are resolved by joining against the orgs table. Only `district` and
+   * `school` org types are currently supported in the FGA model. Other org types
+   * (national, state, local, department) are not yet used in ROAR — if encountered,
+   * they are logged as warnings and excluded from results. When the org hierarchy is
+   * extended to support these types, add corresponding FGA types and update this method.
+   *
+   * @param userId - The user ID to look up memberships for
+   * @returns Array of { entityType, entityId } for all active memberships
+   */
+  async getUserEntityMemberships(userId: string): Promise<{ entityType: EntityType; entityId: string }[]> {
+    const [orgRows, classRows, groupRows, familyRows] = await Promise.all([
+      this.db
+        .select({ entityId: userOrgs.orgId, orgType: orgs.orgType })
+        .from(userOrgs)
+        .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+        .where(and(eq(userOrgs.userId, userId), isEnrollmentActive(userOrgs))),
+      this.db
+        .select({ entityId: userClasses.classId })
+        .from(userClasses)
+        .where(and(eq(userClasses.userId, userId), isEnrollmentActive(userClasses))),
+      this.db
+        .select({ entityId: userGroups.groupId })
+        .from(userGroups)
+        .where(and(eq(userGroups.userId, userId), isEnrollmentActive(userGroups))),
+      this.db
+        .select({ entityId: userFamilies.familyId })
+        .from(userFamilies)
+        .where(and(eq(userFamilies.userId, userId), isActiveInFamily(userFamilies))),
+    ]);
+
+    // Map org types to FGA entity types. Only district and school are supported in the
+    // FGA model today. Other org types (national, state, local, department) are not yet
+    // used in ROAR — log a warning and skip them so the user gets a safe denial rather
+    // than a false grant.
+    const orgMemberships: { entityType: EntityType; entityId: string }[] = [];
+    for (const row of orgRows) {
+      if (FGA_SUPPORTED_ORG_TYPES.has(row.orgType)) {
+        // The type assertion here is safe because we are filtering by supported types
+        // (strictly 'school' or 'district'), but TypeScript can't infer that statically.
+        orgMemberships.push({ entityType: row.orgType as EntityType, entityId: row.entityId });
+      } else {
+        logger.warn(
+          { userId, orgId: row.entityId, orgType: row.orgType },
+          'Skipping org membership with unsupported FGA org type',
+        );
+      }
+    }
+
+    return [
+      ...orgMemberships,
+      ...classRows.map((r) => ({ entityType: EntityType.CLASS, entityId: r.entityId })),
+      ...groupRows.map((r) => ({ entityType: EntityType.GROUP, entityId: r.entityId })),
+      ...familyRows.map((r) => ({ entityType: EntityType.FAMILY, entityId: r.entityId })),
+    ];
+  }
+
+  /**
+   * Get a user's active entity memberships, enriched for the memberships read endpoint.
+   *
+   * Like {@link getUserEntityMemberships}, but additionally returns each membership's
+   * `role` and, for class memberships, the parent `schoolId` / `districtId` (read off
+   * the `classes` row). Active-only: enrollment/membership windows must currently be
+   * open. Unsupported org types are skipped (logged), same as `getUserEntityMemberships`.
+   *
+   * @param userId - The user whose memberships to look up
+   * @returns Array of detailed memberships across orgs, classes, groups, and families
+   */
+  async getUserMembershipsDetailed(userId: string): Promise<UserMembershipDetail[]> {
+    const [orgRows, classRows, groupRows, familyRows] = await Promise.all([
+      this.db
+        .select({ entityId: userOrgs.orgId, role: userOrgs.role, orgType: orgs.orgType })
+        .from(userOrgs)
+        .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+        .where(and(eq(userOrgs.userId, userId), isEnrollmentActive(userOrgs))),
+      this.db
+        .select({
+          entityId: userClasses.classId,
+          role: userClasses.role,
+          schoolId: classes.schoolId,
+          districtId: classes.districtId,
+        })
+        .from(userClasses)
+        .innerJoin(classes, eq(userClasses.classId, classes.id))
+        .where(and(eq(userClasses.userId, userId), isEnrollmentActive(userClasses))),
+      this.db
+        .select({ entityId: userGroups.groupId, role: userGroups.role })
+        .from(userGroups)
+        .where(and(eq(userGroups.userId, userId), isEnrollmentActive(userGroups))),
+      this.db
+        .select({ entityId: userFamilies.familyId, role: userFamilies.role })
+        .from(userFamilies)
+        .where(and(eq(userFamilies.userId, userId), isActiveInFamily(userFamilies))),
+    ]);
+
+    const orgMemberships: UserMembershipDetail[] = [];
+    for (const row of orgRows) {
+      if (FGA_SUPPORTED_ORG_TYPES.has(row.orgType)) {
+        // Safe: filtered to 'district' | 'school', which TypeScript can't infer statically.
+        orgMemberships.push({
+          entityType: row.orgType as 'district' | 'school',
+          entityId: row.entityId,
+          role: row.role,
+        });
+      } else {
+        logger.warn(
+          { userId, orgId: row.entityId, orgType: row.orgType },
+          'Skipping org membership with unsupported FGA org type',
+        );
+      }
+    }
+
+    return [
+      ...orgMemberships,
+      ...classRows.map(
+        (r): UserMembershipDetail => ({
+          entityType: EntityType.CLASS,
+          entityId: r.entityId,
+          role: r.role,
+          schoolId: r.schoolId,
+          districtId: r.districtId,
+        }),
+      ),
+      ...groupRows.map(
+        (r): UserMembershipDetail => ({ entityType: EntityType.GROUP, entityId: r.entityId, role: r.role }),
+      ),
+      ...familyRows.map(
+        (r): UserMembershipDetail => ({ entityType: EntityType.FAMILY, entityId: r.entityId, role: r.role }),
+      ),
+    ];
+  }
+
+  /**
+   * Check whether the user holds an active `platform_admin` role on any org or group.
+   *
+   * Used by service-layer authorization for global catalog endpoints (task variants,
+   * task bundles) that are not scoped to an org entity, so there is no per-entity FGA
+   * object to check a permission against.
+   *
+   * Membership filters mirror `ReportRepository.getUserRolesAtOrAboveScope`:
+   * the enrollment window must be active and the org/group must not be rostered out.
+   * Classes are deliberately excluded — `platform_admin` is not a valid class-level
+   * role (see `FGA_CLASS_VALID_ROLES`); it cascades to classes via the org hierarchy.
+   *
+   * @param userId - The user to check
+   * @returns true if the user has at least one active `platform_admin` membership
+   */
+  async hasPlatformAdminRole(userId: string): Promise<boolean> {
+    const [orgRows, groupRows] = await Promise.all([
+      this.db
+        .select({ id: userOrgs.orgId })
+        .from(userOrgs)
+        .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+        .where(
+          and(
+            eq(userOrgs.userId, userId),
+            eq(userOrgs.role, UserRole.PLATFORM_ADMIN),
+            isEnrollmentActive(userOrgs),
+            isNull(orgs.rosteringEnded),
+          ),
+        )
+        .limit(1),
+      this.db
+        .select({ id: userGroups.groupId })
+        .from(userGroups)
+        .innerJoin(groups, eq(userGroups.groupId, groups.id))
+        .where(
+          and(
+            eq(userGroups.userId, userId),
+            eq(userGroups.role, UserRole.PLATFORM_ADMIN),
+            isEnrollmentActive(userGroups),
+            isNull(groups.rosteringEnded),
+          ),
+        )
+        .limit(1),
+    ]);
+
+    return orgRows.length > 0 || groupRows.length > 0;
+  }
+
+  /**
+   * Resolve the parent school ID for an active class.
+   *
+   * Returns null if the class doesn't exist, the class is rostered out, or the parent
+   * school is rostered out. All three are treated identically — callers should return
+   * 422 without distinguishing between them.
+   *
+   * The service layer also uses the returned school ID to check `can_create_users` on
+   * the parent school (not the class itself), because the FGA model does not define
+   * `can_create_users` on the `class` type.
+   *
+   * @param classId - UUID of the class
+   * @returns The parent school's org ID, or null if the class or school is unavailable
+   */
+  async findClassParentSchool(classId: string): Promise<string | null> {
+    const [row] = await this.db
+      .select({ schoolId: classes.schoolId })
+      .from(classes)
+      .innerJoin(orgs, and(eq(orgs.id, classes.schoolId), isNull(orgs.rosteringEnded)))
+      .where(and(eq(classes.id, classId), isNull(classes.rosteringEnded)))
+      .limit(1);
+    return row?.schoolId ?? null;
+  }
+
+  /**
+   * Resolve the active entities behind a set of declared membership IDs, in one round-trip.
+   *
+   * Powers bulk-import validation, where a batch typically declares the same handful of orgs across
+   * every row — so the distinct ID set is O(1) where the row count is O(100). Callers pass the
+   * deduplicated IDs for the whole batch and validate each row against the result in memory rather
+   * than querying per row.
+   *
+   * Absence from a returned set or map means "doesn't exist, is the wrong org type, or is rostered
+   * out", with no distinction between them — the same contract as {@link findClassParentSchool}, and
+   * for the same reason: callers return 422 either way, and distinguishing them would disclose which
+   * IDs exist.
+   *
+   * Schools and classes additionally carry their parents so callers can check containment. Districts
+   * and groups are existence-only — neither has a parent an import row can contradict. Families are
+   * absent entirely: an import row cannot declare a family membership (the contract's
+   * `OrgMembershipSchema` rejects one), so there is never a family ID to resolve.
+   *
+   * The `orgType` filters are load-bearing: they make a district UUID passed in a school slot (or
+   * vice versa) a miss rather than a false match.
+   *
+   * @param ids - Deduplicated IDs per entity type. Empty arrays skip their query entirely.
+   * @returns Sets for existence-only types; maps carrying parentage for schools and classes.
+   *   `schools.districtId` is nullable — `orgs.parentOrgId` has no NOT NULL backing it, so a
+   *   parentless school is possible and the caller must handle it.
+   */
+  async resolveDeclaredEntities(ids: {
+    districts: string[];
+    schools: string[];
+    classes: string[];
+    groups: string[];
+  }): Promise<{
+    districts: Set<string>;
+    schools: Map<string, { districtId: string | null }>;
+    classes: Map<string, { schoolId: string; districtId: string }>;
+    groups: Set<string>;
+  }> {
+    const [districtRows, schoolRows, classRows, groupRows] = await Promise.all([
+      ids.districts.length > 0
+        ? this.db
+            .select({ id: orgs.id })
+            .from(orgs)
+            .where(
+              and(inArray(orgs.id, ids.districts), eq(orgs.orgType, OrgType.DISTRICT), isNull(orgs.rosteringEnded)),
+            )
+        : Promise.resolve([]),
+      ids.schools.length > 0
+        ? this.db
+            .select({ id: orgs.id, districtId: orgs.parentOrgId })
+            .from(orgs)
+            .where(and(inArray(orgs.id, ids.schools), eq(orgs.orgType, OrgType.SCHOOL), isNull(orgs.rosteringEnded)))
+        : Promise.resolve([]),
+      ids.classes.length > 0
+        ? this.db
+            .select({ id: classes.id, schoolId: classes.schoolId, districtId: classes.districtId })
+            .from(classes)
+            .where(and(inArray(classes.id, ids.classes), isNull(classes.rosteringEnded)))
+        : Promise.resolve([]),
+      ids.groups.length > 0
+        ? this.db
+            .select({ id: groups.id })
+            .from(groups)
+            .where(and(inArray(groups.id, ids.groups), isNull(groups.rosteringEnded)))
+        : Promise.resolve([]),
+    ]);
+
+    return {
+      districts: new Set(districtRows.map((row) => row.id)),
+      schools: new Map(schoolRows.map((row) => [row.id, { districtId: row.districtId }])),
+      classes: new Map(classRows.map((row) => [row.id, { schoolId: row.schoolId, districtId: row.districtId }])),
+      groups: new Set(groupRows.map((row) => row.id)),
+    };
+  }
+
+  /**
+   * Create a user row and all junction-table memberships in a single DB transaction.
+   *
+   * Inserts the `users` row and all `user_orgs`, `user_classes`, and `user_groups` rows
+   * within the supplied transaction. Family membership is deliberately out of scope —
+   * `user_families` rows are written by `FamilyRepository`, whose callers authorize
+   * against the family being written to.
+   *
+   * The caller is responsible for managing the transaction lifecycle. Use
+   * `runTransaction` to open one:
+   *
+   * ```typescript
+   * await repository.runTransaction({
+   *   fn: (tx) => repository.createWithMemberships(userData, orgs, classes, groups, tx),
+   * });
+   * ```
+   *
+   * Firebase Auth creation and FGA tuple writes always happen outside this method.
+   *
+   * @param userData - The user fields to insert (excluding system-managed fields)
+   * @param orgMemberships - Rows to insert into `user_orgs`
+   * @param classMemberships - Rows to insert into `user_classes`
+   * @param groupMemberships - Rows to insert into `user_groups`
+   * @param transaction - The active transaction to execute writes within
+   * @returns The newly created user's ID
+   */
+  async createWithMemberships(
+    userData: Omit<NewUser, 'id'>,
+    orgMemberships: Omit<NewUserOrg, 'userId'>[],
+    classMemberships: Omit<NewUserClass, 'userId'>[],
+    groupMemberships: Omit<NewUserGroup, 'userId'>[],
+    transaction: CoreTransaction,
+  ): Promise<{ id: string }> {
+    const [created] = await transaction.insert(users).values(userData).returning({ id: users.id });
+
+    if (!created) {
+      throw new Error('User insert returned no rows');
+    }
+
+    const { id: userId } = created;
+
+    if (orgMemberships.length > 0) {
+      await transaction.insert(userOrgs).values(orgMemberships.map((m) => ({ ...m, userId })));
+    }
+
+    if (classMemberships.length > 0) {
+      await transaction.insert(userClasses).values(classMemberships.map((m) => ({ ...m, userId })));
+    }
+
+    if (groupMemberships.length > 0) {
+      await transaction.insert(userGroups).values(groupMemberships.map((m) => ({ ...m, userId })));
+    }
+
+    return { id: userId };
+  }
+
+  /**
+   * Check whether a user with the given email, username, or assessmentPid already exists.
+   * Note that this method does not filter by a user's rostering status, so it will return true for users who are inactive.
+   *
+   * Used for pre-flight uniqueness checks before writing to Firebase Auth or the DB,
+   * to surface 409 Conflict early without initiating any external writes.
+   *
+   * @param params - At least one of email, username, or assessmentPid must be provided
+   * @returns true if a matching row exists
+   */
+  async existsByUniqueFields({
+    email,
+    username,
+    assessmentPid,
+  }: {
+    email?: string;
+    username?: string;
+    assessmentPid?: string;
+  }): Promise<boolean> {
+    const conditions = [
+      email ? eq(users.email, email) : null,
+      username ? eq(users.username, username) : null,
+      assessmentPid ? eq(users.assessmentPid, assessmentPid) : null,
+    ].filter((c) => c !== null);
+
+    if (conditions.length === 0) return false;
+
+    const [row] = await this.db
+      .select({ id: users.id })
+      .from(users)
+      .where(or(...conditions))
+      .limit(1);
+
+    return row !== undefined;
+  }
+
+  /**
+   * Find all users whose email matches any in the provided list, case-insensitively.
+   *
+   * Used by the bulk-import pre-flight to classify each row as create vs. update/unenroll by
+   * existence. Matching is case-insensitive to mirror the legacy classification (Firebase Auth
+   * treats emails case-insensitively) and to avoid misclassifying a cased variant as a new create
+   * that would then collide at Firebase. Rostered-out users are included — their email still
+   * occupies the unique field — so a re-import resolves to the existing user rather than a create.
+   *
+   * @param emails - The emails to look up.
+   * @returns The matching user records (may be fewer than the input when some don't exist).
+   *
+   * @NOTE The `lower(email)` predicate won't use the plain email index. For the bulk-import batch
+   *   size (≤100) against admin-initiated requests this is acceptable; a functional index on
+   *   `lower(email)` (or normalizing emails to lowercase on write) would remove the scan at scale.
+   */
+  async findByEmails(emails: string[]): Promise<User[]> {
+    if (emails.length === 0) return [];
+
+    const lowered = emails.map((email) => email.toLowerCase());
+
+    return this.db
+      .select()
+      .from(users)
+      .where(inArray(sql<string>`lower(${users.email})`, lowered));
+  }
+
+  /**
+   * End all of a user's org-scoped enrollments by stamping the end date on every junction row across
+   * orgs, classes, and groups that has not already ended.
+   *
+   * Used by the bulk-import unenroll bin, which — matching the legacy `batchImportUpdate` — ends ALL
+   * of a user's org enrollments (not just the memberships named in the request). Rows whose end date
+   * has already passed are left untouched so their original end date is preserved.
+   *
+   * Open-ended rows aren't enough: a future end date is still active per {@link isEnrollmentActive},
+   * and a future start date becomes active later. Either surviving the unenroll lets the FGA backfill
+   * — which reads these rows unfiltered — re-grant an archived user.
+   *
+   * `user_families` is deliberately excluded. The unenroll row is authorized against the target's
+   * org memberships only (families aren't checkable — see `authorizeRow`). Family membership is
+   * ended through the families endpoints.
+   *
+   * @param userId - The user whose org enrollments to end.
+   * @param transaction - Optional transaction so the caller can archive the user and clean up FGA in
+   *   the same unit of work.
+   */
+  async endAllOrgEnrollments(userId: string, transaction?: CoreTransaction): Promise<void> {
+    const db = transaction ?? this.db;
+    const endedAt = new Date();
+
+    /** Rows still to be ended: no end date, or one that hasn't passed yet. */
+    const notYetEnded = (table: { enrollmentEnd: AnyColumn }) =>
+      or(isNull(table.enrollmentEnd), gt(table.enrollmentEnd, sql`NOW()`));
+
+    /**
+     * Close the window, pulling a not-yet-started row's start back so it stays valid. Each table
+     * CHECKs `enrollmentStart < enrollmentEnd`, so stamping the end alone would be rejected for a
+     * future-dated start — and that's the row that most needs closing, since it would otherwise
+     * become active after the unenroll.
+     *
+     * `LEAST` only ever moves a start earlier, so an already-started enrollment keeps its original
+     * date. A future one loses its scheduled start, which is acceptable: it never happened.
+     */
+    const closedWindow = (table: { enrollmentStart: AnyColumn }) => ({
+      enrollmentEnd: endedAt,
+      enrollmentStart: sql`LEAST(${table.enrollmentStart}, ${endedAt}::timestamptz - interval '1 second')`,
+    });
+
+    // Sequential (not Promise.all) so this is safe inside a single transaction/connection.
+    await db
+      .update(userOrgs)
+      .set(closedWindow(userOrgs))
+      .where(and(eq(userOrgs.userId, userId), notYetEnded(userOrgs)));
+    await db
+      .update(userClasses)
+      .set(closedWindow(userClasses))
+      .where(and(eq(userClasses.userId, userId), notYetEnded(userClasses)));
+    await db
+      .update(userGroups)
+      .set(closedWindow(userGroups))
+      .where(and(eq(userGroups.userId, userId), notYetEnded(userGroups)));
+  }
+
+  /**
+   * Return a user's active memberships with their roles, across orgs, classes, groups, and families.
+   *
+   * Mirrors {@link getUserEntityMemberships} (same active-enrollment filtering and org-type mapping)
+   * but additionally returns the role, which the unenroll flow needs to reconstruct the FGA tuples to
+   * delete. Org memberships with FGA-unsupported org types are dropped (logged by
+   * {@link getUserEntityMemberships}).
+   *
+   * @param userId - The user to look up.
+   * @returns Active memberships as `{ entityType, entityId, role }`.
+   */
+  async getActiveMembershipsWithRoles(
+    userId: string,
+  ): Promise<{ entityType: EntityType; entityId: string; role: string }[]> {
+    const [orgRows, classRows, groupRows, familyRows] = await Promise.all([
+      this.db
+        .select({ entityId: userOrgs.orgId, orgType: orgs.orgType, role: userOrgs.role })
+        .from(userOrgs)
+        .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+        .where(and(eq(userOrgs.userId, userId), isEnrollmentActive(userOrgs))),
+      this.db
+        .select({ entityId: userClasses.classId, role: userClasses.role })
+        .from(userClasses)
+        .where(and(eq(userClasses.userId, userId), isEnrollmentActive(userClasses))),
+      this.db
+        .select({ entityId: userGroups.groupId, role: userGroups.role })
+        .from(userGroups)
+        .where(and(eq(userGroups.userId, userId), isEnrollmentActive(userGroups))),
+      this.db
+        .select({ entityId: userFamilies.familyId, role: userFamilies.role })
+        .from(userFamilies)
+        .where(and(eq(userFamilies.userId, userId), isActiveInFamily(userFamilies))),
+    ]);
+
+    const FGA_SUPPORTED_ORG_TYPES: ReadonlySet<string> = new Set([EntityType.DISTRICT, EntityType.SCHOOL]);
+    const orgMemberships: { entityType: EntityType; entityId: string; role: string }[] = [];
+    for (const row of orgRows) {
+      if (FGA_SUPPORTED_ORG_TYPES.has(row.orgType)) {
+        orgMemberships.push({ entityType: row.orgType as EntityType, entityId: row.entityId, role: row.role });
+      }
+    }
+
+    return [
+      ...orgMemberships,
+      ...classRows.map((r) => ({ entityType: EntityType.CLASS, entityId: r.entityId, role: r.role })),
+      ...groupRows.map((r) => ({ entityType: EntityType.GROUP, entityId: r.entityId, role: r.role })),
+      ...familyRows.map((r) => ({ entityType: EntityType.FAMILY, entityId: r.entityId, role: r.role })),
+    ];
+  }
+
+  /**
+   * Archive a user by stamping `rosteringEnded`. Used by the bulk-import unenroll bin alongside
+   * {@link endAllOrgEnrollments}; pass the same transaction so both land atomically.
+   *
+   * @param userId - The user to archive.
+   * @param transaction - Optional transaction to run within.
+   */
+  async archiveUser(userId: string, transaction?: CoreTransaction): Promise<void> {
+    const db = transaction ?? this.db;
+    await db.update(users).set({ rosteringEnded: new Date() }).where(eq(users.id, userId));
+  }
+
+  /**
+   * Reconcile a user's memberships to match `desired`, with replace-semantics per entity type (the
+   * legacy `batchImportUpdate` behavior): for every entity type the desired list mentions, memberships
+   * present now but not desired are ended, desired memberships not present now are added, and
+   * memberships in both are left untouched. Entity types `desired` doesn't mention are left alone.
+   *
+   * Adds use an upsert, so a previously-ended membership (e.g. a student returning to a prior school)
+   * is reactivated rather than colliding with its existing junction row. `current` is supplied by the
+   * caller so the diff and the writes share the caller's transaction context.
+   *
+   * Reconciliation is by presence only: a membership present in both `current` and `desired` is left
+   * untouched even if its role differs, so a re-import does not change the role of an existing
+   * membership (matching the legacy behavior and avoiding needless FGA churn). Within a single entity
+   * type, a duplicate `entityId` in `desired` collapses to its last role.
+   *
+   * @param userId - The user to reconcile.
+   * @param desired - The membership set the row asks for (with roles).
+   * @param current - The user's current active memberships (with roles).
+   * @param transaction - The active transaction.
+   * @returns The memberships added and removed (with roles), so the caller can sync FGA tuples.
+   */
+  async reconcileMemberships(
+    userId: string,
+    desired: { entityType: EntityType; entityId: string; role: string }[],
+    current: { entityType: EntityType; entityId: string; role: string }[],
+    transaction: CoreTransaction,
+  ): Promise<{
+    added: { entityType: EntityType; entityId: string; role: string }[];
+    removed: { entityType: EntityType; entityId: string; role: string }[];
+  }> {
+    const groupByType = (list: { entityType: EntityType; entityId: string; role: string }[]) => {
+      const byType = new Map<EntityType, Map<string, string>>();
+      for (const m of list) {
+        const ids = byType.get(m.entityType) ?? new Map<string, string>();
+        ids.set(m.entityId, m.role);
+        byType.set(m.entityType, ids);
+      }
+      return byType;
+    };
+
+    const desiredByType = groupByType(desired);
+    const currentByType = groupByType(current);
+
+    const added: { entityType: EntityType; entityId: string; role: string }[] = [];
+    const removed: { entityType: EntityType; entityId: string; role: string }[] = [];
+    const now = new Date();
+
+    for (const [entityType, desiredIds] of desiredByType) {
+      const currentIds = currentByType.get(entityType) ?? new Map<string, string>();
+
+      // End memberships present now but no longer desired.
+      for (const [entityId, role] of currentIds) {
+        if (!desiredIds.has(entityId)) {
+          await this.endMembershipRow(entityType, userId, entityId, now, transaction);
+          removed.push({ entityType, entityId, role });
+        }
+      }
+
+      // Add (or reactivate) desired memberships not present now.
+      for (const [entityId, role] of desiredIds) {
+        if (!currentIds.has(entityId)) {
+          await this.upsertMembershipRow(entityType, userId, entityId, role, now, transaction);
+          added.push({ entityType, entityId, role });
+        }
+      }
+    }
+
+    return { added, removed };
+  }
+
+  /**
+   * Undo a {@link reconcileMemberships} result: end what it added, re-open what it ended.
+   *
+   * Compensation for a caller whose reconcile has already committed but whose downstream write (an
+   * FGA tuple sync) then failed — without it the user keeps a membership no tuple grants, and a
+   * retry can't detect the drift because the next reconcile diffs against the committed state.
+   *
+   * Two deliberate imprecisions, both erring toward less access:
+   * - A re-opened membership gets a fresh `enrollmentStart`. `reconciled.removed` carries only the
+   *   entity and role, so the original start date isn't recoverable here.
+   * - An undone addition is *ended*, not deleted, since the original add may itself have reactivated
+   *   a previously-ended row. The membership reads inactive either way.
+   *
+   * @param userId - The user whose memberships were reconciled.
+   * @param reconciled - The `{ added, removed }` result to invert.
+   * @param transaction - Transaction to run the writes in; the caller owns its lifecycle.
+   */
+  async revertReconciledMemberships(
+    userId: string,
+    reconciled: {
+      added: { entityType: EntityType; entityId: string; role: string }[];
+      removed: { entityType: EntityType; entityId: string; role: string }[];
+    },
+    transaction: CoreTransaction,
+  ): Promise<void> {
+    const now = new Date();
+
+    for (const membership of reconciled.added) {
+      await this.endMembershipRow(membership.entityType, userId, membership.entityId, now, transaction);
+    }
+
+    for (const membership of reconciled.removed) {
+      await this.upsertMembershipRow(
+        membership.entityType,
+        userId,
+        membership.entityId,
+        membership.role,
+        now,
+        transaction,
+      );
+    }
+  }
+
+  /** End a single membership row (stamp the end date) for the given entity type. */
+  private async endMembershipRow(
+    entityType: EntityType,
+    userId: string,
+    entityId: string,
+    endedAt: Date,
+    tx: CoreTransaction,
+  ): Promise<void> {
+    switch (entityType) {
+      case EntityType.DISTRICT:
+      case EntityType.SCHOOL:
+        await tx
+          .update(userOrgs)
+          .set({ enrollmentEnd: endedAt })
+          .where(and(eq(userOrgs.userId, userId), eq(userOrgs.orgId, entityId)));
+        return;
+      case EntityType.CLASS:
+        await tx
+          .update(userClasses)
+          .set({ enrollmentEnd: endedAt })
+          .where(and(eq(userClasses.userId, userId), eq(userClasses.classId, entityId)));
+        return;
+      case EntityType.GROUP:
+        await tx
+          .update(userGroups)
+          .set({ enrollmentEnd: endedAt })
+          .where(and(eq(userGroups.userId, userId), eq(userGroups.groupId, entityId)));
+        return;
+      case EntityType.FAMILY:
+        await tx
+          .update(userFamilies)
+          .set({ leftOn: endedAt })
+          .where(and(eq(userFamilies.userId, userId), eq(userFamilies.familyId, entityId)));
+        return;
+    }
+  }
+
+  /** Insert a membership row, reactivating it (clear end date, refresh role + start) on conflict. */
+  private async upsertMembershipRow(
+    entityType: EntityType,
+    userId: string,
+    entityId: string,
+    role: string,
+    startedAt: Date,
+    tx: CoreTransaction,
+  ): Promise<void> {
+    switch (entityType) {
+      case EntityType.DISTRICT:
+      case EntityType.SCHOOL:
+        await tx
+          .insert(userOrgs)
+          .values({ userId, orgId: entityId, role: role as UserRole, enrollmentStart: startedAt, enrollmentEnd: null })
+          .onConflictDoUpdate({
+            target: [userOrgs.userId, userOrgs.orgId],
+            set: { role: role as UserRole, enrollmentStart: startedAt, enrollmentEnd: null },
+          });
+        return;
+      case EntityType.CLASS:
+        await tx
+          .insert(userClasses)
+          .values({
+            userId,
+            classId: entityId,
+            role: role as UserRole,
+            enrollmentStart: startedAt,
+            enrollmentEnd: null,
+          })
+          .onConflictDoUpdate({
+            target: [userClasses.userId, userClasses.classId],
+            set: { role: role as UserRole, enrollmentStart: startedAt, enrollmentEnd: null },
+          });
+        return;
+      case EntityType.GROUP:
+        await tx
+          .insert(userGroups)
+          .values({
+            userId,
+            groupId: entityId,
+            role: role as UserRole,
+            enrollmentStart: startedAt,
+            enrollmentEnd: null,
+          })
+          .onConflictDoUpdate({
+            target: [userGroups.userId, userGroups.groupId],
+            set: { role: role as UserRole, enrollmentStart: startedAt, enrollmentEnd: null },
+          });
+        return;
+      case EntityType.FAMILY:
+        await tx
+          .insert(userFamilies)
+          .values({ userId, familyId: entityId, role: role as UserFamilyRole, joinedOn: startedAt, leftOn: null })
+          .onConflictDoUpdate({
+            target: [userFamilies.userId, userFamilies.familyId],
+            set: { role: role as UserFamilyRole, joinedOn: startedAt, leftOn: null },
+          });
+        return;
+    }
+  }
+}

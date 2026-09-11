@@ -1,0 +1,15 @@
+node_modules
+**/.Rhistory
+**/.Rproj.user
+**/.ipynb_checkpoints
+.idea
+.DS_Store.firebase/*.cache
+**/.DS_Store
+test-results/
+eslintrc.json
+.firebaserc
+.gitignore
+assets.json
+firebase.json
+webpack.config.cjs
+.env

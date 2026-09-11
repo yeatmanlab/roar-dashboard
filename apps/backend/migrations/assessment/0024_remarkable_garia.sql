@@ -1,0 +1,1 @@
+ALTER TABLE "app"."run_trials" ALTER COLUMN "start_time_unix" SET DATA TYPE bigint;

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image and Audio Recording</title>
+
+    <!-- <script data-dynamic src="./RAN.js"></script> -->
+</head>
+
+<style>    
+    body {
+      margin: 0;
+      min-height: 100vh;  /* Ensure body takes the full viewport height */
+      display: flex;      /* Enable Flexbox */
+      justify-content: center;  /* Center content horizontally */
+      align-items: center;      /* Center content vertically */
+      font-family: sans-serif;
+    }
+
+    stim {
+      position: absolute;
+      height: auto;
+      cursor: pointer;
+    }
+
+    #instruction {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #confirmContainer {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #headCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #canvas-container {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    /* TODO: Using RAN Intro Container temporarily */
+    #ran-intro-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+    }
+</style>
+
+
+<body>    
+    <div id="grid-container" style="position: absolute; width: 100%; height: 100%; visibility: hidden;"></div>
+    <div id="canvas-container" style="visibility: hidden">
+        <h5 id="message"></h5>
+        <canvas id="headCanvas" class="frame" style="position: relative"></canvas>
+      </div>
+    <!-- Countdown display (used by updateCountdown in RAN.js after intro hides) -->
+    <div id="instruction"></div>
+
+    <!-- Intro Panel -->
+    <div id="ran-intro-container" class="container-fluid h-100"> 
+      <div class="static-container">
+        <div class="header-container--ran"> 
+          <h2 class="header"></h2>
+          <h3 class="subtitle"></h3>
+        </div>
+        <img class="lion-char" src="https://storage.googleapis.com/roav-ran/shared/assets/pointingLeftLionAge12.webp" alt="Lion character">
+        <p class="next-text"></p>
+      </div>
+    </div>
+
+    <!-- Continue Button (shown during intro, hidden once test starts) -->
+    <button class="next-button" disabled aria-label="Start"></button>
+
+
+    <div class="panel-block" style="display: block" ;>
+        <video class="inputVideo" style="display: none"></video>
+      </div>
+    
+    <!-- Audio Playing -->  
+    <audio autoplay id="voiceover"> </audio>
+        
+    <!--TODO: Check if we need this-->
+    <!-- Confirm Button -->
+    <!--<div class="row gap-2" id="confirmContainer" style="display: none;">
+        <div class="card-body" style="text-align: center;">
+            <h3> <span id="capName"></span> Test Complete </h3>
+            <button type="button" class="btn btn-primary" id="confirmButton">Back to Menu</button>
+        </div>
+    </div>-->
+
+    <!-- Finish Button -->
+    <button class="finish-button" disabled aria-label="Finish"></button>
+
+<script data-dynamic>
+
+var deviceConfig = store.session.get('deviceConfig')
+// var deviceConfig = {screenWidth: 29, screenHeight: 16.2, screenWidthPX: 960, screenHeightPX: 540, webcamHeight: 0.5}
+var testConfig = store.session.get('testConfig')
+// var testConfig = {dir: "https://eyetrackingdata.blob.core.windows.net/public/assets/Letter",
+//     stimulus : ["C.svg", "D.svg", "H.svg", "K.svg", "N.svg", "O.svg", "R.svg", "S.svg", "V.svg", "Z.svg"],
+//     sizecm: 2}
+
+if (testConfig && testConfig['testname'] === 'Letters') {
+    var subtestText = ['Letter', 'letter']
+} else {
+    var subtestText = ['Number', 'number']
+}
+
+var nextButton = document.querySelector('.next-button');
+voiceover.addEventListener('ended', function() {
+  nextButton.disabled = false;
+});
+// Fallback: enable button after 5 seconds if audio fails or has no src
+var _audioFallbackTimer = setTimeout(function() {
+  nextButton.disabled = false;
+}, 7000);
+nextButton.addEventListener('click', function() {
+  pre_startTest();
+});
+
+var desktop = document.documentElement;
+var canvasContainer = document.getElementById("canvas-container");
+var camera_stream;
+var mediaRecorder;
+var mediaChunks = [];
+var current_viewingDistance;
+
+var clickedTests = store.session.get('clickedTests') || [];
+if (type!=='Practice') {
+clickedTests.push(testConfig['testname'])
+}
+
+store.session.set('clickedTests',clickedTests)
+
+var gridCoordinates = generateGridCoordinates(deviceConfig)
+var shuffledImages = testConfig.stimulus; 
+// var shuffledImages = generateStimulusOrder(testConfig)
+      
+var _gridCoordinates = []
+//  gridCoordinates
+var _shuffledImages = []
+//  shuffledImages.map(filename => filename.split('.')[0]);
+var _parentDir = store.session.get("id")
+var _videoURL = ''
+var _deviceConfig = deviceConfig
+var _testConfig = testConfig
+
+var x_coef =
+store.session.get("x_coef") !== null
+    ? store.session.get("x_coef")
+    : -3.49; // Default value can be 0 or any other default you choose
+var x_intercept =
+store.session.get("x_intercept") !== null
+    ? store.session.get("x_intercept")
+    : 45; // Default value can be 0
+var y_coef =
+store.session.get("y_coef") !== null ? store.session.get("y_coef") : 0; // Default value can be 0
+var y_intercept =
+store.session.get("y_intercept") !== null
+    ? store.session.get("y_intercept")
+    : 0; // Default value can be 0
+
+
+var xpreds = []
+var ypreds = []
+var eyetTimer = []
+var trialRunnning = false
+var continueProcessing = false
+function pre_startTest(){
+        clearTimeout(_audioFallbackTimer);
+        voiceover.pause();
+        voiceover.currentTime = 0;
+        document.querySelector('.container-fluid.h-100').style.display = 'none';
+        document.querySelector('.next-button').style.display = 'none';
+        document.querySelector('.finish-button').style.display = 'flex';
+        startTest(deviceConfig.bEyeTracking);
+      }
+
+function runAfterEveryFrame(output) {
+    var xpred =
+        ((x_coef * (output.output.cpuData[0] * 100 - 50) + x_intercept) *
+        screen.width) /
+        100;
+    var ypred = ((y_coef*((output.output.cpuData[1]*100)) + y_intercept) * screen.height) /100;
+    if (trialRunnning) {
+        xpreds.push(xpred);
+        ypreds.push(ypred);
+        eyetTimer.push(Date.now()); // corrected from 'eyetTimer' and 'data.now()' to 'eyeTimer' and 'Date.now()'
+    }
+    }
+
+
+
+
+</script>
+
+</body>
+</html>

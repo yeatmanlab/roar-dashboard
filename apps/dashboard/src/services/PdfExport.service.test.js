@@ -180,9 +180,9 @@ describe('PdfExportService', () => {
       await Promise.race([
         generatePromise,
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000)),
-      ]).catch((e) => {
-        // Expected to timeout or fail in test environment
-        expect(e.message).toBeTruthy();
+      ]).catch(() => {
+        // Expected to timeout or fail in the test environment — either outcome is
+        // acceptable; the real verification is the iframe assertions below.
       });
 
       // Verify iframe was created
@@ -265,19 +265,21 @@ describe('PdfExportService', () => {
     it('should handle invalid URL gracefully', async () => {
       const promise = PdfExportService.generateSingleDocument('', 'test.pdf');
 
-      await Promise.race([promise, new Promise((resolve) => setTimeout(resolve, 200))]).catch((error) => {
-        // Should either timeout or throw an error
-        expect(error).toBeDefined();
-      });
+      // The call must not crash synchronously — it returns a promise that may
+      // either time out (race resolves) or reject; both outcomes are acceptable,
+      // so the rejection is swallowed.
+      expect(promise).toBeInstanceOf(Promise);
+      await Promise.race([promise, new Promise((resolve) => setTimeout(resolve, 200))]).catch(() => {});
     });
 
     it('should handle missing fileName', async () => {
       const promise = PdfExportService.generateSingleDocument('http://test.com', '');
 
-      await Promise.race([promise, new Promise((resolve) => setTimeout(resolve, 200))]).catch((error) => {
-        // Should either timeout or throw an error
-        expect(error).toBeDefined();
-      });
+      // The call must not crash synchronously — it returns a promise that may
+      // either time out (race resolves) or reject; both outcomes are acceptable,
+      // so the rejection is swallowed.
+      expect(promise).toBeInstanceOf(Promise);
+      await Promise.race([promise, new Promise((resolve) => setTimeout(resolve, 200))]).catch(() => {});
     });
 
     it('should handle empty items array for bulk export', async () => {

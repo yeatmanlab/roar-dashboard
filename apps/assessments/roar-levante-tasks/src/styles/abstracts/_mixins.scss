@@ -1,0 +1,47 @@
+$breakpoints: (
+  'small': (
+    max-width: 500px,
+  ),
+  'small-medium': (
+    max-width: 650px,
+  ),
+  'medium': (
+    max-width: 800px,
+  ),
+  'large': (
+    max-width: 1000px,
+  ),
+  'very-large': (
+    min-width: 1000px,
+  ),
+  'huge': (
+    min-width: 1200px,
+  ),
+);
+
+/// Responsive breakpoint manager
+/// @access public
+/// @param {String} $breakpoint - Breakpoint
+/// @requires $breakpoints
+@mixin respond-to($breakpoint) {
+  $raw-query: map-get($breakpoints, $breakpoint);
+
+  @if $raw-query {
+    $query: if(type-of($raw-query) == 'string', unquote($raw-query), inspect($raw-query));
+
+    @media #{$query} {
+      @content;
+    }
+  } @else {
+    @error 'No value found for `#{$breakpoint}`. '
+         + 'Please make sure it is defined in `$breakpoints` map.';
+  }
+}
+
+/// Responds to touch devices
+/// @access public
+@mixin if-touch() {
+  @media (hover: none) {
+    @content;
+  }
+}

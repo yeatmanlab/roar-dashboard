@@ -6,7 +6,6 @@
 import { classTypeEnum } from '../db/schema/enums';
 import { pgEnumToConst } from './utils';
 
-const ClassType = pgEnumToConst(classTypeEnum);
+export const ClassType = pgEnumToConst(classTypeEnum);
 
 export type ClassType = (typeof classTypeEnum.enumValues)[number];
-export default ClassType;

@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+      crossorigin="anonymous"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/onnxjs/dist/onnx.min.js"></script>
+  </head>
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh; /* Ensure body takes the full viewport height */
+      display: flex; /* Enable Flexbox */
+      justify-content: center; /* Center content horizontally */
+      align-items: center; /* Center content vertically */
+      font-family: sans-serif;
+    }
+
+
+
+    stim {
+      position: absolute;
+      height: auto;
+      cursor: pointer;
+    }
+
+    #instruction {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #confirmContainer {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #stimulus {
+      position: absolute;
+      animation: pulsate 1s infinite;
+      width: 25px;
+      height: 25px;
+      background-color: #1e90ff;
+      border-radius: 50%;
+      display: block; /* Initially hidden */
+      transform: translate(-50%, -50%);
+    }
+
+    #headCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #canvas-container {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      top: 30px;
+      margin: 0 auto;
+    }
+
+    @keyframes pulsate {
+    0% {
+        transform: scale(1) translate(-50%, -50%);
+    }
+    50% {
+        transform: scale(1.2) translate(-50%, -50%);
+    }
+    100% {
+        transform: scale(1) translate(-50%, -50%);
+    }
+
+}
+
+  </style>
+
+  <body>
+    <!-- Center Instructions Panel -->
+    <div id="calibrationContentArea">
+      <div class="row gap-2" id="instruction">
+        <div class="col">
+          <div class="card" style="width: 45rem; height: 39rem">
+            <div class="card-body" style="text-align: center">
+              <h3 class="card-title" id="calibrationTitle">
+                <b> Calibration Phase </b>
+              </h3>
+              <h4 class="card-text">Now, we need to calibrate our systems.</h4>
+              <h4 class="card-text" id="calibrationDescription"></h4>
+              <div style="text-align: center; margin-bottom: 3vh">
+                <img
+                  id="calibrationImage"
+                  src="https://eyetrackingdata.blob.core.windows.net/public/Images/squareAddition_white.png"
+                  width="350px"
+                />
+              </div>
+              <div class="btn-group" role="group" aria-label="Basic example">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  id="startTestButton"
+                  onclick="startTest()"
+                >
+                  Start
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="stimulus" class="pulsating-disc"></div>
+    <div id="canvas-container" style="display: none">
+      <canvas
+        id="headCanvas"
+        class="frame"
+        style="position: relative; display: none"
+      ></canvas>
+    </div>
+
+    <!-- Confirm Button -->
+    <div class="row gap-2" id="confirmContainer" style="display: none">
+      <div class="card-body" style="text-align: center">
+        <h3>Calibration complete!</h3>
+        <button type="button" class="btn btn-primary" id="confirmButton">
+          Continue
+        </button>
+      </div>
+    </div>
+
+    <div class="panel-block" style="display: block" ;>
+      <video class="inputVideo" style="display: none"></video>
+    </div>
+
+    <audio autoplay id="voiceover"></audio>
+
+    <script data-dynamic>
+      voiceover = document.getElementById("voiceover");
+      document.body.addEventListener("click", function () {
+        voiceover.pause();
+        voiceover.currentTime = 0; // Stop the voiceover whenever a click is detected
+      });
+
+      // ----------- required -------------------
+      function runAfterEveryFrame(output) {
+        if (recordEyeMovements) {
+          _gridCoordinates.push({
+            x: parseFloat(stimulus.style.left),
+            y: parseFloat(stimulus.style.top),
+          });
+          _eyeCoordinates.push({
+            x: output.output.cpuData[0] * 100 - 50,
+            y: output.output.cpuData[1] * 100,
+          });
+          _calibrationData.push(calibrationData);
+          let time = new Date().getTime();
+          _timeData.push(time);
+        }
+      }
+
+      function pageCompleted() {
+        continueProcessing = false;
+        recordEyeMovements = false;
+        const event = new Event("pageComplete");
+        document.dispatchEvent(event);
+      }
+
+      var current_viewingDistance= 0
+      var recordEyeMovements = false;
+      var calibrationData = 1;
+      var continueProcessing = true;
+
+      var deviceConfig = store.session.get("deviceConfig");
+      var _gridCoordinates = [];
+      var _parentDir = store.session.get("id");
+      var _videoURL = "";
+
+      var IMAGE_SIZE = 640;
+      var upperbound_x = 96;
+      var lowerbound_x = 2;
+      var upperbound_y = 96;
+      var lowerbound_y = 2;
+      var stimulus = document.getElementById("stimulus");
+      var x = 0;
+      var y = 0;
+      var counter = 0;
+      var incX = 0.15 * 2;
+      var incY = 0.02 * 2;
+      var timeArray = [];
+      var xArray = [];
+      var yArray = [];
+      var _eyeCoordinates = [];
+      var _calibrationData = [];
+      var _timeData = [];
+      var fixationStimulus_x = [30, 50, 70];
+      var fixationStimulus_y = [20, 40, 60];
+
+      async function startTest() {
+        await runInference();
+        openFullscreen();
+        updateCountdown(initStimulus);
+      }
+
+      async function initStimulus() {
+        document.getElementById("stimulus").style.display = "block";
+        await startRecording();
+        recordEyeMovements = true;
+        moveStimulus();
+      }
+
+
+      // Define the locations with repetition to cover 3 seconds at 10ms intervals
+      var locations = [
+          { x: 25, y: 50 }, // Location 1 (25,25)
+          { x: 50, y: 50 }, // Location 2 (25,25)
+          { x: 75, y: 50 }, // Location 3 (25,25)
+          // { x: 75, y: 60 }, // Location 4 (25,25)
+          // { x: 50, y: 50 }  // Location 5 (25,50)
+      ];
+
+      // Create an array that repeats each location enough times to cover 3 seconds at 10ms intervals
+      var sequence = [];
+      locations.forEach(loc => {
+          for (let i = 0; i < 300; i++) { // 300 * 10ms = 3000ms = 3 seconds
+              sequence.push(loc);
+          }
+      });
+
+
+      async function moveStimulus() {
+          if (counter < sequence.length) {
+              let point = document.getElementById('point');
+              stimulus.style.left = `${sequence[counter].x}%`; // Adjust for half of the cell width
+              stimulus.style.top = `${sequence[counter].y}%`; // Adjust for half of the cell height
+              counter++;
+              // Only append to arrays if more than 500ms has passed
+              if (counter % 300 > 50) { 
+                  let time = new Date().getTime();
+                  timeArray.push(time);
+                  xArray.push(sequence[counter].x); // Use the current x value from the sequence
+                  yArray.push(sequence[counter].y); // Use the current y value from the sequence
+              }
+              setTimeout(moveStimulus, 10); // Call this function every 10ms
+          } else {
+            calibrationData = 0;
+            await stopRecording();
+            pageCompleted();
+          }
+      }
+
+
+      // async function moveStimulus() {
+      //   counter = counter + 1;
+      //   if (x > upperbound_x) {
+      //     incX = -0.15 * 2;
+      //   } else if (x < lowerbound_x) {
+      //     incX = 0.15 * 2;
+      //   }
+
+      //   if (y > upperbound_y) {
+      //     incY = -0.02 * 2;
+      //   } else if (y < lowerbound_y) {
+      //     incY = 0.02 * 2;
+      //   }
+      //   x = x + incX;
+      //   y = y + incY;
+      //   let time = new Date().getTime();
+
+      //   timeArray.push(time);
+      //   xArray.push(x);
+      //   yArray.push(y);
+
+      //   stimulus.style.left = `${x}%`; // Adjust for half of the cell width
+      //   stimulus.style.top = `${y}%`; // Adjust for half of the cell height
+
+      //   if (y < 75) {
+      //     setTimeout(moveStimulus, 10);
+      //   } else {
+      //     calibrationData = 0;
+
+      //     await stopRecording();
+      //     pageCompleted();
+      //     // setTimeout(fixationStimulus, 10);
+      //   }
+      // }
+
+      async function fixationStimulus() {
+        for (let x of fixationStimulus_x) {
+          for (let y of fixationStimulus_y) {
+            let time = new Date().getTime();
+            timeArray.push(time);
+            xArray.push(x);
+            yArray.push(y);
+
+            stimulus.style.left = `${x}%`; // Adjust for half of the cell width
+            stimulus.style.top = `${y}%`; // Adjust for half of the cell height
+
+            // Wait for 4 seconds before moving to the next position
+            await new Promise((resolve) => setTimeout(resolve, 4000));
+          }
+        }
+
+        await stopRecording();
+        pageCompleted();
+      }
+    </script>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 export const languageOptions = {
   en: {
     syntax: {
-      gameTab: 'ROAR - PictureSyntax',
+      gameTab: 'ROAR - Picture Syntax',
       url: '/game/core-tasks/trog',
     },
   },

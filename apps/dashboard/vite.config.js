@@ -4,6 +4,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import Vue from '@vitejs/plugin-vue';
 import UnheadVite from '@unhead/addons/vite';
 import { config } from '@dotenvx/dotenvx';
+import dsv from '@rollup/plugin-dsv';
 import { fileURLToPath, URL } from 'url';
 import path from 'path';
 import fs from 'fs';
@@ -61,12 +62,20 @@ function getResponseHeaders() {
  * It is worth noting that any fork of the project not using the env-configs submodule can safely use a regular dotenv
  * file at the root of the project, as Vite will automatically load it.
  *
+ * Values already present in the real environment take precedence over the files loaded here.
+ *
+ * @param {string} mode - The Vite mode being built (development, test, staging, production)
  * @returns {void}
  */
 const loadDotenvFiles = (mode) => {
   let envFilePaths = [];
   const allowOverride = !mode.includes('production') && !mode.includes('staging');
 
+  // A value already in the real environment (CI job env, exported shell var) outranks the checked-in defaults below.
+  // dotenvx's override:true would otherwise discard it, so snapshot here and re-assert once every file has loaded.
+  const presetEnv = { ...process.env };
+
+  // 1. Load from the env-configs submodule (encrypted, shared across team).
   const modeEnvFilePath = path.resolve(__dirname, `./env-configs/.env.${mode}`);
   const modeLocalEnvFileName = path.resolve(__dirname, `./env-configs/.env.${mode}.local`);
 
@@ -77,6 +86,19 @@ const loadDotenvFiles = (mode) => {
     path: envFilePaths,
     override: allowOverride,
   });
+
+  // 2. Load apps/dashboard/.env as an override for any mode's submodule values.
+  // This allows the dashboard to define env vars (e.g. VITE_ROAR_API_BASE_URL,
+  // VITE_FIREBASE_EMULATOR_AUTH_HOST) without modifying the encrypted submodule.
+  if (allowOverride) {
+    const appRootEnvFile = path.resolve(__dirname, '.env');
+    if (fs.existsSync(appRootEnvFile)) {
+      config({ path: [appRootEnvFile], override: true });
+    }
+  }
+
+  // 3. Re-assert the explicit environment, which outranks all of the above.
+  Object.assign(process.env, presetEnv);
 };
 
 const buildFirebaseConfig = (mode = 'development') => {
@@ -115,6 +137,30 @@ const buildFirebaseConfig = (mode = 'development') => {
   const cspTemplatePath = path.join(root, 'firebase', 'admin', 'csp.template.json');
   const cspTemplate = replaceEnvVars(fs.readFileSync(cspTemplatePath, 'utf8'));
   const cspObj = JSON.parse(cspTemplate);
+
+  // Append the ROAR backend origin to connect-src so the ts-rest API client can reach it.
+  // Derives the origin from VITE_ROAR_API_BASE_URL, which is itself an origin in deployed builds
+  // but may be relative locally, hence the try/catch.
+  const roarApiBaseUrl = process.env.VITE_ROAR_API_BASE_URL;
+  if (roarApiBaseUrl) {
+    try {
+      const roarApiOrigin = new URL(roarApiBaseUrl).origin;
+      cspObj['connect-src'] = [...(cspObj['connect-src'] ?? []), roarApiOrigin];
+    } catch {
+      console.warn(`VITE_ROAR_API_BASE_URL is not a valid URL: ${roarApiBaseUrl}`);
+    }
+  }
+
+  // In Firebase Auth emulator mode, allow the local Auth emulator origin so the
+  // Firebase Web SDK can reach it (connectAuthEmulator talks to it over http).
+  // This branch is a no-op unless VITE_FIREBASE_EMULATOR_AUTH_HOST is set —
+  // so deployed builds are unaffected.
+  const emulatorAuthHost = process.env.VITE_FIREBASE_EMULATOR_AUTH_HOST;
+  if (emulatorAuthHost) {
+    const [, portStr] = emulatorAuthHost.split(':');
+    const port = Number(portStr) || 9099;
+    cspObj['connect-src'] = [...(cspObj['connect-src'] ?? []), `http://127.0.0.1:${port}`, `http://localhost:${port}`];
+  }
 
   // Join arrays into single-line policy
   const cspPolicy = Object.entries(cspObj)
@@ -167,6 +213,7 @@ export default defineConfig(({ mode }) => {
           process: true,
         },
       }),
+      dsv(),
       UnheadVite(),
       ...(process.env.NODE_ENV !== 'development'
         ? [
@@ -180,9 +227,23 @@ export default defineConfig(({ mode }) => {
     ],
 
     resolve: {
-      alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
-      },
+      // Ensure a single jspsych instance across all manually-chunked assessment packages.
+      // Without this, Rollup may create multiple copies whose ParameterType enums initialize
+      // in an undefined order, causing "Cannot read properties of undefined (reading 'BOOL')".
+      dedupe: ['jspsych'],
+      alias: [
+        { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
+        // @roar-platform/assessment-schema is not reliably resolved through workspace
+        // symlinks when using subpath exports (e.g. /pa). Point all subpath imports to
+        // the pre-built dist so Vite doesn't fail on unresolved package exports.
+        //
+        // The capture group `(\/[^/]+)?` matches a single subpath segment or nothing;
+        // `$1` is spliced in by JS regex replace — giving e.g. `.../dist/pa/index.js`.
+        {
+          find: /^@roar-platform\/assessment-schema(\/[^/]+)?$/,
+          replacement: fileURLToPath(new URL('../../packages/assessment-schema/dist', import.meta.url)) + '$1/index.js',
+        },
+      ],
     },
 
     server: {
@@ -199,6 +260,19 @@ export default defineConfig(({ mode }) => {
               cert: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.crt')),
             }
           : false,
+      // Proxy /v1 to the local backend so the browser sees same-origin requests —
+      // mirrors how Firebase Hosting proxies to Cloud Run in staging/production.
+      ...(process.env.NODE_ENV === 'development'
+        ? {
+            proxy: {
+              '/v1': {
+                target: process.env.BACKEND_URL ?? 'https://localhost:4000',
+                secure: false,
+                changeOrigin: true,
+              },
+            },
+          }
+        : {}),
     },
 
     preview: {
@@ -211,23 +285,35 @@ export default defineConfig(({ mode }) => {
       sourcemap: true,
       rollupOptions: {
         output: {
-          manualChunks: {
-            lodash: ['lodash'],
-            tanstack: ['@tanstack/vue-query'],
-            chartJs: ['chart.js'],
-            sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue', '@sentry/wasm'],
-            roam: ['@bdelab/roam-apps'],
-            firekit: ['@bdelab/roar-firekit'],
-            letter: ['@bdelab/roar-letter'],
-            multichoice: ['@bdelab/roar-multichoice'],
-            phoneme: ['@bdelab/roar-pa'],
-            sre: ['@bdelab/roar-sre'],
-            swr: ['@bdelab/roar-swr'],
-            utils: ['@bdelab/roar-utils'],
-            vocab: ['@bdelab/roar-vocab'],
-            ran: ['@bdelab/roav-ran'],
-            'roar-readaloud': ['@bdelab/roar-readaloud'],
-          },
+          // The Cypress spec preprocessor (cypress-vite) compiles each spec with
+          // `inlineDynamicImports`, which rollup rejects when combined with
+          // `manualChunks`. Cypress sets `process.env.CYPRESS` in the process that
+          // loads this config, so chunking is skipped for spec compilation only —
+          // the application build (`vite build`) is unaffected.
+          manualChunks: process.env.CYPRESS
+            ? undefined
+            : {
+                lodash: ['lodash'],
+                tanstack: ['@tanstack/vue-query'],
+                chartJs: ['chart.js'],
+                sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue', '@sentry/wasm'],
+                // jspsych must be its own chunk so it initializes (and exports ParameterType) before
+                // any assessment plugin chunk that accesses ParameterType at module evaluation time.
+                jspsych: ['jspsych'],
+                roam: ['@roar-platform/roam-apps'],
+                firekit: ['@bdelab/roar-firekit'],
+                letter: ['@roar-platform/roar-letter'],
+                multichoice: ['@roar-platform/roar-multichoice'],
+                sre: ['@roar-platform/roar-sre'],
+                survey: ['@roar-platform/roar-survey'],
+                swr: ['@roar-platform/roar-swr'],
+                levante: ['@roar-platform/roar-levante-tasks'],
+                utils: ['@bdelab/roar-utils'],
+                ran: ['@roar-platform/roav-ran'],
+                'roar-readaloud': ['@roar-platform/roar-readaloud'],
+                'roav-apps': ['@roar-platform/roav-apps'],
+                phoneme: ['@roar-platform/roar-pa'],
+              },
         },
       },
     },

@@ -1,53 +1,74 @@
 import type { Router } from 'express';
 import { initServer, createExpressEndpoints } from '@ts-rest/express';
-import { StatusCodes } from 'http-status-codes';
-import { UsersContract } from '@roar-dashboard/api-contract';
-
-import { eq } from 'drizzle-orm';
-import { CoreDbClient } from '../db/clients';
-import { users } from '../db/schema';
+import { UsersContract } from '@roar-platform/api-contract';
+import { UsersController } from '../controllers/users.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
+import { AnonTokenMiddleware } from '../middleware/anon-token/anon-token.middleware';
 
 const s = initServer();
 
-// Mock controller
-// @TODO: Remove this mock controller and replace with actual implementation once ready.
-const UserController = {
-  getById: async ({ params: { id } }: { params: { id: string } }) => {
-    const [user] = await CoreDbClient.select().from(users).where(eq(users.id, id)).limit(1);
-
-    if (!user) {
-      return { status: StatusCodes.NOT_FOUND as const, body: { error: { message: 'User not found' } } };
-    }
-
-    return {
-      status: StatusCodes.OK as const,
-      body: {
-        data: {
-          id: user.id,
-          auth_id: user.authId,
-          ...(user.email != null ? { email: user.email } : {}),
-          ...(user.username != null ? { username: user.username } : {}),
-        },
-      },
-    };
-  },
-};
-
 /**
- * Users routes registration handler.
+ * Registers /users routes on the provided Express router.
  *
- * Registers the users routes on the provided router instance using the provided contract.
- *
- * @param routerInstance - The router instance to register the routes on.
+ * All routes require authentication (AuthGuardMiddleware)
+ * Authorization is handled in the service and repository layers.
  */
-export function registerUsersRoutes(routerInstance: Router) {
-  const UsersRoutes = s.router(UsersContract, {
-    getById: {
+export function registerUserRoutes(routerInstance: Router) {
+  const UserRoutes = s.router(UsersContract, {
+    get: {
       middleware: [AuthGuardMiddleware],
-      handler: UserController.getById,
+      handler: async ({ req: { user }, params: { id } }) => UsersController.get(user!, id),
+    },
+    create: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, body }) => UsersController.create(user!, body),
+    },
+    bulkImport: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, body }) => UsersController.bulkImport(user!, body),
+    },
+    update: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { id }, body }) => UsersController.update(user!, id, body),
+    },
+    recordUserAgreement: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { userId }, body }) =>
+        UsersController.recordUserAgreement(user!, userId, body),
+    },
+    listUserAdministrations: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { userId }, query }) =>
+        UsersController.listUserAdministrations(user!, userId, query),
+    },
+    getUserAdministration: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { userId, administrationId } }) =>
+        UsersController.getUserAdministration(user!, userId, administrationId),
+    },
+    listUserAdministrationAgreements: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { userId, administrationId }, query }) =>
+        UsersController.listUserAdministrationAgreements(user!, userId, administrationId, query),
+    },
+    listUserMemberships: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { userId } }) => UsersController.listUserMemberships(user!, userId),
+    },
+    scoreReports: {
+      getGuardianStudentReport: {
+        middleware: [AuthGuardMiddleware],
+        handler: async ({ req: { user }, params: { userId } }) =>
+          UsersController.getGuardianStudentReport(user!, userId),
+      },
+    },
+    createAnonymous: {
+      middleware: [AnonTokenMiddleware],
+      handler: async ({ req: { decodedAnonymousUser } }) => UsersController.createAnonymous(decodedAnonymousUser!.uid),
     },
   });
 
-  createExpressEndpoints(UsersContract, UsersRoutes, routerInstance);
+  createExpressEndpoints(UsersContract, UserRoutes, routerInstance);
 }

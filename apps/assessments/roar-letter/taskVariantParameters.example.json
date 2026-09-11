@@ -1,0 +1,108 @@
+[
+  {
+    "variantName": "letter-school-cat-random-5min-v2",
+    "params": {
+      "task": "letter",
+      "language": "en",
+      "consent": true,
+      "itemSelectMethod": "random",
+      "maxTime": 5,
+      "nItems": 5,
+      "nItemsPhoneme": 15,
+      "recruitment": "school",
+      "skipInstructions": false,
+      "startSelectMethod": "random",
+      "story": false
+    }
+  },
+  {
+    "variantName": "roar-letter-scoring-version-1-first-10-random-mfi",
+    "params": {
+      "task": "letter",
+      "language": "en",
+      "audioFeedback": "neutral",
+      "catsToUpdate": {},
+      "consent": false,
+      "earlyStopping": null,
+      "initialTheta": 0,
+      "itemSelectMethod": "mfi",
+      "logicalOperation": "only",
+      "maxTheta": 8,
+      "maxTime": null,
+      "method": "eap",
+      "minTheta": -8,
+      "nItems": null,
+      "nItemsBeforeBreak": null,
+      "nItemsBeforeBreakPhoneme": null,
+      "nItemsPhoneme": null,
+      "nStartItems": 10,
+      "patience": null,
+      "phonicsCorpus": "roar-phonics-2025-08-01-v3.csv",
+      "phonicsSet": "all",
+      "randomSeed": null,
+      "recruitment": "school",
+      "scoringVersion": 1,
+      "skipInstructions": false,
+      "startSelectMethod": "random",
+      "story": false,
+      "threshold": null,
+      "tolerance": null,
+      "userMode": null
+    }
+  },
+  {
+    "variantName": "es-letter-school-shortLetter-5min",
+    "params": {
+      "task": "letter",
+      "language": "es",
+      "audioFeedback": "neutral",
+      "consent": false,
+      "maxTime": 5,
+      "recruitment": "school",
+      "skipInstructions": false,
+      "story": false,
+      "userMode": "shortLetter"
+    }
+  },
+  {
+    "variantName": "letter-otherlabsRoadLogin-shortLetter-5min",
+    "params": {
+      "task": "letter",
+      "language": "en",
+      "audioFeedback": "neutral",
+      "consent": false,
+      "maxTime": 5,
+      "recruitment": "otherLabsRoadLogin",
+      "skipInstructions": false,
+      "story": false,
+      "userMode": "shortLetter"
+    }
+  },
+  {
+    "variantName": "roar-phonics-2025-09-22-A",
+    "params": {
+      "task": "phonics",
+      "itemSelectMethod": "random",
+      "phonicsSet": "A",
+      "stimulusCorpus": "roar-phonics-2025-08-01-v3"
+    }
+  },
+  {
+    "variantName": "roar-phonics-2025-09-22-B",
+    "params": {
+      "task": "phonics",
+      "itemSelectMethod": "random",
+      "phonicsSet": "B",
+      "stimulusCorpus": "roar-phonics-2025-08-01-v3"
+    }
+  },
+  {
+    "variantName": "roar-phonics-2025-09-22-C",
+    "params": {
+      "task": "phonics",
+      "itemSelectMethod": "random",
+      "phonicsSet": "C",
+      "stimulusCorpus": "roar-phonics-2025-08-01-v3"
+    }
+  }
+]

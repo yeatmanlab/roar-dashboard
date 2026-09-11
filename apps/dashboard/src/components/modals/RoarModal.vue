@@ -29,7 +29,6 @@
 </template>
 <script setup>
 import { watch, ref, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
 import PvDialog from 'primevue/dialog';
 import { useAuthStore } from '@/store/auth';
 
@@ -65,7 +64,6 @@ const props = defineProps({
 const emit = defineEmits(['modalClosed']);
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 
 watch(
@@ -89,11 +87,11 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit?.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
 onMounted(() => {
-  if (roarfirekit.value?.restConfig?.()) init();
+  if (authStore.isAuthReady) init();
 });
 </script>
 <style lang="scss">

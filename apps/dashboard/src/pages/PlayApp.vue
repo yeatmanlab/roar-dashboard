@@ -6,9 +6,9 @@
   </div>
 </template>
 <script setup>
-import RoarSWR from '@bdelab/roar-swr';
-import RoarPA from '@bdelab/roar-pa';
-import RoarSRE from '@bdelab/roar-sre';
+import RoarSWR from '@roar-platform/roar-swr';
+import RoarPA from '@roar-platform/roar-pa';
+import RoarSRE from '@roar-platform/roar-sre';
 import { useAuthStore } from '@/store/auth';
 import { toRaw, onMounted, ref, watch } from 'vue';
 import AppSpinner from '../components/AppSpinner.vue';
@@ -59,9 +59,7 @@ async function startTask() {
   }
 
   gameStarted.value = true;
-  await roarApp.run().then(async () => {
-    // Handle any post-game actions.
-    await authStore.roarfirekit.completeAssessment(currentAssignment, currentGameId);
+  await roarApp.run().then(() => {
     router.replace({ name: 'Home' });
   });
 }

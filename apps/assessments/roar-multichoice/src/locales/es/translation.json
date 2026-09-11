@@ -1,0 +1,107 @@
+{
+  "preloadTrial": {
+    "messageText": "Por favor, espera mientras se carga el juego. Esto puede tardar unos minutos."
+  },
+  "fullScreenTrial": {
+    "prompt": "El juego se va a cambiar a modo de pantalla completa. Presiona el botón para continuar.",
+    "buttonText": "Continuar"
+  },
+  "navigation": {
+    "continueButtonText": "Presiona <span class='yellow'>CUALQUIER TECLA</span> para {{action}}",
+    "continueButtonTextMobile": "Presiona <span class='yellow'>AQUÍ</span> para {{action}}"
+  },
+  "introTrials": {
+    "trial1": {
+      "header": "¡Bienvenido al mundo de Lexicalidad!",
+      "paragraph1": "Eres un mago en busca de la puerta que te devolverá a tu hogar en la Tierra. Para llegar a la puerta, tendrás que viajar por tierras gobernadas por guardianes mágicos.",
+      "paragraph2": "Para que los guardianes te dejen pasar por la tierra, tendrás que diferenciar entre palabras inventadas y palabras reales.&nbsp;"
+    },
+    "trial2": {
+      "header": "Una palabra real o inventada aparecerá muy rápido en el centro de la pantalla.",
+      "paragraph1": "Las palabras inventadas pueden parecer palabras en español, pero no significan nada en español. Por ejemplo, “frup”, “rifli”, o “glizon” son palabras inventadas. <span class='orange'><b> Si ves una palabra inventada, presiona la FLECHA IZQUIERDA.</b></span>",
+      "paragraph2": "Las palabras reales serán las que reconozcas. Son palabras reales en español como “es”, “y”, “cesta”, o “león”. <span class='blue'><b> Si ves una palabra real, presiona la FLECHA DERECHA.</b></span>"
+    },
+    "trial3": {
+      "header": "Déjanos repasar qué flecha presionamos para palabras inventadas y palabras reales.",
+      "paragraph1": "Trata de ser lo más correcto&#47;a posible.",
+      "paragraph2": "Algunas palabras serán difíciles, pero está bien. ¡Si no estás seguro&#47;a, solo haz tu mejor esfuerzo!"
+    },
+    "postPracticeTrial": {
+      "header": "¡Gran trabajo! ¡Estás listo&#47;a para comenzar el viaje!",
+      "paragraph1": "Durante el viaje, ganarás monedas de oro."
+    }
+  },
+  "practiceFeedbackTrial": {
+    "paragraph1": "Presionaste la flecha {{direction}} que es para palabras {{typeWord}}!",
+    "paragraph2": "es una palabra {{typeWord}}. Presiona la flecha {{direction}} para continuar.",
+    "arrowChoicesImgAlt": "opcionesDeFlecha"
+  },
+  "gameBreakTrials": {
+    "midBlockTrials": {
+      "trial1": {
+        "header": "¡Buen trabajo!",
+        "paragraph1": "Estás a la mitad del valle y decides acampar cerca de un pueblo pequeño.",
+        "paragraph2": "En el pueblo, te encuentras con otro aventurero que te acompaña en tu viaje!"
+      },
+      "trial2": {
+        "header": "¡Magnífico!",
+        "paragraph1": "¡Después de unos días de viaje, te encuentras una posada!",
+        "paragraph2": "¡Allí conoces a otro aventurero que se une a tu viaje!"
+      },
+      "trial3": {
+        "header": "¡Fantástico!",
+        "paragraph1": "Estás a la mitad del valle y decides acampar cerca de un pueblo pequeño.",
+        "paragraph2": "¡En el pueblo, te encuentras con otro aventurero que te acompaña en tu viaje!"
+      }
+    },
+    "postBlockTrials": {
+      "trial1": {
+        "header": "¡Felicidades!",
+        "paragraph1": "Con la ayuda del guardián, lograste cruzar el valle.",
+        "paragraph2": "¡Te estás acercando a la puerta!"
+      },
+      "trial2": {
+        "header": "¡Felicidades!",
+        "paragraph1": "Con la ayuda del guardián, lograste cruzar el valle.",
+        "paragraph2": "¡Solo un valle más hasta que llegues a la puerta!"
+      }
+    },
+    "finalTrial": {
+      "header": "¡Finalmente, encontraste al guardián y la puerta que te regresará a casa!",
+      "paragraph1": "Usas tus monedas para abrir la puerta.",
+      "paragraph2": "Te despides de tus nuevos amigos y dejas la tierra de Lexicalidad. ¡Hasta luego!"
+    }
+  },
+  "imagesAlt": {
+    "arrowKeys": "teclas de flecha",
+    "leftArrow": "flecha izquierda",
+    "rightArrow": "flecha derecha",
+    "valley": "imagen de fondo con arboles y lomas",
+    "adventurer1": "aventurero con arpa",
+    "adventurer2": "aventurero creando arcoiris",
+    "adventurer3": "aventurero creando formas de corazón",
+    "wizardCoin": "mago creando monedas",
+    "guardian1": "guardián anaranjado dinosaurio",
+    "guardian2": "guardián azulado dinosaurio",
+    "endingBackground": "paisajes con árboles",
+    "guardian3": "unicornio que guiña",
+    "endingGateCoinbag": "puerta con animación de bolsa de monedas",
+    "wizardWand": "mago ondeando una varita mágica",
+    "leftArrowIntro": "palabra inventada, presiona la tecla de flecha izquierda",
+    "rightArrowIntro": "palabra real, presiona la tecla de flecha derecha"
+  },
+  "terms": {
+    "__comment1__": "e.g. 'presione cualquier tecla para continuar/practicar/comenzar'",
+    "continue": "continuar",
+    "practice": "practicar",
+    "here": "aquí",
+    "begin": "comenzar",
+    "gold": "oro",
+    "left": "izquierda",
+    "right": "derecha",
+    "__comment2__": "i.e. 'bluzp es una palabra real/inventada'",
+    "real": "real",
+    "made-up": "inventada",
+    "save": "guardar tu trabajo"
+  }
+}

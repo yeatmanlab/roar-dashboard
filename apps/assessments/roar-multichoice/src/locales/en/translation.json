@@ -1,0 +1,84 @@
+{
+  "progressBar": "Progress Complete",
+  "fullScreenTrial": {
+    "prompt": "Switching to full screen mode.",
+    "buttonText": "Go"
+  },
+  "navigation": {
+    "continueButtonText": "Press <span class='yellow'>ANY KEY</span> to {{action}}",
+    "continueButtonTextMobile": "Press <span class='yellow'>HERE</span> to {{action}}"
+  },
+  "intro": {
+    "names": {
+      "trial1": {
+        "header": "Hi, welcome to ROAR-Letter!",
+        "paragraph1": "Today, you’re going to help us find some letters. When I say the name of a letter, your job is to find it on the screen and press it."
+      },
+      "trial2": {
+        "paragraph1": "Listen carefully so you know  which letter to choose. To hear the letter again, press the speaker button.",
+        "paragraph2": "Now it’s your turn. Remember, your job is to choose the letter you hear."
+      },
+      "preLowerCase": {
+        "header": "Great job! Now let’s try some lowercase letters."
+      },
+      "preUpperCase": {
+        "header": "Great job! Now let’s try some uppercase letters."
+      }
+    },
+    "sounds": {
+      "trial1": {
+        "header": "Great job! Now we’re going to do something a little bit different.",
+        "paragraph1": "This time, I’m going to say a sound, and your job is to choose a letter that can spell that sound."
+      },
+      "trial2": {
+        "paragraph1": "Listen carefully so you know which letter to choose.",
+        "paragraph2": "To hear the sound again, press the speaker button.",
+        "paragraph3": "Now it’s your turn. Remember, your job is to listen to the sound and choose a letter that can spell that sound."
+      }
+    }
+  },
+  "practiceFeedback": {
+    "mid": {
+      "header": "Great job!  Try another one."
+    },
+    "post": {
+      "header": "Alright, you’re ready to play. Have fun!"
+    }
+  },
+  "gameBreak": {
+    "final": {
+      "header": "Thank you for playing ROAR-Letter!"
+    }
+  },
+  "imagesAlt": {
+    "arrowKeys": "arrow keys",
+    "leftArrow": "left arrow",
+    "rightArrow": "right arrow",
+    "valley": "background image with hills and trees",
+    "adventurer1": "adventurer with harp",
+    "adventurer2": "adventuerer making rainbows",
+    "adventurer3": "adventurer making heart shapes",
+    "wizardCoin": "wizard making coins",
+    "guardian1": "orange dinosaur guardian",
+    "guardian2": "blue dragon guardian",
+    "endingBackground": "landscape with trees",
+    "guardian3": "winking unicorn",
+    "endingGateCoinbag": "gate with coinbag animation",
+    "wizardWand": "wizard waving a magic wand",
+    "leftArrowIntro": "made-up word, press the left arrow key",
+    "rightArrowIntro": "real Word, press the Right Arrow key"
+  },
+  "terms": {
+    "__comment1__": "ex. 'press any key to continue/practice/begin'",
+    "continue": "continue",
+    "practice": "practice",
+    "begin": "begin",
+    "gold": "gold",
+    "left": "left",
+    "right": "right",
+    "__comment2__": "i.e. 'xop is a made-up/real word'",
+    "real": "real",
+    "made-up": "made-up",
+    "save": "save your work"
+  }
+}

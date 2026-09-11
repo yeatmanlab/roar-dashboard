@@ -1,0 +1,201 @@
+sentence,answer,direction,corpusId,itemId
+Im Sommer fallen Schneeflocken.,FALSE,left,uzh,uzh_1
+Flugzeuge fliegen in der Luft.,TRUE,right,uzh,uzh_2
+Eulen können ihren Kopf nicht drehen.,FALSE,left,uzh,uzh_3
+Menschen atmen Luft ein.,TRUE,left,uzh,uzh_4
+Regenbogen haben nur eine Farbe.,FALSE,left,uzh,uzh_5
+Ein Auto hat zehn Räder.,FALSE,left,uzh,uzh_6
+Kameras trinken Bilder.,FALSE,left,uzh,uzh_7
+Das Meer ist voller Salzwasser.,TRUE,right,uzh,uzh_8
+Im Bett wird nachts geschlafen.,TRUE,right,uzh,uzh_9
+Niemand mag Erdbeeren.,FALSE,left,uzh,uzh_10
+Haie haben scharfe Zähne.,TRUE,right,uzh,uzh_11
+Fahnen haben keine Farben.,FALSE,left,uzh,uzh_12
+Autos schwimmen auf dem Wasser.,FALSE,left,uzh,uzh_13
+Pferde können schnell laufen.,TRUE,right,uzh,uzh_14
+Ein Telefon hilft uns beim Gehen.,FALSE,left,uzh,uzh_15
+Muscheln wachsen auf Bäumen.,FALSE,left,uzh,uzh_16
+Ein Haus ist ein Ort zum Wohnen.,TRUE,right,uzh,uzh_17
+Bei Kälte tragen wir Jacken.,TRUE,right,uzh,uzh_18
+Menschen brauchen jeden Tag Schlaf.,TRUE,right,uzh,uzh_19
+Mit Spielzeug kann gespielt werden.,TRUE,right,uzh,uzh_20
+Ein Kissen ist weich.,TRUE,right,uzh,uzh_21
+Delfine können aus einem Vulkan springen.,FALSE,left,uzh,uzh_22
+Der Wal ist ein kleines Landtier.,FALSE,left,uzh,uzh_23
+Mit Sand kann man Dinge kaufen.,FALSE,left,uzh,uzh_24
+Affen klettern auf Bäumen.,TRUE,right,uzh,uzh_25
+"Menschen gehen, rennen und springen, um sich zu bewegen und Sport zu treiben.",TRUE,right,uzh,uzh_26
+"Kinder gehen zur Schule, um zu liegen.",FALSE,left,uzh,uzh_27
+Hamster schwimmen auf Rädern.,FALSE,left,uzh,uzh_28
+Lehrpersonen arbeiten in Schulen.,TRUE,right,uzh,uzh_29
+Eine Uhr tanzt die Zeit.,FALSE,left,uzh,uzh_30
+Ein Baby lernt krabbeln.,TRUE,right,uzh,uzh_31
+Niemand hat Gefühle.,FALSE,left,uzh,uzh_32
+Hände können Dinge halten.,TRUE,right,uzh,uzh_33
+Kirschen wachsen im Winter.,FALSE,left,uzh,uzh_34
+"Wenn wir gähnen, sind wir hungrig.",FALSE,left,uzh,uzh_35
+Ein Dreieck hat zehn Seiten.,FALSE,left,uzh,uzh_36
+Haustiere sind Lebewesen.,TRUE,right,uzh,uzh_37
+Zum Klavierspielen braucht es eine Säge.,FALSE,left,uzh,uzh_38
+Der Mond scheint in der Nacht und ändert ständig seine Form.,TRUE,right,uzh,uzh_39
+Der Wind kann Dinge unsichtbar machen.,FALSE,left,uzh,uzh_40
+Berge sind sehr niedrig.,FALSE,left,uzh,uzh_41
+Menschen sprechen verschiedene Sprachen.,TRUE,right,uzh,uzh_42
+Eltern gehen auf ihren Händen.,FALSE,left,uzh,uzh_43
+Kängurus können weit springen.,TRUE,right,uzh,uzh_44
+Der Ozean ist winzig klein.,FALSE,left,uzh,uzh_45
+Im Park kann man spielen.,TRUE,right,uzh,uzh_46
+"Wir sagen Tschüss, wenn wir gehen.",TRUE,right,uzh,uzh_47
+Der Himmel kann blau oder grau sein.,TRUE,right,uzh,uzh_48
+Reife Bananen sind blau.,FALSE,left,uzh,uzh_49
+Tiger haben schwarze Streifen.,TRUE,right,uzh,uzh_50
+Babys wachsen zu Kindern heran.,TRUE,right,uzh,uzh_51
+"Wenn man Tiere wie Schildkröten, Affen und Eidechsen sehen will, geht man ins Krankenhaus.",FALSE,left,uzh,uzh_52
+Ein Pfirsich ist pelzig und süss.,TRUE,right,uzh,uzh_53
+Blätter fallen von Bäumen.,TRUE,right,uzh,uzh_54
+Türen verschwinden und tauchen wieder auf.,FALSE,left,uzh,uzh_55
+Mit Bleistiften kannst du besser schwimmen.,FALSE,left,uzh,uzh_56
+"Menschen nutzen Landkarten, um Orte zu finden.",TRUE,right,uzh,uzh_57
+Der Raum in dem man schläft ist die Küche.,FALSE,left,uzh,uzh_58
+Leute reden mit ihren Ellbogen.,FALSE,left,uzh,uzh_59
+Ein Lied kann man hören.,TRUE,right,uzh,uzh_60
+Hunde bellen und spielen gern.,TRUE,right,uzh,uzh_61
+Die Sonne geht am Morgen unter.,FALSE,left,uzh,uzh_62
+Regenmäntel halten uns trocken.,TRUE,right,uzh,uzh_63
+Wir essen jeden Tag unsere Zähne.,FALSE,left,uzh,uzh_64
+Milch stammt aus Steinen.,FALSE,left,uzh,uzh_65
+In der Schule schreibt man mit Hammern.,FALSE,left,uzh,uzh_66
+"Jemand, der Autos repariert, ist Astronaut. ",FALSE,left,uzh,uzh_67
+Wir trinken aus Gräsern.,FALSE,left,uzh,uzh_68
+Ein Lamm ist ein kleines Kamel.,FALSE,left,uzh,uzh_69
+Kinder lernen von Erwachsenen.,TRUE,right,uzh,uzh_70
+Ein Segelboot hat ein Segel.,TRUE,right,uzh,uzh_71
+Jeder hat eine Lieblingsfarbe.,TRUE,right,uzh,uzh_72
+Regenbogen sind lecker.,FALSE,left,uzh,uzh_73
+Ein Hirsch hat Flügel.,FALSE,left,uzh,uzh_74
+Der Bus transportiert Menschen.,TRUE,right,uzh,uzh_75
+Kaninchen haben ein weiches Fell.,TRUE,right,uzh,uzh_76
+Papier kann man falten.,TRUE,right,uzh,uzh_77
+"Quallen sind Landlebewesen mit kurzen Armen, die singen können.",FALSE,left,uzh,uzh_78
+Eis ist kochendes Wasser.,FALSE,left,uzh,uzh_79
+Eichhörnchen leben unter Wasser.,FALSE,left,uzh,uzh_80
+Freunde helfen einander.,TRUE,right,uzh,uzh_81
+Elefanten sind riesige Tiere mit einem langen Rüssel.,TRUE,right,uzh,uzh_82
+Orangensaft macht man mit Orangen.,TRUE,right,uzh,uzh_83
+"Kinder schrumpfen, wenn sie älter werden.",FALSE,left,uzh,uzh_84
+"Damit dreckiges Geschirr sauber wird, tust du es in den Ofen.",FALSE,left,uzh,uzh_85
+Schafe haben dicke Wolle.,TRUE,right,uzh,uzh_86
+Mit Strohhalmen hört man Musik.,FALSE,left,uzh,uzh_87
+Die Giraffe hat einen langen Hals.,TRUE,right,uzh,uzh_88
+Mit einem Gummistiefel wird der Rasen gemäht.,FALSE,left,uzh,uzh_89
+Die Schildkröte kann in ihrem Panzer fliegen.,FALSE,left,uzh,uzh_90
+Eine Mücke kann stricken.,FALSE,left,uzh,uzh_91
+Schweine sind blau und dünn.,FALSE,left,uzh,uzh_92
+Der Computer behindert unsere Arbeit.,FALSE,left,uzh,uzh_93
+"Um besser zu hören, trägt man eine Brille.",FALSE,left,uzh,uzh_94
+Schuhe haben immer Rollen.,FALSE,left,uzh,uzh_95
+Das Feuer hat Flammen und brennt.,TRUE,right,uzh,uzh_96
+"Wir benutzen Schlüssel, um Türen zu öffnen.",TRUE,right,uzh,uzh_97
+Der Apfelbaum ist ein Möbelstück.,FALSE,left,uzh,uzh_98
+"Hühner legen Murmeln, die wir essen können.",FALSE,left,uzh,uzh_99
+Alle Menschen brauchen Liebe und Fürsorge.,TRUE,right,uzh,uzh_100
+Ein Berg ist hoch und felsig.,TRUE,right,uzh,uzh_101
+"Wasser ist nass und wir brauchen es, um gesund zu bleiben.",TRUE,right,uzh,uzh_102
+"Äpfel können rot, grün oder gelb sein.",TRUE,right,uzh,uzh_103
+"Manche Leute tragen eine Brille, um besser zu sehen.",TRUE,right,uzh,uzh_104
+Beim Zugfahren ist es wichtig einen Helm zu tragen.,FALSE,left,uzh,uzh_105
+Die Sonne geht jeden Tag auf.,TRUE,right,uzh,uzh_106
+Manchmal ist man traurig.,TRUE,right,uzh,uzh_107
+Enten schwimmen nicht gerne.,FALSE,left,uzh,uzh_108
+Fahrräder haben zwanzig Räder und machen uns unsichtbar.,FALSE,left,uzh,uzh_109
+Im Zoo leben verschiedene Tiere.,TRUE,right,uzh,uzh_110
+Auf der Autobahn fahren die Autos schnell.,TRUE,right,uzh,uzh_111
+Gemüse wird im Bett gelagert.,FALSE,left,uzh,uzh_112
+Im Theater gibt es eine Bühne.,TRUE,right,uzh,uzh_113
+Gummibänder können sich nicht dehnen.,FALSE,left,uzh,uzh_114
+Die meisten Blumen geben unsichtbaren Rauch ab.,FALSE,left,uzh,uzh_115
+Der Kühlschrank wärmt das Essen.,FALSE,left,uzh,uzh_116
+Spargel wächst in einem Vulkan.,FALSE,left,uzh,uzh_117
+Beim Drücken klingelt eine Türklingel.,TRUE,right,uzh,uzh_118
+Familien können Haustiere haben.,TRUE,right,uzh,uzh_119
+Kängurus sind Tiere mit kräftigen Beinen und sie können sehr weit hüpfen.,TRUE,right,uzh,uzh_120
+Beim Duschen wird man sauber.,TRUE,right,uzh,uzh_121
+Bücher haben keine Seiten.,FALSE,left,uzh,uzh_122
+Wüsten sind eisige und schneebedeckte Orte mit ständigem Regen.,FALSE,left,uzh,uzh_123
+Fische atmen durch Kiemen.,TRUE,right,uzh,uzh_124
+"In der Küche gibt es Spülmittel, um das Geschirr abwaschen zu können.",TRUE,right,uzh,uzh_125
+Ein Ball ist flach.,FALSE,left,uzh,uzh_126
+Kartoffelpüree wird aus Kirschen gemacht.,FALSE,left,uzh,uzh_127
+Menschen leben in Häusern.,TRUE,right,uzh,uzh_128
+Ein Jahr hat elf Monate.,FALSE,left,uzh,uzh_129
+Kinder gehen zur Schule.,TRUE,right,uzh,uzh_130
+Affen laufen unter der Erde.,FALSE,left,uzh,uzh_131
+"Wenn es kalt ist, trägt man Sandalen.",FALSE,left,uzh,uzh_132
+Kinder singen gerne Lieder.,TRUE,right,uzh,uzh_133
+Insekten haben keine Beine.,FALSE,left,uzh,uzh_134
+"Wasser kocht, wenn es kalt ist.",FALSE,left,uzh,uzh_135
+Menschen putzen ihre Zähne.,TRUE,right,uzh,uzh_136
+Welpen sind kleine Hunde.,TRUE,right,uzh,uzh_137
+In der Sporthalle treibt man Sport.,TRUE,right,uzh,uzh_138
+Fische fahren Autos mit Rädern und Scheinwerfern.,FALSE,left,uzh,uzh_139
+Schlangen sind am Himmel zu sehen.,FALSE,left,uzh,uzh_140
+Muscheln gibt es in vielen Formen und Farben und man findet sie am Strand.,TRUE,right,uzh,uzh_141
+Die Post wird unter den Häusern vergraben.,FALSE,left,uzh,uzh_142
+Das Licht kommt durch die Fenster ins Haus.,TRUE,right,uzh,uzh_143
+Geschenke bekommt man zu besonderen Anlässen wie Geburtstagen und Feiertagen.,TRUE,right,uzh,uzh_144
+Pferde können laufen und tragen Menschen oder Dinge auf ihrem Rücken.,TRUE,right,uzh,uzh_145
+"Um ein Haus zu bauen, braucht es Farbstifte.",FALSE,left,uzh,uzh_146
+Der Ozean ist klein und flach.,FALSE,left,uzh,uzh_147
+Kinder spielen auf dem Spielplatz.,TRUE,right,uzh,uzh_148
+Die meisten Menschen haben zwei Beine.,TRUE,right,uzh,uzh_149
+"Telefongespräche verhindern, dass Menschen überhaupt reden.",FALSE,left,uzh,uzh_150
+"Impfungen tragen dazu bei, uns vor Krankheiten zu schützen.",TRUE,right,uzh,uzh_151
+"Kleinkinder machen einen Mittagsschlaf, um sich auszuruhen und Energie zu tanken.",TRUE,right,uzh,uzh_152
+Eine Lehrerin hilft uns beim Lernen.,TRUE,right,uzh,uzh_153
+Zebras haben Punkte und leben unter der Erde.,FALSE,left,uzh,uzh_154
+Pflanzen brauchen Wasser und Sonnenlicht.,TRUE,right,uzh,uzh_155
+Hunde pflanzen Blumen.,FALSE,left,uzh,uzh_156
+Im Bett wird nachts getanzt.,FALSE,left,uzh,uzh_157
+Es gibt nur Zeichentrickfilme für Erwachsene und keine für Kinder.,FALSE,left,uzh,uzh_158
+Beim Blumen pflücken schneit es immer.,FALSE,left,uzh,uzh_159
+Regenbogen haben nur eine Farbe.,FALSE,left,uzh,uzh_160
+Pinguine können fliegen.,FALSE,left,uzh,uzh_161
+Hunde können bellen.,TRUE,right,uzh,uzh_162
+Im Ofen kann man Kuchen backen.,TRUE,right,uzh,uzh_163
+Bienen sind kleine Tiere die Honig machen. ,TRUE,right,uzh,uzh_164
+Vögel haben Schuppen.,FALSE,left,uzh,uzh_165
+Wale sind Reptilien.,FALSE,left,uzh,uzh_166
+Vor dem Schlafengehen ziehen wir Pyjamas an.,TRUE,right,uzh,uzh_167
+Bären sind winzig und schwach.,FALSE,left,uzh,uzh_168
+"Musik kann auf Instrumenten wie Schlagzeug, Gitarre und Klavier gespielt werden.",TRUE,right,uzh,uzh_169
+Kinder spielen in der Stratosphäre.,FALSE,left,uzh,uzh_170
+Flugzeuge fliegen am Himmel.,TRUE,right,uzh,uzh_171
+Wir essen mit einer Garage.,FALSE,left,uzh,uzh_172
+Eis ist scharf und bitter.,FALSE,left,uzh,uzh_173
+Du gehst nachts schlafen.,TRUE,right,uzh,uzh_174
+Eine Autohupe hupt laut.,TRUE,right,uzh,uzh_175
+Frösche können im Wasser springen und schwimmen.,TRUE,right,uzh,uzh_176
+Auf dem Flohmarkt werden Traktoren ausgestellt.,FALSE,left,uzh,uzh_177
+Aus einer Raupe wird ein Nashorn.,FALSE,left,uzh,uzh_178
+"Die Leute lachen, wenn Dinge lustig sind.",TRUE,right,uzh,uzh_179
+Menschen haben unterschiedliche Haarfarben.,TRUE,right,uzh,uzh_180
+Brot ist ein seltenes Lebensmittel.,FALSE,left,uzh,uzh_181
+Wir gehen mit unseren Händen.,FALSE,left,uzh,uzh_182
+Schneeflocken sind schwarz und rau.,FALSE,left,uzh,uzh_183
+Züge schwimmen auf Bahngleisen.,FALSE,left,uzh,uzh_184
+"Die Jahreszeiten sind Frühling, Sommer, Herbst und Winter.",TRUE,right,uzh,uzh_185
+Elefanten sind blau und klein.,FALSE,left,uzh,uzh_186
+Die Erdbeere ist eine rote Frucht.,TRUE,right,uzh,uzh_187
+"Ärztinnen und Ärzte helfen uns, wenn wir krank sind.",TRUE,right,uzh,uzh_188
+Wie leben alle auf dem Mars.,FALSE,left,uzh,uzh_189
+Obst und Gemüse helfen unserem Körper zu wachsen und gesund zu bleiben.,TRUE,right,uzh,uzh_190
+Eltern versorgen ihre Kinder.,TRUE,right,uzh,uzh_191
+Wasser löscht den Durst.,TRUE,right,uzh,uzh_192
+"Katzen miauen und schnurren, wenn sie glücklich sind.",TRUE,right,uzh,uzh_193
+"Wenn man in einen Stall geht, sieht man oft Pferde, Kühe oder Schweine.",TRUE,right,uzh,uzh_194
+"Im Sommer geht man ins Freibad, um sich abzukühlen.",TRUE,right,uzh,uzh_195
+"Im Vergleich zu Schulkindern, können Kindergartenkinder noch nicht gut lesen.",TRUE,right,uzh,uzh_196
+"Weil junge Kinder noch nicht lesen können, kriegen sie oft Bilderbücher geschenkt.",TRUE,right,uzh,uzh_197
+"Der Staubsauger ist ein elektrisches Gerät, das wir zum Putzen benutzen.",TRUE,right,uzh,uzh_198
+"Die Fläche um ein Haus, auf dem viele Pflanzen wachsen, nennt man Insel.",FALSE,left,uzh,uzh_199
+In den Ferien musst du nicht in die Schule.,TRUE,right,uzh,uzh_200

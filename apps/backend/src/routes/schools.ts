@@ -1,0 +1,49 @@
+import type { Router } from 'express';
+import { initServer, createExpressEndpoints } from '@ts-rest/express';
+import { SchoolsContract } from '@roar-platform/api-contract';
+import { SchoolsController } from '../controllers/schools.controller';
+import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
+
+const s = initServer();
+
+/**
+ * Registers /schools routes on the provided Express router.
+ *
+ * All routes require authentication (AuthGuardMiddleware).
+ * Authorization is handled in the service/repository layer.
+ */
+export function registerSchoolsRoutes(routerInstance: Router) {
+  const SchoolsRoutes = s.router(SchoolsContract, {
+    create: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, body }) => SchoolsController.create(user!, body),
+    },
+    list: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, query }) => SchoolsController.list(user!, query),
+    },
+    get: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { schoolId } }) => SchoolsController.getById(user!, schoolId),
+    },
+    update: {
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { schoolId }, body }) => SchoolsController.update(user!, schoolId, body),
+    },
+    listClasses: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { schoolId }, query }) =>
+        SchoolsController.listClasses(user!, schoolId, query),
+    },
+    listUsers: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { schoolId }, query }) =>
+        SchoolsController.listUsers(user!, schoolId, query),
+    },
+  });
+
+  createExpressEndpoints(SchoolsContract, SchoolsRoutes, routerInstance);
+}

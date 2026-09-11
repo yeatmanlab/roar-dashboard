@@ -6,7 +6,6 @@
 import { scoreTypeEnum } from '../db/schema/enums';
 import { pgEnumToConst } from './utils';
 
-const ScoreType = pgEnumToConst(scoreTypeEnum);
+export const ScoreType = pgEnumToConst(scoreTypeEnum);
 
 export type ScoreType = (typeof scoreTypeEnum.enumValues)[number];
-export default ScoreType;

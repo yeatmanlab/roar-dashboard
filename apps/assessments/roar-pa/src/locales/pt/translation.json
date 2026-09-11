@@ -1,0 +1,168 @@
+{
+  "loading": "Esta atividade está carregando...",
+  "progressBar": "Progresso concluído",
+  "preloadTrial": {
+    "messageText": "Aguarde enquanto a atividade carrega. Isso pode levar alguns minutos."
+  },
+  "fullScreenTrial": {
+    "prompt": "A atividade será exibida em tela cheia.<br/>Clique no botão para continuar.",
+    "buttonText": "Continuar"
+  },
+  "navigation": {
+    "continueButtonText": "Pressione <span class='yellow'>QUALQUER TECLA</span> para {{action}}",
+    "continueButtonTextMobile": "Clique <span class='yellow'>AQUI</span> para {{action}}"
+  },
+  "audioSetup": "Clique no botão na tela para começar.",
+  "del": {
+    "instructions": {
+      "intro1": {
+        "text1": " Temos mais um amigo para nos ajudar! <br> Você é incrível! ",
+        "text2": "Faça uma pausa se precisar."
+      },
+      "intro2": {
+        "text1": "Tenho nadado muito. Minha barriga está vazia! <br> Vamos procurar alguns caranguejos!"
+      },
+      "intro3": {
+        "text1": "Neste jogo, vamos descobrir o que sobra da palavra se tirarmos alguns sons. Ouça com muita atenção e tente encontrar a nova palavra! "
+      },
+      "introNS": {
+        "text1": "Eliminação",
+        "text2": "Neste bloco, você vai descobrir o que sobra de uma palavra se <b>APAGARMOS</b> alguns sons.",
+        "text3": "Escute com muita atenção e clique na palavra que sobra depois que um som é <b>APAGADO</b> da <br> palavra-alvo na sua tela. </br> ",
+        "text4": "Vamos praticar!"
+      },
+      "break": {
+        "text1": "Você está indo muito bem! Estou quase pronto para sair e nadar!  Vamos pegar mais alguns caranguejos. ",
+        "text2": "Você já fez metade do bloco!",
+        "text3": "Sinta-se à vontade para fazer uma pausa.",
+        "text4": "Você pode continuar quando estiver pronto."
+      },
+      "end": {
+        "text1": "Você ajudou todo mundo! Isso é incrível. <br> Muito obrigado!",
+        "text2": "Ótimo! Você concluiu o último bloco.",
+        "text3": "Obrigado por concluir a atividade de consciência fonológica!"
+      }
+    },
+    "ready": {
+      "text1": "Já sabemos o que fazer! Vamos encontrar esses caranguejos!",
+      "text2": "Ótimo trabalho com as palavras práticas!",
+      "text3": "Vamos começar o terceiro bloco.",
+      "text4": "Lembre-se de ouvir com muita atenção e clicar na palavra que sobrar depois que um som for <b>APAGADO</b> da palavra alvo."
+    },
+    "test": {
+      "text1": "Clique para ouvir novamente"
+    }
+  },
+  "fsm": {
+    "instructions": {
+      "intro": {
+        "text1": " Você  está pronto para jogar comigo e meus amigos? "
+      },
+      "intro1": {
+        "text1": " Vamos colher bananas! <br> Estou com fome! "
+      },
+      "intro2": {
+        "text1": "Neste jogo, vamos procurar palavras que COMEÇAM com o mesmo som. Ouça com muita atenção e clique na palavra que COMEÇA com o mesmo som inicial da palavra que está na sua tela! <br> <br> Boa sorte!"
+      },
+      "introNS": {
+        "text1": "Bem-vindo(a) à atividade de consciência fonológica! ",
+        "text2": "Nesta atividade, você ouvirá os sons que formam uma palavra.",
+        "text3": "Esta atividade tem três blocos em que você deverá juntar os sons do começo, do fim e os que estão escondidos.",
+        "text4": "Vamos começar juntando os primeiros sons!"
+      },
+      "fsmIntroNS": {
+        "text1": "Correspondência do primeiro som",
+        "text2": "Neste bloco, você ouvirá palavras que <b>COMEÇAM</b> com o mesmo som.",
+        "text3": "Ouça com muita atenção e clique na palavra que tem o mesmo som <b>INICIAL</b> que <br> a palavra-alvo na sua tela. </br> </br> ",
+        "text4": "Vamos praticar!"
+      },
+      "break": {
+        "text1": "Ótimo trabalho! Muitas bananas! Vamos pegar mais algumas!",
+        "text2": "Você já fez metade do bloco!",
+        "text3": "Sinta-se à vontade para fazer uma pausa.",
+        "text4": "Você pode continuar quando estiver pronto."
+      },
+      "end": {
+        "text1": "Hummm! Todas as bananas que eu poderia sonhar! Obrigado!",
+        "text2": "Ótimo! você concluiu o primeiro bloco.",
+        "text3": " Ainda faltam dois blocos.",
+        "text4": "Sinta-se à vontade para fazer uma pequena pausa e retornar quando estiver pronto para começar o segundo bloco."
+      }
+    },
+    "ready": {
+      "text1": "Você está pronto! Vamos começar o jogo de verdade!",
+      "text2": "Ótimo trabalho com as palavras práticas!",
+      "text3": "Vamos começar o primeiro bloco.",
+      "text4": "Lembre-se de ouvir com muita atenção e clicar na palavra que tem o mesmo som <b>INICIAL</b> que a palavra-alvo."
+    }
+  },
+  "lsm": {
+    "instructions": {
+      "intro1": {
+        "text1": " Vamos ajudar meus amigos agora! ",
+        "text2": "Faça uma pausa se precisar."
+      },
+      "intro2": {
+        "text1": "Eu adoraria algumas cenouras! <br> Você pode me ajudar?"
+      },
+      "intro3": {
+        "text1": "Neste jogo, vamos procurar palavras que TERMINAM com o mesmo som. Ouça com muita atenção e clique na palavra que tem o mesmo som FINAL que a palavra na sua tela! <br> <br>  Boa sorte!  "
+      },
+      "introNS": {
+        "text1": "Última correspondência de som",
+        "text2": "Neste bloco, você ouvirá palavras que <b>TERMINAM</b> com o mesmo som.",
+        "text3": "Escute com muita atenção e clique na palavra que tem o mesmo som <b>FINAL</b> que <br> a palavra-alvo na sua tela. </br> ",
+        "text4": "Vamos praticar!"
+      },
+      "break": {
+        "text1": "Olha só quantas cenouras! <br> Podemos pegar mais algumas?",
+        "text2": "Você já fez metade do bloco!",
+        "text3": "Sinta-se à vontade para fazer uma pausa.",
+        "text4": "Você pode continuar quando estiver pronto."
+      },
+      "end": {
+        "text1": "Nossa, nunca vi tantas cenouras! Estou muito feliz!",
+        "text2": "Ótimo! Você concluiu o segundo bloco.",
+        "text3": "Falta apenas mais um bloco.",
+        "text4": "Sinta-se à vontade para fazer uma pequena pausa e retornar quando estiver pronto para começar o terceiro bloco."
+      }
+    },
+    "ready": {
+      "text1": "Chega de treino! Vamos começar o jogo de verdade!",
+      "text2": "Ótimo trabalho com as palavras de prática!",
+      "text3": "Vamos começar o segundo bloco.",
+      "text4": "Lembre-se de ouvir com muita atenção e clicar na palavra que tem o mesmo som <b>FINAL</b> que a palavra-alvo."
+    }
+  },
+  "imagesAlt": {
+    "arrowKeys": "arrow keys",
+    "leftArrow": "left arrow",
+    "rightArrow": "right arrow",
+    "valley": "background image with hills and trees",
+    "adventurer1": "adventurer with harp",
+    "adventurer2": "adventuerer making rainbows",
+    "adventurer3": "adventurer making heart shapes",
+    "wizardCoin": "wizard making coins",
+    "guardian1": "orange dinosaur guardian",
+    "guardian2": "blue dragon guardian",
+    "endingBackground": "landscape with trees",
+    "guardian3": "winking unicorn",
+    "endingGateCoinbag": "gate with coinbag animation",
+    "wizardWand": "wizard waving a magic wand",
+    "leftArrowIntro": "made-up word, press the left arrow key",
+    "rightArrowIntro": "real Word, press the Right Arrow key"
+  },
+  "terms": {
+    "__comment1__": "ex. 'press any key to continue/practice/begin'",
+    "continue": "continue",
+    "practice": "practice",
+    "begin": "begin",
+    "gold": "gold",
+    "left": "left",
+    "right": "right",
+    "__comment2__": "i.e. 'xop is a made-up/real word'",
+    "real": "real",
+    "made-up": "made-up",
+    "save": "save your work"
+  }
+}

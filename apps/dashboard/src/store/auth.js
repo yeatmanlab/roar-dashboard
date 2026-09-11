@@ -1,12 +1,11 @@
 import { markRaw } from 'vue';
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import { onAuthStateChanged } from 'firebase/auth';
-import { useRouter } from 'vue-router';
+import { getIdToken } from 'firebase/auth';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { initializeFirekit } from '@/firekit';
-import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
+import { getAuthService } from '@/services/AuthService';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -14,10 +13,7 @@ export const useAuthStore = () => {
     state: () => {
       return {
         spinner: false,
-        firebaseUser: {
-          adminFirebaseUser: null,
-          appFirebaseUser: null,
-        },
+        firebaseUser: null,
         adminOrgs: null,
         roarfirekit: null,
         userData: null,
@@ -28,33 +24,39 @@ export const useAuthStore = () => {
         routeToProfile: false,
         ssoProvider: null,
         showOptionalAssessments: false,
-        adminAuthStateListener: null,
-        appAuthStateListener: null,
+        authStateListener: null,
         accessToken: null,
         redirectError: null, // Stores SSO redirect errors for display on sign-in page
       };
     },
     getters: {
       uid: (state) => {
-        return state.firebaseUser.adminFirebaseUser?.uid;
+        return state.firebaseUser?.uid;
       },
       roarUid: (state) => {
         return state.userClaims?.claims?.roarUid;
       },
       email: (state) => {
-        return state.firebaseUser.adminFirebaseUser?.email;
-      },
-      isUserAuthedAdmin: (state) => {
-        return Boolean(state.firebaseUser.adminFirebaseUser);
-      },
-      isUserAuthedApp: (state) => {
-        return Boolean(state.firebaseUser.appFirebaseUser);
+        return state.firebaseUser?.email;
       },
       isAuthenticated: (state) => {
-        return Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser);
+        return Boolean(state.firebaseUser);
       },
       isFirekitInit: (state) => {
         return state.roarfirekit?.initialized;
+      },
+      /**
+       * Readiness signal for backend (REST/API) calls — the replacement for the
+       * legacy `roarfirekit.restConfig?.()` gate. True once a Firebase ID token
+       * has been captured (via the `onIdTokenChanged` listener), which is all the
+       * backend-scoped queries need: they authenticate off the Bearer token. The
+       * token is only set after firekit's admin auth is initialized, so a truthy
+       * value implies the app is fully ready. Works identically in deployed and
+       * emulator builds, so it also covers the emulator-only readiness fallback
+       * the now-removed `isDashboardReady` helper used to provide.
+       */
+      isAuthReady: (state) => {
+        return Boolean(state.accessToken);
       },
       isUserAdmin: (state) => {
         if (state.userClaims?.claims?.super_admin || state.userClaims?.claims?.admin) return true;
@@ -64,6 +66,16 @@ export const useAuthStore = () => {
       isUserSuperAdmin: (state) => Boolean(state.userClaims?.claims?.super_admin),
     },
     actions: {
+      /**
+       * Initialize the AuthService's Firebase Auth instance and set up the
+       * token change listener. Called once during bootstrap, before initFirekit.
+       */
+      async initAuth() {
+        const authService = getAuthService();
+        await authService.initialize();
+        this.setAuthStateListener();
+      },
+
       async initFirekit() {
         try {
           // IMPORTANT: Firebase/Firekit objects must be wrapped with markRaw() to prevent Vue's
@@ -73,7 +85,6 @@ export const useAuthStore = () => {
           // named property from 'Window': Blocked a frame with origin from accessing cross-origin frame."
           // See: https://github.com/vuejs/core/issues/2282
           this.roarfirekit = markRaw(await initializeFirekit());
-          this.setAuthStateListeners();
         } catch (error) {
           // @TODO: Improve error handling, incl. redirect to error page.
           console.error('Failed to initialize Firekit:', error);
@@ -90,29 +101,25 @@ export const useAuthStore = () => {
           throw error;
         }
       },
-      setAuthStateListeners() {
-        this.adminAuthStateListener = onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
+
+      /**
+       * Single auth state listener on the dashboard-owned Auth instance.
+       * Updates firebaseUser and accessToken on sign-in, sign-out, and token refresh.
+       */
+      setAuthStateListener() {
+        const authService = getAuthService();
+        this.authStateListener = authService.onIdTokenChanged(async (user) => {
           if (user) {
-            this.localFirekitInit = true;
-            // Firebase User objects must use markRaw() for the same reason as roarfirekit above.
-            // They contain internal auth provider state that references cross-origin frames.
-            this.firebaseUser.adminFirebaseUser = markRaw(user);
+            // Firebase User objects must use markRaw() to prevent Vue's reactivity
+            // system from traversing internal auth provider state that references
+            // cross-origin frames.
+            this.firebaseUser = markRaw(user);
             this.accessToken = user.accessToken;
           } else {
-            this.firebaseUser.adminFirebaseUser = null;
+            this.firebaseUser = null;
+            this.accessToken = null;
           }
         });
-        this.appAuthStateListener = onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
-          if (user) {
-            this.firebaseUser.appFirebaseUser = markRaw(user);
-          } else {
-            this.firebaseUser.appFirebaseUser = null;
-          }
-        });
-      },
-      async completeAssessment(adminId, taskId) {
-        //@TODO: Move to mutation since we cannot rotate query keys anymore.
-        await this.roarfirekit.completeAssessment(adminId, taskId);
       },
       async getLegalDoc(docName) {
         return await this.roarfirekit.getLegalDoc(docName);
@@ -120,136 +127,125 @@ export const useAuthStore = () => {
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },
+
+      /**
+       * Sign in with email and password via the dashboard-owned Auth instance.
+       * No emulator branch needed — AuthService handles emulator wiring transparently.
+       *
+       * @param {{ email: string, password: string }} credentials
+       */
       async logInWithEmailAndPassword({ email, password }) {
-        if (this.isFirekitInit) {
-          return this.roarfirekit
-            .logInWithEmailAndPassword({ email, password })
-            .then(() => {})
-            .catch((error) => {
-              console.error('Error signing in:', error);
-              throw error;
-            });
-        }
+        const authService = getAuthService();
+        return authService.signInWithEmailAndPassword(email, password);
       },
+
+      /**
+       * Send a magic link sign-in email.
+       *
+       * @param {{ email: string }} params
+       */
       async initiateLoginWithEmailLink({ email }) {
-        if (this.isFirekitInit) {
-          const redirectUrl = `${window.location.origin}${APP_ROUTES.AUTH_EMAIL_LINK}`;
-          return this.roarfirekit.initiateLoginWithEmailLink({ email, redirectUrl }).then(() => {
-            window.localStorage.setItem('emailForSignIn', email);
-          });
-        }
+        const authService = getAuthService();
+        const redirectUrl = `${window.location.origin}${APP_ROUTES.AUTH_EMAIL_LINK}`;
+        await authService.sendSignInLinkToEmail(email, redirectUrl);
+        window.localStorage.setItem('emailForSignIn', email);
       },
+
+      /**
+       * Complete sign-in from a magic link.
+       *
+       * @param {{ email: string, emailLink: string }} params
+       */
       async signInWithEmailLink({ email, emailLink }) {
-        if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithEmailLink({ email, emailLink }).then(() => {
-            window.localStorage.removeItem('emailForSignIn');
-          });
-        }
+        const authService = getAuthService();
+        await authService.signInWithEmailLink(email, emailLink);
+        window.localStorage.removeItem('emailForSignIn');
       },
-      async signInWithGooglePopup() {
-        this.ssoProvider = AUTH_SSO_PROVIDERS.GOOGLE;
-        if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.GOOGLE);
-        }
+
+      /**
+       * Sign in with an SSO provider via popup.
+       *
+       * @param {'google' | 'clever' | 'classlink' | 'nycps'} providerName
+       */
+      async signInWithPopup(providerName) {
+        this.ssoProvider = providerName;
+        const authService = getAuthService();
+        return authService.signInWithPopup(providerName);
       },
-      async signInWithGoogleRedirect() {
-        this.ssoProvider = AUTH_SSO_PROVIDERS.GOOGLE;
-        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.GOOGLE);
+
+      /**
+       * Sign in with an SSO provider via redirect.
+       *
+       * @param {'google' | 'clever' | 'classlink' | 'nycps'} providerName
+       */
+      async signInWithRedirect(providerName) {
+        this.ssoProvider = providerName;
+        const authService = getAuthService();
+        return authService.signInWithRedirect(providerName);
       },
-      async signInWithCleverPopup() {
-        this.ssoProvider = AUTH_SSO_PROVIDERS.CLEVER;
-        if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.CLEVER);
-        }
-      },
-      async signInWithCleverRedirect() {
-        this.ssoProvider = AUTH_SSO_PROVIDERS.CLEVER;
-        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.CLEVER);
-      },
-      async signInWithClassLinkPopup() {
-        this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
-        if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.CLASSLINK);
-        }
-      },
-      async signInWithClassLinkRedirect() {
-        this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
-        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.CLASSLINK);
-      },
-      async signInWithNYCPSPopup() {
-        this.ssoProvider = AUTH_SSO_PROVIDERS.NYCPS;
-        if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.NYCPS);
-        }
-      },
-      async signInWithNYCPSRedirect() {
-        this.ssoProvider = AUTH_SSO_PROVIDERS.NYCPS;
-        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.NYCPS);
-      },
+
+      /**
+       * Check for a pending SSO redirect result on page load.
+       */
       async initStateFromRedirect() {
         this.spinner = true;
-        this.redirectError = null; // Clear any previous redirect errors
-        const enableCookiesCallback = () => {
-          const router = useRouter();
-          router.replace({ name: 'EnableCookies' });
-        };
-        if (this.isFirekitInit) {
-          return await this.roarfirekit
-            .signInFromRedirectResult(enableCookiesCallback)
-            .then((result) => {
-              // If the result is null, then no redirect operation was called.
-              if (result !== null) {
-                this.spinner = true;
-              } else {
-                this.spinner = false;
-              }
-            })
-            .catch((error) => {
-              console.error('Error processing redirect result:', error);
-              // Store redirect error for display on sign-in page
-              this.redirectError = error;
-              this.spinner = false;
-            });
+        this.redirectError = null;
+        const authService = getAuthService();
+        try {
+          const result = await authService.getRedirectResult();
+          if (result !== null) {
+            this.spinner = true;
+          } else {
+            this.spinner = false;
+          }
+        } catch (error) {
+          console.error('Error processing redirect result:', error);
+          this.redirectError = error;
+          this.spinner = false;
         }
       },
+
+      /**
+       * Force-refresh the ID token and update the store's accessToken synchronously.
+       *
+       * @returns {Promise<string | null>} The fresh token, or null if not signed in.
+       */
       async forceIdTokenRefresh() {
-        await this.roarfirekit.forceIdTokenRefresh();
+        const user = this.firebaseUser;
+        if (!user) return null;
+        // Use getIdToken directly so we can capture the fresh token synchronously.
+        // Relying on the onIdTokenChanged callback introduces a race condition
+        // because the callback fires asynchronously after getIdToken resolves.
+        const freshToken = await getIdToken(user, /* forceRefresh */ true);
+        this.accessToken = freshToken;
+        return freshToken;
       },
+
       async sendMyPasswordResetEmail() {
         if (this.email) {
-          return await this.roarfirekit.sendPasswordResetEmail(this.email).then(() => {
-            return true;
-          });
+          const authService = getAuthService();
+          await authService.sendPasswordResetEmail(this.email);
+          return true;
         } else {
           console.warn('Logged in user does not have an associated email. Unable to send password reset email');
           return false;
         }
       },
-      async createNewFamily(
-        careTakerEmail,
-        careTakerPassword,
-        careTakerData,
-        students,
-        consentData,
-        isTestData = false,
-      ) {
-        if (!this.roarfirekit) {
-          throw new Error('roarfirekit is not initialized');
-        }
-
-        if (!Array.isArray(students)) {
-          throw new Error('students parameter must be an array');
-        }
-
-        return await this.roarfirekit.createNewFamily(
-          careTakerEmail,
-          careTakerPassword,
-          careTakerData,
-          students,
-          consentData,
-          isTestData,
-        );
-      },
+      // NOTE: `createNewFamily` has been removed. ROAR@Home parent registration
+      // now runs through the typed API via
+      // `containers/FamilyRegistration/composables/useFamilyRegistration.js`
+      // (create family → sign in). Consent is not recorded at registration —
+      // TOS is handled post-login by the `/me` gate and per-administration
+      // consent by the consent gate. Sign-in and availability pre-checks remain
+      // on firekit.
+      //
+      // TODO(firekit-removal): `addStudentsToFamily` is the next ROAR@Home
+      // migration step. The API replacement is built and unit-tested
+      // (`useAddFamilyChildrenMutation` + `useAddFamilyChildren` saga), but
+      // wiring it into `HomeParentStudentView` needs a trustworthy backend
+      // family UUID, which the Firestore-based parent dashboard doesn't yet
+      // expose. Until the parent-home Firestore→API migration lands, this
+      // action stays on firekit.
       async addStudentsToFamily(careTakerEmail, careTakerData, students, consentData, isTestData = false) {
         if (!this.roarfirekit) {
           throw new Error('roarfirekit is not initialized');

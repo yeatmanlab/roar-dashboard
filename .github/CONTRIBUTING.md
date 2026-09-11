@@ -211,7 +211,7 @@ but those accepted fastest will follow a workflow similar to the following:
    to your locally cloned repository. For example, to add the upstream ROAR
    dashboard repository, type
 
-   ```Shell
+   ```bash
    git remote add upstream https://github.com/yeatmanlab/roar-dashboard.git
    ```
 
@@ -219,7 +219,7 @@ but those accepted fastest will follow a workflow similar to the following:
    upstream repository.<br />
    For example, to update your main branch on your local cloned repository:
 
-   ```Shell
+   ```bash
    git fetch upstream
    git checkout main
    git merge upstream/main
@@ -230,7 +230,7 @@ but those accepted fastest will follow a workflow similar to the following:
    In most cases, you can install a development version of by navigating to the
    root of your repository and then typing
 
-   ```Shell
+   ```bash
    npm install
    ```
 
@@ -238,7 +238,7 @@ but those accepted fastest will follow a workflow similar to the following:
    code changes.**<br />
    For example:
 
-   ```Shell
+   ```bash
    git fetch upstream  # Always start with an updated upstream
    git checkout -b fix/bug-1222 upstream/main
    ```
@@ -262,7 +262,7 @@ but those accepted fastest will follow a workflow similar to the following:
    address one feature or bug at a time.
    In many of our repositories, you can test your changes locally using
 
-   ```Shell
+   ```bash
    npm run lint
    npm run test
    ```
@@ -275,7 +275,6 @@ but those accepted fastest will follow a workflow similar to the following:
    that they can be merged into the main code base.<br />
    Pull request titles should begin with a descriptive prefix
    (for example, `ENH: Add adaptive testing`):
-
    - `FIX`: bug fixes
    - `ENH`: enhancements or new features
    - `TST`: new or updated tests
@@ -292,6 +291,121 @@ but those accepted fastest will follow a workflow similar to the following:
    The reviewers will take special care in assisting you to address their
    comments, as well as dealing with conflicts and other tricky situations
    that could emerge from distributed development.
+
+## Running the full stack locally
+
+`npm run dev` runs the dashboard on its own. When you need it running against a
+real, seeded backend — for example to exercise the backend-backed admin flows
+such as task/variant management as a super admin — bring up the whole stack with
+one command, mirroring the CI end-to-end job:
+
+```bash
+docker compose up -d --wait   # Start Postgres, OpenFGA, and the Firebase Auth emulator
+npm run dev:setup             # Set up infrastructure (FDW, migrations, FGA store)
+npm run dev:seed              # Seed fixture data, sync FGA tuples, write fixture files
+npm run dev                   # Start the dashboard (and backend via turbo)
+```
+
+Or use `npm run dev:init` to run setup and seed in one step.
+
+**Prerequisites:** Docker and the usual local state — the `env-configs`
+submodule, `apps/dashboard/env-configs/.env.keys`, and TLS certs
+(`npm run dev:setup:certs`). The Firebase Auth emulator runs inside a Docker
+container, so Java and firebase-tools are not required on the host. If you
+already run Postgres on `5432`, pick a free port:
+`ROAR_PG_PORT=5433 docker compose up -d --wait`.
+
+**Signing in:** the seed script prints the seeded logins on startup (also
+written to `/tmp/roar-cypress-fixture.json`). Sign in at https://localhost:5173
+with any of them, password `password`:
+
+| Email                         | Role                         |
+| ----------------------------- | ---------------------------- |
+| `super-admin@test.local`      | super admin                  |
+| `district-admin@test.local`   | district admin, Maple Grove  |
+| `district-b-admin@test.local` | district admin, Cedar Falls  |
+| `school-a-admin@test.local`   | school admin                 |
+| `school-a-teacher@test.local` | teacher                      |
+| `class-a-teacher@test.local`  | teacher                      |
+| `school-a-student@test.local` | participant                  |
+| `class-a-student@test.local`  | participant                  |
+| `group-student@test.local`    | participant (group-assigned) |
+
+**Resetting:** to wipe and re-seed all databases, run
+`npm run dev:reset && npm run dev:seed`.
+
+**Stopping and restarting:** run `docker compose stop` to stop the containers
+while retaining PostgreSQL and Firebase Auth emulator data. Restart them with
+`docker compose up -d --wait`.
+
+**Tearing down:** run `npm run dev:down` to remove the local stack and delete
+PostgreSQL data. This preserves the `firebase-auth-data` volume. The next
+startup needs `npm run dev:init` to recreate and seed the databases. A raw
+`docker compose down` retains the explicitly managed PostgreSQL volume, which
+is reused on the next startup instead of creating another anonymous volume.
+
+The teardown command also removes a legacy anonymous PostgreSQL volume when it
+is still attached to the `roar-postgres` container. For volumes that were
+already detached by the previous configuration, use `docker system df -v` and
+`docker volume inspect <volume-name>` to identify the volume before removing it
+with `docker volume rm <volume-name>`. Do not use a broad volume prune when
+unrelated Docker projects are present.
+
+### Launching an assessment locally
+
+The dev fixture's own tasks are generated by `TaskFactory` and carry slugs like
+`task-3-a3f9k2`. The dashboard's launch components resolve against canonical
+slugs from `@roar-platform/assessment-schema` (`swr`, `sre`, …), so fixture tasks
+are never launchable. `dev:init` therefore also seeds a small set of **real**
+assessments — SWR, SRE, Letter, and PA — into a dedicated **Assessment Launch
+Sandbox** administration, which holds nothing else. The other fixture
+administrations keep their synthetic tasks, which drive the progress and score
+fixtures, so the two never mix in one task list. Sign in as
+`class-a-student@test.local` and pick that administration.
+
+That step runs on its own as `npm run dev:seed:tasks:default`, which is worth
+knowing when you have re-seeded the fixture (`dev:reset && dev:seed`) and want the
+launchable assessments back without re-running the whole pipeline.
+
+To add another assessment:
+
+```bash
+npm run dev:seed:tasks -- --task roar-multichoice
+```
+
+That seeds its tasks and variants from the assessment's
+`taskVariantParameters.json` (copied from the committed `.example.json` if
+absent) and assigns its `defaultVariant` to the launch sandbox. Pass
+`--no-assign` to seed variants without wiring them to an administration.
+
+**Iterating on variant parameters.** Seeding is skip-if-present, so editing
+`taskVariantParameters.json` and re-running does nothing by design. To push
+changes into an existing variant:
+
+```bash
+npm run dev:seed:tasks -- --task roar-swr --refresh-params
+```
+
+This replaces the stored parameters with what the file now says — removed keys
+disappear — while leaving the variant row and any runs that reference it intact.
+
+**Assigning a specific variant** to a specific administration, rather than the
+config's default:
+
+```bash
+npm run dev:assign:variant -- --administration <uuid> --slug swr --variant 'English-v7'
+```
+
+`--variant` is optional when the task has exactly one. Both commands are
+idempotent.
+
+**Inspecting what a run produced:** `npm run db:studio:assess -w apps/backend`
+opens Drizzle Studio over the assessment database (`runs`, `run_trials`,
+`run_scores`, `run_trial_interactions`); `npm run db:studio:core -w apps/backend`
+covers administrations, variants, and `task_variant_parameters`.
+
+Assessments fetch their stimuli from public GCS buckets and CDNs at runtime, so
+launching a task needs network access even though the rest of the stack is local.
 
 ## ROAR coding style
 
@@ -357,7 +471,6 @@ welcoming community. Here are some guidelines to help you conduct effective and
 constructive pull request (PR) reviews:
 
 1. Timeliness
-
    - Respond promptly:
      Aim to review PRs within a reasonable timeframe, ideally within 48 hours
      during the workweek. This helps maintain project momentum and keeps
@@ -368,7 +481,6 @@ constructive pull request (PR) reviews:
      contributor, so they know their work hasn't been overlooked.
 
 1. Thoroughness
-
    - Review completely:
      Ensure you have a clear understanding of the PR's purpose and changes. Review
      all changes thoroughly, not just the parts that might be most relevant to
@@ -379,7 +491,6 @@ constructive pull request (PR) reviews:
      help catch issues that are not immediately visible through code review alone.
 
 1. Constructive Feedback
-
    - Be kind and respectful:
      Remember that behind every contribution is a person who has invested time and
      effort. Approach your review with kindness and respect. Offer constructive
@@ -390,7 +501,6 @@ constructive pull request (PR) reviews:
      Include code snippets, links to documentation, or examples when possible.
 
 1. Clarity and Precision
-
    - Be specific:
      When requesting changes, be specific about what needs to be addressed and
      why. This helps contributors understand your feedback and how to act on it.
@@ -400,7 +510,6 @@ constructive pull request (PR) reviews:
      can lead to better understanding and sometimes even simpler solutions.
 
 1. Encouragement and Acknowledgment
-
    - Praise good work:
      Acknowledge and praise good work. Recognition can be incredibly motivating
      and encourages further contributions.
@@ -411,7 +520,6 @@ constructive pull request (PR) reviews:
      solutions and stronger community bonds.
 
 1. Security and Compliance
-
    - Check for security flaws:
      Always be on the lookout for potential security vulnerabilities in
      contributions. If you suspect a security issue, flag it immediately following
@@ -437,7 +545,7 @@ Most ROAR repositories publish three different kinds of releases:
 
 In order to publish a production release, you must run
 
-```Shell
+```bash
 npm version <major|minor|patch>
 ```
 

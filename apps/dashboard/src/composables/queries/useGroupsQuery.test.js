@@ -1,13 +1,21 @@
 import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
-import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
-import { fetchDocumentsById } from '@/helpers/query/utils';
+import { GROUPS_QUERY_KEY } from '@/constants/queryKeys';
 import useGroupsQuery from './useGroupsQuery';
 
-vi.mock('@/helpers/query/utils', () => ({
-  fetchDocumentsById: vi.fn().mockImplementation(() => []),
+const mockGroupsGet = vi.fn();
+const mockUseAuthStore = vi.fn(() => ({ accessToken: 'test-token' }));
+
+vi.mock('@/clients/roar-api', () => ({
+  getRoarApiClient: () => ({
+    groups: { get: mockGroupsGet },
+  }),
+}));
+
+vi.mock('@/store/auth', () => ({
+  useAuthStore: () => mockUseAuthStore(),
 }));
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
@@ -18,102 +26,154 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
+const groupOk = (id, extra = {}) => ({
+  status: 200,
+  body: { data: { id, name: `Group ${id}`, ...extra } },
+});
+
 describe('useGroupsQuery', () => {
   let queryClient;
 
   beforeEach(() => {
-    queryClient = new VueQuery.QueryClient();
+    vi.restoreAllMocks();
+    queryClient = new VueQuery.QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+      },
+    });
+    mockGroupsGet.mockReset();
+    mockUseAuthStore.mockReset();
+    mockUseAuthStore.mockReturnValue({ accessToken: 'test-token' });
   });
 
   afterEach(() => {
     queryClient?.clear();
   });
 
-  it('should call query with correct parameters', () => {
-    const mockGroupIds = ref([nanoid(), nanoid()]);
-
+  it('calls useQuery with the GROUPS_QUERY_KEY and the ids ref', () => {
+    const groupIds = ref(['11111111-1111-1111-1111-111111111111']);
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useGroupsQuery(mockGroupIds), {
+    withSetup(() => useGroupsQuery(groupIds), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['groups', mockGroupIds],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: true,
+    expect(VueQuery.useQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: [GROUPS_QUERY_KEY, groupIds],
+        queryFn: expect.any(Function),
       }),
-    });
-
-    expect(fetchDocumentsById).toHaveBeenCalledWith('groups', mockGroupIds);
+    );
   });
 
-  it('should allow the query to be disabled via the passed query options', () => {
-    const mockGroupIds = ref([nanoid(), nanoid()]);
-    const queryOptions = { enabled: false };
+  it('fetches one group per id, preserving order, and maps the results', async () => {
+    const idA = '11111111-1111-1111-1111-111111111111';
+    const idB = '22222222-2222-2222-2222-222222222222';
+    const groupIds = ref([idA, idB]);
 
-    vi.spyOn(VueQuery, 'useQuery');
+    // Resolve B slower than A to prove order follows the input array, not
+    // resolution order.
+    mockGroupsGet.mockImplementation(({ params: { groupId } }) => {
+      if (groupId === idB) {
+        return new Promise((resolve) => setTimeout(() => resolve(groupOk(idB, { location: { city: 'Reno' } })), 5));
+      }
+      return Promise.resolve(groupOk(idA, { abbreviation: 'GA' }));
+    });
 
-    withSetup(() => useGroupsQuery(mockGroupIds, queryOptions), {
+    let queryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      queryFn = options.queryFn;
+      return { data: { value: null }, error: { value: null } };
+    });
+
+    withSetup(() => useGroupsQuery(groupIds), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['groups', mockGroupIds],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-      }),
-    });
-
-    expect(fetchDocumentsById).not.toHaveBeenCalled();
+    const result = await queryFn();
+    expect(result.map((g) => g.id)).toEqual([idA, idB]);
+    // Mapping preserves scalar fields (A) and flattens location (B).
+    expect(result[0].abbreviation).toBe('GA');
+    expect(result[1].city).toBe('Reno');
+    expect(mockGroupsGet).toHaveBeenCalledWith({ params: { groupId: idA } });
+    expect(mockGroupsGet).toHaveBeenCalledWith({ params: { groupId: idB } });
   });
 
-  it('should only fetch data if the administration ID is available', async () => {
-    const mockGroupIds = ref([]);
-    const queryOptions = { enabled: true };
+  it('throws a structured error when any group lookup is non-200', async () => {
+    const groupIds = ref(['11111111-1111-1111-1111-111111111111']);
+    mockGroupsGet.mockResolvedValueOnce({ status: 404, body: { error: { code: 'resource/not-found' } } });
 
-    vi.spyOn(VueQuery, 'useQuery');
+    let queryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      queryFn = options.queryFn;
+      return { data: { value: null }, error: { value: null } };
+    });
 
-    withSetup(() => useGroupsQuery(mockGroupIds, queryOptions), {
+    withSetup(() => useGroupsQuery(groupIds), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['groups', mockGroupIds],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-      }),
+    await expect(queryFn()).rejects.toMatchObject({
+      status: 404,
+      body: { error: { code: 'resource/not-found' } },
+    });
+  });
+
+  it('is disabled when the ids array is empty', () => {
+    const groupIds = ref([]);
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useGroupsQuery(groupIds), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(fetchDocumentsById).not.toHaveBeenCalled();
+    expect(VueQuery.useQuery.mock.calls[0][0].enabled.value).toBe(false);
+  });
 
-    mockGroupIds.value = [nanoid()];
+  it('becomes enabled once the ids array is populated', async () => {
+    const groupIds = ref([]);
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useGroupsQuery(groupIds), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
+    expect(enabledRef.value).toBe(false);
+
+    groupIds.value = ['11111111-1111-1111-1111-111111111111'];
     await nextTick();
 
-    expect(fetchDocumentsById).toHaveBeenCalledWith('groups', mockGroupIds);
+    expect(enabledRef.value).toBe(true);
   });
 
-  it('should not let queryOptions override the internally computed value', async () => {
-    const mockGroupIds = ref([]);
-    const queryOptions = { enabled: true };
-
+  it('is disabled when the auth store has no access token', () => {
+    mockUseAuthStore.mockReturnValue({ accessToken: null });
+    const groupIds = ref(['11111111-1111-1111-1111-111111111111']);
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useGroupsQuery(mockGroupIds, queryOptions), {
+    withSetup(() => useGroupsQuery(groupIds), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['groups', mockGroupIds],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-      }),
+    expect(VueQuery.useQuery.mock.calls[0][0].enabled.value).toBe(false);
+  });
+
+  it('does not retry on terminal auth or rostering-ended errors but retries transient ones', () => {
+    const groupIds = ref(['11111111-1111-1111-1111-111111111111']);
+    let retryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      retryFn = options.retry;
+      return { data: { value: null }, error: { value: null } };
     });
 
-    expect(fetchDocumentsById).not.toHaveBeenCalled();
+    withSetup(() => useGroupsQuery(groupIds), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(retryFn(0, { body: { error: { code: 'auth/required' } } })).toBe(false);
+    expect(retryFn(0, { body: { error: { code: 'auth/rostering-ended' } } })).toBe(false);
+    expect(retryFn(0, new Error('network down'))).toBe(true);
+    expect(retryFn(3, new Error('network down'))).toBe(false);
   });
 });

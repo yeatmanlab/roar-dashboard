@@ -5,12 +5,12 @@ import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
 import { useAuthStore } from '@/store/auth';
-import { fetchDocById } from '@/helpers/query/utils';
+import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import useUserClaimsQuery from './useUserClaimsQuery';
 import { USER_CLAIMS_QUERY_KEY } from '@/constants/queryKeys';
 
-vi.mock('@/helpers/query/utils', () => ({
-  fetchDocById: vi.fn().mockImplementation(() => []),
+vi.mock('@/helpers/resolveUserClaims', () => ({
+  resolveUserClaims: vi.fn().mockImplementation(() => []),
 }));
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
@@ -53,7 +53,7 @@ describe('useUserClaimsQuery', () => {
     expect(firstArg.enabled.value).toBe(true);
     expect(isRef(firstArg.enabled)).toBe(true);
 
-    expect(fetchDocById).toHaveBeenCalledWith('userClaims', expect.objectContaining({ _value: mockUserId.value }));
+    expect(resolveUserClaims).toHaveBeenCalledWith(expect.objectContaining({ _value: mockUserId.value }));
   });
 
   it('should correctly control the enabled state of the query', async () => {
@@ -79,12 +79,12 @@ describe('useUserClaimsQuery', () => {
     expect(firstArg.enabled.value).toBe(false);
     expect(isRef(firstArg.enabled)).toBe(true);
 
-    expect(fetchDocById).not.toHaveBeenCalled();
+    expect(resolveUserClaims).not.toHaveBeenCalled();
 
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('userClaims', expect.objectContaining({ _value: mockUserId.value }));
+    expect(resolveUserClaims).toHaveBeenCalledWith(expect.objectContaining({ _value: mockUserId.value }));
   });
 
   it('should only fetch data if once uid is available', async () => {
@@ -106,12 +106,12 @@ describe('useUserClaimsQuery', () => {
     expect(firstArg.enabled.value).toBe(false);
     expect(isRef(firstArg.enabled)).toBe(true);
 
-    expect(fetchDocById).not.toHaveBeenCalled();
+    expect(resolveUserClaims).not.toHaveBeenCalled();
 
     mockUserId.value = nanoid();
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('userClaims', expect.objectContaining({ _value: mockUserId.value }));
+    expect(resolveUserClaims).toHaveBeenCalledWith(expect.objectContaining({ _value: mockUserId.value }));
   });
 
   it('should not let queryOptions override the internally computed value', async () => {
@@ -133,6 +133,6 @@ describe('useUserClaimsQuery', () => {
     expect(firstArg.enabled.value).toBe(false);
     expect(isRef(firstArg.enabled)).toBe(true);
 
-    expect(fetchDocById).not.toHaveBeenCalled();
+    expect(resolveUserClaims).not.toHaveBeenCalled();
   });
 });

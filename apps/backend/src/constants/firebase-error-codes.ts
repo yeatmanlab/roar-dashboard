@@ -7,5 +7,8 @@
 export const FIREBASE_ERROR_CODES = {
   AUTH: {
     ID_TOKEN_EXPIRED: 'auth/id-token-expired',
+    USER_NOT_FOUND: 'auth/user-not-found',
+    EMAIL_ALREADY_EXISTS: 'auth/email-already-exists',
+    TOO_MANY_REQUESTS: 'auth/too-many-requests',
   },
 } as const;

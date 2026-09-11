@@ -1,0 +1,1547 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
+
+// Mock FirebaseAuthClient directly — the service imports it at module level and
+// the firebase-admin/auth mock creates a new object per getAuth() call, so
+// referencing getAuth() in tests would give a different instance.
+// Only `update` exercises Firebase here (password resets); the other methods
+// under test never touch it.
+vi.mock('../../clients/firebase-auth.clients', () => ({
+  FirebaseAuthClient: {
+    updateUser: vi.fn(),
+  },
+}));
+
+import { UserService } from './user.service';
+import { FirebaseAuthClient } from '../../clients/firebase-auth.clients';
+import { UserFactory, AuthContextFactory } from '../../test-support/factories/user.factory';
+import { AgreementFactory } from '../../test-support/factories/agreement.factory';
+import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
+import { UserAgreementFactory } from '../../test-support/factories/user-agreement.factory';
+import { createMockUserRepository } from '../../test-support/repositories/user.repository';
+import { createMockUserAgreementRepository } from '../../test-support/repositories/user-agreement.repository';
+import { createMockAgreementVersionRepository } from '../../test-support/repositories/agreement-version.repository';
+import { createMockAgreementRepository } from '../../test-support/repositories/agreement.repository';
+import { createMockFamilyRepository } from '../../test-support/repositories/family.repository';
+import { createMockAuthorizationService } from '../../test-support/services/authorization.service';
+import { ApiError } from '../../errors/api-error';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
+import { AgreementType } from '../../enums/agreement-type.enum';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { logger } from '../../logger';
+
+// Typed view of the mocked Firebase Auth client (avoids `as any`).
+const mockAuth = FirebaseAuthClient as unknown as {
+  updateUser: ReturnType<typeof vi.fn>;
+};
+
+describe('UserService', () => {
+  let mockUserRepository: ReturnType<typeof createMockUserRepository>;
+  let mockAuthorizationService: ReturnType<typeof createMockAuthorizationService>;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockUserRepository = createMockUserRepository();
+    mockAuthorizationService = createMockAuthorizationService();
+  });
+
+  describe('findByAuthId', () => {
+    it('should return user when found', async () => {
+      const mockUser = UserFactory.build();
+      mockUserRepository.findByAuthId.mockResolvedValue(mockUser);
+
+      const userService = UserService({ userRepository: mockUserRepository });
+      const result = await userService.findByAuthId('test-auth-id');
+
+      expect(mockUserRepository.findByAuthId).toHaveBeenCalledWith('test-auth-id');
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should return null when user not found', async () => {
+      mockUserRepository.findByAuthId.mockResolvedValue(null);
+
+      const userService = UserService({ userRepository: mockUserRepository });
+      const result = await userService.findByAuthId('non-existent-auth-id');
+
+      expect(mockUserRepository.findByAuthId).toHaveBeenCalledWith('non-existent-auth-id');
+      expect(result).toBeNull();
+    });
+
+    it('should wrap repository errors in ApiError with context', async () => {
+      const dbError = new Error('Database connection failed');
+      mockUserRepository.findByAuthId.mockRejectedValue(dbError);
+
+      const userService = UserService({ userRepository: mockUserRepository });
+
+      await expect(userService.findByAuthId('test-auth-id')).rejects.toMatchObject({
+        message: 'Failed to retrieve user',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { authId: 'test-auth-id' },
+        cause: dbError,
+      });
+    });
+
+    it('should re-throw ApiError without wrapping', async () => {
+      const apiError = new ApiError('Already wrapped', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_INVALID,
+      });
+      mockUserRepository.findByAuthId.mockRejectedValue(apiError);
+
+      const userService = UserService({ userRepository: mockUserRepository });
+
+      await expect(userService.findByAuthId('test-auth-id')).rejects.toBe(apiError);
+    });
+  });
+
+  describe('getById', () => {
+    describe('self-access', () => {
+      it('should allow user to access their own profile', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
+        const mockUser = UserFactory.build({ id: authContext.userId });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+        });
+        const result = await userService.getById(authContext, authContext.userId);
+
+        expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: authContext.userId });
+        expect(result).toEqual(mockUser);
+        // Should NOT call FGA methods for self-access
+        expect(mockUserRepository.getUserEntityMemberships).not.toHaveBeenCalled();
+        expect(mockAuthorizationService.hasAnyPermission).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('super admin access', () => {
+      it('should allow super admin to access any user', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'admin-456', isSuperAdmin: true });
+        const targetUserId = 'other-user-789';
+        const mockUser = UserFactory.build({ id: targetUserId });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+        });
+        const result = await userService.getById(authContext, targetUserId);
+
+        expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: targetUserId });
+        expect(result).toEqual(mockUser);
+        // Should NOT call FGA methods for super admin
+        expect(mockUserRepository.getUserEntityMemberships).not.toHaveBeenCalled();
+        expect(mockAuthorizationService.hasAnyPermission).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('FGA access via entity memberships', () => {
+      it('should allow access when user has can_list_users on a target entity', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'teacher-123', isSuperAdmin: false });
+        const targetUserId = 'student-456';
+        const mockUser = UserFactory.build({ id: targetUserId });
+
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([{ entityType: 'class', entityId: 'class-abc' }]);
+        mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+        });
+        const result = await userService.getById(authContext, targetUserId);
+
+        expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: targetUserId });
+        expect(mockUserRepository.getUserEntityMemberships).toHaveBeenCalledWith(targetUserId);
+        expect(mockAuthorizationService.hasAnyPermission).toHaveBeenCalledWith(
+          authContext.userId,
+          FgaRelation.CAN_LIST_USERS,
+          [`${FgaType.CLASS}:class-abc`],
+        );
+        expect(result).toEqual(mockUser);
+      });
+
+      it('should throw FORBIDDEN when user lacks can_list_users on all target entities', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'student-123', isSuperAdmin: false });
+        const targetUserId = 'other-student-456';
+        const mockUser = UserFactory.build({ id: targetUserId });
+
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+          { entityType: 'school', entityId: 'school-xyz' },
+        ]);
+        mockAuthorizationService.hasAnyPermission.mockResolvedValue(false);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(userService.getById(authContext, targetUserId)).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: authContext.userId, targetUserId },
+        });
+      });
+
+      it('should throw FORBIDDEN when target user has no active entity memberships', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'teacher-123', isSuperAdmin: false });
+        const targetUserId = 'orphan-user-456';
+        const mockUser = UserFactory.build({ id: targetUserId });
+
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([]);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(userService.getById(authContext, targetUserId)).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: authContext.userId, targetUserId },
+        });
+
+        // Should NOT call FGA when there are no entities to check
+        expect(mockAuthorizationService.hasAnyPermission).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('error cases', () => {
+      it('should throw NOT_FOUND when user does not exist', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
+        const targetUserId = 'non-existent-user';
+
+        mockUserRepository.getById.mockResolvedValue(null);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(userService.getById(authContext, targetUserId)).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { id: targetUserId, userId: authContext.userId },
+        });
+      });
+
+      it('should wrap repository errors in ApiError with context', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
+        const requestedUserId = 'user-456';
+        const dbError = new Error('Database connection failed');
+
+        mockUserRepository.getById.mockRejectedValue(dbError);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(userService.getById(authContext, requestedUserId)).rejects.toMatchObject({
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: 'user-123', requestedUserId },
+          cause: dbError,
+        });
+      });
+
+      it('should re-throw ApiError without wrapping', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
+        const targetUserId = 'user-456';
+        const apiError = new ApiError('Already wrapped', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_INVALID,
+        });
+
+        mockUserRepository.getById.mockRejectedValue(apiError);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(userService.getById(authContext, targetUserId)).rejects.toBe(apiError);
+      });
+    });
+  });
+
+  describe('update', () => {
+    const superAdminContext = AuthContextFactory.build({ userId: 'admin-123', isSuperAdmin: true });
+    const regularUserContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
+    const targetUserId = 'target-user-456';
+
+    describe('authorization', () => {
+      it('should throw FORBIDDEN immediately when requestor is not a super admin', async () => {
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(userService.update(regularUserContext, targetUserId, { nameFirst: 'Jane' })).rejects.toMatchObject(
+          {
+            message: ApiErrorMessage.FORBIDDEN,
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { userId: regularUserContext.userId, id: targetUserId },
+          },
+        );
+
+        // No repository calls should be made before the auth check
+        expect(mockUserRepository.getById).not.toHaveBeenCalled();
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+      });
+
+      it('should throw NOT_FOUND when the target user does not exist', async () => {
+        mockUserRepository.getById.mockResolvedValue(null);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(userService.update(superAdminContext, targetUserId, { nameFirst: 'Jane' })).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: superAdminContext.userId, id: targetUserId },
+        });
+
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+      });
+
+      it('should allow a super admin to update any user', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.update.mockResolvedValue(undefined);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(
+          userService.update(superAdminContext, targetUserId, { nameFirst: 'Jane' }),
+        ).resolves.toBeUndefined();
+
+        expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: targetUserId });
+        expect(mockUserRepository.update).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('partial update semantics', () => {
+      it('should only pass provided fields to the repository', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.update.mockResolvedValue(undefined);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await userService.update(superAdminContext, targetUserId, { nameFirst: 'Jane', nameLast: 'Doe' });
+
+        expect(mockUserRepository.update).toHaveBeenCalledWith({
+          id: targetUserId,
+          data: { nameFirst: 'Jane', nameLast: 'Doe' },
+        });
+      });
+
+      it('should not include omitted fields in the repository call', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.update.mockResolvedValue(undefined);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        // Only nameFirst is provided — email, grade, etc. should be absent from the update
+        await userService.update(superAdminContext, targetUserId, { nameFirst: 'Jane' });
+
+        const updateCall = mockUserRepository.update.mock.calls[0]![0]!;
+        expect(updateCall.data).not.toHaveProperty('email');
+        expect(updateCall.data).not.toHaveProperty('grade');
+        expect(updateCall.data).not.toHaveProperty('nameLast');
+      });
+
+      it('should pass null to the repository to clear a nullable field', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.update.mockResolvedValue(undefined);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await userService.update(superAdminContext, targetUserId, { nameFirst: null });
+
+        expect(mockUserRepository.update).toHaveBeenCalledWith({
+          id: targetUserId,
+          data: { nameFirst: null },
+        });
+      });
+    });
+
+    describe('error handling', () => {
+      it('should re-throw ApiError without wrapping', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const apiError = new ApiError('Already wrapped', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_INVALID,
+        });
+        mockUserRepository.update.mockRejectedValue(apiError);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(userService.update(superAdminContext, targetUserId, { nameFirst: 'Jane' })).rejects.toBe(apiError);
+      });
+
+      it('should throw CONFLICT on a unique constraint violation', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        /**
+         * Simulate a PostgreSQL unique violation error (SQLSTATE 23505).
+         * Object.assign is used to add the typed `code` property without using `as any`.
+         * unwrapDrizzleError returns the error as-is when it is not a DrizzleQueryError,
+         * so isUniqueViolation will detect the code directly on this error.
+         */
+        const uniqueViolationError = Object.assign(new Error('duplicate key value violates unique constraint'), {
+          code: PostgresErrorCode.UNIQUE_VIOLATION,
+        });
+        mockUserRepository.update.mockRejectedValue(uniqueViolationError);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(
+          userService.update(superAdminContext, targetUserId, { email: 'duplicate@example.com' }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.CONFLICT,
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId: superAdminContext.userId, id: targetUserId },
+        });
+      });
+
+      it('should throw DATABASE_QUERY_FAILED on an unexpected database error', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const dbError = new Error('Connection timeout');
+        mockUserRepository.update.mockRejectedValue(dbError);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(userService.update(superAdminContext, targetUserId, { nameFirst: 'Jane' })).rejects.toMatchObject({
+          message: 'Failed to update user',
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: superAdminContext.userId, id: targetUserId },
+          cause: dbError,
+        });
+      });
+    });
+
+    describe('password update (Firebase Auth)', () => {
+      const newPassword = 'super-secret-password';
+
+      /**
+       * Serialize every argument passed to every mocked logger method into a
+       * single string. Used to assert the plaintext password never reaches a
+       * log line in any field (message, context, error, etc.).
+       */
+      function allLoggerCallsSerialized(): string {
+        const loggerMethods = [logger.error, logger.warn, logger.info, logger.debug] as const;
+        return loggerMethods
+          .flatMap((method) => vi.mocked(method).mock.calls)
+          .map((args) => JSON.stringify(args))
+          .join('|');
+      }
+
+      it('resets the Firebase password when a password and authId are present', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId, authId: 'firebase-uid-abc' });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.update.mockResolvedValue(undefined);
+        mockAuth.updateUser.mockResolvedValue(undefined);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(
+          userService.update(superAdminContext, targetUserId, { password: newPassword }),
+        ).resolves.toBeUndefined();
+
+        expect(mockAuth.updateUser).toHaveBeenCalledTimes(1);
+        expect(mockAuth.updateUser).toHaveBeenCalledWith('firebase-uid-abc', { password: newPassword });
+        // Password-only request must not issue an (empty) DB update.
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+      });
+
+      it('does not touch Firebase when no password is provided', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId, authId: 'firebase-uid-abc' });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.update.mockResolvedValue(undefined);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await userService.update(superAdminContext, targetUserId, { nameFirst: 'Jane' });
+
+        expect(mockAuth.updateUser).not.toHaveBeenCalled();
+      });
+
+      it('applies both a profile update and a password reset together', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId, authId: 'firebase-uid-abc' });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.update.mockResolvedValue(undefined);
+        mockAuth.updateUser.mockResolvedValue(undefined);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await userService.update(superAdminContext, targetUserId, { nameFirst: 'Jane', password: newPassword });
+
+        expect(mockAuth.updateUser).toHaveBeenCalledWith('firebase-uid-abc', { password: newPassword });
+        // The password must never be persisted to the DB — only the profile field is.
+        expect(mockUserRepository.update).toHaveBeenCalledWith({
+          id: targetUserId,
+          data: { nameFirst: 'Jane' },
+        });
+      });
+
+      it('rejects with 422 when the target user has no Firebase account (null authId)', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId, authId: null });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(
+          userService.update(superAdminContext, targetUserId, { password: newPassword }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.UNPROCESSABLE_ENTITY,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+          context: { userId: superAdminContext.userId, id: targetUserId },
+        });
+
+        // No Firebase call and no DB write when the target can't hold a credential.
+        expect(mockAuth.updateUser).not.toHaveBeenCalled();
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+      });
+
+      it('wraps a Firebase failure as INTERNAL_SERVER_ERROR and aborts before the DB write', async () => {
+        const mockUser = UserFactory.build({ id: targetUserId, authId: 'firebase-uid-abc' });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        const firebaseError = new Error('firebase update failed');
+        mockAuth.updateUser.mockRejectedValue(firebaseError);
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        await expect(
+          userService.update(superAdminContext, targetUserId, { nameFirst: 'Jane', password: newPassword }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          context: { userId: superAdminContext.userId, id: targetUserId },
+          cause: firebaseError,
+        });
+
+        // Firebase-first ordering: a password failure aborts before the profile write.
+        expect(mockUserRepository.update).not.toHaveBeenCalled();
+      });
+
+      it('never logs the plaintext password or places it in a thrown error', async () => {
+        // Drive the failure path so both a log line and a thrown ApiError exist.
+        const mockUser = UserFactory.build({ id: targetUserId, authId: 'firebase-uid-abc' });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockAuth.updateUser.mockRejectedValue(new Error('firebase update failed'));
+
+        const userService = UserService({ userRepository: mockUserRepository });
+
+        let thrown: unknown;
+        try {
+          await userService.update(superAdminContext, targetUserId, { password: newPassword });
+        } catch (error) {
+          thrown = error;
+        }
+
+        // The error was thrown (sanity check) ...
+        expect(thrown).toBeInstanceOf(ApiError);
+
+        // ... and the password appears in no logger call.
+        expect(allLoggerCallsSerialized()).not.toContain(newPassword);
+
+        // ... nor anywhere on the thrown ApiError (message, context, or cause).
+        const apiError = thrown as ApiError;
+        expect(JSON.stringify(apiError.context ?? {})).not.toContain(newPassword);
+        expect(apiError.message).not.toContain(newPassword);
+        expect(JSON.stringify(apiError.cause ?? {})).not.toContain(newPassword);
+      });
+    });
+  });
+
+  describe('recordUserAgreement', () => {
+    let mockUserAgreementRepository: ReturnType<typeof createMockUserAgreementRepository>;
+    let mockAgreementVersionRepository: ReturnType<typeof createMockAgreementVersionRepository>;
+    let mockAgreementRepository: ReturnType<typeof createMockAgreementRepository>;
+
+    beforeEach(() => {
+      mockUserAgreementRepository = createMockUserAgreementRepository();
+      mockAgreementVersionRepository = createMockAgreementVersionRepository();
+      mockAgreementRepository = createMockAgreementRepository();
+    });
+
+    describe('resource validation', () => {
+      it('should throw NOT_FOUND when target user does not exist', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        mockUserRepository.getById.mockResolvedValue(null);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, 'non-existent-user', {
+            agreementVersionId: 'version-123',
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+      });
+
+      it('should throw NOT_FOUND when agreement version does not exist', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const targetUser = UserFactory.build({ id: authContext.userId });
+        mockUserRepository.getById.mockResolvedValue(targetUser);
+        mockAgreementVersionRepository.getById.mockResolvedValue(null);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, authContext.userId, {
+            agreementVersionId: 'non-existent-version',
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+      });
+
+      it('should throw NOT_FOUND when agreement does not exist', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const targetUser = UserFactory.build({ id: authContext.userId });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: 'agreement-123' });
+
+        mockUserRepository.getById.mockResolvedValue(targetUser);
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(null);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, authContext.userId, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+      });
+
+      it('should throw CONFLICT when user has already consented to the agreement version', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const targetUser = UserFactory.build({ id: authContext.userId });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: 'agreement-123' });
+        const existingAgreement = UserAgreementFactory.build({
+          userId: authContext.userId,
+          agreementVersionId: agreementVersion.id,
+        });
+
+        mockUserRepository.getById.mockResolvedValue(targetUser);
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockUserAgreementRepository.findByUserIdAndAgreementVersionId.mockResolvedValue(existingAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, authContext.userId, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.CONFLICT,
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        });
+      });
+
+      it('should throw CONFLICT when parent attempts to re-consent for child to same agreement version', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'parent-123' });
+        const childUser = UserFactory.build({ id: 'child-456' });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: 'agreement-123' });
+        const existingAgreement = UserAgreementFactory.build({
+          userId: childUser.id,
+          agreementVersionId: agreementVersion.id,
+        });
+
+        mockUserRepository.getById.mockResolvedValue(childUser);
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockUserAgreementRepository.findByUserIdAndAgreementVersionId.mockResolvedValue(existingAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, childUser.id, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.CONFLICT,
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        });
+      });
+
+      it('should throw NOT_FOUND when requesting user does not exist in database', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const targetUser = UserFactory.build({ id: 'target-456' });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.ASSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+
+        // First call for target user succeeds, second call for requesting user returns null
+        mockUserRepository.getById
+          .mockResolvedValueOnce(targetUser) // Target user exists
+          .mockResolvedValueOnce(null); // Requesting user does not exist
+
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, targetUser.id, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+      });
+    });
+
+    describe('self-consent - adult user', () => {
+      it('should allow adult to consent to TOS agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const adultUser = UserFactory.build({ id: authContext.userId, dob: '1990-01-01', grade: null });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: adultUser.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(adultUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(adultUser); // Requesting user for age check
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+        expect(mockUserAgreementRepository.create).toHaveBeenCalledWith({
+          data: {
+            userId: adultUser.id,
+            agreementVersionId: agreementVersion.id,
+            agreementTimestamp: expect.any(Date),
+          },
+        });
+      });
+
+      it('should allow adult to consent to CONSENT agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const adultUser = UserFactory.build({ id: authContext.userId, dob: '1990-01-01', grade: null });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.CONSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: adultUser.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(adultUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(adultUser); // Requesting user
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+      });
+
+      it('should throw FORBIDDEN when adult tries to consent to ASSENT agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const adultUser = UserFactory.build({ id: authContext.userId, dob: '1990-01-01', grade: null });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.ASSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(adultUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(adultUser); // Requesting user
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, authContext.userId, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
+    });
+
+    describe('self-consent - unknown age user', () => {
+      it('should allow user with unknown age (null dob + null grade) to consent to TOS agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const unknownAgeUser = UserFactory.build({ id: authContext.userId, dob: null, grade: null });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: unknownAgeUser.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(unknownAgeUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(unknownAgeUser); // Requesting user
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const loggerWarnSpy = vi.spyOn(logger, 'warn');
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+        expect(loggerWarnSpy).toHaveBeenCalledWith(
+          { requestingUserId: authContext.userId, agreementId: agreement.id },
+          'User with unknown age (null DOB and no grade) is consenting - allowing all agreement types',
+        );
+
+        loggerWarnSpy.mockRestore();
+      });
+
+      it('should allow user with unknown age to consent to ASSENT agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const unknownAgeUser = UserFactory.build({ id: authContext.userId, dob: null, grade: null });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.ASSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: unknownAgeUser.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(unknownAgeUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(unknownAgeUser); // Requesting user
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+      });
+
+      it('should allow user with unknown age to consent to CONSENT agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const unknownAgeUser = UserFactory.build({ id: authContext.userId, dob: null, grade: null });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.CONSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: unknownAgeUser.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(unknownAgeUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(unknownAgeUser); // Requesting user
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+      });
+    });
+
+    describe('self-consent - minor user', () => {
+      it('should allow minor to consent to ASSENT agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const minorUser = UserFactory.build({ id: authContext.userId, dob: '2015-01-01', grade: '3' });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.ASSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: minorUser.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(minorUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(minorUser); // Requesting user
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+      });
+
+      it('should throw FORBIDDEN when minor tries to consent to TOS agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const minorUser = UserFactory.build({ id: authContext.userId, dob: '2015-01-01', grade: '3' });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(minorUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(minorUser); // Requesting user
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, authContext.userId, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
+
+      it('should throw FORBIDDEN when minor tries to consent to CONSENT agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const minorUser = UserFactory.build({ id: authContext.userId, dob: '2015-01-01', grade: '3' });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.CONSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(minorUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(minorUser); // Requesting user
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, authContext.userId, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
+    });
+
+    describe('parent consent', () => {
+      it('should allow parent to consent to ASSENT agreement for minor child', async () => {
+        const parentContext = AuthContextFactory.build({ userId: 'parent-123' });
+        const parent = UserFactory.build({ id: parentContext.userId });
+        const child = UserFactory.build({ id: 'child-456', dob: '2015-01-01', grade: '3' });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.ASSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: child.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(child); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(parent); // Requesting user
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+          { entityType: 'family', entityId: 'family-abc' },
+        ]);
+        mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
+
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        const result = await userService.recordUserAgreement(parentContext, child.id, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+        expect(mockUserRepository.getUserEntityMemberships).toHaveBeenCalledWith(child.id);
+        expect(mockAuthorizationService.hasAnyPermission).toHaveBeenCalledWith(
+          parentContext.userId,
+          FgaRelation.CAN_CONSENT_FOR_CHILD,
+          [`${FgaType.FAMILY}:family-abc`],
+        );
+      });
+
+      it('should throw FORBIDDEN when user lacks family relationship to target', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const requestingUser = UserFactory.build({ id: authContext.userId });
+        const targetUser = UserFactory.build({ id: 'other-456', dob: '2015-01-01', grade: '3' });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.ASSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(targetUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(requestingUser); // Requesting user
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+          { entityType: 'school', entityId: 'school-xyz' },
+        ]); // No family memberships
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, targetUser.id, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+
+        // hasAnyPermission should NOT be called when there are no family objects
+        expect(mockAuthorizationService.hasAnyPermission).not.toHaveBeenCalled();
+      });
+
+      it('should throw FORBIDDEN when FGA denies can_consent_for_child on family', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const requestingUser = UserFactory.build({ id: authContext.userId });
+        const targetUser = UserFactory.build({ id: 'other-456', dob: '2015-01-01', grade: '3' });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.ASSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(targetUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(requestingUser); // Requesting user
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+          { entityType: 'family', entityId: 'family-abc' },
+        ]);
+        mockAuthorizationService.hasAnyPermission.mockResolvedValue(false);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, targetUser.id, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
+
+      it('should throw FORBIDDEN when parent tries to consent for an adult', async () => {
+        const parentContext = AuthContextFactory.build({ userId: 'parent-123' });
+        const parent = UserFactory.build({ id: parentContext.userId });
+        const adultChild = UserFactory.build({ id: 'adult-456', dob: '1990-01-01', grade: null });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.ASSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(adultChild); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(parent); // Requesting user
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+          { entityType: 'family', entityId: 'family-abc' },
+        ]);
+        mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          userService.recordUserAgreement(parentContext, adultChild.id, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
+
+      it('should throw FORBIDDEN when parent tries to consent to non-ASSENT agreement', async () => {
+        const parentContext = AuthContextFactory.build({ userId: 'parent-123' });
+        const parent = UserFactory.build({ id: parentContext.userId });
+        const child = UserFactory.build({ id: 'child-456', dob: '2015-01-01', grade: '3' });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(child); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(parent); // Requesting user
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+          { entityType: 'family', entityId: 'family-abc' },
+        ]);
+        mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          userService.recordUserAgreement(parentContext, child.id, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
+    });
+
+    describe('error handling', () => {
+      it('should wrap unexpected errors in ApiError', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const dbError = new Error('Database connection failed');
+        mockUserRepository.getById.mockRejectedValue(dbError);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, authContext.userId, {
+            agreementVersionId: 'version-123',
+          }),
+        ).rejects.toMatchObject({
+          message: 'Failed to create user agreement',
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          cause: dbError,
+        });
+      });
+
+      it('should re-throw ApiError without wrapping', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const apiError = new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+        mockUserRepository.getById.mockRejectedValue(apiError);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, authContext.userId, {
+            agreementVersionId: 'version-123',
+          }),
+        ).rejects.toBe(apiError);
+      });
+    });
+  });
+
+  describe('getUnsignedTosAgreements', () => {
+    it('returns empty array when user has signed all TOS agreements', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      mockAgreementRepository.getUnsignedTosAgreements.mockResolvedValue([]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements('user-123');
+
+      expect(mockAgreementRepository.getUnsignedTosAgreements).toHaveBeenCalledWith('user-123');
+      expect(result).toEqual([]);
+    });
+
+    it('returns unsigned TOS agreements with all locale variants', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS, name: 'ROAR Terms of Service' });
+      const versionEn = AgreementVersionFactory.build({
+        agreementId: agreement.id,
+        locale: 'en-US',
+        isCurrent: true,
+      });
+      const versionEs = AgreementVersionFactory.build({
+        agreementId: agreement.id,
+        locale: 'es-MX',
+        isCurrent: true,
+      });
+
+      mockAgreementRepository.getUnsignedTosAgreements.mockResolvedValue([
+        { agreement, currentVersions: [versionEn, versionEs] },
+      ]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements('user-123');
+
+      expect(result).toEqual([
+        {
+          agreementId: agreement.id,
+          agreementName: 'ROAR Terms of Service',
+          versions: [
+            { versionId: versionEn.id, locale: 'en-US' },
+            { versionId: versionEs.id, locale: 'es-MX' },
+          ],
+        },
+      ]);
+    });
+
+    it('maps multiple unsigned agreements correctly', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      const agreement1 = AgreementFactory.build({ agreementType: AgreementType.TOS, name: 'TOS 1' });
+      const agreement2 = AgreementFactory.build({ agreementType: AgreementType.TOS, name: 'TOS 2' });
+      const version1 = AgreementVersionFactory.build({ agreementId: agreement1.id, locale: 'en-US', isCurrent: true });
+      const version2 = AgreementVersionFactory.build({ agreementId: agreement2.id, locale: 'en-US', isCurrent: true });
+
+      mockAgreementRepository.getUnsignedTosAgreements.mockResolvedValue([
+        { agreement: agreement1, currentVersions: [version1] },
+        { agreement: agreement2, currentVersions: [version2] },
+      ]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements('user-123');
+
+      expect(result).toHaveLength(2);
+      expect(result[0]!.agreementId).toBe(agreement1.id);
+      expect(result[1]!.agreementId).toBe(agreement2.id);
+    });
+
+    it('re-throws ApiError from repository without wrapping', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      const apiError = new ApiError('Not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockAgreementRepository.getUnsignedTosAgreements.mockRejectedValue(apiError);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      await expect(userService.getUnsignedTosAgreements('user-123')).rejects.toThrow(apiError);
+    });
+
+    it('wraps unexpected errors in ApiError with 500/DATABASE_QUERY_FAILED', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      mockAgreementRepository.getUnsignedTosAgreements.mockRejectedValue(new Error('DB connection lost'));
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      await expect(userService.getUnsignedTosAgreements('user-123')).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error) }),
+        'Failed to get unsigned TOS agreements',
+      );
+    });
+  });
+
+  describe('getFamilies', () => {
+    it('returns an empty array when the user has no family memberships', async () => {
+      const mockFamilyRepository = createMockFamilyRepository();
+      mockFamilyRepository.getFamilyMembershipsForUser.mockResolvedValue([]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      const result = await userService.getFamilies('user-123');
+
+      expect(mockFamilyRepository.getFamilyMembershipsForUser).toHaveBeenCalledWith('user-123');
+      expect(result).toEqual([]);
+    });
+
+    it('maps each membership to { id, role }, preserving a parent role', async () => {
+      const mockFamilyRepository = createMockFamilyRepository();
+      mockFamilyRepository.getFamilyMembershipsForUser.mockResolvedValue([{ familyId: 'family-abc', role: 'parent' }]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      const result = await userService.getFamilies('parent-123');
+
+      expect(result).toEqual([{ id: 'family-abc', role: 'parent' }]);
+    });
+
+    it('preserves a child role (ROAR@Home child is a member too)', async () => {
+      const mockFamilyRepository = createMockFamilyRepository();
+      mockFamilyRepository.getFamilyMembershipsForUser.mockResolvedValue([{ familyId: 'family-xyz', role: 'child' }]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      const result = await userService.getFamilies('child-456');
+
+      expect(result).toEqual([{ id: 'family-xyz', role: 'child' }]);
+    });
+
+    it('maps multiple memberships, preserving order and each role', async () => {
+      const mockFamilyRepository = createMockFamilyRepository();
+      mockFamilyRepository.getFamilyMembershipsForUser.mockResolvedValue([
+        { familyId: 'family-1', role: 'parent' },
+        { familyId: 'family-2', role: 'child' },
+      ]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      const result = await userService.getFamilies('user-123');
+
+      expect(result).toEqual([
+        { id: 'family-1', role: 'parent' },
+        { id: 'family-2', role: 'child' },
+      ]);
+    });
+
+    it('re-throws ApiError from the repository without wrapping', async () => {
+      const mockFamilyRepository = createMockFamilyRepository();
+      const apiError = new ApiError('Not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockFamilyRepository.getFamilyMembershipsForUser.mockRejectedValue(apiError);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      await expect(userService.getFamilies('user-123')).rejects.toThrow(apiError);
+    });
+
+    it('wraps unexpected errors in ApiError with 500/DATABASE_QUERY_FAILED', async () => {
+      const mockFamilyRepository = createMockFamilyRepository();
+      mockFamilyRepository.getFamilyMembershipsForUser.mockRejectedValue(new Error('DB connection lost'));
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      await expect(userService.getFamilies('user-123')).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error) }),
+        'Failed to get user families',
+      );
+    });
+  });
+
+  describe('createAnonymousUser', () => {
+    const authId = 'firebase-anon-uid-abc123';
+
+    it('returns existing user ID when findByAuthId finds a record (idempotency)', async () => {
+      const existingUser = UserFactory.build();
+      mockUserRepository.findByAuthId.mockResolvedValue(existingUser);
+
+      const userService = UserService({ userRepository: mockUserRepository });
+      const result = await userService.createAnonymousUser(authId);
+
+      expect(result).toEqual({ id: existingUser.id });
+      expect(mockUserRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('creates a new user with assessmentPid derived from authId when none exists', async () => {
+      const newUser = UserFactory.build();
+      mockUserRepository.findByAuthId.mockResolvedValue(null);
+      mockUserRepository.create.mockResolvedValue({ id: newUser.id });
+
+      const userService = UserService({ userRepository: mockUserRepository });
+      await userService.createAnonymousUser(authId);
+
+      expect(mockUserRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            authId,
+            assessmentPid: expect.any(String),
+          }),
+        }),
+      );
+    });
+
+    it('creates the user as UserType.STUDENT', async () => {
+      const newUser = UserFactory.build();
+      mockUserRepository.findByAuthId.mockResolvedValue(null);
+      mockUserRepository.create.mockResolvedValue({ id: newUser.id });
+
+      const userService = UserService({ userRepository: mockUserRepository });
+      await userService.createAnonymousUser(authId);
+
+      expect(mockUserRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ userType: 'student' }),
+        }),
+      );
+    });
+
+    it('re-throws ApiError from findByAuthId without wrapping', async () => {
+      const apiError = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockUserRepository.findByAuthId.mockRejectedValue(apiError);
+
+      const userService = UserService({ userRepository: mockUserRepository });
+
+      await expect(userService.createAnonymousUser(authId)).rejects.toBe(apiError);
+    });
+
+    it('wraps unknown errors from userRepository.create in ApiError INTERNAL_SERVER_ERROR', async () => {
+      const dbError = new Error('db conn failed');
+      mockUserRepository.findByAuthId.mockResolvedValue(null);
+      mockUserRepository.create.mockRejectedValue(dbError);
+
+      const userService = UserService({ userRepository: mockUserRepository });
+
+      await expect(userService.createAnonymousUser(authId)).rejects.toMatchObject({
+        message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { authId },
+        cause: dbError,
+      });
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: dbError, context: { authId } }),
+        'Failed to create anonymous user',
+      );
+    });
+  });
+});

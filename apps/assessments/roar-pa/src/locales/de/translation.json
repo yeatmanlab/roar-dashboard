@@ -1,0 +1,168 @@
+{
+  "loading": "Das Experiment wird geladen...",
+  "progressBar": "Vorgang abgeschlossen",
+  "preloadTrial": {
+    "messageText": "Bitte warte, während das Experiment geladen wird. Dies kann einige Minuten dauern."
+  },
+  "fullScreenTrial": {
+    "prompt": "Das Experiment wird in den Vollbildmodus wechseln. <br/> Klicke auf den Knopf, damit es weitergeht.",
+    "buttonText": "Weiter"
+  },
+  "navigation": {
+    "continueButtonText": "Drücke <span class='yellow'>EINE BELIEBIGE TASTE</span>, {{action}}",
+    "continueButtonTextMobile": "Drücke <span class='yellow'>HIER</span>, {{action}}"
+  },
+  "audioSetup": "Klicke auf den Knopf am Bildschirm, um zu beginnen.",
+  "del": {
+    "instructions": {
+      "intro1": {
+        "text1": "Wir haben noch einen letzten Freund, der unsere Hilfe braucht! <br> Du bist so toll! ",
+        "text2": "Mach eine Pause, wenn du willst"
+      },
+      "intro2": {
+        "text1": "Ich bin so viel geschwommen. Mein Bauch ist leer! <br> Lass uns Krabben suchen!"
+      },
+      "intro3": {
+        "text1": "In diesem Spiel finden wir heraus, was von dem Wort übrig bleibt, wenn wir ein paar Laute auslassen. Hört gut zu und versucht, das neue Wort zu finden! "
+      },
+      "introNS": {
+        "text1": "Weglassen",
+        "text2": "In diesem Block musst du herausfinden, was von einem Wort übrigbleibt, wenn wir einige Laute <b>WEGLASSEN</b>.",
+        "text3": "Hör gut zu und klicke auf das Wort das übrig bleibt, nachdem ein Laut vom <br> Zielwort zuoberst auf deinem Bildschirm </br> <b>WEGGELASSEN</b> wird.",
+        "text4": "Lass uns üben!"
+      },
+      "break": {
+        "text1": "Du machst das super! Ich bin fast bereit wieder schwimmen zu gehen! Lass uns noch ein paar Krabben holen.",
+        "text2": "Du hast schon die Hälfte des Blocks geschafft!",
+        "text3": "Du kannst gerne eine Pause machen.",
+        "text4": "Du kannst weitermachen, sobald du bereit bist."
+      },
+      "end": {
+        "text1": "Du hast mir und all meinen Freunden geholfen! Das ist toll. <br> Vielen Dank!",
+        "text2": "Super! Du hast den letzten Block geschafft!",
+        "text3": "Danke, dass du die Aufgabe mit den Lauten gelöst hast!"
+      }
+    },
+    "ready": {
+      "text1": "Jetzt weisst du was wir tun müssen! Lass uns die Krabben suchen!",
+      "text2": "Gut gemacht mit den Übungswörtern!",
+      "text3": "Lass uns mit dem dritten Block beginnen.",
+      "text4": "Denk daran ganz genau hinzuhören und klicke auf das Wort, dass übrig bleibt, wenn wir einen Laut vom Zielwort <b>WEGLASSEN</b>. "
+    },
+    "test": {
+      "text1": "Klicke, um es noch einmal zu hören"
+    }
+  },
+  "fsm": {
+    "instructions": {
+      "intro": {
+        "text1": "Bist du bereit, mit mir und meinen Freunden ein paar Spiele zu spielen? "
+      },
+      "intro1": {
+        "text1": "Lass uns Bananen sammeln! <br> Ich habe Hunger! "
+      },
+      "intro2": {
+        "text1": "In diesem Spiel suchen wir Wörter, die mit dem gleichen Laut ANFANGEN. Hör genau hin und klicke auf das Wort, das mit dem gleichen ersten Laut ANFÄNGT wie das Wort das du oben auf deinem Bildschirm siehst! <br> <br>  Viel Glück!"
+      },
+      "introNS": {
+        "text1": "Willkommen in der Aufgabe der Laute!",
+        "text2": "In dieser Aufgabe hörst du gut auf die Laute hin, aus denen ein Wort besteht.",
+        "text3": "Diese Aufgabe hat drei Blöcke: Du erkennst Anfanglaute die zusammen gehören, dann Endlaute, und am Schluss lässt du Laute in Wörtern weg.",
+        "text4": "Lass uns mit den Anfangslauten beginnen!"
+      },
+      "fsmIntroNS": {
+        "text1": "Anfangslaute erkennen",
+        "text2": "In diesem Block musst du herausfinden, welche Wörter mit dem gleichen Laut <b>BEGINNEN</b>.",
+        "text3": "Hör gut zu und klicke auf das Wort das am <b>ANFANG</b>  den gleichen Laut hat wie das <br> Zielwort zuoberst auf deinem Bildschirm </br>.",
+        "text4": "Lass uns üben!"
+      },
+      "break": {
+        "text1": "Super gemacht! So viele Bananen! Lass uns noch ein paar sammeln!",
+        "text2": "Du hast schon die Hälfte des Blocks geschafft!",
+        "text3": "Du kannst gerne eine Pause machen.",
+        "text4": "Du kannst weitermachen, sobald du bereit bist."
+      },
+      "end": {
+        "text1": "Mjamm, mjamm, mjamm! Von so vielen Bananen hätte ich nur träumen können! Danke!",
+        "text2": "Super! Du hast den ersten Block geschafft!",
+        "text3": "Es kommen noch zwei Blöcke.",
+        "text4": "Du kannst gerne eine Pause machen und zurückkommen, wenn du bereit bist, mit dem zweiten Block zu beginnen."
+      }
+    },
+    "ready": {
+      "text1": "Du bist bereit! Lass uns mit dem eigentlichen Spiel beginnen!",
+      "text2": "Gut gemacht mit den Übungswörtern!",
+      "text3": "Lass uns mit dem ersten Block beginnen.",
+      "text4": "Denk daran ganz genau hinzuhören und klicke auf das Wort, dass am <b>ANFANG</b> den gleichen Laut hat wie das Zielwort."
+    }
+  },
+  "lsm": {
+    "instructions": {
+      "intro1": {
+        "text1": "Lass uns jetzt meinen Freunden helfen!",
+        "text2": "Mach eine Pause, wenn du willst"
+      },
+      "intro2": {
+        "text1": "Ich hätte so gerne Karotten! <br> Kannst du mir helfen?"
+      },
+      "intro3": {
+        "text1": "In diesem Spiel suchen wir Wörter, die mit dem gleichen Laut ENDEN. Hör genau hin und klicke auf das Wort, das den gleichen LETZTEN Laut hat wie das Wort das du oben auf deinem Bildschirm siehst! <br> <br>  Viel Glück!  "
+      },
+      "introNS": {
+        "text1": "Endlaute erkennen",
+        "text2": "In diesem Block musst du herausfinden, welche Wörter auf den gleichen Laut <b>ENDEN</b>.",
+        "text3": "Hör gut zu und klicke auf das Wort das am <b>ENDE</b>  den gleichen Laut hat wie das <br> Zielwort zuoberst auf deinem Bildschirm </br>.",
+        "text4": "Lass uns üben!"
+      },
+      "break": {
+        "text1": "Schau dir all die Karotten an! <br> Können wir noch ein paar mehr sammeln?",
+        "text2": "Du hast schon die Hälfte des Blocks geschafft!",
+        "text3": "Du kannst gerne eine Pause machen.",
+        "text4": "Du kannst weitermachen, sobald du bereit bist."
+      },
+      "end": {
+        "text1": "Hui! Ich habe noch nie so viele Karotten gesehen! Ich bin so glücklich!",
+        "text2": "Super! Du hast den letzten Block geschafft!",
+        "text3": "Es kommt noch ein Block.",
+        "text4": "Du kannst gerne eine Pause machen und zurückkommen, wenn du bereit bist, mit dem dritten Block zu beginnen."
+      }
+    },
+    "ready": {
+      "text1": "Genug geübt! Lass uns mit dem eigentlichen Spiel beginnen!",
+      "text2": "Gut gemacht mit den Übungswörtern!",
+      "text3": "Lass uns mit dem zweiten Block beginnen.",
+      "text4": "Denk daran ganz genau hinzuhören und klicke auf das Wort, dass am <b>ENDE</b> den gleichen Laut hat wie das Zielwort."
+    }
+  },
+  "imagesAlt": {
+    "arrowKeys": "Pfeiltasten",
+    "leftArrow": "linke Pfeiltaste",
+    "rightArrow": "rechte Pfeiltaste",
+    "valley": "Hintergrundbild mit Hügeln und Bäumen",
+    "adventurer1": "Abenteurer mit Harfe",
+    "adventurer2": "Abenteurer, der Regenbögen macht",
+    "adventurer3": "benteurer, der Herzformen macht",
+    "wizardCoin": "Zauberer, der Münzen herstellt",
+    "guardian1": "oranger Dinosaurier-Wächter",
+    "guardian2": "blauer Drachen-Wächter",
+    "endingBackground": "Landschaft mit Bäumen",
+    "guardian3": "zwinkerndes Einhorn",
+    "endingGateCoinbag": "Tor mit Münzbeutel-Animation",
+    "wizardWand": "Zauberer, der einen Zauberstab schwingt",
+    "leftArrowIntro": "erfundenes Wort, drücke die linke Pfeiltaste",
+    "rightArrowIntro": "echtes Wort, drücke die rechte Pfeiltaste"
+  },
+  "terms": {
+    "__comment1__": "z.B. 'drücke eine beliebige Taste, um weiterzufahren/zu üben/zu beginnen'",
+    "continue": "damit es weitergeht",
+    "practice": "um zu üben",
+    "begin": "um zu beginnen",
+    "gold": "Goldmünzen",
+    "left": "linke",
+    "right": "rechte",
+    "__comment2__": "d.h. 'xop ist ein erfundenes/echtes Wort'",
+    "real": "echte",
+    "made-up": "erfundene",
+    "save": "um deine Arbeit zu speichern"
+  }
+}

@@ -2,3 +2,33 @@
 # later match takes precedence, these owners will be requested for review when
 # someone opens a pull request.
 *       @yeatmanlab/roar-maintainers
+
+# roar-swr assessment
+apps/assessments/roar-swr/ @yeatmanlab/roar-maintainers @AnyaWMa
+
+# roar-pa assessment
+apps/assessments/roar-pa/ @yeatmanlab/roar-maintainers @AnyaWMa
+
+# roar-sre assesment
+apps/assessments/roar-sre/ @yeatmanlab/roar-maintainers @AnyaWMa
+
+# roar-letter assessment
+apps/assessments/roar-letter/ @yeatmanlab/roar-maintainers @AnyaWMa
+
+# roar-multichoice assessment
+apps/assessments/roar-multichoice/ @yeatmanlab/roar-maintainers @tonyamurray
+
+# roar-survey assessment
+apps/assessments/roar-survey/ @yeatmanlab/roar-maintainers
+
+# roar-readaloud assessment
+apps/assessments/roar-readaloud/ @yeatmanlab/roar-maintainers
+
+# roav-apps assessment
+apps/assessments/roav-apps/ @yeatmanlab/roar-maintainers @tanyamelca
+
+# roav-ran assessment
+apps/assessments/roav-ran/ @yeatmanlab/roar-maintainers
+
+# roam-apps assessment
+apps/assessments/roam-apps/ @yeatmanlab/roar-maintainers @KruttikaBhat

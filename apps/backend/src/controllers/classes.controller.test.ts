@@ -1,0 +1,555 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { SortOrder } from '@roar-platform/api-contract';
+import { StatusCodes } from 'http-status-codes';
+import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../enums/api-error-message.enum';
+import { UserRole } from '../enums/user-role.enum';
+import { ClassType } from '../enums/class-type.enum';
+import { ApiError } from '../errors/api-error';
+import { EnrolledUserFactory } from '../test-support/factories/user.factory';
+import { ClassFactory } from '../test-support/factories/class.factory';
+// Mock the ClassService module
+vi.mock('../services/class/class.service', () => ({
+  ClassService: vi.fn(),
+}));
+
+import { ClassService } from '../services/class/class.service';
+
+/**
+ * Type-safe assertion helper for success responses.
+ */
+function expectOkResponse<T>(result: { status: number; body: { data: T } | { error: unknown } }): T {
+  expect(result.status).toBe(StatusCodes.OK);
+  expect(result.body).toHaveProperty('data');
+  return (result.body as { data: T }).data;
+}
+
+/**
+ * Type-safe assertion helper for error responses.
+ */
+function expectErrorResponse(
+  result: { status: number; body: { data: unknown } | { error: unknown } },
+  expectedStatus: number,
+) {
+  expect(result.status).toBe(expectedStatus);
+  expect(result.body).toHaveProperty('error');
+  return (result.body as { error: unknown }).error;
+}
+
+describe('ClassesController', () => {
+  const mockCreate = vi.fn();
+  const mockGetById = vi.fn();
+  const mockListUsers = vi.fn();
+  const mockUpdate = vi.fn();
+  const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    // Setup the mock service
+    vi.mocked(ClassService).mockReturnValue({
+      create: mockCreate,
+      getById: mockGetById,
+      listUsers: mockListUsers,
+      update: mockUpdate,
+    });
+  });
+
+  describe('listUsers', () => {
+    it('should return paginated users with 200 status', async () => {
+      const mockUsers = EnrolledUserFactory.buildList(3);
+      mockListUsers.mockResolvedValue({
+        items: mockUsers,
+        totalItems: 3,
+      });
+
+      // Re-import to pick up the mock
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'class-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+        embed: [],
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(3);
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 3,
+        totalPages: 1,
+      });
+    });
+
+    it('should handle empty results', async () => {
+      mockListUsers.mockResolvedValue({
+        items: [],
+        totalItems: 0,
+      });
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'class-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+        embed: [],
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toEqual([]);
+      expect(data.pagination.totalItems).toBe(0);
+      expect(data.pagination.totalPages).toBe(0);
+    });
+
+    it('should pass query parameters to service', async () => {
+      mockListUsers.mockResolvedValue({
+        items: [],
+        totalItems: 0,
+      });
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      // While grade query param is string, the schema validates and transforms it to an array
+      await Controller.listUsers(mockAuthContext, 'class-456', {
+        page: 2,
+        perPage: 50,
+        sortBy: 'username',
+        sortOrder: SortOrder.DESC,
+        grade: ['5'],
+        role: UserRole.STUDENT,
+        embed: [],
+      });
+
+      expect(mockListUsers).toHaveBeenCalledWith(mockAuthContext, 'class-456', {
+        page: 2,
+        perPage: 50,
+        sortBy: 'username',
+        sortOrder: SortOrder.DESC,
+        grade: ['5'],
+        role: UserRole.STUDENT,
+        embed: [],
+      });
+    });
+
+    it('should handle ApiError with 404 Not Found', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockListUsers.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'nonexistent-class', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+        embed: [],
+      });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should handle ApiError with 403 Forbidden', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockListUsers.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'class-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+        embed: [],
+      });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should handle ApiError with 500 Internal Server Error', async () => {
+      const error = new ApiError('Database error', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockListUsers.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'class-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+        embed: [],
+      });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should rethrow non-ApiError errors', async () => {
+      const error = new Error('Unexpected error');
+      mockListUsers.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      await expect(
+        Controller.listUsers(mockAuthContext, 'class-123', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'nameLast',
+          sortOrder: SortOrder.ASC,
+          embed: [],
+        }),
+      ).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('get', () => {
+    it('should return 200 with the transformed class on success', async () => {
+      const mockClass = ClassFactory.build({
+        id: 'class-123',
+        name: 'Reading 101',
+        schoolId: 'school-1',
+        districtId: 'district-1',
+        classType: ClassType.HOMEROOM,
+        number: '101A',
+        period: '3',
+        subjects: ['Reading', 'Phonics'],
+        grades: ['3', '4'],
+        location: 'Room 12',
+      });
+      mockGetById.mockResolvedValue(mockClass);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.get(mockAuthContext, 'class-123');
+
+      const data = expectOkResponse(result);
+      expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, 'class-123');
+      expect(data).toMatchObject({
+        id: 'class-123',
+        name: 'Reading 101',
+        schoolId: 'school-1',
+        districtId: 'district-1',
+        classType: ClassType.HOMEROOM,
+        number: '101A',
+        period: '3',
+        subjects: ['Reading', 'Phonics'],
+        grades: ['3', '4'],
+        location: 'Room 12',
+      });
+    });
+
+    it('should convert rosteringEnded to an ISO string and omit absent optional fields', async () => {
+      const rosteringEnded = new Date('2024-01-01T00:00:00.000Z');
+      const mockClass = ClassFactory.build({
+        id: 'class-123',
+        name: 'Sparse Class',
+        schoolId: 'school-1',
+        districtId: 'district-1',
+        classType: ClassType.SCHEDULED,
+        // All optional columns left null
+        number: null,
+        period: null,
+        courseId: null,
+        subjects: null,
+        grades: null,
+        location: null,
+        rosteringEnded,
+      });
+      mockGetById.mockResolvedValue(mockClass);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.get(mockAuthContext, 'class-123');
+
+      const data = expectOkResponse(result);
+      expect(data.rosteringEnded).toBe(rosteringEnded.toISOString());
+      // Null columns are omitted entirely from the response.
+      expect(data).not.toHaveProperty('number');
+      expect(data).not.toHaveProperty('period');
+      expect(data).not.toHaveProperty('courseId');
+      expect(data).not.toHaveProperty('subjects');
+      expect(data).not.toHaveProperty('grades');
+      expect(data).not.toHaveProperty('location');
+    });
+
+    it('should map ApiError 404 to a Not Found error response', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockGetById.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.get(mockAuthContext, 'nonexistent-class');
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 403 to a Forbidden error response', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockGetById.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.get(mockAuthContext, 'class-123');
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 500 to an Internal Server Error response', async () => {
+      const error = new ApiError('Database error', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockGetById.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.get(mockAuthContext, 'class-123');
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should re-throw a non-ApiError unchanged so the global error handler catches it', async () => {
+      const unexpected = new Error('Unexpected error');
+      mockGetById.mockRejectedValue(unexpected);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      await expect(Controller.get(mockAuthContext, 'class-123')).rejects.toBe(unexpected);
+    });
+  });
+
+  describe('create', () => {
+    const validBody = {
+      schoolId: '22222222-2222-4222-8222-222222222222',
+      name: 'Reading 101',
+      classType: 'homeroom' as const,
+    };
+
+    it('should return 201 with the new class id on success', async () => {
+      mockCreate.mockResolvedValue({ id: 'class-new-1' });
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.create(mockAuthContext, validBody);
+
+      expect(result.status).toBe(StatusCodes.CREATED);
+      expect(result.body).toHaveProperty('data');
+      const data = (result.body as { data: { id: string } }).data;
+      expect(data).toEqual({ id: 'class-new-1' });
+      expect(mockCreate).toHaveBeenCalledWith(mockAuthContext, expect.objectContaining(validBody));
+    });
+
+    it('should map the request body to the service input field-by-field, omitting absent optionals', async () => {
+      mockCreate.mockResolvedValue({ id: 'class-new-2' });
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      await Controller.create(mockAuthContext, {
+        ...validBody,
+        number: '101A',
+        period: '3',
+        termId: '33333333-3333-4333-8333-333333333333',
+        courseId: '44444444-4444-4444-8444-444444444444',
+        subjects: ['Reading'],
+        grades: ['3', '4'],
+        location: 'Room 12',
+      });
+
+      expect(mockCreate).toHaveBeenCalledWith(mockAuthContext, {
+        schoolId: validBody.schoolId,
+        name: validBody.name,
+        classType: validBody.classType,
+        number: '101A',
+        period: '3',
+        termId: '33333333-3333-4333-8333-333333333333',
+        courseId: '44444444-4444-4444-8444-444444444444',
+        subjects: ['Reading'],
+        grades: ['3', '4'],
+        location: 'Room 12',
+      });
+    });
+
+    it('should map ApiError 403 to a Forbidden error response', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.create(mockAuthContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 422 to an Unprocessable Entity error response', async () => {
+      const error = new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.create(mockAuthContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.UNPROCESSABLE_ENTITY);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 500 to an Internal Server Error response', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.create(mockAuthContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should re-throw a non-ApiError unchanged so the global error handler catches it', async () => {
+      const unexpected = new Error('Unexpected error');
+      mockCreate.mockRejectedValue(unexpected);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      await expect(Controller.create(mockAuthContext, validBody)).rejects.toBe(unexpected);
+    });
+  });
+
+  describe('update', () => {
+    it('should return 200 with the updated class id on success', async () => {
+      mockUpdate.mockResolvedValue({ id: 'class-123' });
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.update(mockAuthContext, 'class-123', { name: 'Renamed Class' });
+
+      const data = expectOkResponse(result);
+      expect(data).toEqual({ id: 'class-123' });
+      expect(mockUpdate).toHaveBeenCalledWith(mockAuthContext, 'class-123', { name: 'Renamed Class' });
+    });
+
+    it('should map the request body to the service input, omitting absent fields', async () => {
+      mockUpdate.mockResolvedValue({ id: 'class-123' });
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      await Controller.update(mockAuthContext, 'class-123', {
+        name: 'Updated',
+        classType: ClassType.SCHEDULED,
+        subjects: ['Math'],
+        grades: ['5'],
+        location: 'Room 7',
+      });
+
+      expect(mockUpdate).toHaveBeenCalledWith(mockAuthContext, 'class-123', {
+        name: 'Updated',
+        classType: ClassType.SCHEDULED,
+        subjects: ['Math'],
+        grades: ['5'],
+        location: 'Room 7',
+      });
+    });
+
+    it('should map ApiError 400 to a Bad Request error response', async () => {
+      const error = new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.update(mockAuthContext, 'class-123', {});
+
+      const errorBody = expectErrorResponse(result, StatusCodes.BAD_REQUEST);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 403 to a Forbidden error response', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.update(mockAuthContext, 'class-123', { name: 'Renamed Class' });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 404 to a Not Found error response', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.update(mockAuthContext, 'nonexistent-class', { name: 'Renamed Class' });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 500 to an Internal Server Error response', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.update(mockAuthContext, 'class-123', { name: 'Renamed Class' });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should re-throw a non-ApiError unchanged so the global error handler catches it', async () => {
+      const unexpected = new Error('Unexpected error');
+      mockUpdate.mockRejectedValue(unexpected);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      await expect(Controller.update(mockAuthContext, 'class-123', { name: 'Renamed Class' })).rejects.toBe(unexpected);
+    });
+  });
+});

@@ -6,31 +6,43 @@
   </div>
 </template>
 <script setup>
-import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
+import { onMounted, watch, ref, computed, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
+import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { MORPHOLOGY_TASK_ID } from '@roar-platform/assessment-schema/roar-multichoice';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import useParticipantId from '@/composables/useParticipantId';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../../../package-lock.json';
+import { version } from '@roar-platform/roar-multichoice/package.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'multichoice' },
+  taskId: { type: String, default: MORPHOLOGY_TASK_ID },
+  // Multichoice is currently English-only; the game resolves locale via i18next rather than
+  // a variant param. If language support is added, thread props.language into gameParams here
+  // (e.g. { language: props.language, task: props.task, ...variantParams })
+  // and add "language" to the variant params in taskVariantParameters.example.json.
   language: { type: String, default: 'en' },
+  task: { type: String, default: 'morphology' },
   launchId: { type: String, default: null },
 });
 
-let TaskLauncher;
+// Start loading the assessment bundle at setup rather than in onMounted. The
+// watcher below runs with `immediate: true`, so startTask can execute during
+// setup — before onMounted would have assigned the launcher.
+const taskLauncherPromise = import('@roar-platform/roar-multichoice').then((module) => module.default);
+// Mark the rejection handled so a failed import doesn't log `Uncaught (in promise)`
+// during the gap before startTask awaits it — that await still rejects into its catch.
+taskLauncherPromise.catch(() => {});
 
-const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roar-multichoice'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+const { isAuthReady } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -43,11 +55,16 @@ const handlePopState = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
+  if (state.accessToken) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(props.launchId, {
-  enabled: initialized,
+// Resolves the proxy-launch id or the launching user's own `/me` id. The student-data query
+// below is gated on it because `useUserStudentDataQuery` falls back to the Firestore
+// `authStore.roarUid` for a falsy argument, which the uuid-typed `GET /users/:id` rejects.
+const participantId = useParticipantId(props.launchId);
+
+const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery(participantId, {
+  enabled: computed(() => initialized.value && Boolean(participantId.value)),
 });
 
 // The following code intercepts the back button and instead forces a refresh.
@@ -60,14 +77,8 @@ window.addEventListener(
   { once: true },
 );
 
-onMounted(async () => {
-  try {
-    TaskLauncher = (await import('@bdelab/roar-multichoice')).default;
-  } catch (error) {
-    console.error('An error occurred while importing the game module.', error);
-  }
-
-  if (roarfirekit.value.restConfig?.()) init();
+onMounted(() => {
+  if (authStore.isAuthReady) init();
 });
 
 // Declare interval at component scope
@@ -79,9 +90,11 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  [isFirekitInit, isLoadingUserData],
-  async ([newFirekitInitValue, newLoadingUserData]) => {
-    if (newFirekitInitValue && !newLoadingUserData && !taskStarted.value) {
+  [isAuthReady, isLoadingUserData, participantId],
+  async ([newIsAuthReady, newLoadingUserData, newParticipantId]) => {
+    // `participantId` is part of the gate because a disabled student-data query reports
+    // `isLoading === false` — on its own it would let the task start before the id resolves.
+    if (newIsAuthReady && !newLoadingUserData && newParticipantId && !taskStarted.value) {
       taskStarted.value = true;
       const { selectedAdmin } = storeToRefs(gameStore);
       await startTask(selectedAdmin);
@@ -103,26 +116,60 @@ async function startTask(selectedAdmin) {
       }
     }, 100);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version, props.launchId);
-
     const userDob = _get(userData.value, 'studentData.dob');
-    const userDateObj = new Date(userDob);
+    const userDateObj = userDob ? new Date(userDob) : null;
 
     const userParams = {
       grade: _get(userData.value, 'studentData.grade'),
-      birthMonth: userDateObj.getMonth() + 1,
-      birthYear: userDateObj.getFullYear(),
-      language: props.language,
+      birthMonth: userDateObj ? userDateObj.getMonth() + 1 : undefined,
+      birthYear: userDateObj ? userDateObj.getFullYear() : undefined,
     };
 
-    const gameParams = { ...appKit._taskInfo.variantParams };
+    // Initialize the new assessment SDK for the dashboard execution path.
+    //
+    // The participant's administrations — each with its tasks' `variantId` embedded —
+    // are already fetched by HomeParticipant via
+    // `GET /users/:userId/administrations?embed=tasks,progress`, and the chosen one is
+    // held in the game store. The administration and variant are therefore read from
+    // `selectedAdmin` rather than re-fetched here.
+    //
+    // An administration's embedded tasks carry the catalog `taskSlug`, which is what the
+    // router passes as `taskId` — GameTabs routes to `/game/<slug>` (see `participantGames.toGame`).
+    const administration = selectedAdmin.value;
+    const taskVariant = (administration?.tasks ?? []).find((task) => task.taskSlug === props.taskId);
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    if (!taskVariant) {
+      throw new Error(`No ${props.taskId} task variant found in the selected administration.`);
+    }
 
-    await roarApp.run().then(async () => {
-      // Handle any post-game actions.
-      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
+    initFirekitCompat(
+      {
+        baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
+        auth: {
+          getToken: () => Promise.resolve(authStore.accessToken),
+          refreshToken: () => authStore.forceIdTokenRefresh(),
+        },
+        participant: { participantId: participantId.value },
+      },
+      {
+        variantId: taskVariant.variantId,
+        taskVersion: version,
+        administrationId: administration.id,
+        isAnonymous: false,
+      },
+    );
 
+    // Source the variant parameters from the assessment SDK now that initFirekitCompat has run.
+    // variantParams.task (from the DB variant) is the authoritative source for the task mode
+    // (morphology vs. cva); props.task is the fallback for variants that predate the task field.
+    const { variantParams } = await getVariantById(taskVariant.variantId);
+    const gameParams = { task: props.task, ...variantParams };
+
+    const TaskLauncher = await taskLauncherPromise;
+
+    const roarApp = new TaskLauncher(gameParams, userParams, 'jspsych-target');
+
+    await roarApp.run().then(() => {
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
       if (props.launchId) {
@@ -140,8 +187,6 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roar-multichoice/lib/resources/roar-multichoice.css';
-
 .game-target {
   position: absolute;
   top: 0;

@@ -57,7 +57,9 @@ const APP_CHECK_DEBUG_TOKEN =
       : VITE_FIREKIT_APPCHECK_DEBUG_TOKEN
     : undefined;
 
-// Define the Firekit configuration object
+// Firekit configuration — always uses production config. Auth emulator wiring
+// is handled by the dashboard's own AuthService, not by firekit. Firekit is
+// retained only for non-auth operations (Firestore queries, assessments).
 const firekitConfig = {
   admin: {
     projectId: VITE_FIREBASE_ADMIN_PROJECT_ID,
@@ -83,7 +85,11 @@ const firekitConfig = {
 };
 
 /**
- * Initialize a new Firekit instance.
+ * Initialize a new Firekit instance for non-auth operations.
+ *
+ * Auth is handled by the dashboard's AuthService. Firekit is initialized with
+ * production config only — it provides Firestore data access and assessment
+ * launching.
  *
  * @returns {Promise<RoarFirekit>} A promise that resolves with the initialized Firekit instance.
  */

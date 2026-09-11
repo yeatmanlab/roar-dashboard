@@ -1,0 +1,336 @@
+import { z } from 'zod';
+
+// --- Grade-conditional field resolution ---
+
+const GradeConditionEntrySchema = z.union([
+  z.object({
+    gradeLt: z.number().int(),
+    value: z.string(),
+  }),
+  z.object({
+    gradeGte: z.number().int(),
+    value: z.string(),
+  }),
+]);
+
+const GradeConditionalFieldSchema = z.object({
+  gradeConditional: z.literal(true),
+  conditions: z.array(GradeConditionEntrySchema).min(1),
+});
+
+/**
+ * A field name value: a static string, null (not applicable), or a grade-conditional object.
+ */
+const FieldNameValueSchema = z.union([z.string(), z.null(), GradeConditionalFieldSchema]);
+
+// --- Versioned arrays (shared pattern) ---
+
+/**
+ * Validate that a versioned array is in strictly descending minVersion order.
+ * resolveVersionedEntry relies on this ordering — ascending entries would cause
+ * the lowest-version entry to always match, silently ignoring newer entries.
+ */
+function descendingMinVersion<T extends { minVersion: number }>(entries: T[], ctx: z.RefinementCtx) {
+  for (let i = 1; i < entries.length; i++) {
+    const current = entries[i];
+    const previous = entries[i - 1];
+    if (current && previous && current.minVersion >= previous.minVersion) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Entries must be in strictly descending minVersion order (found ${previous.minVersion} then ${current.minVersion})`,
+      });
+    }
+  }
+}
+
+/**
+ * A versioned entry for score field names.
+ * Entries are ordered by descending minVersion; first match where scoringVersion >= minVersion wins.
+ */
+const VersionedFieldNameSchema = z.object({
+  minVersion: z.number().int().min(0),
+  fieldName: FieldNameValueSchema,
+});
+
+const VersionedFieldNameArraySchema = z.array(VersionedFieldNameSchema).min(1).superRefine(descendingMinVersion);
+
+/**
+ * A versioned entry for percentile cutoffs.
+ */
+const VersionedPercentileCutoffSchema = z.object({
+  minVersion: z.number().int().min(0),
+  cutoffs: z.object({
+    achieved: z.number(),
+    developing: z.number(),
+  }),
+});
+
+/**
+ * A versioned entry for raw score thresholds.
+ */
+const VersionedRawScoreThresholdSchema = z.object({
+  minVersion: z.number().int().min(0),
+  thresholds: z.object({
+    above: z.number(),
+    some: z.number(),
+  }),
+});
+
+// --- Score field types ---
+
+export const SCORE_FIELD_TYPES = [
+  'percentile',
+  'percentileDisplay',
+  'standardScore',
+  'standardScoreDisplay',
+  'rawScore',
+  'correctIncorrectDifference',
+] as const;
+
+const ScoreFieldTypeSchema = z.enum(SCORE_FIELD_TYPES);
+
+/**
+ * Score fields: each of the 5 field types maps to a versioned array of field names.
+ */
+const ScoreFieldsSchema = z.record(ScoreFieldTypeSchema, VersionedFieldNameArraySchema);
+
+// --- Classification strategies (discriminated union) ---
+
+const PercentileThenRawscoreClassificationSchema = z.object({
+  type: z.literal('percentile-then-rawscore'),
+  /** Exclusive upper bound: percentile cutoffs apply for grades strictly below this value.
+   *  Defaults to 6 (grades K-5 use percentile, grade 6+ uses raw score). Set to null to use percentile for all grades. */
+  percentileBelowGrade: z.number().int().nullable().default(6),
+  percentileCutoffs: z.array(VersionedPercentileCutoffSchema).min(1).superRefine(descendingMinVersion),
+  rawScoreThresholds: z.array(VersionedRawScoreThresholdSchema).min(1).superRefine(descendingMinVersion),
+});
+
+const AssessmentComputedClassificationSchema = z.object({
+  type: z.literal('assessment-computed'),
+  supportLevelField: z.string().optional(),
+});
+
+const NoneClassificationSchema = z.object({
+  type: z.literal('none'),
+});
+
+const ClassificationSchema = z.discriminatedUnion('type', [
+  PercentileThenRawscoreClassificationSchema,
+  AssessmentComputedClassificationSchema,
+  NoneClassificationSchema,
+]);
+
+// --- Subscores ---
+
+/**
+ * The `subscores` block declares an ORDERED list of columns for a task's
+ * sub-skill breakdown. Two endpoints consume it:
+ *
+ * - The individual-student-report (`extractSubscoresFromScoreMap`) surfaces the
+ *   per-subtask `itemLevel` columns flagged as `subskill` (the default), keyed
+ *   by `key` (e.g. `FSM`/`LSM`/`DEL` for PA, `cvc`/`digraph`/… for phonics).
+ * - The task-subscores endpoint renders the full ordered column list, using
+ *   `key` + `label` as table-header metadata and the per-`kind` value source
+ *   below to populate cells.
+ *
+ * This block replaces the standalone `subscore-table.registry` that previously
+ * hard-coded these columns in the backend. Field-name strings come from the
+ * shared `@roar-platform/assessment-schema` package for verified assessments
+ * (PA, phonics, letter, SWR, SRE). Best-guess names for not-yet-migrated
+ * assessments (fluency, roam-alpaca) are flagged `provisional: true` and will
+ * move into assessment-schema as each assessment lands in the monorepo — the
+ * end state is zero hard-coded score-name strings in the backend.
+ *
+ * Column kinds:
+ * - `itemLevel`         — combines `correctName` + `attemptedName` into a
+ *                         `"correct/attempted"` string. `percentCorrectName`,
+ *                         when present, drives numeric sort/filter. `subskill`
+ *                         (default true) marks columns forming the per-subtask
+ *                         breakdown surfaced by the individual-student-report;
+ *                         aggregate columns like a task "Total" set it false.
+ * - `number`            — single `run_scores.name` parsed as a number,
+ *                         optionally `round`ed for display.
+ * - `stringPassthrough` — single `run_scores.name` whose string value is
+ *                         forwarded as-is (e.g. comma-separated "to work on"
+ *                         lists).
+ * - `paSkillsToWorkOn`  — computed PA-only column; value derived from the PA
+ *                         subtask breakdown by the scoring service.
+ * - `letterToWorkOn`    — computed column that merges several domain-indexed
+ *                         string fields into one comma-separated list (e.g. letter's
+ *                         "Letters To Work On" = upperIncorrect (UppercaseNames) +
+ *                         lowerIncorrect (LowercaseNames), concatenated in declared
+ *                         source order).
+ *
+ * Names are matched case-sensitively against `app_assessment_fdw.run_scores.name`.
+ */
+const subscoreColumnBaseFields = {
+  /** Stable response key; appears in the per-task `subscores` object and as a `subscoreColumns[].key`. */
+  key: z.string(),
+  /** Human-readable column header label. */
+  label: z.string(),
+  /** Flags a best-guess column for an assessment not yet migrated into assessment-schema. */
+  provisional: z.boolean().optional(),
+  /**
+   * `run_scores.domain` key for this column's value, when the task emits the
+   * score under a per-subtask domain (PA: numCorrect under FSM/LSM/DEL; letter:
+   * subScore under LowercaseNames/UppercaseNames/Phonemes). Disambiguates
+   * generic names shared across domains; tasks with globally-distinct names
+   * (phonics) omit it and use a flat lookup.
+   */
+  domain: z.string().optional(),
+};
+
+const ItemLevelSubscoreColumnSchema = z.object({
+  kind: z.literal('itemLevel'),
+  ...subscoreColumnBaseFields,
+  correctName: z.string(),
+  attemptedName: z.string(),
+  percentCorrectName: z.string().optional(),
+  /** Whether this column is part of the per-subtask sub-skill breakdown (default true). */
+  subskill: z.boolean().optional().default(true),
+});
+
+const NumberSubscoreColumnSchema = z.object({
+  kind: z.literal('number'),
+  ...subscoreColumnBaseFields,
+  name: z.string(),
+  round: z.boolean().optional(),
+});
+
+const StringPassthroughSubscoreColumnSchema = z.object({
+  kind: z.literal('stringPassthrough'),
+  ...subscoreColumnBaseFields,
+  name: z.string(),
+});
+
+const PaSkillsToWorkOnSubscoreColumnSchema = z.object({
+  kind: z.literal('paSkillsToWorkOn'),
+  ...subscoreColumnBaseFields,
+});
+
+/**
+ * A computed column that merges several domain-indexed string fields into one
+ * comma-separated list — e.g. letter's "Letters To Work On" = `upperIncorrect`
+ * (UppercaseNames) + `lowerIncorrect` (LowercaseNames). Each source value is
+ * itself a comma-joined list; non-empty sources are concatenated in order.
+ */
+const LetterToWorkOnSubscoreColumnSchema = z.object({
+  kind: z.literal('letterToWorkOn'),
+  ...subscoreColumnBaseFields,
+  sources: z
+    .array(
+      z.object({
+        name: z.string(),
+        domain: z.string().optional(),
+      }),
+    )
+    .min(1),
+});
+
+const SubscoreColumnSchema = z.discriminatedUnion('kind', [
+  ItemLevelSubscoreColumnSchema,
+  NumberSubscoreColumnSchema,
+  StringPassthroughSubscoreColumnSchema,
+  PaSkillsToWorkOnSubscoreColumnSchema,
+  LetterToWorkOnSubscoreColumnSchema,
+]);
+
+/**
+ * Subscores config block: an ORDERED array of columns. Order is significant —
+ * it is the order the task-subscores table renders columns in.
+ */
+const SubscoresSchema = z.array(SubscoreColumnSchema).min(1);
+
+// --- Display descriptor ---
+
+/**
+ * Which score a task surfaces as its primary display, and how it's labelled.
+ * Moves the dashboard's `getScoreToDisplay` + percent-correct/raw-only branching
+ * into config so the frontend paints `display` without knowing scoring versions.
+ *
+ * - `normed`                    — percentile (grades below `percentileBelowGrade`) else
+ *                                 standard score; falls back to raw when the resolved
+ *                                 version has no normed fields (e.g. swr-es v0).
+ * - `percentCorrect`            — the task's `percentile` field holds a percent-correct value
+ *                                 (letter/phonics: `TOTAL_PERCENT_CORRECT`).
+ * - `rawOnly`                   — raw score only.
+ * - `gradeEstimate`             — raw score primary (grade-estimate tasks, e.g. roam-alpaca).
+ * - `correctIncorrectDifference`— raw score representing the difference between correct and
+ *                                 incorrect responses (e.g. sre-es at earlier versions).
+ */
+export const DISPLAY_CATEGORIES = [
+  'normed',
+  'percentCorrect',
+  'rawOnly',
+  'gradeEstimate',
+  'correctIncorrectDifference',
+] as const;
+
+const DisplayCategorySchema = z.enum(DISPLAY_CATEGORIES);
+
+/**
+ * Versioned display category. Resolved by descending `minVersion` (first match
+ * where `scoringVersion >= minVersion`) — lets a task be percent-correct at v0
+ * and normed at v1+ (swr-es / sre-es) without the response builder branching.
+ */
+const VersionedDisplayCategorySchema = z.object({
+  minVersion: z.number().int().min(0),
+  category: DisplayCategorySchema,
+});
+
+const ScoreRangeSchema = z.object({ min: z.number(), max: z.number() });
+
+/**
+ * Display ranges (dial min/max) per display score type. Not versioned — the
+ * dashboard's `getRawScoreRange` is per-task, not per-version.
+ */
+const DisplayRangesSchema = z.object({
+  percentile: ScoreRangeSchema.optional(),
+  standardScore: ScoreRangeSchema.optional(),
+  rawScore: ScoreRangeSchema.optional(),
+  percentCorrect: ScoreRangeSchema.optional(),
+  correctIncorrectDifference: ScoreRangeSchema.optional(),
+});
+
+// --- Top-level scoring config ---
+
+export const ScoringConfigSchema = z.object({
+  taskSlugs: z.array(z.string()).min(1),
+  scoreFields: ScoreFieldsSchema,
+  classification: ClassificationSchema,
+  /**
+   * Optional subscores declaration. Tasks without sub-skill breakdowns omit
+   * this block. The individual student report response only includes a
+   * `subscores` field on per-task entries when this block is present.
+   */
+  subscores: SubscoresSchema.optional(),
+  /**
+   * Optional display descriptor. When present, the report responses include a
+   * per-task `display` object; tasks without it omit `display` (the frontend
+   * keeps its legacy path until the config is authored). Ordered by descending
+   * `minVersion`.
+   */
+  displayCategory: z.array(VersionedDisplayCategorySchema).min(1).superRefine(descendingMinVersion).optional(),
+  displayRanges: DisplayRangesSchema.optional(),
+});
+
+// --- Inferred types ---
+
+export type ScoringConfig = z.infer<typeof ScoringConfigSchema>;
+export type ScoreFieldType = z.infer<typeof ScoreFieldTypeSchema>;
+export type GradeConditionalField = z.infer<typeof GradeConditionalFieldSchema>;
+export type FieldNameValue = z.infer<typeof FieldNameValueSchema>;
+export type VersionedFieldName = z.infer<typeof VersionedFieldNameSchema>;
+export type Classification = z.infer<typeof ClassificationSchema>;
+export type PercentileThenRawscoreClassification = z.infer<typeof PercentileThenRawscoreClassificationSchema>;
+export type DisplayCategory = z.infer<typeof DisplayCategorySchema>;
+export type ScoreRange = z.infer<typeof ScoreRangeSchema>;
+export type DisplayRanges = z.infer<typeof DisplayRangesSchema>;
+
+// Subscore column types (consumed by the scoring service helpers + report service)
+export type SubscoreColumn = z.infer<typeof SubscoreColumnSchema>;
+export type ItemLevelSubscoreColumn = z.infer<typeof ItemLevelSubscoreColumnSchema>;
+export type NumberSubscoreColumn = z.infer<typeof NumberSubscoreColumnSchema>;
+export type StringPassthroughSubscoreColumn = z.infer<typeof StringPassthroughSubscoreColumnSchema>;
+export type PaSkillsToWorkOnSubscoreColumn = z.infer<typeof PaSkillsToWorkOnSubscoreColumnSchema>;
+export type LetterToWorkOnSubscoreColumn = z.infer<typeof LetterToWorkOnSubscoreColumnSchema>;

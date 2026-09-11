@@ -1,14 +1,17 @@
-import { ref, nextTick } from 'vue';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
-import { getDistrictSupportCategories } from '@/helpers/query/scores';
+import { getRoarApiClient } from '@/clients/roar-api';
 import useDistrictSupportCategoriesQuery from './useDistrictSupportCategoriesQuery';
 
-vi.mock('@/helpers/query/utils', () => ({
-  fetchDocumentsById: vi.fn().mockImplementation(() => []),
+const mockUseAuthStore = vi.fn(() => ({ accessToken: 'test-token' }));
+
+vi.mock('@/store/auth', () => ({
+  useAuthStore: () => mockUseAuthStore(),
 }));
+
+vi.mock('@/clients/roar-api');
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
@@ -18,110 +21,42 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
-vi.mock('@/helpers/query/scores', () => ({
-  getDistrictSupportCategories: vi.fn().mockImplementation(() => {}),
-}));
-
 describe('useDistrictSupportCategoriesQuery', () => {
   let queryClient;
 
   beforeEach(() => {
     queryClient = new VueQuery.QueryClient();
+    vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    queryClient?.clear();
-  });
-
-  it('should call query with correct parameters', () => {
+  it('should call the aggregateSupportCategories endpoint', () => {
     const districtId = nanoid();
-    const assignmentId = nanoid();
+    const administrationId = nanoid();
 
+    const mockClient = {
+      administrations: {
+        aggregateSupportCategories: vi.fn().mockResolvedValue({ data: {} }),
+      },
+    };
+
+    vi.mocked(getRoarApiClient).mockReturnValue(mockClient);
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useDistrictSupportCategoriesQuery(districtId, assignmentId), {
+    withSetup(() => useDistrictSupportCategoriesQuery(districtId, administrationId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['district-support-categories', districtId, assignmentId],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: true,
-      }),
-    });
-
-    expect(getDistrictSupportCategories).toHaveBeenCalledWith(districtId, assignmentId);
+    expect(VueQuery.useQuery).toHaveBeenCalled();
   });
 
-  it('should allow the query to be disabled via the passed query options', () => {
-    const districtId = nanoid();
-    const assignmentId = nanoid();
-    const queryOptions = { enabled: false };
-
+  it('should disable query when IDs are not provided', () => {
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useDistrictSupportCategoriesQuery(districtId, assignmentId, queryOptions), {
+    withSetup(() => useDistrictSupportCategoriesQuery(null, null), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['district-support-categories', districtId, assignmentId],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-      }),
-    });
-
-    expect(getDistrictSupportCategories).not.toHaveBeenCalled();
-  });
-
-  it('should not fetch data if district or assignment ID is not available', async () => {
-    const districtId = ref(nanoid());
-    const assignmentId = ref(null);
-    const queryOptions = { enabled: true };
-
-    vi.spyOn(VueQuery, 'useQuery');
-
-    withSetup(() => useDistrictSupportCategoriesQuery(districtId, assignmentId, queryOptions), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['district-support-categories', districtId, assignmentId],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-      }),
-    });
-
-    expect(getDistrictSupportCategories).not.toHaveBeenCalled();
-
-    assignmentId.value = nanoid();
-    await nextTick();
-
-    expect(getDistrictSupportCategories).toHaveBeenCalledWith(districtId, assignmentId);
-  });
-
-  it('should not let queryOptions override the internally computed value', async () => {
-    const districtId = null;
-    const assignmentId = null;
-    const queryOptions = { enabled: true };
-
-    vi.spyOn(VueQuery, 'useQuery');
-
-    withSetup(() => useDistrictSupportCategoriesQuery(districtId, assignmentId, queryOptions), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['district-support-categories', districtId, assignmentId],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-      }),
-    });
-
-    expect(getDistrictSupportCategories).not.toHaveBeenCalled();
+    const callArgs = vi.mocked(VueQuery.useQuery).mock.calls[0]?.[0];
+    expect(callArgs?.enabled?.value).toBe(false);
   });
 });

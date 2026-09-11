@@ -1,0 +1,4 @@
+ALTER TABLE "app"."administrations" ALTER COLUMN "excluded_from_research" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "app"."administrations" ALTER COLUMN "excluded_from_research" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "app"."administrations" ALTER COLUMN "excluded_from_research" SET DATA TYPE timestamp with time zone USING CASE WHEN "excluded_from_research" = true THEN NOW() ELSE NULL END;--> statement-breakpoint
+ALTER TABLE "app"."administrations" ADD CONSTRAINT "administrations_excluded_from_research_required" CHECK ("app"."administrations"."excluded_from_research" IS NULL OR ("app"."administrations"."excluded_from_research_by" IS NOT NULL AND "app"."administrations"."excluded_from_research_reason" IS NOT NULL));

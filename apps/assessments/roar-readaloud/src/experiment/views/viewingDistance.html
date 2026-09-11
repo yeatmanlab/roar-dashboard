@@ -1,0 +1,259 @@
+<!-- Scripts -->
+<link
+  href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+  rel="stylesheet"
+  integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+  crossorigin="anonymous"
+/>
+<script
+  src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"
+  crossorigin="anonymous"
+></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.js"
+  crossorigin="anonymous"
+></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js"
+  crossorigin="anonymous"
+></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"
+  crossorigin="anonymous"
+></script>
+<!-- CSS -->
+<style>
+  body {
+    margin: 0;
+  }
+
+  .column {
+    float: left;
+    padding: 10px;
+  }
+
+  .left,
+  .right {
+    width: 33%;
+  }
+
+  .middle {
+    width: 33%;
+  }
+
+  .row:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  #frame-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 5px solid rgba(255, 255, 255, 0.7);
+    /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); */
+    object-fit: cover;
+  }
+
+  #canvas-container {
+    position: relative;
+    width: 480px;
+    height: 480px;
+    margin: 0 auto;
+  }
+
+  #loading-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 20px; /* Adjust as needed */
+    background-color: #0d6efd; /* Adjust as needed */
+    transition: width 0.5s ease; /* Adjust the transition duration */
+  }
+</style>
+
+<!-- HTML -->
+<body id="body">
+  <div class="px-4 py-5 my-5 text-center" style="display: block">
+    <h1 class="display-5 fw-bold" id="title">Configure Viewing Distance</h1>
+    <div class="col-lg-6 mx-auto">
+      <p class="lead mt-3 mb-5"></p>
+      <h3 id="expected_viewing_distance">Expected Viewing Distance: 50cm</h3>
+      <p id="viewing-distance" style="text-align: center">
+        <br />
+        <br />
+      </p>
+
+      <div id="canvas-container">
+        <canvas
+          id="frame-canvas"
+          class="frame"
+          width="1280px"
+          height="720px"
+        ></canvas>
+        <div id="loading-bar"></div>
+      </div>
+
+      <div class="row gap-2" id="confirmButtons" style="display: none">
+        <h2>Awesome. Try stay just like this during the study!</h2>
+
+        <button id="confirmButton">Next</button>
+      </div>
+    </div>
+  </div>
+</body>
+
+<div class="panel-block" style="display: none" ;>
+  <video class="inputVideo"></video>
+</div>
+
+<script>
+  var deviceConfig = store.session.get("deviceConfig");
+  var deviceConfig = {
+    screenWidth: 29,
+    screenHeight: 16.2,
+    screenWidthPX: 960,
+    screenHeightPX: 540,
+    webcamHeight: 0.5,
+    normalizedFocalLength: 1.3,
+  };
+  var _deviceConfig = deviceConfig;
+
+  // var normalizedFocalLength = 1.3
+
+  // chromebook
+  // var normalizedFocalLength = 1.4699437943011984
+  // ipad
+  var normalizedFocalLength = _deviceConfig.normalizedFocalLength;
+
+  var inputVideo = document.getElementsByClassName("inputVideo")[0];
+  var frameCanvas = document.getElementById("frame-canvas");
+  var canvasCtx = frameCanvas.getContext("2d");
+  var viewingDistanceElement = document.getElementById("viewing-distance");
+  var current_viewingDistance = 0;
+  var loadingBar = document.getElementById("loading-bar");
+  var camera_stream;
+
+  function distanceSet() {
+    clearInterval(updateInterval);
+    document.getElementById("canvas-container").style.display = "none";
+    viewingDistanceElement.style.display = "none";
+    document.getElementById("expected_viewing_distance").style.display = "none";
+    document.getElementById("confirmButtons").style.display = "block";
+  }
+
+  async function giveAccess() {
+    try {
+      // Get the user's media (audio and video)
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 60, max: 60 },
+        },
+        audio: true,
+      });
+
+      // Assign the camera stream to the inputVideo element
+      if (inputVideo) {
+        inputVideo.srcObject = stream;
+        inputVideo.play();
+
+        // Set the canvas dimensions to match the video stream
+        // Listen for the 'loadedmetadata' event to ensure video metadata is available
+        inputVideo.addEventListener("loadedmetadata", function () {
+          // Set the canvas dimensions to match the video stream
+          if (frameCanvas) {
+            const { width, height } = {
+              width: inputVideo.videoWidth,
+              height: inputVideo.videoHeight,
+            };
+            console.log(width, height);
+            frameCanvas.width = width;
+            frameCanvas.height = height;
+          }
+        });
+      } else {
+        console.error("inputVideo element not found.");
+      }
+    } catch (error) {
+      console.error("Error accessing media devices:", error);
+    }
+  }
+
+  async function processFrames() {
+    // Check if inputVideo is defined
+    if (inputVideo) {
+      try {
+        await faceMesh.send({ image: inputVideo });
+      } catch (error) {
+        console.error("Error sending frame to FaceMesh:", error);
+      }
+
+      // Continue to the next frame
+      requestAnimationFrame(processFrames);
+    } else {
+      console.error("inputVideo element not found.");
+    }
+  }
+
+  // Call giveAccess to obtain the camera stream
+  giveAccess();
+
+  // Add an event listener for the 'play' event on inputVideo
+  inputVideo.addEventListener("play", function () {
+    // Start processing frames when the video plays
+    processFrames();
+  });
+
+  async function loadWebmFile() {
+    try {
+      // Get the inputVideo element
+      // Check if the inputVideo element exists
+      if (!inputVideo) {
+        console.error("inputVideo element not found.");
+        return;
+      }
+
+      // URL of the .webm file
+      const webmFileURL =
+        "https://eyetrackingdata.blob.core.windows.net/public/Images/Pilot1_15deci5_20deci5_1_0_810_1080_30.mp4";
+
+      // Create a Blob URL for the .webm file
+      const blob = await fetch(webmFileURL).then((response) => response.blob());
+      const blobURL = URL.createObjectURL(blob);
+
+      // Assign the .webm file to the inputVideo element
+      inputVideo.src = blobURL;
+      inputVideo.play();
+
+      // Set the canvas dimensions to match the video stream
+      // Listen for the 'loadedmetadata' event to ensure video metadata is available
+      inputVideo.addEventListener("loadedmetadata", function () {
+        // Set the canvas dimensions to match the video stream
+        const frameCanvas = document.getElementById("frameCanvas");
+        if (frameCanvas) {
+          const { width, height } = {
+            width: inputVideo.videoWidth,
+            height: inputVideo.videoHeight,
+          };
+          console.log(width, height);
+          frameCanvas.width = width;
+          frameCanvas.height = height;
+        }
+      });
+    } catch (error) {
+      console.error("Error loading .webm file:", error);
+    }
+  }
+
+  // Call the function to load the .webm file
+  // loadWebmFile();
+</script>
+
+<script src="./viewingDistance.js"></script>

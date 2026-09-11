@@ -1,0 +1,131 @@
+sentence,answer,direction,itemId
+Las mariposas tienen alas coloridas.,TRUE,right,ai_b_1
+Los océanos vastos albergan una rica diversidad de vida submarina.,TRUE,right,ai_b_2
+Los científicos estudian la naturaleza y descubren nuevos conocimientos.,TRUE,right,ai_b_3
+En invierno hace frío y nieva.,TRUE,right,ai_b_4
+Las tijeras cortan el papel.,TRUE,right,ai_b_5
+Los pájaros construyen nidos en los árboles para criar a sus crías.,TRUE,right,ai_b_6
+Las uvas son pequeñas y jugosas.,TRUE,right,ai_b_7
+Las bolsas pueden llevar objetos.,TRUE,right,ai_b_8
+Los elefantes tienen trompas largas que usan para muchas cosas.,TRUE,right,ai_b_9
+Los payasos hacen reír a la gente.,TRUE,right,ai_b_10
+Los gusanos viven en la tierra.,TRUE,right,ai_b_11
+Los artistas dibujan con lápices.,TRUE,right,ai_b_12
+Los peces nadan en el agua.,TRUE,right,ai_b_13
+Los arcoíris aparecen después de la lluvia.,TRUE,right,ai_b_14
+Los delfines son inteligentes.,TRUE,right,ai_b_15
+Las bicicletas pueden tener canastas.,TRUE,right,ai_b_16
+Las hamburguesas son carne entre panes.,TRUE,right,ai_b_17
+Los pingüinos viven en el hielo.,TRUE,right,ai_b_18
+Las estaciones del año cambian.,TRUE,right,ai_b_19
+Los bomberos usan mangueras para apagar incendios en edificios.,TRUE,right,ai_b_20
+Los perros ladran a los extraños.,TRUE,right,ai_b_21
+Los autobuses transportan personas.,TRUE,right,ai_b_22
+Los perros ladran como señal de alerta.,TRUE,right,ai_b_23
+Los perros son leales y amigables compañeros en los hogares.,TRUE,right,ai_b_24
+Los ciclistas pedalean en bicicletas.,TRUE,right,ai_b_25
+Los niños juegan con juguetes.,TRUE,right,ai_b_26
+Las sillas sirven para sentarse.,TRUE,right,ai_b_27
+Las lágrimas son saladas.,TRUE,right,ai_b_28
+"En la noche, la luna ilumina el cielo.",TRUE,right,ai_b_29
+El sol sale cada mañana.,TRUE,right,ai_b_30
+Octubre tiene 31 días.,TRUE,right,ai_b_31
+Los lectores disfrutan de los libros.,TRUE,right,ai_b_32
+Los nadadores se sumergen en el agua.,TRUE,right,ai_b_33
+Los niños comen helado felizmente.,TRUE,right,ai_b_34
+Los pintores usan brochas para pintar cuadros.,TRUE,right,ai_b_35
+Los conejos saltan en la hierba.,TRUE,right,ai_b_36
+Las ranas saltan en el estanque.,TRUE,right,ai_b_37
+Enero es el primer mes del año.,TRUE,right,ai_b_38
+Los niños disfrutan jugando en los parques al aire libre.,TRUE,right,ai_b_39
+Los volcanes pueden entrar en erupción.,TRUE,right,ai_b_40
+Los médicos usan estetoscopios para escuchar el corazón.,TRUE,right,ai_b_41
+Las pizzas son redondas.,TRUE,right,ai_b_42
+Las ranas croan en la noche.,TRUE,right,ai_b_43
+Los chefs preparan deliciosos platos utilizando ingredientes frescos y sabrosos.,TRUE,right,ai_b_44
+Las hojas crujen bajo los pies.,TRUE,right,ai_b_45
+El helado es un postre frío.,TRUE,right,ai_b_46
+Las fresas son rojas y jugosas.,TRUE,right,ai_b_47
+Los cangrejos caminan de lado.,TRUE,right,ai_b_48
+Un bombero apaga fuegos con agua.,TRUE,right,ai_b_49
+"Las frutas, como las manzanas, ofrecen vitaminas y sabores deliciosos.",TRUE,right,ai_b_50
+Un jardinero cuida de las plantas en un jardín.,TRUE,right,ai_b_51
+Las bicicletas tienen pedales para avanzar.,TRUE,right,ai_b_52
+El sol brilla durante el día.,TRUE,right,ai_b_53
+Los pandas comen bambú.,TRUE,right,ai_b_54
+Los barcos navegan en el agua.,TRUE,right,ai_b_55
+Los aviones vuelan en el cielo.,TRUE,right,ai_b_56
+Las flores desprenden fragancias.,TRUE,right,ai_b_57
+Los astronautas viajan al espacio para explorar planetas y estrellas.,TRUE,right,ai_b_58
+Los árboles dan sombra.,TRUE,right,ai_b_59
+Los gatos cazan ratones.,TRUE,right,ai_b_60
+La escritura utiliza letras y palabras para comunicar pensamientos y ideas.,TRUE,right,ai_b_61
+Los relojes ayudan a las personas a mantenerse en el tiempo adecuado.,TRUE,right,ai_b_62
+Las naranjas son frutas cítricas.,TRUE,right,ai_b_63
+Algunos niños saltan la cuerda en el parque.,TRUE,right,ai_b_64
+El verano es una estación del año.,TRUE,right,ai_b_65
+Los cangrejos escriben novelas.,FALSE,left,ai_b_66
+Las naranjas son frutas amarillas.,FALSE,left,ai_b_67
+Las arañas tejen telas que se convierten en trampolines mágicos.,FALSE,left,ai_b_68
+Los astronautas caminan sobre la luna descalzos y cantando.,FALSE,left,ai_b_69
+Las manzanas son verdes por dentro.,FALSE,left,ai_b_70
+Los dinosaurios son mascotas comunes.,FALSE,left,ai_b_71
+Los gorilas juegan al ajedrez.,FALSE,left,ai_b_72
+Las hojas son mariposas disfrazadas.,FALSE,left,ai_b_73
+Las cucarachas son mensajeras secretas que hablan varios idiomas.,FALSE,left,ai_b_74
+Las piedras son magos.,FALSE,left,ai_b_75
+Los trenes viajan al pasado y al futuro en segundos.,FALSE,left,ai_b_76
+Las abejas bailan en primavera.,FALSE,left,ai_b_77
+Los peces conducen automóviles.,FALSE,left,ai_b_78
+Las olas del mar son escaleras que conducen a mundos submarinos.,FALSE,left,ai_b_79
+Los maestros enseñan a los pájaros a cantar.,FALSE,left,ai_b_80
+Los dragones vuelan en bicicleta.,FALSE,left,ai_b_81
+Los árboles tienen raíces que se extienden hasta el espacio.,FALSE,left,ai_b_82
+"La letra ""Q"" es la primera del alfabeto.",FALSE,left,ai_b_83
+Los caracoles conducen coches.,FALSE,left,ai_b_84
+Los árboles tienen piernas.,FALSE,left,ai_b_85
+Los libros crecen en los árboles.,FALSE,left,ai_b_86
+Un astronauta vive en la luna.,FALSE,left,ai_b_87
+Las olas del mar son completamente silenciosas.,FALSE,left,ai_b_88
+El viento sopla en todas direcciones.,FALSE,left,ai_b_89
+Los relojes tienen poderes mágicos para detener el tiempo.,FALSE,left,ai_b_90
+Las computadoras tienen patas.,FALSE,left,ai_b_91
+Los nadadores corren maratones bajo el agua.,FALSE,left,ai_b_92
+Diciembre tiene 100 días.,FALSE,left,ai_b_93
+Los jardineros juegan al fútbol con flores.,FALSE,left,ai_b_94
+Los vasos son cuadrados.,FALSE,left,ai_b_95
+Las abejas hacen malabares.,FALSE,left,ai_b_96
+Las flores hablan en susurros.,FALSE,left,ai_b_97
+Los desiertos son océanos de arena con olas suaves.,FALSE,left,ai_b_98
+Las tortugas corren carreras de velocidad en el mar.,FALSE,left,ai_b_99
+Los libros pueden hablar.,FALSE,left,ai_b_100
+Los peces caminan por la tierra.,FALSE,left,ai_b_101
+Las tortugas corren tan rápido como los guepardos.,FALSE,left,ai_b_102
+Los pingüinos practican surf.,FALSE,left,ai_b_103
+Las hormigas construyen ciudades subterráneas con rascacielos enormes.,FALSE,left,ai_b_104
+Las hamburguesas son vegetarianas.,FALSE,left,ai_b_105
+Los árboles caminan por el bosque.,FALSE,left,ai_b_106
+Abril es el primer mes del año.,FALSE,left,ai_b_107
+Los elefantes usan sombreros.,FALSE,left,ai_b_108
+Los bomberos apagan incendios con paraguas.,FALSE,left,ai_b_109
+Los teléfonos tienen ruedas para moverse.,FALSE,left,ai_b_110
+Los elefantes tocan la trompeta.,FALSE,left,ai_b_111
+Los helados son calientes.,FALSE,left,ai_b_112
+Los juguetes de peluche son exploradores que escalan montañas.,FALSE,left,ai_b_113
+Las hormigas son tan grandes como elefantes.,FALSE,left,ai_b_114
+Los koalas son expertos en karate.,FALSE,left,ai_b_115
+Los trenes nadan en el océano.,FALSE,left,ai_b_116
+Las vacas saltan la cuerda.,FALSE,left,ai_b_117
+La lluvia cae hacia arriba.,FALSE,left,ai_b_118
+Las sirenas son gimnastas.,FALSE,left,ai_b_119
+Los libros son invisibles.,FALSE,left,ai_b_120
+Los lápices tienen superpoderes para escribir solos en papel.,FALSE,left,ai_b_121
+Los astronautas bailan salsa en el espacio.,FALSE,left,ai_b_122
+Las ardillas son acróbatas.,FALSE,left,ai_b_123
+Los tigres son animales marinos.,FALSE,left,ai_b_124
+Las mariposas son detectives que resuelven misterios en la jungla.,FALSE,left,ai_b_125
+Los elefantes pueden hablar.,FALSE,left,ai_b_126
+Los lápices son herramientas de cocina.,FALSE,left,ai_b_127
+Las vacas son artistas que pintan paisajes en la hierba.,FALSE,left,ai_b_128
+Las flores no necesitan agua.,FALSE,left,ai_b_129
+Las vacas vuelan en el cielo.,FALSE,left,ai_b_130

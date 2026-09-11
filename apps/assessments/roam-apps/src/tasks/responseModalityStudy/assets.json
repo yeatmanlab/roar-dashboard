@@ -1,0 +1,32 @@
+{
+  "default": {
+    "languageSpecific": {
+      "device": [
+        "keyboard-backspace.gif",
+        "keyboard-enter.gif",
+        "keyboard-numbers.gif",
+        "keyboard-example-5.gif",
+        "navigation-instruction.mp3",
+        "response-time-2afc.gif",
+        "response-time-6afc.gif"
+      ],
+      "shared": [
+        "responseModalityStudy-end-screen-1.mp3",
+        "responseModalityStudy-instructions.mp3",
+        "responseModalityStudy-introduction.mp3",
+        "responseModalityStudy-practice-afc.mp3",
+        "responseModalityStudy-practice-production.mp3"
+      ]
+    },
+    "shared": [
+      "arf_2afc_button.jpg",
+      "arf_2afc_swipe.jpg",
+      "arf_production.jpg",
+      "nullAudio.mp3",
+      "tiger.gif",
+      "paper-pencil-red.png",
+      "paper-pencil-green.png",
+      "goButtonRectangleYellow.png"
+    ]
+  }
+}

@@ -6,7 +6,6 @@
 import { trialInteractionTypeEnum } from '../db/schema/enums';
 import { pgEnumToConst } from './utils';
 
-const TrialInteractionType = pgEnumToConst(trialInteractionTypeEnum);
+export const TrialInteractionType = pgEnumToConst(trialInteractionTypeEnum);
 
 export type TrialInteractionType = (typeof trialInteractionTypeEnum.enumValues)[number];
-export default TrialInteractionType;

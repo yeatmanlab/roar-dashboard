@@ -1,0 +1,146 @@
+{
+  "loading": "Das Spiel wird geladen...",
+  "labID": "Labor-ID",
+  "participantID": "Teilnehmer*in-ID",
+  "buttonLabel": "Weiter",
+  "progressBar": "Vorgang abgeschlossen",
+  "preloadTrial": {
+    "messageText": "Bitte warte, während das Spiel geladen wird. Dies kann einige Minuten dauern."
+  },
+  "fullScreenTrial": {
+    "prompt": "Das Spiel wird jetzt in den Vollbildmodus wechseln. <br/> Klicke auf 'Weiter' um zu starten.",
+    "buttonText": "Weiter"
+  },
+  "navigation": {
+    "continueButtonText": "Drücke <span class='yellow'>{{input}}</span> {{action}}",
+    "studentSelect": "Drücke auf <span class='yellow'>eine Zahl</span>. "
+  },
+  "introduction": {
+    "gradeSelect": {
+      "text1": "In welche Klasse gehst du?",
+      "text2": "Um zu beginnen, drücke auf die Taste mit der Zahl deiner Klasse.",
+      "text2Mobile": "Um zu beginnen, drücke auf die Zahl deiner Klasse.",
+      "text3": "Zum Beispiel drückst du auf die „4“, wenn du in die 4. Klasse gehst.",
+      "text4": "Drücke auf die <span class='yellow'>Taste mit der Zahl </span> deiner Klasse, um fortzufahren. ",
+      "text4Mobile": "Drücke auf die <span class='yellow'>Zahl</span> deiner Klasse, um fortzufahren. "
+    },
+    "intro": {
+      "text1": "Willkomen bei der Aufgabe zum Satzlesen!",
+      "text2": "In dieser Aufgabe musst du entscheiden, ob ein Satz wahr ist oder nicht.",
+      "text3": "Einige der Sätze können verwirrend sein, aber gib dein Bestes, so viele Sätze wie möglich richtig zuzuordnen.",
+      "text4": "Willkommen! Du bist die neue Professorin an der Satzakademie.",
+      "text5": "Die Satzakademie besuchen schlaue Schülerinnen und Schüler, die deine Hilfe bei ihren Hausaufgaben zum Satzlesen brauchen.",
+      "text6": "Du wirst ihnen helfen zu entscheiden, ob ein Satz wahr ist oder nicht."
+    }
+  },
+  "practice": {
+    "intro": {
+      "text1": "Anleitung",
+      "text2": "In dieser Aufgabe wirst du einige Sätze lesen und entscheiden, ob diese wahr oder falsch sind.",
+      "text3": "Drücke die <span class='orange'><b> LINKE PFEILTASTE </b></span>, wenn ein Satz falsch ist. Zum Beispiel „Fische leben an Land.“ ist ein falscher Satz und du würdest also die <span class='orange'> <b> linke Pfeiltaste </b> </span> drücken.",
+      "text3Mobile": "Drücke auf den <span class='orange'><b> LINKEN PFEIL </b></span> wenn ein Satz falsch ist. Zum Beispiel „Fische leben an Land.“ ist ein falscher Satz und du würdest also den <span class='orange'> <b> linken Pfeil </b> </span> drücken.",
+      "text4": "Drücke die <span class='blue'><b> RECHTE PFEILTASTE </b></span>, wenn ein Satz wahr ist. Zum Beispiel „Die Kuh ist ein Tier.“ ist ein wahrer Satz und du würdest also die <span class='blue'> <b> rechte Pfeiltaste </b> </span> drücken.",
+      "text4Mobile": "Drücke auf den <span class='blue'><b> RECHTEN PFEIL </b></span>, wenn ein Satz wahr ist. Zum Beispiel „Die Kuh ist ein Tier.“ ist ein wahrer Satz und du würdest also auf den <span class='blue'> <b> rechten Pfeil </b> </span> drücken.",
+      "text5": " Lass uns üben!",
+      "text6": "Drücke <span class='yellow'>eine beliebige Taste </span>, um mit den Übungssätzen zu beginnen.",
+      "text6Mobile": "Drücke <span class='yellow'>HIER</span>, um mit den Übungssätzen zu beginnen."
+    },
+    "postPracticeIntro": {
+      "text1": "Gut gemacht!",
+      "text2": "Du bist bereit, das Spiel zu beginnen.",
+      "text3": "Du hast <b> 3 Minuten </b> Zeit, um so viele Sätze wie möglich richtig zuzuordnen.",
+      "text4": "Lies jeden Satz leise und arbeite so schnell wie möglich, ohne Fehler zu machen.",
+      "text5": "Es ist in Ordnung, wenn du nicht sicher bist. Du darfst raten und mit dem nächsten Satz weitermachen."
+    },
+    "feedback": {
+      "text1": "Du hast die {{arrow}} Pfeiltaste gedrückt, die für {{type}}e Sätze steht.",
+      "text1Mobile": "Du hast auf den {{arrow}}n Pfeil gedrückt, der für {{type}}e Sätze steht.",
+      "text2": "ist ein {{type}}er Satz. Drücke die {{arrow}} Pfeiltaste, um fortzufahren.",
+      "text2Mobile": "ist ein {{type}}er Satz. Drücke auf den {{arrow}}n Pfeil, um fortzufahren."
+    },
+    "postPracticeReminder": {
+      "text1": "Drücke die <span class='orange'> <b> linke Pfeiltaste </b> </span> für <span class='orange'> <b> falsche Sätze.</b> </span>",
+      "text1Mobile": "Drücke auf den <span class='orange'> <b> linken Pfeil </b> </span> für <span class='orange'> <b> falsche Sätze.</b> </span>",
+      "text2": "Drücke die <span class='blue'> <b> rechte Pfeiltaste </b> </span> für <span class='blue'> <b> wahre Sätze. </b> </span>",
+      "text2Mobile": "Drücke auf den <span class='blue'> <b> rechten Pfeil </b> </span> für <span class='blue'> <b> wahre Sätze. </b> </span>",
+      "text3": "Gib dein Bestes!",
+      "text4": "Bist du bereit?"
+    }
+  },
+  "characterSelect": {
+    "studentSelect": {
+      "paragraph1": "Lass uns nun deine Schülerinnen und Schüler kennenlernen!",
+      "paragraph2": "Benutze die Tasten mit den Zahlen, um auszuwählen, mit wem du arbeiten möchtest.",
+      "paragraph2Mobile": "Drücke auf eine Zahl, um auszuwählen, mit wem du arbeiten möchtest.",
+      "paragraph3": "Drücke auf <span class='yellow'>eine Zahl</span>.",
+      "paragraph3MobileBefore": "Drücke auf ",
+      "paragraph3MobileSpan": "eine Zahl",
+      "paragraph3MobileAfter": "."
+    },
+    "studentIntro": {
+      "paragraph1": "Hallo! Ich heisse",
+      "paragraph2": "Ich habe Schwierigkeiten mit meinen Hausaufgaben zum Satzlesen. Ich muss meine Hausaufgaben erledigen, damit ich",
+      "paragraph3": "Kannst du mir helfen?"
+    },
+    "studentCharacter": {
+      "dog": "Hannah",
+      "cat": "Jona",
+      "bird": "Alex",
+      "deer": "Hamza"
+    },
+    "studentActivity": {
+      "dog": "zum Leichtathletik Training gehen kann",
+      "cat": "in die Theaterprobe gehen kann",
+      "bird": "Fussball spielen kann",
+      "deer": "in den Klavierunterricht gehen kann"
+    }
+  },
+  "gameBreak": {
+    "halfwayScreen": {
+      "text1": "Du machst das toll!",
+      "text2": "Du hast die Hälfte geschafft – weiter so!",
+      "text3": "Glückwunsch! Du machst das toll!!",
+      "text4": "Wir haben die Hälfte geschafft. Lass uns weitermachen!"
+    },
+    "endScreen": {
+      "text1": "Gut gemacht!",
+      "text2": "Du hast es geschafft. Vielen Dank, dass du die Aufgabe bearbeitet hast.",
+      "text3": "Gut gemacht!",
+      "text4": "war in Rekordzeit mit den Hausaufgaben fertig. Danke für deine Hilfe!"
+    },
+    "debrief": {
+      "text1": "Vielen Dank fürs Mitmachen!",
+      "text2": "Deine Antworten wurden gespeichert."
+    }
+  },
+  "feedbackTranslations": {
+    "correct": "Das ist richtig!",
+    "incorrect": "Das ist nicht ganz richtig!"
+  },
+  "reminderTexts": {
+    "remember": "Denk daran!"
+  },
+  "grades": {
+    "1": "1. Klasse",
+    "2": "2. Klasse",
+    "3": "3. Klasse",
+    "4": "4. Klasse",
+    "5": "5. Klasse",
+    "6": "6. Klasse",
+    "7": "7. Klasse",
+    "8+": "8. Klasse oder höher"
+  },
+  "terms": {
+    "here": "HIER",
+    "anyKey": "EINE BELIEBIGE TASTE",
+    "continue": ", um fortzufahren",
+    "practice": ", um zu üben",
+    "begin": ", um zu beginnen",
+    "left": "linke",
+    "right": "rechte",
+    "save": "um zu speichern",
+    "close": "Spiel schliessen",
+    "true": "wahr",
+    "false": "falsch"
+  }
+}

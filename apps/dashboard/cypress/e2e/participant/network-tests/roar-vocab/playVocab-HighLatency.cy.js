@@ -2,7 +2,8 @@ import { playVocabulary } from '../../../../support/helper-functions/roar-vocab/
 import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roar-vocab';
-describe('ROAR - Vocabulary Play Through', () => {
+// SKIPPED until #1827: assessment play-through tests need reevaluation after monorepo migration
+describe.skip('ROAR - Vocabulary Play Through', () => {
   it('Plays Vocabulary with a simulated high latency connection', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {

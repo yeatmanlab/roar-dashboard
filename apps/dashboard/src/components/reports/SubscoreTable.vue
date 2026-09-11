@@ -1,7 +1,7 @@
 <template>
   <h2 class="header-text">{{ _toUpper(taskName) }} SCORE TABLE</h2>
   <RoarDataTable
-    :allow-export-p-d-f="false"
+    :allow-export-pdf="false"
     :columns="columns"
     :data="computedTableData"
     :page-limit="pageLimit"
