@@ -400,16 +400,19 @@ export function AuthorizationModule({
     }
 
     try {
-      // 1. Build desired tuples from Postgres (parallel per-category)
-      const [orgHierarchy, orgMemberships, classMemberships, groupMemberships, familyMemberships, adminAssignments] =
-        await Promise.all([
-          wrapCategoryBuilder(buildOrgHierarchyTuples(), 'orgHierarchy'),
-          wrapCategoryBuilder(buildOrgMembershipTuples(), 'orgMemberships'),
-          wrapCategoryBuilder(buildClassMembershipTuples(), 'classMemberships'),
-          wrapCategoryBuilder(buildGroupMembershipTuples(), 'groupMemberships'),
-          wrapCategoryBuilder(buildFamilyMembershipTuples(), 'familyMemberships'),
-          wrapCategoryBuilder(buildAdministrationAssignmentTuples(), 'administrationAssignments'),
-        ]);
+      // 1. Build desired tuples from Postgres — sequentially on purpose: it
+      // lowers the transient build-phase peak (six concurrent unpaginated
+      // selects would overlap their row buffers), though all six arrays still
+      // coexist at the diff step below.
+      const orgHierarchy = await wrapCategoryBuilder(buildOrgHierarchyTuples(), 'orgHierarchy');
+      const orgMemberships = await wrapCategoryBuilder(buildOrgMembershipTuples(), 'orgMemberships');
+      const classMemberships = await wrapCategoryBuilder(buildClassMembershipTuples(), 'classMemberships');
+      const groupMemberships = await wrapCategoryBuilder(buildGroupMembershipTuples(), 'groupMemberships');
+      const familyMemberships = await wrapCategoryBuilder(buildFamilyMembershipTuples(), 'familyMemberships');
+      const adminAssignments = await wrapCategoryBuilder(
+        buildAdministrationAssignmentTuples(),
+        'administrationAssignments',
+      );
 
       // 2. Read existing tuples from FGA
       let existingTuples: TupleKey[];
