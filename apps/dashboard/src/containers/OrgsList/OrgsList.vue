@@ -12,14 +12,13 @@
         <div class="text-md text-gray-500 ml-6">View organizations assigned to your account.</div>
       </div>
       <PvTabView
-        v-if="claimsLoaded"
         v-model:active-index="activeIndex"
         lazy
         class="mb-7"
         data-cy="orgs-list"
         pt:title:data-testid="tab-title__title"
       >
-        <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+        <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :header="orgType.header">
           <div class="grid column-gap-3 mt-2">
             <div
               v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
@@ -65,12 +64,14 @@
               class="p-2 rounded"
             />
           </div>
-          <!--
-            The table is gated by the outer `v-if="claimsLoaded"` (PvTabView). Once
-            claims are loaded `tableData` is always an array (empty while loading), so
-            the table renders and surfaces its own loading state via `:loading`.
-          -->
+          <div v-if="error" role="alert" class="p-3">
+            Unable to load organizations.
+            <PvButton label="Retry" text @click="retry" />
+          </div>
+          <p v-else-if="isLoading || isFetching" role="status" class="p-3">Loading organizations...</p>
+          <p v-else-if="!tableData.length" role="status" class="p-3">No organizations available.</p>
           <RoarDataTable
+            v-else
             :key="tableKey"
             allow-global-filter
             :allow-export-pdf="false"
@@ -87,7 +88,6 @@
           />
         </PvTabPanel>
       </PvTabView>
-      <AppSpinner v-else />
     </section>
     <section class="flex mt-8 justify-content-end">
       <Dialog v-model:visible="isDialogVisible" width="50rem">
@@ -211,7 +211,7 @@
   </Dialog>
 </template>
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { StatusCodes } from 'http-status-codes';
 import { useToast } from 'primevue/usetoast';
@@ -225,18 +225,10 @@ import PvTabView from 'primevue/tabview';
 import PvToast from 'primevue/toast';
 import PvToggleButton from 'primevue/togglebutton';
 import _get from 'lodash/get';
-import _head from 'lodash/head';
 import _cloneDeep from 'lodash/cloneDeep';
 import _kebabCase from 'lodash/kebabCase';
-import { useAuthStore } from '@/store/auth';
 import { getRoarApiClient } from '@/clients/roar-api';
 import { exportCsv } from '@/helpers/query/utils';
-import useUserType from '@/composables/useUserType';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
-import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
-import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
-import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
 import EditOrgsForm from '@/components/EditOrgsForm.vue';
 import RoarModal from '@/components/modals/RoarModal.vue';
 import Dialog from '@/components/Dialog';
@@ -247,12 +239,29 @@ import useUpdateOrgMutation from '@/composables/mutations/useUpdateOrgMutation';
 import { parseGooglePlaceToLocation } from '@/helpers/parseGooglePlaceToLocation';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable';
+import useOrgBrowser from '@/composables/useOrgBrowser';
+import useCurrentUser from '@/composables/useCurrentUser';
 import { ORG_TYPES } from '@/constants/orgTypes';
 import { usePermissions } from '@/composables/usePermissions';
 
-const initialized = ref(false);
-const selectedDistrict = ref(undefined);
-const selectedSchool = ref(undefined);
+const {
+  orgHeaders,
+  activeIndex,
+  activeOrgType,
+  selectedDistrict,
+  selectedSchool,
+  allDistricts,
+  allSchools,
+  isLoadingDistricts,
+  isLoadingSchools,
+  orgData,
+  isLoading,
+  isFetching,
+  error,
+  retry,
+} = useOrgBrowser();
+const { data: currentUser } = useCurrentUser();
+const isSuperAdmin = computed(() => Boolean(currentUser.value?.isSuperAdmin));
 let activationCode = ref(null);
 const isDialogVisible = ref(false);
 const toast = useToast();
@@ -276,51 +285,6 @@ const schoolPlaceholder = computed(() => {
     return 'Loading...';
   }
   return 'Select a school';
-});
-
-const authStore = useAuthStore();
-
-const { data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-const { isSuperAdmin } = useUserType(userClaims);
-const adminOrgs = computed(() => userClaims?.value?.claims?.minimalAdminOrgs);
-
-// The Families tab was intentionally dropped during the ts-rest backend
-// migration — families have no list endpoint and aren't admin-managed here.
-const orgHeaders = computed(() => {
-  const headers = {
-    districts: { header: 'Districts', id: 'districts' },
-    schools: { header: 'Schools', id: 'schools' },
-    classes: { header: 'Classes', id: 'classes' },
-    groups: { header: 'Groups', id: 'groups' },
-  };
-
-  if (isSuperAdmin.value) return headers;
-
-  const result = {};
-  if ((adminOrgs.value?.districts ?? []).length > 0) {
-    result.districts = { header: 'Districts', id: 'districts' };
-    result.schools = { header: 'Schools', id: 'schools' };
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.schools ?? []).length > 0) {
-    result.schools = { header: 'Schools', id: 'schools' };
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.classes ?? []).length > 0) {
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.groups ?? []).length > 0) {
-    result.groups = { header: 'Groups', id: 'groups' };
-  }
-  return result;
-});
-
-const activeIndex = ref(0);
-const activeOrgType = computed(() => {
-  return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
 const globalFilterFields = computed(() => {
@@ -349,108 +313,6 @@ const {
 
 // Use table columns composable (must be after activeOrgType is defined)
 const { tableColumns } = useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, Permissions);
-
-const claimsLoaded = computed(() => !!userClaims?.value?.claims);
-
-// Table data is sourced from the same migrated, page-walking composables that
-// back OrgPicker — one per org type. Each composable walks the backend
-// pagination and returns the full set (equivalent to the legacy
-// page-size-100000 fetch), so the table never needs server-side pagination.
-const {
-  isLoading: isLoadingDistricts,
-  isFetching: isFetchingDistricts,
-  data: allDistricts,
-} = useDistrictsListQuery({
-  enabled: claimsLoaded,
-});
-
-const schoolQueryEnabled = computed(() => {
-  return claimsLoaded.value && !!selectedDistrict.value;
-});
-
-const {
-  isLoading: isLoadingSchools,
-  isFetching: isFetchingSchools,
-  data: allSchools,
-} = useDistrictSchoolsQuery(selectedDistrict, {
-  enabled: schoolQueryEnabled,
-});
-
-const classQueryEnabled = computed(() => {
-  return claimsLoaded.value && !!selectedSchool.value;
-});
-
-const {
-  isLoading: isLoadingClasses,
-  isFetching: isFetchingClasses,
-  data: allClasses,
-} = useSchoolClassesQuery(selectedSchool, {
-  enabled: classQueryEnabled,
-});
-
-// Gated to the Groups tab (in addition to the composable's internal token gate)
-// so the list isn't fetched while the user is on another tab — mirrors OrgPicker.
-const groupsQueryEnabled = computed(() => {
-  return claimsLoaded.value && activeOrgType.value === ORG_TYPES.GROUPS;
-});
-
-const {
-  isLoading: isLoadingGroups,
-  isFetching: isFetchingGroups,
-  data: allGroups,
-} = useGroupsListQuery({
-  enabled: groupsQueryEnabled,
-});
-
-// The org set backing the active tab's table. Each underlying composable only
-// fetches once its parent id / token is available, so this stays minimal —
-// districts and schools reuse the data already fetched for the selectors.
-const orgData = computed(() => {
-  switch (activeOrgType.value) {
-    case ORG_TYPES.DISTRICTS:
-      return allDistricts.value ?? [];
-    case ORG_TYPES.SCHOOLS:
-      return allSchools.value ?? [];
-    case ORG_TYPES.CLASSES:
-      return allClasses.value ?? [];
-    case ORG_TYPES.GROUPS:
-      return allGroups.value ?? [];
-    default:
-      return [];
-  }
-});
-
-// Loading / fetching state for the active tab's underlying query, so the table
-// spinner reflects only the query that feeds it.
-const isLoading = computed(() => {
-  switch (activeOrgType.value) {
-    case ORG_TYPES.DISTRICTS:
-      return isLoadingDistricts.value;
-    case ORG_TYPES.SCHOOLS:
-      return isLoadingSchools.value;
-    case ORG_TYPES.CLASSES:
-      return isLoadingClasses.value;
-    case ORG_TYPES.GROUPS:
-      return isLoadingGroups.value;
-    default:
-      return false;
-  }
-});
-
-const isFetching = computed(() => {
-  switch (activeOrgType.value) {
-    case ORG_TYPES.DISTRICTS:
-      return isFetchingDistricts.value;
-    case ORG_TYPES.SCHOOLS:
-      return isFetchingSchools.value;
-    case ORG_TYPES.CLASSES:
-      return isFetchingClasses.value;
-    case ORG_TYPES.GROUPS:
-      return isFetchingGroups.value;
-    default:
-      return false;
-  }
-});
 
 function copyToClipboard(text) {
   navigator.clipboard
@@ -681,28 +543,6 @@ const updateOrgData = async () => {
     isSubmitting.value = false;
   }
 };
-
-let unsubscribe;
-const initTable = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) initTable();
-});
-
-onMounted(() => {
-  if (authStore.isAuthReady) initTable();
-});
-
-watch(allDistricts, (newValue) => {
-  selectedDistrict.value = _get(_head(newValue), 'id');
-});
-
-watch(allSchools, (newValue) => {
-  selectedSchool.value = _get(_head(newValue), 'id');
-});
 
 const tableKey = ref(0);
 watch([selectedDistrict, selectedSchool], () => {
