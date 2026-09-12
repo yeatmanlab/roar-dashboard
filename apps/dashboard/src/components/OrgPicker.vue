@@ -2,8 +2,8 @@
   <div class="grid">
     <div class="col-12 md:col-6">
       <PvPanel class="m-0 p-0 h-full" header="Select organizations here">
-        <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" class="m-0 p-0" lazy>
-          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+        <PvTabView v-model:active-index="activeIndex" class="m-0 p-0" lazy>
+          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :header="orgType.header">
             <div class="grid column-gap-3">
               <div
                 v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
@@ -43,7 +43,13 @@
                 </PvFloatLabel>
               </div>
             </div>
-            <div class="card flex justify-content-center">
+            <div v-if="error" role="alert" class="p-3">
+              Unable to load organizations.
+              <PvButton label="Retry" text @click="retry" />
+            </div>
+            <p v-else-if="isLoading || isFetching" role="status" class="p-3">Loading organizations...</p>
+            <p v-else-if="!orgData.length" role="status" class="p-3">No organizations available.</p>
+            <div v-else class="card flex justify-content-center">
               <PvListbox
                 v-model="selectedOrgs[activeOrgType]"
                 :options="orgData"
@@ -88,10 +94,9 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed, onMounted, watch } from 'vue';
+import { reactive, computed, watch } from 'vue';
 import _capitalize from 'lodash/capitalize';
-import _get from 'lodash/get';
-import _head from 'lodash/head';
+import PvButton from 'primevue/button';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvCheckbox from 'primevue/checkbox';
 import PvChip from 'primevue/chip';
@@ -101,19 +106,24 @@ import PvPanel from 'primevue/panel';
 import PvScrollPanel from 'primevue/scrollpanel';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
-import { useAuthStore } from '@/store/auth';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
-import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
-import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
-import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
-import useUserType from '@/composables/useUserType';
+import useOrgBrowser from '@/composables/useOrgBrowser';
 
-const initialized = ref(false);
-const authStore = useAuthStore();
-
-const selectedDistrict = ref(undefined);
-const selectedSchool = ref(undefined);
+const {
+  orgHeaders,
+  activeIndex,
+  activeOrgType,
+  selectedDistrict,
+  selectedSchool,
+  allDistricts,
+  allSchools,
+  isLoadingDistricts,
+  isLoadingSchools,
+  orgData,
+  isLoading,
+  isFetching,
+  error,
+  retry,
+} = useOrgBrowser();
 
 const props = defineProps({
   orgs: {
@@ -174,42 +184,6 @@ watch(
   { immediate: true, deep: true },
 );
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-const { isSuperAdmin } = useUserType(userClaims);
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-
-const orgHeaders = computed(() => {
-  const headers = {
-    districts: { header: 'Districts', id: 'districts' },
-    schools: { header: 'Schools', id: 'schools' },
-    classes: { header: 'Classes', id: 'classes' },
-    groups: { header: 'Groups', id: 'groups' },
-  };
-
-  if (isSuperAdmin.value) return headers;
-
-  const result = {};
-  if ((adminOrgs.value?.districts ?? []).length > 0) {
-    result.districts = { header: 'Districts', id: 'districts' };
-    result.schools = { header: 'Schools', id: 'schools' };
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.schools ?? []).length > 0) {
-    result.schools = { header: 'Schools', id: 'schools' };
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.classes ?? []).length > 0) {
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.groups ?? []).length > 0) {
-    result.groups = { header: 'Groups', id: 'groups' };
-  }
-  return result;
-});
-
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
     return 'Loading...';
@@ -224,83 +198,9 @@ const schoolPlaceholder = computed(() => {
   return '';
 });
 
-const activeIndex = ref(0);
-const activeOrgType = computed(() => {
-  return Object.keys(orgHeaders.value)[activeIndex.value];
-});
-
-const claimsLoaded = computed(() => initialized.value && !isLoadingClaims.value);
-
-const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
-  enabled: claimsLoaded,
-});
-
-const schoolQueryEnabled = computed(() => {
-  return claimsLoaded.value && selectedDistrict.value !== undefined;
-});
-
-// Schools for the selected district — backs both the cascading school dropdown
-// (schools/classes tabs) and the schools tab's main listbox. The composable
-// already gates on `accessToken` + a truthy `districtId`; we additionally gate
-// on claims being loaded so behaviour matches the legacy enablement.
-const { isLoading: isLoadingSchools, data: allSchools } = useDistrictSchoolsQuery(selectedDistrict, {
-  enabled: schoolQueryEnabled,
-});
-
-// Classes for the selected school — backs the classes tab's main listbox.
-// Gated internally on `accessToken` + a truthy `selectedSchool`.
-const { data: allClasses } = useSchoolClassesQuery(selectedSchool);
-
-// Groups accessible to the caller — backs the groups tab's main listbox. Gated
-// to the groups tab (in addition to the internal `accessToken` gate) so the
-// list isn't fetched on pickers that never open the Groups tab.
-const { data: allGroups } = useGroupsListQuery({
-  enabled: computed(() => activeOrgType.value === 'groups'),
-});
-
-// Polymorphic listbox source: return the active tab's org set. Each underlying
-// composable only fetches once its parent id / token is available, so this stays
-// minimal — districts and schools reuse the data already fetched above.
-const orgData = computed(() => {
-  switch (activeOrgType.value) {
-    case 'districts':
-      return allDistricts.value ?? [];
-    case 'schools':
-      return allSchools.value ?? [];
-    case 'classes':
-      return allClasses.value ?? [];
-    case 'groups':
-      return allGroups.value ?? [];
-    default:
-      return [];
-  }
-});
-
 const remove = (org, orgKey) => {
   selectedOrgs[orgKey] = selectedOrgs[orgKey].filter((_org) => _org.id !== org.id);
 };
-
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
-
-onMounted(() => {
-  if (authStore.isAuthReady) init();
-});
-
-watch(allDistricts, (newValue) => {
-  selectedDistrict.value = _get(_head(newValue), 'id');
-});
-
-watch(allSchools, (newValue) => {
-  selectedSchool.value = _get(_head(newValue), 'id');
-});
 
 const emit = defineEmits(['selection']);
 

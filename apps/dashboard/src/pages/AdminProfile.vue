@@ -47,56 +47,21 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import _isEmpty from 'lodash/isEmpty';
-import _union from 'lodash/union';
+import { ref, computed } from 'vue';
 import { useAuthStore } from '@/store/auth';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useCurrentUser from '@/composables/useCurrentUser';
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 const sidebarOpen = ref(true);
+const { data: currentUser } = useCurrentUser();
 
-const providerIds = computed(() => {
-  const providerData = roarfirekit.value?.admin?.user?.providerData;
-  return providerData.map((provider) => {
-    return provider.providerId;
-  });
-});
-
-const hasPassword = computed(() => {
-  return providerIds.value.includes('password');
-});
-
-// +-------------------------+
-// | Firekit Inititalization |
-// +-------------------------+
-const initialized = ref(false);
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.accessToken) init();
-});
-
-onMounted(() => {
-  if (authStore.isAuthReady) init();
-});
-
-const { data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-// Keep track of the user's type
-const isAdmin = computed(() => {
-  if (userClaims.value?.claims?.super_admin) return true;
-  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
-  return true;
-});
+// Profile navigation is an identity classification, not an organization permission.
+const isAdmin = computed(
+  () => Boolean(currentUser.value?.isSuperAdmin) || ['admin', 'educator'].includes(currentUser.value?.userType),
+);
+const hasPassword = computed(
+  () => authStore.firebaseUser?.providerData?.some((provider) => provider.providerId === 'password') ?? false,
+);
 </script>
 
 <style lang="scss" scoped>
