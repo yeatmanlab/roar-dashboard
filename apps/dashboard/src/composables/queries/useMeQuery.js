@@ -9,10 +9,64 @@ import { ME_QUERY_KEY } from '@/constants/queryKeys';
 const MAX_RETRIES = 3;
 
 /**
+ * Shared retry policy for `/me`-backed queries.
+ *
+ * Rostering-ended and terminal auth errors are not transient; retrying
+ * wastes time and delays the user-facing error UX. Used by both `useMeQuery`
+ * and `useUserClaimsQuery` (which observes the same `/me` cache entry), and
+ * placed **after** `...options` in each `useQuery` call so a caller-supplied
+ * `retry` can't silently override it.
+ *
+ * @param {number} failureCount - Number of failed attempts so far.
+ * @param {Error} error - The thrown error (carries `.status` / `.body`).
+ * @returns {boolean} Whether TanStack Query should retry.
+ */
+export function meRetryPolicy(failureCount, error) {
+  if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
+    return false;
+  }
+  // Deterministic behavior in Cypress E2E — mirrors the queryClient's
+  // default retry policy (src/queryClient.js), which this policy replaces
+  // for /me-backed queries.
+  if (window.Cypress) return false;
+  return failureCount < MAX_RETRIES;
+}
+
+/**
+ * Fetch the authenticated user's `/me` payload from the backend.
+ *
+ * Shared query function: `useMeQuery` uses it as its `queryFn`, and
+ * `resolveUserClaims` runs it through `queryClient.fetchQuery` with the same
+ * query key so both surfaces dedupe against one cache entry instead of
+ * issuing separate raw requests.
+ *
+ * Non-200 ts-rest results are surfaced as thrown errors so TanStack routes
+ * them through `error` and the QueryCache → globalError bridge. The thrown
+ * shape carries the ts-rest response (`.status` / `.body`) so
+ * `isRosteringEndedError` / `isTerminalAuthError` can introspect it downstream.
+ *
+ * @returns {Promise<object>} The `/me` `data` payload (id, userType, nameFirst, nameLast, unsignedAgreements).
+ * @throws {Error} With `.status` and `.body` attached on non-200 responses.
+ */
+export async function fetchMe() {
+  const client = getRoarApiClient();
+  const result = await client.me.get();
+
+  if (result.status === StatusCodes.OK) {
+    return result.body.data;
+  }
+
+  const error = new Error(`/me request failed with status ${result.status}`);
+  error.status = result.status;
+  error.body = result.body;
+  throw error;
+}
+
+/**
  * `/me` query.
  *
  * Calls the backend `GET /me` endpoint to fetch the authenticated user's profile
- * (id, userType, name, unsignedAgreements). This is the canonical source of
+ * (id, userType, nameFirst, nameLast, unsignedAgreements). This is the canonical source of
  * truth for user identity and TOS status; it replaces the Firestore-based
  * user data fetch.
  *
@@ -46,33 +100,10 @@ const useMeQuery = (queryOptions = undefined) => {
 
   return useQuery({
     queryKey: [ME_QUERY_KEY],
-    queryFn: async () => {
-      const client = getRoarApiClient();
-      const result = await client.me.get();
-
-      if (result.status === StatusCodes.OK) {
-        return result.body.data;
-      }
-
-      // Non-200 ts-rest results are surfaced as thrown errors so TanStack
-      // routes them through `error` and the QueryCache → globalError bridge.
-      // The thrown shape carries the ts-rest response so `isRosteringEndedError`
-      // / `isTerminalAuthError` can introspect it downstream.
-      const error = new Error(`/me request failed with status ${result.status}`);
-      error.status = result.status;
-      error.body = result.body;
-      throw error;
-    },
+    queryFn: fetchMe,
     ...options,
     enabled: isQueryEnabled,
-    retry: (failureCount, error) => {
-      // Rostering-ended and terminal auth errors are not transient; retrying
-      // wastes time and delays the user-facing error UX.
-      if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
-        return false;
-      }
-      return failureCount < MAX_RETRIES;
-    },
+    retry: meRetryPolicy,
   });
 };
 

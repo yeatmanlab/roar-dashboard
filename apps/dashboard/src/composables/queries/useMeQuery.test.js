@@ -185,6 +185,28 @@ describe('useMeQuery', () => {
     expect(retryFn(3, rawError)).toBe(false);
   });
 
+  it('does not retry under Cypress, even on transient errors', () => {
+    // Mirrors the queryClient default retry policy's deterministic-E2E
+    // behavior: `window.Cypress` short-circuits all retries.
+    window.Cypress = {};
+    try {
+      let retryFn;
+      vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+        retryFn = options.retry;
+        return { data: { value: null }, error: { value: null } };
+      });
+
+      withSetup(() => useMeQuery(), {
+        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+      });
+
+      const transientError = new Error('network down');
+      expect(retryFn(0, transientError)).toBe(false);
+    } finally {
+      delete window.Cypress;
+    }
+  });
+
   it('honors a caller-provided `enabled: false`', () => {
     vi.spyOn(VueQuery, 'useQuery');
 
