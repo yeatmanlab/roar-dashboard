@@ -83,7 +83,7 @@
       "version-file": "package.json",
       "release-type": "node",
       "component": "roar-pa",
-      "release-as": "5.3.17"
+      "release-as": "5.4.0"
     },
     "apps/assessments/roar-swr": {
       "changelog-path": "CHANGELOG.md",
