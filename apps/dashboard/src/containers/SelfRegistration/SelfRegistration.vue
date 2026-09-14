@@ -1,24 +1,6 @@
 <template>
   <div id="register-container" class="self-registration">
-    <section id="register">
-      <header>
-        <div class="flex flex-wrap p-3 justify-content-around align-items-center gap-3">
-          <div class="signin-logo">
-            <ROARLogoShort />
-          </div>
-          <div class="flex flex-wrap flex-column align-items-start gap-2">
-            <div class="flex">
-              <div class="text-center font-bold text-3xl text-red-800 mb-1 italic">ROAR@Home</div>
-              <div class="text-sm font-bold text-red-800 ml-1 uppercase">beta</div>
-            </div>
-            <div class="bg-gray-100 rounded p-2">
-              <div class="flex flex-wrap text-gray-600 text-md font-bold">Create your account</div>
-              <div class="flex flex-wrap text-gray-400 text-sm">Sign up to start ROARing</div>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <section id="register" aria-labelledby="self-registration-heading">
       <RegistrationStatus
         :loading="registration.isSubmitting.value"
         :error-message="registration.errorMessage.value"
@@ -34,7 +16,7 @@
         :legal-accepted="consent.legalAccepted.value"
         :future-contact-allowed="consent.futureContactAllowed.value"
         :verification-token="registration.verificationToken.value"
-        :disabled="!canSubmit"
+        :disabled="registration.isSubmitting.value"
         :submitting="registration.isSubmitting.value"
         @update:field="form.setField"
         @touch="form.touch"
@@ -49,7 +31,6 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted } from 'vue';
-import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { AccountOwnerForm, RegistrationStatus } from './components';
 import { useAccountOwnerForm } from './composables/useAccountOwnerForm';
 import { useResearchConsent } from './composables/useResearchConsent';

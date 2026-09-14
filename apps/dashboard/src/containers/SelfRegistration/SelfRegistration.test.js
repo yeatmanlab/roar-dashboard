@@ -201,7 +201,7 @@ describe('SelfRegistration composable contracts', () => {
     form.setField('unknown', 'not allowed');
 
     expect(form.validate()).toBe(false);
-    expect(form.errors.value.email).toBe('Enter a complete email address.');
+    expect(form.errors.value.email).toBe('Enter your email address.');
     expect(form.values).not.toHaveProperty('unknown');
   });
 

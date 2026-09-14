@@ -1,154 +1,202 @@
 <template>
   <div class="self-registration-form-card">
-    <form class="self-registration-form p-fluid" novalidate @submit.prevent="$emit('submit')">
-      <p class="self-registration-required-hint"><span aria-hidden="true">*</span> Required fields</p>
+    <header class="self-registration-header">
+      <div class="self-registration-logo" role="img" aria-label="ROAR">
+        <ROARLogoShort aria-hidden="true" />
+      </div>
+      <div class="self-registration-heading">
+        <h1 id="self-registration-heading">Create your account</h1>
+        <p>Sign up to start ROARing</p>
+      </div>
+    </header>
 
+    <form ref="formElement" class="self-registration-form" novalidate @submit.prevent="handleSubmit">
       <div class="self-registration-name-fields">
         <div class="self-registration-field">
-          <label for="account-owner-first-name">First name <span aria-hidden="true">*</span></label>
-          <PvInputText
+          <label for="account-owner-first-name">
+            First name <span class="self-registration-required" aria-hidden="true">*</span>
+            <span class="self-registration-sr-only">(required)</span>
+          </label>
+          <input
             id="account-owner-first-name"
+            class="self-registration-input"
+            :class="{ 'self-registration-input--invalid': showError('firstName') }"
             name="firstName"
+            required
             autocomplete="given-name"
-            :model-value="values.firstName"
-            :invalid="showError('firstName')"
+            placeholder="Emily"
+            :value="values.firstName"
             :aria-invalid="showError('firstName')"
             :aria-describedby="showError('firstName') ? 'account-owner-first-name-error' : undefined"
             data-cy="signup__parent-first-name"
-            @update:model-value="updateField('firstName', $event)"
+            @input="updateField('firstName', $event.target.value)"
             @blur="$emit('touch', 'firstName')"
           />
-          <small v-if="showError('firstName')" id="account-owner-first-name-error" class="p-error">
+          <small v-if="showError('firstName')" id="account-owner-first-name-error" class="self-registration-error">
             {{ errors.firstName }}
           </small>
         </div>
 
         <div class="self-registration-field">
-          <label for="account-owner-last-name">Last name <span aria-hidden="true">*</span></label>
-          <PvInputText
+          <label for="account-owner-last-name">
+            Last name <span class="self-registration-required" aria-hidden="true">*</span>
+            <span class="self-registration-sr-only">(required)</span>
+          </label>
+          <input
             id="account-owner-last-name"
+            class="self-registration-input"
+            :class="{ 'self-registration-input--invalid': showError('lastName') }"
             name="lastName"
+            required
             autocomplete="family-name"
-            :model-value="values.lastName"
-            :invalid="showError('lastName')"
+            placeholder="Arteaga"
+            :value="values.lastName"
             :aria-invalid="showError('lastName')"
             :aria-describedby="showError('lastName') ? 'account-owner-last-name-error' : undefined"
             data-cy="signup__parent-last-name"
-            @update:model-value="updateField('lastName', $event)"
+            @input="updateField('lastName', $event.target.value)"
             @blur="$emit('touch', 'lastName')"
           />
-          <small v-if="showError('lastName')" id="account-owner-last-name-error" class="p-error">
+          <small v-if="showError('lastName')" id="account-owner-last-name-error" class="self-registration-error">
             {{ errors.lastName }}
           </small>
         </div>
       </div>
 
       <div class="self-registration-field">
-        <label for="account-owner-email">Email address <span aria-hidden="true">*</span></label>
-        <PvInputText
+        <label for="account-owner-email">
+          Email address <span class="self-registration-required" aria-hidden="true">*</span>
+          <span class="self-registration-sr-only">(required)</span>
+        </label>
+        <input
           id="account-owner-email"
+          class="self-registration-input"
+          :class="{ 'self-registration-input--invalid': showError('email') }"
           name="email"
+          required
           type="email"
           inputmode="email"
           autocomplete="email"
-          :model-value="values.email"
-          :invalid="showError('email')"
+          placeholder="you@school.org"
+          :value="values.email"
           :aria-invalid="showError('email')"
           :aria-describedby="showError('email') ? 'account-owner-email-error' : undefined"
           data-cy="signup__parent-email"
-          @update:model-value="updateField('email', $event)"
+          @input="updateField('email', $event.target.value)"
           @blur="$emit('touch', 'email')"
         />
-        <small v-if="showError('email')" id="account-owner-email-error" class="p-error">
+        <small v-if="showError('email')" id="account-owner-email-error" class="self-registration-error">
           {{ errors.email }}
         </small>
       </div>
 
       <div class="self-registration-field">
-        <label for="account-owner-password">Password <span aria-hidden="true">*</span></label>
-        <PvPassword
-          input-id="account-owner-password"
-          :model-value="values.password"
-          :invalid="showError('password')"
-          :feedback="false"
-          toggle-mask
-          fluid
-          :input-props="{
-            name: 'password',
-            autocomplete: 'new-password',
-            'aria-invalid': showError('password'),
-            'aria-describedby': showError('password')
-              ? 'account-owner-password-help account-owner-password-error'
-              : 'account-owner-password-help',
-          }"
-          data-cy="signup__parent-password"
-          @update:model-value="updateField('password', $event)"
-          @blur="$emit('touch', 'password')"
-        />
-        <small id="account-owner-password-help" class="self-registration-field-help">Use at least 8 characters.</small>
-        <small v-if="showError('password')" id="account-owner-password-error" class="p-error">
+        <label for="account-owner-password">
+          Password <span class="self-registration-required" aria-hidden="true">*</span>
+          <span class="self-registration-sr-only">(required)</span>
+        </label>
+        <div class="self-registration-password">
+          <input
+            id="account-owner-password"
+            class="self-registration-input self-registration-password-input"
+            :class="{ 'self-registration-input--invalid': showError('password') }"
+            name="password"
+            required
+            :type="passwordVisible ? 'text' : 'password'"
+            autocomplete="new-password"
+            placeholder="Create a password"
+            :value="values.password"
+            :aria-invalid="showError('password')"
+            :aria-describedby="passwordDescription"
+            data-cy="signup__parent-password"
+            @input="updateField('password', $event.target.value)"
+            @blur="$emit('touch', 'password')"
+          />
+          <button
+            type="button"
+            class="self-registration-password-toggle"
+            :aria-label="passwordVisible ? 'Hide password' : 'Show password'"
+            :aria-pressed="passwordVisible"
+            @click="passwordVisible = !passwordVisible"
+          >
+            <i :class="passwordVisible ? 'pi pi-eye-slash' : 'pi pi-eye'" aria-hidden="true" />
+          </button>
+        </div>
+        <small id="account-owner-password-help" class="self-registration-field-help">
+          Must be at least 8 characters.
+        </small>
+        <small v-if="showError('password')" id="account-owner-password-error" class="self-registration-error">
           {{ errors.password }}
         </small>
       </div>
 
       <ChallengeV3 :model-value="verificationToken" action="submit" @update:model-value="$emit('verification', $event)">
         <div class="self-registration-acknowledgements">
-          <div class="self-registration-checkbox-row">
-            <PvCheckbox
-              input-id="account-owner-legal-acceptance"
-              name="legalAcceptance"
-              binary
-              :model-value="legalAccepted"
-              :invalid="submitted && !legalAccepted"
-              @update:model-value="$emit('update:legal-accepted', $event)"
-            />
-            <label for="account-owner-legal-acceptance">
-              I agree to the
-              <a :href="TERMS_OF_SERVICE_DOCUMENT_PATH" target="_blank" rel="noopener noreferrer">Terms of Use</a>
-              <span aria-hidden="true">*</span>
-            </label>
+          <div class="self-registration-checkbox-field">
+            <div class="self-registration-checkbox-row">
+              <input
+                id="account-owner-future-contact"
+                class="self-registration-checkbox"
+                name="futureContact"
+                type="checkbox"
+                :checked="futureContactAllowed"
+                @change="$emit('update:future-contact-allowed', $event.target.checked)"
+              />
+              <label for="account-owner-future-contact">Email me about new research opportunities</label>
+            </div>
           </div>
-          <small v-if="submitted && !legalAccepted" class="p-error">Review and accept the Terms of Use.</small>
 
-          <div class="self-registration-checkbox-row">
-            <PvCheckbox
-              input-id="account-owner-future-contact"
-              name="futureContact"
-              binary
-              :model-value="futureContactAllowed"
-              @update:model-value="$emit('update:future-contact-allowed', $event)"
-            />
-            <label for="account-owner-future-contact">
-              Contact me about future research opportunities <span class="self-registration-optional">(optional)</span>
-            </label>
+          <div class="self-registration-checkbox-field">
+            <div class="self-registration-checkbox-row">
+              <input
+                id="account-owner-legal-acceptance"
+                class="self-registration-checkbox"
+                name="legalAcceptance"
+                required
+                type="checkbox"
+                :checked="legalAccepted"
+                :aria-invalid="submitted && !legalAccepted"
+                :aria-describedby="submitted && !legalAccepted ? 'account-owner-legal-error' : undefined"
+                @change="$emit('update:legal-accepted', $event.target.checked)"
+              />
+              <label for="account-owner-legal-acceptance">
+                I agree to the
+                <a :href="TERMS_OF_SERVICE_DOCUMENT_PATH" target="_blank" rel="noopener noreferrer">Terms of Use</a>
+                <span class="self-registration-required" aria-hidden="true">*</span>
+                <span class="self-registration-sr-only">(required)</span>
+              </label>
+            </div>
+            <small v-if="submitted && !legalAccepted" id="account-owner-legal-error" class="self-registration-error">
+              Review and accept the Terms of Use.
+            </small>
           </div>
         </div>
       </ChallengeV3>
 
-      <PvButton
+      <button
         type="submit"
-        label="Create account"
         class="self-registration-submit"
         :disabled="disabled"
-        :loading="submitting"
+        :aria-busy="submitting"
         data-cy="signup__create-account"
-      />
+      >
+        <span v-if="submitting" class="pi pi-spin pi-spinner" aria-hidden="true" />
+        {{ submitting ? 'Creating account…' : 'Create account' }}
+      </button>
     </form>
 
-    <div class="self-registration-sign-in">
-      <span>Already have an account?</span>
+    <p class="self-registration-sign-in">
+      Already have an account?
       <RouterLink :to="APP_ROUTES.SIGN_IN">Sign in</RouterLink>
-    </div>
+    </p>
   </div>
 </template>
 
 <script setup>
+import { computed, nextTick, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { ChallengeV3 } from 'vue-recaptcha';
-import PvButton from 'primevue/button';
-import PvCheckbox from 'primevue/checkbox';
-import PvInputText from 'primevue/inputtext';
-import PvPassword from 'primevue/password';
+import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { TERMS_OF_SERVICE_DOCUMENT_PATH } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
 
@@ -173,6 +221,12 @@ const emit = defineEmits([
   'verification',
 ]);
 
+const formElement = ref(null);
+const passwordVisible = ref(false);
+const passwordDescription = computed(() =>
+  showError('password') ? 'account-owner-password-help account-owner-password-error' : 'account-owner-password-help',
+);
+
 function updateField(field, value) {
   emit('update:field', field, value);
 }
@@ -180,27 +234,70 @@ function updateField(field, value) {
 function showError(field) {
   return Boolean(props.errors[field] && (props.submitted || props.touched[field]));
 }
+
+async function handleSubmit() {
+  emit('submit');
+  await nextTick();
+  formElement.value?.querySelector('[aria-invalid="true"]')?.focus();
+}
 </script>
 
 <style scoped>
 .self-registration-form-card {
-  overflow: hidden;
+  width: 100%;
+  padding: 2.25rem;
   border: 1px solid var(--surface-200);
   border-radius: 0.75rem;
   background: var(--surface-0);
-  box-shadow: 0 0.125rem 0.5rem rgb(0 0 0 / 8%);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+}
+
+.self-registration-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+  text-align: center;
+}
+
+.self-registration-logo {
+  width: 5rem;
+  color: var(--primary-color);
+}
+
+.self-registration-logo :deep(path) {
+  fill: currentColor;
+}
+
+.self-registration-heading {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.self-registration-heading h1,
+.self-registration-heading p,
+.self-registration-sign-in {
+  margin: 0;
+}
+
+.self-registration-heading h1 {
+  color: var(--text-color);
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.self-registration-heading p,
+.self-registration-sign-in {
+  color: var(--text-color-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 .self-registration-form {
   display: grid;
   gap: 1.25rem;
-  padding: 1.5rem;
-}
-
-.self-registration-required-hint {
-  margin: 0;
-  color: var(--text-color-secondary);
-  font-size: 0.875rem;
 }
 
 .self-registration-name-fields {
@@ -209,8 +306,10 @@ function showError(field) {
   gap: 1rem;
 }
 
-.self-registration-field {
+.self-registration-field,
+.self-registration-checkbox-field {
   display: grid;
+  min-width: 0;
   gap: 0.375rem;
 }
 
@@ -219,53 +318,172 @@ function showError(field) {
   width: auto;
   color: var(--text-color);
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 1.35;
 }
 
-.self-registration-field label span,
-.self-registration-required-hint span,
-.self-registration-checkbox-row label > span:not(.self-registration-optional) {
+.self-registration-required,
+.self-registration-error {
   color: var(--bright-red);
 }
 
-.self-registration-field-help,
-.self-registration-optional {
+.self-registration-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.self-registration-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 3rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--surface-300);
+  border-radius: 0.375rem;
+  outline: none;
+  background: var(--surface-0);
+  color: var(--text-color);
+  font: inherit;
+  font-size: 0.9375rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.self-registration-input::placeholder {
   color: var(--text-color-secondary);
-  font-size: 0.8125rem;
-  font-weight: 400;
+  opacity: 0.65;
+}
+
+.self-registration-input:focus-visible,
+.self-registration-password-toggle:focus-visible,
+.self-registration-submit:focus-visible,
+.self-registration-sign-in a:focus-visible,
+.self-registration-checkbox:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary-color) 20%, transparent);
+  outline-offset: 2px;
+}
+
+.self-registration-input:focus-visible {
+  border-color: var(--primary-color);
+}
+
+.self-registration-input--invalid {
+  border-color: var(--bright-red);
+}
+
+.self-registration-password {
+  position: relative;
+}
+
+.self-registration-password-input {
+  padding-right: 3rem;
+}
+
+.self-registration-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+}
+
+.self-registration-field-help,
+.self-registration-error {
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.self-registration-field-help {
+  color: var(--text-color-secondary);
 }
 
 .self-registration-acknowledgements {
   display: grid;
-  gap: 1rem;
+  gap: 0.875rem;
 }
 
 .self-registration-checkbox-row {
   display: flex;
   align-items: flex-start;
-  gap: 0.625rem;
+  gap: 0.75rem;
+}
+
+.self-registration-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--primary-color);
+}
+
+.self-registration-checkbox-row a,
+.self-registration-sign-in a {
+  color: var(--primary-color);
+  font-weight: 500;
 }
 
 .self-registration-submit {
+  display: inline-flex;
   width: 100%;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--primary-color);
+  color: #fff;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 150ms ease;
+}
+
+.self-registration-submit:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+.self-registration-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .self-registration-sign-in {
-  display: flex;
-  justify-content: center;
-  gap: 0.375rem;
-  padding: 1rem;
-  border-top: 1px solid var(--surface-200);
-  color: var(--text-color-secondary);
-  font-size: 0.875rem;
+  margin-top: 1.25rem;
+  text-align: center;
 }
 
 @media (max-width: 36rem) {
+  .self-registration-form-card {
+    padding: 1.75rem;
+  }
+
   .self-registration-name-fields {
     grid-template-columns: 1fr;
   }
+}
 
-  .self-registration-form {
+@media (max-width: 22rem) {
+  .self-registration-form-card {
     padding: 1.25rem;
   }
 }
