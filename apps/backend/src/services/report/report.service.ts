@@ -3456,6 +3456,7 @@ function resolveTaskScores(
     rawScore: roundScoreOrNull(resolveNumericScore(scoreMap, fieldNames.rawScoreFieldNames)),
     percentile: roundScoreOrNull(resolveNumericScore(scoreMap, fieldNames.percentileFieldNames)),
     standardScore: roundScoreOrNull(resolveNumericScore(scoreMap, fieldNames.standardScoreFieldNames)),
+    scoringVersion: roundScoreOrNull(resolveNumericScore(scoreMap, ['scoringVersion'])), // TODO: Implement scoring version resolution
   };
 }
 
@@ -3651,7 +3652,7 @@ function buildAssessedTaskEntry(
 function buildBaseUnassessedTaskEntry(taskMeta: ServiceTaskMetadata, optional: boolean): ServiceStudentReportTaskBase {
   return {
     ...taskMeta,
-    scores: { rawScore: null, percentile: null, standardScore: null },
+    scores: { rawScore: null, percentile: null, standardScore: null, scoringVersion: null },
     supportLevel: optional ? 'optional' : null,
     reliable: null,
     optional,
