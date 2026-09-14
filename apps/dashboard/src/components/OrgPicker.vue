@@ -43,10 +43,17 @@
                 </PvFloatLabel>
               </div>
             </div>
-            <div v-if="error" role="alert" class="p-3">
-              Unable to load organizations.
-              <PvButton label="Retry" text @click="retry" />
-            </div>
+            <AppMessageState
+              v-if="error"
+              class="p-3"
+              :type="MESSAGE_STATE_TYPES.ERROR"
+              title="Unable to load organizations"
+              message="Please try again."
+            >
+              <template #actions>
+                <PvButton label="Retry" @click="retry" />
+              </template>
+            </AppMessageState>
             <p v-else-if="isLoading || isFetching" role="status" class="p-3">Loading organizations...</p>
             <p v-else-if="!orgData.length" role="status" class="p-3">No organizations available.</p>
             <div v-else class="card flex justify-content-center">
@@ -106,6 +113,7 @@ import PvPanel from 'primevue/panel';
 import PvScrollPanel from 'primevue/scrollpanel';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
+import { AppMessageState, MESSAGE_STATE_TYPES } from '@/components/AppMessageState';
 import useOrgBrowser from '@/composables/useOrgBrowser';
 
 const {

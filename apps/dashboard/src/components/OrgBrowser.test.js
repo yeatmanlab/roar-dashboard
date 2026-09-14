@@ -2,6 +2,7 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { reactive, ref } from 'vue';
 import OrgPicker from './OrgPicker.vue';
+import { AppMessageState } from './AppMessageState';
 import OrgsList from '@/containers/OrgsList/OrgsList.vue';
 import { DISTRICTS_LIST_QUERY_KEY } from '@/constants/queryKeys';
 
@@ -150,6 +151,7 @@ describe.each([
     api.districts.list.mockResolvedValue({ status: 403, body: {} });
     finish({ status: 403, body: {} });
     await vi.waitFor(() => expect(wrapper.find('[role="alert"]').exists()).toBe(true));
+    expect(wrapper.findComponent(AppMessageState).exists()).toBe(true);
     expect(wrapper.text()).not.toContain('No organizations available.');
     api.districts.list.mockResolvedValue(result([]));
     await wrapper.get('[role="alert"] button').trigger('click');

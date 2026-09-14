@@ -64,10 +64,17 @@
               class="p-2 rounded"
             />
           </div>
-          <div v-if="error" role="alert" class="p-3">
-            Unable to load organizations.
-            <PvButton label="Retry" text @click="retry" />
-          </div>
+          <AppMessageState
+            v-if="error"
+            class="p-3"
+            :type="MESSAGE_STATE_TYPES.ERROR"
+            title="Unable to load organizations"
+            message="Please try again."
+          >
+            <template #actions>
+              <PvButton label="Retry" @click="retry" />
+            </template>
+          </AppMessageState>
           <p v-else-if="isLoading || isFetching" role="status" class="p-3">Loading organizations...</p>
           <p v-else-if="!tableData.length" role="status" class="p-3">No organizations available.</p>
           <RoarDataTable
@@ -239,6 +246,7 @@ import useUpdateOrgMutation from '@/composables/mutations/useUpdateOrgMutation';
 import { parseGooglePlaceToLocation } from '@/helpers/parseGooglePlaceToLocation';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import RoarDataTable from '@/components/RoarDataTable';
+import { AppMessageState, MESSAGE_STATE_TYPES } from '@/components/AppMessageState';
 import useOrgBrowser from '@/composables/useOrgBrowser';
 import useCurrentUser from '@/composables/useCurrentUser';
 import { ORG_TYPES } from '@/constants/orgTypes';
