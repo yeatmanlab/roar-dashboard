@@ -94,7 +94,7 @@ export default function buildMathTimeline(config: Record<string, any>, mediaAsse
 
   const feedbackBlock = (trial?: StimulusType) => {
     return {
-      timeline: [feedback(true, 'feedbackCorrect', 'feedbackNotQuiteRight', false)],
+      timeline: [feedback(true)],
       conditional_function: () => {
         return (
           (trial || taskStore().nextStimulus).assessmentStage === 'practice_response' &&
@@ -166,7 +166,7 @@ export default function buildMathTimeline(config: Record<string, any>, mediaAsse
       trials.push(slider(layoutConfigMap, terminateCat, trial));
       if (index < sliderPractice.length - 1) {
         trials.push({
-          ...feedback(true, 'feedbackCorrect', 'feedbackNotQuiteRight'),
+          ...feedback(true),
           conditional_function: () => {
             return true;
           },
@@ -209,7 +209,7 @@ export default function buildMathTimeline(config: Record<string, any>, mediaAsse
 
   if (runCat) {
     // puts the CAT portion of the corpus into taskStore and removes instructions
-    const allCorpusParts = prepareCorpus(corpus, true, downexCorpus);
+    const allCorpusParts = prepareCorpus(corpus, 3, downexCorpus, false, -3);
     const olderKidInstructionPractice: StimulusType[] = allCorpusParts.ipLight;
     const olderKidInstructions: StimulusType[] = olderKidInstructionPractice.filter(
       (trial: StimulusType) => trial.trialType == 'instructions',

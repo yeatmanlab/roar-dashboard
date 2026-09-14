@@ -60,7 +60,7 @@ export default function buildAdultReasoningTimeline(config: Record<string, any>,
   let numOfTrials;
 
   if (cat) {
-    const fullCorpus = prepareCorpus(corpus, false);
+    const fullCorpus = prepareCorpus(corpus, 0);
     const practice = [...fullCorpus.ipLight, ...fullCorpus.ipHeavy];
     numOfTrials = 8;
 

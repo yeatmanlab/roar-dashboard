@@ -12,13 +12,12 @@ export const enterFullscreen = {
   message: () => {
     const t = taskStore().translations;
     return `<div class="lev-row-container header">
-        <p>${t.generalFullscreen || 'Switch to full screen mode'}</p>
+        <p>${t.generalFullscreen}</p>
       </div>
       `;
   },
   delay_after: 0,
-  keyboard_choices: 'ALL_KEYS',
-  button_label: () => `${taskStore().translations.continueButtonText || 'Continue'}`,
+  button_label: () => `${taskStore().translations.continueButtonText}`,
   on_load: () => {
     const continueButton = document.getElementById('jspsych-fullscreen-btn');
     if (continueButton) {

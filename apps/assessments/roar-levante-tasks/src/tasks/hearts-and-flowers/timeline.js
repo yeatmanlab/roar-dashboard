@@ -195,14 +195,14 @@ function getHeartOrFlowerInstructionsSection(adminConfig, stimulusType) {
     instructionPracticePromptText1,
     instructionPracticePromptAudio1,
     instructionPracticeStimulusSide1,
-    'heartInstruct2',
+    stimulusType === StimulusType.Heart ? 'heartInstruct2' : 'flowerInstruct2',
   );
   const instructionPractice2 = buildInstructionPracticeTrial(
     stimulusType,
     instructionPracticePromptText2,
     instructionPracticePromptAudio2,
     instructionPracticeStimulusSide2,
-    'heartPracticeFeedback1',
+    stimulusType === StimulusType.Heart ? 'heartPracticeFeedback1' : 'flowerPracticeFeedback1',
   );
 
   // Now let's build our timeline. Notice how we are pairing each practice trials with a feedback trial

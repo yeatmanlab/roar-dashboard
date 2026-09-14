@@ -9,12 +9,12 @@ $breakpoints: (
     max-width: 800px,
   ),
   'large': (
-    max-width: 1000px,
+    max-width: 1400px,
   ),
-  'very-large': (
+  'large-lower-bound': (
     min-width: 1000px,
   ),
-  'huge': (
+  'very-large-lower-bound': (
     min-width: 1200px,
   ),
 );

@@ -202,10 +202,13 @@ function buildInstructionTrial(mascotImage, getPromptKey, showResponseButton = f
           jsPsych.finishTrial();
         };
 
-        window.addEventListener(inputMethod, onAnyKeyPress);
-        cleanupInstructionInputListeners.push(() => {
-          window.removeEventListener(inputMethod, onAnyKeyPress);
-        });
+        // Set timeout to ensure event listener is added after current event is finished
+        setTimeout(() => {
+          window.addEventListener(inputMethod, onAnyKeyPress);
+          cleanupInstructionInputListeners.push(() => {
+            window.removeEventListener(inputMethod, onAnyKeyPress);
+          });
+        }, 300);
       }
 
       const audioConfig = {

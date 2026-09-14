@@ -48,7 +48,7 @@ export const DEFAULT_LAYOUT_CONFIG: LayoutConfigType = {
   inCorrectTrialConfig: {
     onIncorrectTrial: 'end',
   },
-  disableOkButton: false,
+  disableOkButton: true,
 };
 
 // Default corpus per task (camelCase task name). Used when variantParams.corpus is absent.
@@ -56,8 +56,8 @@ const defaultCorpus: Record<string, string> = {
   egmaMath: 'math-item-bank',
   matrixReasoning: 'matrix-reasoning-item-bank',
   mentalRotation: 'mental-rotation-item-bank',
-  sameDifferentSelection: 'same-different-selection-item-bank',
-  trog: 'roar-syntax-item-2026-05-14-v3',
+  sameDifferentSelection: 'same-different-selection-item-bank-sparks',
+  trog: 'roar-syntax-item-2026-05-14-v4',
   theoryOfMind: 'theory-of-mind-item-bank',
   vocab: 'vocab-item-bank',
   roarInference: 'inference-2026-05-14-v3',
@@ -138,7 +138,13 @@ export const setSharedConfig = async (
   };
 
   const config = {
-    userMetadata: { ...userMetadata, grade, age: Number(age) || getAge(Number(birthMonth), Number(birthYear)) },
+    userMetadata: {
+      ...userMetadata,
+      grade,
+      age: Number(age) || getAge(Number(birthMonth), Number(birthYear)),
+      birthMonth,
+      birthYear,
+    },
     audioFeedback: audioFeedback || 'neutral',
     skipInstructions: !!skipInstructions, // Not used in any task
     startTime: new Date(),
