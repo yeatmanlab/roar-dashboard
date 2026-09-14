@@ -12,6 +12,7 @@ import { APP_ROUTES, APP_ROUTE_NAMES, GAME_ROUTES } from '@/constants/routes';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
+import { fetchMe } from '@/composables/queries/useMeQuery';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { useGlobalError } from '@/composables/useGlobalError';
@@ -1138,6 +1139,11 @@ router.beforeEach(async (to, from, next) => {
       meData = await Promise.race([
         queryClient.ensureQueryData({
           queryKey: [ME_QUERY_KEY],
+          // Required: no defaultQueryFn is configured on the queryClient, so
+          // after an identity reset clears the entry, ensureQueryData without
+          // a queryFn would reject with "Missing queryFn" and silently skip
+          // the unsigned-TOS gate.
+          queryFn: fetchMe,
           staleTime: 60_000,
         }),
         new Promise((resolve) => setTimeout(() => resolve(undefined), 5000)),
@@ -1171,7 +1177,7 @@ router.beforeEach(async (to, from, next) => {
   // `/me` payload already awaited above (the canonical backend source), keeping
   // `store.isUserSuperAdmin` only as a fallback. That store getter derives from
   // `authStore.userClaims`, which is populated by a *separate* async
-  // `resolveUserClaims('/me')` in App.vue that settles after the first navigation —
+  // `resolveUserClaims()` call in App.vue that settles after the first navigation —
   // the timing gap that bounced the first navigation (and made it work only on the
   // second click) on the emulator stack, where super-admin is the sole route-access
   // signal (the emulator token carries no role claim).
