@@ -4661,6 +4661,38 @@ describe('ReportService', () => {
       expect('historicalScores' in swrEntry).toBe(false);
     });
 
+    it('classifies a past administration on the grade recorded for that run', async () => {
+      // Percentile 60 clears the achieved cutoff of 50; raw score 46 is under the
+      // `some` threshold of 47, so the grade used flips the result.
+      setupGuardianDefaults({
+        adminMetas: [ADMIN_OLDER],
+        user: UserFactory.build({ id: targetUserId, grade: '6', rosteringEnded: null }),
+      });
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        {
+          userId: targetUserId,
+          taskVariantId: VARIANT_ID_2,
+          scoreName: ScoreField.SRE_LEGACY_PERCENTILE_BELOW_GRADE_6,
+          scoreValue: '60',
+        },
+        { userId: targetUserId, taskVariantId: VARIANT_ID_2, scoreName: ScoreField.SRE_RAW_SCORE, scoreValue: '46' },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-old',
+          taskVariantId: VARIANT_ID_2,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2024-12-01'),
+          grade: '5',
+        },
+      ]);
+
+      const result = await createService().getGuardianStudentReport(superAdminAuth, targetUserId);
+
+      expect(result.administrations[0]!.tasks.find((t) => t.taskId === TASK_ID_2)!.supportLevel).toBe('achievedSkill');
+    });
+
     // --- Longitudinal scores ---
 
     it('builds longitudinalScores keyed by task slug, ordered chronologically', async () => {
