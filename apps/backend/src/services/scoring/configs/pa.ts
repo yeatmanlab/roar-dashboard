@@ -10,6 +10,7 @@ export default {
   taskSlugs: [PA_TASK_ID],
   scoreFields: {
     percentile: [
+      { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, fieldName: PA_SCORE_NAMES.PERCENTILE },
       {
         minVersion: 0,
         fieldName: {
@@ -22,6 +23,7 @@ export default {
       },
     ],
     percentileDisplay: [
+      { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, fieldName: PA_SCORE_NAMES.PERCENTILE },
       {
         minVersion: 0,
         fieldName: {
@@ -34,6 +36,7 @@ export default {
       },
     ],
     standardScore: [
+      { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, fieldName: PA_SCORE_NAMES.STANDARD_SCORE },
       {
         minVersion: 0,
         fieldName: {
@@ -46,6 +49,7 @@ export default {
       },
     ],
     standardScoreDisplay: [
+      { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, fieldName: PA_SCORE_NAMES.STANDARD_SCORE },
       {
         minVersion: 0,
         fieldName: {

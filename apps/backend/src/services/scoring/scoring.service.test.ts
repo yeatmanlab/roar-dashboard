@@ -691,10 +691,12 @@ describe('getSupportThreshold', () => {
   });
 
   it('resolves the support range for other percentile-then-rawscore tasks', () => {
-    // swr flips at v7, pa at v4 — both use developing 25 (legacy) → 75, 20 (updated) → 80.
+    // swr flips at v7, pa at v5 — both use developing 25 (legacy) → 75, 20 (updated) → 80.
     expect(getSupportThreshold('swr', null)).toBe(75);
     expect(getSupportThreshold('swr', 7)).toBe(80);
     expect(getSupportThreshold('pa', null)).toBe(75);
+    expect(getSupportThreshold('pa', 3)).toBe(75);
+    expect(getSupportThreshold('pa', 5)).toBe(80);
   });
 
   it('returns null for tasks without a percentile-then-rawscore classification', () => {
