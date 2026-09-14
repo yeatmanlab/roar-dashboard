@@ -1,21 +1,11 @@
 <template>
-  <div class="self-registration-form-card">
-    <header class="self-registration-header">
-      <div class="self-registration-logo" role="img" aria-label="ROAR">
-        <ROARLogoShort aria-hidden="true" />
-      </div>
-      <div class="self-registration-heading">
-        <h1 id="self-registration-heading">Create your account</h1>
-        <p>Sign up to start ROARing</p>
-      </div>
-    </header>
-
+  <div class="self-registration-form-content">
     <form ref="formElement" class="self-registration-form" novalidate @submit.prevent="handleSubmit">
       <div class="self-registration-name-fields">
         <div class="self-registration-field">
           <label for="account-owner-first-name">
             First name <span class="self-registration-required" aria-hidden="true">*</span>
-            <span class="self-registration-sr-only">(required)</span>
+            <span class="sr-only">(required)</span>
           </label>
           <input
             id="account-owner-first-name"
@@ -40,7 +30,7 @@
         <div class="self-registration-field">
           <label for="account-owner-last-name">
             Last name <span class="self-registration-required" aria-hidden="true">*</span>
-            <span class="self-registration-sr-only">(required)</span>
+            <span class="sr-only">(required)</span>
           </label>
           <input
             id="account-owner-last-name"
@@ -66,7 +56,7 @@
       <div class="self-registration-field">
         <label for="account-owner-email">
           Email address <span class="self-registration-required" aria-hidden="true">*</span>
-          <span class="self-registration-sr-only">(required)</span>
+          <span class="sr-only">(required)</span>
         </label>
         <input
           id="account-owner-email"
@@ -93,7 +83,7 @@
       <div class="self-registration-field">
         <label for="account-owner-password">
           Password <span class="self-registration-required" aria-hidden="true">*</span>
-          <span class="self-registration-sr-only">(required)</span>
+          <span class="sr-only">(required)</span>
         </label>
         <div class="self-registration-password">
           <input
@@ -163,7 +153,7 @@
                 I agree to the
                 <a :href="TERMS_OF_SERVICE_DOCUMENT_PATH" target="_blank" rel="noopener noreferrer">Terms of Use</a>
                 <span class="self-registration-required" aria-hidden="true">*</span>
-                <span class="self-registration-sr-only">(required)</span>
+                <span class="sr-only">(required)</span>
               </label>
             </div>
             <small v-if="submitted && !legalAccepted" id="account-owner-legal-error" class="self-registration-error">
@@ -196,7 +186,6 @@
 import { computed, nextTick, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { ChallengeV3 } from 'vue-recaptcha';
-import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { TERMS_OF_SERVICE_DOCUMENT_PATH } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
 
@@ -243,56 +232,8 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-.self-registration-form-card {
+.self-registration-form-content {
   width: 100%;
-  padding: 2.25rem;
-  border: 1px solid var(--surface-200);
-  border-radius: 0.75rem;
-  background: var(--surface-0);
-  box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
-}
-
-.self-registration-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-  margin-bottom: 1.75rem;
-  text-align: center;
-}
-
-.self-registration-logo {
-  width: 5rem;
-  color: var(--primary-color);
-}
-
-.self-registration-logo :deep(path) {
-  fill: currentColor;
-}
-
-.self-registration-heading {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.self-registration-heading h1,
-.self-registration-heading p,
-.self-registration-sign-in {
-  margin: 0;
-}
-
-.self-registration-heading h1 {
-  color: var(--text-color);
-  font-size: 2rem;
-  font-weight: 400;
-  line-height: 1.2;
-}
-
-.self-registration-heading p,
-.self-registration-sign-in {
-  color: var(--text-color-secondary);
-  font-size: 0.875rem;
-  line-height: 1.5;
 }
 
 .self-registration-form {
@@ -325,17 +266,6 @@ async function handleSubmit() {
 .self-registration-required,
 .self-registration-error {
   color: var(--bright-red);
-}
-
-.self-registration-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
 
 .self-registration-input {
@@ -468,23 +398,16 @@ async function handleSubmit() {
 }
 
 .self-registration-sign-in {
-  margin-top: 1.25rem;
+  margin: 1.25rem 0 0;
+  color: var(--text-color-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
   text-align: center;
 }
 
 @media (max-width: 36rem) {
-  .self-registration-form-card {
-    padding: 1.75rem;
-  }
-
   .self-registration-name-fields {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 22rem) {
-  .self-registration-form-card {
-    padding: 1.25rem;
   }
 }
 </style>

@@ -74,6 +74,7 @@ function mountSelfRegistration() {
         RegistrationStatus: true,
         AccountOwnerForm: {
           name: 'AccountOwnerForm',
+          props: ['disabled'],
           emits: [
             'submit',
             'touch',
@@ -154,6 +155,42 @@ describe('SelfRegistration.vue', () => {
     expect(mocks.validate).toHaveBeenCalledOnce();
     expect(mocks.submit).not.toHaveBeenCalled();
     wrapper.unmount();
+  });
+
+  it('keeps the heading and its accessible relationship while submitting and after success', async () => {
+    mocks.isSubmitting.value = true;
+    const submittingWrapper = mountSelfRegistration();
+
+    expect(submittingWrapper.get('#self-registration-heading').text()).toBe('Create your account');
+    expect(submittingWrapper.get('#register').attributes('aria-labelledby')).toBe('self-registration-heading');
+    expect(submittingWrapper.findComponent({ name: 'AccountOwnerForm' }).exists()).toBe(false);
+    submittingWrapper.unmount();
+
+    mocks.isSubmitting.value = false;
+    mocks.isSuccess.value = true;
+    const successWrapper = mountSelfRegistration();
+
+    expect(successWrapper.get('#self-registration-heading').text()).toBe('Create your account');
+    expect(successWrapper.get('#register').attributes('aria-labelledby')).toBe('self-registration-heading');
+    expect(successWrapper.findComponent({ name: 'AccountOwnerForm' }).exists()).toBe(false);
+
+    successWrapper.unmount();
+  });
+
+  it('disables submission until verification is ready but not for an unchecked legal acknowledgement', () => {
+    mocks.verificationToken.value = '';
+    const pendingVerificationWrapper = mountSelfRegistration();
+
+    expect(pendingVerificationWrapper.findComponent({ name: 'AccountOwnerForm' }).props('disabled')).toBe(true);
+    pendingVerificationWrapper.unmount();
+
+    mocks.verificationToken.value = 'verified';
+    mocks.legalAccepted.value = false;
+    const missingLegalAcceptanceWrapper = mountSelfRegistration();
+
+    expect(missingLegalAcceptanceWrapper.findComponent({ name: 'AccountOwnerForm' }).props('disabled')).toBe(false);
+
+    missingLegalAcceptanceWrapper.unmount();
   });
 });
 
