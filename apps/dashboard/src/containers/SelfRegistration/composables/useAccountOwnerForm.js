@@ -7,6 +7,9 @@ const FIELD_NAMES = ['firstName', 'lastName', 'email', 'password'];
  * Owns account-owner values and the normalized account-creation payload.
  * Presentation components update this state through the exposed field API and
  * never receive account-service dependencies.
+ *
+ * @returns {Object} Reactive field state, validation state, normalized payload,
+ * and field mutation helpers.
  */
 export function useAccountOwnerForm() {
   const values = reactive({

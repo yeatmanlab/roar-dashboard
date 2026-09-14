@@ -5,6 +5,9 @@ import { computed, ref } from 'vue';
  * contact as three explicit decisions. Loading is dependency-injected because
  * the approved pre-auth consent source and version-storage contract are still
  * Stage 1 dependencies.
+ *
+ * @returns {Object} Reactive consent state plus document-loading, modal, and
+ * decision helpers.
  */
 export function useResearchConsent() {
   const consentDocument = ref(null);

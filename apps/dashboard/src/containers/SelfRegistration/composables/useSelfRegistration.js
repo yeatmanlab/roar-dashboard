@@ -10,7 +10,15 @@ function toUserMessage(error) {
   return GENERIC_REGISTRATION_ERROR;
 }
 
-/** Coordinates account creation and screen-level workflow state. */
+/**
+ * Coordinates account creation and screen-level workflow state.
+ *
+ * @param {Object} [options] Injectable workflow dependencies.
+ * @param {(payload: Object) => Promise<void>} [options.createAccount] Account-creation operation.
+ * @param {Function} [options.redirect] Post-registration navigation operation.
+ * @param {number} [options.redirectDelay] Delay before post-registration navigation.
+ * @returns {Object} Reactive workflow state and registration actions.
+ */
 export function useSelfRegistration(options = {}) {
   const registration = options.createAccount ? null : useFamilyRegistration();
   const createAccount = options.createAccount ?? registration.submit;
@@ -37,6 +45,10 @@ export function useSelfRegistration(options = {}) {
   }
 
   function setVerificationToken(token) {
+    // TODO(#2186): Send this token to server-side verification when the
+    // POST /v1/families contract accepts anti-abuse evidence. The current API
+    // shape cannot verify a token and changing it spans dashboard, contract,
+    // and backend review.
     verificationToken.value = token ?? '';
   }
 
