@@ -83,28 +83,3 @@ jobs:
           gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ASSESSMENT }}
           gcp-service-account-id: ${{ secrets.FIREBASE_FIRESTORE_SERVICE_ACCOUNT_ID_ASSESSMENT }}
           config-directory: build/apps/dashboard/firebase/assessment
-
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Update project manifests
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  update-manifests:
-    name: Update manifests
-    needs: [deploy]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    strategy:
-      matrix:
-        projects: ${{ fromJSON(vars.ROAR_PROJECTS || '[]') }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          path: "roar-dashboard"
-
-      - name: Update ${{ matrix.projects.name }} deployment manifest
-        uses: ./roar-dashboard/.github/actions/update-deployment-manifest
-        with:
-          project-repo: ${{ matrix.projects.repo }}
-          project-name: ${{ matrix.projects.name }}
-          token: ${{ secrets.CI_GITHUB_PAT }}
-          sha: ${{ github.event.pull_request.head.sha }}
