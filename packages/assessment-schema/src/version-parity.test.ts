@@ -126,25 +126,113 @@ function collectDeclarations(): Declaration[] {
   return declarations;
 }
 
-/**
- * Extracts the major version from a semver range.
- *
- * Handles the comparator prefixes this repo actually uses. Unrecognised ranges throw rather
- * than being skipped, so an exotic range can't quietly bypass the parity assertion.
- *
- * @param range - A semver range such as `^1.2.3` or `>=1.2.3`
- * @returns The major version component
- */
-function majorOf(range: string): number {
-  const match = /^(?:\^|~|>=|<=|=|>|<)?\s*(\d+)\./.exec(range.trim());
+/** A parsed `major.minor.patch` version. */
+interface SemverTriple {
+  major: number;
+  minor: number;
+  patch: number;
+}
 
-  if (!match?.[1]) {
+/** Splits an optional comparator prefix off the version it qualifies. */
+const COMPARATOR_PATTERN = /^(\^|~|>=|<=|=|>|<)?\s*(.+)$/;
+
+/**
+ * Parses a fully-specified `major.minor.patch` version.
+ *
+ * Anything else — a prerelease, build metadata, or a partial version such as `0.1` — throws
+ * rather than being coerced, so a shape this doesn't handle can't quietly bypass the parity
+ * assertion.
+ *
+ * @param version - A version string such as `0.1.0`
+ * @returns The parsed components
+ */
+function parseVersion(version: string): SemverTriple {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version.trim());
+
+  if (!match) {
     throw new Error(
-      `Could not read a major version from range "${range}". Extend majorOf() so parity is not silently skipped.`,
+      `Could not parse "${version}" as a major.minor.patch version. ` +
+        'Extend parseVersion() so parity is not silently skipped.',
     );
   }
 
-  return Number(match[1]);
+  // The pattern matched, so all three groups are present.
+  return { major: Number(match[1]!), minor: Number(match[2]!), patch: Number(match[3]!) };
+}
+
+/**
+ * Orders two versions.
+ *
+ * @param a - Left operand
+ * @param b - Right operand
+ * @returns Negative if `a` precedes `b`, zero if equal, positive if `a` follows `b`
+ */
+function compareVersions(a: SemverTriple, b: SemverTriple): number {
+  return a.major - b.major || a.minor - b.minor || a.patch - b.patch;
+}
+
+/**
+ * Exclusive upper bound npm derives from a caret range.
+ *
+ * Below 1.0.0 the caret pins the leftmost non-zero component, so `^0.1.0` admits `0.1.x` but
+ * **not** `0.2.0`. That is the case a major-only comparison misses entirely: both majors are
+ * 0, yet a published install of `^0.1.0` resolves the stale `0.1.x` tarball rather than the
+ * current package. While this package is pre-1.0, the minor is the compatibility boundary.
+ *
+ * @param floor - The range's lower bound
+ * @returns The first version the range excludes
+ */
+function caretUpperBound({ major, minor, patch }: SemverTriple): SemverTriple {
+  if (major > 0) return { major: major + 1, minor: 0, patch: 0 };
+  if (minor > 0) return { major: 0, minor: minor + 1, patch: 0 };
+  return { major: 0, minor: 0, patch: patch + 1 };
+}
+
+/**
+ * Whether a published install of `range` would resolve `version`.
+ *
+ * Handles the comparator prefixes this repo actually uses. An unrecognised comparator throws
+ * rather than being skipped, so an exotic range can't quietly bypass the parity assertion.
+ *
+ * @param range - A semver range such as `^0.1.0` or `>=1.2.3`
+ * @param version - The version the workspace resolves locally
+ * @returns true if the range admits that version
+ */
+function rangeAdmits(range: string, version: SemverTriple): boolean {
+  const match = COMPARATOR_PATTERN.exec(range.trim());
+
+  if (!match?.[2]) {
+    throw new Error(
+      `Could not read a comparator and version from range "${range}". ` +
+        'Extend rangeAdmits() so parity is not silently skipped.',
+    );
+  }
+
+  const comparator = match[1] ?? '=';
+  const floor = parseVersion(match[2]);
+  const ordering = compareVersions(version, floor);
+
+  switch (comparator) {
+    case '^':
+      return ordering >= 0 && compareVersions(version, caretUpperBound(floor)) < 0;
+    case '~':
+      return ordering >= 0 && compareVersions(version, { major: floor.major, minor: floor.minor + 1, patch: 0 }) < 0;
+    case '=':
+      return ordering === 0;
+    case '>=':
+      return ordering >= 0;
+    case '>':
+      return ordering > 0;
+    case '<=':
+      return ordering <= 0;
+    case '<':
+      return ordering < 0;
+    default:
+      throw new Error(
+        `Unsupported comparator "${comparator}" in range "${range}". ` +
+          'Extend rangeAdmits() so parity is not silently skipped.',
+      );
+  }
 }
 
 /**
@@ -169,6 +257,41 @@ function describeRangeGroups(declarations: Declaration[]): string[] {
     .sort(([, a], [, b]) => a.length - b.length)
     .map(([range, group]) => `${range} (${group.length}): ${group.map((d) => d.workspace).join(', ')}`);
 }
+
+/**
+ * `[range, version, whether the range admits it]`.
+ *
+ * The pre-1.0 rows are why the parity assertion calls `rangeAdmits` rather than comparing
+ * majors: every one of them shares a major of 0 with the version it is checked against, so a
+ * major comparison would report agreement where npm would resolve a different copy.
+ */
+const RANGE_ADMITS_CASES: [range: string, version: string, expected: boolean][] = [
+  ['^0.1.0', '0.1.0', true],
+  ['^0.1.0', '0.1.7', true],
+  ['^0.1.0', '0.2.0', false],
+  ['^0.1.0', '0.0.9', false],
+  ['^0.0.3', '0.0.3', true],
+  ['^0.0.3', '0.0.4', false],
+  ['^1.2.0', '1.9.0', true],
+  ['^1.2.0', '2.0.0', false],
+  ['~0.1.0', '0.1.9', true],
+  ['~0.1.0', '0.2.0', false],
+  ['0.1.0', '0.1.1', false],
+  ['>=0.1.0', '0.2.0', true],
+];
+
+/** Ranges this test deliberately refuses to interpret rather than guess at. */
+const UNSUPPORTED_RANGES: string[] = ['^0.1', 'latest', 'workspace:^', '^0.1.0-rc.1'];
+
+describe('rangeAdmits', () => {
+  it.each(RANGE_ADMITS_CASES)('%s admits %s: %s', (range, version, expected) => {
+    expect(rangeAdmits(range, parseVersion(version))).toBe(expected);
+  });
+
+  it.each(UNSUPPORTED_RANGES)('throws on the unsupported range %s', (range) => {
+    expect(() => rangeAdmits(range, { major: 0, minor: 1, patch: 0 })).toThrow();
+  });
+});
 
 describe(`${PACKAGE_NAME} version parity`, () => {
   const declarations = collectDeclarations();
@@ -199,14 +322,16 @@ describe(`${PACKAGE_NAME} version parity`, () => {
     expect(divergence).toEqual([]);
   });
 
-  it('is declared with a range matching the package major', () => {
+  it('is declared with a range that admits the package version', () => {
     expect(schemaVersion).toBeTruthy();
-    const packageMajor = majorOf(schemaVersion!);
+    const packageVersion = parseVersion(schemaVersion!);
 
-    // A workspace left on an older major would fetch a stale registry copy on a published
-    // install instead of resolving this one.
+    // A range that no longer admits the current version would fetch a stale registry copy on
+    // a published install instead of resolving this one. Below 1.0.0 that happens a minor at
+    // a time — bumping the package to 0.2.0 while consumers declare `^0.1.0` is the drift
+    // this catches, and comparing majors alone would not.
     const stale = declarations
-      .filter((declaration) => majorOf(declaration.range) !== packageMajor)
+      .filter((declaration) => !rangeAdmits(declaration.range, packageVersion))
       .map(
         (declaration) =>
           `${declaration.workspace} (${declaration.manifestPath}) declares ${declaration.range}, package is ${schemaVersion}`,
