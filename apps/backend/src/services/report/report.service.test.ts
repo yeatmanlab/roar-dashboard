@@ -3481,6 +3481,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3652,6 +3653,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3687,6 +3689,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3721,6 +3724,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3758,6 +3762,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3774,6 +3779,7 @@ describe('ReportService', () => {
           completedAt: new Date('2025-04-15T00:00:00Z'),
           reliableRun: true,
           engagementFlags: [],
+          grade: null,
         },
         {
           runId: 'run-older',
@@ -3786,6 +3792,7 @@ describe('ReportService', () => {
           completedAt: new Date('2024-09-15T00:00:00Z'),
           reliableRun: true,
           engagementFlags: [],
+          grade: null,
         },
       ];
       mockReportRepository.getHistoricalRunsForUser.mockResolvedValue(historicalRuns);
@@ -3847,6 +3854,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3865,6 +3873,7 @@ describe('ReportService', () => {
           completedAt: new Date('2024-09-30T00:00:00Z'),
           reliableRun: true,
           engagementFlags: [],
+          grade: null,
         },
         {
           runId: 'run-early',
@@ -3877,6 +3886,7 @@ describe('ReportService', () => {
           completedAt: new Date('2024-09-15T00:00:00Z'),
           reliableRun: true,
           engagementFlags: [],
+          grade: null,
         },
       ];
       mockReportRepository.getHistoricalRunsForUser.mockResolvedValue(historicalRuns);
@@ -3920,6 +3930,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3997,6 +4008,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -4070,6 +4082,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -4136,6 +4149,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -4185,6 +4199,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
         {
           runId: 'run-b',
@@ -4192,6 +4207,7 @@ describe('ReportService', () => {
           reliable: false,
           engagementFlags: ['flagB'],
           completedAt: new Date('2025-09-02'),
+          grade: null,
         },
       ]);
 
@@ -4224,6 +4240,7 @@ describe('ReportService', () => {
           reliable: false,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -4254,6 +4271,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: ['guess', 'inattentive'],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -4489,6 +4507,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2024-12-01'),
+          grade: null,
         },
       ]);
 
@@ -4521,6 +4540,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2024-12-01'),
+          grade: null,
         },
       ]);
 
@@ -4581,6 +4601,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2024-12-10'),
+          grade: null,
         },
       ]);
 
@@ -4608,6 +4629,7 @@ describe('ReportService', () => {
           reliable: false,
           engagementFlags: [],
           completedAt: new Date('2024-12-01'),
+          grade: null,
         },
       ]);
 
