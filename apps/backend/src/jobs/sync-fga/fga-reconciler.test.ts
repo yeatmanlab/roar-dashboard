@@ -2,18 +2,15 @@ import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { ClientWriteRequestOnDuplicateWrites } from '@openfga/sdk';
 import type { OpenFgaClient } from '@openfga/sdk';
 import { StatusCodes } from 'http-status-codes';
-import { ApiErrorCode } from '../../../enums/api-error-code.enum';
-import { ApiErrorMessage } from '../../../enums/api-error-message.enum';
-import { ApiError } from '../../../errors/api-error';
-import { logger } from '../../../logger';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { logger } from '../../logger';
 import {
   createMockFgaClient,
   mockReadResponse,
   mockReadImplementation,
   type MockFgaClient,
-} from '../../../test-support/clients/fga.client';
-import { AuthContextFactory } from '../../../test-support/factories/user.factory';
-import { OrgType } from '../../../enums/org-type.enum';
+} from '../../test-support/clients/fga.client';
+import { OrgType } from '../../enums/org-type.enum';
 import {
   userOrgs,
   userClasses,
@@ -22,8 +19,8 @@ import {
   administrationOrgs,
   administrationClasses,
   administrationGroups,
-} from '../../../db/schema/core';
-import { AuthorizationModule } from './authorization.module';
+} from '../../db/schema/core';
+import { createFgaReconciler } from './fga-reconciler';
 
 // ── Mock DB ──────────────────────────────────────────────────────────────────
 
@@ -151,10 +148,10 @@ function createEmptyDb() {
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
-// Safe cast: the module only calls writeTuples/deleteTuples/read, which the mock provides
+// Safe cast: the reconciler only calls writeTuples/deleteTuples/read, which the mock provides
 const asOpenFgaClient = (mock: MockFgaClient) => mock as unknown as OpenFgaClient;
 
-describe('AuthorizationModule', () => {
+describe('createFgaReconciler', () => {
   let mockClient: MockFgaClient;
 
   beforeEach(() => {
@@ -162,34 +159,8 @@ describe('AuthorizationModule', () => {
     mockClient = createMockFgaClient();
   });
 
-  describe('authorization', () => {
-    it('throws 403 for non-super-admin', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: false });
-      const db = createMockDb({});
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-
-      await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(
-        expect.objectContaining({
-          message: ApiErrorMessage.FORBIDDEN,
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-        }),
-      );
-    });
-
-    it('does not query the database for non-super-admin', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: false });
-      const db = createMockDb({});
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-
-      await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(ApiError);
-      expect(db.select).not.toHaveBeenCalled();
-    });
-  });
-
   describe('dry run', () => {
     it('returns write/delete counts without calling writeTuples or deleteTuples', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createMockDb({
         orgs: [schoolRow],
         classes: [classRow],
@@ -202,8 +173,8 @@ describe('AuthorizationModule', () => {
         administration_groups: [adminGroupRow],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: true });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: true });
 
       expect(result.dryRun).toBe(true);
       expect(result.totalWrites).toBeGreaterThan(0);
@@ -214,11 +185,10 @@ describe('AuthorizationModule', () => {
     });
 
     it('logs diff counts', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createEmptyDb();
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      await module.syncFgaStore(authContext, { dryRun: true });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      await reconciler.reconcile({ dryRun: true });
 
       expect(logger.info).toHaveBeenCalledWith(
         expect.objectContaining({ dryRun: true, totalWrites: 0, totalDeletes: 0 }),
@@ -229,11 +199,10 @@ describe('AuthorizationModule', () => {
 
   describe('empty categories', () => {
     it('returns all zero counts when tables are empty and FGA is empty', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createEmptyDb();
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       expect(result.categories).toEqual({
         orgHierarchy: { write: 0, delete: 0 },
@@ -252,7 +221,6 @@ describe('AuthorizationModule', () => {
 
   describe('org hierarchy', () => {
     it('creates school hierarchy tuples (2 per school with parent)', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createMockDb({
         orgs: [schoolRow],
         classes: [],
@@ -265,8 +233,8 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: true });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: true });
 
       // schoolHierarchyTuples returns 2 tuples per school
       expect(result.categories.orgHierarchy.write).toBe(2);
@@ -274,7 +242,6 @@ describe('AuthorizationModule', () => {
     });
 
     it('creates class hierarchy tuples (2 per class)', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createMockDb({
         orgs: [],
         classes: [classRow],
@@ -287,8 +254,8 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: true });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: true });
 
       expect(result.categories.orgHierarchy.write).toBe(2);
     });
@@ -296,7 +263,6 @@ describe('AuthorizationModule', () => {
 
   describe('org memberships', () => {
     it('routes district memberships to districtMembershipTuple', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createMockDb({
         orgs: [],
         classes: [],
@@ -309,8 +275,8 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       expect(result.categories.orgMemberships.write).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -326,7 +292,6 @@ describe('AuthorizationModule', () => {
     });
 
     it('routes school memberships to schoolMembershipTuple', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createMockDb({
         orgs: [],
         classes: [],
@@ -339,8 +304,8 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       expect(result.categories.orgMemberships.write).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -358,7 +323,6 @@ describe('AuthorizationModule', () => {
 
   describe('family memberships', () => {
     it('uses joinedOn/leftOn for family tuples', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createMockDb({
         orgs: [],
         classes: [],
@@ -371,8 +335,8 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       expect(result.categories.familyMemberships.write).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -396,7 +360,6 @@ describe('AuthorizationModule', () => {
 
   describe('administration assignments', () => {
     it('routes district administration assignments correctly', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createMockDb({
         orgs: [],
         classes: [],
@@ -409,8 +372,8 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       expect(result.categories.administrationAssignments.write).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -426,7 +389,6 @@ describe('AuthorizationModule', () => {
     });
 
     it('routes school administration assignments correctly', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createMockDb({
         orgs: [],
         classes: [],
@@ -439,8 +401,8 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       expect(result.categories.administrationAssignments.write).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -456,7 +418,6 @@ describe('AuthorizationModule', () => {
     });
 
     it('handles class and group administration assignments', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createMockDb({
         orgs: [],
         classes: [],
@@ -469,8 +430,8 @@ describe('AuthorizationModule', () => {
         administration_groups: [adminGroupRow],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       expect(result.categories.administrationAssignments.write).toBe(2);
     });
@@ -478,8 +439,6 @@ describe('AuthorizationModule', () => {
 
   describe('class membership role filtering', () => {
     it('skips admin-tier roles on class memberships and logs the count', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
-
       const validRow = {
         userId: 'user-valid',
         classId: 'class-1',
@@ -507,8 +466,8 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       // Only the student row should produce a tuple
       expect(result.categories.classMemberships.write).toBe(1);
@@ -532,8 +491,6 @@ describe('AuthorizationModule', () => {
 
   describe('SDK chunking', () => {
     it('splits tuples into batches of 100', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
-
       // Create 250 class membership rows
       const manyClassRows = Array.from({ length: 250 }, (_, i) => ({
         userId: `user-${i}`,
@@ -555,8 +512,8 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       expect(result.categories.classMemberships.write).toBe(250);
 
@@ -569,7 +526,6 @@ describe('AuthorizationModule', () => {
     });
 
     it('passes onDuplicateWrites: Ignore for idempotent writes', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createMockDb({
         orgs: [schoolRow],
         classes: [],
@@ -582,8 +538,8 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      await reconciler.reconcile({ dryRun: false });
 
       expect(mockClient.writeTuples).toHaveBeenCalledWith(expect.any(Array), {
         conflict: { onDuplicateWrites: ClientWriteRequestOnDuplicateWrites.Ignore },
@@ -593,7 +549,6 @@ describe('AuthorizationModule', () => {
 
   describe('diff-based reconciliation', () => {
     it('deletes stale tuples not in Postgres', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createEmptyDb();
 
       // FGA has a stale group membership
@@ -604,8 +559,8 @@ describe('AuthorizationModule', () => {
 
       mockReadImplementation(mockClient, async () => mockReadResponse([staleTuple]));
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       expect(result.categories.groupMemberships.delete).toBe(1);
       expect(result.categories.groupMemberships.write).toBe(0);
@@ -613,8 +568,6 @@ describe('AuthorizationModule', () => {
     });
 
     it('handles condition change as 1 delete + 1 write', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
-
       const db = createMockDb({
         orgs: [],
         classes: [],
@@ -654,16 +607,14 @@ describe('AuthorizationModule', () => {
 
       mockReadImplementation(mockClient, async () => mockReadResponse([oldTuple]));
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       expect(result.categories.groupMemberships.delete).toBe(1);
       expect(result.categories.groupMemberships.write).toBe(1);
     });
 
     it('no-op when FGA matches Postgres exactly', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
-
       const db = createMockDb({
         orgs: [],
         classes: [],
@@ -703,8 +654,8 @@ describe('AuthorizationModule', () => {
 
       mockReadImplementation(mockClient, async () => mockReadResponse([matchingTuple]));
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       expect(result.categories.groupMemberships.write).toBe(0);
       expect(result.categories.groupMemberships.delete).toBe(0);
@@ -715,7 +666,6 @@ describe('AuthorizationModule', () => {
     });
 
     it('paginates through continuation tokens', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createEmptyDb();
 
       const tuple1 = {
@@ -736,8 +686,8 @@ describe('AuthorizationModule', () => {
         return mockReadResponse([tuple2]);
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      const result = await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await reconciler.reconcile({ dryRun: false });
 
       // Both stale tuples should be detected as deletes
       expect(result.categories.groupMemberships.delete).toBe(2);
@@ -747,8 +697,6 @@ describe('AuthorizationModule', () => {
     });
 
     it('deletes execute before writes within a category', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
-
       // Postgres has a hierarchy tuple
       const db = createMockDb({
         orgs: [schoolRow],
@@ -770,8 +718,8 @@ describe('AuthorizationModule', () => {
 
       mockReadImplementation(mockClient, async () => mockReadResponse([staleTuple]));
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
-      await module.syncFgaStore(authContext, { dryRun: false });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      await reconciler.reconcile({ dryRun: false });
 
       // Verify delete is called before write
       const deleteCalls = mockClient.deleteTuples.mock.invocationCallOrder;
@@ -789,7 +737,6 @@ describe('AuthorizationModule', () => {
 
   describe('error handling', () => {
     it('wraps DB errors with per-category context via per-promise .catch()', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const dbError = new Error('Connection refused');
 
       // Create a chain that rejects on any await — all method calls return the chain,
@@ -809,9 +756,9 @@ describe('AuthorizationModule', () => {
         select: vi.fn().mockReturnValue({ from }),
       };
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
 
-      await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(
+      await expect(reconciler.reconcile({ dryRun: false })).rejects.toThrow(
         expect.objectContaining({
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
@@ -842,7 +789,6 @@ describe('AuthorizationModule', () => {
     });
 
     it('wraps FGA write errors with EXTERNAL_SERVICE_FAILED', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const fgaError = new Error('FGA connection timeout');
 
       const db = createMockDb({
@@ -860,9 +806,9 @@ describe('AuthorizationModule', () => {
       const failingClient = createMockFgaClient();
       failingClient.writeTuples.mockRejectedValue(fgaError);
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(failingClient) });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(failingClient) });
 
-      await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(
+      await expect(reconciler.reconcile({ dryRun: false })).rejects.toThrow(
         expect.objectContaining({
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
@@ -871,16 +817,15 @@ describe('AuthorizationModule', () => {
     });
 
     it('wraps FGA read errors with EXTERNAL_SERVICE_FAILED', async () => {
-      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const fgaError = new Error('FGA read timeout');
       const db = createEmptyDb();
 
       const failingClient = createMockFgaClient();
       failingClient.read.mockRejectedValue(fgaError);
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(failingClient) });
+      const reconciler = createFgaReconciler({ db: db as never, getClient: () => asOpenFgaClient(failingClient) });
 
-      await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(
+      await expect(reconciler.reconcile({ dryRun: false })).rejects.toThrow(
         expect.objectContaining({
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
