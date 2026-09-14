@@ -34,7 +34,7 @@
         :legal-accepted="consent.legalAccepted.value"
         :future-contact-allowed="consent.futureContactAllowed.value"
         :verification-token="registration.verificationToken.value"
-        :disabled="!canSubmit"
+        :disabled="!canAttemptSubmission"
         :submitting="registration.isSubmitting.value"
         @update:field="form.setField"
         @touch="form.touch"
@@ -59,14 +59,16 @@ const form = useAccountOwnerForm();
 const consent = useResearchConsent();
 const registration = useSelfRegistration();
 
-const canSubmit = computed(
+// Field validity stays out of the disabled state so submitting an incomplete
+// form can reveal actionable field-level errors.
+const canAttemptSubmission = computed(
   () =>
     consent.legalAccepted.value && Boolean(registration.verificationToken.value) && !registration.isSubmitting.value,
 );
 
 async function handleSubmit() {
   if (!form.validate()) return false;
-  if (!canSubmit.value) return false;
+  if (!canAttemptSubmission.value) return false;
   return registration.submit(form.payload.value);
 }
 

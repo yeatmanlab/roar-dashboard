@@ -760,6 +760,9 @@ const routes = [
     path: APP_ROUTES.REGISTER,
     name: 'RegisterHome',
     component: () => import('../pages/RegisterFamilyUsers.vue'),
+    // Account-owner signup does not consume learner activation codes. The
+    // previous parent form received `?code` as an undeclared attribute and
+    // never read it; learner enrollment owns activation-code handling.
     children: [
       {
         name: 'registerStudent',
