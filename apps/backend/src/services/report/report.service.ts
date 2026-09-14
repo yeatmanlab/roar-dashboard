@@ -2244,6 +2244,8 @@ function applyTaskIdFilter(taskMetas: ReportTaskMeta[], filter: ParsedFilter[]):
  * non-negative integer in the JSON config; surfacing data corruption here as
  * "skip the variant" rather than coercing a fractional value into the
  * scoring-config lookup is cheap and correct.
+ *
+ * A JSON `null` is the exception: `Number(null)` is 0. Resolves to the default config (minVersion = 0).
  */
 function extractScoringVersions(params: TaskVariantParameter[]): Map<string, number> {
   const map = new Map<string, number>();
