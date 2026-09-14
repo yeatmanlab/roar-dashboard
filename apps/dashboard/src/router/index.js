@@ -760,13 +760,7 @@ const routes = [
     path: APP_ROUTES.REGISTER,
     name: 'RegisterHome',
     component: () => import('../pages/RegisterFamilyUsers.vue'),
-    props: (route) => ({ code: route.query.code }),
     children: [
-      {
-        name: 'Register',
-        path: '',
-        component: () => import('../components/auth/RegisterParent.vue'),
-      },
       {
         name: 'registerStudent',
         path: 'student',
