@@ -169,6 +169,24 @@ describe.each([
     expect(api.districts.listSchools).toHaveBeenCalledWith(expect.objectContaining({ params: { districtId: 'd1' } }));
   });
 
+  it('keeps loaded rows on screen while a background refetch revalidates them', async () => {
+    mountBrowser();
+    await vi.waitFor(() => expect(displayedNames()).toEqual([district.name]));
+    let finishRefetch;
+    api.districts.list.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishRefetch = resolve;
+        }),
+    );
+    client.invalidateQueries({ queryKey: [DISTRICTS_LIST_QUERY_KEY] });
+    await flushPromises();
+    expect(displayedNames()).toEqual([district.name]);
+    expect(wrapper.text()).not.toContain('Loading organizations...');
+    finishRefetch(result([district, { id: 'd2', name: 'Second district' }]));
+    await vi.waitFor(() => expect(displayedNames()).toEqual([district.name, 'Second district']));
+  });
+
   it('clears the previous school while a new district is loading', async () => {
     api.districts.list.mockResolvedValue(result([district, { id: 'd2', name: 'Second district' }]));
     mountBrowser();

@@ -54,7 +54,7 @@
                 <PvButton label="Retry" @click="retry" />
               </template>
             </AppMessageState>
-            <p v-else-if="isLoading || isFetching" role="status" class="p-3">Loading organizations...</p>
+            <p v-else-if="isPending" role="status" class="p-3">Loading organizations...</p>
             <p v-else-if="!orgData.length" role="status" class="p-3">No organizations available.</p>
             <div v-else class="card flex justify-content-center">
               <PvListbox
@@ -127,8 +127,7 @@ const {
   isLoadingDistricts,
   isLoadingSchools,
   orgData,
-  isLoading,
-  isFetching,
+  isPending,
   error,
   retry,
 } = useOrgBrowser();

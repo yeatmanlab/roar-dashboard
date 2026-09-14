@@ -75,7 +75,7 @@
               <PvButton label="Retry" @click="retry" />
             </template>
           </AppMessageState>
-          <p v-else-if="isLoading || isFetching" role="status" class="p-3">Loading organizations...</p>
+          <p v-else-if="isPending" role="status" class="p-3">Loading organizations...</p>
           <p v-else-if="!tableData.length" role="status" class="p-3">No organizations available.</p>
           <RoarDataTable
             v-else
@@ -265,6 +265,7 @@ const {
   orgData,
   isLoading,
   isFetching,
+  isPending,
   error,
   retry,
 } = useOrgBrowser();

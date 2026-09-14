@@ -8,21 +8,26 @@
         <img src="../../assets/provider-google-logo.svg" alt="The Google Logo" class="mr-2" />
         <span style="line-height: 30px" class="text-lg">Google</span>
         <div class="chip-container">
-          <PvChip v-if="providerIds.includes('google.com')" icon="pi pi-check" label="Linked" class="linked-chip" />
+          <PvChip
+            v-if="providerIds.includes(FIREBASE_AUTH_PROVIDER_IDS.GOOGLE)"
+            icon="pi pi-check"
+            label="Linked"
+            class="linked-chip"
+          />
           <PvChip v-else label="Linked" icon="pi pi-times" class="unlinked-chip" />
         </div>
       </div>
       <button
-        v-if="providerIds.includes('google.com')"
+        v-if="providerIds.includes(FIREBASE_AUTH_PROVIDER_IDS.GOOGLE)"
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
-        @click="unlinkAccount('google')"
+        @click="unlinkAccount(AUTH_SSO_PROVIDERS.GOOGLE)"
       >
         Unlink
       </button>
       <button
         v-else
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
-        @click="linkAccount('google')"
+        @click="linkAccount(AUTH_SSO_PROVIDERS.GOOGLE)"
       >
         Link
       </button>
@@ -33,12 +38,17 @@
         <img src="../../assets/provider-clever-logo.svg" alt="The Clever Logo" class="mr-2" />
         <span style="line-height: 30px" class="text-lg">Clever</span>
         <div class="chip-container">
-          <PvChip v-if="providerIds.includes('oidc.clever')" icon="pi pi-check" label="Linked" class="linked-chip" />
+          <PvChip
+            v-if="providerIds.includes(FIREBASE_AUTH_PROVIDER_IDS.CLEVER)"
+            icon="pi pi-check"
+            label="Linked"
+            class="linked-chip"
+          />
           <PvChip v-else label="Linked" icon="pi pi-times" class="unlinked-chip" />
         </div>
       </div>
       <button
-        v-if="providerIds.includes('oidc.clever')"
+        v-if="providerIds.includes(FIREBASE_AUTH_PROVIDER_IDS.CLEVER)"
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
         @click="unlinkAccount(AUTH_SSO_PROVIDERS.CLEVER)"
       >
@@ -58,12 +68,17 @@
         <img src="../../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="mr-2" />
         <span style="line-height: 30px" class="text-lg">ClassLink</span>
         <div class="chip-container">
-          <PvChip v-if="providerIds.includes('oidc.classlink')" icon="pi pi-check" label="Linked" class="linked-chip" />
+          <PvChip
+            v-if="providerIds.includes(FIREBASE_AUTH_PROVIDER_IDS.CLASSLINK)"
+            icon="pi pi-check"
+            label="Linked"
+            class="linked-chip"
+          />
           <PvChip v-else label="Linked" icon="pi pi-times" class="unlinked-chip" />
         </div>
       </div>
       <button
-        v-if="providerIds.includes('oidc.classlink')"
+        v-if="providerIds.includes(FIREBASE_AUTH_PROVIDER_IDS.CLASSLINK)"
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
         @click="unlinkAccount(AUTH_SSO_PROVIDERS.CLASSLINK)"
       >
@@ -105,6 +120,7 @@ import PvChip from 'primevue/chip';
 import PvConfirmDialog from 'primevue/confirmdialog';
 import { useAuthStore } from '@/store/auth';
 import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
+import { FIREBASE_AUTH_PROVIDER_IDS } from '@/constants/firebase';
 
 // +----------------+
 // | Initialization |
@@ -190,7 +206,7 @@ const unlinkAccount = async (providerId) => {
 // +-----------------+
 const confirm = useConfirm();
 const canDeletePassword = computed(() => {
-  return providerIds.value.includes('password') && providerIds.value.length > 1;
+  return providerIds.value.includes(FIREBASE_AUTH_PROVIDER_IDS.PASSWORD) && providerIds.value.length > 1;
 });
 const deletePassword = async () => {
   confirm.require({

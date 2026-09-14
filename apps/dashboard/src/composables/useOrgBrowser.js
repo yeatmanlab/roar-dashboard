@@ -14,6 +14,8 @@ import { ORG_TYPES } from '@/constants/orgTypes';
  */
 export default function useOrgBrowser() {
   const authStore = useAuthStore();
+  // The Families tab was intentionally dropped during the ts-rest backend
+  // migration — families have no list endpoint and aren't admin-managed here.
   const orgHeaders = [
     { id: ORG_TYPES.DISTRICTS, header: 'Districts' },
     { id: ORG_TYPES.SCHOOLS, header: 'Schools' },
@@ -73,6 +75,11 @@ export default function useOrgBrowser() {
     () => !authStore.isAuthReady || activeQueries.value.some((query) => query.isLoading.value),
   );
   const isFetching = computed(() => activeQueries.value.some((query) => query.isFetching.value));
+  // A background revalidation of an already-populated tab keeps its rows on
+  // screen — only a fetch with nothing to render replaces them with the
+  // loading message. Switching district or school empties `orgData` first
+  // (the cascading watchers above), so that case still reads as pending.
+  const isPending = computed(() => (isLoading.value || isFetching.value) && !orgData.value.length);
   const retry = () =>
     Promise.all(activeQueries.value.filter((query) => query.error.value).map((query) => query.refetch()));
 
@@ -89,6 +96,7 @@ export default function useOrgBrowser() {
     isLoadingSchools: schools.isLoading,
     isLoading,
     isFetching,
+    isPending,
     error,
     retry,
   };
