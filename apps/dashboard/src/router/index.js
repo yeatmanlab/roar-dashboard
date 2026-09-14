@@ -20,6 +20,30 @@ import { queryClient } from '@/queryClient';
 const { Permissions } = usePermissions();
 const { logNavEvent } = useSentryLogging();
 
+const allowedUnauthenticatedRoutes = [
+  'AccessEnded',
+  'AuthClassLink',
+  'AuthClever',
+  'AuthEmailLink',
+  'AuthEmailSent',
+  'AuthNycps',
+  'GenericError',
+  'InitiateAuthNycps',
+  'Maintenance',
+  'Register',
+  'SignIn',
+];
+
+/**
+ * Determine whether a route can be visited without an authenticated session.
+ *
+ * @param {import('vue-router').RouteLocationNormalized} route - The destination route.
+ * @returns {boolean} Whether unauthenticated navigation is allowed.
+ */
+export function isUnauthenticatedRouteAllowed(route) {
+  return route.meta?.requiresGuest === true || allowedUnauthenticatedRoutes.includes(route.name);
+}
+
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
 }
@@ -1027,20 +1051,6 @@ router.beforeEach(async (to, from, next) => {
   const { userCan } = usePermissions();
   const { globalError, clearGlobalError } = useGlobalError();
 
-  const allowedUnauthenticatedRoutes = [
-    'AccessEnded',
-    'AuthClassLink',
-    'AuthClever',
-    'AuthEmailLink',
-    'AuthEmailSent',
-    'AuthNycps',
-    'GenericError',
-    'InitiateAuthNycps',
-    'Maintenance',
-    'Register',
-    'SignIn',
-  ];
-
   // Manage page-signin class for layout styling
   if (to.name === 'SignIn') {
     document.body.classList.add('page-signin');
@@ -1082,11 +1092,7 @@ router.beforeEach(async (to, from, next) => {
     return;
   }
   // Check if user is signed in. If not, go to signin
-  if (
-    !to.path.includes('__/auth/handler') &&
-    !store.isAuthenticated &&
-    !allowedUnauthenticatedRoutes.includes(to.name)
-  ) {
+  if (!to.path.includes('__/auth/handler') && !store.isAuthenticated && !isUnauthenticatedRouteAllowed(to)) {
     // If the user attempt to visit the home page, skip the redirect_to query parameter.
     if (to.fullPath === APP_ROUTES.HOME) {
       next({ path: APP_ROUTES.SIGN_IN });
