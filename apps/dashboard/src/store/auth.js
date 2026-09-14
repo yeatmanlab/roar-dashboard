@@ -44,6 +44,9 @@ export const useAuthStore = () => {
       isAuthenticated: (state) => {
         return Boolean(state.firebaseUser);
       },
+      hasPasswordProvider: (state) => {
+        return state.firebaseUser?.providerData?.some((provider) => provider.providerId === 'password') ?? false;
+      },
       isFirekitInit: (state) => {
         return state.roarfirekit?.initialized;
       },

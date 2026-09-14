@@ -2,9 +2,9 @@ import { shallowMount, RouterLinkStub } from '@vue/test-utils';
 import { ref, reactive, nextTick } from 'vue';
 import AdminProfile from './AdminProfile.vue';
 
-const currentUser = ref();
-const authStore = reactive({ firebaseUser: null });
-vi.mock('@/composables/useCurrentUser', () => ({ default: () => ({ data: currentUser }) }));
+const usesAdminProfile = ref(false);
+const authStore = reactive({ hasPasswordProvider: false });
+vi.mock('@/composables/useCurrentUser', () => ({ default: () => ({ usesAdminProfile }) }));
 vi.mock('@/store/auth', () => ({ useAuthStore: () => authStore }));
 const mountProfile = () =>
   shallowMount(AdminProfile, {
@@ -12,27 +12,23 @@ const mountProfile = () =>
   });
 
 describe('AdminProfile', () => {
-  it.each(['admin', 'educator', 'super-admin', 'student', 'caregiver', undefined])(
-    'uses /me identity for %s profile links without legacy claims',
-    async (userType) => {
-      currentUser.value = userType && { userType, isSuperAdmin: userType === 'super-admin' };
-      authStore.firebaseUser = null;
-      const wrapper = mountProfile();
-      const isAdmin = ['admin', 'educator', 'super-admin'].includes(userType);
-      expect(wrapper.findAllComponents(RouterLinkStub).length).toBe(isAdmin ? 4 : 1);
-      wrapper.unmount();
-    },
-  );
+  it.each([true, false])('uses the admin profile classification for profile links: %s', async (expected) => {
+    usesAdminProfile.value = expected;
+    authStore.hasPasswordProvider = false;
+    const wrapper = mountProfile();
+    expect(wrapper.findAllComponents(RouterLinkStub).length).toBe(expected ? 4 : 1);
+    wrapper.unmount();
+  });
 
   it('updates password and profile links from the current Firebase user and /me', async () => {
-    currentUser.value = { userType: 'admin', isSuperAdmin: false };
-    authStore.firebaseUser = null;
+    usesAdminProfile.value = true;
+    authStore.hasPasswordProvider = false;
     const wrapper = mountProfile();
     expect(wrapper.text()).toContain('Add Password');
-    authStore.firebaseUser = { providerData: [{ providerId: 'password' }] };
+    authStore.hasPasswordProvider = true;
     await nextTick();
     expect(wrapper.text()).toContain('Change Password');
-    currentUser.value = { userType: 'student', isSuperAdmin: false };
+    usesAdminProfile.value = false;
     await nextTick();
     expect(wrapper.text()).not.toContain('Link Accounts');
     wrapper.unmount();

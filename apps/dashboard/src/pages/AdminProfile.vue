@@ -8,19 +8,19 @@
             <i class="pi pi-user" /><span v-if="sidebarOpen">Your Info</span>
           </div></router-link
         >
-        <router-link v-if="isAdmin" to="/profile/password"
+        <router-link v-if="usesAdminProfile" to="/profile/password"
           ><div class="sidebar-button">
             <i class="pi pi-key" /><span v-if="sidebarOpen">{{
-              hasPassword ? 'Change Password' : 'Add Password'
+              authStore.hasPasswordProvider ? 'Change Password' : 'Add Password'
             }}</span>
           </div></router-link
         >
-        <router-link v-if="isAdmin" to="/profile/accounts"
+        <router-link v-if="usesAdminProfile" to="/profile/accounts"
           ><div class="sidebar-button">
             <i class="pi pi-users" /><span v-if="sidebarOpen">Link Accounts</span>
           </div></router-link
         >
-        <router-link v-if="isAdmin" to="/profile/offline"
+        <router-link v-if="usesAdminProfile" to="/profile/offline"
           ><div class="sidebar-button">
             <i class="pi pi-wifi" /><span v-if="sidebarOpen">Offline Settings</span>
           </div></router-link
@@ -47,21 +47,13 @@
   </div>
 </template>
 <script setup>
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import useCurrentUser from '@/composables/useCurrentUser';
 
 const authStore = useAuthStore();
 const sidebarOpen = ref(true);
-const { data: currentUser } = useCurrentUser();
-
-// Profile navigation is an identity classification, not an organization permission.
-const isAdmin = computed(
-  () => Boolean(currentUser.value?.isSuperAdmin) || ['admin', 'educator'].includes(currentUser.value?.userType),
-);
-const hasPassword = computed(
-  () => authStore.firebaseUser?.providerData?.some((provider) => provider.providerId === 'password') ?? false,
-);
+const { usesAdminProfile } = useCurrentUser();
 </script>
 
 <style lang="scss" scoped>
