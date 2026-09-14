@@ -195,7 +195,7 @@ async function addChild(
 
 Membership writes go through sagas with explicit compensation: DB transaction commits → `writeTuplesOrThrow` → on failure, roll back DB rows and Firebase. This ensures there's no observable window where the DB has a role assignment but FGA doesn't, or vice versa. See `family.service.ts:create` and `user.service.ts:create` for the canonical implementations.
 
-For drift recovery, the FGA backfill job (`fga-backfill` endpoint) re-derives all tuples from the DB junction tables — but in steady state, the saga prevents drift in the first place.
+For drift recovery, the sync-fga Cloud Run Job (executed via `gcloud run jobs execute`; dry run by default, `--apply` to write) re-derives all tuples from the DB junction tables — but in steady state, the saga prevents drift in the first place.
 
 ### The principle
 

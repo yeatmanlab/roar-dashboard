@@ -13,7 +13,6 @@ import { registerTaskVariantsRoutes } from './task-variants';
 import { registerTaskBundlesRoutes } from './task-bundles';
 import { registerClassesRoutes } from './classes';
 import { registerUserRoutes } from './users';
-import { registerSystemRoutes } from './system';
 import { API_VERSION } from '../constants/api';
 import { API_ROUTES } from '../constants/api-routes';
 import { version } from '../../package.json';
@@ -48,7 +47,6 @@ export function registerAllRoutes(app: Express) {
   registerTaskBundlesRoutes(router);
   registerClassesRoutes(router);
   registerUserRoutes(router);
-  registerSystemRoutes(router);
 
   // Sub-contracts carry no version prefix, so it is applied here. Clients get an equivalent prefix
   // from the composed contract, but the two are defined independently: the mount point is ours to

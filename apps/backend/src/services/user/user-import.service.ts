@@ -762,7 +762,7 @@ export function UserImportService({
             } catch (compensateError) {
               logger.error(
                 { err: compensateError, context: { userId: user.id } },
-                'Compensation failed: user retains enrollments with no FGA tuples. Manual syncFga required.',
+                'Compensation failed: user retains enrollments with no FGA tuples. Manual FGA sync required — run the sync-fga job with --apply.',
               );
             }
           }
@@ -942,7 +942,7 @@ export function UserImportService({
             } catch (compensateError) {
               logger.error(
                 { err: compensateError, context: { userId: user.id } },
-                'Compensation failed: user retains memberships with no FGA tuples. Manual syncFga required.',
+                'Compensation failed: user retains memberships with no FGA tuples. Manual FGA sync required — run the sync-fga job with --apply.',
               );
             }
           }
@@ -977,7 +977,7 @@ export function UserImportService({
             } catch (compensateError) {
               logger.error(
                 { err: compensateError, context: { userId: user.id } },
-                'Compensation failed: memberships persist without FGA tuples. Manual syncFga required.',
+                'Compensation failed: memberships persist without FGA tuples. Manual FGA sync required — run the sync-fga job with --apply.',
               );
             }
 
