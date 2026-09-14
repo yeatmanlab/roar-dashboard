@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { FgaClient } from '../../clients/fga.client';
 import { createChildLogger } from '../../logger';
-import { AuthorizationModule } from '../../services/authorization/sync/authorization.module';
+import { createFgaReconciler } from '../../jobs/sync-fga/fga-reconciler';
 import { MONOREPO_ROOT } from '../paths';
 
 const logger = createChildLogger({}, { msgPrefix: '[fga-test] ' });
@@ -94,15 +94,15 @@ export async function resetFgaStoreForTestFile(): Promise<void> {
 /**
  * Sync FGA tuples from the current Postgres state.
  *
- * Uses the production `AuthorizationModule.syncFgaStore()` to read all junction
+ * Uses the production FGA reconciler to read all junction
  * tables and write the corresponding tuples to the current FGA store.
  *
  * Called after `seedBaseFixture()` in `vitest.setup.ts` and after `createTierUsers()`
  * in route integration tests.
  */
 export async function syncFgaTuplesFromPostgres(): Promise<void> {
-  const module = AuthorizationModule();
-  await module.syncFgaStore({ userId: 'test-setup', isSuperAdmin: true }, { dryRun: false });
+  const reconciler = createFgaReconciler();
+  await reconciler.reconcile({ dryRun: false });
 }
 
 /**

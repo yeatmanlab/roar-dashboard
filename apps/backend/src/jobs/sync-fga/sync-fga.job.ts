@@ -2,25 +2,20 @@
  * FGA tuple sync — Cloud Run Job entrypoint.
  *
  * Run-to-completion process that reconciles the FGA store against the Postgres
- * junction tables via `AuthorizationModule.syncFgaStore`: initialize
+ * junction tables via the FGA reconciler: initialize
  * dependencies, run one sync, log the per-category diff counts, close the
  * pools, exit. Dry run is the default; writes require an explicit `--apply`.
  *
  * This module has no side effects on import; the process entrypoint is
  * `index.ts`.
  *
- * The job runs with a synthetic super-admin auth context — there is no end
- * user, and IAM on the Cloud Run Job execution is the real access control.
+ * IAM on the Cloud Run Job execution controls access to this operation.
  */
 import 'dotenv/config';
-import type { SyncFgaResponse } from '../../services/authorization/sync/authorization.module';
+import type { SyncFgaResponse } from './fga-reconciler';
 import { FgaClient } from '../../clients/fga.client';
 import { initializeDatabasePools, closeDatabasePools } from '../../db/clients';
 import { logger } from '../../logger';
-import type { AuthContext } from '../../types/auth-context';
-
-/** Synthetic identity used in log lines and error context. */
-const SYNC_JOB_USER_ID = 'system:sync-fga-job';
 
 const APPLY_FLAG = '--apply';
 
@@ -49,12 +44,6 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
   return { ok: true, dryRun: !args.includes(APPLY_FLAG) };
 }
 
-/** Synthetic super-admin context — see the file-level doc for the IAM rationale. */
-const SYNC_JOB_AUTH_CONTEXT: AuthContext = {
-  userId: SYNC_JOB_USER_ID,
-  isSuperAdmin: true,
-};
-
 /**
  * Run one FGA sync: initialize dependencies, sync, log the result, close pools.
  *
@@ -75,10 +64,10 @@ export async function main({ dryRun }: { dryRun: boolean }): Promise<SyncFgaResp
   try {
     // Dynamic import after pool init — the module graph instantiates
     // repositories at module level (same rationale as server.ts).
-    const { AuthorizationModule } = await import('../../services/authorization/sync/authorization.module');
+    const { createFgaReconciler } = await import('./fga-reconciler');
 
-    const module = AuthorizationModule();
-    const result = await module.syncFgaStore(SYNC_JOB_AUTH_CONTEXT, { dryRun });
+    const reconciler = createFgaReconciler();
+    const result = await reconciler.reconcile({ dryRun });
 
     logger.info(
       {

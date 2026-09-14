@@ -1,5 +1,5 @@
 import type { TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
-import { FgaType, FgaHierarchyRelation } from '../fga-constants';
+import { FgaType, FgaHierarchyRelation } from '../../services/authorization/fga-constants';
 
 /**
  * Canonical string serialization of a tuple key for Set-based diffing.

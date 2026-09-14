@@ -3,9 +3,9 @@ import { StatusCodes } from 'http-status-codes';
 import { ClientWriteRequestOnDuplicateWrites } from '@openfga/sdk';
 import type { OpenFgaClient, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { FgaClient } from '../../../clients/fga.client';
-import { getCoreDbClient } from '../../../db/clients';
-import type * as CoreDbSchema from '../../../db/schema/core';
+import { FgaClient } from '../../clients/fga.client';
+import { getCoreDbClient } from '../../db/clients';
+import type * as CoreDbSchema from '../../db/schema/core';
 import {
   orgs,
   classes,
@@ -16,15 +16,14 @@ import {
   administrationOrgs,
   administrationClasses,
   administrationGroups,
-} from '../../../db/schema/core';
-import { OrgType } from '../../../enums/org-type.enum';
-import { ApiErrorCode } from '../../../enums/api-error-code.enum';
-import { ApiErrorMessage } from '../../../enums/api-error-message.enum';
-import { ApiError } from '../../../errors/api-error';
-import { logger } from '../../../logger';
-import type { AuthContext } from '../../../types/auth-context';
-import type { UserRole } from '../../../enums/user-role.enum';
-import type { UserFamilyRole } from '../../../enums/user-family-role.enum';
+} from '../../db/schema/core';
+import { OrgType } from '../../enums/org-type.enum';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { ApiError } from '../../errors/api-error';
+import { logger } from '../../logger';
+import type { UserRole } from '../../enums/user-role.enum';
+import type { UserFamilyRole } from '../../enums/user-family-role.enum';
 import {
   schoolHierarchyTuples,
   classHierarchyTuples,
@@ -37,10 +36,10 @@ import {
   administrationSchoolTuple,
   administrationClassTuple,
   administrationGroupTuple,
-} from '../helpers/fga-tuples';
-import { FGA_CLASS_VALID_ROLES } from '../fga-constants';
-import { SYNC_CATEGORIES, categorizeFgaTuples, diffTuples } from './tuple-key.utils';
-import type { SyncCategory, DiffResult } from './tuple-key.utils';
+} from '../../services/authorization/helpers/fga-tuples';
+import { FGA_CLASS_VALID_ROLES } from '../../services/authorization/fga-constants';
+import { SYNC_CATEGORIES, categorizeFgaTuples, diffTuples } from './fga-tuple-diff';
+import type { SyncCategory, DiffResult } from './fga-tuple-diff';
 
 /** Per-category write and delete counts from a sync operation. */
 export interface SyncCategoryCounts {
@@ -51,8 +50,8 @@ export interface SyncCategoryCounts {
 /**
  * Result of an FGA store sync — per-category and total write/delete counts.
  *
- * Owned by the module rather than the API contract: the sync runs via the
- * sync-fga job entrypoint (`jobs/sync-fga/`), not behind an HTTP endpoint.
+ * Owned by the sync job rather than the API contract because this operation
+ * is not exposed through HTTP.
  */
 export interface SyncFgaResponse {
   dryRun: boolean;
@@ -97,7 +96,7 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * AuthorizationModule
+ * Create an FGA reconciler.
  *
  * Reads all existing data from Postgres junction tables, compares against
  * current FGA tuples, and writes new / deletes stale tuples. Used to sync
@@ -106,7 +105,7 @@ function chunk<T>(items: T[], size: number): T[][] {
  * @param db - Core database client (injectable for testing)
  * @param getClient - Callback returning the OpenFGA client
  */
-export function AuthorizationModule({
+export function createFgaReconciler({
   db,
   getClient = () => FgaClient.getClient(),
 }: {
@@ -396,36 +395,21 @@ export function AuthorizationModule({
    * writes per category because FGA keys tuples by {user, relation, object} — if a
    * condition changed, the old tuple must be removed first.
    *
-   * Authorization: super-admin only.
-   *
-   * @param authContext - The authenticated user's context
    * @param options - Sync options
    * @param options.dryRun - When true, reads FGA and returns diff counts without writing.
    *                         Requires a live FGA connection even in dry-run mode.
    * @returns Sync result with per-category write/delete counts
-   * @throws {ApiError} FORBIDDEN if the user is not a super admin
    * @throws {ApiError} INTERNAL_SERVER_ERROR if a database or FGA error occurs
    */
-  async function syncFgaStore(authContext: AuthContext, { dryRun }: { dryRun: boolean }): Promise<SyncFgaResponse> {
-    const { userId, isSuperAdmin } = authContext;
-
-    if (!isSuperAdmin) {
-      logger.warn({ userId }, 'Non-super-admin attempted FGA sync');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId },
-      });
-    }
-
+  async function reconcile({ dryRun }: { dryRun: boolean }): Promise<SyncFgaResponse> {
     /** Wrap a category builder promise — logs the underlying error, then throws ApiError. */
     function wrapCategoryBuilder<T>(promise: Promise<T>, category: string): Promise<T> {
       return promise.catch((err) => {
-        logger.error({ err, context: { userId, category } }, `Failed to build ${category} tuples`);
+        logger.error({ err, context: { category } }, `Failed to build ${category} tuples`);
         throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
-          context: { userId, category },
+          context: { category },
           cause: err,
         });
       });
@@ -451,11 +435,10 @@ export function AuthorizationModule({
       try {
         existingTuples = await readAllExistingTuples();
       } catch (err) {
-        logger.error({ err, context: { userId } }, 'Failed to read existing tuples from FGA');
+        logger.error({ err }, 'Failed to read existing tuples from FGA');
         throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
-          context: { userId },
           cause: err,
         });
       }
@@ -484,7 +467,7 @@ export function AuthorizationModule({
       const totalWrites = SYNC_CATEGORIES.reduce((sum, name) => sum + categories[name].write, 0);
       const totalDeletes = SYNC_CATEGORIES.reduce((sum, name) => sum + categories[name].delete, 0);
 
-      logger.info({ categories, totalWrites, totalDeletes, dryRun, userId }, 'FGA sync diff counts');
+      logger.info({ categories, totalWrites, totalDeletes, dryRun }, 'FGA sync diff counts');
 
       // 4. Execute deletes then writes per category
       if (!dryRun) {
@@ -505,17 +488,17 @@ export function AuthorizationModule({
             }
           } catch (err) {
             if (err instanceof ApiError) throw err;
-            logger.error({ err, context: { userId, category: label } }, `Failed to sync ${label} tuples to FGA`);
+            logger.error({ err, context: { category: label } }, `Failed to sync ${label} tuples to FGA`);
             throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
               statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
               code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
-              context: { userId, category: label },
+              context: { category: label },
               cause: err,
             });
           }
         }
 
-        logger.info({ totalWrites, totalDeletes, userId }, 'FGA sync completed successfully');
+        logger.info({ totalWrites, totalDeletes }, 'FGA sync completed successfully');
       }
 
       return {
@@ -529,15 +512,14 @@ export function AuthorizationModule({
 
       // Defensive: all known error paths (DB via wrapCategoryBuilder, FGA via per-category catch)
       // already throw ApiError, so this branch guards against unexpected failures only.
-      logger.error({ err: error, context: { userId } }, 'FGA sync failed');
+      logger.error({ err: error }, 'FGA sync failed');
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.INTERNAL,
-        context: { userId },
         cause: error,
       });
     }
   }
 
-  return { syncFgaStore };
+  return { reconcile };
 }

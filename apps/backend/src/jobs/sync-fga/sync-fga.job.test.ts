@@ -1,20 +1,18 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import type { SyncFgaResponse } from '../../services/authorization/sync/authorization.module';
+import type { SyncFgaResponse } from './fga-reconciler';
 import { FgaClient } from '../../clients/fga.client';
 import { logger } from '../../logger';
-import type { AuthContext } from '../../types/auth-context';
 
 // Hoisted so the vi.mock factories below can reference them.
-const { mockInitializeDatabasePools, mockCloseDatabasePools, mockSyncFgaStore, mockAuthorizationModule } = vi.hoisted(
+const { mockInitializeDatabasePools, mockCloseDatabasePools, mockReconcile, mockCreateFgaReconciler } = vi.hoisted(
   () => {
-    const mockSyncFgaStore =
-      vi.fn<(authContext: AuthContext, options: { dryRun: boolean }) => Promise<SyncFgaResponse>>();
+    const mockReconcile = vi.fn<(options: { dryRun: boolean }) => Promise<SyncFgaResponse>>();
 
     return {
       mockInitializeDatabasePools: vi.fn<() => Promise<void>>(),
       mockCloseDatabasePools: vi.fn<() => Promise<void>>(),
-      mockSyncFgaStore,
-      mockAuthorizationModule: vi.fn(() => ({ syncFgaStore: mockSyncFgaStore })),
+      mockReconcile,
+      mockCreateFgaReconciler: vi.fn(() => ({ reconcile: mockReconcile })),
     };
   },
 );
@@ -27,8 +25,8 @@ vi.mock('../../db/clients', () => ({
   closeDatabasePools: mockCloseDatabasePools,
 }));
 
-vi.mock('../../services/authorization/sync/authorization.module', () => ({
-  AuthorizationModule: mockAuthorizationModule,
+vi.mock('./fga-reconciler', () => ({
+  createFgaReconciler: mockCreateFgaReconciler,
 }));
 
 // logger and FgaClient are mocked globally in vitest.setup.ts.
@@ -56,23 +54,23 @@ describe('sync-fga job', () => {
     vi.clearAllMocks();
     mockInitializeDatabasePools.mockResolvedValue(undefined);
     mockCloseDatabasePools.mockResolvedValue(undefined);
-    mockSyncFgaStore.mockResolvedValue(SYNC_RESULT);
+    mockReconcile.mockResolvedValue(SYNC_RESULT);
   });
 
   describe('main', () => {
     it('passes the dryRun option through to the sync', async () => {
       await main({ dryRun: true });
-      expect(mockSyncFgaStore).toHaveBeenCalledWith(expect.anything(), { dryRun: true });
+      expect(mockReconcile).toHaveBeenCalledWith({ dryRun: true });
 
       await main({ dryRun: false });
-      expect(mockSyncFgaStore).toHaveBeenCalledWith(expect.anything(), { dryRun: false });
+      expect(mockReconcile).toHaveBeenCalledWith({ dryRun: false });
     });
 
     it('validates the FGA configuration before running the sync', async () => {
       await main({ dryRun: true });
 
       const getClientOrder = vi.mocked(FgaClient.getClient).mock.invocationCallOrder[0];
-      const syncOrder = mockSyncFgaStore.mock.invocationCallOrder[0];
+      const syncOrder = mockReconcile.mock.invocationCallOrder[0];
 
       expect(getClientOrder).toBeDefined();
       expect(syncOrder).toBeDefined();
@@ -86,32 +84,23 @@ describe('sync-fga job', () => {
       });
 
       await expect(main({ dryRun: true })).rejects.toBe(configError);
-      expect(mockSyncFgaStore).not.toHaveBeenCalled();
+      expect(mockReconcile).not.toHaveBeenCalled();
       expect(mockInitializeDatabasePools).not.toHaveBeenCalled();
       expect(mockCloseDatabasePools).not.toHaveBeenCalled();
     });
 
-    it('passes the synthetic super-admin auth context', async () => {
-      await main({ dryRun: true });
-
-      expect(mockSyncFgaStore).toHaveBeenCalledWith(
-        { userId: 'system:sync-fga-job', isSuperAdmin: true },
-        expect.anything(),
-      );
-    });
-
-    it('validates the FGA client before initializing pools, and pools before the authorization module', async () => {
+    it('validates the FGA client before initializing pools, and pools before the FGA reconciler', async () => {
       await main({ dryRun: true });
 
       const fgaOrder = vi.mocked(FgaClient.initialize).mock.invocationCallOrder[0];
       const poolOrder = mockInitializeDatabasePools.mock.invocationCallOrder[0];
-      const moduleOrder = mockAuthorizationModule.mock.invocationCallOrder[0];
+      const reconcilerOrder = mockCreateFgaReconciler.mock.invocationCallOrder[0];
 
       expect(fgaOrder).toBeDefined();
       expect(poolOrder).toBeDefined();
-      expect(moduleOrder).toBeDefined();
+      expect(reconcilerOrder).toBeDefined();
       expect(fgaOrder!).toBeLessThan(poolOrder!);
-      expect(poolOrder!).toBeLessThan(moduleOrder!);
+      expect(poolOrder!).toBeLessThan(reconcilerOrder!);
     });
 
     it('returns the sync result and logs the per-category counts', async () => {
@@ -137,7 +126,7 @@ describe('sync-fga job', () => {
 
     it('closes pools and re-throws when the sync fails', async () => {
       const syncError = new Error('FGA unreachable');
-      mockSyncFgaStore.mockRejectedValue(syncError);
+      mockReconcile.mockRejectedValue(syncError);
 
       await expect(main({ dryRun: true })).rejects.toBe(syncError);
       expect(mockCloseDatabasePools).toHaveBeenCalledTimes(1);
@@ -174,18 +163,18 @@ describe('sync-fga job', () => {
     it('defaults to dry run when --apply is absent', async () => {
       await run([...BASE_ARGV]);
 
-      expect(mockSyncFgaStore).toHaveBeenCalledWith(expect.anything(), { dryRun: true });
+      expect(mockReconcile).toHaveBeenCalledWith({ dryRun: true });
     });
 
     it('applies changes only with an explicit --apply flag', async () => {
       await run([...BASE_ARGV, '--apply']);
 
-      expect(mockSyncFgaStore).toHaveBeenCalledWith(expect.anything(), { dryRun: false });
+      expect(mockReconcile).toHaveBeenCalledWith({ dryRun: false });
     });
 
     it('returns exit code 1 and logs fatal on failure', async () => {
       const syncError = new Error('sync failed');
-      mockSyncFgaStore.mockRejectedValue(syncError);
+      mockReconcile.mockRejectedValue(syncError);
 
       await expect(run([...BASE_ARGV])).resolves.toBe(1);
       expect(logger.fatal).toHaveBeenCalledWith({ err: syncError }, 'FGA sync job failed');
@@ -195,7 +184,7 @@ describe('sync-fga job', () => {
       await expect(run([...BASE_ARGV, '--aply'])).resolves.toBe(1);
 
       expect(mockInitializeDatabasePools).not.toHaveBeenCalled();
-      expect(mockSyncFgaStore).not.toHaveBeenCalled();
+      expect(mockReconcile).not.toHaveBeenCalled();
       expect(logger.fatal).toHaveBeenCalledWith(
         { argument: '--aply', usage: expect.stringContaining('--apply') },
         'FGA sync job rejected an unknown argument',
@@ -205,7 +194,7 @@ describe('sync-fga job', () => {
     it('rejects --apply=true instead of degrading it to a dry run', async () => {
       await expect(run([...BASE_ARGV, '--apply=true'])).resolves.toBe(1);
 
-      expect(mockSyncFgaStore).not.toHaveBeenCalled();
+      expect(mockReconcile).not.toHaveBeenCalled();
       expect(logger.fatal).toHaveBeenCalledWith(
         expect.objectContaining({ argument: '--apply=true' }),
         'FGA sync job rejected an unknown argument',
