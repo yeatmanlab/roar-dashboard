@@ -3468,6 +3468,8 @@ function resolveTaskScores(
   gradeLevel: number | null,
 ): ServiceTaskScores {
   const fieldNames = resolveScoreFieldNames(taskSlug, gradeLevel);
+  // Reported per run because historical entries span administrations whose
+  // variant parameters aren't loaded here.
   const scoringVersion = Number(scoreMap.get(SCORE_NAME.SCORING_VERSION));
   return {
     rawScore: roundScoreOrNull(resolveNumericScore(scoreMap, fieldNames.rawScoreFieldNames)),
