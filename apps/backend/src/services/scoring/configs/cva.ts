@@ -45,7 +45,7 @@ export default {
       { minVersion: 0, fieldName: null },
     ],
     rawScore: [
-      { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT },
+      { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.ROAR_SCORE },
       { minVersion: 0, fieldName: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_SCORE },
     ],
   },
