@@ -60,13 +60,12 @@ export class FirebaseCoreClient {
     // may hold a real project ID and must not override it here.
     const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
     if (emulatorHost) {
-      // Repeated here, not only at server startup, so the branch cannot be reached on a
-      // deployed service by any entry point that skips server.ts — seeds, jobs, or a
-      // future consumer of this client.
+      // Asserted at the branch itself, not only at boot in server.ts: this is the
+      // credential-free path, so it should refuse rather than rely on every caller
+      // having come through a guarded entry point.
       assertEmulatorNotEnabledOnDeployedService();
 
-      // Logged at warn: this is the credential-free, signature-free code path, so its
-      // presence in any log stream is worth noticing on its own.
+      // Logged at warn so its presence in any log stream is worth noticing on its own.
       logger.warn(
         { projectId: FIREBASE_EMULATOR_PROJECT_ID, emulatorHost },
         'Initializing Firebase Admin against the Auth emulator — tokens are not verified against Google',
