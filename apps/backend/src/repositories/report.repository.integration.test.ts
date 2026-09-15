@@ -10,6 +10,7 @@ import { ReportRepository, toReportAdminWindow } from './report.repository';
 import type { ReportScope, ReportTaskMeta, ProgressOverviewCountsResult } from './report.repository';
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
+import { RunDemographicsFactory } from '../test-support/factories/run-demographics.factory';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
 import { AdministrationClassFactory } from '../test-support/factories/administration-class.factory';
@@ -1778,5 +1779,52 @@ describe('ReportRepository admin-aware enrollment overlap — #1792', () => {
       expect(onUnion.size).toBe(5);
       expect([...onUnion].sort()).toEqual([...strictIds, ...withdrawnIds].sort());
     });
+  });
+});
+
+describe('ReportRepository — run_demographics grade join', () => {
+  it('returns the grade recorded on the run, not the student current grade', async () => {
+    const run = await RunFactory.create({
+      userId: baseFixture.schoolAStudent.id,
+      taskId,
+      taskVariantId: allGradesVariantId,
+      administrationId,
+      useForReporting: true,
+      completedAt: new Date('2025-06-15T10:00:00Z'),
+    });
+    await RunDemographicsFactory.create({ runId: run.id, grade: '5' });
+
+    const historical = await repo.getHistoricalRunsForUser(baseFixture.schoolAStudent.id, baseAdminWindow.dateStart, [
+      taskId,
+    ]);
+    const completed = await repo.getCompletedRunsForUser(administrationId, baseFixture.schoolAStudent.id, [
+      allGradesVariantId,
+    ]);
+
+    expect(historical.find((r) => r.runId === run.id)!.grade).toBe('5');
+    expect(completed.find((r) => r.runId === run.id)!.grade).toBe('5');
+  });
+
+  it('still returns a run that has no demographics snapshot, with a null grade', async () => {
+    const run = await RunFactory.create({
+      userId: baseFixture.schoolBStudent.id,
+      taskId,
+      taskVariantId: allGradesVariantId,
+      administrationId,
+      useForReporting: true,
+      completedAt: new Date('2025-06-15T10:00:00Z'),
+    });
+
+    const historical = await repo.getHistoricalRunsForUser(baseFixture.schoolBStudent.id, baseAdminWindow.dateStart, [
+      taskId,
+    ]);
+    const completed = await repo.getCompletedRunsForUser(administrationId, baseFixture.schoolBStudent.id, [
+      allGradesVariantId,
+    ]);
+
+    expect(historical.filter((r) => r.runId === run.id)).toHaveLength(1);
+    expect(historical.find((r) => r.runId === run.id)!.grade).toBeNull();
+    expect(completed.filter((r) => r.runId === run.id)).toHaveLength(1);
+    expect(completed.find((r) => r.runId === run.id)!.grade).toBeNull();
   });
 });

@@ -195,6 +195,32 @@ describe('getSupportLevel', () => {
       );
     });
 
+    it('pa v5 uses [40, 20] cutoffs', () => {
+      expect(getSupportLevel({ grade: '3', percentile: 40, rawScore: 480, taskSlug: 'pa', scoringVersion: 5 })).toBe(
+        'achievedSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 39, rawScore: 480, taskSlug: 'pa', scoringVersion: 5 })).toBe(
+        'developingSkill',
+      );
+      expect(getSupportLevel({ grade: '3', percentile: 20, rawScore: 480, taskSlug: 'pa', scoringVersion: 5 })).toBe(
+        'needsExtraSupport',
+      );
+    });
+
+    it('pa v3 and null scoring version use legacy [50, 25] cutoffs', () => {
+      for (const scoringVersion of [null, 3]) {
+        expect(getSupportLevel({ grade: '3', percentile: 50, rawScore: 55, taskSlug: 'pa', scoringVersion })).toBe(
+          'achievedSkill',
+        );
+        expect(getSupportLevel({ grade: '3', percentile: 49, rawScore: 55, taskSlug: 'pa', scoringVersion })).toBe(
+          'developingSkill',
+        );
+        expect(getSupportLevel({ grade: '3', percentile: 25, rawScore: 55, taskSlug: 'pa', scoringVersion })).toBe(
+          'needsExtraSupport',
+        );
+      }
+    });
+
     it('swr v1 uses legacy [50, 25] cutoffs', () => {
       expect(getSupportLevel({ grade: '3', percentile: 50, rawScore: 500, taskSlug: 'swr', scoringVersion: 1 })).toBe(
         'achievedSkill',
@@ -388,32 +414,18 @@ describe('getSupportLevel', () => {
       );
     });
 
-    it('pa legacy (v0-v2): above=55, some=45', () => {
-      expect(
-        getSupportLevel({ grade: '8', percentile: null, rawScore: 55, taskSlug: 'pa', scoringVersion: null }),
-      ).toBe('achievedSkill');
-      expect(
-        getSupportLevel({ grade: '8', percentile: null, rawScore: 50, taskSlug: 'pa', scoringVersion: null }),
-      ).toBe('developingSkill');
-      expect(
-        getSupportLevel({ grade: '8', percentile: null, rawScore: 45, taskSlug: 'pa', scoringVersion: null }),
-      ).toBe('needsExtraSupport');
-    });
-
-    it('pa v3-v4: above=480, some=420', () => {
-      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 480, taskSlug: 'pa', scoringVersion: 3 })).toBe(
-        'achievedSkill',
-      );
-      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 450, taskSlug: 'pa', scoringVersion: 3 })).toBe(
-        'developingSkill',
-      );
-      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 420, taskSlug: 'pa', scoringVersion: 3 })).toBe(
-        'needsExtraSupport',
-      );
-      // v4 also uses the same thresholds
-      expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 480, taskSlug: 'pa', scoringVersion: 4 })).toBe(
-        'achievedSkill',
-      );
+    it('pa v3 and null scoring version: above=55, some=45', () => {
+      for (const scoringVersion of [null, 3]) {
+        expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 55, taskSlug: 'pa', scoringVersion })).toBe(
+          'achievedSkill',
+        );
+        expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 50, taskSlug: 'pa', scoringVersion })).toBe(
+          'developingSkill',
+        );
+        expect(getSupportLevel({ grade: '8', percentile: null, rawScore: 45, taskSlug: 'pa', scoringVersion })).toBe(
+          'needsExtraSupport',
+        );
+      }
     });
 
     it('pa v5: above=480, some=420', () => {
@@ -629,14 +641,13 @@ describe('getRawScoreThreshold', () => {
     expect(getRawScoreThreshold('sre-es', null)).toBeNull();
   });
 
-  it('returns pa legacy thresholds', () => {
+  it('returns pa total-correct thresholds through v3', () => {
     expect(getRawScoreThreshold('pa', null)).toEqual({ above: 55, some: 45 });
     expect(getRawScoreThreshold('pa', 2)).toEqual({ above: 55, some: 45 });
+    expect(getRawScoreThreshold('pa', 3)).toEqual({ above: 55, some: 45 });
   });
 
-  it('returns pa updated thresholds for v >= 3', () => {
-    expect(getRawScoreThreshold('pa', 3)).toEqual({ above: 480, some: 420 });
-    expect(getRawScoreThreshold('pa', 4)).toEqual({ above: 480, some: 420 });
+  it('returns pa scaled-IRT thresholds for v5', () => {
     expect(getRawScoreThreshold('pa', 5)).toEqual({ above: 480, some: 420 });
   });
 
@@ -680,10 +691,12 @@ describe('getSupportThreshold', () => {
   });
 
   it('resolves the support range for other percentile-then-rawscore tasks', () => {
-    // swr flips at v7, pa at v4 — both use developing 25 (legacy) → 75, 20 (updated) → 80.
+    // swr flips at v7, pa at v5 — both use developing 25 (legacy) → 75, 20 (updated) → 80.
     expect(getSupportThreshold('swr', null)).toBe(75);
     expect(getSupportThreshold('swr', 7)).toBe(80);
     expect(getSupportThreshold('pa', null)).toBe(75);
+    expect(getSupportThreshold('pa', 3)).toBe(75);
+    expect(getSupportThreshold('pa', 5)).toBe(80);
   });
 
   it('returns null for tasks without a percentile-then-rawscore classification', () => {
