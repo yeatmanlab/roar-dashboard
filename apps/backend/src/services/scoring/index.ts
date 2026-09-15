@@ -6,6 +6,7 @@ export {
   getSupportThreshold,
   resolveScoreFieldNames,
   resolveScoreFieldName,
+  resolveNumericScore,
   getSupportLevelFieldName,
   getSubscoresConfig,
   getPublicSubscoreColumns,
