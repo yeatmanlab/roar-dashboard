@@ -136,6 +136,39 @@ describe.each([
     await vi.waitFor(() => expect(displayedNames()).toEqual([group.name]));
   });
 
+  it('waits for auth before deciding the tab is empty', async () => {
+    // Before a token exists every query is disabled, so TanStack reports
+    // isLoading false — without the isAuthReady guard the tab would flash
+    // "No organizations available." instead of the loading state.
+    authStore.isAuthReady = false;
+    authStore.accessToken = null;
+    mountBrowser();
+    await flushPromises();
+    expect(wrapper.text()).toContain('Loading organizations...');
+    expect(wrapper.text()).not.toContain('No organizations available.');
+    expect(api.districts.list).not.toHaveBeenCalled();
+    authStore.accessToken = 'token';
+    authStore.isAuthReady = true;
+    await vi.waitFor(() => expect(displayedNames()).toEqual([district.name]));
+  });
+
+  it('shows the loading state while the Groups tab first fetches', async () => {
+    let finishGroups;
+    api.groups.list.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishGroups = resolve;
+        }),
+    );
+    mountBrowser();
+    await vi.waitFor(() => expect(displayedNames()).toEqual([district.name]));
+    await openTab(3);
+    expect(wrapper.text()).toContain('Loading organizations...');
+    expect(wrapper.text()).not.toContain('No organizations available.');
+    finishGroups(result([group]));
+    await vi.waitFor(() => expect(displayedNames()).toEqual([group.name]));
+  });
+
   it('distinguishes loading, parent-query errors, retry, and empty results', async () => {
     let finish;
     api.districts.list.mockImplementation(
