@@ -26,6 +26,20 @@ export const FIRESTORE_COLLECTIONS = Object.freeze({
 });
 
 /**
+ * Firebase Auth provider IDs
+ *
+ * The `providerId` values Firebase reports on `user.providerData`. These are
+ * Firebase's own identifiers and are distinct from `AUTH_SSO_PROVIDERS`, which
+ * holds the ROAR-internal slugs that firekit's link/unlink calls expect.
+ */
+export const FIREBASE_AUTH_PROVIDER_IDS = Object.freeze({
+  PASSWORD: 'password',
+  GOOGLE: 'google.com',
+  CLEVER: 'oidc.clever',
+  CLASSLINK: 'oidc.classlink',
+});
+
+/**
  * Firebase Functions Error Codes
  */
 export const FIREBASE_FUNCTIONS_ERROR_CODES = Object.freeze({
