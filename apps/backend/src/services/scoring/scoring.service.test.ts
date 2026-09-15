@@ -838,7 +838,7 @@ describe('resolveScoreFieldNames', () => {
     const result = resolveScoreFieldNames('cva', 3);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.standardScoreFieldNames).toContain('standardScore');
-    expect(result.rawScoreFieldNames).toContain('totalCorrect');
+    expect(result.rawScoreFieldNames).toContain('roarScore');
   });
 
   it('resolves roar-inference fields', () => {
@@ -852,7 +852,7 @@ describe('resolveScoreFieldNames', () => {
     const result = resolveScoreFieldNames('morphology', 3);
     expect(result.percentileFieldNames).toContain('percentile');
     expect(result.standardScoreFieldNames).toContain('standardScore');
-    expect(result.rawScoreFieldNames).toContain('totalCorrect');
+    expect(result.rawScoreFieldNames).toContain('roarScore');
   });
 
   it('resolves trog fields', () => {
@@ -1074,5 +1074,19 @@ describe('getScoreDisplay', () => {
       label: 'percentCorrect',
       range: { min: 0, max: 100 },
     });
+  });
+
+  // Force raw-score fallback to test the raw score value range for different scoring versions
+  const paRawScoreAt = (scoringVersion: number) =>
+    getScoreDisplay({
+      taskSlug: 'pa',
+      gradeLevel: 8,
+      scoringVersion,
+      scores: { rawScore: 200, percentile: null, standardScore: null },
+    });
+
+  it('resolves the raw score range for the scoring version of the run', () => {
+    expect(paRawScoreAt(4)).toMatchObject({ scoreType: 'rawScore', range: { min: 0, max: 57 } });
+    expect(paRawScoreAt(5)).toMatchObject({ scoreType: 'rawScore', range: { min: 40, max: 733 } });
   });
 });
