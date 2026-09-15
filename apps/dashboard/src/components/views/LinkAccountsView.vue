@@ -119,7 +119,7 @@ import { storeToRefs } from 'pinia';
 import PvChip from 'primevue/chip';
 import PvConfirmDialog from 'primevue/confirmdialog';
 import { useAuthStore } from '@/store/auth';
-import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
+import { AUTH_PROVIDERS, AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { FIREBASE_AUTH_PROVIDER_IDS } from '@/constants/firebase';
 
 // +----------------+
@@ -217,7 +217,7 @@ const deletePassword = async () => {
     rejectLabel: 'Cancel',
     acceptLabel: 'Delete',
     accept: async () => {
-      await unlinkAccount('password')
+      await unlinkAccount(AUTH_PROVIDERS.PASSWORD)
         .then(() => {
           toast.add({
             severity: 'success',
