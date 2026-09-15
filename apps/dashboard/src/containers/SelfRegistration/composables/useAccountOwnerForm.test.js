@@ -26,7 +26,7 @@ describe('useAccountOwnerForm', () => {
     form.setField('unknown', 'not allowed');
 
     expect(form.validate()).toBe(false);
-    expect(form.errors.value.email).toBe('Enter a complete email address.');
+    expect(form.errors.value.email).toBe('Enter your email address.');
     expect(form.touched).toEqual({ firstName: true, lastName: true, email: true, password: true });
     expect(form.values).not.toHaveProperty('unknown');
   });
