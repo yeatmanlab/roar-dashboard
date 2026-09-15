@@ -6,7 +6,9 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
 import { AggregationRepository } from '../../repositories/aggregation.repository';
-import { getSupportLevel } from '../scoring/scoring.service';
+import { getSupportLevel, parseScoreValue, resolveNumericScore, resolveScoreFieldNames } from '../scoring';
+import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
+import { SCORE_NAME } from '../../constants/run-scores';
 import { SWR_TASK_IDS } from '@roar-platform/assessment-schema/roar-swr';
 import { SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
 import { PA_TASK_ID } from '@roar-platform/assessment-schema/roar-pa';
@@ -141,7 +143,13 @@ export function AggregationService({
       const taskSlug = taskSlugByVariantId.get(run.taskVariantId) || '';
       const grade = demographicsMap.get(run.id) || null;
       const schools = userSchoolsMap.get(run.userId) || [];
-      const scores = scoresByRunId.get(run.id) || { percentile: null, rawScore: null, scoringVersion: null };
+      const scoreMap = scoresByRunId.get(run.id) ?? new Map<string, string>();
+
+      // Which name holds the percentile or raw score varies by task, grade, and
+      // scoring version — resolve against the scoring config rather than assuming.
+      const scoringVersion = parseScoreValue(scoreMap.get(SCORE_NAME.SCORING_VERSION));
+      const gradeLevel = getGradeAsNumber(grade);
+      const fieldNames = resolveScoreFieldNames(taskSlug, gradeLevel, scoringVersion);
 
       return {
         runId: run.id,
@@ -150,9 +158,9 @@ export function AggregationService({
         taskSlug,
         grade,
         schoolIds: schools.map((s) => s.id),
-        percentile: scores.percentile,
-        rawScore: scores.rawScore,
-        scoringVersion: scores.scoringVersion,
+        percentile: resolveNumericScore(scoreMap, fieldNames.percentileFieldNames),
+        rawScore: resolveNumericScore(scoreMap, fieldNames.rawScoreFieldNames),
+        scoringVersion,
       };
     });
 

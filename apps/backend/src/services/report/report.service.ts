@@ -100,6 +100,7 @@ import {
   getSupportThreshold,
   parseScoreValue,
   resolveScoreFieldNames,
+  resolveNumericScore,
   PA_SKILL_THRESHOLD,
   PA_SKILL_LEGACY_THRESHOLD,
   PA_SUBTASK_KEYS,
@@ -2367,24 +2368,6 @@ function evaluateEligibilityAcrossVariants(
   }
 
   return { isAssigned: anyAssigned, isOptional: anyAssigned && !anyRequired };
-}
-
-/**
- * Resolve a numeric score from the score map by trying each field name in order.
- * Uses parseScoreValue from the scoring service to handle angle-bracket strings
- * like ">99" or "<1" found in newer norming tables.
- *
- * Returns the first valid numeric value found, or null if none match.
- */
-function resolveNumericScore(scores: Map<string, string>, fieldNames: string[]): number | null {
-  for (const name of fieldNames) {
-    const raw = scores.get(name);
-    if (raw !== undefined) {
-      const parsed = parseScoreValue(raw);
-      if (parsed !== null) return parsed;
-    }
-  }
-  return null;
 }
 
 /**
