@@ -1,3 +1,5 @@
+import { GCS_ORIGIN } from '../constants/asset-origins.js';
+
 /**
  * Letter task IDs — one per supported language. Mirrors SWR_TASK_IDS / SRE_TASK_IDS.
  * The `lng` URL param selects the language; `serve.js` uses LETTER_LANGUAGES to
@@ -40,8 +42,8 @@ export type LetterScoringVersion = (typeof LETTER_SCORING_VERSION)[keyof typeof 
  * @param version - The scoring version
  * @returns The full GCS URL for the lookup table
  */
-export const LETTER_SCORE_TABLE_URL = (version: LetterScoringVersion): string =>
-  `https://storage.googleapis.com/roar-ak/scores/letter_lookup_v${version}.csv`;
+export const LETTER_SCORE_TABLE_URL = (version: LetterScoringVersion, origin: string = GCS_ORIGIN): string =>
+  `${origin}/roar-ak/scores/letter_lookup_v${version}.csv`;
 
 /**
  * Clowder CAT category names for the letter assessment engine.
