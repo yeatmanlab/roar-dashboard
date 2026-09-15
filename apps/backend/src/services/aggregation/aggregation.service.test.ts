@@ -47,6 +47,146 @@ describe('aggregateSupportCategories', () => {
     });
   });
 
+  describe('Scoring config resolution', () => {
+    /**
+     * Stored score names and support level cutoffs both vary by task, grade, and
+     * scoring version, so each run resolves against the scoring config rather than
+     * a fixed name or a single set of cutoffs.
+     */
+    function setupTask(taskSlug: string, runs: Array<{ runId: string; grade: string; scores: [string, string][] }>) {
+      mockAdministrationRepository.getById.mockResolvedValue({ id: 'admin-123' } as Administration);
+      vi.mocked(AdministrationTaskVariantRepository).mockImplementation(
+        () =>
+          ({
+            getByAdministrationIds: vi.fn().mockResolvedValue(
+              new Map([
+                [
+                  'admin-123',
+                  [
+                    {
+                      taskId: `task-${taskSlug}-uuid`,
+                      taskSlug,
+                      taskName: taskSlug,
+                      variantId: 'variant-1',
+                      variantName: 'Variant A',
+                      orderIndex: 0,
+                      conditionsAssignment: null,
+                      conditionsRequirements: null,
+                    },
+                  ],
+                ],
+              ]),
+            ),
+          }) as unknown as AdministrationTaskVariantRepository,
+      );
+
+      const mockAggregationRepo = createMockAggregationRepository();
+      mockAggregationRepo.getBestRunsForVariants.mockResolvedValue(
+        runs.map((r) => ({
+          id: r.runId,
+          userId: `user-${r.runId}`,
+          taskVariantId: 'variant-1',
+          administrationId: 'admin-123',
+        })),
+      );
+      mockAggregationRepo.getDemographicsByRunIds.mockResolvedValue(new Map(runs.map((r) => [r.runId, r.grade])));
+      mockAggregationRepo.getScoresByRunIds.mockResolvedValue(new Map(runs.map((r) => [r.runId, new Map(r.scores)])));
+      mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue(
+        runs.map((r) => ({ userId: `user-${r.runId}`, schoolId: 'school-1', schoolName: 'School A' })),
+      );
+      vi.mocked(AggregationRepository).mockImplementation(() => mockAggregationRepo);
+
+      return AggregationService({ administrationRepository: mockAdministrationRepository });
+    }
+
+    it('resolves the legacy field and cutoffs for pre-v7 swr runs', async () => {
+      const service = setupTask('swr', [
+        {
+          runId: 'run-1',
+          grade: '3',
+          scores: [
+            ['wjPercentile', '45'],
+            ['scoringVersion', '6'],
+          ],
+        },
+        {
+          runId: 'run-2',
+          grade: '3',
+          scores: [
+            ['wjPercentile', '25'],
+            ['scoringVersion', '6'],
+          ],
+        },
+      ]);
+
+      const result = await service.aggregateSupportCategories({
+        administrationId: 'admin-123',
+        districtId: 'district-456',
+      });
+
+      const swr = result!['task-swr-uuid']!;
+      expect(swr.achievedSkill.total).toBe(0);
+      expect(swr.developingSkill.total).toBe(1);
+      expect(swr.needsExtraSupport.total).toBe(1);
+    });
+
+    it('resolves the current field and cutoffs for v7 swr runs', async () => {
+      const service = setupTask('swr', [
+        {
+          runId: 'run-1',
+          grade: '3',
+          scores: [
+            ['percentile', '45'],
+            ['scoringVersion', '7'],
+          ],
+        },
+        {
+          runId: 'run-2',
+          grade: '3',
+          scores: [
+            ['percentile', '25'],
+            ['scoringVersion', '7'],
+          ],
+        },
+      ]);
+
+      const result = await service.aggregateSupportCategories({
+        administrationId: 'admin-123',
+        districtId: 'district-456',
+      });
+
+      const swr = result!['task-swr-uuid']!;
+      expect(swr.achievedSkill.total).toBe(1);
+      expect(swr.developingSkill.total).toBe(1);
+      expect(swr.needsExtraSupport.total).toBe(0);
+    });
+
+    it('resolves grade-conditional and task-specific field names', async () => {
+      // v3 pa lookup table returns percentile or sprPercentile depending on grade
+      const service = setupTask('pa', [
+        {
+          runId: 'run-1',
+          grade: '8',
+          scores: [
+            ['sprPercentile', '75'],
+            ['roarScore', '500'],
+            ['scoringVersion', '3'],
+          ],
+        },
+      ]);
+
+      const result = await service.aggregateSupportCategories({
+        administrationId: 'admin-123',
+        districtId: 'district-456',
+      });
+
+      const pa = result!['task-pa-uuid']!;
+      expect(pa.achievedSkill.total).toBe(1);
+      expect(pa.percentile['70-80']?.total).toBe(1);
+      expect(Object.values(pa.raw).some((r) => r.total > 0)).toBe(true);
+    });
+  });
+
   describe('Data aggregation', () => {
     it('returns null when no scored tasks are found', async () => {
       const mockAdmin: Partial<Administration> = {
@@ -136,8 +276,22 @@ describe('aggregateSupportCategories', () => {
       );
       mockAggregationRepo.getScoresByRunIds.mockResolvedValue(
         new Map([
-          ['run-1', { percentile: 75, rawScore: 650, scoringVersion: 1 }],
-          ['run-2', { percentile: 45, rawScore: 500, scoringVersion: 1 }],
+          [
+            'run-1',
+            new Map([
+              ['percentile', '75'],
+              ['roarScore', '650'],
+              ['scoringVersion', '7'],
+            ]),
+          ],
+          [
+            'run-2',
+            new Map([
+              ['percentile', '35'],
+              ['roarScore', '500'],
+              ['scoringVersion', '7'],
+            ]),
+          ],
         ]),
       );
       mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue([
@@ -156,9 +310,9 @@ describe('aggregateSupportCategories', () => {
 
       expect(result).not.toBeNull();
       expect(result!['task-swr-uuid']).toBeDefined();
-      // Run 1 with percentile 75 (above 70) should be achievedSkill
+      // v7 cutoffs are 40/20: percentile 75 is achievedSkill
       expect(result!['task-swr-uuid']!.achievedSkill.total).toBe(1);
-      // Run 2 with percentile 45 (40-50 range) should be developingSkill
+      // and percentile 35 is developingSkill
       expect(result!['task-swr-uuid']!.developingSkill.total).toBe(1);
       expect(result!['task-swr-uuid']!.needsExtraSupport.total).toBe(0);
     });
@@ -221,9 +375,27 @@ describe('aggregateSupportCategories', () => {
       );
       mockAggregationRepo.getScoresByRunIds.mockResolvedValue(
         new Map([
-          ['run-1', { percentile: 80, rawScore: null, scoringVersion: 1 }],
-          ['run-2', { percentile: 85, rawScore: null, scoringVersion: 1 }],
-          ['run-3', { percentile: 70, rawScore: null, scoringVersion: 1 }],
+          [
+            'run-1',
+            new Map([
+              ['percentile', '80'],
+              ['scoringVersion', '5'],
+            ]),
+          ],
+          [
+            'run-2',
+            new Map([
+              ['percentile', '85'],
+              ['scoringVersion', '5'],
+            ]),
+          ],
+          [
+            'run-3',
+            new Map([
+              ['percentile', '70'],
+              ['scoringVersion', '5'],
+            ]),
+          ],
         ]),
       );
       mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue([
@@ -301,7 +473,15 @@ describe('aggregateSupportCategories', () => {
       ]);
       mockAggregationRepo.getDemographicsByRunIds.mockResolvedValue(new Map([['run-1', '2']]));
       mockAggregationRepo.getScoresByRunIds.mockResolvedValue(
-        new Map([['run-1', { percentile: 75, rawScore: null, scoringVersion: 1 }]]),
+        new Map([
+          [
+            'run-1',
+            new Map([
+              ['percentile', '75'],
+              ['scoringVersion', '7'],
+            ]),
+          ],
+        ]),
       );
       // Only active enrollment (enrollmentEnd is null) is returned by the repository
       mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue([
@@ -380,8 +560,22 @@ describe('aggregateSupportCategories', () => {
       );
       mockAggregationRepo.getScoresByRunIds.mockResolvedValue(
         new Map([
-          ['run-1', { percentile: 45, rawScore: 475, scoringVersion: 1 }],
-          ['run-2', { percentile: 75, rawScore: 625, scoringVersion: 1 }],
+          [
+            'run-1',
+            new Map([
+              ['percentile', '45'],
+              ['roarScore', '475'],
+              ['scoringVersion', '7'],
+            ]),
+          ],
+          [
+            'run-2',
+            new Map([
+              ['percentile', '75'],
+              ['roarScore', '625'],
+              ['scoringVersion', '7'],
+            ]),
+          ],
         ]),
       );
       mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue([
