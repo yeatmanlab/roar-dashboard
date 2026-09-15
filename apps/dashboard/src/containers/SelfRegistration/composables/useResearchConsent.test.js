@@ -26,6 +26,7 @@ describe('useResearchConsent', () => {
 
     resolveDocument(document);
     await expect(loading).resolves.toEqual(document);
+    expect(loadDocument).toHaveBeenCalledWith();
     expect(consent.consentDocument.value).toEqual(document);
     expect(consent.isLoading.value).toBe(false);
   });

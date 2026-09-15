@@ -4,7 +4,8 @@ import { computed, ref } from 'vue';
  * Keeps legal acceptance, required research consent, and optional future
  * contact as three explicit decisions. Loading is dependency-injected because
  * the approved pre-auth consent source and version-storage contract are still
- * Stage 1 dependencies.
+ * Stage 1 dependencies. The loader is intentionally independent of route and
+ * invitation-code context; invitation codes belong to LearnerEnrollment.
  *
  * @returns {Object} Reactive consent state plus document-loading, modal, and
  * decision helpers.

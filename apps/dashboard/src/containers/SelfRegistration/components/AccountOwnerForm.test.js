@@ -55,6 +55,14 @@ describe('AccountOwnerForm.vue', () => {
     wrapper.unmount();
   });
 
+  it('does not render invitation or registration-code fields during owner signup', () => {
+    const wrapper = mountForm();
+
+    expect(wrapper.find('[name="code"], [name="invitationCode"], [name="activationCode"]').exists()).toBe(false);
+
+    wrapper.unmount();
+  });
+
   it('emits controlled field updates and uses the native form submission path', async () => {
     const wrapper = mountForm();
 
