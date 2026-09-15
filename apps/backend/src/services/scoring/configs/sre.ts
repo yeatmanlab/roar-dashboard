@@ -78,6 +78,9 @@ export default {
   displayRanges: {
     percentile: { min: 0, max: 99 },
     standardScore: { min: 0, max: 180 },
-    rawScore: { min: 300, max: 967 },
+    rawScore: [
+      { minVersion: SRE_SCORING_VERSION.V5, range: { min: 300, max: 967 } },
+      { minVersion: 0, range: { min: 0, max: 130 } },
+    ],
   },
 } as const;
