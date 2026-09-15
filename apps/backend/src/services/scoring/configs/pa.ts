@@ -130,6 +130,9 @@ export default {
   displayRanges: {
     percentile: { min: 0, max: 99 },
     standardScore: { min: 0, max: 180 },
-    rawScore: { min: 40, max: 733 },
+    rawScore: [
+      { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, range: { min: 40, max: 733 } },
+      { minVersion: 0, range: { min: 0, max: 57 } },
+    ],
   },
 } as const;

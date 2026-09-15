@@ -58,7 +58,7 @@ export default {
     percentile: { min: 0, max: 99 },
     percentCorrect: { min: 0, max: 100 },
     standardScore: { min: 0, max: 180 },
-    rawScore: { min: 100, max: 900 },
+    rawScore: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, range: { min: 100, max: 900 } }],
   },
   subscores: [
     {

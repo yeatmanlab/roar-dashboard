@@ -12,6 +12,6 @@ export default {
   classification: { type: 'none' as const },
   displayCategory: [{ minVersion: 0, category: 'rawOnly' }],
   displayRanges: {
-    rawScore: { min: 100, max: 900 },
+    rawScore: [{ minVersion: 0, range: { min: 100, max: 900 } }],
   },
 } as const;

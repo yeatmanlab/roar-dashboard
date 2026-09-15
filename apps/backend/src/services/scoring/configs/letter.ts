@@ -86,6 +86,9 @@ export default {
   ],
   displayRanges: {
     percentCorrect: { min: 0, max: 100 },
-    rawScore: { min: 0, max: 100 },
+    rawScore: [
+      { minVersion: 1, range: { min: 0, max: 100 } },
+      { minVersion: 0, range: { min: 0, max: 90 } },
+    ],
   },
 };
