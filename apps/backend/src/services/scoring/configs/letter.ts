@@ -38,7 +38,10 @@ export default {
       { minVersion: 1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.STANDARD_SCORE },
       { minVersion: 0, fieldName: null },
     ],
-    rawScore: [{ minVersion: 0, fieldName: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT }],
+    rawScore: [
+      { minVersion: 1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.ROAR_SCORE },
+      { minVersion: 0, fieldName: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT },
+    ],
   },
   classification: {
     type: 'percentile-then-rawscore' as const,
@@ -85,7 +88,9 @@ export default {
     { minVersion: 0, category: 'percentCorrect' },
   ],
   displayRanges: {
+    percentile: { min: 0, max: 99 },
     percentCorrect: { min: 0, max: 100 },
+    standardScore: { min: 0, max: 180 },
     rawScore: [
       { minVersion: 1, range: { min: 0, max: 100 } },
       { minVersion: 0, range: { min: 0, max: 90 } },
