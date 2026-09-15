@@ -70,6 +70,7 @@ function mountSelfRegistration() {
   return mount(SelfRegistration, {
     global: {
       stubs: {
+        AuthPageFooter: true,
         ROARLogoShort: true,
         RegistrationStatus: true,
         AccountOwnerForm: {

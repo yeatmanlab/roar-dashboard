@@ -4,8 +4,8 @@
       <div class="self-registration-name-fields">
         <div class="self-registration-field">
           <label for="account-owner-first-name">
-            First name <span class="self-registration-required" aria-hidden="true">*</span>
-            <span class="sr-only">(required)</span>
+            {{ t('pageRegister.firstName') }} <span class="self-registration-required" aria-hidden="true">*</span>
+            <span class="sr-only">({{ t('pageRegister.required') }})</span>
           </label>
           <input
             id="account-owner-first-name"
@@ -14,7 +14,7 @@
             name="firstName"
             required
             autocomplete="given-name"
-            placeholder="Emily"
+            :placeholder="t('pageRegister.firstNamePlaceholder')"
             :value="values.firstName"
             :aria-invalid="showError('firstName')"
             :aria-describedby="showError('firstName') ? 'account-owner-first-name-error' : undefined"
@@ -29,8 +29,8 @@
 
         <div class="self-registration-field">
           <label for="account-owner-last-name">
-            Last name <span class="self-registration-required" aria-hidden="true">*</span>
-            <span class="sr-only">(required)</span>
+            {{ t('pageRegister.lastName') }} <span class="self-registration-required" aria-hidden="true">*</span>
+            <span class="sr-only">({{ t('pageRegister.required') }})</span>
           </label>
           <input
             id="account-owner-last-name"
@@ -39,7 +39,7 @@
             name="lastName"
             required
             autocomplete="family-name"
-            placeholder="Arteaga"
+            :placeholder="t('pageRegister.lastNamePlaceholder')"
             :value="values.lastName"
             :aria-invalid="showError('lastName')"
             :aria-describedby="showError('lastName') ? 'account-owner-last-name-error' : undefined"
@@ -55,8 +55,8 @@
 
       <div class="self-registration-field">
         <label for="account-owner-email">
-          Email address <span class="self-registration-required" aria-hidden="true">*</span>
-          <span class="sr-only">(required)</span>
+          {{ t('pageRegister.email') }} <span class="self-registration-required" aria-hidden="true">*</span>
+          <span class="sr-only">({{ t('pageRegister.required') }})</span>
         </label>
         <input
           id="account-owner-email"
@@ -67,7 +67,7 @@
           type="email"
           inputmode="email"
           autocomplete="email"
-          placeholder="you@school.org"
+          :placeholder="t('pageRegister.emailPlaceholder')"
           :value="values.email"
           :aria-invalid="showError('email')"
           :aria-describedby="showError('email') ? 'account-owner-email-error' : undefined"
@@ -82,8 +82,8 @@
 
       <div class="self-registration-field">
         <label for="account-owner-password">
-          Password <span class="self-registration-required" aria-hidden="true">*</span>
-          <span class="sr-only">(required)</span>
+          {{ t('pageRegister.password') }} <span class="self-registration-required" aria-hidden="true">*</span>
+          <span class="sr-only">({{ t('pageRegister.required') }})</span>
         </label>
         <div class="self-registration-password">
           <input
@@ -94,7 +94,7 @@
             required
             :type="passwordVisible ? 'text' : 'password'"
             autocomplete="new-password"
-            placeholder="Create a password"
+            :placeholder="t('pageRegister.passwordPlaceholder')"
             :value="values.password"
             :aria-invalid="showError('password')"
             :aria-describedby="passwordDescription"
@@ -105,7 +105,7 @@
           <button
             type="button"
             class="self-registration-password-toggle"
-            :aria-label="passwordVisible ? 'Hide password' : 'Show password'"
+            :aria-label="passwordVisible ? t('pageRegister.hidePassword') : t('pageRegister.showPassword')"
             :aria-pressed="passwordVisible"
             @click="passwordVisible = !passwordVisible"
           >
@@ -113,7 +113,7 @@
           </button>
         </div>
         <small id="account-owner-password-help" class="self-registration-field-help">
-          Must be at least 8 characters.
+          {{ t('pageRegister.passwordHelp') }}
         </small>
         <small v-if="showError('password')" id="account-owner-password-error" class="self-registration-error">
           {{ errors.password }}
@@ -132,7 +132,7 @@
                 :checked="futureContactAllowed"
                 @change="$emit('update:future-contact-allowed', $event.target.checked)"
               />
-              <label for="account-owner-future-contact">Email me about new research opportunities</label>
+              <label for="account-owner-future-contact">{{ t('pageRegister.futureContact') }}</label>
             </div>
           </div>
 
@@ -150,14 +150,16 @@
                 @change="$emit('update:legal-accepted', $event.target.checked)"
               />
               <label for="account-owner-legal-acceptance">
-                I agree to the
-                <a :href="TERMS_OF_SERVICE_DOCUMENT_PATH" target="_blank" rel="noopener noreferrer">Terms of Use</a>
+                {{ t('pageRegister.agreeToTerms') }}
+                <a :href="TERMS_OF_SERVICE_DOCUMENT_PATH" target="_blank" rel="noopener noreferrer">
+                  {{ t('pageRegister.termsOfUse') }}
+                </a>
                 <span class="self-registration-required" aria-hidden="true">*</span>
-                <span class="sr-only">(required)</span>
+                <span class="sr-only">({{ t('pageRegister.required') }})</span>
               </label>
             </div>
             <small v-if="submitted && !legalAccepted" id="account-owner-legal-error" class="self-registration-error">
-              Review and accept the Terms of Use.
+              {{ t('pageRegister.reviewTerms') }}
             </small>
           </div>
         </div>
@@ -171,13 +173,13 @@
         data-cy="signup__create-account"
       >
         <span v-if="submitting" class="pi pi-spin pi-spinner" aria-hidden="true" />
-        {{ submitting ? 'Creating account…' : 'Create account' }}
+        {{ submitting ? t('pageRegister.creatingAccount') : t('pageRegister.createAccount') }}
       </button>
     </form>
 
     <p class="self-registration-sign-in">
-      Already have an account?
-      <RouterLink :to="APP_ROUTES.SIGN_IN">Sign in</RouterLink>
+      {{ t('pageRegister.alreadyHaveAccount') }}
+      <RouterLink :to="APP_ROUTES.SIGN_IN">{{ t('pageRegister.signIn') }}</RouterLink>
     </p>
   </div>
 </template>
@@ -188,6 +190,7 @@ import { RouterLink } from 'vue-router';
 import { ChallengeV3 } from 'vue-recaptcha';
 import { TERMS_OF_SERVICE_DOCUMENT_PATH } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
+import { i18n } from '@/translations/i18n';
 
 const props = defineProps({
   values: { type: Object, required: true },
@@ -200,6 +203,8 @@ const props = defineProps({
   disabled: { type: Boolean, default: false },
   submitting: { type: Boolean, default: false },
 });
+
+const { t } = i18n.global;
 
 const emit = defineEmits([
   'submit',

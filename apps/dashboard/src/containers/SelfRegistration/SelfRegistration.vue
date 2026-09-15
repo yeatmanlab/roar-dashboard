@@ -1,55 +1,61 @@
 <template>
   <div id="register-container" class="self-registration">
-    <section id="register" class="self-registration-form-card" aria-labelledby="self-registration-heading">
-      <header class="self-registration-header">
-        <div class="self-registration-logo" role="img" aria-label="ROAR">
-          <ROARLogoShort aria-hidden="true" />
-        </div>
-        <div class="self-registration-heading">
-          <h1 id="self-registration-heading">Create your account</h1>
-          <p>Sign up to start ROARing</p>
-        </div>
-      </header>
+    <div class="self-registration-column">
+      <section id="register" class="self-registration-form-card" aria-labelledby="self-registration-heading">
+        <header class="self-registration-header">
+          <div class="self-registration-logo" role="img" aria-label="ROAR">
+            <ROARLogoShort aria-hidden="true" />
+          </div>
+          <div class="self-registration-heading">
+            <h1 id="self-registration-heading">{{ t('pageRegister.title') }}</h1>
+            <p>{{ t('pageRegister.subtitle') }}</p>
+          </div>
+        </header>
 
-      <RegistrationStatus
-        :loading="registration.isSubmitting.value"
-        :error-message="registration.errorMessage.value"
-        :success="registration.isSuccess.value"
-        @dismiss="registration.dismissStatus"
-      />
-      <AccountOwnerForm
-        v-if="!registration.isSubmitting.value && !registration.isSuccess.value"
-        :values="form.values"
-        :errors="form.errors.value"
-        :touched="form.touched"
-        :submitted="form.submitted.value"
-        :legal-accepted="consent.legalAccepted.value"
-        :future-contact-allowed="consent.futureContactAllowed.value"
-        :verification-token="registration.verificationToken.value"
-        :disabled="isSubmitDisabled"
-        :submitting="registration.isSubmitting.value"
-        @update:field="form.setField"
-        @touch="form.touch"
-        @update:legal-accepted="consent.setLegalAccepted"
-        @update:future-contact-allowed="consent.setFutureContactAllowed"
-        @verification="registration.setVerificationToken"
-        @submit="handleSubmit"
-      />
-    </section>
+        <RegistrationStatus
+          :loading="registration.isSubmitting.value"
+          :error-message="registration.errorMessage.value"
+          :success="registration.isSuccess.value"
+          @dismiss="registration.dismissStatus"
+        />
+        <AccountOwnerForm
+          v-if="!registration.isSubmitting.value && !registration.isSuccess.value"
+          :values="form.values"
+          :errors="form.errors.value"
+          :touched="form.touched"
+          :submitted="form.submitted.value"
+          :legal-accepted="consent.legalAccepted.value"
+          :future-contact-allowed="consent.futureContactAllowed.value"
+          :verification-token="registration.verificationToken.value"
+          :disabled="isSubmitDisabled"
+          :submitting="registration.isSubmitting.value"
+          @update:field="form.setField"
+          @touch="form.touch"
+          @update:legal-accepted="consent.setLegalAccepted"
+          @update:future-contact-allowed="consent.setFutureContactAllowed"
+          @verification="registration.setVerificationToken"
+          @submit="handleSubmit"
+        />
+      </section>
+      <AuthPageFooter />
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
+import AuthPageFooter from '@/components/AuthPageFooter.vue';
+import { i18n } from '@/translations/i18n';
 import { AccountOwnerForm, RegistrationStatus } from './components';
 import { useAccountOwnerForm } from './composables/useAccountOwnerForm';
 import { useResearchConsent } from './composables/useResearchConsent';
 import { useSelfRegistration } from './composables/useSelfRegistration';
 
-const form = useAccountOwnerForm();
+const { t } = i18n.global;
+const form = useAccountOwnerForm({ t });
 const consent = useResearchConsent();
-const registration = useSelfRegistration();
+const registration = useSelfRegistration({ t });
 
 // Field and legal validity stay out of the disabled state so an attempted
 // submission can reveal actionable inline errors. Verification readiness stays
@@ -74,6 +80,10 @@ onBeforeUnmount(() => document.body.classList.remove('page-register'));
 <style scoped>
 .self-registration {
   isolation: isolate;
+}
+
+.self-registration-column {
+  width: 100%;
 }
 
 .self-registration-form-card {

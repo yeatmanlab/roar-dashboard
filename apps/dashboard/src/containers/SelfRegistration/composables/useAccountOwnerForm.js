@@ -11,7 +11,8 @@ const FIELD_NAMES = ['firstName', 'lastName', 'email', 'password'];
  * @returns {Object} Reactive field state, validation state, normalized payload,
  * and field mutation helpers.
  */
-export function useAccountOwnerForm() {
+export function useAccountOwnerForm(options = {}) {
+  const t = options.t ?? ((_key, fallback) => fallback);
   const values = reactive({
     firstName: '',
     lastName: '',
@@ -25,18 +26,18 @@ export function useAccountOwnerForm() {
     const email = values.email.trim();
 
     return {
-      firstName: values.firstName.trim() ? '' : 'Enter your first name.',
-      lastName: values.lastName.trim() ? '' : 'Enter your last name.',
+      firstName: values.firstName.trim() ? '' : t('pageRegister.errors.firstName', 'Enter your first name.'),
+      lastName: values.lastName.trim() ? '' : t('pageRegister.errors.lastName', 'Enter your last name.'),
       email: !email
-        ? 'Enter your email address.'
+        ? t('pageRegister.errors.emailRequired', 'Enter your email address.')
         : EMAIL_PATTERN.test(email)
           ? ''
-          : 'Enter a valid email address, such as you@example.com.',
+          : t('pageRegister.errors.emailInvalid', 'Enter a valid email address, such as you@example.com.'),
       password: !values.password
-        ? 'Create a password.'
+        ? t('pageRegister.errors.passwordRequired', 'Create a password.')
         : values.password.length >= 8
           ? ''
-          : 'Use at least 8 characters for your password.',
+          : t('pageRegister.errors.passwordLength', 'Use at least 8 characters for your password.'),
     };
   });
   const isValid = computed(() => FIELD_NAMES.every((field) => !errors.value[field]));

@@ -41,9 +41,9 @@ describe('AccountOwnerForm.vue', () => {
       'password',
     ]);
     expect(accountFields.map((field) => field.attributes('placeholder'))).toEqual([
-      'Emily',
-      'Arteaga',
-      'you@school.org',
+      'Name',
+      'Last Name',
+      'you@email.org',
       'Create a password',
     ]);
     expect(wrapper.get('[for="account-owner-first-name"]').text()).toContain('First name');

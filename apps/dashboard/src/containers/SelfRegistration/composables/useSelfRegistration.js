@@ -4,10 +4,15 @@ import { useFamilyRegistration } from '@/containers/FamilyRegistration/composabl
 const GENERIC_REGISTRATION_ERROR =
   'We could not create your account. Check your connection and try again. If the problem continues, contact support.';
 
-function toUserMessage(error) {
+function toUserMessage(error, t) {
   const message = error instanceof Error ? error.message : '';
-  if (/already (?:in use|exists)/i.test(message)) return message;
-  return GENERIC_REGISTRATION_ERROR;
+  if (/email address is already in use/i.test(message)) {
+    return t('pageRegister.errors.emailInUse', message);
+  }
+  if (/account already exists/i.test(message)) {
+    return t('pageRegister.errors.accountExists', message);
+  }
+  return t('pageRegister.errors.generic', GENERIC_REGISTRATION_ERROR);
 }
 
 /**
@@ -24,6 +29,7 @@ export function useSelfRegistration(options = {}) {
   const createAccount = options.createAccount ?? registration.submit;
   const redirect = options.redirect ?? (() => window.location.assign('/'));
   const redirectDelay = options.redirectDelay ?? 1500;
+  const t = options.t ?? ((_key, fallback) => fallback);
 
   const isSubmitting = ref(false);
   const errorMessage = ref('');
@@ -64,7 +70,7 @@ export function useSelfRegistration(options = {}) {
       redirectTimeout = setTimeout(redirect, redirectDelay);
       return true;
     } catch (error) {
-      errorMessage.value = toUserMessage(error);
+      errorMessage.value = toUserMessage(error, t);
       return false;
     } finally {
       isSubmitting.value = false;
