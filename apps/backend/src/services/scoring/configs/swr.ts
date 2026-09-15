@@ -36,6 +36,6 @@ export default {
   displayRanges: {
     percentile: { min: 0, max: 99 },
     standardScore: { min: 0, max: 180 },
-    rawScore: { min: 100, max: 900 },
+    rawScore: [{ minVersion: 0, range: { min: 100, max: 900 } }],
   },
 } as const;

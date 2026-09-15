@@ -41,7 +41,7 @@ export default {
       { minVersion: 0, fieldName: null },
     ],
     rawScore: [
-      { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT },
+      { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.ROAR_SCORE },
       { minVersion: 0, fieldName: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_SCORE },
     ],
   },
@@ -58,7 +58,7 @@ export default {
     percentile: { min: 0, max: 99 },
     percentCorrect: { min: 0, max: 100 },
     standardScore: { min: 0, max: 180 },
-    rawScore: { min: 100, max: 900 },
+    rawScore: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, range: { min: 100, max: 900 } }],
   },
   subscores: [
     {

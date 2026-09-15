@@ -30,7 +30,7 @@ export default {
   displayRanges: {
     percentile: { min: 0, max: 99 },
     standardScore: { min: 0, max: 180 },
-    rawScore: { min: 0, max: 140 },
+    rawScore: [{ minVersion: SRE_SCORING_VERSION.V1, range: { min: 0, max: 140 } }],
     correctIncorrectDifference: { min: 0, max: 140 },
   },
   subscores: [
