@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
-import { serializeTupleKey, categorizeFgaTuples, diffTuples } from './tuple-key.utils';
+import { serializeTupleKey, categorizeFgaTuples, diffTuples } from './fga-tuple-diff';
 
-describe('tuple-key.utils', () => {
+describe('FGA tuple diff', () => {
   describe('serializeTupleKey', () => {
     it('serializes a tuple without condition', () => {
       const tuple: TupleKeyWithoutCondition = {
