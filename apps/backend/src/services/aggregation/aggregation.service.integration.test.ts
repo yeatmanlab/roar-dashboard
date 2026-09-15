@@ -17,10 +17,11 @@ import { CoreDbClient } from '../../db/clients';
  *
  * 1. **AdministrationTaskVariantFactory**: Link administrations to scored tasks (swr, pa, sre, cva, etc.)
  * 2. **FdwRunFactory** (assessment DB): Create runs with useForReporting=true, deletedAt=null
- * 3. **FdwRunScoreFactory** (assessment DB): Seed percentile and raw scores (type='computed'|'raw', name='percentile'|'rawScore')
- * 4. **RunDemographicsFactory** (core DB): Associate runs with grades
- * 5. **UserClassesFactory** (core DB): Enroll users with enrollmentEnd=null (active)
- * 6. **ClassesFactory** (core DB): Link classes to schools
+ * 3. **FdwRunScoreFactory** (assessment DB): Seed score rows under the names the task
+ *    writes, which vary by task, grade, and scoring version — take them from
+ *    `services/scoring/configs/`
+ * 4. **UserClassesFactory** (core DB): Enroll users with enrollmentEnd=null (active)
+ * 5. **ClassesFactory** (core DB): Link classes to schools
  *
  * Once these factories exist, each test should assert:
  * - Non-null aggregation results (indicating data flowed through joins)
