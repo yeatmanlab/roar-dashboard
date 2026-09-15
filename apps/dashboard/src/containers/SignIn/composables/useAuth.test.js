@@ -1,0 +1,173 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ref } from 'vue';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
+
+const mockResolveUserClaims = vi.fn();
+const mockSetGlobalError = vi.fn();
+
+vi.mock('@/helpers/resolveUserClaims', () => ({
+  resolveUserClaims: () => mockResolveUserClaims(),
+}));
+
+vi.mock('@/composables/useGlobalError', () => ({
+  useGlobalError: () => ({ setGlobalError: mockSetGlobalError }),
+}));
+
+vi.mock('@sentry/vue', () => ({
+  setUser: vi.fn(),
+}));
+
+vi.mock('@/services/AuthService', () => ({
+  getAuthService: () => ({
+    fetchSignInMethodsForEmail: vi.fn().mockResolvedValue([]),
+    sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
+  }),
+}));
+
+const { useAuth } = await import('./useAuth');
+
+const MOCK_UID = 'firebase-uid-1';
+
+/**
+ * Build the context object `useAuth` destructures, backed by a minimal fake
+ * auth store. `$subscribe` is a no-op here — the post-login redirect wiring is
+ * out of scope for these tests (and is tracked separately in #2214).
+ */
+function createContext({ uid = MOCK_UID } = {}) {
+  const authStore = {
+    uid,
+    roarUid: null,
+    userClaims: null,
+    spinner: ref(false),
+    ssoProvider: ref(null),
+    roarfirekit: ref(null),
+    $subscribe: vi.fn(),
+    logInWithEmailAndPassword: vi.fn().mockResolvedValue(undefined),
+    signInWithPopup: vi.fn().mockResolvedValue(undefined),
+    signInWithRedirect: vi.fn(),
+    initiateLoginWithEmailLink: vi.fn().mockResolvedValue(undefined),
+  };
+
+  return {
+    authStore,
+    router: { push: vi.fn() },
+    route: { query: {} },
+    email: ref('teacher@example.org'),
+    password: ref('correct-horse'),
+    invalid: ref(false),
+    emailLinkSent: ref(false),
+    showPasswordField: ref(true),
+    resetSignInUI: vi.fn(),
+  };
+}
+
+// `useAuth` reads spinner/ssoProvider/roarfirekit through `storeToRefs`, which
+// requires a real Pinia store. The fake store already exposes them as refs, so
+// a pass-through keeps the composable working without standing up Pinia.
+vi.mock('pinia', () => ({
+  storeToRefs: (store) => ({
+    spinner: store.spinner,
+    ssoProvider: store.ssoProvider,
+    roarfirekit: store.roarfirekit,
+  }),
+}));
+
+describe('useAuth — credential vs. bootstrap error separation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  describe('authWithEmailPassword', () => {
+    it('flags the form as invalid when the credentials are rejected', async () => {
+      const context = createContext();
+      context.authStore.logInWithEmailAndPassword.mockRejectedValue(new Error('auth/wrong-password'));
+
+      const { authWithEmailPassword } = useAuth(context);
+      await authWithEmailPassword();
+
+      expect(context.invalid.value).toBe(true);
+      expect(mockSetGlobalError).not.toHaveBeenCalled();
+      // The bootstrap never ran — the credentials never passed.
+      expect(mockResolveUserClaims).not.toHaveBeenCalled();
+    });
+
+    it('sets a global SERVER_ERROR — not the invalid-credentials state — when the post-login bootstrap fails', async () => {
+      // This is the acceptance criterion: sign-in succeeded, so the form must
+      // NOT silently reset and re-prompt for a password that is already right.
+      const context = createContext();
+      mockResolveUserClaims.mockRejectedValue(new Error('/me request failed with status 500'));
+
+      const { authWithEmailPassword } = useAuth(context);
+      await authWithEmailPassword();
+
+      expect(mockSetGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
+      expect(context.invalid.value).toBe(false);
+      expect(context.authStore.spinner.value).toBe(false);
+    });
+
+    it('maps a rostering-ended bootstrap failure to the ROSTERING_ENDED global error', async () => {
+      const context = createContext();
+      mockResolveUserClaims.mockRejectedValue({ body: { error: { code: 'auth/rostering-ended' } } });
+
+      const { authWithEmailPassword } = useAuth(context);
+      await authWithEmailPassword();
+
+      expect(mockSetGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
+      expect(context.invalid.value).toBe(false);
+    });
+
+    it('maps a terminal auth bootstrap failure to the AUTH_EXPIRED global error', async () => {
+      const context = createContext();
+      mockResolveUserClaims.mockRejectedValue({ body: { error: { code: 'auth/required' } } });
+
+      const { authWithEmailPassword } = useAuth(context);
+      await authWithEmailPassword();
+
+      expect(mockSetGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+      expect(context.invalid.value).toBe(false);
+    });
+
+    it('leaves the form clean and sets no global error on a fully successful sign-in', async () => {
+      const context = createContext();
+      mockResolveUserClaims.mockResolvedValue({ claims: { roarUid: 'roar-1' } });
+
+      const { authWithEmailPassword } = useAuth(context);
+      await authWithEmailPassword();
+
+      expect(context.invalid.value).toBe(false);
+      expect(mockSetGlobalError).not.toHaveBeenCalled();
+      expect(context.authStore.userClaims).toEqual({ claims: { roarUid: 'roar-1' } });
+    });
+  });
+
+  describe('SSO popup flow', () => {
+    it('flags the form as invalid when the popup sign-in is rejected', async () => {
+      const context = createContext();
+      context.authStore.signInWithPopup.mockRejectedValue(new Error('auth/popup-closed-by-user'));
+
+      const { authWithGoogle } = useAuth(context);
+      await authWithGoogle();
+      await vi.waitFor(() => expect(context.invalid.value).toBe(true));
+
+      // Guard against a vacuous pass: Google on a desktop UA takes the popup
+      // branch, not the redirect branch.
+      expect(context.authStore.signInWithPopup).toHaveBeenCalledWith('google');
+      expect(mockSetGlobalError).not.toHaveBeenCalled();
+    });
+
+    it('sets a global error when the popup succeeds but the bootstrap fails', async () => {
+      const context = createContext();
+      mockResolveUserClaims.mockRejectedValue(new Error('/me request failed with status 500'));
+
+      const { authWithGoogle } = useAuth(context);
+      await authWithGoogle();
+      await vi.waitFor(() =>
+        expect(mockSetGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR }),
+      );
+
+      expect(context.authStore.signInWithPopup).toHaveBeenCalledWith('google');
+      expect(context.invalid.value).toBe(false);
+    });
+  });
+});

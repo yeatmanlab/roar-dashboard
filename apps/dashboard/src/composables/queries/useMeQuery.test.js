@@ -146,6 +146,25 @@ describe('useMeQuery', () => {
     expect(retryFn(0, tokenExpiredError)).toBe(false);
   });
 
+  it('does not retry when the API base URL is missing from the build', () => {
+    // `getRoarApiClient()` throws before any request is sent, and the base URL
+    // is baked in at build time — so this is terminal for the page load.
+    let retryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      retryFn = options.retry;
+      return { data: { value: null }, error: { value: null } };
+    });
+
+    withSetup(() => useMeQuery(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const missingBaseUrlError = new Error('VITE_ROAR_API_BASE_URL is not set.');
+    missingBaseUrlError.code = 'client/base-url-missing';
+    expect(retryFn(0, missingBaseUrlError)).toBe(false);
+    expect(retryFn(1, missingBaseUrlError)).toBe(false);
+  });
+
   it('retries up to 3 times on transient errors', () => {
     let retryFn;
     vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {

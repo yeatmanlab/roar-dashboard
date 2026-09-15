@@ -7,6 +7,9 @@ import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import { APP_ROUTES } from '@/constants/routes';
 import { getAuthService } from '@/services/AuthService';
+import { useGlobalError } from '@/composables/useGlobalError';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
+import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 
 export function useAuth(context) {
   const { authStore, router, route, email, password, invalid, emailLinkSent, showPasswordField, resetSignInUI } =
@@ -32,6 +35,34 @@ export function useAuth(context) {
       }
     }
   });
+
+  const { setGlobalError } = useGlobalError();
+
+  /**
+   * Handle a failure that happened *after* the credential check succeeded.
+   *
+   * The credentials were accepted, so this is never "wrong password" — showing
+   * the sign-in form's invalid-credentials error (or silently resetting it)
+   * would tell the user to retype a password that is already correct. Route it
+   * to the global-error mechanism instead, which the router's `beforeEach`
+   * guard turns into an explicit error page.
+   *
+   * @param {Error} error - The error thrown while bootstrapping the session.
+   */
+  function handleBootstrapError(error) {
+    console.error('[SignIn] failed to bootstrap session after successful sign-in', error);
+    spinner.value = false;
+
+    if (isRosteringEndedError(error)) {
+      setGlobalError({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
+      return;
+    }
+    if (isTerminalAuthError(error)) {
+      setGlobalError({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+      return;
+    }
+    setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
+  }
 
   // ---------- Claims ----------
   async function getUserClaims() {
@@ -107,6 +138,33 @@ export function useAuth(context) {
 
   // ---------- SSO flows ----------
   /**
+   * Sign in via SSO popup, then bootstrap the session.
+   *
+   * The two awaits are in separate try blocks on purpose: a rejection from
+   * `signInWithPopup` means the credentials were never accepted (form error),
+   * while a rejection from `getUserClaims` means they were (global error).
+   * Collapsing them into one catch is what made a failed `/me` look like a
+   * cancelled popup.
+   *
+   * @param {'google' | 'clever' | 'classlink' | 'nycps'} provider
+   */
+  async function signInWithPopupAndBootstrap(provider) {
+    try {
+      await authStore.signInWithPopup(provider);
+    } catch {
+      spinner.value = false;
+      invalid.value = true;
+      return;
+    }
+
+    try {
+      await getUserClaims();
+    } catch (error) {
+      handleBootstrapError(error);
+    }
+  }
+
+  /**
    * Generic SSO handler. Uses popup in development (except Cypress) and on
    * desktop for Google; falls back to redirect everywhere else.
    *
@@ -118,13 +176,7 @@ export function useAuth(context) {
       (process.env.NODE_ENV === 'development' && !window.Cypress) || (provider === 'google' && !isMobileBrowser());
 
     if (usePopup) {
-      authStore
-        .signInWithPopup(provider)
-        .then(getUserClaims)
-        .catch(() => {
-          spinner.value = false;
-          invalid.value = true;
-        });
+      signInWithPopupAndBootstrap(provider);
     } else {
       authStore.signInWithRedirect(provider);
     }
@@ -147,22 +199,37 @@ export function useAuth(context) {
   }
 
   // ---------- Email/password ----------
-  function authWithEmailPassword() {
+  /**
+   * Sign in with email/password, then bootstrap the session.
+   *
+   * Credential errors and post-login bootstrap errors are caught separately:
+   * only `logInWithEmailAndPassword` rejecting means the email or password was
+   * wrong. A `getUserClaims` rejection happens after Firebase already accepted
+   * the credentials, so it must not reset the form and re-prompt for a
+   * password that is already correct.
+   */
+  async function authWithEmailPassword() {
     invalid.value = false;
     const creds = {
       email: email.value.includes('@') ? email.value : `${email.value}@roar-auth.com`,
       password: password.value,
     };
-    authStore
-      .logInWithEmailAndPassword(creds)
-      .then(async () => {
-        spinner.value = true;
-        await getUserClaims();
-      })
-      .catch(() => {
-        invalid.value = true;
-        spinner.value = false;
-      });
+
+    try {
+      await authStore.logInWithEmailAndPassword(creds);
+    } catch {
+      invalid.value = true;
+      spinner.value = false;
+      return;
+    }
+
+    spinner.value = true;
+
+    try {
+      await getUserClaims();
+    } catch (error) {
+      handleBootstrapError(error);
+    }
   }
 
   return {

@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getRoarApiClient } from '@/clients/roar-api';
 import { useAuthStore } from '@/store/auth';
-import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
+import { isMissingBaseUrlError, isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 
 const MAX_RETRIES = 3;
@@ -11,18 +11,18 @@ const MAX_RETRIES = 3;
 /**
  * Shared retry policy for `/me`-backed queries.
  *
- * Rostering-ended and terminal auth errors are not transient; retrying
- * wastes time and delays the user-facing error UX. Used by both `useMeQuery`
- * and `useUserClaimsQuery` (which observes the same `/me` cache entry), and
- * placed **after** `...options` in each `useQuery` call so a caller-supplied
- * `retry` can't silently override it.
+ * Rostering-ended errors, terminal auth errors, and a missing API base URL
+ * are not transient; retrying wastes time and delays the user-facing error
+ * UX. Used by both `useMeQuery` and `useUserClaimsQuery` (which observes the
+ * same `/me` cache entry), and placed **after** `...options` in each
+ * `useQuery` call so a caller-supplied `retry` can't silently override it.
  *
  * @param {number} failureCount - Number of failed attempts so far.
  * @param {Error} error - The thrown error (carries `.status` / `.body`).
  * @returns {boolean} Whether TanStack Query should retry.
  */
 export function meRetryPolicy(failureCount, error) {
-  if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
+  if (isRosteringEndedError(error) || isTerminalAuthError(error) || isMissingBaseUrlError(error)) {
     return false;
   }
   // Deterministic behavior in Cypress E2E — mirrors the queryClient's

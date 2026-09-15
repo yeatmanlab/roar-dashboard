@@ -47,12 +47,19 @@ export function getApiErrorMessage(response) {
 
 /**
  * Known API error codes that the frontend handles specifically.
- * Values match the backend's ApiErrorCode enum.
+ * Auth values match the backend's ApiErrorCode enum; the `client/` namespace
+ * is reserved for failures raised in the browser before a request is sent.
  */
 export const API_ERROR_CODES = Object.freeze({
   AUTH_REQUIRED: 'auth/required',
   AUTH_TOKEN_EXPIRED: 'auth/token-expired',
   AUTH_ROSTERING_ENDED: 'auth/rostering-ended',
+  /**
+   * `getRoarApiClient()` could not build the client because
+   * `VITE_ROAR_API_BASE_URL` is missing from the build. Client-side only —
+   * no request ever leaves the browser, so it can never succeed on retry.
+   */
+  CLIENT_BASE_URL_MISSING: 'client/base-url-missing',
 });
 
 /**
@@ -73,4 +80,20 @@ export function isRosteringEndedError(error) {
 export function isTerminalAuthError(error) {
   const code = getApiErrorCode(error);
   return code === API_ERROR_CODES.AUTH_REQUIRED || code === API_ERROR_CODES.AUTH_TOKEN_EXPIRED;
+}
+
+/**
+ * Checks if the error is the missing-base-URL configuration failure raised by
+ * `getRoarApiClient()`.
+ *
+ * Terminal for the whole page load: the base URL comes from the build, so it
+ * cannot appear between attempts. Retrying only delays the error UI, which is
+ * why both the queryClient's default retry policy and `meRetryPolicy`
+ * short-circuit on it.
+ *
+ * @param {Object} error - Error thrown by the API client
+ * @returns {boolean}
+ */
+export function isMissingBaseUrlError(error) {
+  return getApiErrorCode(error) === API_ERROR_CODES.CLIENT_BASE_URL_MISSING;
 }
