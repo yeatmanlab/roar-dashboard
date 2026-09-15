@@ -8,7 +8,6 @@ import { runDemographics } from '../db/schema/core/run-demographics';
 import { userClasses } from '../db/schema/core/user-classes';
 import { classes } from '../db/schema/core/classes';
 import { orgs } from '../db/schema/core/orgs';
-import { ScoreType } from '../enums/score-type.enum';
 
 interface RunRecord {
   id: string;
@@ -59,42 +58,30 @@ export class AggregationRepository {
     return new Map(records.map((d) => [d.runId, d.grade]));
   }
 
-  async getScoresByRunIds(
-    runIds: string[],
-  ): Promise<Map<string, { percentile: number | null; rawScore: number | null; scoringVersion: number | null }>> {
+  /**
+   * All score rows for the given runs, indexed `runId → name → value`.
+   *
+   * Returned unresolved: which name holds a task's percentile or raw score
+   * depends on its slug, grade, and scoring version, so the service resolves
+   * them via `resolveScoreFieldNames`.
+   */
+  async getScoresByRunIds(runIds: string[]): Promise<Map<string, Map<string, string>>> {
     const scoresData = await this.coreDb
       .select({
         runId: fdwRunScores.runId,
-        type: fdwRunScores.type,
         name: fdwRunScores.name,
         value: fdwRunScores.value,
       })
       .from(fdwRunScores)
       .where(inArray(fdwRunScores.runId, runIds));
 
-    const scoresByRunId = new Map<
-      string,
-      { percentile: number | null; rawScore: number | null; scoringVersion: number | null }
-    >();
-
-    // Initialize all runs with null values
+    const scoresByRunId = new Map<string, Map<string, string>>();
     for (const runId of runIds) {
-      scoresByRunId.set(runId, { percentile: null, rawScore: null, scoringVersion: null });
+      scoresByRunId.set(runId, new Map());
     }
 
-    // Parse score records
     for (const score of scoresData) {
-      const existingScores = scoresByRunId.get(score.runId);
-      if (!existingScores) continue;
-
-      const parsedValue = parseFloat(score.value);
-      if (Number.isNaN(parsedValue)) continue;
-
-      if ((score.type as ScoreType) === ScoreType.COMPUTED && score.name === 'percentile') {
-        existingScores.percentile = parsedValue;
-      } else if ((score.type as ScoreType) === ScoreType.RAW && score.name === 'rawScore') {
-        existingScores.rawScore = parsedValue;
-      }
+      scoresByRunId.get(score.runId)?.set(score.name, score.value);
     }
 
     return scoresByRunId;
