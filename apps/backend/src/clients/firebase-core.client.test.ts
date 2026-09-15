@@ -164,8 +164,8 @@ describe('FirebaseCoreClient', () => {
     );
   });
 
-  it('refuses to initialize against the emulator in production', () => {
-    vi.stubEnv('NODE_ENV', 'production');
+  it('refuses to initialize against the emulator on a deployed service', () => {
+    vi.stubEnv('K_SERVICE', 'roar-backend');
     process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
 
     getAppsMock.mockReturnValue([]);

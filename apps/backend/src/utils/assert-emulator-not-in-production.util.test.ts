@@ -24,15 +24,15 @@ describe('isFirebaseAuthEmulatorEnabled', () => {
 });
 
 describe('assertEmulatorNotEnabledInProduction', () => {
-  it('throws in production when the emulator host is set', () => {
-    vi.stubEnv('NODE_ENV', 'production');
+  it('throws on Cloud Run when the emulator host is set', () => {
+    vi.stubEnv('K_SERVICE', 'roar-backend');
     vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
 
     expect(() => assertEmulatorNotEnabledInProduction()).toThrow(/FIREBASE_AUTH_EMULATOR_HOST/);
   });
 
-  it('does not throw in production when the emulator host is unset or empty', () => {
-    vi.stubEnv('NODE_ENV', 'production');
+  it('does not throw on Cloud Run when the emulator host is unset or empty', () => {
+    vi.stubEnv('K_SERVICE', 'roar-backend');
 
     vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', undefined);
     expect(() => assertEmulatorNotEnabledInProduction()).not.toThrow();
@@ -41,13 +41,18 @@ describe('assertEmulatorNotEnabledInProduction', () => {
     expect(() => assertEmulatorNotEnabledInProduction()).not.toThrow();
   });
 
-  // The dev and CI flows that legitimately set the emulator host. Both leave NODE_ENV
-  // below 'production', so the guard has to stay inert for them or it breaks the stack
-  // it is meant to protect.
-  it.each(['development', 'test', undefined])('does not throw when NODE_ENV is %s', (nodeEnv) => {
-    vi.stubEnv('NODE_ENV', nodeEnv);
-    vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
+  // Off Cloud Run the guard must stay inert, whatever NODE_ENV says. The
+  // assessment SDK's integration harness is the case that matters: it spawns a
+  // local backend with NODE_ENV=production against the emulator, purely to dodge a
+  // pino-pretty crash in bundled ESM. Keying on NODE_ENV alone killed that suite.
+  it.each(['production', 'development', 'test', undefined])(
+    'does not throw off Cloud Run when NODE_ENV is %s',
+    (nodeEnv) => {
+      vi.stubEnv('K_SERVICE', undefined);
+      vi.stubEnv('NODE_ENV', nodeEnv);
+      vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
 
-    expect(() => assertEmulatorNotEnabledInProduction()).not.toThrow();
-  });
+      expect(() => assertEmulatorNotEnabledInProduction()).not.toThrow();
+    },
+  );
 });

@@ -20,6 +20,18 @@ export function isFirebaseAuthEmulatorEnabled(): boolean {
 }
 
 /**
+ * Whether this process is running as a deployed Cloud Run service.
+ *
+ * `K_SERVICE` is set by the Cloud Run runtime on every revision and is absent
+ * everywhere else, which makes it the signal that actually means "deployed".
+ *
+ * @returns true when the Cloud Run runtime marker is present
+ */
+export function isRunningOnCloudRun(): boolean {
+  return Boolean(process.env.K_SERVICE);
+}
+
+/**
  * Refuses to continue when the Firebase Auth emulator is configured in production.
  *
  * With `FIREBASE_AUTH_EMULATOR_HOST` set, the Admin SDK initializes without a
@@ -28,19 +40,25 @@ export function isFirebaseAuthEmulatorEnabled(): boolean {
  * a deployed service would therefore accept forged tokens for arbitrary users, so
  * the process must not come up at all rather than come up unauthenticated.
  *
- * `NODE_ENV` is `production` on the staging service too (the Cloud Run module sets
- * it on both), which is the intended blast radius: neither deployed stack has any
- * legitimate use for the emulator. Local development and CI leave `NODE_ENV`
- * unset or at `development`/`test`, so both are unaffected.
+ * Keyed on `K_SERVICE` — injected by Cloud Run on every revision and never set
+ * locally or in CI — rather than on `NODE_ENV` alone. `NODE_ENV=production` is not
+ * a reliable signal for "deployed": the assessment SDK's integration harness sets it
+ * when spawning a local backend against the emulator, purely to avoid a pino-pretty
+ * crash in bundled ESM. Guarding on `NODE_ENV` alone breaks that suite while adding
+ * nothing, since a deployed service always carries `K_SERVICE` too.
  *
- * @throws {Error} If `NODE_ENV` is 'production' while `FIREBASE_AUTH_EMULATOR_HOST` is set
+ * This covers the staging service as well as production — the Cloud Run module sets
+ * `NODE_ENV=production` on both, and neither deployed stack has any legitimate use
+ * for the emulator.
+ *
+ * @throws {Error} If running on Cloud Run while `FIREBASE_AUTH_EMULATOR_HOST` is set
  */
 export function assertEmulatorNotEnabledInProduction(): void {
-  if (process.env.NODE_ENV !== 'production') return;
+  if (!isRunningOnCloudRun()) return;
   if (!isFirebaseAuthEmulatorEnabled()) return;
 
   throw new Error(
-    `${FIREBASE_AUTH_EMULATOR_HOST_ENV_VAR} must not be set in production — ` +
+    `${FIREBASE_AUTH_EMULATOR_HOST_ENV_VAR} must not be set on a deployed service — ` +
       'the Auth emulator issues unverified tokens for arbitrary users',
   );
 }
