@@ -1,0 +1,5 @@
+Stimuli Notes -- Phoneme
+Removed thVoiced  because it sounds too similar to /v/
+Don't present a as a distractor for /o/
+Don't present c as a distractor for x (/ks/)
+Don't present  b and d  distractors in the same trial

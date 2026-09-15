@@ -1,0 +1,80 @@
+@use '../abstracts/' as *;
+
+$ratio_difference: 0.065;
+$instruction_default_size: min(40vw, 40vh);
+$instruction_m_size: min(50vw, 50vh);
+$instruction_sm_size: min(70vw, 70vh);
+$instruction_s_size: min(80vw, 80vh);
+
+$instruction_sm_default_size: min(35vw, 35vh);
+$instruction_sm_m_size: min(45vw, 45vh);
+$instruction_sm_sm_size: min(65vw, 65vh);
+$instruction_sm_s_size: min(75vw, 75vh);
+
+video {
+  &.instruction-video {
+    width: $instruction_default_size;
+    height: $instruction_default_size;
+    margin-top: calc($ratio_difference * $instruction_default_size);
+
+    @include respond-to('medium') {
+      width: $instruction_m_size;
+      height: $instruction_m_size;
+      margin-top: calc($ratio_difference * $instruction_m_size);
+    }
+
+    @include respond-to('small-medium') {
+      width: $instruction_sm_size;
+      height: $instruction_sm_size;
+      margin-top: calc($ratio_difference * $instruction_sm_size);
+    }
+
+    @include respond-to('small') {
+      width: $instruction_s_size;
+      height: $instruction_s_size;
+      margin-top: calc($ratio_difference * $instruction_s_size);
+    }
+  }
+
+  &.instruction-video-small {
+    width: $instruction_sm_default_size;
+    height: $instruction_sm_default_size;
+
+    @include respond-to('medium') {
+      width: $instruction_m_size;
+      height: $instruction_m_size;
+    }
+
+    @include respond-to('small-medium') {
+      width: $instruction_sm_size;
+      height: $instruction_sm_size;
+    }
+
+    @include respond-to('small') {
+      width: $instruction_s_size;
+      height: $instruction_s_size;
+    }
+  }
+}
+
+img {
+  &.instruction-video {
+    width: $instruction_default_size;
+    height: $instruction_default_size;
+
+    @include respond-to('medium') {
+      width: $instruction_m_size;
+      height: $instruction_m_size;
+    }
+
+    @include respond-to('small-medium') {
+      width: $instruction_sm_size;
+      height: $instruction_sm_size;
+    }
+
+    @include respond-to('small') {
+      width: $instruction_s_size;
+      height: $instruction_s_size;
+    }
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "loading": "L'esperimento si sta caricando...",
+  "labID": "ID del laboratorio",
+  "participantID": "ID del partecipante",
+  "progressBar": "Avanzamento Completato",
+  "buttonLabel": "Continua",
+  "preloadTrial": {
+    "messageText": "Per favore aspetta il caricamento dell'esperimento. Potrebbero essere necessari alcuni minuti."
+  },
+  "fullScreenTrial": {
+    "prompt": "L'esperimento passerà alla modalità schermo intero. <br/> Clicca sul tasto per continuare.",
+    "buttonText": "Continua"
+  },
+  "navigation": {
+    "continueButtonText": "Premi <span class='yellow'>QUALSIASI TASTO</span> per {{action}}",
+    "continueButtonTextMobile": "Premi <span class='yellow'>QUI</span> per {{action}}"
+  },
+  "introTrials": {
+    "trial1": {
+      "header1": "Benvenuto&#47;a nel mondo di Lexicality!",
+      "paragraph1": "Sei un mago in cerca del portale che ti riportera&#39 a casa sulla Terra. Per raggiungere il portale pero&#39, dovrai viaggiare nelle terre dominate dai guardiani magici.",
+      "paragraph2": "Affinche&#39 i guardiani ti lascino passare dovrai riuscire a distinguere tra una serie di parole inventate e di parole reali.&nbsp;",
+      "header2": "Benvenuto&#47;a alla prova di Riconoscimento di Parole!",
+      "paragraph3": "In questa prova vedrai delle parole apparire sullo schermo.",
+      "paragraph4": "Dovrai riuscire a distinguere tra una serie di parole inventate e di parole reali.&nbsp"
+    },
+    "trial2": {
+      "header": "Parole inventate o parole reali compariranno velocemente al centro dello schermo.",
+      "paragraph1": "Le parole inventate potrebbero assomigliare a parole italiane, anche se non hanno alcun significato in italiano. Per esempio, cata, sagno o molpa, sono parole inventate. <span class='orange'><b> Se vedi una parola inventata, premi la FRECCIA SINISTRA.</b></span>",
+      "paragraph2": "Le parole reali saranno quelle che riconoscerai. Sono parole italiane reali come porta, tra, fare o leone. <span class='blue'><b> Se vedi una parola reale, premi la FRECCIA DESTRA.</b></span>"
+    },
+    "trial3": {
+      "header": "Proviamo a rivedere quale tasto premere per le parole inventate e quale per le parole reali.",
+      "paragraph1": "Prova ad essere il piu&#39 accurato&#47;a possibile.",
+      "paragraph2": "Alcune parole saranno difficili, ma non ti scoraggiare. Se non sei sicuro&#47;a, dai la risposta che ritieni piu&#39 corretta!"
+    },
+    "postPracticeTrial": {
+      "header1": "Ben fatto, sei pronto&#47;a per iniziare il viaggio!",
+      "header2": "Ben fatto, sei pronto&#47;a per iniziare la prova!",
+      "paragraph1": "Guadagnerai monete d&#39oro lungo il cammino.",
+      "paragraph2": "Buona fortuna!"
+    }
+  },
+  "practiceFeedbackTrial": {
+    "paragraph1": "Hai premuto la freccia {{direction}} che e&#39 per le parole {{typeWord}}!",
+    "paragraph2": "e&#39 una parola {{typeWord}}. Premi la freccia {{direction}} per continuare.",
+    "arrowChoicesImgAlt": "opzioniFreccia"
+  },
+  "gameBreakTrials": {
+    "midBlockTrials": {
+      "trial1": {
+        "header1": "Ben fatto!",
+        "paragraph1": "Sei a meta&#39 strada lungo la valle e decidi di accamparti vicino a un piccolo villaggio.",
+        "paragraph2": "Nel villaggio incontri un altro avventuriero che si unisce al tuo viaggio!",
+        "header2": "Ben fatto!",
+        "paragraph3": "Sei a meta&#39 del primo blocco.",
+        "paragraph4": "Puoi fare una breve pausa e continuare quando sei pronto&#47;a."
+      },
+      "trial2": {
+        "header1": "Fantastico!",
+        "paragraph1": "Dopo qualche giorno di viaggio, arrivi a un rifugio!",
+        "paragraph2": "Qui incontri un altro avventuriero che si unisce al tuo viaggio!",
+        "header2": "Fantastico!",
+        "paragraph3": "Sei a meta&#39 del secondo blocco.",
+        "paragraph4": "Puoi fare una breve pausa e continuare quando sei pronto&#47;a."
+      },
+      "trial3": {
+        "header1": "Ben fatto!",
+        "paragraph1": "Sei a meta&#39 strada lungo la valle e decidi di accamparti vicino a un piccolo villaggio.",
+        "paragraph2": "Nel villaggio incontri un altro avventuriero che si unisce al tuo viaggio!",
+        "header2": "Ben fatto!",
+        "paragraph3": "Sei a meta&#39 del terzo blocco.",
+        "paragraph4": "Puoi fare una breve pausa e continuare quando sei pronto&#47;a."
+      }
+    },
+    "postBlockTrials": {
+      "trial1": {
+        "header1": "Congratulazioni!",
+        "paragraph1": "Con l&#39aiuto del guardiano, sei riuscito&#47;a a passare attraverso la valle.",
+        "paragraph2": "Ti stai avvicinando al portale!",
+        "header2": "Congratulazioni!",
+        "paragraph3": "Hai completato il primo blocco.",
+        "paragraph4": "Puoi fare una breve pausa e continuare quando sei pronto&#47;a."
+      },
+      "trial2": {
+        "header1": "Congratulazioni!",
+        "paragraph1": "Con l&#39aiuto del guardiano, sei riuscito&#47;a a passare attraverso la valle.",
+        "paragraph2": "Ti manca solo un&#39altra valle per raggiungere il portale!",
+        "header2": "Congratulazioni!",
+        "paragraph3": "Hai completato il secondo blocco.",
+        "paragraph4": "Puoi fare una breve pausa e continuare quando sei pronto&#47;a."
+      },
+      "trial3": {
+        "header1": "Congratulazioni!",
+        "paragraph1": "Con l&#39aiuto del guardiano, sei riuscito&#47;a a passare attraverso la valle.",
+        "paragraph2": "Ti stai avvicinando al portale!",
+        "header2": "Congratulazioni!",
+        "paragraph3": "Hai completato un nuovo blocco.",
+        "paragraph4": "Puoi fare una breve pausa e continuare quando sei pronto&#47;a."
+      }
+    },
+    "finalTrial": {
+      "header1": "Finalmente trovi l'ultimo guardiano e il portale che ti riportera&#39 a casa!",
+      "paragraph1": "Usi le monete raccolte per aprire il portale.",
+      "paragraph2": "Saluti i tuoi nuovi amici e lasci il mondo di Lexicality. Alla prossima!",
+      "header2": "Congratulazioni!",
+      "paragraph3": "Hai completato la prova di Riconoscimento di Parole.",
+      "paragraph4": "Grazie per il tuo fantastico lavoro!"
+    }
+  },
+  "imagesAlt": {
+    "arrowKeys": "tasti freccia",
+    "leftArrow": "freccia sinistra",
+    "rightArrow": "freccia destra",
+    "valley": "immagine di sfondo con alberi e colline",
+    "adventurer1": "avventuriero con arpa",
+    "adventurer2": "avventuriero che crea arcobaleni",
+    "adventurer3": "avventuriero che crea forme di cuore",
+    "wizardCoin": "mago che crea monete",
+    "guardian1": "guardiano dinosauro arancione",
+    "guardian2": "guardiano drago blu",
+    "endingBackground": "paesaggio con alberi",
+    "guardian3": "unicorno che strizza l'occhio",
+    "endingGateCoinbag": "portale con animazione portamonete",
+    "wizardWand": "mago che agita una bacchetta magica",
+    "leftArrowIntro": "parola inventata, premi la freccia sinistra",
+    "rightArrowIntro": "parola reale, premi la freccia destra"
+  },
+  "terms": {
+    "__comment1__": "es. 'premi qualsiasi tasto per continuare/fare pratica/iniziare'",
+    "continue": "continuare",
+    "practice": "fare pratica",
+    "begin": "iniziare",
+    "gold": "oro",
+    "left": "sinistra",
+    "right": "destra",
+    "__comment2__": "es. 'valo è una parola inventata/reale'",
+    "real-singular": "reale",
+    "real-plural": "reali",
+    "made-up-singular": "inventata",
+    "made-up-plural": "inventate",
+    "save": "salvare il tuo lavoro"
+  }
+}

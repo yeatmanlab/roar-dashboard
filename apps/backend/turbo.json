@@ -2,7 +2,7 @@
   "extends": ["//"],
   "tasks": {
     "dev": {
-      "with": ["@roar-dashboard/api-contract#dev"]
+      "with": ["@roar-platform/api-contract#dev"]
     },
     "build": {
       "env": [
@@ -12,13 +12,18 @@
         "PORT",
         "KEEP_ALIVE_TIMEOUT",
         "FIREBASE_SERVICE_ACCOUNT_CREDENTIALS",
+        "FIREBASE_AUTH_EMULATOR_HOST",
         "GOOGLE_APPLICATION_CREDENTIALS",
         "GCLOUD_PROJECT",
-        "GOOGLE_CLOUD_PROJECT"
+        "GOOGLE_CLOUD_PROJECT",
+        "FGA_API_URL",
+        "FGA_STORE_ID",
+        "FGA_MODEL_ID",
+        "FGA_OIDC_AUDIENCE"
       ]
     },
-    "lint": {
-      "dependsOn": ["^@roar-dashboard/api-contract#build"]
+    "test": {
+      "env": ["AUTHZ_MODEL_PATH"]
     }
   }
 }

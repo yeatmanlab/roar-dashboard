@@ -1,0 +1,41 @@
+{
+  "modeAdaptStim": "none",
+  "modeAdaptBlock": "adaptAcc",
+  "perfAdaptBlock": 0.5,
+  "numRepeatBlockMax": 1,
+  "numTrialBlock": 12,
+  "numTrialExtra": 2,
+  "durationStimExtra": 2000,
+  "arrMetaparams": [
+    {
+      "typeStim": "opto",
+      "numStim": 2,
+      "durationStim": 350
+    },
+    {
+      "typeStim": "opto",
+      "numStim": 4,
+      "durationStim": 350
+    },
+    {
+      "typeStim": "opto",
+      "numStim": 6,
+      "durationStim": 350
+    },
+    {
+      "typeStim": "pseudo",
+      "numStim": 2,
+      "durationStim": 350
+    },
+    {
+      "typeStim": "pseudo",
+      "numStim": 4,
+      "durationStim": 350
+    },
+    {
+      "typeStim": "pseudo",
+      "numStim": 6,
+      "durationStim": 350
+    }
+  ]
+}

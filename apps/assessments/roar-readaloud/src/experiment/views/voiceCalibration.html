@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+      crossorigin="anonymous"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image and Audio Recording</title>
+
+    <!-- <script data-dynamic src="./voiceCalibration.js"></script> -->
+  </head>
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh; /* Ensure body takes the full viewport height */
+      display: flex; /* Enable Flexbox */
+      justify-content: center; /* Center content horizontally */
+      align-items: center; /* Center content vertically */
+      font-family: sans-serif;
+    }
+
+    stim {
+      position: absolute;
+      height: auto;
+      cursor: pointer;
+    }
+
+    #instruction {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #confirmContainer {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  </style>
+
+  <body>
+    <!-- Center Instructions Panel -->
+    <div id="calibrationContentArea">
+      <div class="row gap-2" id="instruction">
+        <div class="col">
+          <div class="card" style="width: 45rem; height: 39rem">
+            <div class="card-body" style="text-align: center">
+              <h3 class="card-title" id="calibrationTitle">
+                <b> Calibration Phase </b>
+              </h3>
+              <h4 class="card-text">
+                Now, we need to recalibrate the navigation system.
+              </h4>
+              <h4 class="card-text" id="calibrationDescription"></h4>
+              <div style="text-align: center; margin-bottom: 3vh">
+                <img
+                  id="calibrationImage"
+                  src="https://eyetrackingdata.blob.core.windows.net/public/Images/squareAddition_white.png"
+                  width="350px"
+                />
+              </div>
+              <div class="btn-group" role="group" aria-label="Basic example">
+                <!-- <button type="button" class="btn btn-primary" id="giveAccessButton" onclick="giveAccess()">Give Access to Mic/Camera</button> -->
+                <!-- <br> -->
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  id="startTestButton"
+                  onclick="startTest(displayNextStim)"
+                >
+                  Start
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- <center> <img src="./img/letter-calibration-explanation.gif" width="350vh" style="margin-bottom: 3vh;"> </center> -->
+
+    <!-- Confirm Button -->
+    <div class="row gap-2" id="confirmContainer" style="display: none">
+      <div class="card-body" style="text-align: center">
+        <h3>Calibration complete!</h3>
+        <button type="button" class="btn btn-primary" id="confirmButton">
+          Continue
+        </button>
+      </div>
+    </div>
+
+    <script data-dynamic>
+      var desktop = document.documentElement;
+      var camera_stream;
+      var audioRecorder;
+      var videoRecorder;
+      var videoChunks = [];
+
+      var deviceConfig = store.session.get("deviceConfig");
+      // var deviceConfig = {screenWidth: 29, screenHeight: 16.2, screenWidthPX: 960, screenHeightPX: 540, webcamHeight: 0.5}
+      var testConfig = store.session.get("testConfig");
+      // var testConfig = {dir: "https://eyetrackingdata.blob.core.windows.net/public/assets/Letter",
+      //     stimulus : ["C.svg", "D.svg", "H.svg", "K.svg", "N.svg", "O.svg", "R.svg", "S.svg", "V.svg", "Z.svg"],
+      //     sizecm: 2}
+
+      if (testConfig["testname"] === "Letter") {
+        var subtestText = ["Letter", "letter"];
+      } else {
+        var subtestText = ["Number", "number"];
+      }
+
+      // Getting the div element by its ID
+      // const calibrationDiv = document.getElementById('calibrationContentArea');
+
+      // Text you want to edit with ${} variables
+      // const calibrationDetails = `
+      // <div class="row gap-2" id="instruction">
+      //         <div class="col">
+      //             <div class="card" style="width: 45rem; height:39rem">
+      //                 <div class="card-body" style="text-align: center;">
+      //                     <h3 class="card-title"> <b> ${subtestText[0]} Calibration Phase </b> </h3>
+      //                     <h4 class="card-text"> Now, we need to recalibrate the navigation system. </h4>
+      //                     <h4 class="card-text"> You will see ${subtestText[1]}s pop up on the screen. Say the ${subtestText[1]} out loud <b>first</b> and then click on the ${subtestText[1]} to go to the next one. </h4>
+      //                     <center> <img src="./img/${subtestText[1]}-calibration-explanation.gif" width="350vh" style="margin-bottom: 3vh;"> </center>
+      //                         <div class="btn-group" role="group" aria-label="Basic example">
+      //                         <button type="button" class="btn btn-primary" id="giveAccessButton" onclick="giveAccess()">Give Access to Mic/Camera</button>
+      //                         <br>
+      //                         <button type="button" class="btn btn-primary" id="startTestButton" onclick="startTest(displayNextStim)" disabled>Start</button>
+      //                       </div>
+      //                 </div>
+      //             </div>
+      //         </div>
+      //     </div>
+      // `;
+
+      // // Inserting the HTML code into the div
+      // calibrationDiv.innerHTML = calibrationDetails;
+
+      var gridCoordinates = generateGridCoordinates(deviceConfig);
+      var shuffledImages = generateStimulusOrder(testConfig);
+
+      var _gridCoordinates = [];
+      // gridCoordinates;
+      var _shuffledImages = [];
+      // shuffledImages.map(filename => filename.split('.')[0]).reverse();
+      var _parentDir = store.session.get("id");
+      var _videoURL = [];
+      var _deviceConfig = deviceConfig;
+      var _testConfig = testConfig;
+
+      async function displayNextStim() {
+        const position = gridCoordinates.pop();
+        if (position) {
+          await stopRecording();
+          await startRecording();
+          const cell = document.createElement("div");
+          cell.id = "cell";
+          cell.style.width = `${position.width}px`;
+          cell.style.height = `${position.height}px`;
+          cell.style.left = `${position.x}px`; // Adjust for half of the cell width
+          cell.style.top = `${position.y}px`; // Adjust for half of the cell height
+          cell.style.position = "absolute"; // Ensure the position is set to absolute
+          cell.style.transform = "translate(-50%, -50%)"; // Center the content within the element
+          cell.style.display = "flex"; // Set display to flex to use flexbox properties
+          cell.style.justifyContent = "center"; // Center horizontally
+          cell.style.alignItems = "center"; // Center vertically
+          cell.setAttribute("draggable", "false"); // Prevent the cell itself from being draggable
+
+          const stim = document.createElement("img");
+          const randomStimulus = shuffledImages.pop();
+          stim.id = "stim";
+          stim.src = `${testConfig["dir"]}/${randomStimulus}`;
+          stim.style.width = "50%"; // Make the image fill the cell
+          stim.setAttribute("draggable", "false"); // Prevent the image from being draggable
+
+          cell.appendChild(stim);
+
+          // stim.style.width = `${0.50*position.width}px`;
+          // stim.style.left = `${position.x}px`;
+          // stim.style.top = `${position.y}px`;
+          // stim.style.position = 'absolute'; // Ensure the position is set to absolute
+          // stim.style.transform = 'translate(-50%, -50%)'; // Center the content within the element
+          var clickRate = 0;
+          cell.addEventListener("click", () => {
+            clickRate++;
+            if (clickRate == 1) {
+              handleStimClick(randomStimulus, cell, stim);
+            }
+          });
+          document.body.appendChild(cell);
+        } else {
+          _pageCompleted = true;
+        }
+      }
+
+      async function handleStimClick(randomStimulus, cell, stim) {
+        console.log("Image clicked!");
+        const timestamp = new Date().getTime();
+
+        document.getElementById("cell").disabled = true;
+
+        setTimeout(async () => {
+          await stopRecording(); // Stop recording when stimulus is clicked
+          const stimPosition = stim.getBoundingClientRect();
+          stimPosition.x = stimPosition.x + stimPosition.width / 2;
+          stimPosition.y = stimPosition.y + stimPosition.height / 2;
+          var filename =
+            randomStimulus.slice(0, -4) +
+            "_" +
+            stimPosition.x +
+            "_" +
+            stimPosition.y +
+            "_" +
+            timestamp;
+          filename = filename.replace(/\./g, "deci") + ".webm";
+          saveRecordings({
+            filename,
+            parentDir: store.session.get("id"),
+          }); // Save the recorded audio and video
+          _videoURL.push(filename);
+
+          const gridCoordinatesObject = {
+            x: parseFloat(cell.style.left),
+            y: parseFloat(cell.style.top),
+            width: parseFloat(cell.style.width),
+            height: parseFloat(cell.style.height),
+            stim_x: stimPosition.x,
+            stim_y: stimPosition.y,
+            stim_width: stimPosition.width,
+            stim_height: stimPosition.height,
+          };
+
+          _gridCoordinates.push(gridCoordinatesObject);
+          _shuffledImages.push(randomStimulus.slice(0, -4));
+          document.getElementById("cell").remove();
+          // Delay displayNextStim by an additional 100ms
+          setTimeout(() => {
+            displayNextStim(); // Display the next image
+          }, 200);
+        }, 500); // Delay everything here by 200ms
+      }
+    </script>
+  </body>
+</html>

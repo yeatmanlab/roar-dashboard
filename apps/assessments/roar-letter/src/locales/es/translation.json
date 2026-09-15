@@ -1,0 +1,8 @@
+{
+  "loading": "El juego se está cargando...",
+  "progressBar": "Barra de progreso",
+  "fullScreenTrial": {
+    "prompt": "Cambiando a pantalla completa.",
+    "buttonText": "Continuar"
+  }
+}

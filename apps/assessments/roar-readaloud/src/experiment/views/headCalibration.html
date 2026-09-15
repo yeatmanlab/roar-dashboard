@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+      crossorigin="anonymous"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/onnxjs/dist/onnx.min.js"></script>
+  </head>
+
+  <!-- CSS -->
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh; /* Ensure body takes the full viewport height */
+      display: flex; /* Enable Flexbox */
+      justify-content: center; /* Center content horizontally */
+      align-items: center; /* Center content vertically */
+      font-family: sans-serif;
+    }
+
+    stim {
+      position: absolute;
+      height: auto;
+      cursor: pointer;
+    }
+
+    #instruction {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #confirmContainer {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #headCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #canvas-container {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      top: 30px;
+      margin: 0 auto;
+    }
+
+    #loading-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 20px; /* Adjust as needed */
+      background-color: #0d6efd; /* Adjust as needed */
+    }
+  </style>
+
+  <!-- HTML -->
+  <body id="body">
+    <div
+      id="grid-container"
+      style="position: absolute; width: 100%; height: 100%; visibility: hidden"
+    ></div>
+
+    <div id="instructionsContentArea">
+      <div class="row gap-2" id="instruction">
+        <div class="col">
+          <div class="card" style="width: 45rem; height: 39rem">
+            <div class="card-body" id="cardthing" style="text-align: center">
+              <h3 class="card-title" id="instructionTitle">
+                Distance Calibration
+              </h3>
+              <h4 class="card-text" id="instructionSubtitle">That's you!</h4>
+              <h4 class="card-text" id="instructionDescription"></h4>
+              <div id="canvas-container">
+                <p id="viewing-distance" style="text-align: center"></p>
+                <div id="loading-bar" style="top: 0%"></div>
+                <canvas
+                  id="headCanvas"
+                  class="frame"
+                  style="position: relative; border: 1px solid black"
+                ></canvas>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-primary"
+                id="holdButton"
+                style="margin-top: 100px"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+
+  <div class="panel-block" style="display: none" ;>
+    <video class="inputVideo"></video>
+  </div>
+
+  <audio autoplay id="voiceover"></audio>
+
+  <script data-dynamic>
+    var voiceover = document.getElementById("voiceover"); // TO DO: Doesn't have enough time to load? Only plays if the consent screen shows up first
+    voiceover.src = `https://eyetrackingdata.blob.core.windows.net/public/Audios/headCalibration.mp3`;
+    document.body.addEventListener("click", function () {
+      voiceover.pause();
+      voiceover.currentTime = 0; // Stop the voiceover whenever a click is detected
+    });
+    // ----------- required -------------------
+    function runAfterEveryFrame(output) {
+      updateDistance();
+    }
+
+    function pageCompleted() {
+      continueProcessing = false;
+      const event = new Event("pageComplete");
+      document.dispatchEvent(event);
+    }
+
+    // ----------- var -------------------
+    // load stores vars
+    var deviceConfig = store.session.get("deviceConfig") ?? defaultDeviceConfig;
+    // load html elems
+    var viewingDistanceElement = document.getElementById("viewing-distance");
+    var button = document.getElementById("holdButton");
+    var loadingBar = document.getElementById("loading-bar");
+
+    // other var
+    var normalizedFocalLength = deviceConfig.normalizedFocalLength;
+    var intervalId = null;
+    var progress = 0;
+    var continueProcessing = true;
+    var _videoURL = "";
+    var current_viewingDistance = 0;
+
+    // ----------- functions -------------------
+    function updateDistance() {
+      if (normalizedFocalLength > 0) {
+
+        viewingDistanceElement.textContent = `Estimated Distance: ${current_viewingDistance}cm`;
+      }
+    }
+
+    function increaseProgress() {
+      if (progress < 100) {
+        headMetrics_array.push(headMetrics);
+        irisMetrics_array.push(irisMetrics);
+        progress++;
+        loadingBar.style.width = `${progress}%`;
+        if (progress == 50) {
+          canvasContour = headCoordinates;
+        }
+      } else {
+        clearInterval(intervalId); // Stop any increasing
+        pageCompleted();
+      }
+    }
+
+    function calculateMedian(values) {
+      if (values.length === 0) return 0;
+      values.sort((a, b) => a - b);
+      // Calculate the index to slice from, discarding the first 20% of the sorted values
+      const startIndex = Math.floor(values.length * 0.2);
+      const trimmedValues = values.slice(startIndex);
+
+      // Recalculate the length and find the new half index
+      const half = Math.floor(trimmedValues.length / 2);
+      if (values.length % 2) {
+        return values[half];
+      }
+      return (values[half - 1] + values[half]) / 2.0;
+    }
+
+    function medianOfMetrics(metricsArray, key) {
+      const values = metricsArray.map((metric) => metric[key]);
+      return calculateMedian(values);
+    }
+
+    button.addEventListener("mousedown", async function () {
+      await startRecording();
+      intervalId = setInterval(increaseProgress, 20); // Start increasing
+    });
+    button.addEventListener("mouseup", resetProgress);
+    button.addEventListener("mouseleave", resetProgress);
+
+    button.addEventListener("touchstart", async function (event) {
+      event.preventDefault(); // Prevent mouse events from being fired
+      await startRecording();
+      intervalId = setInterval(increaseProgress, 20); // Start increasing
+    });
+    button.addEventListener("touchend", resetProgress);
+    button.addEventListener("touchcancel", resetProgress);
+
+    async function resetProgress() {
+      await stopRecording();
+      clearInterval(intervalId); // Stop any increasing
+      headMetrics_array = [];
+      irisMetrics_array = [];
+      function decreaseProgress() {
+        if (progress > 0) {
+          progress = progress - 3;
+          if (progress < 0) {
+            progress = 0;
+          }
+          loadingBar.style.width = `${progress}%`;
+          setTimeout(decreaseProgress, 10); // Adjust this to control the speed of the decrement
+        }
+      }
+      decreaseProgress();
+    }
+  </script>
+</html>

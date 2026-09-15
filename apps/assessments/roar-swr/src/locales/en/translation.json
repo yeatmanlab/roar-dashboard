@@ -1,0 +1,142 @@
+{
+  "loading": "This experiment is loading...",
+  "labID": "Lab ID",
+  "participantID": "Participant ID",
+  "progressBar": "Progress Complete",
+  "buttonLabel": "Continue",
+  "preloadTrial": {
+    "messageText": "Please wait while the experiment loads. This may take a few minutes."
+  },
+  "fullScreenTrial": {
+    "prompt": "The experiment will switch to full screen mode. <br/> Click the button to continue.",
+    "buttonText": "Continue"
+  },
+  "navigation": {
+    "continueButtonText": "Press <span class='yellow'>ANY KEY</span> to {{action}}",
+    "continueButtonTextMobile": "Press <span class='yellow'>HERE</span> to {{action}}"
+  },
+  "introTrials": {
+    "trial1": {
+      "header1": "Welcome to the world of Lexicality!",
+      "paragraph1": "You are a wizard searching for the gate that will return you to your home on Earth. To reach the gate, you must journey over lands ruled by magical guardians.",
+      "paragraph2": "In order for the guardians to let you pass through the land, you will have to tell the difference between made-up words and real words.&nbsp;",
+      "header2": "Welcome to the Single Word Recognition activity!",
+      "paragraph3": "In this activity, you will look at words that show up on the screen.",
+      "paragraph4": "You will then need to tell the difference between made-up words and real words.&nbsp;"
+    },
+    "trial2": {
+      "header": "A real or made-up word will flash very quickly at the center of the screen.",
+      "paragraph1": "The made-up words might look like English words, but they do not mean anything in English. For example, laip, bove, or cigbert are made-up words. <span class='orange'><b>If you see a made-up word, press the LEFT ARROW.</b></span>",
+      "paragraph2": "The real words will be ones you recognize. They are real English words like is, and, basket, or lion. <span class='blue'><b> If you see a real word, press the RIGHT ARROW.</b></span>"
+    },
+    "trial3": {
+      "header": "Let us review which arrow we press for made-up words and real words.",
+      "paragraph1": "Try to be as accurate as possible.",
+      "paragraph2": "Some words will be hard, and that&#39s okay. If you&#39re not sure, just give your best guess!"
+    },
+    "postPracticeTrial": {
+      "header1": "Great work, you are ready to begin the journey!",
+      "header2": "Great work, you are ready to begin the real activity!",
+      "paragraph1": "You will earn gold coins along the way.",
+      "paragraph2": "Good luck!"
+    }
+  },
+  "practiceFeedbackTrial": {
+    "paragraph1": "You pressed the {{direction}} arrow which is for {{typeWord}} words!",
+    "paragraph2": "is a {{typeWord}}  word. Press the {{direction}} arrow to continue.",
+    "arrowChoicesImgAlt": "arrowChoices"
+  },
+  "gameBreakTrials": {
+    "midBlockTrials": {
+      "trial1": {
+        "header1": "Good work!",
+        "paragraph1": "You are halfway through the valley, and you decide to camp near a small village.",
+        "paragraph2": "In the village, you meet another adventurer who joins your journey!",
+        "header2": "Good work!",
+        "paragraph3": "You are halfway through the first block.",
+        "paragraph4": "Feel free to take a short break and continue when you are ready."
+      },
+      "trial2": {
+        "header1": "Amazing!",
+        "paragraph1": "After a few days of traveling, you come across an inn!",
+        "paragraph2": "There, you meet another adventurer who joins your journey!",
+        "header2": "Amazing!",
+        "paragraph3": "You are halfway through the second block.",
+        "paragraph4": "Feel free to take a short break and continue when you are ready."
+      },
+      "trial3": {
+        "header1": "Fantastic work!",
+        "paragraph1": "You are halfway through the valley, and you decide to camp near a small village.",
+        "paragraph2": "There, you meet another adventurer who joins your journey!",
+        "header2": "Fantastic work!",
+        "paragraph3": "You are halfway through the third block.",
+        "paragraph4": "Feel free to take a short break and continue when you are ready."
+      }
+    },
+    "postBlockTrials": {
+      "trial1": {
+        "header1": "Congratulations!",
+        "paragraph1": "With the guardian&#39s help, you made it through the valley.",
+        "paragraph2": "You&#39re getting closer to the gate!",
+        "header2": "Congratulations!",
+        "paragraph3": "You have completed the first block.",
+        "paragraph4": "Feel free to take a short break and continue when you are ready."
+      },
+      "trial2": {
+        "header1": "Congratulations!",
+        "paragraph1": "With the guardian&#39s help, you made it through the valley.",
+        "paragraph2": "Just one more valley until you reach the gate!",
+        "header2": "Congratulations!",
+        "paragraph3": "You have completed the second block.",
+        "paragraph4": "Feel free to take a short break and continue when you are ready."
+      },
+      "trial3": {
+        "header1": "Congratulations!",
+        "paragraph1": "With the guardian&#39s help, you made it through the valley.",
+        "paragraph2": "You&#39re getting closer to the gate!",
+        "header2": "Great Work!",
+        "paragraph3": "You have completed a new block.",
+        "paragraph4": "Feel free to take a short break and continue when you are ready."
+      }
+    },
+    "finalTrial": {
+      "header1": "Finally, you found the last guardian and the gate that will bring you home!",
+      "paragraph1": "You use your coins to open the gate.",
+      "paragraph2": "You say farewell to your new friends and leave the land of Lexicality. Until next time!",
+      "header2": "Congratulations!",
+      "paragraph3": "You have completed the Single Word Recognition activity.",
+      "paragraph4": "Thank you for your amazing work!"
+    }
+  },
+  "imagesAlt": {
+    "arrowKeys": "arrow keys",
+    "leftArrow": "left arrow",
+    "rightArrow": "right arrow",
+    "valley": "background image with hills and trees",
+    "adventurer1": "adventurer with harp",
+    "adventurer2": "adventuerer making rainbows",
+    "adventurer3": "adventurer making heart shapes",
+    "wizardCoin": "wizard making coins",
+    "guardian1": "orange dinosaur guardian",
+    "guardian2": "blue dragon guardian",
+    "endingBackground": "landscape with trees",
+    "guardian3": "winking unicorn",
+    "endingGateCoinbag": "gate with coinbag animation",
+    "wizardWand": "wizard waving a magic wand",
+    "leftArrowIntro": "made-up word, press the left arrow key",
+    "rightArrowIntro": "real Word, press the Right Arrow key"
+  },
+  "terms": {
+    "__comment1__": "ex. 'press any key to continue/practice/begin'",
+    "continue": "continue",
+    "practice": "practice",
+    "begin": "begin",
+    "gold": "gold",
+    "left": "left",
+    "right": "right",
+    "__comment2__": "i.e. 'xop is a made-up/real word'",
+    "real": "real",
+    "made-up": "made-up",
+    "save": "save your work"
+  }
+}

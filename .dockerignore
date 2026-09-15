@@ -1,0 +1,33 @@
+# Dependencies (rebuilt inside Docker)
+node_modules/
+
+# Build outputs (rebuilt inside Docker)
+dist/
+coverage/
+
+# Git
+.git/
+.gitmodules
+
+# Frontend app
+apps/dashboard/
+
+# Environment / secrets
+.env*
+env-configs/
+certs/
+
+# CI/CD
+.github/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Misc
+.claude/
+.cursor/
+*.md
+LICENSE

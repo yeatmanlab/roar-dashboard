@@ -1,0 +1,49 @@
+@use 'vars' as *;
+
+:root {
+  input,
+  button {
+    font-family: inherit;
+  }
+
+  text-align: center;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+}
+
+h1 {
+  color: $roav-blue;
+}
+
+h2 {
+  text-align: center;
+  font-style: normal;
+  font-weight: regular;
+  color: $roav-blue;
+}
+
+h3 {
+  text-align: center;
+  font-style: normal;
+  font-weight: regular;
+  color: $roav-blue;
+  z-index: 1;
+}
+
+h4 {
+  text-align: center;
+  font-style: normal;
+  font-weight: bold;
+  color: black;
+  z-index: 1;
+}
+
+// button style embedded in text
+.roav-inline-button {
+  padding: 0 0.35em;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  background: #f0f0f0;
+  font-size: 0.85em;
+  color: #000;
+  white-space: nowrap;
+}

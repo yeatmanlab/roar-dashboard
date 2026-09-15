@@ -1,0 +1,377 @@
+sentence,answer,direction,corpusId,itemId
+La sopa se toma con tenedor.,FALSE,left,spanish_lab,spanish_lab_1
+Las peras son una fruta.,TRUE,right,spanish_lab,spanish_lab_2
+Los peces viven fuera del agua.,FALSE,left,spanish_lab,spanish_lab_3
+El agua es de color rojo.,FALSE,left,spanish_lab,spanish_lab_4
+Los perros tienen cuatro patas.,TRUE,right,spanish_lab,spanish_lab_5
+Los pescadores trabajan en la panadería.,FALSE,left,spanish_lab,spanish_lab_6
+Los árboles tienen ramas.,TRUE,right,spanish_lab,spanish_lab_7
+Un cuadrado tiene cinco lados.,FALSE,left,spanish_lab,spanish_lab_8
+A los niños y niñas les gusta jugar.,TRUE,right,spanish_lab,spanish_lab_9
+El hielo es frío.,TRUE,right,spanish_lab,spanish_lab_10
+El café es de color azul.,FALSE,left,spanish_lab,spanish_lab_11
+El jugo de naranja se hace con peras.,FALSE,left,spanish_lab,spanish_lab_12
+Los autobuses van por las carreteras.,TRUE,right,spanish_lab,spanish_lab_13
+El fútbol se juega con una cuchara.,FALSE,left,spanish_lab,spanish_lab_14
+Algunas mesas tienen cuatro patas.,TRUE,right,spanish_lab,spanish_lab_15
+Un tendor sive para cortar tela.,FALSE,left,spanish_lab,spanish_lab_16
+Un celular necesita algo de pila para funcionar.,TRUE,right,spanish_lab,spanish_lab_17
+Un martillo sirve para cocinar.,FALSE,left,spanish_lab,spanish_lab_18
+El fuego es caliente.,TRUE,right,spanish_lab,spanish_lab_19
+Las vacas producen leche.,TRUE,right,spanish_lab,spanish_lab_20
+Las fresas son saladas.,FALSE,left,spanish_lab,spanish_lab_21
+Una moto tiene dos ruedas.,TRUE,right,spanish_lab,spanish_lab_22
+Algunas personas caminan descalzas sobre la arena.,TRUE,right,spanish_lab,spanish_lab_23
+Las botellas de plástico contaminan el mar.,TRUE,right,spanish_lab,spanish_lab_24
+Los conejos son un tipo de pájaro.,FALSE,left,spanish_lab,spanish_lab_25
+Los caballos tienen pelo.,TRUE,right,spanish_lab,spanish_lab_26
+Cuando hace calor algunas personas comen helado.,TRUE,right,spanish_lab,spanish_lab_27
+Los pescadores pescan ovejas en el mar.,FALSE,left,spanish_lab,spanish_lab_28
+El sol sale por la noche.,FALSE,left,spanish_lab,spanish_lab_29
+Las estrellas están en el cielo.,TRUE,right,spanish_lab,spanish_lab_30
+Puedo oler una fruta con mis ojos.,FALSE,left,spanish_lab,spanish_lab_31
+Una guitarra sirve para tocar una canción.,TRUE,right,spanish_lab,spanish_lab_32
+Algunas personas mayores utilizan bastón.,TRUE,right,spanish_lab,spanish_lab_33
+Las personas pueden caminar en las nubes.,FALSE,left,spanish_lab,spanish_lab_34
+Los zapatos se ponen en la cabeza.,FALSE,left,spanish_lab,spanish_lab_35
+Las motos sirven para volar.,FALSE,left,spanish_lab,spanish_lab_36
+Las gallinas ponen huevos.,TRUE,right,spanish_lab,spanish_lab_37
+Los guantes se usan en las manos.,TRUE,right,spanish_lab,spanish_lab_38
+Las arañas tienen tres patas.,FALSE,left,spanish_lab,spanish_lab_39
+El tren se mueve por el ferrocarril.,TRUE,right,spanish_lab,spanish_lab_40
+Se necesita fuerza para cargar un costal de piedras.,TRUE,right,spanish_lab,spanish_lab_41
+En muchos lugares los gallos cantan por las mañanas.,TRUE,right,spanish_lab,spanish_lab_42
+El café se endulza con sal.,FALSE,left,spanish_lab,spanish_lab_43
+Los patos van al colegio montados en jirafas.,FALSE,left,spanish_lab,spanish_lab_44
+Hay muchos ríos que llegan hasta el mar.,TRUE,right,spanish_lab,spanish_lab_45
+En la selva húmeda tropical llueve mucho.,TRUE,right,spanish_lab,spanish_lab_46
+Hay personas que se bañan con agua fría.,TRUE,right,spanish_lab,spanish_lab_47
+La mayoría de los búhos salen a volar en las noches.,TRUE,right,spanish_lab,spanish_lab_48
+La cebolla es una fruta.,FALSE,left,spanish_lab,spanish_lab_49
+Las rocas caminan solas en el desierto.,FALSE,left,spanish_lab,spanish_lab_50
+Los libros se guardan en la nevera.,FALSE,left,spanish_lab,spanish_lab_51
+Algunas personas comen pescado.,TRUE,right,spanish_lab,spanish_lab_52
+El agua es importante para cultivar vegetales.,TRUE,right,spanish_lab,spanish_lab_53
+La luna es una estrella.,FALSE,left,spanish_lab,spanish_lab_54
+Las personas van al aeropuerto para viajar en tren.,FALSE,left,spanish_lab,spanish_lab_55
+Un vaso con leche se puede beber con tenedor.,FALSE,left,spanish_lab,spanish_lab_56
+Algunos pájaros se alimentan del néctar de las flores.,TRUE,right,spanish_lab,spanish_lab_57
+Los gatos lamen sus patas para limpiarse.,TRUE,right,spanish_lab,spanish_lab_58
+Las chanclas son unos buenos zapatos para usar en lugares fríos.,FALSE,left,spanish_lab,spanish_lab_59
+Hay personas que se ponen muy felices cuando bailan.,TRUE,right,spanish_lab,spanish_lab_60
+El trabajo del pintor es cantar canciones.,FALSE,left,spanish_lab,spanish_lab_61
+"Después de llover, puede aparecer un arcoíris.",TRUE,right,spanish_lab,spanish_lab_62
+Todos los pájaros tienen el mismo tamaño de pico.,FALSE,left,spanish_lab,spanish_lab_63
+Algunos estudiantes van caminando al colegio.,TRUE,right,spanish_lab,spanish_lab_64
+El aceite solamente se utiliza para freír naranjas.,FALSE,left,spanish_lab,spanish_lab_65
+Los caballos siempre andan más rápido que los carros.,FALSE,left,spanish_lab,spanish_lab_66
+La miel es ácida como el limón.,FALSE,left,spanish_lab,spanish_lab_67
+La mayoría de celulares sirven para tomar fotos.,TRUE,right,spanish_lab,spanish_lab_68
+Se puede hacer fuego con hielo.,FALSE,left,spanish_lab,spanish_lab_69
+La ropa se limpia con barro.,FALSE,left,spanish_lab,spanish_lab_70
+Los elefantes escalan las montañas.,FALSE,left,spanish_lab,spanish_lab_71
+La leche se puede tomar fría o caliente.,TRUE,right,spanish_lab,spanish_lab_72
+Las avestruces ponen huevos pequeños.,FALSE,left,spanish_lab,spanish_lab_73
+La mayoría de los murciélagos están despiertos durante el día.,FALSE,left,spanish_lab,spanish_lab_74
+Las espinacas son de color rojo.,FALSE,left,spanish_lab,spanish_lab_75
+Los barcos andan por el ferrocarril.,FALSE,left,spanish_lab,spanish_lab_76
+Las palas sirven para sembrar.,TRUE,right,spanish_lab,spanish_lab_77
+El rugido del león se puede oír desde muy lejos.,TRUE,right,spanish_lab,spanish_lab_78
+Los gorilas tienen tres ojos.,FALSE,left,spanish_lab,spanish_lab_79
+Las burbujas se hacen con arena.,FALSE,left,spanish_lab,spanish_lab_80
+Algunos animales duermen durante el día y están despiertos en la noche.,TRUE,right,spanish_lab,spanish_lab_81
+En el desierto hace mucho calor.,TRUE,right,spanish_lab,spanish_lab_82
+Algunos alimentos se transportan en costales.,TRUE,right,spanish_lab,spanish_lab_83
+La lana de las ovejas sirve para hacer ropa.,TRUE,right,spanish_lab,spanish_lab_84
+Las hormigas viven en el mar.,FALSE,left,spanish_lab,spanish_lab_85
+Un lápiz sirve para tomarse una bebida.,FALSE,left,spanish_lab,spanish_lab_86
+Existen rocas de diferentes formas y tamaños.,TRUE,right,spanish_lab,spanish_lab_87
+Todos los artistas pintan con plátanos.,FALSE,left,spanish_lab,spanish_lab_88
+Las luciérnagas emiten luz.,TRUE,right,spanish_lab,spanish_lab_89
+Los cerdos siempre caminan en dos patas.,FALSE,left,spanish_lab,spanish_lab_90
+Las velas sirven para alumbrar en la noche.,TRUE,right,spanish_lab,spanish_lab_91
+Las jirafas tienen manchas de colores verde y rojo.,FALSE,left,spanish_lab,spanish_lab_92
+La nieve cae en lugares en donde hace mucho calor.,FALSE,left,spanish_lab,spanish_lab_93
+En el mar viven animales de diferentes tamaños.,TRUE,right,spanish_lab,spanish_lab_94
+Cuando hay mucho viento los conejos pueden volar.,FALSE,left,spanish_lab,spanish_lab_95
+La ropa se seca más rápido cuando hace frío.,FALSE,left,spanish_lab,spanish_lab_96
+Se necesita de un equipo especial para escalar algunas montañas.,TRUE,right,spanish_lab,spanish_lab_97
+Los conejos saltan sobre sus patas.,TRUE,right,spanish_lab,spanish_lab_98
+A las gaviotas les gusta nadar con los tiburones.,FALSE,left,spanish_lab,spanish_lab_99
+Los profesores enseñan a los estudiantes en el colegio.,TRUE,right,spanish_lab,spanish_lab_100
+Leer libros nos ayuda a aprender cosas nuevas.,TRUE,right,spanish_lab,spanish_lab_101
+Cuando llueve mucho los ríos tienen poca agua.,FALSE,left,spanish_lab,spanish_lab_102
+Los candados sirven para cerrar puertas.,TRUE,right,spanish_lab,spanish_lab_103
+El pan es un alimento que se puede comer a diferentes horas del día.,TRUE,right,spanish_lab,spanish_lab_104
+Los calendarios sirven para recordar fechas importantes.,TRUE,right,spanish_lab,spanish_lab_105
+Se puede tocar la espalda con la punta de la nariz.,FALSE,left,spanish_lab,spanish_lab_106
+Los dientes se pueden limpiar con una zanahoria.,FALSE,left,spanish_lab,spanish_lab_107
+Una botella de plástico se puede reutilizar.,TRUE,right,spanish_lab,spanish_lab_108
+Las nubes se mueven por el viento.,TRUE,right,spanish_lab,spanish_lab_109
+Los patos construyen sus casas en la cima de los árboles.,FALSE,left,spanish_lab,spanish_lab_110
+Las personas respiran mejor cuando el aire es limpio.,TRUE,right,spanish_lab,spanish_lab_111
+La lluvia cae únicamente cuando hace mucho calor.,FALSE,left,spanish_lab,spanish_lab_112
+Tomar agua nos quita la sed.,TRUE,right,spanish_lab,spanish_lab_113
+Los conejos les cantan canciones infantiles para dormir a los tigres.,FALSE,left,spanish_lab,spanish_lab_114
+Las personas sudan cuando hace mucho calor.,TRUE,right,spanish_lab,spanish_lab_115
+Las papas crecen en los árboles.,FALSE,left,spanish_lab,spanish_lab_116
+Los submarinos pueden sumergirse bajo el agua.,TRUE,right,spanish_ai,spanish_ai_1
+Las olas del mar rompen en la playa.,TRUE,right,spanish_ai,spanish_ai_2
+Las iguanas son reptiles verdes.,TRUE,right,spanish_ai,spanish_ai_3
+La lluvia cae del cielo regando la tierra y nutriendo las plantas.,TRUE,right,spanish_ai,spanish_ai_4
+Los pescadores usan anzuelos.,TRUE,right,spanish_ai,spanish_ai_5
+Las ballenas nadan en el océano.,TRUE,right,spanish_ai,spanish_ai_6
+Los números no son letras.,TRUE,right,spanish_ai,spanish_ai_7
+Los leones rugen en la selva.,TRUE,right,spanish_ai,spanish_ai_8
+Las pelotas rebotan en el suelo.,TRUE,right,spanish_ai,spanish_ai_9
+Los girasoles siguen al sol.,TRUE,right,spanish_ai,spanish_ai_10
+Los nadadores practican en la piscina para mejorar sus habilidades.,TRUE,right,spanish_ai,spanish_ai_11
+"Las verduras, como las zanahorias, son saludables y nutritivas.",TRUE,right,spanish_ai,spanish_ai_12
+Los desiertos tienen poca agua.,TRUE,right,spanish_ai,spanish_ai_13
+Los relojes marcan la hora del día.,TRUE,right,spanish_ai,spanish_ai_14
+"La letra ""A"" es la primera del alfabeto.",TRUE,right,spanish_ai,spanish_ai_15
+Los exploradores descubren nuevos lugares en emocionantes aventuras.,TRUE,right,spanish_ai,spanish_ai_16
+Los jugadores de fútbol patean el balón.,TRUE,right,spanish_ai,spanish_ai_17
+Los taxis llevan a las personas a destinos.,TRUE,right,spanish_ai,spanish_ai_18
+Los bailarines se mueven al ritmo de la música.,TRUE,right,spanish_ai,spanish_ai_19
+Los helados son postres fríos y deliciosos que todos disfrutan.,TRUE,right,spanish_ai,spanish_ai_20
+Los bosques están llenos de árboles.,TRUE,right,spanish_ai,spanish_ai_21
+"La ""B"" sigue a la letra ""A"".",TRUE,right,spanish_ai,spanish_ai_22
+Los científicos hacen experimentos.,TRUE,right,spanish_ai,spanish_ai_23
+Las orugas se convierten en mariposas.,TRUE,right,spanish_ai,spanish_ai_24
+Los niños juegan en el parque.,TRUE,right,spanish_ai,spanish_ai_25
+Los libros tienen letras y palabras.,TRUE,right,spanish_ai,spanish_ai_26
+Los ratones tienen colas largas.,TRUE,right,spanish_ai,spanish_ai_27
+Los huracanes son fuertes tormentas.,TRUE,right,spanish_ai,spanish_ai_28
+Los músicos crean hermosas melodías con instrumentos diversos.,TRUE,right,spanish_ai,spanish_ai_29
+Las serpientes mudan su piel.,TRUE,right,spanish_ai,spanish_ai_30
+Las tormentas eléctricas traen relámpagos y truenos durante la lluvia.,TRUE,right,spanish_ai,spanish_ai_31
+Las bicicletas son una forma ecológica y saludable de transporte.,TRUE,right,spanish_ai,spanish_ai_32
+"La ""Z"" es la última letra del alfabeto.",TRUE,right,spanish_ai,spanish_ai_33
+Las manzanas son frutas de colores variados.,TRUE,right,spanish_ai,spanish_ai_34
+Las flores crecen en primavera.,TRUE,right,spanish_ai,spanish_ai_35
+Las arañas tejen telarañas intrincadas.,TRUE,right,spanish_ai,spanish_ai_36
+Las abejas recolectan néctar de las flores.,TRUE,right,spanish_ai,spanish_ai_37
+Los caballos galopan en los campos.,TRUE,right,spanish_ai,spanish_ai_38
+Las palabras están formadas por letras.,TRUE,right,spanish_ai,spanish_ai_39
+El viento mueve las ramas de los árboles.,TRUE,right,spanish_ai,spanish_ai_40
+La luna brilla en la noche.,TRUE,right,spanish_ai,spanish_ai_41
+Las nevadas cubren todo de blanco.,TRUE,right,spanish_ai,spanish_ai_42
+Las cometas vuelan alto.,TRUE,right,spanish_ai,spanish_ai_43
+Las luces iluminan la habitación.,TRUE,right,spanish_ai,spanish_ai_44
+Los libros contienen conocimiento y cuentan historias cautivadoras.,TRUE,right,spanish_ai,spanish_ai_45
+Los tigres tienen rayas.,TRUE,right,spanish_ai,spanish_ai_46
+Los monos saltan entre las ramas.,TRUE,right,spanish_ai,spanish_ai_47
+Los médicos usan batas blancas.,TRUE,right,spanish_ai,spanish_ai_48
+Las bicicletas tienen dos ruedas.,TRUE,right,spanish_ai,spanish_ai_49
+Las mariposas revolotean en el aire.,TRUE,right,spanish_ai,spanish_ai_50
+El sol brilla en el cielo durante el día ofreciendo luz natural.,TRUE,right,spanish_ai,spanish_ai_51
+Los coches tienen ruedas para moverse.,TRUE,right,spanish_ai,spanish_ai_52
+Las sillas proporcionan comodidad y apoyo al sentarse en ellas.,TRUE,right,spanish_ai,spanish_ai_53
+Las zanahorias son vegetales anaranjados.,TRUE,right,spanish_ai,spanish_ai_54
+Un helicóptero tiene ruedas para rodar.,FALSE,left,spanish_ai,spanish_ai_55
+Las montañas son planas en la cima.,FALSE,left,spanish_ai,spanish_ai_56
+Las piedras flotan en el agua.,FALSE,left,spanish_ai,spanish_ai_57
+Un carpintero cocina deliciosos pasteles.,FALSE,left,spanish_ai,spanish_ai_58
+Las bicicletas tienen alas para volar.,FALSE,left,spanish_ai,spanish_ai_59
+Las computadoras bailan al ritmo de la música.,FALSE,left,spanish_ai,spanish_ai_60
+Las zanahorias brillan en la oscuridad.,FALSE,left,spanish_ai,spanish_ai_61
+Las vacaciones escolares duran todo el año.,FALSE,left,spanish_ai,spanish_ai_62
+Los tornados son suaves brisas de verano.,FALSE,left,spanish_ai,spanish_ai_63
+Los relojes miden la temperatura.,FALSE,left,spanish_ai,spanish_ai_64
+Las ballenas son pájaros.,FALSE,left,spanish_ai,spanish_ai_65
+Los pájaros tocan la guitarra.,FALSE,left,spanish_ai,spanish_ai_66
+Los jugadores de fútbol juegan con pelotas de algodón.,FALSE,left,spanish_ai,spanish_ai_67
+Las zanahorias son micrófonos que cantan canciones al crecer.,FALSE,left,spanish_ai,spanish_ai_68
+Los leones son vegetarianos y aman las ensaladas verdes.,FALSE,left,spanish_ai,spanish_ai_69
+Los chefs cocinan con gorros de baño.,FALSE,left,spanish_ai,spanish_ai_70
+Los caramelos crecen en árboles.,FALSE,left,spanish_ai,spanish_ai_71
+Los leones son animales acuáticos.,FALSE,left,spanish_ai,spanish_ai_72
+Los árboles tocan música.,FALSE,left,spanish_ai,spanish_ai_73
+Las ranas navegan por los océanos en botes de papel.,FALSE,left,spanish_ai,spanish_ai_74
+Las maletas tienen vida propia y viajan por el mundo solas.,FALSE,left,spanish_ai,spanish_ai_75
+Las serpientes tienen piernas para caminar.,FALSE,left,spanish_ai,spanish_ai_76
+Las tormentas de nieve ocurren en el verano.,FALSE,left,spanish_ai,spanish_ai_77
+Los unicornios son animales reales.,FALSE,left,spanish_ai,spanish_ai_78
+Las rocas son siempre suaves al tacto.,FALSE,left,spanish_ai,spanish_ai_79
+Los leones comen pizza en la selva.,FALSE,left,spanish_ai,spanish_ai_80
+Las hormigas escriben poesía.,FALSE,left,spanish_ai,spanish_ai_81
+Un submarino viaja por las nubes.,FALSE,left,spanish_ai,spanish_ai_82
+Las galletas son naves espaciales que exploran la galaxia.,FALSE,left,spanish_ai,spanish_ai_83
+Los músicos tocan instrumentos con las orejas.,FALSE,left,spanish_ai,spanish_ai_84
+Los científicos estudian el comportamiento de los unicornios.,FALSE,left,spanish_ai,spanish_ai_85
+Los tiburones viven en el desierto.,FALSE,left,spanish_ai,spanish_ai_86
+Un panadero puede volar en su bicicleta.,FALSE,left,spanish_ai,spanish_ai_87
+Los tigres son expertos en cocina y preparan banquetes exquisitos.,FALSE,left,spanish_ai,spanish_ai_88
+Las sillas hablan en voz alta.,FALSE,left,spanish_ai,spanish_ai_89
+Las motocicletas navegan en el mar.,FALSE,left,spanish_ai,spanish_ai_90
+Los coches son submarinos.,FALSE,left,spanish_ai,spanish_ai_91
+Agosto es el último mes del año.,FALSE,left,spanish_ai,spanish_ai_92
+Los gatos ladran como los perros.,FALSE,left,spanish_ai,spanish_ai_93
+Las letras bailan en el teclado.,FALSE,left,spanish_ai,spanish_ai_94
+Los huracanes solo ocurren en invierno.,FALSE,left,spanish_ai,spanish_ai_95
+Los lápices son máquinas del tiempo.,FALSE,left,spanish_ai,spanish_ai_96
+Las tortugas corren maratones.,FALSE,left,spanish_ai,spanish_ai_97
+Los tiburones son arquitectos que diseñan puentes sobre océanos.,FALSE,left,spanish_ai,spanish_ai_98
+Las jirafas tienen cuellos cortos.,FALSE,left,spanish_ai,spanish_ai_99
+Los caballos son astronautas.,FALSE,left,spanish_ai,spanish_ai_100
+Los árboles son abogados.,FALSE,left,spanish_ai,spanish_ai_101
+Los océanos vastos albergan una rica diversidad de vida submarina.,TRUE,right,spanish_ai,spanish_ai_102
+Los científicos estudian la naturaleza y descubren nuevos conocimientos.,TRUE,right,spanish_ai,spanish_ai_103
+En invierno hace frío y nieva.,TRUE,right,spanish_ai,spanish_ai_104
+Las tijeras cortan el papel.,TRUE,right,spanish_ai,spanish_ai_105
+Las uvas son pequeñas y jugosas.,TRUE,right,spanish_ai,spanish_ai_106
+Las bolsas pueden llevar objetos.,TRUE,right,spanish_ai,spanish_ai_107
+Los elefantes tienen trompas largas que usan para muchas cosas.,TRUE,right,spanish_ai,spanish_ai_108
+Los payasos hacen reír a la gente.,TRUE,right,spanish_ai,spanish_ai_109
+Los gusanos viven en la tierra.,TRUE,right,spanish_ai,spanish_ai_110
+Los arcoíris aparecen después de la lluvia.,TRUE,right,spanish_ai,spanish_ai_111
+Los delfines son inteligentes.,TRUE,right,spanish_ai,spanish_ai_112
+Las bicicletas pueden tener canastas.,TRUE,right,spanish_ai,spanish_ai_113
+Las hamburguesas son carne entre panes.,TRUE,right,spanish_ai,spanish_ai_114
+Las estaciones del año cambian.,TRUE,right,spanish_ai,spanish_ai_115
+Los bomberos usan mangueras para apagar incendios en edificios.,TRUE,right,spanish_ai,spanish_ai_116
+Los autobuses transportan personas.,TRUE,right,spanish_ai,spanish_ai_117
+Los perros ladran como señal de alerta.,TRUE,right,spanish_ai,spanish_ai_118
+Los ciclistas pedalean en bicicletas.,TRUE,right,spanish_ai,spanish_ai_119
+Los niños juegan con juguetes.,TRUE,right,spanish_ai,spanish_ai_120
+Las sillas sirven para sentarse.,TRUE,right,spanish_ai,spanish_ai_121
+Las lágrimas son saladas.,TRUE,right,spanish_ai,spanish_ai_122
+"En la noche, la luna ilumina el cielo.",TRUE,right,spanish_ai,spanish_ai_123
+El sol sale cada mañana.,TRUE,right,spanish_ai,spanish_ai_124
+Octubre tiene 31 días.,TRUE,right,spanish_ai,spanish_ai_125
+Los lectores disfrutan de los libros.,TRUE,right,spanish_ai,spanish_ai_126
+Los nadadores se sumergen en el agua.,TRUE,right,spanish_ai,spanish_ai_127
+Los conejos saltan en la hierba.,TRUE,right,spanish_ai,spanish_ai_128
+Las ranas saltan en el estanque.,TRUE,right,spanish_ai,spanish_ai_129
+Enero es el primer mes del año.,TRUE,right,spanish_ai,spanish_ai_130
+Los niños disfrutan jugando en los parques al aire libre.,TRUE,right,spanish_ai,spanish_ai_131
+Los volcanes pueden entrar en erupción.,TRUE,right,spanish_ai,spanish_ai_132
+Los médicos usan estetoscopios para escuchar el corazón.,TRUE,right,spanish_ai,spanish_ai_133
+Las pizzas son redondas.,TRUE,right,spanish_ai,spanish_ai_134
+Las ranas croan en la noche.,TRUE,right,spanish_ai,spanish_ai_135
+Los chefs preparan deliciosos platos utilizando ingredientes frescos y sabrosos.,TRUE,right,spanish_ai,spanish_ai_136
+Las hojas crujen bajo los pies.,TRUE,right,spanish_ai,spanish_ai_137
+El helado es un postre frío.,TRUE,right,spanish_ai,spanish_ai_138
+Los cangrejos caminan de lado.,TRUE,right,spanish_ai,spanish_ai_139
+Un bombero apaga fuegos con agua.,TRUE,right,spanish_ai,spanish_ai_140
+Un jardinero cuida de las plantas en un jardín.,TRUE,right,spanish_ai,spanish_ai_141
+Las bicicletas tienen pedales para avanzar.,TRUE,right,spanish_ai,spanish_ai_142
+El sol brilla durante el día.,TRUE,right,spanish_ai,spanish_ai_143
+Los pandas comen bambú.,TRUE,right,spanish_ai,spanish_ai_144
+Los barcos navegan en el agua.,TRUE,right,spanish_ai,spanish_ai_145
+Los aviones vuelan en el cielo.,TRUE,right,spanish_ai,spanish_ai_146
+Las flores desprenden fragancias.,TRUE,right,spanish_ai,spanish_ai_147
+Los astronautas viajan al espacio para explorar planetas y estrellas.,TRUE,right,spanish_ai,spanish_ai_148
+Los árboles dan sombra.,TRUE,right,spanish_ai,spanish_ai_149
+Los gatos cazan ratones.,TRUE,right,spanish_ai,spanish_ai_150
+La escritura utiliza letras y palabras para comunicar pensamientos y ideas.,TRUE,right,spanish_ai,spanish_ai_151
+Las naranjas son frutas cítricas.,TRUE,right,spanish_ai,spanish_ai_152
+Algunos niños saltan la cuerda en el parque.,TRUE,right,spanish_ai,spanish_ai_153
+El verano es una estación del año.,TRUE,right,spanish_ai,spanish_ai_154
+Los cangrejos escriben novelas.,FALSE,left,spanish_ai,spanish_ai_155
+Las naranjas son frutas amarillas.,FALSE,left,spanish_ai,spanish_ai_156
+Los astronautas caminan sobre la luna descalzos y cantando.,FALSE,left,spanish_ai,spanish_ai_157
+Los dinosaurios son mascotas comunes.,FALSE,left,spanish_ai,spanish_ai_158
+Los gorilas juegan al ajedrez.,FALSE,left,spanish_ai,spanish_ai_159
+Las cucarachas son mensajeras secretas que hablan varios idiomas.,FALSE,left,spanish_ai,spanish_ai_160
+Las piedras son magos.,FALSE,left,spanish_ai,spanish_ai_161
+Los trenes viajan al pasado y al futuro en segundos.,FALSE,left,spanish_ai,spanish_ai_162
+Las abejas bailan en primavera.,FALSE,left,spanish_ai,spanish_ai_163
+Las olas del mar son escaleras que conducen a mundos submarinos.,FALSE,left,spanish_ai,spanish_ai_164
+Los maestros enseñan a los pájaros a cantar.,FALSE,left,spanish_ai,spanish_ai_165
+Los dragones vuelan en bicicleta.,FALSE,left,spanish_ai,spanish_ai_166
+Los árboles tienen raíces que se extienden hasta el espacio.,FALSE,left,spanish_ai,spanish_ai_167
+"La letra ""Q"" es la primera del alfabeto.",FALSE,left,spanish_ai,spanish_ai_168
+Los caracoles conducen coches.,FALSE,left,spanish_ai,spanish_ai_169
+Los árboles tienen piernas.,FALSE,left,spanish_ai,spanish_ai_170
+Los libros crecen en los árboles.,FALSE,left,spanish_ai,spanish_ai_171
+Un astronauta vive en la luna.,FALSE,left,spanish_ai,spanish_ai_172
+Las olas del mar son completamente silenciosas.,FALSE,left,spanish_ai,spanish_ai_173
+El viento sopla en todas direcciones.,FALSE,left,spanish_ai,spanish_ai_174
+Las computadoras tienen patas.,FALSE,left,spanish_ai,spanish_ai_175
+Los nadadores corren maratones bajo el agua.,FALSE,left,spanish_ai,spanish_ai_176
+Diciembre tiene 100 días.,FALSE,left,spanish_ai,spanish_ai_177
+Los jardineros juegan al fútbol con flores.,FALSE,left,spanish_ai,spanish_ai_178
+Los vasos son cuadrados.,FALSE,left,spanish_ai,spanish_ai_179
+Las abejas hacen malabares.,FALSE,left,spanish_ai,spanish_ai_180
+Las flores hablan en susurros.,FALSE,left,spanish_ai,spanish_ai_181
+Los desiertos son océanos de arena con olas suaves.,FALSE,left,spanish_ai,spanish_ai_182
+Las tortugas corren carreras de velocidad en el mar.,FALSE,left,spanish_ai,spanish_ai_183
+Los libros pueden hablar.,FALSE,left,spanish_ai,spanish_ai_184
+Los peces caminan por la tierra.,FALSE,left,spanish_ai,spanish_ai_185
+Las tortugas corren tan rápido como los guepardos.,FALSE,left,spanish_ai,spanish_ai_186
+Los pingüinos practican surf.,FALSE,left,spanish_ai,spanish_ai_187
+Las hormigas construyen ciudades subterráneas con rascacielos enormes.,FALSE,left,spanish_ai,spanish_ai_188
+Las hamburguesas son vegetarianas.,FALSE,left,spanish_ai,spanish_ai_189
+Los árboles caminan por el bosque.,FALSE,left,spanish_ai,spanish_ai_190
+Abril es el primer mes del año.,FALSE,left,spanish_ai,spanish_ai_191
+Los bomberos apagan incendios con paraguas.,FALSE,left,spanish_ai,spanish_ai_192
+Los teléfonos tienen ruedas para moverse.,FALSE,left,spanish_ai,spanish_ai_193
+Los elefantes tocan la trompeta.,FALSE,left,spanish_ai,spanish_ai_194
+Los juguetes de peluche son exploradores que escalan montañas.,FALSE,left,spanish_ai,spanish_ai_195
+Las hormigas son tan grandes como elefantes.,FALSE,left,spanish_ai,spanish_ai_196
+Los koalas son expertos en karate.,FALSE,left,spanish_ai,spanish_ai_197
+Los trenes nadan en el océano.,FALSE,left,spanish_ai,spanish_ai_198
+La lluvia cae hacia arriba.,FALSE,left,spanish_ai,spanish_ai_199
+Las sirenas son gimnastas.,FALSE,left,spanish_ai,spanish_ai_200
+Los libros son invisibles.,FALSE,left,spanish_ai,spanish_ai_201
+Los lápices tienen superpoderes para escribir solos en papel.,FALSE,left,spanish_ai,spanish_ai_202
+Los astronautas bailan salsa en el espacio.,FALSE,left,spanish_ai,spanish_ai_203
+Las ardillas son acróbatas.,FALSE,left,spanish_ai,spanish_ai_204
+Los tigres son animales marinos.,FALSE,left,spanish_ai,spanish_ai_205
+Los lápices son herramientas de cocina.,FALSE,left,spanish_ai,spanish_ai_206
+Las flores no necesitan agua.,FALSE,left,spanish_ai,spanish_ai_207
+Las lechuzas vuelan de noche.,TRUE,right,spanish_ai-human,spanish_ai-human_1
+Las velas dan luz en la oscuridad.,TRUE,right,spanish_ai-human,spanish_ai-human_2
+Las cerezas son rojas.,TRUE,right,spanish_ai-human,spanish_ai-human_3
+Los murciélagos buscan comida de noche.,TRUE,right,spanish_ai-human,spanish_ai-human_4
+Los gatos tienen bigotes.,TRUE,right,spanish_ai-human,spanish_ai-human_5
+Las estrellas se ven durante el día.,TRUE,right,spanish_ai-human,spanish_ai-human_6
+Los campesinos ordeñan las vacas.,TRUE,right,spanish_ai-human,spanish_ai-human_7
+Los lobos son nocturnos.,TRUE,right,spanish_ai-human,spanish_ai-human_8
+Los panaderos hornean el pan.,TRUE,right,spanish_ai-human,spanish_ai-human_9
+Los carros van por la autopista.,TRUE,right,spanish_ai-human,spanish_ai-human_10
+Las canoas son un medio de transporte importante en los ríos.,TRUE,right,spanish_ai-human,spanish_ai-human_11
+Las ovejas son bailarinas.,FALSE,left,spanish_ai-human,spanish_ai-human_12
+Todos los lagos son completamente cuadrados.,FALSE,left,spanish_ai-human,spanish_ai-human_13
+Los cuadernos tienen alas para volar.,FALSE,left,spanish_ai-human,spanish_ai-human_14
+Los tucanes construyen cuevas en los árboles.,FALSE,left,spanish_ai-human,spanish_ai-human_15
+Las morsas construyen iglús en la playa para vivir.,FALSE,left,spanish_ai-human,spanish_ai-human_16
+Los tigres usan sombreros.,FALSE,left,spanish_ai-human,spanish_ai-human_17
+Los camellos nadan en el mar.,FALSE,left,spanish_ai-human,spanish_ai-human_18
+La mayoría de personas toma bebidas frías cuando hace frío.,FALSE,left,spanish_ai-human,spanish_ai-human_19
+Las ingenieras pintan con lápices gigantes.,FALSE,left,spanish_ai-human,spanish_ai-human_20
+Las palomas viven bajo el agua.,FALSE,left,spanish_ai-human,spanish_ai-human_21
+Las cabras comen helado.,FALSE,left,spanish_ai-human,spanish_ai-human_22
+El mar se ve de un solo color.,FALSE,left,spanish_ai-human,spanish_ai-human_23
+Los canguros habitan en los nevados.,FALSE,left,spanish_ai-human,spanish_ai-human_24
+Los camiones andan por el ferrocarril.,FALSE,left,spanish_ai-human,spanish_ai-human_25
+Los toros caminan hacia atrás.,FALSE,left,spanish_ai-human,spanish_ai-human_26
+Las ranas viven en los volcanes.,FALSE,left,spanish_ai-human,spanish_ai-human_27
+Las lombrices tienen plumas.,FALSE,left,spanish_ai-human,spanish_ai-human_28
+Los pájaros carpinteros toman leche.,FALSE,left,spanish_ai-human,spanish_ai-human_29
+Las guacamayas tienen alas coloridas.,TRUE,right,spanish_ai-human,spanish_ai-human_30
+Algunos loros construyen nidos en los árboles para criar a sus crías.,TRUE,right,spanish_ai-human,spanish_ai-human_31
+Los colores sirven para dibujar.,TRUE,right,spanish_ai-human,spanish_ai-human_32
+Los pelícanos nadan en el agua.,TRUE,right,spanish_ai-human,spanish_ai-human_33
+Los osos polares viven en el hielo.,TRUE,right,spanish_ai-human,spanish_ai-human_34
+Algunos gatos maúllan para llamar la atención,TRUE,right,spanish_ai-human,spanish_ai-human_35
+Los perros son leales y algunas personas los tienen como mascotas.,TRUE,right,spanish_ai-human,spanish_ai-human_36
+Algunas personas toman agua de coco cuando tienen sed.,TRUE,right,spanish_ai-human,spanish_ai-human_37
+Las pintoras usan brochas para pintar cuadros.,TRUE,right,spanish_ai-human,spanish_ai-human_38
+Las mandarinas son anaranjadas y jugosas.,TRUE,right,spanish_ai-human,spanish_ai-human_39
+"Las frutas, como los mangos, ofrecen vitaminas y sabores deliciosos.",TRUE,right,spanish_ai-human,spanish_ai-human_40
+Los silbidos sircen para llamar a alguien.,TRUE,right,spanish_ai-human,spanish_ai-human_41
+El jaguar camina por la nieve.,FALSE,left,spanish_ai-human,spanish_ai-human_42
+Las naranjas son verdes por dentro.,FALSE,left,spanish_ai-human,spanish_ai-human_43
+Las hojas son saltamontes disfrazados.,FALSE,left,spanish_ai-human,spanish_ai-human_44
+Los caimanes conducen automóviles.,FALSE,left,spanish_ai-human,spanish_ai-human_45
+Las escobas sirven para detener el tiempo.,FALSE,left,spanish_ai-human,spanish_ai-human_46
+Los patos usan zapatos.,FALSE,left,spanish_ai-human,spanish_ai-human_47
+Las uvas se comen calientes.,FALSE,left,spanish_ai-human,spanish_ai-human_48
+Las avispas cargan piedras.,FALSE,left,spanish_ai-human,spanish_ai-human_49
+Las cabras ayudan a resolver misterios en la jungla.,FALSE,left,spanish_ai-human,spanish_ai-human_50
+Los pulpos pueden hablar.,FALSE,left,spanish_ai-human,spanish_ai-human_51
+Los caracoles son artistas que pintan paisajes en la hierba.,FALSE,left,spanish_ai-human,spanish_ai-human_52
+Los burros vuelan en el cielo.,FALSE,left,spanish_ai-human,spanish_ai-human_53

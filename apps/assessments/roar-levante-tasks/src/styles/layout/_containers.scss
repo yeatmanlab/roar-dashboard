@@ -1,0 +1,353 @@
+@use '../abstracts/' as *;
+
+.lev-row-container {
+  display: flex;
+  padding: $lev-spacing-s;
+  justify-content: center;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: $txt-primary;
+  margin: $lev-spacing-xxxs 0;
+
+  &.header {
+    p {
+      font-size: $font-size-m;
+      font-weight: $font-weight-bold;
+      margin: 0;
+    }
+
+    @include respond-to('medium') {
+      display: flex;
+      padding: $lev-spacing-xs;
+      justify-content: center;
+      align-items: center;
+
+      p {
+        font-size: $font-size-s;
+        font-weight: $font-weight-normal;
+        margin: 0;
+      }
+    }
+
+    @include respond-to('small') {
+      display: flex;
+      padding: $lev-spacing-xxs;
+      justify-content: center;
+      align-items: center;
+
+      p {
+        font-size: $font-size-xxs;
+        font-weight: $font-weight-normal;
+        margin: 0;
+      }
+    }
+  }
+
+  &.instruction {
+    display: flex;
+    padding: min($lev-spacing-s, 3.5vh);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border: 3px solid $bg-accent_secondary;
+    border-radius: $button-default-border-radius;
+    background-color: $bg-bubble-base;
+    width: calc(100vw - 2 * ($replay_btn_size + $replay_btn_pos + $lev-spacing-s));
+    max-width: max-content;
+
+    p {
+      font-size: $font-size-xs-em;
+      font-weight: $font-weight-light;
+      line-height: 1;
+      margin: 0;
+    }
+
+    @include respond-to('medium') {
+      display: flex;
+      padding: min($lev-spacing-xs, 2.5vh);
+      justify-content: center;
+      align-items: center;
+      border-radius: $button-default-border-radius-small;
+
+      p {
+        font-size: $font-size-xs-em;
+        font-weight: $font-weight-light;
+        line-height: 1;
+        margin: 0;
+      }
+    }
+
+    @include respond-to('small') {
+      display: flex;
+      padding: $lev-spacing-xxs;
+      justify-content: center;
+      align-items: center;
+      border-radius: $button-default-border-radius-small;
+      width: 90vw;
+
+      p {
+        font-size: $font-size-xs-em;
+        font-weight: $font-weight-light;
+        line-height: 1;
+        margin: 0;
+      }
+    }
+  }
+
+  &.instruction-half-screen {
+    @extend .lev-row-container, .instruction;
+    max-width: 40vw !important;
+  }
+
+  &.instruction-small {
+    display: flex;
+    padding: min($lev-spacing-s, 3.5vh);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border: 3px solid $bg-accent_secondary;
+    border-radius: $button-default-border-radius;
+    background-color: $bg-bubble-base;
+    width: calc(100vw - 2 * ($replay_btn_size + $replay_btn_pos + $lev-spacing-s));
+    max-width: max-content;
+
+    p {
+      font-size: $font-size-xs-em;
+      font-weight: $font-weight-light;
+      line-height: 1;
+      margin: 0;
+    }
+
+    @include respond-to('medium') {
+      display: flex;
+      padding: min($lev-spacing-xs, 2.5vh);
+      justify-content: center;
+      align-items: center;
+      border-radius: $button-default-border-radius-small;
+
+      p {
+        font-size: $font-size-xs-em;
+        font-weight: $font-weight-light;
+        line-height: 1;
+        margin: 0;
+      }
+    }
+
+    @include respond-to('small') {
+      display: flex;
+      padding: $lev-spacing-xxs;
+      justify-content: center;
+      align-items: center;
+      border-radius: 16px;
+      width: 90vw;
+
+      p {
+        font-size: $font-size-xs-em;
+        font-weight: $font-weight-light;
+        line-height: 1;
+        margin: 0;
+      }
+    }
+  }
+}
+
+.lev-stimulus-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 900px;
+  justify-content: center;
+  margin-bottom: 16px;
+  align-items: center;
+
+  img {
+    max-width: 100%;
+    width: calc(3 * $response-size-default);
+    height: calc(3 * $response-size-default);
+  }
+}
+
+.lev-stimulus-container-wide {
+  @extend .lev-stimulus-container;
+  max-width: 90vw;
+}
+
+.lev-stim-content {
+  display: flex;
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+  font-size: $font-size-l;
+  color: $txt-primary;
+  // margin: min($lev-spacing-s, 3vh) 0;
+
+  img {
+    border: none;
+    width: $lev-resized-buttons-2;
+    height: $lev-resized-buttons-2;
+    padding: 0;
+    margin: 0;
+    border-radius: min($lev-spacing-s, 3vh);
+  }
+}
+
+.lev-stim-content-x-3 {
+  @extend .lev-stim-content;
+
+  img {
+    width: calc(3 * $response-size-default);
+    height: calc(3 * $response-size-default);
+  }
+
+  @include respond-to('small-medium') {
+    img {
+      width: calc(3 * $response-size-sm);
+      height: calc(3 * $response-size-sm);
+    }
+  }
+
+  @include respond-to('small') {
+    img {
+      width: 3 * $response-size-s;
+      height: 3 * $response-size-s;
+    }
+  }
+}
+
+.lev-stim-content-x-2 {
+  @extend .lev-stim-content;
+
+  img {
+    width: calc(2 * $response-size-default);
+    height: calc(2 * $response-size-default);
+  }
+
+  @include respond-to('small-medium') {
+    img {
+      width: calc(2 * $response-size-sm);
+      height: calc(2 * $response-size-sm);
+    }
+  }
+
+  @include respond-to('small') {
+    img {
+      width: 2 * $response-size-s;
+      height: 2 * $response-size-s;
+    }
+  }
+}
+
+.lev-instructions-container {
+  text-align: center;
+  font-size: 1.3rem;
+  width: 100%;
+
+  .lev-title {
+    text-align: center;
+    margin-bottom: 3vh;
+    font-size: 2rem;
+  }
+
+  .lev-content {
+    text-align: left;
+    margin: 0 auto;
+    // max-width: 60vw;
+    line-height: 1.5;
+  }
+
+  .lev-footer {
+    margin-top: 1.5rem;
+  }
+
+  img {
+    object-fit: contain;
+    width: 100%;
+  }
+}
+
+.lev-staggered-responses {
+  &.lev-staggered-disabled {
+    pointer-events: none;
+  }
+
+  &.lev-staggered-grayscale {
+    filter: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='grayscale'><feColorMatrix type='matrix' values='0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0'/></filter></svg>#grayscale"); /* Firefox 10+, Firefox on Android */
+    filter: grayscale(100%);
+    -moz-filter: grayscale(100%);
+    -ms-filter: grayscale(100%);
+    -o-filter: grayscale(100%);
+    filter: gray; /* IE6-9 */
+    -webkit-filter: grayscale(100%); /* Chrome 19+, Safari 6+, Safari 6+ iOS */
+  }
+
+  &.lev-staggered-opacity {
+    opacity: 0.6;
+  }
+}
+
+.lev-fixation-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: black;
+  font-size: 4rem;
+}
+
+.horizontal-wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  gap: 10vw;
+}
+
+.sds-progress-container {
+  max-width: 50vw;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 30px;
+}
+
+.theta-estimate-container {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 30%;
+  max-height: 50%;
+  border: 1px solid red;
+  border-radius: 10px;
+  background-color: $bg-bubble-base;
+  color: black;
+  font-size: 1.5rem;
+  font-weight: $font-weight-bold;
+  padding: 10px;
+}
+
+// holds experimenter buttons for pausing, leaving the task, or reentering fullscreen
+.experimenter-button-container {
+  position: absolute;
+  bottom: $replay_btn_pos;
+  left: $replay_btn_pos;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: min(8px, 1vh);
+}
+
+.participant-button-container {
+  position: absolute;
+  top: $replay_btn_pos;
+  right: $replay_btn_pos;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: min(8px, 1vh);
+}

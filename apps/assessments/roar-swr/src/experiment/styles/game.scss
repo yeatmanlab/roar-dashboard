@@ -1,0 +1,442 @@
+/* CSS Document */
+.this-is-roar {
+  content: 'is a game';
+}
+
+.jspsych-display-element {
+  * {
+    all: revert;
+    font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  }
+  touch-action: manipulation;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+                                    supported by Chrome, Edge, Opera and Firefox */
+
+  .jspsych-content-wrapper {
+    width: 100%;
+    margin: auto;
+    text-align: center;
+  }
+
+  h1 {
+    margin-top: 10%;
+    margin-right: 10%;
+    margin-left: 10%;
+    text-align: center;
+    padding-inline: 10px;
+
+    font-weight: semi-bold;
+    font-size: 5vh;
+    color: rgba(76, 101, 139, 1);
+  }
+
+  h2 {
+    text-align: center;
+    font-style: normal;
+    font-weight: regular;
+    font-size: 4vh;
+    color: rgba(0, 0, 0, 1);
+  }
+
+  h3 {
+    text-align: center;
+    font-style: normal;
+    font-weight: regular;
+    font-size: 5vh;
+    color: rgba(0, 0, 0, 1);
+  }
+
+  p:not(.stimulus, .feedback) {
+    text-align: center;
+    vertical-align: middle;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 3vh;
+    color: rgba(0, 0, 0, 1);
+    margin: 1.39vh;
+  }
+
+  .consent_form_title {
+    margin-right: 10%;
+    margin-left: 10%;
+    font-size: 3vh;
+  }
+
+  .consent_form_text {
+    margin: 10%;
+    text-align: left;
+    font-size: 2vh;
+  }
+
+  .survey_form_text {
+    text-align: center;
+    font-size: 3vh;
+  }
+
+  .consent_form_agree {
+    margin: 5%;
+    text-align: left;
+    font-size: 2vh;
+  }
+
+  .debrief_text {
+    margin: 20%;
+    text-align: left;
+    font-size: 2vh;
+  }
+
+  .jspsych-survey-multi-select-option {
+    font-size: 2vh;
+    text-align: center;
+  }
+
+  .stimulus {
+    text-align: center;
+    vertical-align: middle;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 5vh;
+    line-height: 5vh;
+    color: rgba(0, 0, 0, 1);
+    display: flex;
+    justify-content: center;
+  }
+
+  .full_screen {
+    text-align: center;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 32px;
+    line-height: 32px;
+    padding-top: 300px;
+    color: rgba(0, 0, 0, 1);
+  }
+
+  .feedback {
+    text-align: center;
+    font-style: normal;
+    font-weight: bold;
+    font-size: 4vh;
+    line-height: 3vh;
+    color: rgba(0, 0, 0, 1);
+  }
+
+  .text_div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 60%;
+  }
+
+  .center {
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  .middle {
+    position: relative;
+    text-align: left;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .orange {
+    color: rgba(219, 97, 69, 1);
+  }
+
+  .blue {
+    color: rgba(66, 152, 181, 1);
+  }
+
+  .yellow {
+    color: rgba(255, 202, 97, 1);
+  }
+
+  .row {
+    display: flex;
+  }
+
+  .column_1 {
+    padding: 0 2vh 0 2vh;
+    flex: 33%;
+  }
+
+  .column_2_upper {
+    margin-top: 5%;
+    padding: 0 2vh 0 2vh;
+    flex: 50%;
+    margin-right: 5%;
+    margin-left: 5%;
+  }
+
+  .column_2_lower {
+    padding: 0 2vh 0 2vh;
+    flex: 50%;
+    margin-right: 5%;
+    margin-left: 5%;
+    img {
+      max-width: 100%;
+    }
+  }
+
+  .column_3 {
+    padding: 0 2vh 0 2vh;
+    flex: 67%;
+    margin-right: 10%;
+  }
+
+  .button {
+    left: 0;
+    right: 0;
+    background-color: rgba(76, 101, 139, 1);
+    text-align: center;
+    // vertical-align: middle;
+    padding: 2vh;
+    font-style: normal;
+    font-weight: bold;
+    font-size: 3vh;
+    color: rgba(255, 255, 255, 1);
+    position: absolute;
+    display: block;
+    bottom: 0;
+    margin-bottom: 0px;
+    border: 0;
+  }
+
+  .story-scene {
+    width: 100%;
+    position: absolute;
+    display: block;
+    bottom: 2.95vh;
+  }
+
+  .scene {
+    position: absolute;
+    bottom: 5vh;
+    width: 100%;
+    display: block;
+  }
+
+  .characterleft {
+    text-align: center;
+    position: relative;
+    top: 30%;
+    height: 30vh;
+  }
+
+  .charactercenter {
+    height: 40vh;
+  }
+
+  .imageleft {
+    text-align: center;
+    position: relative;
+    top: 50%;
+    height: 30vh;
+  }
+
+  .adventure_mid_break {
+    position: relative;
+    display: inline-flex;
+    flex-direction: row;
+    height: 30vh;
+    bottom: 4vh;
+    right: 10%;
+    justify-content: center;
+  }
+
+  .coin {
+    position: relative;
+    height: 15vh;
+    margin: 10vh;
+  }
+
+  .cues {
+    position: relative;
+    top: 5vh;
+    margin: 10vh;
+    height: 15vh;
+  }
+
+  .coin_feedback {
+    position: relative;
+    width: 20vh;
+  }
+
+  .wizard {
+    position: relative;
+    height: 30vh;
+    display: inline-block;
+    right: 20%;
+    bottom: 4vh;
+  }
+
+  .guardian {
+    position: relative;
+    height: 30vh;
+    bottom: 4vh;
+    display: inline-flex;
+  }
+
+  #gate {
+    height: 40vh;
+    left: 50vh;
+    display: inline-flex;
+  }
+
+  .normal_center_text {
+    text-align: center;
+    position: relative;
+    top: 50%;
+  }
+
+  .key {
+    vertical-align: middle;
+    text-align: center;
+    position: relative;
+    top: 600px;
+  }
+
+  /* jsPsych progress bar */
+
+  #jspsych-progressbar-container {
+    color: #555;
+    border-bottom: 1px solid #dedede;
+    background-color: #f9f9f9;
+    margin-bottom: 1em;
+    text-align: center;
+    padding: 8px 0px;
+    width: 100%;
+    line-height: 1em;
+  }
+  #jspsych-progressbar-container span {
+    font-size: 14px;
+    padding-right: 14px;
+  }
+  #jspsych-progressbar-outer {
+    background-color: #eee;
+    width: 50%;
+    margin: auto;
+    height: 14px;
+    display: inline-block;
+    vertical-align: middle;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  #jspsych-progressbar-inner {
+    background-color: #aaa;
+    width: 0%;
+    height: 100%;
+  }
+
+  /* Control appearance of jsPsych.data.displayData() */
+  #jspsych-data-display {
+    text-align: left;
+  }
+
+  /* borrowing Bootstrap style for btn elements, but combining styles a bit */
+  .jspsych-btn {
+    display: inline-block;
+    padding: 1vh 2vh;
+    margin: 1vh;
+    font-size: 4vh;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1.4;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    background-image: none;
+    border: 1vh solid transparent;
+    border-radius: 1vh;
+    color: rgba(255, 255, 255, 1);
+    background-color: rgba(76, 101, 139, 1);
+    border-color: darkgrey;
+  }
+
+  #jspsych-fullscreen-btn {
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .stimulus_div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .lower {
+    position: absolute;
+    bottom: 20%;
+    transform: translate(-50%, -50%);
+    height: 7vh;
+  }
+
+  .btn-arrows {
+    height: 18vh;
+  }
+
+  #jspsych-html-multi-response-btngroup {
+    position: absolute;
+    bottom: 20%;
+    width: 100%;
+  }
+
+  .lexicality-trial-arrows {
+    background-color: transparent;
+    border: transparent;
+    padding: 0;
+  }
+
+  .countdown-arrows {
+    background-color: transparent;
+    border: transparent;
+    margin-left: 5rem;
+    margin-right: 5rem;
+  }
+
+  #countdown-wrapper {
+    position: absolute;
+    bottom: 20%;
+    width: 100%;
+  }
+
+  #countdown-arrows-wrapper {
+    display: flex;
+    justify-content: center;
+  }
+
+  .languageForm {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 6rem;
+    gap: 3rem;
+  }
+}
+
+@media only screen and (max-width: 800px) {
+  .jspsych-display-element {
+    p:not(.stimulus, .feedback) {
+      z-index: 1;
+      position: relative;
+    }
+  }
+}

@@ -49,7 +49,7 @@ function checkNewConditions() {
   cy.log('Found all new conditions.');
 }
 
-describe('The admin user can edit the conditions of an administration.', () => {
+describe.skip('The admin user can edit the conditions of an administration.', () => {
   it(
     'Logs into the dashboard, navigates to the Create Administrations component,' +
       'edits an existing administration, and checks the fields for the appropriate changes..',

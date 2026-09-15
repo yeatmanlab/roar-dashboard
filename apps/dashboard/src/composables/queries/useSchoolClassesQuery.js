@@ -1,42 +1,89 @@
-import { computed, toValue } from 'vue';
+import { toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import _isEmpty from 'lodash/isEmpty';
+import { StatusCodes } from 'http-status-codes';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
-import { orgFetcher } from '@/helpers/query/orgs';
-import useUserType from '@/composables/useUserType';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { getRoarApiClient } from '@/clients/roar-api';
+import { useAuthStore } from '@/store/auth';
+import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
+import { mapClassToOrg } from '@/helpers/mapOrg';
 import { SCHOOL_CLASSES_QUERY_KEY } from '@/constants/queryKeys';
-import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
+
+const MAX_RETRIES = 3;
+
+/**
+ * Page size for the school classes list request.
+ *
+ * The sole consumer (CreateOrgs) folds the full class set into a Tags
+ * autocomplete suggestion list, so the query walks the response's pagination
+ * and returns the complete array rather than a single server page.
+ */
+const SCHOOL_CLASSES_PER_PAGE = 100;
 
 /**
  * School Classes query.
  *
- * Query designed to fetch the classes of a given school.
+ * Fetches the classes of a given school from the backend
+ * `GET /schools/:schoolId/classes` endpoint, following pagination so the full
+ * set is returned. The API already scopes results to the caller and returns
+ * only active classes, so the legacy claims-based filtering is gone.
  *
- * @param {Ref<String>} schoolId – A Vue ref containing the ID of the school to fetch classes for.
+ * Backend response objects (`SchoolClassSchema`) are mapped to the flat org
+ * shape the consumers expect — see `mapClassToOrg`.
+ *
+ * **Enablement.** Gated internally on `authStore.accessToken` (for the API
+ * call) and on `schoolId` being set.
+ *
+ * @param {import('vue').MaybeRefOrGetter<string>} schoolId – The school whose classes to fetch.
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
- * @returns {UseQueryResult} The TanStack query result.
+ * @returns {UseQueryResult} The TanStack query result resolving to the classes array.
  */
 const useSchoolClassesQuery = (schoolId, queryOptions = undefined) => {
-  // Fetch the user claims.
-  const { data: userClaims } = useUserClaimsQuery({
-    enabled: queryOptions?.enabled ?? true,
-  });
+  const authStore = useAuthStore();
 
-  // Get admin status and administation orgs.
-  const { isSuperAdmin } = useUserType(userClaims);
-  const administrationOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-
-  // Ensure all necessary data is loaded before enabling the query.
-  const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
-  const queryConditions = [() => !!toValue(schoolId), () => claimsLoaded.value];
-  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
+  const conditions = [() => Boolean(authStore.accessToken), () => Boolean(toValue(schoolId))];
+  const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
     queryKey: [SCHOOL_CLASSES_QUERY_KEY, schoolId],
-    queryFn: () => orgFetcher(FIRESTORE_COLLECTIONS.CLASSES, schoolId, isSuperAdmin, administrationOrgs),
-    enabled: isQueryEnabled,
+    queryFn: async () => {
+      const client = getRoarApiClient();
+      const classes = [];
+      let page = 1;
+      let totalPages = 1;
+
+      do {
+        const result = await client.schools.listClasses({
+          params: { schoolId: toValue(schoolId) },
+          query: {
+            page,
+            perPage: SCHOOL_CLASSES_PER_PAGE,
+            sortBy: 'name',
+            sortOrder: 'asc',
+          },
+        });
+
+        if (result.status !== StatusCodes.OK) {
+          const error = new Error(`Failed to fetch school classes with status ${result.status}`);
+          error.status = result.status;
+          error.body = result.body;
+          throw error;
+        }
+
+        classes.push(...result.body.data.items);
+        totalPages = result.body.data.pagination.totalPages;
+        page += 1;
+      } while (page <= totalPages);
+
+      return classes.map(mapClassToOrg);
+    },
     ...options,
+    enabled: isQueryEnabled,
+    retry: (failureCount, error) => {
+      if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
+        return false;
+      }
+      return failureCount < MAX_RETRIES;
+    },
   });
 };
 

@@ -3,6 +3,7 @@ import ScoreReportService from '@/services/ScoreReport.service';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 
 import { getSupportLevel, getRawScoreRange, getPaSkillsToWorkOn } from '@/helpers/reports';
+
 // TODO: Update tests once normed task cards are implemented (enable condition scoringVersion >= 1 in hasNewlyAddedNorms)
 // Mock dependencies
 vi.mock('@/helpers/reports', () => ({

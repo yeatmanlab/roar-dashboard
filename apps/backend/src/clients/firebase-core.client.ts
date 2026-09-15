@@ -7,6 +7,8 @@ import {
   cert,
   getApps,
 } from 'firebase-admin/app';
+import { FIREBASE_EMULATOR_PROJECT_ID } from '@roar-platform/assessment-schema';
+import { logger } from '../logger';
 
 /**
  * FirebaseCoreClient
@@ -51,6 +53,15 @@ export class FirebaseCoreClient {
       return this.appInstance;
     }
 
+    // When the Auth emulator is active, the Admin SDK routes token verification to localhost
+    // and does not validate credentials — no credential object needed.
+    // The project ID must match the emulator's --project flag exactly; GOOGLE_CLOUD_PROJECT
+    // may hold a real project ID and must not override it here.
+    if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+      this.appInstance = initializeApp({ projectId: FIREBASE_EMULATOR_PROJECT_ID });
+      return this.appInstance;
+    }
+
     const credential = this.getCredentials();
     this.appInstance = initializeApp({ credential });
     return this.appInstance;
@@ -80,8 +91,7 @@ export class FirebaseCoreClient {
       const json = Buffer.from(encodedJsonCredentials, 'base64').toString('utf8');
       return cert(JSON.parse(json));
     } catch {
-      // @TODO: Replace with actual logger.
-      console.error('Failed to parse service account credentials');
+      logger.error('Failed to parse service account credentials, falling back to ADC');
 
       // If parsing fails, attempt ADC as a last resort
       return applicationDefault();

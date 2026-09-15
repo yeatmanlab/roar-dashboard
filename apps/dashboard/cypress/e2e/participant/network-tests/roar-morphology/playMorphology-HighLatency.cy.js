@@ -3,7 +3,8 @@ import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roar-multichoice';
 
-describe('ROAR - Written Vocabulary Play Through', () => {
+// SKIPPED until #1827: assessment play-through tests need reevaluation after monorepo migration
+describe.skip('ROAR - Written Vocabulary Play Through', () => {
   it('Plays Written Vocabulary with a simulated high latency connection', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {

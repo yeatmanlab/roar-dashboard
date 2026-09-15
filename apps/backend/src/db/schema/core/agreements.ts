@@ -26,7 +26,6 @@ export const agreements = db.table(
     name: p.text().notNull(),
 
     agreementType: agreementTypeEnum().notNull(),
-    requiresMajorityAge: p.boolean().notNull().default(false),
 
     ...timestamps,
   },

@@ -1,0 +1,168 @@
+{
+  "loading": "This experiment is loading...",
+  "progressBar": "Progress Complete",
+  "preloadTrial": {
+    "messageText": "Please wait while the experiment loads. This may take a few minutes."
+  },
+  "fullScreenTrial": {
+    "prompt": "The experiment will switch to full screen mode. <br/> Click the button to continue.",
+    "buttonText": "Continue"
+  },
+  "navigation": {
+    "continueButtonText": "Press <span class='yellow'>ANY KEY</span> to {{action}}",
+    "continueButtonTextMobile": "Press <span class='yellow'>HERE</span> to {{action}}"
+  },
+  "audioSetup": "Click the button on the screen to start.",
+  "del": {
+    "instructions": {
+      "intro1": {
+        "text1": " We have one last friend to help! <br> You are amazing! ",
+        "text2": "Take a break if needed"
+      },
+      "intro2": {
+        "text1": "I have been swimming so much. My belly is empty! <br> Let&#39s go find some crabs!"
+      },
+      "intro3": {
+        "text1": "In this game we are going to find out what&#39s left of the word if we leave some sounds out. Listen very carefully and try to find the new word! "
+      },
+      "introNS": {
+        "text1": "Deletion",
+        "text2": "In this block, you are going to figure out what is left of a word if we <b>DELETE</b> some sounds.",
+        "text3": "Listen very carefully and click on the word that is left after a sound is <b>DELETED</b> from <br> the target word at the top of your screen. </br> ",
+        "text4": "Let’s do some for practice!"
+      },
+      "break": {
+        "text1": "You are doing great! I am almost ready to go out and swim! Let&#39s get a few more crabs.",
+        "text2": "You are halfway through the block!",
+        "text3": "Feel free to take a break.",
+        "text4": "You can continue whenever you are ready."
+      },
+      "end": {
+        "text1": "You have helped me and all my friends! That&#39s amazing. <br> Thank you so much!",
+        "text2": "Awesome! You have completed the last block.",
+        "text3": "Thank you for completing the Phonological Awareness activity!"
+      }
+    },
+    "ready": {
+      "text1": "We know what to do! Let&#39s go find those crabs!",
+      "text2": "Great job on those practice words!",
+      "text3": "Let's start the third block.",
+      "text4": "Remember to listen very carefully and click on the word that is left after a sound is <b>DELETED</b> from the target word."
+    },
+    "test": {
+      "text1": "Click to Listen Again"
+    }
+  },
+  "fsm": {
+    "instructions": {
+      "intro": {
+        "text1": " Are you ready to play some games with me and my friends? "
+      },
+      "intro1": {
+        "text1": " Let&#39s collect some bananas! <br> I am hungry "
+      },
+      "intro2": {
+        "text1": "In this game we are going to look for words that BEGIN with the same sound. Listen very carefully and click on the word that STARTS with the same first sound as the word on top of your screen! <br> <br>  Good luck!"
+      },
+      "introNS": {
+        "text1": "Welcome to the Phonological Awareness activity! ",
+        "text2": "In this activity, you will be listening for the sounds that make up a word.",
+        "text3": "This activity has three blocks where you will match the first, last, and deleted sounds.",
+        "text4": "Let’s start with matching first sounds!"
+      },
+      "fsmIntroNS": {
+        "text1": "First Sound Matching",
+        "text2": "In this block, you will listen for words that <b>BEGIN</b> with the same sound.",
+        "text3": "Listen very carefully and click on the word that has the same <b>FIRST</b> sound <br> as the target word at the top of your screen. </br> </br> ",
+        "text4": "Let’s do some for practice!"
+      },
+      "break": {
+        "text1": "Great job! So many bananas! Let&#39s get a few more!",
+        "text2": "You are halfway through the block!",
+        "text3": "Feel free to take a break.",
+        "text4": "You can continue whenever you are ready."
+      },
+      "end": {
+        "text1": "Yum Yum Yum! All the bananas I could dream of! Thank you!",
+        "text2": "Awesome! You have completed the first block.",
+        "text3": " There are two more blocks to go.",
+        "text4": "Feel free to take a short break and return when you are ready to begin the second block."
+      }
+    },
+    "ready": {
+      "text1": "You are ready! Let&#39s start the real game!",
+      "text2": "Great job on those practice words!",
+      "text3": "Let's start the first block.",
+      "text4": "Remember to listen very carefully and click on the word that has the same <b>FIRST</b> sound as the target word."
+    }
+  },
+  "lsm": {
+    "instructions": {
+      "intro1": {
+        "text1": " Let&#39s go help my friends now! ",
+        "text2": "Take a break if needed"
+      },
+      "intro2": {
+        "text1": "I would love some carrots? <br> Can you help me?"
+      },
+      "intro3": {
+        "text1": "In this game we are going to look for words that END with the same sound. Listen very carefully and click on the word that has the same LAST sound as the word on top of your screen! <br> <br>  Good luck!  "
+      },
+      "introNS": {
+        "text1": "Last Sound Matching",
+        "text2": "In this block, you will listen for words that <b>END</b> with the same sound.",
+        "text3": "Listen very carefully and click on the word that has the same <b>LAST</b> sound <br> as the target word at the top of your screen. </br> ",
+        "text4": "Let’s do some for practice!"
+      },
+      "break": {
+        "text1": "Look at all those carrots! <br> Can we get a few more?",
+        "text2": "You are halfway through the block!",
+        "text3": "Feel free to take a break.",
+        "text4": "You can continue whenever you are ready."
+      },
+      "end": {
+        "text1": "WOW I have never seen this many carrots! I am so happy!",
+        "text2": "Awesome! You have completed the second block.",
+        "text3": "There is one more block to go.",
+        "text4": "Feel free to take a short break and return when you are ready to begin the third block."
+      }
+    },
+    "ready": {
+      "text1": "Enough Practice! Let&#39s start the real game!",
+      "text2": "Great job on those practice words!",
+      "text3": "Let's start the second block.",
+      "text4": "Remember to listen very carefully and click on the word that has the same <b>LAST</b> sound as the target word."
+    }
+  },
+  "imagesAlt": {
+    "arrowKeys": "arrow keys",
+    "leftArrow": "left arrow",
+    "rightArrow": "right arrow",
+    "valley": "background image with hills and trees",
+    "adventurer1": "adventurer with harp",
+    "adventurer2": "adventuerer making rainbows",
+    "adventurer3": "adventurer making heart shapes",
+    "wizardCoin": "wizard making coins",
+    "guardian1": "orange dinosaur guardian",
+    "guardian2": "blue dragon guardian",
+    "endingBackground": "landscape with trees",
+    "guardian3": "winking unicorn",
+    "endingGateCoinbag": "gate with coinbag animation",
+    "wizardWand": "wizard waving a magic wand",
+    "leftArrowIntro": "made-up word, press the left arrow key",
+    "rightArrowIntro": "real Word, press the Right Arrow key"
+  },
+  "terms": {
+    "__comment1__": "ex. 'press any key to continue/practice/begin'",
+    "continue": "continue",
+    "practice": "practice",
+    "begin": "begin",
+    "gold": "gold",
+    "left": "left",
+    "right": "right",
+    "__comment2__": "i.e. 'xop is a made-up/real word'",
+    "real": "real",
+    "made-up": "made-up",
+    "save": "save your work"
+  }
+}

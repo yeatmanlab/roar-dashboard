@@ -15,7 +15,14 @@ beforeEach(() => {
     win.localStorage.setItem('__E2E__', 'true');
   });
 
-  cy.visit('/');
+  // Legacy e2e specs in this directory are `describe.skip`-ed at the file
+  // level, and the previous default `/me` cy.intercept stub has been removed.
+  // Active e2e specs run against the local backend booted via
+  // `apps/backend/src/server-test.ts`, authenticate via the Firebase Auth
+  // emulator (no firekit), and call `cy.visit(...)` explicitly after signing
+  // in. See `.ai/rules/frontend-e2e-testing-pattern.md` for the contract.
+  //
+  // Tests must not rely on this `beforeEach` to visit the dashboard for them.
 
   // Simulate different network conditions based on test file name.
   if (Cypress.spec.name.includes('4G')) {

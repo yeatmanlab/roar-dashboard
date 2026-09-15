@@ -10,7 +10,7 @@ const adminFirestore = getDevFirebase('admin').db;
 const assessmentAuth = getDevFirebase('assessment').auth;
 const assessmentFirestore = getDevFirebase('assessment').db;
 
-describe('Delete Test Runs', () => {
+describe.skip('Delete Test Runs', () => {
   before(() => {
     signInAsSuperAdmin(adminAuth);
     signInAsSuperAdmin(assessmentAuth);

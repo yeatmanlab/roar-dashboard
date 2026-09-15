@@ -1,7 +1,7 @@
 <template>
   <h2 class="header-text">{{ _toUpper(taskName) }} SCORE TABLE</h2>
   <RoarDataTable
-    :allow-export-p-d-f="false"
+    :allow-export-pdf="false"
     :columns="columns"
     :data="computedTableData"
     :page-limit="pageLimit"
@@ -10,14 +10,12 @@
   />
 </template>
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref } from 'vue';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _set from 'lodash/set';
 import _toUpper from 'lodash/toUpper';
 import { exportCsv } from '@/helpers/query/utils';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import RoarDataTable from '@/components/RoarDataTable';
 import {
   roamAlpacaSubskills,
@@ -39,11 +37,6 @@ const props = defineProps({
   orgName: { type: String, default: '' },
   recruitmentType: { type: String, default: '' },
 });
-
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
-
-const initialized = ref(false);
 
 const pageLimit = ref(10);
 
@@ -411,20 +404,6 @@ const exportAll = async () => {
   );
   return;
 };
-
-let unsubscribe;
-const refresh = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) refresh();
-});
-
-onMounted(async () => {
-  if (roarfirekit.value.restConfig?.()) refresh();
-});
 </script>
 <style>
 .header-text {

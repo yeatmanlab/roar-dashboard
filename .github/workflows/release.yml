@@ -1,0 +1,194 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  # Manual trigger for on-demand publish runs: a dry-run rehearsal any time, or — once the
+  # @roar-platform org + NPM_TOKEN exist — a scoped real-publish rehearsal before the big flip.
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (no real publish, no deploy). Uncheck for a real publish — requires the @roar-platform org + NPM_TOKEN."
+        type: boolean
+        default: true
+      only:
+        description: "Limit to a single workspace path (e.g. packages/api-contract). Leave blank to run all publishable workspaces."
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release-please:
+    name: Create Release PR
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      backend_release_created: ${{ steps.release.outputs.backend--release_created }}
+      dashboard_release_created: ${{ steps.release.outputs.dashboard--release_created }}
+      api_contract_release_created: ${{ steps.release.outputs.api-contract--release_created }}
+      assessment_sdk_release_created: ${{ steps.release.outputs.assessment-sdk--release_created }}
+      assessment_schema_release_created: ${{ steps.release.outputs.assessment-schema--release_created }}
+      roar_pa_release_created: ${{ steps.release.outputs.roar-pa--release_created }}
+      backend_tag_name: ${{ steps.release.outputs.backend--tag_name }}
+      dashboard_tag_name: ${{ steps.release.outputs.dashboard--tag_name }}
+      api_contract_tag_name: ${{ steps.release.outputs.api-contract--tag_name }}
+      assessment_sdk_tag_name: ${{ steps.release.outputs.assessment-sdk--tag_name }}
+      backend_version: ${{ steps.release.outputs.backend--version }}
+      dashboard_version: ${{ steps.release.outputs.dashboard--version }}
+      api_contract_version: ${{ steps.release.outputs.api-contract--version }}
+    steps:
+      - name: Run Release Please
+        id: release
+        # Only manage Release PRs on push. On a manual workflow_dispatch (publish rehearsal) this
+        # step is skipped, so release-please never opens/updates a Release PR against the dispatch
+        # branch. The job still succeeds with empty outputs, and publish-assessment-packages runs
+        # via its `github.event_name == 'workflow_dispatch'` condition.
+        if: github.event_name == 'push'
+        uses: googleapis/release-please-action@v5
+        with:
+          config-file: .release-please.json
+          manifest-file: .release-please-manifest.json
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # TODO: Target main once backend refactor is complete
+          target-branch: ${{ github.ref_name }}
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Publish assessment packages to npm
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  publish-assessment-packages:
+    name: Publish assessment packages to npm
+    needs: release-please
+    if: needs.release-please.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      deployed_assessments: ${{ steps.publish.outputs.deployed_assessments }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js environment
+        uses: ./.github/actions/setup-node-environment
+
+      - name: Setup Node.js for npm publish
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Build packages
+        run: npx turbo run build --filter='./packages/*' --filter='./apps/assessments/*'
+
+      - name: Publish new versions and collect deployed assessments
+        id: publish
+        # To add a new publishable package, append its workspace path to PUBLISHABLE_WORKSPACES.
+        # List upstream packages before their dependents so a real publish resolves in order.
+        # Assessment apps (apps/assessments/*) are also queued for Firebase production deployment.
+        #
+        # DRY-RUN GATE: publishing is gated so nothing is published until it's explicitly disabled.
+        # Resolution order (first wins): the workflow_dispatch `dry_run` input → the
+        # `NPM_PUBLISH_DRY_RUN` repository variable (Settings → Secrets and variables → Actions →
+        # Variables) → a fail-safe dry run. A dry run publishes nothing and never queues a deploy.
+        # The workflow_dispatch `only` input scopes a run to a single workspace — e.g. a real-publish
+        # rehearsal on one package before flipping the whole pipeline live.
+        # TODO: Replace NODE_AUTH_TOKEN with OIDC Trusted Publishers once configured for @roar-platform.
+        run: |
+          # An explicit workflow_dispatch input wins; otherwise the repo variable; otherwise fail-safe.
+          # Resolved in bash (not a GitHub expression) so a `dry_run: false` input isn't swallowed by
+          # `||` treating the boolean false as falsy.
+          DRY_RUN="${DISPATCH_DRY_RUN:-${VAR_DRY_RUN:-true}}"
+
+          PUBLISHABLE_WORKSPACES=(
+            packages/api-contract
+            packages/assessment-schema
+            packages/assessment-sdk
+            apps/assessments/roar-letter
+            apps/assessments/roar-levante-tasks
+            apps/assessments/roar-multichoice
+            apps/assessments/roar-pa
+            apps/assessments/roar-readaloud
+            apps/assessments/roar-sre
+            apps/assessments/roar-survey
+            apps/assessments/roar-swr
+            apps/assessments/roav-apps
+            apps/assessments/roav-ran
+            apps/assessments/roam-apps
+          )
+
+          # Optional single-workspace scope for a manual rehearsal (workflow_dispatch `only` input).
+          if [ -n "${ONLY}" ]; then
+            if ! printf '%s\n' "${PUBLISHABLE_WORKSPACES[@]}" | grep -qxF -- "${ONLY}"; then
+              echo "::error::'${ONLY}' is not a known publishable workspace"
+              exit 1
+            fi
+            PUBLISHABLE_WORKSPACES=("${ONLY}")
+            echo "::notice::Scoped to a single workspace: ${ONLY}"
+          fi
+
+          if [ "${DRY_RUN}" != "false" ]; then
+            echo "::notice::Dry-run mode — nothing will be published and no assessment deployment will be queued. (Set dry_run=false or NPM_PUBLISH_DRY_RUN=false for a real publish.)"
+          fi
+
+          deployed=()
+          for workspace in "${PUBLISHABLE_WORKSPACES[@]}"; do
+            pkg=$(node -p "require('./${workspace}/package.json').name")
+            ver=$(node -p "require('./${workspace}/package.json').version")
+            if npm view "${pkg}@${ver}" version &>/dev/null; then
+              echo "✓ ${pkg}@${ver} already on npm, skipping"
+            elif [ "${DRY_RUN}" != "false" ]; then
+              echo "[dry-run] ${pkg}@${ver} — validating publish without pushing to npm"
+              npm publish -w "${workspace}" --dry-run
+            else
+              echo "Publishing ${pkg}@${ver}..."
+              npm publish -w "${workspace}" --provenance
+              if [[ "$workspace" == apps/assessments/* ]]; then
+                deployed+=("${workspace#apps/assessments/}")
+              fi
+            fi
+          done
+
+          if [ ${#deployed[@]} -gt 0 ]; then
+            echo "deployed_assessments=$(jq -c -n '$ARGS.positional' --args "${deployed[@]}")" >> $GITHUB_OUTPUT
+          else
+            echo "deployed_assessments=[]" >> $GITHUB_OUTPUT
+          fi
+        env:
+          DISPATCH_DRY_RUN: ${{ github.event.inputs.dry_run }}
+          VAR_DRY_RUN: ${{ vars.NPM_PUBLISH_DRY_RUN }}
+          ONLY: ${{ github.event.inputs.only }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Trigger assessment production deployments on release
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  trigger-assessment-production-deployments:
+    name: Trigger Assessment Production Deployments
+    needs: [release-please, publish-assessment-packages]
+    if: needs.publish-assessment-packages.outputs.deployed_assessments != '[]' && needs.publish-assessment-packages.outputs.deployed_assessments != ''
+    uses: ./.github/workflows/deploy-assessments-production.yml
+    with:
+      assessments: ${{ needs.publish-assessment-packages.outputs.deployed_assessments }}
+    secrets:
+      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      FIREBASE_HOSTING_SERVICE_ACCOUNT_ID: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
+      ROAR_API_BASE_URL: ${{ secrets.ROAR_API_BASE_URL }}
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Trigger platform deployment on release
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  trigger-platform-deployment:
+    name: Trigger Platform Deployment
+    needs: release-please
+    if: |
+      needs.release-please.outputs.releases_created == 'true' &&
+      needs.release-please.outputs.backend_release_created == 'true' &&
+      needs.release-please.outputs.dashboard_release_created == 'true'
+    uses: ./.github/workflows/deploy-platform-production.yml
+    secrets: inherit
+    with:
+      version: ${{ needs.release-please.outputs.backend_version }}

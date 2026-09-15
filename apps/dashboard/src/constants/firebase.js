@@ -24,6 +24,20 @@ export const FIRESTORE_COLLECTIONS = Object.freeze({
 });
 
 /**
+ * Firebase Auth provider IDs
+ *
+ * The `providerId` values Firebase reports on `user.providerData`. These are
+ * Firebase's own identifiers and are distinct from `AUTH_SSO_PROVIDERS`, which
+ * holds the ROAR-internal slugs that firekit's link/unlink calls expect.
+ */
+export const FIREBASE_AUTH_PROVIDER_IDS = Object.freeze({
+  PASSWORD: 'password',
+  GOOGLE: 'google.com',
+  CLEVER: 'oidc.clever',
+  CLASSLINK: 'oidc.classlink',
+});
+
+/**
  * Firebase Functions Error Codes
  */
 export const FIREBASE_FUNCTIONS_ERROR_CODES = Object.freeze({
@@ -37,3 +51,19 @@ export const FIREBASE_FUNCTIONS_ERROR_CODES = Object.freeze({
 export const FIREBASE_FUNCTIONS_ERROR_REASONS = Object.freeze({
   AUTH_PROVIDER_DISABLED: 'auth_provider_disabled',
 });
+
+/**
+ * Whether the dashboard is pointed at the local Firebase Auth emulator.
+ *
+ * Derived from `VITE_FIREBASE_EMULATOR_AUTH_HOST` or the legacy
+ * `VITE_FIREBASE_EMULATOR_ENABLED` flag for backward compatibility.
+ * It is `false` (inert) in deployed builds. Centralized here so every consumer
+ * evaluates the flag identically.
+ *
+ * Consumers: `usePermissions.js`, `composables/mutations/useSignOutMutation.js`.
+ * These will be migrated in follow-up PRs.
+ */
+export const IS_FIREBASE_EMULATOR_ENABLED =
+  Boolean(import.meta.env.VITE_FIREBASE_EMULATOR_AUTH_HOST) ||
+  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === true ||
+  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';

@@ -2,8 +2,8 @@
   <div class="grid">
     <div class="col-12 md:col-6">
       <PvPanel class="m-0 p-0 h-full" header="Select organizations here">
-        <PvTabView v-if="claimsLoaded" v-model:active-index="activeIndex" class="m-0 p-0" lazy>
-          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+        <PvTabView v-model:active-index="activeIndex" class="m-0 p-0" lazy>
+          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :header="orgType.header">
             <div class="grid column-gap-3">
               <div
                 v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
@@ -43,7 +43,20 @@
                 </PvFloatLabel>
               </div>
             </div>
-            <div class="card flex justify-content-center">
+            <AppMessageState
+              v-if="error"
+              class="p-3"
+              :type="MESSAGE_STATE_TYPES.ERROR"
+              title="Unable to load organizations"
+              message="Please try again."
+            >
+              <template #actions>
+                <PvButton label="Retry" @click="retry" />
+              </template>
+            </AppMessageState>
+            <p v-else-if="isPending" role="status" class="p-3">Loading organizations...</p>
+            <p v-else-if="!orgData.length" role="status" class="p-3">No organizations available.</p>
+            <div v-else class="card flex justify-content-center">
               <PvListbox
                 v-model="selectedOrgs[activeOrgType]"
                 :options="orgData"
@@ -88,12 +101,9 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed, onMounted, watch } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
-import { storeToRefs } from 'pinia';
+import { reactive, computed, watch } from 'vue';
 import _capitalize from 'lodash/capitalize';
-import _get from 'lodash/get';
-import _head from 'lodash/head';
+import PvButton from 'primevue/button';
 import PvFloatLabel from 'primevue/floatlabel';
 import PvCheckbox from 'primevue/checkbox';
 import PvChip from 'primevue/chip';
@@ -103,19 +113,24 @@ import PvPanel from 'primevue/panel';
 import PvScrollPanel from 'primevue/scrollpanel';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
-import { useAuthStore } from '@/store/auth';
-import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
-import { orderByDefault } from '@/helpers/query/utils';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
-import useUserType from '@/composables/useUserType';
+import { AppMessageState, MESSAGE_STATE_TYPES } from '@/components/AppMessageState';
+import useOrgBrowser from '@/composables/useOrgBrowser';
 
-const initialized = ref(false);
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
-
-const selectedDistrict = ref(undefined);
-const selectedSchool = ref(undefined);
+const {
+  orgHeaders,
+  activeIndex,
+  activeOrgType,
+  selectedDistrict,
+  selectedSchool,
+  allDistricts,
+  allSchools,
+  isLoadingDistricts,
+  isLoadingSchools,
+  orgData,
+  isPending,
+  error,
+  retry,
+} = useOrgBrowser();
 
 const props = defineProps({
   orgs: {
@@ -176,42 +191,6 @@ watch(
   { immediate: true, deep: true },
 );
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-const { isSuperAdmin } = useUserType(userClaims);
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-
-const orgHeaders = computed(() => {
-  const headers = {
-    districts: { header: 'Districts', id: 'districts' },
-    schools: { header: 'Schools', id: 'schools' },
-    classes: { header: 'Classes', id: 'classes' },
-    groups: { header: 'Groups', id: 'groups' },
-  };
-
-  if (isSuperAdmin.value) return headers;
-
-  const result = {};
-  if ((adminOrgs.value?.districts ?? []).length > 0) {
-    result.districts = { header: 'Districts', id: 'districts' };
-    result.schools = { header: 'Schools', id: 'schools' };
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.schools ?? []).length > 0) {
-    result.schools = { header: 'Schools', id: 'schools' };
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.classes ?? []).length > 0) {
-    result.classes = { header: 'Classes', id: 'classes' };
-  }
-  if ((adminOrgs.value?.groups ?? []).length > 0) {
-    result.groups = { header: 'Groups', id: 'groups' };
-  }
-  return result;
-});
-
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
     return 'Loading...';
@@ -226,70 +205,9 @@ const schoolPlaceholder = computed(() => {
   return '';
 });
 
-const activeIndex = ref(0);
-const activeOrgType = computed(() => {
-  return Object.keys(orgHeaders.value)[activeIndex.value];
-});
-
-const claimsLoaded = computed(() => initialized.value && !isLoadingClaims.value);
-
-const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
-  enabled: claimsLoaded,
-});
-
-const schoolQueryEnabled = computed(() => {
-  return claimsLoaded.value && selectedDistrict.value !== undefined;
-});
-
-const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
-  queryKey: ['schools', selectedDistrict],
-  queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
-  enabled: schoolQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const { data: orgData } = useQuery({
-  queryKey: ['orgs', activeOrgType, selectedDistrict, selectedSchool],
-  queryFn: () =>
-    orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, ref(orderByDefault), isSuperAdmin, adminOrgs, [
-      'id',
-      'name',
-      'districtId',
-      'schoolId',
-      'schools',
-      'classes',
-    ]),
-  keepPreviousData: true,
-  enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
 const remove = (org, orgKey) => {
   selectedOrgs[orgKey] = selectedOrgs[orgKey].filter((_org) => _org.id !== org.id);
 };
-
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
-});
-
-onMounted(() => {
-  if (roarfirekit.value.restConfig?.()) init();
-});
-
-watch(allDistricts, (newValue) => {
-  selectedDistrict.value = _get(_head(newValue), 'id');
-});
-
-watch(allSchools, (newValue) => {
-  selectedSchool.value = _get(_head(newValue), 'id');
-});
 
 const emit = defineEmits(['selection']);
 

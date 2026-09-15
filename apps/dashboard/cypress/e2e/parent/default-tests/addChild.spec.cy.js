@@ -13,6 +13,7 @@ const ORG_CODE = Cypress.env('ACTIVATION_CODE');
  * @TODO: Re-enable this test after the Backend Refactor (BERF) is complete and
  * the createNewFamily function performance has been optimized.
  */
+// SKIPPED until #1827: createNewFamily timeouts — needs reevaluation after backend refactor
 describe.skip('Parent: Add Child', () => {
   beforeEach(() => {
     cy.login(PARENT_USERNAME, PARENT_PASSWORD);
