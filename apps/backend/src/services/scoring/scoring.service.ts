@@ -331,9 +331,6 @@ export function resolveScoreFieldName(
 
 /**
  * Resolve a numeric score from the score map by trying each field name in order.
- * Uses parseScoreValue from the scoring service to handle angle-bracket strings
- * like ">99" or "<1" found in newer norming tables.
- *
  * Returns the first valid numeric value found, or null if none match.
  */
 export function resolveNumericScore(scores: Map<string, string>, fieldNames: string[]): number | null {
