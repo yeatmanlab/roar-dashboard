@@ -1,5 +1,5 @@
 import { QueryCache, QueryClient } from '@tanstack/vue-query';
-import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
+import { isMissingBaseUrlError, isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 import { useGlobalError } from '@/composables/useGlobalError';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
@@ -36,6 +36,14 @@ export const queryClient = new QueryClient({
         setGlobalError({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
         return;
       }
+      // A missing base URL breaks every query in the app, not just `/me`, so
+      // it takes the whole page to the error state regardless of which query
+      // surfaced it first. Signing out won't help, but the page is at least
+      // explicit instead of spinning.
+      if (isMissingBaseUrlError(error)) {
+        setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
+        return;
+      }
       // Only treat the `/me` query as a global server error. Other queries
       // may have their own UI affordances for failure (retry buttons,
       // toasts, empty states) and shouldn't take the whole app down.
@@ -53,8 +61,10 @@ export const queryClient = new QueryClient({
       staleTime: window.Cypress ? 0 : 10 * 60 * 1000,
       gcTime: window.Cypress ? 0 : 15 * 60 * 1000,
       retry: (failureCount, error) => {
-        // Don't retry on terminal auth errors (unrecoverable).
-        if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
+        // Don't retry on terminal auth errors (unrecoverable), nor on a
+        // missing base URL — that comes from the build, so it is terminal for
+        // the page load and retrying only delays the error UI.
+        if (isRosteringEndedError(error) || isTerminalAuthError(error) || isMissingBaseUrlError(error)) {
           return false;
         }
         // Deterministic behavior in Cypress E2E.
