@@ -83,6 +83,18 @@ describe('AccountOwnerForm.vue', () => {
     wrapper.unmount();
   });
 
+  it('allows confirmed legal acceptance to be unchecked', async () => {
+    const wrapper = mountForm({ legalAccepted: true });
+    const legalAcceptance = wrapper.get('[name="legalAcceptance"]');
+
+    await legalAcceptance.trigger('click');
+
+    expect(wrapper.emitted('update:legal-accepted')).toContainEqual([false]);
+    expect(legalAcceptance.element.checked).toBe(false);
+
+    wrapper.unmount();
+  });
+
   it('emits controlled field updates and uses the native form submission path', async () => {
     const wrapper = mountForm();
 

@@ -147,7 +147,7 @@
                 :checked="legalAccepted"
                 :aria-invalid="submitted && !legalAccepted"
                 :aria-describedby="submitted && !legalAccepted ? 'account-owner-legal-error' : undefined"
-                @click.prevent="toggleLegalAcceptance"
+                @click="toggleLegalAcceptance"
               />
               <label for="account-owner-legal-acceptance">
                 {{ t('pageRegister.agreeToTerms') }}
@@ -225,7 +225,8 @@ function updateField(field, value) {
   emit('update:field', field, value);
 }
 
-function toggleLegalAcceptance() {
+function toggleLegalAcceptance(event) {
+  if (!props.legalAccepted) event.preventDefault();
   emit('update:legal-accepted', !props.legalAccepted);
 }
 
