@@ -6,18 +6,33 @@ import { ApiError } from '../../errors/api-error';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
 import { AggregationRepository } from '../../repositories/aggregation.repository';
-import { createMockAdministrationRepository, createMockAggregationRepository } from '../../test-support/repositories';
+import {
+  createMockAdministrationRepository,
+  createMockAggregationRepository,
+  createMockTaskVariantParameterRepository,
+} from '../../test-support/repositories';
 
 vi.mock('../../repositories/administration-task-variant.repository');
 vi.mock('../../repositories/aggregation.repository');
 
 describe('aggregateSupportCategories', () => {
   let mockAdministrationRepository: MockedObject<AdministrationRepository>;
+  let mockTaskVariantParameterRepository: ReturnType<typeof createMockTaskVariantParameterRepository>;
   let aggregateSupportCategories: ReturnType<typeof AggregationService>['aggregateSupportCategories'];
+
+  /** Sets the variant scoringVersion that raw score buckets are sized from. */
+  function setVariantScoringVersion(version: number, variantId = 'variant-1') {
+    mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([
+      { taskVariantId: variantId, name: 'scoringVersion', value: version, createdAt: new Date(), updatedAt: null },
+    ]);
+  }
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockAdministrationRepository = createMockAdministrationRepository();
+    mockTaskVariantParameterRepository = createMockTaskVariantParameterRepository();
+    // No scoringVersion rows by default, so every variant resolves to v0.
+    mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
     // Mock AdministrationTaskVariantRepository to return empty tasks
     vi.mocked(AdministrationTaskVariantRepository).mockImplementation(
       () =>
@@ -30,6 +45,7 @@ describe('aggregateSupportCategories', () => {
     // Create service instance with mocked repositories
     const service = AggregationService({
       administrationRepository: mockAdministrationRepository,
+      taskVariantParameterRepository: mockTaskVariantParameterRepository,
     });
     aggregateSupportCategories = service.aggregateSupportCategories;
   });
@@ -96,7 +112,10 @@ describe('aggregateSupportCategories', () => {
       );
       vi.mocked(AggregationRepository).mockImplementation(() => mockAggregationRepo);
 
-      return AggregationService({ administrationRepository: mockAdministrationRepository });
+      return AggregationService({
+        administrationRepository: mockAdministrationRepository,
+        taskVariantParameterRepository: mockTaskVariantParameterRepository,
+      });
     }
 
     it('resolves the legacy field and cutoffs for pre-v7 swr runs', async () => {
@@ -162,14 +181,14 @@ describe('aggregateSupportCategories', () => {
     });
 
     it('resolves grade-conditional and task-specific field names', async () => {
-      // v3 pa lookup table returns percentile or sprPercentile depending on grade
+      setVariantScoringVersion(3);
       const service = setupTask('pa', [
         {
           runId: 'run-1',
           grade: '8',
           scores: [
             ['sprPercentile', '75'],
-            ['roarScore', '500'],
+            ['roarScore', '56'],
             ['scoringVersion', '3'],
           ],
         },
@@ -183,7 +202,53 @@ describe('aggregateSupportCategories', () => {
       const pa = result!['task-pa-uuid']!;
       expect(pa.achievedSkill.total).toBe(1);
       expect(pa.percentile['70-80']?.total).toBe(1);
-      expect(Object.values(pa.raw).some((r) => r.total > 0)).toBe(true);
+      expect(pa.raw['50-57']?.total).toBe(1);
+    });
+
+    describe('Raw score buckets', () => {
+      function sreRun(percentileName: string, percentile: string, rawScore: string, scoringVersion: string) {
+        return [
+          {
+            runId: 'run-1',
+            grade: '3',
+            scores: [
+              [percentileName, percentile],
+              ['sreScore', rawScore],
+              ['scoringVersion', scoringVersion],
+            ] as [string, string][],
+          },
+        ];
+      }
+
+      it('buckets on the scale of the variant scoring version', async () => {
+        setVariantScoringVersion(0);
+        const preV5 = await setupTask('sre', sreRun('tosrecPercentile', '60', '120', '0')).aggregateSupportCategories({
+          administrationId: 'admin-123',
+          districtId: 'district-456',
+        });
+        expect(preV5!['task-sre-uuid']!.raw['100-130']?.total).toBe(1);
+
+        setVariantScoringVersion(5);
+        const v5 = await setupTask('sre', sreRun('percentile', '60', '320', '5')).aggregateSupportCategories({
+          administrationId: 'admin-123',
+          districtId: 'district-456',
+        });
+        expect(v5!['task-sre-uuid']!.raw['300-350']?.total).toBe(1);
+      });
+
+      it('omits a raw score outside the variant scale, but still counts its support level', async () => {
+        setVariantScoringVersion(0);
+        const service = setupTask('sre', sreRun('tosrecPercentile', '60', '500', '0'));
+
+        const result = await service.aggregateSupportCategories({
+          administrationId: 'admin-123',
+          districtId: 'district-456',
+        });
+
+        const sre = result!['task-sre-uuid']!;
+        expect(sre.raw).toEqual({});
+        expect(sre.achievedSkill.total).toBe(1);
+      });
     });
   });
 
@@ -302,6 +367,7 @@ describe('aggregateSupportCategories', () => {
 
       const service = AggregationService({
         administrationRepository: mockAdministrationRepository,
+        taskVariantParameterRepository: mockTaskVariantParameterRepository,
       });
       const result = await service.aggregateSupportCategories({
         administrationId: 'admin-123',
@@ -406,6 +472,7 @@ describe('aggregateSupportCategories', () => {
 
       const service = AggregationService({
         administrationRepository: mockAdministrationRepository,
+        taskVariantParameterRepository: mockTaskVariantParameterRepository,
       });
       const result = await service.aggregateSupportCategories({
         administrationId: 'admin-123',
@@ -491,6 +558,7 @@ describe('aggregateSupportCategories', () => {
 
       const service = AggregationService({
         administrationRepository: mockAdministrationRepository,
+        taskVariantParameterRepository: mockTaskVariantParameterRepository,
       });
       const result = await service.aggregateSupportCategories({
         administrationId: 'admin-123',
@@ -586,6 +654,7 @@ describe('aggregateSupportCategories', () => {
 
       const service = AggregationService({
         administrationRepository: mockAdministrationRepository,
+        taskVariantParameterRepository: mockTaskVariantParameterRepository,
       });
       const result = await service.aggregateSupportCategories({
         administrationId: 'admin-123',
