@@ -113,7 +113,7 @@ describe('isTerminalAuthError', () => {
   });
 
   it('returns false for the missing-base-URL error (not an auth failure)', () => {
-    expect(isTerminalAuthError({ code: API_ERROR_CODES.CLIENT_BASE_URL_MISSING })).toBe(false);
+    expect(isTerminalAuthError({ code: API_ERROR_CODES.CONFIG_BASE_URL_MISSING })).toBe(false);
   });
 });
 
@@ -122,7 +122,7 @@ describe('isMissingBaseUrlError', () => {
     // `getRoarApiClient()` throws a plain Error with `.code` set, so the
     // plain-code branch of `getApiErrorCode` is the one that has to match.
     const error = new Error('VITE_ROAR_API_BASE_URL is not set.');
-    error.code = API_ERROR_CODES.CLIENT_BASE_URL_MISSING;
+    error.code = API_ERROR_CODES.CONFIG_BASE_URL_MISSING;
     expect(isMissingBaseUrlError(error)).toBe(true);
   });
 

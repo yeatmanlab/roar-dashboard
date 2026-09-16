@@ -28,7 +28,7 @@ vi.mock('@/utils/api-errors', () => {
     AUTH_TOKEN_EXPIRED: 'auth/token-expired',
     AUTH_REQUIRED: 'auth/required',
     AUTH_ROSTERING_ENDED: 'auth/rostering-ended',
-    CLIENT_BASE_URL_MISSING: 'client/base-url-missing',
+    CONFIG_BASE_URL_MISSING: 'config/base-url-missing',
   });
 
   function getApiErrorCode(response) {
@@ -54,7 +54,7 @@ vi.mock('@/utils/api-errors', () => {
   }
 
   function isMissingBaseUrlError(error) {
-    return getApiErrorCode(error) === API_ERROR_CODES.CLIENT_BASE_URL_MISSING;
+    return getApiErrorCode(error) === API_ERROR_CODES.CONFIG_BASE_URL_MISSING;
   }
 
   return {
@@ -132,7 +132,7 @@ describe('queryClient QueryCache onError', () => {
   it('sets SERVER_ERROR on a missing base URL, whichever query surfaced it', () => {
     // A missing base URL breaks every query, so it must not be gated on the
     // /me query key the way an ordinary server error is.
-    const error = { code: 'client/base-url-missing' };
+    const error = { code: 'config/base-url-missing' };
     onErrorCallback(error, { queryKey: ['some-other-key'] });
 
     expect(setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
@@ -156,7 +156,7 @@ describe('queryClient default retry policy', () => {
     // The base URL is baked in at build time, so it cannot appear between
     // attempts — retrying would only delay the error UI.
     const error = new Error('VITE_ROAR_API_BASE_URL is not set.');
-    error.code = 'client/base-url-missing';
+    error.code = 'config/base-url-missing';
 
     expect(retry(0, error)).toBe(false);
     expect(retry(1, error)).toBe(false);

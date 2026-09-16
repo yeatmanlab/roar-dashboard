@@ -160,7 +160,7 @@ describe('useMeQuery', () => {
     });
 
     const missingBaseUrlError = new Error('VITE_ROAR_API_BASE_URL is not set.');
-    missingBaseUrlError.code = 'client/base-url-missing';
+    missingBaseUrlError.code = 'config/base-url-missing';
     expect(retryFn(0, missingBaseUrlError)).toBe(false);
     expect(retryFn(1, missingBaseUrlError)).toBe(false);
   });

@@ -47,8 +47,9 @@ export function getApiErrorMessage(response) {
 
 /**
  * Known API error codes that the frontend handles specifically.
- * Auth values match the backend's ApiErrorCode enum; the `client/` namespace
- * is reserved for failures raised in the browser before a request is sent.
+ * Auth values match the backend's ApiErrorCode enum; the `config/` namespace
+ * is reserved for build-configuration failures raised in the browser before a
+ * request is sent, so it can never collide with a server-sent code.
  */
 export const API_ERROR_CODES = Object.freeze({
   AUTH_REQUIRED: 'auth/required',
@@ -59,7 +60,7 @@ export const API_ERROR_CODES = Object.freeze({
    * `VITE_ROAR_API_BASE_URL` is missing from the build. Client-side only —
    * no request ever leaves the browser, so it can never succeed on retry.
    */
-  CLIENT_BASE_URL_MISSING: 'client/base-url-missing',
+  CONFIG_BASE_URL_MISSING: 'config/base-url-missing',
 });
 
 /**
@@ -95,5 +96,5 @@ export function isTerminalAuthError(error) {
  * @returns {boolean}
  */
 export function isMissingBaseUrlError(error) {
-  return getApiErrorCode(error) === API_ERROR_CODES.CLIENT_BASE_URL_MISSING;
+  return getApiErrorCode(error) === API_ERROR_CODES.CONFIG_BASE_URL_MISSING;
 }
