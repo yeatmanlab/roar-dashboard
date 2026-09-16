@@ -140,13 +140,6 @@
     "reviewTerms": "Review and accept the Terms of Use.",
     "consent": {
       "modalTitle": "Consent",
-      "requiredTitle": "Research consent required",
-      "requiredDescription": "Review the research consent before creating your account.",
-      "completedTitle": "Research consent completed",
-      "completedDescription": "You can review the consent again at any time before creating your account.",
-      "requiredError": "Review and confirm the research consent.",
-      "review": "Review consent",
-      "loading": "Loading…",
       "loadingDocument": "Loading the research consent…",
       "loadError": "We could not load the research consent. Check your connection and try again.",
       "retry": "Try again",

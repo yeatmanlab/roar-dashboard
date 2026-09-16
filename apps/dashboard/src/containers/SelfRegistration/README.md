@@ -19,10 +19,10 @@ account-owner account before authentication. It does not enroll a learner.
 acceptance and optional future contact. Its default-document loader must not
 derive a document from route or invitation-code context. The consent modal loads
 the existing `consent-behavioral-eye-tracking` legal document (or its approved
-Spanish counterpart), requires the explicit research acknowledgement, and keeps
-the selected document identifier, version metadata, and confirmation time in a
-feature-local consent record. Closing or canceling the modal does not create that
-record.
+Spanish counterpart). Selecting **Continue** is the explicit confirmation and
+keeps the selected document identifier, version metadata, and confirmation time
+in a feature-local consent record. Closing or canceling the modal neither creates
+that record nor checks the signup acknowledgement.
 
 ## Stage 2 boundary
 

@@ -144,13 +144,6 @@
     "reviewTerms": "Revisa y acepta los Términos de uso.",
     "consent": {
       "modalTitle": "Consentimiento",
-      "requiredTitle": "Consentimiento de investigación obligatorio",
-      "requiredDescription": "Revisa el consentimiento de investigación antes de crear tu cuenta.",
-      "completedTitle": "Consentimiento de investigación completado",
-      "completedDescription": "Puedes volver a revisar el consentimiento antes de crear tu cuenta.",
-      "requiredError": "Revisa y confirma el consentimiento de investigación.",
-      "review": "Revisar consentimiento",
-      "loading": "Cargando…",
       "loadingDocument": "Cargando el consentimiento de investigación…",
       "loadError": "No pudimos cargar el consentimiento de investigación. Comprueba tu conexión e inténtalo de nuevo.",
       "retry": "Intentar de nuevo",

@@ -1,13 +1,6 @@
 import { CONSENT_TYPES } from '@/constants/consentTypes';
 
 /**
- * The explicit acknowledgement text already used by ROAR research tasks.
- * Keep this language verbatim unless an IRB-approved revision replaces it.
- */
-export const RESEARCH_CONSENT_ACKNOWLEDGEMENT =
-  'I agree to participate in this research. Participation in this research is voluntary, and I can stop at any time without penalty. I feel that I understand what I am getting into, and I know I am free to discontinue the experiment with no consequence to myself and/or my child.';
-
-/**
  * Converts known legal-document timestamps or version values to a stable string.
  *
  * @param {unknown} value Legal-document version metadata.

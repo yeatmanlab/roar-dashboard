@@ -28,16 +28,6 @@
           <!-- The legal document is converted from Markdown and sanitized before rendering. -->
           <!-- eslint-disable-next-line vue/no-v-html -->
           <div class="self-registration-consent-markdown" v-html="renderedDocument" />
-
-          <div class="self-registration-consent-confirmation">
-            <input
-              id="research-consent-confirmation"
-              v-model="confirmationChecked"
-              type="checkbox"
-              class="self-registration-consent-checkbox"
-            />
-            <label for="research-consent-confirmation">{{ RESEARCH_CONSENT_ACKNOWLEDGEMENT }}</label>
-          </div>
         </div>
       </template>
     </div>
@@ -50,7 +40,7 @@
         <button
           type="button"
           class="self-registration-consent-primary"
-          :disabled="loading || loadFailed || !document?.text || !confirmationChecked"
+          :disabled="loading || loadFailed || !document?.text"
           @click="$emit('confirm')"
         >
           <i class="pi pi-check" aria-hidden="true" />
@@ -62,33 +52,22 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import PvDialog from 'primevue/dialog';
 import { i18n } from '@/translations/i18n';
-import { RESEARCH_CONSENT_ACKNOWLEDGEMENT } from '../composables/loadDefaultResearchConsent';
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
   document: { type: Object, default: null },
-  accepted: { type: Boolean, default: false },
   loading: { type: Boolean, default: false },
   loadFailed: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['cancel', 'confirm', 'retry']);
 const { t } = i18n.global;
-const confirmationChecked = ref(false);
 const renderedDocument = computed(() => DOMPurify.sanitize(marked.parse(props.document?.text ?? '')));
-
-watch(
-  () => props.visible,
-  (visible) => {
-    if (visible) confirmationChecked.value = props.accepted;
-  },
-  { immediate: true },
-);
 
 function handleVisibleChange(visible) {
   if (!visible) emit('cancel');
@@ -177,27 +156,6 @@ function handleVisibleChange(visible) {
   vertical-align: top;
 }
 
-.self-registration-consent-confirmation {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--surface-200);
-  color: var(--text-color);
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.5;
-}
-
-.self-registration-consent-checkbox {
-  width: 1.25rem;
-  height: 1.25rem;
-  flex: 0 0 auto;
-  margin: 0.125rem 0 0;
-  accent-color: var(--primary-color);
-}
-
 .self-registration-consent-footer {
   display: flex;
   justify-content: flex-end;
@@ -237,8 +195,7 @@ function handleVisibleChange(visible) {
 }
 
 .self-registration-consent-primary:focus-visible,
-.self-registration-consent-secondary:focus-visible,
-.self-registration-consent-checkbox:focus-visible {
+.self-registration-consent-secondary:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--primary-color) 20%, transparent);
   outline-offset: 2px;
 }

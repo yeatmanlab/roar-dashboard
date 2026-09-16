@@ -31,16 +31,13 @@ function mountModal(props = {}) {
 }
 
 describe('ConsentModal.vue', () => {
-  it('renders the actual loaded document and requires explicit confirmation', async () => {
+  it('renders the actual loaded document and uses Continue as explicit confirmation', async () => {
     const wrapper = mountModal();
     const continueButton = wrapper.get('.self-registration-consent-primary');
 
     expect(wrapper.get('[role="dialog"]').attributes('aria-label')).toBe('Consent');
     expect(wrapper.text()).toContain('STANFORD UNIVERSITY CONSENT FORM');
-    expect(wrapper.text()).toContain('I agree to participate in this research.');
-    expect(continueButton.attributes('disabled')).toBeDefined();
-
-    await wrapper.get('#research-consent-confirmation').setValue(true);
+    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false);
     expect(continueButton.attributes('disabled')).toBeUndefined();
     await continueButton.trigger('click');
 

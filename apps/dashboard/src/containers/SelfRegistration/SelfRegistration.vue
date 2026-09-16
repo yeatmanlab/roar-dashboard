@@ -25,9 +25,6 @@
           :touched="form.touched"
           :submitted="form.submitted.value"
           :legal-accepted="consent.legalAccepted.value"
-          :research-consent-accepted="consent.researchConsentAccepted.value"
-          :consent-loading="consent.isLoading.value"
-          :consent-load-failed="Boolean(consent.loadError.value)"
           :future-contact-allowed="consent.futureContactAllowed.value"
           :verification-token="registration.verificationToken.value"
           :disabled="isSubmitDisabled"
@@ -36,8 +33,6 @@
           @touch="form.touch"
           @update:legal-accepted="handleLegalAccepted"
           @update:future-contact-allowed="consent.setFutureContactAllowed"
-          @review-research-consent="openResearchConsent"
-          @retry-research-consent="openResearchConsent"
           @verification="registration.setVerificationToken"
           @submit="handleSubmit"
         />
@@ -48,12 +43,11 @@
     <ConsentModal
       :visible="consent.isModalOpen.value"
       :document="consent.consentDocument.value"
-      :accepted="consent.researchConsentAccepted.value"
       :loading="consent.isLoading.value"
       :load-failed="Boolean(consent.loadError.value)"
       @cancel="consent.closeModal"
       @retry="loadResearchConsent"
-      @confirm="consent.acceptResearchConsent"
+      @confirm="confirmResearchConsent"
     />
   </div>
 </template>
@@ -104,12 +98,24 @@ function openResearchConsent() {
 }
 
 function handleLegalAccepted(value) {
-  consent.setLegalAccepted(value);
-  if (value && !consent.researchConsentAccepted.value) openResearchConsent();
+  if (!value) {
+    consent.setLegalAccepted(false);
+    return;
+  }
+
+  openResearchConsent();
+}
+
+function confirmResearchConsent() {
+  if (consent.acceptResearchConsent()) consent.setLegalAccepted(true);
 }
 
 async function handleSubmit() {
   if (!form.validate()) return false;
+  if (consent.legalAccepted.value && !consent.researchConsentAccepted.value) {
+    openResearchConsent();
+    return false;
+  }
   if (!canAttemptSubmission.value) return false;
   return registration.submit(form.payload.value);
 }

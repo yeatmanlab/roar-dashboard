@@ -143,13 +143,6 @@
     "reviewTerms": "Revise e aceite os Termos de Uso.",
     "consent": {
       "modalTitle": "Consentimento",
-      "requiredTitle": "Consentimento para pesquisa obrigatório",
-      "requiredDescription": "Revise o consentimento para pesquisa antes de criar sua conta.",
-      "completedTitle": "Consentimento para pesquisa concluído",
-      "completedDescription": "Você pode revisar o consentimento novamente antes de criar sua conta.",
-      "requiredError": "Revise e confirme o consentimento para pesquisa.",
-      "review": "Revisar consentimento",
-      "loading": "Carregando…",
       "loadingDocument": "Carregando o consentimento para pesquisa…",
       "loadError": "Não foi possível carregar o consentimento para pesquisa. Verifique sua conexão e tente novamente.",
       "retry": "Tentar novamente",

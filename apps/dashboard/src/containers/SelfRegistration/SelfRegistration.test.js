@@ -112,8 +112,6 @@ function mountSelfRegistration() {
             'update:field',
             'update:legal-accepted',
             'update:future-contact-allowed',
-            'review-research-consent',
-            'retry-research-consent',
             'verification',
           ],
           template: '<button data-testid="account-owner-form" @click="$emit(\'submit\')">Submit</button>',
@@ -127,6 +125,7 @@ describe('SelfRegistration.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.validate.mockReturnValue(true);
+    mocks.acceptResearchConsent.mockReturnValue(true);
     mocks.legalAccepted.value = true;
     mocks.researchConsentAccepted.value = true;
     mocks.requiredAcknowledgementsComplete.value = true;
@@ -155,7 +154,6 @@ describe('SelfRegistration.vue', () => {
     const accountOwnerForm = wrapper.findComponent({ name: 'AccountOwnerForm' });
     accountOwnerForm.vm.$emit('update:field', 'firstName', 'Taylor');
     accountOwnerForm.vm.$emit('touch', 'firstName');
-    accountOwnerForm.vm.$emit('update:legal-accepted', true);
     accountOwnerForm.vm.$emit('update:future-contact-allowed', false);
     accountOwnerForm.vm.$emit('verification', 'new-token');
     await wrapper.get('[data-testid="account-owner-form"]').trigger('click');
@@ -163,7 +161,6 @@ describe('SelfRegistration.vue', () => {
 
     expect(mocks.setField).toHaveBeenCalledWith('firstName', 'Taylor');
     expect(mocks.touch).toHaveBeenCalledWith('firstName');
-    expect(mocks.setLegalAccepted).toHaveBeenCalledWith(true);
     expect(mocks.setFutureContactAllowed).toHaveBeenCalledWith(false);
     expect(mocks.setVerificationToken).toHaveBeenCalledWith('new-token');
     expect(mocks.submit).toHaveBeenCalledWith(mocks.payload.value);
@@ -197,7 +194,8 @@ describe('SelfRegistration.vue', () => {
     wrapper.unmount();
   });
 
-  it('opens the required research consent after legal acceptance without conflating the decisions', async () => {
+  it('opens research consent without checking legal acceptance prematurely', async () => {
+    mocks.legalAccepted.value = false;
     mocks.researchConsentAccepted.value = false;
     mocks.requiredAcknowledgementsComplete.value = false;
     mocks.consentDocument.value = null;
@@ -207,10 +205,27 @@ describe('SelfRegistration.vue', () => {
     accountOwnerForm.vm.$emit('update:legal-accepted', true);
     await flushPromises();
 
-    expect(mocks.setLegalAccepted).toHaveBeenCalledWith(true);
+    expect(mocks.setLegalAccepted).not.toHaveBeenCalled();
     expect(mocks.openConsentModal).toHaveBeenCalledOnce();
     expect(mocks.acceptResearchConsent).not.toHaveBeenCalled();
     expect(mocks.loadConsent).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it('checks legal acceptance only when Continue confirms the loaded consent', () => {
+    mocks.legalAccepted.value = false;
+    mocks.researchConsentAccepted.value = false;
+    const wrapper = mountSelfRegistration();
+    const consentModal = wrapper.findComponent({ name: 'ConsentModal' });
+
+    consentModal.vm.$emit('cancel');
+    expect(mocks.closeConsentModal).toHaveBeenCalledOnce();
+    expect(mocks.setLegalAccepted).not.toHaveBeenCalled();
+    expect(mocks.acceptResearchConsent).not.toHaveBeenCalled();
+
+    consentModal.vm.$emit('confirm');
+    expect(mocks.acceptResearchConsent).toHaveBeenCalledOnce();
+    expect(mocks.setLegalAccepted).toHaveBeenCalledWith(true);
     wrapper.unmount();
   });
 

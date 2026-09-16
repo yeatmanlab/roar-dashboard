@@ -63,19 +63,23 @@ describe('AccountOwnerForm.vue', () => {
     wrapper.unmount();
   });
 
-  it('keeps legal acceptance, research consent, and optional contact as separate controls', async () => {
+  it('keeps legal acceptance controlled until the consent modal is confirmed', async () => {
     const wrapper = mountForm();
+    const legalAcceptance = wrapper.get('[name="legalAcceptance"]');
 
-    expect(wrapper.get('[name="legalAcceptance"]').exists()).toBe(true);
+    expect(legalAcceptance.element.checked).toBe(false);
     expect(wrapper.get('[name="futureContact"]').exists()).toBe(true);
-    expect(wrapper.get('[data-testid="research-consent-status"]').text()).toContain('Research consent required');
+    expect(wrapper.find('[data-testid="research-consent-status"]').exists()).toBe(false);
 
-    await wrapper.get('[name="legalAcceptance"]').setValue(true);
-    await wrapper.get('.self-registration-consent-action').trigger('click');
+    await legalAcceptance.trigger('click');
 
     expect(wrapper.emitted('update:legal-accepted')).toContainEqual([true]);
-    expect(wrapper.emitted('review-research-consent')).toHaveLength(1);
     expect(wrapper.emitted('update:future-contact-allowed')).toBeUndefined();
+    expect(legalAcceptance.element.checked).toBe(false);
+
+    await wrapper.setProps({ legalAccepted: true });
+
+    expect(legalAcceptance.element.checked).toBe(true);
     wrapper.unmount();
   });
 
