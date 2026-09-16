@@ -4,19 +4,17 @@ import { AggregationService } from './aggregation.service';
 import type { Administration } from '../../db/schema';
 import { ApiError } from '../../errors/api-error';
 import { AdministrationRepository } from '../../repositories/administration.repository';
-import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
-import { AggregationRepository } from '../../repositories/aggregation.repository';
 import {
   createMockAdministrationRepository,
+  createMockAdministrationTaskVariantRepository,
   createMockAggregationRepository,
   createMockTaskVariantParameterRepository,
 } from '../../test-support/repositories';
 
-vi.mock('../../repositories/administration-task-variant.repository');
-vi.mock('../../repositories/aggregation.repository');
-
 describe('aggregateSupportCategories', () => {
   let mockAdministrationRepository: MockedObject<AdministrationRepository>;
+  let mockAdministrationTaskVariantRepository: ReturnType<typeof createMockAdministrationTaskVariantRepository>;
+  let mockAggregationRepository: ReturnType<typeof createMockAggregationRepository>;
   let mockTaskVariantParameterRepository: ReturnType<typeof createMockTaskVariantParameterRepository>;
   let aggregateSupportCategories: ReturnType<typeof AggregationService>['aggregateSupportCategories'];
 
@@ -33,18 +31,15 @@ describe('aggregateSupportCategories', () => {
     mockTaskVariantParameterRepository = createMockTaskVariantParameterRepository();
     // No scoringVersion rows by default, so every variant resolves to v0.
     mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
-    // Mock AdministrationTaskVariantRepository to return empty tasks
-    vi.mocked(AdministrationTaskVariantRepository).mockImplementation(
-      () =>
-        ({
-          getByAdministrationIds: vi.fn().mockResolvedValue(new Map()),
-        }) as unknown as AdministrationTaskVariantRepository,
-    );
-    // Mock AggregationRepository to return empty results by default
-    vi.mocked(AggregationRepository).mockImplementation(() => createMockAggregationRepository());
+    // No tasks and no runs by default
+    mockAdministrationTaskVariantRepository = createMockAdministrationTaskVariantRepository();
+    mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(new Map());
+    mockAggregationRepository = createMockAggregationRepository();
     // Create service instance with mocked repositories
     const service = AggregationService({
       administrationRepository: mockAdministrationRepository,
+      administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+      aggregationRepository: mockAggregationRepository,
       taskVariantParameterRepository: mockTaskVariantParameterRepository,
     });
     aggregateSupportCategories = service.aggregateSupportCategories;
@@ -71,33 +66,27 @@ describe('aggregateSupportCategories', () => {
      */
     function setupTask(taskSlug: string, runs: Array<{ runId: string; grade: string; scores: [string, string][] }>) {
       mockAdministrationRepository.getById.mockResolvedValue({ id: 'admin-123' } as Administration);
-      vi.mocked(AdministrationTaskVariantRepository).mockImplementation(
-        () =>
-          ({
-            getByAdministrationIds: vi.fn().mockResolvedValue(
-              new Map([
-                [
-                  'admin-123',
-                  [
-                    {
-                      taskId: `task-${taskSlug}-uuid`,
-                      taskSlug,
-                      taskName: taskSlug,
-                      variantId: 'variant-1',
-                      variantName: 'Variant A',
-                      orderIndex: 0,
-                      conditionsAssignment: null,
-                      conditionsRequirements: null,
-                    },
-                  ],
-                ],
-              ]),
-            ),
-          }) as unknown as AdministrationTaskVariantRepository,
+      mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(
+        new Map([
+          [
+            'admin-123',
+            [
+              {
+                taskId: `task-${taskSlug}-uuid`,
+                taskSlug,
+                taskName: taskSlug,
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
+          ],
+        ]),
       );
 
-      const mockAggregationRepo = createMockAggregationRepository();
-      mockAggregationRepo.getBestRunsForVariants.mockResolvedValue(
+      mockAggregationRepository.getBestRunsForVariants.mockResolvedValue(
         runs.map((r) => ({
           id: r.runId,
           userId: `user-${r.runId}`,
@@ -105,15 +94,18 @@ describe('aggregateSupportCategories', () => {
           administrationId: 'admin-123',
         })),
       );
-      mockAggregationRepo.getDemographicsByRunIds.mockResolvedValue(new Map(runs.map((r) => [r.runId, r.grade])));
-      mockAggregationRepo.getScoresByRunIds.mockResolvedValue(new Map(runs.map((r) => [r.runId, new Map(r.scores)])));
-      mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue(
+      mockAggregationRepository.getDemographicsByRunIds.mockResolvedValue(new Map(runs.map((r) => [r.runId, r.grade])));
+      mockAggregationRepository.getScoresByRunIds.mockResolvedValue(
+        new Map(runs.map((r) => [r.runId, new Map(r.scores)])),
+      );
+      mockAggregationRepository.getUserSchoolsByUserIds.mockResolvedValue(
         runs.map((r) => ({ userId: `user-${r.runId}`, schoolId: 'school-1', schoolName: 'School A' })),
       );
-      vi.mocked(AggregationRepository).mockImplementation(() => mockAggregationRepo);
 
       return AggregationService({
         administrationRepository: mockAdministrationRepository,
+        administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+        aggregationRepository: mockAggregationRepository,
         taskVariantParameterRepository: mockTaskVariantParameterRepository,
       });
     }
@@ -270,12 +262,7 @@ describe('aggregateSupportCategories', () => {
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin as Administration);
 
       // Mock the task variant repository to return empty task list
-      vi.mocked(AdministrationTaskVariantRepository).mockImplementation(
-        () =>
-          ({
-            getByAdministrationIds: vi.fn().mockResolvedValue(new Map()),
-          }) as unknown as AdministrationTaskVariantRepository,
-      );
+      mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(new Map());
 
       const result = await aggregateSupportCategories({
         administrationId: 'admin-123',
@@ -302,44 +289,38 @@ describe('aggregateSupportCategories', () => {
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin as Administration);
 
       // Mock task variant repository with one SWR task
-      vi.mocked(AdministrationTaskVariantRepository).mockImplementation(
-        () =>
-          ({
-            getByAdministrationIds: vi.fn().mockResolvedValue(
-              new Map([
-                [
-                  'admin-123',
-                  [
-                    {
-                      taskId: 'task-swr-uuid',
-                      taskSlug: 'swr',
-                      taskName: 'Sight Word Reading',
-                      variantId: 'variant-1',
-                      variantName: 'Variant A',
-                      orderIndex: 0,
-                      conditionsAssignment: null,
-                      conditionsRequirements: null,
-                    },
-                  ],
-                ],
-              ]),
-            ),
-          }) as unknown as AdministrationTaskVariantRepository,
+      mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(
+        new Map([
+          [
+            'admin-123',
+            [
+              {
+                taskId: 'task-swr-uuid',
+                taskSlug: 'swr',
+                taskName: 'Sight Word Reading',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
+          ],
+        ]),
       );
 
       // Mock aggregation repository methods
-      const mockAggregationRepo = createMockAggregationRepository();
-      mockAggregationRepo.getBestRunsForVariants.mockResolvedValue([
+      mockAggregationRepository.getBestRunsForVariants.mockResolvedValue([
         { id: 'run-1', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
         { id: 'run-2', userId: 'user-2', taskVariantId: 'variant-1', administrationId: 'admin-123' },
       ]);
-      mockAggregationRepo.getDemographicsByRunIds.mockResolvedValue(
+      mockAggregationRepository.getDemographicsByRunIds.mockResolvedValue(
         new Map([
           ['run-1', '2'],
           ['run-2', '3'],
         ]),
       );
-      mockAggregationRepo.getScoresByRunIds.mockResolvedValue(
+      mockAggregationRepository.getScoresByRunIds.mockResolvedValue(
         new Map([
           [
             'run-1',
@@ -359,14 +340,15 @@ describe('aggregateSupportCategories', () => {
           ],
         ]),
       );
-      mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue([
+      mockAggregationRepository.getUserSchoolsByUserIds.mockResolvedValue([
         { userId: 'user-1', schoolId: 'school-1', schoolName: 'School A' },
         { userId: 'user-2', schoolId: 'school-1', schoolName: 'School A' },
       ]);
-      vi.mocked(AggregationRepository).mockImplementation(() => mockAggregationRepo);
 
       const service = AggregationService({
         administrationRepository: mockAdministrationRepository,
+        administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+        aggregationRepository: mockAggregationRepository,
         taskVariantParameterRepository: mockTaskVariantParameterRepository,
       });
       const result = await service.aggregateSupportCategories({
@@ -400,46 +382,40 @@ describe('aggregateSupportCategories', () => {
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin as Administration);
 
       // Mock task variant repository
-      vi.mocked(AdministrationTaskVariantRepository).mockImplementation(
-        () =>
-          ({
-            getByAdministrationIds: vi.fn().mockResolvedValue(
-              new Map([
-                [
-                  'admin-123',
-                  [
-                    {
-                      taskId: 'task-pa-uuid',
-                      taskSlug: 'pa',
-                      taskName: 'Phonological Awareness',
-                      variantId: 'variant-1',
-                      variantName: 'Variant A',
-                      orderIndex: 0,
-                      conditionsAssignment: null,
-                      conditionsRequirements: null,
-                    },
-                  ],
-                ],
-              ]),
-            ),
-          }) as unknown as AdministrationTaskVariantRepository,
+      mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(
+        new Map([
+          [
+            'admin-123',
+            [
+              {
+                taskId: 'task-pa-uuid',
+                taskSlug: 'pa',
+                taskName: 'Phonological Awareness',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
+          ],
+        ]),
       );
 
       // Mock aggregation repository methods
-      const mockAggregationRepo = createMockAggregationRepository();
-      mockAggregationRepo.getBestRunsForVariants.mockResolvedValue([
+      mockAggregationRepository.getBestRunsForVariants.mockResolvedValue([
         { id: 'run-1', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
         { id: 'run-2', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
         { id: 'run-3', userId: 'user-2', taskVariantId: 'variant-1', administrationId: 'admin-123' },
       ]);
-      mockAggregationRepo.getDemographicsByRunIds.mockResolvedValue(
+      mockAggregationRepository.getDemographicsByRunIds.mockResolvedValue(
         new Map([
           ['run-1', '2'],
           ['run-2', '2'],
           ['run-3', '3'],
         ]),
       );
-      mockAggregationRepo.getScoresByRunIds.mockResolvedValue(
+      mockAggregationRepository.getScoresByRunIds.mockResolvedValue(
         new Map([
           [
             'run-1',
@@ -464,14 +440,15 @@ describe('aggregateSupportCategories', () => {
           ],
         ]),
       );
-      mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue([
+      mockAggregationRepository.getUserSchoolsByUserIds.mockResolvedValue([
         { userId: 'user-1', schoolId: 'school-1', schoolName: 'School A' },
         { userId: 'user-2', schoolId: 'school-2', schoolName: 'School B' },
       ]);
-      vi.mocked(AggregationRepository).mockImplementation(() => mockAggregationRepo);
 
       const service = AggregationService({
         administrationRepository: mockAdministrationRepository,
+        administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+        aggregationRepository: mockAggregationRepository,
         taskVariantParameterRepository: mockTaskVariantParameterRepository,
       });
       const result = await service.aggregateSupportCategories({
@@ -509,37 +486,31 @@ describe('aggregateSupportCategories', () => {
 
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin as Administration);
 
-      vi.mocked(AdministrationTaskVariantRepository).mockImplementation(
-        () =>
-          ({
-            getByAdministrationIds: vi.fn().mockResolvedValue(
-              new Map([
-                [
-                  'admin-123',
-                  [
-                    {
-                      taskId: 'task-swr-uuid',
-                      taskSlug: 'swr',
-                      taskName: 'Sight Word Reading',
-                      variantId: 'variant-1',
-                      variantName: 'Variant A',
-                      orderIndex: 0,
-                      conditionsAssignment: null,
-                      conditionsRequirements: null,
-                    },
-                  ],
-                ],
-              ]),
-            ),
-          }) as unknown as AdministrationTaskVariantRepository,
+      mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(
+        new Map([
+          [
+            'admin-123',
+            [
+              {
+                taskId: 'task-swr-uuid',
+                taskSlug: 'swr',
+                taskName: 'Sight Word Reading',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
+          ],
+        ]),
       );
 
-      const mockAggregationRepo = createMockAggregationRepository();
-      mockAggregationRepo.getBestRunsForVariants.mockResolvedValue([
+      mockAggregationRepository.getBestRunsForVariants.mockResolvedValue([
         { id: 'run-1', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
       ]);
-      mockAggregationRepo.getDemographicsByRunIds.mockResolvedValue(new Map([['run-1', '2']]));
-      mockAggregationRepo.getScoresByRunIds.mockResolvedValue(
+      mockAggregationRepository.getDemographicsByRunIds.mockResolvedValue(new Map([['run-1', '2']]));
+      mockAggregationRepository.getScoresByRunIds.mockResolvedValue(
         new Map([
           [
             'run-1',
@@ -551,13 +522,14 @@ describe('aggregateSupportCategories', () => {
         ]),
       );
       // Only active enrollment (enrollmentEnd is null) is returned by the repository
-      mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue([
+      mockAggregationRepository.getUserSchoolsByUserIds.mockResolvedValue([
         { userId: 'user-1', schoolId: 'school-1', schoolName: 'School A (Active)' },
       ]);
-      vi.mocked(AggregationRepository).mockImplementation(() => mockAggregationRepo);
 
       const service = AggregationService({
         administrationRepository: mockAdministrationRepository,
+        administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+        aggregationRepository: mockAggregationRepository,
         taskVariantParameterRepository: mockTaskVariantParameterRepository,
       });
       const result = await service.aggregateSupportCategories({
@@ -590,43 +562,37 @@ describe('aggregateSupportCategories', () => {
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin as Administration);
 
       // Mock task variant repository
-      vi.mocked(AdministrationTaskVariantRepository).mockImplementation(
-        () =>
-          ({
-            getByAdministrationIds: vi.fn().mockResolvedValue(
-              new Map([
-                [
-                  'admin-123',
-                  [
-                    {
-                      taskId: 'task-swr-uuid',
-                      taskSlug: 'swr',
-                      taskName: 'Sight Word Reading',
-                      variantId: 'variant-1',
-                      variantName: 'Variant A',
-                      orderIndex: 0,
-                      conditionsAssignment: null,
-                      conditionsRequirements: null,
-                    },
-                  ],
-                ],
-              ]),
-            ),
-          }) as unknown as AdministrationTaskVariantRepository,
+      mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(
+        new Map([
+          [
+            'admin-123',
+            [
+              {
+                taskId: 'task-swr-uuid',
+                taskSlug: 'swr',
+                taskName: 'Sight Word Reading',
+                variantId: 'variant-1',
+                variantName: 'Variant A',
+                orderIndex: 0,
+                conditionsAssignment: null,
+                conditionsRequirements: null,
+              },
+            ],
+          ],
+        ]),
       );
 
-      const mockAggregationRepo = createMockAggregationRepository();
-      mockAggregationRepo.getBestRunsForVariants.mockResolvedValue([
+      mockAggregationRepository.getBestRunsForVariants.mockResolvedValue([
         { id: 'run-1', userId: 'user-1', taskVariantId: 'variant-1', administrationId: 'admin-123' },
         { id: 'run-2', userId: 'user-2', taskVariantId: 'variant-1', administrationId: 'admin-123' },
       ]);
-      mockAggregationRepo.getDemographicsByRunIds.mockResolvedValue(
+      mockAggregationRepository.getDemographicsByRunIds.mockResolvedValue(
         new Map([
           ['run-1', '2'],
           ['run-2', '3'],
         ]),
       );
-      mockAggregationRepo.getScoresByRunIds.mockResolvedValue(
+      mockAggregationRepository.getScoresByRunIds.mockResolvedValue(
         new Map([
           [
             'run-1',
@@ -646,14 +612,15 @@ describe('aggregateSupportCategories', () => {
           ],
         ]),
       );
-      mockAggregationRepo.getUserSchoolsByUserIds.mockResolvedValue([
+      mockAggregationRepository.getUserSchoolsByUserIds.mockResolvedValue([
         { userId: 'user-1', schoolId: 'school-1', schoolName: 'School A' },
         { userId: 'user-2', schoolId: 'school-1', schoolName: 'School A' },
       ]);
-      vi.mocked(AggregationRepository).mockImplementation(() => mockAggregationRepo);
 
       const service = AggregationService({
         administrationRepository: mockAdministrationRepository,
+        administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+        aggregationRepository: mockAggregationRepository,
         taskVariantParameterRepository: mockTaskVariantParameterRepository,
       });
       const result = await service.aggregateSupportCategories({
