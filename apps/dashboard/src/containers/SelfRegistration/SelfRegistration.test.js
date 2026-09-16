@@ -14,7 +14,17 @@ const mocks = vi.hoisted(() => ({
   },
   setLegalAccepted: vi.fn(),
   setFutureContactAllowed: vi.fn(),
+  openConsentModal: vi.fn(),
+  closeConsentModal: vi.fn(),
+  acceptResearchConsent: vi.fn(),
+  loadConsent: vi.fn().mockResolvedValue(undefined),
   legalAccepted: { value: true },
+  researchConsentAccepted: { value: true },
+  requiredAcknowledgementsComplete: { value: true },
+  consentDocument: { value: { id: 'consent-v1', version: 'v1', text: 'Approved consent' } },
+  consentLoading: { value: false },
+  consentLoadError: { value: null },
+  consentModalOpen: { value: false },
   futureContactAllowed: { value: false },
   submit: vi.fn().mockResolvedValue(true),
   dismissStatus: vi.fn(),
@@ -23,6 +33,10 @@ const mocks = vi.hoisted(() => ({
   errorMessage: { value: '' },
   isSuccess: { value: false },
   verificationToken: { value: 'verified' },
+}));
+
+vi.mock('@/store/auth', () => ({
+  useAuthStore: () => ({ getLegalDoc: vi.fn().mockResolvedValue({ text: 'Approved consent' }) }),
 }));
 
 vi.mock('vue-recaptcha', () => ({
@@ -46,7 +60,17 @@ vi.mock('./composables/useResearchConsent', () => ({
   useResearchConsent: () => ({
     setLegalAccepted: mocks.setLegalAccepted,
     setFutureContactAllowed: mocks.setFutureContactAllowed,
+    openModal: mocks.openConsentModal,
+    closeModal: mocks.closeConsentModal,
+    acceptResearchConsent: mocks.acceptResearchConsent,
+    loadConsent: mocks.loadConsent,
     legalAccepted: mocks.legalAccepted,
+    researchConsentAccepted: mocks.researchConsentAccepted,
+    requiredAcknowledgementsComplete: mocks.requiredAcknowledgementsComplete,
+    consentDocument: mocks.consentDocument,
+    isLoading: mocks.consentLoading,
+    loadError: mocks.consentLoadError,
+    isModalOpen: mocks.consentModalOpen,
     futureContactAllowed: mocks.futureContactAllowed,
   }),
 }));
@@ -73,6 +97,12 @@ function mountSelfRegistration() {
         AuthPageFooter: true,
         ROARLogoShort: true,
         RegistrationStatus: true,
+        ConsentModal: {
+          name: 'ConsentModal',
+          props: ['visible'],
+          emits: ['cancel', 'confirm', 'retry'],
+          template: '<div data-testid="consent-modal" />',
+        },
         AccountOwnerForm: {
           name: 'AccountOwnerForm',
           props: ['disabled'],
@@ -82,6 +112,8 @@ function mountSelfRegistration() {
             'update:field',
             'update:legal-accepted',
             'update:future-contact-allowed',
+            'review-research-consent',
+            'retry-research-consent',
             'verification',
           ],
           template: '<button data-testid="account-owner-form" @click="$emit(\'submit\')">Submit</button>',
@@ -96,6 +128,12 @@ describe('SelfRegistration.vue', () => {
     vi.clearAllMocks();
     mocks.validate.mockReturnValue(true);
     mocks.legalAccepted.value = true;
+    mocks.researchConsentAccepted.value = true;
+    mocks.requiredAcknowledgementsComplete.value = true;
+    mocks.consentDocument.value = { id: 'consent-v1', version: 'v1', text: 'Approved consent' };
+    mocks.consentLoading.value = false;
+    mocks.consentLoadError.value = null;
+    mocks.consentModalOpen.value = false;
     mocks.verificationToken.value = 'verified';
     mocks.isSubmitting.value = false;
     mocks.errorMessage.value = '';
@@ -148,6 +186,7 @@ describe('SelfRegistration.vue', () => {
 
   it('does not start registration before required submission prerequisites are ready', async () => {
     mocks.legalAccepted.value = false;
+    mocks.requiredAcknowledgementsComplete.value = false;
     const wrapper = mountSelfRegistration();
 
     wrapper.findComponent({ name: 'AccountOwnerForm' }).vm.$emit('submit');
@@ -155,6 +194,23 @@ describe('SelfRegistration.vue', () => {
 
     expect(mocks.validate).toHaveBeenCalledOnce();
     expect(mocks.submit).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it('opens the required research consent after legal acceptance without conflating the decisions', async () => {
+    mocks.researchConsentAccepted.value = false;
+    mocks.requiredAcknowledgementsComplete.value = false;
+    mocks.consentDocument.value = null;
+    const wrapper = mountSelfRegistration();
+    const accountOwnerForm = wrapper.findComponent({ name: 'AccountOwnerForm' });
+
+    accountOwnerForm.vm.$emit('update:legal-accepted', true);
+    await flushPromises();
+
+    expect(mocks.setLegalAccepted).toHaveBeenCalledWith(true);
+    expect(mocks.openConsentModal).toHaveBeenCalledOnce();
+    expect(mocks.acceptResearchConsent).not.toHaveBeenCalled();
+    expect(mocks.loadConsent).toHaveBeenCalledOnce();
     wrapper.unmount();
   });
 

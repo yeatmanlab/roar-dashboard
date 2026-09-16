@@ -25,20 +25,36 @@
           :touched="form.touched"
           :submitted="form.submitted.value"
           :legal-accepted="consent.legalAccepted.value"
+          :research-consent-accepted="consent.researchConsentAccepted.value"
+          :consent-loading="consent.isLoading.value"
+          :consent-load-failed="Boolean(consent.loadError.value)"
           :future-contact-allowed="consent.futureContactAllowed.value"
           :verification-token="registration.verificationToken.value"
           :disabled="isSubmitDisabled"
           :submitting="registration.isSubmitting.value"
           @update:field="form.setField"
           @touch="form.touch"
-          @update:legal-accepted="consent.setLegalAccepted"
+          @update:legal-accepted="handleLegalAccepted"
           @update:future-contact-allowed="consent.setFutureContactAllowed"
+          @review-research-consent="openResearchConsent"
+          @retry-research-consent="openResearchConsent"
           @verification="registration.setVerificationToken"
           @submit="handleSubmit"
         />
       </section>
       <AuthPageFooter />
     </div>
+
+    <ConsentModal
+      :visible="consent.isModalOpen.value"
+      :document="consent.consentDocument.value"
+      :accepted="consent.researchConsentAccepted.value"
+      :loading="consent.isLoading.value"
+      :load-failed="Boolean(consent.loadError.value)"
+      @cancel="consent.closeModal"
+      @retry="loadResearchConsent"
+      @confirm="consent.acceptResearchConsent"
+    />
   </div>
 </template>
 
@@ -46,13 +62,16 @@
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import AuthPageFooter from '@/components/AuthPageFooter.vue';
+import { useAuthStore } from '@/store/auth';
 import { i18n } from '@/translations/i18n';
-import { AccountOwnerForm, RegistrationStatus } from './components';
+import { AccountOwnerForm, ConsentModal, RegistrationStatus } from './components';
+import { loadDefaultResearchConsent } from './composables/loadDefaultResearchConsent';
 import { useAccountOwnerForm } from './composables/useAccountOwnerForm';
 import { useResearchConsent } from './composables/useResearchConsent';
 import { useSelfRegistration } from './composables/useSelfRegistration';
 
 const { t } = i18n.global;
+const authStore = useAuthStore();
 const form = useAccountOwnerForm({ t });
 const consent = useResearchConsent();
 const registration = useSelfRegistration({ t });
@@ -64,8 +83,30 @@ const isSubmitDisabled = computed(() => !registration.verificationToken.value ||
 
 const canAttemptSubmission = computed(
   () =>
-    consent.legalAccepted.value && Boolean(registration.verificationToken.value) && !registration.isSubmitting.value,
+    consent.requiredAcknowledgementsComplete.value &&
+    Boolean(registration.verificationToken.value) &&
+    !registration.isSubmitting.value,
 );
+
+async function loadResearchConsent() {
+  try {
+    await consent.loadConsent(() =>
+      loadDefaultResearchConsent(authStore.getLegalDoc.bind(authStore), i18n.global.locale.value),
+    );
+  } catch {
+    // The composable exposes a recoverable error state; do not leak provider errors.
+  }
+}
+
+function openResearchConsent() {
+  consent.openModal();
+  if (!consent.consentDocument.value && !consent.isLoading.value) void loadResearchConsent();
+}
+
+function handleLegalAccepted(value) {
+  consent.setLegalAccepted(value);
+  if (value && !consent.researchConsentAccepted.value) openResearchConsent();
+}
 
 async function handleSubmit() {
   if (!form.validate()) return false;

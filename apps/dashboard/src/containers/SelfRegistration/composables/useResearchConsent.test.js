@@ -4,6 +4,7 @@ import { useResearchConsent } from './useResearchConsent';
 describe('useResearchConsent', () => {
   it('keeps required research consent separate from legal acceptance and optional contact', () => {
     const consent = useResearchConsent();
+    consent.consentDocument.value = { id: 'consent-v1', version: 'v1' };
     consent.setLegalAccepted(true);
     consent.setFutureContactAllowed(true);
 
@@ -42,8 +43,9 @@ describe('useResearchConsent', () => {
     expect(consent.consentDocument.value).toBeNull();
   });
 
-  it('opens, closes, and closes the modal after explicit consent', () => {
-    const consent = useResearchConsent();
+  it('opens, closes, and records the exact document after explicit consent', () => {
+    const consent = useResearchConsent({ now: () => new Date('2026-09-15T12:00:00.000Z') });
+    consent.consentDocument.value = { id: 'consent-v1', version: '2026-09' };
 
     consent.openModal();
     expect(consent.isModalOpen.value).toBe(true);
@@ -54,6 +56,19 @@ describe('useResearchConsent', () => {
     consent.openModal();
     consent.acceptResearchConsent();
     expect(consent.researchConsentAccepted.value).toBe(true);
+    expect(consent.consentRecord.value).toEqual({
+      documentId: 'consent-v1',
+      documentVersion: '2026-09',
+      confirmedAt: '2026-09-15T12:00:00.000Z',
+    });
     expect(consent.isModalOpen.value).toBe(false);
+  });
+
+  it('does not record consent when no approved document is loaded', () => {
+    const consent = useResearchConsent();
+
+    expect(consent.acceptResearchConsent()).toBe(false);
+    expect(consent.consentRecord.value).toBeNull();
+    expect(consent.researchConsentAccepted.value).toBe(false);
   });
 });

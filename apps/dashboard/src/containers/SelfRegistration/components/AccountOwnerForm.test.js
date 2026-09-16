@@ -63,6 +63,22 @@ describe('AccountOwnerForm.vue', () => {
     wrapper.unmount();
   });
 
+  it('keeps legal acceptance, research consent, and optional contact as separate controls', async () => {
+    const wrapper = mountForm();
+
+    expect(wrapper.get('[name="legalAcceptance"]').exists()).toBe(true);
+    expect(wrapper.get('[name="futureContact"]').exists()).toBe(true);
+    expect(wrapper.get('[data-testid="research-consent-status"]').text()).toContain('Research consent required');
+
+    await wrapper.get('[name="legalAcceptance"]').setValue(true);
+    await wrapper.get('.self-registration-consent-action').trigger('click');
+
+    expect(wrapper.emitted('update:legal-accepted')).toContainEqual([true]);
+    expect(wrapper.emitted('review-research-consent')).toHaveLength(1);
+    expect(wrapper.emitted('update:future-contact-allowed')).toBeUndefined();
+    wrapper.unmount();
+  });
+
   it('emits controlled field updates and uses the native form submission path', async () => {
     const wrapper = mountForm();
 

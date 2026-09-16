@@ -17,9 +17,12 @@ account-owner account before authentication. It does not enroll a learner.
 
 `useResearchConsent` owns research-consent state independently from legal
 acceptance and optional future contact. Its default-document loader must not
-derive a document from route or invitation-code context. The accessible consent
-interaction and protocol record are implemented by the dedicated Stage 1
-research-consent ticket stacked after the open-signup work.
+derive a document from route or invitation-code context. The consent modal loads
+the existing `consent-behavioral-eye-tracking` legal document (or its approved
+Spanish counterpart), requires the explicit research acknowledgement, and keeps
+the selected document identifier, version metadata, and confirmation time in a
+feature-local consent record. Closing or canceling the modal does not create that
+record.
 
 ## Stage 2 boundary
 

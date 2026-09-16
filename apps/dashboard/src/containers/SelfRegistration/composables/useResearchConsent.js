@@ -7,18 +7,22 @@ import { computed, ref } from 'vue';
  * Stage 1 dependencies. The loader is intentionally independent of route and
  * invitation-code context; invitation codes belong to LearnerEnrollment.
  *
+ * @param {Object} [options] Injectable consent dependencies.
+ * @param {() => Date} [options.now] Clock used to timestamp confirmation.
  * @returns {Object} Reactive consent state plus document-loading, modal, and
  * decision helpers.
  */
-export function useResearchConsent() {
+export function useResearchConsent(options = {}) {
   const consentDocument = ref(null);
+  const consentRecord = ref(null);
   const isLoading = ref(false);
   const loadError = ref(null);
   const isModalOpen = ref(false);
   const legalAccepted = ref(false);
-  const researchConsentAccepted = ref(false);
   const futureContactAllowed = ref(false);
+  const now = options.now ?? (() => new Date());
 
+  const researchConsentAccepted = computed(() => Boolean(consentRecord.value));
   const requiredAcknowledgementsComplete = computed(() => legalAccepted.value && researchConsentAccepted.value);
 
   async function loadConsent(loadDocument) {
@@ -44,8 +48,15 @@ export function useResearchConsent() {
   }
 
   function acceptResearchConsent() {
-    researchConsentAccepted.value = true;
+    if (!consentDocument.value) return false;
+
+    consentRecord.value = {
+      documentId: consentDocument.value.id,
+      documentVersion: consentDocument.value.version ?? null,
+      confirmedAt: now().toISOString(),
+    };
     closeModal();
+    return true;
   }
 
   function setLegalAccepted(value) {
@@ -58,6 +69,7 @@ export function useResearchConsent() {
 
   return {
     consentDocument,
+    consentRecord,
     isLoading,
     loadError,
     isModalOpen,

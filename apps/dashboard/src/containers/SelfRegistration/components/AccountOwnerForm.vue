@@ -162,6 +162,15 @@
               {{ t('pageRegister.reviewTerms') }}
             </small>
           </div>
+
+          <ConsentStatus
+            :accepted="researchConsentAccepted"
+            :loading="consentLoading"
+            :load-failed="consentLoadFailed"
+            :show-error="submitted && !researchConsentAccepted"
+            @review="$emit('review-research-consent')"
+            @retry="$emit('retry-research-consent')"
+          />
         </div>
       </ChallengeV3>
 
@@ -191,6 +200,7 @@ import { ChallengeV3 } from 'vue-recaptcha';
 import { TERMS_OF_SERVICE_DOCUMENT_PATH } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
 import { i18n } from '@/translations/i18n';
+import ConsentStatus from './ConsentStatus.vue';
 
 const props = defineProps({
   values: { type: Object, required: true },
@@ -198,6 +208,9 @@ const props = defineProps({
   touched: { type: Object, required: true },
   submitted: { type: Boolean, default: false },
   legalAccepted: { type: Boolean, default: false },
+  researchConsentAccepted: { type: Boolean, default: false },
+  consentLoading: { type: Boolean, default: false },
+  consentLoadFailed: { type: Boolean, default: false },
   futureContactAllowed: { type: Boolean, default: false },
   verificationToken: { type: String, default: '' },
   disabled: { type: Boolean, default: false },
@@ -212,6 +225,8 @@ const emit = defineEmits([
   'update:field',
   'update:legal-accepted',
   'update:future-contact-allowed',
+  'review-research-consent',
+  'retry-research-consent',
   'verification',
 ]);
 
