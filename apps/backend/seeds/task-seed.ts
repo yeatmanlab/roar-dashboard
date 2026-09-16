@@ -11,7 +11,6 @@
  *
  * The --task argument selects a config from the registry which provides:
  * - Task ID(s) and metadata (name, nameSimple, nameTechnical)
- * - Allowed parameter keys for validation
  * - Optional custom validation function
  *
  * Idempotent — tasks and variants that already exist are skipped.
