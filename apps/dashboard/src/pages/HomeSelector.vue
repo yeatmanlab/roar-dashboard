@@ -99,7 +99,7 @@ const {
   enabled: initialized,
 });
 
-const { isAdmin, isSuperAdmin, isParticipant, isLaunchAdmin } = useUserType(userClaims);
+const { userType, isAdmin, isSuperAdmin, isParticipant, isLaunchAdmin } = useUserType(userClaims);
 
 const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value || isLaunchAdmin.value);
 
@@ -119,6 +119,21 @@ const isLoading = computed(() => {
   // reached in that state. Reorder those branches and the spinner comes back.
   return !initialized.value || isLoadingClaims.value || !userClaims.value;
 });
+
+// Mirrors the template's final `v-else`: claims resolved, but no home matches.
+const noHomeMatched = computed(
+  () => !hasError.value && !isLoading.value && !isParticipant.value && !isLaunchAdmin.value && !isAdminUser.value,
+);
+watch(
+  noHomeMatched,
+  (matchedNone) => {
+    if (!matchedNone) return;
+    // The on-screen copy stays generic on purpose; the diagnostic detail goes
+    // here, where Sentry's captureConsoleIntegration picks it up in production.
+    console.error('[Auth] no home view matched for the resolved user type', { userType: userType.value });
+  },
+  { immediate: true },
+);
 
 /** Refetch the claims query so the user can recover without a full reload. */
 function handleRetry() {

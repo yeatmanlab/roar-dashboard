@@ -61,8 +61,8 @@
     "errorTitle": "No pudimos cargar tu panel",
     "errorMessage": "Se produjo un error al cargar tu cuenta. Por favor, inténtalo de nuevo.",
     "errorRetry": "Intentar de nuevo",
-    "unmatchedTitle": "No hay panel disponible",
-    "unmatchedMessage": "Tu cuenta aún no está configurada para ningún panel. Por favor, contacta a tu administrador."
+    "unmatchedTitle": "No pudimos cargar tu panel",
+    "unmatchedMessage": "Por favor, contacta a tu administrador."
   },
   "gameTabs": {
     "clickToStart": "Haz clic para empezar",

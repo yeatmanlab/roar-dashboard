@@ -60,8 +60,8 @@
     "errorTitle": "Não foi possível carregar o seu painel",
     "errorMessage": "Ocorreu um erro ao carregar a sua conta. Por favor, tente novamente.",
     "errorRetry": "Tentar novamente",
-    "unmatchedTitle": "Nenhum painel disponível",
-    "unmatchedMessage": "A sua conta ainda não está configurada para nenhum painel. Por favor, entre em contato com o seu administrador."
+    "unmatchedTitle": "Não foi possível carregar o seu painel",
+    "unmatchedMessage": "Por favor, entre em contato com o seu administrador."
   },
   "gameTabs": {
     "clickToStart": "Clique para começar",

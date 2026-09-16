@@ -51,7 +51,7 @@ export function useAuth(context) {
    * @param {Error} error - The error thrown while bootstrapping the session.
    */
   function handleBootstrapError(error) {
-    console.error('[SignIn] failed to bootstrap session after successful sign-in', error);
+    console.error('[Auth] failed to bootstrap session after successful sign-in', error);
     spinner.value = false;
   }
 

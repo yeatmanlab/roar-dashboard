@@ -12,6 +12,7 @@ const claimsQueryState = {
 };
 
 const userTypeState = {
+  userType: ref('student'),
   isAdmin: ref(false),
   isSuperAdmin: ref(false),
   isParticipant: ref(false),
@@ -29,6 +30,7 @@ vi.mock('@/composables/queries/useUserClaimsQuery', () => ({
 
 vi.mock('@/composables/useUserType', () => ({
   default: () => ({
+    userType: computed(() => userTypeState.userType.value),
     isAdmin: computed(() => userTypeState.isAdmin.value),
     isSuperAdmin: computed(() => userTypeState.isSuperAdmin.value),
     isParticipant: computed(() => userTypeState.isParticipant.value),
@@ -160,6 +162,7 @@ describe('HomeSelector.vue', () => {
   it('shows the unmatched state when claims resolve to no known user type', async () => {
     // Previously an empty `<div>` — a blank screen with no explanation.
     claimsQueryState.data.value = { claims: {} };
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const wrapper = mountHomeSelector();
     await nextTick();
@@ -167,6 +170,13 @@ describe('HomeSelector.vue', () => {
     expect(wrapper.find('[data-testid="home-selector__unmatched"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="home-selector__loading"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="home-selector__error"]').exists()).toBe(false);
+
+    // The on-screen copy is generic by design; the diagnostic detail must go to
+    // console.error, which Sentry captures in production. This pins that contract.
+    expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('no home view matched'), {
+      userType: 'student',
+    });
+    consoleError.mockRestore();
   });
 
   it('renders the error branch ahead of the loading branch', async () => {

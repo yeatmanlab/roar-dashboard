@@ -60,8 +60,8 @@
     "errorTitle": "We couldn't load your dashboard",
     "errorMessage": "Something went wrong while loading your account. Please try again.",
     "errorRetry": "Try Again",
-    "unmatchedTitle": "No dashboard available",
-    "unmatchedMessage": "Your account isn't set up for any dashboard yet. Please contact your administrator."
+    "unmatchedTitle": "We couldn't load your dashboard",
+    "unmatchedMessage": "Please contact your administrator."
   },
   "gameTabs": {
     "clickToStart": "Click to start",

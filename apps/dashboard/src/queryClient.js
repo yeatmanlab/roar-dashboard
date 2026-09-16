@@ -27,29 +27,34 @@ import { ME_QUERY_KEY } from '@/constants/queryKeys';
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
-      const { setGlobalError } = useGlobalError();
+      let type;
       if (isRosteringEndedError(error)) {
-        setGlobalError({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
-        return;
+        type = GLOBAL_ERROR_TYPES.ROSTERING_ENDED;
+      } else if (isTerminalAuthError(error)) {
+        type = GLOBAL_ERROR_TYPES.AUTH_EXPIRED;
+      } else if (isMissingBaseUrlError(error)) {
+        // A missing base URL breaks every query in the app, not just `/me`, so
+        // it takes the whole page to the error state regardless of which query
+        // surfaced it first. Signing out won't help, but the page is at least
+        // explicit instead of spinning.
+        type = GLOBAL_ERROR_TYPES.SERVER_ERROR;
+      } else if (Array.isArray(query?.queryKey) && query.queryKey[0] === ME_QUERY_KEY) {
+        // Only treat the `/me` query as a global server error. Other queries
+        // may have their own UI affordances for failure (retry buttons,
+        // toasts, empty states) and shouldn't take the whole app down.
+        type = GLOBAL_ERROR_TYPES.SERVER_ERROR;
       }
-      if (isTerminalAuthError(error)) {
-        setGlobalError({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
-        return;
-      }
-      // A missing base URL breaks every query in the app, not just `/me`, so
-      // it takes the whole page to the error state regardless of which query
-      // surfaced it first. Signing out won't help, but the page is at least
-      // explicit instead of spinning.
-      if (isMissingBaseUrlError(error)) {
-        setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
-        return;
-      }
-      // Only treat the `/me` query as a global server error. Other queries
-      // may have their own UI affordances for failure (retry buttons,
-      // toasts, empty states) and shouldn't take the whole app down.
-      if (Array.isArray(query?.queryKey) && query.queryKey[0] === ME_QUERY_KEY) {
-        setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
-      }
+      if (!type) return;
+
+      // Sentry captures console.error in production (captureConsoleIntegration
+      // in sentry.js), and this bridge is the only handler on paths with no
+      // bootstrap catch of their own — background `/me` refetches, the reload
+      // path, and the missing-base-URL throw — so the log here is what makes
+      // those failures observable at all.
+      console.error('[Auth] API error escalated to the global error state', { type, queryKey: query?.queryKey }, error);
+
+      const { setGlobalError } = useGlobalError();
+      setGlobalError({ type });
     },
   }),
   defaultOptions: {
