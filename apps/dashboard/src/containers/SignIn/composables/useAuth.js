@@ -7,9 +7,6 @@ import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import { APP_ROUTES } from '@/constants/routes';
 import { getAuthService } from '@/services/AuthService';
-import { useGlobalError } from '@/composables/useGlobalError';
-import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
-import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 
 export function useAuth(context) {
   const { authStore, router, route, email, password, invalid, emailLinkSent, showPasswordField, resetSignInUI } =
@@ -36,32 +33,26 @@ export function useAuth(context) {
     }
   });
 
-  const { setGlobalError } = useGlobalError();
-
   /**
    * Handle a failure that happened *after* the credential check succeeded.
    *
    * The credentials were accepted, so this is never "wrong password" — showing
    * the sign-in form's invalid-credentials error (or silently resetting it)
-   * would tell the user to retype a password that is already correct. Route it
-   * to the global-error mechanism instead, which the router's `beforeEach`
-   * guard turns into an explicit error page.
+   * would tell the user to retype a password that is already correct.
+   *
+   * The global error is already set by the time this runs: the bootstrap goes
+   * through `resolveUserClaims`, which fetches `ME_QUERY_KEY` on the shared
+   * query client, so the `QueryCache.onError` bridge in `queryClient.js` has
+   * classified the failure and set `globalError` before the rejection surfaces
+   * here. That bridge is documented as the single mapping from API errors to
+   * `useGlobalError`; re-deriving it here would be a second surface competing
+   * to set the same flag. This only stops the spinner and logs.
    *
    * @param {Error} error - The error thrown while bootstrapping the session.
    */
   function handleBootstrapError(error) {
     console.error('[SignIn] failed to bootstrap session after successful sign-in', error);
     spinner.value = false;
-
-    if (isRosteringEndedError(error)) {
-      setGlobalError({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
-      return;
-    }
-    if (isTerminalAuthError(error)) {
-      setGlobalError({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
-      return;
-    }
-    setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
   }
 
   // ---------- Claims ----------
@@ -161,6 +152,13 @@ export function useAuth(context) {
       await getUserClaims();
     } catch (error) {
       handleBootstrapError(error);
+    } finally {
+      // `getUserClaims` can also return without throwing and without signing the
+      // user in — it no-ops when the uid is absent, and bails on a stale write if
+      // the identity changed mid-flight. The spinner lives on the auth store and
+      // is rendered app-wide by App.vue, so leaving it set would overlay whatever
+      // the redirect lands on, not just this form.
+      spinner.value = false;
     }
   }
 
@@ -229,6 +227,13 @@ export function useAuth(context) {
       await getUserClaims();
     } catch (error) {
       handleBootstrapError(error);
+    } finally {
+      // `getUserClaims` can also return without throwing and without signing the
+      // user in — it no-ops when the uid is absent, and bails on a stale write if
+      // the identity changed mid-flight. The spinner lives on the auth store and
+      // is rendered app-wide by App.vue, so leaving it set would overlay whatever
+      // the redirect lands on, not just this form.
+      spinner.value = false;
     }
   }
 
