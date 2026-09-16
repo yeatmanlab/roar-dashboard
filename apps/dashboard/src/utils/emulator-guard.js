@@ -19,11 +19,10 @@ export const DEPLOYED_MODES = Object.freeze(['staging', 'production']);
  * Every variable that can switch the dashboard onto the local Auth emulator, with the
  * predicate that decides whether its value actually turns the emulator on.
  *
- * The predicates mirror `IS_FIREBASE_EMULATOR_ENABLED` in `constants/firebase.js`
- * exactly — the host is truthy-checked, the legacy flag is compared against `true`
- * and `'true'` — so the build guard fires on precisely the values that would have
- * enabled the emulator, no more and no less. A variable added there must be added
- * here too, or the guard would miss the one that was set.
+ * This map is the single definition of "emulator enabled": the build guard and
+ * `IS_FIREBASE_EMULATOR_ENABLED` in `constants/firebase.js` both resolve through it,
+ * so the build cannot fire on a different set of values than the runtime honours.
+ * Add a new emulator variable here and both follow.
  */
 const EMULATOR_ENV_VAR_PREDICATES = Object.freeze({
   VITE_FIREBASE_EMULATOR_AUTH_HOST: (value) => Boolean(value),
