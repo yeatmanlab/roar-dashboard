@@ -1,16 +1,21 @@
 import { ref } from 'vue';
-import { useFamilyRegistration } from '@/containers/FamilyRegistration/composables/useFamilyRegistration';
+import { StatusCodes } from 'http-status-codes';
+import useCreateFamilyMutation from '@/composables/mutations/useCreateFamilyMutation';
+import { mapParentFormToCreateFamily } from '@/helpers/registration/mapParentFormToCreateFamily';
 
 const GENERIC_REGISTRATION_ERROR =
   'We could not create your account. Check your connection and try again. If the problem continues, contact support.';
 
 function toUserMessage(error, t) {
   const message = error instanceof Error ? error.message : '';
-  if (/email address is already in use/i.test(message)) {
-    return t('pageRegister.errors.emailInUse', message);
+  if (error?.status === StatusCodes.CONFLICT || /email address is already in use/i.test(message)) {
+    return t('pageRegister.errors.emailInUse', 'This email address is already in use. Please sign in instead.');
   }
-  if (/account already exists/i.test(message)) {
-    return t('pageRegister.errors.accountExists', message);
+  if (error?.status === StatusCodes.UNPROCESSABLE_ENTITY || /account already exists/i.test(message)) {
+    return t(
+      'pageRegister.errors.accountExists',
+      'An account already exists for this email. Please sign in to access your account.',
+    );
   }
   return t('pageRegister.errors.generic', GENERIC_REGISTRATION_ERROR);
 }
@@ -19,12 +24,14 @@ function toUserMessage(error, t) {
  * Coordinates account creation and screen-level workflow state.
  *
  * @param {Object} [options] Injectable workflow dependencies.
- * @param {(payload: Object) => Promise<void>} [options.createAccount] Account-creation operation.
+ * @param {(payload: Object) => Promise<unknown>} [options.createAccount] Account-creation operation.
  * @returns {Object} Reactive workflow state and registration actions.
  */
 export function useSelfRegistration(options = {}) {
-  const registration = options.createAccount ? null : useFamilyRegistration();
-  const createAccount = options.createAccount ?? registration.submit;
+  const createFamilyMutation = options.createAccount ? null : useCreateFamilyMutation();
+  const createAccount =
+    options.createAccount ??
+    ((payload) => createFamilyMutation.mutateAsync({ body: mapParentFormToCreateFamily(payload) }));
   const t = options.t ?? ((_key, fallback) => fallback);
 
   const isSubmitting = ref(false);

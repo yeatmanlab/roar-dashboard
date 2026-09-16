@@ -294,11 +294,8 @@ export const useAuthStore = () => {
       },
       // NOTE: `createNewFamily` has been removed. ROAR@Home parent registration
       // now runs through the typed API via
-      // `containers/FamilyRegistration/composables/useFamilyRegistration.js`
-      // (create family → confirmation → explicit sign in). Consent is not
-      // recorded at registration — TOS is handled post-login by the `/me` gate
-      // and per-administration consent by the consent gate. Sign-in and
-      // availability pre-checks remain on firekit.
+      // `containers/SelfRegistration/composables/useSelfRegistration.js`
+      // (create family → confirmation → explicit sign in).
       //
       // TODO(firekit-removal): `addStudentsToFamily` is the next ROAR@Home
       // migration step. The API replacement is built and unit-tested

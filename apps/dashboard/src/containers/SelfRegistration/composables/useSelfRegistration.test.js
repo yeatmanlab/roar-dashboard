@@ -1,12 +1,39 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { withSetup } from '@/test-support/withSetup.js';
 import { useSelfRegistration } from './useSelfRegistration';
 
-vi.mock('@/containers/FamilyRegistration/composables/useFamilyRegistration', () => ({
-  useFamilyRegistration: vi.fn(),
+const mocks = vi.hoisted(() => ({
+  createFamily: vi.fn(),
 }));
 
+vi.mock('@/composables/mutations/useCreateFamilyMutation', () => ({
+  default: () => ({ mutateAsync: mocks.createFamily }),
+}));
+
+const FORM = { email: 'parent@example.com', password: 'super-secret', firstName: 'Pat', lastName: 'Guardian' };
+
 describe('useSelfRegistration', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.createFamily.mockResolvedValue({ id: 'family-1' });
+  });
+
+  it('maps the account-owner form into the strict family-creation payload', async () => {
+    const [workflow, app] = withSetup(() => useSelfRegistration());
+
+    await expect(workflow.submit(FORM)).resolves.toBe(true);
+
+    expect(mocks.createFamily).toHaveBeenCalledWith({
+      body: {
+        email: 'parent@example.com',
+        password: 'super-secret',
+        name: { first: 'Pat', last: 'Guardian' },
+      },
+    });
+    expect(workflow.isSuccess.value).toBe(true);
+    app.unmount();
+  });
+
   it('prevents duplicate requests and holds the success state for explicit navigation', async () => {
     let resolveCreation;
     const createAccount = vi.fn(() => new Promise((resolve) => (resolveCreation = resolve)));
@@ -35,14 +62,15 @@ describe('useSelfRegistration', () => {
     app.unmount();
   });
 
-  it('preserves actionable duplicate-account errors', async () => {
-    const duplicateError = new Error('This email address is already in use. Please sign in instead.');
-    const [workflow, app] = withSetup(() =>
-      useSelfRegistration({ createAccount: vi.fn().mockRejectedValue(duplicateError) }),
-    );
+  it.each([
+    [409, 'This email address is already in use. Please sign in instead.'],
+    [422, 'An account already exists for this email. Please sign in to access your account.'],
+  ])('maps a %s response to an actionable account error', async (status, expectedMessage) => {
+    mocks.createFamily.mockRejectedValue({ status });
+    const [workflow, app] = withSetup(() => useSelfRegistration());
 
-    await expect(workflow.submit({ email: 'parent@example.com' })).resolves.toBe(false);
-    expect(workflow.errorMessage.value).toBe(duplicateError.message);
+    await expect(workflow.submit(FORM)).resolves.toBe(false);
+    expect(workflow.errorMessage.value).toBe(expectedMessage);
     app.unmount();
   });
 
