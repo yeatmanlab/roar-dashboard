@@ -1,44 +1,39 @@
 import { describe, it, expect } from 'vitest';
-import {
-  EMULATOR_ENV_VARS,
-  assertEmulatorDisabledForDeployedBuild,
-  findEnabledEmulatorEnvVars,
-  resolveIsFirebaseEmulatorEnabled,
-} from './emulator-guard';
+import { assertEmulatorDisabledForDeployedBuild, resolveIsFirebaseEmulatorEnabled } from './emulator-guard';
 
 const EMULATOR_HOST = '127.0.0.1:9099';
 
-describe('findEnabledEmulatorEnvVars', () => {
-  it('reports the auth host when it holds a value', () => {
-    expect(findEnabledEmulatorEnvVars({ VITE_FIREBASE_EMULATOR_AUTH_HOST: EMULATOR_HOST })).toEqual([
-      'VITE_FIREBASE_EMULATOR_AUTH_HOST',
-    ]);
+// Which values count as "emulator enabled" is the load-bearing detail: the build
+// guard and the runtime flag share one predicate map, so these cases are asserted
+// through both public entry points rather than against the map directly.
+describe('which values enable the emulator', () => {
+  it.each([
+    ['the auth host holding a value', { VITE_FIREBASE_EMULATOR_AUTH_HOST: EMULATOR_HOST }],
+    ['the legacy flag as boolean true', { VITE_FIREBASE_EMULATOR_ENABLED: true }],
+    ['the legacy flag as the string "true"', { VITE_FIREBASE_EMULATOR_ENABLED: 'true' }],
+  ])('treats %s as enabled', (_label, env) => {
+    expect(resolveIsFirebaseEmulatorEnabled({ MODE: 'development', ...env })).toBe(true);
+    expect(() => assertEmulatorDisabledForDeployedBuild('production', env)).toThrow(/emulator/i);
   });
 
-  it('reports the legacy flag for true and the string "true" only', () => {
-    expect(findEnabledEmulatorEnvVars({ VITE_FIREBASE_EMULATOR_ENABLED: true })).toEqual([
-      'VITE_FIREBASE_EMULATOR_ENABLED',
-    ]);
-    expect(findEnabledEmulatorEnvVars({ VITE_FIREBASE_EMULATOR_ENABLED: 'true' })).toEqual([
-      'VITE_FIREBASE_EMULATOR_ENABLED',
-    ]);
-    expect(findEnabledEmulatorEnvVars({ VITE_FIREBASE_EMULATOR_ENABLED: 'false' })).toEqual([]);
-    expect(findEnabledEmulatorEnvVars({ VITE_FIREBASE_EMULATOR_ENABLED: '' })).toEqual([]);
+  it.each([
+    ['an empty environment', {}],
+    ['an empty auth host', { VITE_FIREBASE_EMULATOR_AUTH_HOST: '' }],
+    ['the legacy flag as "false"', { VITE_FIREBASE_EMULATOR_ENABLED: 'false' }],
+    ['the legacy flag as an empty string', { VITE_FIREBASE_EMULATOR_ENABLED: '' }],
+    ['an unrelated variable', { VITE_ROAR_API_BASE_URL: 'https://api.example.com' }],
+  ])('treats %s as disabled', (_label, env) => {
+    expect(resolveIsFirebaseEmulatorEnabled({ MODE: 'development', ...env })).toBe(false);
+    expect(() => assertEmulatorDisabledForDeployedBuild('production', env)).not.toThrow();
   });
 
-  it('reports nothing for an empty or unrelated environment', () => {
-    expect(findEnabledEmulatorEnvVars({})).toEqual([]);
-    expect(findEnabledEmulatorEnvVars({ VITE_FIREBASE_EMULATOR_AUTH_HOST: '' })).toEqual([]);
-    expect(findEnabledEmulatorEnvVars({ VITE_ROAR_API_BASE_URL: 'https://api.example.com' })).toEqual([]);
-  });
-
-  it('reports every enabled variable, not just the first', () => {
-    expect(
-      findEnabledEmulatorEnvVars({
+  it('names every enabled variable in the build error, not just the first', () => {
+    expect(() =>
+      assertEmulatorDisabledForDeployedBuild('production', {
         VITE_FIREBASE_EMULATOR_AUTH_HOST: EMULATOR_HOST,
         VITE_FIREBASE_EMULATOR_ENABLED: 'true',
       }),
-    ).toEqual([...EMULATOR_ENV_VARS]);
+    ).toThrow(/VITE_FIREBASE_EMULATOR_AUTH_HOST, VITE_FIREBASE_EMULATOR_ENABLED/);
   });
 });
 
