@@ -24,6 +24,15 @@ keeps the selected document identifier, version metadata, and confirmation time
 in a feature-local consent record. Closing or canceling the modal neither creates
 that record nor checks the signup acknowledgement.
 
+The feature-local consent record is an ephemeral UI-submission gate, not durable
+proof of consent. The strict `POST /v1/families/` contract does not currently
+accept consent metadata, and the record is not written to browser storage; it is
+discarded when `SelfRegistration` unmounts. Persisting the document identifier,
+version, and confirmation time requires an approved API and backend storage
+change and must be tracked before this behavior is represented as durable consent
+capture. Portuguese locales intentionally use the approved default English
+document until a Portuguese consent document is configured and approved.
+
 ## Completion behavior
 
 A successful account-creation request does not authenticate or redirect the

@@ -15,7 +15,10 @@ function normalizeVersion(value) {
 
 /**
  * Loads the approved default ROAR research-consent document from the same legal
- * document source used by the legacy registration flow.
+ * document source used by the legacy registration flow. Spanish locales use
+ * the approved Spanish document; all other locales, including Portuguese, use
+ * the approved default English document until another localized document is
+ * configured.
  *
  * @param {(documentId: string) => Promise<Object>} getLegalDocument Legal-document loader.
  * @param {string} [locale='en-US'] Active dashboard locale.
