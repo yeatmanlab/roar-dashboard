@@ -55,6 +55,24 @@ export function useAuth(context) {
     spinner.value = false;
   }
 
+  /**
+   * Resolve the session after a successful credential check, always clearing
+   * the spinner. `getUserClaims` can return without throwing and without
+   * signing the user in — it no-ops when the uid is absent, and bails on a
+   * stale write if the identity changed mid-flight. The spinner lives on the
+   * auth store and is rendered app-wide by App.vue, so leaving it set would
+   * overlay whatever the redirect lands on, not just this form.
+   */
+  async function bootstrapSessionAfterSignIn() {
+    try {
+      await getUserClaims();
+    } catch (error) {
+      handleBootstrapError(error);
+    } finally {
+      spinner.value = false;
+    }
+  }
+
   // ---------- Claims ----------
   async function getUserClaims() {
     if (authStore.uid) {
@@ -148,18 +166,7 @@ export function useAuth(context) {
       return;
     }
 
-    try {
-      await getUserClaims();
-    } catch (error) {
-      handleBootstrapError(error);
-    } finally {
-      // `getUserClaims` can also return without throwing and without signing the
-      // user in — it no-ops when the uid is absent, and bails on a stale write if
-      // the identity changed mid-flight. The spinner lives on the auth store and
-      // is rendered app-wide by App.vue, so leaving it set would overlay whatever
-      // the redirect lands on, not just this form.
-      spinner.value = false;
-    }
+    await bootstrapSessionAfterSignIn();
   }
 
   /**
@@ -223,18 +230,7 @@ export function useAuth(context) {
 
     spinner.value = true;
 
-    try {
-      await getUserClaims();
-    } catch (error) {
-      handleBootstrapError(error);
-    } finally {
-      // `getUserClaims` can also return without throwing and without signing the
-      // user in — it no-ops when the uid is absent, and bails on a stale write if
-      // the identity changed mid-flight. The spinner lives on the auth store and
-      // is rendered app-wide by App.vue, so leaving it set would overlay whatever
-      // the redirect lands on, not just this form.
-      spinner.value = false;
-    }
+    await bootstrapSessionAfterSignIn();
   }
 
   return {

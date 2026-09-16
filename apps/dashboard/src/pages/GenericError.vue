@@ -3,11 +3,13 @@ import { useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 import PvButton from 'primevue/button';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
+import { useAuthStore } from '@/store/auth';
 import { useGlobalError } from '@/composables/useGlobalError';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 
 const router = useRouter();
 const queryClient = useQueryClient();
+const authStore = useAuthStore();
 const { clearGlobalError } = useGlobalError();
 const { mutate: signOut } = useSignOutMutation();
 
@@ -19,8 +21,18 @@ const { mutate: signOut } = useSignOutMutation();
  * proceeds normally; if it fails again, the watcher re-sets the global
  * error and the router guard sends the user back here.
  */
-function handleTryAgain() {
+async function handleTryAgain() {
   clearGlobalError();
+
+  // SERVER_ERROR can also mean the app-bootstrap `initFirekit()` failed, and
+  // nothing on the SPA navigation path re-runs it — without this, "Try Again"
+  // would send the user back into the app with `roarfirekit` still null.
+  // A repeat failure re-sets the global error, so the guard returns here.
+  // Firekit is being deprecated (#2219); this branch dies with it.
+  if (!authStore.roarfirekit) {
+    await authStore.initFirekit();
+  }
+
   queryClient.invalidateQueries({ queryKey: [ME_QUERY_KEY] });
   router.push('/');
 }
