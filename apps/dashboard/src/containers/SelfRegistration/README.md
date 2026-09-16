@@ -1,5 +1,8 @@
 # SelfRegistration boundaries
 
+Release verification and approval status are tracked in
+[`QUALITY_ASSURANCE.md`](./QUALITY_ASSURANCE.md).
+
 `SelfRegistration` is Stage 1 of ROAR at Home family onboarding. It creates the
 account-owner account before authentication. It does not enroll a learner.
 
