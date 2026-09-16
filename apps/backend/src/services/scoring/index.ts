@@ -2,6 +2,8 @@ export {
   parseScoreValue,
   getSupportLevel,
   getScoreDisplay,
+  getScoreRange,
+  extractScoringVersions,
   getRawScoreThreshold,
   getSupportThreshold,
   resolveScoreFieldNames,

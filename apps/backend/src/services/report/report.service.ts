@@ -88,7 +88,6 @@ import { TaskService } from '../task/task.service';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
-import type { TaskVariantParameter } from '../../db/schema';
 import {
   getScoringConfig,
   getSubscoresConfig,
@@ -98,6 +97,7 @@ import {
   getSupportLevel,
   getScoreDisplay,
   getSupportThreshold,
+  extractScoringVersions,
   parseScoreValue,
   resolveScoreFieldNames,
   resolveNumericScore,
@@ -2232,32 +2232,6 @@ function applyTaskIdFilter(taskMetas: ReportTaskMeta[], filter: ParsedFilter[]):
   }
 
   return taskMetas.filter((t) => requestedTaskIds.has(t.taskId));
-}
-
-/**
- * Extract a `taskVariantId → scoringVersion` map from `task_variant_parameters`
- * rows. Used by every score-reporting endpoint to drive version-aware score
- * classification (`getSupportLevel` resolves cutoffs against the variant's
- * `scoringVersion`).
- *
- * `Number.isInteger` rejects `NaN`, `±Infinity`, and fractional values (e.g.,
- * a JSONB value of `'1.5'` parses to `1.5`). A `scoringVersion` is always a
- * non-negative integer in the JSON config; surfacing data corruption here as
- * "skip the variant" rather than coercing a fractional value into the
- * scoring-config lookup is cheap and correct.
- *
- * A JSON `null` is the exception: `Number(null)` is 0. Resolves to the default config (minVersion = 0).
- */
-function extractScoringVersions(params: TaskVariantParameter[]): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const param of params) {
-    if (param.name !== 'scoringVersion') continue;
-    const version = typeof param.value === 'number' ? param.value : Number(param.value);
-    if (Number.isInteger(version)) {
-      map.set(param.taskVariantId, version);
-    }
-  }
-  return map;
 }
 
 export function groupVariantsByTaskId(taskMetas: ReportTaskMeta[]): TaskGroup[] {
