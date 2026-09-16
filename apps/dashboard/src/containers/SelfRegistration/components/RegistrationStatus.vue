@@ -10,18 +10,18 @@
   </div>
 
   <PvDialog
-    v-else
-    :visible="Boolean(errorMessage || success)"
-    :header="success ? t('pageRegister.accountCreated') : t('pageRegister.createErrorTitle')"
+    v-else-if="errorMessage"
+    :visible="true"
+    :header="t('pageRegister.createErrorTitle')"
     :style="{ width: 'min(25rem, calc(100vw - 2rem))' }"
     :modal="true"
     :draggable="false"
     @update:visible="dismiss"
   >
     <p role="status" aria-live="polite">
-      {{ success ? t('pageRegister.accountCreatedMessage') : errorMessage }}
+      {{ errorMessage }}
     </p>
-    <PvButton v-if="errorMessage" :label="t('pageRegister.close')" @click="dismiss" />
+    <PvButton :label="t('pageRegister.close')" @click="dismiss" />
   </PvDialog>
 </template>
 
@@ -34,7 +34,6 @@ import { i18n } from '@/translations/i18n';
 defineProps({
   loading: { type: Boolean, default: false },
   errorMessage: { type: String, default: '' },
-  success: { type: Boolean, default: false },
 });
 
 const { t } = i18n.global;

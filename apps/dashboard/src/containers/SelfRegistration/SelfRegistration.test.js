@@ -97,6 +97,11 @@ function mountSelfRegistration() {
         AuthPageFooter: true,
         ROARLogoShort: true,
         RegistrationStatus: true,
+        RegistrationSuccess: {
+          name: 'RegistrationSuccess',
+          props: ['firstName'],
+          template: '<div id="self-registration-success-heading">{{ firstName }}</div>',
+        },
         ConsentModal: {
           name: 'ConsentModal',
           props: ['visible'],
@@ -229,7 +234,7 @@ describe('SelfRegistration.vue', () => {
     wrapper.unmount();
   });
 
-  it('keeps the heading and its accessible relationship while submitting and after success', async () => {
+  it('keeps the signup heading while submitting and labels the explicit success state', async () => {
     mocks.isSubmitting.value = true;
     const submittingWrapper = mountSelfRegistration();
 
@@ -242,9 +247,10 @@ describe('SelfRegistration.vue', () => {
     mocks.isSuccess.value = true;
     const successWrapper = mountSelfRegistration();
 
-    expect(successWrapper.get('#self-registration-heading').text()).toBe('Create your account');
-    expect(successWrapper.get('#register').attributes('aria-labelledby')).toBe('self-registration-heading');
+    expect(successWrapper.find('#self-registration-heading').exists()).toBe(false);
+    expect(successWrapper.get('#register').attributes('aria-labelledby')).toBe('self-registration-success-heading');
     expect(successWrapper.findComponent({ name: 'AccountOwnerForm' }).exists()).toBe(false);
+    expect(successWrapper.findComponent({ name: 'RegistrationSuccess' }).props('firstName')).toBe('Pat');
 
     successWrapper.unmount();
   });

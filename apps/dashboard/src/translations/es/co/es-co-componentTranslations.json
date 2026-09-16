@@ -133,7 +133,8 @@
     "creatingYourAccount": "Creando tu cuenta…",
     "accountCreated": "Cuenta creada",
     "createErrorTitle": "No pudimos crear tu cuenta",
-    "accountCreatedMessage": "Tu cuenta ha sido creada. Redirigiéndote a tu panel…",
+    "accountCreatedMessage": "Te damos la bienvenida a ROAR, {firstName}. Ahora puedes iniciar sesión y agregar niños a tu panel para comenzar a participar en estudios de investigación.",
+    "continueToSignIn": "Continuar para iniciar sesión",
     "close": "Cerrar",
     "errors": {
       "firstName": "Ingresa tu nombre.",
@@ -143,7 +144,7 @@
       "passwordRequired": "Crea una contraseña.",
       "passwordLength": "Usa al menos 8 caracteres para tu contraseña.",
       "emailInUse": "Este correo electrónico ya está en uso. Inicia sesión en su lugar.",
-      "accountExists": "Ya existe una cuenta con este correo electrónico. Inicia sesión para terminar de configurar tu cuenta.",
+      "accountExists": "Ya existe una cuenta con este correo electrónico. Inicia sesión para acceder a tu cuenta.",
       "generic": "No pudimos crear tu cuenta. Comprueba tu conexión e inténtalo de nuevo. Si el problema continúa, contacta con soporte."
     }
   },

@@ -1,8 +1,14 @@
 <template>
   <div id="register-container" class="self-registration">
     <div class="self-registration-column">
-      <section id="register" class="self-registration-form-card" aria-labelledby="self-registration-heading">
-        <header class="self-registration-header">
+      <section
+        id="register"
+        class="self-registration-form-card"
+        :aria-labelledby="
+          registration.isSuccess.value ? 'self-registration-success-heading' : 'self-registration-heading'
+        "
+      >
+        <header v-if="!registration.isSuccess.value" class="self-registration-header">
           <div class="self-registration-logo" role="img" aria-label="ROAR">
             <ROARLogoShort aria-hidden="true" />
           </div>
@@ -15,11 +21,11 @@
         <RegistrationStatus
           :loading="registration.isSubmitting.value"
           :error-message="registration.errorMessage.value"
-          :success="registration.isSuccess.value"
           @dismiss="registration.dismissStatus"
         />
+        <RegistrationSuccess v-if="registration.isSuccess.value" :first-name="form.values.firstName" />
         <AccountOwnerForm
-          v-if="!registration.isSubmitting.value && !registration.isSuccess.value"
+          v-else-if="!registration.isSubmitting.value"
           :values="form.values"
           :errors="form.errors.value"
           :touched="form.touched"
@@ -58,7 +64,7 @@ import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import AuthPageFooter from '@/components/AuthPageFooter.vue';
 import { useAuthStore } from '@/store/auth';
 import { i18n } from '@/translations/i18n';
-import { AccountOwnerForm, ConsentModal, RegistrationStatus } from './components';
+import { AccountOwnerForm, ConsentModal, RegistrationStatus, RegistrationSuccess } from './components';
 import { loadDefaultResearchConsent } from './composables/loadDefaultResearchConsent';
 import { useAccountOwnerForm } from './composables/useAccountOwnerForm';
 import { useResearchConsent } from './composables/useResearchConsent';

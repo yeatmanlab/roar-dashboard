@@ -24,6 +24,14 @@ keeps the selected document identifier, version metadata, and confirmation time
 in a feature-local consent record. Closing or canceling the modal neither creates
 that record nor checks the signup acknowledgement.
 
+## Completion behavior
+
+A successful account-creation request does not authenticate or redirect the
+owner automatically. The form is replaced by a persistent, personalized success
+state with an explicit **Continue to sign in** action. This keeps account creation
+and authentication as separate user-visible steps and makes the Stage 1 outcome
+clear before navigation.
+
 ## Stage 2 boundary
 
 Learner details, invitation-code entry and validation, invited activities, and
