@@ -121,15 +121,6 @@ function validateVariants(raw: unknown): VariantDef[] {
 
     const p = params as Record<string, unknown>;
 
-    // Validate allowed parameter keys if the config defines them
-    if (config.allowedParamKeys) {
-      for (const key of Object.keys(p)) {
-        if (!config.allowedParamKeys.has(key)) {
-          throw new Error(`${loc}: unknown param "${key}"`);
-        }
-      }
-    }
-
     // Run custom validation if provided. Return false to skip the variant.
     if (config.validateVariant) {
       const shouldInclude = config.validateVariant(loc, p);
