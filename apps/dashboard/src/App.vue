@@ -26,7 +26,10 @@
       pages) render immediately because `accessToken` is null, so
       `isMeSettling` is false.
     -->
-    <AppSpinner v-if="isMeSettling" />
+    <div v-if="isMeSettling" class="flex flex-column align-items-center justify-content-center min-h-screen-minus-nav">
+      <!-- margin: 0 overrides the spinner's own 100px top offset, which fights flex centering -->
+      <AppSpinner style="margin: 0" />
+    </div>
     <router-view v-else :key="$route.fullPath" />
 
     <SessionTimer v-if="loadSessionTimeoutHandler" />

@@ -28,6 +28,7 @@ vi.mock('@/utils/api-errors', () => {
     AUTH_TOKEN_EXPIRED: 'auth/token-expired',
     AUTH_REQUIRED: 'auth/required',
     AUTH_ROSTERING_ENDED: 'auth/rostering-ended',
+    CONFIG_BASE_URL_MISSING: 'config/base-url-missing',
   });
 
   function getApiErrorCode(response) {
@@ -52,7 +53,17 @@ vi.mock('@/utils/api-errors', () => {
     return code === API_ERROR_CODES.AUTH_TOKEN_EXPIRED || code === API_ERROR_CODES.AUTH_REQUIRED;
   }
 
-  return { API_ERROR_CODES, getApiErrorCode, isRosteringEndedError, isTerminalAuthError };
+  function isMissingBaseUrlError(error) {
+    return getApiErrorCode(error) === API_ERROR_CODES.CONFIG_BASE_URL_MISSING;
+  }
+
+  return {
+    API_ERROR_CODES,
+    getApiErrorCode,
+    isMissingBaseUrlError,
+    isRosteringEndedError,
+    isTerminalAuthError,
+  };
 });
 
 describe('queryClient QueryCache onError', () => {
@@ -116,5 +127,51 @@ describe('queryClient QueryCache onError', () => {
 
     expect(setGlobalError).not.toHaveBeenCalled();
     expect(globalError.value).toBeNull();
+  });
+
+  it('sets SERVER_ERROR on a missing base URL, whichever query surfaced it', () => {
+    // A missing base URL breaks every query, so it must not be gated on the
+    // /me query key the way an ordinary server error is.
+    const error = { code: 'config/base-url-missing' };
+    onErrorCallback(error, { queryKey: ['some-other-key'] });
+
+    expect(setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
+    expect(globalError.value).toEqual({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
+  });
+});
+
+describe('queryClient default retry policy', () => {
+  /** @type {Function} */
+  let retry;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    globalError.value = null;
+
+    const { queryClient } = await import('./queryClient');
+    retry = queryClient.getDefaultOptions().queries.retry;
+  });
+
+  it('does not retry on the missing base URL error class', () => {
+    // The base URL is baked in at build time, so it cannot appear between
+    // attempts — retrying would only delay the error UI.
+    const error = new Error('VITE_ROAR_API_BASE_URL is not set.');
+    error.code = 'config/base-url-missing';
+
+    expect(retry(0, error)).toBe(false);
+    expect(retry(1, error)).toBe(false);
+  });
+
+  it('does not retry on rostering-ended or terminal auth errors', () => {
+    expect(retry(0, { body: { error: { code: 'auth/rostering-ended' } } })).toBe(false);
+    expect(retry(0, { body: { error: { code: 'auth/required' } } })).toBe(false);
+  });
+
+  it('still retries transient errors up to 3 times', () => {
+    const transientError = new Error('network down');
+
+    expect(retry(0, transientError)).toBe(true);
+    expect(retry(2, transientError)).toBe(true);
+    expect(retry(3, transientError)).toBe(false);
   });
 });

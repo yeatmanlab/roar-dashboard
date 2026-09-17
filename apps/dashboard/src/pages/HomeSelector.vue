@@ -1,13 +1,48 @@
 <template>
-  <div v-if="isLoading" class="flex flex-column align-items-center justify-content-center min-h-screen-minus-nav">
+  <div
+    v-if="hasError"
+    class="flex flex-column align-items-center justify-content-center min-h-screen-minus-nav"
+    data-testid="home-selector__error"
+  >
+    <AppMessageState
+      :type="MESSAGE_STATE_TYPES.ERROR"
+      :title="$t('homeSelector.errorTitle')"
+      :message="$t('homeSelector.errorMessage')"
+    >
+      <template #actions>
+        <PvButton :label="$t('homeSelector.errorRetry')" @click="handleRetry" />
+      </template>
+    </AppMessageState>
+  </div>
+
+  <div
+    v-else-if="isLoading"
+    class="flex flex-column align-items-center justify-content-center min-h-screen-minus-nav"
+    data-testid="home-selector__loading"
+  >
     <AppSpinner style="margin-bottom: 1rem" />
     <span>{{ $t('homeSelector.loading') }}</span>
   </div>
 
-  <div v-else>
-    <HomeParticipant v-if="isParticipant" />
-    <HomeParent v-else-if="isLaunchAdmin" />
-    <HomeAdministrator v-else-if="isAdminUser" />
+  <div v-else-if="isParticipant"><HomeParticipant /></div>
+  <div v-else-if="isLaunchAdmin"><HomeParent /></div>
+  <div v-else-if="isAdminUser"><HomeAdministrator /></div>
+
+  <!--
+    No branch matched: claims resolved, but they describe a user type this page
+    has no home for. Previously this rendered an empty `<div>`, which read as a
+    blank screen with no way forward.
+  -->
+  <div
+    v-else
+    class="flex flex-column align-items-center justify-content-center min-h-screen-minus-nav"
+    data-testid="home-selector__unmatched"
+  >
+    <AppMessageState
+      :type="MESSAGE_STATE_TYPES.EMPTY"
+      :title="$t('homeSelector.unmatchedTitle')"
+      :message="$t('homeSelector.unmatchedMessage')"
+    />
   </div>
 </template>
 
@@ -15,6 +50,7 @@
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import PvButton from 'primevue/button';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserType from '@/composables/useUserType';
@@ -23,6 +59,7 @@ import useSentryLogging from '@/composables/useSentryLogging';
 import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
 import AppSpinner from '@/components/AppSpinner.vue';
+import { AppMessageState, MESSAGE_STATE_TYPES } from '@/components/AppMessageState';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
@@ -53,21 +90,55 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.accessToken) init();
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
+const {
+  isLoading: isLoadingClaims,
+  data: userClaims,
+  error: claimsError,
+  refetch: refetchClaims,
+} = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const { isAdmin, isSuperAdmin, isParticipant, isLaunchAdmin } = useUserType(userClaims);
+const { userType, isAdmin, isSuperAdmin, isParticipant, isLaunchAdmin } = useUserType(userClaims);
 
 const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value || isLaunchAdmin.value);
+
+// The claims query has exhausted its retries and has no data to fall back on.
+// This is the branch that used to be missing: `isLoading` below keys off
+// `!userClaims.value`, so without it a failed query spun forever.
+const hasError = computed(() => Boolean(claimsError.value) && !userClaims.value);
 
 const isLoading = computed(() => {
   // Identity and role come from `/me`-derived claims — the only signal needed to
   // route to the correct home. The legacy Firestore `userData` gate was removed:
   // it never resolved on the auth-only local stack, and the claims are sufficient
   // on every build (the rendered home component fetches its own data).
+  //
+  // Stays true on a settled failure, because claims never arrive. That is safe
+  // only because the template checks `hasError` first — this branch is never
+  // reached in that state. Reorder those branches and the spinner comes back.
   return !initialized.value || isLoadingClaims.value || !userClaims.value;
 });
+
+// Mirrors the template's final `v-else`: claims resolved, but no home matches.
+const noHomeMatched = computed(
+  () => !hasError.value && !isLoading.value && !isParticipant.value && !isLaunchAdmin.value && !isAdminUser.value,
+);
+watch(
+  noHomeMatched,
+  (matchedNone) => {
+    if (!matchedNone) return;
+    // The on-screen copy stays generic on purpose; the diagnostic detail goes
+    // here, where Sentry's captureConsoleIntegration picks it up in production.
+    console.error('[Auth] no home view matched for the resolved user type', { userType: userType.value });
+  },
+  { immediate: true },
+);
+
+/** Refetch the claims query so the user can recover without a full reload. */
+function handleRetry() {
+  refetchClaims();
+}
 
 // Admin Terms-of-Service consent is no longer gated here. The global router
 // guard redirects to SignTos whenever `/me.unsignedAgreements` is non-empty, and

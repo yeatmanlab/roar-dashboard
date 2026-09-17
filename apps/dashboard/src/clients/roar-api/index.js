@@ -7,6 +7,7 @@
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
 import { ApiContractV1 } from '@roar-platform/api-contract';
 import { useAuthStore } from '@/store/auth';
+import { API_ERROR_CODES } from '@/utils/api-errors';
 
 const ROAR_API_BASE_URL = import.meta.env.VITE_ROAR_API_BASE_URL;
 
@@ -58,12 +59,19 @@ async function apiWithAuthRetry(args) {
  * Creates the client on first call (lazy initialization).
  *
  * @returns {ReturnType<typeof initClient>} Typed ts-rest client
- * @throws {Error} If VITE_ROAR_API_BASE_URL is not set
+ * @throws {Error} If VITE_ROAR_API_BASE_URL is not set. The error carries
+ *   `code: 'config/base-url-missing'` so `isMissingBaseUrlError` can classify
+ *   it without matching on the message text.
  */
 export function getRoarApiClient() {
   if (!clientInstance) {
     if (!ROAR_API_BASE_URL) {
-      throw new Error('VITE_ROAR_API_BASE_URL is not set. ' + 'Add it to .env.development or .env.production.');
+      const error = new Error('VITE_ROAR_API_BASE_URL is not set.');
+      // Tag the error so retry policies and the global-error bridge can
+      // recognize it. The base URL is baked in at build time, so this can
+      // never resolve itself between attempts — retrying is pure delay.
+      error.code = API_ERROR_CODES.CONFIG_BASE_URL_MISSING;
+      throw error;
     }
 
     clientInstance = initClient(ApiContractV1, {

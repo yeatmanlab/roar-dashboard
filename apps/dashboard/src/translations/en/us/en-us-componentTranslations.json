@@ -56,7 +56,12 @@
   "homeSelector": {
     "loading": "Loading...",
     "inactivityLogout": "You will soon be logged out for security purposes. Please click \"Continue\" if you wish to continue your session.\n Otherwise, you will be automatically logged out in { timeLeft } seconds.",
-    "inactivityLogoutAcceptLabel": "Continue"
+    "inactivityLogoutAcceptLabel": "Continue",
+    "errorTitle": "We couldn't load your dashboard",
+    "errorMessage": "Something went wrong while loading your account. Please try again.",
+    "errorRetry": "Try Again",
+    "unmatchedTitle": "We couldn't load your dashboard",
+    "unmatchedMessage": "Please contact your administrator."
   },
   "gameTabs": {
     "clickToStart": "Click to start",
