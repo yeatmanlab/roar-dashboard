@@ -49,8 +49,15 @@ export function parseScoreValue(value: string | number | null | undefined): numb
 /**
  * Resolve from an ordered versioned array. Entries must be ordered by descending minVersion.
  * Returns the value from the first entry where scoringVersion >= minVersion, or undefined.
+ *
+ * @param entries - Versioned entries in strictly descending minVersion order
+ * @param scoringVersion - The variant's scoring version
+ * @returns The first entry the version satisfies, or undefined if none do
  */
-function resolveVersionedEntry<T extends { minVersion: number }>(entries: T[], scoringVersion: number): T | undefined {
+export function resolveVersionedEntry<T extends { minVersion: number }>(
+  entries: T[],
+  scoringVersion: number,
+): T | undefined {
   return entries.find((entry) => scoringVersion >= entry.minVersion);
 }
 

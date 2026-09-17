@@ -9,6 +9,7 @@ export {
   resolveScoreFieldNames,
   resolveScoreFieldName,
   resolveNumericScore,
+  resolveVersionedEntry,
   getSupportLevelFieldName,
   getSubscoresConfig,
   getPublicSubscoreColumns,
