@@ -157,6 +157,20 @@ describe('useSSOAccountReadinessVerification', () => {
     expect(result.hasError.value).toBe(false);
   });
 
+  it('routes to SignIn when auth/required persists through all attempts', async () => {
+    // auth/required is retried (token race), but a session that never
+    // produces a token is treated as expired once the attempts run out.
+    fetchMe.mockRejectedValue(buildMeError(401, 'auth/required'));
+
+    const { result } = setup();
+    await result.startPolling();
+
+    expect(fetchMe).toHaveBeenCalledTimes(3);
+    expect(mocks.setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+    expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.SIGN_IN });
+    expect(result.hasError.value).toBe(false);
+  });
+
   it('sets hasError after exhausting all attempts', async () => {
     fetchMe.mockRejectedValue(buildMeError(500));
 

@@ -7,6 +7,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
+import { APP_ROUTE_NAMES } from '@/constants/routes';
 
 /**
  * SSO landing page.
@@ -46,9 +47,9 @@ onMounted(() => {
 
   if (props.code && oauthRequestFlag) {
     authStore[oauthRequestFlag] = true;
-    router.replace({ name: 'SignIn' });
+    router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
   } else {
-    router.push({ name: 'Home' });
+    router.push({ name: APP_ROUTE_NAMES.HOME });
   }
 });
 </script>

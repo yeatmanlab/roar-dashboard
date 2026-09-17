@@ -72,6 +72,7 @@ export function useProviders(options) {
       return;
     }
 
+    // getProviders sets availableProviders and hasCheckedProviders itself.
     let providers;
     try {
       providers = await getProviders();
@@ -81,9 +82,6 @@ export function useProviders(options) {
       if (discoveryError) discoveryError.value = true;
       return;
     }
-
-    availableProviders.value = providers;
-    hasCheckedProviders.value = true;
 
     // multi SSO chooser
     const sso = providers.filter((p) =>

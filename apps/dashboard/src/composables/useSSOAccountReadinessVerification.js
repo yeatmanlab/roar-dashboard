@@ -182,6 +182,11 @@ const useSSOAccountReadinessVerification = () => {
           setGlobalError({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
           router.replace({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
         } else if (isTerminalAuthError(error)) {
+          // Deliberately broader than the retry short-circuit: auth/required
+          // that persisted through every attempt lands here too. A session
+          // that never produced a token is treated as expired, matching
+          // meRetryPolicy — only the first attempts get the benefit of the
+          // token-listener race.
           hasRedirected = true;
           setGlobalError({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
           router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
