@@ -47,6 +47,7 @@ import PvButton from 'primevue/button';
 import PvPassword from 'primevue/password';
 import { storeToRefs } from 'pinia';
 import { required, sameAs, minLength } from '@vuelidate/validators';
+import { FIREBASE_AUTH_PROVIDER_IDS } from '@/constants/firebase';
 // +-------------------+
 // | Vuelidate / Setup |
 // +-------------------+
@@ -84,7 +85,7 @@ const providerIds = computed(() => {
 });
 
 const hasPassword = computed(() => {
-  return providerIds.value.includes('password');
+  return providerIds.value.includes(FIREBASE_AUTH_PROVIDER_IDS.PASSWORD);
 });
 
 async function updatePassword() {
