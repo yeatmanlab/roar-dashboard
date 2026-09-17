@@ -6,12 +6,28 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
 import { AggregationRepository } from '../../repositories/aggregation.repository';
-import { getSupportLevel } from '../scoring/scoring.service';
-import { SWR_TASK_IDS } from '@roar-platform/assessment-schema/roar-swr';
-import { SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
-import { PA_TASK_ID } from '@roar-platform/assessment-schema/roar-pa';
-import { MORPHOLOGY_TASK_ID, CVA_TASK_ID } from '@roar-platform/assessment-schema/roar-multichoice';
-import { LEVANTE_NORMED_TASK_IDS } from '@roar-platform/assessment-schema/roar-levante-tasks';
+import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
+import {
+  extractScoringVersions,
+  getScoreRange,
+  getSupportLevel,
+  parseScoreValue,
+  resolveNumericScore,
+  resolveScoreFieldNames,
+  resolveVersionedEntry,
+} from '../scoring';
+import { SCORE_NAME } from '../../constants/run-scores';
+import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
+import { SWR_SCORING_VERSION, SWR_TASK_IDS } from '@roar-platform/assessment-schema/roar-swr';
+import { SRE_SCORING_VERSION, SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
+import { PA_SCORING_VERSION, PA_TASK_ID } from '@roar-platform/assessment-schema/roar-pa';
+import { LETTER_SCORING_VERSION, LETTER_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
+import {
+  MULTICHOICE_SCORING_VERSION,
+  MORPHOLOGY_TASK_ID,
+  CVA_TASK_ID,
+} from '@roar-platform/assessment-schema/roar-multichoice';
+import { LEVANTE_SCORING_VERSION, LEVANTE_NORMED_TASK_IDS } from '@roar-platform/assessment-schema/roar-levante-tasks';
 
 const SCORED_TASK_IDS = [
   SWR_TASK_IDS.EN,
@@ -19,6 +35,7 @@ const SCORED_TASK_IDS = [
   SRE_TASK_IDS.EN,
   SRE_TASK_IDS.ES,
   PA_TASK_ID,
+  LETTER_TASK_IDS.EN,
   CVA_TASK_ID,
   MORPHOLOGY_TASK_ID,
   LEVANTE_NORMED_TASK_IDS.TROG,
@@ -68,10 +85,12 @@ export function AggregationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
   aggregationRepository = new AggregationRepository(),
+  taskVariantParameterRepository = new TaskVariantParameterRepository(),
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
   aggregationRepository?: AggregationRepository;
+  taskVariantParameterRepository?: TaskVariantParameterRepository;
 } = {}) {
   async function aggregateSupportCategories(params: {
     administrationId: string;
@@ -105,6 +124,12 @@ export function AggregationService({
     // Map task variant ID → task slug for lookup later
     const taskSlugByVariantId = new Map(scoredTasks.map((t) => [t.variantId, t.taskSlug]));
     const variantIds = scoredTasks.map((t) => t.variantId);
+
+    // Buckets use the variant's version so the distribution is one scale; runs are
+    // classified against their own version below.
+    const variantParams = await taskVariantParameterRepository.getByTaskVariantIds(variantIds);
+    const scoringVersionByVariant = extractScoringVersions(variantParams);
+    const rawBucketMaps = buildRawBucketMaps(scoredTasks, scoringVersionByVariant);
 
     // Fetch all best runs for these task variants
     const runs = await aggregationRepository.getBestRunsForVariants(administrationId, variantIds);
@@ -141,7 +166,14 @@ export function AggregationService({
       const taskSlug = taskSlugByVariantId.get(run.taskVariantId) || '';
       const grade = demographicsMap.get(run.id) || null;
       const schools = userSchoolsMap.get(run.userId) || [];
-      const scores = scoresByRunId.get(run.id) || { percentile: null, rawScore: null, scoringVersion: null };
+      const scoreMap = scoresByRunId.get(run.id) ?? new Map<string, string>();
+
+      // Which name holds the percentile or raw score varies by task, grade, and
+      // scoring version — resolve against the scoring config rather than assuming.
+      // The run's own version, not the variant's: it reflects how this run was scored.
+      const scoringVersion = parseScoreValue(scoreMap.get(SCORE_NAME.SCORING_VERSION));
+      const gradeLevel = getGradeAsNumber(grade);
+      const fieldNames = resolveScoreFieldNames(taskSlug, gradeLevel, scoringVersion);
 
       return {
         runId: run.id,
@@ -150,9 +182,9 @@ export function AggregationService({
         taskSlug,
         grade,
         schoolIds: schools.map((s) => s.id),
-        percentile: scores.percentile,
-        rawScore: scores.rawScore,
-        scoringVersion: scores.scoringVersion,
+        percentile: resolveNumericScore(scoreMap, fieldNames.percentileFieldNames),
+        rawScore: resolveNumericScore(scoreMap, fieldNames.rawScoreFieldNames),
+        scoringVersion,
       };
     });
 
@@ -210,7 +242,7 @@ export function AggregationService({
         levelCounts.schools[schoolId]!.count++;
       }
 
-      // Aggregate score ranges
+      // Histogram totals can potentially deviate if admin has runs with different scoring versions
       if (enrichedRun.percentile !== null) {
         const percentileRange = getPercentileRange(enrichedRun.taskSlug, enrichedRun.percentile);
         if (percentileRange) {
@@ -225,7 +257,8 @@ export function AggregationService({
       }
 
       if (enrichedRun.rawScore !== null) {
-        const rawRange = getRawScoreRange(enrichedRun.taskSlug, enrichedRun.rawScore);
+        const bucketMap = rawBucketMaps.get(enrichedRun.taskSlug);
+        const rawRange = bucketMap ? findRangeInMap(bucketMap, enrichedRun.rawScore) : null;
         if (rawRange) {
           aggregateToScoreRange(
             taskCounts.raw,
@@ -295,18 +328,27 @@ function generateScoreRangeMap(min: number, max: number, divisor: number): Recor
   return rangeMap;
 }
 
-// Raw score ranges
-const SWR_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
-const SWR_ES_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
-const PA_RANGE_MAP = generateScoreRangeMap(40, 733, 50);
-const LETTER_RANGE_MAP = generateScoreRangeMap(0, 100, 10);
-const SRE_RANGE_MAP = generateScoreRangeMap(300, 967, 50);
-const SRE_ES_RANGE_MAP = generateScoreRangeMap(0, 140, 10);
-const CVA_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
-const TROG_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
-const ROAR_INFERENCE_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
-const MORPHOLOGY_RANGE_MAP = generateScoreRangeMap(100, 900, 50);
-const COMPOSITE_FOUNDATIONAL_RANGE_MAP = generateScoreRangeMap(-100, 967, 100);
+// Bounds come from the scoring config's `displayRanges.rawScore`
+const RAW_BUCKET_WIDTH: Record<string, { minVersion: number; width: number }[]> = {
+  [SWR_TASK_IDS.EN]: [{ minVersion: 0, width: 100 }],
+  [SWR_TASK_IDS.ES]: [{ minVersion: SWR_SCORING_VERSION.V1, width: 100 }],
+  [PA_TASK_ID]: [
+    { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, width: 70 },
+    { minVersion: 0, width: 5 },
+  ],
+  // No v0 entry: pre-norming letter runs have no classification (see letter.ts's
+  // classification config) and are dropped from the chart before bucketing runs.
+  [LETTER_TASK_IDS.EN]: [{ minVersion: LETTER_SCORING_VERSION.V1, width: 10 }],
+  [SRE_TASK_IDS.EN]: [
+    { minVersion: SRE_SCORING_VERSION.V5, width: 65 },
+    { minVersion: 0, width: 10 },
+  ],
+  [SRE_TASK_IDS.ES]: [{ minVersion: SRE_SCORING_VERSION.V1, width: 10 }],
+  [CVA_TASK_ID]: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, width: 100 }],
+  [MORPHOLOGY_TASK_ID]: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, width: 100 }],
+  [LEVANTE_NORMED_TASK_IDS.TROG]: [{ minVersion: LEVANTE_SCORING_VERSION.V1, width: 100 }],
+  [LEVANTE_NORMED_TASK_IDS.ROAR_INFERENCE]: [{ minVersion: LEVANTE_SCORING_VERSION.V1, width: 100 }],
+};
 
 // Percentile ranges (0-99 for most normed tasks)
 const PERCENTILE_RANGE_MAP = generateScoreRangeMap(0, 99, 10);
@@ -324,24 +366,40 @@ function findRangeInMap(rangeMap: Record<number, string>, score: number): string
   );
 }
 
-function getRawScoreRange(taskSlug: string, rawScore: number): string | null {
-  const scoreRangeMaps: Record<string, Record<number, string>> = {
-    swr: SWR_RANGE_MAP,
-    'swr-es': SWR_ES_RANGE_MAP,
-    pa: PA_RANGE_MAP,
-    letter: LETTER_RANGE_MAP,
-    sre: SRE_RANGE_MAP,
-    'sre-es': SRE_ES_RANGE_MAP,
-    cva: CVA_RANGE_MAP,
-    trog: TROG_RANGE_MAP,
-    'roar-inference': ROAR_INFERENCE_RANGE_MAP,
-    morphology: MORPHOLOGY_RANGE_MAP,
-    'composite-foundational': COMPOSITE_FOUNDATIONAL_RANGE_MAP,
-  };
+/**
+ * Build each task's raw score buckets from its configured range for the variant's
+ * scoring version.
+ *
+ * @param scoredTasks - The administration's scored task variants
+ * @param scoringVersionByVariant - Scoring version per task variant ID
+ * @returns Map of task slug to its bucket map; tasks without bounds or a width are omitted
+ */
+function buildRawBucketMaps(
+  scoredTasks: Array<{ variantId: string; taskSlug: string }>,
+  scoringVersionByVariant: Map<string, number>,
+): Map<string, Record<number, string>> {
+  const bucketMaps = new Map<string, Record<number, string>>();
 
-  const rangeMap = scoreRangeMaps[taskSlug];
-  if (!rangeMap) return null;
-  return findRangeInMap(rangeMap, rawScore);
+  for (const task of scoredTasks) {
+    const widthTiers = RAW_BUCKET_WIDTH[task.taskSlug];
+    const scoringVersion = scoringVersionByVariant.get(task.variantId) ?? 0;
+    const width = widthTiers ? resolveVersionedEntry(widthTiers, scoringVersion)?.width : undefined;
+    const bounds = getScoreRange(task.taskSlug, 'rawScore', scoringVersion);
+    if (width === undefined || !bounds) continue;
+
+    // Assumes one scoring version per task per administration.
+    if (bucketMaps.has(task.taskSlug)) {
+      logger.warn(
+        { taskSlug: task.taskSlug, variantId: task.variantId, scoringVersion },
+        'Multiple variants for one task slug; raw score buckets use the first resolved version',
+      );
+      continue;
+    }
+
+    bucketMaps.set(task.taskSlug, generateScoreRangeMap(bounds.min, bounds.max, width));
+  }
+
+  return bucketMaps;
 }
 
 function getPercentileRange(taskSlug: string, percentile: number): string | null {

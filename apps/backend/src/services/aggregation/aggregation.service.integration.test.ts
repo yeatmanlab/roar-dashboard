@@ -4,7 +4,17 @@ import { AdministrationRepository } from '../../repositories/administration.repo
 import { baseFixture } from '../../test-support/fixtures';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../../test-support/factories/administration-org.factory';
+import { AdministrationTaskVariantFactory } from '../../test-support/factories/administration-task-variant.factory';
+import { RunFactory } from '../../test-support/factories/run.factory';
+import { RunDemographicsFactory } from '../../test-support/factories/run-demographics.factory';
+import { RunScoreFactory } from '../../test-support/factories/run-score.factory';
+import { TaskFactory } from '../../test-support/factories/task.factory';
+import { TaskVariantFactory } from '../../test-support/factories/task-variant.factory';
+import { TaskVariantParameterFactory } from '../../test-support/factories/task-variant-parameter.factory';
 import { CoreDbClient } from '../../db/clients';
+import { SCORE_NAME, SCORE_TYPE } from '../../constants/run-scores';
+import { SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
+import type { Task } from '../../db/schema';
 
 /**
  * Integration tests for aggregateSupportCategories service.
@@ -17,10 +27,11 @@ import { CoreDbClient } from '../../db/clients';
  *
  * 1. **AdministrationTaskVariantFactory**: Link administrations to scored tasks (swr, pa, sre, cva, etc.)
  * 2. **FdwRunFactory** (assessment DB): Create runs with useForReporting=true, deletedAt=null
- * 3. **FdwRunScoreFactory** (assessment DB): Seed percentile and raw scores (type='computed'|'raw', name='percentile'|'rawScore')
- * 4. **RunDemographicsFactory** (core DB): Associate runs with grades
- * 5. **UserClassesFactory** (core DB): Enroll users with enrollmentEnd=null (active)
- * 6. **ClassesFactory** (core DB): Link classes to schools
+ * 3. **FdwRunScoreFactory** (assessment DB): Seed score rows under the names the task
+ *    writes, which vary by task, grade, and scoring version — take them from
+ *    `services/scoring/configs/`
+ * 4. **UserClassesFactory** (core DB): Enroll users with enrollmentEnd=null (active)
+ * 5. **ClassesFactory** (core DB): Link classes to schools
  *
  * Once these factories exist, each test should assert:
  * - Non-null aggregation results (indicating data flowed through joins)
@@ -31,6 +42,9 @@ import { CoreDbClient } from '../../db/clients';
  * This is critical for "Highest" risk tier (scoring/classification per testing-coverage-expectations.md).
  * These tests document the real-data regression coverage gap; they must not be re-enabled
  * without actual data seeding (see: quality-code-review.md "AI-generated tests without behavior verification").
+ *
+ * UPDATE: all five factories above now exist, and `Raw score buckets` below uses them to seed
+ * real data. The skipped tests are left as-is and still need to be revisited.
  */
 describe('aggregateSupportCategories - Integration', () => {
   let administrationRepository: AdministrationRepository;
@@ -284,6 +298,118 @@ describe('aggregateSupportCategories - Integration', () => {
       // When seeded with users in multiple active class enrollments:
       // A run should be counted once per school (not deduplicated)
       expect(result === null || typeof result === 'object').toBe(true);
+    });
+  });
+
+  describe('Raw score buckets', () => {
+    let sreTask: Task;
+
+    beforeAll(async () => {
+      sreTask = await TaskFactory.create({ slug: SRE_TASK_IDS.EN });
+    });
+
+    /**
+     * Seeds one administration with a single sre run, where the variant declares
+     * `scoringVersion` and the run carries its own.
+     */
+    async function seedSreRun(args: {
+      variantScoringVersion: number;
+      runScoringVersion: string;
+      percentileName: string;
+      percentile: string;
+      rawScore: string;
+    }) {
+      const admin = await AdministrationFactory.create({ createdBy: baseFixture.districtAdmin.id });
+      await AdministrationOrgFactory.create({ administrationId: admin.id, orgId: baseFixture.district.id });
+
+      const variant = await TaskVariantFactory.create({ taskId: sreTask.id });
+      await TaskVariantParameterFactory.create({
+        taskVariantId: variant.id,
+        name: SCORE_NAME.SCORING_VERSION,
+        value: args.variantScoringVersion,
+      });
+      await AdministrationTaskVariantFactory.create({ administrationId: admin.id, taskVariantId: variant.id });
+
+      const run = await RunFactory.create({
+        userId: baseFixture.classAStudent.id,
+        administrationId: admin.id,
+        taskId: sreTask.id,
+        taskVariantId: variant.id,
+        useForReporting: true,
+      });
+      await RunDemographicsFactory.create({ runId: run.id, grade: '3' });
+
+      const scoreRows: Array<[string, string]> = [
+        [args.percentileName, args.percentile],
+        ['sreScore', args.rawScore],
+        [SCORE_NAME.SCORING_VERSION, args.runScoringVersion],
+      ];
+      for (const [name, value] of scoreRows) {
+        await RunScoreFactory.create({
+          runId: run.id,
+          type: SCORE_TYPE.COMPUTED,
+          domain: 'composite',
+          name,
+          value,
+          assessmentStage: null,
+          categoryScore: null,
+        });
+      }
+
+      return admin;
+    }
+
+    it('bins a pre-v5 raw score on the pre-v5 scale', async () => {
+      const admin = await seedSreRun({
+        variantScoringVersion: 0,
+        runScoringVersion: '0',
+        percentileName: 'tosrecPercentile',
+        percentile: '60',
+        rawScore: '120',
+      });
+
+      const result = await aggregateSupportCategories({
+        administrationId: admin.id,
+        districtId: baseFixture.district.id,
+      });
+
+      expect(result![sreTask.id]!.raw['110-120']?.total).toBe(1);
+    });
+
+    it('bins a v5 raw score on the v5 scale', async () => {
+      const admin = await seedSreRun({
+        variantScoringVersion: 5,
+        runScoringVersion: '5',
+        percentileName: 'percentile',
+        percentile: '60',
+        rawScore: '320',
+      });
+
+      const result = await aggregateSupportCategories({
+        administrationId: admin.id,
+        districtId: baseFixture.district.id,
+      });
+
+      expect(result![sreTask.id]!.raw['300-365']?.total).toBe(1);
+    });
+
+    it('omits a raw score outside the variant scale, but still counts its support level', async () => {
+      const admin = await seedSreRun({
+        variantScoringVersion: 0,
+        runScoringVersion: '0',
+        percentileName: 'tosrecPercentile',
+        percentile: '60',
+        rawScore: '500',
+      });
+
+      const result = await aggregateSupportCategories({
+        administrationId: admin.id,
+        districtId: baseFixture.district.id,
+      });
+
+      const sre = result![sreTask.id]!;
+      expect(sre.raw).toEqual({});
+      expect(sre.achievedSkill.total).toBe(1);
     });
   });
 });
