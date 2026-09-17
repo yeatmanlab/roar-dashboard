@@ -31,6 +31,24 @@ vi.mock('firebase/auth', () => ({
 import { useAuthStore } from '@/store/auth';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 
+describe('authStore.hasPasswordProvider', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  it('reflects whether the current Firebase user has a password provider', () => {
+    const authStore = useAuthStore();
+
+    expect(authStore.hasPasswordProvider).toBe(false);
+
+    authStore.firebaseUser = { providerData: [{ providerId: 'google.com' }] };
+    expect(authStore.hasPasswordProvider).toBe(false);
+
+    authStore.firebaseUser = { providerData: [{ providerId: 'google.com' }, { providerId: 'password' }] };
+    expect(authStore.hasPasswordProvider).toBe(true);
+  });
+});
+
 describe('authStore.setAuthStateListener', () => {
   let authStore;
   /** @type {(user: object | null) => Promise<void>} */
