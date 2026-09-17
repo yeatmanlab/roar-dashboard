@@ -46,13 +46,9 @@ export default defineConfig(({ mode }) => ({
           // value, so injecting this into a deployed build would point it at an emulator
           // that issues unverified tokens. Staging and production resolve Firebase config
           // from /__/firebase/init.json instead.
-          ...(mode === 'development'
-            ? {
-                'process.env.FIREBASE_AUTH_EMULATOR_HOST': JSON.stringify(
-                  process.env.FIREBASE_AUTH_EMULATOR_HOST || '',
-                ),
-              }
-            : { 'process.env.FIREBASE_AUTH_EMULATOR_HOST': JSON.stringify('') }),
+          'process.env.FIREBASE_AUTH_EMULATOR_HOST': JSON.stringify(
+            mode === 'development' ? process.env.FIREBASE_AUTH_EMULATOR_HOST || '' : '',
+          ),
         }
       : {},
   server: getServerConfig(mode),
