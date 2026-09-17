@@ -8,6 +8,7 @@ import dsv from '@rollup/plugin-dsv';
 import { fileURLToPath, URL } from 'url';
 import path from 'path';
 import fs from 'fs';
+import { assertEmulatorDisabledForDeployedBuild } from './src/utils/emulator-guard';
 
 /**
  * Parse server response headers
@@ -198,6 +199,12 @@ const buildFirebaseConfig = (mode = 'development') => {
 export default defineConfig(({ mode }) => {
   // Trigger custom dotenv file loader for env-configs directory.
   loadDotenvFiles(mode);
+
+  // Checked after the dotenv loader, so an emulator variable coming from a dotenv
+  // file is caught as well as one exported in the shell. Deployed modes only —
+  // development and test builds (local dev, the CI e2e job) are untouched.
+  assertEmulatorDisabledForDeployedBuild(mode, process.env);
+
   buildFirebaseConfig(mode);
 
   const responseHeaders = getResponseHeaders();
