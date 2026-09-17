@@ -7,11 +7,34 @@
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
 import { ApiContractV1 } from '@roar-platform/api-contract';
 import { useAuthStore } from '@/store/auth';
+import { API_ERROR_CODES } from '@/utils/api-errors';
 
 const ROAR_API_BASE_URL = import.meta.env.VITE_ROAR_API_BASE_URL;
 
 /** @type {ReturnType<typeof initClient> | null} */
 let clientInstance = null;
+
+/** @type {Promise<string | null> | null} */
+let inFlightRefresh = null;
+
+/**
+ * Force a token refresh, deduplicating concurrent callers.
+ *
+ * N requests that 401 at the same time share a single refresh: the first
+ * caller starts it, the rest await the same promise, and each retries with
+ * the token it resolves to.
+ *
+ * @param {ReturnType<typeof useAuthStore>} authStore
+ * @returns {Promise<string | null>} The fresh token, or null if not signed in.
+ */
+function refreshTokenDeduped(authStore) {
+  if (!inFlightRefresh) {
+    inFlightRefresh = authStore.forceIdTokenRefresh().finally(() => {
+      inFlightRefresh = null;
+    });
+  }
+  return inFlightRefresh;
+}
 
 /**
  * Custom API function that injects the auth token and handles 401 retry.
@@ -37,8 +60,8 @@ async function apiWithAuthRetry(args) {
   if (response.status === 401) {
     try {
       const body = await response.clone().json();
-      if (body?.error?.code === 'auth/token-expired') {
-        const freshToken = await authStore.forceIdTokenRefresh();
+      if (body?.error?.code === API_ERROR_CODES.AUTH_TOKEN_EXPIRED) {
+        const freshToken = await refreshTokenDeduped(authStore);
         const retryHeaders = {
           ...args.headers,
           ...(freshToken ? { Authorization: `Bearer ${freshToken}` } : {}),

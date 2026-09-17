@@ -12,6 +12,7 @@ import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { useAuthStore } from '@/store/auth';
+import useAssessmentAuthCallbacks from '@/composables/useAssessmentAuthCallbacks';
 import { useGameStore } from '@/store/game';
 import useParticipantId from '@/composables/useParticipantId';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
@@ -130,10 +131,7 @@ async function startTask(selectedAdmin) {
     initFirekitCompat(
       {
         baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
-        auth: {
-          getToken: () => Promise.resolve(authStore.accessToken),
-          refreshToken: () => authStore.forceIdTokenRefresh(),
-        },
+        auth: useAssessmentAuthCallbacks(),
         participant: { participantId: participantId.value },
       },
       {
