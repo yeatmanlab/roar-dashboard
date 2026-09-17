@@ -63,6 +63,24 @@ describe('AuthSSO', () => {
     },
   );
 
+  it('treats the InitiateAuthNycps sentinel code "true" as a present code', async () => {
+    const { authStore } = mountAuthSSO({ provider: AUTH_SSO_PROVIDERS.NYCPS, code: 'true' });
+    await flushPromises();
+
+    expect(authStore.nycpsOAuthRequested).toBe(true);
+    expect(mocks.routerReplace).toHaveBeenCalledWith({ name: 'SignIn' });
+  });
+
+  it('redirects to Home for an unknown provider without touching the store', async () => {
+    // AUTH_SSO_PROVIDERS.GOOGLE is a real enum member but has no landing flag.
+    const { authStore } = mountAuthSSO({ provider: AUTH_SSO_PROVIDERS.GOOGLE, code: 'oauth-code' });
+    await flushPromises();
+
+    expect(authStore.undefined).toBeUndefined();
+    expect(mocks.routerPush).toHaveBeenCalledWith({ name: 'Home' });
+    expect(mocks.routerReplace).not.toHaveBeenCalled();
+  });
+
   it('redirects to Home when no code is present', async () => {
     const { authStore } = mountAuthSSO({ provider: AUTH_SSO_PROVIDERS.CLEVER });
     await flushPromises();

@@ -3,8 +3,16 @@ import { useRouter, useRoute } from 'vue-router';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
 import { fetchMe } from '@/composables/queries/useMeQuery';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
+import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
+import { APP_ROUTE_NAMES } from '@/constants/routes';
 import useSSOAccountReadinessVerification from './useSSOAccountReadinessVerification';
+
+const mocks = vi.hoisted(() => ({
+  logAuthEvent: vi.fn(),
+  setGlobalError: vi.fn(),
+}));
 
 vi.mock('vue-router', () => ({
   useRouter: vi.fn(),
@@ -26,7 +34,13 @@ vi.mock('@/composables/queries/useMeQuery', () => ({
 
 vi.mock('@/composables/useSentryLogging', () => ({
   default: () => ({
-    logAuthEvent: vi.fn(),
+    logAuthEvent: mocks.logAuthEvent,
+  }),
+}));
+
+vi.mock('@/composables/useGlobalError', () => ({
+  useGlobalError: () => ({
+    setGlobalError: mocks.setGlobalError,
   }),
 }));
 
@@ -46,6 +60,14 @@ vi.mock('@/helpers/redirectSignInPath', () => ({
 
 const readyUser = { id: 'roar-user-id', userType: 'student' };
 
+/** Build an error with the shape fetchMe attaches on non-200 responses. */
+const buildMeError = (status, code) => {
+  const error = new Error(`/me request failed with status ${status}`);
+  error.status = status;
+  error.body = code ? { error: { message: 'error', code } } : { error: { message: 'error' } };
+  return error;
+};
+
 describe('useSSOAccountReadinessVerification', () => {
   let queryClient;
   let router;
@@ -59,6 +81,7 @@ describe('useSSOAccountReadinessVerification', () => {
     };
     router = {
       push: vi.fn(),
+      replace: vi.fn(),
     };
 
     VueQuery.useQueryClient.mockReturnValue(queryClient);
@@ -81,6 +104,7 @@ describe('useSSOAccountReadinessVerification', () => {
     expect(queryClient.setQueryData).toHaveBeenCalledWith([ME_QUERY_KEY], readyUser);
     expect(queryClient.invalidateQueries).toHaveBeenCalled();
     expect(router.push).toHaveBeenCalledWith({ path: '/' });
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.SUCCESS, { data: { provider: 'SSO' } });
     expect(result.hasError.value).toBe(false);
   });
 
@@ -91,27 +115,31 @@ describe('useSSOAccountReadinessVerification', () => {
     await result.startPolling();
 
     expect(fetchMe).toHaveBeenCalledTimes(2);
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.USER_TYPE_GUEST, {
+      level: 'warning',
+      data: { retryCount: 1, provider: 'SSO' },
+    });
     expect(router.push).toHaveBeenCalledWith({ path: '/' });
     expect(result.hasError.value).toBe(false);
   });
 
-  it('keeps polling while /me fails, then redirects once it resolves', async () => {
-    const notFound = new Error('/me request failed with status 404');
-    notFound.status = 404;
-    fetchMe.mockRejectedValueOnce(notFound).mockResolvedValueOnce(readyUser);
+  it('keeps polling while /me fails with user-not-found, then redirects once it resolves', async () => {
+    fetchMe.mockRejectedValueOnce(buildMeError(401, 'auth/user-not-found')).mockResolvedValueOnce(readyUser);
 
     const { result } = setup();
     await result.startPolling();
 
     expect(fetchMe).toHaveBeenCalledTimes(2);
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.USER_TYPE_MISSING, {
+      level: 'warning',
+      data: { retryCount: 1, provider: 'SSO', userType: undefined, status: 401 },
+    });
     expect(router.push).toHaveBeenCalledWith({ path: '/' });
     expect(result.hasError.value).toBe(false);
   });
 
   it('sets hasError after exhausting all attempts', async () => {
-    const unauthorized = new Error('/me request failed with status 401');
-    unauthorized.status = 401;
-    fetchMe.mockRejectedValue(unauthorized);
+    fetchMe.mockRejectedValue(buildMeError(500));
 
     const { result } = setup();
     await result.startPolling();
@@ -119,11 +147,40 @@ describe('useSSOAccountReadinessVerification', () => {
     expect(fetchMe).toHaveBeenCalledTimes(3);
     expect(router.push).not.toHaveBeenCalled();
     expect(result.hasError.value).toBe(true);
-    expect(result.retryCount.value).toBeGreaterThan(0);
+    // The retry callback fires on every failure, including the last one.
+    expect(result.retryCount.value).toBe(3);
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.POLLING_MAX_RETRIES_EXCEEDED, {
+      level: 'error',
+      data: { retryCount: 3, provider: 'SSO' },
+    });
+  });
+
+  it('stops immediately and routes to AccessEnded on a rostering-ended error', async () => {
+    fetchMe.mockRejectedValue(buildMeError(403, 'auth/rostering-ended'));
+
+    const { result } = setup();
+    await result.startPolling();
+
+    expect(fetchMe).toHaveBeenCalledTimes(1);
+    expect(mocks.setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
+    expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
+    expect(result.hasError.value).toBe(false);
+  });
+
+  it('stops immediately and routes to SignIn on a terminal auth error', async () => {
+    fetchMe.mockRejectedValue(buildMeError(401, 'auth/token-expired'));
+
+    const { result } = setup();
+    await result.startPolling();
+
+    expect(fetchMe).toHaveBeenCalledTimes(1);
+    expect(mocks.setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+    expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.SIGN_IN });
+    expect(result.hasError.value).toBe(false);
   });
 
   it('recovers via retryPolling after an error', async () => {
-    fetchMe.mockRejectedValue(new Error('still provisioning'));
+    fetchMe.mockRejectedValue(buildMeError(500));
 
     const { result } = setup();
     await result.startPolling();
@@ -169,6 +226,8 @@ describe('useSSOAccountReadinessVerification', () => {
     app.unmount();
     await polling;
 
+    // The retry callback bails after the first attempt — no further fetches.
+    expect(fetchMe).toHaveBeenCalledTimes(1);
     expect(router.push).not.toHaveBeenCalled();
     expect(result.hasError.value).toBe(false);
   });

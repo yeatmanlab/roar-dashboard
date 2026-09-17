@@ -4,12 +4,16 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { setUser } from '@sentry/vue';
 import { backOff } from 'exponential-backoff';
 import { fetchMe } from '@/composables/queries/useMeQuery';
+import { useGlobalError } from '@/composables/useGlobalError';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { AUTH_USER_TYPE } from '@/constants/auth';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
+import { APP_ROUTE_NAMES } from '@/constants/routes';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 import isTestEnv from '@/helpers/isTestEnv';
+import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 
 const { logAuthEvent } = useSentryLogging();
 
@@ -42,6 +46,7 @@ const useSSOAccountReadinessVerification = () => {
   const router = useRouter();
   const route = useRoute();
   const queryClient = useQueryClient();
+  const { setGlobalError } = useGlobalError();
 
   /**
    * Check if the user account is ready and redirect if so.
@@ -65,8 +70,10 @@ const useSSOAccountReadinessVerification = () => {
     setUser({ id: data.id, userType });
     logAuthEvent(AUTH_LOG_MESSAGES.SUCCESS, { data: { provider: 'SSO' } });
 
-    // Seed the /me cache with the fresh payload, then invalidate all queries
-    // so everything else is fetched freshly now that the user record exists.
+    // Seed the /me cache with the fresh payload, then invalidate all queries.
+    // The blanket invalidation is intentional: SSO completion is a cold start —
+    // anything cached before this point was fetched while the user record was
+    // still being provisioned, so none of it is trustworthy.
     queryClient.setQueryData([ME_QUERY_KEY], data);
     queryClient.invalidateQueries();
 
@@ -112,6 +119,15 @@ const useSSOAccountReadinessVerification = () => {
             // Update retry count for UI/logging.
             retryCount.value = attemptNumber;
 
+            // Rostering-ended and terminal auth errors are not transient —
+            // stop immediately instead of burning the whole backoff schedule.
+            // The provisioning case stays retryable: the backend answers 401
+            // `auth/user-not-found` for a not-yet-provisioned SSO user, which
+            // neither helper matches.
+            if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
+              return false;
+            }
+
             // Log progress.
             if (error.userType === AUTH_USER_TYPE.GUEST) {
               logAuthEvent(AUTH_LOG_MESSAGES.USER_TYPE_GUEST, {
@@ -130,14 +146,28 @@ const useSSOAccountReadinessVerification = () => {
           },
         },
       );
-    } catch {
-      // Max retries exceeded or unexpected error.
+    } catch (error) {
       if (!hasRedirected) {
-        hasError.value = true;
-        logAuthEvent(AUTH_LOG_MESSAGES.POLLING_MAX_RETRIES_EXCEEDED, {
-          level: 'error',
-          data: { retryCount: retryCount.value, provider: 'SSO' },
-        });
+        // Terminal errors route the same way the rest of the app handles them
+        // (queryClient.js QueryCache onError + App.vue meError watcher). This
+        // fetch bypasses the query cache, so the mapping is applied here.
+        if (isRosteringEndedError(error)) {
+          hasRedirected = true;
+          setGlobalError({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
+          router.replace({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
+        } else if (isTerminalAuthError(error)) {
+          hasRedirected = true;
+          setGlobalError({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+          router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
+        } else {
+          // Max retries exceeded or unexpected error — show the retryable
+          // error state on SSOAuthPage.
+          hasError.value = true;
+          logAuthEvent(AUTH_LOG_MESSAGES.POLLING_MAX_RETRIES_EXCEEDED, {
+            level: 'error',
+            data: { retryCount: retryCount.value, provider: 'SSO' },
+          });
+        }
       }
     } finally {
       isPolling.value = false;

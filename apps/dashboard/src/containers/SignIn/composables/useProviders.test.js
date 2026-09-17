@@ -191,15 +191,20 @@ describe('useProviders', () => {
       expect(mockOptions.hasCheckedProviders.value).toBe(true);
     });
 
-    it('should auto-continue on a single SSO provider', async () => {
-      mocks.fetchSignInMethodsForEmail.mockResolvedValue([AUTH_SSO_PROVIDERS.GOOGLE]);
+    it.each([
+      [AUTH_SSO_PROVIDERS.GOOGLE, 'authWithGoogle'],
+      [AUTH_SSO_PROVIDERS.CLEVER, 'authWithClever'],
+      [AUTH_SSO_PROVIDERS.CLASSLINK, 'authWithClassLink'],
+      [AUTH_SSO_PROVIDERS.NYCPS, 'authWithNYCPS'],
+    ])('should auto-continue on a single SSO provider: %s', async (provider, authFn) => {
+      mocks.fetchSignInMethodsForEmail.mockResolvedValue([provider]);
       mockOptions.email.value = 'test@example.com';
 
       const { checkAvailableProviders } = useProviders(mockOptions);
 
       await checkAvailableProviders();
 
-      expect(mockOptions.authWithGoogle).toHaveBeenCalled();
+      expect(mockOptions[authFn]).toHaveBeenCalled();
       expect(mockOptions.hasCheckedProviders.value).toBe(true);
     });
 

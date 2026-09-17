@@ -39,8 +39,13 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 onMounted(() => {
-  if (props.code) {
-    authStore[OAUTH_REQUEST_FLAGS[props.provider]] = true;
+  // The lookup can miss when a provider is added to AUTH_SSO_PROVIDERS but
+  // not to OAUTH_REQUEST_FLAGS — the prop validator only warns in dev, so
+  // guard here to avoid writing a garbage key onto the auth store.
+  const oauthRequestFlag = OAUTH_REQUEST_FLAGS[props.provider];
+
+  if (props.code && oauthRequestFlag) {
+    authStore[oauthRequestFlag] = true;
     router.replace({ name: 'SignIn' });
   } else {
     router.push({ name: 'Home' });
