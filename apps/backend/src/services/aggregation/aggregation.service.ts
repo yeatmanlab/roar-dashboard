@@ -21,7 +21,7 @@ import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
 import { SWR_SCORING_VERSION, SWR_TASK_IDS } from '@roar-platform/assessment-schema/roar-swr';
 import { SRE_SCORING_VERSION, SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
 import { PA_SCORING_VERSION, PA_TASK_ID } from '@roar-platform/assessment-schema/roar-pa';
-import { LETTER_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
+import { LETTER_SCORING_VERSION, LETTER_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
 import {
   MULTICHOICE_SCORING_VERSION,
   MORPHOLOGY_TASK_ID,
@@ -336,7 +336,9 @@ const RAW_BUCKET_WIDTH: Record<string, { minVersion: number; width: number }[]> 
     { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, width: 70 },
     { minVersion: 0, width: 5 },
   ],
-  [LETTER_TASK_IDS.EN]: [{ minVersion: 0, width: 10 }],
+  // No v0 entry: pre-norming letter runs have no classification (see letter.ts's
+  // classification config) and are dropped from the chart before bucketing runs.
+  [LETTER_TASK_IDS.EN]: [{ minVersion: LETTER_SCORING_VERSION.V1, width: 10 }],
   [SRE_TASK_IDS.EN]: [
     { minVersion: SRE_SCORING_VERSION.V5, width: 65 },
     { minVersion: 0, width: 10 },

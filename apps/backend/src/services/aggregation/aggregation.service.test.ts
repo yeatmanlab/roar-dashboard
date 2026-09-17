@@ -295,6 +295,35 @@ describe('aggregateSupportCategories', () => {
       expect(letter.achievedSkill.total).toBe(1);
       expect(letter.raw['60-70']?.total).toBe(1);
     });
+
+    it('drops a pre-norming (v0) letter run from the chart entirely', async () => {
+      setVariantScoringVersion(0);
+      const service = setupTask('letter', [
+        {
+          runId: 'run-1',
+          grade: '3',
+          scores: [
+            ['totalPercentCorrect', '60'],
+            ['totalCorrect', '63'],
+            ['scoringVersion', '0'],
+          ],
+        },
+      ]);
+
+      const result = await service.aggregateSupportCategories({
+        administrationId: 'admin-123',
+        districtId: 'district-456',
+      });
+
+      // Letter has no v0 classification config, so the run has no support level
+      // and is excluded from every bucket — support-level counts and histograms alike.
+      const letter = result!['task-letter-uuid']!;
+      expect(letter.achievedSkill.total).toBe(0);
+      expect(letter.developingSkill.total).toBe(0);
+      expect(letter.needsExtraSupport.total).toBe(0);
+      expect(letter.raw).toEqual({});
+      expect(letter.percentile).toEqual({});
+    });
   });
 
   describe('Data aggregation', () => {
