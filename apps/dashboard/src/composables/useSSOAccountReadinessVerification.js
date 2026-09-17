@@ -13,7 +13,7 @@ import { ME_QUERY_KEY } from '@/constants/queryKeys';
 import { APP_ROUTE_NAMES } from '@/constants/routes';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 import isTestEnv from '@/helpers/isTestEnv';
-import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
+import { API_ERROR_CODES, getApiErrorCode, isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 
 const { logAuthEvent } = useSentryLogging();
 
@@ -29,6 +29,13 @@ const getBackoffOptions = () => ({
 });
 
 /**
+ * `true` when the error is a 401 with code `auth/token-expired` — the API
+ * client's built-in refresh-and-retry has already failed by the time this
+ * surfaces, so it is never transient.
+ */
+const isTokenExpiredError = (error) => getApiErrorCode(error) === API_ERROR_CODES.AUTH_TOKEN_EXPIRED;
+
+/**
  * Verify account readiness after SSO authentication.
  *
  * This composable polls the backend `/me` endpoint until the SSO user is
@@ -36,6 +43,12 @@ const getBackoffOptions = () => ({
  * which may take some time — until then `/me` responds with an error status
  * (surfaced by `fetchMe` as a thrown error), which counts as "not ready yet".
  * Uses exponential backoff to reduce load on the server while waiting.
+ *
+ * Rostering-ended and expired-token errors stop polling immediately and
+ * route the user away (AccessEnded / SignIn) via the global error state,
+ * matching how the rest of the app treats these errors. Only the "still
+ * provisioning" and "max retries exceeded" cases surface through
+ * `hasError` / `retryPolling`.
  */
 const useSSOAccountReadinessVerification = () => {
   const retryCount = ref(0);
@@ -46,7 +59,7 @@ const useSSOAccountReadinessVerification = () => {
   const router = useRouter();
   const route = useRoute();
   const queryClient = useQueryClient();
-  const { setGlobalError } = useGlobalError();
+  const { setGlobalError, clearGlobalError } = useGlobalError();
 
   /**
    * Check if the user account is ready and redirect if so.
@@ -76,6 +89,12 @@ const useSSOAccountReadinessVerification = () => {
     // still being provisioned, so none of it is trustworthy.
     queryClient.setQueryData([ME_QUERY_KEY], data);
     queryClient.invalidateQueries();
+
+    // A stale global error from an earlier failed /me attempt (e.g. the
+    // app-level useMeQuery erroring while the user was still provisioning)
+    // would make the router guard hijack this redirect. /me just succeeded,
+    // so clear it — mirrors App.vue's meData watcher.
+    clearGlobalError();
 
     router.push({ path: redirectSignInPath(route) });
     return true;
@@ -119,12 +138,14 @@ const useSSOAccountReadinessVerification = () => {
             // Update retry count for UI/logging.
             retryCount.value = attemptNumber;
 
-            // Rostering-ended and terminal auth errors are not transient —
+            // Rostering-ended and expired-token errors are not transient —
             // stop immediately instead of burning the whole backoff schedule.
-            // The provisioning case stays retryable: the backend answers 401
-            // `auth/user-not-found` for a not-yet-provisioned SSO user, which
-            // neither helper matches.
-            if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
+            // Two 401 codes deliberately stay retryable: `auth/user-not-found`
+            // (the backend hasn't provisioned the SSO user yet), and
+            // `auth/required` (the request went out without a token — right
+            // after the SSO redirect the first attempts can race the Firebase
+            // token listener that populates the store's accessToken).
+            if (isRosteringEndedError(error) || isTokenExpiredError(error)) {
               return false;
             }
 
@@ -148,9 +169,14 @@ const useSSOAccountReadinessVerification = () => {
       );
     } catch (error) {
       if (!hasRedirected) {
-        // Terminal errors route the same way the rest of the app handles them
-        // (queryClient.js QueryCache onError + App.vue meError watcher). This
-        // fetch bypasses the query cache, so the mapping is applied here.
+        // Terminal errors reproduce what the rest of the app does in two
+        // places: the QueryCache onError bridge (global error state) and the
+        // App.vue meError watcher (navigation). This fetch bypasses the query
+        // cache, so neither surface sees the error — both halves are applied
+        // here. Navigation alone is not enough (the router guard bounces
+        // error pages back to Home when no global error is set), and state
+        // alone is not enough either (the guard only runs on navigation, and
+        // nothing else navigates away from the SSO landing page).
         if (isRosteringEndedError(error)) {
           hasRedirected = true;
           setGlobalError({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });

@@ -40,8 +40,9 @@ export function useProviders(options) {
     const emailVal = (toValue(email) || '').trim().toLowerCase();
     // Constraint: fetchSignInMethodsForEmail returns [] for every address once
     // Firebase email-enumeration protection is enabled on the project. The
-    // setting is currently off; discovery must move to a backend endpoint
-    // before it is turned on, or every user degrades to the password form.
+    // setting is currently off (verified 2026-09-17), but enabling it is
+    // planned. TODO: move discovery to a backend endpoint before the setting
+    // is turned on, or every user degrades to the password form.
     const raw = await getAuthService().fetchSignInMethodsForEmail(emailVal);
     const norm = await normalizeProviders(raw || []);
     availableProviders.value = norm;

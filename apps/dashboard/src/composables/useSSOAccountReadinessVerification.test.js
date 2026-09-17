@@ -12,6 +12,7 @@ import useSSOAccountReadinessVerification from './useSSOAccountReadinessVerifica
 const mocks = vi.hoisted(() => ({
   logAuthEvent: vi.fn(),
   setGlobalError: vi.fn(),
+  clearGlobalError: vi.fn(),
 }));
 
 vi.mock('vue-router', () => ({
@@ -41,6 +42,7 @@ vi.mock('@/composables/useSentryLogging', () => ({
 vi.mock('@/composables/useGlobalError', () => ({
   useGlobalError: () => ({
     setGlobalError: mocks.setGlobalError,
+    clearGlobalError: mocks.clearGlobalError,
   }),
 }));
 
@@ -103,6 +105,9 @@ describe('useSSOAccountReadinessVerification', () => {
     expect(fetchMe).toHaveBeenCalledTimes(1);
     expect(queryClient.setQueryData).toHaveBeenCalledWith([ME_QUERY_KEY], readyUser);
     expect(queryClient.invalidateQueries).toHaveBeenCalled();
+    // A stale global error from a failed earlier /me attempt is cleared so
+    // the router guard cannot hijack the redirect.
+    expect(mocks.clearGlobalError).toHaveBeenCalled();
     expect(router.push).toHaveBeenCalledWith({ path: '/' });
     expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.SUCCESS, { data: { provider: 'SSO' } });
     expect(result.hasError.value).toBe(false);
@@ -134,6 +139,20 @@ describe('useSSOAccountReadinessVerification', () => {
       level: 'warning',
       data: { retryCount: 1, provider: 'SSO', userType: undefined, status: 401 },
     });
+    expect(router.push).toHaveBeenCalledWith({ path: '/' });
+    expect(result.hasError.value).toBe(false);
+  });
+
+  it('keeps polling when the request goes out without a token (auth/required)', async () => {
+    // Right after the SSO redirect the first attempts can race the Firebase
+    // token listener — auth/required must not be treated as terminal here.
+    fetchMe.mockRejectedValueOnce(buildMeError(401, 'auth/required')).mockResolvedValueOnce(readyUser);
+
+    const { result } = setup();
+    await result.startPolling();
+
+    expect(fetchMe).toHaveBeenCalledTimes(2);
+    expect(mocks.setGlobalError).not.toHaveBeenCalled();
     expect(router.push).toHaveBeenCalledWith({ path: '/' });
     expect(result.hasError.value).toBe(false);
   });
