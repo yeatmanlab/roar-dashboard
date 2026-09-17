@@ -73,15 +73,25 @@ describe('<AccountOwnerForm /> quality evidence', () => {
     mountAt(1280, 900);
 
     cy.get('label[for="account-owner-first-name"]').should('contain.text', 'First name');
-    cy.get('#account-owner-first-name').should('have.attr', 'required').and('have.attr', 'autocomplete', 'given-name');
+    cy.get('#account-owner-first-name').should(($input) => {
+      expect($input).to.have.attr('required');
+      expect($input).to.have.attr('autocomplete', 'given-name');
+    });
     cy.get('label[for="account-owner-last-name"]').should('contain.text', 'Last name');
-    cy.get('#account-owner-last-name').should('have.attr', 'required').and('have.attr', 'autocomplete', 'family-name');
+    cy.get('#account-owner-last-name').should(($input) => {
+      expect($input).to.have.attr('required');
+      expect($input).to.have.attr('autocomplete', 'family-name');
+    });
     cy.get('label[for="account-owner-email"]').should('contain.text', 'Email address');
-    cy.get('#account-owner-email').should('have.attr', 'type', 'email').and('have.attr', 'autocomplete', 'email');
+    cy.get('#account-owner-email').should(($input) => {
+      expect($input).to.have.attr('type', 'email');
+      expect($input).to.have.attr('autocomplete', 'email');
+    });
     cy.get('label[for="account-owner-password"]').should('contain.text', 'Password');
-    cy.get('#account-owner-password')
-      .should('have.attr', 'autocomplete', 'new-password')
-      .and('have.attr', 'aria-describedby', 'account-owner-password-help');
+    cy.get('#account-owner-password').should(($input) => {
+      expect($input).to.have.attr('autocomplete', 'new-password');
+      expect($input).to.have.attr('aria-describedby', 'account-owner-password-help');
+    });
     cy.get('#account-owner-password-help').should('contain.text', 'at least 8 characters');
   });
 });
