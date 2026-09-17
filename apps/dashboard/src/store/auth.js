@@ -8,6 +8,7 @@ import { APP_ROUTES } from '@/constants/routes';
 import { getAuthService } from '@/services/AuthService';
 import { queryClient } from '@/queryClient';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
+import { FIREBASE_AUTH_PROVIDER_IDS } from '@/constants/firebase';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -43,6 +44,13 @@ export const useAuthStore = () => {
       },
       isAuthenticated: (state) => {
         return Boolean(state.firebaseUser);
+      },
+      hasPasswordProvider: (state) => {
+        return (
+          state.firebaseUser?.providerData?.some(
+            (provider) => provider.providerId === FIREBASE_AUTH_PROVIDER_IDS.PASSWORD,
+          ) ?? false
+        );
       },
       isFirekitInit: (state) => {
         return state.roarfirekit?.initialized;
