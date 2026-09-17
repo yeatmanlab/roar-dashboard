@@ -271,6 +271,30 @@ describe('aggregateSupportCategories', () => {
         expect(sre.achievedSkill.total).toBe(1);
       });
     });
+
+    it('aggregates a v1 letter run on the 0-100 scale', async () => {
+      setVariantScoringVersion(1);
+      const service = setupTask('letter', [
+        {
+          runId: 'run-1',
+          grade: '3',
+          scores: [
+            ['percentile', '60'],
+            ['roarScore', '63'],
+            ['scoringVersion', '1'],
+          ],
+        },
+      ]);
+
+      const result = await service.aggregateSupportCategories({
+        administrationId: 'admin-123',
+        districtId: 'district-456',
+      });
+
+      const letter = result!['task-letter-uuid']!;
+      expect(letter.achievedSkill.total).toBe(1);
+      expect(letter.raw['60-70']?.total).toBe(1);
+    });
   });
 
   describe('Data aggregation', () => {
