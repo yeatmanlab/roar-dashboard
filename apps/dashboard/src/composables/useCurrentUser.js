@@ -1,6 +1,8 @@
 import { computed } from 'vue';
 import useMeQuery from '@/composables/queries/useMeQuery';
 
+const ADMIN_PROFILE_USER_TYPES = new Set(['admin', 'educator']);
+
 /**
  * Authenticated user state, derived from the `/me` query.
  *
@@ -14,9 +16,9 @@ import useMeQuery from '@/composables/queries/useMeQuery';
  * on `authStore.accessToken`, so the same call here is safe before sign-in
  * (`data.value` is undefined, the derived refs default sensibly).
  *
- * Authorization-related derived refs (e.g. `isAdmin`) are intentionally not
- * here — they live in `useUserType` / `usePermissions` and read from
- * `userClaims` until the legacy claims fetch is retired in a later migration.
+ * Permission checks remain in `useUserType` / `usePermissions`. The `usesAdminProfile`
+ * ref is an identity classification from `/me`; it does not grant access to a
+ * resource or organization.
  *
  * @example
  * const { currentUserId, hasUnsignedTos, isPending } = useCurrentUser();
@@ -30,6 +32,7 @@ import useMeQuery from '@/composables/queries/useMeQuery';
  *   isSuccess: import('vue').Ref<boolean>,
  *   error: import('vue').Ref<Error | null>,
  *   currentUserId: import('vue').ComputedRef<string | undefined>,
+ *   usesAdminProfile: import('vue').ComputedRef<boolean>,
  *   hasUnsignedTos: import('vue').ComputedRef<boolean>,
  *   unsignedAgreements: import('vue').ComputedRef<unknown[]>,
  * }}
@@ -38,6 +41,9 @@ export default function useCurrentUser() {
   const { data, status, isPending, isFetching, isError, isSuccess, error } = useMeQuery();
 
   const currentUserId = computed(() => data.value?.id);
+  const usesAdminProfile = computed(
+    () => Boolean(data.value?.isSuperAdmin) || ADMIN_PROFILE_USER_TYPES.has(data.value?.userType),
+  );
   const hasUnsignedTos = computed(() => (data.value?.unsignedAgreements?.length ?? 0) > 0);
   const unsignedAgreements = computed(() => data.value?.unsignedAgreements ?? []);
 
@@ -50,6 +56,7 @@ export default function useCurrentUser() {
     isSuccess,
     error,
     currentUserId,
+    usesAdminProfile,
     hasUnsignedTos,
     unsignedAgreements,
   };
