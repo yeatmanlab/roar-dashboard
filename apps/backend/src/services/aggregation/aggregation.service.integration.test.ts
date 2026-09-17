@@ -373,7 +373,7 @@ describe('aggregateSupportCategories - Integration', () => {
         districtId: baseFixture.district.id,
       });
 
-      expect(result![sreTask.id]!.raw['100-130']?.total).toBe(1);
+      expect(result![sreTask.id]!.raw['110-120']?.total).toBe(1);
     });
 
     it('bins a v5 raw score on the v5 scale', async () => {
@@ -390,7 +390,7 @@ describe('aggregateSupportCategories - Integration', () => {
         districtId: baseFixture.district.id,
       });
 
-      expect(result![sreTask.id]!.raw['300-350']?.total).toBe(1);
+      expect(result![sreTask.id]!.raw['300-365']?.total).toBe(1);
     });
 
     it('omits a raw score outside the variant scale, but still counts its support level', async () => {
