@@ -26,7 +26,8 @@
     "magicLink": "Solicitar link por e-mail",
     "error": "Erro",
     "success": "Sucesso",
-    "checkYourEmail": "Verifique seu e-mail {email} para obter instruções sobre como redefinir sua senha."
+    "checkYourEmail": "Verifique seu e-mail {email} para obter instruções sobre como redefinir sua senha.",
+    "providerCheckFailed": "Não foi possível verificar quais opções de login estão disponíveis para este e-mail. Tente novamente."
   },
   "cleverLanding": {
     "cleverLoading": "Carregando seus dados do Clever..."

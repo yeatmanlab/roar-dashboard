@@ -9,6 +9,7 @@ import {
   pageTitlesBR,
 } from '@/translations/exports';
 import { APP_ROUTES, APP_ROUTE_NAMES, GAME_ROUTES } from '@/constants/routes';
+import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
@@ -811,32 +812,32 @@ const routes = [
     path: APP_ROUTES.AUTH_CLEVER,
     name: 'AuthClever',
     beforeRouteLeave: [removeQueryParams, removeHash],
-    component: () => import('../components/auth/AuthClever.vue'),
-    props: (route) => ({ code: route.query.code }),
+    component: () => import('../components/auth/AuthSSO.vue'),
+    props: (route) => ({ code: route.query.code, provider: AUTH_SSO_PROVIDERS.CLEVER }),
     meta: { pageTitle: 'Clever Authentication' },
   },
   {
     path: APP_ROUTES.AUTH_CLASSLINK,
     name: 'AuthClassLink',
     beforeRouteLeave: [removeQueryParams, removeHash],
-    component: () => import('../components/auth/AuthClassLink.vue'),
-    props: (route) => ({ code: route.query.code }),
+    component: () => import('../components/auth/AuthSSO.vue'),
+    props: (route) => ({ code: route.query.code, provider: AUTH_SSO_PROVIDERS.CLASSLINK }),
     meta: { pageTitle: 'ClassLink Authentication' },
   },
   {
     path: APP_ROUTES.AUTH_NYCPS,
     name: 'AuthNycps',
     beforeRouteLeave: [removeQueryParams, removeHash],
-    component: () => import('../components/auth/AuthNycps.vue'),
-    props: (route) => ({ code: route.query.code }),
+    component: () => import('../components/auth/AuthSSO.vue'),
+    props: (route) => ({ code: route.query.code, provider: AUTH_SSO_PROVIDERS.NYCPS }),
     meta: { pageTitle: 'NYCPS Authentication' },
   },
   {
     path: APP_ROUTES.AUTH_NYCPS_INITIATE,
     name: 'InitiateAuthNycps',
     beforeRouteLeave: [removeQueryParams, removeHash],
-    component: () => import('../components/auth/AuthNycps.vue'),
-    props: () => ({ code: 'true' }),
+    component: () => import('../components/auth/AuthSSO.vue'),
+    props: () => ({ code: 'true', provider: AUTH_SSO_PROVIDERS.NYCPS }),
     meta: { pageTitle: 'Initiate NYCPS Authentication' },
   },
   {

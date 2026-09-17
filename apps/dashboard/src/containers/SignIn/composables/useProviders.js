@@ -1,5 +1,6 @@
 import { toValue } from 'vue';
 import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
+import { getAuthService } from '@/services/AuthService';
 
 export function useProviders(options) {
   const {
@@ -10,7 +11,7 @@ export function useProviders(options) {
     multipleProviders,
     hideProviders,
     showPasswordField,
-    roarfirekit,
+    discoveryError,
     authWithGoogle,
     authWithClever,
     authWithClassLink,
@@ -36,14 +37,8 @@ export function useProviders(options) {
   }
 
   async function getProviders() {
-    const kit = toValue(roarfirekit);
-    if (!kit) {
-      availableProviders.value = [];
-      hasCheckedProviders.value = true;
-      return [];
-    }
     const emailVal = (toValue(email) || '').trim().toLowerCase();
-    const raw = await kit.fetchEmailAuthMethods(emailVal);
+    const raw = await getAuthService().fetchSignInMethodsForEmail(emailVal);
     const norm = await normalizeProviders(raw || []);
     availableProviders.value = norm;
     hasCheckedProviders.value = true;
@@ -61,6 +56,8 @@ export function useProviders(options) {
       email.value = triggeredEmail.trim();
     }
 
+    if (discoveryError?.value) discoveryError.value = false;
+
     // username path → direct password flow
     if (toValue(isUsername)) {
       showPasswordField.value = true;
@@ -70,7 +67,15 @@ export function useProviders(options) {
       return;
     }
 
-    const providers = await getProviders();
+    let providers;
+    try {
+      providers = await getProviders();
+    } catch {
+      // Discovery failed — surface a retryable error instead of degrading to
+      // the password form, which cannot work for SSO-only users.
+      if (discoveryError) discoveryError.value = true;
+      return;
+    }
 
     availableProviders.value = providers;
     hasCheckedProviders.value = true;

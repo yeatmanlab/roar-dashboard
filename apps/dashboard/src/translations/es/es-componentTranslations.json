@@ -27,7 +27,8 @@
     "magicLink": "Solicitar link al email",
     "error": "Error",
     "success": "Listo",
-    "checkYourEmail": "Abre tu email {email} para restablecer tu contraseña."
+    "checkYourEmail": "Abre tu email {email} para restablecer tu contraseña.",
+    "providerCheckFailed": "No pudimos comprobar qué opciones de inicio de sesión están disponibles para este email. Inténtalo de nuevo."
   },
   "cleverLanding": {
     "cleverLoading": "Cargando tus datos desde Clever..."
