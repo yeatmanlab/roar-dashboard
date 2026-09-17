@@ -13,6 +13,7 @@ import { userClasses } from './user-classes';
 import { userFamilies } from './user-families';
 import { userGroups } from './user-groups';
 import { userOrgs } from './user-orgs';
+import { userResearchExclusions } from './user-research-exclusions';
 import { tasks } from './tasks';
 import { taskVariants } from './task-variants';
 import { taskVariantParameters } from './task-variant-parameters';
@@ -55,15 +56,9 @@ export const orgsRelations = relations(orgs, ({ one, many }) => ({
 /**
  * Group Relations
  *
- * Groups form a hierarchical structure with self-referencing parent/child relationships.
+ * Groups are standalone entities with no hierarchy.
  */
-export const groupsRelations = relations(groups, ({ one, many }) => ({
-  parent: one(groups, {
-    fields: [groups.parentGroupId],
-    references: [groups.id],
-    relationName: 'groupHierarchy',
-  }),
-  children: many(groups, { relationName: 'groupHierarchy' }),
+export const groupsRelations = relations(groups, ({ many }) => ({
   users: many(userGroups),
   administrations: many(administrationGroups),
   invitationCodes: many(invitationCodes),
@@ -157,6 +152,7 @@ export const taskBundleVariantsRelations = relations(taskBundleVariants, ({ one 
  */
 export const administrationsRelations = relations(administrations, ({ one, many }) => ({
   createdByUser: one(users, { fields: [administrations.createdBy], references: [users.id] }),
+  excludedFromResearchByUser: one(users, { fields: [administrations.excludedFromResearchBy], references: [users.id] }),
   agreements: many(administrationAgreements),
   classes: many(administrationClasses),
   groups: many(administrationGroups),
@@ -228,6 +224,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   classes: many(userClasses),
   families: many(userFamilies),
   agreements: many(userAgreements),
+  researchExclusions: many(userResearchExclusions),
 }));
 
 export const userOrgsRelations = relations(userOrgs, ({ one }) => ({
@@ -256,4 +253,9 @@ export const userAgreementsRelations = relations(userAgreements, ({ one }) => ({
     fields: [userAgreements.agreementVersionId],
     references: [agreementVersions.id],
   }),
+}));
+
+export const userResearchExclusionsRelations = relations(userResearchExclusions, ({ one }) => ({
+  user: one(users, { fields: [userResearchExclusions.userId], references: [users.id] }),
+  excludedByUser: one(users, { fields: [userResearchExclusions.excludedBy], references: [users.id] }),
 }));

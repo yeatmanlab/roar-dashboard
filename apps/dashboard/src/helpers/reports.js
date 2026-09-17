@@ -6,6 +6,23 @@ import { SCORE_REPORT_DISTRIBUTION_CHART_PATHS } from '../constants/filePaths';
 import { i18n } from '@/translations/i18n';
 import { useI18n } from 'vue-i18n';
 
+// A task uses normed norms when its scoring version >= the normed version.
+export const NORMED_TASK_VERSIONS = {
+  swr: 6,
+  sre: 3,
+  'swr-es': 1,
+  'sre-es': 1,
+  pa: 3,
+  letter: 1,
+  trog: 1,
+  'roar-inference': 1,
+  cva: 1,
+  morphology: 1,
+};
+
+// Core foundational assessments that default to normed when scoring version is undefined.
+export const CORE_FOUNDATIONAL_TASKS = ['swr', 'sre', 'pa'];
+
 /*
  *  Task Display Names
  *  A map of all tasks, including their taskId, display name, and index for ordering
@@ -194,7 +211,7 @@ export const taskDisplayNames = {
     name: 'Picture Syntax',
     publicName: 'ROAR - Picture Syntax',
     studentFacingName: 'Picture Syntax',
-    extendedTitle: 'ROAR -Picture Syntax',
+    extendedTitle: 'ROAR - Picture Syntax',
     extendedName: 'Picture Syntax',
     order: 15,
   },
@@ -455,6 +472,14 @@ export const tasksToDisplayGraphs = [
 export const rawOnlyTasks = ['cva', 'morphology', 'vocab', 'fluency', 'roar-readaloud'];
 
 /*
+ *  Tasks to Check If Normed
+ *  A list of tasks that require checking if they are normed or not to determine
+ *  which score type to display (raw scores for unnormed, percentile/standard for normed).
+ *  Exception: letter shows percentile when unnormed instead of raw score.
+ */
+export const tasksToCheckIfNormed = ['cva', 'morphology', 'letter', 'trog', 'roar-inference', 'swr-es', 'sre-es'];
+
+/*
  *  Excluded from Score Report Apps
  *  A list of tasks to be excluded from a RoarDataTable because they do not have scores.
  *  However, these tasks will still be included in the progress report.
@@ -558,8 +583,7 @@ export const subskillTasks = ['roam-alpaca', ...roamFluencyTasks];
  *  Support Level Colors
  *  Colors corresponding to each support level.
  */
-import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
-import { SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
+import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_SUPPORT_SKILL_LEVELS } from '@/constants/scores';
 
 export const progressTags = {
   Optional: {
@@ -2035,7 +2059,7 @@ export const taskInfoById = {
 };
 
 // Then create a function to populate the template
-export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
+export const replaceScoreRange = (desc, taskId, scoringVersion = null, supportThreshold = null) => {
   if (!desc) return '';
 
   let editedDesc = desc;
@@ -2045,8 +2069,16 @@ export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   }
 
   if (desc.includes('{{SUPPORT_RANGE}}')) {
-    const useUpdatedNorms = (taskId === 'sre' && scoringVersion >= 4) || (taskId === 'swr' && scoringVersion >= 7);
-    editedDesc = editedDesc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
+    // Prefer the backend-resolved support threshold (the developing-cutoff complement the
+    // facets response supplies); fall back to the legacy scoringVersion rule when it isn't
+    // available (older backend, or a task with no facet). swr ≥ v7 / sre ≥ v4 → 80%, else 75%.
+    const resolved =
+      supportThreshold != null
+        ? supportThreshold
+        : (taskId === 'sre' && scoringVersion >= 4) || (taskId === 'swr' && scoringVersion >= 7)
+          ? 80
+          : 75;
+    editedDesc = editedDesc.replace('{{SUPPORT_RANGE}}', `${resolved}%`);
   }
 
   return editedDesc;

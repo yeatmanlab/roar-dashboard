@@ -1,0 +1,1249 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
+import { SortOrder, DistrictDetailSortField, DistrictSchoolSortField } from '@roar-platform/api-contract';
+import { DistrictService } from './district.service';
+import { OrgFactory } from '../../test-support/factories/org.factory';
+import { EnrolledUserFactory } from '../../test-support/factories/user.factory';
+import { createMockDistrictRepository, createMockSchoolRepository } from '../../test-support/repositories';
+import { OrgType } from '../../enums/org-type.enum';
+import { ApiError } from '../../errors/api-error';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { createMockAuthorizationService } from '../../test-support/services';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { UserRole } from '../../enums/user-role.enum';
+import type { District } from '../../repositories/district.repository';
+
+describe('DistrictService', () => {
+  const mockDistrictRepository = createMockDistrictRepository();
+  const mockAuthorizationService = createMockAuthorizationService();
+  const mockSchoolRepository = createMockSchoolRepository();
+
+  const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
+  const mockSuperAdminContext = { userId: 'admin-123', isSuperAdmin: true };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('list', () => {
+    it('should return all districts for super admins (unrestricted)', async () => {
+      const mockDistricts = OrgFactory.buildList(3, { orgType: OrgType.DISTRICT });
+      mockDistrictRepository.listAll.mockResolvedValue({
+        items: mockDistricts,
+        totalItems: 3,
+      });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.list(
+        { userId: 'admin-123', isSuperAdmin: true },
+        {
+          page: 1,
+          perPage: 25,
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.DESC,
+        },
+      );
+
+      expect(mockDistrictRepository.listAll).toHaveBeenCalledWith({
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: SortOrder.DESC },
+        includeEnded: false,
+        embedCounts: false,
+      });
+      expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
+      expect(result.items).toHaveLength(3);
+      expect(result.totalItems).toBe(3);
+    });
+
+    it('should use FGA listAccessibleObjects + listByIds for non-super admin users', async () => {
+      const mockDistricts = OrgFactory.buildList(2, { orgType: OrgType.DISTRICT });
+
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([
+        `${FgaType.DISTRICT}:${mockDistricts[0]!.id}`,
+        `${FgaType.DISTRICT}:${mockDistricts[1]!.id}`,
+      ]);
+      mockDistrictRepository.listByIds.mockResolvedValue({
+        items: mockDistricts,
+        totalItems: 2,
+      });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.list(
+        { userId: 'user-123', isSuperAdmin: false },
+        {
+          page: 1,
+          perPage: 25,
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
+        },
+      );
+
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_LIST,
+        FgaType.DISTRICT,
+      );
+      expect(mockDistrictRepository.listByIds).toHaveBeenCalledWith([mockDistricts[0]!.id, mockDistricts[1]!.id], {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: SortOrder.ASC },
+        includeEnded: false,
+        embedCounts: false,
+      });
+      expect(mockDistrictRepository.listAll).not.toHaveBeenCalled();
+      expect(result.items).toHaveLength(2);
+      expect(result.totalItems).toBe(2);
+    });
+
+    it('should pass includeEnded parameter to repository', async () => {
+      mockDistrictRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.list(
+        { userId: 'admin-123', isSuperAdmin: true },
+        {
+          page: 1,
+          perPage: 25,
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
+          includeEnded: true,
+        },
+      );
+
+      expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          includeEnded: true,
+        }),
+      );
+    });
+
+    it('should pass embedCounts parameter to repository', async () => {
+      mockDistrictRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.list(
+        { userId: 'admin-123', isSuperAdmin: true },
+        {
+          page: 1,
+          perPage: 25,
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
+          embedCounts: true,
+        },
+      );
+
+      expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          embedCounts: true,
+        }),
+      );
+    });
+
+    it('should default includeEnded to false when not provided', async () => {
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([`${FgaType.DISTRICT}:dist-1`]);
+      mockDistrictRepository.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.list(
+        { userId: 'user-123', isSuperAdmin: false },
+        {
+          page: 1,
+          perPage: 25,
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
+        },
+      );
+
+      expect(mockDistrictRepository.listByIds).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({
+          includeEnded: false,
+        }),
+      );
+    });
+
+    it('should default embedCounts to false when not provided', async () => {
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([`${FgaType.DISTRICT}:dist-1`]);
+      mockDistrictRepository.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.list(
+        { userId: 'user-123', isSuperAdmin: false },
+        {
+          page: 1,
+          perPage: 25,
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
+        },
+      );
+
+      expect(mockDistrictRepository.listByIds).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({
+          embedCounts: false,
+        }),
+      );
+    });
+
+    it('should map sortBy "name" to database column "name"', async () => {
+      mockDistrictRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.list(
+        { userId: 'admin-123', isSuperAdmin: true },
+        {
+          page: 1,
+          perPage: 25,
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
+        },
+      );
+
+      expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { field: 'name', direction: SortOrder.ASC },
+        }),
+      );
+    });
+
+    it('should map sortBy "abbreviation" to database column "abbreviation"', async () => {
+      mockDistrictRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.list(
+        { userId: 'admin-123', isSuperAdmin: true },
+        {
+          page: 1,
+          perPage: 25,
+          sortBy: DistrictDetailSortField.ABBREVIATION,
+          sortOrder: SortOrder.DESC,
+        },
+      );
+
+      expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { field: 'abbreviation', direction: SortOrder.DESC },
+        }),
+      );
+    });
+
+    it('should return empty results when FGA returns no accessible districts', async () => {
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.list(
+        { userId: 'user-no-access', isSuperAdmin: false },
+        {
+          page: 1,
+          perPage: 25,
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
+        },
+      );
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+      expect(mockDistrictRepository.listByIds).not.toHaveBeenCalled();
+    });
+
+    it('should pass pagination options correctly', async () => {
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([`${FgaType.DISTRICT}:dist-1`]);
+      mockDistrictRepository.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.list(
+        { userId: 'user-456', isSuperAdmin: false },
+        {
+          page: 3,
+          perPage: 50,
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
+        },
+      );
+
+      expect(mockDistrictRepository.listByIds).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({
+          page: 3,
+          perPage: 50,
+        }),
+      );
+    });
+
+    it('should throw ApiError when repository throws ApiError', async () => {
+      const error = new ApiError('Database error', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockDistrictRepository.listAll.mockRejectedValue(error);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.list(
+          { userId: 'admin-123', isSuperAdmin: true },
+          {
+            page: 1,
+            perPage: 25,
+            sortBy: 'name',
+            sortOrder: 'asc',
+          },
+        ),
+      ).rejects.toThrow(ApiError);
+    });
+
+    it('should wrap non-ApiError in ApiError with DATABASE_QUERY_FAILED code', async () => {
+      const error = new Error('Unexpected database error');
+      mockDistrictRepository.listAll.mockRejectedValue(error);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.list(
+          { userId: 'admin-123', isSuperAdmin: true },
+          {
+            page: 1,
+            perPage: 25,
+            sortBy: 'name',
+            sortOrder: 'asc',
+          },
+        ),
+      ).rejects.toMatchObject({
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    });
+
+    it('should return districts with counts when embedCounts is true', async () => {
+      const mockDistrictsWithCounts = OrgFactory.buildList(2, { orgType: OrgType.DISTRICT }).map((d) => ({
+        ...d,
+        counts: {
+          users: 100,
+          schools: 5,
+          classes: 20,
+        },
+      }));
+
+      mockDistrictRepository.listAll.mockResolvedValue({
+        items: mockDistrictsWithCounts,
+        totalItems: 2,
+      });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.list(
+        { userId: 'admin-123', isSuperAdmin: true },
+        {
+          page: 1,
+          perPage: 25,
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
+          embedCounts: true,
+        },
+      );
+
+      expect(result.items[0]).toHaveProperty('counts');
+      expect(result.items[0]!.counts).toEqual({
+        users: 100,
+        schools: 5,
+        classes: 20,
+      });
+    });
+  });
+
+  describe('getById', () => {
+    it('should fetch district by ID for regular users via FGA', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: OrgType.DISTRICT,
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Step 1: unrestricted lookup succeeds
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      // Step 3: FGA permission check passes
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getById(mockAuthContext, validUuid);
+
+      expect(result).toEqual(mockDistrict);
+    });
+
+    it('should call requirePermission with correct FGA arguments for regular users', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: OrgType.DISTRICT,
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.getById(mockAuthContext, validUuid);
+
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_READ,
+        `${FgaType.DISTRICT}:${validUuid}`,
+      );
+    });
+
+    it('should use getUnrestrictedById for super admins and skip FGA check', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: OrgType.DISTRICT,
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.getById(mockSuperAdminContext, validUuid);
+
+      // Super admins should use unrestricted method, not the FGA check
+      expect(mockDistrictRepository.getUnrestrictedById).toHaveBeenCalledWith(validUuid);
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+    });
+
+    it('should throw 404 when district not found', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(null);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+      });
+    });
+
+    it('should throw 403 when FGA denies permission', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: OrgType.DISTRICT,
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      // District exists (unrestricted lookup succeeds)
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      // But FGA denies permission
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
+    });
+
+    it('should wrap database errors in ApiError with DATABASE_QUERY_FAILED code', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const dbError = new Error('Database connection lost');
+      mockDistrictRepository.getUnrestrictedById.mockRejectedValue(dbError);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toMatchObject({
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    });
+  });
+
+  describe('listDistrictSchools', () => {
+    const districtId = '123e4567-e89b-12d3-a456-426614174000';
+    const mockDistrict = {
+      id: districtId,
+      name: 'Test District',
+      abbreviation: 'TD',
+      orgType: OrgType.DISTRICT,
+      parentOrgId: null,
+      isRosteringRootOrg: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: DistrictSchoolSortField.NAME as 'name' | 'abbreviation',
+      sortOrder: 'asc' as const,
+    };
+
+    const mockSchools = OrgFactory.buildList(3, { orgType: OrgType.SCHOOL });
+
+    it('returns all schools for super admin without FGA checks', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      mockSchoolRepository.listAllByDistrictId.mockResolvedValue({
+        items: mockSchools,
+        totalItems: 3,
+      });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+        schoolRepository: mockSchoolRepository,
+      });
+
+      const result = await service.listDistrictSchools(mockSuperAdminContext, districtId, defaultOptions);
+
+      expect(result.items).toHaveLength(3);
+      expect(result.totalItems).toBe(3);
+      expect(mockSchoolRepository.listAllByDistrictId).toHaveBeenCalledWith(districtId, expect.any(Object));
+      // Super admin skips FGA permission checks
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
+    });
+
+    it('returns accessible schools for non-super-admin user via FGA', async () => {
+      const schoolIds = mockSchools.map((s) => s.id);
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(
+        schoolIds.map((id) => `${FgaType.SCHOOL}:${id}`),
+      );
+      mockSchoolRepository.listAccessibleByDistrictId.mockResolvedValue({
+        items: mockSchools,
+        totalItems: 3,
+      });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+        schoolRepository: mockSchoolRepository,
+      });
+
+      const result = await service.listDistrictSchools(mockAuthContext, districtId, defaultOptions);
+
+      expect(result.items).toHaveLength(3);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_LIST,
+        `${FgaType.DISTRICT}:${districtId}`,
+      );
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_LIST,
+        FgaType.SCHOOL,
+      );
+      expect(mockSchoolRepository.listAccessibleByDistrictId).toHaveBeenCalledWith(
+        districtId,
+        schoolIds,
+        expect.any(Object),
+      );
+    });
+
+    it('returns empty result when user has no accessible schools', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+        schoolRepository: mockSchoolRepository,
+      });
+
+      const result = await service.listDistrictSchools(mockAuthContext, districtId, defaultOptions);
+
+      expect(result.items).toHaveLength(0);
+      expect(result.totalItems).toBe(0);
+      expect(mockSchoolRepository.listAccessibleByDistrictId).not.toHaveBeenCalled();
+    });
+
+    it('throws 403 when user lacks CAN_LIST on the district', async () => {
+      const forbidden = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      mockAuthorizationService.requirePermission.mockRejectedValue(forbidden);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await expect(service.listDistrictSchools(mockAuthContext, districtId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('throws 404 when district does not exist', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(null);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await expect(service.listDistrictSchools(mockAuthContext, districtId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('passes pagination and sorting options to repository', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      mockSchoolRepository.listAllByDistrictId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await service.listDistrictSchools(mockSuperAdminContext, districtId, {
+        page: 3,
+        perPage: 50,
+        sortBy: DistrictSchoolSortField.ABBREVIATION as 'name' | 'abbreviation',
+        sortOrder: 'desc',
+      });
+
+      expect(mockSchoolRepository.listAllByDistrictId).toHaveBeenCalledWith(
+        districtId,
+        expect.objectContaining({
+          page: 3,
+          perPage: 50,
+          orderBy: { field: 'abbreviation', direction: 'desc' },
+        }),
+      );
+    });
+
+    it('passes includeEnded and embedCounts options to repository', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      mockSchoolRepository.listAllByDistrictId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await service.listDistrictSchools(mockSuperAdminContext, districtId, {
+        ...defaultOptions,
+        includeEnded: true,
+        embedCounts: true,
+      });
+
+      expect(mockSchoolRepository.listAllByDistrictId).toHaveBeenCalledWith(
+        districtId,
+        expect.objectContaining({
+          includeEnded: true,
+          embedCounts: true,
+        }),
+      );
+    });
+
+    it('wraps non-ApiError in ApiError with DATABASE_QUERY_FAILED code', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      mockSchoolRepository.listAllByDistrictId.mockRejectedValue(new Error('Unexpected DB error'));
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await expect(service.listDistrictSchools(mockSuperAdminContext, districtId, defaultOptions)).rejects.toThrow(
+        ApiError,
+      );
+
+      let thrownError: unknown;
+      try {
+        await service.listDistrictSchools(mockSuperAdminContext, districtId, defaultOptions);
+      } catch (error) {
+        thrownError = error;
+      }
+
+      expect(thrownError).toBeInstanceOf(ApiError);
+      expect((thrownError as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      expect((thrownError as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    it('re-throws ApiError without wrapping', async () => {
+      const apiError = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      mockAuthorizationService.requirePermission.mockRejectedValue(apiError);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await expect(service.listDistrictSchools(mockAuthContext, districtId, defaultOptions)).rejects.toThrow(apiError);
+    });
+
+    it('wraps listAccessibleObjects non-ApiError as DATABASE_QUERY_FAILED', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+      mockAuthorizationService.listAccessibleObjects.mockRejectedValue(new Error('FGA unavailable'));
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await expect(service.listDistrictSchools(mockAuthContext, districtId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
+
+  describe('listUsers', () => {
+    let mockDistrictRepo: ReturnType<typeof createMockDistrictRepository>;
+
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'nameLast' as const,
+      sortOrder: SortOrder.ASC,
+      embed: [],
+    };
+
+    beforeEach(() => {
+      mockDistrictRepo = createMockDistrictRepository();
+    });
+
+    it('should return users for super admin (unrestricted)', async () => {
+      const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      const mockUsers = EnrolledUserFactory.buildList(3);
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({
+        items: mockUsers,
+        totalItems: 3,
+      });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepo,
+      });
+
+      const result = await service.listUsers(
+        { userId: 'admin-123', isSuperAdmin: true },
+        'district-123',
+        defaultOptions,
+      );
+
+      expect(mockDistrictRepo.getUnrestrictedById).toHaveBeenCalledWith('district-123');
+      expect(mockDistrictRepo.getUsersByDistrictPath).toHaveBeenCalledWith(mockDistrict.path, {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: false,
+      });
+      expect(result.items).toHaveLength(3);
+      expect(result.totalItems).toBe(3);
+    });
+
+    it('should check authorization for non-super admin users via FGA', async () => {
+      const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      const mockAuthService = createMockAuthorizationService();
+      const mockUsers = EnrolledUserFactory.buildList(2);
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockAuthService.requirePermission.mockResolvedValue(undefined);
+      mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({
+        items: mockUsers,
+        totalItems: 2,
+      });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepo,
+        authorizationService: mockAuthService,
+      });
+
+      const result = await service.listUsers(
+        { userId: 'user-123', isSuperAdmin: false },
+        'district-123',
+        defaultOptions,
+      );
+
+      expect(mockAuthService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_LIST_USERS,
+        `${FgaType.DISTRICT}:district-123`,
+      );
+      expect(result.items).toHaveLength(2);
+      expect(result.totalItems).toBe(2);
+    });
+
+    it('should return empty results when district has no users', async () => {
+      const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepo,
+      });
+
+      const result = await service.listUsers(
+        { userId: 'admin-123', isSuperAdmin: true },
+        'district-123',
+        defaultOptions,
+      );
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('should throw not-found error when district does not exist', async () => {
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(null);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepo,
+      });
+
+      await expect(
+        service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('should throw forbidden error when user lacks access to the district', async () => {
+      const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      const mockAuthService = createMockAuthorizationService();
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockAuthService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepo,
+        authorizationService: mockAuthService,
+      });
+
+      await expect(
+        service.listUsers({ userId: 'user-123', isSuperAdmin: false }, 'district-123', defaultOptions),
+      ).rejects.toMatchObject({
+        message: ApiErrorMessage.FORBIDDEN,
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('should bypass FGA check for super admin and use getUsersByDistrictPath', async () => {
+      const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      const mockUsers = EnrolledUserFactory.buildList(2);
+      const mockAuthService = createMockAuthorizationService();
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({ items: mockUsers, totalItems: 2 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepo,
+        authorizationService: mockAuthService,
+      });
+
+      const result = await service.listUsers(
+        { userId: 'admin-123', isSuperAdmin: true },
+        'district-123',
+        defaultOptions,
+      );
+
+      // Super admin skips FGA gate
+      expect(mockAuthService.requirePermission).not.toHaveBeenCalled();
+      expect(mockDistrictRepo.getUsersByDistrictPath).toHaveBeenCalledWith(mockDistrict.path, expect.any(Object));
+      expect(result.items).toHaveLength(2);
+    });
+
+    it('should throw ApiError when database query fails', async () => {
+      const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      const dbError = new Error('Connection refused');
+      mockDistrictRepo.getUsersByDistrictPath.mockRejectedValue(dbError);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepo,
+      });
+
+      await expect(
+        service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'district-123', defaultOptions),
+      ).rejects.toMatchObject({
+        message: 'Failed to retrieve district users',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should pass role filter to repository', async () => {
+      const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepo,
+      });
+
+      await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'district-123', {
+        ...defaultOptions,
+        role: UserRole.STUDENT,
+      });
+
+      expect(mockDistrictRepo.getUsersByDistrictPath).toHaveBeenCalledWith(mockDistrict.path, {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        role: UserRole.STUDENT,
+        embedDemographics: false,
+      });
+    });
+
+    it('should pass grade filter to repository', async () => {
+      const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepo,
+      });
+
+      await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'district-123', {
+        ...defaultOptions,
+        grade: ['5', '6'],
+      });
+
+      expect(mockDistrictRepo.getUsersByDistrictPath).toHaveBeenCalledWith(mockDistrict.path, {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        grade: ['5', '6'],
+        embedDemographics: false,
+      });
+    });
+
+    it('should pass embedDemographics=true to the repository when the demographics embed is requested', async () => {
+      const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepo,
+      });
+
+      await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'district-123', {
+        ...defaultOptions,
+        embed: ['demographics'],
+      });
+
+      expect(mockDistrictRepo.getUsersByDistrictPath).toHaveBeenCalledWith(mockDistrict.path, {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        embedDemographics: true,
+      });
+    });
+  });
+
+  describe('create', () => {
+    const validInput = {
+      name: 'Springfield USD',
+      abbreviation: 'SPFD',
+    };
+
+    it('should create a district for super admins and return the new id', async () => {
+      mockDistrictRepository.createDistrict.mockResolvedValue({ id: 'district-new-1' });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.create(mockSuperAdminContext, validInput);
+
+      expect(result).toEqual({ id: 'district-new-1' });
+      expect(mockDistrictRepository.createDistrict).toHaveBeenCalledWith({
+        name: 'Springfield USD',
+        abbreviation: 'SPFD',
+      });
+    });
+
+    it('should flatten nested location and identifiers into the repository input', async () => {
+      mockDistrictRepository.createDistrict.mockResolvedValue({ id: 'district-new-2' });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.create(mockSuperAdminContext, {
+        name: 'Springfield USD',
+        abbreviation: 'SPFD',
+        location: {
+          addressLine1: '123 Main St',
+          city: 'Springfield',
+          stateProvince: 'IL',
+          postalCode: '62701',
+          country: 'US',
+        },
+        identifiers: {
+          ncesId: 'NCES-1',
+          stateId: 'IL-DIST-1',
+        },
+      });
+
+      expect(mockDistrictRepository.createDistrict).toHaveBeenCalledWith({
+        name: 'Springfield USD',
+        abbreviation: 'SPFD',
+        locationAddressLine1: '123 Main St',
+        locationCity: 'Springfield',
+        locationStateProvince: 'IL',
+        locationPostalCode: '62701',
+        locationCountry: 'US',
+        ncesId: 'NCES-1',
+        stateId: 'IL-DIST-1',
+      });
+    });
+
+    it('should throw 403 ApiError when caller is not a super admin', async () => {
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.create(mockAuthContext, validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      expect(mockDistrictRepository.createDistrict).not.toHaveBeenCalled();
+    });
+
+    it('should re-throw ApiError thrown by the repository', async () => {
+      const repoError = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockDistrictRepository.createDistrict.mockRejectedValue(repoError);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.create(mockSuperAdminContext, validInput)).rejects.toBe(repoError);
+    });
+
+    it('should wrap unexpected DB errors as ApiError 500 with DATABASE_QUERY_FAILED', async () => {
+      mockDistrictRepository.createDistrict.mockRejectedValue(new Error('connection lost'));
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.create(mockSuperAdminContext, validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
+
+  describe('update', () => {
+    const districtId = '123e4567-e89b-12d3-a456-426614174000';
+
+    const buildDistrict = () => OrgFactory.build({ id: districtId, orgType: OrgType.DISTRICT }) as unknown as District;
+
+    it('should throw 404 and NOT call updateDistrict when the district does not exist', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(null);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.update(mockSuperAdminContext, districtId, { name: 'New Name' })).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+      });
+      expect(mockDistrictRepository.updateDistrict).not.toHaveBeenCalled();
+    });
+
+    it('should throw 403 and NOT call updateDistrict when caller is not a super admin (existence-before-authz)', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(buildDistrict());
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.update(mockAuthContext, districtId, { name: 'New Name' })).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
+      // No FGA permission check is made — can_update is no_one, the bypass is the policy
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      expect(mockDistrictRepository.updateDistrict).not.toHaveBeenCalled();
+    });
+
+    it('should throw 400 and NOT call updateDistrict when no mutable fields are provided', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(buildDistrict());
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.update(mockSuperAdminContext, districtId, {})).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+      expect(mockDistrictRepository.updateDistrict).not.toHaveBeenCalled();
+    });
+
+    it('should call updateDistrict with the mapped column-shaped partial and return the id (happy path)', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(buildDistrict());
+      mockDistrictRepository.updateDistrict.mockResolvedValue(undefined);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.update(mockSuperAdminContext, districtId, {
+        name: 'Updated District',
+        abbreviation: 'UPD',
+        location: { city: 'Springfield', stateProvince: 'IL' },
+        identifiers: { ncesId: 'NCES-2' },
+      });
+
+      expect(result).toEqual({ id: districtId });
+      expect(mockDistrictRepository.updateDistrict).toHaveBeenCalledWith(districtId, {
+        name: 'Updated District',
+        abbreviation: 'UPD',
+        locationCity: 'Springfield',
+        locationStateProvince: 'IL',
+        ncesId: 'NCES-2',
+      });
+    });
+
+    it('should wrap unexpected DB errors from updateDistrict as ApiError 500 with DATABASE_QUERY_FAILED', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(buildDistrict());
+      mockDistrictRepository.updateDistrict.mockRejectedValue(new Error('connection lost'));
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.update(mockSuperAdminContext, districtId, { name: 'New Name' })).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
+});

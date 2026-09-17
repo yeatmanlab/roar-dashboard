@@ -1,0 +1,954 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
+import { RunEventService } from './run-event.service';
+import { ApiError } from '../../errors/api-error';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import type { AuthContext } from '../../types/auth-context';
+import type {
+  MockRunRepository,
+  MockRunTrialRepository,
+  MockRunTrialInteractionsRepository,
+  MockRunScoresRepository,
+  MockFamilyRepository,
+} from '../../test-support/repositories';
+import {
+  createMockRunRepository,
+  createMockRunTrialRepository,
+  createMockRunTrialInteractionsRepository,
+  createMockRunScoresRepository,
+  createMockFamilyRepository,
+} from '../../test-support/repositories';
+import type {
+  MockAuthorizationService,
+  MockRunService,
+  MockFoundationalCompositeService,
+} from '../../test-support/services';
+import {
+  createMockAuthorizationService,
+  createMockRunService,
+  createMockFoundationalCompositeService,
+} from '../../test-support/services';
+import { RunFactory } from '../../test-support/factories/run.factory';
+import { SCORE_TYPE, SCORE_DOMAIN, ASSESSMENT_STAGE, SCORE_NAME } from '../../constants/run-scores';
+
+/**
+ * RunEventService Tests
+ *
+ * Tests the business logic for handling run events.
+ * Verifies authorization checks, error handling, and state updates.
+ */
+describe('RunEventService', () => {
+  let authContext: AuthContext;
+  let runRepository: MockRunRepository;
+  let runTrialsRepository: MockRunTrialRepository;
+  let runTrialInteractionsRepository: MockRunTrialInteractionsRepository;
+  let runScoresRepository: MockRunScoresRepository;
+  let runService: MockRunService;
+  let foundationalCompositeService: MockFoundationalCompositeService;
+  let familyRepository: MockFamilyRepository;
+  let authorizationService: MockAuthorizationService;
+  let runEventsService: ReturnType<typeof RunEventService>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    authContext = { userId: 'user-123', isSuperAdmin: false };
+
+    runRepository = createMockRunRepository();
+
+    runTrialsRepository = createMockRunTrialRepository();
+
+    runTrialInteractionsRepository = createMockRunTrialInteractionsRepository();
+
+    runScoresRepository = createMockRunScoresRepository();
+
+    runService = createMockRunService();
+
+    foundationalCompositeService = createMockFoundationalCompositeService();
+
+    familyRepository = createMockFamilyRepository();
+
+    authorizationService = createMockAuthorizationService();
+
+    runEventsService = RunEventService({
+      runRepository,
+      runTrialsRepository,
+      runTrialInteractionsRepository,
+      runScoresRepository,
+      runService,
+      foundationalCompositeService,
+      familyRepository,
+      authorizationService,
+    });
+  });
+
+  describe('verifyUserAccess', () => {
+    it('should allow access when requester owns the run', async () => {
+      const targetUserId = 'user-123';
+      const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+      const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.completeRun(authContext, targetUserId, validRunId, {
+        type: 'complete' as const,
+      });
+
+      // If no error is thrown, the access check passed
+      // (completeRun calls verifyUserAccess internally)
+      expect(runRepository.update).toHaveBeenCalled();
+    });
+
+    it('should allow parent with CAN_CREATE_RUN_FOR_CHILD permission to post events for child', async () => {
+      const parentContext = { userId: 'parent-456', isSuperAdmin: false };
+      const childUserId = 'child-789';
+      const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+      const mockRun = RunFactory.build({ id: validRunId, userId: childUserId });
+
+      familyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123']);
+      authorizationService.hasAnyPermission.mockResolvedValue(true);
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.completeRun(parentContext, childUserId, validRunId, {
+        type: 'complete' as const,
+      });
+
+      expect(familyRepository.getFamilyIdsForUser).toHaveBeenCalledWith(childUserId);
+      expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith('parent-456', 'can_create_run_for_child', [
+        'family:family-123',
+      ]);
+      expect(runRepository.update).toHaveBeenCalled();
+    });
+
+    it('should throw FORBIDDEN when parent lacks CAN_CREATE_RUN_FOR_CHILD permission', async () => {
+      const parentContext = { userId: 'parent-456', isSuperAdmin: false };
+      const childUserId = 'child-789';
+
+      familyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123']);
+      authorizationService.hasAnyPermission.mockResolvedValue(false);
+
+      await expect(
+        runEventsService.completeRun(parentContext, childUserId, 'run-123', {
+          type: 'complete' as const,
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
+
+      expect(authorizationService.hasAnyPermission).toHaveBeenCalled();
+    });
+
+    it('should throw FORBIDDEN when parent has no family relationship with child', async () => {
+      const parentContext = { userId: 'parent-456', isSuperAdmin: false };
+      const childUserId = 'child-789';
+
+      familyRepository.getFamilyIdsForUser.mockResolvedValue([]);
+      authorizationService.hasAnyPermission.mockResolvedValue(false);
+
+      await expect(
+        runEventsService.completeRun(parentContext, childUserId, 'run-123', {
+          type: 'complete' as const,
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
+    });
+
+    it('should allow super admin to post events for any user', async () => {
+      const superAdminContext = { userId: 'super-admin', isSuperAdmin: true };
+      const targetUserId = 'child-789';
+      const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+      const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.completeRun(superAdminContext, targetUserId, validRunId, {
+        type: 'complete' as const,
+      });
+
+      // Super admins should not need to check family or FGA permissions
+      expect(familyRepository.getFamilyIdsForUser).not.toHaveBeenCalled();
+      expect(authorizationService.hasAnyPermission).not.toHaveBeenCalled();
+      expect(runRepository.update).toHaveBeenCalled();
+    });
+  });
+
+  describe('completeRun', () => {
+    const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+    const validBody = { type: 'complete' as const };
+    const targetUserId = 'user-123';
+
+    it('should complete a run successfully', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.completeRun(authContext, targetUserId, validRunId, validBody);
+
+      expect(runRepository.getById).toHaveBeenCalledWith({ id: validRunId });
+      expect(runRepository.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: validRunId,
+          data: expect.objectContaining({
+            completedAt: expect.any(Date),
+          }),
+        }),
+      );
+    });
+
+    it('should throw NOT_FOUND when run does not exist', async () => {
+      runRepository.getById.mockResolvedValue(null);
+
+      await expect(
+        runEventsService.completeRun(authContext, targetUserId, validRunId, validBody),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw FORBIDDEN when run is owned by a different user', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'different-user' });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(
+        runEventsService.completeRun(authContext, targetUserId, validRunId, validBody),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw CONFLICT when run is already completed', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123', completedAt: new Date() });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(
+        runEventsService.completeRun(authContext, targetUserId, validRunId, validBody),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw CONFLICT when run is already aborted', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123', abortedAt: new Date() });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(
+        runEventsService.completeRun(authContext, targetUserId, validRunId, validBody),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should include metadata in error context when run is not found', async () => {
+      runRepository.getById.mockResolvedValue(null);
+
+      let thrownError: unknown;
+      try {
+        await runEventsService.completeRun(authContext, 'user-123', validRunId, validBody);
+      } catch (error) {
+        thrownError = error;
+      }
+
+      expect(thrownError).toBeInstanceOf(ApiError);
+      expect((thrownError as ApiError).context).toEqual({
+        runId: validRunId,
+        targetUserId: 'user-123',
+      });
+    });
+
+    it('should handle optional metadata in event body', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      const bodyWithMetadata = {
+        type: 'complete' as const,
+        metadata: { source: 'mobile', sessionId: 'sess-456' },
+      };
+
+      await runEventsService.completeRun(authContext, 'user-123', validRunId, bodyWithMetadata);
+
+      expect(runRepository.update).toHaveBeenCalled();
+      const updateCall = runRepository.update.mock.calls[0]![0];
+      expect(updateCall.data.metadata).toEqual(bodyWithMetadata.metadata);
+    });
+
+    it('should return 500 when database update fails', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockRejectedValue(new Error('Database connection lost'));
+
+      await expect(
+        runEventsService.completeRun(authContext, targetUserId, validRunId, validBody),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should re-throw ApiError exceptions', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runRepository.getById.mockResolvedValue(mockRun);
+      const apiError = new ApiError('Custom error', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      runRepository.update.mockRejectedValue(apiError);
+
+      await expect(runEventsService.completeRun(authContext, targetUserId, validRunId, validBody)).rejects.toBe(
+        apiError,
+      );
+    });
+  });
+
+  describe('abortRun', () => {
+    const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+    const validBody = { type: 'abort' as const };
+    const targetUserId = 'user-123';
+
+    it('should abort a run successfully', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.abortRun(authContext, targetUserId, validRunId, validBody);
+
+      expect(runRepository.getById).toHaveBeenCalledWith({ id: validRunId });
+      expect(runRepository.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: validRunId,
+          data: expect.objectContaining({
+            abortedAt: expect.any(Date),
+          }),
+        }),
+      );
+    });
+
+    it('should throw NOT_FOUND when run does not exist', async () => {
+      runRepository.getById.mockResolvedValue(null);
+
+      await expect(runEventsService.abortRun(authContext, targetUserId, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw FORBIDDEN when user does not own the run', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'different-user' });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(runEventsService.abortRun(authContext, targetUserId, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw CONFLICT when run is already aborted', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123', abortedAt: new Date() });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(runEventsService.abortRun(authContext, targetUserId, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw CONFLICT when run is already completed', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123', completedAt: new Date() });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(runEventsService.abortRun(authContext, targetUserId, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should return 500 when database update fails', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockRejectedValue(new Error('Database connection lost'));
+
+      await expect(runEventsService.abortRun(authContext, targetUserId, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should re-throw ApiError exceptions', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runRepository.getById.mockResolvedValue(mockRun);
+      const apiError = new ApiError('Custom error', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      runRepository.update.mockRejectedValue(apiError);
+
+      await expect(runEventsService.abortRun(authContext, targetUserId, validRunId, validBody)).rejects.toBe(apiError);
+    });
+  });
+
+  describe('writeTrial', () => {
+    const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+    const validBody = {
+      type: 'trial' as const,
+      trial: {
+        assessmentStage: ASSESSMENT_STAGE.TEST,
+        correct: 1,
+      },
+    };
+    const targetUserId = 'user-123';
+
+    it('should write a trial successfully', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      const createdTrial = { id: 'trial-123' };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+        await fn({});
+      });
+      runTrialsRepository.create.mockResolvedValue(createdTrial);
+
+      await runEventsService.writeTrial(authContext, targetUserId, validRunId, validBody);
+
+      expect(runRepository.getById).toHaveBeenCalledWith({ id: validRunId });
+      expect(runTrialsRepository.runTransaction).toHaveBeenCalled();
+      expect(runTrialsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            runId: validRunId,
+            assessmentStage: ASSESSMENT_STAGE.TEST,
+            correct: 1,
+          }),
+        }),
+      );
+
+      // The foundational composite is recomputed for the run's student/administration...
+      expect(foundationalCompositeService.recomputeForRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: mockRun.userId,
+          administrationId: mockRun.administrationId,
+          triggeringTaskId: mockRun.taskId,
+        }),
+      );
+      // ...and only after use_for_reporting has been recomputed, so it reads fresh flags.
+      expect(foundationalCompositeService.recomputeForRun.mock.invocationCallOrder[0]!).toBeGreaterThan(
+        runService.recomputeBestRunForVariant.mock.invocationCallOrder[0]!,
+      );
+    });
+
+    it('should handle trial with interactions', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      const bodyWithInteractions = {
+        type: 'trial' as const,
+        trial: {
+          assessmentStage: ASSESSMENT_STAGE.PRACTICE,
+          correct: 1,
+        },
+        interactions: [
+          { event: 'focus' as const, timeMs: 100 },
+          { event: 'blur' as const, timeMs: 200 },
+        ],
+      };
+
+      const createdTrial = { id: 'trial-123' };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+        await fn({});
+      });
+      runTrialsRepository.create.mockResolvedValue(createdTrial);
+      runTrialInteractionsRepository.create.mockResolvedValue({ id: 'interaction-1' });
+
+      await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithInteractions);
+
+      expect(runTrialsRepository.runTransaction).toHaveBeenCalled();
+      expect(runTrialsRepository.create).toHaveBeenCalled();
+      // Verify interactions were created
+      expect(runTrialInteractionsRepository.create).toHaveBeenCalledTimes(2);
+      expect(runTrialInteractionsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            trialId: 'trial-123',
+            interactionType: 'focus',
+            timeMs: 100,
+          }),
+        }),
+      );
+    });
+
+    it('should return 500 when database transaction fails', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      const dbError = new Error('Database connection lost');
+      runTrialsRepository.runTransaction.mockRejectedValue(dbError);
+
+      await expect(runEventsService.writeTrial(authContext, targetUserId, validRunId, validBody)).rejects.toMatchObject(
+        {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        },
+      );
+    });
+
+    it('sanitizes Number.MAX_VALUE sentinels in jsonb trial columns (thetas, thetaStdErrs, itemParameters)', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      const createdTrial = { id: 'trial-123' };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+        await fn({});
+      });
+      runTrialsRepository.create.mockResolvedValue(createdTrial);
+
+      const bodyWithSentinels = {
+        type: 'trial' as const,
+        trial: {
+          assessmentStage: ASSESSMENT_STAGE.TEST,
+          correct: 1,
+          thetas: { composite: Number.MAX_VALUE },
+          thetaStdErrs: { composite: Number.MAX_VALUE },
+          itemParameters: [{ a: Number.MAX_VALUE, b: 0.5 }],
+        },
+      };
+
+      await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithSentinels);
+
+      const call = runTrialsRepository.create.mock.calls[0]![0];
+      expect(call.data.thetas).toEqual({ composite: null });
+      expect(call.data.thetaStdErrs).toEqual({ composite: null });
+      expect(call.data.itemParameters).toEqual([{ a: null, b: 0.5 }]);
+    });
+
+    it('should re-throw ApiError when thrown during transaction', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      const apiError = new ApiError('Custom error', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      runTrialsRepository.runTransaction.mockRejectedValue(apiError);
+
+      await expect(runEventsService.writeTrial(authContext, targetUserId, validRunId, validBody)).rejects.toBe(
+        apiError,
+      );
+    });
+
+    describe('scores', () => {
+      it('does not call runScoresRepository.upsertMany when scores is missing', async () => {
+        const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const createdTrial = { id: 'trial-123' };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn({});
+        });
+        runTrialsRepository.create.mockResolvedValue(createdTrial);
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, validBody);
+
+        expect(runScoresRepository.upsertMany).not.toHaveBeenCalled();
+      });
+
+      it('does not call runScoresRepository.upsertMany when scores is an empty array', async () => {
+        const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const bodyWithEmptyScores = {
+          ...validBody,
+          scores: [],
+        };
+
+        const createdTrial = { id: 'trial-123' };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn({});
+        });
+        runTrialsRepository.create.mockResolvedValue(createdTrial);
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithEmptyScores);
+
+        expect(runScoresRepository.upsertMany).not.toHaveBeenCalled();
+      });
+
+      it('upserts a single score row inside the trial transaction', async () => {
+        const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const bodyWithScore = {
+          ...validBody,
+          scores: [
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE_RAW,
+              value: '0.5',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+            },
+          ],
+        };
+
+        const createdTrial = { id: 'trial-123' };
+        const txSentinel = { __tx: true };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn(txSentinel);
+        });
+        runTrialsRepository.create.mockResolvedValue(createdTrial);
+        runScoresRepository.upsertMany.mockResolvedValue([{ id: 'score-1' }]);
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithScore);
+
+        expect(runScoresRepository.upsertMany).toHaveBeenCalledTimes(1);
+        expect(runScoresRepository.upsertMany).toHaveBeenCalledWith({
+          transaction: txSentinel,
+          data: [
+            {
+              runId: validRunId,
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE_RAW,
+              value: '0.5',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+              categoryScore: null,
+            },
+          ],
+        });
+      });
+
+      it('upserts multiple score rows in a single call', async () => {
+        const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const bodyWithScores = {
+          ...validBody,
+          scores: [
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE_RAW,
+              value: '0.5',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+            },
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.NUM_ATTEMPTED,
+              value: '12',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+            },
+          ],
+        };
+
+        const createdTrial = { id: 'trial-123' };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn({});
+        });
+        runTrialsRepository.create.mockResolvedValue(createdTrial);
+        runScoresRepository.upsertMany.mockResolvedValue([{ id: 'score-1' }, { id: 'score-2' }]);
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithScores);
+
+        expect(runScoresRepository.upsertMany).toHaveBeenCalledTimes(1);
+        const call = runScoresRepository.upsertMany.mock.calls[0]![0];
+        expect(call.data).toHaveLength(2);
+        expect(call.data[0]!.name).toBe(SCORE_NAME.THETA_SE_RAW);
+        expect(call.data[1]!.name).toBe(SCORE_NAME.NUM_ATTEMPTED);
+      });
+
+      it('passes assessmentStage as null when omitted', async () => {
+        const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        // The score `name` and `value` here are illustrative — `support_level` is
+        // task-dependent (resolved via `getSupportLevelFieldName(taskSlug)`) and
+        // `achievedSkill` is one of three valid `SupportLevel` values defined as a
+        // type union, not a typed const object. The test asserts on `assessmentStage`
+        // and `categoryScore` flow-through, not the score name/value.
+        const bodyWithStagelessScore = {
+          ...validBody,
+          scores: [
+            {
+              type: SCORE_TYPE.COMPUTED,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: 'support_level',
+              value: 'achievedSkill',
+              categoryScore: true,
+            },
+          ],
+        };
+
+        const createdTrial = { id: 'trial-123' };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn({});
+        });
+        runTrialsRepository.create.mockResolvedValue(createdTrial);
+        runScoresRepository.upsertMany.mockResolvedValue([{ id: 'score-1' }]);
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithStagelessScore);
+
+        const call = runScoresRepository.upsertMany.mock.calls[0]![0];
+        expect(call.data[0]!.assessmentStage).toBeNull();
+        expect(call.data[0]!.categoryScore).toBe(true);
+      });
+
+      it('calls runService.recomputeBestRunForVariant inside the trial transaction', async () => {
+        const mockRun = RunFactory.build({
+          id: validRunId,
+          userId: targetUserId,
+          administrationId: 'admin-456',
+          taskVariantId: 'variant-789',
+        });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const txSentinel = { __tx: true };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn(txSentinel);
+        });
+        runTrialsRepository.create.mockResolvedValue({ id: 'trial-123' });
+        runService.recomputeBestRunForVariant.mockResolvedValue(undefined);
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, validBody);
+
+        expect(runService.recomputeBestRunForVariant).toHaveBeenCalledTimes(1);
+        expect(runService.recomputeBestRunForVariant).toHaveBeenCalledWith({
+          userId: targetUserId,
+          administrationId: 'admin-456',
+          taskVariantId: 'variant-789',
+          transaction: txSentinel,
+        });
+      });
+
+      it('runs the recompute after the score upsert (last step of the transaction)', async () => {
+        const mockRun = RunFactory.build({
+          id: validRunId,
+          userId: targetUserId,
+          administrationId: 'admin-456',
+          taskVariantId: 'variant-789',
+        });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const callOrder: string[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn({});
+        });
+        runTrialsRepository.create.mockImplementation(async () => {
+          callOrder.push('trial');
+          return { id: 'trial-123' };
+        });
+        runScoresRepository.upsertMany.mockImplementation(async () => {
+          callOrder.push('scores');
+          return [{ id: 'score-1' }];
+        });
+        runService.recomputeBestRunForVariant.mockImplementation(async () => {
+          callOrder.push('recompute');
+        });
+
+        const bodyWithScore = {
+          ...validBody,
+          scores: [
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE_RAW,
+              value: '0.5',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+            },
+          ],
+        };
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithScore);
+
+        expect(callOrder).toEqual(['trial', 'scores', 'recompute']);
+      });
+
+      it('propagates a score-upsert failure as a 500 ApiError with DATABASE_QUERY_FAILED', async () => {
+        const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const bodyWithScore = {
+          ...validBody,
+          scores: [
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE_RAW,
+              value: '0.5',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+            },
+          ],
+        };
+
+        // Simulate the transaction propagating the score-upsert failure: runTransaction
+        // invokes its fn which calls upsertMany and rejects, then runTransaction itself rejects.
+        const dbError = new Error('upsert failed');
+        runTrialsRepository.runTransaction.mockImplementation(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          async ({ fn }: any) => {
+            await fn({});
+          },
+        );
+        runTrialsRepository.create.mockResolvedValue({ id: 'trial-123' });
+        runScoresRepository.upsertMany.mockRejectedValue(dbError);
+
+        await expect(
+          runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithScore),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        });
+      });
+    });
+  });
+
+  describe('updateEngagement', () => {
+    const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+    const validBody = {
+      type: 'engagement' as const,
+      engagementFlags: {
+        incomplete: true,
+        responseTimeTooFast: true,
+        accuracyTooLow: false,
+        notEnoughResponses: false,
+      },
+      reliableRun: true,
+    };
+    const targetUserId = 'user-123';
+
+    beforeEach(() => {
+      runRepository.update = vi.fn();
+    });
+
+    it('should update engagement successfully', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.updateEngagement(authContext, targetUserId, validRunId, validBody);
+
+      expect(runRepository.getById).toHaveBeenCalledWith({ id: validRunId });
+      expect(runRepository.update).toHaveBeenCalledWith({
+        id: validRunId,
+        data: {
+          engagementFlags: validBody.engagementFlags,
+          reliableRun: true,
+        },
+      });
+    });
+
+    it('should handle empty engagement flags', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      const bodyWithEmptyFlags = {
+        type: 'engagement' as const,
+        engagementFlags: {},
+        reliableRun: false,
+      };
+
+      await runEventsService.updateEngagement(authContext, targetUserId, validRunId, bodyWithEmptyFlags);
+
+      expect(runRepository.update).toHaveBeenCalledWith({
+        id: validRunId,
+        data: {
+          engagementFlags: {},
+          reliableRun: false,
+        },
+      });
+    });
+
+    it('should handle multiple engagement flags', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      const bodyWithMultipleFlags = {
+        type: 'engagement' as const,
+        engagementFlags: {
+          incomplete: true,
+          responseTimeTooFast: true,
+          accuracyTooLow: true,
+          notEnoughResponses: true,
+        },
+        reliableRun: false,
+      };
+
+      await runEventsService.updateEngagement(authContext, targetUserId, validRunId, bodyWithMultipleFlags);
+
+      expect(runRepository.update).toHaveBeenCalledWith({
+        id: validRunId,
+        data: {
+          engagementFlags: bodyWithMultipleFlags.engagementFlags,
+          reliableRun: false,
+        },
+      });
+    });
+
+    it('should return 500 when database update fails', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      const dbError = new Error('Database connection lost');
+      runRepository.update.mockRejectedValue(dbError);
+
+      await expect(
+        runEventsService.updateEngagement(authContext, targetUserId, validRunId, validBody),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should re-throw ApiError when thrown during update', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      const apiError = new ApiError('Custom error', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      runRepository.update.mockRejectedValue(apiError);
+
+      await expect(runEventsService.updateEngagement(authContext, targetUserId, validRunId, validBody)).rejects.toBe(
+        apiError,
+      );
+    });
+  });
+});

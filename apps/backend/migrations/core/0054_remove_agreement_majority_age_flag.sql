@@ -1,0 +1,1 @@
+ALTER TABLE "app"."agreements" DROP COLUMN "requires_majority_age";

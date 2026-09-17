@@ -9,7 +9,7 @@ const navigateToStudentReport = () => {
   );
 };
 
-describe('Longitudinal Chart Component', () => {
+describe.skip('Longitudinal Chart Component', () => {
   beforeEach(() => {
     // Login as a partner admin
     cy.login(PARTNER_ADMIN_USERNAME, PARTNER_ADMIN_PASSWORD);

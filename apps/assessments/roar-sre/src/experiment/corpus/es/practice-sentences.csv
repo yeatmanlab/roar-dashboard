@@ -1,0 +1,5 @@
+sentence,answer,direction,correctresponse
+Una manzana es azul.,F,left,arrowleft
+Puedes leer cuentos en la biblioteca.,T,right,arrowright
+Las personas montan en bicicleta.,T,right,arrowright
+Los sombreros se ponen en el pie.,F,left,arrowleft

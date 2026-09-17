@@ -1,0 +1,13 @@
+{
+  "preloadTrial": {
+    "messageText": "Aspetta il caricamento dell'esperimento. Potrebbero volerci alcuni minuti."
+  },
+  "fullScreenTrial": {
+    "prompt": "L'esperimento avverra&#39 a schermo intero. Premi il bottone per continuare.",
+    "buttonText": "Continua"
+  },
+  "navigation": {
+    "continueButtonText": "Premi <span class='yellow'>QUALSIASI TASTO</span> per {{action}}",
+    "continueButtonTextMobile": "Premi <span class='yellow'>QUI</span> per {{action}}"
+  }
+}

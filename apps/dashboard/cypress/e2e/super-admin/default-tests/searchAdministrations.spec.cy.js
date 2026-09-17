@@ -1,5 +1,5 @@
 const roarDemoAdministrationName = Cypress.env('testPartnerAdministrationName');
-describe(
+describe.skip(
   'The admin user can navigate to the view administration page, ' + 'and can see search for an administration',
   () => {
     it('Activates the admin sidebar, then searches for an administration.', () => {

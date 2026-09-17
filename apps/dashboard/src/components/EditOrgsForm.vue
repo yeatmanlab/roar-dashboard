@@ -3,22 +3,22 @@
     <div class="form-container">
       <div class="form-field w-full">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">Name</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverOrgData.name ?? 'None' }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverOrgData?.name ?? 'None' }}</div>
         <PvInputText v-else v-model="localOrgData.name" />
       </div>
-      <div class="form-field w-full">
+      <div v-if="showAbbreviation" class="form-field w-full">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">Abbreviation</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverOrgData.abbreviation ?? 'None' }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverOrgData?.abbreviation ?? 'None' }}</div>
         <PvInputText v-else v-model="localOrgData.abbreviation" />
       </div>
     </div>
-    <div class="form-field">
+    <div v-if="showStructuredLocation" class="form-field">
       <label :class="{ 'font-light uppercase text-sm': !editMode }">
         <span> <i class="pi pi-map"></i></span> Address
       </label>
       <div class="p-inputgroup">
         <GMapAutocomplete
-          :placeholder="localOrgData.address?.formattedAddress ?? 'Enter an address'"
+          :placeholder="addressPlaceholder"
           :options="{
             fields: ['address_components', 'formatted_address', 'place_id', 'url'],
           }"
@@ -29,85 +29,88 @@
         </GMapAutocomplete>
       </div>
     </div>
-    <div v-if="orgType === 'districts'" class="form-field">
+    <div v-if="showNcesId" class="form-field">
       <label :class="{ 'font-light uppercase text-sm': !editMode }">NCES ID</label>
-      <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverOrgData.ncesId ?? 'None' }}</div>
+      <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverOrgData?.ncesId ?? 'None' }}</div>
       <PvInputText v-else v-model="localOrgData.ncesId" />
-    </div>
-    <div class="form-field">
-      <label :class="{ 'font-light uppercase text-sm': !editMode }">Tags</label>
-      <PvChips v-model="localOrgData.tags" />
-    </div>
-    <div>
-      <PvCheckbox v-model="localOrgData.testData" binary />
-      <label class="ml-1">Test Data</label>
-    </div>
-    <div>
-      <PvCheckbox v-model="localOrgData.demoData" binary />
-      <label class="ml-1">Demo Data</label>
     </div>
   </div>
 </template>
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
-import { fetchDocById } from '@/helpers/query/utils';
-import { useQuery } from '@tanstack/vue-query';
-import PvChips from 'primevue/chips';
-import PvCheckbox from 'primevue/checkbox';
+import { ref, computed, watch } from 'vue';
 import PvInputText from 'primevue/inputtext';
 import _isEmpty from 'lodash/isEmpty';
+import useOrgQuery from '@/composables/queries/useOrgQuery';
+import { singularizeFirestoreCollection } from '@/helpers';
+import { ORG_TYPES } from '@/constants/orgTypes';
+
 const props = defineProps({
   orgType: { type: String, required: true },
   orgId: { type: String, required: true },
   editMode: { type: Boolean, default: true },
 });
 
-// +------------+
-// | Initialize |
-// +------------+
-const initialized = ref(false);
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
-
 const emit = defineEmits(['modalClosed', 'update:orgData']);
 
 // +----------------------------+
 // | Query for existing orgData |
 // +----------------------------+
-const { data: serverOrgData } = useQuery({
-  queryKey: ['org', props.orgType, props.orgId],
-  queryFn: () => fetchDocById(props.orgType, props.orgId),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+// Read the org through the migrated by-id composable (ts-rest backend) rather
+// than Firestore. `useOrgQuery` dispatches by the SINGULAR org type, while this
+// component receives the PLURAL type from OrgsList's active tab. The composable
+// gates internally on `authStore.accessToken`, so no firekit/init machinery is
+// needed here. We select the single org out of the returned array.
+const singularOrgType = computed(() => singularizeFirestoreCollection(props.orgType));
+const orgIds = computed(() => [props.orgId]);
+
+// `singularOrgType.value` is dereferenced once at setup (a plain string, not the
+// ref). That's safe because OrgsList keys this component on
+// `${activeOrgType}:${currentEditOrgId}`, so it remounts whenever the org type
+// changes — the setup-time value is always current. `orgIds` is passed as a ref so
+// it stays reactive.
+const { data: serverOrgData } = useOrgQuery(singularOrgType.value, orgIds, {
+  select: (data) => data?.[0],
 });
+
+// Per-org-type fields. Classes have no `abbreviation` (their update schema omits
+// it), so the input is hidden for them. NCES ID is surfaced for districts only,
+// matching the legacy form.
+const showAbbreviation = computed(() => props.orgType !== ORG_TYPES.CLASSES);
+const showNcesId = computed(() => props.orgType === ORG_TYPES.DISTRICTS);
+// Districts, schools, and groups carry a structured address object; classes use a
+// free-text location string that this form does not edit, so the Google Places
+// autocomplete is hidden for classes (and `buildOrgUpdateBody` excludes it too).
+const showStructuredLocation = computed(() => props.orgType !== ORG_TYPES.CLASSES);
 
 // +-------------+
 // | Local State |
 // +-------------+
+// `address` starts null and is only populated when the user picks a new place
+// via `setAddress`. The current address is shown via the autocomplete
+// placeholder (`addressPlaceholder`), built from the org's structured location.
 const localOrgData = ref({
   name: null,
   abbreviation: null,
   address: null,
   ncesId: null,
-  tags: [],
-  testData: false,
-  demoData: false,
+});
+
+// Human-readable rendering of the org's current structured location, used as
+// the autocomplete placeholder so the existing address is visible. The backend
+// org (via `mapOrg`) flattens `location` to top-level fields, so we read those.
+const addressPlaceholder = computed(() => {
+  const org = serverOrgData.value;
+  const display = [org?.addressLine1, org?.city, org?.stateProvince, org?.postalCode].filter(Boolean).join(', ');
+  return display || 'Enter an address';
 });
 
 const setupOrgData = (orgData) => {
-  let org = {
+  localOrgData.value = {
     name: orgData?.name ?? '',
     abbreviation: orgData?.abbreviation ?? '',
-    address: orgData?.address ?? '',
+    address: null,
     ncesId: orgData?.ncesId ?? '',
-    tags: orgData?.tags ?? [],
-    testData: orgData?.testData ?? false,
-    demoData: orgData?.demoData ?? false,
   };
-  localOrgData.value = org;
 };
 
 const setAddress = (place) => {
@@ -119,41 +122,25 @@ const setAddress = (place) => {
   };
 };
 
+// Seed the editable fields from the org once it loads (and on subsequent
+// refetches). `immediate` covers the case where the query already has data.
 watch(
-  () => serverOrgData,
+  serverOrgData,
   (orgData) => {
     if (!_isEmpty(orgData)) {
-      setupOrgData(orgData.value);
+      setupOrgData(orgData);
     }
   },
-  { deep: true, immediate: false },
+  { immediate: true },
 );
-
-// +--------------------+
-// | Initialize firekit |
-// +--------------------+
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit?.restConfig?.()) init();
-});
-
-onMounted(() => {
-  if (roarfirekit.value?.restConfig?.()) init();
-  if (!_isEmpty(serverOrgData.value)) setupOrgData(serverOrgData.value);
-});
 
 // +---------------------+
 // | Handle update event |
 // +---------------------+
 watch(
-  () => localOrgData,
+  localOrgData,
   (orgData) => {
-    emit('update:orgData', orgData.value);
+    emit('update:orgData', orgData);
   },
   { deep: true, immediate: false },
 );
@@ -174,27 +161,6 @@ watch(
 .form-field {
   display: flex;
   flex-direction: column;
-}
-/* Styles for PvChips */
-.p-chips > ul {
-  width: 100%;
-}
-
-.p-chips-token {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  background: var(--primary-color);
-  padding: 0.25rem;
-  border-radius: 0.35rem;
-  color: white;
-  margin: 0.05rem;
-}
-
-.p-chips-token-icon,
-g {
-  margin-left: 0.5rem;
-  color: white;
 }
 
 /*

@@ -31,6 +31,7 @@ export * from './user-classes';
 export * from './user-families';
 export * from './user-groups';
 export * from './user-orgs';
+export * from './user-research-exclusions';
 
 // Relations
 export * from './relations';

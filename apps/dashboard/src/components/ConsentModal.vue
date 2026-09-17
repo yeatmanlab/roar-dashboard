@@ -75,10 +75,16 @@ onMounted(() => {
         await new Promise((resolve) => setTimeout(resolve, 600));
         await props.onConfirm();
 
+        // Pick the toast language from the app's active i18n locale rather than
+        // from `consentType`: `consentType` is now `consent`/`assent` (no `-es`
+        // suffix), so sniffing it for `-es` never matched and the Spanish detail
+        // never fired. The Spanish locales are `es` and `es-CO`, so a `startsWith`
+        // check covers both.
+        const isSpanish = i18n.locale.value.startsWith('es');
         toast.add({
           severity: TOAST_SEVERITIES.INFO,
           summary: i18n.t('consentModal.toastHeader'),
-          detail: props.consentType.includes('-es')
+          detail: isSpanish
             ? `ESTADO DE ${_lowerCase(props.consentType).toUpperCase()} ACTUALIZADO`
             : `${_lowerCase(props.consentType).toUpperCase()} STATUS UPDATED.`,
           life: TOAST_DEFAULT_LIFE_DURATION,

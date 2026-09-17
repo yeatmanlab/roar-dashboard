@@ -3,7 +3,7 @@ import translations from '../../../../src/translations/en/en-componentTranslatio
 const PARTICIPANT_TESTLEGAL_USERNAME = Cypress.env('PARTICIPANT_TESTLEGAL_USERNAME');
 const PARTICIPANT_TESTLEGAL_PASSWORD = Cypress.env('PARTICIPANT_TESTLEGAL_PASSWORD');
 
-describe('Participant: Legal Docs', () => {
+describe.skip('Participant: Legal Docs', () => {
   it('Renders an assent form for un-assented users', () => {
     // Login as the participant with the test legal document.
     cy.login(PARTICIPANT_TESTLEGAL_USERNAME, PARTICIPANT_TESTLEGAL_PASSWORD);

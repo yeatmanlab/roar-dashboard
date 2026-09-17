@@ -1,0 +1,156 @@
+import type {
+  TaskVariantsListQuery,
+  TaskVariantListItem as ContractTaskVariantListItem,
+  TaskVariant as ContractTaskVariant,
+} from '@roar-platform/api-contract';
+import { StatusCodes } from 'http-status-codes';
+import { ApiError } from '../errors/api-error';
+import {
+  TaskVariantService,
+  type TaskVariantListItem,
+  type TaskVariantWithParameters,
+} from '../services/task-variant/task-variant.service';
+import type { AuthContext } from '../types/auth-context';
+import { toErrorResponse } from '../utils/to-error-response.util';
+
+const taskVariantService = TaskVariantService();
+
+/**
+ * Maps a service task variant list item to the API contract shape.
+ * Converts Date fields to ISO strings.
+ *
+ * @param item - The service-layer task variant list item
+ * @returns The API-formatted task variant list item
+ */
+function transformTaskVariantListItem(item: TaskVariantListItem): ContractTaskVariantListItem {
+  return {
+    id: item.id,
+    taskId: item.taskId,
+    name: item.name,
+    description: item.description,
+    status: item.status,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt?.toISOString() ?? null,
+    taskName: item.taskName,
+    taskSlug: item.taskSlug,
+    taskImage: item.taskImage,
+    // Only include 'parameters' key when embed=parameters was requested.
+    // Preserves the distinction between "not requested" (key absent) and
+    // "requested but empty" (key present, value []). Matches the contract's
+    // .optional() modifier, which allows the key itself to be omitted.
+    ...(item.parameters !== undefined && { parameters: item.parameters }),
+  };
+}
+
+/**
+ * Maps a service task variant item (with always-present parameters) to the full API contract shape.
+ *
+ * @param item - The service-layer task variant item
+ * @returns The API-formatted task variant
+ */
+function transformTaskVariantItem(item: TaskVariantWithParameters): ContractTaskVariant {
+  return {
+    id: item.id,
+    taskId: item.taskId,
+    name: item.name,
+    description: item.description,
+    status: item.status,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt?.toISOString() ?? null,
+    taskName: item.taskName,
+    taskSlug: item.taskSlug,
+    taskImage: item.taskImage,
+    parameters: item.parameters,
+  };
+}
+
+/**
+ * Handles HTTP concerns for the /task-variants endpoints.
+ *
+ * Responsible for transforming service results into ts-rest responses
+ * and mapping known ApiError status codes to typed error responses.
+ * Business logic and authorization live in TaskVariantService.
+ */
+export const TaskVariantsController = {
+  /**
+   * List all published task variants across all tasks.
+   *
+   * Delegates to TaskVariantService for authorization and business logic.
+   * Requires super admin privileges.
+   *
+   * @param authContext - User's authentication context (requires super admin)
+   * @param query - Query parameters for pagination, sort, search, embed, and filters
+   * @returns Paginated list of published task variants with optional embedded parameters
+   */
+  list: async (authContext: AuthContext, query: TaskVariantsListQuery) => {
+    try {
+      const { page, perPage, sortBy, sortOrder, search, embed, filter } = query;
+
+      const result = await taskVariantService.listAllPublished(authContext, {
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+        ...(search !== undefined && { search }),
+        embed,
+        filters: filter,
+      });
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items: result.items.map(transformTaskVariantListItem),
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages: Math.ceil(result.totalItems / perPage),
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get a single task variant by ID, with its parameters and denormalized task fields.
+   *
+   * Delegates to TaskVariantService for business logic.
+   * Available to any authenticated user.
+   *
+   * @param authContext - User's authentication context
+   * @param variantId - UUID of the variant to retrieve
+   * @returns The task variant with task details and parameters
+   */
+  getByIdWithTaskDetails: async (authContext: AuthContext, variantId: string) => {
+    try {
+      const item = await taskVariantService.getByIdWithTaskDetails(authContext, variantId);
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformTaskVariantItem(item),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+};

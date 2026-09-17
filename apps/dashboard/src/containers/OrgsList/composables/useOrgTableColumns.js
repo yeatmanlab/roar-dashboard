@@ -1,8 +1,13 @@
 import { computed } from 'vue';
 import { ORG_EXPORT_EVENTS } from '../constants/exportConstants';
+import { ORG_TYPES } from '@/constants/orgTypes';
 
 /**
  * Composable for generating organization table columns based on org type and permissions.
+ *
+ * Address, Tags, Clever, and ClassLink columns were intentionally dropped during
+ * the ts-rest backend migration — the backend org schemas don't expose those
+ * fields, so the columns would always render empty.
  *
  * @param {Ref<string>} activeOrgType - The active organization type
  * @param {Ref<boolean>} isSuperAdmin - Whether the user is a super admin
@@ -15,8 +20,6 @@ export function useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, Permiss
     const columns = [
       { field: 'name', header: 'Name', dataType: 'text', pinned: true, sort: true },
       { field: 'abbreviation', header: 'Abbreviation', dataType: 'text', sort: true },
-      { field: 'address.formattedAddress', header: 'Address', dataType: 'text', sort: true },
-      { field: 'tags', header: 'Tags', dataType: 'tag', chip: true, sort: false },
     ];
 
     // Add MDR Number and NCES ID for districts and schools
@@ -25,12 +28,6 @@ export function useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, Permiss
         { field: 'mdrNumber', header: 'MDR Number', dataType: 'text', sort: false },
         { field: 'ncesId', header: 'NCES ID', dataType: 'text', sort: false },
       );
-    }
-
-    // Add SSO integration columns for districts, schools, and classes
-    if (['districts', 'schools', 'classes'].includes(activeOrgType.value)) {
-      columns.push({ field: 'clever', header: 'Clever', dataType: 'boolean', sort: false });
-      columns.push({ field: 'classlink', header: 'ClassLink', dataType: 'boolean', sort: false });
     }
 
     // Add Users link if user has permission
@@ -57,8 +54,11 @@ export function useOrgTableColumns(activeOrgType, isSuperAdmin, userCan, Permiss
       });
     }
 
-    // Add Invite Users button for super admins
-    if (isSuperAdmin.value) {
+    // Add Invite Users button for super admins, groups only. Activation
+    // (invitation) codes for districts/schools/classes were intentionally
+    // dropped during the ts-rest backend migration — only groups expose an
+    // invitation-code endpoint (GET /groups/:groupId/invitation-code).
+    if (isSuperAdmin.value && activeOrgType.value === ORG_TYPES.GROUPS) {
       columns.push({
         header: 'SignUp Code',
         buttonLabel: 'Invite Users',

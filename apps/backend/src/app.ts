@@ -1,13 +1,28 @@
 import express from 'express';
-import type { NextFunction, Request, Response } from 'express';
-import { isHttpError } from 'http-errors';
+import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { registerAllRoutes } from './routes';
-import { API_ERROR_CODES } from './constants/api-error-codes';
+import { errorHandler } from './error-handler';
+import { corsMiddleware } from './middleware/cors/cors.middleware';
+import { securityHeadersMiddleware } from './middleware/security-headers/security-headers.middleware';
+import { requestLogger } from './middleware/request-logger/request-logger.middleware';
+import { ApiErrorCode } from './enums/api-error-code.enum';
+import { ApiErrorMessage } from './enums/api-error-message.enum';
+import { healthRouter } from './health/health-routes';
 
 const app = express();
 
-app.use(express.json());
+// requestLogger is registered first so every request is logged — including CORS preflight
+// (OPTIONS), which corsMiddleware short-circuits with a 204 before later middleware run.
+app.use(requestLogger);
+app.use(securityHeadersMiddleware);
+app.use(corsMiddleware);
+// Mirror the ~1 MiB per-document ceiling of the legacy Firestore write path (which bypassed
+// this backend) rather than Express's 100 KB default, so clients sized against Firestore keep
+// working.
+app.use(express.json({ limit: '1mb' }));
+
+app.use(healthRouter);
 
 registerAllRoutes(app);
 
@@ -15,32 +30,13 @@ registerAllRoutes(app);
 app.use((_req: Request, res: Response) => {
   return res.status(StatusCodes.NOT_FOUND).json({
     error: {
-      message: 'Not found.',
-      code: API_ERROR_CODES.REQUEST.INVALID,
+      message: ApiErrorMessage.NOT_FOUND,
+      code: ApiErrorCode.REQUEST_INVALID,
     },
   });
 });
 
 // Handle errors
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-  // Convert HTTP errors created within the application to JSON responses
-  if (isHttpError(err)) {
-    return res.status(err.statusCode).json({
-      error: {
-        message: err.message,
-        code: err.code,
-      },
-    });
-  }
-
-  // Fallback for unexpected errors
-  return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-    error: {
-      message: 'An unexpected error occurred.',
-      code: API_ERROR_CODES.INTERNAL,
-    },
-  });
-});
+app.use(errorHandler);
 
 export default app;

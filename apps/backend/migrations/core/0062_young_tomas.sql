@@ -1,0 +1,1 @@
+ALTER TYPE "app"."user_role" ADD VALUE 'platform_admin' BEFORE 'principal';

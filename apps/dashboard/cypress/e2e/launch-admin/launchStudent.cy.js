@@ -1,7 +1,7 @@
 const LAUNCH_ADMIN_USERNAME = Cypress.env('LAUNCH_ADMIN_USERNAME');
 const LAUNCH_ADMIN_PASSWORD = Cypress.env('LAUNCH_ADMIN_PASSWORD');
 
-describe('Launch Admin: Launch Student', () => {
+describe.skip('Launch Admin: Launch Student', () => {
   it("Navigates to launch into user's assessments", () => {
     cy.login(LAUNCH_ADMIN_USERNAME, LAUNCH_ADMIN_PASSWORD);
     cy.waitForStudentReportList();

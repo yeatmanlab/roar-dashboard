@@ -8,19 +8,19 @@
             <i class="pi pi-user" /><span v-if="sidebarOpen">Your Info</span>
           </div></router-link
         >
-        <router-link v-if="isAdmin" to="/profile/password"
+        <router-link v-if="usesAdminProfile" to="/profile/password"
           ><div class="sidebar-button">
             <i class="pi pi-key" /><span v-if="sidebarOpen">{{
-              hasPassword ? 'Change Password' : 'Add Password'
+              authStore.hasPasswordProvider ? 'Change Password' : 'Add Password'
             }}</span>
           </div></router-link
         >
-        <router-link v-if="isAdmin" to="/profile/accounts"
+        <router-link v-if="usesAdminProfile" to="/profile/accounts"
           ><div class="sidebar-button">
             <i class="pi pi-users" /><span v-if="sidebarOpen">Link Accounts</span>
           </div></router-link
         >
-        <router-link v-if="isAdmin" to="/profile/offline"
+        <router-link v-if="usesAdminProfile" to="/profile/offline"
           ><div class="sidebar-button">
             <i class="pi pi-wifi" /><span v-if="sidebarOpen">Offline Settings</span>
           </div></router-link
@@ -47,56 +47,13 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import _isEmpty from 'lodash/isEmpty';
-import _union from 'lodash/union';
+import { ref } from 'vue';
 import { useAuthStore } from '@/store/auth';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useCurrentUser from '@/composables/useCurrentUser';
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 const sidebarOpen = ref(true);
-
-const providerIds = computed(() => {
-  const providerData = roarfirekit.value?.admin?.user?.providerData;
-  return providerData.map((provider) => {
-    return provider.providerId;
-  });
-});
-
-const hasPassword = computed(() => {
-  return providerIds.value.includes('password');
-});
-
-// +-------------------------+
-// | Firekit Inititalization |
-// +-------------------------+
-const initialized = ref(false);
-let unsubscribe;
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig?.()) init();
-});
-
-onMounted(() => {
-  if (roarfirekit.value.restConfig?.()) init();
-});
-
-const { data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
-// Keep track of the user's type
-const isAdmin = computed(() => {
-  if (userClaims.value?.claims?.super_admin) return true;
-  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
-  return true;
-});
+const { usesAdminProfile } = useCurrentUser();
 </script>
 
 <style lang="scss" scoped>

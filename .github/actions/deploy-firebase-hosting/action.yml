@@ -1,0 +1,182 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/deploy-firebase-hosting
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Deploy Firebase Hosting
+description: Deploys a ROAR application to Firebase Hosting.
+outputs:
+  deployment-url:
+    description: "The URL of the deployed application."
+    value: ${{ steps.output-deployment-url.outputs.deployment-url }}
+inputs:
+  firebase-channel:
+    description: "The Firebase hosting channel to deploy to, preview or default."
+    required: true
+  firebase-project-id:
+    description: "The Firebase project ID to deploy to."
+    required: true
+  gcp-workload-identity-provider:
+    description: "The GCP workload identity provider to authenticate with."
+    required: true
+  gcp-service-account-id:
+    description: "The GCP service account ID to impersonate."
+    required: true
+  expires:
+    description: "TTL for ephemeral preview channels (e.g. '7d', '12h'). Only used when firebase-channel is 'preview'."
+    required: false
+    default: "7d"
+  github-token:
+    description: "The GitHub token to use for authentication."
+    required: false
+  dist-path:
+    description: "Path to the built dist directory to deploy."
+    required: false
+    default: "build/apps/dashboard/dist"
+  firebase-config-path:
+    description: "Path to the firebase.json config file, relative to the repository root."
+    required: true
+  firebase-hosting-site:
+    description: "Firebase Hosting site ID to deploy to (e.g. roar-dashboard-staging), or — when hosting-suffix-map-path is set — the Hosting target name (e.g. roar-pa). Required when the Firebase project hosts multiple sites."
+    required: false
+    default: ""
+  hosting-suffix-map-path:
+    description: "Path to a JSON map of Hosting target name to site-ID suffix (e.g. { \"roar-swr\": \"word\" }), relative to the repository root. Set this to resolve the site as <firebase-project-id>-<suffix> through a generated .firebaserc target map instead of a literal site ID; firebase-hosting-site then names the target."
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    # Ensure firebase-tools runs under the project's Node version instead of
+    # the runner's system default (which may lag behind and hit bugs like the
+    # keep-alive socket issue in Node 24.17.0 — nodejs/node#63989).
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+
+    # Authenticate with GCP using Workload Identity Federation
+    - name: Authenticate with GCP
+      id: gcp-auth
+      uses: google-github-actions/auth@v3
+      with:
+        project_id: ${{ inputs.firebase-project-id }}
+        workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
+        service_account: ${{ inputs.gcp-service-account-id }}
+        create_credentials_file: true
+        token_format: "access_token"
+        access_token_scopes: "email,openid,https://www.googleapis.com/auth/cloudplatformprojects.readonly,https://www.googleapis.com/auth/firebase,https://www.googleapis.com/auth/cloud-platform"
+
+    # Retrieve GCP credentials
+    # Note: This is currently necessary as firebaseextended/action-hosting-deploy does not support currently support
+    # automatic GCP authentication using google-github-actions/auth action.
+    - name: Retrieve GCP credentials
+      shell: bash
+      run: |
+        echo "GCP_HOSTING_SERVICE_ACCOUNT_KEY=$(cat "${{ steps.gcp-auth.outputs.credentials_file_path }}" | tr -d '\n')" >> $GITHUB_ENV
+
+    # Prepare deployment
+    # Note: As the project relies on two simultaneous Firebase projects and the configs are stored in the /firebase
+    # directory, we prepare the deployment by ensuring that the Firebase config and dist directory are located on the
+    # same path. Otherwise, the firebaseextended/action-hosting-deploy action fails to deploy the application.
+    # Note: Deploying to something other than the project's default Hosting site works one of two ways.
+    # With hosting-suffix-map-path set (target mode), we synthesize a .firebaserc next to firebase.json
+    # from the suffix map plus the project ID, and firebase-hosting-site names a target the CLI resolves.
+    # Without it (site mode), we inject firebase-hosting-site as the "site" key of the hosting config.
+    # Inputs are read through environment variables as they can carry runtime-derived values (e.g. step
+    # outputs) — and, for the project ID, a secret we must not interpolate into the script body.
+    - name: Prepare deployment
+      shell: bash
+      env:
+        FIREBASE_HOSTING_SITE: ${{ inputs.firebase-hosting-site }}
+        FIREBASE_PROJECT_ID: ${{ inputs.firebase-project-id }}
+        HOSTING_SUFFIX_MAP_PATH: ${{ inputs.hosting-suffix-map-path }}
+      run: |
+        mkdir app
+        cp -r ${{ inputs.dist-path }} app/dist
+        cp ${{ inputs.firebase-config-path }} app/firebase.json
+        if [ -n "$HOSTING_SUFFIX_MAP_PATH" ]; then
+          # Target mode. The suffix map holds only the per-assessment tail of each site ID
+          # (roar-swr -> word); the project ID comes from the deploy credentials, so one map
+          # resolves to the staging or the production site depending on which project we
+          # authenticate against. Generated rather than committed so the project IDs stay out
+          # of the tree — see .gitignore and `npm run hosting:rc` for the local equivalent.
+          if [ -z "$FIREBASE_PROJECT_ID" ]; then
+            echo "::error::firebase-project-id is required when hosting-suffix-map-path is set."
+            exit 1
+          fi
+          # Fail before the map is used if it has no entry for this target. Otherwise the site
+          # simply never appears in the generated map and the deploy step reports "Hosting site
+          # or target ... not detected in firebase.json", which names neither the file to edit
+          # nor the missing key.
+          if [ -n "$FIREBASE_HOSTING_SITE" ] && ! jq -e --arg target "$FIREBASE_HOSTING_SITE" 'has($target)' "$HOSTING_SUFFIX_MAP_PATH" > /dev/null; then
+            echo "::error::$HOSTING_SUFFIX_MAP_PATH has no entry for target '$FIREBASE_HOSTING_SITE'. Add \"$FIREBASE_HOSTING_SITE\": \"<site-id-suffix>\" to it."
+            exit 1
+          fi
+          # The CLI locates the project root by the directory holding firebase.json, so the
+          # generated .firebaserc has to sit beside it in app/ — a repository-root copy is not
+          # found from here. Only "targets" is emitted: project aliases exist for `firebase use`,
+          # and the deploy step passes the project explicitly.
+          jq -n \
+            --arg project "$FIREBASE_PROJECT_ID" \
+            --slurpfile suffixes "$HOSTING_SUFFIX_MAP_PATH" \
+            '{targets: {($project): {hosting: ($suffixes[0] | map_values([$project + "-" + .]))}}}' \
+            > app/.firebaserc
+          # Mirror of the site-mode guard below. A target the config doesn't declare would
+          # otherwise fail as "Hosting site or target ... not detected in firebase.json" from
+          # the deploy step — after the build and GCP auth, and without naming the input to fix.
+          # Skipped when no target is given, since a blank target deploys every target in .firebaserc.
+          if [ -n "$FIREBASE_HOSTING_SITE" ]; then
+            declared_target=$(jq -r '.hosting.target // "<none>"' app/firebase.json)
+            if [ "$declared_target" != "$FIREBASE_HOSTING_SITE" ]; then
+              echo "::error::${{ inputs.firebase-config-path }} declares hosting target '$declared_target', but firebase-hosting-site is '$FIREBASE_HOSTING_SITE'. Set \"target\" in the hosting config to match, or unset hosting-suffix-map-path to deploy by site ID."
+              exit 1
+            fi
+          fi
+          echo "Deploying to Firebase Hosting target: $FIREBASE_HOSTING_SITE"
+        elif [ -n "$FIREBASE_HOSTING_SITE" ]; then
+          # Site mode. Inject the site ID directly. Mutually exclusive with target mode:
+          # firebase-tools rejects a hosting config that carries both "site" and "target".
+          if jq -e '.hosting.target' app/firebase.json > /dev/null; then
+            echo "::error::${{ inputs.firebase-config-path }} declares a hosting target, so the site ID cannot be injected. Pass hosting-suffix-map-path and set firebase-hosting-site to the target name."
+            exit 1
+          fi
+          jq --arg site "$FIREBASE_HOSTING_SITE" '.hosting.site = $site' app/firebase.json > app/firebase.tmp.json
+          mv app/firebase.tmp.json app/firebase.json
+          echo "Deploying to named Firebase Hosting site: $FIREBASE_HOSTING_SITE"
+        fi
+        cd app && pwd && ls -la
+
+    # Deploy application
+    # Note: Due to a bug in the FirebaseExtended/action-hosting-deploy action, it is not possible to use a conditional
+    # expression on the channelId parameter. As a workaround, we use two separate steps to deploy the application.
+    - name: Deploy application to ephemeral environment
+      if: ${{ inputs.firebase-channel == 'preview' }}
+      uses: FirebaseExtended/action-hosting-deploy@v0.11.0
+      id: firebase-deploy
+      with:
+        firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
+        repoToken: "${{ inputs.github-token }}"
+        projectId: "${{ inputs.firebase-project-id }}"
+        target: "${{ inputs.firebase-hosting-site }}"
+        expires: "${{ inputs.expires }}"
+        entryPoint: ./app
+
+    - name: Deploy application
+      if: ${{ inputs.firebase-channel == 'default' }}
+      uses: FirebaseExtended/action-hosting-deploy@v0.11.0
+      with:
+        firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
+        projectId: "${{ inputs.firebase-project-id }}"
+        channelId: "live"
+        target: "${{ inputs.firebase-hosting-site }}"
+        entryPoint: ./app
+
+    # Output deployment URL
+    - name: Output deployment URL
+      if: ${{ inputs.firebase-channel == 'preview' }}
+      id: output-deployment-url
+      shell: bash
+      run: |
+        deployment_url="${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}"
+        echo "deployment-url=$deployment_url" >> $GITHUB_OUTPUT

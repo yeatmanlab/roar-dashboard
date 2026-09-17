@@ -1,0 +1,489 @@
+@use '../abstracts' as *;
+
+button {
+  &.button-base {
+    border-radius: $button-default-border-radius;
+    border-width: $button-default-border-width;
+    border-style: solid;
+    text-align: center;
+    font-size: $button-default-font-size;
+    font-weight: $button-default-font-weight;
+    color: $txt-white;
+    min-width: 60px;
+    min-height: 50px;
+    cursor: pointer;
+  }
+
+  &.primary {
+    @extend .button-base;
+    background: $bg-button-primary;
+    padding: $button-primary-padding;
+    border-color: $bg-accent_secondary;
+    box-shadow: $button-default-box-shadow rgba($bg-accent_secondary, 0.5) inset;
+    font-size: $font-size-xs-em;
+    font-weight: $font-weight-dark;
+    color: $txt-white;
+
+    @include respond-to('small') {
+      font-size: $font-size-xxs;
+      font-weight: $font-weight-normal;
+      color: $txt-white;
+      padding: $button-primary-padding-small;
+      border-radius: $button-default-border-radius-small;
+    }
+
+    &:hover {
+      background: $bg-button-primary-hover;
+      border-color: $border-button-primary-hover;
+      box-shadow: $button-default-box-shadow rgba($border-button-primary-hover, 0.5) inset;
+    }
+
+    &:active {
+      background: $bg-button-primary-clicked;
+      border-color: $border-button-primary-clicked;
+      box-shadow: $button-default-box-shadow rgba($border-button-primary-clicked, 0.5) inset;
+    }
+
+    &:disabled {
+      background: $btn-disabled-bg;
+      border-color: $btn-disabled-inset;
+      box-shadow: $button-default-box-shadow $btn-disabled-inset inset;
+      cursor: no-drop;
+    }
+
+    &.small {
+      font-size: $font-size-xxxs;
+      font-weight: $font-weight-normal;
+      color: $txt-white;
+      padding: $button-primary-padding-xs;
+      border-radius: $button-default-border-radius-small;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  &.secondary {
+    @extend .button-base;
+    background: $border-accent;
+    border-color: $bg-accent_secondary;
+    box-shadow:
+      $button-secondary-box-shadow $bg-accent_secondary inset,
+      $button-secondary-inner-shadow $bg-button-secondary inset;
+    font-size: $font-size-lm;
+    width: 2.5 * $font-size-l;
+    height: 2.5 * $font-size-l;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    @include respond-to('small-medium') {
+      font-size: $font-size-ms;
+      font-weight: $font-weight-normal;
+      border-radius: $button-default-border-radius-small;
+      width: 2.4 * $font-size-m;
+      height: 2.4 * $font-size-m;
+    }
+
+    @include respond-to('small') {
+      font-size: $font-size-m;
+      font-weight: $font-weight-normal;
+      border-radius: $button-default-border-radius-small;
+      width: 3 * $font-size-m;
+      height: 3 * $font-size-m;
+    }
+
+    &:hover {
+      background: $bg-button-primary-hover;
+      border-color: $border-button-primary-hover;
+      box-shadow: $bg-button-secondary inset;
+    }
+
+    &:active {
+      background: $bg-button-primary-clicked;
+      border-color: $border-button-primary-clicked;
+      box-shadow:
+        $button-secondary-box-shadow $border-button-primary-clicked inset,
+        $button-secondary-inner-shadow $bg-button-secondary inset;
+    }
+  }
+
+  &.secondary--green {
+    @extend .button-base;
+    background: $bg-green_base;
+    padding: $button-secondary-padding;
+    border-color: $border-green_dark;
+    box-shadow:
+      $button-secondary-box-shadow $border-green_dark inset,
+      $button-secondary-inner-shadow $bg-green-gradient inset;
+    cursor: default;
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    @include respond-to('small') {
+      font-size: $font-size-l;
+      font-weight: $font-weight-normal;
+      color: $txt-white;
+      padding: $button-secondary-padding-small;
+      border-radius: $button-default-border-radius-small;
+      min-width: 40px;
+      min-height: 40px;
+    }
+  }
+
+  &.secondary--wide {
+    @extend .button-base;
+    background: $bg-button-primary;
+    padding: $button-primary-padding;
+    border-color: $bg-accent_secondary;
+    box-shadow: $button-default-box-shadow rgba($bg-accent_secondary, 0.5) inset;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-dark;
+    color: $txt-white;
+
+    @include respond-to('small') {
+      font-size: $font-size-xxs;
+      font-weight: $font-weight-normal;
+      color: $txt-white;
+      padding: $button-primary-padding-small;
+      border-radius: $button-default-border-radius-small;
+    }
+
+    &:hover {
+      background: $bg-button-primary-hover;
+      border-color: $border-button-primary-hover;
+      box-shadow: $bg-button-secondary inset;
+    }
+
+    &:active {
+      background: $bg-button-primary-clicked;
+      border-color: $border-button-primary-clicked;
+      box-shadow:
+        $button-secondary-box-shadow $border-button-primary-clicked inset,
+        $button-secondary-inner-shadow $bg-button-secondary inset;
+    }
+
+    &:disabled {
+      filter: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='grayscale'><feColorMatrix type='matrix' values='0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0'/></filter></svg>#grayscale");
+      /* Firefox 10+, Firefox on Android */
+      filter: grayscale(100%);
+      -moz-filter: grayscale(100%);
+      -ms-filter: grayscale(100%);
+      -o-filter: grayscale(100%);
+      filter: gray;
+      /* IE6-9 */
+      -webkit-filter: grayscale(100%);
+      /* Chrome 19+, Safari 6+, Safari 6+ iOS */
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    // override the active state for disabled buttons
+    &:disabled:active {
+      background: $bg-button-primary;
+      border-color: $bg-accent_secondary;
+      box-shadow: $button-default-box-shadow rgba($bg-accent_secondary, 0.5) inset;
+    }
+  }
+
+  &.slider {
+    @extend .button-base;
+    background: $border-accent;
+    border-color: $bg-accent_secondary;
+    box-shadow:
+      $button-secondary-box-shadow $bg-accent_secondary inset,
+      $button-secondary-inner-shadow $bg-button-secondary inset;
+    font-size: $font-size-lm;
+    width: 16px;
+    height: 16x;
+  }
+
+  &.utility {
+    cursor: pointer;
+    border-radius: min(16px, 2vh);
+    padding: min(16px, 2vh);
+    background-color: rgba($bg-button-primary, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: $replay_btn_size;
+    height: $replay_btn_size;
+    border: 2px solid $border-button-accent;
+
+    @include respond-to('small') {
+      width: 36px;
+      height: 36px;
+      padding: 9px;
+    }
+
+    &:hover {
+      background-color: rgba($bg-button-primary-hover, 0.4);
+      border: 2px solid $border-button-primary-hover;
+    }
+
+    &:active {
+      background-color: rgba($bg-button-primary-clicked, 0.6);
+      border: 2px solid $border-button-primary-clicked;
+    }
+
+    &:disabled {
+      background-color: rgba($bg-white-40, 0.6);
+      border: 2px solid $border-grey;
+      pointer-events: none;
+
+      svg {
+        path {
+          fill: $border-grey;
+        }
+      }
+    }
+
+    &.open {
+      background-color: rgba($bg-button-primary-clicked, 0.6);
+      border: 2px solid $border-button-primary-clicked;
+    }
+
+    &.transparent {
+      background-color: transparent;
+      border: transparent;
+      width: $experimenter_btn_size;
+      height: $experimenter_btn_size;
+      padding: 0;
+    }
+  }
+
+  &.image {
+    @extend .button-base;
+    padding: 0;
+    box-sizing: border-box;
+    border-color: $border-grey;
+    min-width: unset !important;
+    min-height: unset !important;
+
+    img {
+      border: none;
+      width: $response-size-default;
+      height: $response-size-default;
+      padding: 0;
+      margin: 0;
+      border-radius: $button-default-border-radius;
+      float: left;
+    }
+
+    @include respond-to('small-medium') {
+      border-radius: $button-default-border-radius;
+
+      img {
+        width: $response-size-sm;
+        height: $response-size-sm;
+        border-radius: $button-default-border-radius-small;
+      }
+    }
+
+    @include respond-to('small') {
+      border-radius: $lev-spacing-s;
+
+      img {
+        width: $response-size-s;
+        height: $response-size-s;
+        border-radius: $lev-spacing-xs;
+      }
+    }
+
+    &:hover {
+      border-color: $bg-accent_secondary;
+    }
+
+    &:active {
+      border-color: $border-button-primary-clicked;
+    }
+  }
+
+  // add padding for matrix reasoning buttons so that the image is not cut off
+  &.image-matrix {
+    @extend .button-base;
+    padding: 0;
+    box-sizing: border-box;
+    border-color: $border-grey;
+    min-width: unset !important;
+    min-height: unset !important;
+    background-color: $bg-bubble-base;
+
+    img {
+      border: none;
+      width: $response-size-default;
+      height: $response-size-default;
+      padding: 1vh;
+      margin: 0;
+      float: left;
+    }
+
+    @include respond-to('small-medium') {
+      img {
+        width: $response-size-sm;
+        height: $response-size-sm;
+        padding: 1vh;
+      }
+    }
+
+    @include respond-to('small') {
+      img {
+        width: $response-size-s;
+        height: $response-size-s;
+        padding: 1vh;
+      }
+    }
+
+    &:hover {
+      border-color: $bg-accent_secondary;
+    }
+
+    &:active {
+      border-color: $border-button-primary-clicked;
+    }
+  }
+
+  // for applying grayed-out styling independent of the disabled button state
+  &.image-grayed-out {
+    filter: grayscale(100%);
+    -moz-filter: grayscale(100%);
+    -ms-filter: grayscale(100%);
+    -o-filter: grayscale(100%);
+    filter: gray;
+    /* IE6-9 */
+    -webkit-filter: grayscale(100%);
+    /* Chrome 19+, Safari 6+, Safari 6+ iOS */
+    opacity: 0.6;
+  }
+
+  &.image-large {
+    @extend .button-base;
+    padding: 0;
+    box-sizing: border-box;
+    border-color: $border-grey;
+
+    img {
+      border: none;
+      width: $lev-resized-buttons-2;
+      height: $lev-resized-buttons-2;
+      padding: 0;
+      margin: 0;
+      border-radius: $button-default-border-radius-small;
+      float: left;
+    }
+
+    &:hover {
+      border-color: $bg-accent_secondary;
+    }
+
+    &:active {
+      border-color: $border-button-primary-clicked;
+    }
+  }
+
+  &.image-medium {
+    @extend .button-base;
+    padding: 0;
+    box-sizing: border-box;
+    border-color: $border-grey;
+
+    img {
+      border: none;
+      width: $response-size-m;
+      height: $response-size-m;
+      padding: 0;
+      margin: 0;
+      border-radius: $button-default-border-radius-small;
+      float: left;
+    }
+
+    @include respond-to('small') {
+      border-radius: $lev-spacing-s;
+
+      img {
+        width: $response-size-s;
+        height: $response-size-s;
+        border-radius: $button-default-border-radius-small;
+      }
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        border-color: $border-button-primary-clicked;
+      }
+    }
+
+    &:active {
+      border-color: $border-button-primary-clicked;
+    }
+
+    &.selected {
+      border-color: $border-button-primary-clicked;
+    }
+  }
+
+  &.no-pointer-events {
+    pointer-events: none;
+    cursor: default;
+  }
+
+  &.success-shadow {
+    box-shadow: 0 0 20px 5px rgb(85, 251, 56);
+    border-radius: 2rem;
+  }
+
+  &.error-shadow {
+    box-shadow: 0 0 30px 8px rgb(255, 43, 1);
+    border-radius: 2rem;
+  }
+
+  &.warning-shadow {
+    box-shadow: 0 0 20px 5px $border-yellow_dark;
+    border-radius: 2rem;
+  }
+
+  &.info-shadow {
+    box-shadow: 0 0 20px 5px $border-accent;
+    border-radius: 2rem;
+    border-color: $bg-accent_secondary;
+  }
+}
+
+// Mouseover interactions for hearts & flowers version 1
+.hf-mouseover button.secondary--green {
+  &:hover {
+    background: $bg-green-base-hover;
+    border-color: $border-button-green-hover;
+    box-shadow:
+      $button-secondary-box-shadow $border-button-green-hover inset,
+      $button-secondary-inner-shadow $bg-green-gradient inset;
+    cursor: pointer;
+  }
+
+  &:active {
+    background: $bg-green-base-clicked;
+    border-color: $border-button-green-clicked;
+    box-shadow:
+      $button-secondary-box-shadow $border-button-green-clicked inset,
+      $button-secondary-inner-shadow $bg-green-gradient inset;
+  }
+}
+
+// Mouseover is disabled for hearts & flowers version 2 (keyboard and touch only)
+.hf-touch button.secondary--green {
+  &:hover {
+    cursor: default;
+  }
+}

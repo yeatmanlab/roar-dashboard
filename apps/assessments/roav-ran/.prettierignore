@@ -1,0 +1,10 @@
+# Build artifacts and generated output
+dist/
+lib/
+build/
+coverage/
+node_modules/
+.turbo/
+
+# View templates contain inline scripts/styles that Prettier reformats poorly
+*.html

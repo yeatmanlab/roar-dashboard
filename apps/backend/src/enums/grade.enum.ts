@@ -31,4 +31,3 @@ const Grade = {
 } as const satisfies Record<string, (typeof gradeEnum.enumValues)[number]>;
 
 export type Grade = (typeof gradeEnum.enumValues)[number];
-export default Grade;

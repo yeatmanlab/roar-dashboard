@@ -1,0 +1,54 @@
+@use '../abstracts' as *;
+
+.lev-text {
+  font-size: 32px;
+  line-height: 1;
+  color: $txt-primary;
+  letter-spacing: 0;
+  font-weight: 700;
+
+  &.primary {
+    color: $txt-primary;
+  }
+
+  &.secondary {
+    color: $txt-secondary;
+  }
+
+  &.base {
+    color: $txt-white;
+  }
+
+  &.h0 {
+    font-size: 85px;
+  }
+
+  &.h1 {
+    font-size: 72px;
+  }
+
+  &.h2 {
+    font-size: 64px;
+  }
+
+  &.h3 {
+    font-size: 48px;
+    line-height: 1.5;
+  }
+
+  &.h4 {
+    font-size: 40px;
+    line-height: 1.5;
+  }
+
+  &.main-bold {
+    font-size: 32px;
+    line-height: 1.5;
+  }
+
+  &.main-regular {
+    font-size: 32px;
+    line-height: 1.5;
+    font-size: 500;
+  }
+}

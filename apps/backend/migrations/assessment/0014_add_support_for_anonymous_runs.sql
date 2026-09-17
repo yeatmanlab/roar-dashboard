@@ -1,0 +1,1 @@
+ALTER TABLE "app"."runs" ADD COLUMN "is_anonymous" boolean DEFAULT false;

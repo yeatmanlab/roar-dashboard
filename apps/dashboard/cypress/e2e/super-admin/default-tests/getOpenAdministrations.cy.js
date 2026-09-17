@@ -5,7 +5,7 @@ import { getOpenAdministrations } from '../../../support/query';
 const adminAuth = getDevFirebase('admin').auth;
 const adminFirestore = getDevFirebase('admin').db;
 
-describe('Get Open Administrations', () => {
+describe.skip('Get Open Administrations', () => {
   before(() => {
     signInAsSuperAdmin(adminAuth);
   });

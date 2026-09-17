@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { FirebaseCoreClient } from './firebase-core.client';
+import { logger } from '../logger';
+import { FIREBASE_EMULATOR_PROJECT_ID } from '@roar-platform/assessment-schema';
 import {
   initializeApp,
   getApp as getAdminApp,
@@ -20,11 +22,16 @@ const clearAuthEnv = () => {
   delete process.env.GCLOUD_PROJECT;
   delete process.env.GOOGLE_CLOUD_PROJECT;
   delete process.env.FIREBASE_SERVICE_ACCOUNT_CREDENTIALS;
+  delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
 };
 
 beforeEach(() => {
   FirebaseCoreClient.clearCache();
   clearAuthEnv();
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe('FirebaseCoreClient', () => {
@@ -121,6 +128,50 @@ describe('FirebaseCoreClient', () => {
     expect(certMock).not.toHaveBeenCalled();
     expect(initializeAppMock).toHaveBeenCalledWith({ credential: defaultCredentials });
     expect(app).toBe(mockApp);
+  });
+
+  it('initializes with the emulator project ID when FIREBASE_AUTH_EMULATOR_HOST is set, ignoring project env vars', () => {
+    process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+    // A real project ID in the environment must not override the emulator project
+    // ID, which has to match the emulator's --project flag exactly.
+    process.env.GCLOUD_PROJECT = 'gcloud-project';
+    process.env.GOOGLE_CLOUD_PROJECT = 'google-cloud-project';
+
+    const mockApp = { name: 'mock-emulator-app' };
+    getAppsMock.mockReturnValue([]);
+    initializeAppMock.mockReturnValue(mockApp);
+
+    const app = FirebaseCoreClient.getApp();
+
+    // No credential is resolved in emulator mode.
+    expect(applicationDefaultMock).not.toHaveBeenCalled();
+    expect(certMock).not.toHaveBeenCalled();
+    expect(initializeAppMock).toHaveBeenCalledWith({ projectId: FIREBASE_EMULATOR_PROJECT_ID });
+    expect(app).toBe(mockApp);
+  });
+
+  it('warns when the emulator branch is taken, so the credential-free path is visible in logs', () => {
+    process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+
+    getAppsMock.mockReturnValue([]);
+    initializeAppMock.mockReturnValue({ name: 'mock-emulator-app' });
+
+    FirebaseCoreClient.getApp();
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ emulatorHost: '127.0.0.1:9099', projectId: FIREBASE_EMULATOR_PROJECT_ID }),
+      expect.stringContaining('Auth emulator'),
+    );
+  });
+
+  it('refuses to initialize against the emulator on a deployed service', () => {
+    vi.stubEnv('K_SERVICE', 'roar-backend');
+    process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+
+    getAppsMock.mockReturnValue([]);
+
+    expect(() => FirebaseCoreClient.getApp()).toThrow(/FIREBASE_AUTH_EMULATOR_HOST/);
+    expect(initializeAppMock).not.toHaveBeenCalled();
   });
 
   it('clearCache resets the cached app and allows re-initialization', () => {

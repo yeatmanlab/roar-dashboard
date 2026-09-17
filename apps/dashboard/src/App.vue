@@ -17,7 +17,17 @@
 
     <Navigation />
 
-    <router-view :key="$route.fullPath" />
+    <!--
+      Gate router-view on `/me` settlement. Once the user has an access
+      token, useMeQuery is enabled; we hold the destination page back
+      until the query has settled so the protected route doesn't paint
+      with stale store values or before the TOS / error redirects below
+      have a chance to fire. Unauthenticated routes (Sign-In, error
+      pages) render immediately because `accessToken` is null, so
+      `isMeSettling` is false.
+    -->
+    <AppSpinner v-if="isMeSettling" />
+    <router-view v-else :key="$route.fullPath" />
 
     <SessionTimer v-if="loadSessionTimeoutHandler" />
   </div>
@@ -26,12 +36,13 @@
 </template>
 
 <script setup>
-import { computed, onBeforeMount, onMounted, ref, defineAsyncComponent } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, onBeforeMount, onMounted, ref, watch, defineAsyncComponent } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 import { Head } from '@unhead/vue/components';
 import PvToast from 'primevue/toast';
 import Navigation from '@/containers/Navigation/Navigation.vue';
+import AppSpinner from '@/components/AppSpinner.vue';
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
 const VueQueryDevtools = defineAsyncComponent(() =>
@@ -39,14 +50,20 @@ const VueQueryDevtools = defineAsyncComponent(() =>
 );
 
 import { useAuthStore } from '@/store/auth';
-import { fetchDocById } from '@/helpers/query/utils';
+import { createAuthService } from '@/services/AuthService';
+import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import { i18n } from '@/translations/i18n';
+import useCurrentUser from '@/composables/useCurrentUser';
+import { useGlobalError } from '@/composables/useGlobalError';
+import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
+import { APP_ROUTE_NAMES } from '@/constants/routes';
 
 const isAuthStoreReady = ref(false);
 const showDevtools = ref(false);
 
 const authStore = useAuthStore();
 const route = useRoute();
+const router = useRouter();
 
 const pageTitle = computed(() => {
   const locale = i18n.global.locale.value;
@@ -58,20 +75,113 @@ const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authS
 
 useRecaptchaProvider();
 
+// `useCurrentUser` is the single read-path for the authenticated user across
+// the dashboard — it wraps `useMeQuery`, which is internally gated on
+// `authStore.accessToken` and handles retry (3x on transient failures, skip
+// on rostering-ended / terminal auth).
+//
+// `/me` data lives in TanStack Query — consumers read it via
+// `useCurrentUser` (or `queryClient.getQueryData([ME_QUERY_KEY])` from
+// non-component code). Nothing copies it into the auth store any more.
+const { data: meData, error: meError, isFetching: isMeFetching } = useCurrentUser();
+
+/**
+ * Hold back router-view until `/me` settles for authenticated users.
+ *
+ * Three states matter here:
+ *   - No access token: useMeQuery is disabled; we render immediately so
+ *     unauthenticated routes (Sign-In, error pages) paint without delay.
+ *   - Access token present, /me still in flight (no data, no error yet):
+ *     show a spinner so the destination page can't flash before any TOS /
+ *     error redirects below get a chance to fire.
+ *   - /me has resolved or errored: render the destination; the error
+ *     watcher below has already issued any necessary redirect.
+ */
+const isMeSettling = computed(
+  () => Boolean(authStore.accessToken) && isMeFetching.value && !meData.value && !meError.value,
+);
+
+// Clear any stale `globalError` left over from a prior failed fetch when
+// `/me` resolves successfully. A transient 500 followed by a successful
+// retry would otherwise leave the user stuck on GenericError because the
+// router's global-error guard would keep firing.
+//
+// TOS routing is intentionally NOT handled here. The router's `beforeEach`
+// guard (in `router/index.js`) is the single source of truth: it awaits
+// `ensureQueryData([ME_QUERY_KEY])` on the initial navigation and reads the
+// cached payload on subsequent navigations. Duplicating the redirect here
+// produced a race where both surfaces tried to push to SignTos at once.
+const { clearGlobalError } = useGlobalError();
+watch(meData, (data) => {
+  if (!data) return;
+  clearGlobalError();
+});
+
+// Translate `/me` failures into a `router.replace()` so the user lands on
+// the matching error page without first flashing the route they originally
+// requested. The router's `beforeEach` guard handles subsequent transitions
+// once `globalError` is set; this watcher exists only to cover the boot
+// window where `/me` resolves *after* the first navigation has already
+// completed.
+//
+// All `setGlobalError` mapping lives in `queryClient.js`'s `QueryCache`
+// `onError` hook — this watcher does not touch global error state.
+watch(meError, (err) => {
+  if (!err) return;
+  if (isRosteringEndedError(err)) {
+    if (route.name !== APP_ROUTE_NAMES.ACCESS_ENDED) {
+      router.replace({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
+    }
+  } else if (isTerminalAuthError(err)) {
+    if (route.name !== APP_ROUTE_NAMES.SIGN_IN) {
+      router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
+    }
+  } else if (route.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
+    router.replace({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
+  }
+});
+
 onBeforeMount(async () => {
+  // 1. Create the AuthService singleton — owns Firebase Auth directly.
+  createAuthService({
+    projectId: import.meta.env.VITE_FIREBASE_ADMIN_PROJECT_ID,
+    apiKey: import.meta.env.VITE_FIREBASE_ADMIN_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_ADMIN_AUTH_DOMAIN,
+    emulatorAuthHost: import.meta.env.VITE_FIREBASE_EMULATOR_AUTH_HOST || undefined,
+  });
+
+  // 2. Initialize Auth (Firebase app + emulator + token listener).
+  await authStore.initAuth();
+
+  // 3. Initialize Firekit for non-auth operations (Firestore, assessments).
   await authStore.initFirekit();
 
-  await authStore.initStateFromRedirect().then(async () => {
-    // @TODO: Refactor this callback as we should ideally use the useUserClaimsQuery and useUserDataQuery composables.
-    // @NOTE: Whilst the rest of the application relies on the user's ROAR UID, this callback requires the user's ID
-    // in order for SSO to work and cannot currently be changed without significant refactoring.
+  // 4. Check for pending SSO redirect results.
+  await authStore.initStateFromRedirect().then(() => {
+    // Claims are derived from the backend `/me` response on all builds (see
+    // `resolveUserClaims`) and copied onto the auth store for the legacy
+    // consumers that still read `authStore.userClaims` (`useUserType`,
+    // `usePermissions`, the `roarUid` getter). The `useMeQuery` composable
+    // (above) is the canonical source for the authenticated user — new
+    // consumers should read from `useCurrentUser` (which wraps it). The
+    // remaining `authStore.userData` consumers are tracked in #2219.
+    //
+    // The chain is deliberately NOT awaited: claims populate the store copy
+    // asynchronously, and app readiness must not wait on `/me` retries (up
+    // to ~7s of backoff on transient failures). Error surfacing is tracked
+    // in #2205.
     if (authStore.uid) {
-      const userClaims = await fetchDocById('userClaims', authStore.uid);
-      authStore.userClaims = userClaims;
-    }
-    if (authStore.roarUid) {
-      const userData = await fetchDocById('users', authStore.roarUid);
-      authStore.userData = userData;
+      const uidAtStart = authStore.uid;
+      resolveUserClaims()
+        .then((userClaims) => {
+          // The user may have switched while the fetch was in flight; a
+          // stale write would undo the listener's identity reset.
+          if (authStore.uid !== uidAtStart) return;
+          authStore.userClaims = userClaims;
+        })
+        .catch((error) => {
+          console.error('[App] failed to resolve user claims from /me', error);
+        });
     }
   });
 

@@ -1,0 +1,5 @@
+sentence,answer,direction,correctresponse
+A MAÇÃ É AZUL.,F,left,arrowleft
+VOCÊ PODE LER HISTÓRIAS NA ESCOLA.,T,right,arrowright
+AS PESSOAS DIRIGEM CARROS.,T,right,arrowright
+VOCÊ USA CHAPÉU NO PÉ.,F,left,arrowleft
