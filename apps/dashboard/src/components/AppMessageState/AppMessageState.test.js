@@ -21,6 +21,7 @@ describe('AppMessageState', () => {
       },
     });
 
+    expect(wrapper.attributes('role')).toBe('alert');
     expect(wrapper.html()).toMatchSnapshot();
   });
 
