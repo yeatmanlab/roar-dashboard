@@ -14,14 +14,20 @@ import {
   parseScoreValue,
   resolveNumericScore,
   resolveScoreFieldNames,
+  resolveVersionedEntry,
 } from '../scoring';
 import { SCORE_NAME } from '../../constants/run-scores';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
-import { SWR_TASK_IDS } from '@roar-platform/assessment-schema/roar-swr';
-import { SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
-import { PA_TASK_ID } from '@roar-platform/assessment-schema/roar-pa';
-import { MORPHOLOGY_TASK_ID, CVA_TASK_ID } from '@roar-platform/assessment-schema/roar-multichoice';
-import { LEVANTE_NORMED_TASK_IDS } from '@roar-platform/assessment-schema/roar-levante-tasks';
+import { SWR_SCORING_VERSION, SWR_TASK_IDS } from '@roar-platform/assessment-schema/roar-swr';
+import { SRE_SCORING_VERSION, SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
+import { PA_SCORING_VERSION, PA_TASK_ID } from '@roar-platform/assessment-schema/roar-pa';
+import { LETTER_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
+import {
+  MULTICHOICE_SCORING_VERSION,
+  MORPHOLOGY_TASK_ID,
+  CVA_TASK_ID,
+} from '@roar-platform/assessment-schema/roar-multichoice';
+import { LEVANTE_SCORING_VERSION, LEVANTE_NORMED_TASK_IDS } from '@roar-platform/assessment-schema/roar-levante-tasks';
 
 const SCORED_TASK_IDS = [
   SWR_TASK_IDS.EN,
@@ -29,6 +35,7 @@ const SCORED_TASK_IDS = [
   SRE_TASK_IDS.EN,
   SRE_TASK_IDS.ES,
   PA_TASK_ID,
+  LETTER_TASK_IDS.EN,
   CVA_TASK_ID,
   MORPHOLOGY_TASK_ID,
   LEVANTE_NORMED_TASK_IDS.TROG,
@@ -321,18 +328,24 @@ function generateScoreRangeMap(min: number, max: number, divisor: number): Recor
   return rangeMap;
 }
 
-/** Bucket width per task. Bounds come from the scoring config; only the width lives here. */
-const RAW_BUCKET_WIDTH: Record<string, number> = {
-  swr: 50,
-  'swr-es': 50,
-  pa: 50,
-  letter: 10,
-  sre: 50,
-  'sre-es': 10,
-  cva: 50,
-  trog: 50,
-  'roar-inference': 50,
-  morphology: 50,
+// Bounds come from the scoring config's `displayRanges.rawScore`
+const RAW_BUCKET_WIDTH: Record<string, { minVersion: number; width: number }[]> = {
+  [SWR_TASK_IDS.EN]: [{ minVersion: 0, width: 100 }],
+  [SWR_TASK_IDS.ES]: [{ minVersion: SWR_SCORING_VERSION.V1, width: 100 }],
+  [PA_TASK_ID]: [
+    { minVersion: PA_SCORING_VERSION.V5_ADAPTIVE, width: 70 },
+    { minVersion: 0, width: 5 },
+  ],
+  [LETTER_TASK_IDS.EN]: [{ minVersion: 0, width: 10 }],
+  [SRE_TASK_IDS.EN]: [
+    { minVersion: SRE_SCORING_VERSION.V5, width: 65 },
+    { minVersion: 0, width: 10 },
+  ],
+  [SRE_TASK_IDS.ES]: [{ minVersion: SRE_SCORING_VERSION.V1, width: 10 }],
+  [CVA_TASK_ID]: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, width: 100 }],
+  [MORPHOLOGY_TASK_ID]: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, width: 100 }],
+  [LEVANTE_NORMED_TASK_IDS.TROG]: [{ minVersion: LEVANTE_SCORING_VERSION.V1, width: 100 }],
+  [LEVANTE_NORMED_TASK_IDS.ROAR_INFERENCE]: [{ minVersion: LEVANTE_SCORING_VERSION.V1, width: 100 }],
 };
 
 // Percentile ranges (0-99 for most normed tasks)
@@ -366,10 +379,11 @@ function buildRawBucketMaps(
   const bucketMaps = new Map<string, Record<number, string>>();
 
   for (const task of scoredTasks) {
-    const width = RAW_BUCKET_WIDTH[task.taskSlug];
+    const widthTiers = RAW_BUCKET_WIDTH[task.taskSlug];
     const scoringVersion = scoringVersionByVariant.get(task.variantId) ?? 0;
+    const width = widthTiers ? resolveVersionedEntry(widthTiers, scoringVersion)?.width : undefined;
     const bounds = getScoreRange(task.taskSlug, 'rawScore', scoringVersion);
-    if (!width || !bounds) continue;
+    if (width === undefined || !bounds) continue;
 
     // Assumes one scoring version per task per administration.
     if (bucketMaps.has(task.taskSlug)) {

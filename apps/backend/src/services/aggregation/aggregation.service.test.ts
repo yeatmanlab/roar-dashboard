@@ -194,7 +194,7 @@ describe('aggregateSupportCategories', () => {
       const pa = result!['task-pa-uuid']!;
       expect(pa.achievedSkill.total).toBe(1);
       expect(pa.percentile['70-80']?.total).toBe(1);
-      expect(pa.raw['50-57']?.total).toBe(1);
+      expect(pa.raw['55-57']?.total).toBe(1);
     });
 
     describe('Raw score buckets', () => {
@@ -218,14 +218,43 @@ describe('aggregateSupportCategories', () => {
           administrationId: 'admin-123',
           districtId: 'district-456',
         });
-        expect(preV5!['task-sre-uuid']!.raw['100-130']?.total).toBe(1);
+        expect(preV5!['task-sre-uuid']!.raw['110-120']?.total).toBe(1);
 
         setVariantScoringVersion(5);
         const v5 = await setupTask('sre', sreRun('percentile', '60', '320', '5')).aggregateSupportCategories({
           administrationId: 'admin-123',
           districtId: 'district-456',
         });
-        expect(v5!['task-sre-uuid']!.raw['300-350']?.total).toBe(1);
+        expect(v5!['task-sre-uuid']!.raw['300-365']?.total).toBe(1);
+      });
+
+      it('sizes buckets by the width for the variant scoring version', async () => {
+        // Same raw score, two variant versions: pa buckets by 5 at v0 and by 70 at v5.
+        const paRun = (percentileName: string, scoringVersion: string) => [
+          {
+            runId: 'run-1',
+            grade: '8',
+            scores: [
+              [percentileName, '75'],
+              ['roarScore', '56'],
+              ['scoringVersion', scoringVersion],
+            ] as [string, string][],
+          },
+        ];
+
+        setVariantScoringVersion(0);
+        const v0 = await setupTask('pa', paRun('sprPercentile', '3')).aggregateSupportCategories({
+          administrationId: 'admin-123',
+          districtId: 'district-456',
+        });
+        expect(Object.keys(v0!['task-pa-uuid']!.raw)).toEqual(['55-57']);
+
+        setVariantScoringVersion(5);
+        const v5 = await setupTask('pa', paRun('percentile', '5')).aggregateSupportCategories({
+          administrationId: 'admin-123',
+          districtId: 'district-456',
+        });
+        expect(Object.keys(v5!['task-pa-uuid']!.raw)).toEqual(['40-110']);
       });
 
       it('omits a raw score outside the variant scale, but still counts its support level', async () => {
@@ -638,10 +667,10 @@ describe('aggregateSupportCategories', () => {
       expect(taskCounts.percentile['70-80']!.total).toBe(1);
 
       // Check raw score ranges
-      expect(taskCounts.raw).toHaveProperty('450-500');
-      expect(taskCounts.raw).toHaveProperty('600-650');
-      expect(taskCounts.raw['450-500']!.total).toBe(1);
-      expect(taskCounts.raw['600-650']!.total).toBe(1);
+      expect(taskCounts.raw).toHaveProperty('400-500');
+      expect(taskCounts.raw).toHaveProperty('600-700');
+      expect(taskCounts.raw['400-500']!.total).toBe(1);
+      expect(taskCounts.raw['600-700']!.total).toBe(1);
     });
   });
 });
