@@ -14,6 +14,9 @@ import { computed, ref } from 'vue';
  */
 export function useResearchConsent(options = {}) {
   const consentDocument = ref(null);
+  // This is an ephemeral client-side decision record used to gate submission.
+  // The strict create-family API does not currently accept consent metadata, so
+  // this value is not durable and is discarded when the container unmounts.
   const consentRecord = ref(null);
   const isLoading = ref(false);
   const loadError = ref(null);
