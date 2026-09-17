@@ -29,6 +29,13 @@
       :description="$t('authSignIn.incorrectEmailOrPassword')"
     />
 
+    <!-- PROVIDER DISCOVERY ERROR -->
+    <SignInError
+      :show="discoveryError"
+      :title="$t('authSignIn.error')"
+      :description="$t('authSignIn.providerCheckFailed')"
+    />
+
     <!-- PASSWORD RESET ALERT -->
     <SuccessAlert
       :show="showSuccessAlert"
@@ -131,12 +138,12 @@ const {
   resetSignInUI,
   availableProviders,
   hasCheckedProviders,
+  discoveryError,
   isUsername,
 } = useSignInForm();
 
 /* ---- auth flows, forgot password, success alert ---- */
 const {
-  roarfirekit,
   authWithGoogle,
   authWithClever,
   authWithClassLink,
@@ -170,7 +177,7 @@ const { checkAvailableProviders } = useProviders({
   multipleProviders,
   hideProviders,
   showPasswordField,
-  roarfirekit,
+  discoveryError,
   authWithGoogle,
   authWithClever,
   authWithClassLink,

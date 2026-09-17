@@ -1,5 +1,6 @@
 import { toValue } from 'vue';
 import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
+import { getAuthService } from '@/services/AuthService';
 
 export function useProviders(options) {
   const {
@@ -10,7 +11,7 @@ export function useProviders(options) {
     multipleProviders,
     hideProviders,
     showPasswordField,
-    roarfirekit,
+    discoveryError,
     authWithGoogle,
     authWithClever,
     authWithClassLink,
@@ -36,14 +37,13 @@ export function useProviders(options) {
   }
 
   async function getProviders() {
-    const kit = toValue(roarfirekit);
-    if (!kit) {
-      availableProviders.value = [];
-      hasCheckedProviders.value = true;
-      return [];
-    }
     const emailVal = (toValue(email) || '').trim().toLowerCase();
-    const raw = await kit.fetchEmailAuthMethods(emailVal);
+    // Constraint: fetchSignInMethodsForEmail returns [] for every address once
+    // Firebase email-enumeration protection is enabled on the project. The
+    // setting is currently off (verified 2026-09-17), but enabling it is
+    // planned. TODO: move discovery to a backend endpoint before the setting
+    // is turned on, or every user degrades to the password form.
+    const raw = await getAuthService().fetchSignInMethodsForEmail(emailVal);
     const norm = await normalizeProviders(raw || []);
     availableProviders.value = norm;
     hasCheckedProviders.value = true;
@@ -61,6 +61,8 @@ export function useProviders(options) {
       email.value = triggeredEmail.trim();
     }
 
+    if (discoveryError?.value) discoveryError.value = false;
+
     // username path → direct password flow
     if (toValue(isUsername)) {
       showPasswordField.value = true;
@@ -70,10 +72,16 @@ export function useProviders(options) {
       return;
     }
 
-    const providers = await getProviders();
-
-    availableProviders.value = providers;
-    hasCheckedProviders.value = true;
+    // getProviders sets availableProviders and hasCheckedProviders itself.
+    let providers;
+    try {
+      providers = await getProviders();
+    } catch {
+      // Discovery failed — surface a retryable error instead of degrading to
+      // the password form, which cannot work for SSO-only users.
+      if (discoveryError) discoveryError.value = true;
+      return;
+    }
 
     // multi SSO chooser
     const sso = providers.filter((p) =>

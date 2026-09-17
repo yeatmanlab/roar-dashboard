@@ -1,16 +1,19 @@
 import { ref, onUnmounted } from 'vue';
-import { storeToRefs } from 'pinia';
 import { useRouter, useRoute } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 import { setUser } from '@sentry/vue';
 import { backOff } from 'exponential-backoff';
-import { useAuthStore } from '@/store/auth.js';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import { fetchMe } from '@/composables/queries/useMeQuery';
+import { useGlobalError } from '@/composables/useGlobalError';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { AUTH_USER_TYPE } from '@/constants/auth';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
+import { ME_QUERY_KEY } from '@/constants/queryKeys';
+import { APP_ROUTE_NAMES } from '@/constants/routes';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
 import isTestEnv from '@/helpers/isTestEnv';
+import { API_ERROR_CODES, getApiErrorCode, isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 
 const { logAuthEvent } = useSentryLogging();
 
@@ -26,11 +29,26 @@ const getBackoffOptions = () => ({
 });
 
 /**
+ * `true` when the error is a 401 with code `auth/token-expired` — the API
+ * client's built-in refresh-and-retry has already failed by the time this
+ * surfaces, so it is never transient.
+ */
+const isTokenExpiredError = (error) => getApiErrorCode(error) === API_ERROR_CODES.AUTH_TOKEN_EXPIRED;
+
+/**
  * Verify account readiness after SSO authentication.
  *
- * This composable polls the user document until it is ready for use following SSO authentication.
- * The backend creates and populates the user document after SSO, which may take some time.
+ * This composable polls the backend `/me` endpoint until the SSO user is
+ * provisioned and rostered. The backend creates the user record after SSO,
+ * which may take some time — until then `/me` responds with an error status
+ * (surfaced by `fetchMe` as a thrown error), which counts as "not ready yet".
  * Uses exponential backoff to reduce load on the server while waiting.
+ *
+ * Rostering-ended and expired-token errors stop polling immediately and
+ * route the user away (AccessEnded / SignIn) via the global error state,
+ * matching how the rest of the app treats these errors. Only the "still
+ * provisioning" and "max retries exceeded" cases surface through
+ * `hasError` / `retryPolling`.
  */
 const useSSOAccountReadinessVerification = () => {
   const retryCount = ref(0);
@@ -41,20 +59,15 @@ const useSSOAccountReadinessVerification = () => {
   const router = useRouter();
   const route = useRoute();
   const queryClient = useQueryClient();
-  const authStore = useAuthStore();
-  const { roarUid } = storeToRefs(authStore);
-
-  const { data: userData, refetch: refetchUserData } = useUserDataQuery();
-
-  setUser({ id: roarUid.value, userType: userData?.value?.userType });
+  const { setGlobalError, clearGlobalError } = useGlobalError();
 
   /**
-   * Check if user account is ready and redirect if so.
+   * Check if the user account is ready and redirect if so.
    *
-   * User is considered ready when userType exists and is not 'guest'.
-   * Guest users are temporary accounts that are still being provisioned.
+   * The user is considered ready when `/me` resolves with a userType that is
+   * not 'guest'. Guest users are temporary accounts still being provisioned.
    *
-   * @param {object|null} data - The user data to check.
+   * @param {object|null} data - The `/me` data payload to check.
    * @returns {boolean} True if user is ready and redirect was triggered.
    */
   const checkAndRedirectIfReady = (data) => {
@@ -67,38 +80,28 @@ const useSSOAccountReadinessVerification = () => {
     // User is ready - mark as redirected to stop any further polling.
     hasRedirected = true;
 
+    setUser({ id: data.id, userType });
     logAuthEvent(AUTH_LOG_MESSAGES.SUCCESS, { data: { provider: 'SSO' } });
 
-    // Invalidate all queries to ensure data is fetched freshly after the user document is ready.
+    // Seed the /me cache with the fresh payload, then invalidate all queries.
+    // The blanket invalidation is intentional: SSO completion is a cold start —
+    // anything cached before this point was fetched while the user record was
+    // still being provisioned, so none of it is trustworthy.
+    queryClient.setQueryData([ME_QUERY_KEY], data);
     queryClient.invalidateQueries();
+
+    // A stale global error from an earlier failed /me attempt (e.g. the
+    // app-level useMeQuery erroring while the user was still provisioning)
+    // would make the router guard hijack this redirect. /me just succeeded,
+    // so clear it — mirrors App.vue's meData watcher.
+    clearGlobalError();
 
     router.push({ path: redirectSignInPath(route) });
     return true;
   };
 
   /**
-   * Wait for roarUid to be available in the auth store.
-   *
-   * After SSO redirect, the auth store needs time to sync with Firebase and populate userClaims.
-   * This function polls quickly until roarUid is available, without counting against retry attempts.
-   * For new accounts where roarUid doesn't exist yet (backend provisioning), this will time out
-   * and the backOff loop will handle further retries.
-   *
-   * @param {number} maxWaitMs - Maximum time to wait in milliseconds.
-   * @param {number} intervalMs - Polling interval in milliseconds.
-   * @returns {Promise<void>}
-   */
-  const waitForRoarUid = async (maxWaitMs = 10000, intervalMs = 100) => {
-    const startTime = Date.now();
-    while (!roarUid.value && !hasRedirected && Date.now() - startTime < maxWaitMs) {
-      await new Promise((resolve) => setTimeout(resolve, intervalMs));
-    }
-    // Don't throw - roarUid might legitimately not exist for new accounts being provisioned.
-    // The backOff loop will handle that case with proper retries.
-  };
-
-  /**
-   * Starts polling with exponential backoff to check for user readiness.
+   * Starts polling `/me` with exponential backoff to check for user readiness.
    * Will retry up to the configured max attempts before setting hasError.
    *
    * @returns {Promise<void>}
@@ -113,21 +116,11 @@ const useSSOAccountReadinessVerification = () => {
     hasError.value = false;
 
     try {
-      // Wait for auth store to sync before starting the backOff loop.
-      // This prevents wasting retry attempts on "roarUid not available" for existing accounts.
-      await waitForRoarUid();
-
       await backOff(
         async () => {
-          // Check if roarUid is available (may still be waiting for backend provisioning).
-          if (!roarUid.value) {
-            const error = new Error('User ID not available yet');
-            error.userType = undefined;
-            throw error;
-          }
-
-          // Refetch user data from the server and use the result directly.
-          const { data } = await refetchUserData();
+          // Fetch /me directly. While the backend is still provisioning the
+          // SSO user, this throws (401/404), which triggers a retry.
+          const data = await fetchMe();
 
           if (checkAndRedirectIfReady(data)) {
             // Success - returning normally will exit backOff.
@@ -145,6 +138,17 @@ const useSSOAccountReadinessVerification = () => {
             // Update retry count for UI/logging.
             retryCount.value = attemptNumber;
 
+            // Rostering-ended and expired-token errors are not transient —
+            // stop immediately instead of burning the whole backoff schedule.
+            // Two 401 codes deliberately stay retryable: `auth/user-not-found`
+            // (the backend hasn't provisioned the SSO user yet), and
+            // `auth/required` (the request went out without a token — right
+            // after the SSO redirect the first attempts can race the Firebase
+            // token listener that populates the store's accessToken).
+            if (isRosteringEndedError(error) || isTokenExpiredError(error)) {
+              return false;
+            }
+
             // Log progress.
             if (error.userType === AUTH_USER_TYPE.GUEST) {
               logAuthEvent(AUTH_LOG_MESSAGES.USER_TYPE_GUEST, {
@@ -154,7 +158,7 @@ const useSSOAccountReadinessVerification = () => {
             } else {
               logAuthEvent(AUTH_LOG_MESSAGES.USER_TYPE_MISSING, {
                 level: 'warning',
-                data: { retryCount: attemptNumber, provider: 'SSO', userType: error.userType },
+                data: { retryCount: attemptNumber, provider: 'SSO', userType: error.userType, status: error.status },
               });
             }
 
@@ -163,14 +167,38 @@ const useSSOAccountReadinessVerification = () => {
           },
         },
       );
-    } catch {
-      // Max retries exceeded or unexpected error.
+    } catch (error) {
       if (!hasRedirected) {
-        hasError.value = true;
-        logAuthEvent(AUTH_LOG_MESSAGES.POLLING_MAX_RETRIES_EXCEEDED, {
-          level: 'error',
-          data: { retryCount: retryCount.value, provider: 'SSO' },
-        });
+        // Terminal errors reproduce what the rest of the app does in two
+        // places: the QueryCache onError bridge (global error state) and the
+        // App.vue meError watcher (navigation). This fetch bypasses the query
+        // cache, so neither surface sees the error — both halves are applied
+        // here. Navigation alone is not enough (the router guard bounces
+        // error pages back to Home when no global error is set), and state
+        // alone is not enough either (the guard only runs on navigation, and
+        // nothing else navigates away from the SSO landing page).
+        if (isRosteringEndedError(error)) {
+          hasRedirected = true;
+          setGlobalError({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
+          router.replace({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
+        } else if (isTerminalAuthError(error)) {
+          // Deliberately broader than the retry short-circuit: auth/required
+          // that persisted through every attempt lands here too. A session
+          // that never produced a token is treated as expired, matching
+          // meRetryPolicy — only the first attempts get the benefit of the
+          // token-listener race.
+          hasRedirected = true;
+          setGlobalError({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+          router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
+        } else {
+          // Max retries exceeded or unexpected error — show the retryable
+          // error state on SSOAuthPage.
+          hasError.value = true;
+          logAuthEvent(AUTH_LOG_MESSAGES.POLLING_MAX_RETRIES_EXCEEDED, {
+            level: 'error',
+            data: { retryCount: retryCount.value, provider: 'SSO' },
+          });
+        }
       }
     } finally {
       isPolling.value = false;

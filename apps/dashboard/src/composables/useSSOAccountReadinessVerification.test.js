@@ -1,13 +1,19 @@
-import { ref } from 'vue';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createTestingPinia } from '@pinia/testing';
-import * as VueQuery from '@tanstack/vue-query';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useRouter, useRoute } from 'vue-router';
-import { storeToRefs } from 'pinia';
-import { backOff } from 'exponential-backoff';
+import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import { fetchMe } from '@/composables/queries/useMeQuery';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
+import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
+import { ME_QUERY_KEY } from '@/constants/queryKeys';
+import { APP_ROUTE_NAMES } from '@/constants/routes';
 import useSSOAccountReadinessVerification from './useSSOAccountReadinessVerification';
+
+const mocks = vi.hoisted(() => ({
+  logAuthEvent: vi.fn(),
+  setGlobalError: vi.fn(),
+  clearGlobalError: vi.fn(),
+}));
 
 vi.mock('vue-router', () => ({
   useRouter: vi.fn(),
@@ -18,384 +24,244 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
   return {
     ...original,
-    useQueryClient: vi.fn(() => ({
-      invalidateQueries: vi.fn(),
-    })),
+    useQueryClient: vi.fn(),
   };
 });
 
-vi.mock('@/composables/queries/useUserDataQuery', () => {
-  const mock = vi.fn(() => ({
-    data: ref({}),
-    refetch: vi.fn(),
-  }));
-
-  return {
-    default: mock,
-  };
-});
-
-vi.mock('exponential-backoff', () => ({
-  backOff: vi.fn(),
+vi.mock('@/composables/queries/useMeQuery', () => ({
+  default: vi.fn(),
+  fetchMe: vi.fn(),
 }));
 
 vi.mock('@/composables/useSentryLogging', () => ({
   default: () => ({
-    logAuthEvent: vi.fn(),
+    logAuthEvent: mocks.logAuthEvent,
   }),
 }));
 
-// Mock auth store - storeToRefs will return a ref-like object
-vi.mock('@/store/auth.js', () => {
-  const { ref } = require('vue');
-  const mockRoarUid = ref('test-roar-uid');
+vi.mock('@/composables/useGlobalError', () => ({
+  useGlobalError: () => ({
+    setGlobalError: mocks.setGlobalError,
+    clearGlobalError: mocks.clearGlobalError,
+  }),
+}));
 
-  return {
-    useAuthStore: vi.fn(() => ({
-      $id: 'auth',
-      // Expose the ref for storeToRefs to use
-      _mockRoarUid: mockRoarUid,
-    })),
-  };
-});
+vi.mock('@sentry/vue', () => ({
+  setUser: vi.fn(),
+}));
 
-// Mock storeToRefs to work with our mock store
-vi.mock('pinia', async (getModule) => {
-  const original = await getModule();
-  const { ref } = await import('vue');
-  const mockRoarUid = ref('test-roar-uid');
+// Force the short backoff schedule (3 attempts, 200ms starting delay) so the
+// exhaustion tests don't wait on the production schedule.
+vi.mock('@/helpers/isTestEnv', () => ({
+  default: () => true,
+}));
 
-  return {
-    ...original,
-    storeToRefs: vi.fn(() => ({
-      roarUid: mockRoarUid,
-    })),
-  };
-});
+vi.mock('@/helpers/redirectSignInPath', () => ({
+  redirectSignInPath: vi.fn(() => '/'),
+}));
+
+const readyUser = { id: 'roar-user-id', userType: 'student' };
+
+/** Build an error with the shape fetchMe attaches on non-200 responses. */
+const buildMeError = (status, code) => {
+  const error = new Error(`/me request failed with status ${status}`);
+  error.status = status;
+  error.body = code ? { error: { message: 'error', code } } : { error: { message: 'error' } };
+  return error;
+};
 
 describe('useSSOAccountReadinessVerification', () => {
-  // eslint-disable-next-line no-unused-vars
-  let piniaInstance;
   let queryClient;
   let router;
-  let route;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    piniaInstance = createTestingPinia();
-    queryClient = new VueQuery.QueryClient();
+    queryClient = {
+      setQueryData: vi.fn(),
+      invalidateQueries: vi.fn(),
+    };
     router = {
       push: vi.fn(),
-    };
-    route = {
-      query: {},
+      replace: vi.fn(),
     };
 
+    VueQuery.useQueryClient.mockReturnValue(queryClient);
     useRouter.mockReturnValue(router);
-    useRoute.mockReturnValue(route);
+    useRoute.mockReturnValue({ query: {} });
   });
 
-  afterEach(() => {
-    queryClient?.clear();
+  const setup = () => {
+    const [result, app] = withSetup(() => useSSOAccountReadinessVerification());
+    return { result, app };
+  };
+
+  it('redirects when /me reports a ready user on the first attempt', async () => {
+    fetchMe.mockResolvedValue(readyUser);
+
+    const { result } = setup();
+    await result.startPolling();
+
+    expect(fetchMe).toHaveBeenCalledTimes(1);
+    expect(queryClient.setQueryData).toHaveBeenCalledWith([ME_QUERY_KEY], readyUser);
+    expect(queryClient.invalidateQueries).toHaveBeenCalled();
+    // A stale global error from a failed earlier /me attempt is cleared so
+    // the router guard cannot hijack the redirect.
+    expect(mocks.clearGlobalError).toHaveBeenCalled();
+    expect(router.push).toHaveBeenCalledWith({ path: '/' });
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.SUCCESS, { data: { provider: 'SSO' } });
+    expect(result.hasError.value).toBe(false);
   });
 
-  describe('startPolling', () => {
-    it('should call backOff when startPolling is invoked', async () => {
-      vi.mocked(backOff).mockResolvedValue(undefined);
+  it('keeps polling while the user is a guest, then redirects once ready', async () => {
+    fetchMe.mockResolvedValueOnce({ id: 'roar-user-id', userType: 'guest' }).mockResolvedValueOnce(readyUser);
 
-      const [result] = withSetup(() => useSSOAccountReadinessVerification(), {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      });
+    const { result } = setup();
+    await result.startPolling();
 
-      await result.startPolling();
-
-      expect(backOff).toHaveBeenCalledTimes(1);
+    expect(fetchMe).toHaveBeenCalledTimes(2);
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.USER_TYPE_GUEST, {
+      level: 'warning',
+      data: { retryCount: 1, provider: 'SSO' },
     });
+    expect(router.push).toHaveBeenCalledWith({ path: '/' });
+    expect(result.hasError.value).toBe(false);
+  });
 
-    it('should not start polling if already polling', async () => {
-      // Make backOff hang to simulate ongoing polling
-      vi.mocked(backOff).mockImplementation(() => new Promise(() => {}));
+  it('keeps polling while /me fails with user-not-found, then redirects once it resolves', async () => {
+    fetchMe.mockRejectedValueOnce(buildMeError(401, 'auth/user-not-found')).mockResolvedValueOnce(readyUser);
 
-      const [result] = withSetup(() => useSSOAccountReadinessVerification(), {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      });
+    const { result } = setup();
+    await result.startPolling();
 
-      // Start first polling (will hang after waitForRoarUid completes)
-      result.startPolling();
-
-      // Allow microtasks to process (waitForRoarUid is async)
-      await Promise.resolve();
-
-      // Try to start second polling - should be blocked since first is in progress
-      result.startPolling();
-
-      // Allow microtasks to process
-      await Promise.resolve();
-
-      // Should only have been called once
-      expect(backOff).toHaveBeenCalledTimes(1);
+    expect(fetchMe).toHaveBeenCalledTimes(2);
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.USER_TYPE_MISSING, {
+      level: 'warning',
+      data: { retryCount: 1, provider: 'SSO', userType: undefined, status: 401 },
     });
+    expect(router.push).toHaveBeenCalledWith({ path: '/' });
+    expect(result.hasError.value).toBe(false);
+  });
 
-    it('should redirect when user has valid userType', async () => {
-      const mockRefetch = vi.fn().mockResolvedValue({ data: { userType: 'participant' } });
+  it('keeps polling when the request goes out without a token (auth/required)', async () => {
+    // Right after the SSO redirect the first attempts can race the Firebase
+    // token listener — auth/required must not be treated as terminal here.
+    fetchMe.mockRejectedValueOnce(buildMeError(401, 'auth/required')).mockResolvedValueOnce(readyUser);
 
-      vi.mocked(useUserDataQuery).mockReturnValue({
-        data: ref({}),
-        refetch: mockRefetch,
-      });
+    const { result } = setup();
+    await result.startPolling();
 
-      // Mock backOff to call the function once
-      vi.mocked(backOff).mockImplementation(async (fn) => {
-        await fn();
-      });
+    expect(fetchMe).toHaveBeenCalledTimes(2);
+    expect(mocks.setGlobalError).not.toHaveBeenCalled();
+    expect(router.push).toHaveBeenCalledWith({ path: '/' });
+    expect(result.hasError.value).toBe(false);
+  });
 
-      const [result] = withSetup(() => useSSOAccountReadinessVerification(), {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      });
+  it('routes to SignIn when auth/required persists through all attempts', async () => {
+    // auth/required is retried (token race), but a session that never
+    // produces a token is treated as expired once the attempts run out.
+    fetchMe.mockRejectedValue(buildMeError(401, 'auth/required'));
 
-      await result.startPolling();
+    const { result } = setup();
+    await result.startPolling();
 
-      expect(router.push).toHaveBeenCalledWith({ path: '/' });
-    });
+    expect(fetchMe).toHaveBeenCalledTimes(3);
+    expect(mocks.setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+    expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.SIGN_IN });
+    expect(result.hasError.value).toBe(false);
+  });
 
-    it('should not redirect when userType is guest', async () => {
-      const mockRefetch = vi.fn().mockResolvedValue({ data: { userType: 'guest' } });
+  it('sets hasError after exhausting all attempts', async () => {
+    fetchMe.mockRejectedValue(buildMeError(500));
 
-      vi.mocked(useUserDataQuery).mockReturnValue({
-        data: ref({}),
-        refetch: mockRefetch,
-      });
+    const { result } = setup();
+    await result.startPolling();
 
-      // Mock backOff to call the function (which will throw because userType is guest)
-      // then reject after max retries
-      vi.mocked(backOff).mockImplementation(async (fn) => {
-        try {
-          await fn();
-        } catch {
-          // Function threw because user is guest, simulate max retries exceeded
-          throw new Error('Max retries exceeded');
-        }
-      });
-
-      const [result] = withSetup(() => useSSOAccountReadinessVerification(), {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      });
-
-      await result.startPolling();
-
-      expect(router.push).not.toHaveBeenCalled();
-    });
-
-    it('should set hasError to true when max retries exceeded', async () => {
-      const mockRefetch = vi.fn().mockResolvedValue({ data: {} });
-
-      vi.mocked(useUserDataQuery).mockReturnValue({
-        data: ref({}),
-        refetch: mockRefetch,
-      });
-
-      // Mock backOff to call the function then reject after max retries
-      vi.mocked(backOff).mockImplementation(async (fn) => {
-        try {
-          await fn();
-        } catch {
-          throw new Error('Max retries exceeded');
-        }
-      });
-
-      const [result] = withSetup(() => useSSOAccountReadinessVerification(), {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      });
-
-      expect(result.hasError.value).toBe(false);
-
-      await result.startPolling();
-
-      expect(result.hasError.value).toBe(true);
-    });
-
-    it('should redirect when userType becomes valid during polling', async () => {
-      // First call returns no userType, second call returns valid userType
-      const mockRefetch = vi
-        .fn()
-        .mockResolvedValueOnce({ data: {} })
-        .mockResolvedValueOnce({ data: { userType: 'participant' } });
-
-      vi.mocked(useUserDataQuery).mockReturnValue({
-        data: ref({}),
-        refetch: mockRefetch,
-      });
-
-      // Simulate backOff calling the retry function and succeeding on second attempt
-      vi.mocked(backOff).mockImplementation(async (fn) => {
-        // First call - user not ready
-        try {
-          await fn();
-        } catch {
-          // Second call - user ready
-          await fn();
-        }
-      });
-
-      const [result] = withSetup(() => useSSOAccountReadinessVerification(), {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      });
-
-      await result.startPolling();
-
-      expect(router.push).toHaveBeenCalledWith({ path: '/' });
-      expect(result.hasError.value).toBe(false);
-    });
-
-    it('should wait for roarUid before starting backoff polling', async () => {
-      // Create a ref that starts null and becomes available after a delay
-      const delayedRoarUid = ref(null);
-      vi.mocked(storeToRefs).mockReturnValueOnce({ roarUid: delayedRoarUid });
-
-      const mockRefetch = vi.fn().mockResolvedValue({ data: { userType: 'participant' } });
-      vi.mocked(useUserDataQuery).mockReturnValue({
-        data: ref({}),
-        refetch: mockRefetch,
-      });
-
-      vi.mocked(backOff).mockImplementation(async (fn) => {
-        await fn();
-      });
-
-      const [result] = withSetup(() => useSSOAccountReadinessVerification(), {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      });
-
-      // Start polling while roarUid is null
-      const pollingPromise = result.startPolling();
-
-      // Simulate roarUid becoming available after a short delay
-      setTimeout(() => {
-        delayedRoarUid.value = 'delayed-roar-uid';
-      }, 50);
-
-      await pollingPromise;
-
-      // Polling should have succeeded after roarUid became available
-      expect(router.push).toHaveBeenCalledWith({ path: '/' });
-      expect(mockRefetch).toHaveBeenCalled();
-    });
-
-    it('should proceed to backoff polling when waitForRoarUid times out', async () => {
-      // Mock roarUid to never become available
-      const nullRoarUid = ref(null);
-      vi.mocked(storeToRefs).mockReturnValueOnce({ roarUid: nullRoarUid });
-
-      vi.useFakeTimers();
-
-      const mockRefetch = vi.fn().mockResolvedValue({ data: {} });
-      vi.mocked(useUserDataQuery).mockReturnValue({
-        data: ref({}),
-        refetch: mockRefetch,
-      });
-
-      // backOff should be called even when roarUid is null (after timeout)
-      // The function will throw because roarUid is null
-      vi.mocked(backOff).mockImplementation(async (fn) => {
-        try {
-          await fn();
-        } catch {
-          throw new Error('Max retries exceeded');
-        }
-      });
-
-      const [result] = withSetup(() => useSSOAccountReadinessVerification(), {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      });
-
-      // Start polling - this will wait for roarUid which never comes
-      const pollingPromise = result.startPolling();
-
-      // Fast-forward past the 10s waitForRoarUid timeout
-      await vi.advanceTimersByTimeAsync(10100);
-
-      await pollingPromise;
-
-      // backOff should have been called even though roarUid is still null
-      expect(backOff).toHaveBeenCalled();
-      // Since roarUid is null, the polling should have failed
-      expect(result.hasError.value).toBe(true);
-
-      vi.useRealTimers();
+    expect(fetchMe).toHaveBeenCalledTimes(3);
+    expect(router.push).not.toHaveBeenCalled();
+    expect(result.hasError.value).toBe(true);
+    // The retry callback fires on every failure, including the last one.
+    expect(result.retryCount.value).toBe(3);
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.POLLING_MAX_RETRIES_EXCEEDED, {
+      level: 'error',
+      data: { retryCount: 3, provider: 'SSO' },
     });
   });
 
-  describe('retryPolling', () => {
-    it('should reset hasError and retryCount then start polling', async () => {
-      const mockRefetch = vi.fn().mockResolvedValue({ data: {} });
+  it('stops immediately and routes to AccessEnded on a rostering-ended error', async () => {
+    fetchMe.mockRejectedValue(buildMeError(403, 'auth/rostering-ended'));
 
-      vi.mocked(useUserDataQuery).mockReturnValue({
-        data: ref({}),
-        refetch: mockRefetch,
-      });
+    const { result } = setup();
+    await result.startPolling();
 
-      // First call fails (backOff rejects after fn throws), second succeeds
-      vi.mocked(backOff)
-        .mockImplementationOnce(async (fn) => {
-          try {
-            await fn();
-          } catch {
-            throw new Error('Max retries exceeded');
-          }
-        })
-        .mockResolvedValueOnce(undefined);
-
-      const [result] = withSetup(() => useSSOAccountReadinessVerification(), {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      });
-
-      // First polling attempt fails
-      await result.startPolling();
-      expect(result.hasError.value).toBe(true);
-
-      // Retry polling
-      await result.retryPolling();
-
-      expect(result.hasError.value).toBe(false);
-      expect(result.retryCount.value).toBe(0);
-      expect(backOff).toHaveBeenCalledTimes(2);
-    });
+    expect(fetchMe).toHaveBeenCalledTimes(1);
+    expect(mocks.setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
+    expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
+    expect(result.hasError.value).toBe(false);
   });
 
-  describe('onUnmounted', () => {
-    it('should stop polling when component is unmounted', async () => {
-      const mockRefetch = vi.fn().mockResolvedValue({ data: {} });
+  it('stops immediately and routes to SignIn on a terminal auth error', async () => {
+    fetchMe.mockRejectedValue(buildMeError(401, 'auth/token-expired'));
 
-      vi.mocked(useUserDataQuery).mockReturnValue({
-        data: ref({}),
-        refetch: mockRefetch,
-      });
+    const { result } = setup();
+    await result.startPolling();
 
-      let retryCallback;
-      vi.mocked(backOff).mockImplementation(async (fn, options) => {
-        retryCallback = options.retry;
-        // Call fn to ensure refetch is invoked
-        try {
-          await fn();
-        } catch {
-          // Expected - user not ready
-        }
-        throw new Error('Simulated failure');
-      });
+    expect(fetchMe).toHaveBeenCalledTimes(1);
+    expect(mocks.setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+    expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.SIGN_IN });
+    expect(result.hasError.value).toBe(false);
+  });
 
-      const [result, app] = withSetup(() => useSSOAccountReadinessVerification(), {
-        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-      });
+  it('recovers via retryPolling after an error', async () => {
+    fetchMe.mockRejectedValue(buildMeError(500));
 
-      await result.startPolling();
+    const { result } = setup();
+    await result.startPolling();
+    expect(result.hasError.value).toBe(true);
 
-      // Unmount the component
-      app.unmount();
+    fetchMe.mockResolvedValue(readyUser);
+    result.retryPolling();
 
-      // The retry callback should return false (stop retrying) after unmount
-      // This is tested indirectly by checking hasRedirected is set
-      expect(retryCallback).toBeDefined();
-    });
+    // retryPolling kicks off polling without awaiting it.
+    await vi.waitFor(() => expect(router.push).toHaveBeenCalledWith({ path: '/' }));
+    expect(result.hasError.value).toBe(false);
+  });
+
+  it('does not start a second concurrent polling session', async () => {
+    let resolveFetch;
+    fetchMe.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+    );
+
+    const { result } = setup();
+    const first = result.startPolling();
+    // Wait until backOff has actually invoked fetchMe before starting the
+    // second session — the first attempt is scheduled asynchronously.
+    await vi.waitFor(() => expect(fetchMe).toHaveBeenCalled());
+    const second = result.startPolling();
+
+    resolveFetch(readyUser);
+    await Promise.all([first, second]);
+
+    expect(fetchMe).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops polling when the component unmounts', async () => {
+    fetchMe.mockResolvedValue({ id: 'roar-user-id', userType: 'guest' });
+
+    const { result, app } = setup();
+    const polling = result.startPolling();
+    await Promise.resolve();
+
+    app.unmount();
+    await polling;
+
+    // The retry callback bails after the first attempt — no further fetches.
+    expect(fetchMe).toHaveBeenCalledTimes(1);
+    expect(router.push).not.toHaveBeenCalled();
+    expect(result.hasError.value).toBe(false);
   });
 });

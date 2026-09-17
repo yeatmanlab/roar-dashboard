@@ -12,8 +12,8 @@ export function useAuth(context) {
   const { authStore, router, route, email, password, invalid, emailLinkSent, showPasswordField, resetSignInUI } =
     context;
 
-  // pull reactive store refs (spinner, ssoProvider, roarfirekit)
-  const { spinner, ssoProvider, roarfirekit } = storeToRefs(authStore);
+  // pull reactive store refs (spinner, ssoProvider)
+  const { spinner, ssoProvider } = storeToRefs(authStore);
 
   const isUsername = computed(() => {
     const v = email.value ?? '';
@@ -166,7 +166,6 @@ export function useAuth(context) {
   }
 
   return {
-    roarfirekit,
     spinner,
 
     isUsername,

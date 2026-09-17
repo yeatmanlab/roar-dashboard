@@ -11,6 +11,7 @@ export function useSignInForm() {
   const spinner = ref(false);
   const availableProviders = ref([]); // ['google','clever','classlink','nycps']
   const hasCheckedProviders = ref(false);
+  const discoveryError = ref(false); // provider discovery failed — retryable
   const isUsername = computed(() => email.value !== '' && !email.value.includes('@'));
   const canContinue = computed(() => !multipleProviders.value && !emailLinkSent.value);
 
@@ -32,6 +33,7 @@ export function useSignInForm() {
     spinner.value = false;
     availableProviders.value = [];
     hasCheckedProviders.value = false;
+    discoveryError.value = false;
   }
 
   function continueClick(emit) {
@@ -50,6 +52,7 @@ export function useSignInForm() {
     spinner,
     availableProviders,
     hasCheckedProviders,
+    discoveryError,
     isUsername,
     canContinue,
     onEmailUpdate,

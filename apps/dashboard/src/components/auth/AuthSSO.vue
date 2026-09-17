@@ -1,0 +1,55 @@
+<template>
+  <AppSpinner />
+</template>
+<script setup>
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/store/auth';
+import AppSpinner from '@/components/AppSpinner.vue';
+import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
+import { APP_ROUTE_NAMES } from '@/constants/routes';
+
+/**
+ * SSO landing page.
+ *
+ * The identity provider redirects here after its OAuth consent step. The
+ * component records which provider requested the sign-in and bounces to the
+ * SignIn page, which re-triggers the corresponding AuthService flow on mount.
+ * No firekit state is involved.
+ */
+
+const OAUTH_REQUEST_FLAGS = Object.freeze({
+  [AUTH_SSO_PROVIDERS.CLEVER]: 'cleverOAuthRequested',
+  [AUTH_SSO_PROVIDERS.CLASSLINK]: 'classLinkOAuthRequested',
+  [AUTH_SSO_PROVIDERS.NYCPS]: 'nycpsOAuthRequested',
+});
+
+const props = defineProps({
+  provider: {
+    type: String,
+    required: true,
+    // defineProps is hoisted out of setup(), so the validator can only
+    // reference imported bindings — not the local OAUTH_REQUEST_FLAGS map.
+    validator: (value) =>
+      [AUTH_SSO_PROVIDERS.CLEVER, AUTH_SSO_PROVIDERS.CLASSLINK, AUTH_SSO_PROVIDERS.NYCPS].includes(value),
+  },
+  code: { type: String, default: '' },
+});
+
+const router = useRouter();
+const authStore = useAuthStore();
+
+onMounted(() => {
+  // The lookup can miss when a provider is added to AUTH_SSO_PROVIDERS but
+  // not to OAUTH_REQUEST_FLAGS — the prop validator only warns in dev, so
+  // guard here to avoid writing a garbage key onto the auth store.
+  const oauthRequestFlag = OAUTH_REQUEST_FLAGS[props.provider];
+
+  if (props.code && oauthRequestFlag) {
+    authStore[oauthRequestFlag] = true;
+    router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
+  } else {
+    router.push({ name: APP_ROUTE_NAMES.HOME });
+  }
+});
+</script>
