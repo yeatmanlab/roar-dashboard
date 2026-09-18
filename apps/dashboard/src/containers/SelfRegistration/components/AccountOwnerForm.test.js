@@ -51,6 +51,10 @@ describe('AccountOwnerForm.vue', () => {
     expect(wrapper.get('[for="account-owner-email"]').text()).toContain('Email address');
     expect(wrapper.get('[for="account-owner-password"]').text()).toContain('Password');
     expect(wrapper.get('#account-owner-password-help').text()).toBe('Must be at least 8 characters.');
+    expect(wrapper.get('[for="account-owner-future-contact"]').text()).toBe(
+      'Contact me about new research opportunities',
+    );
+    expect(wrapper.get('[for="account-owner-legal-acceptance"]').text()).toContain('Terms and Conditions');
 
     wrapper.unmount();
   });

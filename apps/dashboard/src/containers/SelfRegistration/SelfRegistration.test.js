@@ -17,11 +17,10 @@ const mocks = vi.hoisted(() => ({
   legalAccepted: { value: true },
   futureContactAllowed: { value: false },
   submit: vi.fn().mockResolvedValue(true),
-  dismissStatus: vi.fn(),
+  dismissError: vi.fn(),
   setVerificationToken: vi.fn(),
   isSubmitting: { value: false },
   errorMessage: { value: '' },
-  isSuccess: { value: false },
   verificationToken: { value: 'verified' },
 }));
 
@@ -54,11 +53,10 @@ vi.mock('./composables/useResearchConsent', () => ({
 vi.mock('./composables/useSelfRegistration', () => ({
   useSelfRegistration: () => ({
     submit: mocks.submit,
-    dismissStatus: mocks.dismissStatus,
+    dismissError: mocks.dismissError,
     setVerificationToken: mocks.setVerificationToken,
     isSubmitting: mocks.isSubmitting,
     errorMessage: mocks.errorMessage,
-    isSuccess: mocks.isSuccess,
     verificationToken: mocks.verificationToken,
   }),
 }));
@@ -72,10 +70,19 @@ function mountSelfRegistration() {
       stubs: {
         AuthPageFooter: true,
         ROARLogoShort: true,
-        RegistrationStatus: true,
+        Dialog: {
+          props: ['visible', 'header'],
+          emits: ['update:visible'],
+          template: '<div v-if="visible" data-testid="registration-error"><slot /></div>',
+        },
+        Button: {
+          props: ['label'],
+          emits: ['click'],
+          template: '<button type="button" @click="$emit(\'click\')">{{ label }}</button>',
+        },
         AccountOwnerForm: {
           name: 'AccountOwnerForm',
-          props: ['disabled'],
+          props: ['disabled', 'submitting'],
           emits: [
             'submit',
             'touch',
@@ -99,16 +106,9 @@ describe('SelfRegistration.vue', () => {
     mocks.verificationToken.value = 'verified';
     mocks.isSubmitting.value = false;
     mocks.errorMessage.value = '';
-    mocks.isSuccess.value = false;
   });
 
   afterEach(() => document.body.classList.remove('page-register'));
-
-  it('defines the route-level Vue component contract', () => {
-    expect(SelfRegistration).toBeDefined();
-    expect(SelfRegistration.setup).toBeTypeOf('function');
-    expect(SelfRegistration.__file).toContain('SelfRegistration.vue');
-  });
 
   it('connects presentation events to form, consent, and workflow owners', async () => {
     const wrapper = mountSelfRegistration();
@@ -146,11 +146,13 @@ describe('SelfRegistration.vue', () => {
     wrapper.unmount();
   });
 
-  it('does not start registration before required submission prerequisites are ready', async () => {
+  it('keeps submission available and reveals validation when legal acceptance is missing', async () => {
     mocks.legalAccepted.value = false;
     const wrapper = mountSelfRegistration();
+    const accountOwnerForm = wrapper.findComponent({ name: 'AccountOwnerForm' });
 
-    wrapper.findComponent({ name: 'AccountOwnerForm' }).vm.$emit('submit');
+    expect(accountOwnerForm.props('disabled')).toBe(false);
+    accountOwnerForm.vm.$emit('submit');
     await flushPromises();
 
     expect(mocks.validate).toHaveBeenCalledOnce();
@@ -158,40 +160,39 @@ describe('SelfRegistration.vue', () => {
     wrapper.unmount();
   });
 
-  it('keeps the heading and its accessible relationship while submitting and after success', async () => {
-    mocks.isSubmitting.value = true;
-    const submittingWrapper = mountSelfRegistration();
+  it('allows registration when client verification is unavailable', async () => {
+    mocks.verificationToken.value = '';
+    const wrapper = mountSelfRegistration();
 
-    expect(submittingWrapper.get('#self-registration-heading').text()).toBe('Create your account');
-    expect(submittingWrapper.get('#register').attributes('aria-labelledby')).toBe('self-registration-heading');
-    expect(submittingWrapper.findComponent({ name: 'AccountOwnerForm' }).exists()).toBe(false);
-    submittingWrapper.unmount();
+    wrapper.findComponent({ name: 'AccountOwnerForm' }).vm.$emit('submit');
+    await flushPromises();
 
-    mocks.isSubmitting.value = false;
-    mocks.isSuccess.value = true;
-    const successWrapper = mountSelfRegistration();
-
-    expect(successWrapper.get('#self-registration-heading').text()).toBe('Create your account');
-    expect(successWrapper.get('#register').attributes('aria-labelledby')).toBe('self-registration-heading');
-    expect(successWrapper.findComponent({ name: 'AccountOwnerForm' }).exists()).toBe(false);
-
-    successWrapper.unmount();
+    expect(mocks.validate).toHaveBeenCalledOnce();
+    expect(mocks.submit).toHaveBeenCalledWith(mocks.payload.value);
+    wrapper.unmount();
   });
 
-  it('disables submission until verification is ready but not for an unchecked legal acknowledgement', () => {
-    mocks.verificationToken.value = '';
-    const pendingVerificationWrapper = mountSelfRegistration();
+  it('keeps the form mounted with loading controls while registration is in flight', () => {
+    mocks.isSubmitting.value = true;
+    const wrapper = mountSelfRegistration();
+    const accountOwnerForm = wrapper.findComponent({ name: 'AccountOwnerForm' });
 
-    expect(pendingVerificationWrapper.findComponent({ name: 'AccountOwnerForm' }).props('disabled')).toBe(true);
-    pendingVerificationWrapper.unmount();
+    expect(accountOwnerForm.exists()).toBe(true);
+    expect(accountOwnerForm.props('disabled')).toBe(true);
+    expect(accountOwnerForm.props('submitting')).toBe(true);
+    wrapper.unmount();
+  });
 
-    mocks.verificationToken.value = 'verified';
-    mocks.legalAccepted.value = false;
-    const missingLegalAcceptanceWrapper = mountSelfRegistration();
+  it('shows errors above the still-mounted form and dismisses them', async () => {
+    mocks.errorMessage.value = 'Registration failed';
+    const wrapper = mountSelfRegistration();
 
-    expect(missingLegalAcceptanceWrapper.findComponent({ name: 'AccountOwnerForm' }).props('disabled')).toBe(false);
+    expect(wrapper.get('[data-testid="registration-error"]').text()).toContain('Registration failed');
+    expect(wrapper.findComponent({ name: 'AccountOwnerForm' }).exists()).toBe(true);
 
-    missingLegalAcceptanceWrapper.unmount();
+    await wrapper.get('[data-testid="registration-error"] button').trigger('click');
+    expect(mocks.dismissError).toHaveBeenCalledOnce();
+    wrapper.unmount();
   });
 });
 
@@ -206,9 +207,6 @@ describe('AccountOwnerForm.vue', () => {
       global: {
         stubs: {
           ChallengeV3: { template: '<div><slot /></div>' },
-          PvInputText: true,
-          PvPassword: true,
-          PvCheckbox: true,
           PvButton: { props: ['label'], template: '<button>{{ label }}</button>' },
           RouterLink: { template: '<a><slot /></a>' },
         },
@@ -221,8 +219,37 @@ describe('AccountOwnerForm.vue', () => {
     expect(wrapper.text()).toContain('Password');
     expect(wrapper.text()).toContain('Create account');
     expect(wrapper.text()).toContain('Sign in');
+    expect(wrapper.findAllComponents({ name: 'FormTextInput' })).toHaveLength(3);
+    expect(wrapper.findAllComponents({ name: 'FormPasswordInput' })).toHaveLength(1);
+    expect(wrapper.findAllComponents({ name: 'FormCheckboxInput' })).toHaveLength(2);
 
     await wrapper.get('form').trigger('submit');
     expect(wrapper.emitted('submit')).toHaveLength(1);
+  });
+
+  it('forwards shared-control updates and blur events through its presentation contract', async () => {
+    const wrapper = mount(AccountOwnerForm, {
+      props: {
+        values: { firstName: '', lastName: '', email: '', password: '' },
+        errors: { firstName: '', lastName: '', email: '', password: '' },
+        touched: { firstName: false, lastName: false, email: false, password: false },
+      },
+      global: {
+        stubs: {
+          ChallengeV3: { template: '<div><slot /></div>' },
+          PvButton: true,
+          RouterLink: { template: '<a><slot /></a>' },
+        },
+      },
+    });
+
+    const firstName = wrapper.get('[data-cy="signup__parent-first-name"]');
+    await firstName.setValue('Taylor');
+    await firstName.trigger('blur');
+    await wrapper.get('#account-owner-legal-acceptance').setValue(true);
+
+    expect(wrapper.emitted('update:field')).toContainEqual(['firstName', 'Taylor']);
+    expect(wrapper.emitted('touch')).toContainEqual(['firstName']);
+    expect(wrapper.emitted('update:legal-accepted')).toContainEqual([true]);
   });
 });
