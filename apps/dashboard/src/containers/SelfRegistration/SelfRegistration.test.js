@@ -155,6 +155,18 @@ describe('SelfRegistration.vue', () => {
     expect(mocks.submit).not.toHaveBeenCalled();
     wrapper.unmount();
   });
+
+  it('allows registration when client verification is unavailable', async () => {
+    mocks.verificationToken.value = '';
+    const wrapper = mountSelfRegistration();
+
+    wrapper.findComponent({ name: 'AccountOwnerForm' }).vm.$emit('submit');
+    await flushPromises();
+
+    expect(mocks.validate).toHaveBeenCalledOnce();
+    expect(mocks.submit).toHaveBeenCalledWith(mocks.payload.value);
+    wrapper.unmount();
+  });
 });
 
 describe('AccountOwnerForm.vue', () => {
