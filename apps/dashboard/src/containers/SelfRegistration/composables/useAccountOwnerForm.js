@@ -1,7 +1,26 @@
+import useVuelidate from '@vuelidate/core';
+import { email, helpers, minLength, required } from '@vuelidate/validators';
 import { computed, reactive, ref } from 'vue';
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FIELD_NAMES = ['firstName', 'lastName', 'email', 'password'];
+const PASSWORD_MIN_LENGTH = 8;
+
+const validationRules = {
+  firstName: {
+    required: helpers.withMessage('Enter your first name.', required),
+  },
+  lastName: {
+    required: helpers.withMessage('Enter your last name.', required),
+  },
+  email: {
+    required: helpers.withMessage('Enter a complete email address.', required),
+    email: helpers.withMessage('Enter a complete email address.', email),
+  },
+  password: {
+    required: helpers.withMessage('Use at least 8 characters for your password.', required),
+    minLength: helpers.withMessage('Use at least 8 characters for your password.', minLength(PASSWORD_MIN_LENGTH)),
+  },
+};
 
 /**
  * Owns account-owner values and the normalized account-creation payload.
@@ -20,14 +39,20 @@ export function useAccountOwnerForm() {
   });
   const touched = reactive(Object.fromEntries(FIELD_NAMES.map((field) => [field, false])));
   const submitted = ref(false);
-
-  const errors = computed(() => ({
-    firstName: values.firstName.trim() ? '' : 'Enter your first name.',
-    lastName: values.lastName.trim() ? '' : 'Enter your last name.',
-    email: EMAIL_PATTERN.test(values.email.trim()) ? '' : 'Enter a complete email address.',
-    password: values.password.length >= 8 ? '' : 'Use at least 8 characters for your password.',
+  const validationValues = computed(() => ({
+    firstName: values.firstName.trim(),
+    lastName: values.lastName.trim(),
+    email: values.email.trim(),
+    password: values.password,
   }));
-  const isValid = computed(() => FIELD_NAMES.every((field) => !errors.value[field]));
+  const v$ = useVuelidate(validationRules, validationValues);
+
+  const errors = computed(() =>
+    Object.fromEntries(
+      FIELD_NAMES.map((field) => [field, v$.value[field].$silentErrors[0]?.$message?.toString() ?? '']),
+    ),
+  );
+  const isValid = computed(() => !v$.value.$invalid);
   const payload = computed(() => ({
     firstName: values.firstName.trim(),
     lastName: values.lastName.trim(),
@@ -47,12 +72,18 @@ export function useAccountOwnerForm() {
   }
 
   function touch(field) {
-    if (FIELD_NAMES.includes(field)) touched[field] = true;
+    if (FIELD_NAMES.includes(field)) {
+      touched[field] = true;
+      v$.value[field].$touch();
+    }
   }
 
   function validate() {
     submitted.value = true;
-    FIELD_NAMES.forEach(touch);
+    v$.value.$touch();
+    FIELD_NAMES.forEach((field) => {
+      touched[field] = true;
+    });
     return isValid.value;
   }
 
