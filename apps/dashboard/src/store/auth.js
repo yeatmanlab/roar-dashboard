@@ -1,6 +1,5 @@
 import { markRaw } from 'vue';
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import { getIdToken } from 'firebase/auth';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { initializeFirekit } from '@/firekit';
@@ -157,7 +156,10 @@ export const useAuthStore = () => {
             // system from traversing internal auth provider state that references
             // cross-origin frames.
             this.firebaseUser = markRaw(user);
-            this.accessToken = user.accessToken;
+            // Derive the token via the public getIdToken() (cached, no network
+            // round-trip) rather than reading the private `user.accessToken`
+            // field, which is not part of Firebase's public API surface.
+            this.accessToken = await authService.getIdToken();
           } else {
             this.firebaseUser = null;
             this.accessToken = null;
@@ -177,9 +179,6 @@ export const useAuthStore = () => {
       },
       async getLegalDoc(docName) {
         return await this.roarfirekit.getLegalDoc(docName);
-      },
-      async registerWithEmailAndPassword({ email, password, userData }) {
-        return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },
 
       /**
@@ -280,12 +279,13 @@ export const useAuthStore = () => {
        * @returns {Promise<string | null>} The fresh token, or null if not signed in.
        */
       async forceIdTokenRefresh() {
-        const user = this.firebaseUser;
-        if (!user) return null;
-        // Use getIdToken directly so we can capture the fresh token synchronously.
-        // Relying on the onIdTokenChanged callback introduces a race condition
-        // because the callback fires asynchronously after getIdToken resolves.
-        const freshToken = await getIdToken(user, /* forceRefresh */ true);
+        // Capture the fresh token from getIdToken's resolution and assign it
+        // here directly. Relying on the onIdTokenChanged callback introduces a
+        // race condition because the callback fires asynchronously after
+        // getIdToken resolves.
+        const authService = getAuthService();
+        const freshToken = await authService.getIdToken(/* forceRefresh */ true);
+        if (freshToken === null) return null;
         this.accessToken = freshToken;
         return freshToken;
       },

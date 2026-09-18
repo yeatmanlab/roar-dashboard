@@ -13,6 +13,7 @@ import { storeToRefs } from 'pinia';
 import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { SURVEY_TASK_ID } from '@roar-platform/assessment-schema/roar-survey';
 import { useAuthStore } from '@/store/auth';
+import useAssessmentAuthCallbacks from '@/composables/useAssessmentAuthCallbacks';
 import { useGameStore } from '@/store/game';
 import useParticipantId from '@/composables/useParticipantId';
 import { version } from '@roar-platform/roar-survey/package.json';
@@ -87,10 +88,7 @@ async function startTask(selectedAdmin) {
     initFirekitCompat(
       {
         baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
-        auth: {
-          getToken: () => Promise.resolve(authStore.accessToken),
-          refreshToken: () => authStore.forceIdTokenRefresh(),
-        },
+        auth: useAssessmentAuthCallbacks(),
         participant: { participantId: participantId.value },
       },
       {

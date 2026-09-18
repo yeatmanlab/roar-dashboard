@@ -5,12 +5,14 @@ const mocks = vi.hoisted(() => ({
   onIdTokenChanged: vi.fn(),
   resetQueries: vi.fn(),
   signInWithEmailAndPassword: vi.fn(),
+  getIdToken: vi.fn(),
 }));
 
 vi.mock('@/services/AuthService', () => ({
   getAuthService: () => ({
     onIdTokenChanged: mocks.onIdTokenChanged,
     signInWithEmailAndPassword: mocks.signInWithEmailAndPassword,
+    getIdToken: mocks.getIdToken,
   }),
 }));
 
@@ -22,10 +24,6 @@ vi.mock('@/queryClient', () => ({
 
 vi.mock('@/firekit', () => ({
   initializeFirekit: vi.fn(),
-}));
-
-vi.mock('firebase/auth', () => ({
-  getIdToken: vi.fn(),
 }));
 
 import { useAuthStore } from '@/store/auth';
@@ -54,13 +52,14 @@ describe('authStore.setAuthStateListener', () => {
   /** @type {(user: object | null) => Promise<void>} */
   let listenerCallback;
 
-  const userA = { uid: 'firebase-uid-a', accessToken: 'token-a' };
-  const userB = { uid: 'firebase-uid-b', accessToken: 'token-b' };
+  const userA = { uid: 'firebase-uid-a' };
+  const userB = { uid: 'firebase-uid-b' };
 
   beforeEach(() => {
     vi.clearAllMocks();
     setActivePinia(createPinia());
     mocks.resetQueries.mockResolvedValue(undefined);
+    mocks.getIdToken.mockResolvedValue('token-from-service');
     mocks.onIdTokenChanged.mockImplementation((callback) => {
       listenerCallback = callback;
       return vi.fn(); // unsubscribe handle
@@ -69,13 +68,25 @@ describe('authStore.setAuthStateListener', () => {
     authStore.setAuthStateListener();
   });
 
+  it('derives the token via the public AuthService.getIdToken(), not the private user.accessToken field', async () => {
+    // The user object carries the internal `accessToken` field, but the store
+    // must ignore it and use the public API instead.
+    mocks.getIdToken.mockResolvedValue('public-api-token');
+
+    await listenerCallback({ uid: userA.uid, accessToken: 'private-field-token' });
+
+    expect(mocks.getIdToken).toHaveBeenCalledTimes(1);
+    expect(authStore.accessToken).toBe('public-api-token');
+  });
+
   it('does not reset identity on a same-uid token refresh', async () => {
     await listenerCallback(userA);
     mocks.resetQueries.mockClear();
     authStore.userClaims = { claims: { roarUid: 'roar-a' } };
 
     // Token refresh: same uid, new token.
-    await listenerCallback({ uid: userA.uid, accessToken: 'token-a-refreshed' });
+    mocks.getIdToken.mockResolvedValue('token-a-refreshed');
+    await listenerCallback({ uid: userA.uid });
 
     expect(mocks.resetQueries).not.toHaveBeenCalled();
     expect(authStore.userClaims).toEqual({ claims: { roarUid: 'roar-a' } });
@@ -89,6 +100,7 @@ describe('authStore.setAuthStateListener', () => {
     authStore.userClaims = { claims: { super_admin: true } };
     authStore.userData = { id: 'user-a' };
 
+    mocks.getIdToken.mockResolvedValue('token-b');
     await listenerCallback(userB);
 
     expect(mocks.resetQueries).toHaveBeenCalledTimes(1);
@@ -98,7 +110,7 @@ describe('authStore.setAuthStateListener', () => {
     expect(authStore.userClaims).toBeNull();
     expect(authStore.userData).toBeNull();
     expect(authStore.firebaseUser.uid).toBe(userB.uid);
-    expect(authStore.accessToken).toBe(userB.accessToken);
+    expect(authStore.accessToken).toBe('token-b');
   });
 
   it('writes the new user to the store before resetting the /me cache', async () => {
@@ -113,9 +125,10 @@ describe('authStore.setAuthStateListener', () => {
       return Promise.resolve();
     });
 
+    mocks.getIdToken.mockResolvedValue('token-b');
     await listenerCallback(userB);
 
-    expect(accessTokenAtReset).toBe(userB.accessToken);
+    expect(accessTokenAtReset).toBe('token-b');
   });
 
   it('resets identity on sign-out (A→null), even when the sign-out mutation is bypassed', async () => {
@@ -187,5 +200,36 @@ describe('authStore sign-in initiators', () => {
     expect(callOrder).toEqual(['resetQueries', 'signIn']);
     expect(authStore.userClaims).toBeNull();
     expect(authStore.userData).toBeNull();
+  });
+});
+
+describe('authStore.forceIdTokenRefresh', () => {
+  let authStore;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setActivePinia(createPinia());
+    authStore = useAuthStore();
+  });
+
+  it('force-refreshes via AuthService.getIdToken and captures the token synchronously', async () => {
+    authStore.accessToken = 'stale-token';
+    mocks.getIdToken.mockResolvedValue('fresh-token');
+
+    const result = await authStore.forceIdTokenRefresh();
+
+    expect(mocks.getIdToken).toHaveBeenCalledWith(true);
+    expect(result).toBe('fresh-token');
+    expect(authStore.accessToken).toBe('fresh-token');
+  });
+
+  it('returns null and leaves the stored token untouched when not signed in', async () => {
+    authStore.accessToken = 'stale-token';
+    mocks.getIdToken.mockResolvedValue(null);
+
+    const result = await authStore.forceIdTokenRefresh();
+
+    expect(result).toBeNull();
+    expect(authStore.accessToken).toBe('stale-token');
   });
 });

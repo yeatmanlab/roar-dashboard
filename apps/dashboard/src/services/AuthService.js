@@ -21,7 +21,6 @@ import {
   signInWithEmailLink as fbSignInWithEmailLink,
   sendSignInLinkToEmail as fbSendSignInLinkToEmail,
   isSignInWithEmailLink as fbIsSignInWithEmailLink,
-  createUserWithEmailAndPassword as fbCreateUserWithEmailAndPassword,
   sendPasswordResetEmail as fbSendPasswordResetEmail,
   fetchSignInMethodsForEmail as fbFetchSignInMethodsForEmail,
   getIdToken,
@@ -194,17 +193,6 @@ class AuthService {
    */
   isSignInWithEmailLink(link) {
     return fbIsSignInWithEmailLink(this.#auth, link);
-  }
-
-  /**
-   * Create a new user with email and password.
-   *
-   * @param {string} email
-   * @param {string} password
-   * @returns {Promise<import('firebase/auth').UserCredential>}
-   */
-  async createUserWithEmailAndPassword(email, password) {
-    return fbCreateUserWithEmailAndPassword(this.#auth, email, password);
   }
 
   /**
