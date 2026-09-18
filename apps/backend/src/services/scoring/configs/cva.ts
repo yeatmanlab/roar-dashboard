@@ -21,7 +21,7 @@ const COMPOSITE_DOMAIN = 'composite';
  *
  * The version split mirrors the assessment's two scoring modes:
  * - V1 (adaptive) emits the composite score names. `percentile` and `standardScore` are
- *   present only when the normed IRT lookup resolves, and `totalCorrect` is the raw score.
+ *   present only when the normed IRT lookup resolves, and `roarScore` is the raw score.
  * - v0 (pre-versioning, non-adaptive) emits only aggregate counts from the test stage —
  *   hence no normed scores, and the non-adaptive `subScore` as the raw score.
  */

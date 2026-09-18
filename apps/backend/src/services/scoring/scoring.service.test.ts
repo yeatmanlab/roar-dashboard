@@ -1093,6 +1093,53 @@ describe('getScoreDisplay', () => {
     expect(paRawScoreAt(4)).toMatchObject({ scoreType: 'rawScore', range: { min: 0, max: 57 } });
     expect(paRawScoreAt(5)).toMatchObject({ scoreType: 'rawScore', range: { min: 40, max: 733 } });
   });
+
+  describe('sre display ranges', () => {
+    const sreDisplayAt = (args: {
+      scoringVersion: number | null;
+      gradeLevel: number | null;
+      scores: { rawScore: number | null; percentile: number | null; standardScore: number | null };
+    }) => getScoreDisplay({ taskSlug: 'sre', ...args });
+
+    // Force the raw-score fallback (grade >= 6, no standard score) so the
+    // version-keyed rawScore range is the thing under test.
+    const sreRawScoreAt = (scoringVersion: number | null) =>
+      sreDisplayAt({
+        scoringVersion,
+        gradeLevel: 8,
+        scores: { rawScore: 480, percentile: null, standardScore: null },
+      });
+
+    it('resolves the unversioned percentile and standard score ranges', () => {
+      const scores = { rawScore: 500, percentile: 45, standardScore: 98 };
+      expect(sreDisplayAt({ scoringVersion: 5, gradeLevel: 3, scores })).toEqual({
+        scoreType: 'percentile',
+        value: 45,
+        label: 'percentile',
+        range: { min: 0, max: 99 },
+      });
+      expect(sreDisplayAt({ scoringVersion: 5, gradeLevel: 6, scores })).toEqual({
+        scoreType: 'standardScore',
+        value: 98,
+        label: 'standardScore',
+        range: { min: 0, max: 180 },
+      });
+    });
+
+    it('resolves the raw score range for the scoring version of the run', () => {
+      expect(sreRawScoreAt(5)).toMatchObject({ scoreType: 'rawScore', range: { min: 300, max: 967 } });
+      expect(sreRawScoreAt(4)).toMatchObject({ scoreType: 'rawScore', range: { min: 0, max: 130 } });
+      expect(sreRawScoreAt(null)).toMatchObject({ scoreType: 'rawScore', range: { min: 0, max: 130 } });
+
+      expect(
+        sreDisplayAt({
+          scoringVersion: 5,
+          gradeLevel: 8,
+          scores: { rawScore: null, percentile: null, standardScore: null },
+        }),
+      ).toEqual({ scoreType: 'rawScore', value: null, label: 'rawScore', range: { min: 300, max: 967 } });
+    });
+  });
 });
 
 describe('getScoreRange', () => {
