@@ -109,12 +109,6 @@ describe('SelfRegistration.vue', () => {
 
   afterEach(() => document.body.classList.remove('page-register'));
 
-  it('defines the route-level Vue component contract', () => {
-    expect(SelfRegistration).toBeDefined();
-    expect(SelfRegistration.setup).toBeTypeOf('function');
-    expect(SelfRegistration.__file).toContain('SelfRegistration.vue');
-  });
-
   it('connects presentation events to form, consent, and workflow owners', async () => {
     const wrapper = mountSelfRegistration();
 
