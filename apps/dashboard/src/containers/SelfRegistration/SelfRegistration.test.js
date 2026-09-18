@@ -68,6 +68,7 @@ function mountSelfRegistration() {
   return mount(SelfRegistration, {
     global: {
       stubs: {
+        AuthPageFooter: true,
         ROARLogoShort: true,
         Dialog: {
           props: ['visible', 'header'],

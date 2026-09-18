@@ -1,15 +1,15 @@
 <template>
-  <div class="self-registration-form-card">
-    <form class="self-registration-form p-fluid" novalidate @submit.prevent="$emit('submit')">
-      <p class="self-registration-required-hint"><span aria-hidden="true">*</span> Required fields</p>
-
+  <div class="self-registration-form-content">
+    <form ref="formElement" class="self-registration-form p-fluid" novalidate @submit.prevent="handleSubmit">
       <div class="self-registration-name-fields">
         <TextInput
           id="account-owner-first-name"
-          label="First name"
+          :label="t('pageRegister.firstName')"
           name="firstName"
           autocomplete="given-name"
           required
+          :disabled="disabled"
+          :placeholder="t('pageRegister.firstNamePlaceholder')"
           :model-value="values.firstName"
           :invalid="showError('firstName')"
           :error="showError('firstName') ? errors.firstName : ''"
@@ -20,10 +20,12 @@
 
         <TextInput
           id="account-owner-last-name"
-          label="Last name"
+          :label="t('pageRegister.lastName')"
           name="lastName"
           autocomplete="family-name"
           required
+          :disabled="disabled"
+          :placeholder="t('pageRegister.lastNamePlaceholder')"
           :model-value="values.lastName"
           :invalid="showError('lastName')"
           :error="showError('lastName') ? errors.lastName : ''"
@@ -35,12 +37,14 @@
 
       <TextInput
         id="account-owner-email"
-        label="Email address"
+        :label="t('pageRegister.email')"
         name="email"
         type="email"
         inputmode="email"
         autocomplete="email"
         required
+        :disabled="disabled"
+        :placeholder="t('pageRegister.emailPlaceholder')"
         :model-value="values.email"
         :invalid="showError('email')"
         :error="showError('email') ? errors.email : ''"
@@ -51,11 +55,15 @@
 
       <PasswordInput
         id="account-owner-password"
-        label="Password"
+        :label="t('pageRegister.password')"
         name="password"
         autocomplete="new-password"
         required
-        help="Use at least 8 characters."
+        :disabled="disabled"
+        :placeholder="t('pageRegister.passwordPlaceholder')"
+        :help="t('pageRegister.passwordHelp')"
+        :show-password-label="t('pageRegister.showPassword')"
+        :hide-password-label="t('pageRegister.hidePassword')"
         :model-value="values.password"
         :invalid="showError('password')"
         :error="showError('password') ? errors.password : ''"
@@ -67,40 +75,42 @@
       <ChallengeV3 :model-value="verificationToken" action="submit" @update:model-value="$emit('verification', $event)">
         <div class="self-registration-acknowledgements">
           <CheckboxInput
+            id="account-owner-future-contact"
+            name="futureContact"
+            :label="t('pageRegister.futureContact')"
+            :disabled="disabled"
+            :model-value="futureContactAllowed"
+            @update:model-value="$emit('update:future-contact-allowed', $event)"
+          />
+
+          <CheckboxInput
             id="account-owner-legal-acceptance"
             name="legalAcceptance"
             required
+            :disabled="disabled"
             :model-value="legalAccepted"
             :invalid="submitted && !legalAccepted"
-            :error="submitted && !legalAccepted ? 'Review and accept the Terms of Use.' : ''"
+            :error="submitted && !legalAccepted ? t('pageRegister.reviewTerms') : ''"
             @update:model-value="$emit('update:legal-accepted', $event)"
           >
             <span>
-              I agree to the
+              {{ t('pageRegister.agreeToTerms') }}
               <a
                 class="self-registration-terms-link"
                 :href="TERMS_OF_SERVICE_DOCUMENT_PATH"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Terms of Use
+                {{ t('pageRegister.termsOfUse') }}
               </a>
             </span>
           </CheckboxInput>
-
-          <CheckboxInput
-            id="account-owner-future-contact"
-            name="futureContact"
-            label="Contact me about future research opportunities (optional)"
-            :model-value="futureContactAllowed"
-            @update:model-value="$emit('update:future-contact-allowed', $event)"
-          />
         </div>
       </ChallengeV3>
 
       <PvButton
         type="submit"
-        label="Create account"
+        :label="submitting ? t('pageRegister.creatingAccount') : t('pageRegister.createAccount')"
         class="self-registration-submit"
         :disabled="disabled"
         :loading="submitting"
@@ -109,13 +119,14 @@
     </form>
 
     <div class="self-registration-sign-in">
-      <span>Already have an account?</span>
-      <RouterLink :to="APP_ROUTES.SIGN_IN">Sign in</RouterLink>
+      <span>{{ t('pageRegister.alreadyHaveAccount') }}</span>
+      <RouterLink :to="APP_ROUTES.SIGN_IN">{{ t('pageRegister.signIn') }}</RouterLink>
     </div>
   </div>
 </template>
 
 <script setup>
+import { nextTick, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { ChallengeV3 } from 'vue-recaptcha';
 import PvButton from 'primevue/button';
@@ -124,6 +135,7 @@ import PasswordInput from '@/components/Form/PasswordInput';
 import TextInput from '@/components/Form/TextInput';
 import { TERMS_OF_SERVICE_DOCUMENT_PATH } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
+import { i18n } from '@/translations/i18n';
 
 const props = defineProps({
   values: { type: Object, required: true },
@@ -146,6 +158,9 @@ const emit = defineEmits([
   'verification',
 ]);
 
+const { t } = i18n.global;
+const formElement = ref(null);
+
 function updateField(field, value) {
   emit('update:field', field, value);
 }
@@ -153,27 +168,22 @@ function updateField(field, value) {
 function showError(field) {
   return Boolean(props.errors[field] && (props.submitted || props.touched[field]));
 }
+
+async function handleSubmit() {
+  emit('submit');
+  await nextTick();
+  formElement.value?.querySelector('[aria-invalid="true"]')?.focus();
+}
 </script>
 
 <style scoped>
-.self-registration-form-card {
-  overflow: hidden;
-  border: 1px solid var(--surface-200);
-  border-radius: 0.75rem;
-  background: var(--surface-0);
-  box-shadow: 0 0.125rem 0.5rem rgb(0 0 0 / 8%);
+.self-registration-form-content {
+  width: 100%;
 }
 
 .self-registration-form {
   display: grid;
   gap: 1.25rem;
-  padding: 1.5rem;
-}
-
-.self-registration-required-hint {
-  margin: 0;
-  color: var(--text-color-secondary);
-  font-size: 0.875rem;
 }
 
 .self-registration-name-fields {
@@ -182,13 +192,9 @@ function showError(field) {
   gap: 1rem;
 }
 
-.self-registration-required-hint span {
-  color: var(--bright-red);
-}
-
 .self-registration-acknowledgements {
   display: grid;
-  gap: 1rem;
+  gap: 0.875rem;
 }
 
 .self-registration-terms-link {
@@ -205,8 +211,7 @@ function showError(field) {
   display: flex;
   justify-content: center;
   gap: 0.375rem;
-  padding: 1rem;
-  border-top: 1px solid var(--surface-200);
+  margin-top: 1.25rem;
   color: var(--text-color-secondary);
   font-size: 0.875rem;
 }
@@ -214,10 +219,6 @@ function showError(field) {
 @media (max-width: 36rem) {
   .self-registration-name-fields {
     grid-template-columns: 1fr;
-  }
-
-  .self-registration-form {
-    padding: 1.25rem;
   }
 }
 </style>

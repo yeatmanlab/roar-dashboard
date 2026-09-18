@@ -5,32 +5,44 @@ import { computed, reactive, ref } from 'vue';
 const FIELD_NAMES = ['firstName', 'lastName', 'email', 'password'];
 const PASSWORD_MIN_LENGTH = 8;
 
-const validationRules = {
-  firstName: {
-    required: helpers.withMessage('Enter your first name.', required),
-  },
-  lastName: {
-    required: helpers.withMessage('Enter your last name.', required),
-  },
-  email: {
-    required: helpers.withMessage('Enter a complete email address.', required),
-    email: helpers.withMessage('Enter a complete email address.', email),
-  },
-  password: {
-    required: helpers.withMessage('Use at least 8 characters for your password.', required),
-    minLength: helpers.withMessage('Use at least 8 characters for your password.', minLength(PASSWORD_MIN_LENGTH)),
-  },
-};
+const defaultTranslate = (_key, fallback) => fallback;
+
+function createValidationRules(t) {
+  return {
+    firstName: {
+      required: helpers.withMessage(t('pageRegister.errors.firstName', 'Enter your first name.'), required),
+    },
+    lastName: {
+      required: helpers.withMessage(t('pageRegister.errors.lastName', 'Enter your last name.'), required),
+    },
+    email: {
+      required: helpers.withMessage(t('pageRegister.errors.emailRequired', 'Enter your email address.'), required),
+      email: helpers.withMessage(
+        t('pageRegister.errors.emailInvalid', 'Enter a valid email address, such as you@example.com.'),
+        email,
+      ),
+    },
+    password: {
+      required: helpers.withMessage(t('pageRegister.errors.passwordRequired', 'Create a password.'), required),
+      minLength: helpers.withMessage(
+        t('pageRegister.errors.passwordLength', 'Use at least 8 characters for your password.'),
+        minLength(PASSWORD_MIN_LENGTH),
+      ),
+    },
+  };
+}
 
 /**
  * Owns account-owner values and the normalized account-creation payload.
  * Presentation components update this state through the exposed field API and
  * never receive account-service dependencies.
  *
+ * @param {Object} [options] Form dependencies.
+ * @param {Function} [options.t] Translation function for validation messages.
  * @returns {Object} Reactive field state, validation state, normalized payload,
  * and field mutation helpers.
  */
-export function useAccountOwnerForm() {
+export function useAccountOwnerForm({ t = defaultTranslate } = {}) {
   const values = reactive({
     firstName: '',
     lastName: '',
@@ -45,7 +57,7 @@ export function useAccountOwnerForm() {
     email: values.email.trim(),
     password: values.password,
   }));
-  const v$ = useVuelidate(validationRules, validationValues);
+  const v$ = useVuelidate(createValidationRules(t), validationValues);
 
   const errors = computed(() =>
     Object.fromEntries(
