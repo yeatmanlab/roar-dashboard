@@ -787,13 +787,6 @@ const routes = [
     // Account-owner signup does not consume learner activation codes. The
     // previous parent form received `?code` as an undeclared attribute and
     // never read it; learner enrollment owns activation-code handling.
-    children: [
-      {
-        name: 'registerStudent',
-        path: 'student',
-        component: () => import('../components/auth/RegisterChildren.vue'),
-      },
-    ],
     meta: { requiresGuest: true },
   },
   {
