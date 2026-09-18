@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { withSetup } from '@/test-support/withSetup.js';
+import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
 import { useSelfRegistration } from './useSelfRegistration';
 import { useFamilyRegistration } from '@/containers/FamilyRegistration/composables/useFamilyRegistration';
 
@@ -67,23 +68,24 @@ describe('useSelfRegistration', () => {
     app.unmount();
   });
 
-  it('maps unexpected provider failures to a stable recovery message', async () => {
+  it('maps unexpected provider failures to neutral recovery guidance', async () => {
     const registration = createRegistration(vi.fn().mockRejectedValue(new Error('internal provider detail')));
     const [workflow, app] = withSetup(() => useSelfRegistration({ registration }));
 
     await expect(workflow.submit({ email: 'parent@example.com' })).resolves.toBe(false);
-    expect(workflow.errorMessage.value).toMatch(/could not create your account/i);
+    expect(workflow.errorMessage.value).toBe(ACCOUNT_CREATION_ERROR_MESSAGE);
     expect(workflow.errorMessage.value).not.toContain('provider detail');
     app.unmount();
   });
 
-  it('preserves actionable duplicate-account errors', async () => {
+  it('does not reveal duplicate-account details', async () => {
     const duplicateError = new Error('This email address is already in use. Please sign in instead.');
     const registration = createRegistration(vi.fn().mockRejectedValue(duplicateError));
     const [workflow, app] = withSetup(() => useSelfRegistration({ registration }));
 
     await expect(workflow.submit({ email: 'parent@example.com' })).resolves.toBe(false);
-    expect(workflow.errorMessage.value).toBe(duplicateError.message);
+    expect(workflow.errorMessage.value).toBe(ACCOUNT_CREATION_ERROR_MESSAGE);
+    expect(workflow.errorMessage.value).not.toMatch(/already|exists|in use/i);
     app.unmount();
   });
 

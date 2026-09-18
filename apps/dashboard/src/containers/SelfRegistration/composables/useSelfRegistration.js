@@ -1,14 +1,6 @@
 import { computed, onScopeDispose, ref } from 'vue';
 import { useFamilyRegistration } from '@/containers/FamilyRegistration/composables/useFamilyRegistration';
-
-const GENERIC_REGISTRATION_ERROR =
-  'We could not create your account. Check your connection and try again. If the problem continues, contact support.';
-
-function toUserMessage(error) {
-  const message = error instanceof Error ? error.message : '';
-  if (/already (?:in use|exists)/i.test(message)) return message;
-  return GENERIC_REGISTRATION_ERROR;
-}
+import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
 
 /**
  * Coordinates account creation and screen-level workflow state.
@@ -28,7 +20,7 @@ export function useSelfRegistration({
   redirectDelay = 1500,
 } = {}) {
   const { isSubmitting, error } = registration;
-  const errorMessage = computed(() => (error.value ? toUserMessage(error.value) : ''));
+  const errorMessage = computed(() => (error.value ? ACCOUNT_CREATION_ERROR_MESSAGE : ''));
   const isSuccess = ref(false);
   const verificationToken = ref('');
   let redirectTimeout;
