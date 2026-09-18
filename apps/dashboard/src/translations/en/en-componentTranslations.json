@@ -138,6 +138,14 @@
     "agreeToTerms": "I agree to the",
     "termsOfUse": "Terms of Use",
     "reviewTerms": "Review and accept the Terms of Use.",
+    "consent": {
+      "modalTitle": "Consent",
+      "loadingDocument": "Loading the research consent…",
+      "loadError": "We could not load the research consent. Check your connection and try again.",
+      "retry": "Try again",
+      "cancel": "Cancel",
+      "continue": "Continue"
+    },
     "creatingAccount": "Creating account…",
     "createAccount": "Create account",
     "alreadyHaveAccount": "Already have an account?",
@@ -145,7 +153,8 @@
     "creatingYourAccount": "Creating your account…",
     "accountCreated": "Account created",
     "createErrorTitle": "We could not create your account",
-    "accountCreatedMessage": "Your account has been created. Redirecting to your dashboard…",
+    "accountCreatedMessage": "Welcome to ROAR, {firstName}. You can now sign in and add children to your dashboard to begin participating in research studies.",
+    "continueToSignIn": "Continue to sign in",
     "close": "Close",
     "errors": {
       "firstName": "Enter your first name.",
@@ -155,7 +164,7 @@
       "passwordRequired": "Create a password.",
       "passwordLength": "Use at least 8 characters for your password.",
       "emailInUse": "This email address is already in use. Please sign in instead.",
-      "accountExists": "An account already exists for this email. Please sign in to finish setting up your account.",
+      "accountExists": "An account already exists for this email. Please sign in to access your account.",
       "generic": "We could not create your account. Check your connection and try again. If the problem continues, contact support."
     }
   },

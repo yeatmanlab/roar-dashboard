@@ -1,4 +1,4 @@
-import { onScopeDispose, ref } from 'vue';
+import { ref } from 'vue';
 import { useFamilyRegistration } from '@/containers/FamilyRegistration/composables/useFamilyRegistration';
 
 const GENERIC_REGISTRATION_ERROR =
@@ -20,32 +20,19 @@ function toUserMessage(error, t) {
  *
  * @param {Object} [options] Injectable workflow dependencies.
  * @param {(payload: Object) => Promise<void>} [options.createAccount] Account-creation operation.
- * @param {Function} [options.redirect] Post-registration navigation operation.
- * @param {number} [options.redirectDelay] Delay before post-registration navigation.
  * @returns {Object} Reactive workflow state and registration actions.
  */
 export function useSelfRegistration(options = {}) {
   const registration = options.createAccount ? null : useFamilyRegistration();
   const createAccount = options.createAccount ?? registration.submit;
-  const redirect = options.redirect ?? (() => window.location.assign('/'));
-  const redirectDelay = options.redirectDelay ?? 1500;
   const t = options.t ?? ((_key, fallback) => fallback);
 
   const isSubmitting = ref(false);
   const errorMessage = ref('');
   const isSuccess = ref(false);
   const verificationToken = ref('');
-  let redirectTimeout;
-
-  function cancelRedirect() {
-    if (redirectTimeout !== undefined) {
-      clearTimeout(redirectTimeout);
-      redirectTimeout = undefined;
-    }
-  }
 
   function dismissStatus() {
-    cancelRedirect();
     errorMessage.value = '';
     isSuccess.value = false;
   }
@@ -67,7 +54,6 @@ export function useSelfRegistration(options = {}) {
     try {
       await createAccount(payload);
       isSuccess.value = true;
-      redirectTimeout = setTimeout(redirect, redirectDelay);
       return true;
     } catch (error) {
       errorMessage.value = toUserMessage(error, t);
@@ -77,8 +63,6 @@ export function useSelfRegistration(options = {}) {
     }
   }
 
-  onScopeDispose(cancelRedirect);
-
   return {
     isSubmitting,
     errorMessage,
@@ -86,7 +70,6 @@ export function useSelfRegistration(options = {}) {
     verificationToken,
     submit,
     dismissStatus,
-    cancelRedirect,
     setVerificationToken,
   };
 }

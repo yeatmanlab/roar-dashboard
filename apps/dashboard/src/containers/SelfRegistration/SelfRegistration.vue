@@ -1,8 +1,14 @@
 <template>
   <div id="register-container" class="self-registration">
     <div class="self-registration-column">
-      <section id="register" class="self-registration-form-card" aria-labelledby="self-registration-heading">
-        <header class="self-registration-header">
+      <section
+        id="register"
+        class="self-registration-form-card"
+        :aria-labelledby="
+          registration.isSuccess.value ? 'self-registration-success-heading' : 'self-registration-heading'
+        "
+      >
+        <header v-if="!registration.isSuccess.value" class="self-registration-header">
           <div class="self-registration-logo" role="img" aria-label="ROAR">
             <ROARLogoShort aria-hidden="true" />
           </div>
@@ -15,11 +21,11 @@
         <RegistrationStatus
           :loading="registration.isSubmitting.value"
           :error-message="registration.errorMessage.value"
-          :success="registration.isSuccess.value"
           @dismiss="registration.dismissStatus"
         />
+        <RegistrationSuccess v-if="registration.isSuccess.value" :first-name="form.values.firstName" />
         <AccountOwnerForm
-          v-if="!registration.isSubmitting.value && !registration.isSuccess.value"
+          v-else-if="!registration.isSubmitting.value"
           :values="form.values"
           :errors="form.errors.value"
           :touched="form.touched"
@@ -31,7 +37,7 @@
           :submitting="registration.isSubmitting.value"
           @update:field="form.setField"
           @touch="form.touch"
-          @update:legal-accepted="consent.setLegalAccepted"
+          @update:legal-accepted="handleLegalAccepted"
           @update:future-contact-allowed="consent.setFutureContactAllowed"
           @verification="registration.setVerificationToken"
           @submit="handleSubmit"
@@ -39,6 +45,16 @@
       </section>
       <AuthPageFooter />
     </div>
+
+    <ConsentModal
+      :visible="consent.isModalOpen.value"
+      :document="consent.consentDocument.value"
+      :loading="consent.isLoading.value"
+      :load-failed="Boolean(consent.loadError.value)"
+      @cancel="consent.closeModal"
+      @retry="loadResearchConsent"
+      @confirm="confirmResearchConsent"
+    />
   </div>
 </template>
 
@@ -46,13 +62,16 @@
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import AuthPageFooter from '@/components/AuthPageFooter.vue';
+import { useAuthStore } from '@/store/auth';
 import { i18n } from '@/translations/i18n';
-import { AccountOwnerForm, RegistrationStatus } from './components';
+import { AccountOwnerForm, ConsentModal, RegistrationStatus, RegistrationSuccess } from './components';
+import { loadDefaultResearchConsent } from './composables/loadDefaultResearchConsent';
 import { useAccountOwnerForm } from './composables/useAccountOwnerForm';
 import { useResearchConsent } from './composables/useResearchConsent';
 import { useSelfRegistration } from './composables/useSelfRegistration';
 
 const { t } = i18n.global;
+const authStore = useAuthStore();
 const form = useAccountOwnerForm({ t });
 const consent = useResearchConsent();
 const registration = useSelfRegistration({ t });
@@ -64,11 +83,45 @@ const isSubmitDisabled = computed(() => !registration.verificationToken.value ||
 
 const canAttemptSubmission = computed(
   () =>
-    consent.legalAccepted.value && Boolean(registration.verificationToken.value) && !registration.isSubmitting.value,
+    consent.requiredAcknowledgementsComplete.value &&
+    Boolean(registration.verificationToken.value) &&
+    !registration.isSubmitting.value,
 );
+
+async function loadResearchConsent() {
+  try {
+    await consent.loadConsent(() =>
+      loadDefaultResearchConsent(authStore.getLegalDoc.bind(authStore), i18n.global.locale.value),
+    );
+  } catch {
+    // The composable exposes a recoverable error state; do not leak provider errors.
+  }
+}
+
+function openResearchConsent() {
+  consent.openModal();
+  if (!consent.consentDocument.value && !consent.isLoading.value) void loadResearchConsent();
+}
+
+function handleLegalAccepted(value) {
+  if (!value) {
+    consent.setLegalAccepted(false);
+    return;
+  }
+
+  openResearchConsent();
+}
+
+function confirmResearchConsent() {
+  if (consent.acceptResearchConsent()) consent.setLegalAccepted(true);
+}
 
 async function handleSubmit() {
   if (!form.validate()) return false;
+  if (consent.legalAccepted.value && !consent.researchConsentAccepted.value) {
+    openResearchConsent();
+    return false;
+  }
   if (!canAttemptSubmission.value) return false;
   return registration.submit(form.payload.value);
 }

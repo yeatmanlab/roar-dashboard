@@ -3,15 +3,6 @@ import { withSetup } from '@/test-support/withSetup.js';
 
 // --- Mocks -----------------------------------------------------------------
 
-const mockLogIn = vi.fn();
-const mockForceRefresh = vi.fn();
-vi.mock('@/store/auth', () => ({
-  useAuthStore: () => ({
-    logInWithEmailAndPassword: (...args) => mockLogIn(...args),
-    forceIdTokenRefresh: (...args) => mockForceRefresh(...args),
-  }),
-}));
-
 const mockCreateFamily = vi.fn();
 vi.mock('@/composables/mutations/useCreateFamilyMutation', () => ({
   default: () => ({ mutateAsync: (...args) => mockCreateFamily(...args) }),
@@ -54,38 +45,21 @@ describe('useFamilyRegistration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCreateFamily.mockResolvedValue({ id: 'fam-1' });
-    mockLogIn.mockResolvedValue(undefined);
-    mockForceRefresh.mockResolvedValue('fresh-token');
   });
 
-  it('runs the happy path in order: create family → sign in (no agreement work)', async () => {
-    const order = [];
-    mockCreateFamily.mockImplementation(async () => {
-      order.push('createFamily');
-      return { id: 'fam-1' };
-    });
-    mockLogIn.mockImplementation(async () => {
-      order.push('signIn');
-    });
-    mockForceRefresh.mockImplementation(async () => {
-      order.push('refresh');
-      return 'fresh-token';
-    });
-
+  it('creates the family without silently signing in (no agreement work)', async () => {
     const saga = setupSaga();
     await saga.submit(FORM);
 
-    expect(order).toEqual(['createFamily', 'signIn', 'refresh']);
     // Create body excludes legacy fields / isTestData.
     expect(mockCreateFamily).toHaveBeenCalledWith({
       body: { email: 'parent@example.com', password: 'super-secret', name: { first: 'Pat', last: 'Guardian' } },
     });
-    expect(mockLogIn).toHaveBeenCalledWith({ email: 'parent@example.com', password: 'super-secret' });
     expectNoAgreementWork();
     expect(saga.error.value).toBeNull();
   });
 
-  it('surfaces a terminal "email in use" error on a 409 create and does not sign in', async () => {
+  it('surfaces a terminal "email in use" error on a 409 create', async () => {
     const err = new Error('conflict');
     err.status = 409;
     mockCreateFamily.mockRejectedValueOnce(err);
@@ -93,31 +67,16 @@ describe('useFamilyRegistration', () => {
     const saga = setupSaga();
     await expect(saga.submit(FORM)).rejects.toThrow(/already in use/i);
 
-    expect(mockLogIn).not.toHaveBeenCalled();
     expectNoAgreementWork();
   });
 
-  it('on a 422 (family already exists) resumes by simply signing in', async () => {
+  it('directs an existing family owner to Sign In on a 422', async () => {
     const err = new Error('unprocessable');
     err.status = 422;
     mockCreateFamily.mockRejectedValueOnce(err);
 
     const saga = setupSaga();
-    await saga.submit(FORM);
-
-    expect(mockLogIn).toHaveBeenCalledWith({ email: 'parent@example.com', password: 'super-secret' });
-    expectNoAgreementWork();
-    expect(saga.error.value).toBeNull();
-  });
-
-  it('on a 422 then a failed sign-in surfaces a recoverable "please sign in" error', async () => {
-    const err = new Error('unprocessable');
-    err.status = 422;
-    mockCreateFamily.mockRejectedValueOnce(err);
-    mockLogIn.mockRejectedValueOnce(new Error('wrong password'));
-
-    const saga = setupSaga();
-    await expect(saga.submit(FORM)).rejects.toThrow(/sign in to finish/i);
+    await expect(saga.submit(FORM)).rejects.toThrow(/sign in to access/i);
     expectNoAgreementWork();
   });
 
@@ -129,7 +88,6 @@ describe('useFamilyRegistration', () => {
     const saga = setupSaga();
     await expect(saga.submit(FORM)).rejects.toThrow(/boom/i);
 
-    expect(mockLogIn).not.toHaveBeenCalled();
     expect(saga.error.value).toBeInstanceOf(Error);
     expectNoAgreementWork();
   });

@@ -63,6 +63,38 @@ describe('AccountOwnerForm.vue', () => {
     wrapper.unmount();
   });
 
+  it('keeps legal acceptance controlled until the consent modal is confirmed', async () => {
+    const wrapper = mountForm();
+    const legalAcceptance = wrapper.get('[name="legalAcceptance"]');
+
+    expect(legalAcceptance.element.checked).toBe(false);
+    expect(wrapper.get('[name="futureContact"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="research-consent-status"]').exists()).toBe(false);
+
+    await legalAcceptance.trigger('click');
+
+    expect(wrapper.emitted('update:legal-accepted')).toContainEqual([true]);
+    expect(wrapper.emitted('update:future-contact-allowed')).toBeUndefined();
+    expect(legalAcceptance.element.checked).toBe(false);
+
+    await wrapper.setProps({ legalAccepted: true });
+
+    expect(legalAcceptance.element.checked).toBe(true);
+    wrapper.unmount();
+  });
+
+  it('allows confirmed legal acceptance to be unchecked', async () => {
+    const wrapper = mountForm({ legalAccepted: true });
+    const legalAcceptance = wrapper.get('[name="legalAcceptance"]');
+
+    await legalAcceptance.trigger('click');
+
+    expect(wrapper.emitted('update:legal-accepted')).toContainEqual([false]);
+    expect(legalAcceptance.element.checked).toBe(false);
+
+    wrapper.unmount();
+  });
+
   it('emits controlled field updates and uses the native form submission path', async () => {
     const wrapper = mountForm();
 

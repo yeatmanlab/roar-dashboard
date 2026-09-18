@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { withSetup } from '@/test-support/withSetup.js';
 import { useSelfRegistration } from './useSelfRegistration';
 
@@ -7,14 +7,10 @@ vi.mock('@/containers/FamilyRegistration/composables/useFamilyRegistration', () 
 }));
 
 describe('useSelfRegistration', () => {
-  afterEach(() => vi.useRealTimers());
-
-  it('prevents duplicate account-creation requests and redirects after success', async () => {
-    vi.useFakeTimers();
+  it('prevents duplicate requests and holds the success state for explicit navigation', async () => {
     let resolveCreation;
     const createAccount = vi.fn(() => new Promise((resolve) => (resolveCreation = resolve)));
-    const redirect = vi.fn();
-    const [workflow, app] = withSetup(() => useSelfRegistration({ createAccount, redirect, redirectDelay: 25 }));
+    const [workflow, app] = withSetup(() => useSelfRegistration({ createAccount }));
 
     const first = workflow.submit({ email: 'parent@example.com' });
     const second = await workflow.submit({ email: 'parent@example.com' });
@@ -24,8 +20,6 @@ describe('useSelfRegistration', () => {
     resolveCreation();
     await first;
     expect(workflow.isSuccess.value).toBe(true);
-    vi.advanceTimersByTime(25);
-    expect(redirect).toHaveBeenCalledOnce();
 
     app.unmount();
   });
@@ -52,21 +46,18 @@ describe('useSelfRegistration', () => {
     app.unmount();
   });
 
-  it('cancels a pending redirect when the status is dismissed', async () => {
-    vi.useFakeTimers();
-    const redirect = vi.fn();
+  it('clears a dismissed error without changing verification readiness', async () => {
     const [workflow, app] = withSetup(() =>
-      useSelfRegistration({ createAccount: vi.fn().mockResolvedValue(), redirect, redirectDelay: 25 }),
+      useSelfRegistration({ createAccount: vi.fn().mockRejectedValue(new Error('provider unavailable')) }),
     );
 
     workflow.setVerificationToken('verified');
     await workflow.submit({ email: 'parent@example.com' });
     workflow.dismissStatus();
-    vi.advanceTimersByTime(25);
 
     expect(workflow.verificationToken.value).toBe('verified');
     expect(workflow.isSuccess.value).toBe(false);
-    expect(redirect).not.toHaveBeenCalled();
+    expect(workflow.errorMessage.value).toBe('');
     app.unmount();
   });
 });
