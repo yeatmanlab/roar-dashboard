@@ -1,22 +1,19 @@
 <template>
   <div v-if="show" class="mt-2 mb-1 field">
-    <PvFloatLabel class="mt-4">
-      <PvPassword
-        id="password"
-        :feedback="false"
-        :class="['w-full', 'text-200', { 'p-invalid': invalid }]"
-        :input-props="{ autocomplete: 'current-password' }"
-        toggle-mask
-        show-icon="pi pi-eye-slash"
-        hide-icon="pi pi-eye"
-        :model-value="password"
-        data-cy="sign-in__password"
-        @update:model-value="(v) => $emit('update:password', v)"
-        @keydown.enter.prevent="$emit('submit')"
-      />
-
-      <label for="password">{{ $t('authSignIn.passwordPlaceholder') }}</label>
-    </PvFloatLabel>
+    <FormPasswordInput
+      id="password"
+      class="mt-4"
+      name="password"
+      autocomplete="current-password"
+      :label="$t('authSignIn.passwordPlaceholder')"
+      :placeholder="$t('authSignIn.passwordPlaceholder')"
+      label-hidden
+      :model-value="password"
+      :invalid="invalid"
+      data-cy="sign-in__password"
+      @update:model-value="(value) => $emit('update:password', value)"
+      @keydown.enter.prevent="$emit('submit')"
+    />
 
     <div v-if="!isUsername" class="mt-2 flex w-full align-items-center justify-content-between">
       <small class="text-sm text-400 cursor-pointer font-semibold hover:text-primary" @click="$emit('forgot-password')">
@@ -30,8 +27,7 @@
 </template>
 
 <script setup>
-import PvPassword from 'primevue/password';
-import PvFloatLabel from 'primevue/floatlabel';
+import FormPasswordInput from '@/components/Form/PasswordInput';
 
 defineProps({
   show: { type: Boolean, default: false },

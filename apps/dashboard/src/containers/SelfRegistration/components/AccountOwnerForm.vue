@@ -4,124 +4,97 @@
       <p class="self-registration-required-hint"><span aria-hidden="true">*</span> Required fields</p>
 
       <div class="self-registration-name-fields">
-        <div class="self-registration-field">
-          <label for="account-owner-first-name">First name <span aria-hidden="true">*</span></label>
-          <PvInputText
-            id="account-owner-first-name"
-            name="firstName"
-            autocomplete="given-name"
-            :model-value="values.firstName"
-            :invalid="showError('firstName')"
-            :aria-invalid="showError('firstName')"
-            :aria-describedby="showError('firstName') ? 'account-owner-first-name-error' : undefined"
-            data-cy="signup__parent-first-name"
-            @update:model-value="updateField('firstName', $event)"
-            @blur="$emit('touch', 'firstName')"
-          />
-          <small v-if="showError('firstName')" id="account-owner-first-name-error" class="p-error">
-            {{ errors.firstName }}
-          </small>
-        </div>
-
-        <div class="self-registration-field">
-          <label for="account-owner-last-name">Last name <span aria-hidden="true">*</span></label>
-          <PvInputText
-            id="account-owner-last-name"
-            name="lastName"
-            autocomplete="family-name"
-            :model-value="values.lastName"
-            :invalid="showError('lastName')"
-            :aria-invalid="showError('lastName')"
-            :aria-describedby="showError('lastName') ? 'account-owner-last-name-error' : undefined"
-            data-cy="signup__parent-last-name"
-            @update:model-value="updateField('lastName', $event)"
-            @blur="$emit('touch', 'lastName')"
-          />
-          <small v-if="showError('lastName')" id="account-owner-last-name-error" class="p-error">
-            {{ errors.lastName }}
-          </small>
-        </div>
-      </div>
-
-      <div class="self-registration-field">
-        <label for="account-owner-email">Email address <span aria-hidden="true">*</span></label>
-        <PvInputText
-          id="account-owner-email"
-          name="email"
-          type="email"
-          inputmode="email"
-          autocomplete="email"
-          :model-value="values.email"
-          :invalid="showError('email')"
-          :aria-invalid="showError('email')"
-          :aria-describedby="showError('email') ? 'account-owner-email-error' : undefined"
-          data-cy="signup__parent-email"
-          @update:model-value="updateField('email', $event)"
-          @blur="$emit('touch', 'email')"
+        <TextInput
+          id="account-owner-first-name"
+          label="First name"
+          name="firstName"
+          autocomplete="given-name"
+          required
+          :model-value="values.firstName"
+          :invalid="showError('firstName')"
+          :error="showError('firstName') ? errors.firstName : ''"
+          data-cy="signup__parent-first-name"
+          @update:model-value="updateField('firstName', $event)"
+          @blur="$emit('touch', 'firstName')"
         />
-        <small v-if="showError('email')" id="account-owner-email-error" class="p-error">
-          {{ errors.email }}
-        </small>
+
+        <TextInput
+          id="account-owner-last-name"
+          label="Last name"
+          name="lastName"
+          autocomplete="family-name"
+          required
+          :model-value="values.lastName"
+          :invalid="showError('lastName')"
+          :error="showError('lastName') ? errors.lastName : ''"
+          data-cy="signup__parent-last-name"
+          @update:model-value="updateField('lastName', $event)"
+          @blur="$emit('touch', 'lastName')"
+        />
       </div>
 
-      <div class="self-registration-field">
-        <label for="account-owner-password">Password <span aria-hidden="true">*</span></label>
-        <PvPassword
-          input-id="account-owner-password"
-          :model-value="values.password"
-          :invalid="showError('password')"
-          :feedback="false"
-          toggle-mask
-          fluid
-          :input-props="{
-            name: 'password',
-            autocomplete: 'new-password',
-            'aria-invalid': showError('password'),
-            'aria-describedby': showError('password')
-              ? 'account-owner-password-help account-owner-password-error'
-              : 'account-owner-password-help',
-          }"
-          data-cy="signup__parent-password"
-          @update:model-value="updateField('password', $event)"
-          @blur="$emit('touch', 'password')"
-        />
-        <small id="account-owner-password-help" class="self-registration-field-help">Use at least 8 characters.</small>
-        <small v-if="showError('password')" id="account-owner-password-error" class="p-error">
-          {{ errors.password }}
-        </small>
-      </div>
+      <TextInput
+        id="account-owner-email"
+        label="Email address"
+        name="email"
+        type="email"
+        inputmode="email"
+        autocomplete="email"
+        required
+        :model-value="values.email"
+        :invalid="showError('email')"
+        :error="showError('email') ? errors.email : ''"
+        data-cy="signup__parent-email"
+        @update:model-value="updateField('email', $event)"
+        @blur="$emit('touch', 'email')"
+      />
+
+      <PasswordInput
+        id="account-owner-password"
+        label="Password"
+        name="password"
+        autocomplete="new-password"
+        required
+        help="Use at least 8 characters."
+        :model-value="values.password"
+        :invalid="showError('password')"
+        :error="showError('password') ? errors.password : ''"
+        data-cy="signup__parent-password"
+        @update:model-value="updateField('password', $event)"
+        @blur="$emit('touch', 'password')"
+      />
 
       <ChallengeV3 :model-value="verificationToken" action="submit" @update:model-value="$emit('verification', $event)">
         <div class="self-registration-acknowledgements">
-          <div class="self-registration-checkbox-row">
-            <PvCheckbox
-              input-id="account-owner-legal-acceptance"
-              name="legalAcceptance"
-              binary
-              :model-value="legalAccepted"
-              :invalid="submitted && !legalAccepted"
-              @update:model-value="$emit('update:legal-accepted', $event)"
-            />
-            <label for="account-owner-legal-acceptance">
+          <CheckboxInput
+            id="account-owner-legal-acceptance"
+            name="legalAcceptance"
+            required
+            :model-value="legalAccepted"
+            :invalid="submitted && !legalAccepted"
+            :error="submitted && !legalAccepted ? 'Review and accept the Terms of Use.' : ''"
+            @update:model-value="$emit('update:legal-accepted', $event)"
+          >
+            <span>
               I agree to the
-              <a :href="TERMS_OF_SERVICE_DOCUMENT_PATH" target="_blank" rel="noopener noreferrer">Terms of Use</a>
-              <span aria-hidden="true">*</span>
-            </label>
-          </div>
-          <small v-if="submitted && !legalAccepted" class="p-error">Review and accept the Terms of Use.</small>
+              <a
+                class="self-registration-terms-link"
+                :href="TERMS_OF_SERVICE_DOCUMENT_PATH"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Terms of Use
+              </a>
+            </span>
+          </CheckboxInput>
 
-          <div class="self-registration-checkbox-row">
-            <PvCheckbox
-              input-id="account-owner-future-contact"
-              name="futureContact"
-              binary
-              :model-value="futureContactAllowed"
-              @update:model-value="$emit('update:future-contact-allowed', $event)"
-            />
-            <label for="account-owner-future-contact">
-              Contact me about future research opportunities <span class="self-registration-optional">(optional)</span>
-            </label>
-          </div>
+          <CheckboxInput
+            id="account-owner-future-contact"
+            name="futureContact"
+            label="Contact me about future research opportunities (optional)"
+            :model-value="futureContactAllowed"
+            @update:model-value="$emit('update:future-contact-allowed', $event)"
+          />
         </div>
       </ChallengeV3>
 
@@ -146,9 +119,9 @@
 import { RouterLink } from 'vue-router';
 import { ChallengeV3 } from 'vue-recaptcha';
 import PvButton from 'primevue/button';
-import PvCheckbox from 'primevue/checkbox';
-import PvInputText from 'primevue/inputtext';
-import PvPassword from 'primevue/password';
+import CheckboxInput from '@/components/Form/CheckboxInput';
+import PasswordInput from '@/components/Form/PasswordInput';
+import TextInput from '@/components/Form/TextInput';
 import { TERMS_OF_SERVICE_DOCUMENT_PATH } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
 
@@ -209,30 +182,8 @@ function showError(field) {
   gap: 1rem;
 }
 
-.self-registration-field {
-  display: grid;
-  gap: 0.375rem;
-}
-
-.self-registration-field label,
-.self-registration-checkbox-row label {
-  width: auto;
-  color: var(--text-color);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.self-registration-field label span,
-.self-registration-required-hint span,
-.self-registration-checkbox-row label > span:not(.self-registration-optional) {
+.self-registration-required-hint span {
   color: var(--bright-red);
-}
-
-.self-registration-field-help,
-.self-registration-optional {
-  color: var(--text-color-secondary);
-  font-size: 0.8125rem;
-  font-weight: 400;
 }
 
 .self-registration-acknowledgements {
@@ -240,10 +191,10 @@ function showError(field) {
   gap: 1rem;
 }
 
-.self-registration-checkbox-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.625rem;
+.self-registration-terms-link {
+  color: var(--primary-color);
+  text-decoration: underline;
+  text-underline-offset: 0.125rem;
 }
 
 .self-registration-submit {

@@ -168,9 +168,6 @@ describe('AccountOwnerForm.vue', () => {
       global: {
         stubs: {
           ChallengeV3: { template: '<div><slot /></div>' },
-          PvInputText: true,
-          PvPassword: true,
-          PvCheckbox: true,
           PvButton: { props: ['label'], template: '<button>{{ label }}</button>' },
           RouterLink: { template: '<a><slot /></a>' },
         },
@@ -183,8 +180,37 @@ describe('AccountOwnerForm.vue', () => {
     expect(wrapper.text()).toContain('Password');
     expect(wrapper.text()).toContain('Create account');
     expect(wrapper.text()).toContain('Sign in');
+    expect(wrapper.findAllComponents({ name: 'FormTextInput' })).toHaveLength(3);
+    expect(wrapper.findAllComponents({ name: 'FormPasswordInput' })).toHaveLength(1);
+    expect(wrapper.findAllComponents({ name: 'FormCheckboxInput' })).toHaveLength(2);
 
     await wrapper.get('form').trigger('submit');
     expect(wrapper.emitted('submit')).toHaveLength(1);
+  });
+
+  it('forwards shared-control updates and blur events through its presentation contract', async () => {
+    const wrapper = mount(AccountOwnerForm, {
+      props: {
+        values: { firstName: '', lastName: '', email: '', password: '' },
+        errors: { firstName: '', lastName: '', email: '', password: '' },
+        touched: { firstName: false, lastName: false, email: false, password: false },
+      },
+      global: {
+        stubs: {
+          ChallengeV3: { template: '<div><slot /></div>' },
+          PvButton: true,
+          RouterLink: { template: '<a><slot /></a>' },
+        },
+      },
+    });
+
+    const firstName = wrapper.get('[data-cy="signup__parent-first-name"]');
+    await firstName.setValue('Taylor');
+    await firstName.trigger('blur');
+    await wrapper.get('#account-owner-legal-acceptance').setValue(true);
+
+    expect(wrapper.emitted('update:field')).toContainEqual(['firstName', 'Taylor']);
+    expect(wrapper.emitted('touch')).toContainEqual(['firstName']);
+    expect(wrapper.emitted('update:legal-accepted')).toContainEqual([true]);
   });
 });
