@@ -6,22 +6,22 @@
     aria-live="polite"
   >
     <AppSpinner class="mb-3" />
-    <span>Creating your account…</span>
+    <span>{{ t('pageRegister.creatingYourAccount') }}</span>
   </div>
 
   <PvDialog
     v-else
     :visible="Boolean(errorMessage || success)"
-    :header="success ? 'Account created' : 'We could not create your account'"
+    :header="success ? t('pageRegister.accountCreated') : t('pageRegister.createErrorTitle')"
     :style="{ width: 'min(25rem, calc(100vw - 2rem))' }"
     :modal="true"
     :draggable="false"
     @update:visible="dismiss"
   >
     <p role="status" aria-live="polite">
-      {{ success ? 'Your account has been created. Redirecting to your dashboard…' : errorMessage }}
+      {{ success ? t('pageRegister.accountCreatedMessage') : errorMessage }}
     </p>
-    <PvButton v-if="errorMessage" label="Close" @click="dismiss" />
+    <PvButton v-if="errorMessage" :label="t('pageRegister.close')" @click="dismiss" />
   </PvDialog>
 </template>
 
@@ -29,12 +29,15 @@
 import AppSpinner from '@/components/AppSpinner.vue';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
+import { i18n } from '@/translations/i18n';
 
 defineProps({
   loading: { type: Boolean, default: false },
   errorMessage: { type: String, default: '' },
   success: { type: Boolean, default: false },
 });
+
+const { t } = i18n.global;
 
 const emit = defineEmits(['dismiss']);
 

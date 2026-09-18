@@ -11,7 +11,8 @@ const FIELD_NAMES = ['firstName', 'lastName', 'email', 'password'];
  * @returns {Object} Reactive field state, validation state, normalized payload,
  * and field mutation helpers.
  */
-export function useAccountOwnerForm() {
+export function useAccountOwnerForm(options = {}) {
+  const t = options.t ?? ((_key, fallback) => fallback);
   const values = reactive({
     firstName: '',
     lastName: '',
@@ -21,12 +22,24 @@ export function useAccountOwnerForm() {
   const touched = reactive(Object.fromEntries(FIELD_NAMES.map((field) => [field, false])));
   const submitted = ref(false);
 
-  const errors = computed(() => ({
-    firstName: values.firstName.trim() ? '' : 'Enter your first name.',
-    lastName: values.lastName.trim() ? '' : 'Enter your last name.',
-    email: EMAIL_PATTERN.test(values.email.trim()) ? '' : 'Enter a complete email address.',
-    password: values.password.length >= 8 ? '' : 'Use at least 8 characters for your password.',
-  }));
+  const errors = computed(() => {
+    const email = values.email.trim();
+
+    return {
+      firstName: values.firstName.trim() ? '' : t('pageRegister.errors.firstName', 'Enter your first name.'),
+      lastName: values.lastName.trim() ? '' : t('pageRegister.errors.lastName', 'Enter your last name.'),
+      email: !email
+        ? t('pageRegister.errors.emailRequired', 'Enter your email address.')
+        : EMAIL_PATTERN.test(email)
+          ? ''
+          : t('pageRegister.errors.emailInvalid', 'Enter a valid email address, such as you@example.com.'),
+      password: !values.password
+        ? t('pageRegister.errors.passwordRequired', 'Create a password.')
+        : values.password.length >= 8
+          ? ''
+          : t('pageRegister.errors.passwordLength', 'Use at least 8 characters for your password.'),
+    };
+  });
   const isValid = computed(() => FIELD_NAMES.every((field) => !errors.value[field]));
   const payload = computed(() => ({
     firstName: values.firstName.trim(),
