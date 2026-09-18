@@ -1,4 +1,4 @@
-import { onScopeDispose, ref } from 'vue';
+import { computed, onScopeDispose, ref } from 'vue';
 import { useFamilyRegistration } from '@/containers/FamilyRegistration/composables/useFamilyRegistration';
 
 const GENERIC_REGISTRATION_ERROR =
@@ -14,19 +14,21 @@ function toUserMessage(error) {
  * Coordinates account creation and screen-level workflow state.
  *
  * @param {Object} [options] Injectable workflow dependencies.
- * @param {(payload: Object) => Promise<void>} [options.createAccount] Account-creation operation.
+ * @param {Object} [options.registration] Family-registration workflow.
+ * @param {(payload: Object) => Promise<void>} options.registration.submit Account-creation operation.
+ * @param {import('vue').Ref<boolean>} options.registration.isSubmitting Registration loading state.
+ * @param {import('vue').Ref<Error|null>} options.registration.error Registration failure state.
  * @param {Function} [options.redirect] Post-registration navigation operation.
  * @param {number} [options.redirectDelay] Delay before post-registration navigation.
  * @returns {Object} Reactive workflow state and registration actions.
  */
-export function useSelfRegistration(options = {}) {
-  const registration = options.createAccount ? null : useFamilyRegistration();
-  const createAccount = options.createAccount ?? registration.submit;
-  const redirect = options.redirect ?? (() => window.location.assign('/'));
-  const redirectDelay = options.redirectDelay ?? 1500;
-
-  const isSubmitting = ref(false);
-  const errorMessage = ref('');
+export function useSelfRegistration({
+  registration = useFamilyRegistration(),
+  redirect = () => window.location.assign('/'),
+  redirectDelay = 1500,
+} = {}) {
+  const { isSubmitting, error } = registration;
+  const errorMessage = computed(() => (error.value ? toUserMessage(error.value) : ''));
   const isSuccess = ref(false);
   const verificationToken = ref('');
   let redirectTimeout;
@@ -40,7 +42,7 @@ export function useSelfRegistration(options = {}) {
 
   function dismissStatus() {
     cancelRedirect();
-    errorMessage.value = '';
+    error.value = null;
     isSuccess.value = false;
   }
 
@@ -55,19 +57,16 @@ export function useSelfRegistration(options = {}) {
   async function submit(payload) {
     if (isSubmitting.value) return false;
 
-    isSubmitting.value = true;
-    errorMessage.value = '';
+    error.value = null;
     isSuccess.value = false;
     try {
-      await createAccount(payload);
+      await registration.submit(payload);
       isSuccess.value = true;
       redirectTimeout = setTimeout(redirect, redirectDelay);
       return true;
-    } catch (error) {
-      errorMessage.value = toUserMessage(error);
+    } catch (caughtError) {
+      error.value = error.value ?? (caughtError instanceof Error ? caughtError : new Error(String(caughtError)));
       return false;
-    } finally {
-      isSubmitting.value = false;
     }
   }
 
