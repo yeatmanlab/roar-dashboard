@@ -60,9 +60,9 @@ const isClassLinkProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVID
 const isCleverProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS.CLEVER);
 
 onMounted(() => {
-  // No polling to start here: the shared /me query (useMeQuery) is already
+  // Nothing to start here: the shared /me query (useMeQuery) is already
   // retrying through the provisioning window; the composable only observes it.
-  logAuthEvent(AUTH_LOG_MESSAGES.POLLING_ACCOUNT_READINESS, {
+  logAuthEvent(AUTH_LOG_MESSAGES.AWAITING_ACCOUNT_READINESS, {
     data: { ssoProvider: ssoProvider.value },
   });
   ssoProvider.value = null;

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { nextTick, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import * as VueQuery from '@tanstack/vue-query';
@@ -7,11 +7,13 @@ import { withSetup } from '@/test-support/withSetup.js';
 import useMeQuery from '@/composables/queries/useMeQuery';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
+import { APP_ROUTE_NAMES } from '@/constants/routes';
 import useSSOAccountReadinessVerification from './useSSOAccountReadinessVerification';
 
 const mocks = vi.hoisted(() => ({
   logAuthEvent: vi.fn(),
   clearGlobalError: vi.fn(),
+  useAuthStore: vi.fn(() => ({ accessToken: 'test-token' })),
 }));
 
 vi.mock('vue-router', () => ({
@@ -41,6 +43,10 @@ vi.mock('@/composables/useGlobalError', () => ({
   useGlobalError: () => ({
     clearGlobalError: mocks.clearGlobalError,
   }),
+}));
+
+vi.mock('@/store/auth', () => ({
+  useAuthStore: () => mocks.useAuthStore(),
 }));
 
 vi.mock('@sentry/vue', () => ({
@@ -90,6 +96,11 @@ describe('useSSOAccountReadinessVerification', () => {
     useMeQuery.mockReturnValue(meQuery);
     useRouter.mockReturnValue(router);
     useRoute.mockReturnValue({ query: {} });
+    mocks.useAuthStore.mockReturnValue({ accessToken: 'test-token' });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   const setup = () => {
@@ -129,13 +140,24 @@ describe('useSSOAccountReadinessVerification', () => {
 
     meQuery.data.value = readyUser;
     await nextTick();
-    // The blanket invalidation refetches /me itself; a fresh payload object
-    // lands in the cache and must not re-trigger the redirect.
     meQuery.data.value = { ...readyUser };
     await nextTick();
 
     expect(router.push).toHaveBeenCalledTimes(1);
     expect(queryClient.invalidateQueries).toHaveBeenCalledTimes(1);
+  });
+
+  it('invalidates everything except the /me entry on success', async () => {
+    setup();
+
+    meQuery.data.value = readyUser;
+    await nextTick();
+
+    // The /me payload that just resolved is the freshest data in the cache;
+    // refetching it immediately would be a redundant request.
+    const { predicate } = queryClient.invalidateQueries.mock.calls[0][0];
+    expect(predicate({ queryKey: [ME_QUERY_KEY] })).toBe(false);
+    expect(predicate({ queryKey: ['administrations'] })).toBe(true);
   });
 
   it('logs provisioning progress on each retry', async () => {
@@ -157,6 +179,22 @@ describe('useSSOAccountReadinessVerification', () => {
     });
   });
 
+  it('logs non-provisioning retry failures with a distinct message', async () => {
+    // A 500 during the SSO window is not "still provisioning" — labeling it
+    // as such would misdirect incident triage.
+    setup();
+
+    meQuery.failureReason.value = buildMeError(500);
+    meQuery.failureCount.value = 1;
+    await nextTick();
+
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.SSO_READINESS_RETRY_FAILED, {
+      level: 'warning',
+      data: { retryCount: 1, provider: 'SSO', status: 500 },
+    });
+    expect(mocks.logAuthEvent).not.toHaveBeenCalledWith(AUTH_LOG_MESSAGES.PROVISIONING_PENDING, expect.anything());
+  });
+
   it('sets hasError and logs when /me exhausts its retries on a non-terminal error', async () => {
     const { result } = setup();
 
@@ -166,7 +204,7 @@ describe('useSSOAccountReadinessVerification', () => {
 
     expect(result.hasError.value).toBe(true);
     expect(router.push).not.toHaveBeenCalled();
-    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.POLLING_MAX_RETRIES_EXCEEDED, {
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.PROVISIONING_RETRIES_EXHAUSTED, {
       level: 'error',
       data: { retryCount: 3, provider: 'SSO' },
     });
@@ -190,7 +228,7 @@ describe('useSSOAccountReadinessVerification', () => {
     await nextTick();
 
     expect(result.hasError.value).toBe(false);
-    expect(mocks.logAuthEvent).not.toHaveBeenCalledWith(AUTH_LOG_MESSAGES.POLLING_MAX_RETRIES_EXCEEDED, {
+    expect(mocks.logAuthEvent).not.toHaveBeenCalledWith(AUTH_LOG_MESSAGES.PROVISIONING_RETRIES_EXHAUSTED, {
       level: 'error',
       data: expect.anything(),
     });
@@ -205,13 +243,40 @@ describe('useSSOAccountReadinessVerification', () => {
     expect(result.hasError.value).toBe(false);
   });
 
-  it('exposes the query failure count as retryCount', async () => {
-    const { result } = setup();
+  it('routes to SignIn when no access token arrives within the grace period', async () => {
+    // Deep link or stale bookmark: no Firebase session means the /me query
+    // never fires, so without this guard the page would spin forever.
+    vi.useFakeTimers();
+    mocks.useAuthStore.mockReturnValue({ accessToken: null });
 
-    meQuery.failureCount.value = 5;
-    await nextTick();
+    setup();
+    await vi.advanceTimersByTimeAsync(10_000);
 
-    expect(result.retryCount.value).toBe(5);
+    expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.SIGN_IN });
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.SSO_SESSION_MISSING, {
+      level: 'warning',
+      data: { provider: 'SSO' },
+    });
+  });
+
+  it('does not route to SignIn when a token is present at the end of the grace period', async () => {
+    vi.useFakeTimers();
+
+    setup();
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it('cancels the no-session timer on unmount', async () => {
+    vi.useFakeTimers();
+    mocks.useAuthStore.mockReturnValue({ accessToken: null });
+
+    const { app } = setup();
+    app.unmount();
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(router.replace).not.toHaveBeenCalled();
   });
 
   it('resets the /me query on retryPolling', () => {

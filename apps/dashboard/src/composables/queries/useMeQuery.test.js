@@ -229,11 +229,13 @@ describe('useMeQuery', () => {
     expect(retryFn(PROVISIONING_MAX_RETRIES, notProvisionedError)).toBe(false);
   });
 
-  it('retries auth/user-not-found under Cypress, but with a shortened window', () => {
+  it('retries auth/user-not-found in test environments, but with a shortened window', () => {
     // Unlike other transient errors (no retries in Cypress), the
     // provisioning path stays exercised in E2E — just with fewer attempts
-    // so runs stay fast.
-    window.Cypress = {};
+    // so runs stay fast. Detection goes through isTestEnv (the __E2E__
+    // localStorage flag), not window.Cypress, which the app context can't
+    // always see.
+    window.localStorage.setItem('__E2E__', 'true');
     try {
       let retryFn;
       vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
@@ -250,7 +252,7 @@ describe('useMeQuery', () => {
       expect(retryFn(2, notProvisionedError)).toBe(true);
       expect(retryFn(3, notProvisionedError)).toBe(false);
     } finally {
-      delete window.Cypress;
+      window.localStorage.removeItem('__E2E__');
     }
   });
 
@@ -265,13 +267,13 @@ describe('useMeQuery', () => {
       expect(meRetryDelay(14, notProvisionedError)).toBe(10_000);
     });
 
-    it('uses a fast schedule for the provisioning path under Cypress', () => {
-      window.Cypress = {};
+    it('uses a fast schedule for the provisioning path in test environments', () => {
+      window.localStorage.setItem('__E2E__', 'true');
       try {
         expect(meRetryDelay(0, notProvisionedError)).toBe(200);
         expect(meRetryDelay(1, notProvisionedError)).toBe(300);
       } finally {
-        delete window.Cypress;
+        window.localStorage.removeItem('__E2E__');
       }
     });
 

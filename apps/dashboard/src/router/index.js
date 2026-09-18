@@ -13,7 +13,7 @@ import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
-import { fetchMe, meRetryPolicy, meRetryDelay } from '@/composables/queries/useMeQuery';
+import { fetchMe } from '@/composables/queries/useMeQuery';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { useGlobalError } from '@/composables/useGlobalError';
@@ -1138,28 +1138,31 @@ router.beforeEach(async (to, from, next) => {
   // navigation through and re-evaluate on the next one than freeze the
   // router. App.vue's `AppSpinner` gates render on `isMeSettling` in the
   // meantime, so the user never sees a flash of the wrong page.
+  // Routes flagged `awaitsUserProvisioning` (the SSO landing page) skip the
+  // prefetch entirely: the page owns the `/me` lifecycle during provisioning,
+  // the unsigned-TOS gate cannot apply to a user whose record doesn't exist
+  // yet, and starting a long provisioning-aware retry cycle here would only
+  // be abandoned by the 5s race below.
   let meData;
-  if (store.isAuthenticated) {
+  if (store.isAuthenticated && !to.meta?.awaitsUserProvisioning) {
     try {
-      meData = await Promise.race([
-        queryClient.ensureQueryData({
-          queryKey: [ME_QUERY_KEY],
-          // Required: no defaultQueryFn is configured on the queryClient, so
-          // after an identity reset clears the entry, ensureQueryData without
-          // a queryFn would reject with "Missing queryFn" and silently skip
-          // the unsigned-TOS gate.
-          queryFn: fetchMe,
-          staleTime: 60_000,
-          // If this call is the one that starts the fetch (no observer has
-          // subscribed yet), the provisioning-aware /me retry policy must
-          // apply here too — otherwise a fetch kicked off by this guard
-          // would exhaust the queryClient's generic 3-retry default during
-          // the SSO provisioning window and park the query in error state.
-          retry: meRetryPolicy,
-          retryDelay: meRetryDelay,
-        }),
-        new Promise((resolve) => setTimeout(() => resolve(undefined), 5000)),
-      ]);
+      const ensured = queryClient.ensureQueryData({
+        queryKey: [ME_QUERY_KEY],
+        // Required: no defaultQueryFn is configured on the queryClient, so
+        // after an identity reset clears the entry, ensureQueryData without
+        // a queryFn would reject with "Missing queryFn" and silently skip
+        // the unsigned-TOS gate. The retry policy is NOT attached here — it
+        // is pinned on the query key via `setQueryDefaults` in useMeQuery.js,
+        // so every /me initiator shares the provisioning-aware schedule.
+        queryFn: fetchMe,
+        staleTime: 60_000,
+      });
+      // If the 5s timeout wins the race, nothing observes `ensured` any
+      // more — without this no-op handler, a late rejection (the
+      // provisioning window can run ~100s) surfaces as an unhandled
+      // promise rejection long after this guard returned.
+      ensured.catch(() => {});
+      meData = await Promise.race([ensured, new Promise((resolve) => setTimeout(() => resolve(undefined), 5000))]);
     } catch {
       // ensureQueryData throws on terminal `/me` failures (rostering-ended,
       // auth-expired). Those are surfaced via the QueryCache → globalError

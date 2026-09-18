@@ -2,11 +2,17 @@ import { useQuery } from '@tanstack/vue-query';
 import { StatusCodes } from 'http-status-codes';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getRoarApiClient } from '@/clients/roar-api';
+import { queryClient } from '@/queryClient';
 import { useAuthStore } from '@/store/auth';
+import isTestEnv from '@/helpers/isTestEnv';
 import { isRosteringEndedError, isTerminalAuthError, isUserNotProvisionedError } from '@/utils/api-errors';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 
 const MAX_RETRIES = 3;
+
+// TanStack's default schedule, spelled out: 1s, 2s, 4s, ... capped at 30s.
+const DEFAULT_RETRY_BASE_DELAY_MS = 1000;
+const DEFAULT_RETRY_MAX_DELAY_MS = 30_000;
 
 // `auth/user-not-found` means the Firebase account exists but the backend
 // user record doesn't — after an SSO sign-in that is the provisioning window,
@@ -28,8 +34,8 @@ const PROVISIONING_RETRY_MAX_DELAY_MS = 10_000;
  * wastes time and delays the user-facing error UX. `auth/user-not-found` is
  * the opposite case: the backend hasn't provisioned the user record yet
  * (SSO rostering in flight), so it gets a longer retry window than ordinary
- * transient failures — in Cypress a shortened one, to keep E2E runs fast
- * while still exercising the provisioning path.
+ * transient failures — in test environments (`isTestEnv`) a shortened one,
+ * to keep E2E runs fast while still exercising the provisioning path.
  *
  * Used by both `useMeQuery` and `useUserClaimsQuery` (which observes the
  * same `/me` cache entry), and placed **after** `...options` in each
@@ -44,7 +50,9 @@ export function meRetryPolicy(failureCount, error) {
     return false;
   }
   if (isUserNotProvisionedError(error)) {
-    const maxRetries = window.Cypress ? PROVISIONING_MAX_RETRIES_TEST : PROVISIONING_MAX_RETRIES;
+    // `isTestEnv` (the __E2E__ localStorage flag), not `window.Cypress` —
+    // the Cypress global is not visible from the app context in some setups.
+    const maxRetries = isTestEnv() ? PROVISIONING_MAX_RETRIES_TEST : PROVISIONING_MAX_RETRIES;
     return failureCount < maxRetries;
   }
   // Deterministic behavior in Cypress E2E — mirrors the queryClient's
@@ -69,11 +77,10 @@ export function meRetryPolicy(failureCount, error) {
  */
 export function meRetryDelay(failureCount, error) {
   if (isUserNotProvisionedError(error)) {
-    const baseDelay = window.Cypress ? PROVISIONING_RETRY_BASE_DELAY_TEST_MS : PROVISIONING_RETRY_BASE_DELAY_MS;
+    const baseDelay = isTestEnv() ? PROVISIONING_RETRY_BASE_DELAY_TEST_MS : PROVISIONING_RETRY_BASE_DELAY_MS;
     return Math.min(baseDelay * PROVISIONING_RETRY_DELAY_MULTIPLIER ** failureCount, PROVISIONING_RETRY_MAX_DELAY_MS);
   }
-  // TanStack Query's default schedule: 1s, 2s, 4s, ... capped at 30s.
-  return Math.min(1000 * 2 ** failureCount, 30_000);
+  return Math.min(DEFAULT_RETRY_BASE_DELAY_MS * 2 ** failureCount, DEFAULT_RETRY_MAX_DELAY_MS);
 }
 
 /**
@@ -141,6 +148,18 @@ export async function fetchMe() {
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
+// Pin the retry policy on the query key itself, so /me fetches started
+// outside a `useQuery` observer — the router guard's `ensureQueryData`,
+// `resolveUserClaims`' `fetchQuery` — get the same provisioning-aware
+// schedule without every initiator having to hand-attach the pair. A future
+// initiator that forgets would otherwise silently fall back to the
+// queryClient's generic 3-retry default and reintroduce the GenericError
+// bounce during SSO provisioning.
+queryClient.setQueryDefaults([ME_QUERY_KEY], {
+  retry: meRetryPolicy,
+  retryDelay: meRetryDelay,
+});
+
 const useMeQuery = (queryOptions = undefined) => {
   const authStore = useAuthStore();
   const conditions = [() => Boolean(authStore.accessToken)];

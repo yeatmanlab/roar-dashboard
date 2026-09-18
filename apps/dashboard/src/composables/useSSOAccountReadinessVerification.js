@@ -1,16 +1,24 @@
-import { computed, watch } from 'vue';
+import { computed, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 import { setUser } from '@sentry/vue';
 import useMeQuery from '@/composables/queries/useMeQuery';
 import { useGlobalError } from '@/composables/useGlobalError';
 import useSentryLogging from '@/composables/useSentryLogging';
+import { useAuthStore } from '@/store/auth';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
+import { APP_ROUTE_NAMES } from '@/constants/routes';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
-import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
+import { isRosteringEndedError, isTerminalAuthError, isUserNotProvisionedError } from '@/utils/api-errors';
 
 const { logAuthEvent } = useSentryLogging();
+
+// How long the SSO landing page waits for the Firebase token listener to
+// produce an access token before concluding there is no session at all
+// (deep link, stale bookmark, or an SSO redirect that never signed in).
+// The token normally arrives within a couple of seconds of the redirect.
+const NO_SESSION_GRACE_PERIOD_MS = 10_000;
 
 /**
  * Verify account readiness after SSO authentication.
@@ -26,9 +34,12 @@ const { logAuthEvent } = useSentryLogging();
  *
  * What this composable adds on top of the query:
  *
- * - the success routine: Sentry identification, a blanket query
- *   invalidation, clearing any stale global error, and the redirect to the
- *   user's original destination;
+ * - the success routine: Sentry identification, invalidation of everything
+ *   cached during the provisioning window, clearing any stale global error,
+ *   and the redirect to the user's original destination;
+ * - a no-session guard: without an access token the query never fires, so a
+ *   visitor who lands here signed out is routed to SignIn after a grace
+ *   period instead of spinning forever;
  * - progress/error logging for the SSO flow; and
  * - `retryPolling`, which resets the `/me` query so SSOAuthPage's retry
  *   button restarts the provisioning wait from scratch.
@@ -48,12 +59,10 @@ const useSSOAccountReadinessVerification = () => {
   const router = useRouter();
   const route = useRoute();
   const queryClient = useQueryClient();
+  const authStore = useAuthStore();
   const { clearGlobalError } = useGlobalError();
 
   const { data, error, failureCount, failureReason } = useMeQuery();
-
-  /** Number of failed `/me` attempts in the current fetch cycle. */
-  const retryCount = computed(() => failureCount.value);
 
   /**
    * `true` once the `/me` query has exhausted its retries on a
@@ -65,20 +74,41 @@ const useSSOAccountReadinessVerification = () => {
     () => Boolean(error.value) && !isRosteringEndedError(error.value) && !isTerminalAuthError(error.value),
   );
 
+  // No access token means the /me query is disabled and will never settle.
+  // Give the Firebase token listener a grace period, then route to SignIn —
+  // mirrors the old polling loop, which fetched unconditionally, exhausted
+  // its retries on auth/required, and landed on SignIn.
+  const noSessionTimer = setTimeout(() => {
+    if (authStore.accessToken || hasRedirected) return;
+    hasRedirected = true;
+    logAuthEvent(AUTH_LOG_MESSAGES.SSO_SESSION_MISSING, {
+      level: 'warning',
+      data: { provider: 'SSO' },
+    });
+    router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
+  }, NO_SESSION_GRACE_PERIOD_MS);
+  onUnmounted(() => clearTimeout(noSessionTimer));
+
   // Log each retry so the provisioning wait is visible in Sentry traces.
+  // Non-provisioning failures (500s, network errors) get a distinct message
+  // — labeling them "not yet provisioned" would misdirect incident triage.
   watch(failureCount, (count) => {
     if (count === 0 || hasRedirected) return;
-    logAuthEvent(AUTH_LOG_MESSAGES.PROVISIONING_PENDING, {
+    const reason = failureReason.value;
+    const message = isUserNotProvisionedError(reason)
+      ? AUTH_LOG_MESSAGES.PROVISIONING_PENDING
+      : AUTH_LOG_MESSAGES.SSO_READINESS_RETRY_FAILED;
+    logAuthEvent(message, {
       level: 'warning',
-      data: { retryCount: count, provider: 'SSO', status: failureReason.value?.status },
+      data: { retryCount: count, provider: 'SSO', status: reason?.status },
     });
   });
 
   watch(hasError, (errored) => {
     if (!errored || hasRedirected) return;
-    logAuthEvent(AUTH_LOG_MESSAGES.POLLING_MAX_RETRIES_EXCEEDED, {
+    logAuthEvent(AUTH_LOG_MESSAGES.PROVISIONING_RETRIES_EXHAUSTED, {
       level: 'error',
-      data: { retryCount: retryCount.value, provider: 'SSO' },
+      data: { retryCount: failureCount.value, provider: 'SSO' },
     });
   });
 
@@ -95,10 +125,14 @@ const useSSOAccountReadinessVerification = () => {
       setUser({ id: me.id, userType: me.userType });
       logAuthEvent(AUTH_LOG_MESSAGES.SUCCESS, { data: { provider: 'SSO' } });
 
-      // Blanket invalidation is intentional: SSO completion is a cold start —
-      // anything cached before this point was fetched while the user record
-      // was still being provisioned, so none of it is trustworthy.
-      queryClient.invalidateQueries();
+      // Invalidate everything cached during the provisioning window — SSO
+      // completion is a cold start, so data fetched while the user record
+      // was still being created is not trustworthy. /me itself is excluded:
+      // the entry that just resolved is the freshest data in the cache, and
+      // refetching it immediately would be a redundant request.
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] !== ME_QUERY_KEY,
+      });
 
       // A stale global error from an earlier failed /me attempt would make
       // the router guard hijack this redirect. /me just succeeded, so clear
@@ -123,7 +157,6 @@ const useSSOAccountReadinessVerification = () => {
   };
 
   return {
-    retryCount,
     hasError,
     retryPolling,
   };
