@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { StatusCodes } from 'http-status-codes';
 import useCreateFamilyMutation from '@/composables/mutations/useCreateFamilyMutation';
+import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
 import { mapParentFormToCreateFamily } from '@/helpers/registration/mapParentFormToCreateFamily';
 
 /**
@@ -54,11 +55,10 @@ export function useFamilyRegistration() {
         await createFamilyMutation.mutateAsync({ body });
       } catch (createError) {
         if (createError?.status === StatusCodes.CONFLICT) {
-          // 409 — email already in use; terminal and user-actionable.
-          throw new Error('This email address is already in use. Please sign in instead.');
+          throw new Error(ACCOUNT_CREATION_ERROR_MESSAGE);
         }
         if (createError?.status === StatusCodes.UNPROCESSABLE_ENTITY) {
-          throw new Error('An account already exists for this email. Please sign in to access your account.');
+          throw new Error(ACCOUNT_CREATION_ERROR_MESSAGE);
         }
         throw createError;
       }

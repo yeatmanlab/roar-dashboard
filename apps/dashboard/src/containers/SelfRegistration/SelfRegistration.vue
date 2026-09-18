@@ -18,14 +18,20 @@
           </div>
         </header>
 
-        <RegistrationStatus
-          :loading="registration.isSubmitting.value"
-          :error-message="registration.errorMessage.value"
-          @dismiss="registration.dismissStatus"
-        />
+        <PvDialog
+          :visible="Boolean(registration.errorMessage.value)"
+          :header="t('pageRegister.createErrorTitle')"
+          :style="{ width: 'min(25rem, calc(100vw - 2rem))' }"
+          :modal="true"
+          :draggable="false"
+          @update:visible="registration.dismissError"
+        >
+          <p role="alert">{{ registration.errorMessage.value }}</p>
+          <PvButton :label="t('pageRegister.close')" @click="registration.dismissError" />
+        </PvDialog>
         <RegistrationSuccess v-if="registration.isSuccess.value" :first-name="form.values.firstName" />
         <AccountOwnerForm
-          v-else-if="!registration.isSubmitting.value"
+          v-else
           :values="form.values"
           :errors="form.errors.value"
           :touched="form.touched"
@@ -33,7 +39,7 @@
           :legal-accepted="consent.legalAccepted.value"
           :future-contact-allowed="consent.futureContactAllowed.value"
           :verification-token="registration.verificationToken.value"
-          :disabled="isSubmitDisabled"
+          :disabled="!canAttemptSubmission"
           :submitting="registration.isSubmitting.value"
           @update:field="form.setField"
           @touch="form.touch"
@@ -60,11 +66,13 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted } from 'vue';
+import PvButton from 'primevue/button';
+import PvDialog from 'primevue/dialog';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import AuthPageFooter from '@/components/AuthPageFooter.vue';
 import { useAuthStore } from '@/store/auth';
 import { i18n } from '@/translations/i18n';
-import { AccountOwnerForm, ConsentModal, RegistrationStatus, RegistrationSuccess } from './components';
+import { AccountOwnerForm, ConsentModal, RegistrationSuccess } from './components';
 import { loadDefaultResearchConsent } from './composables/loadDefaultResearchConsent';
 import { useAccountOwnerForm } from './composables/useAccountOwnerForm';
 import { useResearchConsent } from './composables/useResearchConsent';
@@ -76,17 +84,9 @@ const form = useAccountOwnerForm({ t });
 const consent = useResearchConsent();
 const registration = useSelfRegistration({ t });
 
-// Field and legal validity stay out of the disabled state so an attempted
-// submission can reveal actionable inline errors. Verification readiness stays
-// in the disabled state because submitting without a token cannot proceed.
-const isSubmitDisabled = computed(() => !registration.verificationToken.value || registration.isSubmitting.value);
-
-const canAttemptSubmission = computed(
-  () =>
-    consent.requiredAcknowledgementsComplete.value &&
-    Boolean(registration.verificationToken.value) &&
-    !registration.isSubmitting.value,
-);
+// Keep the button available so submission can reveal actionable field and
+// acknowledgement errors. Disable it only while a request is in flight.
+const canAttemptSubmission = computed(() => !registration.isSubmitting.value);
 
 async function loadResearchConsent() {
   try {
@@ -118,7 +118,8 @@ function confirmResearchConsent() {
 
 async function handleSubmit() {
   if (!form.validate()) return false;
-  if (consent.legalAccepted.value && !consent.researchConsentAccepted.value) {
+  if (!consent.legalAccepted.value) return false;
+  if (!consent.researchConsentAccepted.value) {
     openResearchConsent();
     return false;
   }

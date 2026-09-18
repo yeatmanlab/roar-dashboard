@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { withSetup } from '@/test-support/withSetup.js';
+import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
 
 // --- Mocks -----------------------------------------------------------------
 
@@ -59,24 +60,26 @@ describe('useFamilyRegistration', () => {
     expect(saga.error.value).toBeNull();
   });
 
-  it('surfaces a terminal "email in use" error on a 409 create', async () => {
+  it('surfaces neutral recovery guidance on a 409 create', async () => {
     const err = new Error('conflict');
     err.status = 409;
     mockCreateFamily.mockRejectedValueOnce(err);
 
     const saga = setupSaga();
-    await expect(saga.submit(FORM)).rejects.toThrow(/already in use/i);
+    await expect(saga.submit(FORM)).rejects.toThrow(ACCOUNT_CREATION_ERROR_MESSAGE);
+    expect(saga.error.value.message).not.toMatch(/already|exists|in use/i);
 
     expectNoAgreementWork();
   });
 
-  it('directs an existing family owner to Sign In on a 422', async () => {
+  it('surfaces neutral recovery guidance on a 422 create', async () => {
     const err = new Error('unprocessable');
     err.status = 422;
     mockCreateFamily.mockRejectedValueOnce(err);
 
     const saga = setupSaga();
-    await expect(saga.submit(FORM)).rejects.toThrow(/sign in to access/i);
+    await expect(saga.submit(FORM)).rejects.toThrow(ACCOUNT_CREATION_ERROR_MESSAGE);
+    expect(saga.error.value.message).not.toMatch(/already|exists|in use/i);
     expectNoAgreementWork();
   });
 

@@ -30,4 +30,34 @@ describe('useAccountOwnerForm', () => {
     expect(form.touched).toEqual({ firstName: true, lastName: true, email: true, password: true });
     expect(form.values).not.toHaveProperty('unknown');
   });
+
+  it.each([
+    ['firstName', ' ', 'Enter your first name.'],
+    ['lastName', ' ', 'Enter your last name.'],
+    ['email', 'not-an-email', 'Enter a valid email address, such as you@example.com.'],
+    ['password', '1234567', 'Use at least 8 characters for your password.'],
+  ])('uses Vuelidate rules for an invalid %s', (field, value, message) => {
+    const form = useAccountOwnerForm();
+    form.setValues({
+      firstName: 'Pat',
+      lastName: 'Guardian',
+      email: 'parent@example.com',
+      password: 'password1',
+      [field]: value,
+    });
+
+    expect(form.validate()).toBe(false);
+    expect(form.errors.value[field]).toBe(message);
+  });
+
+  it('clears stale validation messages when a field is corrected', () => {
+    const form = useAccountOwnerForm();
+    form.touch('email');
+
+    expect(form.errors.value.email).toBe('Enter your email address.');
+
+    form.setField('email', 'parent@example.com');
+
+    expect(form.errors.value.email).toBe('');
+  });
 });

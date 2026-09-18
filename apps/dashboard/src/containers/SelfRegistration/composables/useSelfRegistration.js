@@ -1,40 +1,28 @@
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useFamilyRegistration } from '@/containers/FamilyRegistration/composables/useFamilyRegistration';
-
-const GENERIC_REGISTRATION_ERROR =
-  'We could not create your account. Check your connection and try again. If the problem continues, contact support.';
-
-function toUserMessage(error, t) {
-  const message = error instanceof Error ? error.message : '';
-  if (/email address is already in use/i.test(message)) {
-    return t('pageRegister.errors.emailInUse', message);
-  }
-  if (/account already exists/i.test(message)) {
-    return t('pageRegister.errors.accountExists', message);
-  }
-  return t('pageRegister.errors.generic', GENERIC_REGISTRATION_ERROR);
-}
+import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
 
 /**
  * Coordinates account creation and screen-level workflow state.
  *
  * @param {Object} [options] Injectable workflow dependencies.
- * @param {(payload: Object) => Promise<void>} [options.createAccount] Account-creation operation.
+ * @param {Object} [options.registration] Family-registration workflow.
+ * @param {(payload: Object) => Promise<void>} options.registration.submit Account-creation operation.
+ * @param {import('vue').Ref<boolean>} options.registration.isSubmitting Registration loading state.
+ * @param {import('vue').Ref<Error|null>} options.registration.error Registration failure state.
+ * @param {Function} [options.t] Translation function for user-facing errors.
  * @returns {Object} Reactive workflow state and registration actions.
  */
-export function useSelfRegistration(options = {}) {
-  const registration = options.createAccount ? null : useFamilyRegistration();
-  const createAccount = options.createAccount ?? registration.submit;
-  const t = options.t ?? ((_key, fallback) => fallback);
-
-  const isSubmitting = ref(false);
-  const errorMessage = ref('');
+export function useSelfRegistration({ registration = useFamilyRegistration(), t = (_key, fallback) => fallback } = {}) {
+  const { isSubmitting, error } = registration;
+  const errorMessage = computed(() =>
+    error.value ? t('pageRegister.errors.generic', ACCOUNT_CREATION_ERROR_MESSAGE) : '',
+  );
   const isSuccess = ref(false);
   const verificationToken = ref('');
 
-  function dismissStatus() {
-    errorMessage.value = '';
-    isSuccess.value = false;
+  function dismissError() {
+    error.value = null;
   }
 
   function setVerificationToken(token) {
@@ -48,18 +36,15 @@ export function useSelfRegistration(options = {}) {
   async function submit(payload) {
     if (isSubmitting.value) return false;
 
-    isSubmitting.value = true;
-    errorMessage.value = '';
+    error.value = null;
     isSuccess.value = false;
     try {
-      await createAccount(payload);
+      await registration.submit(payload);
       isSuccess.value = true;
       return true;
-    } catch (error) {
-      errorMessage.value = toUserMessage(error, t);
+    } catch (caughtError) {
+      error.value = error.value ?? (caughtError instanceof Error ? caughtError : new Error(String(caughtError)));
       return false;
-    } finally {
-      isSubmitting.value = false;
     }
   }
 
@@ -69,7 +54,7 @@ export function useSelfRegistration(options = {}) {
     isSuccess,
     verificationToken,
     submit,
-    dismissStatus,
+    dismissError,
     setVerificationToken,
   };
 }

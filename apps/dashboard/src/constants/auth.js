@@ -55,3 +55,5 @@ export const AUTH_PROVIDERS = Object.freeze({
 
 export const TERMS_OF_SERVICE_DOCUMENT_PATH = '/docs/roar-terms-of-service.pdf';
 export const USER_ICON_IMAGE_PATH = '/assets/img/cute-lion.png';
+export const ACCOUNT_CREATION_ERROR_MESSAGE =
+  'We could not create an account with these details. Try signing in or resetting your password.';

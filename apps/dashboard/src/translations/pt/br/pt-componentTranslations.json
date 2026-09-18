@@ -137,10 +137,10 @@
     "showPassword": "Mostrar senha",
     "hidePassword": "Ocultar senha",
     "passwordHelp": "Deve ter pelo menos 8 caracteres.",
-    "futureContact": "Quero receber e-mails sobre novas oportunidades de pesquisa",
+    "futureContact": "Entre em contato comigo sobre novas oportunidades de pesquisa",
     "agreeToTerms": "Concordo com os",
-    "termsOfUse": "Termos de Uso",
-    "reviewTerms": "Revise e aceite os Termos de Uso.",
+    "termsOfUse": "Termos e Condições",
+    "reviewTerms": "Revise e aceite os Termos e Condições.",
     "consent": {
       "modalTitle": "Consentimento",
       "loadingDocument": "Carregando o consentimento para pesquisa…",
