@@ -17,6 +17,7 @@ import {
   administrationClasses,
   administrationGroups,
   administrationTaskVariants,
+  runDemographics,
   taskVariants,
   tasks,
 } from '../db/schema';
@@ -303,6 +304,8 @@ export interface ResolvedScoringRules {
  * The service layer joins these with the per-run score rows (returned
  * separately by `getScoresForRunIds`) to assemble the per-task
  * `historicalScores` arrays in the response.
+ *
+ * Grade is used to determine field names for older sre and pa runs.
  */
 export interface HistoricalRunRow {
   runId: string;
@@ -315,6 +318,7 @@ export interface HistoricalRunRow {
   completedAt: Date;
   reliableRun: boolean | null;
   engagementFlags: string[];
+  grade: string | null;
 }
 
 /**
@@ -2875,6 +2879,9 @@ export class ReportRepository {
    * Includes the current administration too (because `<=`), which the service
    * treats as the most-recent point on the trend line.
    *
+   * Each row carries the grade at the time of the run, so the service resolves
+   * grade-conditional score fields against that grade, not the current one.
+   *
    * @param userId - The student's user ID
    * @param currentAdminDateStart - Inclusive upper bound on `administration.dateStart`
    * @param taskIds - Restrict to these task IDs (typically the current admin's tasks)
@@ -2899,9 +2906,12 @@ export class ReportRepository {
         completedAt: fdwRuns.completedAt,
         reliableRun: fdwRuns.reliableRun,
         engagementFlags: fdwRuns.engagementFlags,
+        grade: runDemographics.grade,
       })
       .from(fdwRuns)
       .innerJoin(administrations, eq(fdwRuns.administrationId, administrations.id))
+      // Nothing guarantees a snapshot row (no cross-DB FK) so we left join.
+      .leftJoin(runDemographics, eq(runDemographics.runId, fdwRuns.id))
       .where(
         and(
           eq(fdwRuns.userId, userId),
@@ -2925,6 +2935,7 @@ export class ReportRepository {
       completedAt: r.completedAt!,
       reliableRun: r.reliableRun,
       engagementFlags: Array.isArray(r.engagementFlags) ? (r.engagementFlags as string[]) : [],
+      grade: r.grade,
     }));
   }
 
@@ -2946,6 +2957,9 @@ export class ReportRepository {
    *
    * Filters mirror `getCompletedRunScores`: completed runs only
    * (`completedAt IS NOT NULL`), non-aborted, non-deleted, reporting-eligible.
+   *
+   * Each row carries the grade at the time of the run, so the service resolves
+   * grade-conditional score fields against that grade, not the current one.
    */
   async getCompletedRunsForUser(
     administrationId: string,
@@ -2958,6 +2972,7 @@ export class ReportRepository {
       reliable: boolean | null;
       engagementFlags: string[];
       completedAt: Date;
+      grade: string | null;
     }>
   > {
     if (taskVariantIds.length === 0) return [];
@@ -2969,8 +2984,11 @@ export class ReportRepository {
         reliableRun: fdwRuns.reliableRun,
         engagementFlags: fdwRuns.engagementFlags,
         completedAt: fdwRuns.completedAt,
+        grade: runDemographics.grade,
       })
       .from(fdwRuns)
+      // Nothing guarantees a snapshot row (no cross-DB FK) so we left join.
+      .leftJoin(runDemographics, eq(runDemographics.runId, fdwRuns.id))
       .where(
         and(
           eq(fdwRuns.administrationId, administrationId),
@@ -2989,6 +3007,7 @@ export class ReportRepository {
       reliable: r.reliableRun,
       engagementFlags: Array.isArray(r.engagementFlags) ? (r.engagementFlags as string[]) : [],
       completedAt: r.completedAt!,
+      grade: r.grade,
     }));
   }
 

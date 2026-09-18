@@ -69,10 +69,25 @@ const ScoreField = {
    * so the modern name matches when `scoringVersion` is `null` or ≥ 7.
    */
   PERCENTILE: 'percentile',
+  /** Legacy (pre-v7) `swr` percentile field — what a v0 run actually wrote. */
+  SWR_LEGACY_PERCENTILE: 'wjPercentile',
   /** Raw-score field for `swr` (see `services/scoring/configs/swr.ts`). */
   SWR_RAW_SCORE: 'roarScore',
   /** Assessment-computed support level (e.g., roam-alpaca). */
   SUPPORT_LEVEL: 'supportLevel',
+  /**
+   * Legacy (pre-v5) `pa` percentile field for grade 6 and up. Below grade 6 the
+   * legacy config resolves to `percentile`, the same name v5 uses at every
+   * grade — so grade 6+ is where the version actually changes which field is
+   * read (see `services/scoring/configs/pa.ts`).
+   */
+  PA_LEGACY_PERCENTILE_GRADE_6_UP: 'sprPercentile',
+  /** Legacy `sre` percentile fields — grade-conditional below/at grade 6. */
+  SRE_LEGACY_PERCENTILE_BELOW_GRADE_6: 'tosrecPercentile',
+  SRE_LEGACY_PERCENTILE_GRADE_6_UP: 'sprPercentile',
+  /** Raw-score field for `sre` (see `services/scoring/configs/sre.ts`). */
+  SRE_RAW_SCORE: 'sreScore',
+  SCORING_VERSION: 'scoringVersion',
 } as const;
 
 describe('ReportService', () => {
@@ -145,6 +160,34 @@ describe('ReportService', () => {
       conditionsRequirements: null,
     },
   ];
+
+  /**
+   * Scoring version the default fixtures declare on every task variant.
+   *
+   * Field names resolve per version, so a fixture writing a modern score name
+   * has to declare the version that introduced it — swr's `percentile` arrives
+   * at v7, and a variant with no declared version resolves as v0, which reads
+   * `wjPercentile`. Tests exercising legacy behaviour override this or use the
+   * v0-era field names in `ScoreField`.
+   */
+  const DEFAULT_SCORING_VERSION = 7;
+
+  /**
+   * Mock `getByTaskVariantIds` so every requested variant declares a
+   * `scoringVersion`. Derived from the call arguments rather than a fixed list
+   * so tests using ad-hoc variant IDs are covered too.
+   */
+  function mockScoringVersionParams(version: number = DEFAULT_SCORING_VERSION) {
+    mockTaskVariantParameterRepository.getByTaskVariantIds.mockImplementation(async (taskVariantIds: string[]) =>
+      taskVariantIds.map((taskVariantId) => ({
+        taskVariantId,
+        name: 'scoringVersion',
+        value: version,
+        createdAt: new Date(),
+        updatedAt: null,
+      })),
+    );
+  }
 
   function createService() {
     // Inject a real AdministrationService backed by the same mocks the
@@ -1331,7 +1374,7 @@ describe('ReportService', () => {
         students,
       });
       mockReportRepository.getCompletedRunScores.mockResolvedValue(scoreRows);
-      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+      mockScoringVersionParams();
     }
 
     // --- Authorization (same shape as getProgressOverview, but checks CAN_READ_SCORES) ---
@@ -1871,7 +1914,7 @@ describe('ReportService', () => {
 
     it('ignores task variant parameters whose name is not scoringVersion', async () => {
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '45')];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SWR_LEGACY_PERCENTILE, '45')];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
       // Param has the wrong name — should be ignored, leaving version=null (treated as 0)
@@ -1890,7 +1933,7 @@ describe('ReportService', () => {
 
     it('ignores scoringVersion values that cannot be parsed as a number', async () => {
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '45')];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SWR_LEGACY_PERCENTILE, '45')];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
       // Non-numeric string → Number('foo') is NaN → skipped → version stays null/0
@@ -1923,6 +1966,83 @@ describe('ReportService', () => {
       // v7 cutoffs applied: 45 >= 40 → achievedSkill
       expect(swrTask.supportLevels.achievedSkill.count).toBe(1);
       expect(swrTask.supportLevels.developingSkill.count).toBe(0);
+    });
+
+    // --- Scoring version source: the run's stamp vs. the variant parameter ---
+
+    it('prefers the scoringVersion the run was scored under over the variant parameter', async () => {
+      // The variant now declares v7, but this run was scored under v3 and wrote
+      // the legacy field name. Resolving by the variant would look for
+      // `percentile`, find nothing, and drop the student from every bucket.
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SWR_LEGACY_PERCENTILE, '45'),
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SCORING_VERSION, '3'),
+      ];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+      mockScoringVersionParams(7);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      // v0 field names and v0 cutoffs: 45 < 50 → developingSkill.
+      expect(swrTask.supportLevels.developingSkill.count).toBe(1);
+      expect(swrTask.supportLevels.achievedSkill.count).toBe(0);
+    });
+
+    it('falls back to the variant parameter when the run carries no scoringVersion', async () => {
+      // Assessments stamp the version only when the norm lookup hits, so an
+      // unstamped run still has to resolve against the variant's declared v7.
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '45')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+      mockScoringVersionParams(7);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.supportLevels.achievedSkill.count).toBe(1);
+      expect(swrTask.supportLevels.developingSkill.count).toBe(0);
+    });
+
+    it('treats an explicit v0 stamp as a version, not as a missing one', async () => {
+      // Guards the `??` in resolveRunScoringVersion: a truthiness check would
+      // read 0 as absent and fall back to the variant's v7, which reads a field
+      // this run never wrote.
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SWR_LEGACY_PERCENTILE, '45'),
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SCORING_VERSION, '0'),
+      ];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+      mockScoringVersionParams(7);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.supportLevels.developingSkill.count).toBe(1);
+      expect(swrTask.supportLevels.achievedSkill.count).toBe(0);
+    });
+
+    it('resolves as v0 when neither the run nor the variant declares a version', async () => {
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SWR_LEGACY_PERCENTILE, '45')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.supportLevels.developingSkill.count).toBe(1);
+      expect(swrTask.supportLevels.achievedSkill.count).toBe(0);
     });
 
     // --- Assessment-computed support level (roam-alpaca) ---
@@ -2040,7 +2160,7 @@ describe('ReportService', () => {
       });
       mockReportRepository.getCompletedRunScores.mockResolvedValue(scoreRows);
       mockReportRepository.getSchoolsForUsers.mockResolvedValue(schoolsByUser);
-      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+      mockScoringVersionParams();
     }
 
     // --- Authorization (mirrors getScoreOverview) ---
@@ -2138,23 +2258,32 @@ describe('ReportService', () => {
         expect(task.scoreBinsBySchool).toEqual([]);
       }
       // Support threshold is task-config metadata (the developing-cutoff complement),
-      // so the zero-student empty facet still carries it. sre at version 0 → 75.
-      expect(result.tasks.find((t) => t.taskSlug === 'sre')!.supportThreshold).toBe(75);
+      // so the zero-student empty facet still carries it. sre at v7 → 100 - 20 = 80.
+      expect(result.tasks.find((t) => t.taskSlug === 'sre')!.supportThreshold).toBe(80);
     });
 
     it('populates per-task supportThreshold from the resolved scoring version', async () => {
-      setupDefaultFacetsMocks();
+      async function thresholdsBySlug(version: number) {
+        setupDefaultFacetsMocks();
+        mockScoringVersionParams(version);
+        const result = await createService().getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+        return Object.fromEntries(result.tasks.map((t) => [t.taskSlug, t.supportThreshold]));
+      }
 
-      const service = createService();
-      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+      // The threshold is the developing-cutoff complement, so it moves with the
+      // version the variant declares: v0 cutoff 25 → 75, v7 cutoff 20 → 80.
+      const atV0 = await thresholdsBySlug(0);
+      expect(atV0.swr).toBe(75);
+      expect(atV0.sre).toBe(75);
+      expect(atV0.pa).toBe(75);
+      // vocab has no percentile-then-rawscore classification → null at any version.
+      expect(atV0.vocab).toBeNull();
 
-      const bySlug = Object.fromEntries(result.tasks.map((t) => [t.taskSlug, t.supportThreshold]));
-      // percentile-then-rawscore tasks at version 0 → 100 - developing(25) = 75.
-      expect(bySlug.swr).toBe(75);
-      expect(bySlug.sre).toBe(75);
-      expect(bySlug.pa).toBe(75);
-      // vocab has no percentile-then-rawscore classification → null.
-      expect(bySlug.vocab).toBeNull();
+      const atV7 = await thresholdsBySlug(7);
+      expect(atV7.swr).toBe(80);
+      expect(atV7.sre).toBe(80);
+      expect(atV7.pa).toBe(80);
+      expect(atV7.vocab).toBeNull();
     });
 
     it('returns computedAt as a parseable ISO datetime', async () => {
@@ -2797,7 +2926,7 @@ describe('ReportService', () => {
     /** Build a default getStudentScores mock return value. */
     function setupDefaultStudentScoresMocks(items: StudentScoreQueryRow[] = [], totalItems = items.length) {
       mockReportRepository.getStudentScores.mockResolvedValue({ items, totalItems });
-      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+      mockScoringVersionParams();
       mockReportRepository.getSchoolNamesForUsers.mockResolvedValue(new Map());
     }
 
@@ -3089,11 +3218,41 @@ describe('ReportService', () => {
 
       const swrEntry = result.items[0]!.scores[TASK_ID_1]!;
       expect(swrEntry.completed).toBe(true);
-      // grade 3, swr v0 cutoffs achieved=50 → percentile 90 → achievedSkill
+      // grade 3, swr v7 cutoffs achieved=40 → percentile 90 → achievedSkill
       expect(swrEntry.supportLevel).toBe('achievedSkill');
       expect(swrEntry.percentile).toBe(90);
       expect(swrEntry.reliable).toBe(true);
       expect(swrEntry.engagementFlags).toEqual([]);
+    });
+
+    it('resolves a row score field from the version its run was scored under', async () => {
+      // The variant declares v7 but this run is legacy, so the row has to read
+      // the legacy field and classify on legacy cutoffs (45 < 50).
+      const row = buildQueryRow({
+        userId: 'student-1',
+        grade: '3',
+        runs: new Map([
+          [VARIANT_ID_1, { runId: 'run-1', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01') }],
+        ]),
+        scores: new Map([
+          [
+            VARIANT_ID_1,
+            new Map([
+              [ScoreField.SWR_LEGACY_PERCENTILE, '45'],
+              [ScoreField.SCORING_VERSION, '3'],
+            ]),
+          ],
+        ]),
+      });
+      setupDefaultStudentScoresMocks([row], 1);
+      mockScoringVersionParams(7);
+
+      const service = createService();
+      const result = await service.listStudentScores(superAdminAuth, testAdministrationId, baseQuery);
+
+      const swrEntry = result.items[0]!.scores[TASK_ID_1]!;
+      expect(swrEntry.percentile).toBe(45);
+      expect(swrEntry.supportLevel).toBe('developingSkill');
     });
 
     it('marks not-assessed students as completed:false with supportLevel="optional" when task is optional', async () => {
@@ -3316,7 +3475,7 @@ describe('ReportService', () => {
 
     it('wraps unexpected repository errors in a 500 ApiError', async () => {
       mockReportRepository.getStudentScores.mockRejectedValue(new Error('connection reset'));
-      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+      mockScoringVersionParams();
 
       const service = createService();
       await expect(service.listStudentScores(superAdminAuth, testAdministrationId, baseQuery)).rejects.toMatchObject({
@@ -3349,7 +3508,7 @@ describe('ReportService', () => {
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([]);
       mockReportRepository.getHistoricalRunsForUser.mockResolvedValue([]);
       mockReportRepository.getScoresForRunIds.mockResolvedValue([]);
-      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+      mockScoringVersionParams();
       mockUserRepository.getById.mockResolvedValue(
         UserFactory.build({ id: targetUserId, nameFirst: 'Jane', nameLast: 'Doe', username: 'jdoe', grade: '3' }),
       );
@@ -3481,6 +3640,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3505,6 +3665,93 @@ describe('ReportService', () => {
       expect(labels).toContain('Reliability');
       const typeTag = swrTask.tags.find((t) => t.label === 'Type')!;
       expect(typeTag.value).toBe('Required');
+    });
+
+    it('classifies an older administration on the percentile cutoff when the run predates grade 6', async () => {
+      // Percentile 60 clears the legacy achieved cutoff of 50; raw score 46 falls
+      // under the `some` threshold of 47, so the grade used flips the result.
+      setupDefaults();
+      // A legacy run: v3 sre resolves its percentile field grade-conditionally,
+      // which is what makes the run's recorded grade decide the field below.
+      mockScoringVersionParams(3);
+      mockUserRepository.getById.mockResolvedValue(
+        UserFactory.build({ id: targetUserId, nameFirst: 'Jane', nameLast: 'Doe', username: 'jdoe', grade: '6' }),
+      );
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        {
+          userId: targetUserId,
+          taskVariantId: VARIANT_ID_2,
+          scoreName: ScoreField.SRE_LEGACY_PERCENTILE_BELOW_GRADE_6,
+          scoreValue: '60',
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: VARIANT_ID_2,
+          scoreName: ScoreField.SRE_RAW_SCORE,
+          scoreValue: '46',
+        },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-prior-admin',
+          taskVariantId: VARIANT_ID_2,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2024-09-15'),
+          grade: '5',
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      const sreTask = result.tasks.find((t) => t.taskId === TASK_ID_2)!;
+      expect(sreTask.scores.percentile).toBe(60);
+      expect(sreTask.supportLevel).toBe('achievedSkill');
+    });
+
+    it('reports the scoring version recorded on the current run', async () => {
+      setupDefaults();
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        {
+          userId: targetUserId,
+          taskVariantId: VARIANT_ID_1,
+          scoreName: ScoreField.PERCENTILE,
+          scoreValue: '90',
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: VARIANT_ID_1,
+          scoreName: ScoreField.SCORING_VERSION,
+          scoreValue: '7',
+        },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-1',
+          taskVariantId: VARIANT_ID_1,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+          grade: null,
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.scores.scoringVersion).toBe(7);
     });
 
     it('emits Type tag only (no Reliability) for an unassessed task', async () => {
@@ -3556,6 +3803,67 @@ describe('ReportService', () => {
       expect(result.tasks).toHaveLength(0);
       expect(result.totalTaskCount).toBe(0);
       expect(result.completedTaskCount).toBe(0);
+    });
+
+    // --- Display descriptor ---
+
+    it('picks the display score type from the version the run was scored under', async () => {
+      // swr-es is percent-correct at v0 and normed at v1+, so the version
+      // decides which score the card surfaces — not just which field it reads.
+      const SWR_ES_TASK_ID = 'aaaaaaaa-bbbb-cccc-dddd-000000000002';
+      const SWR_ES_VARIANT_ID = 'swr-es-variant-1';
+
+      async function displayForRun(scoreRows: Array<{ scoreName: string; scoreValue: string }>) {
+        setupDefaults();
+        mockReportRepository.getTaskMetadata.mockResolvedValue([
+          {
+            taskId: SWR_ES_TASK_ID,
+            taskVariantId: SWR_ES_VARIANT_ID,
+            taskSlug: 'swr-es',
+            taskName: 'ROAR - Palabra',
+            orderIndex: 0,
+            conditionsAssignment: null,
+            conditionsRequirements: null,
+          },
+        ]);
+        mockReportRepository.getCompletedRunScores.mockResolvedValue(
+          scoreRows.map((row) => ({ userId: targetUserId, taskVariantId: SWR_ES_VARIANT_ID, ...row })),
+        );
+        mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+          {
+            runId: 'run-1',
+            taskVariantId: SWR_ES_VARIANT_ID,
+            reliable: true,
+            engagementFlags: [],
+            completedAt: new Date('2025-09-01'),
+            grade: null,
+          },
+        ]);
+
+        const result = await createService().getIndividualStudentReport(
+          superAdminAuth,
+          testAdministrationId,
+          targetUserId,
+          reportQuery,
+        );
+        return result.tasks.find((t) => t.taskId === SWR_ES_TASK_ID)!.display;
+      }
+
+      const unnormed = await displayForRun([
+        { scoreName: 'percentCorrect', scoreValue: '80' },
+        { scoreName: ScoreField.SCORING_VERSION, scoreValue: '0' },
+      ]);
+      expect(unnormed?.scoreType).toBe('percentCorrect');
+      expect(unnormed?.value).toBe(80);
+      expect(unnormed?.range).toEqual({ min: 0, max: 100 });
+
+      const normed = await displayForRun([
+        { scoreName: ScoreField.PERCENTILE, scoreValue: '80' },
+        { scoreName: ScoreField.SCORING_VERSION, scoreValue: '1' },
+      ]);
+      expect(normed?.scoreType).toBe('percentile');
+      expect(normed?.value).toBe(80);
+      expect(normed?.range).toEqual({ min: 0, max: 99 });
     });
 
     // --- Subscores ---
@@ -3652,6 +3960,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3687,6 +3996,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3721,6 +4031,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3758,6 +4069,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3774,6 +4086,7 @@ describe('ReportService', () => {
           completedAt: new Date('2025-04-15T00:00:00Z'),
           reliableRun: true,
           engagementFlags: [],
+          grade: null,
         },
         {
           runId: 'run-older',
@@ -3786,12 +4099,17 @@ describe('ReportService', () => {
           completedAt: new Date('2024-09-15T00:00:00Z'),
           reliableRun: true,
           engagementFlags: [],
+          grade: null,
         },
       ];
       mockReportRepository.getHistoricalRunsForUser.mockResolvedValue(historicalRuns);
+      // Historical runs carry their own scoringVersion stamp — prior
+      // administrations' variant parameters aren't loaded.
       mockReportRepository.getScoresForRunIds.mockResolvedValue([
         { runId: 'run-older', scoreName: ScoreField.PERCENTILE, scoreValue: '40' },
+        { runId: 'run-older', scoreName: ScoreField.SCORING_VERSION, scoreValue: '7' },
         { runId: 'run-newer', scoreName: ScoreField.PERCENTILE, scoreValue: '50' },
+        { runId: 'run-newer', scoreName: ScoreField.SCORING_VERSION, scoreValue: '7' },
       ]);
 
       const service = createService();
@@ -3809,6 +4127,153 @@ describe('ReportService', () => {
       expect(swrTask.historicalScores[1]!.administrationName).toBe('Spring 2025');
       expect(swrTask.historicalScores[0]!.scores.percentile).toBe(40);
       expect(swrTask.historicalScores[1]!.scores.percentile).toBe(50);
+    });
+
+    describe('historical run grade', () => {
+      // sre resolves its legacy percentile field grade-conditionally, and a v3 run
+      // records both candidates — so the grade decides which norm is reported.
+      function setupSreHistoricalRun(runGrade: string | null) {
+        setupDefaults();
+        mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: targetUserId, grade: '8' }));
+        mockReportRepository.getHistoricalRunsForUser.mockResolvedValue([
+          {
+            runId: 'run-prior',
+            userId: targetUserId,
+            taskId: TASK_ID_2,
+            taskVariantId: VARIANT_ID_2,
+            administrationId: 'admin-prior',
+            administrationName: 'Fall 2024',
+            administrationDateStart: new Date('2024-09-01T00:00:00Z'),
+            completedAt: new Date('2024-09-15T00:00:00Z'),
+            reliableRun: true,
+            engagementFlags: [],
+            grade: runGrade,
+          },
+        ]);
+        mockReportRepository.getScoresForRunIds.mockResolvedValue([
+          { runId: 'run-prior', scoreName: ScoreField.SRE_LEGACY_PERCENTILE_BELOW_GRADE_6, scoreValue: '40' },
+          { runId: 'run-prior', scoreName: ScoreField.SRE_LEGACY_PERCENTILE_GRADE_6_UP, scoreValue: '75' },
+          { runId: 'run-prior', scoreName: ScoreField.SCORING_VERSION, scoreValue: '3' },
+        ]);
+      }
+
+      async function historicalScoresForSre() {
+        const result = await createService().getIndividualStudentReport(
+          superAdminAuth,
+          testAdministrationId,
+          targetUserId,
+          reportQuery,
+        );
+        return result.tasks.find((t) => t.taskId === TASK_ID_2)!.historicalScores;
+      }
+
+      it('resolves score fields against the grade recorded on the run', async () => {
+        setupSreHistoricalRun('3');
+
+        const scores = (await historicalScoresForSre())[0]!.scores;
+        expect(scores.percentile).toBe(40);
+        expect(scores.scoringVersion).toBe(3);
+      });
+
+      it('falls back to the student current grade when the run has no recorded grade', async () => {
+        setupSreHistoricalRun(null);
+
+        expect((await historicalScoresForSre())[0]!.scores.percentile).toBe(75);
+      });
+    });
+
+    describe('historical run scoring version', () => {
+      function setupHistoricalRun(
+        scoreRows: Array<{ scoreName: string; scoreValue: string }>,
+        opts?: { taskId?: string; taskVariantId?: string; grade?: string },
+      ) {
+        setupDefaults();
+        mockReportRepository.getHistoricalRunsForUser.mockResolvedValue([
+          {
+            runId: 'run-prior',
+            userId: targetUserId,
+            taskId: opts?.taskId ?? TASK_ID_1,
+            taskVariantId: opts?.taskVariantId ?? VARIANT_ID_1,
+            administrationId: 'admin-prior',
+            administrationName: 'Fall 2024',
+            administrationDateStart: new Date('2024-09-01T00:00:00Z'),
+            completedAt: new Date('2024-09-15T00:00:00Z'),
+            reliableRun: true,
+            engagementFlags: [],
+            grade: opts?.grade ?? '3',
+          },
+        ]);
+        mockReportRepository.getScoresForRunIds.mockResolvedValue(
+          scoreRows.map((row) => ({ runId: 'run-prior', ...row })),
+        );
+      }
+
+      async function historicalScoresFor(taskId: string = TASK_ID_1) {
+        const result = await createService().getIndividualStudentReport(
+          superAdminAuth,
+          testAdministrationId,
+          targetUserId,
+          reportQuery,
+        );
+        return result.tasks.find((t) => t.taskId === taskId)!.historicalScores;
+      }
+
+      it('resolves a run with no scoringVersion score as v0', async () => {
+        setupHistoricalRun([{ scoreName: ScoreField.SWR_LEGACY_PERCENTILE, scoreValue: '40' }]);
+
+        const scores = (await historicalScoresFor())[0]!.scores;
+        expect(scores.percentile).toBe(40);
+        expect(scores.scoringVersion).toBeNull();
+      });
+
+      it('resolves a run whose scoringVersion is unparseable as v0', async () => {
+        setupHistoricalRun([
+          { scoreName: ScoreField.SWR_LEGACY_PERCENTILE, scoreValue: '40' },
+          { scoreName: ScoreField.SCORING_VERSION, scoreValue: 'foo' },
+        ]);
+
+        const scores = (await historicalScoresFor())[0]!.scores;
+        expect(scores.percentile).toBe(40);
+        expect(scores.scoringVersion).toBeNull();
+      });
+
+      it('reads the modern field name for a run stamped with a modern version', async () => {
+        setupHistoricalRun([
+          { scoreName: ScoreField.PERCENTILE, scoreValue: '40' },
+          { scoreName: ScoreField.SCORING_VERSION, scoreValue: '7' },
+        ]);
+
+        const scores = (await historicalScoresFor())[0]!.scores;
+        expect(scores.percentile).toBe(40);
+        expect(scores.scoringVersion).toBe(7);
+      });
+
+      // A legacy pa run carries both fields and shares `percentile` with v5,
+      // but at grade 6+ legacy resolves `sprPercentile` — so the wrong version
+      // reports the other norm's number rather than null.
+      describe('pa at grade 6 and up (both field names present)', () => {
+        const PA_SCORE_ROWS = [
+          { scoreName: ScoreField.PA_LEGACY_PERCENTILE_GRADE_6_UP, scoreValue: '40' },
+          { scoreName: ScoreField.PERCENTILE, scoreValue: '99' },
+        ];
+
+        async function paPercentileForVersion(version: string) {
+          setupHistoricalRun([...PA_SCORE_ROWS, { scoreName: ScoreField.SCORING_VERSION, scoreValue: version }], {
+            taskId: TASK_ID_3,
+            taskVariantId: VARIANT_ID_3,
+            grade: '8',
+          });
+          return (await historicalScoresFor(TASK_ID_3))[0]!.scores.percentile;
+        }
+
+        it('reads the legacy grade-6+ field for a pre-v5 run', async () => {
+          expect(await paPercentileForVersion('3')).toBe(40);
+        });
+
+        it('reads the shared field for a v5 run', async () => {
+          expect(await paPercentileForVersion('5')).toBe(99);
+        });
+      });
     });
 
     it('returns an empty historicalScores array for tasks with no prior runs', async () => {
@@ -3847,6 +4312,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3865,6 +4331,7 @@ describe('ReportService', () => {
           completedAt: new Date('2024-09-30T00:00:00Z'),
           reliableRun: true,
           engagementFlags: [],
+          grade: null,
         },
         {
           runId: 'run-early',
@@ -3877,12 +4344,15 @@ describe('ReportService', () => {
           completedAt: new Date('2024-09-15T00:00:00Z'),
           reliableRun: true,
           engagementFlags: [],
+          grade: null,
         },
       ];
       mockReportRepository.getHistoricalRunsForUser.mockResolvedValue(historicalRuns);
       mockReportRepository.getScoresForRunIds.mockResolvedValue([
         { runId: 'run-early', scoreName: ScoreField.PERCENTILE, scoreValue: '40' },
+        { runId: 'run-early', scoreName: ScoreField.SCORING_VERSION, scoreValue: '7' },
         { runId: 'run-late', scoreName: ScoreField.PERCENTILE, scoreValue: '55' },
+        { runId: 'run-late', scoreName: ScoreField.SCORING_VERSION, scoreValue: '7' },
       ]);
 
       const service = createService();
@@ -3920,6 +4390,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -3940,7 +4411,7 @@ describe('ReportService', () => {
     it('wraps unexpected repository errors in a 500', async () => {
       mockReportRepository.verifyStudentInScope.mockResolvedValue(true);
       mockReportRepository.getCompletedRunScores.mockRejectedValue(new Error('connection reset'));
-      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+      mockScoringVersionParams();
       mockUserRepository.getById.mockResolvedValue(UserFactory.build({ id: targetUserId }));
       mockReportRepository.getHistoricalRunsForUser.mockResolvedValue([]);
 
@@ -3997,6 +4468,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -4070,6 +4542,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -4136,6 +4609,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -4185,6 +4659,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
         {
           runId: 'run-b',
@@ -4192,6 +4667,7 @@ describe('ReportService', () => {
           reliable: false,
           engagementFlags: ['flagB'],
           completedAt: new Date('2025-09-02'),
+          grade: null,
         },
       ]);
 
@@ -4224,6 +4700,7 @@ describe('ReportService', () => {
           reliable: false,
           engagementFlags: [],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -4254,6 +4731,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: ['guess', 'inattentive'],
           completedAt: new Date('2025-09-01'),
+          grade: null,
         },
       ]);
 
@@ -4330,7 +4808,7 @@ describe('ReportService', () => {
       });
       mockReportRepository.getCompletedRunScores.mockResolvedValue([]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([]);
-      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+      mockScoringVersionParams();
     }
 
     // --- Authorization ---
@@ -4489,6 +4967,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2024-12-01'),
+          grade: null,
         },
       ]);
 
@@ -4497,6 +4976,41 @@ describe('ReportService', () => {
 
       const swrEntry = result.administrations[0]!.tasks.find((t) => t.taskId === TASK_ID_1)!;
       expect('historicalScores' in swrEntry).toBe(false);
+    });
+
+    it('classifies a past administration on the grade recorded for that run', async () => {
+      // Percentile 60 clears the achieved cutoff of 50; raw score 46 is under the
+      // `some` threshold of 47, so the grade used flips the result.
+      setupGuardianDefaults({
+        adminMetas: [ADMIN_OLDER],
+        user: UserFactory.build({ id: targetUserId, grade: '6', rosteringEnded: null }),
+      });
+      // v3 sre resolves its percentile field grade-conditionally — that's what
+      // makes the run's recorded grade decide which norm is read.
+      mockScoringVersionParams(3);
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        {
+          userId: targetUserId,
+          taskVariantId: VARIANT_ID_2,
+          scoreName: ScoreField.SRE_LEGACY_PERCENTILE_BELOW_GRADE_6,
+          scoreValue: '60',
+        },
+        { userId: targetUserId, taskVariantId: VARIANT_ID_2, scoreName: ScoreField.SRE_RAW_SCORE, scoreValue: '46' },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-old',
+          taskVariantId: VARIANT_ID_2,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2024-12-01'),
+          grade: '5',
+        },
+      ]);
+
+      const result = await createService().getGuardianStudentReport(superAdminAuth, targetUserId);
+
+      expect(result.administrations[0]!.tasks.find((t) => t.taskId === TASK_ID_2)!.supportLevel).toBe('achievedSkill');
     });
 
     // --- Longitudinal scores ---
@@ -4521,6 +5035,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2024-12-01'),
+          grade: null,
         },
       ]);
 
@@ -4581,6 +5096,7 @@ describe('ReportService', () => {
           reliable: true,
           engagementFlags: [],
           completedAt: new Date('2024-12-10'),
+          grade: null,
         },
       ]);
 
@@ -4608,6 +5124,7 @@ describe('ReportService', () => {
           reliable: false,
           engagementFlags: [],
           completedAt: new Date('2024-12-01'),
+          grade: null,
         },
       ]);
 
