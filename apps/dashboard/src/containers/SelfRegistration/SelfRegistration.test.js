@@ -74,6 +74,7 @@ function mountSelfRegistration() {
         RegistrationStatus: true,
         AccountOwnerForm: {
           name: 'AccountOwnerForm',
+          props: ['disabled'],
           emits: [
             'submit',
             'touch',
@@ -144,11 +145,13 @@ describe('SelfRegistration.vue', () => {
     wrapper.unmount();
   });
 
-  it('does not start registration before required submission prerequisites are ready', async () => {
+  it('keeps submission available and reveals validation when legal acceptance is missing', async () => {
     mocks.legalAccepted.value = false;
     const wrapper = mountSelfRegistration();
+    const accountOwnerForm = wrapper.findComponent({ name: 'AccountOwnerForm' });
 
-    wrapper.findComponent({ name: 'AccountOwnerForm' }).vm.$emit('submit');
+    expect(accountOwnerForm.props('disabled')).toBe(false);
+    accountOwnerForm.vm.$emit('submit');
     await flushPromises();
 
     expect(mocks.validate).toHaveBeenCalledOnce();

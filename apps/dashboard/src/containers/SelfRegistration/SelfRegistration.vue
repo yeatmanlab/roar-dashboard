@@ -59,14 +59,15 @@ const form = useAccountOwnerForm();
 const consent = useResearchConsent();
 const registration = useSelfRegistration();
 
-// Field validity stays out of the disabled state so submitting an incomplete
-// form can reveal actionable field-level errors. The verification token is
-// collected for future server-side support, but cannot provide protection and
-// must not block signup until the API contract accepts it.
-const canAttemptSubmission = computed(() => consent.legalAccepted.value && !registration.isSubmitting.value);
+// Keep the button available so submission can reveal actionable field and
+// acknowledgement errors. Disable it only while a request is in flight.
+const canAttemptSubmission = computed(() => !registration.isSubmitting.value);
 
 async function handleSubmit() {
   if (!form.validate()) return false;
+  // Form validation marks the form submitted, which makes the legal
+  // acknowledgement error visible before this guard prevents the request.
+  if (!consent.legalAccepted.value) return false;
   if (!canAttemptSubmission.value) return false;
   return registration.submit(form.payload.value);
 }
