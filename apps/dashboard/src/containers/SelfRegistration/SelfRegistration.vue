@@ -20,13 +20,12 @@
       </header>
 
       <RegistrationStatus
-        :loading="registration.isSubmitting.value"
         :error-message="registration.errorMessage.value"
         :success="registration.isSuccess.value"
         @dismiss="registration.dismissStatus"
       />
       <AccountOwnerForm
-        v-if="!registration.isSubmitting.value && !registration.isSuccess.value"
+        v-if="!registration.isSuccess.value"
         :values="form.values"
         :errors="form.errors.value"
         :touched="form.touched"

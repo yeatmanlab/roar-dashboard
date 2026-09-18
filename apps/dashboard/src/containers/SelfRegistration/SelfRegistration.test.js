@@ -74,7 +74,7 @@ function mountSelfRegistration() {
         RegistrationStatus: true,
         AccountOwnerForm: {
           name: 'AccountOwnerForm',
-          props: ['disabled'],
+          props: ['disabled', 'submitting'],
           emits: [
             'submit',
             'touch',
@@ -168,6 +168,25 @@ describe('SelfRegistration.vue', () => {
 
     expect(mocks.validate).toHaveBeenCalledOnce();
     expect(mocks.submit).toHaveBeenCalledWith(mocks.payload.value);
+    wrapper.unmount();
+  });
+
+  it('keeps the form mounted with loading controls while registration is in flight', () => {
+    mocks.isSubmitting.value = true;
+    const wrapper = mountSelfRegistration();
+    const accountOwnerForm = wrapper.findComponent({ name: 'AccountOwnerForm' });
+
+    expect(accountOwnerForm.exists()).toBe(true);
+    expect(accountOwnerForm.props('disabled')).toBe(true);
+    expect(accountOwnerForm.props('submitting')).toBe(true);
+    wrapper.unmount();
+  });
+
+  it('removes the form after registration succeeds', () => {
+    mocks.isSuccess.value = true;
+    const wrapper = mountSelfRegistration();
+
+    expect(wrapper.findComponent({ name: 'AccountOwnerForm' }).exists()).toBe(false);
     wrapper.unmount();
   });
 });
