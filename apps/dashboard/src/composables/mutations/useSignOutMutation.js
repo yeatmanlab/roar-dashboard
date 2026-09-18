@@ -23,7 +23,9 @@ const useSignOutMutation = () => {
   const { clearGlobalError } = useGlobalError();
 
   return useMutation({
-    mutationKey: SIGN_OUT_MUTATION_KEY,
+    // Array-wrapped so `useIsMutating({ mutationKey: [...] })` filters can
+    // match it (TanStack mutation keys are arrays, like query keys).
+    mutationKey: [SIGN_OUT_MUTATION_KEY],
     mutationFn: async () => {
       const authService = getAuthService();
       await authService.signOut();

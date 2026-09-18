@@ -36,6 +36,9 @@
       :description="$t('authSignIn.providerCheckFailed')"
     />
 
+    <!-- SSO SIGN-IN ERROR -->
+    <SignInError :show="ssoError" :title="$t('authSignIn.error')" :description="$t('authSignIn.ssoSignInFailed')" />
+
     <!-- PASSWORD RESET ALERT -->
     <SuccessAlert
       :show="showSuccessAlert"
@@ -139,6 +142,7 @@ const {
   availableProviders,
   hasCheckedProviders,
   discoveryError,
+  ssoError,
   isUsername,
 } = useSignInForm();
 
@@ -163,6 +167,7 @@ const {
   email,
   password,
   invalid,
+  ssoError,
   emailLinkSent,
   showPasswordField,
   resetSignInUI,

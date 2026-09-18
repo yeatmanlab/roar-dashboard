@@ -17,7 +17,7 @@ import { fetchMe } from '@/composables/queries/useMeQuery';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { useGlobalError } from '@/composables/useGlobalError';
-import { queryClient } from '@/queryClient';
+import { queryClient, setProvisioningContextCheck } from '@/queryClient';
 const { Permissions } = usePermissions();
 const { logNavEvent } = useSentryLogging();
 
@@ -1029,6 +1029,26 @@ export const router = createRouter({
     if (to.meta.smoothScroll) scroll.behavior = 'smooth';
     return scroll;
   },
+});
+
+// Tell the /me retry policy (queryClient.js) when a provisioning wait may be
+// in progress, so `auth/user-not-found` gets the patient ~100s schedule.
+// Two signals, both needed:
+//   - `meta.awaitsUserProvisioning` — the SSO landing page. Derived from the
+//     matched route, not a pathname comparison, so trailing slashes and any
+//     future flagged route behave like every other provisioning exemption.
+//   - `authStore.ssoProvider` — a redirect SSO return lands on /signin and
+//     enables /me there, before useAuth's $subscribe pushes to /sso. Without
+//     this signal that window would burn the generic ~7s budget and bounce
+//     an unprovisioned user to GenericError mid-sign-in.
+setProvisioningContextCheck(() => {
+  if (router.currentRoute.value.meta?.awaitsUserProvisioning) return true;
+  try {
+    return Boolean(useAuthStore().ssoProvider);
+  } catch {
+    // Pinia isn't installed yet (early boot) — no SSO flow can be in flight.
+    return false;
+  }
 });
 
 router.beforeEach(async (to, from, next) => {

@@ -27,7 +27,8 @@
     "error": "Error",
     "success": "Success",
     "checkYourEmail": "Check your email {email} for password reset instructions",
-    "providerCheckFailed": "We couldn't check which sign-in options are available for this email. Please try again."
+    "providerCheckFailed": "We couldn't check which sign-in options are available for this email. Please try again.",
+    "ssoSignInFailed": "We couldn't start the sign-in with your provider. Please try again."
   },
   "cleverLanding": {
     "cleverLoading": "Loading your data from Clever..."

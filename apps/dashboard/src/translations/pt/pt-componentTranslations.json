@@ -27,7 +27,8 @@
     "error": "Erro",
     "success": "Sucesso",
     "checkYourEmail": "Verifique seu e-mail {email} para obter instruções sobre como redefinir sua senha.",
-    "providerCheckFailed": "Não foi possível verificar quais opções de login estão disponíveis para este e-mail. Tente novamente."
+    "providerCheckFailed": "Não foi possível verificar quais opções de login estão disponíveis para este e-mail. Tente novamente.",
+    "ssoSignInFailed": "Não foi possível iniciar o login com seu provedor. Tente novamente."
   },
   "cleverLanding": {
     "cleverLoading": "Carregando seus dados do Clever..."

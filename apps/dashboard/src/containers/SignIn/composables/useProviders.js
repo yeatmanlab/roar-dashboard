@@ -78,7 +78,15 @@ export function useProviders(options) {
       providers = await getProviders();
     } catch {
       // Discovery failed — surface a retryable error instead of degrading to
-      // the password form, which cannot work for SSO-only users.
+      // the password form, which cannot work for SSO-only users. Clear the
+      // previous address's provider state too, so a stale chooser can't
+      // render alongside the banner and invite an SSO flow discovery never
+      // validated for this email.
+      availableProviders.value = [];
+      multipleProviders.value = false;
+      hideProviders.value = false;
+      showPasswordField.value = false;
+      hasCheckedProviders.value = false;
       discoveryError.value = true;
       return;
     }

@@ -26,29 +26,47 @@ const DEFAULT_RETRY_BASE_DELAY_MS = 1000;
 const DEFAULT_RETRY_MAX_DELAY_MS = 30_000;
 
 /**
- * `true` while the SSO landing page is the active location.
+ * `true` while an SSO provisioning wait may legitimately be in progress.
  *
- * The patient provisioning schedule applies only there — the page renders a
- * dedicated wait/retry UX for it. Everywhere else `auth/user-not-found`
- * settles on the generic schedule (~7s), so a deprovisioned account is not
- * parked behind the app-level spinner for the full ~100s window. Read from
- * `window.location` (the router runs in history mode, so it is always
- * current) because importing the router here would be circular.
+ * The patient provisioning schedule applies only then — the SSO landing page
+ * renders a dedicated wait/retry UX for it. Everywhere else
+ * `auth/user-not-found` settles on the generic schedule (~7s), so a
+ * deprovisioned account is not parked behind the app-level spinner for the
+ * full ~100s window.
  *
- * @returns {boolean} Whether the SSO landing page is active.
+ * The real check is registered by `router/index.js` via
+ * {@link setProvisioningContextCheck}: it derives the answer from the active
+ * route's `meta.awaitsUserProvisioning` (the same flag every other
+ * provisioning exemption keys off, immune to trailing slashes and new
+ * flagged routes) and from `authStore.ssoProvider` (a redirect SSO return
+ * fails `/me` on /signin before the flow pushes to /sso — that in-flight
+ * window must be patient too). This module can't derive that itself:
+ * importing the router or the auth store here would be circular. The
+ * pathname comparison below is only the fallback until the router module
+ * has loaded, and the default in unit tests.
  */
-function isOnProvisioningRoute() {
-  return window.location.pathname === APP_ROUTES.SSO;
+let provisioningContextCheck = () => window.location.pathname === APP_ROUTES.SSO;
+
+/**
+ * Register the app's provisioning-context check.
+ *
+ * Called once from `router/index.js`. Replaces the pathname fallback with a
+ * check derived from the route table and the auth store.
+ *
+ * @param {() => boolean} check - Returns `true` while a provisioning wait may be in progress.
+ */
+export function setProvisioningContextCheck(check) {
+  provisioningContextCheck = check;
 }
 
 /**
  * Shared retry policy for `/me`-backed queries.
  *
  * Rostering-ended and terminal auth errors are not transient; retrying
- * wastes time and delays the user-facing error UX. `auth/user-not-found` on
- * the SSO landing page is the opposite case: the backend hasn't provisioned
- * the user record yet (SSO rostering in flight), so it gets a longer retry
- * window than ordinary transient failures — in test environments
+ * wastes time and delays the user-facing error UX. `auth/user-not-found`
+ * during a provisioning wait is the opposite case: the backend hasn't
+ * provisioned the user record yet (SSO rostering in flight), so it gets a
+ * longer retry window than ordinary transient failures — in test environments
  * (`isTestEnv`) a shortened one, to keep E2E runs fast while still
  * exercising the provisioning path.
  *
@@ -64,7 +82,7 @@ export function meRetryPolicy(failureCount, error) {
   if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
     return false;
   }
-  if (isUserNotProvisionedError(error) && isOnProvisioningRoute()) {
+  if (isUserNotProvisionedError(error) && provisioningContextCheck()) {
     // `isTestEnv` (the __E2E__ localStorage flag), not `window.Cypress` —
     // the Cypress global is not visible from the app context in some setups.
     const maxRetries = isTestEnv() ? PROVISIONING_MAX_RETRIES_TEST : PROVISIONING_MAX_RETRIES;
@@ -72,17 +90,19 @@ export function meRetryPolicy(failureCount, error) {
   }
   // Deterministic behavior in Cypress E2E — mirrors the queryClient's
   // default retry policy below, which this policy replaces for /me-backed
-  // queries.
-  if (window.Cypress) return false;
+  // queries. Checks both detectors: `window.Cypress` for parity with the
+  // default policy, `isTestEnv()` for the setups where the Cypress global
+  // is not visible from the app context.
+  if (window.Cypress || isTestEnv()) return false;
   return failureCount < MAX_RETRIES;
 }
 
 /**
  * Retry delay companion to {@link meRetryPolicy}.
  *
- * While the user is not provisioned yet and the SSO landing page is active,
- * back off gently (600ms base, 1.5x growth, 10s cap) so the whole retry
- * window spans roughly 100 seconds of rostering time. Every other retryable
+ * While the user is not provisioned yet and a provisioning wait is in
+ * progress, back off gently (600ms base, 1.5x growth, 10s cap) so the whole
+ * retry window spans roughly 100 seconds of rostering time. Every other retryable
  * error keeps TanStack's default exponential schedule.
  *
  * @param {number} failureCount - Number of failed attempts so far (0-based at
@@ -91,7 +111,7 @@ export function meRetryPolicy(failureCount, error) {
  * @returns {number} Delay in milliseconds before the next attempt.
  */
 export function meRetryDelay(failureCount, error) {
-  if (isUserNotProvisionedError(error) && isOnProvisioningRoute()) {
+  if (isUserNotProvisionedError(error) && provisioningContextCheck()) {
     const baseDelay = isTestEnv() ? PROVISIONING_RETRY_BASE_DELAY_TEST_MS : PROVISIONING_RETRY_BASE_DELAY_MS;
     return Math.min(baseDelay * PROVISIONING_RETRY_DELAY_MULTIPLIER ** failureCount, PROVISIONING_RETRY_MAX_DELAY_MS);
   }

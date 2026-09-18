@@ -139,6 +139,7 @@ class AuthService {
    * @returns {Promise<import('firebase/auth').UserCredential>}
    */
   async signInWithEmailAndPassword(email, password) {
+    await this.initialize();
     return fbSignInWithEmailAndPassword(this.#auth, email, password);
   }
 
@@ -149,10 +150,11 @@ class AuthService {
    * @returns {Promise<import('firebase/auth').UserCredential>}
    */
   async signInWithPopup(providerName) {
-    // A sign-in can race the app bootstrap's initialize() — the OAuth
+    // Any auth call can race the app bootstrap's initialize() — the OAuth
     // landing pages replace to SignIn, whose onMounted re-triggers the SSO
-    // flow, possibly before App.vue's awaited initAuth() has resolved.
-    // Awaiting the memoized initialize() makes readiness structural.
+    // flow, and the sign-in form is interactive before App.vue's awaited
+    // initAuth() resolves. Awaiting the memoized initialize() in every
+    // async method that touches #auth makes readiness structural.
     await this.initialize();
     const provider = this.#resolveProvider(providerName);
     return fbSignInWithPopup(this.#auth, provider);
@@ -191,6 +193,7 @@ class AuthService {
    * @returns {Promise<import('firebase/auth').UserCredential>}
    */
   async signInWithEmailLink(email, emailLink) {
+    await this.initialize();
     return fbSignInWithEmailLink(this.#auth, email, emailLink);
   }
 
@@ -202,6 +205,7 @@ class AuthService {
    * @returns {Promise<void>}
    */
   async sendSignInLinkToEmail(email, url) {
+    await this.initialize();
     return fbSendSignInLinkToEmail(this.#auth, email, {
       url,
       handleCodeInApp: true,
@@ -226,6 +230,7 @@ class AuthService {
    * @returns {Promise<import('firebase/auth').UserCredential>}
    */
   async createUserWithEmailAndPassword(email, password) {
+    await this.initialize();
     return fbCreateUserWithEmailAndPassword(this.#auth, email, password);
   }
 
@@ -236,6 +241,7 @@ class AuthService {
    * @returns {Promise<void>}
    */
   async sendPasswordResetEmail(email) {
+    await this.initialize();
     return fbSendPasswordResetEmail(this.#auth, email);
   }
 
@@ -246,6 +252,7 @@ class AuthService {
    * @returns {Promise<string[]>}
    */
   async fetchSignInMethodsForEmail(email) {
+    await this.initialize();
     return fbFetchSignInMethodsForEmail(this.#auth, email);
   }
 
@@ -277,6 +284,7 @@ class AuthService {
    * @returns {Promise<void>}
    */
   async signOut() {
+    await this.initialize();
     return fbSignOut(this.#auth);
   }
 

@@ -109,15 +109,15 @@ describe('useSSOAccountReadinessVerification – provisioning window (integratio
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    await advanceUntil(() => router.push.mock.calls.length > 0);
+    await advanceUntil(() => router.replace.mock.calls.length > 0);
 
     // The query retried past the point where the generic policy would have
     // parked it in error state...
     expect(mockMeGet.mock.calls.length).toBeGreaterThan(GENERIC_WINDOW_ATTEMPTS);
     // ...and the flow completed as a success, exactly once, with no error UI.
     expect(result.hasError.value).toBe(false);
-    expect(router.push).toHaveBeenCalledTimes(1);
-    expect(router.push).toHaveBeenCalledWith({ path: '/' });
+    expect(router.replace).toHaveBeenCalledTimes(1);
+    expect(router.replace).toHaveBeenCalledWith({ path: '/' });
 
     app.unmount();
   });
@@ -137,7 +137,7 @@ describe('useSSOAccountReadinessVerification – provisioning window (integratio
 
     expect(result.hasError.value).toBe(true);
     expect(mockMeGet).toHaveBeenCalledTimes(16);
-    expect(router.push).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
 
     app.unmount();
   });

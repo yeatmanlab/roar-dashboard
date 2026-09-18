@@ -26,6 +26,7 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   return {
     ...original,
     useQueryClient: vi.fn(),
+    useIsMutating: vi.fn(),
   };
 });
 
@@ -93,6 +94,7 @@ describe('useSSOAccountReadinessVerification', () => {
     };
 
     VueQuery.useQueryClient.mockReturnValue(queryClient);
+    VueQuery.useIsMutating.mockReturnValue(ref(0));
     useMeQuery.mockReturnValue(meQuery);
     useRouter.mockReturnValue(router);
     useRoute.mockReturnValue({ query: {} });
@@ -110,7 +112,7 @@ describe('useSSOAccountReadinessVerification', () => {
 
   it('runs the success routine when /me resolves after mount', async () => {
     const { result } = setup();
-    expect(router.push).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
 
     meQuery.data.value = readyUser;
     await nextTick();
@@ -120,19 +122,22 @@ describe('useSSOAccountReadinessVerification', () => {
     // A stale global error from a failed earlier /me attempt is cleared so
     // the router guard cannot hijack the redirect.
     expect(mocks.clearGlobalError).toHaveBeenCalled();
-    expect(router.push).toHaveBeenCalledWith({ path: '/' });
+    // `replace`, not `push` — /sso must not stay in history.
+    expect(router.replace).toHaveBeenCalledWith({ path: '/' });
     expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.SUCCESS, { data: { provider: 'SSO' } });
     expect(result.hasError.value).toBe(false);
   });
 
-  it('runs the success routine immediately when /me data is already cached at mount', () => {
-    // Provisioning can finish before SSOAuthPage mounts (fast rostering, or
-    // a cached payload) — the immediate watcher covers that ordering.
+  it('redirects without invalidating when /me data is already cached at mount', () => {
+    // Back navigation or a manual revisit after sign-in: no provisioning
+    // wait happened, so replaying the blanket invalidation would refetch
+    // every active query for nothing — just redirect.
     meQuery.data.value = readyUser;
 
     setup();
 
-    expect(router.push).toHaveBeenCalledWith({ path: '/' });
+    expect(router.replace).toHaveBeenCalledWith({ path: '/' });
+    expect(queryClient.invalidateQueries).not.toHaveBeenCalled();
   });
 
   it('redirects only once even when the /me payload updates again', async () => {
@@ -143,13 +148,15 @@ describe('useSSOAccountReadinessVerification', () => {
     meQuery.data.value = { ...readyUser };
     await nextTick();
 
-    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.replace).toHaveBeenCalledTimes(1);
     expect(queryClient.invalidateQueries).toHaveBeenCalledTimes(1);
   });
 
   it('invalidates everything except the /me entry on success', async () => {
     setup();
 
+    // Data arrives after mount — a real provisioning wait, so the cold-start
+    // invalidation applies.
     meQuery.data.value = readyUser;
     await nextTick();
 
@@ -203,7 +210,7 @@ describe('useSSOAccountReadinessVerification', () => {
     await nextTick();
 
     expect(result.hasError.value).toBe(true);
-    expect(router.push).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
     expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.PROVISIONING_RETRIES_EXHAUSTED, {
       level: 'error',
       data: { retryCount: 3, provider: 'SSO' },
@@ -291,6 +298,38 @@ describe('useSSOAccountReadinessVerification', () => {
     await nextTick();
 
     expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.SIGN_IN });
+  });
+
+  it('does not treat the page-initiated sign-out as a lost session', async () => {
+    // The Sign out button nulls the token before the sign-out mutation's
+    // onSuccess navigates — the watcher must stand down while the mutation
+    // is in flight instead of logging a false warning and racing it.
+    VueQuery.useIsMutating.mockReturnValue(ref(1));
+    const store = reactive({ accessToken: 'test-token' });
+    mocks.useAuthStore.mockReturnValue(store);
+
+    setup();
+    store.accessToken = null;
+    await nextTick();
+
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(mocks.logAuthEvent).not.toHaveBeenCalledWith(AUTH_LOG_MESSAGES.SSO_SESSION_MISSING, expect.anything());
+  });
+
+  it('forwards redirect_to when routing to SignIn without a session', async () => {
+    // The deep-link target survives the round trip through SignIn — the
+    // success path and the router guard preserve it the same way.
+    vi.useFakeTimers();
+    mocks.useAuthStore.mockReturnValue({ accessToken: null });
+    useRoute.mockReturnValue({ query: { redirect_to: '/administrations/xyz' } });
+
+    setup();
+    await vi.advanceTimersByTimeAsync(20_000);
+
+    expect(router.replace).toHaveBeenCalledWith({
+      name: APP_ROUTE_NAMES.SIGN_IN,
+      query: { redirect_to: '/administrations/xyz' },
+    });
   });
 
   it('resets the /me query on retryPolling', () => {

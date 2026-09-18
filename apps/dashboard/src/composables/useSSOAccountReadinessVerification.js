@@ -1,12 +1,13 @@
 import { computed, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useQueryClient } from '@tanstack/vue-query';
+import { useIsMutating, useQueryClient } from '@tanstack/vue-query';
 import { setUser } from '@sentry/vue';
 import useMeQuery from '@/composables/queries/useMeQuery';
 import { useGlobalError } from '@/composables/useGlobalError';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { useAuthStore } from '@/store/auth';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
+import { SIGN_OUT_MUTATION_KEY } from '@/constants/mutationKeys';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 import { APP_ROUTE_NAMES } from '@/constants/routes';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
@@ -66,6 +67,15 @@ const useSSOAccountReadinessVerification = () => {
 
   const { data, error, failureCount, failureReason } = useMeQuery();
 
+  // `true` if /me was already resolved when this composable mounted — a Back
+  // navigation or a manual revisit after sign-in, not a provisioning wait.
+  const hadMeDataAtMount = Boolean(data.value);
+
+  // Non-zero while the sign-out mutation is running. The page's own Sign out
+  // button nulls the access token before the mutation's onSuccess navigates —
+  // the token watcher below must not treat that as a lost session.
+  const signOutMutationCount = useIsMutating({ mutationKey: [SIGN_OUT_MUTATION_KEY] });
+
   /**
    * `true` once the `/me` query has exhausted its retries on a
    * non-terminal error. Terminal errors (rostering-ended, expired token)
@@ -82,7 +92,13 @@ const useSSOAccountReadinessVerification = () => {
       level: 'warning',
       data: { provider: 'SSO' },
     });
-    router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
+    // Forward the deep-link target so signing in still lands the user where
+    // the original link pointed — the success path and the router guard's
+    // SSO forwarding preserve the parameter the same way.
+    router.replace({
+      name: APP_ROUTE_NAMES.SIGN_IN,
+      ...(route.query.redirect_to ? { query: { redirect_to: route.query.redirect_to } } : {}),
+    });
   };
 
   // No access token means the /me query is disabled and will never settle.
@@ -99,7 +115,8 @@ const useSSOAccountReadinessVerification = () => {
   // A token that later *disappears* outside the sign-out flow (revocation,
   // account disabled, an identity reset) disables the /me query again:
   // nothing would fetch, no watcher would navigate, and the page would spin
-  // forever — so route to SignIn immediately instead.
+  // forever — so route to SignIn immediately instead. The page's own
+  // sign-out is excluded: the mutation resets state and navigates itself.
   watch(
     () => Boolean(authStore.accessToken),
     (hasToken, hadToken) => {
@@ -107,7 +124,7 @@ const useSSOAccountReadinessVerification = () => {
         clearTimeout(noSessionTimer);
         return;
       }
-      if (hadToken && !hasRedirected) {
+      if (hadToken && !hasRedirected && signOutMutationCount.value === 0) {
         redirectToSignIn();
       }
     },
@@ -151,19 +168,25 @@ const useSSOAccountReadinessVerification = () => {
 
       // Invalidate everything cached during the provisioning window — SSO
       // completion is a cold start, so data fetched while the user record
-      // was still being created is not trustworthy. /me itself is excluded:
-      // the entry that just resolved is the freshest data in the cache, and
-      // refetching it immediately would be a redundant request.
-      queryClient.invalidateQueries({
-        predicate: (query) => query.queryKey[0] !== ME_QUERY_KEY,
-      });
+      // was still being created is not trustworthy. Two exclusions: /me
+      // itself (the entry that just resolved is the freshest data in the
+      // cache), and the case where /me was already cached at mount — then
+      // no provisioning wait happened (Back navigation, manual revisit) and
+      // a blanket refetch of every active query would be pure waste.
+      if (!hadMeDataAtMount) {
+        queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] !== ME_QUERY_KEY,
+        });
+      }
 
       // A stale global error from an earlier failed /me attempt would make
       // the router guard hijack this redirect. /me just succeeded, so clear
       // it — mirrors App.vue's meData watcher.
       clearGlobalError();
 
-      router.push({ path: redirectSignInPath(route) });
+      // `replace`, not `push`: keeping /sso in history would make the Back
+      // button remount this page and replay the redirect.
+      router.replace({ path: redirectSignInPath(route) });
     },
     { immediate: true },
   );
