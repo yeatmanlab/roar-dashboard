@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UserRoles } from '@bdelab/roar-firekit';
 import { queryClient } from '@/queryClient';
-import { fetchMe } from '@/composables/queries/useMeQuery';
+import { fetchMe, meRetryPolicy, meRetryDelay } from '@/composables/queries/useMeQuery';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 import { deriveClaimsFromMe, resolveUserClaims } from './resolveUserClaims';
 
@@ -14,6 +14,8 @@ vi.mock('@/queryClient', () => ({
 vi.mock('@/composables/queries/useMeQuery', () => ({
   default: vi.fn(),
   fetchMe: vi.fn(),
+  meRetryPolicy: vi.fn(),
+  meRetryDelay: vi.fn(),
 }));
 
 const MOCK_ROAR_UID = '00000000-0000-0000-0000-000000000001';
@@ -90,6 +92,10 @@ describe('resolveUserClaims', () => {
     expect(queryClient.fetchQuery).toHaveBeenCalledWith({
       queryKey: [ME_QUERY_KEY],
       queryFn: fetchMe,
+      // The shared /me retry policy rides along so a fetch initiated here
+      // retries through the provisioning window like every other initiator.
+      retry: meRetryPolicy,
+      retryDelay: meRetryDelay,
     });
     // No per-call staleTime: freshness is governed by the queryClient's
     // defaultOptions (fetchQuery applies them via defaultQueryOptions).

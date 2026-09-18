@@ -1,17 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { nextTick, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import * as VueQuery from '@tanstack/vue-query';
+import { setUser } from '@sentry/vue';
 import { withSetup } from '@/test-support/withSetup.js';
-import { fetchMe } from '@/composables/queries/useMeQuery';
-import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
+import useMeQuery from '@/composables/queries/useMeQuery';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
-import { APP_ROUTE_NAMES } from '@/constants/routes';
 import useSSOAccountReadinessVerification from './useSSOAccountReadinessVerification';
 
 const mocks = vi.hoisted(() => ({
   logAuthEvent: vi.fn(),
-  setGlobalError: vi.fn(),
   clearGlobalError: vi.fn(),
 }));
 
@@ -30,7 +29,6 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
 
 vi.mock('@/composables/queries/useMeQuery', () => ({
   default: vi.fn(),
-  fetchMe: vi.fn(),
 }));
 
 vi.mock('@/composables/useSentryLogging', () => ({
@@ -41,19 +39,12 @@ vi.mock('@/composables/useSentryLogging', () => ({
 
 vi.mock('@/composables/useGlobalError', () => ({
   useGlobalError: () => ({
-    setGlobalError: mocks.setGlobalError,
     clearGlobalError: mocks.clearGlobalError,
   }),
 }));
 
 vi.mock('@sentry/vue', () => ({
   setUser: vi.fn(),
-}));
-
-// Force the short backoff schedule (3 attempts, 200ms starting delay) so the
-// exhaustion tests don't wait on the production schedule.
-vi.mock('@/helpers/isTestEnv', () => ({
-  default: () => true,
 }));
 
 vi.mock('@/helpers/redirectSignInPath', () => ({
@@ -73,20 +64,30 @@ const buildMeError = (status, code) => {
 describe('useSSOAccountReadinessVerification', () => {
   let queryClient;
   let router;
+  let meQuery;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     queryClient = {
-      setQueryData: vi.fn(),
       invalidateQueries: vi.fn(),
+      resetQueries: vi.fn(),
     };
     router = {
       push: vi.fn(),
       replace: vi.fn(),
     };
+    // The composable observes the canonical /me query — the test drives it
+    // by mutating these refs, the same way TanStack would on fetch events.
+    meQuery = {
+      data: ref(null),
+      error: ref(null),
+      failureCount: ref(0),
+      failureReason: ref(null),
+    };
 
     VueQuery.useQueryClient.mockReturnValue(queryClient);
+    useMeQuery.mockReturnValue(meQuery);
     useRouter.mockReturnValue(router);
     useRoute.mockReturnValue({ query: {} });
   });
@@ -96,14 +97,14 @@ describe('useSSOAccountReadinessVerification', () => {
     return { result, app };
   };
 
-  it('redirects when /me reports a ready user on the first attempt', async () => {
-    fetchMe.mockResolvedValue(readyUser);
-
+  it('runs the success routine when /me resolves after mount', async () => {
     const { result } = setup();
-    await result.startPolling();
+    expect(router.push).not.toHaveBeenCalled();
 
-    expect(fetchMe).toHaveBeenCalledTimes(1);
-    expect(queryClient.setQueryData).toHaveBeenCalledWith([ME_QUERY_KEY], readyUser);
+    meQuery.data.value = readyUser;
+    await nextTick();
+
+    expect(setUser).toHaveBeenCalledWith({ id: readyUser.id, userType: readyUser.userType });
     expect(queryClient.invalidateQueries).toHaveBeenCalled();
     // A stale global error from a failed earlier /me attempt is cleared so
     // the router guard cannot hijack the redirect.
@@ -113,155 +114,112 @@ describe('useSSOAccountReadinessVerification', () => {
     expect(result.hasError.value).toBe(false);
   });
 
-  it('keeps polling while the user is a guest, then redirects once ready', async () => {
-    fetchMe.mockResolvedValueOnce({ id: 'roar-user-id', userType: 'guest' }).mockResolvedValueOnce(readyUser);
+  it('runs the success routine immediately when /me data is already cached at mount', () => {
+    // Provisioning can finish before SSOAuthPage mounts (fast rostering, or
+    // a cached payload) — the immediate watcher covers that ordering.
+    meQuery.data.value = readyUser;
 
-    const { result } = setup();
-    await result.startPolling();
+    setup();
 
-    expect(fetchMe).toHaveBeenCalledTimes(2);
-    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.USER_TYPE_GUEST, {
+    expect(router.push).toHaveBeenCalledWith({ path: '/' });
+  });
+
+  it('redirects only once even when the /me payload updates again', async () => {
+    setup();
+
+    meQuery.data.value = readyUser;
+    await nextTick();
+    // The blanket invalidation refetches /me itself; a fresh payload object
+    // lands in the cache and must not re-trigger the redirect.
+    meQuery.data.value = { ...readyUser };
+    await nextTick();
+
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(queryClient.invalidateQueries).toHaveBeenCalledTimes(1);
+  });
+
+  it('logs provisioning progress on each retry', async () => {
+    setup();
+
+    meQuery.failureReason.value = buildMeError(401, 'auth/user-not-found');
+    meQuery.failureCount.value = 1;
+    await nextTick();
+    meQuery.failureCount.value = 2;
+    await nextTick();
+
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.PROVISIONING_PENDING, {
       level: 'warning',
-      data: { retryCount: 1, provider: 'SSO' },
+      data: { retryCount: 1, provider: 'SSO', status: 401 },
     });
-    expect(router.push).toHaveBeenCalledWith({ path: '/' });
-    expect(result.hasError.value).toBe(false);
-  });
-
-  it('keeps polling while /me fails with user-not-found, then redirects once it resolves', async () => {
-    fetchMe.mockRejectedValueOnce(buildMeError(401, 'auth/user-not-found')).mockResolvedValueOnce(readyUser);
-
-    const { result } = setup();
-    await result.startPolling();
-
-    expect(fetchMe).toHaveBeenCalledTimes(2);
-    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.USER_TYPE_MISSING, {
+    expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.PROVISIONING_PENDING, {
       level: 'warning',
-      data: { retryCount: 1, provider: 'SSO', userType: undefined, status: 401 },
+      data: { retryCount: 2, provider: 'SSO', status: 401 },
     });
-    expect(router.push).toHaveBeenCalledWith({ path: '/' });
-    expect(result.hasError.value).toBe(false);
   });
 
-  it('keeps polling when the request goes out without a token (auth/required)', async () => {
-    // Right after the SSO redirect the first attempts can race the Firebase
-    // token listener — auth/required must not be treated as terminal here.
-    fetchMe.mockRejectedValueOnce(buildMeError(401, 'auth/required')).mockResolvedValueOnce(readyUser);
-
+  it('sets hasError and logs when /me exhausts its retries on a non-terminal error', async () => {
     const { result } = setup();
-    await result.startPolling();
 
-    expect(fetchMe).toHaveBeenCalledTimes(2);
-    expect(mocks.setGlobalError).not.toHaveBeenCalled();
-    expect(router.push).toHaveBeenCalledWith({ path: '/' });
-    expect(result.hasError.value).toBe(false);
-  });
+    meQuery.failureCount.value = 3;
+    meQuery.error.value = buildMeError(500);
+    await nextTick();
 
-  it('routes to SignIn when auth/required persists through all attempts', async () => {
-    // auth/required is retried (token race), but a session that never
-    // produces a token is treated as expired once the attempts run out.
-    fetchMe.mockRejectedValue(buildMeError(401, 'auth/required'));
-
-    const { result } = setup();
-    await result.startPolling();
-
-    expect(fetchMe).toHaveBeenCalledTimes(3);
-    expect(mocks.setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
-    expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.SIGN_IN });
-    expect(result.hasError.value).toBe(false);
-  });
-
-  it('sets hasError after exhausting all attempts', async () => {
-    fetchMe.mockRejectedValue(buildMeError(500));
-
-    const { result } = setup();
-    await result.startPolling();
-
-    expect(fetchMe).toHaveBeenCalledTimes(3);
-    expect(router.push).not.toHaveBeenCalled();
     expect(result.hasError.value).toBe(true);
-    // The retry callback fires on every failure, including the last one.
-    expect(result.retryCount.value).toBe(3);
+    expect(router.push).not.toHaveBeenCalled();
     expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.POLLING_MAX_RETRIES_EXCEEDED, {
       level: 'error',
       data: { retryCount: 3, provider: 'SSO' },
     });
   });
 
-  it('stops immediately and routes to AccessEnded on a rostering-ended error', async () => {
-    fetchMe.mockRejectedValue(buildMeError(403, 'auth/rostering-ended'));
-
+  it('sets hasError when the provisioning window closes without a user record', async () => {
     const { result } = setup();
-    await result.startPolling();
 
-    expect(fetchMe).toHaveBeenCalledTimes(1);
-    expect(mocks.setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
-    expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
-    expect(result.hasError.value).toBe(false);
-  });
+    meQuery.error.value = buildMeError(401, 'auth/user-not-found');
+    await nextTick();
 
-  it('stops immediately and routes to SignIn on a terminal auth error', async () => {
-    fetchMe.mockRejectedValue(buildMeError(401, 'auth/token-expired'));
-
-    const { result } = setup();
-    await result.startPolling();
-
-    expect(fetchMe).toHaveBeenCalledTimes(1);
-    expect(mocks.setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
-    expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.SIGN_IN });
-    expect(result.hasError.value).toBe(false);
-  });
-
-  it('recovers via retryPolling after an error', async () => {
-    fetchMe.mockRejectedValue(buildMeError(500));
-
-    const { result } = setup();
-    await result.startPolling();
     expect(result.hasError.value).toBe(true);
+  });
 
-    fetchMe.mockResolvedValue(readyUser);
+  it('does not set hasError on a rostering-ended error', async () => {
+    // Terminal errors navigate away via the QueryCache bridge and App.vue's
+    // meError watcher — SSOAuthPage must not flash its retry UI first.
+    const { result } = setup();
+
+    meQuery.error.value = buildMeError(403, 'auth/rostering-ended');
+    await nextTick();
+
+    expect(result.hasError.value).toBe(false);
+    expect(mocks.logAuthEvent).not.toHaveBeenCalledWith(AUTH_LOG_MESSAGES.POLLING_MAX_RETRIES_EXCEEDED, {
+      level: 'error',
+      data: expect.anything(),
+    });
+  });
+
+  it('does not set hasError on a terminal auth error', async () => {
+    const { result } = setup();
+
+    meQuery.error.value = buildMeError(401, 'auth/token-expired');
+    await nextTick();
+
+    expect(result.hasError.value).toBe(false);
+  });
+
+  it('exposes the query failure count as retryCount', async () => {
+    const { result } = setup();
+
+    meQuery.failureCount.value = 5;
+    await nextTick();
+
+    expect(result.retryCount.value).toBe(5);
+  });
+
+  it('resets the /me query on retryPolling', () => {
+    const { result } = setup();
+
     result.retryPolling();
 
-    // retryPolling kicks off polling without awaiting it.
-    await vi.waitFor(() => expect(router.push).toHaveBeenCalledWith({ path: '/' }));
-    expect(result.hasError.value).toBe(false);
-  });
-
-  it('does not start a second concurrent polling session', async () => {
-    let resolveFetch;
-    fetchMe.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveFetch = resolve;
-        }),
-    );
-
-    const { result } = setup();
-    const first = result.startPolling();
-    // Wait until backOff has actually invoked fetchMe before starting the
-    // second session — the first attempt is scheduled asynchronously.
-    await vi.waitFor(() => expect(fetchMe).toHaveBeenCalled());
-    const second = result.startPolling();
-
-    resolveFetch(readyUser);
-    await Promise.all([first, second]);
-
-    expect(fetchMe).toHaveBeenCalledTimes(1);
-  });
-
-  it('stops polling when the component unmounts', async () => {
-    fetchMe.mockResolvedValue({ id: 'roar-user-id', userType: 'guest' });
-
-    const { result, app } = setup();
-    const polling = result.startPolling();
-    await Promise.resolve();
-
-    app.unmount();
-    await polling;
-
-    // The retry callback bails after the first attempt — no further fetches.
-    expect(fetchMe).toHaveBeenCalledTimes(1);
-    expect(router.push).not.toHaveBeenCalled();
-    expect(result.hasError.value).toBe(false);
+    expect(mocks.clearGlobalError).toHaveBeenCalled();
+    expect(queryClient.resetQueries).toHaveBeenCalledWith({ queryKey: [ME_QUERY_KEY] });
   });
 });

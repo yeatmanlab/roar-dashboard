@@ -13,7 +13,7 @@ import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
-import { fetchMe } from '@/composables/queries/useMeQuery';
+import { fetchMe, meRetryPolicy, meRetryDelay } from '@/composables/queries/useMeQuery';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { useGlobalError } from '@/composables/useGlobalError';
@@ -806,7 +806,11 @@ const routes = [
     beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import('../pages/SSOAuthPage.vue'),
     props: (route) => ({ code: route.query.code }), // @TODO: Isn't the code processed by the sign-in page?
-    meta: { pageTitle: 'Signing you in…' },
+    // `awaitsUserProvisioning` exempts this route from App.vue's `/me` gate
+    // and generic-error redirect: after the SSO redirect, `/me` fails with
+    // `auth/user-not-found` until the backend provisions the user, and this
+    // page owns the loading/retry UX for that window.
+    meta: { pageTitle: 'Signing you in…', awaitsUserProvisioning: true },
   },
   {
     path: APP_ROUTES.AUTH_CLEVER,
@@ -1146,6 +1150,13 @@ router.beforeEach(async (to, from, next) => {
           // the unsigned-TOS gate.
           queryFn: fetchMe,
           staleTime: 60_000,
+          // If this call is the one that starts the fetch (no observer has
+          // subscribed yet), the provisioning-aware /me retry policy must
+          // apply here too — otherwise a fetch kicked off by this guard
+          // would exhaust the queryClient's generic 3-retry default during
+          // the SSO provisioning window and park the query in error state.
+          retry: meRetryPolicy,
+          retryDelay: meRetryDelay,
         }),
         new Promise((resolve) => setTimeout(() => resolve(undefined), 5000)),
       ]);

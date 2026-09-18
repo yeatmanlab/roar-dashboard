@@ -3,19 +3,37 @@ import { StatusCodes } from 'http-status-codes';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getRoarApiClient } from '@/clients/roar-api';
 import { useAuthStore } from '@/store/auth';
-import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
+import { isRosteringEndedError, isTerminalAuthError, isUserNotProvisionedError } from '@/utils/api-errors';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 
 const MAX_RETRIES = 3;
+
+// `auth/user-not-found` means the Firebase account exists but the backend
+// user record doesn't — after an SSO sign-in that is the provisioning window,
+// which rostering can take a while to close. These retries replace the
+// SSO-specific polling loop that previously fetched `/me` outside the query
+// cache; the whole app now shares this single, patient schedule (~100s:
+// 600ms base, 1.5x growth, capped at 10s per retry).
+export const PROVISIONING_MAX_RETRIES = 15;
+const PROVISIONING_MAX_RETRIES_TEST = 3;
+const PROVISIONING_RETRY_BASE_DELAY_MS = 600;
+const PROVISIONING_RETRY_BASE_DELAY_TEST_MS = 200;
+const PROVISIONING_RETRY_DELAY_MULTIPLIER = 1.5;
+const PROVISIONING_RETRY_MAX_DELAY_MS = 10_000;
 
 /**
  * Shared retry policy for `/me`-backed queries.
  *
  * Rostering-ended and terminal auth errors are not transient; retrying
- * wastes time and delays the user-facing error UX. Used by both `useMeQuery`
- * and `useUserClaimsQuery` (which observes the same `/me` cache entry), and
- * placed **after** `...options` in each `useQuery` call so a caller-supplied
- * `retry` can't silently override it.
+ * wastes time and delays the user-facing error UX. `auth/user-not-found` is
+ * the opposite case: the backend hasn't provisioned the user record yet
+ * (SSO rostering in flight), so it gets a longer retry window than ordinary
+ * transient failures — in Cypress a shortened one, to keep E2E runs fast
+ * while still exercising the provisioning path.
+ *
+ * Used by both `useMeQuery` and `useUserClaimsQuery` (which observes the
+ * same `/me` cache entry), and placed **after** `...options` in each
+ * `useQuery` call so a caller-supplied `retry` can't silently override it.
  *
  * @param {number} failureCount - Number of failed attempts so far.
  * @param {Error} error - The thrown error (carries `.status` / `.body`).
@@ -25,11 +43,37 @@ export function meRetryPolicy(failureCount, error) {
   if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
     return false;
   }
+  if (isUserNotProvisionedError(error)) {
+    const maxRetries = window.Cypress ? PROVISIONING_MAX_RETRIES_TEST : PROVISIONING_MAX_RETRIES;
+    return failureCount < maxRetries;
+  }
   // Deterministic behavior in Cypress E2E — mirrors the queryClient's
   // default retry policy (src/queryClient.js), which this policy replaces
   // for /me-backed queries.
   if (window.Cypress) return false;
   return failureCount < MAX_RETRIES;
+}
+
+/**
+ * Retry delay companion to {@link meRetryPolicy}.
+ *
+ * While the user is not provisioned yet, back off gently (600ms base, 1.5x
+ * growth, 10s cap) so the whole retry window spans roughly 100 seconds of
+ * rostering time. Every other retryable error keeps TanStack's default
+ * exponential schedule.
+ *
+ * @param {number} failureCount - Number of failed attempts so far (0-based at
+ *   the first retry decision, matching TanStack's retryer).
+ * @param {Error} error - The thrown error (carries `.status` / `.body`).
+ * @returns {number} Delay in milliseconds before the next attempt.
+ */
+export function meRetryDelay(failureCount, error) {
+  if (isUserNotProvisionedError(error)) {
+    const baseDelay = window.Cypress ? PROVISIONING_RETRY_BASE_DELAY_TEST_MS : PROVISIONING_RETRY_BASE_DELAY_MS;
+    return Math.min(baseDelay * PROVISIONING_RETRY_DELAY_MULTIPLIER ** failureCount, PROVISIONING_RETRY_MAX_DELAY_MS);
+  }
+  // TanStack Query's default schedule: 1s, 2s, 4s, ... capped at 30s.
+  return Math.min(1000 * 2 ** failureCount, 30_000);
 }
 
 /**
@@ -81,7 +125,10 @@ export async function fetchMe() {
  * terminal auth errors (`auth/required`, `auth/token-expired`). Those error
  * codes are surfaced to `useGlobalError` (via the QueryCache bridge in
  * `plugins.js`) so the router can redirect to AccessEnded / SignIn / GenericError
- * pages without spinning on retries first.
+ * pages without spinning on retries first. `auth/user-not-found` gets the
+ * opposite treatment: it marks the SSO provisioning window (Firebase account
+ * exists, backend user record doesn't yet), so the query retries it patiently
+ * — see {@link meRetryPolicy} / {@link meRetryDelay}.
  *
  * The non-retriable-error policy and the access-token gate are intentionally
  * placed **after** `...options` in the `useQuery` call so a caller-supplied
@@ -105,6 +152,7 @@ const useMeQuery = (queryOptions = undefined) => {
     ...options,
     enabled: isQueryEnabled,
     retry: meRetryPolicy,
+    retryDelay: meRetryDelay,
   });
 };
 

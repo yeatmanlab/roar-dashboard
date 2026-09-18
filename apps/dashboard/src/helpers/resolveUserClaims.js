@@ -1,6 +1,6 @@
 import { UserRoles } from '@bdelab/roar-firekit';
 import { queryClient } from '@/queryClient';
-import { fetchMe } from '@/composables/queries/useMeQuery';
+import { fetchMe, meRetryPolicy, meRetryDelay } from '@/composables/queries/useMeQuery';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 
 /**
@@ -62,6 +62,11 @@ export async function resolveUserClaims() {
   const meData = await queryClient.fetchQuery({
     queryKey: [ME_QUERY_KEY],
     queryFn: fetchMe,
+    // Every /me fetch initiator carries the same policy: if this call starts
+    // the fetch (no observer in flight yet), the provisioning-aware retries
+    // must apply here too, not the queryClient's generic 3-retry default.
+    retry: meRetryPolicy,
+    retryDelay: meRetryDelay,
   });
   return { claims: deriveClaimsFromMe(meData) };
 }

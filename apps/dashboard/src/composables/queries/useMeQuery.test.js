@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
-import useMeQuery from './useMeQuery';
+import useMeQuery, { meRetryDelay, PROVISIONING_MAX_RETRIES } from './useMeQuery';
 
 const mockMeGet = vi.fn();
 // Controllable per-test — defaults to a truthy token so most tests don't have
@@ -65,6 +65,7 @@ describe('useMeQuery', () => {
         queryKey: [ME_QUERY_KEY],
         queryFn: expect.any(Function),
         retry: expect.any(Function),
+        retryDelay: expect.any(Function),
       }),
     );
   });
@@ -205,6 +206,81 @@ describe('useMeQuery', () => {
     } finally {
       delete window.Cypress;
     }
+  });
+
+  it('retries auth/user-not-found through the full provisioning window', () => {
+    // `auth/user-not-found` marks the SSO provisioning window (Firebase
+    // account exists, backend user record doesn't yet) — it gets the patient
+    // retry schedule instead of the 3-retry transient budget.
+    let retryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      retryFn = options.retry;
+      return { data: { value: null }, error: { value: null } };
+    });
+
+    withSetup(() => useMeQuery(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const notProvisionedError = { body: { error: { code: 'auth/user-not-found' } } };
+    expect(retryFn(0, notProvisionedError)).toBe(true);
+    expect(retryFn(3, notProvisionedError)).toBe(true);
+    expect(retryFn(PROVISIONING_MAX_RETRIES - 1, notProvisionedError)).toBe(true);
+    expect(retryFn(PROVISIONING_MAX_RETRIES, notProvisionedError)).toBe(false);
+  });
+
+  it('retries auth/user-not-found under Cypress, but with a shortened window', () => {
+    // Unlike other transient errors (no retries in Cypress), the
+    // provisioning path stays exercised in E2E — just with fewer attempts
+    // so runs stay fast.
+    window.Cypress = {};
+    try {
+      let retryFn;
+      vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+        retryFn = options.retry;
+        return { data: { value: null }, error: { value: null } };
+      });
+
+      withSetup(() => useMeQuery(), {
+        plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+      });
+
+      const notProvisionedError = { body: { error: { code: 'auth/user-not-found' } } };
+      expect(retryFn(0, notProvisionedError)).toBe(true);
+      expect(retryFn(2, notProvisionedError)).toBe(true);
+      expect(retryFn(3, notProvisionedError)).toBe(false);
+    } finally {
+      delete window.Cypress;
+    }
+  });
+
+  describe('meRetryDelay', () => {
+    const notProvisionedError = { body: { error: { code: 'auth/user-not-found' } } };
+
+    it('backs off gently while the user is not provisioned', () => {
+      expect(meRetryDelay(0, notProvisionedError)).toBe(600);
+      expect(meRetryDelay(1, notProvisionedError)).toBe(900);
+      expect(meRetryDelay(2, notProvisionedError)).toBe(1350);
+      // Capped at 10s so the tail of the window doesn't sprawl.
+      expect(meRetryDelay(14, notProvisionedError)).toBe(10_000);
+    });
+
+    it('uses a fast schedule for the provisioning path under Cypress', () => {
+      window.Cypress = {};
+      try {
+        expect(meRetryDelay(0, notProvisionedError)).toBe(200);
+        expect(meRetryDelay(1, notProvisionedError)).toBe(300);
+      } finally {
+        delete window.Cypress;
+      }
+    });
+
+    it("keeps TanStack's default exponential schedule for other errors", () => {
+      const transientError = new Error('network down');
+      expect(meRetryDelay(0, transientError)).toBe(1000);
+      expect(meRetryDelay(1, transientError)).toBe(2000);
+      expect(meRetryDelay(5, transientError)).toBe(30_000);
+    });
   });
 
   it('honors a caller-provided `enabled: false`', () => {

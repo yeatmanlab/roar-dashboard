@@ -19,11 +19,11 @@ import { ME_QUERY_KEY } from '@/constants/queryKeys';
  * The QueryCache's `onError` is the **single** bridge between API errors and
  * `useGlobalError`. App.vue's `meError` watcher only handles navigation; it
  * does not write to global error state. Keeping the mapping in one place
- * prevents two surfaces from competing to set or clear the same flag.
- * One exception: the SSO readiness poller
- * (`useSSOAccountReadinessVerification`) fetches `/me` outside the query
- * cache, so this bridge never sees its errors — it applies the same
- * error-code-to-global-error mapping itself.
+ * prevents two surfaces from competing to set or clear the same flag. The
+ * SSO readiness flow (`useSSOAccountReadinessVerification`) observes the
+ * same `/me` query as the rest of the app, so its errors flow through this
+ * bridge too — `onError` fires only after the query's retries (including
+ * the patient provisioning schedule in `meRetryPolicy`) are exhausted.
  *
  * `useGlobalError` is module-scoped (its state is a `ref` outside any
  * component), so calling it from this non-component context is safe.
