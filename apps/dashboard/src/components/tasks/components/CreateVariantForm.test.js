@@ -51,7 +51,7 @@ const CreateVariantForm = (await import('./CreateVariantForm.vue')).default;
 // native select keyed by its label so the three instances stay distinguishable.
 // ---------------------------------------------------------------------------
 
-const TextInputStub = {
+const TextInputLegacyStub = {
   props: ['modelValue', 'id'],
   emits: ['update:modelValue'],
   template: `<input :data-testid="'text-' + id" :value="modelValue" @input="$emit('update:modelValue', $event.target.value)" />`,
@@ -89,7 +89,7 @@ function mountForm() {
     props: { selectedTaskId: 'task-1' },
     global: {
       stubs: {
-        TextInput: TextInputStub,
+        TextInputLegacy: TextInputLegacyStub,
         TaskParametersConfigurator: ConfiguratorStub,
         Dropdown: DropdownStub,
         PvButton: { template: '<button><slot /></button>' },

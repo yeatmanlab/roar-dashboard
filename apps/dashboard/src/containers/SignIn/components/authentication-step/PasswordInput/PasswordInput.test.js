@@ -1,242 +1,81 @@
-import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { describe, expect, it } from 'vitest';
 import PasswordInput from './PasswordInput.vue';
 
+function mountInput(props = {}) {
+  return mount(PasswordInput, {
+    props: { show: true, isUsername: false, invalid: false, password: '', ...props },
+    global: {
+      mocks: {
+        $t: (key) =>
+          ({
+            'authSignIn.passwordPlaceholder': 'Password',
+            'authSignIn.forgotPassword': 'Forgot password?',
+            'authSignIn.magicLink': 'Request email link',
+          })[key],
+      },
+    },
+  });
+}
+
 describe('PasswordInput.vue', () => {
-  it('should render the component', () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: false,
-        isUsername: false,
-        invalid: false,
-        password: '',
-      },
-    });
+  it('does not display when show is false', () => {
+    const wrapper = mountInput({ show: false });
 
-    expect(wrapper.exists()).toBe(true);
+    expect(wrapper.find('.field').exists()).toBe(false);
   });
 
-  it('should not display when show is false', () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: false,
-        isUsername: false,
-        invalid: false,
-        password: '',
-      },
-    });
+  it('renders the shared redesigned password input with sign-in semantics', () => {
+    const wrapper = mountInput({ password: 'safe-password' });
+    const control = wrapper.getComponent({ name: 'FormPasswordInput' });
+    const input = wrapper.get('input');
 
-    const field = wrapper.find('.field');
-    expect(field.exists()).toBe(false);
+    expect(control.props('modelValue')).toBe('safe-password');
+    expect(control.props('labelHidden')).toBe(true);
+    expect(input.attributes('id')).toBe('password');
+    expect(input.attributes('name')).toBe('password');
+    expect(input.attributes('autocomplete')).toBe('current-password');
+    expect(input.attributes('data-cy')).toBe('sign-in__password');
   });
 
-  it('should display when show is true', () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: false,
-        password: '',
-      },
-    });
+  it('emits password updates from the shared control', async () => {
+    const wrapper = mountInput();
 
-    const field = wrapper.find('.field');
-    expect(field.exists()).toBe(true);
-  });
-
-  it('should display password input field', () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: false,
-        password: '',
-      },
-    });
-
-    const passwordInput = wrapper.findComponent({ name: 'Password' });
-    expect(passwordInput.exists()).toBe(true);
-  });
-
-  it('should have data-cy attribute', () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: false,
-        password: '',
-      },
-    });
-
-    const passwordInput = wrapper.findComponent({ name: 'Password' });
-    expect(passwordInput.attributes('data-cy')).toBe('sign-in__password');
-  });
-
-  it('should emit update:password when password changes', async () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: false,
-        password: '',
-      },
-    });
-
-    const passwordInput = wrapper.findComponent({ name: 'Password' });
-    await passwordInput.vm.$emit('update:model-value', 'newpassword');
-
-    expect(wrapper.emitted('update:password')).toBeTruthy();
+    await wrapper.get('input').setValue('newpassword');
     expect(wrapper.emitted('update:password')[0]).toEqual(['newpassword']);
   });
 
-  it('should display forgot password link when not username', () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: false,
-        password: '',
-      },
-    });
+  it('displays recovery actions for email identifiers', () => {
+    const wrapper = mountInput();
 
     const links = wrapper.findAll('small');
-    expect(links.length).toBeGreaterThan(0);
+    expect(links).toHaveLength(2);
   });
 
-  it('should hide forgot password link when isUsername is true', () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: true,
-        invalid: false,
-        password: '',
-      },
-    });
+  it('hides recovery actions for username identifiers', () => {
+    const wrapper = mountInput({ isUsername: true });
 
-    const linksContainer = wrapper.find('.flex.w-full');
-    expect(linksContainer.exists()).toBe(false);
+    expect(wrapper.find('.flex.w-full').exists()).toBe(false);
   });
 
-  it('should emit forgot-password when forgot password link clicked', async () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: false,
-        password: '',
-      },
-    });
+  it('emits the selected recovery action', async () => {
+    const wrapper = mountInput();
 
     const links = wrapper.findAll('small');
-    const forgotPasswordLink = links[0];
-    await forgotPasswordLink.trigger('click');
+    await links[0].trigger('click');
+    await links[1].trigger('click');
 
-    expect(wrapper.emitted('forgot-password')).toBeTruthy();
+    expect(wrapper.emitted('forgot-password')).toHaveLength(1);
+    expect(wrapper.emitted('magic-link')).toHaveLength(1);
   });
 
-  it('should emit magic-link when magic link clicked', async () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: false,
-        password: '',
-      },
-    });
+  it('passes invalid state through and emits submit on Enter', async () => {
+    const wrapper = mountInput({ invalid: true });
 
-    const links = wrapper.findAll('small');
-    const magicLinkButton = links[1];
-    await magicLinkButton.trigger('click');
+    expect(wrapper.getComponent({ name: 'FormPasswordInput' }).props('invalid')).toBe(true);
+    expect(wrapper.get('input').attributes('aria-invalid')).toBe('true');
 
-    expect(wrapper.emitted('magic-link')).toBeTruthy();
-  });
-
-  it('should apply invalid class when invalid is true', () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: true,
-        password: '',
-      },
-    });
-
-    const passwordInput = wrapper.findComponent({ name: 'Password' });
-    expect(passwordInput.classes()).toContain('p-invalid');
-  });
-
-  it('should not apply invalid class when invalid is false', () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: false,
-        password: '',
-      },
-    });
-
-    const passwordInput = wrapper.findComponent({ name: 'Password' });
-    expect(passwordInput.classes()).not.toContain('p-invalid');
-  });
-
-  it('should have toggle mask enabled', () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: false,
-        password: '',
-      },
-    });
-
-    const passwordInput = wrapper.findComponent({ name: 'Password' });
-    expect(passwordInput.props('toggleMask')).toBe(true);
-  });
-
-  it('should have feedback disabled', () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: false,
-        password: '',
-      },
-    });
-
-    const passwordInput = wrapper.findComponent({ name: 'Password' });
-    expect(passwordInput.props('feedback')).toBe(false);
-  });
-
-  it('should display password value', () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: false,
-        password: 'mypassword',
-      },
-    });
-
-    const passwordInput = wrapper.findComponent({ name: 'Password' });
-    expect(passwordInput.props('modelValue')).toBe('mypassword');
-  });
-
-  it('should update when props change', async () => {
-    const wrapper = mount(PasswordInput, {
-      props: {
-        show: true,
-        isUsername: false,
-        invalid: false,
-        password: 'oldpassword',
-      },
-    });
-
-    let passwordInput = wrapper.findComponent({ name: 'Password' });
-    expect(passwordInput.props('modelValue')).toBe('oldpassword');
-
-    await wrapper.setProps({ password: 'newpassword' });
-
-    passwordInput = wrapper.findComponent({ name: 'Password' });
-    expect(passwordInput.props('modelValue')).toBe('newpassword');
+    await wrapper.get('input').trigger('keydown', { key: 'Enter' });
+    expect(wrapper.emitted('submit')).toHaveLength(1);
   });
 });
