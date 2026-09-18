@@ -1319,7 +1319,7 @@ export function ReportService({
             taskMeta,
             scoredVariant,
             scoredScoreMap,
-            scoringVersionByVariant.get(scoredVariant.taskVariantId) ?? null,
+            resolveRunScoringVersion(scoredScoreMap, scoringVersionByVariant.get(scoredVariant.taskVariantId)),
             currentRun?.grade ?? targetUser.grade,
             eligibility.isOptional,
             historicalRuns,
@@ -1590,7 +1590,7 @@ export function ReportService({
               taskMeta,
               scoredVariant,
               scoredScoreMap,
-              scoringVersionByVariant.get(scoredVariant.taskVariantId) ?? null,
+              resolveRunScoringVersion(scoredScoreMap, scoringVersionByVariant.get(scoredVariant.taskVariantId)),
               currentRun?.grade ?? targetUser.grade,
               eligibility.isOptional,
               currentRun,
@@ -2251,12 +2251,41 @@ function extractScoringVersions(params: TaskVariantParameter[]): Map<string, num
   const map = new Map<string, number>();
   for (const param of params) {
     if (param.name !== 'scoringVersion') continue;
-    const version = typeof param.value === 'number' ? param.value : Number(param.value);
-    if (Number.isInteger(version)) {
+    const version = parseScoringVersion(param.value);
+    if (version !== null) {
       map.set(param.taskVariantId, version);
     }
   }
   return map;
+}
+
+/**
+ * Normalise a raw `scoringVersion` value — a JSONB variant parameter or a
+ * `run_scores` string — into the integer the scoring service resolves against,
+ * or `null` when it isn't one. `null` represents "no known version", which
+ * resolves to the default config (minVersion = 0).
+ *
+ * @param value - Raw value from a variant parameter or a run score row
+ * @returns The integer scoring version, or `null` if absent or non-integer
+ */
+function parseScoringVersion(value: unknown): number | null {
+  const version = typeof value === 'number' ? value : Number(value);
+  return Number.isInteger(version) ? version : null;
+}
+
+/**
+ * Resolve the scoring version a run was scored under.
+ *
+ * @param scoreMap - The run's `run_scores` values, keyed by score name
+ * @param variantScoringVersion - Version from the variant's parameters. Accepts
+ *   a bare `scoringVersionByVariant.get(id)`, so callers don't coalesce first.
+ * @returns The run's scoring version, the variant's as fallback, else null
+ */
+function resolveRunScoringVersion(
+  scoreMap: Map<string, string>,
+  variantScoringVersion: number | null | undefined,
+): number | null {
+  return parseScoringVersion(scoreMap.get(SCORE_NAME.SCORING_VERSION)) ?? variantScoringVersion ?? null;
 }
 
 export function groupVariantsByTaskId(taskMetas: ReportTaskMeta[]): TaskGroup[] {
@@ -2430,9 +2459,12 @@ function aggregateTaskGroup(
     if (scored) {
       totalAssessed++;
 
-      const scoringVersion = scoringVersionByVariant.get(scored.variant.taskVariantId) ?? null;
+      const scoringVersion = resolveRunScoringVersion(
+        scored.scores,
+        scoringVersionByVariant.get(scored.variant.taskVariantId),
+      );
       const gradeLevel = getGradeAsNumber(student.grade);
-      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel);
+      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel, scoringVersion);
 
       const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
       const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
@@ -2708,7 +2740,9 @@ function aggregateTaskFacet({
   let anyPercentileSeen = false;
 
   for (const [, scored] of scoredByUserId) {
-    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, scored.gradeLevel);
+    // Bin edges are cohort-level, so they use the variant's version.
+    const scoringVersion = scoringVersionByVariant.get(scored.variant.taskVariantId) ?? null;
+    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, scored.gradeLevel, scoringVersion);
     const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
     const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
     if (rawScore !== null) {
@@ -2730,9 +2764,12 @@ function aggregateTaskFacet({
     const scored = scoredByUserId.get(student.userId);
     if (!scored) continue;
 
-    const scoringVersion = scoringVersionByVariant.get(scored.variant.taskVariantId) ?? null;
+    const scoringVersion = resolveRunScoringVersion(
+      scored.scores,
+      scoringVersionByVariant.get(scored.variant.taskVariantId),
+    );
     const gradeLevel = getGradeAsNumber(student.grade);
-    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel);
+    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel, scoringVersion);
     const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
     const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
     const assessmentSupportLevel = resolveStringScore(scored.scores, ASSESSMENT_SUPPORT_LEVEL_FIELDS);
@@ -2911,6 +2948,8 @@ function uniqueTaskMetadataInOrder(taskMetas: ReportTaskMeta[]): ServiceTaskMeta
  *
  * Returns an empty rules object for unknown task slugs and for `'none'`
  * classification — those tasks have no support level the SQL CASE can compute.
+ *
+ * The version is the variant's, not the run's.
  */
 function resolveScoringRulesForVariant(taskSlug: string, scoringVersion: number | null): ResolvedScoringRules {
   const empty: ResolvedScoringRules = {
@@ -3154,12 +3193,14 @@ function assembleStudentScoreRow(
     }
 
     if (scored) {
-      const scoringVersion = scoringVersionByVariant.get(scored.variant.taskVariantId) ?? null;
+      const scoringVersion = resolveRunScoringVersion(
+        scored.scoreMap,
+        scoringVersionByVariant.get(scored.variant.taskVariantId),
+      );
       const gradeLevel = getGradeAsNumber(row.grade);
-      // Match score-overview's resolution strategy: omit scoringVersion so all-version
-      // field names are returned. This is best-effort — the version is still passed to
-      // getSupportLevel below for correct cutoff selection.
-      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel);
+      // Same version drives field resolution and getSupportLevel below, so the
+      // reported score and its classification come from one norming table.
+      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel, scoringVersion);
 
       const percentile = resolveNumericScore(scored.scoreMap, fieldNames.percentileFieldNames);
       const rawScore = resolveNumericScore(scored.scoreMap, fieldNames.rawScoreFieldNames);
@@ -3463,21 +3504,29 @@ export function computePaSkillsToWorkOn(
   return out;
 }
 
-/** Resolve numeric score fields from a score map — wraps the existing helpers. */
+/**
+ * Resolve numeric score fields from a score map — wraps the existing helpers.
+ *
+ * @param scoreMap - The run's `run_scores` values, keyed by score name
+ * @param taskSlug - The task slug
+ * @param gradeLevel - Numeric grade level, or null
+ * @param variantScoringVersion - Fallback when the run carries no version stamp.
+ *   Null for historical entries, whose administrations' variant parameters
+ *   aren't loaded here.
+ */
 function resolveTaskScores(
   scoreMap: Map<string, string>,
   taskSlug: string,
   gradeLevel: number | null,
+  variantScoringVersion: number | null,
 ): ServiceTaskScores {
-  const fieldNames = resolveScoreFieldNames(taskSlug, gradeLevel);
-  // Reported per run because historical entries span administrations whose
-  // variant parameters aren't loaded here.
-  const scoringVersion = Number(scoreMap.get(SCORE_NAME.SCORING_VERSION));
+  const scoringVersion = resolveRunScoringVersion(scoreMap, variantScoringVersion);
+  const fieldNames = resolveScoreFieldNames(taskSlug, gradeLevel, scoringVersion);
   return {
     rawScore: roundScoreOrNull(resolveNumericScore(scoreMap, fieldNames.rawScoreFieldNames)),
     percentile: roundScoreOrNull(resolveNumericScore(scoreMap, fieldNames.percentileFieldNames)),
     standardScore: roundScoreOrNull(resolveNumericScore(scoreMap, fieldNames.standardScoreFieldNames)),
-    scoringVersion: Number.isInteger(scoringVersion) ? scoringVersion : null,
+    scoringVersion,
   };
 }
 
@@ -3531,7 +3580,7 @@ function buildHistoricalScoresForTask(
       administrationId: run.administrationId,
       administrationName: run.administrationName,
       date: run.completedAt.toISOString(),
-      scores: resolveTaskScores(scoreMap, taskSlug, gradeLevel),
+      scores: resolveTaskScores(scoreMap, taskSlug, gradeLevel, null),
     };
   });
 }
@@ -3564,12 +3613,12 @@ function buildBaseAssessedTaskEntry(
   domainScoreMap?: Map<string, Map<string, string>>,
 ): { entry: ServiceStudentReportTaskBase } {
   const gradeLevel = getGradeAsNumber(grade);
-  const scores = resolveTaskScores(scoreMap, scoredVariant.taskSlug, gradeLevel);
+  const scores = resolveTaskScores(scoreMap, scoredVariant.taskSlug, gradeLevel, scoringVersion);
 
   // Re-derive the unrounded numeric scores for classification (rounding before
   // classification could swing borderline cases — pass the raw numerics into
   // getSupportLevel and let it apply cutoffs).
-  const fieldNames = resolveScoreFieldNames(scoredVariant.taskSlug, gradeLevel);
+  const fieldNames = resolveScoreFieldNames(scoredVariant.taskSlug, gradeLevel, scoringVersion);
   const percentile = resolveNumericScore(scoreMap, fieldNames.percentileFieldNames);
   const rawScore = resolveNumericScore(scoreMap, fieldNames.rawScoreFieldNames);
   const assessmentSupportLevel = resolveStringScore(scoreMap, ASSESSMENT_SUPPORT_LEVEL_FIELDS);
