@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useRouter, useRoute } from 'vue-router';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
+import { setWindowPath } from '@/test-support/setWindowPath';
 import useSSOAccountReadinessVerification from './useSSOAccountReadinessVerification';
 
 /**
@@ -78,6 +79,9 @@ describe('useSSOAccountReadinessVerification – provisioning window (integratio
 
   beforeEach(() => {
     vi.useFakeTimers();
+    // The patient provisioning schedule only applies while the SSO landing
+    // page is the active location — put the test there, like the real flow.
+    setWindowPath('/sso');
     queryClient = new VueQuery.QueryClient();
     router = { push: vi.fn(), replace: vi.fn() };
     useRouter.mockReturnValue(router);
@@ -88,6 +92,7 @@ describe('useSSOAccountReadinessVerification – provisioning window (integratio
   afterEach(() => {
     queryClient.clear();
     vi.useRealTimers();
+    setWindowPath('/');
   });
 
   it('survives provisioning that outlasts the generic retry window and redirects on completion', async () => {

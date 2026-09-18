@@ -17,8 +17,10 @@ const { logAuthEvent } = useSentryLogging();
 // How long the SSO landing page waits for the Firebase token listener to
 // produce an access token before concluding there is no session at all
 // (deep link, stale bookmark, or an SSO redirect that never signed in).
-// The token normally arrives within a couple of seconds of the redirect.
-const NO_SESSION_GRACE_PERIOD_MS = 10_000;
+// The token normally arrives within a couple of seconds of the redirect;
+// the period is generous so a slow token exchange on a weak device makes
+// the cut, and the watcher below cancels the timer the moment it does.
+const NO_SESSION_GRACE_PERIOD_MS = 20_000;
 
 /**
  * Verify account readiness after SSO authentication.
@@ -74,20 +76,42 @@ const useSSOAccountReadinessVerification = () => {
     () => Boolean(error.value) && !isRosteringEndedError(error.value) && !isTerminalAuthError(error.value),
   );
 
-  // No access token means the /me query is disabled and will never settle.
-  // Give the Firebase token listener a grace period, then route to SignIn —
-  // mirrors the old polling loop, which fetched unconditionally, exhausted
-  // its retries on auth/required, and landed on SignIn.
-  const noSessionTimer = setTimeout(() => {
-    if (authStore.accessToken || hasRedirected) return;
+  const redirectToSignIn = () => {
     hasRedirected = true;
     logAuthEvent(AUTH_LOG_MESSAGES.SSO_SESSION_MISSING, {
       level: 'warning',
       data: { provider: 'SSO' },
     });
     router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
+  };
+
+  // No access token means the /me query is disabled and will never settle.
+  // Give the Firebase token listener a grace period, then route to SignIn —
+  // mirrors the old polling loop, which fetched unconditionally, exhausted
+  // its retries on auth/required, and landed on SignIn.
+  const noSessionTimer = setTimeout(() => {
+    if (authStore.accessToken || hasRedirected) return;
+    redirectToSignIn();
   }, NO_SESSION_GRACE_PERIOD_MS);
   onUnmounted(() => clearTimeout(noSessionTimer));
+
+  // A token that arrives cancels the timer — the query takes over from here.
+  // A token that later *disappears* outside the sign-out flow (revocation,
+  // account disabled, an identity reset) disables the /me query again:
+  // nothing would fetch, no watcher would navigate, and the page would spin
+  // forever — so route to SignIn immediately instead.
+  watch(
+    () => Boolean(authStore.accessToken),
+    (hasToken, hadToken) => {
+      if (hasToken) {
+        clearTimeout(noSessionTimer);
+        return;
+      }
+      if (hadToken && !hasRedirected) {
+        redirectToSignIn();
+      }
+    },
+  );
 
   // Log each retry so the provisioning wait is visible in Sentry traces.
   // Non-provisioning failures (500s, network errors) get a distinct message

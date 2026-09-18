@@ -805,7 +805,8 @@ const routes = [
     name: 'SSO',
     beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import('../pages/SSOAuthPage.vue'),
-    props: (route) => ({ code: route.query.code }), // @TODO: Isn't the code processed by the sign-in page?
+    // The OAuth `code` parameter is consumed by AuthSSO.vue on the provider
+    // callback routes below — SSOAuthPage declares no props.
     // `awaitsUserProvisioning` exempts this route from App.vue's `/me` gate
     // and generic-error redirect: after the SSO redirect, `/me` fails with
     // `auth/user-not-found` until the backend provisions the user, and this
@@ -1079,8 +1080,19 @@ router.beforeEach(async (to, from, next) => {
       return;
     }
     if (globalError.value.type === GLOBAL_ERROR_TYPES.SERVER_ERROR && to.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
-      next({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
-      return;
+      // Routes that own the provisioning wait (the SSO landing page) render
+      // their own retryable error UX for an exhausted /me query — don't
+      // hijack a navigation to them. Leaving such a route abandons that
+      // wait, so the error it owned goes with it: clear it and let the
+      // navigation through instead of bouncing the user to GenericError.
+      if (to.meta?.awaitsUserProvisioning || from.meta?.awaitsUserProvisioning) {
+        if (from.meta?.awaitsUserProvisioning && !to.meta?.awaitsUserProvisioning) {
+          clearGlobalError();
+        }
+      } else {
+        next({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
+        return;
+      }
     }
   }
 
@@ -1145,31 +1157,29 @@ router.beforeEach(async (to, from, next) => {
   // be abandoned by the 5s race below.
   let meData;
   if (store.isAuthenticated && !to.meta?.awaitsUserProvisioning) {
-    try {
-      const ensured = queryClient.ensureQueryData({
-        queryKey: [ME_QUERY_KEY],
-        // Required: no defaultQueryFn is configured on the queryClient, so
-        // after an identity reset clears the entry, ensureQueryData without
-        // a queryFn would reject with "Missing queryFn" and silently skip
-        // the unsigned-TOS gate. The retry policy is NOT attached here — it
-        // is pinned on the query key via `setQueryDefaults` in useMeQuery.js,
-        // so every /me initiator shares the provisioning-aware schedule.
-        queryFn: fetchMe,
-        staleTime: 60_000,
-      });
-      // If the 5s timeout wins the race, nothing observes `ensured` any
-      // more — without this no-op handler, a late rejection (the
-      // provisioning window can run ~100s) surfaces as an unhandled
-      // promise rejection long after this guard returned.
-      ensured.catch(() => {});
-      meData = await Promise.race([ensured, new Promise((resolve) => setTimeout(() => resolve(undefined), 5000))]);
-    } catch {
-      // ensureQueryData throws on terminal `/me` failures (rostering-ended,
-      // auth-expired). Those are surfaced via the QueryCache → globalError
-      // bridge, which the early-return guard above handles. Treat the
-      // payload as unavailable and let navigation continue.
-      meData = undefined;
-    }
+    // Failures resolve to `undefined` — terminal /me errors are surfaced via
+    // the QueryCache → globalError bridge, which the early-return guard
+    // above handles on the next navigation. The `.catch` also covers a
+    // rejection that lands AFTER the 5s timeout won the race (a slow /me
+    // can reject long after this guard returned); without it, that orphaned
+    // rejection would surface as an unhandled promise rejection.
+    meData = await Promise.race([
+      queryClient
+        .ensureQueryData({
+          queryKey: [ME_QUERY_KEY],
+          // Required: no defaultQueryFn is configured on the queryClient, so
+          // after an identity reset clears the entry, ensureQueryData
+          // without a queryFn would reject with "Missing queryFn" and
+          // silently skip the unsigned-TOS gate. The retry policy is NOT
+          // attached here — it is pinned on the query key via
+          // `setQueryDefaults` in queryClient.js, so every /me initiator
+          // shares the same schedule.
+          queryFn: fetchMe,
+          staleTime: 60_000,
+        })
+        .catch(() => undefined),
+      new Promise((resolve) => setTimeout(() => resolve(undefined), 5000)),
+    ]);
   }
   if (!meData) {
     meData = queryClient.getQueryData([ME_QUERY_KEY]);

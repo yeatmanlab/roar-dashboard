@@ -61,7 +61,7 @@ export function useProviders(options) {
       email.value = triggeredEmail.trim();
     }
 
-    if (discoveryError?.value) discoveryError.value = false;
+    discoveryError.value = false;
 
     // username path → direct password flow
     if (toValue(isUsername)) {
@@ -79,7 +79,7 @@ export function useProviders(options) {
     } catch {
       // Discovery failed — surface a retryable error instead of degrading to
       // the password form, which cannot work for SSO-only users.
-      if (discoveryError) discoveryError.value = true;
+      discoveryError.value = true;
       return;
     }
 

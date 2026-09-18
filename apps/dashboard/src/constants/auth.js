@@ -37,6 +37,22 @@ export const AUTH_SSO_PROVIDERS = Object.freeze({
 });
 
 /**
+ * Auth-store flags set by the OAuth landing pages (AuthSSO.vue) and consumed
+ * by SignIn's onMounted to re-trigger the corresponding SSO flow after the
+ * identity provider redirects back. Keyed by AUTH_SSO_PROVIDERS values;
+ * Google has no entry because it never routes through the landing pages.
+ * Lives here, next to AUTH_SSO_PROVIDERS, so adding a provider updates the
+ * provider list and its flag in one place.
+ *
+ * @constant {Object} AUTH_SSO_OAUTH_REQUEST_FLAGS - Provider → auth-store flag name.
+ */
+export const AUTH_SSO_OAUTH_REQUEST_FLAGS = Object.freeze({
+  [AUTH_SSO_PROVIDERS.CLEVER]: 'cleverOAuthRequested',
+  [AUTH_SSO_PROVIDERS.CLASSLINK]: 'classLinkOAuthRequested',
+  [AUTH_SSO_PROVIDERS.NYCPS]: 'nycpsOAuthRequested',
+});
+
+/**
  * Auth Providers
  *
  * The provider vocabulary firekit's link/unlink methods expect — its own

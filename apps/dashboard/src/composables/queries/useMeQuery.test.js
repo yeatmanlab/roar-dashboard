@@ -2,7 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
-import useMeQuery, { meRetryDelay, PROVISIONING_MAX_RETRIES } from './useMeQuery';
+import { meRetryDelay, PROVISIONING_MAX_RETRIES } from '@/queryClient';
+import { setWindowPath } from '@/test-support/setWindowPath';
+import useMeQuery from './useMeQuery';
+
+// The patient provisioning schedule only applies while the SSO landing page
+// is the active location — elsewhere auth/user-not-found settles on the
+// generic budget so the app-level spinner never holds for the full window.
+const enterProvisioningRoute = () => setWindowPath('/sso');
+const leaveProvisioningRoute = () => setWindowPath('/');
 
 const mockMeGet = vi.fn();
 // Controllable per-test — defaults to a truthy token so most tests don't have
@@ -208,10 +216,36 @@ describe('useMeQuery', () => {
     }
   });
 
-  it('retries auth/user-not-found through the full provisioning window', () => {
+  it('retries auth/user-not-found through the full provisioning window on the SSO route', () => {
     // `auth/user-not-found` marks the SSO provisioning window (Firebase
     // account exists, backend user record doesn't yet) — it gets the patient
     // retry schedule instead of the 3-retry transient budget.
+    enterProvisioningRoute();
+    let retryFn;
+    vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
+      retryFn = options.retry;
+      return { data: { value: null }, error: { value: null } };
+    });
+
+    withSetup(() => useMeQuery(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    try {
+      const notProvisionedError = { body: { error: { code: 'auth/user-not-found' } } };
+      expect(retryFn(0, notProvisionedError)).toBe(true);
+      expect(retryFn(3, notProvisionedError)).toBe(true);
+      expect(retryFn(PROVISIONING_MAX_RETRIES - 1, notProvisionedError)).toBe(true);
+      expect(retryFn(PROVISIONING_MAX_RETRIES, notProvisionedError)).toBe(false);
+    } finally {
+      leaveProvisioningRoute();
+    }
+  });
+
+  it('gives auth/user-not-found only the generic budget away from the SSO route', () => {
+    // Off the SSO landing page there is no provisioning UX — a deprovisioned
+    // account must settle on the generic schedule (~7s) instead of holding
+    // the app-level spinner for the full ~100s window.
     let retryFn;
     vi.spyOn(VueQuery, 'useQuery').mockImplementation((options) => {
       retryFn = options.retry;
@@ -224,9 +258,10 @@ describe('useMeQuery', () => {
 
     const notProvisionedError = { body: { error: { code: 'auth/user-not-found' } } };
     expect(retryFn(0, notProvisionedError)).toBe(true);
-    expect(retryFn(3, notProvisionedError)).toBe(true);
-    expect(retryFn(PROVISIONING_MAX_RETRIES - 1, notProvisionedError)).toBe(true);
-    expect(retryFn(PROVISIONING_MAX_RETRIES, notProvisionedError)).toBe(false);
+    expect(retryFn(2, notProvisionedError)).toBe(true);
+    expect(retryFn(3, notProvisionedError)).toBe(false);
+    // The delay follows the default schedule as well, not the gentle one.
+    expect(meRetryDelay(0, notProvisionedError)).toBe(1000);
   });
 
   it('retries auth/user-not-found in test environments, but with a shortened window', () => {
@@ -235,6 +270,7 @@ describe('useMeQuery', () => {
     // so runs stay fast. Detection goes through isTestEnv (the __E2E__
     // localStorage flag), not window.Cypress, which the app context can't
     // always see.
+    enterProvisioningRoute();
     window.localStorage.setItem('__E2E__', 'true');
     try {
       let retryFn;
@@ -253,11 +289,20 @@ describe('useMeQuery', () => {
       expect(retryFn(3, notProvisionedError)).toBe(false);
     } finally {
       window.localStorage.removeItem('__E2E__');
+      leaveProvisioningRoute();
     }
   });
 
   describe('meRetryDelay', () => {
     const notProvisionedError = { body: { error: { code: 'auth/user-not-found' } } };
+
+    beforeEach(() => {
+      enterProvisioningRoute();
+    });
+
+    afterEach(() => {
+      leaveProvisioningRoute();
+    });
 
     it('backs off gently while the user is not provisioned', () => {
       expect(meRetryDelay(0, notProvisionedError)).toBe(600);

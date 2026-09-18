@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { nextTick, ref } from 'vue';
+import { nextTick, reactive, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import * as VueQuery from '@tanstack/vue-query';
 import { setUser } from '@sentry/vue';
@@ -250,7 +250,7 @@ describe('useSSOAccountReadinessVerification', () => {
     mocks.useAuthStore.mockReturnValue({ accessToken: null });
 
     setup();
-    await vi.advanceTimersByTimeAsync(10_000);
+    await vi.advanceTimersByTimeAsync(20_000);
 
     expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.SIGN_IN });
     expect(mocks.logAuthEvent).toHaveBeenCalledWith(AUTH_LOG_MESSAGES.SSO_SESSION_MISSING, {
@@ -263,7 +263,7 @@ describe('useSSOAccountReadinessVerification', () => {
     vi.useFakeTimers();
 
     setup();
-    await vi.advanceTimersByTimeAsync(10_000);
+    await vi.advanceTimersByTimeAsync(20_000);
 
     expect(router.replace).not.toHaveBeenCalled();
   });
@@ -274,9 +274,23 @@ describe('useSSOAccountReadinessVerification', () => {
 
     const { app } = setup();
     app.unmount();
-    await vi.advanceTimersByTimeAsync(10_000);
+    await vi.advanceTimersByTimeAsync(20_000);
 
     expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it('routes to SignIn when the access token disappears after having arrived', async () => {
+    // A token lost outside the sign-out flow (revocation, account disabled,
+    // identity reset) disables the /me query again — nothing would fetch and
+    // the page would spin forever without this redirect.
+    const store = reactive({ accessToken: 'test-token' });
+    mocks.useAuthStore.mockReturnValue(store);
+
+    setup();
+    store.accessToken = null;
+    await nextTick();
+
+    expect(router.replace).toHaveBeenCalledWith({ name: APP_ROUTE_NAMES.SIGN_IN });
   });
 
   it('resets the /me query on retryPolling', () => {

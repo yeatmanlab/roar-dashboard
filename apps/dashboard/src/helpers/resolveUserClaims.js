@@ -59,9 +59,9 @@ export function deriveClaimsFromMe(meData) {
  * @throws {Error} When the `/me` request fails.
  */
 export async function resolveUserClaims() {
-  // No per-call retry policy: the provisioning-aware /me schedule is pinned
-  // on the query key via `setQueryDefaults` in useMeQuery.js, so a fetch
-  // started here shares it with every other initiator.
+  // No per-call retry policy: the /me schedule is pinned on the query key
+  // via `setQueryDefaults` in queryClient.js, so a fetch started here shares
+  // it with every other initiator.
   const meData = await queryClient.fetchQuery({
     queryKey: [ME_QUERY_KEY],
     queryFn: fetchMe,

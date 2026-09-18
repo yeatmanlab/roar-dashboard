@@ -6,7 +6,7 @@ import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import AppSpinner from '@/components/AppSpinner.vue';
-import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
+import { AUTH_SSO_OAUTH_REQUEST_FLAGS } from '@/constants/auth';
 import { APP_ROUTE_NAMES } from '@/constants/routes';
 
 /**
@@ -18,20 +18,15 @@ import { APP_ROUTE_NAMES } from '@/constants/routes';
  * No firekit state is involved.
  */
 
-const OAUTH_REQUEST_FLAGS = Object.freeze({
-  [AUTH_SSO_PROVIDERS.CLEVER]: 'cleverOAuthRequested',
-  [AUTH_SSO_PROVIDERS.CLASSLINK]: 'classLinkOAuthRequested',
-  [AUTH_SSO_PROVIDERS.NYCPS]: 'nycpsOAuthRequested',
-});
-
 const props = defineProps({
   provider: {
     type: String,
     required: true,
     // defineProps is hoisted out of setup(), so the validator can only
-    // reference imported bindings — not the local OAUTH_REQUEST_FLAGS map.
-    validator: (value) =>
-      [AUTH_SSO_PROVIDERS.CLEVER, AUTH_SSO_PROVIDERS.CLASSLINK, AUTH_SSO_PROVIDERS.NYCPS].includes(value),
+    // reference imported bindings — the map import above qualifies. Deriving
+    // the valid providers from the map keeps the validator and the flag
+    // lookup below from drifting apart.
+    validator: (value) => Object.keys(AUTH_SSO_OAUTH_REQUEST_FLAGS).includes(value),
   },
   code: { type: String, default: '' },
 });
@@ -41,9 +36,9 @@ const authStore = useAuthStore();
 
 onMounted(() => {
   // The lookup can miss when a provider is added to AUTH_SSO_PROVIDERS but
-  // not to OAUTH_REQUEST_FLAGS — the prop validator only warns in dev, so
-  // guard here to avoid writing a garbage key onto the auth store.
-  const oauthRequestFlag = OAUTH_REQUEST_FLAGS[props.provider];
+  // not to AUTH_SSO_OAUTH_REQUEST_FLAGS — the prop validator only warns in
+  // dev, so guard here to avoid writing a garbage key onto the auth store.
+  const oauthRequestFlag = AUTH_SSO_OAUTH_REQUEST_FLAGS[props.provider];
 
   if (props.code && oauthRequestFlag) {
     authStore[oauthRequestFlag] = true;

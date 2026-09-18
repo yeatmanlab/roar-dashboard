@@ -126,7 +126,12 @@ export function useAuth(context) {
           invalid.value = true;
         });
     } else {
-      authStore.signInWithRedirect(provider);
+      // A rejection before the browser leaves the page (e.g. initialization
+      // failure) would otherwise die silently with the spinner stuck on.
+      authStore.signInWithRedirect(provider).catch(() => {
+        spinner.value = false;
+        invalid.value = true;
+      });
     }
   }
 
