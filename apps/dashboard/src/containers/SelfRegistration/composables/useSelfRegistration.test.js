@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { withSetup } from '@/test-support/withSetup.js';
 import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
 import { useSelfRegistration } from './useSelfRegistration';
@@ -30,13 +30,12 @@ function createRegistration(submitImplementation = vi.fn().mockResolvedValue()) 
 
 describe('useSelfRegistration', () => {
   beforeEach(() => vi.clearAllMocks());
-  afterEach(() => vi.useRealTimers());
 
   it('uses the production family-registration workflow by default', async () => {
     const registration = createRegistration();
     vi.mocked(useFamilyRegistration).mockReturnValue(registration);
     const redirect = vi.fn();
-    const [workflow, app] = withSetup(() => useSelfRegistration({ redirect, redirectDelay: 0 }));
+    const [workflow, app] = withSetup(() => useSelfRegistration({ redirect }));
 
     await expect(workflow.submit({ email: 'parent@example.com' })).resolves.toBe(true);
 
@@ -46,13 +45,12 @@ describe('useSelfRegistration', () => {
     app.unmount();
   });
 
-  it('prevents duplicate account-creation requests and redirects after success', async () => {
-    vi.useFakeTimers();
+  it('prevents duplicate account-creation requests and redirects immediately after success', async () => {
     let resolveCreation;
     const createAccount = vi.fn(() => new Promise((resolve) => (resolveCreation = resolve)));
     const registration = createRegistration(createAccount);
     const redirect = vi.fn();
-    const [workflow, app] = withSetup(() => useSelfRegistration({ registration, redirect, redirectDelay: 25 }));
+    const [workflow, app] = withSetup(() => useSelfRegistration({ registration, redirect }));
 
     const first = workflow.submit({ email: 'parent@example.com' });
     const second = await workflow.submit({ email: 'parent@example.com' });
@@ -61,8 +59,6 @@ describe('useSelfRegistration', () => {
 
     resolveCreation();
     await first;
-    expect(workflow.isSuccess.value).toBe(true);
-    vi.advanceTimersByTime(25);
     expect(redirect).toHaveBeenCalledOnce();
 
     app.unmount();
@@ -89,21 +85,15 @@ describe('useSelfRegistration', () => {
     app.unmount();
   });
 
-  it('cancels a pending redirect when the status is dismissed', async () => {
-    vi.useFakeTimers();
-    const redirect = vi.fn();
-    const registration = createRegistration();
-    const [workflow, app] = withSetup(() => useSelfRegistration({ registration, redirect, redirectDelay: 25 }));
+  it('dismisses account-creation errors', async () => {
+    const registration = createRegistration(vi.fn().mockRejectedValue(new Error('provider failure')));
+    const [workflow, app] = withSetup(() => useSelfRegistration({ registration }));
 
-    workflow.setVerificationToken('verified');
     await workflow.submit({ email: 'parent@example.com' });
-    workflow.dismissStatus();
-    vi.advanceTimersByTime(25);
+    workflow.dismissError();
 
-    expect(workflow.verificationToken.value).toBe('verified');
-    expect(workflow.isSuccess.value).toBe(false);
     expect(registration.error.value).toBeNull();
-    expect(redirect).not.toHaveBeenCalled();
+    expect(workflow.errorMessage.value).toBe('');
     app.unmount();
   });
 });

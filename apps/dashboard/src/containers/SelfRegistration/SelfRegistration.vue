@@ -19,13 +19,18 @@
         </div>
       </header>
 
-      <RegistrationStatus
-        :error-message="registration.errorMessage.value"
-        :success="registration.isSuccess.value"
-        @dismiss="registration.dismissStatus"
-      />
+      <PvDialog
+        :visible="Boolean(registration.errorMessage.value)"
+        header="We could not create your account"
+        :style="{ width: 'min(25rem, calc(100vw - 2rem))' }"
+        :modal="true"
+        :draggable="false"
+        @update:visible="registration.dismissError"
+      >
+        <p role="alert">{{ registration.errorMessage.value }}</p>
+        <PvButton label="Close" @click="registration.dismissError" />
+      </PvDialog>
       <AccountOwnerForm
-        v-if="!registration.isSuccess.value"
         :values="form.values"
         :errors="form.errors.value"
         :touched="form.touched"
@@ -48,8 +53,10 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted } from 'vue';
+import PvButton from 'primevue/button';
+import PvDialog from 'primevue/dialog';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
-import { AccountOwnerForm, RegistrationStatus } from './components';
+import { AccountOwnerForm } from './components';
 import { useAccountOwnerForm } from './composables/useAccountOwnerForm';
 import { useResearchConsent } from './composables/useResearchConsent';
 import { useSelfRegistration } from './composables/useSelfRegistration';

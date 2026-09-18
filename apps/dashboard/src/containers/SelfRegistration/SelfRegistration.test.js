@@ -17,11 +17,10 @@ const mocks = vi.hoisted(() => ({
   legalAccepted: { value: true },
   futureContactAllowed: { value: false },
   submit: vi.fn().mockResolvedValue(true),
-  dismissStatus: vi.fn(),
+  dismissError: vi.fn(),
   setVerificationToken: vi.fn(),
   isSubmitting: { value: false },
   errorMessage: { value: '' },
-  isSuccess: { value: false },
   verificationToken: { value: 'verified' },
 }));
 
@@ -54,11 +53,10 @@ vi.mock('./composables/useResearchConsent', () => ({
 vi.mock('./composables/useSelfRegistration', () => ({
   useSelfRegistration: () => ({
     submit: mocks.submit,
-    dismissStatus: mocks.dismissStatus,
+    dismissError: mocks.dismissError,
     setVerificationToken: mocks.setVerificationToken,
     isSubmitting: mocks.isSubmitting,
     errorMessage: mocks.errorMessage,
-    isSuccess: mocks.isSuccess,
     verificationToken: mocks.verificationToken,
   }),
 }));
@@ -71,7 +69,16 @@ function mountSelfRegistration() {
     global: {
       stubs: {
         ROARLogoShort: true,
-        RegistrationStatus: true,
+        Dialog: {
+          props: ['visible', 'header'],
+          emits: ['update:visible'],
+          template: '<div v-if="visible" data-testid="registration-error"><slot /></div>',
+        },
+        Button: {
+          props: ['label'],
+          emits: ['click'],
+          template: '<button type="button" @click="$emit(\'click\')">{{ label }}</button>',
+        },
         AccountOwnerForm: {
           name: 'AccountOwnerForm',
           props: ['disabled', 'submitting'],
@@ -98,7 +105,6 @@ describe('SelfRegistration.vue', () => {
     mocks.verificationToken.value = 'verified';
     mocks.isSubmitting.value = false;
     mocks.errorMessage.value = '';
-    mocks.isSuccess.value = false;
   });
 
   afterEach(() => document.body.classList.remove('page-register'));
@@ -182,11 +188,15 @@ describe('SelfRegistration.vue', () => {
     wrapper.unmount();
   });
 
-  it('removes the form after registration succeeds', () => {
-    mocks.isSuccess.value = true;
+  it('shows errors above the still-mounted form and dismisses them', async () => {
+    mocks.errorMessage.value = 'Registration failed';
     const wrapper = mountSelfRegistration();
 
-    expect(wrapper.findComponent({ name: 'AccountOwnerForm' }).exists()).toBe(false);
+    expect(wrapper.get('[data-testid="registration-error"]').text()).toContain('Registration failed');
+    expect(wrapper.findComponent({ name: 'AccountOwnerForm' }).exists()).toBe(true);
+
+    await wrapper.get('[data-testid="registration-error"] button').trigger('click');
+    expect(mocks.dismissError).toHaveBeenCalledOnce();
     wrapper.unmount();
   });
 });

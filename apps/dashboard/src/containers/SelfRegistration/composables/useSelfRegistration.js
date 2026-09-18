@@ -1,4 +1,4 @@
-import { computed, onScopeDispose, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useFamilyRegistration } from '@/containers/FamilyRegistration/composables/useFamilyRegistration';
 import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
 
@@ -11,31 +11,18 @@ import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
  * @param {import('vue').Ref<boolean>} options.registration.isSubmitting Registration loading state.
  * @param {import('vue').Ref<Error|null>} options.registration.error Registration failure state.
  * @param {Function} [options.redirect] Post-registration navigation operation.
- * @param {number} [options.redirectDelay] Delay before post-registration navigation.
  * @returns {Object} Reactive workflow state and registration actions.
  */
 export function useSelfRegistration({
   registration = useFamilyRegistration(),
   redirect = () => window.location.assign('/'),
-  redirectDelay = 1500,
 } = {}) {
   const { isSubmitting, error } = registration;
   const errorMessage = computed(() => (error.value ? ACCOUNT_CREATION_ERROR_MESSAGE : ''));
-  const isSuccess = ref(false);
   const verificationToken = ref('');
-  let redirectTimeout;
 
-  function cancelRedirect() {
-    if (redirectTimeout !== undefined) {
-      clearTimeout(redirectTimeout);
-      redirectTimeout = undefined;
-    }
-  }
-
-  function dismissStatus() {
-    cancelRedirect();
+  function dismissError() {
     error.value = null;
-    isSuccess.value = false;
   }
 
   function setVerificationToken(token) {
@@ -50,11 +37,9 @@ export function useSelfRegistration({
     if (isSubmitting.value) return false;
 
     error.value = null;
-    isSuccess.value = false;
     try {
       await registration.submit(payload);
-      isSuccess.value = true;
-      redirectTimeout = setTimeout(redirect, redirectDelay);
+      redirect();
       return true;
     } catch (caughtError) {
       error.value = error.value ?? (caughtError instanceof Error ? caughtError : new Error(String(caughtError)));
@@ -62,16 +47,12 @@ export function useSelfRegistration({
     }
   }
 
-  onScopeDispose(cancelRedirect);
-
   return {
     isSubmitting,
     errorMessage,
-    isSuccess,
     verificationToken,
     submit,
-    dismissStatus,
-    cancelRedirect,
+    dismissError,
     setVerificationToken,
   };
 }
