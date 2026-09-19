@@ -34,32 +34,32 @@ describe('useSelfRegistration', () => {
   it('uses the production family-registration workflow by default', async () => {
     const registration = createRegistration();
     vi.mocked(useFamilyRegistration).mockReturnValue(registration);
-    const redirect = vi.fn();
-    const [workflow, app] = withSetup(() => useSelfRegistration({ redirect }));
+    const [workflow, app] = withSetup(() => useSelfRegistration());
 
     await expect(workflow.submit({ email: 'parent@example.com' })).resolves.toBe(true);
 
     expect(useFamilyRegistration).toHaveBeenCalledOnce();
     expect(registration.submit).toHaveBeenCalledWith({ email: 'parent@example.com' });
     expect(workflow.isSubmitting).toBe(registration.isSubmitting);
+    expect(workflow.isSuccess.value).toBe(true);
     app.unmount();
   });
 
-  it('prevents duplicate account-creation requests and redirects immediately after success', async () => {
+  it('prevents duplicate account-creation requests and exposes success after creation', async () => {
     let resolveCreation;
     const createAccount = vi.fn(() => new Promise((resolve) => (resolveCreation = resolve)));
     const registration = createRegistration(createAccount);
-    const redirect = vi.fn();
-    const [workflow, app] = withSetup(() => useSelfRegistration({ registration, redirect }));
+    const [workflow, app] = withSetup(() => useSelfRegistration({ registration }));
 
     const first = workflow.submit({ email: 'parent@example.com' });
     const second = await workflow.submit({ email: 'parent@example.com' });
     expect(second).toBe(false);
     expect(createAccount).toHaveBeenCalledTimes(1);
+    expect(workflow.isSuccess.value).toBe(false);
 
     resolveCreation();
     await first;
-    expect(redirect).toHaveBeenCalledOnce();
+    expect(workflow.isSuccess.value).toBe(true);
 
     app.unmount();
   });

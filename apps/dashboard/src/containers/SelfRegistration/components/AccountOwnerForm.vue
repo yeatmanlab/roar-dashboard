@@ -91,6 +91,7 @@
             :model-value="legalAccepted"
             :invalid="submitted && !legalAccepted"
             :error="submitted && !legalAccepted ? t('pageRegister.reviewTerms') : ''"
+            @click="handleLegalAcceptanceClick"
             @update:model-value="$emit('update:legal-accepted', $event)"
           >
             <span>
@@ -167,6 +168,13 @@ function updateField(field, value) {
 
 function showError(field) {
   return Boolean(props.errors[field] && (props.submitted || props.touched[field]));
+}
+
+function handleLegalAcceptanceClick(event) {
+  if (props.legalAccepted) return;
+
+  event.preventDefault();
+  emit('update:legal-accepted', true);
 }
 
 async function handleSubmit() {
