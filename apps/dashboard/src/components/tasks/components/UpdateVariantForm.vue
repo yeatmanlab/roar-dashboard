@@ -43,7 +43,7 @@
       <fieldset class="flex flex-column row-gap-4 p-4">
         <legend class="sr-only">Variant Details</legend>
 
-        <TextInput
+        <TextInputLegacy
           id="updateVariantName"
           v-model="v$.name.$model"
           label="Variant Name"
@@ -51,7 +51,7 @@
           :errors="v$.name.$errors"
         />
 
-        <TextInput
+        <TextInputLegacy
           id="updateVariantDescription"
           v-model="v$.description.$model"
           label="Description"
@@ -118,7 +118,7 @@ import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useTaskVariantsByTaskQuery from '@/composables/queries/useTaskVariantsByTaskQuery';
 import useUpdateTaskVariantMutation from '@/composables/mutations/useUpdateTaskVariantMutation';
 import Dropdown from '@/components/Form/Dropdown';
-import TextInput from '@/components/Form/TextInput';
+import TextInputLegacy from '@/components/Form/TextInputLegacy';
 import TaskParametersConfigurator from '@/components/TaskParametersConfigurator/TaskParametersConfigurator.vue';
 import { buildVariantPatchBody, splitVariantParameters } from '@/helpers/taskConfig';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';

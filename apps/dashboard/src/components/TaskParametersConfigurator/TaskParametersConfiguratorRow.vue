@@ -1,7 +1,7 @@
 <template>
   <fieldset class="flex gap-2 align-content-start flex-grow-0 params-container" data-testId="task-configurator-row">
     <div class="relative w-1/4 min-w-32">
-      <TextInput
+      <TextInputLegacy
         v-model="v$.row.name.$model"
         label="Parameter Name"
         placeholder="Name"
@@ -28,7 +28,7 @@
     </div>
 
     <div class="flex-1">
-      <TextInput
+      <TextInputLegacy
         v-if="row.type === TASK_PARAMETER_TYPES.STRING"
         v-model="v$.row.value.$model"
         label="Parameter Value"
@@ -85,7 +85,7 @@ import { helpers, required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import PvButton from 'primevue/button';
 import { hasNoDuplicates, notInBlacklist } from '@/helpers/formValidators';
-import TextInput from '@/components/Form/TextInput';
+import TextInputLegacy from '@/components/Form/TextInputLegacy';
 import NumberInput from '@/components/Form/NumberInput';
 import Dropdown from '@/components/Form/Dropdown';
 import { TASK_PARAMETER_NAME_REGEX, TASK_PARAMETER_TYPES } from '@/constants/tasks';
