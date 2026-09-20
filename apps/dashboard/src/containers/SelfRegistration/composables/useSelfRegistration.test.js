@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { withSetup } from '@/test-support/withSetup.js';
+import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
 import { useSelfRegistration } from './useSelfRegistration';
 
 const mocks = vi.hoisted(() => ({
@@ -34,57 +35,47 @@ describe('useSelfRegistration', () => {
     app.unmount();
   });
 
-  it('prevents duplicate requests and holds the success state for explicit navigation', async () => {
+  it('prevents duplicate account-creation requests and exposes success after creation', async () => {
     let resolveCreation;
     const createAccount = vi.fn(() => new Promise((resolve) => (resolveCreation = resolve)));
     const [workflow, app] = withSetup(() => useSelfRegistration({ createAccount }));
 
-    const first = workflow.submit({ email: 'parent@example.com' });
-    const second = await workflow.submit({ email: 'parent@example.com' });
+    const first = workflow.submit(FORM);
+    const second = await workflow.submit(FORM);
+
     expect(second).toBe(false);
     expect(createAccount).toHaveBeenCalledTimes(1);
+    expect(workflow.isSuccess.value).toBe(false);
 
     resolveCreation();
     await first;
     expect(workflow.isSuccess.value).toBe(true);
-
-    app.unmount();
-  });
-
-  it('maps unexpected provider failures to a stable recovery message', async () => {
-    const [workflow, app] = withSetup(() =>
-      useSelfRegistration({ createAccount: vi.fn().mockRejectedValue(new Error('internal provider detail')) }),
-    );
-
-    await expect(workflow.submit({ email: 'parent@example.com' })).resolves.toBe(false);
-    expect(workflow.errorMessage.value).toMatch(/could not create your account/i);
-    expect(workflow.errorMessage.value).not.toContain('provider detail');
     app.unmount();
   });
 
   it.each([
-    [409, 'This email address is already in use. Please sign in instead.'],
-    [422, 'An account already exists for this email. Please sign in to access your account.'],
-  ])('maps a %s response to an actionable account error', async (status, expectedMessage) => {
-    mocks.createFamily.mockRejectedValue({ status });
-    const [workflow, app] = withSetup(() => useSelfRegistration());
+    new Error('internal provider detail'),
+    Object.assign(new Error('This email address is already in use.'), { status: 409 }),
+    Object.assign(new Error('An account already exists.'), { status: 422 }),
+  ])('maps account-creation failures to neutral recovery guidance', async (providerError) => {
+    const [workflow, app] = withSetup(() =>
+      useSelfRegistration({ createAccount: vi.fn().mockRejectedValue(providerError) }),
+    );
 
     await expect(workflow.submit(FORM)).resolves.toBe(false);
-    expect(workflow.errorMessage.value).toBe(expectedMessage);
+    expect(workflow.errorMessage.value).toBe(ACCOUNT_CREATION_ERROR_MESSAGE);
+    expect(workflow.errorMessage.value).not.toMatch(/provider|already|exists|in use/i);
     app.unmount();
   });
 
-  it('clears a dismissed error without changing verification readiness', async () => {
+  it('dismisses account-creation errors', async () => {
     const [workflow, app] = withSetup(() =>
-      useSelfRegistration({ createAccount: vi.fn().mockRejectedValue(new Error('provider unavailable')) }),
+      useSelfRegistration({ createAccount: vi.fn().mockRejectedValue(new Error('provider failure')) }),
     );
 
-    workflow.setVerificationToken('verified');
-    await workflow.submit({ email: 'parent@example.com' });
-    workflow.dismissStatus();
+    await workflow.submit(FORM);
+    workflow.dismissError();
 
-    expect(workflow.verificationToken.value).toBe('verified');
-    expect(workflow.isSuccess.value).toBe(false);
     expect(workflow.errorMessage.value).toBe('');
     app.unmount();
   });

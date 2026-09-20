@@ -1,51 +1,39 @@
-import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { describe, expect, it } from 'vitest';
 import CheckboxInput from './CheckboxInput.vue';
 
+function mountInput(props = {}, slots = {}) {
+  return mount(CheckboxInput, {
+    props: { label: 'Contact me', modelValue: false, ...props },
+    slots,
+  });
+}
+
 describe('CheckboxInput', () => {
-  // @NOTE: Test is temporarily disabled due since the test is failing with the latest PrimeVue v4.2.4 update.
-  // Functionality was tested manually and is working as expected.
-  // @TODO: Investigate and re-enable the test once the issue is resolved.
-  it.skip('emits model update event with correct value when checkbox is clicked', async () => {
-    const wrapper = mount(CheckboxInput, {
-      props: {
-        modelValue: false,
-        'onUpdate:modelValue': (e) => wrapper.setProps({ modelValue: e }),
-      },
-    });
+  it('connects its label to a generated checkbox id', () => {
+    const wrapper = mountInput();
+    const input = wrapper.get('input');
 
-    await wrapper.find('input').trigger('click');
-    expect(wrapper.props('modelValue')).toBe(true);
-    expect(wrapper.emitted('update:modelValue')).toBeTruthy();
-    expect(wrapper.emitted('update:modelValue')[0]).toEqual([true]);
-
-    await wrapper.find('input').trigger('click');
-    expect(wrapper.props('modelValue')).toBe(false);
-    expect(wrapper.emitted('update:modelValue')).toBeTruthy();
-    expect(wrapper.emitted('update:modelValue')[1]).toEqual([false]);
+    expect(input.attributes('id')).toMatch(/^checkbox-/);
+    expect(wrapper.get('label').attributes('for')).toBe(input.attributes('id'));
+    expect(wrapper.get('label').text()).toBe('Contact me');
   });
 
-  it('generates a unique id for the checkbox if none is provided', () => {
-    const wrapper = mount(CheckboxInput, {
-      modelValue: false,
-    });
-    const inputId = wrapper.find('input').attributes('id');
-    const labelId = wrapper.find('label').attributes('for');
-    expect(inputId).toMatch(/^checkbox-/);
-    expect(labelId).toBe(inputId);
+  it('renders rich label content and updates the model', async () => {
+    const wrapper = mountInput({ id: 'legal-acceptance', required: true }, { default: 'I agree to the Terms' });
+
+    await wrapper.get('input').setValue(true);
+
+    expect(wrapper.get('label').text()).toContain('I agree to the Terms');
+    expect(wrapper.get('input').attributes('required')).toBeDefined();
+    expect(wrapper.emitted('update:modelValue')).toEqual([[true]]);
   });
 
-  it('uses the provided id for the checkbox', () => {
-    const mockId = 'mock-id';
-    const wrapper = mount(CheckboxInput, {
-      props: {
-        modelValue: true,
-        id: mockId,
-      },
-    });
-    const inputId = wrapper.find('input').attributes('id');
-    const labelId = wrapper.find('label').attributes('for');
-    expect(inputId).toBe(mockId);
-    expect(labelId).toBe(inputId);
+  it('associates an error with an invalid checkbox', () => {
+    const wrapper = mountInput({ id: 'legal-acceptance', error: 'Review and accept the Terms.' });
+
+    expect(wrapper.get('input').attributes('aria-invalid')).toBe('true');
+    expect(wrapper.get('input').attributes('aria-describedby')).toBe('legal-acceptance-error');
+    expect(wrapper.get('#legal-acceptance-error').text()).toBe('Review and accept the Terms.');
   });
 });

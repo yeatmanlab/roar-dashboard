@@ -137,10 +137,10 @@
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "passwordHelp": "Must be at least 8 characters.",
-    "futureContact": "Email me about new research opportunities",
+    "futureContact": "Contact me about new research opportunities",
     "agreeToTerms": "I agree to the",
-    "termsOfUse": "Terms of Use",
-    "reviewTerms": "Review and accept the Terms of Use.",
+    "termsOfUse": "Terms and Conditions",
+    "reviewTerms": "Review and accept the Terms and Conditions.",
     "consent": {
       "modalTitle": "Consent",
       "loadingDocument": "Loading the research consent…",

@@ -1,47 +1,31 @@
-import { ref } from 'vue';
-import { StatusCodes } from 'http-status-codes';
+import { computed, ref } from 'vue';
 import useCreateFamilyMutation from '@/composables/mutations/useCreateFamilyMutation';
+import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
 import { mapParentFormToCreateFamily } from '@/helpers/registration/mapParentFormToCreateFamily';
-
-const GENERIC_REGISTRATION_ERROR =
-  'We could not create your account. Check your connection and try again. If the problem continues, contact support.';
-
-function toUserMessage(error, t) {
-  const message = error instanceof Error ? error.message : '';
-  if (error?.status === StatusCodes.CONFLICT || /email address is already in use/i.test(message)) {
-    return t('pageRegister.errors.emailInUse', 'This email address is already in use. Please sign in instead.');
-  }
-  if (error?.status === StatusCodes.UNPROCESSABLE_ENTITY || /account already exists/i.test(message)) {
-    return t(
-      'pageRegister.errors.accountExists',
-      'An account already exists for this email. Please sign in to access your account.',
-    );
-  }
-  return t('pageRegister.errors.generic', GENERIC_REGISTRATION_ERROR);
-}
 
 /**
  * Coordinates account creation and screen-level workflow state.
  *
  * @param {Object} [options] Injectable workflow dependencies.
  * @param {(payload: Object) => Promise<unknown>} [options.createAccount] Account-creation operation.
+ * @param {Function} [options.t] Translation function for user-facing errors.
  * @returns {Object} Reactive workflow state and registration actions.
  */
-export function useSelfRegistration(options = {}) {
-  const createFamilyMutation = options.createAccount ? null : useCreateFamilyMutation();
-  const createAccount =
-    options.createAccount ??
-    ((payload) => createFamilyMutation.mutateAsync({ body: mapParentFormToCreateFamily(payload) }));
-  const t = options.t ?? ((_key, fallback) => fallback);
+export function useSelfRegistration({ createAccount, t = (_key, fallback) => fallback } = {}) {
+  const createFamilyMutation = createAccount ? null : useCreateFamilyMutation();
+  const submitAccount =
+    createAccount ?? ((payload) => createFamilyMutation.mutateAsync({ body: mapParentFormToCreateFamily(payload) }));
 
   const isSubmitting = ref(false);
-  const errorMessage = ref('');
+  const error = ref(null);
+  const errorMessage = computed(() =>
+    error.value ? t('pageRegister.errors.generic', ACCOUNT_CREATION_ERROR_MESSAGE) : '',
+  );
   const isSuccess = ref(false);
   const verificationToken = ref('');
 
-  function dismissStatus() {
-    errorMessage.value = '';
-    isSuccess.value = false;
+  function dismissError() {
+    error.value = null;
   }
 
   function setVerificationToken(token) {
@@ -56,14 +40,15 @@ export function useSelfRegistration(options = {}) {
     if (isSubmitting.value) return false;
 
     isSubmitting.value = true;
-    errorMessage.value = '';
+    error.value = null;
     isSuccess.value = false;
+
     try {
-      await createAccount(payload);
+      await submitAccount(payload);
       isSuccess.value = true;
       return true;
-    } catch (error) {
-      errorMessage.value = toUserMessage(error, t);
+    } catch (caughtError) {
+      error.value = caughtError instanceof Error ? caughtError : new Error(String(caughtError));
       return false;
     } finally {
       isSubmitting.value = false;
@@ -76,7 +61,7 @@ export function useSelfRegistration(options = {}) {
     isSuccess,
     verificationToken,
     submit,
-    dismissStatus,
+    dismissError,
     setVerificationToken,
   };
 }

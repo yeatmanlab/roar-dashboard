@@ -16,9 +16,9 @@
     <template v-if="selectedTask">
       <fieldset class="flex flex-column row-gap-4">
         <legend class="sr-only">Task Details</legend>
-        <TextInput id="taskSlug" :model-value="selectedTask.slug" label="Slug (immutable)" :disabled="true" />
+        <TextInputLegacy id="taskSlug" :model-value="selectedTask.slug" label="Slug (immutable)" :disabled="true" />
 
-        <TextInput
+        <TextInputLegacy
           id="taskName"
           v-model="v$.name.$model"
           label="Name"
@@ -27,7 +27,7 @@
           :required="true"
         />
 
-        <TextInput
+        <TextInputLegacy
           id="taskNameSimple"
           v-model="v$.nameSimple.$model"
           label="Simple Name"
@@ -36,7 +36,7 @@
           :required="true"
         />
 
-        <TextInput
+        <TextInputLegacy
           id="taskNameTechnical"
           v-model="v$.nameTechnical.$model"
           label="Technical Name"
@@ -45,7 +45,7 @@
           :required="true"
         />
 
-        <TextInput
+        <TextInputLegacy
           id="taskDescription"
           v-model="v$.description.$model"
           label="Description"
@@ -53,7 +53,7 @@
           :errors="v$.description.$errors"
         />
 
-        <TextInput
+        <TextInputLegacy
           id="taskImage"
           v-model="v$.image.$model"
           label="Cover Image URL"
@@ -62,7 +62,7 @@
           :errors="v$.image.$errors"
         />
 
-        <TextInput
+        <TextInputLegacy
           id="taskTutorialVideo"
           v-model="v$.tutorialVideo.$model"
           label="Tutorial Video URL"
@@ -128,7 +128,7 @@ import PvToast from 'primevue/toast';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
 import Dropdown from '@/components/Form/Dropdown';
-import TextInput from '@/components/Form/TextInput';
+import TextInputLegacy from '@/components/Form/TextInputLegacy';
 import TaskParametersConfigurator from '@/components/TaskParametersConfigurator/TaskParametersConfigurator.vue';
 import { buildTaskConfigFromRows, splitTaskConfig } from '@/helpers/taskConfig';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';

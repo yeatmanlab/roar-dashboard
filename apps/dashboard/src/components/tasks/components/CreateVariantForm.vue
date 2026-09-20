@@ -17,7 +17,7 @@
       />
 
       <template v-if="selectedTaskId">
-        <TextInput
+        <TextInputLegacy
           id="variantName"
           v-model="v$.name.$model"
           label="Variant Name"
@@ -25,7 +25,7 @@
           :errors="v$.name.$errors"
         />
 
-        <TextInput
+        <TextInputLegacy
           id="variantDescription"
           v-model="v$.description.$model"
           label="Description"
@@ -139,7 +139,7 @@ import PvButton from 'primevue/button';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useAddTaskVariantMutation from '@/composables/mutations/useAddTaskVariantMutation';
 import Dropdown from '@/components/Form/Dropdown';
-import TextInput from '@/components/Form/TextInput';
+import TextInputLegacy from '@/components/Form/TextInputLegacy';
 import TaskParametersConfigurator from '@/components/TaskParametersConfigurator/TaskParametersConfigurator.vue';
 import { buildVariantParametersFromRows } from '@/helpers/taskConfig';
 import { parseVariantDefinitions } from '@/helpers/parseVariantDefinitions';
