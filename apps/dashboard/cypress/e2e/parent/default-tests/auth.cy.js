@@ -22,54 +22,25 @@ describe.skip('Parent: Auth', () => {
     cy.logout();
   });
 
-  it('Shows an error when using invalid invitation codes during student enrollment', () => {
-    const invalidActivationCode = '626cb856';
+  it('Creates an account and requires an explicit transition to SignIn', () => {
+    cy.visit(APP_ROUTES.REGISTER);
 
-    // Visit the sign-up page with the invalid activation code.
-    cy.visit(`${APP_ROUTES.REGISTER}/?code=${invalidActivationCode}`);
-
-    // Fill out parent form (code validation now happens during student enrollment).
     cy.get('[data-cy="signup__parent-first-name"]').type(PARENT_FIRST_NAME);
     cy.get('[data-cy="signup__parent-last-name"]').type(PARENT_LAST_NAME);
     cy.get('[data-cy="signup__parent-email"]').type(NEW_PARENT_USERNAME);
     cy.get('[data-cy="signup__parent-password"]').type(PARENT_PASSWORD);
-    cy.get('[data-cy="signup__parent-password-confirm"]').type(PARENT_PASSWORD);
 
-    // Accept terms and conditions.
-    cy.findByTestId('checkbox__input').click();
+    cy.get('[name="legalAcceptance"]').click();
 
-    // Verify consent dialog and click Continue.
-    cy.get('[data-cy="consent-modal"]').should('be.visible');
-    cy.get('[data-cy="consent-modal"]').find('button').contains('Continue').click();
-    // Wait for consent dialog to close.
-    cy.get('[data-cy="consent-modal"]').should('not.exist');
+    cy.findByTestId('research-consent-modal').should('be.visible').find('button').contains('Continue').click();
+    cy.findByTestId('research-consent-modal').should('not.exist');
+    cy.get('[name="legalAcceptance"]').should('be.checked');
 
-    // Submit parent form (should succeed - validation moved to student enrollment).
-    cy.get('form').find('button').contains('Register').click();
+    cy.get('[data-cy="signup__create-account"]').should('not.be.disabled').click();
 
-    // Wait for parent dashboard to load and enrollment modal to close.
-    cy.waitForParentHomepage();
-    // Accept consent form for parent
-    cy.get('button').contains('Continue').click();
-    // Click "Add Child" to open enrollment modal.
-    cy.get('[data-cy="add-student-btn"]').click();
-
-    // Wait for enrollment modal to be visible and verify the invalid code is pre-populated.
-    cy.get('[data-cy="enrollment-modal"]').should('be.visible');
-    cy.get('[data-cy="activation-code-input"]').should('have.value', invalidActivationCode);
-
-    // Fill out student form.
-    cy.get('[data-cy="student-username-input"]').type('teststudent');
-    cy.get('[data-cy="student-password-input"]').type('TestPassword123!');
-    cy.get('[data-cy="student-confirm-password-input"]').type('TestPassword123!');
-
-    // Validate the activation code (should fail).
-    cy.get('[data-cy="enrollment-modal"]').find('button').contains('Validate').click();
-
-    // Validate failure message appears in error dialog.
-    cy.get('[data-cy="enrollment-modal"]').should('exist');
-    cy.findByTestId('dialog__content')
-      .should('be.visible')
-      .contains(`The code ${invalidActivationCode} does not belong to any organization`);
+    cy.findByRole('heading', { name: 'Account created' }).should('be.focused');
+    cy.contains(`Welcome to ROAR, ${PARENT_FIRST_NAME}.`).should('be.visible');
+    cy.findByRole('link', { name: /continue to sign in/i }).click();
+    cy.location('pathname').should('eq', APP_ROUTES.SIGN_IN);
   });
 });

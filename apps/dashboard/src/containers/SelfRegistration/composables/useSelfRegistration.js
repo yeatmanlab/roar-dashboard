@@ -1,20 +1,23 @@
 import { computed, ref } from 'vue';
-import { useFamilyRegistration } from '@/containers/FamilyRegistration/composables/useFamilyRegistration';
+import useCreateFamilyMutation from '@/composables/mutations/useCreateFamilyMutation';
 import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
+import { mapParentFormToCreateFamily } from '@/helpers/registration/mapParentFormToCreateFamily';
 
 /**
  * Coordinates account creation and screen-level workflow state.
  *
  * @param {Object} [options] Injectable workflow dependencies.
- * @param {Object} [options.registration] Family-registration workflow.
- * @param {(payload: Object) => Promise<void>} options.registration.submit Account-creation operation.
- * @param {import('vue').Ref<boolean>} options.registration.isSubmitting Registration loading state.
- * @param {import('vue').Ref<Error|null>} options.registration.error Registration failure state.
+ * @param {(payload: Object) => Promise<unknown>} [options.createAccount] Account-creation operation.
  * @param {Function} [options.t] Translation function for user-facing errors.
  * @returns {Object} Reactive workflow state and registration actions.
  */
-export function useSelfRegistration({ registration = useFamilyRegistration(), t = (_key, fallback) => fallback } = {}) {
-  const { isSubmitting, error } = registration;
+export function useSelfRegistration({ createAccount, t = (_key, fallback) => fallback } = {}) {
+  const createFamilyMutation = createAccount ? null : useCreateFamilyMutation();
+  const submitAccount =
+    createAccount ?? ((payload) => createFamilyMutation.mutateAsync({ body: mapParentFormToCreateFamily(payload) }));
+
+  const isSubmitting = ref(false);
+  const error = ref(null);
   const errorMessage = computed(() =>
     error.value ? t('pageRegister.errors.generic', ACCOUNT_CREATION_ERROR_MESSAGE) : '',
   );
@@ -36,15 +39,19 @@ export function useSelfRegistration({ registration = useFamilyRegistration(), t 
   async function submit(payload) {
     if (isSubmitting.value) return false;
 
+    isSubmitting.value = true;
     error.value = null;
     isSuccess.value = false;
+
     try {
-      await registration.submit(payload);
+      await submitAccount(payload);
       isSuccess.value = true;
       return true;
     } catch (caughtError) {
-      error.value = error.value ?? (caughtError instanceof Error ? caughtError : new Error(String(caughtError)));
+      error.value = caughtError instanceof Error ? caughtError : new Error(String(caughtError));
       return false;
+    } finally {
+      isSubmitting.value = false;
     }
   }
 

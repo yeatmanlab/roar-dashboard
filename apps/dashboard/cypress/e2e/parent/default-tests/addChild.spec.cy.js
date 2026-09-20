@@ -2,18 +2,8 @@ const PARENT_USERNAME = Cypress.env('PARENT_EMAIL');
 const PARENT_PASSWORD = Cypress.env('PARENT_PASSWORD');
 const ORG_CODE = Cypress.env('ACTIVATION_CODE');
 
-/**
- * TEMPORARILY SKIPPED: This test is currently experiencing timeouts due to
- * performance issues in the createNewFamily cloud function. The function is
- * taking 9+ seconds to respond, causing the test to fail.
- *
- * Root cause: Sequential parent org updates after student creation (see packages/common/src/orgs/create-family.ts)
- * These updates should be parallelized using Promise.all() instead of sequential awaits.
- *
- * @TODO: Re-enable this test after the Backend Refactor (BERF) is complete and
- * the createNewFamily function performance has been optimized.
- */
-// SKIPPED until #1827: createNewFamily timeouts — needs reevaluation after backend refactor
+// SKIPPED until #1827: learner enrollment still uses the legacy parent-home
+// integration and needs reevaluation as part of the Stage 2 backend migration.
 describe.skip('Parent: Add Child', () => {
   beforeEach(() => {
     cy.login(PARENT_USERNAME, PARENT_PASSWORD);
