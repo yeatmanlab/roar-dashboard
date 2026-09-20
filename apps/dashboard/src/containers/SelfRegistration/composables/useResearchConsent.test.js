@@ -6,12 +6,18 @@ describe('useResearchConsent', () => {
     const consent = useResearchConsent();
     consent.consentDocument.value = { id: 'consent-v1', version: 'v1' };
     consent.setLegalAccepted(true);
-    consent.setFutureContactAllowed(true);
 
+    expect(consent.futureContactAllowed.value).toBe(false);
     expect(consent.researchConsentAccepted.value).toBe(false);
     expect(consent.requiredAcknowledgementsComplete.value).toBe(false);
 
     consent.acceptResearchConsent();
+    expect(consent.requiredAcknowledgementsComplete.value).toBe(true);
+
+    consent.setFutureContactAllowed(true);
+    expect(consent.requiredAcknowledgementsComplete.value).toBe(true);
+
+    consent.setFutureContactAllowed(false);
     expect(consent.requiredAcknowledgementsComplete.value).toBe(true);
   });
 
