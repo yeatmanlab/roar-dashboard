@@ -390,6 +390,7 @@ const selection = (selected) => {
 const variants = ref([]);
 const preSelectedVariants = ref([]);
 const variantResolutionErrors = ref([]);
+const hydratedAdministrationId = ref(null);
 const nonUniqueTasks = ref('');
 
 const variantsByTaskId = computed(() => {
@@ -579,6 +580,18 @@ watch(
   [existingAdministrationData, allVariants],
   ([adminInfo, allVariantInfo]) => {
     if (adminInfo && !_isEmpty(allVariantInfo)) {
+      // Hydrate the form once per administration. Both queries backing this watcher are served
+      // stale-while-revalidate, so a refetch (on mount, or on window refocus past the 10 minute
+      // staleTime) emits a fresh data reference for unchanged data. Re-hydrating would append the
+      // saved assessments a second time and overwrite whatever the user has edited so far.
+      if (hydratedAdministrationId.value === props.adminId) return;
+      hydratedAdministrationId.value = props.adminId;
+
+      // Start from a clean slate so switching administrations can't inherit the previous one.
+      preSelectedVariants.value = [];
+      variants.value = [];
+      variantResolutionErrors.value = [];
+
       // Exclude name and publicName from duplicate formType
       if (props.formType === ADMINISTRATION_FORM_TYPES.DUPLICATE) {
         state.administrationName = `${adminInfo.name} - Copy`;
@@ -597,7 +610,6 @@ watch(
       });
       state.dateStarted = new Date(adminInfo.dateOpened);
       state.dateClosed = new Date(adminInfo.dateClosed);
-      variantResolutionErrors.value = [];
       _forEach(adminInfo.assessments, (assessment) => {
         handleFoundVariant(assessment, allVariantInfo);
       });
