@@ -1,5 +1,9 @@
 <template>
-  <div class="flex flex-column align-items-center gap-3" data-cy="app-message-state">
+  <div
+    class="flex flex-column align-items-center gap-3"
+    :role="type === MESSAGE_STATE_TYPES.ERROR ? 'alert' : 'status'"
+    data-cy="app-message-state"
+  >
     <img :src="imageSrc" aria-hidden class="w-32" />
     <h2 class="m-0" data-cy="app-message-state__title">{{ title }}</h2>
     <p v-if="message" class="m-0 mb-3 text-color-secondary" data-cy="app-message-state__message">{{ message }}</p>

@@ -1,34 +1,40 @@
-import { useQuery } from '@tanstack/vue-query';
+import { computed, toValue } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
-import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
-import { resolveUserClaims } from '@/helpers/resolveUserClaims';
-import { USER_CLAIMS_QUERY_KEY } from '@/constants/queryKeys';
+import useMeQuery from '@/composables/queries/useMeQuery';
+import { deriveClaimsFromMe } from '@/helpers/resolveUserClaims';
+
 /**
  * User claims data query.
  *
- * Resolves claims via `resolveUserClaims`, which reads the legacy Firestore
- * `userClaims` document in deployed builds and derives `super_admin` from the
- * backend `/me` response when the local Auth emulator is enabled (Firestore is
- * not available against the local stack). This keeps the production path
- * unchanged while letting claims-gated queries (e.g. the administrations list)
- * resolve in local dev.
+ * Delegates to {@link useMeQuery} instead of duplicating the `/me` query
+ * config: `useMeQuery` owns the query key, `queryFn`, the access-token gate
+ * (AND-ed with any caller `enabled` via `computeQueryOverrides`), and the
+ * shared retry policy (pinned after its options spread so callers can't
+ * override it). This composable only adds two things:
+ *
+ * - a `uid` gate, AND-ed here with the caller's `enabled` and passed down as
+ *   a computed `enabled` for `useMeQuery` to AND with its token gate; and
+ * - a `select` projection into the legacy `{ claims }` shape via
+ *   `deriveClaimsFromMe`. The `select` is placed **after** `...queryOptions`,
+ *   so a caller-supplied `select` cannot override the projection.
+ *
+ * Because claims are a projection of the shared `/me` cache entry rather
+ * than a second, independently-aging entry, any invalidation, reset, or
+ * refetch of `/me` (e.g. after signing an agreement, or an identity reset)
+ * propagates to claims automatically.
  *
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
- * @returns {UseQueryResult} The TanStack query result.
+ * @returns {UseQueryResult} The TanStack query result; `data` is `{ claims }`.
  */
 const useUserClaimsQuery = (queryOptions = undefined) => {
   const authStore = useAuthStore();
   const { uid } = storeToRefs(authStore);
 
-  const queryConditions = [() => !!uid.value];
-  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
-
-  return useQuery({
-    queryKey: [USER_CLAIMS_QUERY_KEY, uid],
-    queryFn: () => resolveUserClaims(uid),
-    enabled: isQueryEnabled,
-    ...options,
+  return useMeQuery({
+    ...queryOptions,
+    enabled: computed(() => !!uid.value && (toValue(queryOptions?.enabled) ?? true)),
+    select: (meData) => ({ claims: deriveClaimsFromMe(meData) }),
   });
 };
 

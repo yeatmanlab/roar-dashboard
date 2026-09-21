@@ -21,9 +21,11 @@ export default defineConfig({
     assetFileNames: '[name][extname]',
     sourcemap: true,
   },
-  // Workspace deps, auth, and Sentry are externalized — the consuming host (dashboard)
-  // provides them, keeping duplicate copies out of the lib bundle.
-  external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@roar-platform\/assessment-schema(\/.*)?$/, /^@sentry\//],
+  // `assessment-schema` is deliberately bundled rather than externalized: it is pure constants
+  // and pure functions, so duplicate copies behave identically, and inlining pins each
+  // assessment to the vocabulary it was built and tested against. `firebase` is absent from
+  // the bundle because nothing under src/ imports it, not because this list externalizes it.
+  external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@sentry\//],
   plugins: [
     postcss({
       inject: true,
