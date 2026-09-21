@@ -21,6 +21,7 @@ import { SWR_SCORING_VERSION, SWR_TASK_IDS } from '@roar-platform/assessment-sch
 import { SRE_SCORING_VERSION, SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
 import { PA_SCORING_VERSION, PA_TASK_ID } from '@roar-platform/assessment-schema/roar-pa';
 import { LETTER_TASK_IDS } from '@roar-platform/assessment-schema/roar-letter';
+import { COMPOSITE_DOMAIN } from '@roar-platform/assessment-schema';
 import {
   MULTICHOICE_SCORING_VERSION,
   MORPHOLOGY_TASK_ID,
@@ -165,7 +166,7 @@ export function AggregationService({
       const taskSlug = taskSlugByVariantId.get(run.taskVariantId) || '';
       const grade = demographicsMap.get(run.id) || null;
       const schools = userSchoolsMap.get(run.userId) || [];
-      const scoreMap = scoresByRunId.get(run.id) ?? new Map<string, string>();
+      const scoreMap = flattenScoresByDomain(scoresByRunId.get(run.id));
 
       // Which name holds the percentile or raw score varies by task, grade, and
       // scoring version — resolve against the scoring config rather than assuming.
@@ -372,6 +373,33 @@ function findRangeInMap(rangeMap: Record<number, string>, score: number): string
  * @param scoringVersionByVariant - Scoring version per task variant ID
  * @returns Map of task slug to its bucket map; tasks without bounds or a width are omitted
  */
+/**
+ * Flatten a run's `domain → name → value` scores to `name → value`. Names repeat
+ * across domains (PA emits `numCorrect` under FSM, LSM, DEL and composite), so
+ * composite is applied last and wins, others in sorted order for determinism.
+ *
+ * @param byDomain - The run's scores indexed by domain, or undefined if it has none
+ * @returns Flat map of score name to value
+ */
+function flattenScoresByDomain(byDomain: Map<string, Map<string, string>> | undefined): Map<string, string> {
+  const flat = new Map<string, string>();
+  if (!byDomain) return flat;
+
+  const domains = [...byDomain.keys()].sort();
+  for (const domain of domains) {
+    if (domain === COMPOSITE_DOMAIN) continue;
+    for (const [name, value] of byDomain.get(domain)!) {
+      flat.set(name, value);
+    }
+  }
+
+  for (const [name, value] of byDomain.get(COMPOSITE_DOMAIN) ?? []) {
+    flat.set(name, value);
+  }
+
+  return flat;
+}
+
 function buildRawBucketMaps(
   scoredTasks: Array<{ variantId: string; taskSlug: string }>,
   scoringVersionByVariant: Map<string, number>,

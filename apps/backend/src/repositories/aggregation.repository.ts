@@ -59,29 +59,42 @@ export class AggregationRepository {
   }
 
   /**
-   * All score rows for the given runs, indexed `runId → name → value`.
+   * All score rows for the given runs, indexed `runId → domain → name → value`.
+   *
+   * Indexed by domain because names are generic: PA emits `numCorrect` under
+   * each of FSM, LSM, DEL and composite, so a flat name map keeps an arbitrary
+   * one of the four.
    *
    * Returned unresolved: which name holds a task's percentile or raw score
    * depends on its slug, grade, and scoring version, so the service resolves
    * them via `resolveScoreFieldNames`.
    */
-  async getScoresByRunIds(runIds: string[]): Promise<Map<string, Map<string, string>>> {
+  async getScoresByRunIds(runIds: string[]): Promise<Map<string, Map<string, Map<string, string>>>> {
     const scoresData = await this.coreDb
       .select({
         runId: fdwRunScores.runId,
+        domain: fdwRunScores.domain,
         name: fdwRunScores.name,
         value: fdwRunScores.value,
       })
       .from(fdwRunScores)
       .where(inArray(fdwRunScores.runId, runIds));
 
-    const scoresByRunId = new Map<string, Map<string, string>>();
+    const scoresByRunId = new Map<string, Map<string, Map<string, string>>>();
     for (const runId of runIds) {
       scoresByRunId.set(runId, new Map());
     }
 
     for (const score of scoresData) {
-      scoresByRunId.get(score.runId)?.set(score.name, score.value);
+      const byDomain = scoresByRunId.get(score.runId);
+      if (!byDomain) continue;
+
+      let byName = byDomain.get(score.domain);
+      if (!byName) {
+        byName = new Map<string, string>();
+        byDomain.set(score.domain, byName);
+      }
+      byName.set(score.name, score.value);
     }
 
     return scoresByRunId;

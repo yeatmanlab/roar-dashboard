@@ -10,6 +10,13 @@ import {
   createMockAggregationRepository,
   createMockTaskVariantParameterRepository,
 } from '../../test-support/repositories';
+import { COMPOSITE_DOMAIN } from '@roar-platform/assessment-schema';
+import { PA_SCORE_DOMAINS } from '@roar-platform/assessment-schema/roar-pa';
+
+/** Wraps flat `name → value` score fixtures as composite-domain scores. */
+function compositeScores(entries: [string, string][]): Map<string, Map<string, string>> {
+  return new Map([[COMPOSITE_DOMAIN, new Map(entries)]]);
+}
 
 describe('aggregateSupportCategories', () => {
   let mockAdministrationRepository: MockedObject<AdministrationRepository>;
@@ -96,7 +103,7 @@ describe('aggregateSupportCategories', () => {
       );
       mockAggregationRepository.getDemographicsByRunIds.mockResolvedValue(new Map(runs.map((r) => [r.runId, r.grade])));
       mockAggregationRepository.getScoresByRunIds.mockResolvedValue(
-        new Map(runs.map((r) => [r.runId, new Map(r.scores)])),
+        new Map(runs.map((r) => [r.runId, compositeScores(r.scores)])),
       );
       mockAggregationRepository.getUserSchoolsByUserIds.mockResolvedValue(
         runs.map((r) => ({ userId: `user-${r.runId}`, schoolId: 'school-1', schoolName: 'School A' })),
@@ -195,6 +202,48 @@ describe('aggregateSupportCategories', () => {
       expect(pa.achievedSkill.total).toBe(1);
       expect(pa.percentile['70-80']?.total).toBe(1);
       expect(pa.raw['55-57']?.total).toBe(1);
+    });
+
+    it('classifies on the composite score when a subtask domain repeats the name', async () => {
+      setVariantScoringVersion(5);
+      const service = setupTask('pa', [{ runId: 'run-1', grade: '3', scores: [] }]);
+      // PA writes roarScore and scoringVersion under each subtask as well as
+      // composite. Composite is listed first so the subtask would win on arrival
+      // order alone; only its value should classify the run.
+      mockAggregationRepository.getScoresByRunIds.mockResolvedValue(
+        new Map([
+          [
+            'run-1',
+            new Map([
+              [
+                COMPOSITE_DOMAIN,
+                new Map([
+                  ['roarScore', '450'],
+                  ['scoringVersion', '5'],
+                ]),
+              ],
+              [
+                PA_SCORE_DOMAINS.FSM,
+                new Map([
+                  ['roarScore', '600'],
+                  ['scoringVersion', '5'],
+                ]),
+              ],
+            ]),
+          ],
+        ]),
+      );
+
+      const result = await service.aggregateSupportCategories({
+        administrationId: 'admin-123',
+        districtId: 'district-456',
+      });
+
+      // v5 raw thresholds are above 480 / some 420, so composite's 450 is
+      // developing where FSM's 600 would read as achieved.
+      const pa = result!['task-pa-uuid']!;
+      expect(pa.developingSkill.total).toBe(1);
+      expect(pa.achievedSkill.total).toBe(0);
     });
 
     describe('Raw score buckets', () => {
@@ -377,7 +426,7 @@ describe('aggregateSupportCategories', () => {
         new Map([
           [
             'run-1',
-            new Map([
+            compositeScores([
               ['percentile', '75'],
               ['roarScore', '650'],
               ['scoringVersion', '7'],
@@ -385,7 +434,7 @@ describe('aggregateSupportCategories', () => {
           ],
           [
             'run-2',
-            new Map([
+            compositeScores([
               ['percentile', '35'],
               ['roarScore', '500'],
               ['scoringVersion', '7'],
@@ -472,21 +521,21 @@ describe('aggregateSupportCategories', () => {
         new Map([
           [
             'run-1',
-            new Map([
+            compositeScores([
               ['percentile', '80'],
               ['scoringVersion', '5'],
             ]),
           ],
           [
             'run-2',
-            new Map([
+            compositeScores([
               ['percentile', '85'],
               ['scoringVersion', '5'],
             ]),
           ],
           [
             'run-3',
-            new Map([
+            compositeScores([
               ['percentile', '70'],
               ['scoringVersion', '5'],
             ]),
@@ -567,7 +616,7 @@ describe('aggregateSupportCategories', () => {
         new Map([
           [
             'run-1',
-            new Map([
+            compositeScores([
               ['percentile', '75'],
               ['scoringVersion', '7'],
             ]),
@@ -649,7 +698,7 @@ describe('aggregateSupportCategories', () => {
         new Map([
           [
             'run-1',
-            new Map([
+            compositeScores([
               ['percentile', '45'],
               ['roarScore', '475'],
               ['scoringVersion', '7'],
@@ -657,7 +706,7 @@ describe('aggregateSupportCategories', () => {
           ],
           [
             'run-2',
-            new Map([
+            compositeScores([
               ['percentile', '75'],
               ['roarScore', '625'],
               ['scoringVersion', '7'],
