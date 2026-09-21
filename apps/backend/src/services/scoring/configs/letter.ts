@@ -2,6 +2,8 @@ import {
   LETTER_SUBSCORE_KEYS,
   LETTER_SUBSCORE_DEFS,
   LETTER_COMPOSITE_SCORE_NAMES,
+  LETTER_SCORING_VERSION,
+  LETTER_TASK_IDS,
 } from '@roar-platform/assessment-schema/roar-letter';
 
 /**
@@ -20,33 +22,33 @@ import {
  * their subscore cells resolve to null.
  */
 export default {
-  taskSlugs: ['letter', 'letter-es', 'letter-en-ca'],
+  taskSlugs: [LETTER_TASK_IDS.EN, LETTER_TASK_IDS.ES, LETTER_TASK_IDS.EN_CA],
   scoreFields: {
     percentile: [
-      { minVersion: 1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.PERCENTILE },
+      { minVersion: LETTER_SCORING_VERSION.V1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.PERCENTILE },
       { minVersion: 0, fieldName: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT },
     ],
     percentileDisplay: [
-      { minVersion: 1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.PERCENTILE },
+      { minVersion: LETTER_SCORING_VERSION.V1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.PERCENTILE },
       { minVersion: 0, fieldName: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT },
     ],
     standardScore: [
-      { minVersion: 1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.STANDARD_SCORE },
+      { minVersion: LETTER_SCORING_VERSION.V1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.STANDARD_SCORE },
       { minVersion: 0, fieldName: null },
     ],
     standardScoreDisplay: [
-      { minVersion: 1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.STANDARD_SCORE },
+      { minVersion: LETTER_SCORING_VERSION.V1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.STANDARD_SCORE },
       { minVersion: 0, fieldName: null },
     ],
     rawScore: [
-      { minVersion: 1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.ROAR_SCORE },
+      { minVersion: LETTER_SCORING_VERSION.V1, fieldName: LETTER_COMPOSITE_SCORE_NAMES.ROAR_SCORE },
       { minVersion: 0, fieldName: LETTER_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT },
     ],
   },
   classification: {
     type: 'percentile-then-rawscore' as const,
-    percentileCutoffs: [{ minVersion: 1, cutoffs: { achieved: 40, developing: 20 } }],
-    rawScoreThresholds: [{ minVersion: 1, thresholds: { above: 95, some: 95 } }],
+    percentileCutoffs: [{ minVersion: LETTER_SCORING_VERSION.V1, cutoffs: { achieved: 40, developing: 20 } }],
+    rawScoreThresholds: [{ minVersion: LETTER_SCORING_VERSION.V1, thresholds: { above: 95, some: 95 } }],
   },
   subscores: [
     // Per-subtask subScore columns (domain-indexed), grouping from roar-letter.
@@ -84,7 +86,7 @@ export default {
     },
   ],
   displayCategory: [
-    { minVersion: 1, category: 'normed' },
+    { minVersion: LETTER_SCORING_VERSION.V1, category: 'normed' },
     { minVersion: 0, category: 'percentCorrect' },
   ],
   displayRanges: {
@@ -92,7 +94,7 @@ export default {
     percentCorrect: { min: 0, max: 100 },
     standardScore: { min: 0, max: 180 },
     rawScore: [
-      { minVersion: 1, range: { min: 0, max: 100 } },
+      { minVersion: LETTER_SCORING_VERSION.V1, range: { min: 0, max: 100 } },
       { minVersion: 0, range: { min: 0, max: 90 } },
     ],
   },

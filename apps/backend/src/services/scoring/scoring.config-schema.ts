@@ -292,6 +292,9 @@ const VersionedScoreRangeSchema = z.object({
 /**
  * Display ranges (dial min/max) per display score type. `rawScore` is versioned
  * because the raw scale is norming-table-derived.
+ *
+ * The other fields don't need versioning — `displayCategory` picks which one applies
+ * per version, so a range a version doesn't use is never read.
  */
 const DisplayRangesSchema = z.object({
   percentile: ScoreRangeSchema.optional(),

@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { SCORE_NAME } from '../../constants/run-scores';
 import {
   parseScoreValue,
+  parseScoringVersion,
+  resolveRunScoringVersion,
   getSupportLevel,
   getScoreDisplay,
   getRawScoreThreshold,
@@ -8,6 +11,10 @@ import {
   resolveScoreFieldNames,
   resolveScoreFieldName,
   getSupportLevelFieldName,
+  getScoreRange,
+  extractScoringVersions,
+  resolveNumericScore,
+  resolveVersionedEntry,
 } from './scoring.service';
 
 describe('parseScoreValue', () => {
@@ -45,6 +52,48 @@ describe('parseScoreValue', () => {
   it('returns null for non-numeric strings', () => {
     expect(parseScoreValue('abc')).toBeNull();
     expect(parseScoreValue('')).toBeNull();
+  });
+});
+
+describe('parseScoringVersion', () => {
+  it('parses integer strings and numbers', () => {
+    expect(parseScoringVersion('7')).toBe(7);
+    expect(parseScoringVersion(7)).toBe(7);
+    expect(parseScoringVersion(0)).toBe(0);
+  });
+
+  it('returns null for every way of being absent', () => {
+    expect(parseScoringVersion(undefined)).toBeNull();
+    expect(parseScoringVersion(null)).toBeNull();
+    expect(parseScoringVersion('')).toBeNull();
+    expect(parseScoringVersion('   ')).toBeNull();
+  });
+
+  it('returns null for non-integer values', () => {
+    expect(parseScoringVersion('7.5')).toBeNull();
+    expect(parseScoringVersion(7.5)).toBeNull();
+    expect(parseScoringVersion('abc')).toBeNull();
+    expect(parseScoringVersion(true)).toBeNull();
+    expect(parseScoringVersion({})).toBeNull();
+  });
+
+  it('returns null for angle-bracket strings, unlike parseScoreValue', () => {
+    expect(parseScoringVersion('>7')).toBeNull();
+    expect(parseScoreValue('>7')).toBe(7);
+  });
+});
+
+describe('resolveRunScoringVersion', () => {
+  it('reads the run scoring version', () => {
+    expect(resolveRunScoringVersion(new Map([[SCORE_NAME.SCORING_VERSION, '7']]))).toBe(7);
+  });
+
+  it('returns null for missing scoring version', () => {
+    expect(resolveRunScoringVersion(new Map([['roarScore', '500']]))).toBeNull();
+  });
+
+  it('returns null for a non-integer scoring version', () => {
+    expect(resolveRunScoringVersion(new Map([[SCORE_NAME.SCORING_VERSION, '>7']]))).toBeNull();
   });
 });
 
@@ -1135,5 +1184,142 @@ describe('getScoreDisplay', () => {
         }),
       ).toEqual({ scoreType: 'rawScore', value: null, label: 'rawScore', range: { min: 300, max: 967 } });
     });
+  });
+});
+
+describe('getScoreRange', () => {
+  describe('rawScore (versioned)', () => {
+    it('resolves the range for the scoring version', () => {
+      expect(getScoreRange('sre', 'rawScore', 0)).toEqual({ min: 0, max: 130 });
+      expect(getScoreRange('sre', 'rawScore', 5)).toEqual({ min: 300, max: 967 });
+      expect(getScoreRange('pa', 'rawScore', 5)).toEqual({ min: 40, max: 733 });
+    });
+
+    it('falls back to the lower tier for a version below the higher minVersion', () => {
+      expect(getScoreRange('sre', 'rawScore', 4)).toEqual({ min: 0, max: 130 });
+      expect(getScoreRange('pa', 'rawScore', 4)).toEqual({ min: 0, max: 57 });
+    });
+
+    it('treats a null scoring version as v0', () => {
+      expect(getScoreRange('sre', 'rawScore', null)).toEqual({ min: 0, max: 130 });
+    });
+
+    it('returns null when no tier covers the version', () => {
+      // sre-es declares a raw range only from v1, so a legacy run has no scale.
+      expect(getScoreRange('sre-es', 'rawScore', 0)).toBeNull();
+    });
+  });
+
+  describe('unversioned score types', () => {
+    it('ignores the scoring version', () => {
+      expect(getScoreRange('sre', 'percentile', 0)).toEqual({ min: 0, max: 99 });
+      expect(getScoreRange('sre', 'percentile', 5)).toEqual({ min: 0, max: 99 });
+      expect(getScoreRange('sre', 'standardScore', 0)).toEqual({ min: 0, max: 180 });
+    });
+
+    it('returns null for a score type the config does not declare', () => {
+      expect(getScoreRange('swr', 'percentCorrect', 7)).toBeNull();
+    });
+  });
+
+  it('returns null for an unknown task', () => {
+    expect(getScoreRange('not-a-task', 'rawScore', 1)).toBeNull();
+  });
+});
+
+describe('extractScoringVersions', () => {
+  it('maps task variant IDs to their scoring version', () => {
+    const versions = extractScoringVersions([
+      { taskVariantId: 'variant-1', name: 'scoringVersion', value: 7 },
+      { taskVariantId: 'variant-2', name: 'scoringVersion', value: '1' },
+    ]);
+
+    expect(versions.get('variant-1')).toBe(7);
+    expect(versions.get('variant-2')).toBe(1);
+  });
+
+  it('ignores parameters that are not scoringVersion', () => {
+    const versions = extractScoringVersions([{ taskVariantId: 'variant-1', name: 'corpus', value: 3 }]);
+
+    expect(versions.size).toBe(0);
+  });
+
+  it('records no version when the value is not an integer', () => {
+    const versions = extractScoringVersions([
+      { taskVariantId: 'variant-1', name: 'scoringVersion', value: 'abc' },
+      { taskVariantId: 'variant-2', name: 'scoringVersion', value: 1.5 },
+      { taskVariantId: 'variant-3', name: 'scoringVersion', value: undefined },
+      { taskVariantId: 'variant-4', name: 'scoringVersion', value: null },
+      { taskVariantId: 'variant-5', name: 'scoringVersion', value: '' },
+    ]);
+
+    expect(versions.size).toBe(0);
+  });
+
+  it('takes the last row when a variant has duplicate parameters', () => {
+    const versions = extractScoringVersions([
+      { taskVariantId: 'variant-1', name: 'scoringVersion', value: 6 },
+      { taskVariantId: 'variant-1', name: 'scoringVersion', value: 7 },
+    ]);
+
+    expect(versions.get('variant-1')).toBe(7);
+  });
+});
+
+describe('resolveNumericScore', () => {
+  it('returns the first field name present in the score map', () => {
+    const scores = new Map([
+      ['percentile', '45'],
+      ['sprPercentile', '80'],
+    ]);
+
+    expect(resolveNumericScore(scores, ['sprPercentile', 'percentile'])).toBe(80);
+    expect(resolveNumericScore(scores, ['percentile', 'sprPercentile'])).toBe(45);
+  });
+
+  it('skips absent names', () => {
+    const scores = new Map([['percentile', '45']]);
+
+    expect(resolveNumericScore(scores, ['missing', 'percentile'])).toBe(45);
+  });
+
+  it('skips present-but-unparseable values', () => {
+    const scores = new Map([
+      ['percentile', 'not-a-number'],
+      ['sprPercentile', '80'],
+    ]);
+
+    expect(resolveNumericScore(scores, ['percentile', 'sprPercentile'])).toBe(80);
+  });
+
+  it('parses angle-bracket strings', () => {
+    expect(resolveNumericScore(new Map([['percentile', '>99']]), ['percentile'])).toBe(99);
+  });
+
+  it('returns null when no name resolves', () => {
+    expect(resolveNumericScore(new Map([['percentile', '45']]), ['missing'])).toBeNull();
+    expect(resolveNumericScore(new Map(), ['percentile'])).toBeNull();
+  });
+});
+
+describe('resolveVersionedEntry', () => {
+  const tiers = [
+    { minVersion: 5, width: 65 },
+    { minVersion: 0, width: 10 },
+  ];
+
+  it('returns the first entry the version satisfies', () => {
+    expect(resolveVersionedEntry(tiers, 5)).toEqual({ minVersion: 5, width: 65 });
+    expect(resolveVersionedEntry(tiers, 6)).toEqual({ minVersion: 5, width: 65 });
+    expect(resolveVersionedEntry(tiers, 4)).toEqual({ minVersion: 0, width: 10 });
+    expect(resolveVersionedEntry(tiers, 0)).toEqual({ minVersion: 0, width: 10 });
+  });
+
+  it('returns undefined when the version is below every minVersion', () => {
+    expect(resolveVersionedEntry([{ minVersion: 1, width: 50 }], 0)).toBeUndefined();
+  });
+
+  it('returns undefined for an empty array', () => {
+    expect(resolveVersionedEntry([], 7)).toBeUndefined();
   });
 });
