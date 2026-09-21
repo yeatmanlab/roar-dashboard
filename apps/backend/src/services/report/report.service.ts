@@ -719,26 +719,21 @@ export function ReportService({
         };
       }
 
-      // 7. Fetch scoring versions from task_variant_parameters
+      // 7. Bulk fetch completed run scores
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
-      const allParams = await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds);
-      const scoringVersionByVariant = extractScoringVersions(allParams);
-
-      // 8. Bulk fetch completed run scores
       const studentIds = students.map((s) => s.userId);
       const scoreRows = await reportRepository.getCompletedRunScores(administrationId, studentIds, taskVariantIds);
 
       // Build a lookup: userId → taskVariantId → Map<scoreName, scoreValue>
       const scoresByStudentTask = buildScoreLookup(scoreRows);
 
-      // 9. Aggregate per task (deduplicated across variants)
+      // 8. Aggregate per task (deduplicated across variants)
       const tasks: ServiceTaskScoreOverview[] = taskGroups.map(({ representative, variants }) =>
         aggregateTaskGroup(
           representative,
           variants,
           students,
           scoresByStudentTask,
-          scoringVersionByVariant,
           taskService.evaluateTaskVariantEligibility,
         ),
       );
@@ -1103,7 +1098,6 @@ export function ReportService({
           row,
           taskOrder,
           variantsByTaskId,
-          scoringVersionByVariant,
           taskService.evaluateTaskVariantEligibility,
           scopeType,
           schoolNamesByUser,
@@ -1224,16 +1218,11 @@ export function ReportService({
         });
       }
 
-      // 5. Fetch scoring versions per variant (drives both classification and subscore lookups)
-      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
-      const allParams =
-        taskVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds) : [];
-      const scoringVersionByVariant = extractScoringVersions(allParams);
-
       // 6. Fetch the student's current-admin scores, run metadata, and historical
       // runs/scores in parallel. Run metadata (reliable, engagementFlags) lives
       // on the runs row; getCompletedRunScores only returns score rows, so we
       // also call getCompletedRunsForUser for the run-level signals.
+      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
       const taskIdsInAdmin = Array.from(new Set(taskMetas.map((t) => t.taskId)));
       const [currentScoreRows, currentRunRows, historicalRuns] = await Promise.all([
         reportRepository.getCompletedRunScores(administrationId, [targetUserId], taskVariantIds),
@@ -1319,7 +1308,7 @@ export function ReportService({
             taskMeta,
             scoredVariant,
             scoredScoreMap,
-            resolveRunScoringVersion(scoredScoreMap, scoringVersionByVariant.get(scoredVariant.taskVariantId)),
+            resolveRunScoringVersion(scoredScoreMap),
             currentRun?.grade ?? targetUser.grade,
             eligibility.isOptional,
             historicalRuns,
@@ -1497,14 +1486,6 @@ export function ReportService({
       );
       const taskMetadataByAdmin = new Map<string, ReportTaskMeta[]>(taskMetadataResults);
 
-      // 5. Bulk-fetch scoring versions across the union of all variants
-      const allVariantIds = Array.from(
-        new Set(taskMetadataResults.flatMap(([, metas]) => metas.map((m) => m.taskVariantId))),
-      );
-      const allParams =
-        allVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(allVariantIds) : [];
-      const scoringVersionByVariant = extractScoringVersions(allParams);
-
       // 6. Fetch scores + run metadata per admin in parallel.
       // Each admin only fetches its own variants; pinning queries to a single
       // (admin, user) pair keeps the FDW-side filters narrow.
@@ -1590,7 +1571,7 @@ export function ReportService({
               taskMeta,
               scoredVariant,
               scoredScoreMap,
-              resolveRunScoringVersion(scoredScoreMap, scoringVersionByVariant.get(scoredVariant.taskVariantId)),
+              resolveRunScoringVersion(scoredScoreMap),
               currentRun?.grade ?? targetUser.grade,
               eligibility.isOptional,
               currentRun,
@@ -2274,18 +2255,23 @@ function parseScoringVersion(value: unknown): number | null {
 }
 
 /**
- * Resolve the scoring version a run was scored under.
+ * Resolve the scoring version a run was scored under, from the run's own stamp.
+ *
+ * Deliberately does *not* fall back to the variant's declared version. A run
+ * carries a stamp only if the assessment was already stamping when it ran, so
+ * an absent stamp is not an absent version — it is the last version before
+ * stamping was introduced (swr v6, sre v3, pa v3). Each of those sits below its
+ * config's stamping threshold, so they all select the `minVersion: 0` entry,
+ * which is why `null` resolving to the v0 config is correct rather than a
+ * guess. Resolving against a variant declaring (say) v7 instead would look up
+ * field names the run never wrote — `percentile` and `rawScore` both come back
+ * null and the run drops out of its tallies.
  *
  * @param scoreMap - The run's `run_scores` values, keyed by score name
- * @param variantScoringVersion - Version from the variant's parameters. Accepts
- *   a bare `scoringVersionByVariant.get(id)`, so callers don't coalesce first.
- * @returns The run's scoring version, the variant's as fallback, else null
+ * @returns The run's scoring version, or `null` when it carries no stamp
  */
-function resolveRunScoringVersion(
-  scoreMap: Map<string, string>,
-  variantScoringVersion: number | null | undefined,
-): number | null {
-  return parseScoringVersion(scoreMap.get(SCORE_NAME.SCORING_VERSION)) ?? variantScoringVersion ?? null;
+function resolveRunScoringVersion(scoreMap: Map<string, string>): number | null {
+  return parseScoringVersion(scoreMap.get(SCORE_NAME.SCORING_VERSION));
 }
 
 export function groupVariantsByTaskId(taskMetas: ReportTaskMeta[]): TaskGroup[] {
@@ -2442,7 +2428,6 @@ function aggregateTaskGroup(
   variants: ReportTaskMeta[],
   students: StudentOverviewRow[],
   scoresByStudentTask: ScoreLookup,
-  scoringVersionByVariant: Map<string, number>,
   evaluateEligibility: EligibilityEvaluator,
 ): ServiceTaskScoreOverview {
   let totalAssessed = 0;
@@ -2459,10 +2444,7 @@ function aggregateTaskGroup(
     if (scored) {
       totalAssessed++;
 
-      const scoringVersion = resolveRunScoringVersion(
-        scored.scores,
-        scoringVersionByVariant.get(scored.variant.taskVariantId),
-      );
+      const scoringVersion = resolveRunScoringVersion(scored.scores);
       const gradeLevel = getGradeAsNumber(student.grade);
       const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel, scoringVersion);
 
@@ -2740,8 +2722,12 @@ function aggregateTaskFacet({
   let anyPercentileSeen = false;
 
   for (const [, scored] of scoredByUserId) {
-    // Bin edges are cohort-level, so they use the variant's version.
-    const scoringVersion = scoringVersionByVariant.get(scored.variant.taskVariantId) ?? null;
+    // Each run is read at its own version, matching the tally pass below —
+    // the variant's version would look up field names the run never wrote.
+    // Bin edges themselves stay cohort-level, so a run whose score falls
+    // outside them is dropped from the chart while still counting in
+    // `totalAssessed`. That is intended.
+    const scoringVersion = resolveRunScoringVersion(scored.scores);
     const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, scored.gradeLevel, scoringVersion);
     const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
     const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
@@ -2764,10 +2750,7 @@ function aggregateTaskFacet({
     const scored = scoredByUserId.get(student.userId);
     if (!scored) continue;
 
-    const scoringVersion = resolveRunScoringVersion(
-      scored.scores,
-      scoringVersionByVariant.get(scored.variant.taskVariantId),
-    );
+    const scoringVersion = resolveRunScoringVersion(scored.scores);
     const gradeLevel = getGradeAsNumber(student.grade);
     const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel, scoringVersion);
     const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
@@ -2949,7 +2932,10 @@ function uniqueTaskMetadataInOrder(taskMetas: ReportTaskMeta[]): ServiceTaskMeta
  * Returns an empty rules object for unknown task slugs and for `'none'`
  * classification — those tasks have no support level the SQL CASE can compute.
  *
- * The version is the variant's, not the run's.
+ * The version is the variant's, not the run's — one CASE is generated per
+ * variant, before any run is read. Field names are therefore resolved across
+ * *all* versions, so the CASE matches unstamped (v0-named) and stamped runs
+ * alike; only the cutoffs, which can't be coalesced, take the variant's version.
  */
 function resolveScoringRulesForVariant(taskSlug: string, scoringVersion: number | null): ResolvedScoringRules {
   const empty: ResolvedScoringRules = {
@@ -2965,7 +2951,7 @@ function resolveScoringRulesForVariant(taskSlug: string, scoringVersion: number 
   const config = getScoringConfig(taskSlug);
   if (!config) return empty;
 
-  const fieldNames = resolveScoreFieldNames(taskSlug, null, scoringVersion);
+  const fieldNames = resolveScoreFieldNames(taskSlug, null);
   const baseRules: ResolvedScoringRules = {
     ...empty,
     percentileFieldNames: fieldNames.percentileFieldNames,
@@ -3163,7 +3149,6 @@ function assembleStudentScoreRow(
   row: StudentScoreQueryRow,
   taskOrder: ReadonlyArray<string>,
   variantsByTaskId: ReadonlyMap<string, ReportTaskMeta[]>,
-  scoringVersionByVariant: Map<string, number>,
   evaluateEligibility: StudentEligibilityEvaluator,
   scopeType: ScopeType,
   schoolNamesByUser: Map<string, string> | undefined,
@@ -3193,10 +3178,7 @@ function assembleStudentScoreRow(
     }
 
     if (scored) {
-      const scoringVersion = resolveRunScoringVersion(
-        scored.scoreMap,
-        scoringVersionByVariant.get(scored.variant.taskVariantId),
-      );
+      const scoringVersion = resolveRunScoringVersion(scored.scoreMap);
       const gradeLevel = getGradeAsNumber(row.grade);
       // Same version drives field resolution and getSupportLevel below, so the
       // reported score and its classification come from one norming table.
@@ -3510,17 +3492,13 @@ export function computePaSkillsToWorkOn(
  * @param scoreMap - The run's `run_scores` values, keyed by score name
  * @param taskSlug - The task slug
  * @param gradeLevel - Numeric grade level, or null
- * @param variantScoringVersion - Fallback when the run carries no version stamp.
- *   Null for historical entries, whose administrations' variant parameters
- *   aren't loaded here.
  */
 function resolveTaskScores(
   scoreMap: Map<string, string>,
   taskSlug: string,
   gradeLevel: number | null,
-  variantScoringVersion: number | null,
 ): ServiceTaskScores {
-  const scoringVersion = resolveRunScoringVersion(scoreMap, variantScoringVersion);
+  const scoringVersion = resolveRunScoringVersion(scoreMap);
   const fieldNames = resolveScoreFieldNames(taskSlug, gradeLevel, scoringVersion);
   return {
     rawScore: roundScoreOrNull(resolveNumericScore(scoreMap, fieldNames.rawScoreFieldNames)),
@@ -3580,7 +3558,7 @@ function buildHistoricalScoresForTask(
       administrationId: run.administrationId,
       administrationName: run.administrationName,
       date: run.completedAt.toISOString(),
-      scores: resolveTaskScores(scoreMap, taskSlug, gradeLevel, null),
+      scores: resolveTaskScores(scoreMap, taskSlug, gradeLevel),
     };
   });
 }
@@ -3613,7 +3591,7 @@ function buildBaseAssessedTaskEntry(
   domainScoreMap?: Map<string, Map<string, string>>,
 ): { entry: ServiceStudentReportTaskBase } {
   const gradeLevel = getGradeAsNumber(grade);
-  const scores = resolveTaskScores(scoreMap, scoredVariant.taskSlug, gradeLevel, scoringVersion);
+  const scores = resolveTaskScores(scoreMap, scoredVariant.taskSlug, gradeLevel);
 
   // Re-derive the unrounded numeric scores for classification (rounding before
   // classification could swing borderline cases — pass the raw numerics into
