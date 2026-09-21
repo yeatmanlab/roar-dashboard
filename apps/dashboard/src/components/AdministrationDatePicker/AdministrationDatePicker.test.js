@@ -105,6 +105,52 @@ describe('AdministrationDatePicker.vue', () => {
     expect(presetWrapper.vm.currentMode).toBe('presets');
   });
 
+  describe('minStartDate', () => {
+    // CreateAdministration computes a null minStartDate whenever an adminId is present, i.e. for
+    // every edit and every duplicate, so the prop has to accept it without warning.
+    const mountWithNullMinStartDate = () =>
+      mount(AdministrationDatePicker, {
+        props: {
+          minStartDate: null,
+          minEndDate,
+          startDate: null,
+          endDate: null,
+        },
+      });
+
+    it('accepts a null minStartDate without logging a prop validation warning', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      mountWithNullMinStartDate();
+
+      // Vue passes the message plus a component trace as separate arguments, so match across all
+      // of them. Asserting on a single argument would pin the arity and never match, making the
+      // negative assertion vacuous.
+      const warnings = warn.mock.calls.map((args) => args.map(String).join(' ')).join('\n');
+      warn.mockRestore();
+
+      expect(warnings).not.toContain('minStartDate');
+    });
+
+    it('forwards a null minStartDate to the start date input as no lower bound', async () => {
+      const nullBoundWrapper = mountWithNullMinStartDate();
+      nullBoundWrapper.vm.currentMode = 'custom';
+      await nullBoundWrapper.vm.$nextTick();
+
+      const [startInput] = nullBoundWrapper.findAllComponents({ name: 'DateInput' });
+      expect(startInput.props('minDate')).toBeNull();
+    });
+
+    it('still forwards a supplied minStartDate to the start date input', async () => {
+      wrapper.vm.currentMode = 'custom';
+      await wrapper.vm.$nextTick();
+
+      const [startInput, endInput] = wrapper.findAllComponents({ name: 'DateInput' });
+      expect(startInput.props('minDate')).toEqual(minStartDate);
+      expect(endInput.props('minDate')).toEqual(minEndDate);
+    });
+  });
+
   it('highlights selected preset card', async () => {
     const preset = 'summer';
     await wrapper.vm.presetChange(preset);
