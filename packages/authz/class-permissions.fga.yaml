@@ -1,5 +1,5 @@
 name: Class Permissions
-model_file: ../authorization-model.fga
+model_file: authorization-model.fga
 
 tuples:
   # ─── Hierarchy (bidirectional) ─────────────────────────────────────
