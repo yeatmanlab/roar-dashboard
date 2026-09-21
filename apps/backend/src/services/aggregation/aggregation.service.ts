@@ -11,12 +11,11 @@ import {
   extractScoringVersions,
   getScoreRange,
   getSupportLevel,
-  parseScoreValue,
   resolveNumericScore,
+  resolveRunScoringVersion,
   resolveScoreFieldNames,
   resolveVersionedEntry,
 } from '../scoring';
-import { SCORE_NAME } from '../../constants/run-scores';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
 import { SWR_SCORING_VERSION, SWR_TASK_IDS } from '@roar-platform/assessment-schema/roar-swr';
 import { SRE_SCORING_VERSION, SRE_TASK_IDS } from '@roar-platform/assessment-schema/roar-sre';
@@ -171,7 +170,7 @@ export function AggregationService({
       // Which name holds the percentile or raw score varies by task, grade, and
       // scoring version — resolve against the scoring config rather than assuming.
       // The run's own version, not the variant's: it reflects how this run was scored.
-      const scoringVersion = parseScoreValue(scoreMap.get(SCORE_NAME.SCORING_VERSION));
+      const scoringVersion = resolveRunScoringVersion(scoreMap);
       const gradeLevel = getGradeAsNumber(grade);
       const fieldNames = resolveScoreFieldNames(taskSlug, gradeLevel, scoringVersion);
 
@@ -211,7 +210,8 @@ export function AggregationService({
       const taskCounts = aggregatedBySlug[enrichedRun.taskSlug];
       if (!taskCounts) continue;
 
-      // Classify run by support level
+      // Classify run by support level. No assessmentSupportLevel is passed, so an
+      // 'assessment-computed' task would chart nothing if added to SCORED_TASK_IDS.
       const supportLevel = getSupportLevel({
         grade: enrichedRun.grade,
         percentile: enrichedRun.percentile,

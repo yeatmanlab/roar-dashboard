@@ -99,6 +99,7 @@ import {
   getSupportThreshold,
   extractScoringVersions,
   parseScoreValue,
+  resolveRunScoringVersion,
   resolveScoreFieldNames,
   resolveNumericScore,
   PA_SKILL_THRESHOLD,
@@ -2213,40 +2214,6 @@ function applyTaskIdFilter(taskMetas: ReportTaskMeta[], filter: ParsedFilter[]):
   }
 
   return taskMetas.filter((t) => requestedTaskIds.has(t.taskId));
-}
-
-/**
- * Normalise a raw `scoringVersion` value — a JSONB variant parameter or a
- * `run_scores` string — into the integer the scoring service resolves against,
- * or `null` when it isn't one. `null` represents "no known version", which
- * resolves to the default config (minVersion = 0).
- *
- * @param value - Raw value from a variant parameter or a run score row
- * @returns The integer scoring version, or `null` if absent or non-integer
- */
-function parseScoringVersion(value: unknown): number | null {
-  const version = typeof value === 'number' ? value : Number(value);
-  return Number.isInteger(version) ? version : null;
-}
-
-/**
- * Resolve the scoring version a run was scored under, from the run's own stamp.
- *
- * Deliberately does *not* fall back to the variant's declared version. A run
- * carries a stamp only if the assessment was already stamping when it ran, so
- * an absent stamp is not an absent version — it is the last version before
- * stamping was introduced (swr v6, sre v3, pa v3). Each of those sits below its
- * config's stamping threshold, so they all select the `minVersion: 0` entry,
- * which is why `null` resolving to the v0 config is correct rather than a
- * guess. Resolving against a variant declaring (say) v7 instead would look up
- * field names the run never wrote — `percentile` and `rawScore` both come back
- * null and the run drops out of its tallies.
- *
- * @param scoreMap - The run's `run_scores` values, keyed by score name
- * @returns The run's scoring version, or `null` when it carries no stamp
- */
-function resolveRunScoringVersion(scoreMap: Map<string, string>): number | null {
-  return parseScoringVersion(scoreMap.get(SCORE_NAME.SCORING_VERSION));
 }
 
 export function groupVariantsByTaskId(taskMetas: ReportTaskMeta[]): TaskGroup[] {

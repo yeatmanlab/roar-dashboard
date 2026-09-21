@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { SCORE_NAME } from '../../constants/run-scores';
 import {
   parseScoreValue,
+  parseScoringVersion,
+  resolveRunScoringVersion,
   getSupportLevel,
   getScoreDisplay,
   getRawScoreThreshold,
@@ -49,6 +52,48 @@ describe('parseScoreValue', () => {
   it('returns null for non-numeric strings', () => {
     expect(parseScoreValue('abc')).toBeNull();
     expect(parseScoreValue('')).toBeNull();
+  });
+});
+
+describe('parseScoringVersion', () => {
+  it('parses integer strings and numbers', () => {
+    expect(parseScoringVersion('7')).toBe(7);
+    expect(parseScoringVersion(7)).toBe(7);
+    expect(parseScoringVersion(0)).toBe(0);
+  });
+
+  it('returns null for every way of being absent', () => {
+    expect(parseScoringVersion(undefined)).toBeNull();
+    expect(parseScoringVersion(null)).toBeNull();
+    expect(parseScoringVersion('')).toBeNull();
+    expect(parseScoringVersion('   ')).toBeNull();
+  });
+
+  it('returns null for non-integer values', () => {
+    expect(parseScoringVersion('7.5')).toBeNull();
+    expect(parseScoringVersion(7.5)).toBeNull();
+    expect(parseScoringVersion('abc')).toBeNull();
+    expect(parseScoringVersion(true)).toBeNull();
+    expect(parseScoringVersion({})).toBeNull();
+  });
+
+  it('returns null for angle-bracket strings, unlike parseScoreValue', () => {
+    expect(parseScoringVersion('>7')).toBeNull();
+    expect(parseScoreValue('>7')).toBe(7);
+  });
+});
+
+describe('resolveRunScoringVersion', () => {
+  it('reads the run scoring version', () => {
+    expect(resolveRunScoringVersion(new Map([[SCORE_NAME.SCORING_VERSION, '7']]))).toBe(7);
+  });
+
+  it('returns null for missing scoring version', () => {
+    expect(resolveRunScoringVersion(new Map([['roarScore', '500']]))).toBeNull();
+  });
+
+  it('returns null for a non-integer scoring version', () => {
+    expect(resolveRunScoringVersion(new Map([[SCORE_NAME.SCORING_VERSION, '>7']]))).toBeNull();
   });
 });
 
@@ -1199,20 +1244,16 @@ describe('extractScoringVersions', () => {
     expect(versions.size).toBe(0);
   });
 
-  it('ignores values that are not integers', () => {
+  it('records no version when the value is not an integer', () => {
     const versions = extractScoringVersions([
       { taskVariantId: 'variant-1', name: 'scoringVersion', value: 'abc' },
       { taskVariantId: 'variant-2', name: 'scoringVersion', value: 1.5 },
       { taskVariantId: 'variant-3', name: 'scoringVersion', value: undefined },
+      { taskVariantId: 'variant-4', name: 'scoringVersion', value: null },
+      { taskVariantId: 'variant-5', name: 'scoringVersion', value: '' },
     ]);
 
     expect(versions.size).toBe(0);
-  });
-
-  it('reads a null value as v0, the same as an absent parameter', () => {
-    const versions = extractScoringVersions([{ taskVariantId: 'variant-1', name: 'scoringVersion', value: null }]);
-
-    expect(versions.get('variant-1')).toBe(0);
   });
 
   it('takes the last row when a variant has duplicate parameters', () => {

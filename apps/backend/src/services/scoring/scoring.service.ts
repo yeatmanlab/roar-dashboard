@@ -1,4 +1,5 @@
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
+import { SCORE_NAME } from '../../constants/run-scores';
 import type {
   ScoringConfig,
   FieldNameValue,
@@ -42,6 +43,36 @@ export function parseScoreValue(value: string | number | null | undefined): numb
   const stripped = value.replace(ANGLE_BRACKET_PATTERN, '');
   const parsed = parseFloat(stripped);
   return isNaN(parsed) ? null : parsed;
+}
+
+/**
+ * Parse a `scoringVersion` into the integer the versioned configs index by.
+ * Every way of being absent — no value, null, empty string — returns `null`,
+ * so the result reflects the run rather than how the row was written.
+ *
+ * @param value - Raw value from a variant parameter or a run score row
+ * @returns The integer scoring version, or `null` if absent or non-integer
+ */
+export function parseScoringVersion(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isInteger(value) ? value : null;
+  }
+  if (typeof value !== 'string' || value.trim() === '') {
+    return null;
+  }
+  const version = Number(value);
+  return Number.isInteger(version) ? version : null;
+}
+
+/**
+ * Read a run's scoring version. An absent value for swr v6, sre v3, pa v3 is treated
+ * as the floor version.
+ *
+ * @param scoreMap - The run's `run_scores` values, keyed by score name
+ * @returns The run's scoring version, or `null` when it carries no stamp
+ */
+export function resolveRunScoringVersion(scoreMap: Map<string, string>): number | null {
+  return parseScoringVersion(scoreMap.get(SCORE_NAME.SCORING_VERSION));
 }
 
 // --- Versioned array resolution ---
@@ -298,7 +329,6 @@ export function getScoreRange(
 /**
  * Extract a `taskVariantId → scoringVersion` map from `task_variant_parameters` rows.
  * Drives version-aware classification and range resolution across score reporting.
- * A JSON `null` is the exception: `Number(null)` is 0, resolving to the default config.
  *
  * @param params - `task_variant_parameters` rows for the variants of interest
  * @returns Map of task variant ID to scoring version; invalid variants are omitted
@@ -309,8 +339,8 @@ export function extractScoringVersions(
   const map = new Map<string, number>();
   for (const param of params) {
     if (param.name !== 'scoringVersion') continue;
-    const version = typeof param.value === 'number' ? param.value : Number(param.value);
-    if (Number.isInteger(version)) {
+    const version = parseScoringVersion(param.value);
+    if (version !== null) {
       map.set(param.taskVariantId, version);
     }
   }

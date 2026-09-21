@@ -1,5 +1,6 @@
 export {
   parseScoreValue,
+  resolveRunScoringVersion,
   getSupportLevel,
   getScoreDisplay,
   getScoreRange,
