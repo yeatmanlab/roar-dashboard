@@ -103,6 +103,10 @@
           :pre-existing-assessment-info="existingAssessments"
           @variants-changed="handleVariantsChanged"
         />
+        <small v-if="variantResolutionErrors.length" class="p-error mt-2 block">
+          {{ variantResolutionErrors.map((error) => error.message).join(' ') }} Select a replacement for each affected
+          task before saving.
+        </small>
 
         <div class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
@@ -141,7 +145,7 @@
               class="text-white bg-primary border-none border-round h-3rem p-3 hover:bg-red-900"
               data-cy="button-create-administration"
               style="margin: 0"
-              :disabled="isSubmitting || !userCan(submitPermission)"
+              :disabled="isSubmitting || variantResolutionErrors.length > 0 || !userCan(submitPermission)"
               @click="submit"
             >
               <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2"></i> {{ submitLabel }}
@@ -171,8 +175,6 @@ import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
 import _forEach from 'lodash/forEach';
-import _find from 'lodash/find';
-import _isEqual from 'lodash/isEqual';
 import _union from 'lodash/union';
 import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
@@ -196,6 +198,7 @@ import { APP_ROUTES, ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 import { ORG_TYPES } from '@/constants/orgTypes';
 import { usePermissions } from '@/composables/usePermissions';
+import { findAdministrationVariant } from '@/helpers/findAdministrationVariant';
 import AdministrationDatePicker from '@/components/AdministrationDatePicker';
 const { userCan, Permissions } = usePermissions();
 
@@ -249,18 +252,6 @@ const submitPermission = computed(() => {
 
   return Permissions.Administrations.CREATE;
 });
-
-// +------------------------------------------------------------------------------------------------------------------+
-// | Fetch Variants with Params
-// +------------------------------------------------------------------------------------------------------------------+
-const findVariantWithParams = (variants, params) => {
-  // TODO: implement tie breakers if found.length > 1
-  return _find(variants, (variant) => {
-    const cleanVariantParams = removeNull(variant.variant.params);
-    const cleanInputParams = removeNull(params);
-    return _isEqual(cleanInputParams, cleanVariantParams);
-  });
-};
 
 const { data: allVariants } = useTaskVariantsQuery(false, {
   enabled: initialized,
@@ -398,6 +389,7 @@ const selection = (selected) => {
 // +------------------------------------------------------------------------------------------------------------------+
 const variants = ref([]);
 const preSelectedVariants = ref([]);
+const variantResolutionErrors = ref([]);
 const nonUniqueTasks = ref('');
 
 const variantsByTaskId = computed(() => {
@@ -405,20 +397,24 @@ const variantsByTaskId = computed(() => {
 });
 
 const handleFoundVariant = (assessment, allVariants) => {
-  const { conditions: assessmentConditions = undefined, params: assessmentParams, taskId } = assessment;
-  const allVariantsForThisTask = _filter(allVariants, (variant) => variant.task.id === taskId);
-  const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
-  if (found) {
-    const clonedFound = _cloneDeep(found);
-    // Set conditions from assessment, or undefined if no conditions exist
-    clonedFound.variant.conditions = !_isEmpty(assessmentConditions) ? assessmentConditions : undefined;
-    preSelectedVariants.value = _union(preSelectedVariants.value, [clonedFound]);
-    variants.value = _union(variants.value, [clonedFound]);
+  try {
+    const found = findAdministrationVariant(assessment, allVariants);
+    if (found) {
+      const clonedFound = _cloneDeep(found);
+      // Set conditions from assessment, or undefined if no conditions exist
+      clonedFound.variant.conditions = !_isEmpty(assessment.conditions) ? assessment.conditions : undefined;
+      preSelectedVariants.value = _union(preSelectedVariants.value, [clonedFound]);
+      variants.value = _union(variants.value, [clonedFound]);
+    }
+  } catch (error) {
+    variantResolutionErrors.value.push({ taskId: assessment.taskId, message: error.message });
   }
 };
 
 const handleVariantsChanged = (newVariants) => {
   variants.value = newVariants;
+  const selectedTaskIds = new Set(newVariants.map((variant) => variant.task.id));
+  variantResolutionErrors.value = variantResolutionErrors.value.filter((error) => !selectedTaskIds.has(error.taskId));
 };
 
 const handleConsentSelected = (newConsentAssent) => {
@@ -457,11 +453,6 @@ const checkForRequiredOrgs = (orgs) => {
 // +------------------------------------------------------------------------------------------------------------------+
 // | Form submission
 // +------------------------------------------------------------------------------------------------------------------+
-const removeNull = (obj) => {
-  // eslint-disable-next-line no-unused-vars
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== null));
-};
-
 const removeUndefined = (obj) => {
   // eslint-disable-next-line no-unused-vars
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
@@ -606,6 +597,7 @@ watch(
       });
       state.dateStarted = new Date(adminInfo.dateOpened);
       state.dateClosed = new Date(adminInfo.dateClosed);
+      variantResolutionErrors.value = [];
       _forEach(adminInfo.assessments, (assessment) => {
         handleFoundVariant(assessment, allVariantInfo);
       });
