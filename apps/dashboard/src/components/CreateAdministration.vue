@@ -584,6 +584,13 @@ watch(
       // stale-while-revalidate, so a refetch (on mount, or on window refocus past the 10 minute
       // staleTime) emits a fresh data reference for unchanged data. Re-hydrating would append the
       // saved assessments a second time and overwrite whatever the user has edited so far.
+      //
+      // Latching unconditionally assumes a non-empty variants payload is a complete one, which
+      // holds today: useTaskVariantsQuery is a single un-paginated query independent of adminId,
+      // so its data goes straight from undefined to the full list. A first pass that failed to
+      // resolve a variant is therefore frozen in place, and recovering means reloading the page.
+      // Latching only on an error-free pass is not the fix — a later refetch would then discard
+      // the replacement variant the user had just picked.
       if (hydratedAdministrationId.value === props.adminId) return;
       hydratedAdministrationId.value = props.adminId;
 
