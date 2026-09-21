@@ -61,15 +61,12 @@ const DEFAULT_DEMOGRAPHICS = {
  */
 const ScoreField = {
   /**
-   * Percentile field for swr, sre, pa, and other percentile-then-rawscore
-   * tasks. Note: `swr.json` makes this version-conditional (`percentile`
-   * for scoringVersion ≥ 7, `wjPercentile` for legacy versions). Tests
-   * here use the modern (post-version-7) field name; `resolveScoreFieldNames`
-   * returns both candidates and the service walks them in priority order,
-   * so the modern name matches when `scoringVersion` is `null` or ≥ 7.
+   * Percentile field for percentile-then-rawscore tasks. Which version writes
+   * it is per-task: swr only from v7, pa from its floor entry below grade 6.
+   * A fixture using it on swr or sre must stamp a version; on pa it need not.
    */
   PERCENTILE: 'percentile',
-  /** Legacy (pre-v7) `swr` percentile field — what a v0 run actually wrote. */
+  /** Pre-v7 `swr` percentile field — what an unstamped (v6) swr run wrote. */
   SWR_LEGACY_PERCENTILE: 'wjPercentile',
   /** Raw-score field for `swr` (see `services/scoring/configs/swr.ts`). */
   SWR_RAW_SCORE: 'roarScore',
@@ -162,13 +159,12 @@ describe('ReportService', () => {
   ];
 
   /**
-   * Scoring version the default fixtures declare on every task variant.
+   * Version the default fixtures stamp, on runs and on task variants.
    *
-   * Field names resolve per version, so a fixture writing a modern score name
-   * has to declare the version that introduced it — swr's `percentile` arrives
-   * at v7, and a variant with no declared version resolves as v0, which reads
-   * `wjPercentile`. Tests exercising legacy behaviour override this or use the
-   * v0-era field names in `ScoreField`.
+   * A run resolves on its own stamp, so a fixture writing a field that only
+   * exists above its task's stamping threshold (swr/sre `percentile`) must
+   * stamp one. Unstamped fixtures are legitimate everywhere else and are left
+   * unstamped deliberately — that is the floor-entry path.
    */
   const DEFAULT_SCORING_VERSION = 7;
 
@@ -1645,7 +1641,9 @@ describe('ReportService', () => {
       // Variant A has high percentile (achievedSkill); variant B has low (would be needsExtraSupport)
       const scoreRows = [
         buildScoreRow('student-1', 'var-a', ScoreField.PERCENTILE, '90'),
+        buildScoreRow('student-1', 'var-a', ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)),
         buildScoreRow('student-1', 'var-b', ScoreField.PERCENTILE, '10'),
+        buildScoreRow('student-1', 'var-b', ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)),
       ];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
@@ -1724,16 +1722,22 @@ describe('ReportService', () => {
 
     // --- Scoring version ---
 
-    it('passes scoring version from task variant parameters into scoring logic', async () => {
+    it('ignores the variant scoring version, classifying on the run stamp alone', async () => {
+      // The variant declares v7 but the run was stamped v3 and wrote the legacy
+      // field. Consulting the variant would resolve `percentile`, find nothing,
+      // and drop the student — so the overview no longer reads variant params.
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '50')];
+      const scoreRows = [
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SWR_LEGACY_PERCENTILE, '45'),
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SCORING_VERSION, '3'),
+      ];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
       mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([
         {
           taskVariantId: VARIANT_ID_1,
           name: 'scoringVersion',
-          value: 2,
+          value: 7,
           createdAt: new Date(),
           updatedAt: null,
         },
@@ -1742,12 +1746,11 @@ describe('ReportService', () => {
       const service = createService();
       const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
 
-      // Repository is consulted for scoring versions
-      expect(mockTaskVariantParameterRepository.getByTaskVariantIds).toHaveBeenCalledWith(
-        testTaskMetas.map((t) => t.taskVariantId),
-      );
-      // And the call completes successfully
-      expect(result.tasks).toHaveLength(testTaskMetas.length);
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      // v3 → floor cutoffs (achieved 50): 45 < 50 → developingSkill, not achieved.
+      expect(swrTask.supportLevels.developingSkill.count).toBe(1);
+      expect(swrTask.supportLevels.achievedSkill.count).toBe(0);
+      expect(mockTaskVariantParameterRepository.getByTaskVariantIds).not.toHaveBeenCalled();
     });
 
     // --- Error handling ---
@@ -1951,13 +1954,13 @@ describe('ReportService', () => {
 
     it('accepts string-numeric scoringVersion values', async () => {
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '45')];
+      // The run's own stamp is a string; Number('7') = 7 → v7 cutoffs applied.
+      const scoreRows = [
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '45'),
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SCORING_VERSION, '7'),
+      ];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
-      // String '7' → Number('7') = 7 → v7 cutoffs applied
-      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([
-        { taskVariantId: VARIANT_ID_1, name: 'scoringVersion', value: '7', createdAt: new Date(), updatedAt: null },
-      ]);
 
       const service = createService();
       const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
@@ -1992,11 +1995,12 @@ describe('ReportService', () => {
       expect(swrTask.supportLevels.achievedSkill.count).toBe(0);
     });
 
-    it('falls back to the variant parameter when the run carries no scoringVersion', async () => {
-      // Assessments stamp the version only when the norm lookup hits, so an
-      // unstamped run still has to resolve against the variant's declared v7.
+    it('resolves an unstamped run as v0, ignoring the variant declaration', async () => {
+      // An unstamped run only ever carries the v0-era field names, so the
+      // variant's v7 must not pull it onto the v7 norming table. Reading v0
+      // finds wjPercentile=45 and applies v0 cutoffs: 45 < 50 -> developing.
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '45')];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SWR_LEGACY_PERCENTILE, '45')];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
       mockScoringVersionParams(7);
@@ -2005,14 +2009,14 @@ describe('ReportService', () => {
       const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
 
       const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
-      expect(swrTask.supportLevels.achievedSkill.count).toBe(1);
-      expect(swrTask.supportLevels.developingSkill.count).toBe(0);
+      expect(swrTask.supportLevels.developingSkill.count).toBe(1);
+      expect(swrTask.supportLevels.achievedSkill.count).toBe(0);
     });
 
     it('treats an explicit v0 stamp as a version, not as a missing one', async () => {
-      // Guards the `??` in resolveRunScoringVersion: a truthiness check would
-      // read 0 as absent and fall back to the variant's v7, which reads a field
-      // this run never wrote.
+      // Guards the parse in resolveRunScoringVersion: a truthiness check would
+      // read 0 as absent, which is indistinguishable from unstamped here but
+      // would diverge if the fallback were ever reintroduced.
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
       const scoreRows = [
         buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SWR_LEGACY_PERCENTILE, '45'),
@@ -2084,7 +2088,10 @@ describe('ReportService', () => {
       // Newer norming tables encode extreme values as ">99" or "<1". parseScoreValue
       // strips the brackets so the score is still classifiable.
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '>99')];
+      const scoreRows = [
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '>99'),
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)),
+      ];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
 
@@ -2093,8 +2100,25 @@ describe('ReportService', () => {
 
       const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
       expect(swrTask.totalAssessed).toBe(1);
-      // 99 (after bracket strip) >= 50 (v0 swr achieved cutoff) → achievedSkill
+      // 99 (after bracket strip) >= 40 (v7 swr achieved cutoff) → achievedSkill
       expect(swrTask.supportLevels.achievedSkill.count).toBe(1);
+    });
+
+    it('classifies an unstamped pa run below grade 6 on the floor cutoffs, not v5', async () => {
+      // pa stamped from V4_ADAPTIVE, so unstamped is v3 → floor cutoffs
+      // (achieved 50). Under v5's (achieved 40) this run would read achieved.
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_3, ScoreField.PERCENTILE, '45')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const paTask = result.tasks.find((t) => t.taskId === TASK_ID_3)!;
+      expect(paTask.totalAssessed).toBe(1);
+      expect(paTask.supportLevels.developingSkill.count).toBe(1);
+      expect(paTask.supportLevels.achievedSkill.count).toBe(0);
     });
 
     // --- No resolvable score path ---
@@ -2343,9 +2367,13 @@ describe('ReportService', () => {
       ];
       const scoreRows = [
         buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '90'),
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)),
         buildScoreRow('student-2', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('student-2', VARIANT_ID_1, ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)),
         buildScoreRow('student-3', VARIANT_ID_1, ScoreField.PERCENTILE, '10'),
+        buildScoreRow('student-3', VARIANT_ID_1, ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)),
         buildScoreRow('student-4', VARIANT_ID_1, ScoreField.PERCENTILE, '95'),
+        buildScoreRow('student-4', VARIANT_ID_1, ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)),
       ];
       setupDefaultFacetsMocks(students, scoreRows);
 
@@ -2508,9 +2536,30 @@ describe('ReportService', () => {
 
     // --- Bin edges and bin-edge stability ---
 
+    it('reads an unstamped run at its own version, not the variant declaration', async () => {
+      // Bin *edges* are cohort-level and not what this asserts.
+      const students = [buildFacetStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SWR_LEGACY_PERCENTILE, '45')];
+      setupDefaultFacetsMocks(students, scoreRows);
+      mockScoringVersionParams(7);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      const gradeEntry = swrTask.scoreBinsByGrade.find((e) => e.grade === '3')!;
+      expect(gradeEntry.percentile.reduce((sum, bin) => sum + bin.count, 0)).toBe(1);
+      // v6 → floor cutoffs (achieved 50): 45 lands in developingSkill.
+      const grade3 = swrTask.supportLevelByGrade.find((e) => e.grade === '3')!;
+      expect(grade3.developingSkill.count).toBe(1);
+    });
+
     it('returns 10 fixed percentile bins covering 0–100 with width 10', async () => {
       const students = [buildFacetStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '50')];
+      const scoreRows = [
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)),
+      ];
       setupDefaultFacetsMocks(students, scoreRows);
 
       const service = createService();
@@ -2543,7 +2592,9 @@ describe('ReportService', () => {
       ];
       const scoreRows = [
         buildScoreRow('student-max', VARIANT_ID_1, ScoreField.PERCENTILE, '100'),
+        buildScoreRow('student-max', VARIANT_ID_1, ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)),
         buildScoreRow('student-min', VARIANT_ID_1, ScoreField.PERCENTILE, '0'),
+        buildScoreRow('student-min', VARIANT_ID_1, ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)),
       ];
       setupDefaultFacetsMocks(students, scoreRows);
 
@@ -3209,7 +3260,15 @@ describe('ReportService', () => {
         runs: new Map([
           [VARIANT_ID_1, { runId: 'run-1', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01') }],
         ]),
-        scores: new Map([[VARIANT_ID_1, new Map([[ScoreField.PERCENTILE, '90']])]]),
+        scores: new Map([
+          [
+            VARIANT_ID_1,
+            new Map([
+              [ScoreField.PERCENTILE, '90'],
+              [ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)],
+            ]),
+          ],
+        ]),
       });
       setupDefaultStudentScoresMocks([row], 1);
 
@@ -3308,6 +3367,7 @@ describe('ReportService', () => {
             new Map([
               [ScoreField.PERCENTILE, '90.7'],
               [ScoreField.SWR_RAW_SCORE, '512.4'],
+              [ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)],
             ]),
           ],
         ]),
@@ -3380,8 +3440,20 @@ describe('ReportService', () => {
           ],
         ]),
         scores: new Map([
-          ['var-a', new Map([[ScoreField.PERCENTILE, '90']])],
-          ['var-b', new Map([[ScoreField.PERCENTILE, '10']])],
+          [
+            'var-a',
+            new Map([
+              [ScoreField.PERCENTILE, '90'],
+              [ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)],
+            ]),
+          ],
+          [
+            'var-b',
+            new Map([
+              [ScoreField.PERCENTILE, '10'],
+              [ScoreField.SCORING_VERSION, String(DEFAULT_SCORING_VERSION)],
+            ]),
+          ],
         ]),
       });
       setupDefaultStudentScoresMocks([row], 1);
@@ -3632,7 +3704,10 @@ describe('ReportService', () => {
         scoreName: ScoreField.PERCENTILE,
         scoreValue: '90',
       };
-      mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        completedScoreRow,
+        { ...completedScoreRow, scoreName: ScoreField.SCORING_VERSION, scoreValue: String(DEFAULT_SCORING_VERSION) },
+      ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
           runId: 'run-1',
@@ -4023,7 +4098,10 @@ describe('ReportService', () => {
         scoreName: ScoreField.PERCENTILE,
         scoreValue: '65',
       };
-      mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        completedScoreRow,
+        { ...completedScoreRow, scoreName: ScoreField.SCORING_VERSION, scoreValue: String(DEFAULT_SCORING_VERSION) },
+      ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
           runId: 'run-1',
@@ -4273,6 +4351,20 @@ describe('ReportService', () => {
         it('reads the shared field for a v5 run', async () => {
           expect(await paPercentileForVersion('5')).toBe(99);
         });
+      });
+
+      // Unstamped pa is v3, whose floor entry resolves `percentile` below
+      // grade 6 — the same name v5 uses. So the row is real, not malformed.
+      it('reads an unstamped pa run below grade 6 from the floor entry', async () => {
+        setupHistoricalRun([{ scoreName: ScoreField.PERCENTILE, scoreValue: '45' }], {
+          taskId: TASK_ID_3,
+          taskVariantId: VARIANT_ID_3,
+          grade: '3',
+        });
+
+        const historical = (await historicalScoresFor(TASK_ID_3))[0]!;
+        expect(historical.scores.percentile).toBe(45);
+        expect(historical.scores.scoringVersion).toBeNull();
       });
     });
 
@@ -4650,7 +4742,19 @@ describe('ReportService', () => {
       // Student has scores on BOTH variants — variant A wins (lower orderIndex).
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
         { userId: targetUserId, taskVariantId: 'var-a', scoreName: ScoreField.PERCENTILE, scoreValue: '90' },
+        {
+          userId: targetUserId,
+          taskVariantId: 'var-a',
+          scoreName: ScoreField.SCORING_VERSION,
+          scoreValue: String(DEFAULT_SCORING_VERSION),
+        },
         { userId: targetUserId, taskVariantId: 'var-b', scoreName: ScoreField.PERCENTILE, scoreValue: '10' },
+        {
+          userId: targetUserId,
+          taskVariantId: 'var-b',
+          scoreName: ScoreField.SCORING_VERSION,
+          scoreValue: String(DEFAULT_SCORING_VERSION),
+        },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -5022,10 +5126,22 @@ describe('ReportService', () => {
         if (adminId === ADMIN_OLDER.id) {
           return [
             { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '40' },
+            {
+              userId: targetUserId,
+              taskVariantId: VARIANT_ID_1,
+              scoreName: ScoreField.SCORING_VERSION,
+              scoreValue: String(DEFAULT_SCORING_VERSION),
+            },
           ];
         }
         return [
           { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '60' },
+          {
+            userId: targetUserId,
+            taskVariantId: VARIANT_ID_1,
+            scoreName: ScoreField.SCORING_VERSION,
+            scoreValue: String(DEFAULT_SCORING_VERSION),
+          },
         ];
       });
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
@@ -5088,6 +5204,12 @@ describe('ReportService', () => {
         // include only the alt variant's score, which means the primary is skipped
         // and the alt becomes the scored variant.
         { userId: targetUserId, taskVariantId: altVariantId, scoreName: ScoreField.PERCENTILE, scoreValue: '55' },
+        {
+          userId: targetUserId,
+          taskVariantId: altVariantId,
+          scoreName: ScoreField.SCORING_VERSION,
+          scoreValue: String(DEFAULT_SCORING_VERSION),
+        },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
