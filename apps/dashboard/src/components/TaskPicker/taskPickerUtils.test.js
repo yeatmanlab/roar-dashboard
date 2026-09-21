@@ -58,6 +58,24 @@ describe('mergeSelectedVariants', () => {
     expect(result[0].variant.params).toEqual({});
   });
 
+  it('does not overwrite conditions edited after the variant entered the selection', () => {
+    // updateVariant edits conditions on an already-selected card. A later merge must not reset
+    // them to the saved assessment's conditions, so this helper stays correct on its own rather
+    // than relying on the parent never re-supplying inputVariants.
+    const incoming = [makeVariant('variant-a', 'swr')];
+    const preExisting = [{ variantId: 'variant-a', conditions: { assigned: { value: 'saved' } } }];
+
+    const hydrated = mergeSelectedVariants([], incoming, preExisting);
+    const edited = hydrated.map((variant) => ({
+      ...variant,
+      variant: { ...variant.variant, conditions: { assigned: { value: 'edited by the user' } } },
+    }));
+
+    const result = mergeSelectedVariants(edited, incoming, preExisting);
+
+    expect(result[0].variant.conditions).toEqual({ assigned: { value: 'edited by the user' } });
+  });
+
   it('leaves conditions unset for variants without a pre-existing assessment', () => {
     const incoming = [makeVariant('variant-a', 'swr')];
     const preExisting = [{ variantId: 'some-other-variant', conditions: { assigned: {} } }];
