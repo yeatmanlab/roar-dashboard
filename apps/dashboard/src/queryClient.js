@@ -17,8 +17,10 @@ import { ME_QUERY_KEY } from '@/constants/queryKeys';
  *     to redirect to the SignTos flow.
  *
  * The QueryCache's `onError` is the **single** bridge between API errors and
- * `useGlobalError`. App.vue's `meError` watcher only handles navigation; it
- * does not write to global error state. Keeping the mapping in one place
+ * `useGlobalError`. Navigation is equally centralized: the
+ * `useGlobalErrorRedirect` watcher (installed in App.vue) redirects when
+ * `globalError` changes on a settled route, and the router's `beforeEach`
+ * guard enforces it on navigations. Keeping the mapping in one place
  * prevents two surfaces from competing to set or clear the same flag.
  *
  * `useGlobalError` is module-scoped (its state is a `ref` outside any
