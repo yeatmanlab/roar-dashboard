@@ -19,14 +19,14 @@ const mouseInstructions = {
     let mouseImage = null;
     if (store.session.get('desktopTouchScreen')) {
       mouseImage = mediaAssets.images.coreMathResponseK4Mobile;
-      if (store.session.get('grade') > 4) {
+      /*if (store.session.get('grade') > 4) {
         mouseImage = mediaAssets.images.coreMathResponseMobile;
-      }
+      }*/
     } else {
       mouseImage = mediaAssets.images.coreMathResponseK4;
-      if (store.session.get('grade') > 4) {
+      /*if (store.session.get('grade') > 4) {
         mouseImage = mediaAssets.images.coreMathResponse;
-      }
+      }*/
     }
 
     let responseMode =
@@ -100,7 +100,7 @@ const timeInstructions = {
   },
   prompt: () => {
     let diameter = 2 * Math.round(window.innerWidth * 0.04);
-    if (store.session.get('grade') > 4) {
+    /*if (store.session.get('grade') > 4) {
       return `
         <div class="jspsych-content-modified">
           <h2 class="title">${i18next.t('instructions.text1')}</h2>
@@ -126,8 +126,8 @@ const timeInstructions = {
           <p class="instructions-text">${i18next.t('instructions.core-math.text9')}</p>
         </div>
         `;
-    } else {
-      return `
+    } else {*/
+    return `
         <div class="jspsych-content-modified">
           <h2 class="title">${i18next.t('instructions.text1')}</h2>
           <p class="instructions-text">${i18next.t('instructions.core-math.text8')}</p>
@@ -153,7 +153,7 @@ const timeInstructions = {
           <p class="instructions-text">${i18next.t('instructions.core-math.text9')}</p>
         </div>
         `;
-    }
+    //}
   },
   keyboard_choices: () => [],
   button_choices: () => [''],
@@ -286,7 +286,7 @@ const preTaskCheck = {
   },
 };
 
-const ifAudioInstructions = {
+/*const ifAudioInstructions = {
   timeline: [audioInstructions],
   conditional_function: () => {
     if (store.session.get('grade') > 4) {
@@ -294,7 +294,7 @@ const ifAudioInstructions = {
     }
     return true;
   },
-};
+};*/
 
 const ifTimeInstructions = {
   timeline: [timeInstructions],
@@ -308,5 +308,5 @@ const ifTimeInstructions = {
 };
 
 export const instructions = {
-  timeline: [mouseInstructions, ifAudioInstructions, ifTimeInstructions, pencilPaper, preTaskCheck],
+  timeline: [mouseInstructions, audioInstructions, ifTimeInstructions, pencilPaper, preTaskCheck],
 };

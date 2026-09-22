@@ -23,7 +23,7 @@ export const numberLine = (corpusName, assessment_stage_val) => {
       //to set the dimensions of the timer in pixels (make sure it is even)
       let diameter = 2 * Math.round(window.innerWidth * 0.05); //hard code timer to be 10% width of screen
       let replayButton = ``;
-      if (store.session.get('replayButton') && store.session.get('nextStimulus').audio_file !== '') {
+      if (store.session.get('nextStimulus').audio_file !== '') {
         replayButton = `<img id="replay" draggable="false" src="${mediaAssets.images.iconSpeaker}" alt="replay"/>`;
       }
 
@@ -98,7 +98,7 @@ export const numberLine = (corpusName, assessment_stage_val) => {
         source.connect(jsPsychAudioCtx.destination);
         source.start(0);
       }
-      if (store.session.get('replayButton') && store.session.get('nextStimulus').audio_file !== '') {
+      if (store.session.get('nextStimulus').audio_file !== '') {
         const replayBtn = document.getElementById('replay');
         replayBtn.addEventListener('click', replayAudio);
         //play audio immediately when item loads
