@@ -11,6 +11,7 @@ import type { ReportScope, ReportTaskMeta, ProgressOverviewCountsResult } from '
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
 import { RunDemographicsFactory } from '../test-support/factories/run-demographics.factory';
+import { RunScoreFactory } from '../test-support/factories/run-score.factory';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
 import { AdministrationClassFactory } from '../test-support/factories/administration-class.factory';
@@ -1784,25 +1785,52 @@ describe('ReportRepository admin-aware enrollment overlap — #1792', () => {
 
 describe('ReportRepository — run_demographics grade join', () => {
   it('returns the grade recorded on the run, not the student current grade', async () => {
+    // Latest completedAt for this (user, variant) in this administration, so
+    // getStudentScores' most-recent-run dedup selects this run. It is also the
+    // only one of them carrying score rows, which getCompletedRunScores
+    // inner-joins on.
     const run = await RunFactory.create({
       userId: baseFixture.schoolAStudent.id,
       taskId,
       taskVariantId: allGradesVariantId,
       administrationId,
       useForReporting: true,
-      completedAt: new Date('2025-06-15T10:00:00Z'),
+      completedAt: new Date('2025-06-20T10:00:00Z'),
     });
     await RunDemographicsFactory.create({ runId: run.id, grade: '5' });
+    await RunScoreFactory.create({ runId: run.id, name: 'percentile', value: '60' });
 
-    const historical = await repo.getHistoricalRunsForUser(baseFixture.schoolAStudent.id, baseAdminWindow.dateStart, [
-      taskId,
-    ]);
-    const completed = await repo.getCompletedRunsForUser(administrationId, baseFixture.schoolAStudent.id, [
-      allGradesVariantId,
-    ]);
+    const studentId = baseFixture.schoolAStudent.id;
+    const historical = await repo.getHistoricalRunsForUser(studentId, baseAdminWindow.dateStart, [taskId]);
+    const completed = await repo.getCompletedRunsForUser(administrationId, studentId, [allGradesVariantId]);
+    const scoreRows = await repo.getCompletedRunScores(administrationId, [studentId], [allGradesVariantId]);
+    const studentScores = await repo.getStudentScores(
+      administrationId,
+      districtScope,
+      baseAdminWindow,
+      [
+        {
+          taskId,
+          taskVariantId: allGradesVariantId,
+          taskSlug: 'swr',
+          taskName: 'ROAR - Word',
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
+      ],
+      { ...defaultOptions, perPage: 100 },
+    );
 
     expect(historical.find((r) => r.runId === run.id)!.grade).toBe('5');
     expect(completed.find((r) => r.runId === run.id)!.grade).toBe('5');
+
+    // Score rows carry the snapshot grade plus the run identity callers narrow by.
+    const scoreRow = scoreRows.find((r) => r.scoreName === 'percentile')!;
+    expect(scoreRow.runGrade).toBe('5');
+    expect(scoreRow.runId).toBe(run.id);
+
+    expect(studentScores.items.find((r) => r.userId === studentId)!.runs.get(allGradesVariantId)!.grade).toBe('5');
   });
 
   it('still returns a run that has no demographics snapshot, with a null grade', async () => {

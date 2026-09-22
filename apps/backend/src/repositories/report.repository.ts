@@ -228,6 +228,9 @@ export interface RunScoreRow {
   scoreDomain?: string;
   scoreName: string;
   scoreValue: string;
+  runGrade: string | null;
+  runId: string;
+  completedAt: Date | null;
 }
 
 /** Score field type used in dynamic sort/filter on the student-scores endpoint. */
@@ -416,7 +419,17 @@ export interface StudentScoreQueryRow {
    * can pick the most recent completed run per (user, variant) without an extra
    * lookup, and surfaced for any consumer that wants to display recency.
    */
-  runs: Map<string, { runId: string; reliable: boolean | null; engagementFlags: string[]; completedAt: Date | null }>;
+  runs: Map<
+    string,
+    {
+      runId: string;
+      reliable: boolean | null;
+      engagementFlags: string[];
+      completedAt: Date | null;
+      /** Grade at the time of the run, from the `run_demographics` snapshot. Null when no snapshot row exists. */
+      grade: string | null;
+    }
+  >;
   /** Map of taskVariantId → score field name → value (raw text from run_scores). */
   scores: Map<string, Map<string, string>>;
   /** Synthetic foundational-composite run scores, keyed by run_scores.name. */
@@ -2065,14 +2078,13 @@ export class ReportRepository {
    * reporting-eligible. Mirrors the run filters used in `getProgressStudents`.
    *
    * Run-level dedup: this query does not de-duplicate at the run level — it returns
-   * every score row for every matching run. The caller (`buildScoreLookup`) folds
-   * scores into a `userId → taskVariantId → scoreName → value` map, with last-row-wins
-   * on duplicate `(userId, taskVariantId, scoreName)` triples. That is correct only
-   * if the assessment side guarantees at most one `useForReporting=true`,
-   * non-aborted, non-deleted completed run per (user, variant). If that invariant
-   * is ever broken, multi-run scoring will silently pick the last-fetched row's
-   * value rather than e.g. the most recent one — surface this assumption here so
-   * any future change to assessment-side run lifecycle gets reviewed against it.
+   * every score row for every matching run, each tagged with its `runId` and
+   * `completedAt`. The assessment side is expected to guarantee at most one
+   * `useForReporting=true`, non-aborted, non-deleted completed run per
+   * (user, variant), in which case there is nothing to de-duplicate. Because
+   * nothing here enforces that, the caller (`selectLatestRunRows`) narrows to the
+   * most recently completed run per (user, variant) before folding, matching the
+   * recency dedup the run-metadata queries already apply.
    *
    * @param administrationId - The administration ID
    * @param studentIds - Student user IDs to fetch scores for
@@ -2095,9 +2107,14 @@ export class ReportRepository {
         scoreDomain: fdwRunScores.domain,
         scoreName: fdwRunScores.name,
         scoreValue: fdwRunScores.value,
+        runGrade: runDemographics.grade,
+        runId: fdwRuns.id,
+        completedAt: fdwRuns.completedAt,
       })
       .from(fdwRuns)
       .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
+      // Nothing guarantees a snapshot row (no cross-DB FK) so we left join.
+      .leftJoin(runDemographics, eq(runDemographics.runId, fdwRuns.id))
       .where(
         and(
           eq(fdwRuns.administrationId, administrationId),
@@ -2380,8 +2397,11 @@ export class ReportRepository {
           reliableRun: fdwRuns.reliableRun,
           engagementFlags: fdwRuns.engagementFlags,
           completedAt: fdwRuns.completedAt,
+          grade: runDemographics.grade,
         })
         .from(fdwRuns)
+        // Nothing guarantees a snapshot row (no cross-DB FK) so we left join.
+        .leftJoin(runDemographics, eq(runDemographics.runId, fdwRuns.id))
         .where(
           and(
             eq(fdwRuns.administrationId, administrationId),
@@ -2409,6 +2429,7 @@ export class ReportRepository {
             reliable: r.reliableRun,
             engagementFlags: Array.isArray(r.engagementFlags) ? (r.engagementFlags as string[]) : [],
             completedAt: r.completedAt,
+            grade: r.grade,
           });
         }
       }
