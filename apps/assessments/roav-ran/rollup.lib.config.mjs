@@ -42,7 +42,10 @@ export default defineConfig({
     assetFileNames: '[name][extname]',
     sourcemap: true,
   },
-  // Workspace deps and peer deps are externalized — consumers provide these themselves.
+  // `assessment-schema` is deliberately bundled rather than externalized: it is pure constants
+  // and pure functions, so duplicate copies behave identically, and inlining pins each
+  // assessment to the vocabulary it was built and tested against. `firebase` is absent from
+  // the bundle because nothing under src/ imports it, not because this list externalizes it.
   external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@sentry\//],
   plugins: [
     // CSS is injected into the bundle (was extracted to resources/roav-ran.css in the
