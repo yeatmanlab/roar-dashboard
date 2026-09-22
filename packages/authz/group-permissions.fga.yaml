@@ -1,5 +1,5 @@
 name: Group Permissions
-model_file: ../authorization-model.fga
+model_file: authorization-model.fga
 
 tuples:
   # ─── Group memberships (specific roles, not flat "member") ───────
