@@ -70,8 +70,9 @@ export const ScoreReportsContract = c.router({
       'plus reliability and engagement flags.\n\n' +
       'Sorting and filtering accept dynamic `scores.<taskId>.<field>` fields in addition to ' +
       'static user fields. Task IDs in dynamic fields are validated against the administration ' +
-      'and return 400 if unknown. Sorting by support level uses a per-variant SQL CASE ' +
-      "expression built from the scoring config's resolved cutoffs.\n\n" +
+      'and return 400 if unknown. Sorting and filtering by support level use a per-variant ' +
+      "SQL CASE expression built from the scoring config's cutoffs, selected by each run's " +
+      'own `scoringVersion` so they agree with the `supportLevel` in the response.\n\n' +
       'Filter behavior notes:\n' +
       '- `supportLevel:eq:optional` and `supportLevel:in:...,optional,...` are silently dropped ' +
       'from SQL filtering — `optional` is not a classifiable support level, it depends on ' +

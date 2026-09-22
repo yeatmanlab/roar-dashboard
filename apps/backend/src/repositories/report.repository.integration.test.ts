@@ -7,7 +7,12 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { ReportRepository, toReportAdminWindow } from './report.repository';
-import type { ReportScope, ReportTaskMeta, ProgressOverviewCountsResult } from './report.repository';
+import type {
+  ReportScope,
+  ReportTaskMeta,
+  ProgressOverviewCountsResult,
+  ResolvedScoringRules,
+} from './report.repository';
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
 import { RunDemographicsFactory } from '../test-support/factories/run-demographics.factory';
@@ -1854,5 +1859,116 @@ describe('ReportRepository — run_demographics grade join', () => {
     expect(historical.find((r) => r.runId === run.id)!.grade).toBeNull();
     expect(completed.filter((r) => r.runId === run.id)).toHaveLength(1);
     expect(completed.find((r) => r.runId === run.id)!.grade).toBeNull();
+  });
+});
+
+describe('ReportRepository.getStudentScores — supportLevel uses the run scoring version', () => {
+  /** swr's real cutoffs: v7 norms are looser than the pre-stamping v0 norms. */
+  const swrRules: ResolvedScoringRules = {
+    assessmentSupportLevelField: null,
+    percentileCutoffsByVersion: [
+      { minVersion: 7, cutoffs: { achieved: 40, developing: 20 } },
+      { minVersion: 0, cutoffs: { achieved: 50, developing: 25 } },
+    ],
+    rawScoreThresholdsByVersion: [
+      { minVersion: 7, thresholds: { above: 513, some: 413 } },
+      { minVersion: 0, thresholds: { above: 550, some: 400 } },
+    ],
+    percentileBelowGrade: 6,
+    // Both generations of the percentile field name, as the service resolves them.
+    percentileFieldNames: ['percentile', 'wjPercentile'],
+    rawScoreFieldNames: ['rawScore'],
+    standardScoreFieldNames: ['standardScore'],
+  };
+
+  let scope: ReportScope;
+  let adminWindow: { id: string; dateStart: Date; dateEnd: Date };
+  let taskMetas: ReportTaskMeta[];
+  let stampedStudentId: string;
+  let unstampedStudentId: string;
+
+  /**
+   * Two grade-3 students, both percentile 45. Under v7 that is achievedSkill
+   * (>= 40); under v0 it is developingSkill (>= 25, < 50). Only the version
+   * each run was scored under separates them.
+   */
+  beforeAll(async () => {
+    const district = await OrgFactory.create({ orgType: OrgType.DISTRICT, name: 'SupportLevel Version District' });
+    const admin = await AdministrationFactory.create({
+      name: 'SupportLevel Version Admin',
+      createdBy: baseFixture.districtAdmin.id,
+      dateStart: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      dateEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+    await AdministrationOrgFactory.create({ administrationId: admin.id, orgId: district.id });
+    await AdministrationTaskVariantFactory.create({
+      administrationId: admin.id,
+      taskVariantId: allGradesVariantId,
+      orderIndex: 0,
+    });
+
+    adminWindow = toReportAdminWindow(admin);
+    scope = { scopeType: 'district', scopeId: district.id };
+    taskMetas = await repo.getTaskMetadata(admin.id);
+
+    const seedStudent = async (nameLast: string, scores: { name: string; value: string }[]) => {
+      const student = await UserFactory.create({ nameLast, grade: '3' });
+      await UserOrgFactory.create({ userId: student.id, orgId: district.id, role: UserRole.STUDENT });
+      const run = await RunFactory.create({
+        userId: student.id,
+        taskId,
+        taskVariantId: allGradesVariantId,
+        administrationId: admin.id,
+        useForReporting: true,
+        completedAt: new Date(),
+      });
+      for (const score of scores) {
+        await RunScoreFactory.create({ runId: run.id, name: score.name, value: score.value });
+      }
+      return student.id;
+    };
+
+    // Stamped v7 run, written under the v7 field name.
+    stampedStudentId = await seedStudent('SupportLevelStampedV7', [
+      { name: 'percentile', value: '45' },
+      { name: 'scoringVersion', value: '7' },
+    ]);
+    // Pre-stamping run: no scoringVersion row, and the v0 field name.
+    unstampedStudentId = await seedStudent('SupportLevelUnstamped', [{ name: 'wjPercentile', value: '45' }]);
+  });
+
+  const filterBySupportLevel = (priority: string) =>
+    repo.getStudentScores(
+      adminWindow.id,
+      scope,
+      adminWindow,
+      taskMetas,
+      defaultOptions,
+      undefined,
+      null,
+      [
+        {
+          taskVariantId: allGradesVariantId,
+          taskSlug: 'swr',
+          fieldType: 'supportLevel',
+          operator: 'eq',
+          values: [priority],
+        },
+      ],
+      new Map([[allGradesVariantId, swrRules]]),
+    );
+
+  it('classifies a stamped v7 run under the v7 cutoffs', async () => {
+    const result = await filterBySupportLevel('3');
+
+    expect(result.items.map((r) => r.userId)).toEqual([stampedStudentId]);
+    expect(result.totalItems).toBe(1);
+  });
+
+  it('classifies an unstamped run under the v0 cutoffs, not the variant current version', async () => {
+    const result = await filterBySupportLevel('2');
+
+    expect(result.items.map((r) => r.userId)).toEqual([unstampedStudentId]);
+    expect(result.totalItems).toBe(1);
   });
 });

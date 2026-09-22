@@ -982,31 +982,22 @@ export function ReportService({
       // silently swallowed into a 500 by a downstream failure.
       validateDynamicFieldTaskIds(sortBy, filter, primaryVariantByTaskId, taskMetas);
 
-      // 5. Resolve scoring versions per variant
-      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
-      const allParams =
-        taskVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds) : [];
-      const scoringVersionByVariant = extractScoringVersions(allParams);
-
-      // 6. Resolve scoring rules per variant for SQL CASE generation in the repo
+      // 5. Resolve scoring rules per variant for SQL CASE generation in the repo
       const scoringRulesByVariant = new Map<string, ResolvedScoringRules>();
       for (const variant of taskMetas) {
-        scoringRulesByVariant.set(
-          variant.taskVariantId,
-          resolveScoringRulesForVariant(variant.taskSlug, scoringVersionByVariant.get(variant.taskVariantId) ?? null),
-        );
+        scoringRulesByVariant.set(variant.taskVariantId, resolveScoringRulesForVariant(variant.taskSlug));
       }
 
-      // 7. Resolve dynamic sort field (against primary variants)
-      const sortField = resolveDynamicSortField(sortBy, primaryVariantByTaskId, scoringVersionByVariant);
+      // 6. Resolve dynamic sort field (against primary variants)
+      const sortField = resolveDynamicSortField(sortBy, primaryVariantByTaskId);
 
-      // 8. Resolve dynamic score-field filters (against primary variants)
+      // 7. Resolve dynamic score-field filters (against primary variants)
       const userLevelFilters: ParsedFilter[] = [];
       const scoreFieldFilters: StudentScoresFieldFilter[] = [];
       for (const f of filter) {
         if (f.field === 'taskId') continue;
         if (SCORE_TASK_FIELD_PATTERN.test(f.field)) {
-          const filterRef = resolveDynamicFilter(f, primaryVariantByTaskId, scoringVersionByVariant);
+          const filterRef = resolveDynamicFilter(f, primaryVariantByTaskId);
           if (filterRef) scoreFieldFilters.push(filterRef);
           continue;
         }
@@ -1042,7 +1033,7 @@ export function ReportService({
         return { tasks: [], items: [], totalItems: 0, exclusions: { rosteringEnded: exclusionsRosteringEnded } };
       }
 
-      // 9. Determine the static sort column when sorting by a user field.
+      // 8. Determine the static sort column when sorting by a user field.
       // user.schoolName is handled inside the repository as a correlated subquery,
       // so we pass undefined and rely on the dynamic-sort path falling through to
       // the repo's school-name expression. Other static fields use their column.
@@ -1058,7 +1049,7 @@ export function ReportService({
         }
       }
 
-      // 10. Repository call
+      // 9. Repository call
       const result = await reportRepository.getStudentScores(
         administrationId,
         { scopeType, scopeId },
@@ -1073,7 +1064,7 @@ export function ReportService({
         includeFoundationalCompositeScores,
       );
 
-      // 11. Build response — dedupe per taskId, classify, set optional/completed
+      // 10. Build response — dedupe per taskId, classify, set optional/completed
       const tasksOrdered: ServiceTaskMetadata[] = uniqueTaskMetadataInOrder(taskMetas);
 
       // Resolve schoolNames for district-scope rows (not auto-populated by
@@ -2228,9 +2219,8 @@ function applyTaskIdFilter(taskMetas: ReportTaskMeta[], filter: ParsedFilter[]):
 
 /**
  * Extract a `taskVariantId → scoringVersion` map from `task_variant_parameters`
- * rows. Used by every score-reporting endpoint to drive version-aware score
- * classification (`getSupportLevel` resolves cutoffs against the variant's
- * `scoringVersion`).
+ * rows. This is the variant's *declared* version; score classification resolves
+ * against each run's own stamp (`resolveRunScoringVersion`) instead.
  *
  * `Number.isInteger` rejects `NaN`, `±Infinity`, and fractional values (e.g.,
  * a JSONB value of `'1.5'` parses to `1.5`). A `scoringVersion` is always a
@@ -2976,23 +2966,21 @@ function uniqueTaskMetadataInOrder(taskMetas: ReportTaskMeta[]): ServiceTaskMeta
 }
 
 /**
- * Resolve the scoring config for a variant + scoring version into the shape the
- * repository needs for SQL CASE generation. Decouples the repository from the
- * scoring service.
+ * Resolve the scoring config for a variant into the shape the repository needs
+ * for SQL CASE generation. Decouples the repository from the scoring service.
  *
  * Returns an empty rules object for unknown task slugs and for `'none'`
  * classification — those tasks have no support level the SQL CASE can compute.
  *
- * The version is the variant's, not the run's — one CASE is generated per
- * variant, before any run is read. Field names are therefore resolved across
- * *all* versions, so the CASE matches unstamped (v0-named) and stamped runs
- * alike; only the cutoffs, which can't be coalesced, take the variant's version.
+ * Nothing here is version-specific: one CASE is generated per variant, before
+ * any run is read, so both field names and cutoffs are handed over for *all*
+ * versions and the CASE resolves each run against its own stamp.
  */
-function resolveScoringRulesForVariant(taskSlug: string, scoringVersion: number | null): ResolvedScoringRules {
+function resolveScoringRulesForVariant(taskSlug: string): ResolvedScoringRules {
   const empty: ResolvedScoringRules = {
     assessmentSupportLevelField: null,
-    percentileCutoffs: null,
-    rawScoreThresholds: null,
+    percentileCutoffsByVersion: [],
+    rawScoreThresholdsByVersion: [],
     percentileBelowGrade: null,
     percentileFieldNames: [],
     rawScoreFieldNames: [],
@@ -3021,13 +3009,10 @@ function resolveScoringRulesForVariant(taskSlug: string, scoringVersion: number 
   }
 
   // percentile-then-rawscore
-  const version = scoringVersion ?? 0;
-  const pctEntry = config.classification.percentileCutoffs.find((e) => version >= e.minVersion);
-  const rawEntry = config.classification.rawScoreThresholds.find((e) => version >= e.minVersion);
   return {
     ...baseRules,
-    percentileCutoffs: pctEntry?.cutoffs ?? null,
-    rawScoreThresholds: rawEntry?.thresholds ?? null,
+    percentileCutoffsByVersion: config.classification.percentileCutoffs,
+    rawScoreThresholdsByVersion: config.classification.rawScoreThresholds,
     // percentileBelowGrade defaults to 6 (exclusive); null in the config means
     // "use percentile for all grades", which we represent as null in the rules.
     percentileBelowGrade: config.classification.percentileBelowGrade ?? 6,
@@ -3093,7 +3078,6 @@ function validateDynamicFieldTaskIds(
 function resolveDynamicSortField(
   sortBy: string,
   primaryVariantByTaskId: Map<string, ReportTaskMeta>,
-  scoringVersionByVariant: Map<string, number>,
 ): StudentScoresFieldRef | null {
   const parsed = parseScoreFieldString(sortBy);
   if (!parsed) return null;
@@ -3105,7 +3089,6 @@ function resolveDynamicSortField(
     taskVariantId: variant!.taskVariantId,
     taskSlug: variant!.taskSlug,
     fieldType: parsed.fieldType,
-    scoringVersion: scoringVersionByVariant.get(variant!.taskVariantId) ?? null,
   };
 }
 
@@ -3134,7 +3117,6 @@ const SUPPORT_LEVEL_NAME_TO_PRIORITY: Record<string, number> = {
 function resolveDynamicFilter(
   filter: ParsedFilter,
   primaryVariantByTaskId: Map<string, ReportTaskMeta>,
-  scoringVersionByVariant: Map<string, number>,
 ): StudentScoresFieldFilter | null {
   const parsed = parseScoreFieldString(filter.field);
   if (!parsed) return null;
@@ -3161,7 +3143,6 @@ function resolveDynamicFilter(
     taskVariantId: variant!.taskVariantId,
     taskSlug: variant!.taskSlug,
     fieldType: parsed.fieldType,
-    scoringVersion: scoringVersionByVariant.get(variant!.taskVariantId) ?? null,
     operator: filter.operator as StudentScoresFilterOperator,
     values,
   };
