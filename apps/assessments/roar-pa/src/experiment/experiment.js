@@ -26,6 +26,7 @@ import { delIntroductionTrials, delIntroductionTrialsNS, delEnd } from './trials
 import { delPracticeTrials } from './trials/del/practice';
 import { exitFullscreen } from './trials/fullScreen';
 import { writePracticeTrials } from './trials/practice';
+import { installAssessmentLifecycleGuards } from './audioLifecycle';
 import enPractice from './config/corpus/en/practice.csv';
 import enTest from './config/corpus/en/test.csv';
 import enPracticeCat from './config/corpus/en/practice-cat.csv';
@@ -33,6 +34,8 @@ import esPractice from './config/corpus/es/practice.csv';
 import esTest from './config/corpus/es/test.csv';
 import dePractice from './config/corpus/de/practice.csv';
 import deTest from './config/corpus/de/test.csv';
+import ptPractice from './config/corpus/pt/practice.csv';
+import ptTest from './config/corpus/pt/test.csv';
 import enTestCatFoundational from './config/corpus/en/phoneme_foundational_composite.csv';
 import { processCSV } from './config/corpus';
 
@@ -131,6 +134,8 @@ export function buildExperiment(config) {
       files = [esPractice, esTest];
     } else if (i18next.language === 'de') {
       files = [dePractice, deTest];
+    } else if (i18next.language === 'pt') {
+      files = [ptPractice, ptTest];
     } else if (config.isAdaptive) {
       files = [enPracticeCat, enTestCatFoundational];
     } else {
@@ -155,6 +160,7 @@ export function buildExperiment(config) {
 
   // Initialize jsPsych and timeline
   initRoarJsPsych(config);
+  installAssessmentLifecycleGuards();
   const initialTimeline = initRoarTimeline(config);
 
   const timeline = [preloadTrials.fsm, audioSetup, ...initialTimeline.timeline];

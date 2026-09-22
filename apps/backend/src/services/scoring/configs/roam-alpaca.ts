@@ -5,6 +5,59 @@ import {
   ROAM_ALPACA_COMPOSITE_SCORE_NAMES,
 } from '@roar-platform/assessment-schema/roam-apps';
 
+const COMPOSITE_DOMAIN = 'composite';
+
+const alpacaSubtaskColumns = Object.values(ROAM_ALPACA_SUBTASK_DOMAINS).flatMap((domain) => [
+  {
+    kind: 'number' as const,
+    key: `${domain}RawScore`,
+    label: `${domain} Raw Score`,
+    domain,
+    name: ROAM_ALPACA_SUBTASK_SCORE_NAMES.RAW_SCORE,
+    provisional: true,
+  },
+  {
+    kind: 'number' as const,
+    key: `${domain}NumCorrect`,
+    label: `${domain} Num Correct`,
+    domain,
+    name: ROAM_ALPACA_SUBTASK_SCORE_NAMES.NUM_CORRECT,
+    provisional: true,
+  },
+  {
+    kind: 'number' as const,
+    key: `${domain}NumIncorrect`,
+    label: `${domain} Num Incorrect`,
+    domain,
+    name: ROAM_ALPACA_SUBTASK_SCORE_NAMES.NUM_INCORRECT,
+    provisional: true,
+  },
+  {
+    kind: 'number' as const,
+    key: `${domain}NumAttempted`,
+    label: `${domain} Num Attempted`,
+    domain,
+    name: ROAM_ALPACA_SUBTASK_SCORE_NAMES.NUM_ATTEMPTED,
+    provisional: true,
+  },
+  {
+    kind: 'number' as const,
+    key: `${domain}GradeEstimate`,
+    label: `${domain} Grade Estimate`,
+    domain,
+    name: ROAM_ALPACA_SUBTASK_SCORE_NAMES.GRADE_ESTIMATE,
+    provisional: true,
+  },
+  {
+    kind: 'stringPassthrough' as const,
+    key: `${domain}SupportLevel`,
+    label: `${domain} Support Level`,
+    domain,
+    name: ROAM_ALPACA_SUBTASK_SCORE_NAMES.SUPPORT_LEVEL,
+    provisional: true,
+  },
+]);
+
 export default {
   taskSlugs: [ROAM_ALPACA_TASK_IDS.EN, ROAM_ALPACA_TASK_IDS.ES, ROAM_ALPACA_TASK_IDS.PT],
   scoreFields: {
@@ -30,7 +83,48 @@ export default {
       kind: 'number',
       key: 'rawScore',
       label: 'Raw Score',
+      domain: COMPOSITE_DOMAIN,
       name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.ROAR_SCORE,
+      provisional: true,
+    },
+    {
+      kind: 'number',
+      key: 'compositeNumCorrect',
+      label: 'Num Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.NUM_CORRECT,
+      provisional: true,
+    },
+    {
+      kind: 'number',
+      key: 'compositeNumIncorrect',
+      label: 'Num Incorrect',
+      domain: COMPOSITE_DOMAIN,
+      name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.NUM_INCORRECT,
+      provisional: true,
+    },
+    {
+      kind: 'number',
+      key: 'compositeNumAttempted',
+      label: 'Num Attempted',
+      domain: COMPOSITE_DOMAIN,
+      name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.NUM_ATTEMPTED,
+      provisional: true,
+    },
+    {
+      kind: 'number',
+      key: 'gradeEstimate',
+      label: 'Grade Estimate',
+      domain: COMPOSITE_DOMAIN,
+      name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.GRADE_ESTIMATE,
+      provisional: true,
+    },
+    {
+      kind: 'stringPassthrough',
+      key: 'supportLevel',
+      label: 'Support Level',
+      domain: COMPOSITE_DOMAIN,
+      name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.SUPPORT_LEVEL,
       provisional: true,
     },
     {
@@ -73,10 +167,12 @@ export default {
       name: ROAM_ALPACA_SUBTASK_SCORE_NAMES.SUB_PERCENT_CORRECT,
       provisional: true,
     },
+    ...alpacaSubtaskColumns,
     {
       kind: 'stringPassthrough',
       key: 'incorrectSkills',
       label: 'Skills To Work On',
+      domain: COMPOSITE_DOMAIN,
       name: ROAM_ALPACA_COMPOSITE_SCORE_NAMES.INCORRECT_SKILLS,
       provisional: true,
     },

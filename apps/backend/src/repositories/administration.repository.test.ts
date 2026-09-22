@@ -420,4 +420,52 @@ describe('AdministrationRepository', () => {
       expect(result).toEqual({ id: administrationId });
     });
   });
+  describe('contract-union exhaustiveness', () => {
+    // `AdministrationStatus` and `TreeParentEntityType` are owned by the api-contract, so a
+    // member added there passes Zod at the boundary and arrives here unannounced. These tests
+    // pin the runtime half of the guard; the compile-time half is `assertUnreachable`'s `never`
+    // parameter, which fails the build before any of this can run.
+    const PAGINATION = { page: 1, perPage: 25 };
+
+    describe('status filter', () => {
+      it('throws instead of dropping the WHERE clause for an unrecognised status', async () => {
+        await expect(repository.listAll({ ...PAGINATION, status: 'archived' as never })).rejects.toThrow(
+          'Unsupported administration status filter: archived',
+        );
+      });
+
+      it('fails before querying, so no unfiltered result set is ever built', async () => {
+        await expect(repository.listAll({ ...PAGINATION, status: 'archived' as never })).rejects.toThrow();
+
+        expect(mockDb.select).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('getTreeNodes', () => {
+      const administrationId = faker.string.uuid();
+
+      it('throws for an unrecognised parent entity type', async () => {
+        await expect(
+          repository.getTreeNodes(administrationId, 'family' as never, faker.string.uuid(), PAGINATION),
+        ).rejects.toThrow('Unsupported tree parent entity type: family');
+      });
+
+      it('throws when a branching parent type arrives without a parentEntityId', async () => {
+        // AdministrationService rejects this with a 400, but the contract declares both query
+        // params independently optional — an empty page here would read as "no children".
+        await expect(repository.getTreeNodes(administrationId, 'district', undefined, PAGINATION)).rejects.toThrow(
+          'requires a parentEntityId',
+        );
+      });
+
+      it('still returns an empty page for leaf node types', async () => {
+        await expect(
+          repository.getTreeNodes(administrationId, 'class', faker.string.uuid(), PAGINATION),
+        ).resolves.toEqual({ items: [], totalItems: 0 });
+        await expect(
+          repository.getTreeNodes(administrationId, 'group', faker.string.uuid(), PAGINATION),
+        ).resolves.toEqual({ items: [], totalItems: 0 });
+      });
+    });
+  });
 });

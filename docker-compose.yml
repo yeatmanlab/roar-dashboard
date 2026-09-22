@@ -88,4 +88,5 @@ services:
 
 volumes:
   postgres-data:
+    name: roar-postgres-data
   firebase-auth-data:

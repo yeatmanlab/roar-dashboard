@@ -11,8 +11,14 @@ export default {
       { minVersion: SWR_SCORING_VERSION.V7, fieldName: SWR_SCORE_NAMES.PERCENTILE },
       { minVersion: 0, fieldName: SWR_SCORE_NAMES.WJ_PERCENTILE },
     ],
-    standardScore: [{ minVersion: 0, fieldName: SWR_SCORE_NAMES.STANDARD_SCORE }],
-    standardScoreDisplay: [{ minVersion: 0, fieldName: SWR_SCORE_NAMES.STANDARD_SCORE }],
+    standardScore: [
+      { minVersion: SWR_SCORING_VERSION.V7, fieldName: SWR_SCORE_NAMES.STANDARD_SCORE },
+      { minVersion: 0, fieldName: SWR_SCORE_NAMES.STANDARD_SCORE },
+    ],
+    standardScoreDisplay: [
+      { minVersion: SWR_SCORING_VERSION.V7, fieldName: SWR_SCORE_NAMES.STANDARD_SCORE },
+      { minVersion: 0, fieldName: SWR_SCORE_NAMES.STANDARD_SCORE },
+    ],
     rawScore: [{ minVersion: 0, fieldName: SWR_SCORE_NAMES.RAW_SCORE }],
   },
   classification: {

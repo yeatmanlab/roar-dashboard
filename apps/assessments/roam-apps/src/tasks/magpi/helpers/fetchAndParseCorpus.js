@@ -22,6 +22,7 @@ import {
   transformItemsNumLine,
   transformOrderMagpi,
 } from '../../shared/helpers/downloadCSV';
+import { deviceType, primaryInput } from 'detect-it';
 
 export const getCorpusSymComp = async () => {
   let itemBank = {
@@ -176,9 +177,20 @@ export const getCorpusNumLine = async () => {
   return corpusAll;
 };
 
-export const fetchAndParseCorpusMagpi = async () => {
+export const fetchAndParseCorpusMagpi = async (task, assets) => {
   let corpusNL = await getCorpusNumLine();
   let corpusSC = await getCorpusSymComp();
+
+  store.session.set('deviceType', deviceType);
+  store.session.set('primaryInput', primaryInput);
+  // desktop device that has a touch screen
+  store.session.set('desktopTouchScreen', deviceType === 'hybrid' && primaryInput === 'mouse');
+
+  if (store.session.get('desktopTouchScreen')) {
+    assets.default.languageSpecific.device.push('navigation-instruction-mobile.mp3');
+  } else {
+    assets.default.languageSpecific.device.push('navigation-instruction.mp3');
+  }
 
   let corpusAll = {
     numberLine: corpusNL,

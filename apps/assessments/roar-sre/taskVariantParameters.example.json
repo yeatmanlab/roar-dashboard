@@ -26,7 +26,7 @@
     }
   },
   {
-    "variantName": "English — grade-based (v3)",
+    "variantName": "English-grade-based-v3",
     "params": {
       "lng": "en",
       "scoringVersion": 3,
@@ -39,7 +39,7 @@
     }
   },
   {
-    "variantName": "English — age-based (v4, default)",
+    "variantName": "English-age-based-v4-default",
     "params": {
       "lng": "en",
       "scoringVersion": 4,
@@ -52,7 +52,7 @@
     }
   },
   {
-    "variantName": "Spanish v1",
+    "variantName": "Spanish-v1",
     "params": {
       "lng": "es",
       "scoringVersion": 1,
@@ -65,7 +65,7 @@
     }
   },
   {
-    "variantName": "Spanish — age-based (v1)",
+    "variantName": "Spanish-age-based-v1",
     "params": {
       "lng": "es",
       "scoringVersion": 1,
@@ -104,7 +104,7 @@
     }
   },
   {
-    "variantName": "English — fixed forms (90s2BlocksFixedForms)",
+    "variantName": "English-fixed-forms-90s2BlocksFixedForms",
     "params": {
       "lng": "en",
       "scoringVersion": 4,
@@ -117,7 +117,7 @@
     }
   },
   {
-    "variantName": "Italian (stub — translation not yet complete, do not seed)",
+    "variantName": "Italian-stub-translation-not-yet-complete-do-not-seed",
     "params": {
       "lng": "it",
       "scoringVersion": null,

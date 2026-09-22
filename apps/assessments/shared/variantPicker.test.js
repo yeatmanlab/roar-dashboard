@@ -14,7 +14,8 @@ const { mountVariantPicker } = await import('./variantPicker.js');
 const PICKER_ID = 'roar-variant-picker';
 const SELECT_ID = 'roar-variant-picker-select';
 
-const baseArgs = { baseUrl: '/v1', auth: { getToken: vi.fn() }, taskId: 'pa' };
+// Origin only (empty for a same-origin dev build) — the contract supplies the version prefix.
+const baseArgs = { baseUrl: '', auth: { getToken: vi.fn() }, taskId: 'pa' };
 
 /** Build a 200 listTaskVariants envelope for the given variant items. */
 function okResponse(items, totalPages = 1) {

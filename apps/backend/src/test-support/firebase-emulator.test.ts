@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { FirebaseAuthClient } from '../clients/firebase-auth.clients';
 import { EMULATOR_TEST_PASSWORD, emulatorEmailFor, seedFirebaseAuthEmulator } from './firebase-emulator';
@@ -28,6 +28,19 @@ describe('emulatorEmailFor', () => {
 });
 
 describe('seedFirebaseAuthEmulator', () => {
+  // seedFirebaseAuthEmulator() always clears the emulator via a real fetch()
+  // call first (see clearFirebaseAuthEmulator). Stub it so these unit tests
+  // never make a real network call — they should pass with no emulator running.
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('refuses to seed when FIREBASE_AUTH_EMULATOR_HOST is not set', async () => {
     await expect(seedFirebaseAuthEmulator([{ authId: 'uid-1' }])).rejects.toThrow(
       /FIREBASE_AUTH_EMULATOR_HOST is not set/,

@@ -12,6 +12,7 @@ import {
 } from '../../experimentHelpers';
 import { mediaAssets } from '../../experiment';
 import { lsmBreak } from './instructions';
+import { SHORT_AUDIO_END_FALLBACK_MS } from '../../audioLifecycle';
 
 export const lsmTestTrials = {
   timeline: [
@@ -78,6 +79,7 @@ export const lsmTestTrials = {
       choices: [],
       response_allowed_while_playing: false,
       trial_ends_after_audio: true,
+      trial_duration: SHORT_AUDIO_END_FALLBACK_MS,
     },
     {
       timeline: [lsmBreak],

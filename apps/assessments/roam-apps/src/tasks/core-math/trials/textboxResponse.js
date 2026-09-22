@@ -6,18 +6,23 @@ import { mediaAssets } from '../../..';
 import i18next from 'i18next';
 import { validityEvaluator, catIRT } from '../timeline';
 import { startTimer } from '../helpers/updateCountDown';
-// import { SimpleKeyboard } from 'simple-keyboard';
+import { SimpleKeyboard } from 'simple-keyboard';
 //import "simple-keyboard/build/css/index.css";
 import { addResponse, endGame, updateSkillScores, scaleTheta, isMobile } from './trialHelpers';
+import { trackClickSource, getClickSource } from '../../shared/helpers';
 import { scaleContentToFitMobile } from './scaleContent';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
 
 let rt = [];
 let key = [];
+let clickSourceList = [];
 let textboxVal = [];
 let startTime;
 
-const storeKeyRT = (keyName) => {
+// e is only passed by the mobile on-screen keyboard (see mobileKeyboard's
+// onKeyPress below) — desktopKeyboard's physical-keydown calls omit it, so
+// clickSourceList only ever fills in for the mobile virtual-keypad path.
+const storeKeyRT = (keyName, e) => {
   const endTime = performance.now();
   const response_time = Math.round(endTime - startTime);
   if (keyName === '{enter}') {
@@ -28,10 +33,15 @@ const storeKeyRT = (keyName) => {
     key.push(keyName);
   }
   rt.push(response_time);
+  if (e) {
+    clickSourceList.push(getClickSource(e));
+  }
 };
 
 // Shows a textbox for responding, takes in keyboard input.
 const desktopKeyboard = (corpusName, assessment_stage_val) => {
+  let refocusTextbox;
+
   let stim = {
     type: jsPsychSurveyHtmlForm,
     html: () => {
@@ -126,6 +136,7 @@ const desktopKeyboard = (corpusName, assessment_stage_val) => {
       //initialise variables for trial
       rt = [];
       key = [];
+      clickSourceList = [];
       textboxVal = [];
       startTime = performance.now(); //get initial time
       //set the timer only for the default usermode
@@ -140,6 +151,11 @@ const desktopKeyboard = (corpusName, assessment_stage_val) => {
     on_load: () => {
       document.getElementById('question_input_key_0').focus();
 
+      // Only resolves to a real value when the go-button (multi-textbox /
+      // fraction items) is clicked/tapped — single-textbox items finish via
+      // Enter, so this naturally stays null there since no click occurs.
+      trackClickSource('jspsych-survey-html-form');
+
       let currentItem = store.session.get('nextStimulus');
       let responseFormat = currentItem.response_format;
 
@@ -153,6 +169,29 @@ const desktopKeyboard = (corpusName, assessment_stage_val) => {
           currentTextbox = 'textbox2';
         });
       }
+
+      // Refocus whichever textbox was last focused if the click lands
+      // outside all of them — doesn't touch arrow-key/click switching
+      // between textboxes, only recovers focus lost to an outside click.
+      const textboxIds =
+        responseFormat[0] === 'fraction'
+          ? ['question_input_key_0', 'question_input_key_1']
+          : responseFormat.map((_, i) => `question_input_key_${i}`);
+      const textboxes = textboxIds.map((id) => document.getElementById(id)).filter(Boolean);
+
+      let lastFocusedTextbox = textboxes[0];
+      textboxes.forEach((box) => {
+        box.addEventListener('focus', () => {
+          lastFocusedTextbox = box;
+        });
+      });
+
+      refocusTextbox = (event) => {
+        if (!textboxes.includes(event.target)) {
+          lastFocusedTextbox.focus();
+        }
+      };
+      document.addEventListener('click', refocusTextbox);
 
       //store the textbox value at each keypress
       document.getElementById('question_input_key_0').addEventListener('input', function () {
@@ -301,6 +340,8 @@ const desktopKeyboard = (corpusName, assessment_stage_val) => {
       clearTimeout(store.session.get('timerId'));
       clearTimeout(store.session.get('timerIdCountdown'));
 
+      document.removeEventListener('click', refocusTextbox);
+
       store.session.set('warningVisible', false);
 
       const stimulus = store.session.get('nextStimulus');
@@ -433,7 +474,9 @@ const desktopKeyboard = (corpusName, assessment_stage_val) => {
         response_key_list: key,
         response_time_list: rt,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source: store.session.get('clickSource'),
       });
 
       // update trial count
@@ -549,6 +592,7 @@ const mobileKeyboard = (corpusName, assessment_stage_val) => {
       //initialise variables for trial
       rt = [];
       key = [];
+      clickSourceList = [];
       textboxVal = [];
       startTime = performance.now(); //get initial time
       //set the timer only for the default usermode
@@ -563,15 +607,15 @@ const mobileKeyboard = (corpusName, assessment_stage_val) => {
     choices: 'NO_KEYS',
     response_ends_trials: false,
     on_load: () => {
-      //let responseFormat = store.session.get('nextStimulus').response_format;
+      let responseFormat = store.session.get('nextStimulus').response_format;
       //focus the first textbox
-      //let currentIdx = 0;
+      let currentIdx = 0;
       let currentInput = document.getElementById('question_input_key_0');
       currentInput.classList.add('focused');
 
-      /*
       const decimalKey = store.session.get('decimalKey');
 
+      // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
       const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`],
@@ -581,30 +625,28 @@ const mobileKeyboard = (corpusName, assessment_stage_val) => {
           '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
           '{empty}': ' ', // Prevents rendering key value
         },
-        onChange: (input) => onChange(input),
-        onKeyPress: (button) => onKeyPress(button),
+        onChange: onChange,
+        onKeyPress: (button, e) => onKeyPress(button, e),
       });
-      */
 
       document.querySelectorAll('.response-box-mobile').forEach((el) => {
         el.addEventListener('click', () => {
           if (currentInput) currentInput.classList.remove('focused');
           currentInput = el;
           currentInput.classList.add('focused');
-          //currentIdx = [...document.querySelectorAll('.response-box-mobile')].indexOf(currentInput);
+          currentIdx = [...document.querySelectorAll('.response-box-mobile')].indexOf(currentInput);
         });
       });
 
-      /*
-      function onChange(input) {
+      function onChange() {
         if (currentIdx >= 0) {
           textboxVal[currentIdx] = document.getElementById('question_input_key_' + currentIdx).textContent;
         }
       }
 
-      function onKeyPress(button) {
+      function onKeyPress(button, e) {
         if (!currentInput) return;
-        storeKeyRT(button);
+        storeKeyRT(button, e);
         if (button === '{bksp}') {
           currentInput.textContent = currentInput.textContent.slice(0, -1);
         } else if (button === '{enter}') {
@@ -625,7 +667,6 @@ const mobileKeyboard = (corpusName, assessment_stage_val) => {
           currentInput.textContent += button;
         }
       }
-      */
 
       //set the timer only for the default usermode
       if (store.session.get('config').userMode === 'default') {
@@ -778,7 +819,9 @@ const mobileKeyboard = (corpusName, assessment_stage_val) => {
         response_key_list: key,
         response_time_list: rt,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source_list: clickSourceList,
       });
 
       // update trial count

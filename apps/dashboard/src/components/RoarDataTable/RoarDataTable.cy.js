@@ -13,6 +13,7 @@ const props = {
   lazy: false,
   isInsideListOrgs: false,
   groupheaders: true,
+  taskScoringVersions: {},
 };
 
 // Use this data to compare against the data being filtered by the component
@@ -168,7 +169,7 @@ describe('<RoarDataTable />', () => {
   it('Mocks filtering by support level Pink.', () => {
     const task = 'trog';
     const tag = 'Needs Extra Support';
-    const assessment = 'ROAR - Syntax';
+    const assessment = 'ROAR - Picture Syntax';
     const category = 'Pink';
     const column = ['Username'];
 

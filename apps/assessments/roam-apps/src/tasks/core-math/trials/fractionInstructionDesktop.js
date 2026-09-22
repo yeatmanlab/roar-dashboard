@@ -4,7 +4,7 @@ import { mediaAssets } from '../../..';
 import { jsPsych } from '../../taskSetup';
 import i18next from 'i18next';
 import store from 'store2';
-import { isMobile } from './trialHelpers';
+import { trackClickSource } from '../../shared/helpers';
 
 let rt = [];
 let key = [];
@@ -24,6 +24,8 @@ const storeKeyRT = (keyName) => {
 
 // Fixed item, displays instructions for fraction problems
 const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
+  let refocusTextbox;
+
   return {
     type: jsPsychSurveyHtmlForm,
     html: () => {
@@ -95,6 +97,11 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
     on_load: () => {
       document.getElementById('question_input_key_0').focus();
 
+      // Only resolves to a real value when the go-button is clicked/tapped —
+      // finishing via Enter is a native form submit, so this naturally stays
+      // null in that case since no click occurs.
+      trackClickSource('jspsych-survey-html-form');
+
       let elements = document.getElementsByClassName('katex');
       // Loop through the elements and change the font size
       for (let i = 0; i < elements.length; i++) {
@@ -133,12 +140,32 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
       replayAudio();
 
       //store the textbox value at each keypress
-      document.getElementById('question_input_key_0').addEventListener('input', function () {
+      const textbox0 = document.getElementById('question_input_key_0');
+      const textbox1 = document.getElementById('question_input_key_1');
+      textbox0.addEventListener('input', function () {
         textboxVal[0] = this.value;
       });
-      document.getElementById('question_input_key_1').addEventListener('input', function () {
+      textbox1.addEventListener('input', function () {
         textboxVal[1] = this.value;
       });
+
+      // Refocus whichever textbox was last focused if the click lands
+      // outside both of them — doesn't touch arrow-key/click switching
+      // between textboxes, only recovers focus lost to an outside click.
+      const textboxes = [textbox0, textbox1];
+      let lastFocusedTextbox = textbox0;
+      textboxes.forEach((box) => {
+        box.addEventListener('focus', () => {
+          lastFocusedTextbox = box;
+        });
+      });
+
+      refocusTextbox = (event) => {
+        if (!textboxes.includes(event.target)) {
+          lastFocusedTextbox.focus();
+        }
+      };
+      document.addEventListener('click', refocusTextbox);
 
       document.getElementById('jspsych-survey-html-form').addEventListener('keydown', (event) => {
         //only permit numbers, backspace and enter key
@@ -179,6 +206,8 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
       if (source) {
         source.stop();
       }
+
+      document.removeEventListener('click', refocusTextbox);
 
       let save_trial = true;
       const stimulus = store.session.get('nextStimulus');
@@ -232,7 +261,9 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
         response_key_list: key,
         response_time_list: rt,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source: store.session.get('clickSource'),
       });
       store.session.set('fractionInstructionDone', true);
     },
@@ -240,6 +271,8 @@ const fractionInstructionTrial = (corpusName, assessment_stage_val) => {
 };
 
 const feedbackIncorrect = (corpusName, assessment_stage_val) => {
+  let refocusTextbox;
+
   return {
     type: jsPsychSurveyHtmlForm,
     html: () => {
@@ -316,6 +349,11 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
     on_load: () => {
       document.getElementById('question_input_key_0').focus();
 
+      // Only resolves to a real value when the go-button is clicked/tapped —
+      // finishing via Enter is a native form submit, so this naturally stays
+      // null in that case since no click occurs.
+      trackClickSource('jspsych-survey-html-form');
+
       let elements = document.getElementsByClassName('katex');
       // Loop through the elements and change the font size
       for (let i = 0; i < elements.length; i++) {
@@ -354,12 +392,32 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       replayAudio();
 
       //store the textbox value at each keypress
-      document.getElementById('question_input_key_0').addEventListener('input', function () {
+      const textbox0 = document.getElementById('question_input_key_0');
+      const textbox1 = document.getElementById('question_input_key_1');
+      textbox0.addEventListener('input', function () {
         textboxVal[0] = this.value;
       });
-      document.getElementById('question_input_key_1').addEventListener('input', function () {
+      textbox1.addEventListener('input', function () {
         textboxVal[1] = this.value;
       });
+
+      // Refocus whichever textbox was last focused if the click lands
+      // outside both of them — doesn't touch arrow-key/click switching
+      // between textboxes, only recovers focus lost to an outside click.
+      const textboxes = [textbox0, textbox1];
+      let lastFocusedTextbox = textbox0;
+      textboxes.forEach((box) => {
+        box.addEventListener('focus', () => {
+          lastFocusedTextbox = box;
+        });
+      });
+
+      refocusTextbox = (event) => {
+        if (!textboxes.includes(event.target)) {
+          lastFocusedTextbox.focus();
+        }
+      };
+      document.addEventListener('click', refocusTextbox);
 
       document.getElementById('jspsych-survey-html-form').addEventListener('keydown', (event) => {
         //only permit numbers, backspace and enter key
@@ -400,6 +458,9 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       if (source) {
         source.stop();
       }
+
+      document.removeEventListener('click', refocusTextbox);
+
       let save_trial = true;
       const stimulus = store.session.get('nextStimulus');
       let response_val = [];
@@ -449,7 +510,9 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         response_key_list: key,
         response_time_list: rt,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source: store.session.get('clickSource'),
       });
 
       store.session.set('allowKeyUp', true);

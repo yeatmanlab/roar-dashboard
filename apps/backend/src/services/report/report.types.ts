@@ -251,7 +251,7 @@ export type ServiceSupportLevelValue = 'achievedSkill' | 'developingSkill' | 'ne
  * Absent on tasks whose config declares no display category.
  */
 export interface ServiceScoreDisplay {
-  scoreType: 'percentile' | 'standardScore' | 'rawScore' | 'percentCorrect';
+  scoreType: 'percentile' | 'standardScore' | 'rawScore' | 'percentCorrect' | 'correctIncorrectDifference';
   value: number | null;
   label: string;
   range: { min: number; max: number } | null;
@@ -273,10 +273,18 @@ export interface ServiceStudentScoreEntry {
   display?: ServiceScoreDisplay;
 }
 
+export interface ServiceFoundationalCompositeScore {
+  thetaEstimate: number | null;
+  roarScore: number | null;
+  percentile: number | null;
+  standardScore: number | null;
+}
+
 /** A student row in score results. */
 export interface ServiceStudentScoreRow {
   user: ServiceUserInfo;
   scores: Record<string, ServiceStudentScoreEntry>;
+  foundationalComposite?: ServiceFoundationalCompositeScore | null;
 }
 
 /** Return type for listStudentScores. */

@@ -2789,6 +2789,7 @@ describe('ReportService', () => {
         homeLanguage: null,
         runs: new Map(),
         scores: new Map(),
+        foundationalCompositeScores: new Map(),
         ...overrides,
       };
     }
@@ -2938,10 +2939,28 @@ describe('ReportService', () => {
         ],
       });
 
-      // After #1792, getStudentScores args are: administrationId, scope, admin, taskMetas, options, filterCondition, sortField, scoreFieldFilters, scoringRulesByVariant, includeUnenrolledStudents
+      // getStudentScores args are: administrationId, scope, admin, taskMetas, options, filterCondition, sortField,
+      // scoreFieldFilters, scoringRulesByVariant, includeUnenrolledStudents, includeFoundationalCompositeScores.
       const taskMetasArg = mockReportRepository.getStudentScores.mock.calls[0]![3];
       const seenIds = new Set(taskMetasArg.map((t) => t.taskId));
       expect(seenIds).toEqual(new Set([TASK_ID_1, TASK_ID_3]));
+    });
+
+    it('keeps foundational composite enabled when taskId filter excludes foundational tasks', async () => {
+      setupDefaultStudentScoresMocks();
+
+      const service = createService();
+      await service.listStudentScores(superAdminAuth, testAdministrationId, {
+        ...baseQuery,
+        filter: [{ field: 'taskId', operator: 'in', value: TASK_ID_4 }],
+      });
+
+      const callArgs = mockReportRepository.getStudentScores.mock.calls[0]!;
+      const taskMetasArg = callArgs[3];
+      const includeFoundationalCompositeScoresArg = callArgs[10];
+
+      expect(taskMetasArg.map((task) => task.taskId)).toEqual([TASK_ID_4]);
+      expect(includeFoundationalCompositeScoresArg).toBe(true);
     });
 
     it('returns 400 when taskId filter references a UUID not assigned to the administration', async () => {
@@ -3142,6 +3161,30 @@ describe('ReportService', () => {
       const entry = result.items[0]!.scores[TASK_ID_1]!;
       expect(entry.percentile).toBe(91);
       expect(entry.rawScore).toBe(512);
+    });
+
+    it('maps foundational composite run scores onto the student row', async () => {
+      const row = buildQueryRow({
+        userId: 'student-1',
+        grade: '3',
+        foundationalCompositeScores: new Map([
+          ['thetaEstimate', '1.234'],
+          ['roarScore', '488.6'],
+          ['percentile', '>99'],
+          ['standardScore', '112.4'],
+        ]),
+      });
+      setupDefaultStudentScoresMocks([row], 1);
+
+      const service = createService();
+      const result = await service.listStudentScores(superAdminAuth, testAdministrationId, baseQuery);
+
+      expect(result.items[0]!.foundationalComposite).toEqual({
+        thetaEstimate: 1.234,
+        roarScore: 488.6,
+        percentile: 99,
+        standardScore: 112.4,
+      });
     });
 
     it('uses first variant with completed scores in multi-variant tasks (per-row dedup)', async () => {

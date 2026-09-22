@@ -105,8 +105,13 @@ export function parseDateLocal(str) {
 function serializeDob(dob) {
   if (!dob) return null;
 
-  const date = dob instanceof Date ? dob : new Date(dob);
-  if (isNaN(date.getTime())) return null;
+  // Route strings through {@link parseDateLocal} rather than `new Date(dob)`: the
+  // latter reads a date-only `YYYY-MM-DD` as UTC midnight, which the local getters
+  // below would then render as the previous day anywhere west of UTC. Parsing and
+  // serializing locally is what makes the round-trip this function documents
+  // actually lossless.
+  const date = dob instanceof Date ? dob : parseDateLocal(dob);
+  if (!date || isNaN(date.getTime())) return null;
 
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');

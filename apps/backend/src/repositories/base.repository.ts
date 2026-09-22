@@ -234,8 +234,9 @@ export abstract class BaseRepository<
    * Updates an existing entity.
    */
   async update(params: BaseUpdateParams<InferInsertModel<TTable>>): Promise<void> {
+    const db = params.transaction ?? this.db;
     const idColumn = this.typedTable.id as Parameters<typeof eq>[0];
-    await this.db.update(this.typedTable).set(params.data).where(eq(idColumn, params.id));
+    await db.update(this.typedTable).set(params.data).where(eq(idColumn, params.id));
   }
 
   /**

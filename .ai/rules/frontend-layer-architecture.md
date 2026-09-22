@@ -134,7 +134,7 @@ containers/StudentScoreReport/
 │   └── Support/
 │       └── Support.vue
 └── composables/                     # Container-specific logic (optional)
-    └── useScoreListData.js
+    └── useReportCardData.js
 ```
 
 Presentational variants (screen vs print) use a `.print.vue` suffix.

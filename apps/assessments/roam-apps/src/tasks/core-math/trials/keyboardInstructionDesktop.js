@@ -4,7 +4,6 @@ import { mediaAssets } from '../../..';
 import { jsPsych } from '../../taskSetup';
 import i18next from 'i18next';
 import store from 'store2';
-import { isMobile } from './trialHelpers';
 
 let rt = [];
 let key = [];
@@ -13,6 +12,8 @@ let textboxVal;
 let source;
 
 const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
+  let refocusTextbox;
+
   return {
     type: jsPsychSurveyHtmlForm,
     html: () => {
@@ -55,11 +56,21 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
       assessment_stage: assessment_stage_val,
     },
     on_load: () => {
-      document.getElementById('practice_number').focus();
+      const textbox = document.getElementById('practice_number');
+      textbox.focus();
 
-      document.getElementById('practice_number').addEventListener('input', function () {
+      textbox.addEventListener('input', function () {
         textboxVal = this.value;
       });
+
+      // Clicking anywhere outside the textbox blurs it — refocus so the
+      // cursor/caret reappears and the student can keep typing.
+      refocusTextbox = (event) => {
+        if (event.target !== textbox) {
+          textbox.focus();
+        }
+      };
+      document.addEventListener('click', refocusTextbox);
 
       async function replayAudio() {
         // pause audio
@@ -108,6 +119,8 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
         source.stop();
       }
 
+      document.removeEventListener('click', refocusTextbox);
+
       let save_trial = true;
       const stimulus = store.session.get('nextStimulus');
 
@@ -141,7 +154,8 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
         response_key_list: key,
         response_time_list: rt,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
       });
       store.session.set('keyboardInstructionDone', true);
     },
@@ -149,6 +163,8 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
 };
 
 const feedbackIncorrect = (corpusName, assessment_stage_val) => {
+  let refocusTextbox;
+
   return {
     type: jsPsychSurveyHtmlForm,
     html: () => {
@@ -196,11 +212,21 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       assessment_stage: assessment_stage_val,
     },
     on_load: () => {
-      document.getElementById('practice_number').focus();
+      const textbox = document.getElementById('practice_number');
+      textbox.focus();
 
-      document.getElementById('practice_number').addEventListener('input', function () {
+      textbox.addEventListener('input', function () {
         textboxVal = this.value;
       });
+
+      // Clicking anywhere outside the textbox blurs it — refocus so the
+      // cursor/caret reappears and the student can keep typing.
+      refocusTextbox = (event) => {
+        if (event.target !== textbox) {
+          textbox.focus();
+        }
+      };
+      document.addEventListener('click', refocusTextbox);
 
       async function replayAudio() {
         // pause audio
@@ -249,6 +275,8 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         source.stop();
       }
 
+      document.removeEventListener('click', refocusTextbox);
+
       let save_trial = true;
       const stimulus = store.session.get('nextStimulus');
 
@@ -284,7 +312,8 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         response_key_list: key,
         response_time_list: rt,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
       });
     },
   };

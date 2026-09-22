@@ -65,11 +65,14 @@ describe('subscore columns (config-driven)', () => {
       expect(getNumericFieldForSubscore('phonics', 'cvc')).toBeNull();
     });
 
-    it('returns a bare scoreName (no domain) for a distinct-name number column', () => {
+    it('returns the configured score name/domain for number columns', () => {
       expect(getNumericFieldForSubscore('phonics', 'totalPercentCorrect')).toEqual({
         scoreName: 'totalPercentCorrect',
       });
-      expect(getNumericFieldForSubscore('roam-alpaca', 'rawScore')).toEqual({ scoreName: 'roarScore' });
+      expect(getNumericFieldForSubscore('roam-alpaca', 'rawScore')).toEqual({
+        scoreName: 'roarScore',
+        scoreDomain: 'composite',
+      });
     });
 
     it('returns scoreName + domain for a domain-scoped number column (roam-alpaca subtasks share subPercentCorrect)', () => {

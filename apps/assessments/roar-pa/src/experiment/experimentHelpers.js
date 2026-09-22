@@ -9,6 +9,7 @@ import { camelize } from '@bdelab/roar-utils';
 import { pa } from '@roar-platform/assessment-schema';
 import { jsPsych } from './jsPsych';
 import { mediaAssets, paValidityEvaluator } from './experiment';
+import { unlockAssessmentAudio } from './audioLifecycle';
 import './i18n';
 import irtHyperparameters from './config/corpus/en/irt_hyperparameters.csv';
 
@@ -39,54 +40,54 @@ export const initClowder = (config) => {
       method: config.abilityMethod,
       itemSelect: 'fixed',
       priorDist: 'norm',
-      randomSeed: 'seed-fsm-practice',
+      randomSeed: config.randomSeed ? `${config.randomSeed}-practice-fsm` : config.randomSeed,
     },
     fsm: {
       method: config.abilityMethod,
       itemSelect: config.itemSelect,
       priorDist: 'norm',
       ...hyperMap.fsm,
-      randomSeed: 'seed-fsm',
+      randomSeed: config.randomSeed ? `${config.randomSeed}-fsm` : config.randomSeed,
     },
     practiceLSM: {
       method: config.abilityMethod,
       itemSelect: 'fixed',
       priorDist: 'norm',
-      randomSeed: 'seed-lsm-practice',
+      randomSeed: config.randomSeed ? `${config.randomSeed}-practice-lsm` : config.randomSeed,
     },
     lsm: {
       method: config.abilityMethod,
       itemSelect: config.itemSelect,
       priorDist: 'norm',
       ...hyperMap.lsm,
-      randomSeed: 'seed-lsm',
+      randomSeed: config.randomSeed ? `${config.randomSeed}-lsm` : config.randomSeed,
     },
     practiceDEL: {
       method: config.abilityMethod,
       itemSelect: 'fixed',
       priorDist: 'norm',
-      randomSeed: 'seed-del-practice',
+      randomSeed: config.randomSeed ? `${config.randomSeed}-practice-del` : config.randomSeed,
     },
     del: {
       method: config.abilityMethod,
       itemSelect: config.itemSelect,
       priorDist: 'norm',
       ...hyperMap.del,
-      randomSeed: 'seed-del',
+      randomSeed: config.randomSeed ? `${config.randomSeed}-del` : config.randomSeed,
     },
     composite: {
       method: config.abilityMethod,
       itemSelect: config.itemSelect,
       priorDist: 'norm',
       ...hyperMap.composite,
-      randomSeed: 'seed-composite',
+      randomSeed: config.randomSeed ? `${config.randomSeed}-composite` : config.randomSeed,
     },
     composite_foundational: {
       method: config.abilityMethod,
       itemSelect: config.itemSelect,
       priorDist: 'norm',
       ...hyperMap.composite_foundational,
-      randomSeed: 'seed-composite-foundational',
+      randomSeed: config.randomSeed ? `${config.randomSeed}-composite-foundational` : config.randomSeed,
     },
   };
 
@@ -340,11 +341,14 @@ export const practiceStoppingRule = (whichBlock) => {
 
   const keepLooping = store.session('incorrectCounter') !== 2;
 
-  if (!keepLooping && isAdaptive) {
-    // If we are using IRT scoring, do not skip the test block even if the
-    // participant gets both practice items wrong
-    setNextStimulus();
+  if (!keepLooping) {
+    // Practice block is ending (both practice items answered or max attempts reached)
+    // Always allow test block to run
+
     store.session.set('keepBlock', true);
+    if (isAdaptive) {
+      setNextStimulus();
+    }
   }
 
   return keepLooping;
@@ -364,8 +368,12 @@ export const stoppingRule = () => {
     if (store.session('incorrectCounter') === 3 || sumCorrect <= 2) {
       store.session.set('incorrectCounter', 0);
       store.session.set('kResponses', []);
-      moveToNextBlock();
-      jsPsych.endCurrentTimeline();
+      if (store.session('currentStimulus')) {
+        if (store.session('config').isAdaptive) {
+          moveToNextBlock();
+        }
+        jsPsych.endCurrentTimeline();
+      }
     }
   }
 };
@@ -379,12 +387,32 @@ export const audioSetup = {
     displayElement.innerHTML = `<h1> ${i18next.t('audioSetup')} </h1> 
       <img draggable="false" class="instructionCanvasNS" src="${mediaAssets.images.goBlink}" alt="canvas 1">`;
 
-    function initAudioFiles() {
-      jsPsych.pluginAPI.audioContext();
+    let audioSetupComplete = false;
+    let initAudioFiles;
+
+    function completeAudioSetup() {
+      if (audioSetupComplete) return;
+
+      audioSetupComplete = true;
+      document.removeEventListener('pointerup', initAudioFiles);
+      document.removeEventListener('touchend', initAudioFiles);
+      document.removeEventListener('click', initAudioFiles);
       done();
     }
 
-    document.addEventListener('click', initAudioFiles, { once: true });
+    initAudioFiles = async () => {
+      if (audioSetupComplete) return;
+
+      const audioUnlocked = await unlockAssessmentAudio();
+
+      if (audioUnlocked) {
+        completeAudioSetup();
+      }
+    };
+
+    document.addEventListener('pointerup', initAudioFiles);
+    document.addEventListener('touchend', initAudioFiles);
+    document.addEventListener('click', initAudioFiles);
 
     // Hide sentry feedback report button
     if (sentryFeedback) {

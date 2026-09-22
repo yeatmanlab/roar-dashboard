@@ -9,16 +9,33 @@ export const afcInstructions = (responseMode) => {
   return {
     type: jsPsychAudioMultiResponse,
     stimulus: () => {
-      if (responseMode === '2afc') {
-        return mediaAssets.audio.instructionsFluency2afc;
+      // For chromebook -> gets considered as desktop device, so give instruction to use the touch screen
+      if (store.session.get('desktopTouchScreen')) {
+        if (responseMode === '2afc') {
+          return mediaAssets.audio.instructionsFluency2afcMobile;
+        } else {
+          return mediaAssets.audio.instructionsFluency6afcMobile;
+        }
       } else {
-        return mediaAssets.audio.instructionsFluency6afc;
+        if (responseMode === '2afc') {
+          return mediaAssets.audio.instructionsFluency2afc;
+        } else {
+          return mediaAssets.audio.instructionsFluency6afc;
+        }
       }
     },
     prompt: () => {
-      let mouseImage = mediaAssets.images.coreMathResponse; //6afc
-      if (responseMode === '2afc') {
-        mouseImage = mediaAssets.images.instructions2afc;
+      let mouseImage = null;
+      if (store.session.get('desktopTouchScreen')) {
+        mouseImage = mediaAssets.images.coreMathResponseMobile; //6afc
+        if (responseMode === '2afc') {
+          mouseImage = mediaAssets.images.instructions2afcMobile;
+        }
+      } else {
+        mouseImage = mediaAssets.images.coreMathResponse; //6afc
+        if (responseMode === '2afc') {
+          mouseImage = mediaAssets.images.instructions2afc;
+        }
       }
 
       /*let responseMode = isMobile
@@ -30,14 +47,14 @@ export const afcInstructions = (responseMode) => {
         text1 = 'instructions.fluency.text19';
       }
       let text2 = 'instructions.fluency.text20';
-      if (isMobile) {
+      if (isMobile || store.session.get('desktopTouchScreen')) {
         text2 = 'instructions.fluency.text21';
       }
       return `
       <div class="jspsych-content-modified">
         <h2 class="title">${i18next.t('instructions.text1')}</h2>
         <p class="instructions-text">${i18next.t(text1)} ${i18next.t(text2)}</p>
-        <img class="img-border" src="${mouseImage}" alt="response">
+        <img class="img-border-height" src="${mouseImage}" alt="response">
       </div>
       `;
     },

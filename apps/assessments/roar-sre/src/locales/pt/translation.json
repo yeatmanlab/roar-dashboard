@@ -50,12 +50,12 @@
       "text2": "Você está pronto para começar o jogo.",
       "text3": "Você terá <b> 3 minutos </b> para responder o máximo de frases que puder.",
       "text4": "Leia cada frase silenciosamente e trabalhe o mais rápido possível sem cometer erros.",
-      "text5": "Está tudo bem se você não souber a resposta. Dê seu melhor palpite e siga para a próxima sentença."
+      "text5": "Está tudo bem se você não souber a resposta. Dê o seu melhor palpite e siga para a próxima sentença."
     },
     "feedback": {
-      "text1": "Você pressionou a seta {{arrow}} para frases {{type}}s.",
+      "text1": "Você pressionou a tecla de seta {{arrow}} para frases {{type}}s. ",
       "text1Mobile": "Você pressionou a seta {{arrow}} para frases {{type}}s.",
-      "text2": "é uma frase {{type}}. Pressione a seta {{arrow}} para continuar.",
+      "text2": "é uma frase {{type}}. Pressione a tecla de seta {{arrow}} para continuar.",
       "text2Mobile": "é uma frase {{type}}. Pressione a seta {{arrow}} para continuar."
     },
     "postPracticeReminder": {
@@ -71,10 +71,10 @@
     "studentSelect": {
       "paragraph1": "Agora, vamos conhecer seus alunos!",
       "paragraph2": "Pressione a tecla numérica no seu teclado para escolher o aluno com quem você gostaria de trabalhar.",
-      "paragraph2Mobile": "Pressione uma tecla numérica para selecionar um estudante",
+      "paragraph2Mobile": "Pressione no número do estudante que você deseja selecionar.",
       "paragraph3": "Pressione <span class='yellow'> uma tecla numérica </span> para escolher um estudante",
-      "paragraph3MobileBefore": "Pressione",
-      "paragraph3MobileSpan": "uma tecla numérica",
+      "paragraph3MobileBefore": "Pressione ",
+      "paragraph3MobileSpan": "o número ",
       "paragraph3MobileAfter": "para escolher um estudante"
     },
     "studentIntro": {

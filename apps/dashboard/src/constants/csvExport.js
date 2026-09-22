@@ -22,3 +22,9 @@ export const CSV_EXPORT_STATIC_COLUMNS = [
   'Start Date',
   'Completion Date',
 ];
+export const CSV_EXPORT_COMPOSITE_SCORE_COLUMNS = [
+  'Composite Score - Percentile',
+  'Composite Score - Standard',
+  'Composite Score - Raw',
+  'Composite Score - Support Level',
+];

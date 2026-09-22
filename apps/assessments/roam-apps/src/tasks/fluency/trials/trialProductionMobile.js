@@ -11,18 +11,18 @@ import { mediaAssets } from '../../..';
 import { updateProgressBar, dashToCamelCase } from '../../shared/helpers';
 import i18next from 'i18next';
 import { validityEvaluator } from '../timeline';
-//import { SimpleKeyboard } from 'simple-keyboard';
+import { SimpleKeyboard } from 'simple-keyboard';
 import { pushSkill } from './trialDefinitions';
-import { isMobile } from '../helpers';
+import { getClickSource } from '../../shared/helpers';
 //import "simple-keyboard/build/css/index.css";
 
 let rt = [];
 let key = [];
+let clickSource = [];
 let textboxVal;
-//let startTime;
+let startTime;
 
-/*
-const storeKeyRT = (keyName) => {
+const storeKeyRT = (keyName, e) => {
   const endTime = performance.now();
   const response_time = Math.round(endTime - startTime);
   if (keyName === '{enter}') {
@@ -33,8 +33,8 @@ const storeKeyRT = (keyName) => {
     key.push(keyName);
   }
   rt.push(response_time);
+  clickSource.push(getClickSource(e));
 };
-*/
 
 const itemToHtml = (stimulus) => {
   if (store.session.get('config').taskName === 'fluency-calf') {
@@ -88,8 +88,9 @@ export const numberMainTimerMobile = (corpusName, assessment_stage_val) => {
       //initialise variables for trial
       rt = [];
       key = [];
+      clickSource = [];
       textboxVal = null;
-      //startTime = performance.now(); //get initial time
+      startTime = performance.now(); //get initial time
     },
     choices: 'NO_KEYS',
     response_ends_trials: false,
@@ -98,7 +99,7 @@ export const numberMainTimerMobile = (corpusName, assessment_stage_val) => {
       let currentInput = document.getElementById('question_input_key');
       currentInput.classList.add('focused');
 
-      /*
+      // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
       const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
@@ -108,17 +109,17 @@ export const numberMainTimerMobile = (corpusName, assessment_stage_val) => {
           '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
           '{empty}': ' ', // Prevents rendering key value
         },
-        onChange: (input) => onChange(input),
-        onKeyPress: (button) => onKeyPress(button),
+        onChange: onChange,
+        onKeyPress: (button, e) => onKeyPress(button, e),
       });
 
-      function onChange(input) {
+      function onChange() {
         textboxVal = document.getElementById('question_input_key').textContent;
       }
 
-      function onKeyPress(button) {
+      function onKeyPress(button, e) {
         if (!currentInput) return;
-        storeKeyRT(button);
+        storeKeyRT(button, e);
         if (button === '{bksp}') {
           currentInput.textContent = currentInput.textContent.slice(0, -1);
         } else if (button === '{enter}') {
@@ -127,7 +128,6 @@ export const numberMainTimerMobile = (corpusName, assessment_stage_val) => {
           currentInput.textContent += button;
         }
       }
-      */
     },
     on_finish: (data) => {
       const stimulus = store.session.get('nextStimulus');
@@ -196,7 +196,9 @@ export const numberMainTimerMobile = (corpusName, assessment_stage_val) => {
         //group: store.session.get("config").group,
         response_key_list: key,
         response_time_list: rt,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source_list: clickSource,
       });
 
       // progress bar
@@ -223,7 +225,6 @@ export const numberMainTimerMobile = (corpusName, assessment_stage_val) => {
         }
 
         updateProgressBar();
-        // feed response to fluencyValidityEvaluator for evaluation per trial
         // feed response to fluencyValidityEvaluator for evaluation per trial
         if (store.session.get('evaluateValidity')) {
           validityEvaluator.addResponseData(data.rt, response_val, store.session.get('dataCorrect'));
@@ -320,8 +321,9 @@ export const practiceFeedbackIncorrectMobile = (corpusName, assessment_stage_val
       //initialise variables for trial
       rt = [];
       key = [];
+      clickSource = [];
       textboxVal = null;
-      //startTime = performance.now(); //get initial time
+      startTime = performance.now(); //get initial time
     },
     choices: 'NO_KEYS',
     response_ends_trials: false,
@@ -330,7 +332,7 @@ export const practiceFeedbackIncorrectMobile = (corpusName, assessment_stage_val
       currentInput.style.border = '2px solid rgb(255,0,0)';
       currentInput.style.outline = 'none';
 
-      /*
+      // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
       const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
@@ -340,17 +342,17 @@ export const practiceFeedbackIncorrectMobile = (corpusName, assessment_stage_val
           '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
           '{empty}': ' ', // Prevents rendering key value
         },
-        onChange: (input) => onChange(input),
-        onKeyPress: (button) => onKeyPress(button),
+        onChange: onChange,
+        onKeyPress: (button, e) => onKeyPress(button, e),
       });
 
-      function onChange(input) {
+      function onChange() {
         textboxVal = document.getElementById('question_input_key').textContent;
       }
 
-      function onKeyPress(button) {
+      function onKeyPress(button, e) {
         if (!currentInput) return;
-        storeKeyRT(button);
+        storeKeyRT(button, e);
         if (button === '{bksp}') {
           currentInput.textContent = currentInput.textContent.slice(0, -1);
         } else if (button === '{enter}') {
@@ -359,7 +361,6 @@ export const practiceFeedbackIncorrectMobile = (corpusName, assessment_stage_val
           currentInput.textContent += button;
         }
       }
-      */
 
       async function replayAudio(audioFile) {
         const jsPsychAudioCtx = jsPsych.pluginAPI.audioContext();
@@ -446,7 +447,9 @@ export const practiceFeedbackIncorrectMobile = (corpusName, assessment_stage_val
           //group: store.session.get("config").group,
           response_key_list: key,
           response_time_list: rt,
-          is_mobile: isMobile,
+          device_type: store.session.get('deviceType'),
+          primary_input: store.session.get('primaryInput'),
+          click_source_list: clickSource,
         });
       } else {
         store.session.transact('correctCount', (oldVal) => oldVal + 1);
@@ -493,7 +496,7 @@ export const practiceFeedbackCorrectMobile = {
     currentInput.style.outline = 'none';
     currentInput.innerText = store.session.get('response');
 
-    /*
+    // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
     const keyboard = new SimpleKeyboard({
       layout: {
         default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
@@ -504,6 +507,5 @@ export const practiceFeedbackCorrectMobile = {
         '{empty}': ' ', // Prevents rendering key value
       },
     });
-    */
   },
 };

@@ -1,6 +1,6 @@
 [
   {
-    "variantName": "English Fixed (v3)",
+    "variantName": "English-Fixed-v3",
     "params": {
       "language": "en",
       "scoringVersion": 3,
@@ -20,7 +20,7 @@
     }
   },
   {
-    "variantName": "English Adaptive (v5)",
+    "variantName": "English-Adaptive-v5",
     "params": {
       "language": "en",
       "scoringVersion": 5,

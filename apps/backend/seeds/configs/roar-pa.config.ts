@@ -24,25 +24,10 @@ export const paConfig: TaskSeedConfig = {
       name: 'Phonological Awareness',
       nameSimple: 'Phonological Awareness',
       nameTechnical: 'Rapid Online Assessment of Reading — Phonological Awareness',
+      description: 'Identify the sounds in the words',
+      image: 'https://raw.githubusercontent.com/yeatmanlab/roar-assets/main/roar-apps/phoneme-no-lion.png',
     },
   },
-  allowedParamKeys: new Set([
-    'abilityMethod',
-    'consent',
-    'earlyStopping',
-    'isAdaptive',
-    'itemSelect',
-    'language',
-    'logicalOperation',
-    'numTestItems',
-    'randomSeed',
-    'recruitment',
-    'scoreKind',
-    'scoringVersion',
-    'skipInstructions',
-    'storyOption',
-    'userMode',
-  ]),
   validateVariant(loc, params) {
     if (!('language' in params)) {
       throw new Error(`${loc}: "language" is required`);
@@ -56,4 +41,7 @@ export const paConfig: TaskSeedConfig = {
       }
     }
   },
+
+  // English, fixed forms, scoring version 3.
+  defaultVariant: 'English-Fixed-v3',
 };

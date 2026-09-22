@@ -4,7 +4,7 @@ import { mediaAssets } from '../../..';
 import jsPsychHtmlButtonResponse from '@jspsych/plugin-html-button-response';
 import { validityEvaluator, catIRT } from '../timeline';
 import { startTimer } from '../helpers/updateCountDown';
-import { addResponse, endGame, updateSkillScores, isMobile } from './trialHelpers';
+import { addResponse, endGame, updateSkillScores } from './trialHelpers';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
 import _round from 'lodash/round';
 
@@ -285,7 +285,9 @@ export const giveN = (corpusName, assessment_stage_val) => {
         response_key_list: null,
         response_time_list: rt,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source: 'mouse',
       });
 
       // update trial count

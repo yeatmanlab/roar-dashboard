@@ -56,6 +56,7 @@ import {
   tasksToDisplayPercentCorrect,
   tasksToDisplayTotalCorrect,
   tasksToDisplayGradeEstimate,
+  isTaskNormed,
 } from '@/helpers/reports';
 
 const canvasRef = ref(null);
@@ -94,7 +95,7 @@ const showSupportLevels = computed(() => {
     Object.values(SCORE_SUPPORT_LEVEL_COLORS).includes(point.color),
   );
 
-  return !isDisplayTask && hasSupportLevels;
+  return (!isDisplayTask || isTaskNormed(props.taskId, props.taskScoringVersion)) && hasSupportLevels;
 });
 
 const WINDOW_DAYS = 7 * 24 * 60 * 60 * 1000;
@@ -161,9 +162,9 @@ const chartOptions = computed(() => {
             if (p.assignmentId === props.currentAssignmentId) lines.push(`✦ ${t('scoreReports.currentScoreReport')} ✦`);
 
             // Always show all available scores in a consistent order
-            if (p.rawScore != null) lines.push(`Raw Score: ${p.rawScore}`);
-            if (p.percentile != null) lines.push(`Percentile: ${p.percentile}`);
-            if (p.standardScore != null) lines.push(`Standard Score: ${p.standardScore}`);
+            if (p.rawScore != null) lines.push(`${t('scoreReports.rawScore')}: ${p.rawScore}`);
+            if (p.percentile != null) lines.push(`${t('scoreReports.percentileScore')}: ${p.percentile}`);
+            if (p.standardScore != null) lines.push(`${t('scoreReports.standardScore')}: ${p.standardScore}`);
 
             return lines;
           },

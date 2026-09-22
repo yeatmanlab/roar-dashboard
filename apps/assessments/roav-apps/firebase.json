@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "target": "roav-apps",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [

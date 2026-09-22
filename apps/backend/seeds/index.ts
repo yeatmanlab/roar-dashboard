@@ -25,6 +25,7 @@ import { createChildLogger } from '../src/logger';
 import { runReset } from './reset';
 import { runSetup } from './setup';
 import { runSeed } from './seed';
+import { runSeedDefaultTasks } from './seed-default-tasks';
 
 const logger = createChildLogger({}, { msgPrefix: '[dev] ' });
 
@@ -49,6 +50,11 @@ async function main(): Promise<void> {
   await runReset();
 
   await runSeed();
+
+  // Seed the real assessments last: the fixture administration must exist before a
+  // variant can be assigned to it, and the fixture's own generated-slug tasks are
+  // not launchable from the dashboard.
+  await runSeedDefaultTasks();
 
   logger.info('Dev environment ready.');
 }

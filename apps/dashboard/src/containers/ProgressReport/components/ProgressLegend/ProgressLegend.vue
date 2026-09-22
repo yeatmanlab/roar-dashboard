@@ -8,15 +8,15 @@
     }"
   >
     <div class="flex flex-wrap gap-3 px-2 py-1 rounded justify-content-around align-items-center">
-      <div class="flex flex-row items-center gap-2 text-sm font-light">
+      <div class="flex flex-row gap-2 text-sm font-light align-items-center">
         <div class="legend-circle legend-circle--completed" />
         <div>Completed</div>
       </div>
-      <div class="flex flex-row items-center gap-2 text-sm font-light">
+      <div class="flex flex-row gap-2 text-sm font-light align-items-center">
         <div class="legend-circle legend-circle--started" />
         <div>Started</div>
       </div>
-      <div class="flex flex-row items-center gap-2 text-sm font-light">
+      <div class="flex flex-row gap-2 text-sm font-light align-items-center">
         <div class="legend-circle legend-circle--assigned" />
         <div>Assigned</div>
       </div>

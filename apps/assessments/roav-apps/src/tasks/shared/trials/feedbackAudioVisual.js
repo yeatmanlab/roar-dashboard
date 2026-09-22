@@ -41,6 +41,8 @@ const paramsDef = (tagReq) => ({
   animateBtn: false,
   modeGameTrial: ModeGame.ALL,
   modeGameSkipResponse: ModeGame.ALL,
+  durationTrial: DURATIONS.INSTRUCTION,
+  durationAudioEndFallback: DURATIONS.AUDIO_END_FALLBACK_SHORT, // @fix-freeze-audio
 
   inputKeyNext: sessionGet(SK.MODE_GAME) === ModeGame.GAME ? TypeKey.DUMMY : TypeKey.SPACEBAR, // " " for space bar
 });
@@ -66,6 +68,18 @@ export const t_feedbackAudioVisual = (paramsIn = {}, tagReq = 'def') => {
       button_html: () => `
         `,
       trial_ends_after_audio: () => skipResponse,
+      on_start: (trial) => {
+        if (!skipResponse) {
+          // eslint-disable-next-line no-param-reassign
+          trial.trial_duration = params.durationTrial;
+        }
+        // @fix-freeze-audio - begin
+        else {
+          // eslint-disable-next-line no-param-reassign
+          trial.trial_duration = params.durationAudioEndFallback;
+        }
+        // @fix-freeze-audio - end
+      },
       on_load: () => {
         scrollToTop();
         const endTrial = () => {

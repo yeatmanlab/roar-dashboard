@@ -11,7 +11,7 @@ import { updateProgressBar, dashToCamelCase } from '../../shared/helpers';
 import { validityEvaluator } from '../timeline';
 import i18next from 'i18next';
 import { pushSkill } from './trialDefinitions';
-import { isMobile } from '../helpers';
+import { trackClickSource } from '../../shared/helpers';
 
 const itemToHtml = (stimulus) => {
   if (store.session.get('config').taskName === 'fluency-calf') {
@@ -50,6 +50,9 @@ export const numberMainNAFC = (corpusName, assessment_stage_val) => {
     },
     on_load: () => {
       document.getElementById('jspsych-audio-multi-response-btngroup').classList.add(`nafc-btn-layout`);
+
+      //track click source
+      trackClickSource('jspsych-audio-multi-response-btngroup');
 
       //disable on load to prevent double clicking
       let buttons = document.querySelectorAll('.jspsych-audio-multi-response-button');
@@ -124,7 +127,9 @@ export const numberMainNAFC = (corpusName, assessment_stage_val) => {
         //group: store.session.get("config").group,
         response_key_list: null,
         response_time_list: null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source: store.session.get('clickSource'),
       });
 
       if (corpusName !== 'practice') {
@@ -197,6 +202,9 @@ export const practiceFeedbackIncorrectAFC = (corpusName, assessment_stage_val) =
     },
     on_load: () => {
       document.getElementById('jspsych-audio-multi-response-btngroup').classList.add(`nafc-btn-layout`);
+
+      //track click source
+      trackClickSource('jspsych-audio-multi-response-btngroup');
 
       let buttons = document.querySelectorAll('.jspsych-audio-multi-response-button');
 
@@ -289,7 +297,9 @@ export const practiceFeedbackIncorrectAFC = (corpusName, assessment_stage_val) =
         //group: store.session.get("config").group,
         response_key_list: null,
         response_time_list: null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source: store.session.get('clickSource'),
       });
     },
   };

@@ -5,6 +5,7 @@ import type {
   UserResponse,
   CreateUserRequestBody,
   UpdateUserRequestBody,
+  ImportUsersRequest,
   RecordUserAgreementRequestBody,
   GuardianStudentReportResponse,
   AdministrationsListQuery,
@@ -13,7 +14,7 @@ import type {
   UserMembershipResponse,
 } from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
-import { UserService } from '../services/user';
+import { UserService, UserImportService } from '../services/user';
 import { ReportService } from '../services/report/report.service';
 import type { GuardianStudentReportResult } from '../services/report/report.types';
 import { AdministrationService } from '../services/administration/administration.service';
@@ -24,6 +25,7 @@ import { transformAdministration, transformAdministrationBase } from './utils/ad
 import { toAgreementItem } from './utils/agreement.transform';
 
 const userService = UserService();
+const userImportService = UserImportService();
 const administrationService = AdministrationService();
 const reportService = ReportService();
 
@@ -195,6 +197,37 @@ export const UsersController = {
           StatusCodes.TOO_MANY_REQUESTS,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Bulk create / update / unenroll users.
+   *
+   * Always returns 200 with a multi-status body for a well-formed, authenticated request — per-row
+   * outcomes (including failures) live in `results`, never in the HTTP status code. The `summary`
+   * totals each bin. Only a failure of the whole request before per-row processing maps to a 500.
+   */
+  bulkImport: async (authContext: AuthContext, body: ImportUsersRequest) => {
+    try {
+      const results = await userImportService.bulkImport(authContext, body.users);
+
+      const summary = {
+        total: results.length,
+        created: results.filter((r) => r.status === 'ok' && r.classification === 'created').length,
+        updated: results.filter((r) => r.status === 'ok' && r.classification === 'updated').length,
+        unenrolled: results.filter((r) => r.status === 'ok' && r.classification === 'unenrolled').length,
+        failed: results.filter((r) => r.status === 'failed').length,
+      };
+
+      return {
+        status: StatusCodes.OK as const,
+        body: { data: { results, summary } },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.INTERNAL_SERVER_ERROR]);
       }
       throw error;
     }

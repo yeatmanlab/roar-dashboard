@@ -7,12 +7,9 @@ import { CoreDbClient } from '../db/clients';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type * as CoreDbSchema from '../db/schema/core';
-import type {
-  TaskVariantSortFieldType,
-  TaskVariantStatus,
-  TaskVariantsSortFieldType,
-} from '@roar-platform/api-contract';
+import type { TaskVariantSortFieldType, TaskVariantsSortFieldType } from '@roar-platform/api-contract';
 import { SortOrder } from '@roar-platform/api-contract';
+import type { TaskVariantStatus } from '../enums/task-variant-status.enum';
 import type { ParsedFilter } from '../types/filter';
 import type { FilterFieldMap } from '../utils/build-filter-conditions.util';
 import { buildFilterConditions } from '../utils/build-filter-conditions.util';

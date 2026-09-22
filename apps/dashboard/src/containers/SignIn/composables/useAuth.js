@@ -4,7 +4,6 @@ import { setUser } from '@sentry/vue';
 
 import { isMobileBrowser } from '@/helpers';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
-import { fetchDocById } from '@/helpers/query/utils';
 import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import { APP_ROUTES } from '@/constants/routes';
 import { getAuthService } from '@/services/AuthService';
@@ -37,14 +36,16 @@ export function useAuth(context) {
   // ---------- Claims ----------
   async function getUserClaims() {
     if (authStore.uid) {
-      // Emulator mode derives super_admin from /me; production reads Firestore.
-      const userClaims = await resolveUserClaims(authStore.uid);
+      const uidAtStart = authStore.uid;
+      // Claims are derived from the backend /me response on all builds.
+      const userClaims = await resolveUserClaims();
+      // The user may have switched while the fetch was in flight; a stale
+      // write (or Sentry setUser) would undo the listener's identity reset.
+      if (authStore.uid !== uidAtStart) return;
       authStore.userClaims = userClaims;
     }
     if (authStore.roarUid) {
-      const userData = await fetchDocById('users', authStore.roarUid);
-      authStore.userData = userData;
-      setUser({ id: authStore.roarUid, userType: userData?.userType });
+      setUser({ id: authStore.roarUid });
     }
   }
 

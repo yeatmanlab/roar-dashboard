@@ -8,6 +8,7 @@ import dsv from '@rollup/plugin-dsv';
 import { fileURLToPath, URL } from 'url';
 import path from 'path';
 import fs from 'fs';
+import { assertEmulatorDisabledForDeployedBuild } from './src/utils/emulator-guard';
 
 /**
  * Parse server response headers
@@ -62,11 +63,18 @@ function getResponseHeaders() {
  * It is worth noting that any fork of the project not using the env-configs submodule can safely use a regular dotenv
  * file at the root of the project, as Vite will automatically load it.
  *
+ * Values already present in the real environment take precedence over the files loaded here.
+ *
+ * @param {string} mode - The Vite mode being built (development, test, staging, production)
  * @returns {void}
  */
 const loadDotenvFiles = (mode) => {
   let envFilePaths = [];
   const allowOverride = !mode.includes('production') && !mode.includes('staging');
+
+  // A value already in the real environment (CI job env, exported shell var) outranks the checked-in defaults below.
+  // dotenvx's override:true would otherwise discard it, so snapshot here and re-assert once every file has loaded.
+  const presetEnv = { ...process.env };
 
   // 1. Load from the env-configs submodule (encrypted, shared across team).
   const modeEnvFilePath = path.resolve(__dirname, `./env-configs/.env.${mode}`);
@@ -89,6 +97,9 @@ const loadDotenvFiles = (mode) => {
       config({ path: [appRootEnvFile], override: true });
     }
   }
+
+  // 3. Re-assert the explicit environment, which outranks all of the above.
+  Object.assign(process.env, presetEnv);
 };
 
 const buildFirebaseConfig = (mode = 'development') => {
@@ -129,7 +140,8 @@ const buildFirebaseConfig = (mode = 'development') => {
   const cspObj = JSON.parse(cspTemplate);
 
   // Append the ROAR backend origin to connect-src so the ts-rest API client can reach it.
-  // Derives the origin from VITE_ROAR_API_BASE_URL (which includes the /v1 path prefix).
+  // Derives the origin from VITE_ROAR_API_BASE_URL, which is itself an origin in deployed builds
+  // but may be relative locally, hence the try/catch.
   const roarApiBaseUrl = process.env.VITE_ROAR_API_BASE_URL;
   if (roarApiBaseUrl) {
     try {
@@ -187,6 +199,12 @@ const buildFirebaseConfig = (mode = 'development') => {
 export default defineConfig(({ mode }) => {
   // Trigger custom dotenv file loader for env-configs directory.
   loadDotenvFiles(mode);
+
+  // Checked after the dotenv loader, so an emulator variable coming from a dotenv
+  // file is caught as well as one exported in the shell. Deployed modes only —
+  // development and test builds (local dev, the CI e2e job) are untouched.
+  assertEmulatorDisabledForDeployedBuild(mode, process.env);
+
   buildFirebaseConfig(mode);
 
   const responseHeaders = getResponseHeaders();
@@ -299,8 +317,6 @@ export default defineConfig(({ mode }) => {
                 levante: ['@roar-platform/roar-levante-tasks'],
                 utils: ['@bdelab/roar-utils'],
                 ran: ['@roar-platform/roav-ran'],
-                crowding: ['@bdelab/roav-crowding'],
-                'roav-mep': ['@bdelab/roav-mep'],
                 'roar-readaloud': ['@roar-platform/roar-readaloud'],
                 'roav-apps': ['@roar-platform/roav-apps'],
                 phoneme: ['@roar-platform/roar-pa'],

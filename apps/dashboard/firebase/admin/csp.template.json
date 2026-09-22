@@ -62,9 +62,14 @@
     "https://storage.googleapis.com/roav-readaloud/",
     "https://storage.googleapis.com/trog/",
     "https://storage.googleapis.com/roav-mp/",
+    "https://storage.googleapis.com/roar-levante-tasks/",
+    "https://storage.googleapis.com/levante-assets-dev/",
+    "https://storage.googleapis.com/levante-assets-prod/",
+    "https://storage.googleapis.com/tasks-shared/",
     "https://www.gstatic.com"
   ],
   "media-src": [
+    "blob:",
     "https://eyetrackingdata.blob.core.windows.net",
     "https://storage.googleapis.com/road-dashboard/",
     "https://storage.googleapis.com/roam-apps/",
@@ -89,12 +94,17 @@
     "https://storage.googleapis.com/roav-ran/",
     "https://storage.googleapis.com/roav-mp/",
     "https://storage.googleapis.com/roav-readaloud/",
-    "https://storage.googleapis.com/trog/"
+    "https://storage.googleapis.com/trog/",
+    "https://storage.googleapis.com/roar-levante-tasks/",
+    "https://storage.googleapis.com/levante-assets-dev/",
+    "https://storage.googleapis.com/levante-assets-prod/"
   ],
   "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
   "connect-src": [
     "'self'",
     "https://cdn.jsdelivr.net/npm/@mediapipe/",
+    "https://cdn.jsdelivr.net/npm/onnxjs/",
+    "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/",
     "https://eyetrackingdata.blob.core.windows.net",
     "https://*.analytics.google.com",
     "https://*.google-analytics.com",

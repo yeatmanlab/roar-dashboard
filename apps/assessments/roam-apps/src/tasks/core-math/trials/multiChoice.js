@@ -4,7 +4,8 @@ import { jsPsych } from '../../taskSetup';
 import { mediaAssets } from '../../..';
 import { validityEvaluator, catIRT } from '../timeline';
 import { startTimer } from '../helpers/updateCountDown';
-import { addResponse, endGame, updateSkillScores, scaleTheta, isMobile } from './trialHelpers';
+import { addResponse, endGame, updateSkillScores, scaleTheta } from './trialHelpers';
+import { trackClickSource } from '../../shared/helpers';
 import { scaleJsPsychContentToFit } from './scaleContent';
 import { updateGradeEstimateObject } from './gradeEstimateHelpers';
 //import { parseKatex } from "../helpers";
@@ -98,6 +99,9 @@ export const multiChoice = (corpusName, assessment_stage_val) => {
       } else {
         document.getElementById('jspsych-audio-multi-response-btngroup').classList.add(`nafc-btn-layout`);
       }
+
+      //track click source
+      trackClickSource('jspsych-audio-multi-response-btngroup');
 
       //set the timer only for the default usermode
       if (store.session.get('config').userMode === 'default') {
@@ -245,7 +249,9 @@ export const multiChoice = (corpusName, assessment_stage_val) => {
         response_key_list: null,
         response_time_list: null,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source: store.session.get('clickSource'),
       });
 
       // update trial count

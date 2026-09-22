@@ -25,6 +25,12 @@ const onnxRuntimeDist = dirname(require.resolve('onnxruntime-web'));
 // pipeline runs ONNX inference in a Web Worker and loads WASM + an .onnx model at runtime.
 // So the build emits a `dist/` directory (worker chunks + .wasm + the model) rather than a
 // single `dist/index.js`, and keeps the off-main-thread / wasm / binary-copy plugins.
+//
+// The model is referenced as `new URL('./eyetracking_google.onnx', import.meta.url)` from
+// views/worker.js. Rollup leaves that expression intact, so it resolves against the
+// *emitted* module — `dist/worker.js` — and the model is copied to `dist/` alongside it.
+// Consumers that understand the pattern (Vite in the dashboard, webpack standalone)
+// re-emit and rewrite it from there. See roar-project-management#1981.
 export default defineConfig({
   input: 'src/experiment/index.js',
   output: {
@@ -35,7 +41,10 @@ export default defineConfig({
     assetFileNames: '[name][extname]',
     sourcemap: true,
   },
-  // Workspace deps and peer deps are externalized — consumers provide these themselves.
+  // `assessment-schema` is deliberately bundled rather than externalized: it is pure constants
+  // and pure functions, so duplicate copies behave identically, and inlining pins each
+  // assessment to the vocabulary it was built and tested against. `firebase` is absent from
+  // the bundle because nothing under src/ imports it, not because this list externalizes it.
   external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@sentry\//],
   plugins: [
     postcss({
@@ -73,7 +82,7 @@ export default defineConfig({
     copy({
       targets: [
         { src: `${onnxRuntimeDist}/*.wasm`, dest: 'dist' },
-        { src: 'src/experiment/views/eyetracking_google.onnx', dest: 'dist/views' },
+        { src: 'src/experiment/views/eyetracking_google.onnx', dest: 'dist' },
       ],
     }),
   ],

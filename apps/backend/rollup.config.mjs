@@ -10,7 +10,12 @@ import run from '@rollup/plugin-run';
 const isDev = process.env.NODE_ENV !== 'production';
 
 export default defineConfig({
-  input: 'src/server.ts',
+  // Input keys become output file names, so the FGA sync job lands at
+  // dist/jobs/sync-fga.js next to dist/server.js.
+  input: {
+    server: 'src/server.ts',
+    'jobs/sync-fga': 'src/jobs/sync-fga/index.ts',
+  },
   output: isDev
     ? {
         dir: 'dist',
@@ -118,6 +123,9 @@ export default defineConfig({
 
     isDev &&
       run({
+        // plugin-run refuses multi-entry builds unless told which entry to fork.
+        // Dev mode runs the HTTP server; the sync job is built but never auto-run.
+        input: 'src/server.ts',
         execArgv: ['--enable-source-maps', '--use-system-ca'],
       }),
   ].filter(Boolean),

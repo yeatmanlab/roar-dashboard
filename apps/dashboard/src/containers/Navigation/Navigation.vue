@@ -13,6 +13,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import useUserType from '@/composables/useUserType';
+import useCurrentUser from '@/composables/useCurrentUser';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { getSidebarActions } from '@/router/sidebarActions';
@@ -43,6 +44,8 @@ const { data: userClaims } = useUserClaimsQuery({
 
 const { isAdmin, isSuperAdmin, isLaunchAdmin } = useUserType(userClaims);
 
+const { data: currentUser } = useCurrentUser();
+
 // @TODO: Move the navbar blacklist to route meta definitions.
 const navbarBlacklist = [
   'SignIn',
@@ -52,10 +55,13 @@ const navbarBlacklist = [
   'PlayApp',
   'SWR',
   'SWR-ES',
+  'SWR-PT',
   'SRE',
   'SRE-ES',
+  'SRE-PT',
   'PA',
   'PA-ES',
+  'PA-PT',
   'Letter',
   'Letter-ES',
   'Phonics',
@@ -66,14 +72,20 @@ const navbarBlacklist = [
   'Read Aloud',
   'ROAM-ARF',
   'ROAM-ARF-ES',
+  'ROAM-ARF-PT',
   'ROAM-CALF',
   'ROAM-CALF-ES',
+  'ROAM-CALF-PT',
   'ROAM-Alpaca',
   'ROAM-Alpaca-ES',
+  'ROAM-Alpaca-PT',
   'RAN',
-  'Crowding',
-  'MEP',
+  'Symbol Search',
+  'Symbol Search-PT',
   'ROAV-MP',
+  'ROAV-MP-PT',
+  'ROAV-RVP',
+  'ROAV-RVP-PT',
   'Launch SWR',
   'Launch SWR-ES',
   'Launch SRE',
@@ -98,8 +110,8 @@ const navbarBlacklist = [
   'Launch Fluency-Alpaca-ES',
   'Launch Fluency-Alpaca-PT',
   'Launch RAN',
-  'Launch Crowding',
-  'Launch MEP',
+  'Launch Symbol Search',
+  'Launch Symbol Search-PT',
   'AuthNycps',
   'InitiateAuthNycps',
 ];
@@ -133,7 +145,11 @@ const displayName = computed(() => {
 
   const displayName = authStore?.userData?.displayName;
   const username = authStore?.userData?.username;
-  const firstName = authStore?.userData?.name?.first;
+
+  // `/me` is the canonical source for the user's name. The `authStore.userData`
+  // fallbacks below are retained because `userData` is still tracked for
+  // migration (#2219) and stays correct should it ever be repopulated.
+  const firstName = currentUser.value?.nameFirst;
   const userType = isAdmin.value ? 'Admin' : 'User';
 
   return `${firstName || displayName || username || email || userType}`;

@@ -139,7 +139,8 @@ const developmentConfig = merge(webConfig, {
     client: {
       overlay: false,
     },
-    // Proxy the SDK's API calls (ROAR_API_BASE_URL defaults to '/v1') to the local backend.
+    // Proxy the SDK's API calls to the local backend — the contract prefixes every path with
+    // the API version, so the context below matches whatever that prefix currently is.
     proxy: [
       {
         context: ['/v1'],
@@ -159,7 +160,7 @@ module.exports = async (env, args) => {
       new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
-        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || '/v1'),
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || ''),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',

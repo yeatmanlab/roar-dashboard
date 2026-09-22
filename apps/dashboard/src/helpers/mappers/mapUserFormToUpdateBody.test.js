@@ -46,6 +46,24 @@ describe('mapUserFormToUpdateBody', () => {
     expect(body.dob).toBe('2015-12-31');
   });
 
+  // Regression: a form loaded from the API hands back `dob` as a date-only string.
+  // `new Date('2015-04-01')` parses as UTC midnight, so serializing it with local
+  // getters used to write back 2015-03-31 for any negative UTC offset — silently
+  // shifting a student's DOB by a day on every save that didn't touch the field.
+  it('serializes a date-only dob string without shifting the day', () => {
+    const form = formModel();
+    form.studentData.dob = '2015-04-01';
+    expect(mapUserFormToUpdateBody(form).dob).toBe('2015-04-01');
+  });
+
+  it('round-trips a date-only dob string unchanged', () => {
+    const form = formModel();
+    for (const dob of ['2015-01-01', '2015-12-31', '2016-02-29']) {
+      form.studentData.dob = dob;
+      expect(mapUserFormToUpdateBody(form).dob).toBe(dob);
+    }
+  });
+
   it('maps a null/unset dob to null', () => {
     const form = formModel();
     form.studentData.dob = null;

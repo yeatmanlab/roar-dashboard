@@ -35,13 +35,13 @@ class TaskLauncher {
 
     const { initConfig, buildTaskViews, audioMapping, imageAssets } = taskConfig[camelize(this.gameParams.taskName)];
 
-    //pull language specific audio+text
-    const audioMappingLang = audioMapping[i18next.language];
-
     //cleans the parameters and sets other variables (time, number of trials, corpus name)
     const config = await initConfig(this.gameParams, this.userParams, this.displayElement);
     //store this data in the browser
     store.session.set('config', config);
+
+    //pull language specific audio+text, en is the default if the language assets do not exist
+    const audioMappingLang = audioMapping[i18next.language] ?? audioMapping.en ?? {};
 
     await preloadView(config, audioMappingLang, imageAssets);
 

@@ -76,7 +76,7 @@
     "theoryOfMindDescription": "Listen to the stories and answer the questions.",
     "theoryOfMindName": "Stories Game",
     "trogDescription": "Listen to the words and choose the matching picture.",
-    "trogName": "ROAR - Syntax",
+    "trogName": "ROAR - Picture Syntax",
     "surveyName": "Thoughts and Feelings",
     "surveyDescription": "Answer questions about your time at school.",
     "mefsName": "Lion and Monkey Game",
@@ -125,7 +125,7 @@
   },
   "sentryForm": {
     "formTitle": "ROAR Bug Report",
-    "buttonLabel": "Report an Issue",
+    "buttonLabel": "Submit a Request",
     "submitButtonLabel": "Submit Issue Report",
     "cancelButtonLabel": "Cancel",
     "namePlaceholder": "Your Name (optional)",

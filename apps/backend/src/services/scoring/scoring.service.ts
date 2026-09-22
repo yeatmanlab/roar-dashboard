@@ -202,6 +202,10 @@ export function getScoreDisplay(args: {
       scoreType = 'rawScore';
       value = scores.rawScore;
       break;
+    case 'correctIncorrectDifference':
+      scoreType = 'correctIncorrectDifference';
+      value = scores.rawScore;
+      break;
     case 'normed': {
       const percentileBelowGrade =
         config.classification.type === 'percentile-then-rawscore' ? config.classification.percentileBelowGrade : 6;

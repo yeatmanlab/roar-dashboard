@@ -36,9 +36,8 @@
           <ScoreListPrint
             :student-first-name="studentFirstName"
             :student-grade="studentGrade"
-            :task-data="taskData"
+            :report-tasks="reportTasks"
             :tasks-dictionary="tasksDictionary"
-            :longitudinal-data="longitudinalData"
             :current-assignment-id="administrationId"
             :task-scoring-versions="getScoringVersions"
           />
@@ -68,9 +67,8 @@
           <ScoreListScreen
             :student-first-name="studentFirstName"
             :student-grade="studentGrade"
-            :task-data="taskData"
+            :report-tasks="reportTasks"
             :tasks-dictionary="tasksDictionary"
-            :longitudinal-data="longitudinalData"
             :expanded="expanded"
             :task-scoring-versions="getScoringVersions"
             :current-assignment-id="administrationId"
@@ -93,14 +91,21 @@ import { computed, ref, onMounted, onUnmounted, watch, nextTick, toValue } from 
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useI18n } from 'vue-i18n';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
-import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
-import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
-import useUserLongitudinalRunsQuery from '@/composables/queries/useUserLongitudinalRunsQuery';
+import useUserProfileQuery from '@/composables/queries/useUserProfileQuery';
+import useAdministrationQuery from '@/composables/queries/useAdministrationQuery';
+import useAdministrationTaskVariantsQuery from '@/composables/queries/useAdministrationTaskVariantsQuery';
+import useTaskVariantParametersQuery from '@/composables/queries/useTaskVariantParametersQuery';
+import useAdministrationIndividualScoreReportQuery from '@/composables/queries/useAdministrationIndividualScoreReportQuery';
+import useGuardianStudentReportQuery from '@/composables/queries/useGuardianStudentReportQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import usePagedPreview from '@/composables/usePagedPreview';
 import PdfExportService from '@/services/PdfExport.service';
-import { taskDisplayNames, getDistributionChartPath, updatedNormVersions } from '@/helpers/reports';
+import {
+  taskDisplayNames,
+  getDistributionChartPath,
+  updatedNormVersions,
+  previouslyUnnormedTasks,
+} from '@/helpers/reports';
 
 import AppSpinner from '@/components/AppSpinner.vue';
 import { HeaderScreen, HeaderPrint } from './components/Header';
@@ -108,10 +113,12 @@ import { SummaryScreen, SummaryPrint } from './components/Summary';
 import { ScoreListScreen, ScoreListPrint } from './components/ScoreList';
 import { SupportScreen, SupportPrint } from './components/Support';
 import EmptyState from './components/EmptyState.vue';
+import { useScoringVersions } from './composables/useScoringVersions';
 import { getStudentDisplayName } from '@/helpers/getStudentDisplayName';
 import { formatListArray } from '@/helpers/formatListArray';
 import { getStudentExternalId } from '@/helpers/getStudentExternalId';
 import { STUDENT_SCORE_REPORT_TASK_IDS } from '@/constants/studentScoreReportTasks';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 const props = defineProps({
   administrationId: { type: String, required: true },
@@ -125,6 +132,11 @@ const route = useRoute();
 
 const isPrintMode = computed(() => route.query.print !== undefined);
 
+// Two routes into this container use different backend endpoints: the parent/guardian path
+// (orgType 'family') uses the longitudinal guardian report; the administrator path (org
+// scopes) uses the administration-scoped individual report.
+const isParentPath = computed(() => props.orgType === SINGULAR_ORG_TYPES.FAMILIES);
+
 const expanded = ref(false);
 const exportLoading = ref(false);
 
@@ -133,36 +145,72 @@ const isLoading = computed(
   () =>
     isLoadingStudentData.value ||
     isLoadingTasksDictionary.value ||
-    isLoadingTaskData.value ||
+    isLoadingReport.value ||
+    isLoadingGuardian.value ||
     isLoadingAdministrationData.value ||
-    isLoadingLongitudinalData.value,
+    isLoadingAdministrationTaskVariants.value ||
+    isLoadingTaskVariantParameters.value,
 );
 
-const { data: studentData, isLoading: isLoadingStudentData } = useUserDataQuery(props.userId, {
+const { data: studentData, isLoading: isLoadingStudentData } = useUserProfileQuery(props.userId, {
   enabled: initialized,
 });
 
-const { data: administrationData, isLoading: isLoadingAdministrationData } = useAdministrationsQuery(
-  [props.administrationId],
-  {
-    enabled: initialized,
-    select: (data) => data[0],
-  },
-);
-
-const { data: taskData, isLoading: isLoadingTaskData } = useUserRunPageQuery(
-  props.userId,
+const { data: administrationData, isLoading: isLoadingAdministrationData } = useAdministrationQuery(
   props.administrationId,
-  props.orgType,
-  props.orgId,
   { enabled: initialized },
 );
 
-const { data: longitudinalData, isLoading: isLoadingLongitudinalData } = useUserLongitudinalRunsQuery(
+const { data: administrationTaskVariants, isLoading: isLoadingAdministrationTaskVariants } =
+  useAdministrationTaskVariantsQuery(props.administrationId, { enabled: initialized });
+
+// The task-variants endpoint doesn't expose scoringVersion (it's a variant param, not a column
+// on administration_task_variants/task_variants), so it's fetched separately per variant — see
+// getScoringVersions below.
+const variantIds = computed(() => administrationTaskVariants.value?.map((variant) => variant.id) ?? []);
+const { data: taskVariantParameters, isLoading: isLoadingTaskVariantParameters } = useTaskVariantParametersQuery(
+  variantIds,
+  { enabled: initialized },
+);
+
+// Administrator path: administration-scoped individual report (scores, support level, tags,
+// subscores, per-task historical scores).
+const { data: reportData, isLoading: isLoadingReport } = useAdministrationIndividualScoreReportQuery(
+  props.administrationId,
   props.userId,
   props.orgType,
   props.orgId,
-  { enabled: initialized, select: (data) => data },
+  { enabled: computed(() => initialized.value && !isParentPath.value) },
+);
+
+// Parent/guardian path: longitudinal report across all administrations.
+const { data: guardianData, isLoading: isLoadingGuardian } = useGuardianStudentReportQuery(props.userId, {
+  enabled: computed(() => initialized.value && isParentPath.value),
+});
+
+// The guardian report returns every administration plus a top-level longitudinalScores map.
+// Pick the administration being viewed and attach its per-task historical scores so the
+// guardian tasks match the admin report's per-task shape (which carries historicalScores).
+const guardianReportTasks = computed(() => {
+  const data = guardianData.value;
+  if (!data) return [];
+  const administration = data.administrations.find((entry) => entry.administrationId === props.administrationId);
+  if (!administration) return [];
+  return administration.tasks.map((task) => ({
+    ...task,
+    historicalScores: data.longitudinalScores?.[task.taskSlug] ?? [],
+  }));
+});
+
+// Both paths feed the score cards from the backend; the score list builds its cards from
+// these report tasks (see useReportCardData).
+const reportTasks = computed(() => (isParentPath.value ? guardianReportTasks.value : (reportData.value?.tasks ?? [])));
+
+// Minimal { taskId(slug), scores } shape the container's summary/distribution computeds and
+// the empty-state read, derived from the same backend report tasks (scores present only when
+// completed — the distribution/empty-state consumers key off score presence).
+const taskData = computed(() =>
+  reportTasks.value.map((task) => ({ taskId: task.taskSlug, scores: task.completed ? task.scores : undefined })),
 );
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({
@@ -175,7 +223,8 @@ const tasks = computed(
       ?.map((assignment) => assignment.taskId)
       .filter((t) => {
         if (!STUDENT_SCORE_REPORT_TASK_IDS.includes(t)) return false;
-        if (t === 'swr-es' || t === 'sre-es') return getScoringVersions.value[t] >= 1;
+        // Letter displayed score cards before norming (percent correct)
+        if (previouslyUnnormedTasks.includes(t) && t !== 'letter') return getScoringVersions.value[t] >= 1;
         return true;
       }) || [],
 );
@@ -193,15 +242,7 @@ const tasksListArray = computed(() =>
 const studentFirstName = computed(() => getStudentDisplayName(studentData).firstName);
 const studentLastName = computed(() => getStudentDisplayName(studentData).lastName);
 const studentGrade = computed(() => toValue(studentData)?.studentData?.grade);
-const getScoringVersions = computed(() => {
-  const scoringVersions = Object.fromEntries(
-    administrationData.value?.assessments.map((assessment) => [
-      assessment.taskId,
-      assessment?.params?.scoringVersion ?? null,
-    ]),
-  );
-  return scoringVersions;
-});
+const { getScoringVersions } = useScoringVersions(taskVariantParameters);
 
 const { locale } = useI18n();
 
@@ -226,8 +267,7 @@ const isDistributionChartEnabled = computed(() => {
     // Must have scores and be a normed task
     if (!task.scores || !normedTaskIds.includes(task.taskId)) return false;
 
-    // Spanish tasks require a non-null scoring version
-    if (task.taskId === 'sre-es' || task.taskId === 'swr-es') {
+    if (previouslyUnnormedTasks.includes(task.taskId)) {
       return getScoringVersions.value[task.taskId] >= 1;
     }
 

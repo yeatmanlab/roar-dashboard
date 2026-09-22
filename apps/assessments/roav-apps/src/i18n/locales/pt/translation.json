@@ -1,4 +1,9 @@
 {
+  "loading": "Esta atividade está carregando...",
+  "progressBar": "Progresso concluído",
+  "preloadTrial": {
+    "messageText": "Aguarde enquanto a atividade carrega. Isso pode levar alguns minutos."
+  },
   "enter-full-screen": {
     "prompt": "Alternar para o modo de tela cheia",
     "label-button": "IR"

@@ -16,6 +16,14 @@
         <strong>{{ task }}</strong>
       </li>
     </ul>
+
+    <i18n-t keypath="scoreReports.longitudinalNote" tag="p">
+      <template #link>
+        <a href="https://roar.stanford.edu/technical/" target="_blank">
+          {{ $t('scoreReports.longitudinalLink') }}
+        </a>
+      </template>
+    </i18n-t>
   </div>
 </template>
 

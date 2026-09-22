@@ -184,6 +184,65 @@ describe('AuthorizationService', () => {
     });
   });
 
+  describe('deleteTuplesOrThrow', () => {
+    it('skips the SDK call when given an empty array', async () => {
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await service.deleteTuplesOrThrow([]);
+
+      expect(mockClient.deleteTuples).not.toHaveBeenCalled();
+    });
+
+    it('calls client.deleteTuples with the provided tuples', async () => {
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await service.deleteTuplesOrThrow(sampleTuplesWithoutCondition);
+
+      expect(mockClient.deleteTuples).toHaveBeenCalledWith(sampleTuplesWithoutCondition);
+    });
+
+    it('logs at debug level on success', async () => {
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await service.deleteTuplesOrThrow(sampleTuplesWithoutCondition);
+
+      expect(logger.debug).toHaveBeenCalledWith({ tupleCount: 1 }, 'FGA tuples deleted successfully');
+    });
+
+    it('throws ApiError with EXTERNAL_SERVICE_FAILED on SDK failure', async () => {
+      const sdkError = new Error('FGA delete failed');
+      mockClient.deleteTuples.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await expect(service.deleteTuplesOrThrow(sampleTuplesWithoutCondition)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        }),
+      );
+    });
+
+    it('logs the error and preserves the SDK error as the cause', async () => {
+      const sdkError = new Error('FGA delete failed');
+      mockClient.deleteTuples.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      let thrownError: unknown;
+      try {
+        await service.deleteTuplesOrThrow(sampleTuplesWithoutCondition);
+      } catch (error) {
+        thrownError = error;
+      }
+
+      expect(logger.error).toHaveBeenCalledWith({ err: sdkError, tupleCount: 1 }, 'Failed to delete FGA tuples');
+      expect(thrownError).toBeInstanceOf(ApiError);
+      const apiError = thrownError as ApiError;
+      expect(apiError.context).toEqual({ tupleCount: 1 });
+      expect(apiError.cause).toBe(sdkError);
+    });
+  });
+
   describe('hasPermission', () => {
     it('returns true when client.check returns allowed: true', async () => {
       mockClient.check.mockResolvedValueOnce({ allowed: true });

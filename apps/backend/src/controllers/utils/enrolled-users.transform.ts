@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../../errors/api-error';
-import type { EnrolledUser, EnrolledUserEntity, EnrolledFamilyUser, EnrolledFamilyUserEntity } from '../../types/user';
+import type { EnrolledUser, EnrolledFamilyUser } from '@roar-platform/api-contract';
+import type { EnrolledUserEntity, EnrolledFamilyUserEntity } from '../../types/user';
 import { toErrorResponse } from '../../utils/to-error-response.util';
 import { UserFamilyRole } from '../../enums/user-family-role.enum';
 

@@ -68,6 +68,22 @@ module.exports = defineConfig({
         'file:preprocessor',
         vitePreprocessor({
           mode: 'development',
+          configFile: false,
+          resolve: {
+            alias: {
+              '@': path.resolve(__dirname, './src'),
+            },
+          },
+          plugins: [
+            Vue({
+              include: [/\.vue$/, /\.md$/],
+            }),
+            nodePolyfills({
+              globals: {
+                process: true,
+              },
+            }),
+          ],
         }),
       );
 
@@ -153,7 +169,7 @@ module.exports = defineConfig({
       'ROAR - Picture Vocab',
       'ROAM - Math Facts',
       'ROAM - Calculation Fluency',
-      'ROAR - Syntax',
+      'ROAR - Picture Syntax',
       'ROAR - Phoneme',
       'ROAR - Word',
       'ROAR - Sentence',

@@ -16,8 +16,15 @@ export function createMockUserRepository(): MockedObject<UserRepository> {
     getUserMembershipsDetailed: vi.fn(),
     hasPlatformAdminRole: vi.fn(),
     findClassParentSchool: vi.fn(),
+    resolveDeclaredEntities: vi.fn(),
+    revertReconciledMemberships: vi.fn(),
     createWithMemberships: vi.fn(),
     existsByUniqueFields: vi.fn(),
+    findByEmails: vi.fn(),
+    endAllOrgEnrollments: vi.fn(),
+    getActiveMembershipsWithRoles: vi.fn(),
+    archiveUser: vi.fn(),
+    reconcileMemberships: vi.fn(),
   } as MockedObject<UserRepository>;
 }
 

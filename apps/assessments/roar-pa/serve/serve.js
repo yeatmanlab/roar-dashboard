@@ -6,6 +6,7 @@ import { pa } from '@roar-platform/assessment-schema';
 import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
+import { ROAR_DB_MODE, unresolvedDefaultVariantPolicy } from '../../shared/roarDbMode.js';
 import { wireScoreAdapter } from '../src/sdk/pa-firekit-facade';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
@@ -16,6 +17,14 @@ const urlParams = new URLSearchParams(queryString);
 // Variant / session
 const variantId = urlParams.get('variantId');
 const taskVersion = urlParams.get('taskVersion') ?? '1.0';
+
+// Default variant per task, used when the URL supplies no `variantId`. Placeholder values
+// lifted from taskVariantParameters.example.json — researchers revise these per environment
+// as they re-create the variants. A task with no entry keeps the previous behaviour (oldest
+// published variant). See https://github.com/yeatmanlab/roar-project-management/issues/1828
+const DEFAULT_VARIANT_NAMES = {
+  [pa.PA_TASK_ID]: 'English-Fixed-v3',
+};
 
 // User / participant params — game configuration comes from variant params fetched via SDK
 const assessmentPid = urlParams.get('participant');
@@ -43,10 +52,16 @@ onAuthStateChanged(auth, async (user) => {
 
       // Provision the anonymous ROAR user (and resolve a variant) via the SDK.
       // Performs the participant-free calls and hands back the participantId and resolved variantId.
-      // The variantId URL param wins; otherwise it falls back to the first published variant.
+      // The variantId URL param wins; otherwise the task's entry in DEFAULT_VARIANT_NAMES is
+      // matched by name, falling back to the oldest published variant when there is none.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         { baseUrl, auth: authCallbacks },
-        { ...(variantId ? { variantId } : {}), taskId: pa.PA_TASK_ID },
+        {
+          ...(variantId ? { variantId } : {}),
+          taskId: pa.PA_TASK_ID,
+          defaultVariantName: DEFAULT_VARIANT_NAMES[pa.PA_TASK_ID],
+          onUnresolvedDefault: unresolvedDefaultVariantPolicy(ROAR_DB),
+        },
       );
 
       const ctx = {
@@ -63,7 +78,7 @@ onAuthStateChanged(auth, async (user) => {
 
       // Dev/staging only: mount a variant switcher so reviewers can hop between published
       // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
-      if (ROAR_DB !== 'production') {
+      if (ROAR_DB !== ROAR_DB_MODE.PRODUCTION) {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,

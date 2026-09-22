@@ -16,6 +16,7 @@ import { StatusCodes } from 'http-status-codes';
 import type { Administration, User } from '../../db/schema';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { EntityType } from '../../types/entity-type';
 import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
 import { collectStreamedFgaObjects } from '../authorization/helpers/collect-streamed-fga-objects.helper';
 import {
@@ -1009,6 +1010,31 @@ export function AdministrationService({
   }
 
   /**
+   * Whether the requester is an authorized guardian of the target user — i.e. holds
+   * `can_read_child` on any family the target belongs to. Mirrors the parent-consent
+   * check in `UserService.recordUserAgreement` (which uses `can_consent_for_child`).
+   *
+   * Non-throwing on purpose: callers combine it with the existing self / super-admin /
+   * admin-teacher access paths, so it returns a boolean rather than throwing FORBIDDEN.
+   *
+   * @param requesterUserId - The authenticated requester (e.g. the launching parent)
+   * @param targetUserId - The user whose data is being accessed (e.g. the child)
+   * @returns true when the requester holds `can_read_child` on a shared family
+   */
+  async function hasGuardianReadAccess(requesterUserId: string, targetUserId: string): Promise<boolean> {
+    const targetMemberships = await userRepository.getUserEntityMemberships(targetUserId);
+    const familyObjects = targetMemberships
+      .filter((membership) => membership.entityType === EntityType.FAMILY)
+      .map((membership) => `${FgaType.FAMILY}:${membership.entityId}`);
+
+    if (familyObjects.length === 0) {
+      return false;
+    }
+
+    return authorizationService.hasAnyPermission(requesterUserId, FgaRelation.CAN_READ_CHILD, familyObjects);
+  }
+
+  /**
    * List administrations accessible to a requester and target user with pagination, sorting, and optional embeds.
    *
    * super_admin users have unrestricted access to all administrations.
@@ -1081,21 +1107,30 @@ export function AdministrationService({
       );
       const targetUserAdminIds = targetUserAdmins.map(extractFgaObjectId);
 
-      if (targetUserAdminIds.length === 0) {
-        return { items: [], totalItems: 0 };
-      }
       // Fetch administrations based on user role and authorization
       let result: PaginatedResult<Administration>;
 
       if (isSuperAdmin) {
         result = await administrationRepository.getByIds(targetUserAdminIds, queryParams);
+      } else if (await hasGuardianReadAccess(requesterUserId, userId)) {
+        // Authorized guardians (can_read_child) see all of the target child's
+        // administrations, bypassing the admin/teacher shared-access intersection
+        // below — a guardian holds no administration-level access of their own, so
+        // the intersection would always be empty.
+        result = await administrationRepository.getByIds(targetUserAdminIds, queryParams);
       } else {
-        const requesterUserAdmins = await authorizationService.listAccessibleObjects(
-          requesterUserId,
-          FgaRelation.CAN_LIST,
-          FgaType.ADMINISTRATION,
-        );
-        const requesterUserAdminIds = new Set(requesterUserAdmins.map(extractFgaObjectId));
+        const requesterUserAdminIds =
+          targetUserAdminIds.length > 0
+            ? new Set(
+                (
+                  await authorizationService.listAccessibleObjects(
+                    requesterUserId,
+                    FgaRelation.CAN_LIST,
+                    FgaType.ADMINISTRATION,
+                  )
+                ).map(extractFgaObjectId),
+              )
+            : new Set<string>();
         const intersectedIds = targetUserAdminIds.filter((id) => requesterUserAdminIds.has(id));
 
         if (intersectedIds.length === 0) {
@@ -1516,11 +1551,19 @@ export function AdministrationService({
           { requesterUserId, userId, administrationId },
           'Requester attempting cross-user administration agreements access',
         );
-        await authorizationService.requirePermission(
-          requesterUserId,
-          FgaRelation.CAN_READ,
-          `${FgaType.ADMINISTRATION}:${administrationId}`,
-        );
+        // Authorized guardians (can_read_child on the target's family) may read their
+        // child's per-administration consent agreements. A guardian holds no
+        // administration-level access, so check the guardian path first and otherwise
+        // require can_read on the administration (the admin/teacher path), which throws
+        // FORBIDDEN for everyone else.
+        const isGuardian = await hasGuardianReadAccess(requesterUserId, userId);
+        if (!isGuardian) {
+          await authorizationService.requirePermission(
+            requesterUserId,
+            FgaRelation.CAN_READ,
+            `${FgaType.ADMINISTRATION}:${administrationId}`,
+          );
+        }
       }
 
       const queryParams = {

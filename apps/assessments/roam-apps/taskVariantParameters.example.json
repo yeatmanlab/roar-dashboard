@@ -15,7 +15,7 @@
     }
   },
   {
-    "variantName": "un-dígito-school-nostory-keyboardPractice",
+    "variantName": "un-digito-school-nostory-keyboardPractice",
     "params": {
       "audio": true,
       "consent": false,
@@ -30,7 +30,7 @@
     }
   },
   {
-    "variantName": "pt-um-dígito-school-nostory-keyboardPractice",
+    "variantName": "pt-um-digito-school-nostory-keyboardPractice",
     "params": {
       "audio": true,
       "consent": false,
@@ -61,7 +61,7 @@
     }
   },
   {
-    "variantName": "varios-dígitos-school-nostory-keyboardPractice",
+    "variantName": "varios-digitos-school-nostory-keyboardPractice",
     "params": {
       "audio": true,
       "consent": false,
@@ -76,7 +76,7 @@
     }
   },
   {
-    "variantName": "pt-vários-dígitos-school-nostory-keyboardPractice",
+    "variantName": "pt-varios-digitos-school-nostory-keyboardPractice",
     "params": {
       "audio": true,
       "consent": false,

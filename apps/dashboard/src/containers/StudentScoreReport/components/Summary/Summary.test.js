@@ -16,6 +16,7 @@ describe('Summary.vue', () => {
             roarSummary: 'This is a summary of assessment results.',
             completedTasks: 'This report includes scores for the following assessments:',
             summary: 'Based on these results, {firstName} shows strong performance.',
+            longitudinalNote: 'Compare results over time to track progress.',
           },
         },
       },

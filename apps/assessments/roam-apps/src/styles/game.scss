@@ -1431,10 +1431,16 @@ $text-red: rgba(222, 69, 69, 1);
       line-height: 1.5;
     }
 
-    .img-border {
+    .img-border-width {
       border: 6px solid rgba(229, 218, 191, 1);
       border-radius: 10px;
       width: 60%;
+    }
+
+    .img-border-height {
+      border: 6px solid rgba(229, 218, 191, 1);
+      border-radius: 10px;
+      height: 55%;
     }
 
     .class-container {

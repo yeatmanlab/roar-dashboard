@@ -36,8 +36,10 @@ export const UserFamilyFactory = Factory.define<UserFamily>(({ onCreate }) => {
     userId: faker.string.uuid(),
     familyId: faker.string.uuid(),
     role: faker.helpers.arrayElement(['parent', 'child'] as const),
-    joinedOn: new Date(),
-    leftOn: null, // null = active membership
+    // Backdate by 1 s so enrollment is safely ≤ Postgres NOW() when
+    // the query runs, avoiding a JS-vs-DB clock race on joinedOn.
+    joinedOn: new Date(Date.now() - 1000),
+    leftOn: null, // null = active enrollment
     createdAt: new Date(),
     updatedAt: new Date(),
   };

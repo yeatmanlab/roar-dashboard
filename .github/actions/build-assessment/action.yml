@@ -12,7 +12,7 @@ inputs:
     description: "npm script to run for the build (e.g. build:staging, build:production)."
     required: true
   roar-api-base-url:
-    description: "Full base URL for the ROAR backend API, including /v1 (e.g. https://api.staging.roar.education/v1). Baked into the bundle at build time."
+    description: "Origin of the ROAR backend API, with no path (e.g. https://api-staging.roar.education). The version prefix comes from the contract. Baked into the bundle at build time."
     required: true
 
 runs:

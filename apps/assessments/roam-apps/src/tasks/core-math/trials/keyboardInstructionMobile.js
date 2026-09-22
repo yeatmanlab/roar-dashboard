@@ -4,18 +4,20 @@ import { mediaAssets } from '../../..';
 import { jsPsych } from '../../taskSetup';
 import i18next from 'i18next';
 import store from 'store2';
-// import { SimpleKeyboard } from 'simple-keyboard';
-import { isMobile } from './trialHelpers';
+import { SimpleKeyboard } from 'simple-keyboard';
+import { getClickSource } from '../../shared/helpers';
 //import "simple-keyboard/build/css/index.css";
 
 let rt = [];
 let key = [];
+let clickSourceList = [];
 let textboxVal;
-//let startTime;
+let startTime;
 let source;
 
-/*
-const storeKeyRT = (keyName) => {
+// e is only passed by onKeyPress below (the on-screen virtual keypad), so
+// clickSourceList fills in per keystroke with which pointer type was used.
+const storeKeyRT = (keyName, e) => {
   const endTime = performance.now();
   const response_time = Math.round(endTime - startTime);
   if (keyName === '{enter}') {
@@ -26,8 +28,10 @@ const storeKeyRT = (keyName) => {
     key.push(keyName);
   }
   rt.push(response_time);
+  if (e) {
+    clickSourceList.push(getClickSource(e));
+  }
 };
-*/
 
 const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
   return {
@@ -67,8 +71,9 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
       //initialise variables for trial
       rt = [];
       key = [];
+      clickSourceList = [];
       textboxVal = null;
-      //startTime = performance.now();
+      startTime = performance.now();
     },
     data: {
       // Here is where we specify that we should save the trial to Firestore
@@ -78,9 +83,9 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
       let currentInput = document.getElementById('practice_number');
       currentInput.classList.add('focused');
 
-      /*
       const decimalKey = store.session.get('decimalKey');
 
+      // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
       const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`],
@@ -90,17 +95,17 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
           '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
           '{empty}': ' ', // Prevents rendering key value
         },
-        onChange: (input) => onChange(input),
-        onKeyPress: (button) => onKeyPress(button),
+        onChange: onChange,
+        onKeyPress: (button, e) => onKeyPress(button, e),
       });
 
-      function onChange(input) {
+      function onChange() {
         textboxVal = document.getElementById('practice_number').textContent;
       }
 
-      function onKeyPress(button) {
+      function onKeyPress(button, e) {
         if (!currentInput) return;
-        storeKeyRT(button);
+        storeKeyRT(button, e);
         if (button === '{bksp}') {
           currentInput.textContent = currentInput.textContent.slice(0, -1);
         } else if (button === '{enter}') {
@@ -108,7 +113,7 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
         } else {
           currentInput.textContent += button;
         }
-      }*/
+      }
 
       async function replayAudio() {
         // pause audio
@@ -167,7 +172,9 @@ const keyboardInstructionTrial = (corpusName, assessment_stage_val) => {
         response_key_list: key,
         response_time_list: rt,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source_list: clickSourceList,
       });
       store.session.set('keyboardInstructionDone', true);
     },
@@ -217,8 +224,9 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       //initialise variables for trial
       rt = [];
       key = [];
+      clickSourceList = [];
       textboxVal = null;
-      //startTime = performance.now();
+      startTime = performance.now();
     },
     data: {
       // Here is where we specify that we should save the trial to Firestore
@@ -228,9 +236,9 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
       let currentInput = document.getElementById('practice_number');
       currentInput.classList.add('focused');
 
-      /*
       const decimalKey = store.session.get('decimalKey');
 
+      // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
       const keyboard = new SimpleKeyboard({
         layout: {
           default: ['1 2 3 4 5 6 7 8 9 0', `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`],
@@ -240,17 +248,17 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
           '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
           '{empty}': ' ', // Prevents rendering key value
         },
-        onChange: (input) => onChange(input),
-        onKeyPress: (button) => onKeyPress(button),
+        onChange: onChange,
+        onKeyPress: (button, e) => onKeyPress(button, e),
       });
 
-      function onChange(input) {
+      function onChange() {
         textboxVal = document.getElementById('practice_number').textContent;
       }
 
-      function onKeyPress(button) {
+      function onKeyPress(button, e) {
         if (!currentInput) return;
-        storeKeyRT(button);
+        storeKeyRT(button, e);
         if (button === '{bksp}') {
           currentInput.textContent = currentInput.textContent.slice(0, -1);
         } else if (button === '{enter}') {
@@ -258,7 +266,7 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         } else {
           currentInput.textContent += button;
         }
-      }*/
+      }
 
       async function replayAudio() {
         // pause audio
@@ -319,7 +327,9 @@ const feedbackIncorrect = (corpusName, assessment_stage_val) => {
         response_key_list: key,
         response_time_list: rt,
         distractors: stimulus.distractor_list ? stimulus.distractor_list : null,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source_list: clickSourceList,
       });
     },
   };
@@ -369,9 +379,10 @@ const feedbackCorrect = {
   button_choices: () => [''],
   response_ends_trial: true,
   trial_ends_after_audio: true,
-  /*on_load: () => {
+  on_load: () => {
     const decimalKey = store.session.get('decimalKey');
 
+    // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
     const keyboard = new SimpleKeyboard({
       layout: {
         default: ['1 2 3 4 5 6 7 8 9 0', `{bksp} {empty} {empty} ${decimalKey} - {empty} {empty} {enter}`],
@@ -382,7 +393,7 @@ const feedbackCorrect = {
         '{empty}': ' ', // Prevents rendering key value
       },
     });
-  },*/
+  },
 };
 
 const ifCorrect = {

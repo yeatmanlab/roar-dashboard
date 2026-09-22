@@ -5,6 +5,8 @@ import {
   MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES,
 } from '@roar-platform/assessment-schema/roar-multichoice';
 
+const COMPOSITE_DOMAIN = 'composite';
+
 /**
  * CVA (written vocabulary) scoring config.
  *
@@ -28,11 +30,11 @@ export default {
   scoreFields: {
     percentile: [
       { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.PERCENTILE },
-      { minVersion: 0, fieldName: null },
+      { minVersion: 0, fieldName: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_PERCENT_CORRECT },
     ],
     percentileDisplay: [
       { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.PERCENTILE },
-      { minVersion: 0, fieldName: null },
+      { minVersion: 0, fieldName: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_PERCENT_CORRECT },
     ],
     standardScore: [
       { minVersion: MULTICHOICE_SCORING_VERSION.V1, fieldName: MULTICHOICE_COMPOSITE_SCORE_NAMES.STANDARD_SCORE },
@@ -47,5 +49,57 @@ export default {
       { minVersion: 0, fieldName: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_SCORE },
     ],
   },
-  classification: { type: 'none' as const },
+  classification: {
+    type: 'percentile-then-rawscore' as const,
+    percentileCutoffs: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, cutoffs: { achieved: 40, developing: 20 } }],
+    rawScoreThresholds: [{ minVersion: MULTICHOICE_SCORING_VERSION.V1, thresholds: { above: 520, some: 447 } }],
+  },
+  displayCategory: [
+    { minVersion: MULTICHOICE_SCORING_VERSION.V1, category: 'normed' },
+    { minVersion: 0, category: 'percentCorrect' },
+  ],
+  displayRanges: {
+    percentile: { min: 0, max: 99 },
+    percentCorrect: { min: 0, max: 100 },
+    standardScore: { min: 0, max: 180 },
+    rawScore: { min: 100, max: 900 },
+  },
+  subscores: [
+    {
+      kind: 'number' as const,
+      key: 'numCorrect',
+      label: 'Num Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT,
+    },
+    {
+      kind: 'number' as const,
+      key: 'numAttempted',
+      label: 'Num Attempted',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED,
+    },
+    {
+      kind: 'number' as const,
+      key: 'percentCorrect',
+      label: 'Percent Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT,
+      round: true,
+    },
+    {
+      kind: 'number' as const,
+      key: 'subScore',
+      label: 'Num Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_SCORE,
+    },
+    {
+      kind: 'number' as const,
+      key: 'subPercentCorrect',
+      label: 'Percent Correct',
+      domain: COMPOSITE_DOMAIN,
+      name: MULTICHOICE_NON_ADAPTIVE_SCORE_NAMES.SUB_PERCENT_CORRECT,
+    },
+  ],
 } as const;

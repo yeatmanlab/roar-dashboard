@@ -116,7 +116,10 @@ $arrowBlue: rgba(66, 152, 181, 1);
   }
 
   .mobile-practice-feedback {
+    appearance: none;
     background: none;
+    border: 0;
+    padding: 0;
     margin-top: 4rem;
   }
 

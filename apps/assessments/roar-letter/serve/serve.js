@@ -6,6 +6,7 @@ import { LETTER_LANGUAGES, PHONICS_TASK_IDS } from '@roar-platform/assessment-sc
 import RoarLetter from '../src/experiment/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 import { mountVariantPicker } from '../../shared/variantPicker.js';
+import { ROAR_DB_MODE, unresolvedDefaultVariantPolicy } from '../../shared/roarDbMode.js';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
@@ -37,6 +38,16 @@ const taskId = task === 'phonics' ? PHONICS_TASK_IDS.EN : language.taskId;
 // The dev variant picker lists every published variant across all letter language tasks plus phonics.
 const PICKER_TASK_IDS = [...Object.values(LETTER_LANGUAGES).map((l) => l.taskId), PHONICS_TASK_IDS.EN];
 
+// Default variant per task, used when the URL supplies no `variantId`. Placeholder values
+// lifted from taskVariantParameters.example.json — researchers revise these per environment
+// as they re-create the variants. A task with no entry keeps the previous behaviour (oldest
+// published variant). See https://github.com/yeatmanlab/roar-project-management/issues/1828
+const DEFAULT_VARIANT_NAMES = {
+  [LETTER_LANGUAGES.en.taskId]: 'letter-school-cat-random-5min-v2',
+  [LETTER_LANGUAGES.es.taskId]: 'es-letter-school-shortLetter-5min',
+  [PHONICS_TASK_IDS.EN]: 'roar-phonics-2025-09-22-A',
+};
+
 // App config
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -54,10 +65,16 @@ onAuthStateChanged(auth, async (user) => {
 
       // Provision the anonymous ROAR user (and resolve a variant) via the SDK.
       // Performs the participant-free calls and hands back the participantId and resolved variantId.
-      // The variantId URL param wins; otherwise it falls back to the first published variant.
+      // The variantId URL param wins; otherwise the task's entry in DEFAULT_VARIANT_NAMES is
+      // matched by name, falling back to the oldest published variant when there is none.
       const { participantId, variantId: resolvedVariantId } = await bootstrapAnonymousSession(
         { baseUrl, auth: authCallbacks },
-        { ...(variantId ? { variantId } : {}), taskId },
+        {
+          ...(variantId ? { variantId } : {}),
+          taskId,
+          defaultVariantName: DEFAULT_VARIANT_NAMES[taskId],
+          onUnresolvedDefault: unresolvedDefaultVariantPolicy(ROAR_DB),
+        },
       );
 
       const ctx = {
@@ -74,7 +91,7 @@ onAuthStateChanged(auth, async (user) => {
 
       // Dev/staging only: mount a variant switcher so reviewers can hop between published
       // variants without hand-editing the URL. No-op in production (guard is eliminated at build).
-      if (ROAR_DB !== 'production') {
+      if (ROAR_DB !== ROAR_DB_MODE.PRODUCTION) {
         mountVariantPicker({
           baseUrl,
           auth: authCallbacks,

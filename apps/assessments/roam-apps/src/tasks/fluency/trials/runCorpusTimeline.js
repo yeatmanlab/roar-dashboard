@@ -27,6 +27,8 @@ export const numberMainOuterLoop = (corpusName, assessment_stage_val, responseMo
       } else {
         //end task because all blocks are complete
         store.session.set('arrayIdx', 0);
+        //hide progress bar
+        document.getElementById('jspsych-progressbar-container').style.visibility = 'hidden';
         return false;
       }
     },

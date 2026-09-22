@@ -19,17 +19,24 @@ export const t_timelineDef = () => {
 
   arrTrials.push(tr.t_saveConfigBlockStim());
 
-  arrTrials.push(tr.t_enterFullscreen(true));
+  arrTrials.push(tr.t_enterFullscreen(false)); // @fix-freeze-audio - adding explicit audio enable request
 
   arrTrials.push(tr.t_enterLandscape());
 
   arrTrials.push(tr.t_installTouchGuards());
 
-  arrTrials.push(tr.t_collectDataMonitor());
+  arrTrials.push(
+    // @fix-freeze-audio - white background
+    tr.t_collectDataMonitor({
+      keyImgBg: '',
+    }),
+  );
 
   arrTrials.push(tr.t_setAllowModeInputAll(true));
 
   arrTrials.push(tr.t_initCatsAll());
+
+  arrTrials.push(tr.t_enableAudio()); // @fix-freeze-audio - adding explicit audio enable request
 
   arrTrials.push(
     tr.t_instructionGeneral(

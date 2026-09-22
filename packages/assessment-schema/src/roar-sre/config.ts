@@ -1,3 +1,4 @@
+import { GCS_ORIGIN } from '../constants/asset-origins.js';
 import { COMPOSITE_FOUNDATIONAL_DOMAIN } from '../constants/common-domains.js';
 
 /**
@@ -51,7 +52,11 @@ export type SreScoringVersion = (typeof SRE_SCORING_VERSION)[keyof typeof SRE_SC
  * @param version - The scoring version
  * @returns The full GCS URL for the lookup table
  */
-export const SRE_SCORE_TABLE_URL = (taskId: 'sre' | 'sre-es', version: SreScoringVersion): string => {
+export const SRE_SCORE_TABLE_URL = (
+  taskId: 'sre' | 'sre-es',
+  version: SreScoringVersion,
+  origin: string = GCS_ORIGIN,
+): string => {
   const prefix = taskId.replace('-', '_');
-  return `https://storage.googleapis.com/roar-sre/scores/${prefix}_lookup_v${version}.csv`;
+  return `${origin}/roar-sre/scores/${prefix}_lookup_v${version}.csv`;
 };

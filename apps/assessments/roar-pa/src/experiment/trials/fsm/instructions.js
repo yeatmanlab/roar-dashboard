@@ -2,6 +2,7 @@ import jsPsychAudioButtonResponse from '@jspsych/plugin-audio-button-response';
 import store from 'store2';
 import i18next from 'i18next';
 import { mediaAssets } from '../../experiment';
+import { AUDIO_END_FALLBACK_MS } from '../../audioLifecycle';
 import '../../i18n';
 
 const setupRecommendation = {
@@ -42,6 +43,7 @@ const fsmIntro1 = {
         </div>
     `,
   trial_ends_after_audio: true,
+  trial_duration: AUDIO_END_FALLBACK_MS,
   choices: [],
   response_allowed_while_playing: false,
 };
@@ -164,6 +166,7 @@ export const fsmEnd = {
       </div>`;
   },
   trial_ends_after_audio: true,
+  trial_duration: AUDIO_END_FALLBACK_MS,
   choices: [],
   response_allowed_while_playing: false,
 };

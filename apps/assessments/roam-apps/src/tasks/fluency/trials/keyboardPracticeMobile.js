@@ -4,16 +4,15 @@ import { mediaAssets } from '../../..';
 import { jsPsych } from '../../taskSetup';
 import i18next from 'i18next';
 import store from 'store2';
-//import { SimpleKeyboard } from 'simple-keyboard';
+import { SimpleKeyboard } from 'simple-keyboard';
 //import "simple-keyboard/build/css/index.css";
 
 let rt = [];
 let key = [];
 let textboxVal;
-//let startTime;
+let startTime;
 let source1, source2;
 
-/*
 const storeKeyRT = (keyName) => {
   const endTime = performance.now();
   const response_time = Math.round(endTime - startTime);
@@ -26,7 +25,6 @@ const storeKeyRT = (keyName) => {
   }
   rt.push(response_time);
 };
-*/
 
 export const practiceStimulusMobile = {
   type: jsPsychHtmlKeyboardResponse,
@@ -61,7 +59,7 @@ export const practiceStimulusMobile = {
     rt = [];
     key = [];
     textboxVal = null;
-    //startTime = performance.now();
+    startTime = performance.now();
   },
   data: {
     // Here is where we specify that we should save the trial to Firestore
@@ -71,9 +69,8 @@ export const practiceStimulusMobile = {
     let currentInput = document.getElementById('practice_number');
     currentInput.classList.add('focused');
 
-    // Previous implementation using SimpleKeyboard library
-    /*
-      const keyboard = new SimpleKeyboard({
+    // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
+    const keyboard = new SimpleKeyboard({
       layout: {
         default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
       },
@@ -82,7 +79,7 @@ export const practiceStimulusMobile = {
         '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
         '{empty}': ' ', // Prevents rendering key value
       },
-      onChange: (input) => onChange(input),
+      onChange: onChange,
       onKeyPress: (button) => onKeyPress(button),
     });
 
@@ -101,7 +98,6 @@ export const practiceStimulusMobile = {
         currentInput.textContent += button;
       }
     }
-    */
 
     async function replayAudio() {
       // pause audio
@@ -194,7 +190,7 @@ export const feedbackIncorrectMobile = {
     rt = [];
     key = [];
     textboxVal = null;
-    //startTime = performance.now();
+    startTime = performance.now();
   },
   data: {
     // Here is where we specify that we should save the trial to Firestore
@@ -204,7 +200,7 @@ export const feedbackIncorrectMobile = {
     let currentInput = document.getElementById('practice_number');
     currentInput.classList.add('focused');
 
-    /*
+    // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
     const keyboard = new SimpleKeyboard({
       layout: {
         default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
@@ -214,11 +210,11 @@ export const feedbackIncorrectMobile = {
         '{enter}': `${i18next.t('terms.submit')} <span class="big-symbol">\u2713</span>`,
         '{empty}': ' ', // Prevents rendering key value
       },
-      onChange: (input) => onChange(input),
+      onChange: onChange,
       onKeyPress: (button) => onKeyPress(button),
     });
 
-    function onChange(input) {
+    function onChange() {
       textboxVal = document.getElementById('practice_number').textContent;
     }
 
@@ -233,7 +229,6 @@ export const feedbackIncorrectMobile = {
         currentInput.textContent += button;
       }
     }
-    */
 
     async function replayAudio() {
       // pause audio
@@ -331,7 +326,7 @@ export const feedbackCorrectMobile = {
     let currentInput = document.getElementById('practice_number');
     currentInput.innerText = store.session.get('response');
 
-    /*
+    // eslint-disable-next-line no-unused-vars -- constructed for its DOM-rendering side effect only
     const keyboard = new SimpleKeyboard({
       layout: {
         default: ['1 2 3 4 5 6 7 8 9 0', '{bksp} {empty} {empty} {empty} {empty} {empty} {empty} {enter}'],
@@ -342,6 +337,5 @@ export const feedbackCorrectMobile = {
         '{empty}': ' ', // Prevents rendering key value
       },
     });
-    */
   },
 };

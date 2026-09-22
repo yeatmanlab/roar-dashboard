@@ -39,14 +39,17 @@ export default defineConfig(({ mode }) => ({
   define:
     mode !== 'lib'
       ? {
-          // Default to '/v1' so dev builds use relative URLs proxied by Vite.
-          // Set ROAR_API_BASE_URL for production — full URL including /v1.
-          ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || '/v1'),
-          // Defaults to the local Auth emulator in dev — assessment development
-          // always runs against the emulator, never a real Firebase project. An
-          // explicit FIREBASE_AUTH_EMULATOR_HOST env var still overrides.
+          // Default to '' so dev builds emit relative URLs, which Vite proxies. The
+          // version prefix comes from the contract, so ROAR_API_BASE_URL is an origin with no path.
+          ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || ''),
+          // Development only — defaults to the local Auth emulator, since assessment
+          // development always runs against the emulator, never a real Firebase project.
+          // src/main.js calls connectAuthEmulator() on any non-empty value, so injecting
+          // this into a deployed build would point it at an emulator that issues
+          // unverified tokens. Staging and production resolve Firebase config from
+          // /__/firebase/init.json instead.
           'process.env.FIREBASE_AUTH_EMULATOR_HOST': JSON.stringify(
-            process.env.FIREBASE_AUTH_EMULATOR_HOST || (mode === 'development' ? '127.0.0.1:9099' : ''),
+            mode === 'development' ? process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099' : '',
           ),
         }
       : {},

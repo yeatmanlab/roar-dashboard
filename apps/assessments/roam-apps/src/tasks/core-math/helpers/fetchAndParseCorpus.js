@@ -14,6 +14,7 @@ import 'katex/dist/katex.min.css'; //katex css
 import 'simple-keyboard/build/css/index.css'; //simple keyboard css
 import { getCorpusNumLine } from '../../magpi/helpers';
 import i18next from 'i18next';
+import { deviceType, primaryInput } from 'detect-it';
 
 let increment_list = [];
 
@@ -183,6 +184,11 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
   let itemType = [];
   let subSkillRange = {};
 
+  store.session.set('deviceType', deviceType);
+  store.session.set('primaryInput', primaryInput);
+  // desktop device that has a touch screen
+  store.session.set('desktopTouchScreen', deviceType === 'hybrid' && primaryInput === 'mouse');
+
   // get language for url
   let lng = getLanguage(i18next.language);
 
@@ -321,6 +327,12 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
 
     /*try {
       await downloadHyperParamsCSV(hyperParams, "hyperParams");
+    } catch (error) {
+      console.error("Error:", error);
+    }*/
+
+    /*try {
+      await downloadLocalCSV(breakMap, "breaks");
     } catch (error) {
       console.error("Error:", error);
     }*/
@@ -499,14 +511,22 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
 
   //add story mode assets
   let suffix = '';
-  if (store.session.get('config').storyOption || store.session.get('isK2')) {
+  if (store.session.get('config').story) {
     assets.default.shared.push('core-math-end-screen-k2.png');
     suffix = '-k2';
   }
 
   for (let i = 0; i < breaks.breakScreens.length; i++) {
-    assets.default.shared.push('core-math-break-screen-' + breaks.breakScreens[i] + '.png');
-    assets.default.languageSpecific.shared.push('core-math-break-' + i + suffix + '.mp3');
+    const screen = breaks.breakScreens[i];
+    const imageFile = 'core-math-break-screen-' + screen + '.png';
+    const audioFile = 'core-math-break-' + screen + suffix + '.mp3';
+
+    if (!assets.default.shared.includes(imageFile)) {
+      assets.default.shared.push(imageFile);
+    }
+    if (!assets.default.languageSpecific.shared.includes(audioFile)) {
+      assets.default.languageSpecific.shared.push(audioFile);
+    }
   }
 
   //instruction assets
@@ -515,10 +535,24 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
   assets.default.languageSpecific.shared.push('core-math-end-screen' + suffix + '.mp3');
 
   //speaker button instruction
-  if (grade > 4) {
-    assets.default.languageSpecific.device.push('core-math-response.gif');
+  if (store.session.get('desktopTouchScreen')) {
+    assets.default.languageSpecific.device.push('navigation-instruction-mobile.mp3');
+    assets.default.languageSpecific.device.push('core-math-response-mobile.mp3');
+    assets.default.languageSpecific.device.push('core-math-speaker-mobile.gif');
+    if (grade > 4) {
+      assets.default.languageSpecific.device.push('core-math-response-mobile.gif');
+    } else {
+      assets.default.languageSpecific.device.push('core-math-response-k4-mobile.gif');
+    }
   } else {
-    assets.default.languageSpecific.device.push('core-math-response-k4.gif');
+    assets.default.languageSpecific.device.push('navigation-instruction.mp3');
+    assets.default.languageSpecific.device.push('core-math-response.mp3');
+    assets.default.languageSpecific.device.push('core-math-speaker.gif');
+    if (grade > 4) {
+      assets.default.languageSpecific.device.push('core-math-response.gif');
+    } else {
+      assets.default.languageSpecific.device.push('core-math-response-k4.gif');
+    }
   }
 
   addItemSpecificAudio(checkStimulusArray, assets);
@@ -542,12 +576,10 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
     let assetList;
     if (grade >= 3) {
       assetList = [
-        'num-line-intro.mp3',
         'num-line-instr-100.mp3',
         'num-line-practice-100.mp3',
         'num-line-practice-100-correct.mp3',
         'num-line-practice-100-incorrect.mp3',
-        'num-line-post-practice-100.mp3',
         'num-line-instr-1.mp3',
         'num-line-practice-1.mp3',
         'num-line-practice-1-correct.mp3',
@@ -561,12 +593,10 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
       ];
     } else {
       assetList = [
-        'num-line-intro-K2.mp3',
         'num-line-instr-20.mp3',
         'num-line-practice-20.mp3',
         'num-line-practice-20-correct.mp3',
         'num-line-practice-20-incorrect.mp3',
-        'num-line-post-practice-20.mp3',
         'num-line-instr-100-K2.mp3',
         'num-line-practice-100-K2.mp3',
         'num-line-practice-100-correct.mp3',
@@ -575,6 +605,14 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
         'num-line-practice-done.mp3',
         'num-line-move-feedback.mp3',
       ];
+    }
+
+    if (store.session.get('config').story) {
+      assetList.push('num-line-intro-K2.mp3');
+      assetList.push('num-line-post-practice-20.mp3');
+    } else {
+      assetList.push('num-line-intro.mp3');
+      assetList.push('num-line-post-practice-100.mp3');
     }
 
     for (let i = 0; i < assetList.length; i++) {

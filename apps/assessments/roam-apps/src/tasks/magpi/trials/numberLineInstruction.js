@@ -6,7 +6,6 @@ import { jsPsych } from '../../taskSetup';
 import _round from 'lodash/round';
 import i18next from 'i18next';
 import { playAudio, stopAudio, initializeNumberLine, setMarkerFromValue } from './numberLineSlider';
-import { isMobile } from '../../fluency/helpers';
 
 const delayAfterPlayback = () => {
   let timerForceId = setTimeout(() => {
@@ -23,14 +22,14 @@ const enableButton = (btn) => {
 export const transitionScreen = {
   type: jsPsychAudioMultiResponse,
   stimulus: () => {
-    if (store.session.get('isK2')) {
+    if (store.session.get('config').story) {
       return mediaAssets.audio['numLineIntroK2'];
     } else {
       return mediaAssets.audio['numLineIntro'];
     }
   },
   prompt: () => {
-    if (store.session.get('isK2')) {
+    if (store.session.get('config').story) {
       return `
        <div class = "jspsych-content-modified">
           <img src="${mediaAssets.images['coreMathBreakScreen3']}" alt= "background" class="imageBG"> 
@@ -85,26 +84,45 @@ export const transitionScreen = {
 const transitionScreen2 = {
   type: jsPsychAudioMultiResponse,
   stimulus: () => {
-    if (store.session.get('blockType') === 20) {
-      return mediaAssets.audio['numLinePostPractice20'];
-    } else if (store.session.get('blockType') === 100) {
-      if (store.session.get('arrayIdx') > 0) {
-        return mediaAssets.audio['numLinePostPractice100K2'];
+    if (store.session.get('arrayIdx') === 0) {
+      if (store.session.get('config').story) {
+        return mediaAssets.audio['numLinePostPractice20']; // general instructions with Ally (for story mode)
       } else {
-        return mediaAssets.audio['numLinePostPractice100'];
+        return mediaAssets.audio['numLinePostPractice100']; // general instruction without Ally (for non story mode)
       }
-    } else {
-      return mediaAssets.audio['numLinePostPractice1'];
+    } else if (store.session.get('arrayIdx') > 0) {
+      if (store.session.get('blockType') === 100) {
+        return mediaAssets.audio['numLinePostPractice100K2']; //instruction with Ally's name about putting numbers on a number line (applies for K-2 irrespective of story and non story mode)
+      } else {
+        return mediaAssets.audio['numLinePostPractice1']; // instruction without Ally's name about putting fractions on a number line (applies for 3-12 irrespective of story and non-story mode)
+      }
     }
   },
   prompt: () => {
-    if (store.session.get('isK2')) {
-      let headerText = `${i18next.t('magpiPilot.numberLine.transition.K2-text4')}`;
-      let paraText = `${i18next.t('magpiPilot.numberLine.transition.K2-text5')}`;
-      if (store.session.get('arrayIdx') > 0) {
-        paraText = `${i18next.t('magpiPilot.numberLine.transition.K2-text6')}`;
+    let headerText, paraText;
+    if (store.session.get('arrayIdx') === 0) {
+      if (store.session.get('config').story) {
+        // general instructions with Ally (for story mode)
+        headerText = `${i18next.t('magpiPilot.numberLine.transition.K2-text4')}`;
+        paraText = `${i18next.t('magpiPilot.numberLine.transition.K2-text5')}`;
+      } else {
+        // general instruction without Ally (for non story mode)
+        headerText = `${i18next.t('magpiPilot.numberLine.transition.text5')}`;
+        paraText = `${i18next.t('magpiPilot.numberLine.transition.text6')}`;
       }
+    } else if (store.session.get('arrayIdx') > 0) {
+      if (store.session.get('blockType') === 100) {
+        //instruction with Ally's name about putting numbers on a number line (applies for K-2 irrespective of story and non story mode)
+        headerText = `${i18next.t('magpiPilot.numberLine.transition.K2-text4')}`;
+        paraText = `${i18next.t('magpiPilot.numberLine.transition.K2-text6')}`;
+      } else {
+        // instruction without Ally's name about putting fractions on a number line (applies for 3-12 irrespective of story and non-story mode)
+        headerText = `${i18next.t('magpiPilot.numberLine.transition.text7')}`;
+        paraText = `${i18next.t('magpiPilot.numberLine.transition.text8')}`;
+      }
+    }
 
+    if (store.session.get('config').story) {
       return (
         `
        <div class = "jspsych-content-modified">
@@ -131,12 +149,6 @@ const transitionScreen2 = {
       `
       );
     } else {
-      let headerText = `${i18next.t('magpiPilot.numberLine.transition.text5')}`;
-      let paraText = `${i18next.t('magpiPilot.numberLine.transition.text6')}`;
-      if (store.session.get('arrayIdx') > 0) {
-        headerText = `${i18next.t('magpiPilot.numberLine.transition.text7')}`;
-        paraText = `${i18next.t('magpiPilot.numberLine.transition.text8')}`;
-      }
       return (
         `
             <div class = "jspsych-content-modified">
@@ -260,6 +272,7 @@ const instructionIntro1 = () => {
 
 const instructionIntro2 = () => {
   let handleContinueClick;
+  let clickSourceList;
 
   let stim = {
     type: jsPsychHtmlButtonResponse,
@@ -320,6 +333,7 @@ const instructionIntro2 = () => {
       const minValue = 0;
       const maxValue = store.session.get('blockType');
       let currentValue = minValue;
+      clickSourceList = [];
       const step = store.session.get('blockStepInstruction')[maxValue];
       const line = document.getElementById('line');
       const marker = document.getElementById('marker');
@@ -351,6 +365,9 @@ const instructionIntro2 = () => {
           continueText.classList.remove('hidden');
           continueBtn.classList.remove('go-button-hidden');
           playAudio('numLinePracticeDone');
+        },
+        onInteraction: (pointerType) => {
+          clickSourceList.push(pointerType || 'unknown');
         },
       });
     },
@@ -390,7 +407,9 @@ const instructionIntro2 = () => {
         percent_error: perError,
         item: store.session.get('blockType'),
         target: target,
-        is_mobile: isMobile,
+        device_type: store.session.get('deviceType'),
+        primary_input: store.session.get('primaryInput'),
+        click_source_list: clickSourceList,
       });
     },
   };

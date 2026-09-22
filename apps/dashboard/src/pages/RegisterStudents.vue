@@ -358,6 +358,7 @@
               :using-org-picker="usingOrgPicker"
               :using-email="usingEmail"
               :submit-status="submitting"
+              :resolve-org-id="getOrgId"
               @validation-update="handleValidationUpdate"
               @delete-student="removeUser"
             >
@@ -382,6 +383,8 @@ import Button from 'primevue/button';
 import PvFileUpload from 'primevue/fileupload';
 import PvToggleSwitch from 'primevue/toggleswitch';
 import { csvFileToJson } from '@/helpers';
+import csvRowToImportRow from '@/helpers/csvRowToImportRow';
+import useBulkImportUsersMutation from '@/composables/mutations/useBulkImportUsersMutation';
 import { orgFetchAll } from '@/helpers/query/orgs';
 import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
@@ -420,6 +423,7 @@ const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const { userCan, Permissions } = usePermissions();
+const bulkImportUsersMutation = useBulkImportUsersMutation();
 
 const SubmitStatus = {
   IDLE: 'idle',
@@ -657,16 +661,22 @@ const orgCache = ref({
   families: new Map(),
 });
 
+// Tracks in-flight orgFetchAll calls, keyed by (orgType, selectedDistrict, selectedSchool),
+// so concurrent lookups that would otherwise all miss orgCache before the first one resolves
+// coalesce into a single Firestore query instead of one per row.
+const pendingOrgFetches = new Map();
+
 // Helper function to get org ID (uses cache if available)
 const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchool = null) => {
   if (!orgName) return null;
-
+  const normalize = (s) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+  const cleanOrgInput = normalize(orgName);
   const cacheKey =
     orgType === 'schools'
-      ? `${orgName}-${selectedDistrict}`
+      ? `${cleanOrgInput}-${selectedDistrict}`
       : orgType === 'classes'
-        ? `${orgName}-${selectedSchool}`
-        : orgName;
+        ? `${cleanOrgInput}-${selectedSchool}`
+        : cleanOrgInput;
 
   // Check cache first
   if (orgCache.value[orgType].has(cacheKey)) {
@@ -675,30 +685,40 @@ const getOrgId = async (orgType, orgName, selectedDistrict = null, selectedSchoo
 
   // If not in cache, fetch and cache the result
   try {
-    // Fetch user's available orgs of type orgType
-    const userAdminOrgs = await orgFetchAll(
-      orgType,
-      selectedDistrict,
-      selectedSchool,
-      orderByDefault,
-      isSuperAdmin,
-      adminOrgs,
-      ['id', 'name', 'districtId', 'schoolId', 'schools', 'classes'],
-    );
+    const fetchKey = `${orgType}-${selectedDistrict}-${selectedSchool}`;
+    let fetchPromise = pendingOrgFetches.get(fetchKey);
+    if (!fetchPromise) {
+      // Fetch user's available orgs of type orgType
+      fetchPromise = orgFetchAll(orgType, selectedDistrict, selectedSchool, orderByDefault, isSuperAdmin, adminOrgs, [
+        'id',
+        'name',
+        'districtId',
+        'schoolId',
+        'schools',
+        'classes',
+      ]).finally(() => {
+        // Only coalesce while in flight; let it be retried/refetched after settling.
+        pendingOrgFetches.delete(fetchKey);
+      });
+      pendingOrgFetches.set(fetchKey, fetchPromise);
+    }
+
+    const userAdminOrgs = await fetchPromise;
 
     // Cache orgs in case we need them for a subsequent call
     userAdminOrgs.forEach((org) => {
+      const cleanOrgDb = normalize(org.name);
       const cacheKey =
         orgType === 'schools'
-          ? `${org.name}-${selectedDistrict}`
+          ? `${cleanOrgDb}-${selectedDistrict}`
           : orgType === 'classes'
-            ? `${org.name}-${selectedSchool}`
-            : org.name;
+            ? `${cleanOrgDb}-${selectedSchool}`
+            : cleanOrgDb;
       orgCache.value[orgType].set(cacheKey, org.id);
     });
 
     // Find org with name orgName
-    const org = userAdminOrgs.find((o) => o.name.trim().toLowerCase() === orgName.trim().toLowerCase());
+    const org = userAdminOrgs.find((o) => normalize(o.name) === cleanOrgInput);
     return org?.id;
   } catch (error) {
     console.error(`Error fetching ${orgType} ID for ${orgName}:`, error);
@@ -782,137 +802,134 @@ const preTransformStudents = () => {
   mappedStudents.value = transformedStudents;
   showSubmitTable.value = true;
 };
+// Maps the org-field key (plural) to the import-row membership entity type (singular).
+const ORG_KEY_TO_ENTITY_TYPE = {
+  districts: 'district',
+  schools: 'school',
+  classes: 'class',
+  groups: 'group',
+  families: 'family',
+};
+
 const transformStudentData = async (rawStudent) => {
-  const transformedStudent = {};
+  // Build the import-row shape directly from the CSV-mapped row; fill memberships below.
+  const importRow = csvRowToImportRow(rawStudent);
 
-  // Handle required fields
-  Object.keys(mappedColumns.value.required).forEach((key) => {
-    if (rawStudent[key]) {
-      if (key === 'username') {
-        _set(transformedStudent, 'email', `${rawStudent[key]}@roar-auth.com`);
-        _set(transformedStudent, 'userData.username', rawStudent[key]);
-      } else if (['email', 'password'].includes(key)) {
-        _set(transformedStudent, key, rawStudent[key]);
-      } else {
-        _set(transformedStudent, `userData.${key}`, rawStudent[key]);
-      }
+  const addMembership = (entityType, entityId) => {
+    if (entityId) {
+      // Students belong to a family as a `child`; to every other entity as a `student`.
+      importRow.memberships.push({ entityType, entityId, role: entityType === 'family' ? 'child' : 'student' });
     }
-  });
+  };
 
-  // Handle name fields
-  Object.keys(mappedColumns.value.names).forEach((key) => {
-    if (rawStudent[key]) _set(transformedStudent, `userData.name.${key}`, rawStudent[key]);
-  });
-
-  // Handle demographic fields
-  Object.keys(mappedColumns.value.demographics).forEach((key) => {
-    if (rawStudent[key] && key === 'race') {
-      _set(transformedStudent, `userData.${key}`, rawStudent[key].split(', '));
-    } else if (rawStudent[key]) {
-      _set(transformedStudent, `userData.${key}`, rawStudent[key]);
-    }
-  });
-
-  // Handle optional fields
-  Object.keys(mappedColumns.value.optional).forEach((key) => {
-    if (rawStudent[key]) {
-      _set(transformedStudent, `userData.${key}`, rawStudent[key]);
-    }
-  });
-
-  // Handle organizations
   if (!usingOrgPicker.value) {
-    // If the org picker is not being used, we are given the names of the orgs as values.
-    // To submit, we need to send orgIds. Education orgs, districts, schools, and classes
-    // are fetched in order. First district, then school, then class. If any of these are not
-    // found, it will skip the rest as they are required to find the class.
+    // The CSV supplies org names; resolve them to IDs in district -> school -> class order. If a
+    // parent is missing the dependent lookups are skipped (they need the parent to resolve).
+    const orgFields = mappedColumns.value.organizations;
     let studentDistrictId = null;
     let studentSchoolId = null;
-    const orgFields = mappedColumns.value.organizations;
 
-    // First check for non-educational orgs
     if (orgFields.groups && rawStudent['groups']) {
-      const groupName = rawStudent['groups'];
-      const groupId = await getOrgId('groups', groupName);
-      if (groupId) {
-        _set(transformedStudent, 'userData.groups', { id: groupId });
-      }
+      addMembership('group', await getOrgId('groups', rawStudent['groups']));
     }
-    // Process district -> school -> class hierarchy
+
     if (orgFields.districts && rawStudent['districts']) {
-      const districtName = rawStudent['districts'];
-      studentDistrictId = await getOrgId('districts', districtName);
-      if (studentDistrictId) {
-        _set(transformedStudent, 'userData.districts', { id: studentDistrictId });
-      } else {
-        // TODO: display this gracefully on the UI.
-        console.error(`District ${districtName} not found.`);
-      }
+      studentDistrictId = await getOrgId('districts', rawStudent['districts']);
+      if (studentDistrictId) addMembership('district', studentDistrictId);
+      // TODO: display this gracefully on the UI.
+      else console.error(`District ${rawStudent['districts']} not found.`);
     }
 
     if (studentDistrictId && orgFields.schools && rawStudent['schools']) {
-      const schoolName = rawStudent['schools'];
-      studentSchoolId = await getOrgId('schools', schoolName, studentDistrictId);
-      if (studentSchoolId) {
-        _set(transformedStudent, 'userData.schools', { id: studentSchoolId });
-      } else {
-        // TODO: display this gracefully on the UI.
-        console.error(`School ${schoolName} not found.`);
-      }
+      studentSchoolId = await getOrgId('schools', rawStudent['schools'], studentDistrictId);
+      if (studentSchoolId) addMembership('school', studentSchoolId);
+      else console.error(`School ${rawStudent['schools']} not found.`);
     }
 
     if (studentSchoolId && orgFields.classes && rawStudent['classes']) {
-      const className = rawStudent['classes'];
-      const classId = await getOrgId('classes', className, studentDistrictId, studentSchoolId);
-      if (classId) {
-        _set(transformedStudent, 'userData.classes', { id: classId });
-      } else {
-        // TODO: display this gracefully on the UI.
-        console.error(`Class ${className} not found.`);
-      }
+      const classId = await getOrgId('classes', rawStudent['classes'], studentDistrictId, studentSchoolId);
+      if (classId) addMembership('class', classId);
+      else console.error(`Class ${rawStudent['classes']} not found.`);
     }
   } else {
-    // Take input from the org picker
+    // The org picker supplies selected org IDs directly.
     Object.keys(selectedOrgs.value).forEach((key) => {
       if (selectedOrgs.value[key].length) {
-        _set(transformedStudent, `userData.${key}`, { id: selectedOrgs.value[key][0].id });
+        addMembership(ORG_KEY_TO_ENTITY_TYPE[key], selectedOrgs.value[key][0].id);
       }
     });
   }
 
-  return transformedStudent;
+  return importRow;
 };
 
 const submit = async () => {
   submitting.value = SubmitStatus.TRANSFORMING;
 
-  // Transform each student's data according to the mappings
-  const transformedStudents = [];
+  // Transform each student into an import row (memberships resolved via org-id lookups).
+  const importRows = [];
   for (const student of mappedStudents.value) {
-    const transformedStudent = await transformStudentData(student);
-    transformedStudents.push(transformedStudent);
+    importRows.push(await transformStudentData(student));
+  }
+
+  // A row with no resolvable org/family membership fails the backend's `memberships.min(1)`
+  // check. Since rows are batched, one such row would otherwise fail the entire chunk it's
+  // in, along with every valid row batched alongside it.
+  // TODO: this is a stopgap. Once project/backend-refactor is updated with main, port the
+  // stricter pre-submit org-resolution validation from enh/csv-uploader-1 (PR #2123, async
+  // `resolveOrgId` checks in SubmitTable.vue) so invalid rows are flagged before Submit is
+  // even enabled.
+  const rowsToSubmit = [];
+  for (const row of importRows) {
+    if (!row.unenroll && row.memberships.length === 0) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: `User ${row.email} skipped: no valid district, school, class, group, or family was found.`,
+        life: 5000,
+      });
+    } else {
+      rowsToSubmit.push(row);
+    }
   }
   submitting.value = SubmitStatus.SUBMITTING;
 
-  // Chunk users into chunks of 50 for submission
-  const chunkedUsers = _chunk(transformedStudents, 50);
+  // Chunk under the endpoint's 100-row cap (50 keeps headroom) and submit each chunk.
+  const chunkedUsers = _chunk(rowsToSubmit, 50);
   for (const chunk of chunkedUsers) {
-    await roarfirekit.value.createUpdateUsers(chunk).then((results) => {
-      for (const result of results.data) {
-        if (result?.status === 'rejected') {
-          const email = result.email;
+    try {
+      const results = await bulkImportUsersMutation.mutateAsync({ users: chunk });
+
+      // The endpoint returns a per-row multi-status body; map each result back to its row's email.
+      for (const rowResult of results) {
+        const email = chunk[rowResult.index]?.email;
+        if (rowResult.status === 'ok') {
+          toast.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: `User ${email} ${rowResult.classification}.`,
+            life: 3000,
+          });
+        } else {
           toast.add({
             severity: 'error',
             summary: 'Error',
-            detail: `User ${email} failed to process: ${result.reason}`,
+            detail: `User ${email} failed: ${rowResult.error.message}`,
             life: 5000,
           });
-        } else if (result?.status === 'fulfilled') {
-          const email = result.email;
-          toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
         }
       }
-    });
+    } catch (error) {
+      // Non-200 responses carry `error.status`; a network-level throw (e.g. a timeout)
+      // won't, so fall back to the error message rather than reporting "status undefined".
+      const reason = error.status ? `status ${error.status}` : error.message;
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: `A batch of ${chunk.length} users failed to process (${reason}).`,
+        life: 5000,
+      });
+    }
   }
   submitting.value = SubmitStatus.COMPLETE;
 };

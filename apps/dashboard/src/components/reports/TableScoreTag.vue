@@ -42,8 +42,11 @@ import {
   taskDisplayNames,
   includedValidityFlags,
   subskillTasks,
+  roamFluencySubskills,
   roamFluencySubskillHeaders,
+  roamFluencySubskillHeadersNonResponse,
   roamFluencyTasks,
+  isTaskNormed,
 } from '@/helpers/reports.js';
 
 defineProps({
@@ -61,17 +64,24 @@ defineProps({
 
 let returnScoreTooltip = (colData, fieldPath) => {
   const pathSegments = fieldPath.split('.');
+
+  if (pathSegments[0] === 'compositeScore') {
+    return handleCompositeScoreTooltip(colData);
+  }
+
   const taskId = pathSegments[0] === 'scores' ? pathSegments[1] : null;
   // Subskill fieldPaths are formatted as scores.taskId.subskillId.property
   const subskillId = pathSegments.length > 3 ? pathSegments[2] : null;
+  const subskillProperty = pathSegments.length > 3 ? pathSegments[3] : null;
   let toolTip = '';
 
   if (subskillTasks.includes(taskId) && subskillId) {
     // Prevent any tooltips from rendering for the incorrectSkills column.
-    if (taskId === 'roam-alpaca' && pathSegments[3] === 'incorrectSkills') {
+    if (taskId === 'roam-alpaca' && subskillProperty === 'incorrectSkills') {
       return toolTip;
     }
-    return handleSubskillToolTip(taskId, subskillId, toolTip, colData);
+
+    return handleSubskillToolTip(taskId, subskillId, toolTip, colData, subskillProperty);
   } else if (colData.scores[taskId]?.supportLevel || (taskId && !scoredTasks.includes(taskId))) {
     // Handle raw only tasks or scored tasks
     return handleToolTip(taskId, toolTip, colData);
@@ -97,7 +107,10 @@ function handleToolTip(_taskId, _toolTip, _colData) {
     _colData.scores?.[_taskId]?.numCorrect ||
     _colData.scores?.[_taskId]?.numIncorrect
   ) {
-    if (tasksToDisplayCorrectIncorrectDifference.includes(_taskId) && !_colData.scores?.[_taskId]?.scoringVersion) {
+    if (
+      tasksToDisplayCorrectIncorrectDifference.includes(_taskId) &&
+      !isTaskNormed(_taskId, _colData.scores?.[_taskId]?.scoringVersion)
+    ) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
       _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.correctIncorrectDifference + '\n';
@@ -124,15 +137,17 @@ function handleToolTip(_taskId, _toolTip, _colData) {
         }
         _toolTip = fcStats + '\n' + frStats;
       } else {
-        for (const [property, propertyHeader] of Object.entries(roamFluencySubskillHeaders)) {
+        // Non-response modality scores (1.3.6+) requires new formatting, nesting numCorrect and numIncorrect under rawScore
+        // < 1.3.6 only showed numCorrect and numAttempted.
+        for (const [property, propertyHeader] of Object.entries(roamFluencySubskillHeadersNonResponse)) {
           if (_colData.scores?.[_taskId]?.[property] != undefined) {
-            _toolTip += `${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
+            _toolTip += `${_colData.scores?.[_taskId]?.useSubskillFormat && (property === 'numCorrect' || property === 'numIncorrect') ? `\u00A0\u2022\u00A0` : ''}${propertyHeader}: ${_colData.scores?.[_taskId]?.[property]}\n`;
           }
         }
       }
     } else if (
       tasksToDisplayPercentCorrect.includes(_taskId) &&
-      !(_taskId === 'swr-es' && _colData.scores?.[_taskId]?.scoringVersion)
+      !isTaskNormed(_taskId, _colData.scores?.[_taskId]?.scoringVersion)
     ) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
@@ -143,7 +158,11 @@ function handleToolTip(_taskId, _toolTip, _colData) {
       if (_colData.scores?.[_taskId]?.gradeEstimate) {
         _toolTip += 'Grade Estimate: ' + _colData.scores?.[_taskId]?.gradeEstimate + '\n';
       }
-    } else if (rawOnlyTasks.includes(_taskId) && _colData.scores?.[_taskId]?.rawScore !== undefined) {
+    } else if (
+      rawOnlyTasks.includes(_taskId) &&
+      _colData.scores?.[_taskId]?.rawScore !== undefined &&
+      !isTaskNormed(_taskId, _colData.scores?.[_taskId]?.scoringVersion)
+    ) {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
     } else {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
@@ -156,7 +175,24 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   return _toolTip;
 }
 
-function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
+function handleCompositeScoreTooltip(colData) {
+  const composite = colData.compositeScore;
+  if (!composite?.supportLevel) return '';
+
+  let toolTip = composite.supportLevel + '\n\n';
+  if (composite.rawScore != undefined) {
+    toolTip += 'Raw Score: ' + composite.rawScore + '\n';
+  }
+  if (composite.standardScore != undefined) {
+    toolTip += 'Standard: ' + composite.standardScore + '\n';
+  }
+  if (composite.percentile != undefined) {
+    toolTip += 'Percentile: ' + composite.percentile + '\n';
+  }
+  return toolTip;
+}
+
+function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData, _subskillProperty) {
   const subskillInfo = _colData.scores?.[_taskId]?.[_subskillId];
   if (_taskId === 'roam-alpaca') {
     if (subskillInfo?.supportLevel) {
@@ -169,11 +205,36 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData) {
       _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate + '\n';
     }
   } else if (roamFluencyTasks.includes(_taskId)) {
-    Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-      if (subskillInfo?.[property] != undefined) {
-        _toolTip += `${propertyHeader}: ${subskillInfo?.[property]}\n`;
+    // Non-response modality (1.3.6+)
+    if (_subskillProperty !== 'totalIncorrectSkills') {
+      Object.entries(roamFluencySubskillHeadersNonResponse).forEach(([property, propertyHeader]) => {
+        if (subskillInfo?.[property] != undefined) {
+          _toolTip += `${property === 'numCorrect' || property === 'numIncorrect' ? `\u00A0\u2022\u00A0` : ''}${propertyHeader}: ${subskillInfo?.[property]}\n`;
+        }
+      });
+
+      // Ignore skillsAssessed field for overall score (scores.computed.composite.rawScore)
+      if (
+        _colData.scores?.[_taskId]?.recruitment !== 'responseModality' &&
+        _subskillId !== 'composite' &&
+        subskillInfo?.skillsAssessed != undefined
+      ) {
+        _toolTip += `\nProblem Types Assessed: ${subskillInfo?.skillsAssessed}\n`;
       }
-    });
+    } else {
+      let incorrectSkillIndex = 0;
+      // Handles the "No. of Problem Types to Work On" column
+      // Format incorrect skills from scores.computed.composite.incorrectSkills
+      Object.keys(roamFluencySubskills).forEach((subskillId) => {
+        if (subskillInfo?.incorrectSkills?.[subskillId] != undefined) {
+          _toolTip += `${roamFluencySubskills[subskillId]}: ${subskillInfo?.incorrectSkills?.[subskillId] || 0}\n`;
+          incorrectSkillIndex++;
+          if (incorrectSkillIndex < Object.keys(subskillInfo?.incorrectSkills).length) {
+            _toolTip += '\n';
+          }
+        }
+      });
+    }
   }
 
   return _toolTip;

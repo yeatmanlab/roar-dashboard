@@ -50,7 +50,7 @@ vi.mock('@roar-platform/assessment-schema', () => ({
   },
 }));
 
-const { PA_TASK_ID, PA_SCORING_VERSION, PA_SCORE_KIND } = pa;
+const { PA_TASK_ID, PA_SCORING_VERSION } = pa;
 
 const setSession = ({ config, thetas, thetaSEs }) => {
   store.session.set('config', config);
@@ -87,7 +87,6 @@ describe('RoarScores.computedScoreCallback', () => {
       numAttempted: 10,
       numIncorrect: 2,
       percentCorrect: 80,
-      roarScoreKind: PA_SCORE_KIND.RAW_TOTAL_CORRECT,
       scoringVersion: PA_SCORING_VERSION.V3_FIXED,
     });
     expect(result.lsm.percentCorrect).toBe(60);
@@ -98,7 +97,6 @@ describe('RoarScores.computedScoreCallback', () => {
       numAttempted: 20,
       numIncorrect: 6,
       percentCorrect: 70,
-      roarScoreKind: PA_SCORE_KIND.RAW_TOTAL_CORRECT,
       scoringVersion: PA_SCORING_VERSION.V3_FIXED,
     });
   });
@@ -130,11 +128,10 @@ describe('RoarScores.computedScoreCallback', () => {
     });
     expect(result.fsm.roarScore).toBeUndefined(); // adaptive → no raw roarScore on subtasks
     // Composite: cross-scale transform applied, thetaEstimate (scaled) ≠ thetaEstimateRaw (native).
-    // roarScoreKind and scoringVersion are set unconditionally on composite.
+    // scoringVersion is set unconditionally on composite.
     expect(result.composite).toMatchObject({
       thetaEstimate: 0.65,
       thetaEstimateRaw: 0.6,
-      roarScoreKind: PA_SCORE_KIND.SCALED_IRT,
       scoringVersion: PA_SCORING_VERSION.V5_ADAPTIVE,
     });
     expect(result.composite_foundational).toMatchObject({ thetaEstimate: -1.1, thetaSE: 0.3 });

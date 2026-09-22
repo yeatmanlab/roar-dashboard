@@ -167,9 +167,9 @@ module.exports = async (env, args) => {
       new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
-        // Default to '/v1' so dev builds use relative URLs proxied by webpack-dev-server.
-        // Set ROAR_API_BASE_URL for production — full URL including /v1.
-        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || '/v1'),
+        // Default to '' so dev builds emit relative URLs, which webpack-dev-server proxies. The
+        // version prefix comes from the contract, so ROAR_API_BASE_URL is an origin with no path.
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || ''),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',

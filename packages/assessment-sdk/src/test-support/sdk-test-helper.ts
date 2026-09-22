@@ -20,10 +20,13 @@ export function getBackendPort(): string {
 
 /**
  * Gets the backend base URL.
+ *
+ * Origin only, with no path: the contract supplies the version prefix, so appending it here would
+ * request /v1/v1/... and miss every route.
  */
 export function getBackendUrl(): string {
   const port = getBackendPort();
-  return `http://localhost:${port}/v1`;
+  return `http://localhost:${port}`;
 }
 
 /**

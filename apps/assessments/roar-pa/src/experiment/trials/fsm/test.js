@@ -12,6 +12,7 @@ import {
 } from '../../experimentHelpers';
 import { mediaAssets } from '../../experiment';
 import { fsmBreak } from './instructions';
+import { SHORT_AUDIO_END_FALLBACK_MS } from '../../audioLifecycle';
 
 export const fsmTestTrials = {
   timeline: [
@@ -78,6 +79,7 @@ export const fsmTestTrials = {
       choices: [],
       response_allowed_while_playing: false,
       trial_ends_after_audio: true,
+      trial_duration: SHORT_AUDIO_END_FALLBACK_MS,
     },
     {
       timeline: [fsmBreak],

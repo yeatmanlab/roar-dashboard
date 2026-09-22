@@ -117,7 +117,7 @@ import PvSelect from 'primevue/select';
 import PvToggleSwitch from 'primevue/toggleswitch';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import useMeQuery from '@/composables/queries/useMeQuery';
+import useParticipantId from '@/composables/useParticipantId';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import useUserMembershipsQuery from '@/composables/queries/useUserMembershipsQuery';
 import useUserAdministrationsQuery from '@/composables/queries/useUserAdministrationsQuery';
@@ -188,16 +188,15 @@ const getOptionLabel = computed(() => {
 const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
 
-// Resolve the participant's ROAR (Postgres) user ID from the backend `/me`
-// endpoint. This is the identity the backend user, administrations, and
-// agreements endpoints expect — NOT the Firebase `roarUid`.
+// The participant's ROAR (Postgres) user ID — the identity the
+// `GET /users/:userId/administrations` endpoint expects, NOT the Firebase
+// `roarUid`. Drives the per-user administrations query, the consent-gate
+// agreements query, and consent recording below.
 //
-// NOTE: In proxy-launch mode (`props.launchId` set), `me.id` is the launching
-// user's ID, not the participant's. Resolving the participant's UUID for the
-// proxy path is handled by the separate proxy-launch change; the standard
-// student homepage path is unaffected.
-const { data: me } = useMeQuery({ enabled: initialized });
-const userId = computed(() => me.value?.id);
+// Reading another user's administrations and agreements relies on the backend
+// guardian-read authorization (`can_read_child`); without it the parent-scoped
+// reads return 403.
+const userId = useParticipantId(props.launchId);
 
 // Participant profile from the backend (`GET /users/:id` → `mapUser`), replacing
 // the Firestore user-doc read — the last Firestore read on this page. Pass the

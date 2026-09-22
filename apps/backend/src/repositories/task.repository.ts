@@ -12,14 +12,14 @@ import { SortOrder } from '@roar-platform/api-contract';
 import { escapeLikePattern } from '../utils/escape-like-pattern.util';
 
 /**
- * Explicit mapping from API sort field names to task table columns.
- * This ensures only valid columns are used for sorting, even if API validation is bypassed.
+ * Explicit mapping from API sort field names to task table sort expressions.
+ * This ensures only valid fields are used for sorting, even if API validation is bypassed.
  */
 const TASK_SORT_COLUMNS: Record<TaskSortFieldType, AnyColumn | SQL> = {
   createdAt: tasks.createdAt,
   updatedAt: tasks.updatedAt,
-  name: tasks.name,
-  slug: tasks.slug,
+  name: sql`lower(${tasks.name})`,
+  slug: sql`lower(${tasks.slug})`,
 };
 
 /**

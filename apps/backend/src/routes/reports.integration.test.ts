@@ -32,6 +32,8 @@ import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
+import { COMPOSITE_RUN_TASK_ID, COMPOSITE_RUN_TASK_VARIANT_ID, COMPOSITE_RUN_TASK_VERSION } from '../constants/run';
+import { ASSESSMENT_STAGE, SCORE_DOMAIN, SCORE_NAME, SCORE_TYPE } from '../constants/run-scores';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -478,6 +480,36 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
         .set('Authorization', 'Bearer token');
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+
+  describe('user.grade filter validation', () => {
+    it('returns 400 for the contains operator on the grade enum column', async () => {
+      // `contains` compiles to ILIKE, which has no operator against app.grade. The
+      // contract advertises the operator for user.grade, so this is well-formed input.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...defaultQuery(), filter: 'user.grade:contains:1' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 400 for a value outside the grade enum', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...defaultQuery(), filter: 'user.grade:eq:K2' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
     });
   });
 
@@ -2399,6 +2431,50 @@ describe('GET /v1/administrations/:id/reports/scores/facets', () => {
       expect(res.body.data.totalStudents).toBeGreaterThan(0);
     });
   });
+
+  describe('user.grade filter validation', () => {
+    // The contract aliases SCORE_FACETS_FILTER_FIELDS to SCORE_OVERVIEW_FILTER_FIELDS, so a
+    // filter accepted by overview must behave identically here. Facets applies user filters in
+    // JS rather than SQL (it needs the unfiltered population first), so without explicit
+    // validation the same query string that 400s on overview returned 200 with a silently
+    // wrong or empty aggregation.
+    it('returns 400 for the contains operator on the grade enum column', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreFacetsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...facetsQuery(), filter: 'user.grade:contains:1' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 400 for a value outside the grade enum', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreFacetsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...facetsQuery(), filter: 'user.grade:eq:K2' })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('still accepts a valid grade filter and narrows the aggregation', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreFacetsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ ...facetsQuery(), filter: 'user.grade:eq:3' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.totalStudents).toBeGreaterThan(0);
+    });
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2693,6 +2769,70 @@ describe('GET /v1/administrations/:id/reports/scores/students', () => {
       for (const row of res.body.data.items) {
         expect(row.user.schoolName).toBeNull();
       }
+    });
+
+    it('returns foundationalComposite from the synthetic composite run scores', async () => {
+      const foundationalTask = await TaskFactory.create({ slug: 'pa', name: 'Phonological Awareness' });
+      const foundationalVariant = await TaskVariantFactory.create({ taskId: foundationalTask.id });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        taskVariantId: foundationalVariant.id,
+        orderIndex: 99,
+      });
+
+      const run = await RunFactory.create({
+        userId: baseFixture.grade5Student.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        taskId: COMPOSITE_RUN_TASK_ID,
+        taskVariantId: COMPOSITE_RUN_TASK_VARIANT_ID,
+        taskVersion: COMPOSITE_RUN_TASK_VERSION,
+        useForReporting: true,
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.THETA_ESTIMATE,
+        value: '1.234',
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.ROAR_SCORE,
+        value: '488.6',
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.PERCENTILE,
+        value: '>99',
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: SCORE_TYPE.COMPUTED,
+        domain: SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL,
+        name: SCORE_NAME.STANDARD_SCORE,
+        value: '112.4',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const studentRow = res.body.data.items.find(
+        (item: { user: { userId: string } }) => item.user.userId === baseFixture.grade5Student.id,
+      );
+      expect(studentRow?.foundationalComposite).toEqual({
+        thetaEstimate: 1.234,
+        roarScore: 488.6,
+        percentile: 99,
+        standardScore: 112.4,
+      });
     });
 
     it('filters tasks via taskId filter', async () => {
@@ -3524,7 +3664,23 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
       });
       await RunScoreFactory.create({
         runId: run.id,
-        type: 'computed',
+        type: SCORE_TYPE.RAW,
+        domain: 'default',
+        name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_CORRECT,
+        value: '33',
+        assessmentStage: ASSESSMENT_STAGE.TEST,
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: SCORE_TYPE.RAW,
+        domain: 'default',
+        name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_NUM_ATTEMPTED,
+        value: '40',
+        assessmentStage: ASSESSMENT_STAGE.TEST,
+      });
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: SCORE_TYPE.COMPUTED,
         domain: 'default',
         name: PHONICS_COMPOSITE_SCORE_NAMES.TOTAL_PERCENT_CORRECT,
         value: '82.6',
@@ -3546,9 +3702,14 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
       expect(data.task.taskId).toBe(phonicsTaskId);
       expect(data.task.taskSlug).toBe('phonics');
 
-      // Columns: the 9 phonics sub-skills (canonical order) + totalPercentCorrect.
+      // Columns: the 9 phonics sub-skills (canonical order) + aggregate score columns.
       const columnKeys = data.subscoreColumns.map((c: { key: string }) => c.key);
-      expect(columnKeys).toEqual([...PHONICS_SUBSKILL_KEYS, 'totalPercentCorrect']);
+      expect(columnKeys).toEqual([
+        ...PHONICS_SUBSKILL_KEYS,
+        'totalCorrect',
+        'totalNumAttempted',
+        'totalPercentCorrect',
+      ]);
 
       // The seeded student appears with the expected cell values.
       const studentRow = data.items.find(
@@ -3557,6 +3718,8 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
       expect(studentRow).toBeDefined();
       expect(studentRow.subscores[SEEDED_SKILL]).toBe('7/10');
       expect(studentRow.subscores[UNSEEDED_SKILL]).toBeNull();
+      expect(studentRow.subscores.totalCorrect).toBe(33);
+      expect(studentRow.subscores.totalNumAttempted).toBe(40);
       // number column with round: true (82.6 -> 83)
       expect(studentRow.subscores.totalPercentCorrect).toBe(83);
     });
@@ -3577,6 +3740,28 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
         })
         .set('Authorization', 'Bearer token');
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('rejects a user.grade filter the column type cannot evaluate with 400', async () => {
+      // Asserted on a task that reaches the query builder: with an unconfigured task
+      // this endpoint returns 400 before any filter is inspected, so the same
+      // assertion elsewhere would pass without exercising the guard at all.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, phonicsTaskId))
+        .query({
+          scopeType: 'district',
+          scopeId: baseFixture.district.id,
+          page: 1,
+          perPage: 25,
+          filter: 'user.grade:contains:1',
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect({ status: res.status, code: res.body.error?.code }).toMatchObject({
+        status: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
     });
   });
 });

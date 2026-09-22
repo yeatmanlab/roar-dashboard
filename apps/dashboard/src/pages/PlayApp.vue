@@ -1,7 +1,7 @@
 <template>
   <div v-if="gameStarted" id="jspsych-target" class="game-target" />
   <div v-else class="col-full text-center">
-    <h1>Preparing your game!</h1>
+    <h1>{{ t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
 </template>
@@ -14,9 +14,11 @@ import { toRaw, onMounted, ref, watch } from 'vue';
 import AppSpinner from '../components/AppSpinner.vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import _head from 'lodash/head';
 
 const router = useRouter();
+const { t } = useI18n();
 const currentGameId = router.currentRoute.value.params.gameId;
 const gameStarted = ref(false);
 const authStore = useAuthStore();

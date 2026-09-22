@@ -34,6 +34,7 @@ import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
 import { COMPOSITE_RUN_TASK_ID } from '../constants/run';
+import { SCORE_DOMAIN, SCORE_NAME } from '../constants/run-scores';
 import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
 import {
@@ -414,6 +415,8 @@ export interface StudentScoreQueryRow {
   runs: Map<string, { runId: string; reliable: boolean | null; engagementFlags: string[]; completedAt: Date | null }>;
   /** Map of taskVariantId → score field name → value (raw text from run_scores). */
   scores: Map<string, Map<string, string>>;
+  /** Synthetic foundational-composite run scores, keyed by run_scores.name. */
+  foundationalCompositeScores: Map<string, string>;
 }
 
 /**
@@ -2130,6 +2133,7 @@ export class ReportRepository {
    * @param sortField - Optional dynamic score-field sort
    * @param scoreFieldFilters - Optional dynamic score-field filters
    * @param scoringRulesByVariant - Resolved scoring rules per variant for supportLevel CASE generation
+   * @param includeFoundationalCompositeScores - Whether the unfiltered administration includes a foundational task
    * @returns Paginated student rows with run metadata and score values
    */
   async getStudentScores(
@@ -2143,6 +2147,7 @@ export class ReportRepository {
     scoreFieldFilters?: StudentScoresFieldFilter[],
     scoringRulesByVariant?: Map<string, ResolvedScoringRules>,
     includeUnenrolledStudents = false,
+    includeFoundationalCompositeScores = false,
   ): Promise<PaginatedResult<StudentScoreQueryRow>> {
     const { page, perPage } = options;
     const offset = (page - 1) * perPage;
@@ -2360,6 +2365,7 @@ export class ReportRepository {
     // and bulk fetch all run scores so the service can assemble per-task entries.
     const runsByStudent = new Map<string, StudentScoreQueryRow['runs']>();
     const scoresByStudent = new Map<string, Map<string, Map<string, string>>>();
+    const foundationalCompositeScoresByStudent = new Map<string, Map<string, string>>();
 
     if (taskVariantIds.length > 0) {
       const runRows = await this.db
@@ -2431,6 +2437,42 @@ export class ReportRepository {
       }
     }
 
+    if (includeFoundationalCompositeScores) {
+      const compositeScoreRows = await this.db
+        .select({
+          userId: fdwRuns.userId,
+          scoreName: fdwRunScores.name,
+          scoreValue: fdwRunScores.value,
+        })
+        .from(fdwRuns)
+        .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
+        .where(
+          and(
+            eq(fdwRuns.administrationId, administrationId),
+            inArray(fdwRuns.userId, studentIds),
+            eq(fdwRuns.taskId, COMPOSITE_RUN_TASK_ID),
+            isNull(fdwRuns.deletedAt),
+            isNull(fdwRuns.abortedAt),
+            eq(fdwRuns.useForReporting, true),
+            eq(fdwRunScores.domain, SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL),
+            inArray(fdwRunScores.name, [
+              SCORE_NAME.THETA_ESTIMATE,
+              SCORE_NAME.ROAR_SCORE,
+              SCORE_NAME.PERCENTILE,
+              SCORE_NAME.STANDARD_SCORE,
+            ]),
+          ),
+        )
+        .orderBy(asc(fdwRuns.createdAt));
+
+      for (const row of compositeScoreRows) {
+        if (!foundationalCompositeScoresByStudent.has(row.userId)) {
+          foundationalCompositeScoresByStudent.set(row.userId, new Map());
+        }
+        foundationalCompositeScoresByStudent.get(row.userId)!.set(row.scoreName, row.scoreValue);
+      }
+    }
+
     // 9. Assemble result rows
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dataQuery is any from dynamic chain
     const items: StudentScoreQueryRow[] = studentRows.map((student: any) => ({
@@ -2451,6 +2493,7 @@ export class ReportRepository {
       homeLanguage: student.homeLanguage,
       runs: runsByStudent.get(student.userId) ?? new Map(),
       scores: scoresByStudent.get(student.userId) ?? new Map(),
+      foundationalCompositeScores: foundationalCompositeScoresByStudent.get(student.userId) ?? new Map(),
     }));
 
     return { items, totalItems };

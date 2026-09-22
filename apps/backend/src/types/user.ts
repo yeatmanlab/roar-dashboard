@@ -1,28 +1,26 @@
-import type {
-  EnrolledUserDemographics,
-  EnrolledUsersSortFieldType,
-  UserRole,
-  UserFamilyRole,
-  GradeFilter,
-  SortOrder,
-} from '@roar-platform/api-contract';
+import type { EnrolledUsersSortFieldType, SortOrder } from '@roar-platform/api-contract';
 import type { User } from '../db/schema';
+import type { Grade } from '../enums/grade.enum';
+import type { UserRole } from '../enums/user-role.enum';
+import type { UserFamilyRole } from '../enums/user-family-role.enum';
 
-// Export types for repo and service usage
-export type {
-  EnrolledUser,
-  EnrolledUserDemographics,
-  EnrolledFamilyUser,
-  EnrolledFamilyUsersQuery,
-  EnrolledUsersQuery,
-  EnrolledUsersSortFieldType,
-} from '@roar-platform/api-contract';
+/*
+ * Transport query shapes, re-exported for the service layer's enrolled-user endpoints.
+ * These are the last api-contract types this module hands out — everything else below is
+ * backend-owned. Removing them belongs to the service-layer decoupling work, not here.
+ */
+/* eslint-disable no-restricted-imports */
+export type { EnrolledFamilyUsersQuery, EnrolledUsersQuery } from '@roar-platform/api-contract';
+/* eslint-enable no-restricted-imports */
+
+export type { EnrolledUsersSortFieldType } from '@roar-platform/api-contract';
 
 interface BaseListEnrolledUsersOptions {
   page: number;
   perPage: number;
   orderBy?: { field: EnrolledUsersSortFieldType; direction: SortOrder };
-  grade?: GradeFilter;
+  /** Grades to filter on. The contract parses `?grade=1,2,3` into this array. */
+  grade?: Grade[] | undefined;
 }
 
 export interface ListEnrolledUsersOptions extends BaseListEnrolledUsersOptions {
@@ -41,11 +39,23 @@ export interface ListEnrolledFamilyUsersOptions extends BaseListEnrolledUsersOpt
 }
 
 /**
- * The demographic data attached to an enrolled-user entity when the
- * `demographics` embed is resolved. Mirrors the contract's
- * `EnrolledUserDemographics` shape.
+ * The `users` columns holding demographic PII, attached to an enrolled-user entity when
+ * the `demographics` embed is resolved.
+ *
+ * Derived from the schema rather than mirroring the contract's `EnrolledUserDemographics`,
+ * so this type and the column map in `buildEnrolledUserSelection` are pinned to the same
+ * source. `userType` is `.notNull()` in the DB; every other column is nullable.
  */
-export type EnrolledUserDemographicsEntity = EnrolledUserDemographics;
+export type EnrolledUserDemographicsColumn =
+  | 'userType'
+  | 'statusEll'
+  | 'statusFrl'
+  | 'statusIep'
+  | 'race'
+  | 'hispanicEthnicity'
+  | 'homeLanguage';
+
+export type EnrolledUserDemographicsEntity = Pick<User, EnrolledUserDemographicsColumn>;
 
 /**
  * The base `users` columns the enrolled-user list always selects and the

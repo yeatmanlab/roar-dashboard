@@ -2,18 +2,22 @@ import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-respo
 import { mediaAssets } from '../../..'; //media files
 import i18next from 'i18next';
 import '../../../i18n/i18n';
-
 import { getDevice } from '@bdelab/roar-utils';
+import store from 'store2';
 
 export const navigationInstruction = {
   type: jsPsychAudioMultiResponse,
   stimulus: () => {
-    return mediaAssets.audio.navigationInstruction;
+    if (store.session.get('desktopTouchScreen')) {
+      return mediaAssets.audio.navigationInstructionMobile;
+    } else {
+      return mediaAssets.audio.navigationInstruction;
+    }
   },
   prompt: () => {
     let isMobile = getDevice() === 'mobile';
     let mode = 'navigation.text3';
-    if (isMobile) {
+    if (isMobile || store.session.get('desktopTouchScreen')) {
       mode = 'navigation.text4';
     }
     return `

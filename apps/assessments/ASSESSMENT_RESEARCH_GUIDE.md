@@ -38,14 +38,14 @@ That's the whole data-generation path: **play the assessment, and rows appear.**
 
 The variant's **game parameters** (adaptivity, item selection, language, etc.) always come from the seeded variant — not the URL. URL parameters select _which_ variant to run and attach participant/demographic context. The common ones (from the standalone `serve.js`):
 
-| Parameter                                     | Purpose                                                           |
-| --------------------------------------------- | ----------------------------------------------------------------- |
-| `variantId`                                   | Run a specific seeded variant (otherwise the first published one) |
-| `participant`                                 | Assessment participant id (PID) to associate with the run         |
-| `grade`                                       | Participant grade                                                 |
-| `birthyear`, `birthmonth`, `age`, `agemonths` | Participant age/DOB context                                       |
-| `labId`                                       | Lab identifier                                                    |
-| `taskVersion`                                 | Task version string (defaults to `1.0`)                           |
+| Parameter                                     | Purpose                                                               |
+| --------------------------------------------- | --------------------------------------------------------------------- |
+| `variantId`                                   | Run a specific seeded variant (otherwise the task's declared default) |
+| `participant`                                 | Assessment participant id (PID) to associate with the run             |
+| `grade`                                       | Participant grade                                                     |
+| `birthyear`, `birthmonth`, `age`, `agemonths` | Participant age/DOB context                                           |
+| `labId`                                       | Lab identifier                                                        |
+| `taskVersion`                                 | Task version string (defaults to `1.0`)                               |
 
 ```
 http://localhost:8000/?variantId=<id>&participant=demo-01&grade=3
@@ -55,11 +55,22 @@ Multi-task assessments (e.g. `roam-apps`) also take a task selector parameter �
 
 To grab a specific `variantId`, use the [variant picker](#switching-variants-the-variant-picker) or the [seeded-variants query](#useful-queries).
 
-> **Demographics vs. `run_demographics`.** The demographic URL params are not the `run_demographics` table — that table is populated from rostering and stays **empty for anonymous standalone runs**. If an assessment records these values at all, they land in `runs.metadata`, not `run_demographics`.
+> **Demographics vs. `run_demographics`.** The demographic URL params are not the `run_demographics` table — that table is populated from rostering and stays **empty for anonymous standalone runs**. (It also lives in `roar_core`, not `roar_assessment`, unlike every other `run_*` table — so that's where to look if you go looking.) If an assessment records these values at all, they land in `runs.metadata`, not `run_demographics`.
+
+### Which variant runs when you don't name one
+
+With no `variantId` in the URL, the assessment resolves its **declared default variant** — a per-task name in its `serve/serve.js` — and falls back to the oldest published variant if there is no entry for that task. So the variant you get on a bare `http://localhost:8000/` is a deliberate choice, not an accident of seeding order.
+
+Two consequences worth knowing while you work:
+
+- **If you seed variants under your own names**, the committed default won't match. Locally that is a **console warning**, not an error, and you'll quietly run the oldest published variant instead. Check the browser console if the run doesn't look like the configuration you expected.
+- **To change the default**, edit `DEFAULT_VARIANT_NAMES` in the assessment's `serve/serve.js`. To override it for one run, pass `variantId` or use the [variant picker](#switching-variants-the-variant-picker).
+
+Full resolution order, the naming convention, and the staging/production strictness rules are in the setup guide's [Choosing which variant loads by default](./ASSESSMENT_ENVIRONMENT.md#choosing-which-variant-loads-by-default).
 
 ### Anonymous identity — and what a refresh does
 
-Each standalone play is tied to your browser's Firebase Auth emulator user. That identity is **persisted in browser local storage**, so:
+Each standalone play is tied to your browser's Firebase Auth emulator user. That identity is **persisted by the browser** (Firebase stores it in IndexedDB, falling back to local storage), so:
 
 - **A page refresh keeps the same anonymous user** — and therefore the same ROAR participant. Repeated runs in the same browser accumulate under one user, which is what you usually want while iterating.
 - **A fresh participant** comes from a different browser or profile, an incognito window, cleared site data, or an emulator wipe (`npm restart` / `npm stop` — the Auth emulator is in-memory and reset by both).
@@ -134,12 +145,12 @@ FROM app_assessment_fdw.runs r
 JOIN app.users u ON u.id = r.user_id
 JOIN app.task_variants tv ON tv.id = r.task_variant_id
 JOIN app.tasks t ON t.id = tv.task_id
-WHERE t.slug = 'pa'          -- the task slug, e.g. 'pa', 'swr', 'sre'
+WHERE t.slug = 'swr'         -- English only; LIKE 'swr%' for all five SWR tasks
   AND r.deleted_at IS NULL
 ORDER BY r.created_at DESC;
 ```
 
-> **Multi-task / multi-language slugs.** Language-as-task assessments use language-suffixed slugs (`swr`, `swr-es`), and multi-task assessments have several slugs. Match with `t.slug LIKE 'swr%'`, or list the exact slugs, rather than a single `=` — otherwise you'll silently miss runs.
+> **Multi-task / multi-language slugs.** Language-as-task assessments use language-suffixed slugs — SWR alone is five tasks (`swr`, `swr-es`, `swr-it`, `swr-pt`, `swr-de`) — and multi-task assessments have several slugs. Match with `t.slug LIKE 'swr%'`, or list the exact slugs, rather than a single `=` — otherwise you'll silently miss runs.
 
 **Trial-level data for a specific run** — run in `roar_assessment`:
 
