@@ -1,5 +1,5 @@
 name: Hierarchy Cascading
-model_file: ../authorization-model.fga
+model_file: authorization-model.fga
 
 tuples:
   # ─── Hierarchy (bidirectional) ─────────────────────────────────────
