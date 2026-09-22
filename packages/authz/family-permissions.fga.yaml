@@ -1,5 +1,5 @@
 name: Family Permissions
-model_file: ../authorization-model.fga
+model_file: authorization-model.fga
 
 tuples:
   # ─── Family memberships (with active_membership condition) ───────
