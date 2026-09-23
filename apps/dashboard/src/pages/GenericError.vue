@@ -29,9 +29,11 @@ async function handleTryAgain() {
   // the SPA navigation path re-runs App.vue's onBeforeMount. Neither is safely
   // re-creatable in place (re-running setAuthStateListener would stack a
   // second subscription), so reload the app and let the full bootstrap run
-  // from the beginning. The listener is the last step of initAuth, so its
-  // absence identifies exactly this failure mode. A repeat failure re-sets
-  // the global error and the guard lands back here.
+  // from the beginning. The listener handle is the last thing initAuth sets,
+  // so a missing handle means the bootstrap never completed — or a sign-out's
+  // `$reset` dropped it. Either way the SPA path's assumptions don't hold,
+  // and a reload recovers both cases at the cost of one page load. A repeat
+  // failure re-sets the global error and the guard lands back here.
   if (!authStore.authStateListener) {
     window.location.assign('/');
     return;
