@@ -47,20 +47,6 @@ export const swrConfig: TaskSeedConfig = {
       nameTechnical: 'Rapid Online Assessment of Reading — Single Word Recognition (German)',
     },
   },
-  allowedParamKeys: new Set([
-    'addNoResponse',
-    'audioFeedbackOption',
-    'consent',
-    'lng',
-    'numAdaptive',
-    'numNew',
-    'numValidated',
-    'recruitment',
-    'scoringVersion',
-    'skipInstructions',
-    'storyOption',
-    'userMode',
-  ]),
   validateVariant(loc, params) {
     const lng = params.lng as string | undefined;
     if (!lng) throw new Error(`${loc}: "lng" is required`);
