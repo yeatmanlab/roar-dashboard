@@ -5,7 +5,11 @@ const mockPush = vi.fn();
 const mockInvalidateQueries = vi.fn();
 const mockClearGlobalError = vi.fn();
 const mockSignOut = vi.fn();
-const authStore = { roarfirekit: null, initFirekit: vi.fn().mockResolvedValue(undefined) };
+const authStore = {
+  roarfirekit: null,
+  authStateListener: null,
+  initFirekit: vi.fn().mockResolvedValue(undefined),
+};
 
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: mockPush }) }));
 vi.mock('@tanstack/vue-query', () => ({ useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }) }));
@@ -34,9 +38,31 @@ const clickTryAgain = async (wrapper) => {
 };
 
 describe('GenericError.vue', () => {
+  let assignSpy;
+
   beforeEach(() => {
     vi.clearAllMocks();
     authStore.roarfirekit = null;
+    // Auth bootstrap completed in the default scenario — the listener exists.
+    authStore.authStateListener = () => {};
+    assignSpy = vi.spyOn(window.location, 'assign').mockImplementation(() => {});
+  });
+
+  // SERVER_ERROR can also mean the app-bootstrap initAuth() failed. The
+  // AuthService singleton and its token listener cannot be rebuilt on the SPA
+  // navigation path, so Try Again must reload the app to re-run the full
+  // bootstrap — an SPA retry would re-enter the app with auth still broken.
+  it('hard-reloads on Try Again when the auth bootstrap never completed', async () => {
+    authStore.authStateListener = null;
+    const wrapper = mountPage();
+    await clickTryAgain(wrapper);
+
+    expect(mockClearGlobalError).toHaveBeenCalled();
+    expect(assignSpy).toHaveBeenCalledWith('/');
+    // No SPA-path recovery: the reload re-runs the bootstrap from scratch.
+    expect(authStore.initFirekit).not.toHaveBeenCalled();
+    expect(mockInvalidateQueries).not.toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   // SERVER_ERROR can mean the app-bootstrap initFirekit() failed; nothing on
@@ -58,6 +84,7 @@ describe('GenericError.vue', () => {
     await clickTryAgain(wrapper);
 
     expect(authStore.initFirekit).not.toHaveBeenCalled();
+    expect(assignSpy).not.toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith('/');
   });
 });

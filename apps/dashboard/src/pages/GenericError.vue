@@ -24,6 +24,19 @@ const { mutate: signOut } = useSignOutMutation();
 async function handleTryAgain() {
   clearGlobalError();
 
+  // SERVER_ERROR can also mean the app-bootstrap `initAuth()` failed: the
+  // AuthService singleton or its token listener never came up, and nothing on
+  // the SPA navigation path re-runs App.vue's onBeforeMount. Neither is safely
+  // re-creatable in place (re-running setAuthStateListener would stack a
+  // second subscription), so reload the app and let the full bootstrap run
+  // from the beginning. The listener is the last step of initAuth, so its
+  // absence identifies exactly this failure mode. A repeat failure re-sets
+  // the global error and the guard lands back here.
+  if (!authStore.authStateListener) {
+    window.location.assign('/');
+    return;
+  }
+
   // SERVER_ERROR can also mean the app-bootstrap `initFirekit()` failed, and
   // nothing on the SPA navigation path re-runs it — without this, "Try Again"
   // would send the user back into the app with `roarfirekit` still null.
