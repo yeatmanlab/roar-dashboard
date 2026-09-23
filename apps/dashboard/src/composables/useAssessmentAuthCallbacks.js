@@ -8,8 +8,9 @@ import { getAuthService } from '@/services/AuthService';
  * task component, replacing the per-component inline literals that returned
  * the store's cached token. `getToken` resolves a live token via the
  * AuthService so a long-running assessment never sends a token that went
- * stale between trials; the cached store token is only the fallback when no
- * Firebase user is signed in (e.g. a race during sign-out).
+ * stale between trials. It resolves null when no Firebase user is signed
+ * in — deliberately no fallback to the store's cached token, so a
+ * signed-out session cannot keep authenticating SDK requests.
  *
  * @returns {{ getToken: () => Promise<string | null>, refreshToken: () => Promise<string | null> }}
  */
@@ -17,10 +18,7 @@ export default function useAssessmentAuthCallbacks() {
   const authStore = useAuthStore();
 
   return {
-    getToken: async () => {
-      const liveToken = await getAuthService().getIdToken();
-      return liveToken ?? authStore.accessToken;
-    },
+    getToken: () => getAuthService().getIdToken(),
     refreshToken: () => authStore.forceIdTokenRefresh(),
   };
 }

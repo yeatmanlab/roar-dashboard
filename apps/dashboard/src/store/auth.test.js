@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   resetQueries: vi.fn(),
   signInWithEmailAndPassword: vi.fn(),
   getIdToken: vi.fn(),
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock('@/services/AuthService', () => ({
@@ -13,6 +14,7 @@ vi.mock('@/services/AuthService', () => ({
     onIdTokenChanged: mocks.onIdTokenChanged,
     signInWithEmailAndPassword: mocks.signInWithEmailAndPassword,
     getIdToken: mocks.getIdToken,
+    getCurrentUser: mocks.getCurrentUser,
   }),
 }));
 
@@ -77,6 +79,48 @@ describe('authStore.setAuthStateListener', () => {
 
     expect(mocks.getIdToken).toHaveBeenCalledTimes(1);
     expect(authStore.accessToken).toBe('public-api-token');
+  });
+
+  it('does not resurrect a token when a sign-out lands while getIdToken is pending', async () => {
+    let resolveToken;
+    mocks.getIdToken.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveToken = resolve;
+        }),
+    );
+
+    // Sign-in event suspends at getIdToken; the sign-out event completes
+    // fully before the token resolves.
+    const signInEvent = listenerCallback(userA);
+    await listenerCallback(null);
+    resolveToken('token-a');
+    await signInEvent;
+
+    expect(authStore.firebaseUser).toBeNull();
+    expect(authStore.accessToken).toBeNull();
+  });
+
+  it('does not resurrect a token when a user switch lands while getIdToken is pending', async () => {
+    let resolveTokenA;
+    mocks.getIdToken
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveTokenA = resolve;
+          }),
+      )
+      .mockResolvedValueOnce('token-b');
+
+    // User A's event suspends at getIdToken; user B's event completes fully
+    // before A's token resolves.
+    const signInEventA = listenerCallback(userA);
+    await listenerCallback(userB);
+    resolveTokenA('token-a');
+    await signInEventA;
+
+    expect(authStore.firebaseUser.uid).toBe(userB.uid);
+    expect(authStore.accessToken).toBe('token-b');
   });
 
   it('does not reset identity on a same-uid token refresh', async () => {
@@ -214,6 +258,7 @@ describe('authStore.forceIdTokenRefresh', () => {
 
   it('force-refreshes via AuthService.getIdToken and captures the token synchronously', async () => {
     authStore.accessToken = 'stale-token';
+    mocks.getCurrentUser.mockReturnValue({ uid: 'firebase-uid-a' });
     mocks.getIdToken.mockResolvedValue('fresh-token');
 
     const result = await authStore.forceIdTokenRefresh();
@@ -223,8 +268,51 @@ describe('authStore.forceIdTokenRefresh', () => {
     expect(authStore.accessToken).toBe('fresh-token');
   });
 
+  it('shares a single in-flight refresh across concurrent callers', async () => {
+    mocks.getCurrentUser.mockReturnValue({ uid: 'firebase-uid-a' });
+    let resolveToken;
+    mocks.getIdToken.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveToken = resolve;
+        }),
+    );
+
+    const first = authStore.forceIdTokenRefresh();
+    const second = authStore.forceIdTokenRefresh();
+    resolveToken('fresh-token');
+
+    await expect(first).resolves.toBe('fresh-token');
+    await expect(second).resolves.toBe('fresh-token');
+    expect(mocks.getIdToken).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts a new refresh after the previous in-flight refresh settles', async () => {
+    mocks.getCurrentUser.mockReturnValue({ uid: 'firebase-uid-a' });
+    mocks.getIdToken.mockResolvedValue('fresh-token');
+
+    await authStore.forceIdTokenRefresh();
+    await authStore.forceIdTokenRefresh();
+
+    expect(mocks.getIdToken).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not store the token when a sign-out lands while the refresh is pending', async () => {
+    authStore.accessToken = 'stale-token';
+    // Signed in when the refresh starts, signed out by the time it resolves.
+    mocks.getCurrentUser.mockReturnValueOnce({ uid: 'firebase-uid-a' }).mockReturnValueOnce(null);
+    mocks.getIdToken.mockResolvedValue('fresh-token');
+
+    const result = await authStore.forceIdTokenRefresh();
+
+    expect(result).toBeNull();
+    // The auth listener owns clearing the token on sign-out.
+    expect(authStore.accessToken).toBe('stale-token');
+  });
+
   it('returns null and leaves the stored token untouched when not signed in', async () => {
     authStore.accessToken = 'stale-token';
+    mocks.getCurrentUser.mockReturnValue(null);
     mocks.getIdToken.mockResolvedValue(null);
 
     const result = await authStore.forceIdTokenRefresh();

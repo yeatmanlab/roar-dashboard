@@ -143,7 +143,7 @@ describe('apiWithAuthRetry', () => {
     expect(tsRestFetchApi).toHaveBeenCalledTimes(1);
   });
 
-  it('retries without Authorization header when forceIdTokenRefresh returns null', async () => {
+  it('returns the original 401 without retrying when forceIdTokenRefresh returns null', async () => {
     const expiredResponse = {
       status: 401,
       clone() {
@@ -151,90 +151,56 @@ describe('apiWithAuthRetry', () => {
       },
       json: vi.fn().mockResolvedValue({ error: { code: 'auth/token-expired' } }),
     };
-    const retryResponse = { status: 401 };
 
-    vi.mocked(tsRestFetchApi).mockResolvedValueOnce(expiredResponse).mockResolvedValueOnce(retryResponse);
+    vi.mocked(tsRestFetchApi).mockResolvedValueOnce(expiredResponse);
 
     mockAuthStore.forceIdTokenRefresh.mockResolvedValue(null);
 
     const result = await capturedApi({ headers: {} });
 
-    expect(result).toBe(retryResponse);
+    // No token means the retry is a guaranteed 401 — skip the round-trip.
+    expect(result).toBe(expiredResponse);
     expect(mockAuthStore.forceIdTokenRefresh).toHaveBeenCalledTimes(1);
-    expect(tsRestFetchApi).toHaveBeenCalledTimes(2);
-    const retryArgs = vi.mocked(tsRestFetchApi).mock.calls[1][0];
-    expect(retryArgs.headers).not.toHaveProperty('Authorization');
+    expect(tsRestFetchApi).toHaveBeenCalledTimes(1);
   });
 
-  it('shares a single refresh across concurrent 401s', async () => {
-    const makeExpiredResponse = () => ({
+  it('returns the original 401 when the token refresh itself fails', async () => {
+    const expiredResponse = {
       status: 401,
       clone() {
         return this;
       },
       json: vi.fn().mockResolvedValue({ error: { code: 'auth/token-expired' } }),
-    });
-    const successA = { status: 200 };
-    const successB = { status: 200 };
+    };
 
-    vi.mocked(tsRestFetchApi)
-      .mockResolvedValueOnce(makeExpiredResponse())
-      .mockResolvedValueOnce(makeExpiredResponse())
-      .mockResolvedValueOnce(successA)
-      .mockResolvedValueOnce(successB);
+    vi.mocked(tsRestFetchApi).mockResolvedValueOnce(expiredResponse);
 
-    // Deferred refresh: both callers must have registered on the shared
-    // in-flight promise before it resolves.
-    let resolveRefresh;
-    mockAuthStore.forceIdTokenRefresh.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveRefresh = () => resolve('refreshed-token');
-        }),
-    );
+    mockAuthStore.forceIdTokenRefresh.mockRejectedValue(new Error('refresh failed'));
 
-    const requestA = capturedApi({ headers: {} });
-    const requestB = capturedApi({ headers: {} });
+    const result = await capturedApi({ headers: {} });
 
-    // Let both requests hit their 401 and reach the refresh step.
-    await vi.waitFor(() => expect(resolveRefresh).toBeDefined());
-    resolveRefresh();
-
-    const [resultA, resultB] = await Promise.all([requestA, requestB]);
-
-    expect(mockAuthStore.forceIdTokenRefresh).toHaveBeenCalledTimes(1);
-    expect(tsRestFetchApi).toHaveBeenCalledTimes(4);
-    expect([resultA, resultB]).toEqual([successA, successB]);
-    // Both retries carry the shared refreshed token.
-    const retryCalls = vi.mocked(tsRestFetchApi).mock.calls.slice(2);
-    for (const [callArgs] of retryCalls) {
-      expect(callArgs.headers).toMatchObject({ Authorization: 'Bearer refreshed-token' });
-    }
+    // A failed refresh (e.g. revoked session) surfaces the original auth
+    // 401 rather than throwing the refresh internal at the caller.
+    expect(result).toBe(expiredResponse);
+    expect(tsRestFetchApi).toHaveBeenCalledTimes(1);
   });
 
-  it('starts a new refresh after the previous in-flight refresh settles', async () => {
-    const makeExpiredResponse = () => ({
+  it('propagates a retry failure as an error instead of returning the original 401', async () => {
+    const expiredResponse = {
       status: 401,
       clone() {
         return this;
       },
       json: vi.fn().mockResolvedValue({ error: { code: 'auth/token-expired' } }),
-    });
+    };
 
-    vi.mocked(tsRestFetchApi)
-      .mockResolvedValueOnce(makeExpiredResponse())
-      .mockResolvedValueOnce({ status: 200 })
-      .mockResolvedValueOnce(makeExpiredResponse())
-      .mockResolvedValueOnce({ status: 200 });
+    vi.mocked(tsRestFetchApi).mockResolvedValueOnce(expiredResponse).mockRejectedValueOnce(new Error('network down'));
 
     mockAuthStore.forceIdTokenRefresh.mockResolvedValue('refreshed-token');
 
-    await capturedApi({ headers: {} });
-    await capturedApi({ headers: {} });
-
-    // Sequential 401s each get their own refresh — the in-flight promise is
-    // cleared once it settles, not held forever.
-    expect(mockAuthStore.forceIdTokenRefresh).toHaveBeenCalledTimes(2);
+    // A transient network failure on the retry must not masquerade as a
+    // terminal auth 401 — callers would bounce the user to sign-in.
+    await expect(capturedApi({ headers: {} })).rejects.toThrow('network down');
   });
 
   it('returns original response when 401 body cannot be parsed', async () => {

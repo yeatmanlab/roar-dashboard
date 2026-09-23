@@ -3,14 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mocks = vi.hoisted(() => ({
   getIdToken: vi.fn(),
   forceIdTokenRefresh: vi.fn(),
-  authStore: { accessToken: 'cached-token' },
 }));
 
 vi.mock('@/store/auth', () => ({
   useAuthStore: () => ({
-    get accessToken() {
-      return mocks.authStore.accessToken;
-    },
     forceIdTokenRefresh: mocks.forceIdTokenRefresh,
   }),
 }));
@@ -26,7 +22,6 @@ import useAssessmentAuthCallbacks from './useAssessmentAuthCallbacks';
 describe('useAssessmentAuthCallbacks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.authStore.accessToken = 'cached-token';
   });
 
   it('returns the { getToken, refreshToken } shape the assessment SDK expects', () => {
@@ -57,12 +52,14 @@ describe('useAssessmentAuthCallbacks', () => {
     await expect(getToken()).resolves.toBe('token-2');
   });
 
-  it('getToken falls back to the cached store token when no user is signed in', async () => {
+  it('getToken resolves null when no user is signed in — no cached-token fallback', async () => {
     mocks.getIdToken.mockResolvedValue(null);
 
     const { getToken } = useAssessmentAuthCallbacks();
 
-    await expect(getToken()).resolves.toBe('cached-token');
+    // A signed-out session must not keep authenticating SDK requests with
+    // a stale cached token.
+    await expect(getToken()).resolves.toBeNull();
   });
 
   it('refreshToken delegates to authStore.forceIdTokenRefresh', async () => {
