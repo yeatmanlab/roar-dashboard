@@ -120,23 +120,26 @@ diagnose_port_conflict() {
     return
   fi
 
-  # Not a container — a host process. The Postgres port gets tailored advice:
-  # a local PostgreSQL install is a common culprit, and the port is overridable
-  # when the clash is intentional.
-  if [[ "$port" == "$ASSESSMENT_PG_PORT" ]]; then
-    echo "  A local PostgreSQL instance may be running. Stop it, or pick another port:" >&2
-    echo "    macOS (Homebrew): brew services stop postgresql@<version>" >&2
-    echo "    Ubuntu/Debian:    sudo systemctl stop postgresql" >&2
-    echo "    Or:               ASSESSMENT_PG_PORT=<port> npm start" >&2
-    return
-  fi
-
+  # Not a container — a host process. Name it before guessing: the Postgres
+  # port's usual culprit is a local PostgreSQL install, but pgweb, another
+  # stack's DB, or any stray service can hold it too.
   local proc
   proc="$(lsof -i ":${port}" -sTCP:LISTEN 2>/dev/null | awk 'NR==2 {print $1 " (pid " $2 ")"}' || true)"
   if [[ -n "$proc" ]]; then
     echo "  Held by: ${proc}. Stop that process and retry." >&2
   else
     echo "  Find the process with: lsof -i :${port}  (or: ss -tlnp | grep ${port})" >&2
+    if [[ "$port" == "$ASSESSMENT_PG_PORT" ]]; then
+      echo "  A local PostgreSQL instance is a common culprit:" >&2
+      echo "    macOS (Homebrew): brew services stop postgresql@<version>" >&2
+      echo "    Ubuntu/Debian:    sudo systemctl stop postgresql" >&2
+    fi
+  fi
+
+  # The Postgres port is the one overridable port, so the clash can also be
+  # side-stepped entirely.
+  if [[ "$port" == "$ASSESSMENT_PG_PORT" ]]; then
+    echo "  Or pick another port: ASSESSMENT_PG_PORT=<port> npm start" >&2
   fi
 }
 
