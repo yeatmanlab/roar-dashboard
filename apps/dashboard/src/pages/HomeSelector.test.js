@@ -7,6 +7,7 @@ import enComponentTranslations from '@/translations/en/en-componentTranslations.
 const mockRefetch = vi.fn();
 const claimsQueryState = {
   isLoading: ref(false),
+  isFetching: ref(false),
   data: ref(null),
   error: ref(null),
 };
@@ -22,6 +23,7 @@ const userTypeState = {
 vi.mock('@/composables/queries/useUserClaimsQuery', () => ({
   default: () => ({
     isLoading: claimsQueryState.isLoading,
+    isFetching: claimsQueryState.isFetching,
     data: claimsQueryState.data,
     error: claimsQueryState.error,
     refetch: mockRefetch,
@@ -93,6 +95,7 @@ describe('HomeSelector.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     claimsQueryState.isLoading.value = false;
+    claimsQueryState.isFetching.value = false;
     claimsQueryState.data.value = null;
     claimsQueryState.error.value = null;
     userTypeState.isAdmin.value = false;
@@ -123,6 +126,28 @@ describe('HomeSelector.vue', () => {
     expect(wrapper.find('[data-testid="home-selector__error"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="home-selector__loading"]').exists()).toBe(false);
     expect(wrapper.text()).toContain(enComponentTranslations.homeSelector.errorTitle);
+  });
+
+  it('shows the loading state, not the error, while a refetch of a failed query is in flight', async () => {
+    // GenericError's Try Again invalidates `/me` before navigating here, so
+    // the query arrives holding its old error while the refetch runs. The
+    // error state must wait for the refetch to settle — otherwise the user
+    // sees an error flash even when the retry succeeds.
+    claimsQueryState.error.value = new Error('/me request failed with status 500');
+    claimsQueryState.isFetching.value = true;
+
+    const wrapper = mountHomeSelector();
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="home-selector__loading"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="home-selector__error"]').exists()).toBe(false);
+
+    // The refetch settles without data: now the error state renders.
+    claimsQueryState.isFetching.value = false;
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="home-selector__error"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="home-selector__loading"]').exists()).toBe(false);
   });
 
   it('refetches the claims query when the error state retry is clicked', async () => {

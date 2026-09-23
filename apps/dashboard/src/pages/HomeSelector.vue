@@ -92,6 +92,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 const {
   isLoading: isLoadingClaims,
+  isFetching: isFetchingClaims,
   data: userClaims,
   error: claimsError,
   refetch: refetchClaims,
@@ -103,10 +104,15 @@ const { userType, isAdmin, isSuperAdmin, isParticipant, isLaunchAdmin } = useUse
 
 const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value || isLaunchAdmin.value);
 
-// The claims query has exhausted its retries and has no data to fall back on.
-// This is the branch that used to be missing: `isLoading` below keys off
-// `!userClaims.value`, so without it a failed query spun forever.
-const hasError = computed(() => Boolean(claimsError.value) && !userClaims.value);
+// The claims query has exhausted its retries, has no data to fall back on,
+// and no refetch is in flight. This is the branch that used to be missing:
+// `isLoading` below keys off `!userClaims.value`, so without it a failed
+// query spun forever. The `isFetchingClaims` gate matters after
+// GenericError's Try Again: that path invalidates `/me` before navigating
+// here, so the query still holds its old error while the refetch runs —
+// without the gate, the user sees this error state flash even when the
+// retry succeeds.
+const hasError = computed(() => Boolean(claimsError.value) && !userClaims.value && !isFetchingClaims.value);
 
 const isLoading = computed(() => {
   // Identity and role come from `/me`-derived claims — the only signal needed to
