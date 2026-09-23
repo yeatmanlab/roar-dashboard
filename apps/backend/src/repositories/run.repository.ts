@@ -236,7 +236,7 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
           inArray(runScores.runId, runIds),
           eq(runScores.type, SCORE_TYPE.COMPUTED),
           inArray(runScores.domain, [SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL, SCORE_DOMAIN.COMPOSITE]),
-          inArray(runScores.name, [SCORE_NAME.THETA_ESTIMATE, SCORE_NAME.THETA_SE, 'scoringVersion']),
+          inArray(runScores.name, [SCORE_NAME.THETA_ESTIMATE, SCORE_NAME.THETA_SE, SCORE_NAME.SCORING_VERSION]),
         ),
       );
 

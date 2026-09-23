@@ -28,6 +28,7 @@ export const SWR_SCORE_NAMES = {
   WJ_PERCENTILE: 'wjPercentile', // legacy field name used before scoring version 7
   STANDARD_SCORE: 'standardScore',
   RAW_SCORE: 'roarScore',
+  SCORING_VERSION: 'scoringVersion',
 
   // Raw counts — Italian, Portuguese, and German produce only these (no normed scores)
   ...TRIAL_COUNT_SCORE_NAMES,
