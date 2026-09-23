@@ -26,6 +26,7 @@
     "vue": "^3.0.0"
   },
   "scripts": {
+    "predev": "bash ../../../scripts/assessment-predev.sh",
     "dev": "vite --mode development",
     "dev:ci": "npx vite --mode development --port 8000",
     "setup": "bash ../../../scripts/assessment-setup.sh",
