@@ -53,6 +53,7 @@ export const API_ERROR_CODES = Object.freeze({
   AUTH_REQUIRED: 'auth/required',
   AUTH_TOKEN_EXPIRED: 'auth/token-expired',
   AUTH_ROSTERING_ENDED: 'auth/rostering-ended',
+  AUTH_USER_NOT_FOUND: 'auth/user-not-found',
 });
 
 /**
@@ -73,4 +74,21 @@ export function isRosteringEndedError(error) {
 export function isTerminalAuthError(error) {
   const code = getApiErrorCode(error);
   return code === API_ERROR_CODES.AUTH_REQUIRED || code === API_ERROR_CODES.AUTH_TOKEN_EXPIRED;
+}
+
+/**
+ * Checks if the error indicates the caller's Firebase account has no backend
+ * user record yet (401 `auth/user-not-found` from the auth guard).
+ *
+ * This is the provisioning signal: right after an SSO sign-in the Firebase
+ * account exists but the backend user record is still being created by
+ * rostering, so `/me` fails with this code until provisioning completes.
+ * Consumers treat it as transient and retry with a patient backoff instead
+ * of surfacing an error.
+ *
+ * @param {Object} error - ts-rest error response or error object
+ * @returns {boolean}
+ */
+export function isUserNotProvisionedError(error) {
+  return getApiErrorCode(error) === API_ERROR_CODES.AUTH_USER_NOT_FOUND;
 }

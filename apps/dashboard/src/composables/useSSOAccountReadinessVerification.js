@@ -1,200 +1,210 @@
-import { ref, onUnmounted } from 'vue';
-import { storeToRefs } from 'pinia';
+import { computed, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useQueryClient } from '@tanstack/vue-query';
+import { useIsMutating, useQueryClient } from '@tanstack/vue-query';
 import { setUser } from '@sentry/vue';
-import { backOff } from 'exponential-backoff';
-import { useAuthStore } from '@/store/auth.js';
-import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useMeQuery from '@/composables/queries/useMeQuery';
+import { useGlobalError } from '@/composables/useGlobalError';
 import useSentryLogging from '@/composables/useSentryLogging';
-import { AUTH_USER_TYPE } from '@/constants/auth';
+import { useAuthStore } from '@/store/auth';
 import { AUTH_LOG_MESSAGES } from '@/constants/logMessages';
+import { SIGN_OUT_MUTATION_KEY } from '@/constants/mutationKeys';
+import { ME_QUERY_KEY } from '@/constants/queryKeys';
+import { APP_ROUTE_NAMES } from '@/constants/routes';
 import { redirectSignInPath } from '@/helpers/redirectSignInPath';
-import isTestEnv from '@/helpers/isTestEnv';
+import { isRosteringEndedError, isTerminalAuthError, isUserNotProvisionedError } from '@/utils/api-errors';
 
 const { logAuthEvent } = useSentryLogging();
 
-/**
- * Get backoff configuration for polling.
- * Uses fewer attempts when running in Cypress to speed up tests.
- */
-const getBackoffOptions = () => ({
-  numOfAttempts: isTestEnv() ? 3 : 15,
-  startingDelay: isTestEnv() ? 200 : 600,
-  timeMultiple: 1.5,
-  delayFirstAttempt: false,
-});
+// How long the SSO landing page waits for the Firebase token listener to
+// produce an access token before concluding there is no session at all
+// (deep link, stale bookmark, or an SSO redirect that never signed in).
+// The token normally arrives within a couple of seconds of the redirect;
+// the period is generous so a slow token exchange on a weak device makes
+// the cut, and the watcher below cancels the timer the moment it does.
+const NO_SESSION_GRACE_PERIOD_MS = 20_000;
 
 /**
  * Verify account readiness after SSO authentication.
  *
- * This composable polls the user document until it is ready for use following SSO authentication.
- * The backend creates and populates the user document after SSO, which may take some time.
- * Uses exponential backoff to reduce load on the server while waiting.
+ * After an SSO redirect the Firebase account exists before the backend user
+ * record does — until rostering finishes provisioning, `/me` fails with
+ * `auth/user-not-found`. This composable does **not** poll on its own: it
+ * observes the canonical `/me` query (`useMeQuery`), whose shared retry
+ * policy already treats `auth/user-not-found` as "still provisioning" and
+ * retries it patiently (see `meRetryPolicy` / `meRetryDelay`). Because the
+ * whole app shares that one query, there is no second polling loop to race
+ * against the app-level `/me` gate in `App.vue`.
+ *
+ * What this composable adds on top of the query:
+ *
+ * - the success routine: Sentry identification, invalidation of everything
+ *   cached during the provisioning window, clearing any stale global error,
+ *   and the redirect to the user's original destination;
+ * - a no-session guard: without an access token the query never fires, so a
+ *   visitor who lands here signed out is routed to SignIn after a grace
+ *   period instead of spinning forever;
+ * - progress/error logging for the SSO flow; and
+ * - `retryPolling`, which resets the `/me` query so SSOAuthPage's retry
+ *   button restarts the provisioning wait from scratch.
+ *
+ * Terminal errors are not handled here. Rostering-ended and expired-token
+ * failures flow through the QueryCache → globalError bridge
+ * (`queryClient.js`) and App.vue's `meError` watcher, which navigate to
+ * AccessEnded / SignIn exactly as they do everywhere else in the app. Only
+ * the "retries exhausted" case surfaces through `hasError` / `retryPolling`,
+ * because SSOAuthPage owns that error UX (the SSO route sets
+ * `meta.awaitsUserProvisioning`, which excludes it from App.vue's generic
+ * error redirect).
  */
 const useSSOAccountReadinessVerification = () => {
-  const retryCount = ref(0);
-  const hasError = ref(false);
-  const isPolling = ref(false);
   let hasRedirected = false;
 
   const router = useRouter();
   const route = useRoute();
   const queryClient = useQueryClient();
   const authStore = useAuthStore();
-  const { roarUid } = storeToRefs(authStore);
+  const { clearGlobalError } = useGlobalError();
 
-  const { data: userData, refetch: refetchUserData } = useUserDataQuery();
+  const { data, error, failureCount, failureReason } = useMeQuery();
 
-  setUser({ id: roarUid.value, userType: userData?.value?.userType });
+  // `true` if /me was already resolved when this composable mounted — a Back
+  // navigation or a manual revisit after sign-in, not a provisioning wait.
+  const hadMeDataAtMount = Boolean(data.value);
+
+  // Non-zero while the sign-out mutation is running. The page's own Sign out
+  // button nulls the access token before the mutation's onSuccess navigates —
+  // the token watcher below must not treat that as a lost session.
+  const signOutMutationCount = useIsMutating({ mutationKey: [SIGN_OUT_MUTATION_KEY] });
 
   /**
-   * Check if user account is ready and redirect if so.
-   *
-   * User is considered ready when userType exists and is not 'guest'.
-   * Guest users are temporary accounts that are still being provisioned.
-   *
-   * @param {object|null} data - The user data to check.
-   * @returns {boolean} True if user is ready and redirect was triggered.
+   * `true` once the `/me` query has exhausted its retries on a
+   * non-terminal error. Terminal errors (rostering-ended, expired token)
+   * are excluded — those navigate away via App.vue's `meError` watcher, so
+   * SSOAuthPage must not flash its retry UI first.
    */
-  const checkAndRedirectIfReady = (data) => {
-    const userType = data?.userType;
+  const hasError = computed(
+    () => Boolean(error.value) && !isRosteringEndedError(error.value) && !isTerminalAuthError(error.value),
+  );
 
-    if (!userType || userType === AUTH_USER_TYPE.GUEST) {
-      return false;
-    }
-
-    // User is ready - mark as redirected to stop any further polling.
+  const redirectToSignIn = () => {
     hasRedirected = true;
-
-    logAuthEvent(AUTH_LOG_MESSAGES.SUCCESS, { data: { provider: 'SSO' } });
-
-    // Invalidate all queries to ensure data is fetched freshly after the user document is ready.
-    queryClient.invalidateQueries();
-
-    router.push({ path: redirectSignInPath(route) });
-    return true;
+    logAuthEvent(AUTH_LOG_MESSAGES.SSO_SESSION_MISSING, {
+      level: 'warning',
+      data: { provider: 'SSO' },
+    });
+    // Forward the deep-link target so signing in still lands the user where
+    // the original link pointed — the success path and the router guard's
+    // SSO forwarding preserve the parameter the same way.
+    router.replace({
+      name: APP_ROUTE_NAMES.SIGN_IN,
+      ...(route.query.redirect_to ? { query: { redirect_to: route.query.redirect_to } } : {}),
+    });
   };
 
-  /**
-   * Wait for roarUid to be available in the auth store.
-   *
-   * After SSO redirect, the auth store needs time to sync with Firebase and populate userClaims.
-   * This function polls quickly until roarUid is available, without counting against retry attempts.
-   * For new accounts where roarUid doesn't exist yet (backend provisioning), this will time out
-   * and the backOff loop will handle further retries.
-   *
-   * @param {number} maxWaitMs - Maximum time to wait in milliseconds.
-   * @param {number} intervalMs - Polling interval in milliseconds.
-   * @returns {Promise<void>}
-   */
-  const waitForRoarUid = async (maxWaitMs = 10000, intervalMs = 100) => {
-    const startTime = Date.now();
-    while (!roarUid.value && !hasRedirected && Date.now() - startTime < maxWaitMs) {
-      await new Promise((resolve) => setTimeout(resolve, intervalMs));
-    }
-    // Don't throw - roarUid might legitimately not exist for new accounts being provisioned.
-    // The backOff loop will handle that case with proper retries.
-  };
+  // No access token means the /me query is disabled and will never settle.
+  // Give the Firebase token listener a grace period, then route to SignIn —
+  // mirrors the old polling loop, which fetched unconditionally, exhausted
+  // its retries on auth/required, and landed on SignIn.
+  const noSessionTimer = setTimeout(() => {
+    if (authStore.accessToken || hasRedirected) return;
+    redirectToSignIn();
+  }, NO_SESSION_GRACE_PERIOD_MS);
+  onUnmounted(() => clearTimeout(noSessionTimer));
 
-  /**
-   * Starts polling with exponential backoff to check for user readiness.
-   * Will retry up to the configured max attempts before setting hasError.
-   *
-   * @returns {Promise<void>}
-   */
-  const startPolling = async () => {
-    // Prevent multiple concurrent polling sessions.
-    if (isPolling.value) {
-      return;
-    }
-
-    isPolling.value = true;
-    hasError.value = false;
-
-    try {
-      // Wait for auth store to sync before starting the backOff loop.
-      // This prevents wasting retry attempts on "roarUid not available" for existing accounts.
-      await waitForRoarUid();
-
-      await backOff(
-        async () => {
-          // Check if roarUid is available (may still be waiting for backend provisioning).
-          if (!roarUid.value) {
-            const error = new Error('User ID not available yet');
-            error.userType = undefined;
-            throw error;
-          }
-
-          // Refetch user data from the server and use the result directly.
-          const { data } = await refetchUserData();
-
-          if (checkAndRedirectIfReady(data)) {
-            // Success - returning normally will exit backOff.
-            return;
-          }
-
-          // Not ready yet - throw to trigger retry.
-          const error = new Error('User not ready');
-          error.userType = data?.userType;
-          throw error;
-        },
-        {
-          ...getBackoffOptions(),
-          retry: (error, attemptNumber) => {
-            // Update retry count for UI/logging.
-            retryCount.value = attemptNumber;
-
-            // Log progress.
-            if (error.userType === AUTH_USER_TYPE.GUEST) {
-              logAuthEvent(AUTH_LOG_MESSAGES.USER_TYPE_GUEST, {
-                level: 'warning',
-                data: { retryCount: attemptNumber, provider: 'SSO' },
-              });
-            } else {
-              logAuthEvent(AUTH_LOG_MESSAGES.USER_TYPE_MISSING, {
-                level: 'warning',
-                data: { retryCount: attemptNumber, provider: 'SSO', userType: error.userType },
-              });
-            }
-
-            // Stop retrying if we've already redirected (e.g., component unmounted).
-            return !hasRedirected;
-          },
-        },
-      );
-    } catch {
-      // Max retries exceeded or unexpected error.
-      if (!hasRedirected) {
-        hasError.value = true;
-        logAuthEvent(AUTH_LOG_MESSAGES.POLLING_MAX_RETRIES_EXCEEDED, {
-          level: 'error',
-          data: { retryCount: retryCount.value, provider: 'SSO' },
-        });
+  // A token that arrives cancels the timer — the query takes over from here.
+  // A token that later *disappears* outside the sign-out flow (revocation,
+  // account disabled, an identity reset) disables the /me query again:
+  // nothing would fetch, no watcher would navigate, and the page would spin
+  // forever — so route to SignIn immediately instead. The page's own
+  // sign-out is excluded: the mutation resets state and navigates itself.
+  watch(
+    () => Boolean(authStore.accessToken),
+    (hasToken, hadToken) => {
+      if (hasToken) {
+        clearTimeout(noSessionTimer);
+        return;
       }
-    } finally {
-      isPolling.value = false;
-    }
-  };
+      if (hadToken && !hasRedirected && signOutMutationCount.value === 0) {
+        redirectToSignIn();
+      }
+    },
+  );
 
-  /**
-   * Retry polling after an error. Resets error state and retry count.
-   */
-  const retryPolling = () => {
-    hasError.value = false;
-    retryCount.value = 0;
-    startPolling();
-  };
-
-  onUnmounted(() => {
-    // Signal to stop polling if still in progress.
-    hasRedirected = true;
+  // Log each retry so the provisioning wait is visible in Sentry traces.
+  // Non-provisioning failures (500s, network errors) get a distinct message
+  // — labeling them "not yet provisioned" would misdirect incident triage.
+  watch(failureCount, (count) => {
+    if (count === 0 || hasRedirected) return;
+    const reason = failureReason.value;
+    const message = isUserNotProvisionedError(reason)
+      ? AUTH_LOG_MESSAGES.PROVISIONING_PENDING
+      : AUTH_LOG_MESSAGES.SSO_READINESS_RETRY_FAILED;
+    logAuthEvent(message, {
+      level: 'warning',
+      data: { retryCount: count, provider: 'SSO', status: reason?.status },
+    });
   });
 
+  watch(hasError, (errored) => {
+    if (!errored || hasRedirected) return;
+    logAuthEvent(AUTH_LOG_MESSAGES.PROVISIONING_RETRIES_EXHAUSTED, {
+      level: 'error',
+      data: { retryCount: failureCount.value, provider: 'SSO' },
+    });
+  });
+
+  // The user is provisioned the moment `/me` resolves — the backend only
+  // returns a payload once the user record exists. `immediate: true` covers
+  // the case where provisioning finished before this composable mounted and
+  // the payload is already in the cache.
+  watch(
+    data,
+    (me) => {
+      if (!me || hasRedirected) return;
+      hasRedirected = true;
+
+      setUser({ id: me.id, userType: me.userType });
+      logAuthEvent(AUTH_LOG_MESSAGES.SUCCESS, { data: { provider: 'SSO' } });
+
+      // Invalidate everything cached during the provisioning window — SSO
+      // completion is a cold start, so data fetched while the user record
+      // was still being created is not trustworthy. Two exclusions: /me
+      // itself (the entry that just resolved is the freshest data in the
+      // cache), and the case where /me was already cached at mount — then
+      // no provisioning wait happened (Back navigation, manual revisit) and
+      // a blanket refetch of every active query would be pure waste.
+      if (!hadMeDataAtMount) {
+        queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] !== ME_QUERY_KEY,
+        });
+      }
+
+      // A stale global error from an earlier failed /me attempt would make
+      // the router guard hijack this redirect. /me just succeeded, so clear
+      // it — mirrors App.vue's meData watcher.
+      clearGlobalError();
+
+      // `replace`, not `push`: keeping /sso in history would make the Back
+      // button remount this page and replay the redirect.
+      router.replace({ path: redirectSignInPath(route) });
+    },
+    { immediate: true },
+  );
+
+  /**
+   * Restart the provisioning wait after `/me` exhausted its retries.
+   *
+   * Resets the `/me` query (failure count included) and refetches it for
+   * every active observer — this composable's `useMeQuery` and App.vue's
+   * `useCurrentUser` alike, since they share one cache entry.
+   */
+  const retryPolling = () => {
+    clearGlobalError();
+    queryClient.resetQueries({ queryKey: [ME_QUERY_KEY] });
+  };
+
   return {
-    retryCount,
     hasError,
-    startPolling,
     retryPolling,
   };
 };

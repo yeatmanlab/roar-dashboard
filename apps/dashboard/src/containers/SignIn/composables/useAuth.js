@@ -9,11 +9,21 @@ import { APP_ROUTES } from '@/constants/routes';
 import { getAuthService } from '@/services/AuthService';
 
 export function useAuth(context) {
-  const { authStore, router, route, email, password, invalid, emailLinkSent, showPasswordField, resetSignInUI } =
-    context;
+  const {
+    authStore,
+    router,
+    route,
+    email,
+    password,
+    invalid,
+    ssoError,
+    emailLinkSent,
+    showPasswordField,
+    resetSignInUI,
+  } = context;
 
-  // pull reactive store refs (spinner, ssoProvider, roarfirekit)
-  const { spinner, ssoProvider, roarfirekit } = storeToRefs(authStore);
+  // pull reactive store refs (spinner, ssoProvider)
+  const { spinner, ssoProvider } = storeToRefs(authStore);
 
   const isUsername = computed(() => {
     const v = email.value ?? '';
@@ -123,10 +133,17 @@ export function useAuth(context) {
         .then(getUserClaims)
         .catch(() => {
           spinner.value = false;
-          invalid.value = true;
+          // `ssoError`, not `invalid`: the user never typed a password, so
+          // "incorrect email or password" would misdirect them into resets.
+          ssoError.value = true;
         });
     } else {
-      authStore.signInWithRedirect(provider);
+      // A rejection before the browser leaves the page (e.g. initialization
+      // failure) would otherwise die silently with the spinner stuck on.
+      authStore.signInWithRedirect(provider).catch(() => {
+        spinner.value = false;
+        ssoError.value = true;
+      });
     }
   }
 
@@ -166,7 +183,6 @@ export function useAuth(context) {
   }
 
   return {
-    roarfirekit,
     spinner,
 
     isUsername,

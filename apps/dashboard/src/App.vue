@@ -96,9 +96,22 @@ const { data: meData, error: meError, isFetching: isMeFetching } = useCurrentUse
  *     error redirects below get a chance to fire.
  *   - /me has resolved or errored: render the destination; the error
  *     watcher below has already issued any necessary redirect.
+ *
+ * Routes flagged `meta.awaitsUserProvisioning` (the SSO landing page) are
+ * exempt: right after an SSO redirect, `/me` legitimately fails with
+ * `auth/user-not-found` until the backend has provisioned the user, and
+ * `useMeQuery` retries through that window patiently. The page renders its
+ * own provisioning UX for that wait — holding it behind this gate would
+ * show a bare spinner instead and keep its retry/error UI from ever
+ * mounting.
  */
 const isMeSettling = computed(
-  () => Boolean(authStore.accessToken) && isMeFetching.value && !meData.value && !meError.value,
+  () =>
+    !route.meta.awaitsUserProvisioning &&
+    Boolean(authStore.accessToken) &&
+    isMeFetching.value &&
+    !meData.value &&
+    !meError.value,
 );
 
 // Clear any stale `globalError` left over from a prior failed fetch when
@@ -136,7 +149,11 @@ watch(meError, (err) => {
     if (route.name !== APP_ROUTE_NAMES.SIGN_IN) {
       router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
     }
-  } else if (route.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
+  } else if (!route.meta.awaitsUserProvisioning && route.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
+    // Routes that own the provisioning wait (meta.awaitsUserProvisioning)
+    // render their own retryable error state when `/me` exhausts its
+    // retries — don't yank them to GenericError. Terminal errors above
+    // still navigate away from those routes like everywhere else.
     router.replace({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
   }
 });
