@@ -1,6 +1,8 @@
 -- Create filtered FDW views in the app_fdw schema.
 --
--- Pre-requisites (handled by bootstrap scripts in roar-iac, or setup-fdw-local.sh locally):
+-- Pre-requisites (handled by bootstrap scripts in roar-iac; locally by the Docker
+-- init script docker/postgres/init-dev-databases.sh, or src/test-support/db/setup-fdw.ts
+-- for host-run/CI test databases):
 --   - role_fdw_reader must exist (GRANTs handled by bootstrap scripts)
 --
 -- These views expose a subset of columns from app.* base tables for cross-database
