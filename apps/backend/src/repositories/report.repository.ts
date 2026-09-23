@@ -2188,15 +2188,21 @@ export class ReportRepository {
     }
     const joins: JoinPlan[] = [];
 
-    /** Build a runs+run_scores subquery selecting `value` for one (variant, name) combo. */
+    /**
+     * Build a runs+run_scores subquery selecting `value` for one (variant, name) combo.
+     * `grade` is the run's demographic snapshot, mirroring the response path's
+     * `runGrade ?? student.grade`; left-joined since a run may have none.
+     */
     const buildScoreSub = (alias: string, variantId: string, scoreNames: string[]) =>
       this.db
         .select({
           userId: fdwRuns.userId,
           value: fdwRunScores.value,
+          grade: runDemographics.grade,
         })
         .from(fdwRuns)
         .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
+        .leftJoin(runDemographics, eq(runDemographics.runId, fdwRuns.id))
         .where(
           and(
             eq(fdwRuns.administrationId, administrationId),
@@ -2254,11 +2260,13 @@ export class ReportRepository {
       const rawNames = rules.rawScoreFieldNames;
       let pctSql: SQL | null = null;
       let rawSql: SQL | null = null;
+      let gradeSql: SQL = gradeAsIntSql(users.grade);
 
       if (pctNames.length > 0 && rules.percentileCutoffsByVersion.length > 0) {
         const sub = buildScoreSub(`${aliasPrefix}_pct`, ref.taskVariantId, pctNames);
         joins.push({ sub, alias: `${aliasPrefix}_pct`, expr: numericValueSql(sub.value) });
         pctSql = numericValueSql(sub.value);
+        gradeSql = gradeAsIntSql(sql`COALESCE(${sub.grade}, ${users.grade})`);
       }
       if (rawNames.length > 0 && rules.rawScoreThresholdsByVersion.length > 0) {
         const sub = buildScoreSub(`${aliasPrefix}_raw`, ref.taskVariantId, rawNames);
@@ -2274,7 +2282,7 @@ export class ReportRepository {
         verSql = numericValueSql(sub.value);
       }
 
-      return buildSupportLevelPrioritySql(rules, gradeAsIntSql(users.grade), pctSql, rawSql, verSql);
+      return buildSupportLevelPrioritySql(rules, gradeSql, pctSql, rawSql, verSql);
     };
 
     // 2. Build sort expression (via dynamic field if requested)
