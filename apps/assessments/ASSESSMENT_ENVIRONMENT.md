@@ -31,7 +31,7 @@ After that, `npm start` is all you need for day-to-day work. Everything else is 
   - Ubuntu/Debian: `curl -fsSL https://get.docker.com | sh`, then `sudo usermod -aG docker $USER` and log out/in so you can run Docker without `sudo`. See https://docs.docker.com/engine/install/ubuntu/ for the manual apt steps.
 - **Stack host ports free** — the stack binds five host ports, and `npm start` refuses to launch while any of them is taken (it names the holder and how to free it):
   - **5433** — the ephemeral database (deliberately not the standard 5432, so it can run alongside a persistent platform-dev Postgres on 5432). The only overridable port: `ASSESSMENT_PG_PORT=<port> npm start`.
-  - **9099 / 9199 / 9000** — the Firebase Auth emulator, Storage emulator, and Emulator UI. Note the platform dev stack also binds 9099, so the two stacks can't run at the same time.
+  - **9099 / 9199 / 9000** — the Firebase Auth emulator, Storage emulator, and Emulator UI. Note the platform dev stack also binds 9099 and 9199, so the two stacks can't run at the same time.
   - **4000** — the backend API.
   - Find a holder yourself: `lsof -i :<port>` (macOS) / `ss -tlnp | grep :<port>` (Linux)
 
@@ -268,7 +268,7 @@ The environment doesn't need to be stopped first — the rebuild only updates th
 
 **"Port 5433 is already in use."** Something is holding the ephemeral database's host port — the error names the holder. Stop it, or run with a different port: `ASSESSMENT_PG_PORT=<port> npm start`.
 
-**"Port 9099 / 9199 / 9000 / 4000 is already in use."** Another service is holding a Firebase emulator, Emulator UI, or backend port — most commonly the ROAR platform dev stack, which also binds 9099. These ports aren't overridable: stop the holder (the error names it; for the platform stack, `docker compose down` from the repo root), then `npm start`.
+**"Port 9099 / 9199 / 9000 / 4000 is already in use."** Another service is holding a Firebase emulator, Emulator UI, or backend port — most commonly the ROAR platform dev stack, which also binds 9099 and 9199. These ports aren't overridable: stop the holder (the error names it; for the platform stack, `docker compose down` from the repo root), then `npm start`.
 
 **"Port 8000 is already in use."** A previous dev server (or another assessment) is still running. Stop that process, then `npm start`.
 

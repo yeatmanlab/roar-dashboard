@@ -22,7 +22,10 @@ services:
       - postgres-data:/var/lib/postgresql
       - ./docker/postgres:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      # -h forces a TCP probe: during first-boot init the entrypoint runs a
+      # temporary socket-only server, which plain pg_isready reports as ready
+      # before dependents can actually connect over TCP.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -59,29 +62,37 @@ services:
       timeout: 5s
       retries: 12
 
-  # Shared emulator image (docker/firebase-emulator) — this stack starts auth only;
-  # the assessment stack starts auth + storage from the same image and config.
+  # Shared emulator image (docker/firebase-emulator) — same image and config as
+  # the assessment stack. Storage is included because recording assessments
+  # (roar-readaloud, roav-ran, roav-apps) derive the Storage emulator host from
+  # FIREBASE_AUTH_EMULATOR_HOST and upload to :9199 — without it, every recording
+  # upload in platform-context dev gets connection-refused.
   firebase-auth-emulator:
     container_name: roar-firebase-auth
     build: docker/firebase-emulator
     command: >
       emulators:start
-        --only auth
+        --only auth,storage
         --project ${GCLOUD_PROJECT:-demo-roar}
         --config /firebase.json
         --import /emulator-data
         --export-on-exit /emulator-data
     ports:
       - "${ROAR_AUTH_PORT:-9099}:9099"
+      - "${ROAR_STORAGE_PORT:-9199}:9199"
       - "${ROAR_AUTH_UI_PORT:-9999}:9000"
     volumes:
       - ./docker/firebase-emulator/firebase.json:/firebase.json:ro
-      # firebase.json references storage.rules relative to its own location; mount it
-      # so the config resolves even though this stack doesn't start the Storage emulator.
+      # firebase.json references storage.rules relative to its own location.
       - ./docker/firebase-emulator/storage.rules:/storage.rules:ro
       - firebase-auth-data:/emulator-data
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:9099/ || exit 1"]
+      # Probe both emulators so a half-started container doesn't report healthy.
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:9099/ && curl --silent http://localhost:9199/ --output /dev/null",
+        ]
       interval: 5s
       timeout: 5s
       retries: 12
