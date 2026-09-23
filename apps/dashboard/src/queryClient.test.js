@@ -138,6 +138,21 @@ describe('queryClient QueryCache onError', () => {
     expect(setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
     expect(globalError.value).toEqual({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
   });
+
+  it('logs a sanitized query key, never the raw one', () => {
+    // captureConsoleIntegration forwards console.error arguments to Sentry,
+    // so free-text segments (search input) must be redacted at the log site.
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const error = { code: 'config/base-url-missing' };
+    onErrorCallback(error, { queryKey: ['users-list', { search: 'timmy' }] });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      { type: GLOBAL_ERROR_TYPES.SERVER_ERROR, queryKey: ['users-list', { search: '[redacted]' }] },
+      error,
+    );
+    consoleErrorSpy.mockRestore();
+  });
 });
 
 describe('queryClient default retry policy', () => {

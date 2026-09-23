@@ -1,5 +1,6 @@
 import { QueryCache, QueryClient } from '@tanstack/vue-query';
 import { isMissingBaseUrlError, isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
+import { sanitizeQueryKey } from '@/utils/sanitize-query-key';
 import { useGlobalError } from '@/composables/useGlobalError';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
@@ -52,8 +53,14 @@ export const queryClient = new QueryClient({
       // in sentry.js), and this bridge is the only handler on paths with no
       // bootstrap catch of their own — background `/me` refetches, the reload
       // path, and the missing-base-URL throw — so the log here is what makes
-      // those failures observable at all.
-      console.error('[Auth] API error escalated to the global error state', { type, queryKey: query?.queryKey }, error);
+      // those failures observable at all. The key is sanitized so free-text
+      // segments (search input, filter values) never reach Sentry; the family
+      // constant and opaque IDs pass through for debuggability.
+      console.error(
+        '[Auth] API error escalated to the global error state',
+        { type, queryKey: sanitizeQueryKey(query?.queryKey) },
+        error,
+      );
 
       const { setGlobalError } = useGlobalError();
       setGlobalError({ type });
