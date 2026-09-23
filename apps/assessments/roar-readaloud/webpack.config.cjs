@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const { merge } = require('webpack-merge');
+const { FIREBASE_EMULATOR_AUTH_HOST } = require('../shared/devEmulatorHost.cjs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
@@ -160,7 +161,7 @@ const developmentConfig = merge(webConfig, {
     proxy: [
       {
         context: ['/v1'],
-        target: process.env.BACKEND_URL ?? 'http://localhost:4000',
+        target: process.env.BACKEND_URL ?? 'https://localhost:4000',
         secure: false,
         changeOrigin: true,
       },
@@ -175,20 +176,12 @@ const developmentConfig = merge(webConfig, {
 module.exports = async (env, args) => {
   const roarDB = env.dbmode ?? 'development';
 
-  const devFirebaseConfig =
-    roarDB === 'development'
-      ? {
-          FIREBASE_AUTH_EMULATOR_HOST: JSON.stringify(process.env.FIREBASE_AUTH_EMULATOR_HOST ?? ''),
-        }
-      : {};
-
   const envDependentConfig = {
     plugins: [
       new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
         ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL ?? ''),
-        ...devFirebaseConfig,
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
@@ -206,7 +199,7 @@ module.exports = async (env, args) => {
         // Defaults to the local Auth emulator — assessment development always runs
         // against the emulator, never a real Firebase project. An explicit
         // FIREBASE_AUTH_EMULATOR_HOST env var still overrides this default.
-        FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
+        FIREBASE_AUTH_EMULATOR_HOST: FIREBASE_EMULATOR_AUTH_HOST,
       }),
     ],
   };

@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
 import { existsSync, readFileSync } from 'fs';
+import { FIREBASE_EMULATOR_AUTH_HOST } from '../shared/devEmulatorHost.cjs';
 
 const BUILD_MODES = new Set(['lib', 'staging', 'production']);
 
@@ -49,7 +50,7 @@ export default defineConfig(({ mode }) => ({
           // unverified tokens. Staging and production resolve Firebase config from
           // /__/firebase/init.json instead.
           'process.env.FIREBASE_AUTH_EMULATOR_HOST': JSON.stringify(
-            mode === 'development' ? process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099' : '',
+            mode === 'development' ? process.env.FIREBASE_AUTH_EMULATOR_HOST || FIREBASE_EMULATOR_AUTH_HOST : '',
           ),
         }
       : {},

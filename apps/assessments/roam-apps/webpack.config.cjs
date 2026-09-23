@@ -2,6 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 
 const { merge } = require('webpack-merge');
+const { FIREBASE_EMULATOR_AUTH_HOST } = require('../shared/devEmulatorHost.cjs');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
@@ -186,7 +187,7 @@ module.exports = async (env, args) => {
         // Defaults to the local Auth emulator — assessment development always runs
         // against the emulator, never a real Firebase project. An explicit
         // FIREBASE_AUTH_EMULATOR_HOST env var still overrides this default.
-        FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
+        FIREBASE_AUTH_EMULATOR_HOST: FIREBASE_EMULATOR_AUTH_HOST,
       }),
     ],
   };

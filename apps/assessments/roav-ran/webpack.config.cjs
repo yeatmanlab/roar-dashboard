@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const { merge } = require('webpack-merge');
+const { FIREBASE_EMULATOR_AUTH_HOST } = require('../shared/devEmulatorHost.cjs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
@@ -190,7 +191,7 @@ module.exports = async (env, args) => {
   const devFirebaseConfig = {
     plugins: [
       new webpack.EnvironmentPlugin({
-        FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
+        FIREBASE_AUTH_EMULATOR_HOST: FIREBASE_EMULATOR_AUTH_HOST,
       }),
     ],
   };
