@@ -2476,8 +2476,7 @@ function aggregateTaskGroup(
       const scoringVersion = resolveRunScoringVersion(scored.scores);
       // Read the score at the grade the student was in when they took it
       const scoringGrade = scored.runGrade ?? student.grade;
-      const gradeLevel = getGradeAsNumber(scoringGrade);
-      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel, scoringVersion);
+      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, scoringGrade, scoringVersion);
 
       const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
       const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
@@ -2764,8 +2763,7 @@ function aggregateTaskFacet({
     // outside them is dropped from the chart while still counting in
     // `totalAssessed`. That is intended.
     const scoringVersion = resolveRunScoringVersion(scored.scores);
-    const gradeLevel = getGradeAsNumber(scored.scoringGrade);
-    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel, scoringVersion);
+    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, scored.scoringGrade, scoringVersion);
     const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
     const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
     if (rawScore !== null) {
@@ -2788,8 +2786,7 @@ function aggregateTaskFacet({
     if (!scored) continue;
 
     const scoringVersion = resolveRunScoringVersion(scored.scores);
-    const gradeLevel = getGradeAsNumber(scored.scoringGrade);
-    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel, scoringVersion);
+    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, scored.scoringGrade, scoringVersion);
     const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
     const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
     const assessmentSupportLevel = resolveStringScore(scored.scores, ASSESSMENT_SUPPORT_LEVEL_FIELDS);

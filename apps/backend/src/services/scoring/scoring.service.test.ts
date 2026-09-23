@@ -736,6 +736,27 @@ describe('resolveScoreFieldNames', () => {
     });
   });
 
+  describe('grade normalization', () => {
+    // The grade argument accepts what `getSupportLevel` accepts, so callers can
+    // hand both the same value instead of converting for one and not the other.
+    it('accepts a numeric grade string', () => {
+      expect(resolveScoreFieldNames('sre', '3', 3).percentileFieldNames).toEqual(
+        resolveScoreFieldNames('sre', 3, 3).percentileFieldNames,
+      );
+    });
+
+    it('accepts a grade enum string, mapping it through getGradeAsNumber', () => {
+      // Kindergarten maps to 0, i.e. below the grade-6 branch.
+      expect(resolveScoreFieldNames('sre', 'Kindergarten', 3).percentileFieldNames).toEqual(['tosrecPercentile']);
+    });
+
+    it('treats a non-numeric grade the same as null', () => {
+      expect(resolveScoreFieldNames('sre', 'Ungraded', 3).percentileFieldNames).toEqual(
+        resolveScoreFieldNames('sre', null, 3).percentileFieldNames,
+      );
+    });
+  });
+
   describe('with scoringVersion (version-specific names only)', () => {
     it('swr v3 returns only legacy "wjPercentile" (not "percentile")', () => {
       const result = resolveScoreFieldNames('swr', 3, 3);
