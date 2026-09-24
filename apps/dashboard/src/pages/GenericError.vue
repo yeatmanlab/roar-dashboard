@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 import PvButton from 'primevue/button';
+import { AppMessageState, MESSAGE_STATE_TYPES } from '@/components/AppMessageState';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { useAuthStore } from '@/store/auth';
 import { useGlobalError } from '@/composables/useGlobalError';
@@ -60,14 +61,17 @@ function handleSignOut() {
 
 <template>
   <div class="flex flex-column align-items-center justify-content-center min-h-screen-minus-nav p-4">
-    <i class="pi pi-exclamation-triangle text-6xl text-yellow-500 mb-4" aria-label="Error" />
-    <h1 class="text-2xl font-bold mb-2">Something Went Wrong</h1>
-    <p class="text-center text-gray-600 mb-4 max-w-30rem">
-      An unexpected error occurred. Please try again, or sign out and sign back in.
-    </p>
-    <div class="flex gap-3">
-      <PvButton label="Try Again" @click="handleTryAgain" />
-      <PvButton label="Sign Out" outlined @click="handleSignOut" />
-    </div>
+    <AppMessageState
+      :type="MESSAGE_STATE_TYPES.ERROR"
+      title="Something Went Wrong"
+      message="An unexpected error occurred. Please try again, or sign out and sign back in."
+    >
+      <template #actions>
+        <div class="flex gap-3">
+          <PvButton label="Try Again" @click="handleTryAgain" />
+          <PvButton label="Sign Out" outlined @click="handleSignOut" />
+        </div>
+      </template>
+    </AppMessageState>
   </div>
 </template>
