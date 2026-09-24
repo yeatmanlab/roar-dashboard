@@ -61,7 +61,12 @@ export function useAuth(context) {
    * @param {Error} error - The error thrown while bootstrapping the session.
    */
   function handleBootstrapError(error) {
-    console.error('[Auth] failed to bootstrap session after successful sign-in', error);
+    // `warn`, not `error`: Sentry captures console.error (levels: ['error']
+    // in sentry.js), and the QueryCache bridge already logged this failure at
+    // error level with the sanitized query key — a second console.error here
+    // produced two Sentry events for one root cause. This line only keeps the
+    // sign-in-flow context visible in the local console.
+    console.warn('[Auth] failed to bootstrap session after successful sign-in', error);
     spinner.value = false;
   }
 
