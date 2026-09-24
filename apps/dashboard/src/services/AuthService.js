@@ -52,8 +52,8 @@ class AuthService {
   #app;
   /** @type {import('firebase/auth').Auth} */
   #auth;
-  /** @type {boolean} */
-  #initialized = false;
+  /** @type {Promise<void> | null} */
+  #initPromise = null;
   /** @type {{ projectId: string, apiKey: string, authDomain: string, emulatorAuthHost?: string }} */
   #config;
 
@@ -69,10 +69,23 @@ class AuthService {
    *
    * Connects to the Auth emulator when `config.emulatorAuthHost` is set.
    * Sets session persistence so auth state doesn't survive browser tabs.
+   *
+   * Memoized on the promise (not a boolean) so concurrent callers — the app
+   * bootstrap and a sign-in method racing it — share a single initialization
+   * run instead of double-initializing. A failed run clears the memo so the
+   * next caller retries.
    */
   async initialize() {
-    if (this.#initialized) return;
+    if (!this.#initPromise) {
+      this.#initPromise = this.#doInitialize().catch((error) => {
+        this.#initPromise = null;
+        throw error;
+      });
+    }
+    return this.#initPromise;
+  }
 
+  async #doInitialize() {
     const isEmulator = Boolean(this.#config.emulatorAuthHost);
 
     if (!isEmulator) {
@@ -110,7 +123,6 @@ class AuthService {
     }
 
     await setPersistence(this.#auth, browserSessionPersistence);
-    this.#initialized = true;
   }
 
   /** @returns {import('firebase/auth').Auth} The Firebase Auth instance (readonly). */
@@ -126,6 +138,7 @@ class AuthService {
    * @returns {Promise<import('firebase/auth').UserCredential>}
    */
   async signInWithEmailAndPassword(email, password) {
+    await this.initialize();
     return fbSignInWithEmailAndPassword(this.#auth, email, password);
   }
 
@@ -136,6 +149,12 @@ class AuthService {
    * @returns {Promise<import('firebase/auth').UserCredential>}
    */
   async signInWithPopup(providerName) {
+    // Any auth call can race the app bootstrap's initialize() — the OAuth
+    // landing pages replace to SignIn, whose onMounted re-triggers the SSO
+    // flow, and the sign-in form is interactive before App.vue's awaited
+    // initAuth() resolves. Awaiting the memoized initialize() in every
+    // async method that touches #auth makes readiness structural.
+    await this.initialize();
     const provider = this.#resolveProvider(providerName);
     return fbSignInWithPopup(this.#auth, provider);
   }
@@ -147,6 +166,8 @@ class AuthService {
    * @returns {Promise<void>}
    */
   async signInWithRedirect(providerName) {
+    // See signInWithPopup — sign-ins await initialization themselves.
+    await this.initialize();
     const provider = this.#resolveProvider(providerName);
     return fbSignInWithRedirect(this.#auth, provider);
   }
@@ -157,6 +178,9 @@ class AuthService {
    * @returns {Promise<import('firebase/auth').UserCredential | null>}
    */
   async getRedirectResult() {
+    // See signInWithPopup — resolving a redirect result must not race
+    // initialization either.
+    await this.initialize();
     return fbGetRedirectResult(this.#auth);
   }
 
@@ -168,6 +192,7 @@ class AuthService {
    * @returns {Promise<import('firebase/auth').UserCredential>}
    */
   async signInWithEmailLink(email, emailLink) {
+    await this.initialize();
     return fbSignInWithEmailLink(this.#auth, email, emailLink);
   }
 
@@ -179,6 +204,7 @@ class AuthService {
    * @returns {Promise<void>}
    */
   async sendSignInLinkToEmail(email, url) {
+    await this.initialize();
     return fbSendSignInLinkToEmail(this.#auth, email, {
       url,
       handleCodeInApp: true,
@@ -202,6 +228,7 @@ class AuthService {
    * @returns {Promise<void>}
    */
   async sendPasswordResetEmail(email) {
+    await this.initialize();
     return fbSendPasswordResetEmail(this.#auth, email);
   }
 
@@ -212,6 +239,7 @@ class AuthService {
    * @returns {Promise<string[]>}
    */
   async fetchSignInMethodsForEmail(email) {
+    await this.initialize();
     return fbFetchSignInMethodsForEmail(this.#auth, email);
   }
 
@@ -243,6 +271,7 @@ class AuthService {
    * @returns {Promise<void>}
    */
   async signOut() {
+    await this.initialize();
     return fbSignOut(this.#auth);
   }
 

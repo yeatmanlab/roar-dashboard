@@ -6,6 +6,8 @@ import { initializeFirekit } from '@/firekit';
 import { APP_ROUTES } from '@/constants/routes';
 import { getAuthService } from '@/services/AuthService';
 import { queryClient } from '@/queryClient';
+import { useGlobalError } from '@/composables/useGlobalError';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 import { FIREBASE_AUTH_PROVIDER_IDS } from '@/constants/firebase';
 
@@ -126,8 +128,16 @@ export const useAuthStore = () => {
           // See: https://github.com/vuejs/core/issues/2282
           this.roarfirekit = markRaw(await initializeFirekit());
         } catch (error) {
-          // @TODO: Improve error handling, incl. redirect to error page.
+          // Firekit backs Firestore reads and assessment launching, so a
+          // failed init leaves the app unable to do its job. Route it to the
+          // existing global-error mechanism — the `useGlobalErrorRedirect`
+          // watcher in App.vue redirects to GenericError immediately, and the
+          // router's `beforeEach` guard enforces it on later navigations —
+          // instead of logging and letting the caller continue into an
+          // unusable session.
           console.error('Failed to initialize Firekit:', error);
+          const { setGlobalError } = useGlobalError();
+          setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
         }
       },
 

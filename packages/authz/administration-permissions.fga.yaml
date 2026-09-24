@@ -1,5 +1,5 @@
 name: Administration Permissions
-model_file: ../authorization-model.fga
+model_file: authorization-model.fga
 
 tuples:
   # ─── District hierarchy (bidirectional) ────────────────────────────

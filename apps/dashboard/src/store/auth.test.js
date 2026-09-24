@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   signInWithEmailAndPassword: vi.fn(),
   getIdToken: vi.fn(),
   getCurrentUser: vi.fn(),
+  initializeFirekit: vi.fn(),
+  setGlobalError: vi.fn(),
 }));
 
 vi.mock('@/services/AuthService', () => ({
@@ -25,11 +27,16 @@ vi.mock('@/queryClient', () => ({
 }));
 
 vi.mock('@/firekit', () => ({
-  initializeFirekit: vi.fn(),
+  initializeFirekit: mocks.initializeFirekit,
+}));
+
+vi.mock('@/composables/useGlobalError', () => ({
+  useGlobalError: () => ({ setGlobalError: mocks.setGlobalError }),
 }));
 
 import { useAuthStore } from '@/store/auth';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 
 describe('authStore.hasPasswordProvider', () => {
   beforeEach(() => {
@@ -319,5 +326,37 @@ describe('authStore.forceIdTokenRefresh', () => {
 
     expect(result).toBeNull();
     expect(authStore.accessToken).toBe('stale-token');
+  });
+});
+
+describe('authStore.initFirekit', () => {
+  let authStore;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setActivePinia(createPinia());
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    authStore = useAuthStore();
+  });
+
+  it('stores the firekit instance and sets no global error on success', async () => {
+    mocks.initializeFirekit.mockResolvedValue({ id: 'firekit' });
+
+    await authStore.initFirekit();
+
+    expect(authStore.roarfirekit).toEqual({ id: 'firekit' });
+    expect(mocks.setGlobalError).not.toHaveBeenCalled();
+  });
+
+  it('routes an initialization failure to the global error mechanism', async () => {
+    // Previously this only logged, leaving the app in an unusable session with
+    // no visible error. The router's beforeEach guard reads globalError and
+    // redirects to GenericError.
+    mocks.initializeFirekit.mockRejectedValue(new Error('firekit boom'));
+
+    await authStore.initFirekit();
+
+    expect(mocks.setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
+    expect(authStore.roarfirekit).toBeNull();
   });
 });

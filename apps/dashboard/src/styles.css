@@ -271,5 +271,9 @@ legend {
 }
 
 .min-h-screen-minus-nav {
-  min-height: calc(100vh - 8rem);
+  /* 8.5rem clears the navbar's rendered height (135px measured: 7px top border,
+     logo row with its margins, menubar padding, 1px bottom border). Subtracting
+     less than the real height makes every page using this class scroll by the
+     difference. */
+  min-height: calc(100vh - 8.5rem);
 }

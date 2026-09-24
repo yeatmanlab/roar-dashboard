@@ -26,7 +26,9 @@
     "magicLink": "Request email link",
     "error": "Error",
     "success": "Success",
-    "checkYourEmail": "Check your email {email} for password reset instructions"
+    "checkYourEmail": "Check your email {email} for password reset instructions",
+    "providerCheckFailed": "We couldn't check which sign-in options are available for this email. Please try again.",
+    "ssoSignInFailed": "We couldn't start the sign-in with your provider. Please try again."
   },
   "cleverLanding": {
     "cleverLoading": "Loading your data from Clever..."
@@ -56,7 +58,12 @@
   "homeSelector": {
     "loading": "Loading...",
     "inactivityLogout": "You will soon be logged out for security purposes. Please click \"Continue\" if you wish to continue your session.\n Otherwise, you will be automatically logged out in { timeLeft } seconds.",
-    "inactivityLogoutAcceptLabel": "Continue"
+    "inactivityLogoutAcceptLabel": "Continue",
+    "errorTitle": "We couldn't load your dashboard",
+    "errorMessage": "Something went wrong while loading your account. Please try again.",
+    "errorRetry": "Try Again",
+    "unmatchedTitle": "We couldn't load your dashboard",
+    "unmatchedMessage": "Please contact your administrator."
   },
   "gameTabs": {
     "clickToStart": "Click to start",

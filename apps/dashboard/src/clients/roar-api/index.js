@@ -2,7 +2,7 @@
  * Typed ts-rest API client for the ROAR backend.
  *
  * Reads authStore.accessToken synchronously on each request.
- * Retries once on 401 auth/token-expired by forcing a token refresh.
+ * Retries once on 401 auth/token-expired or auth/token-invalid by forcing a token refresh.
  */
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
 import { ApiContractV1 } from '@roar-platform/api-contract';
@@ -17,7 +17,8 @@ let clientInstance = null;
 /**
  * Custom API function that injects the auth token and handles 401 retry.
  * Reads accessToken synchronously from the auth store.
- * On 401 with auth/token-expired, forces a token refresh and retries once.
+ * On 401 with auth/token-expired or auth/token-invalid, forces a token refresh
+ * and retries once.
  * Concurrent refreshes are deduplicated inside authStore.forceIdTokenRefresh.
  *
  * @param {Object} args - ts-rest API args
@@ -35,7 +36,11 @@ async function apiWithAuthRetry(args) {
 
   const response = await tsRestFetchApi({ ...args, headers });
 
-  // If 401 with token-expired, refresh and retry once
+  // If 401 with an expired or invalid token, refresh and retry once. Invalid
+  // gets the same treatment as expired: it can mean a corrupted client-side
+  // token while the Firebase session is healthy, which one forced refresh
+  // repairs. A dead session fails the retry too, and that second 401 is what
+  // the app layer treats as terminal (see isTerminalAuthError).
   if (response.status === 401) {
     let errorCode;
     try {
@@ -46,7 +51,7 @@ async function apiWithAuthRetry(args) {
       return response;
     }
 
-    if (errorCode === API_ERROR_CODES.AUTH_TOKEN_EXPIRED) {
+    if (errorCode === API_ERROR_CODES.AUTH_TOKEN_EXPIRED || errorCode === API_ERROR_CODES.AUTH_TOKEN_INVALID) {
       let freshToken;
       try {
         freshToken = await authStore.forceIdTokenRefresh();
@@ -77,12 +82,19 @@ async function apiWithAuthRetry(args) {
  * Creates the client on first call (lazy initialization).
  *
  * @returns {ReturnType<typeof initClient>} Typed ts-rest client
- * @throws {Error} If VITE_ROAR_API_BASE_URL is not set
+ * @throws {Error} If VITE_ROAR_API_BASE_URL is not set. The error carries
+ *   `code: 'config/base-url-missing'` so `isMissingBaseUrlError` can classify
+ *   it without matching on the message text.
  */
 export function getRoarApiClient() {
   if (!clientInstance) {
     if (!ROAR_API_BASE_URL) {
-      throw new Error('VITE_ROAR_API_BASE_URL is not set. ' + 'Add it to .env.development or .env.production.');
+      const error = new Error('VITE_ROAR_API_BASE_URL is not set.');
+      // Tag the error so retry policies and the global-error bridge can
+      // recognize it. The base URL is baked in at build time, so this can
+      // never resolve itself between attempts — retrying is pure delay.
+      error.code = API_ERROR_CODES.CONFIG_BASE_URL_MISSING;
+      throw error;
     }
 
     clientInstance = initClient(ApiContractV1, {
