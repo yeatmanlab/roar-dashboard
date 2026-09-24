@@ -2,35 +2,9 @@ import { useQuery } from '@tanstack/vue-query';
 import { StatusCodes } from 'http-status-codes';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getRoarApiClient } from '@/clients/roar-api';
+import { meRetryPolicy, meRetryDelay } from '@/queryClient';
 import { useAuthStore } from '@/store/auth';
-import { isMissingBaseUrlError, isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
-
-const MAX_RETRIES = 3;
-
-/**
- * Shared retry policy for `/me`-backed queries.
- *
- * Rostering-ended errors, terminal auth errors, and a missing API base URL
- * are not transient; retrying wastes time and delays the user-facing error
- * UX. Used by both `useMeQuery` and `useUserClaimsQuery` (which observes the
- * same `/me` cache entry), and placed **after** `...options` in each
- * `useQuery` call so a caller-supplied `retry` can't silently override it.
- *
- * @param {number} failureCount - Number of failed attempts so far.
- * @param {Error} error - The thrown error (carries `.status` / `.body`).
- * @returns {boolean} Whether TanStack Query should retry.
- */
-export function meRetryPolicy(failureCount, error) {
-  if (isRosteringEndedError(error) || isTerminalAuthError(error) || isMissingBaseUrlError(error)) {
-    return false;
-  }
-  // Deterministic behavior in Cypress E2E — mirrors the queryClient's
-  // default retry policy (src/queryClient.js), which this policy replaces
-  // for /me-backed queries.
-  if (window.Cypress) return false;
-  return failureCount < MAX_RETRIES;
-}
 
 /**
  * Fetch the authenticated user's `/me` payload from the backend.
@@ -80,11 +54,17 @@ export async function fetchMe() {
  * Retry policy: the query does **not** retry on `auth/rostering-ended` or
  * terminal auth errors (`auth/required`, `auth/token-expired`). Those error
  * codes are surfaced to `useGlobalError` (via the QueryCache bridge in
- * `plugins.js`) so the router can redirect to AccessEnded / SignIn / GenericError
- * pages without spinning on retries first.
+ * `queryClient.js`) so the router can redirect to AccessEnded / SignIn /
+ * GenericError pages without spinning on retries first. On the SSO landing
+ * page, `auth/user-not-found` gets the opposite treatment: it marks the
+ * provisioning window (Firebase account exists, backend user record doesn't
+ * yet), so the query retries it patiently. The policy lives in
+ * `queryClient.js` (`meRetryPolicy` / `meRetryDelay`), where it is also
+ * pinned on the query key via `setQueryDefaults` so non-observer initiators
+ * share it.
  *
- * The non-retriable-error policy and the access-token gate are intentionally
- * placed **after** `...options` in the `useQuery` call so a caller-supplied
+ * The retry policy and the access-token gate are intentionally placed
+ * **after** `...options` in the `useQuery` call so a caller-supplied
  * `enabled` or `retry` can't silently override them.
  *
  * Errors thrown by this query reach the caller via the standard TanStack Query
@@ -105,6 +85,7 @@ const useMeQuery = (queryOptions = undefined) => {
     ...options,
     enabled: isQueryEnabled,
     retry: meRetryPolicy,
+    retryDelay: meRetryDelay,
   });
 };
 

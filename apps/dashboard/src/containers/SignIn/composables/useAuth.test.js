@@ -55,6 +55,7 @@ function createContext({ uid = MOCK_UID } = {}) {
     email: ref('teacher@example.org'),
     password: ref('correct-horse'),
     invalid: ref(false),
+    ssoError: ref(false),
     emailLinkSent: ref(false),
     showPasswordField: ref(true),
     resetSignInUI: vi.fn(),
@@ -145,13 +146,16 @@ describe('useAuth — credential vs. bootstrap error separation', () => {
   });
 
   describe('SSO popup flow', () => {
-    it('flags the form as invalid when the popup sign-in is rejected', async () => {
+    it('flags the SSO error, not the credentials, when the popup sign-in is rejected', async () => {
       const context = createContext();
       context.authStore.signInWithPopup.mockRejectedValue(new Error('auth/popup-closed-by-user'));
 
       const { authWithGoogle } = useAuth(context);
       await authWithGoogle();
-      await vi.waitFor(() => expect(context.invalid.value).toBe(true));
+      // `ssoError`, not `invalid`: the user never typed a password, so the
+      // invalid-credentials copy would misdirect them into password resets.
+      await vi.waitFor(() => expect(context.ssoError.value).toBe(true));
+      expect(context.invalid.value).toBe(false);
 
       // Guard against a vacuous pass: Google on a desktop UA takes the popup
       // branch, not the redirect branch.

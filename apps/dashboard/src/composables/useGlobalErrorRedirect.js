@@ -49,6 +49,11 @@ export function useGlobalErrorRedirect() {
       }
 
       // SERVER_ERROR and anything unrecognized land on the generic error page.
+      // Routes that own the provisioning wait (meta.awaitsUserProvisioning)
+      // render their own retryable error state when `/me` exhausts its
+      // retries — don't yank them to GenericError. The terminal branches
+      // above still navigate away from those routes like everywhere else.
+      if (route.meta?.awaitsUserProvisioning) return;
       if (route.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
         router.replace({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
       }

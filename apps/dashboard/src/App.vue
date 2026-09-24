@@ -98,9 +98,22 @@ const { data: meData, error: meError, isFetching: isMeFetching } = useCurrentUse
  *     error redirects below get a chance to fire.
  *   - /me has resolved or errored: render the destination; the error
  *     watcher below has already issued any necessary redirect.
+ *
+ * Routes flagged `meta.awaitsUserProvisioning` (the SSO landing page) are
+ * exempt: right after an SSO redirect, `/me` legitimately fails with
+ * `auth/user-not-found` until the backend has provisioned the user, and
+ * `useMeQuery` retries through that window patiently. The page renders its
+ * own provisioning UX for that wait — holding it behind this gate would
+ * show a bare spinner instead and keep its retry/error UI from ever
+ * mounting.
  */
 const isMeSettling = computed(
-  () => Boolean(authStore.accessToken) && isMeFetching.value && !meData.value && !meError.value,
+  () =>
+    !route.meta.awaitsUserProvisioning &&
+    Boolean(authStore.accessToken) &&
+    isMeFetching.value &&
+    !meData.value &&
+    !meError.value,
 );
 
 // Clear any stale `globalError` left over from a prior failed fetch when
