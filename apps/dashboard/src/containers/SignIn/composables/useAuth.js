@@ -43,6 +43,51 @@ export function useAuth(context) {
     }
   });
 
+  /**
+   * Handle a failure that happened *after* the credential check succeeded.
+   *
+   * The credentials were accepted, so this is never "wrong password" — showing
+   * the sign-in form's invalid-credentials error (or silently resetting it)
+   * would tell the user to retype a password that is already correct.
+   *
+   * The global error is already set by the time this runs: the bootstrap goes
+   * through `resolveUserClaims`, which fetches `ME_QUERY_KEY` on the shared
+   * query client, so the `QueryCache.onError` bridge in `queryClient.js` has
+   * classified the failure and set `globalError` before the rejection surfaces
+   * here. That bridge is documented as the single mapping from API errors to
+   * `useGlobalError`; re-deriving it here would be a second surface competing
+   * to set the same flag. This only stops the spinner and logs.
+   *
+   * @param {Error} error - The error thrown while bootstrapping the session.
+   */
+  function handleBootstrapError(error) {
+    // `warn`, not `error`: Sentry captures console.error (levels: ['error']
+    // in sentry.js), and the QueryCache bridge already logged this failure at
+    // error level with the sanitized query key — a second console.error here
+    // produced two Sentry events for one root cause. This line only keeps the
+    // sign-in-flow context visible in the local console.
+    console.warn('[Auth] failed to bootstrap session after successful sign-in', error);
+    spinner.value = false;
+  }
+
+  /**
+   * Resolve the session after a successful credential check, always clearing
+   * the spinner. `getUserClaims` can return without throwing and without
+   * signing the user in — it no-ops when the uid is absent, and bails on a
+   * stale write if the identity changed mid-flight. The spinner lives on the
+   * auth store and is rendered app-wide by App.vue, so leaving it set would
+   * overlay whatever the redirect lands on, not just this form.
+   */
+  async function bootstrapSessionAfterSignIn() {
+    try {
+      await getUserClaims();
+    } catch (error) {
+      handleBootstrapError(error);
+    } finally {
+      spinner.value = false;
+    }
+  }
+
   // ---------- Claims ----------
   async function getUserClaims() {
     if (authStore.uid) {
@@ -117,6 +162,31 @@ export function useAuth(context) {
 
   // ---------- SSO flows ----------
   /**
+   * Sign in via SSO popup, then bootstrap the session.
+   *
+   * The two awaits are in separate try blocks on purpose: a rejection from
+   * `signInWithPopup` means the provider flow failed (SSO error banner),
+   * while a rejection from `getUserClaims` means sign-in succeeded and the
+   * bootstrap failed (global error). Collapsing them into one catch is what
+   * made a failed `/me` look like a cancelled popup.
+   *
+   * @param {'google' | 'clever' | 'classlink' | 'nycps'} provider
+   */
+  async function signInWithPopupAndBootstrap(provider) {
+    try {
+      await authStore.signInWithPopup(provider);
+    } catch {
+      spinner.value = false;
+      // `ssoError`, not `invalid`: the user never typed a password, so
+      // "incorrect email or password" would misdirect them into resets.
+      ssoError.value = true;
+      return;
+    }
+
+    await bootstrapSessionAfterSignIn();
+  }
+
+  /**
    * Generic SSO handler. Uses popup in development (except Cypress) and on
    * desktop for Google; falls back to redirect everywhere else.
    *
@@ -128,15 +198,7 @@ export function useAuth(context) {
       (process.env.NODE_ENV === 'development' && !window.Cypress) || (provider === 'google' && !isMobileBrowser());
 
     if (usePopup) {
-      authStore
-        .signInWithPopup(provider)
-        .then(getUserClaims)
-        .catch(() => {
-          spinner.value = false;
-          // `ssoError`, not `invalid`: the user never typed a password, so
-          // "incorrect email or password" would misdirect them into resets.
-          ssoError.value = true;
-        });
+      signInWithPopupAndBootstrap(provider);
     } else {
       // A rejection before the browser leaves the page (e.g. initialization
       // failure) would otherwise die silently with the spinner stuck on.
@@ -164,22 +226,33 @@ export function useAuth(context) {
   }
 
   // ---------- Email/password ----------
-  function authWithEmailPassword() {
+  /**
+   * Sign in with email/password, then bootstrap the session.
+   *
+   * Credential errors and post-login bootstrap errors are caught separately:
+   * only `logInWithEmailAndPassword` rejecting means the email or password was
+   * wrong. A `getUserClaims` rejection happens after Firebase already accepted
+   * the credentials, so it must not reset the form and re-prompt for a
+   * password that is already correct.
+   */
+  async function authWithEmailPassword() {
     invalid.value = false;
     const creds = {
       email: email.value.includes('@') ? email.value : `${email.value}@roar-auth.com`,
       password: password.value,
     };
-    authStore
-      .logInWithEmailAndPassword(creds)
-      .then(async () => {
-        spinner.value = true;
-        await getUserClaims();
-      })
-      .catch(() => {
-        invalid.value = true;
-        spinner.value = false;
-      });
+
+    try {
+      await authStore.logInWithEmailAndPassword(creds);
+    } catch {
+      invalid.value = true;
+      spinner.value = false;
+      return;
+    }
+
+    spinner.value = true;
+
+    await bootstrapSessionAfterSignIn();
   }
 
   return {

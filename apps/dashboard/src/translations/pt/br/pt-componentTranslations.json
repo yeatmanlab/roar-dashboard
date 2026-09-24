@@ -58,7 +58,12 @@
   "homeSelector": {
     "loading": "Carregando...",
     "inactivityLogout": "Por motivos de segurança, você será desconectado em breve. Clique em \"Continuar\" se desejar manter sua sessão.\n Caso contrário, você será desconectado automaticamente em { timeLeft } segundos.",
-    "inactivityLogoutAcceptLabel": "Continuar"
+    "inactivityLogoutAcceptLabel": "Continuar",
+    "errorTitle": "Não foi possível carregar o seu painel",
+    "errorMessage": "Ocorreu um erro ao carregar a sua conta. Por favor, tente novamente.",
+    "errorRetry": "Tentar novamente",
+    "unmatchedTitle": "Não foi possível carregar o seu painel",
+    "unmatchedMessage": "Por favor, entre em contato com o seu administrador."
   },
   "gameTabs": {
     "clickToStart": "Clique para começar",

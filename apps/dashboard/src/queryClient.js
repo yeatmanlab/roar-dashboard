@@ -1,6 +1,13 @@
 import { QueryCache, QueryClient } from '@tanstack/vue-query';
-import { isRosteringEndedError, isTerminalAuthError, isUserNotProvisionedError } from '@/utils/api-errors';
+import {
+  isMissingBaseUrlError,
+  isRosteringEndedError,
+  isTerminalAuthError,
+  isUserNotProvisionedError,
+} from '@/utils/api-errors';
+import { sanitizeQueryKey } from '@/utils/sanitize-query-key';
 import { useGlobalError } from '@/composables/useGlobalError';
+import { getAuthService } from '@/services/AuthService';
 import isTestEnv from '@/helpers/isTestEnv';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
@@ -79,7 +86,9 @@ export function setProvisioningContextCheck(check) {
  * @returns {boolean} Whether TanStack Query should retry.
  */
 export function meRetryPolicy(failureCount, error) {
-  if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
+  // A missing API base URL comes from the build, so it is terminal for the
+  // page load — retrying only delays the error UI.
+  if (isRosteringEndedError(error) || isTerminalAuthError(error) || isMissingBaseUrlError(error)) {
     return false;
   }
   if (isUserNotProvisionedError(error) && provisioningContextCheck()) {
@@ -131,8 +140,10 @@ export function meRetryDelay(failureCount, error) {
  *     to redirect to the SignTos flow.
  *
  * The QueryCache's `onError` is the **single** bridge between API errors and
- * `useGlobalError`. App.vue's `meError` watcher only handles navigation; it
- * does not write to global error state. Keeping the mapping in one place
+ * `useGlobalError`. Navigation is equally centralized: the
+ * `useGlobalErrorRedirect` watcher (installed in App.vue) redirects when
+ * `globalError` changes on a settled route, and the router's `beforeEach`
+ * guard enforces it on navigations. Keeping the mapping in one place
  * prevents two surfaces from competing to set or clear the same flag. The
  * SSO readiness flow (`useSSOAccountReadinessVerification`) observes the
  * same `/me` query as the rest of the app, so its errors flow through this
@@ -145,21 +156,59 @@ export function meRetryDelay(failureCount, error) {
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
-      const { setGlobalError } = useGlobalError();
+      let type;
       if (isRosteringEndedError(error)) {
-        setGlobalError({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
-        return;
+        type = GLOBAL_ERROR_TYPES.ROSTERING_ENDED;
+      } else if (isTerminalAuthError(error)) {
+        type = GLOBAL_ERROR_TYPES.AUTH_EXPIRED;
+      } else if (isMissingBaseUrlError(error)) {
+        // A missing base URL breaks every query in the app, not just `/me`, so
+        // it takes the whole page to the error state regardless of which query
+        // surfaced it first. Signing out won't help, but the page is at least
+        // explicit instead of spinning.
+        type = GLOBAL_ERROR_TYPES.SERVER_ERROR;
+      } else if (Array.isArray(query?.queryKey) && query.queryKey[0] === ME_QUERY_KEY) {
+        // Only treat the `/me` query as a global server error. Other queries
+        // may have their own UI affordances for failure (retry buttons,
+        // toasts, empty states) and shouldn't take the whole app down.
+        type = GLOBAL_ERROR_TYPES.SERVER_ERROR;
       }
-      if (isTerminalAuthError(error)) {
-        setGlobalError({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
-        return;
+      if (!type) return;
+
+      // Sentry captures console.error in production (captureConsoleIntegration
+      // in sentry.js), and this bridge is the only handler on paths with no
+      // bootstrap catch of their own — background `/me` refetches, the reload
+      // path, and the missing-base-URL throw — so the log here is what makes
+      // those failures observable at all. The key is sanitized so free-text
+      // segments (search input, filter values) never reach Sentry; the family
+      // constant and opaque IDs pass through for debuggability.
+      console.error(
+        '[Auth] API error escalated to the global error state',
+        { type, queryKey: sanitizeQueryKey(query?.queryKey) },
+        error,
+      );
+
+      if (type === GLOBAL_ERROR_TYPES.AUTH_EXPIRED) {
+        // Terminal auth means the session is dead server-side: the token was
+        // rejected and the API client's refresh retry already failed. Dispose
+        // the local session too, or Firebase persistence restores the dead
+        // session on the next load and every navigation loops back through
+        // this bridge. The onIdTokenChanged listener does the cleanup: it
+        // clears the token, and the uid change runs resetIdentity. Disposal
+        // lives here — at the single classification point — so the redirect
+        // watcher and the router guard stay navigation-only.
+        try {
+          // Fire-and-forget: the redirect to SignIn must not wait on Firebase.
+          getAuthService()
+            .signOut()
+            .catch(() => {});
+        } catch {
+          // No AuthService instance yet — nothing to dispose.
+        }
       }
-      // Only treat the `/me` query as a global server error. Other queries
-      // may have their own UI affordances for failure (retry buttons,
-      // toasts, empty states) and shouldn't take the whole app down.
-      if (Array.isArray(query?.queryKey) && query.queryKey[0] === ME_QUERY_KEY) {
-        setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
-      }
+
+      const { setGlobalError } = useGlobalError();
+      setGlobalError({ type });
     },
   }),
   defaultOptions: {
@@ -171,8 +220,10 @@ export const queryClient = new QueryClient({
       staleTime: window.Cypress ? 0 : 10 * 60 * 1000,
       gcTime: window.Cypress ? 0 : 15 * 60 * 1000,
       retry: (failureCount, error) => {
-        // Don't retry on terminal auth errors (unrecoverable).
-        if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
+        // Don't retry on terminal auth errors (unrecoverable), nor on a
+        // missing base URL — that comes from the build, so it is terminal for
+        // the page load and retrying only delays the error UI.
+        if (isRosteringEndedError(error) || isTerminalAuthError(error) || isMissingBaseUrlError(error)) {
           return false;
         }
         // Deterministic behavior in Cypress E2E.
