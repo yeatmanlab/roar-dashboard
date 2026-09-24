@@ -34,11 +34,16 @@ async function apiWithAuthRetry(args) {
 
   const response = await tsRestFetchApi({ ...args, headers });
 
-  // If 401 with token-expired, refresh and retry once
+  // If 401 with an expired or invalid token, refresh and retry once. Invalid
+  // gets the same treatment as expired: it can mean a corrupted client-side
+  // token while the Firebase session is healthy, which one forced refresh
+  // repairs. A dead session fails the retry too, and that second 401 is what
+  // the app layer treats as terminal (see isTerminalAuthError).
   if (response.status === 401) {
     try {
       const body = await response.clone().json();
-      if (body?.error?.code === 'auth/token-expired') {
+      const errorCode = body?.error?.code;
+      if (errorCode === API_ERROR_CODES.AUTH_TOKEN_EXPIRED || errorCode === API_ERROR_CODES.AUTH_TOKEN_INVALID) {
         const freshToken = await authStore.forceIdTokenRefresh();
         const retryHeaders = {
           ...args.headers,

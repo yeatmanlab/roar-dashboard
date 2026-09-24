@@ -54,6 +54,7 @@ export function getApiErrorMessage(response) {
 export const API_ERROR_CODES = Object.freeze({
   AUTH_REQUIRED: 'auth/required',
   AUTH_TOKEN_EXPIRED: 'auth/token-expired',
+  AUTH_TOKEN_INVALID: 'auth/token-invalid',
   AUTH_ROSTERING_ENDED: 'auth/rostering-ended',
   AUTH_USER_NOT_FOUND: 'auth/user-not-found',
   /**
@@ -75,13 +76,19 @@ export function isRosteringEndedError(error) {
 
 /**
  * Checks if the error is a terminal auth error (not recoverable by retry).
- * Terminal auth at the app layer means the API client's retry already failed.
+ * Terminal auth at the app layer means the API client's retry already failed:
+ * expired and invalid tokens both get one refresh-and-retry in the client, so
+ * either code reaching app code means the refreshed token was rejected too.
  * @param {Object} error - ts-rest error response or error object
  * @returns {boolean}
  */
 export function isTerminalAuthError(error) {
   const code = getApiErrorCode(error);
-  return code === API_ERROR_CODES.AUTH_REQUIRED || code === API_ERROR_CODES.AUTH_TOKEN_EXPIRED;
+  return (
+    code === API_ERROR_CODES.AUTH_REQUIRED ||
+    code === API_ERROR_CODES.AUTH_TOKEN_EXPIRED ||
+    code === API_ERROR_CODES.AUTH_TOKEN_INVALID
+  );
 }
 
 /**

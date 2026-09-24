@@ -125,13 +125,41 @@ describe('apiWithAuthRetry', () => {
     );
   });
 
-  it('does not retry on 401 without auth/token-expired code', async () => {
+  it('retries on 401 with auth/token-invalid after refreshing the token', async () => {
+    // A corrupted client-side token with a healthy Firebase session recovers
+    // with one forced refresh — same treatment as an expired token.
+    const invalidResponse = {
+      status: 401,
+      clone() {
+        return this;
+      },
+      json: vi.fn().mockResolvedValue({ error: { code: 'auth/token-invalid' } }),
+    };
+    const successResponse = { status: 200 };
+
+    vi.mocked(tsRestFetchApi).mockResolvedValueOnce(invalidResponse).mockResolvedValueOnce(successResponse);
+
+    mockAuthStore.forceIdTokenRefresh.mockResolvedValue('refreshed-token');
+
+    const result = await capturedApi({ headers: {} });
+
+    expect(result).toBe(successResponse);
+    expect(mockAuthStore.forceIdTokenRefresh).toHaveBeenCalledTimes(1);
+    expect(tsRestFetchApi).toHaveBeenCalledTimes(2);
+    expect(tsRestFetchApi).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer refreshed-token' }),
+      }),
+    );
+  });
+
+  it('does not retry on 401 with a non-token error code', async () => {
     const unauthorizedResponse = {
       status: 401,
       clone() {
         return this;
       },
-      json: vi.fn().mockResolvedValue({ error: { code: 'auth/invalid-token' } }),
+      json: vi.fn().mockResolvedValue({ error: { code: 'auth/required' } }),
     };
 
     vi.mocked(tsRestFetchApi).mockResolvedValue(unauthorizedResponse);

@@ -33,6 +33,7 @@ vi.mock('@/utils/api-errors', () => {
   // Inline the predicates to avoid circular alias resolution
   const API_ERROR_CODES = Object.freeze({
     AUTH_TOKEN_EXPIRED: 'auth/token-expired',
+    AUTH_TOKEN_INVALID: 'auth/token-invalid',
     AUTH_REQUIRED: 'auth/required',
     AUTH_ROSTERING_ENDED: 'auth/rostering-ended',
     CONFIG_BASE_URL_MISSING: 'config/base-url-missing',
@@ -57,7 +58,11 @@ vi.mock('@/utils/api-errors', () => {
 
   function isTerminalAuthError(error) {
     const code = getApiErrorCode(error);
-    return code === API_ERROR_CODES.AUTH_TOKEN_EXPIRED || code === API_ERROR_CODES.AUTH_REQUIRED;
+    return (
+      code === API_ERROR_CODES.AUTH_TOKEN_EXPIRED ||
+      code === API_ERROR_CODES.AUTH_TOKEN_INVALID ||
+      code === API_ERROR_CODES.AUTH_REQUIRED
+    );
   }
 
   function isMissingBaseUrlError(error) {
@@ -119,6 +124,14 @@ describe('queryClient QueryCache onError', () => {
     onErrorCallback({ body: { error: { code: 'some/other-error' } } }, { queryKey: [ME_QUERY_KEY] });
 
     expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
+  it('sets AUTH_EXPIRED global error on auth/token-invalid', () => {
+    const error = { body: { error: { code: 'auth/token-invalid' } } };
+    onErrorCallback(error);
+
+    expect(setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
   });
 
   it('sets AUTH_EXPIRED global error on auth/required', () => {

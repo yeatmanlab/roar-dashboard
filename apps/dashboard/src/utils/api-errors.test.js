@@ -102,6 +102,12 @@ describe('isTerminalAuthError', () => {
     expect(isTerminalAuthError({ error: { code: API_ERROR_CODES.AUTH_TOKEN_EXPIRED } })).toBe(true);
   });
 
+  it('returns true for auth/token-invalid', () => {
+    // The API client already refresh-retried an invalid token once, so the
+    // code reaching app code means the refreshed token was rejected too.
+    expect(isTerminalAuthError({ error: { code: API_ERROR_CODES.AUTH_TOKEN_INVALID } })).toBe(true);
+  });
+
   it('returns false for rostering-ended (not a terminal auth error)', () => {
     expect(isTerminalAuthError({ error: { code: API_ERROR_CODES.AUTH_ROSTERING_ENDED } })).toBe(false);
   });
