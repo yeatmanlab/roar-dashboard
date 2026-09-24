@@ -12,9 +12,12 @@ import {
   addExperimenterButtons,
   setupFullscreenButton,
   updateTheta,
+  enableOkButton,
+  disableOkButton,
+  wrapListeners,
 } from '../../shared/helpers';
 import { finishExperiment } from '../../shared/trials';
-import { isTouchScreen, jsPsych } from '../../taskSetup';
+import { jsPsych } from '../../taskSetup';
 import { taskStore } from '../../../taskStore';
 import { handleStaggeredButtons } from '../../shared/helpers/staggerButtons';
 import { displayDebugInfo } from '../../shared/helpers/displayDebugInfo';
@@ -22,6 +25,7 @@ import { displayDebugInfo } from '../../shared/helpers/displayDebugInfo';
 const replayButtonHtmlId = 'replay-btn-revisited';
 let incorrectPracticeResponses: string[] = [];
 let startTime: number;
+let isFeedbackPlaying = false;
 
 export const generateImageChoices = (choices: string[]) => {
   return choices.map((choice) => {
@@ -41,6 +45,12 @@ export function handleButtonFeedback(
   responsevalue: number,
   correctAudio: string,
 ) {
+  if (isFeedbackPlaying) {
+    return;
+  }
+
+  isFeedbackPlaying = true;
+
   const choice = btn?.parentElement?.id || '';
   const answer = taskStore().correctResponseIdx.toString();
 
@@ -52,12 +62,11 @@ export function handleButtonFeedback(
   } else {
     btn.classList.add('error-shadow');
     feedbackAudio = mediaAssets.audio.feedbackTryAgain;
-    // renable buttons
-    setTimeout(() => enableBtns(cards), 500);
     incorrectPracticeResponses.push(choice);
   }
 
   function finishTrial() {
+    isFeedbackPlaying = false;
     jsPsych.finishTrial({
       response: choice,
       incorrectPracticeResponses,
@@ -79,8 +88,16 @@ export function handleButtonFeedback(
       enabled: false,
       maxRepetitions: 2,
     },
+    onEnded: () => {
+      isFeedbackPlaying = false;
+      enableBtns(cards);
+    },
   };
 
+  // Clear onended before stop so an interrupted clip cannot unlock early
+  if (PageAudioHandler.audioSource) {
+    PageAudioHandler.audioSource.onended = null;
+  }
   PageAudioHandler.stopAndDisconnectNode(); // disconnect first to avoid overlap
   isCorrectChoice
     ? PageAudioHandler.playAudio(feedbackAudio, correctAudioConfig)
@@ -167,8 +184,8 @@ export const legacyStimulus = (trial?: StimulusType) => {
     prompt_above_buttons: true,
     button_choices: () => {
       const stim = trial || taskStore().nextStimulus;
-      if (stim.trialType === 'instructions' || stim.trialType == 'something-same-1') {
-        return ['OK'];
+      if (stim.trialType === 'instructions' || stim.trialType === 'something-same-1') {
+        return [taskStore().translations.continueButtonText];
       } else {
         const randomize = stim.answer ? 'yes' : 'no';
         // Randomize choices if there is an answer
@@ -180,7 +197,8 @@ export const legacyStimulus = (trial?: StimulusType) => {
       const stim = trial || taskStore().nextStimulus;
       const buttonClass =
         stim.trialType === 'instructions' || stim.trialType === 'something-same-1' ? 'primary' : 'image-medium';
-      return `<button class="${buttonClass}">%choice%</button>`;
+      const disabled = stim.trialType === 'instructions' ? ' disabled' : '';
+      return `<button class="${buttonClass}"${disabled}>%choice%</button>`;
     },
     response_ends_trial: () => {
       const stim = trial || taskStore().nextStimulus;
@@ -201,7 +219,27 @@ export const legacyStimulus = (trial?: StimulusType) => {
         audioFile += '-heavy';
       }
 
-      PageAudioHandler.playAudio(mediaAssets.audio[camelize(audioFile)]);
+      const audioConfig: AudioConfigType =
+        stimulus.trialType === 'instructions'
+          ? {
+              restrictRepetition: {
+                enabled: false,
+                maxRepetitions: 2,
+              },
+              onEnded: enableOkButton,
+            }
+          : {
+              restrictRepetition: {
+                enabled: false,
+                maxRepetitions: 2,
+              },
+            };
+
+      PageAudioHandler.playAudio(mediaAssets.audio[camelize(audioFile)], audioConfig);
+
+      if (stimulus.trialType === 'instructions') {
+        disableOkButton();
+      }
 
       const pageStateHandler = new PageStateHandler(audioFile, true);
       setupReplayAudio(pageStateHandler);
@@ -226,10 +264,11 @@ export const legacyStimulus = (trial?: StimulusType) => {
       }
 
       if (stimulus.trialType === 'something-same-2' && taskStore().heavyInstructions) {
-        handleStaggeredButtons(pageStateHandler, buttonContainer, [
-          'same-different-selection-highlight-1',
-          'same-different-selection-highlight-2',
-        ]);
+        handleStaggeredButtons(
+          pageStateHandler,
+          Array.from(buttonContainer.children as HTMLCollectionOf<HTMLButtonElement>),
+          ['same-different-selection-highlight-1', 'same-different-selection-highlight-2'],
+        );
       }
 
       if (
@@ -237,14 +276,13 @@ export const legacyStimulus = (trial?: StimulusType) => {
         (assessmentStage === 'practice_response' && trialType !== 'something-same-1')
       ) {
         // cards should give feedback during test dimensions block
+        isFeedbackPlaying = false;
         const practiceBtns = Array.from(buttonContainer.children)
           .map((btnDiv) => btnDiv.firstChild)
           .filter((btn) => !!btn) as HTMLButtonElement[];
 
         practiceBtns.forEach((card, i) => {
-          const eventType = isTouchScreen ? 'touchend' : 'click';
-
-          card.addEventListener(eventType, (e) => {
+          wrapListeners(card, () => {
             handleButtonFeedback(card, practiceBtns, false, i, 'feedbackGoodJob');
           });
         });
@@ -323,7 +361,11 @@ export const legacyStimulus = (trial?: StimulusType) => {
           shouldTerminateCat();
           const allSequentialTrials = taskStore().sequentialTrials;
           const nextTrials = allSequentialTrials.filter((trial: StimulusType) => {
-            return trial.trialNumber === stim.trialNumber && trial.trialType === stim.trialType;
+            const equivalentTrialType =
+              stim.trialType === trial.trialType ||
+              (stim.trialType.includes('something-same') && trial.trialType.includes('something-same'));
+
+            return trial.trialNumber === stim.trialNumber && equivalentTrialType;
           });
 
           selectNextSequentialTrial(nextTrials);

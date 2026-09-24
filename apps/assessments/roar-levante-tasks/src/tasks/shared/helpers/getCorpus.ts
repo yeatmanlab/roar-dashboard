@@ -78,7 +78,7 @@ const transformCSV = (csvInput: ParsedRowType[], sequentialStimulus: boolean, ta
 
   csvInput.forEach((row) => {
     // Leaving this here for quick testing of a certain type of trial
-    // if (!row.trial_type.includes('Number Line')) return;
+    //if (!row.trial_type.includes('-match')) return;
 
     if (row.block_threshold && !blockThresholds.includes(row.block_threshold)) {
       blockThresholds.push(row.block_threshold);
@@ -200,7 +200,7 @@ export const getCorpus = async (config: Record<string, any>, isDev: boolean) => 
 
   const bucketName = getBucketName(task, isDev, 'corpus');
 
-  let corpusUrl = `https://storage.googleapis.com/${bucketName}/${corpus}.csv?alt=media`;
+  let corpusUrl = `https://storage.googleapis.com/${bucketName}/${corpus}.csv?alt=media&v=3`;
 
   // Default corpuses are CAT and norm compatible (v1)
   if (task === 'roar-inference') {
