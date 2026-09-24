@@ -18,6 +18,9 @@
 #   "predev": "bash ../../../scripts/assessment-predev.sh"
 set -euo pipefail
 
+# Shared context (REPO_ROOT) and the port_in_use predicate.
+source "$(cd "$(dirname "$0")" && pwd)/assessment-common.sh"
+
 fail() {
   echo "Error: $1" >&2
   shift
@@ -29,14 +32,17 @@ fail() {
 }
 
 # ── 1. The dev server's own port ─────────────────────────────────────────────
-if lsof -i :8000 -sTCP:LISTEN >/dev/null 2>&1 || ss -tlnp 2>/dev/null | grep -q ':8000 '; then
+if port_in_use 8000; then
   fail "port 8000 is already in use." \
     "A previous dev server (or another assessment) is still running — stop it first."
 fi
 
 # ── 2. The Firebase Auth emulator ────────────────────────────────────────────
-if ! curl --silent --fail --max-time 2 http://127.0.0.1:9099/ >/dev/null 2>&1; then
-  fail "no Firebase Auth emulator on 127.0.0.1:9099." \
+# An exported FIREBASE_AUTH_EMULATOR_HOST overrides the bundler default, so
+# probe the host the dev bundle will actually use.
+emulator_host="${FIREBASE_AUTH_EMULATOR_HOST:-127.0.0.1:9099}"
+if ! curl --silent --fail --max-time 2 "http://${emulator_host}/" >/dev/null 2>&1; then
+  fail "no Firebase Auth emulator on ${emulator_host}." \
     "Assessment environment: npm start" \
     "Platform context:       docker compose up -d --wait   (from the repo root)"
 fi
@@ -54,20 +60,33 @@ else
     "Platform context:       NODE_ENV=development npm run dev -w apps/backend"
 fi
 
-# ── 4. Platform context only: emulator token verification ────────────────────
+# ── 4a. HTTP backend: the proxy must be told ─────────────────────────────────
+# The bundler configs default the /v1 proxy to https://localhost:4000 (the
+# host-run backend). Against the containerized HTTP backend that default fails
+# the TLS handshake on every request; `npm start` exports BACKEND_URL, a direct
+# `npm run dev` must do the same.
+if [[ "$backend_scheme" == "http" && -z "${BACKEND_URL:-}" ]]; then
+  fail "the backend on localhost:4000 serves plain HTTP, but BACKEND_URL is not set." \
+    "The dev-server proxy would default to https:// and fail every /v1 request." \
+    "Use:  npm start   (sets BACKEND_URL for you)" \
+    "or:   BACKEND_URL=http://localhost:4000 npm run dev"
+fi
+
+# ── 4b. Platform context only: emulator token verification ───────────────────
 # The backend verifies tokens against the Auth emulator only when
 # FIREBASE_AUTH_EMULATOR_HOST is set in its environment (see
 # apps/backend/src/clients/firebase-core.client.ts). Without it, the assessment
 # signs in against the emulator while the backend verifies against real
 # Firebase, and every /v1 request 401s with no hint of why. The containerized
 # backend sets the variable in compose; only the host-run backend can miss it.
-if [[ "$backend_scheme" == "https" ]]; then
-  REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# An exported FIREBASE_AUTH_EMULATOR_HOST counts as configured — like the .env
+# grep, it signals intent; neither can inspect the running backend's env.
+if [[ "$backend_scheme" == "https" && -z "${FIREBASE_AUTH_EMULATOR_HOST:-}" ]]; then
   BACKEND_ENV="$REPO_ROOT/apps/backend/.env"
   if [[ ! -f "$BACKEND_ENV" ]] || ! grep -qE '^FIREBASE_AUTH_EMULATOR_HOST=.+' "$BACKEND_ENV"; then
     fail "the host-run backend is not configured for the Auth emulator." \
       "Add this line to apps/backend/.env, then restart the backend:" \
       "" \
-      "  FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099"
+      "  FIREBASE_AUTH_EMULATOR_HOST=${emulator_host}"
   fi
 fi

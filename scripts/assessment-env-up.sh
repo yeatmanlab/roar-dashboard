@@ -27,11 +27,15 @@ if ! docker_compose_available; then
   exit 1
 fi
 
-# If the backend container is already running the full stack is up — the backend
-# only starts after migrations and the Firebase emulators are healthy. This covers
-# the common case where the user killed the dev server with Ctrl+C but left the
-# Docker stack running. Skip straight to restarting the dev server.
-if assessment_container_running assessment-backend; then
+# If the backend AND emulator containers are running the full stack is up — the
+# backend only starts after migrations and the Firebase emulators are healthy.
+# This covers the common case where the user killed the dev server with Ctrl+C
+# but left the Docker stack running. Both containers are required: with only the
+# backend running (emulator crashed or stopped), skipping the bring-up would
+# send predev into a loop where its suggested fix — `npm start` — takes this
+# same skip path; falling through to `docker compose up` heals a partial stack
+# instead (the DB volume survives container removal).
+if assessment_container_running assessment-backend && assessment_container_running firebase-emulator; then
   echo "Assessment environment already running. Starting assessment dev server..."
 else
   # Require the config file before Docker tries to seed from it.
