@@ -1,7 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const { merge } = require('webpack-merge');
-const { FIREBASE_EMULATOR_AUTH_HOST } = require('../shared/devEmulatorHost.cjs');
+const { devEmulatorConfig } = require('../shared/devEmulatorWebpackConfig.cjs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
@@ -185,22 +185,11 @@ module.exports = async (env, args) => {
     ],
   };
 
-  // Development only: surface the Auth emulator host to the browser bundle so
-  // getFirebaseConfig() connects to the emulator instead of fetching /__/firebase/init.json
-  // (which 404s outside Firebase Hosting). Defaults to the local Auth emulator in dev — assessment development never targets a real Firebase project.
-  const devFirebaseConfig = {
-    plugins: [
-      new webpack.EnvironmentPlugin({
-        FIREBASE_AUTH_EMULATOR_HOST: FIREBASE_EMULATOR_AUTH_HOST,
-      }),
-    ],
-  };
-
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig, devFirebaseConfig);
+      return merge(developmentConfig, envDependentConfig, devEmulatorConfig);
     case 'production':
-      // `devFirebaseConfig` is deliberately absent: including it inlines whatever
+      // `devEmulatorConfig` is deliberately absent: including it inlines whatever
       // FIREBASE_AUTH_EMULATOR_HOST holds at build time, and serve.js connects to
       // any non-empty value — pointing a deployed build at an emulator that issues
       // unverified tokens. Production fetches /__/firebase/init.json instead.

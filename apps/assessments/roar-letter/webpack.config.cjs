@@ -2,7 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 
 const { merge } = require('webpack-merge');
-const { FIREBASE_EMULATOR_AUTH_HOST } = require('../shared/devEmulatorHost.cjs');
+const { devEmulatorConfig } = require('../shared/devEmulatorWebpackConfig.cjs');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
@@ -163,21 +163,6 @@ module.exports = async (env, args) => {
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
-      }),
-    ],
-  };
-
-  // Injected only into local dev builds. Staging and production bundles must not
-  // carry this default: a truthy FIREBASE_AUTH_EMULATOR_HOST makes getFirebaseConfig()
-  // take the emulator path in end users' browsers instead of fetching
-  // /__/firebase/init.json from Firebase Hosting.
-  const devEmulatorConfig = {
-    plugins: [
-      new webpack.EnvironmentPlugin({
-        // Defaults to the local Auth emulator — assessment development always runs
-        // against the emulator, never a real Firebase project. An explicit
-        // FIREBASE_AUTH_EMULATOR_HOST env var still overrides this default.
-        FIREBASE_AUTH_EMULATOR_HOST: FIREBASE_EMULATOR_AUTH_HOST,
       }),
     ],
   };
