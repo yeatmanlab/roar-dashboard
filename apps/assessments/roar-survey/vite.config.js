@@ -16,6 +16,11 @@ function getServerConfig(mode) {
   const certPath = path.resolve(__dirname, '../../../certs/roar-local.crt');
 
   return {
+    // Every assessment dev server binds 8000: predev's port gate, the backend's
+    // ALLOWED_ORIGINS, and the docs all assume it. strictPort fails loudly when
+    // the port is taken instead of silently binding 5174.
+    port: 8000,
+    strictPort: true,
     // Mirrors the webpack-dev-server https config used by other assessments.
     https:
       existsSync(keyPath) && existsSync(certPath)
