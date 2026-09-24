@@ -108,6 +108,11 @@ services:
   firebase-emulator:
     container_name: firebase-emulator
     build: docker/firebase-emulator
+    # Rebuild on every `up` (layer-cached, seconds): a cached image from the
+    # retired assessment.Dockerfile firebase-emulator stage has no `firebase`
+    # ENTRYPOINT for the entrypoint-relative command below, and compose never
+    # rebuilds an existing image on its own.
+    pull_policy: build
     volumes:
       - ./docker/firebase-emulator/firebase.json:/firebase.json:ro
       # firebase.json references storage.rules; mount it so the Storage emulator can load it.

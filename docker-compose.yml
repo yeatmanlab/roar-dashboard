@@ -70,6 +70,11 @@ services:
   firebase-auth-emulator:
     container_name: roar-firebase-auth
     build: docker/firebase-emulator
+    # Rebuild on every `up` (layer-cached, seconds): a cached image from before
+    # the shared-image consolidation cannot run this command — it lacks Java 21
+    # and the pre-downloaded Storage JAR — and compose never rebuilds an
+    # existing image on its own.
+    pull_policy: build
     command: >
       emulators:start
         --only auth,storage
@@ -88,6 +93,8 @@ services:
       - firebase-auth-data:/emulator-data
     healthcheck:
       # Probe both emulators so a half-started container doesn't report healthy.
+      # Timing matches the assessment stack's copy of this service: the JVM-based
+      # Storage emulator makes cold starts much slower than auth alone.
       test:
         [
           "CMD-SHELL",
@@ -95,7 +102,8 @@ services:
         ]
       interval: 5s
       timeout: 5s
-      retries: 12
+      retries: 20
+      start_period: 45s
 
 volumes:
   postgres-data:
