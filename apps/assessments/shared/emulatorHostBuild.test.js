@@ -1,7 +1,7 @@
 // @vitest-environment node
 // (The suite default is jsdom for variantPicker; this spec only imports bundler
 // configs, and vite's esbuild dependency breaks under jsdom's TextEncoder.)
-import { readdirSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,9 +22,22 @@ import { FIREBASE_EMULATOR_AUTH_HOST } from './devEmulatorHost.cjs';
 
 const ASSESSMENTS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const webpackAssessments = readdirSync(ASSESSMENTS_DIR, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory() && existsSync(path.join(ASSESSMENTS_DIR, entry.name, 'webpack.config.cjs')))
-  .map((entry) => entry.name);
+function assessmentsWith(configFile) {
+  return readdirSync(ASSESSMENTS_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(path.join(ASSESSMENTS_DIR, entry.name, configFile)))
+    .map((entry) => entry.name);
+}
+
+const webpackAssessments = assessmentsWith('webpack.config.cjs');
+
+// Only vite APP configs build bundles this invariant applies to. Some webpack
+// assessments (roar-sre, roar-swr) carry a vite.config.js that is purely a
+// vitest config — no define block, nothing bundled — so discovery keys on the
+// package's dev script actually running vite.
+const viteAssessments = assessmentsWith('vite.config.js').filter((name) => {
+  const pkg = JSON.parse(readFileSync(path.join(ASSESSMENTS_DIR, name, 'package.json'), 'utf8'));
+  return /\bvite\b/.test(pkg.scripts?.dev ?? '');
+});
 
 async function loadWebpackConfig(name, dbmode, mode) {
   const { default: configFactory } = await import(
@@ -81,17 +94,18 @@ describe.each(webpackAssessments)('%s webpack config — Auth emulator host', (n
   });
 });
 
-describe('roar-survey vite config — Auth emulator host', () => {
+describe.each(viteAssessments)('%s vite config — Auth emulator host', (name) => {
   async function loadViteConfig(mode) {
     const { default: configFactory } = await import(
-      pathToFileURL(path.join(ASSESSMENTS_DIR, 'roar-survey', 'vite.config.js')).href
+      pathToFileURL(path.join(ASSESSMENTS_DIR, name, 'vite.config.js')).href
     );
-    return configFactory({ mode });
+    return typeof configFactory === 'function' ? configFactory({ mode }) : configFactory;
   }
 
-  it.each(['production', 'staging'])('defines an empty emulator host for a %s build', async (mode) => {
+  it.each(['production', 'staging'])('defines no truthy emulator host for a %s build', async (mode) => {
     const config = await loadViteConfig(mode);
-    expect(config.define['process.env.FIREBASE_AUTH_EMULATOR_HOST']).toBe('""');
+    // Absent is as safe as empty — only a truthy value is a leak.
+    expect(config.define?.['process.env.FIREBASE_AUTH_EMULATOR_HOST'] ?? '""').toBe('""');
   });
 
   it('defaults the emulator host to the shared constant for local development', async () => {
