@@ -7,6 +7,7 @@ import {
 } from '@/utils/api-errors';
 import { sanitizeQueryKey } from '@/utils/sanitize-query-key';
 import { useGlobalError } from '@/composables/useGlobalError';
+import { getAuthService } from '@/services/AuthService';
 import isTestEnv from '@/helpers/isTestEnv';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
@@ -186,6 +187,25 @@ export const queryClient = new QueryClient({
         { type, queryKey: sanitizeQueryKey(query?.queryKey) },
         error,
       );
+
+      if (type === GLOBAL_ERROR_TYPES.AUTH_EXPIRED) {
+        // Terminal auth means the session is dead server-side: the token was
+        // rejected and the API client's refresh retry already failed. Dispose
+        // the local session too, or Firebase persistence restores the dead
+        // session on the next load and every navigation loops back through
+        // this bridge. The onIdTokenChanged listener does the cleanup: it
+        // clears the token, and the uid change runs resetIdentity. Disposal
+        // lives here — at the single classification point — so the redirect
+        // watcher and the router guard stay navigation-only.
+        try {
+          // Fire-and-forget: the redirect to SignIn must not wait on Firebase.
+          getAuthService()
+            .signOut()
+            .catch(() => {});
+        } catch {
+          // No AuthService instance yet — nothing to dispose.
+        }
+      }
 
       const { setGlobalError } = useGlobalError();
       setGlobalError({ type });

@@ -21,6 +21,13 @@ vi.mock('@/composables/useGlobalError', () => ({
   }),
 }));
 
+const mockSignOut = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/services/AuthService', () => ({
+  getAuthService: () => ({
+    signOut: mockSignOut,
+  }),
+}));
+
 // Pass through real api-errors utilities (pure functions, no side effects)
 vi.mock('@/utils/api-errors', () => {
   // Inline the predicates to avoid circular alias resolution
@@ -95,6 +102,23 @@ describe('queryClient QueryCache onError', () => {
 
     expect(setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
     expect(globalError.value).toEqual({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+  });
+
+  it('disposes the Firebase session on a terminal auth error', () => {
+    // The session is dead server-side; without a local signOut, Firebase
+    // persistence restores it on the next load and navigations loop back
+    // through this bridge instead of landing on a clean sign-in.
+    const error = { body: { error: { code: 'auth/token-expired' } } };
+    onErrorCallback(error);
+
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not sign out on non-terminal error types', () => {
+    onErrorCallback({ body: { error: { code: 'auth/rostering-ended' } } });
+    onErrorCallback({ body: { error: { code: 'some/other-error' } } }, { queryKey: [ME_QUERY_KEY] });
+
+    expect(mockSignOut).not.toHaveBeenCalled();
   });
 
   it('sets AUTH_EXPIRED global error on auth/required', () => {
