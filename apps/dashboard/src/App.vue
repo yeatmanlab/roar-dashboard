@@ -26,7 +26,10 @@
       pages) render immediately because `accessToken` is null, so
       `isMeSettling` is false.
     -->
-    <AppSpinner v-if="isMeSettling" />
+    <div v-if="isMeSettling" class="flex flex-column align-items-center justify-content-center min-h-screen-minus-nav">
+      <!-- margin: 0 overrides the spinner's own 100px top offset, which fights flex centering -->
+      <AppSpinner style="margin: 0" />
+    </div>
     <router-view v-else :key="$route.fullPath" />
 
     <SessionTimer v-if="loadSessionTimeoutHandler" />
@@ -37,7 +40,7 @@
 
 <script setup>
 import { computed, onBeforeMount, onMounted, ref, watch, defineAsyncComponent } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 import { Head } from '@unhead/vue/components';
 import PvToast from 'primevue/toast';
@@ -55,15 +58,14 @@ import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import { i18n } from '@/translations/i18n';
 import useCurrentUser from '@/composables/useCurrentUser';
 import { useGlobalError } from '@/composables/useGlobalError';
-import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
-import { APP_ROUTE_NAMES } from '@/constants/routes';
+import { useGlobalErrorRedirect } from '@/composables/useGlobalErrorRedirect';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 
 const isAuthStoreReady = ref(false);
 const showDevtools = ref(false);
 
 const authStore = useAuthStore();
 const route = useRoute();
-const router = useRouter();
 
 const pageTitle = computed(() => {
   const locale = i18n.global.locale.value;
@@ -96,9 +98,22 @@ const { data: meData, error: meError, isFetching: isMeFetching } = useCurrentUse
  *     error redirects below get a chance to fire.
  *   - /me has resolved or errored: render the destination; the error
  *     watcher below has already issued any necessary redirect.
+ *
+ * Routes flagged `meta.awaitsUserProvisioning` (the SSO landing page) are
+ * exempt: right after an SSO redirect, `/me` legitimately fails with
+ * `auth/user-not-found` until the backend has provisioned the user, and
+ * `useMeQuery` retries through that window patiently. The page renders its
+ * own provisioning UX for that wait — holding it behind this gate would
+ * show a bare spinner instead and keep its retry/error UI from ever
+ * mounting.
  */
 const isMeSettling = computed(
-  () => Boolean(authStore.accessToken) && isMeFetching.value && !meData.value && !meError.value,
+  () =>
+    !route.meta.awaitsUserProvisioning &&
+    Boolean(authStore.accessToken) &&
+    isMeFetching.value &&
+    !meData.value &&
+    !meError.value,
 );
 
 // Clear any stale `globalError` left over from a prior failed fetch when
@@ -111,81 +126,82 @@ const isMeSettling = computed(
 // `ensureQueryData([ME_QUERY_KEY])` on the initial navigation and reads the
 // cached payload on subsequent navigations. Duplicating the redirect here
 // produced a race where both surfaces tried to push to SignTos at once.
-const { clearGlobalError } = useGlobalError();
+const { setGlobalError, clearGlobalError } = useGlobalError();
 watch(meData, (data) => {
   if (!data) return;
   clearGlobalError();
 });
 
-// Translate `/me` failures into a `router.replace()` so the user lands on
-// the matching error page without first flashing the route they originally
-// requested. The router's `beforeEach` guard handles subsequent transitions
-// once `globalError` is set; this watcher exists only to cover the boot
-// window where `/me` resolves *after* the first navigation has already
-// completed.
+// Redirect whenever `globalError` is set outside a navigation. The router's
+// `beforeEach` guard only reads `globalError` when a navigation is already
+// happening, so errors that land on a settled route — `/me` resolving after
+// the first navigation completed, a Firekit init failure during bootstrap, a
+// background query escalated by the QueryCache bridge — need this watcher to
+// reach their error page at all.
 //
 // All `setGlobalError` mapping lives in `queryClient.js`'s `QueryCache`
-// `onError` hook — this watcher does not touch global error state.
-watch(meError, (err) => {
-  if (!err) return;
-  if (isRosteringEndedError(err)) {
-    if (route.name !== APP_ROUTE_NAMES.ACCESS_ENDED) {
-      router.replace({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
-    }
-  } else if (isTerminalAuthError(err)) {
-    if (route.name !== APP_ROUTE_NAMES.SIGN_IN) {
-      router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
-    }
-  } else if (route.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
-    router.replace({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
-  }
-});
+// `onError` hook — this watcher does not classify errors, it only navigates.
+useGlobalErrorRedirect();
 
 onBeforeMount(async () => {
-  // 1. Create the AuthService singleton — owns Firebase Auth directly.
-  createAuthService({
-    projectId: import.meta.env.VITE_FIREBASE_ADMIN_PROJECT_ID,
-    apiKey: import.meta.env.VITE_FIREBASE_ADMIN_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_ADMIN_AUTH_DOMAIN,
-    emulatorAuthHost: import.meta.env.VITE_FIREBASE_EMULATOR_AUTH_HOST || undefined,
-  });
+  try {
+    // 1. Create the AuthService singleton — owns Firebase Auth directly.
+    createAuthService({
+      projectId: import.meta.env.VITE_FIREBASE_ADMIN_PROJECT_ID,
+      apiKey: import.meta.env.VITE_FIREBASE_ADMIN_API_KEY,
+      authDomain: import.meta.env.VITE_FIREBASE_ADMIN_AUTH_DOMAIN,
+      emulatorAuthHost: import.meta.env.VITE_FIREBASE_EMULATOR_AUTH_HOST || undefined,
+    });
 
-  // 2. Initialize Auth (Firebase app + emulator + token listener).
-  await authStore.initAuth();
+    // 2. Initialize Auth (Firebase app + emulator + token listener).
+    await authStore.initAuth();
 
-  // 3. Initialize Firekit for non-auth operations (Firestore, assessments).
-  await authStore.initFirekit();
+    // 3. Initialize Firekit for non-auth operations (Firestore, assessments).
+    await authStore.initFirekit();
 
-  // 4. Check for pending SSO redirect results.
-  await authStore.initStateFromRedirect().then(() => {
-    // Claims are derived from the backend `/me` response on all builds (see
-    // `resolveUserClaims`) and copied onto the auth store for the legacy
-    // consumers that still read `authStore.userClaims` (`useUserType`,
-    // `usePermissions`, the `roarUid` getter). The `useMeQuery` composable
-    // (above) is the canonical source for the authenticated user — new
-    // consumers should read from `useCurrentUser` (which wraps it). The
-    // remaining `authStore.userData` consumers are tracked in #2219.
+    // 4. Check for pending SSO redirect results.
+    await authStore.initStateFromRedirect().then(() => {
+      // Claims are derived from the backend `/me` response on all builds (see
+      // `resolveUserClaims`) and copied onto the auth store for the legacy
+      // consumers that still read `authStore.userClaims` (`useUserType`,
+      // `usePermissions`, the `roarUid` getter). The `useMeQuery` composable
+      // (above) is the canonical source for the authenticated user — new
+      // consumers should read from `useCurrentUser` (which wraps it). The
+      // remaining `authStore.userData` consumers are tracked in #2219.
+      //
+      // The chain is deliberately NOT awaited: claims populate the store copy
+      // asynchronously, and app readiness must not wait on `/me` retries (up
+      // to ~7s of backoff on transient failures). Error surfacing is tracked
+      // in #2205.
+      if (authStore.uid) {
+        const uidAtStart = authStore.uid;
+        resolveUserClaims()
+          .then((userClaims) => {
+            // The user may have switched while the fetch was in flight; a
+            // stale write would undo the listener's identity reset.
+            if (authStore.uid !== uidAtStart) return;
+            authStore.userClaims = userClaims;
+          })
+          .catch((error) => {
+            console.error('[App] failed to resolve user claims from /me', error);
+          });
+      }
+    });
+
+    isAuthStoreReady.value = true;
+  } catch (error) {
+    // `initFirekit` and `initStateFromRedirect` catch internally, so this
+    // boundary guards the steps with none of their own — `createAuthService`
+    // and `initAuth` (missing Firebase config, persistence setup, emulator
+    // init). Without it a rejection escapes the lifecycle hook: no error
+    // page, no readiness, an app stuck on whatever painted first.
     //
-    // The chain is deliberately NOT awaited: claims populate the store copy
-    // asynchronously, and app readiness must not wait on `/me` retries (up
-    // to ~7s of backoff on transient failures). Error surfacing is tracked
-    // in #2205.
-    if (authStore.uid) {
-      const uidAtStart = authStore.uid;
-      resolveUserClaims()
-        .then((userClaims) => {
-          // The user may have switched while the fetch was in flight; a
-          // stale write would undo the listener's identity reset.
-          if (authStore.uid !== uidAtStart) return;
-          authStore.userClaims = userClaims;
-        })
-        .catch((error) => {
-          console.error('[App] failed to resolve user claims from /me', error);
-        });
-    }
-  });
-
-  isAuthStoreReady.value = true;
+    // `isAuthStoreReady` intentionally stays false — it only gates the
+    // session timer, and a session that never bootstrapped has nothing to
+    // time out. Sentry captures this via captureConsoleIntegration.
+    console.error('[App] auth bootstrap failed', error);
+    setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
+  }
 });
 
 onMounted(() => {

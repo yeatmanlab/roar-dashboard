@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { useRouter } from 'vue-router';
 import * as Sentry from '@sentry/vue';
 import { useAuthStore } from '@/store/auth';
+import { useGlobalError } from '@/composables/useGlobalError';
 import { getAuthService } from '@/services/AuthService';
 import { SIGN_OUT_MUTATION_KEY } from '@/constants/mutationKeys';
 import { APP_ROUTES } from '@/constants/routes';
@@ -19,9 +20,12 @@ const useSignOutMutation = () => {
   const authStore = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { clearGlobalError } = useGlobalError();
 
   return useMutation({
-    mutationKey: SIGN_OUT_MUTATION_KEY,
+    // Array-wrapped so `useIsMutating({ mutationKey: [...] })` filters can
+    // match it (TanStack mutation keys are arrays, like query keys).
+    mutationKey: [SIGN_OUT_MUTATION_KEY],
     mutationFn: async () => {
       const authService = getAuthService();
       await authService.signOut();
@@ -43,6 +47,12 @@ const useSignOutMutation = () => {
       // Clear the query client to remove all cached data — this also drops
       // any cached `/me` payload.
       queryClient.clear();
+
+      // Drop any lingering global error (e.g. SERVER_ERROR set by the
+      // QueryCache bridge after /me exhausted its retries). Sign-out is a
+      // fresh start — leaving the flag set would make the router guard
+      // hijack the SignIn redirect below to GenericError / AccessEnded.
+      clearGlobalError();
 
       // Local emulator: re-initializing Firekit client-side re-runs
       // connectAuthEmulator on the already-used Auth instance, which Firebase only

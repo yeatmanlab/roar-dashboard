@@ -11,11 +11,18 @@ export function useSignInForm() {
   const spinner = ref(false);
   const availableProviders = ref([]); // ['google','clever','classlink','nycps']
   const hasCheckedProviders = ref(false);
+  const discoveryError = ref(false); // provider discovery failed — retryable
+  const ssoError = ref(false); // starting an SSO sign-in failed — retryable
   const isUsername = computed(() => email.value !== '' && !email.value.includes('@'));
   const canContinue = computed(() => !multipleProviders.value && !emailLinkSent.value);
 
   function onEmailUpdate(val) {
     email.value = String(val || '').trim();
+    // A failure banner from the previous address no longer applies once the
+    // user edits the email — clear it instead of leaving it up until the
+    // next Continue.
+    discoveryError.value = false;
+    ssoError.value = false;
   }
   function onPasswordUpdate(val) {
     password.value = String(val || '');
@@ -32,6 +39,8 @@ export function useSignInForm() {
     spinner.value = false;
     availableProviders.value = [];
     hasCheckedProviders.value = false;
+    discoveryError.value = false;
+    ssoError.value = false;
   }
 
   function continueClick(emit) {
@@ -50,6 +59,8 @@ export function useSignInForm() {
     spinner,
     availableProviders,
     hasCheckedProviders,
+    discoveryError,
+    ssoError,
     isUsername,
     canContinue,
     onEmailUpdate,

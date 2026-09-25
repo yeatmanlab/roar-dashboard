@@ -199,7 +199,11 @@ module.exports = async (env, args) => {
     case 'development':
       return merge(developmentConfig, envDependentConfig, devFirebaseConfig);
     case 'production':
-      return merge(productionConfig, envDependentConfig, devFirebaseConfig);
+      // `devFirebaseConfig` is deliberately absent: including it inlines whatever
+      // FIREBASE_AUTH_EMULATOR_HOST holds at build time, and serve.js connects to
+      // any non-empty value — pointing a deployed build at an emulator that issues
+      // unverified tokens. Production fetches /__/firebase/init.json instead.
+      return merge(productionConfig, envDependentConfig);
     default:
       throw new Error('No matching configuration was found!');
   }

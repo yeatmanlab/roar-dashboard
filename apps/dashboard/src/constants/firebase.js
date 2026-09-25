@@ -1,3 +1,5 @@
+import { resolveIsFirebaseEmulatorEnabled } from '@/utils/emulator-guard';
+
 /**
  * Firestore databases
  */
@@ -56,14 +58,16 @@ export const FIREBASE_FUNCTIONS_ERROR_REASONS = Object.freeze({
  * Whether the dashboard is pointed at the local Firebase Auth emulator.
  *
  * Derived from `VITE_FIREBASE_EMULATOR_AUTH_HOST` or the legacy
- * `VITE_FIREBASE_EMULATOR_ENABLED` flag for backward compatibility.
- * It is `false` (inert) in deployed builds. Centralized here so every consumer
- * evaluates the flag identically.
+ * `VITE_FIREBASE_EMULATOR_ENABLED` flag for backward compatibility. Centralized here
+ * so every consumer evaluates the flag identically.
+ *
+ * `resolveIsFirebaseEmulatorEnabled` throws rather than returning `true` in a
+ * staging or production build — the build itself is supposed to have failed
+ * first (see `assertEmulatorDisabledForDeployedBuild` in `vite.config.js`), so
+ * this is the backstop for a bundle that got past it.
  *
  * Consumers: `usePermissions.js`, `composables/mutations/useSignOutMutation.js`.
- * These will be migrated in follow-up PRs.
+ * Both branches exist to work around firekit's token claims and Auth-emulator
+ * re-init; they go away with firekit (see the TODO in `usePermissions.js`).
  */
-export const IS_FIREBASE_EMULATOR_ENABLED =
-  Boolean(import.meta.env.VITE_FIREBASE_EMULATOR_AUTH_HOST) ||
-  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === true ||
-  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';
+export const IS_FIREBASE_EMULATOR_ENABLED = resolveIsFirebaseEmulatorEnabled(import.meta.env);

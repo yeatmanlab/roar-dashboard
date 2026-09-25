@@ -2,12 +2,15 @@
 import { useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 import PvButton from 'primevue/button';
+import { AppMessageState, MESSAGE_STATE_TYPES } from '@/components/AppMessageState';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
+import { useAuthStore } from '@/store/auth';
 import { useGlobalError } from '@/composables/useGlobalError';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 
 const router = useRouter();
 const queryClient = useQueryClient();
+const authStore = useAuthStore();
 const { clearGlobalError } = useGlobalError();
 const { mutate: signOut } = useSignOutMutation();
 
@@ -19,8 +22,33 @@ const { mutate: signOut } = useSignOutMutation();
  * proceeds normally; if it fails again, the watcher re-sets the global
  * error and the router guard sends the user back here.
  */
-function handleTryAgain() {
+async function handleTryAgain() {
   clearGlobalError();
+
+  // SERVER_ERROR can also mean the app-bootstrap `initAuth()` failed: the
+  // AuthService singleton or its token listener never came up, and nothing on
+  // the SPA navigation path re-runs App.vue's onBeforeMount. Neither is safely
+  // re-creatable in place (re-running setAuthStateListener would stack a
+  // second subscription), so reload the app and let the full bootstrap run
+  // from the beginning. The listener handle is the last thing initAuth sets,
+  // so a missing handle means the bootstrap never completed — or a sign-out's
+  // `$reset` dropped it. Either way the SPA path's assumptions don't hold,
+  // and a reload recovers both cases at the cost of one page load. A repeat
+  // failure re-sets the global error and the guard lands back here.
+  if (!authStore.authStateListener) {
+    window.location.assign('/');
+    return;
+  }
+
+  // SERVER_ERROR can also mean the app-bootstrap `initFirekit()` failed, and
+  // nothing on the SPA navigation path re-runs it — without this, "Try Again"
+  // would send the user back into the app with `roarfirekit` still null.
+  // A repeat failure re-sets the global error, so the guard returns here.
+  // Firekit is being deprecated (#2219); this branch dies with it.
+  if (!authStore.roarfirekit) {
+    await authStore.initFirekit();
+  }
+
   queryClient.invalidateQueries({ queryKey: [ME_QUERY_KEY] });
   router.push('/');
 }
@@ -32,15 +60,18 @@ function handleSignOut() {
 </script>
 
 <template>
-  <div class="flex flex-column align-items-center justify-content-center min-h-screen p-4">
-    <i class="pi pi-exclamation-triangle text-6xl text-yellow-500 mb-4" aria-label="Error" />
-    <h1 class="text-2xl font-bold mb-2">Something Went Wrong</h1>
-    <p class="text-center text-gray-600 mb-4 max-w-30rem">
-      An unexpected error occurred. Please try again, or sign out and sign back in.
-    </p>
-    <div class="flex gap-3">
-      <PvButton label="Try Again" @click="handleTryAgain" />
-      <PvButton label="Sign Out" outlined @click="handleSignOut" />
-    </div>
+  <div class="flex flex-column align-items-center justify-content-center min-h-screen-minus-nav p-4">
+    <AppMessageState
+      :type="MESSAGE_STATE_TYPES.ERROR"
+      title="Something Went Wrong"
+      message="An unexpected error occurred. Please try again, or sign out and sign back in."
+    >
+      <template #actions>
+        <div class="flex gap-3">
+          <PvButton label="Try Again" @click="handleTryAgain" />
+          <PvButton label="Sign Out" outlined @click="handleSignOut" />
+        </div>
+      </template>
+    </AppMessageState>
   </div>
 </template>
