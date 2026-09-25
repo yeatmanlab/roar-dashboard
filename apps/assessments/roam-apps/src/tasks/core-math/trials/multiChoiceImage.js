@@ -28,7 +28,7 @@ export const multiChoiceImage = (corpusName, assessment_stage_val) => {
       let currentItem = store.session.get('nextStimulus');
       let questionHTML = `<p>` + currentItem.item + `</p>`;
       let replayButton = ``;
-      if (store.session.get('replayButton') && store.session.get('nextStimulus').audio_file !== '') {
+      if (store.session.get('nextStimulus').audio_file !== '') {
         replayButton = `<img id="replay" draggable="false" src="${mediaAssets.images.iconSpeaker}" alt="replay"/>`;
       }
       //position the image after the item, if an image is part of the question
@@ -118,7 +118,7 @@ export const multiChoiceImage = (corpusName, assessment_stage_val) => {
         source.start(0);
       }
 
-      if (store.session.get('replayButton') && store.session.get('nextStimulus').audio_file !== '') {
+      if (store.session.get('nextStimulus').audio_file !== '') {
         const replayBtn = document.getElementById('replay');
         replayBtn.addEventListener('click', replayAudio);
         //play audio immediately when item loads

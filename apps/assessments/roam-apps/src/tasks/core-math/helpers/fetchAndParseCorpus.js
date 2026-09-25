@@ -539,20 +539,12 @@ export const fetchAndParseCorpusCoreMath = async (task, assets) => {
     assets.default.languageSpecific.device.push('navigation-instruction-mobile.mp3');
     assets.default.languageSpecific.device.push('core-math-response-mobile.mp3');
     assets.default.languageSpecific.device.push('core-math-speaker-mobile.gif');
-    if (grade > 4) {
-      assets.default.languageSpecific.device.push('core-math-response-mobile.gif');
-    } else {
-      assets.default.languageSpecific.device.push('core-math-response-k4-mobile.gif');
-    }
+    assets.default.languageSpecific.device.push('core-math-response-k4-mobile.gif');
   } else {
     assets.default.languageSpecific.device.push('navigation-instruction.mp3');
     assets.default.languageSpecific.device.push('core-math-response.mp3');
     assets.default.languageSpecific.device.push('core-math-speaker.gif');
-    if (grade > 4) {
-      assets.default.languageSpecific.device.push('core-math-response.gif');
-    } else {
-      assets.default.languageSpecific.device.push('core-math-response-k4.gif');
-    }
+    assets.default.languageSpecific.device.push('core-math-response-k4.gif');
   }
 
   addItemSpecificAudio(checkStimulusArray, assets);
