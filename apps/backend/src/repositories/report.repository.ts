@@ -27,6 +27,7 @@ import { fdwRuns } from '../db/schema/assessment-fdw/runs';
 import { fdwRunScores } from '../db/schema/assessment-fdw/run-scores';
 import { SortOrder } from '@roar-platform/api-contract';
 import type { ScopeType } from '../services/report/report.types';
+import type { PercentileThenRawscoreClassification } from '../services/scoring/scoring.config-schema';
 import { conditionToSql } from '../utils/condition-to-sql';
 import type { Condition } from '../types/condition';
 import type { ConditionFieldMap } from '../utils/condition-to-sql';
@@ -228,6 +229,9 @@ export interface RunScoreRow {
   scoreDomain?: string;
   scoreName: string;
   scoreValue: string;
+  runGrade: string | null;
+  runId: string;
+  completedAt: Date | null;
 }
 
 /** Score field type used in dynamic sort/filter on the student-scores endpoint. */
@@ -247,11 +251,6 @@ export interface StudentScoresFieldRef {
   taskSlug: string;
   /** The score field type to read. */
   fieldType: StudentScoresFieldType;
-  /**
-   * The scoring version for this variant (from task_variant_parameters), or null
-   * for the legacy v0 path. Determines which cutoff/threshold table to use.
-   */
-  scoringVersion: number | null;
 }
 
 /** Operator for student-scores filter conditions on score fields. */
@@ -277,16 +276,17 @@ export interface StudentScoresFieldFilter extends StudentScoresFieldRef {
  * - `assessmentSupportLevelField`: when set, the variant uses
  *   classification.type === 'assessment-computed' and its support level lives
  *   in run_scores under this field name.
- * - `percentileCutoffs` / `rawScoreThresholds`: present when classification is
- *   `percentile-then-rawscore`. `null` for tasks with classification.type
- *   `'none'` or unknown taskSlug — the support level is unclassifiable.
+ * - `percentileCutoffsByVersion` / `rawScoreThresholdsByVersion`: all versions,
+ *   since the applicable one is per-run — the CASE reads the run's own
+ *   `scoringVersion`. Empty for `'none'`/unknown taskSlug. Walked in array
+ *   order, matching the JS `.find()` (schema validates descending minVersion).
  * - `percentileBelowGrade`: from the scoring config; null means "use percentile
  *   for all grades".
  */
 export interface ResolvedScoringRules {
   assessmentSupportLevelField: string | null;
-  percentileCutoffs: { achieved: number; developing: number } | null;
-  rawScoreThresholds: { above: number; some: number } | null;
+  percentileCutoffsByVersion: PercentileThenRawscoreClassification['percentileCutoffs'];
+  rawScoreThresholdsByVersion: PercentileThenRawscoreClassification['rawScoreThresholds'];
   percentileBelowGrade: number | null;
   /** Resolved field names for the variant + grade-aware fallback. */
   percentileFieldNames: string[];
@@ -416,7 +416,17 @@ export interface StudentScoreQueryRow {
    * can pick the most recent completed run per (user, variant) without an extra
    * lookup, and surfaced for any consumer that wants to display recency.
    */
-  runs: Map<string, { runId: string; reliable: boolean | null; engagementFlags: string[]; completedAt: Date | null }>;
+  runs: Map<
+    string,
+    {
+      runId: string;
+      reliable: boolean | null;
+      engagementFlags: string[];
+      completedAt: Date | null;
+      /** Grade at the time of the run, from the `run_demographics` snapshot. Null when no snapshot row exists. */
+      grade: string | null;
+    }
+  >;
   /** Map of taskVariantId → score field name → value (raw text from run_scores). */
   scores: Map<string, Map<string, string>>;
   /** Synthetic foundational-composite run scores, keyed by run_scores.name. */
@@ -2065,14 +2075,13 @@ export class ReportRepository {
    * reporting-eligible. Mirrors the run filters used in `getProgressStudents`.
    *
    * Run-level dedup: this query does not de-duplicate at the run level — it returns
-   * every score row for every matching run. The caller (`buildScoreLookup`) folds
-   * scores into a `userId → taskVariantId → scoreName → value` map, with last-row-wins
-   * on duplicate `(userId, taskVariantId, scoreName)` triples. That is correct only
-   * if the assessment side guarantees at most one `useForReporting=true`,
-   * non-aborted, non-deleted completed run per (user, variant). If that invariant
-   * is ever broken, multi-run scoring will silently pick the last-fetched row's
-   * value rather than e.g. the most recent one — surface this assumption here so
-   * any future change to assessment-side run lifecycle gets reviewed against it.
+   * every score row for every matching run, each tagged with its `runId` and
+   * `completedAt`. The assessment side is expected to guarantee at most one
+   * `useForReporting=true`, non-aborted, non-deleted completed run per
+   * (user, variant), in which case there is nothing to de-duplicate. Because
+   * nothing here enforces that, the caller (`selectLatestRunRows`) narrows to the
+   * most recently completed run per (user, variant) before folding, matching the
+   * recency dedup the run-metadata queries already apply.
    *
    * @param administrationId - The administration ID
    * @param studentIds - Student user IDs to fetch scores for
@@ -2095,9 +2104,14 @@ export class ReportRepository {
         scoreDomain: fdwRunScores.domain,
         scoreName: fdwRunScores.name,
         scoreValue: fdwRunScores.value,
+        runGrade: runDemographics.grade,
+        runId: fdwRuns.id,
+        completedAt: fdwRuns.completedAt,
       })
       .from(fdwRuns)
       .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
+      // Nothing guarantees a snapshot row (no cross-DB FK) so we left join.
+      .leftJoin(runDemographics, eq(runDemographics.runId, fdwRuns.id))
       .where(
         and(
           eq(fdwRuns.administrationId, administrationId),
@@ -2174,15 +2188,21 @@ export class ReportRepository {
     }
     const joins: JoinPlan[] = [];
 
-    /** Build a runs+run_scores subquery selecting `value` for one (variant, name) combo. */
+    /**
+     * Build a runs+run_scores subquery selecting `value` for one (variant, name) combo.
+     * `grade` is the run's demographic snapshot, mirroring the response path's
+     * `runGrade ?? student.grade`; left-joined since a run may have none.
+     */
     const buildScoreSub = (alias: string, variantId: string, scoreNames: string[]) =>
       this.db
         .select({
           userId: fdwRuns.userId,
           value: fdwRunScores.value,
+          grade: runDemographics.grade,
         })
         .from(fdwRuns)
         .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
+        .leftJoin(runDemographics, eq(runDemographics.runId, fdwRuns.id))
         .where(
           and(
             eq(fdwRuns.administrationId, administrationId),
@@ -2240,19 +2260,29 @@ export class ReportRepository {
       const rawNames = rules.rawScoreFieldNames;
       let pctSql: SQL | null = null;
       let rawSql: SQL | null = null;
+      let gradeSql: SQL = gradeAsIntSql(users.grade);
 
-      if (pctNames.length > 0 && rules.percentileCutoffs) {
+      if (pctNames.length > 0 && rules.percentileCutoffsByVersion.length > 0) {
         const sub = buildScoreSub(`${aliasPrefix}_pct`, ref.taskVariantId, pctNames);
         joins.push({ sub, alias: `${aliasPrefix}_pct`, expr: numericValueSql(sub.value) });
         pctSql = numericValueSql(sub.value);
+        gradeSql = gradeAsIntSql(sql`COALESCE(${sub.grade}, ${users.grade})`);
       }
-      if (rawNames.length > 0 && rules.rawScoreThresholds) {
+      if (rawNames.length > 0 && rules.rawScoreThresholdsByVersion.length > 0) {
         const sub = buildScoreSub(`${aliasPrefix}_raw`, ref.taskVariantId, rawNames);
         joins.push({ sub, alias: `${aliasPrefix}_raw`, expr: numericValueSql(sub.value) });
         rawSql = numericValueSql(sub.value);
       }
 
-      return buildSupportLevelPrioritySql(rules, gradeAsIntSql(users.grade), pctSql, rawSql);
+      // The run's stamped version selects which cutoffs apply; absent → 0.
+      let verSql: SQL | null = null;
+      if (pctSql || rawSql) {
+        const sub = buildScoreSub(`${aliasPrefix}_ver`, ref.taskVariantId, [SCORE_NAME.SCORING_VERSION]);
+        joins.push({ sub, alias: `${aliasPrefix}_ver`, expr: numericValueSql(sub.value) });
+        verSql = numericValueSql(sub.value);
+      }
+
+      return buildSupportLevelPrioritySql(rules, gradeSql, pctSql, rawSql, verSql);
     };
 
     // 2. Build sort expression (via dynamic field if requested)
@@ -2380,8 +2410,11 @@ export class ReportRepository {
           reliableRun: fdwRuns.reliableRun,
           engagementFlags: fdwRuns.engagementFlags,
           completedAt: fdwRuns.completedAt,
+          grade: runDemographics.grade,
         })
         .from(fdwRuns)
+        // Nothing guarantees a snapshot row (no cross-DB FK) so we left join.
+        .leftJoin(runDemographics, eq(runDemographics.runId, fdwRuns.id))
         .where(
           and(
             eq(fdwRuns.administrationId, administrationId),
@@ -2409,6 +2442,7 @@ export class ReportRepository {
             reliable: r.reliableRun,
             engagementFlags: Array.isArray(r.engagementFlags) ? (r.engagementFlags as string[]) : [],
             completedAt: r.completedAt,
+            grade: r.grade,
           });
         }
       }
@@ -3351,14 +3385,15 @@ function numericValueSql(valueExpr: SQL | Column): SQL {
  *
  * For percentile-then-rawscore tasks, the CASE evaluates percentile cutoffs when
  * the student's grade is below `percentileBelowGrade`, otherwise raw-score
- * thresholds. Cutoffs/thresholds are emitted as numeric literals from the
- * pre-resolved `ResolvedScoringRules` so the repository stays decoupled from
- * the scoring service.
+ * thresholds. Which cutoffs apply is gated on the run's own `scoringVersion`
+ * (absent → 0, the pre-stamping norms), so this agrees with the support level
+ * the response reports for the same run.
  *
  * @param rules - Pre-resolved scoring rules for the variant
  * @param gradeIntSql - SQL expression evaluating to the student's numeric grade
  * @param pctSql - SQL expression evaluating to the student's percentile (or null if no percentile join)
  * @param rawSql - SQL expression evaluating to the student's raw score (or null if no raw-score join)
+ * @param verSql - SQL expression evaluating to the run's scoring version (or null if no version join)
  * @returns CASE expression returning priority integer or NULL — null when no rules apply
  */
 function buildSupportLevelPrioritySql(
@@ -3366,32 +3401,44 @@ function buildSupportLevelPrioritySql(
   gradeIntSql: SQL,
   pctSql: SQL | null,
   rawSql: SQL | null,
+  verSql: SQL | null,
 ): SQL | null {
-  const pct = rules.percentileCutoffs;
-  const raw = rules.rawScoreThresholds;
-  if (!pct && !raw) return null;
+  const pctByVersion = rules.percentileCutoffsByVersion;
+  const rawByVersion = rules.rawScoreThresholdsByVersion;
+  if (pctByVersion.length === 0 && rawByVersion.length === 0) return null;
+
+  const version = verSql ? sql`COALESCE(${verSql}, 0)` : sql`0`;
+
+  /** Gate per-version inner CASEs on the run's version, in array order. */
+  const gateByVersion = (gated: SQL[]): SQL => sql`CASE ${sql.join(gated, sql` `)} END`;
 
   const branches: SQL[] = [];
 
-  if (pct && pctSql) {
+  if (pctByVersion.length > 0 && pctSql) {
     const gradeGate =
       rules.percentileBelowGrade !== null
         ? sql`AND (${gradeIntSql}) IS NOT NULL AND (${gradeIntSql}) < ${rules.percentileBelowGrade}`
         : sql``;
-    branches.push(sql`WHEN ${pctSql} IS NOT NULL ${gradeGate} THEN
-      CASE
-        WHEN ${pctSql} >= ${pct.achieved} THEN 3
-        WHEN ${pctSql} >= ${pct.developing} THEN 2
-        ELSE 1
-      END`);
+    const gated = pctByVersion.map(
+      ({ minVersion, cutoffs }) => sql`WHEN ${version} >= ${minVersion} THEN
+        CASE
+          WHEN ${pctSql} >= ${cutoffs.achieved} THEN 3
+          WHEN ${pctSql} >= ${cutoffs.developing} THEN 2
+          ELSE 1
+        END`,
+    );
+    branches.push(sql`WHEN ${pctSql} IS NOT NULL ${gradeGate} THEN ${gateByVersion(gated)}`);
   }
-  if (raw && rawSql) {
-    branches.push(sql`WHEN ${rawSql} IS NOT NULL THEN
-      CASE
-        WHEN ${rawSql} >= ${raw.above} THEN 3
-        WHEN ${rawSql} >= ${raw.some} THEN 2
-        ELSE 1
-      END`);
+  if (rawByVersion.length > 0 && rawSql) {
+    const gated = rawByVersion.map(
+      ({ minVersion, thresholds }) => sql`WHEN ${version} >= ${minVersion} THEN
+        CASE
+          WHEN ${rawSql} >= ${thresholds.above} THEN 3
+          WHEN ${rawSql} >= ${thresholds.some} THEN 2
+          ELSE 1
+        END`,
+    );
+    branches.push(sql`WHEN ${rawSql} IS NOT NULL THEN ${gateByVersion(gated)}`);
   }
 
   if (branches.length === 0) return null;

@@ -51,7 +51,6 @@ const VueQueryDevtools = defineAsyncComponent(() =>
 
 import { useAuthStore } from '@/store/auth';
 import { createAuthService } from '@/services/AuthService';
-import { fetchDocById } from '@/helpers/query/utils';
 import { resolveUserClaims } from '@/helpers/resolveUserClaims';
 import { i18n } from '@/translations/i18n';
 import useCurrentUser from '@/composables/useCurrentUser';
@@ -158,28 +157,31 @@ onBeforeMount(async () => {
   await authStore.initFirekit();
 
   // 4. Check for pending SSO redirect results.
-  await authStore.initStateFromRedirect().then(async () => {
-    // TODO(post-/me): retire once useUserClaimsQuery is migrated; see frontend migration plan.
+  await authStore.initStateFromRedirect().then(() => {
+    // Claims are derived from the backend `/me` response on all builds (see
+    // `resolveUserClaims`) and copied onto the auth store for the legacy
+    // consumers that still read `authStore.userClaims` (`useUserType`,
+    // `usePermissions`, the `roarUid` getter). The `useMeQuery` composable
+    // (above) is the canonical source for the authenticated user — new
+    // consumers should read from `useCurrentUser` (which wraps it). The
+    // remaining `authStore.userData` consumers are tracked in #2219.
     //
-    // The Firestore-based fetches below populate the legacy `userData` /
-    // `userClaims` fields on the auth store for existing consumers. The
-    // `useMeQuery` composable (above) is the canonical source for the
-    // authenticated user — new consumers should read from `useCurrentUser`
-    // (which wraps it). Legacy consumers (`useUserType`, `usePermissions`,
-    // and the components that still read `authStore.userData` directly)
-    // will migrate incrementally as their ts-rest equivalents land.
-    //
-    // Out of scope for this PR: the SSO flow still needs the Firestore user
-    // ID at this point, so deleting the fetches here would break sign-in
-    // before the migration is complete.
+    // The chain is deliberately NOT awaited: claims populate the store copy
+    // asynchronously, and app readiness must not wait on `/me` retries (up
+    // to ~7s of backoff on transient failures). Error surfacing is tracked
+    // in #2205.
     if (authStore.uid) {
-      // Emulator mode derives super_admin from /me; production reads Firestore.
-      const userClaims = await resolveUserClaims(authStore.uid);
-      authStore.userClaims = userClaims;
-    }
-    if (authStore.roarUid) {
-      const userData = await fetchDocById('users', authStore.roarUid);
-      authStore.userData = userData;
+      const uidAtStart = authStore.uid;
+      resolveUserClaims()
+        .then((userClaims) => {
+          // The user may have switched while the fetch was in flight; a
+          // stale write would undo the listener's identity reset.
+          if (authStore.uid !== uidAtStart) return;
+          authStore.userClaims = userClaims;
+        })
+        .catch((error) => {
+          console.error('[App] failed to resolve user claims from /me', error);
+        });
     }
   });
 

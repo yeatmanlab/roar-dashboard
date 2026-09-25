@@ -168,11 +168,12 @@ When the stack first comes up, a one-shot migration container runs the database 
 
 Each assessment has a seed config in `apps/backend/seeds/configs/<name>.config.ts` that defines:
 
-- the **task(s)** the variants belong to (single-task assessments have one; multi-task assessments route each variant to a task from its params),
-- the **allowed parameter keys**, and
+- the **task(s)** the variants belong to (single-task assessments have one; multi-task assessments route each variant to a task from its params), and
 - a **validation function**.
 
-**Validation runs at seed time.** Seeding fails with a descriptive error if `taskVariantParameters.json` is missing, contains an unknown parameter key, or has an invalid value — the rules come from that config, not from a generic schema.
+**Validation runs at seed time.** Seeding fails with a descriptive error if `taskVariantParameters.json` is missing or a variant has an invalid value — the rules come from that config, not from a generic schema.
+
+**Parameter keys are not restricted.** Any key you put in `taskVariantParameters.json` is seeded through to the variant as-is, so you can test a new parameter without touching the backend or rebuilding anything. The trade-off is that a misspelled key won't be flagged — it seeds successfully, the task never reads it, and the assessment silently runs with that parameter at its default. If a parameter seems to have no effect, check its spelling against `taskVariantParameters.example.json` first.
 
 Variants are seeded as `published` and matched by name, so seeding is **idempotent and additive**: a variant that already exists is skipped, and a new entry is added alongside the existing ones. To target a specific variant when playing the assessment, pass `variantId=<id>` in the dev server URL — or use the [variant picker](./ASSESSMENT_RESEARCH_GUIDE.md#switching-variants-the-variant-picker). With no `variantId`, the assessment loads its declared default — see [Choosing which variant loads by default](#choosing-which-variant-loads-by-default).
 
@@ -269,7 +270,7 @@ The environment doesn't need to be stopped first — the rebuild only updates th
 
 **"taskVariantParameters.json not found."** You skipped the config step. Run `npm run setup`, or copy the example manually (see [Configuring task variants](#configuring-task-variants)).
 
-**The migration container failed / "Unknown task."** The assessment isn't registered in the seed config registry, or its `taskVariantParameters.json` has an invalid parameter. The error names the available tasks and the offending key. Fix the config or the params file, then `npm run rebuild` and `npm start`.
+**The migration container failed / "Unknown task."** The assessment isn't registered in the seed config registry, or its `taskVariantParameters.json` has an invalid parameter value. The error names the available tasks and the offending entry. Fix the config or the params file, then `npm run rebuild` and `npm start`.
 
 **"My new variant didn't show up."** Editing `taskVariantParameters.json` doesn't re-seed on its own. Run `npm run seed:tasks` (preserves your data) rather than `npm restart` (wipes it). See [Adding or changing variants without losing data](#adding-or-changing-variants-without-losing-data).
 
