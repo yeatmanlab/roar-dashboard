@@ -35,6 +35,21 @@ PARAMS_FILE="$ASSESSMENT_DIR/taskVariantParameters.json"
 # publishes the same port the scripts connect to; override ASSESSMENT_PG_PORT to change it.
 export ASSESSMENT_PG_PORT="${ASSESSMENT_PG_PORT:-5433}"
 
+# A running stack knows its real port better than this shell does: a stack
+# started with a custom ASSESSMENT_PG_PORT would otherwise break `npm run
+# seed:tasks` (and the preflights) in any later shell where the variable is
+# unset. A non-default env var still wins — the running container only fills
+# in when the caller said nothing.
+if [ "$ASSESSMENT_PG_PORT" = "5433" ]; then
+  # || true: callers run under set -euo pipefail, and a missing container (or
+  # stopped daemon) must degrade to the default, not abort the sourcing script.
+  _published_pg_port="$(docker port assessment-db 5432/tcp 2>/dev/null | head -1 | awk -F: '{print $NF}' || true)"
+  if [ -n "$_published_pg_port" ] && [ "$_published_pg_port" != "5433" ]; then
+    export ASSESSMENT_PG_PORT="$_published_pg_port"
+  fi
+  unset _published_pg_port
+fi
+
 # All host ports the assessment stack binds: Postgres, Firebase Auth emulator,
 # Storage emulator, Emulator UI, backend API. Looped by the port pre-flights in
 # assessment-setup.sh (advisory) and assessment-env-up.sh (hard gate).
@@ -61,19 +76,35 @@ docker_compose_available() {
   docker compose version &>/dev/null
 }
 
+# True when the Docker daemon is actually running — `docker compose version`
+# succeeds client-side with the daemon stopped, so installed-but-not-launched
+# Docker Desktop passes the availability check and then fails compose with a
+# raw socket error. Check this after availability.
+docker_daemon_running() {
+  docker info &>/dev/null
+}
+
 # True when the given TCP port is already bound (lsof on macOS, ss on Linux).
 # Usage: port_in_use 5433
 port_in_use() {
   lsof -i ":$1" -sTCP:LISTEN &>/dev/null || ss -tlnp 2>/dev/null | grep -q ":$1 "
 }
 
-# True when the named container is running.
+# True when the named container is running. The name filter is anchored:
+# Docker's filter is a substring match, so a bare "assessment-db" would also
+# match "assessment-db-migrate".
 # Usage: assessment_container_running assessment-db
 assessment_container_running() {
-  docker ps --filter "name=$1" --filter "status=running" -q 2>/dev/null | grep -q .
+  docker ps --filter "name=^$1$" --filter "status=running" -q 2>/dev/null | grep -q .
 }
 
 # ── Canonical help messages (to stderr) ──────────────────────────────────────
+
+# Docker installed but the daemon is not running.
+print_docker_daemon_help() {
+  echo "  macOS: launch Docker Desktop and wait for it to finish starting." >&2
+  echo "  Linux: sudo systemctl start docker" >&2
+}
 
 # Docker (Compose v2) install options.
 print_docker_install_help() {

@@ -26,6 +26,11 @@ if ! docker_compose_available; then
   print_docker_install_help
   exit 1
 fi
+if ! docker_daemon_running; then
+  echo "Error: Docker is installed but not running." >&2
+  print_docker_daemon_help
+  exit 1
+fi
 
 # If the backend AND emulator containers are running the full stack is up — the
 # backend only starts after migrations and the Firebase emulators are healthy.
@@ -74,7 +79,18 @@ else
   # --remove-orphans drops any container in the roar-assessment project whose
   # service no longer exists, so future service renames self-heal without
   # needing to be listed above.
-  docker compose -f "$COMPOSE_FILE" up -d --wait --remove-orphans
+  # On failure, surface the container logs before exiting: compose reports only
+  # a terse exit line (e.g. `service "assessment-db-migrate" didn't complete
+  # successfully`), while the actual error — most commonly the seeder naming an
+  # invalid taskVariantParameters.json entry — is in the container's own output.
+  if ! docker compose -f "$COMPOSE_FILE" up -d --wait --remove-orphans; then
+    echo >&2
+    echo "The environment failed to start. Recent output from the migration/seed and backend containers:" >&2
+    docker compose -f "$COMPOSE_FILE" logs --no-color --tail=40 assessment-db-migrate backend >&2 || true
+    echo >&2
+    echo "Fix the reported problem (an invalid taskVariantParameters.json entry is the usual cause), then run: npm start" >&2
+    exit 1
+  fi
 
   echo "All services healthy. Starting assessment dev server..."
 fi

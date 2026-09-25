@@ -74,6 +74,9 @@ docker compose -f "$COMPOSE_FILE" down -v --remove-orphans --timeout 0 2>/dev/nu
 docker rm -f "${CONTAINERS[@]}" 2>/dev/null || true
 # If the retried compose down above also failed, this is the only removal of the
 # data volume — without it the "deletes the local database" contract breaks.
-docker volume rm roar-assessment_postgres-18-data 2>/dev/null || true
+# The legacy pre-Postgres-18 name is included as cheap insurance for checkouts
+# that ran the old stack: compose down -v only removes volumes the current file
+# declares, so nothing else ever deletes it.
+docker volume rm roar-assessment_postgres-18-data roar-assessment_pgdata 2>/dev/null || true
 
 echo "Assessment environment stopped."

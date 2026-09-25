@@ -13,6 +13,11 @@
 #
 # Usage (from any assessment package.json):
 #   "seed:tasks": "bash ../../../scripts/assessment-seed-tasks.sh"
+#
+# Extra arguments are forwarded to the seeder. The one researchers need:
+#   npm run seed:tasks -- --refresh-params
+# re-applies the parameter values from taskVariantParameters.json to variants
+# that already exist (a plain run is additive by name and skips them).
 set -euo pipefail
 
 # Shared context (REPO_ROOT, ASSESSMENT_NAME, PARAMS_FILE) and pre-flight
@@ -34,7 +39,12 @@ if ! assessment_container_running assessment-db; then
 fi
 
 echo "Seeding task variants for \"$ASSESSMENT_NAME\" from taskVariantParameters.json..."
-echo "Existing tasks, variants, and generated run data are left untouched (seeding is additive by name)."
+if [[ " $* " == *" --refresh-params "* ]]; then
+  echo "Refreshing parameters on existing variants too (--refresh-params). Generated run data is left untouched."
+else
+  echo "Existing tasks, variants, and generated run data are left untouched (seeding is additive by name)."
+  echo "Changed a parameter on an EXISTING variant? Re-run with: npm run seed:tasks -- --refresh-params"
+fi
 echo
 
 # Run the same seeder the migrate container uses, but from the host against the
@@ -44,7 +54,7 @@ echo
 cd "$REPO_ROOT"
 CORE_DATABASE_URL="postgres://postgres:postgres@localhost:${ASSESSMENT_PG_PORT}/roar_core" \
 TASK_VARIANT_PARAMETERS_FILE="$PARAMS_FILE" \
-  "${NPM_CLI[@]}" run dev:seed:tasks -w apps/backend -- --task "$ASSESSMENT_NAME"
+  "${NPM_CLI[@]}" run dev:seed:tasks -w apps/backend -- --task "$ASSESSMENT_NAME" "$@"
 
 echo
 echo "Done. Reload the assessment (or use the variant picker) to see the new variants."

@@ -48,10 +48,27 @@ if ! curl --silent --fail --max-time 2 "http://${emulator_host}/" >/dev/null 2>&
 fi
 
 # ── 3. The backend API ───────────────────────────────────────────────────────
-# The scheme identifies the context: the containerized assessment-env backend
-# serves plain HTTP; a host-run dev backend serves TLS (mkcert) unconditionally.
-if curl --silent --fail --max-time 2 http://localhost:4000/health/live >/dev/null 2>&1; then
+# An exported BACKEND_URL (set by `npm start`, or by hand) is authoritative for
+# where the /v1 proxy points — probe exactly that. Without it, probe the
+# default localhost:4000; there the scheme identifies the context: the
+# containerized assessment-env backend serves plain HTTP, a host-run dev
+# backend serves TLS (mkcert) unconditionally.
+if [[ -n "${BACKEND_URL:-}" ]]; then
+  if ! curl --silent --fail --insecure --max-time 2 "${BACKEND_URL%/}/health/live" >/dev/null 2>&1; then
+    fail "no backend responds at BACKEND_URL (${BACKEND_URL})." \
+      "Start it, or unset BACKEND_URL to use the default localhost:4000."
+  fi
+  backend_scheme="${BACKEND_URL%%:*}"
+elif curl --silent --fail --max-time 2 http://localhost:4000/health/live >/dev/null 2>&1; then
   backend_scheme=http
+  # The bundler configs default the /v1 proxy to https://localhost:4000 (the
+  # host-run backend). Against this containerized HTTP backend that default
+  # fails the TLS handshake on every request; `npm start` exports BACKEND_URL,
+  # a direct `npm run dev` must do the same.
+  fail "the backend on localhost:4000 serves plain HTTP, but BACKEND_URL is not set." \
+    "The dev-server proxy would default to https:// and fail every /v1 request." \
+    "Use:  npm start   (sets BACKEND_URL for you)" \
+    "or:   BACKEND_URL=http://localhost:4000 npm run dev"
 elif curl --silent --fail --insecure --max-time 2 https://localhost:4000/health/live >/dev/null 2>&1; then
   backend_scheme=https
 else
@@ -60,19 +77,7 @@ else
     "Platform context:       NODE_ENV=development npm run dev -w apps/backend"
 fi
 
-# ── 4a. HTTP backend: the proxy must be told ─────────────────────────────────
-# The bundler configs default the /v1 proxy to https://localhost:4000 (the
-# host-run backend). Against the containerized HTTP backend that default fails
-# the TLS handshake on every request; `npm start` exports BACKEND_URL, a direct
-# `npm run dev` must do the same.
-if [[ "$backend_scheme" == "http" && -z "${BACKEND_URL:-}" ]]; then
-  fail "the backend on localhost:4000 serves plain HTTP, but BACKEND_URL is not set." \
-    "The dev-server proxy would default to https:// and fail every /v1 request." \
-    "Use:  npm start   (sets BACKEND_URL for you)" \
-    "or:   BACKEND_URL=http://localhost:4000 npm run dev"
-fi
-
-# ── 4b. Platform context only: emulator token verification ───────────────────
+# ── 4. Platform context only: emulator token verification ────────────────────
 # The backend verifies tokens against the Auth emulator only when
 # FIREBASE_AUTH_EMULATOR_HOST is set in its environment (see
 # apps/backend/src/clients/firebase-core.client.ts). Without it, the assessment
