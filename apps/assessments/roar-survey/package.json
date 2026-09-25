@@ -35,7 +35,7 @@
     "stop": "bash ../../../scripts/assessment-env-down.sh",
     "restart": "bash ../../../scripts/assessment-restart.sh",
     "rebuild": "bash ../../../scripts/assessment-env-build.sh",
-    "update": "npm --prefix ../../../packages/assessment-schema run build && npm --prefix ../../../packages/assessment-sdk run build",
+    "update": "npm --prefix ../../../ run build -- --filter=@roar-platform/api-contract --filter=@roar-platform/assessment-schema --filter=@roar-platform/scoring-tables --filter=@roar-platform/assessment-sdk",
     "build": "vite build --mode lib",
     "build:staging": "vite build --mode staging",
     "build:production": "vite build --mode production",

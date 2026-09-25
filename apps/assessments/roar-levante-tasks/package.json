@@ -31,7 +31,7 @@
     "setup": "bash ../../../scripts/assessment-setup.sh",
     "start": "bash ../../../scripts/assessment-env-up.sh",
     "seed:tasks": "bash ../../../scripts/assessment-seed-tasks.sh",
-    "update": "npm --prefix ../../../packages/assessment-schema run build && npm --prefix ../../../packages/assessment-sdk run build",
+    "update": "npm --prefix ../../../ run build -- --filter=@roar-platform/api-contract --filter=@roar-platform/assessment-schema --filter=@roar-platform/scoring-tables --filter=@roar-platform/assessment-sdk",
     "stop": "bash ../../../scripts/assessment-env-down.sh",
     "restart": "bash ../../../scripts/assessment-restart.sh",
     "rebuild": "bash ../../../scripts/assessment-env-build.sh",
