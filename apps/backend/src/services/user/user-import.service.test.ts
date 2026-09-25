@@ -1360,8 +1360,8 @@ describe('UserImportService.bulkImport', () => {
 
         const results = await buildService().bulkImport(superAdmin, [makeRow({ email: 'updatee@example.org' })]);
 
-        // Compensation failure must not mask the row outcome or abort the batch — it's logged for
-        // manual syncFga instead.
+        // Compensation failure must not mask the row outcome or abort the batch — it's logged so an
+        // operator can run the sync-fga job with --apply instead.
         expect(results[0]!.status).toBe('failed');
       });
 

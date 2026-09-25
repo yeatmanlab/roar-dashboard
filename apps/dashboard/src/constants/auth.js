@@ -37,5 +37,21 @@ export const AUTH_SSO_PROVIDERS = Object.freeze({
   NYCPS: 'nycps',
 });
 
+/**
+ * Auth Providers
+ *
+ * The provider vocabulary firekit's link/unlink methods expect — its own
+ * `AuthProviderType`, which it translates into a Firebase provider ID
+ * internally. Distinct from `FIREBASE_AUTH_PROVIDER_IDS`, which holds the IDs
+ * Firebase reports back on `user.providerData`. Password is not SSO, so it
+ * lives here rather than in `AUTH_SSO_PROVIDERS`.
+ *
+ * @constant {Object} AUTH_PROVIDERS - Providers accepted by firekit link/unlink.
+ */
+export const AUTH_PROVIDERS = Object.freeze({
+  ...AUTH_SSO_PROVIDERS,
+  PASSWORD: 'password',
+});
+
 export const TERMS_OF_SERVICE_DOCUMENT_PATH = '/docs/roar-terms-of-service.pdf';
 export const USER_ICON_IMAGE_PATH = '/assets/img/cute-lion.png';

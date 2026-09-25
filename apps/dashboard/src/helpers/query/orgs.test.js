@@ -2,9 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getOrgsRequestBody, orgFetcher, orgCounter } from './orgs';
 import { getAxiosInstance, mapFields, convertValues } from './utils';
 
-vi.mock('vue', () => ({
-  toValue: vi.fn((val) => val),
-}));
+// Partial mock: keep the real Vue exports — the auth store's import chain
+// reaches modules that call `ref` at module scope — and only stub `toValue`.
+vi.mock('vue', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    toValue: vi.fn((val) => val),
+  };
+});
 
 const mockPost = vi.fn().mockResolvedValue({ data: 'mockData' });
 

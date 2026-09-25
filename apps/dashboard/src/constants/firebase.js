@@ -1,3 +1,5 @@
+import { resolveIsFirebaseEmulatorEnabled } from '@/utils/emulator-guard';
+
 /**
  * Firestore databases
  */
@@ -24,6 +26,20 @@ export const FIRESTORE_COLLECTIONS = Object.freeze({
 });
 
 /**
+ * Firebase Auth provider IDs
+ *
+ * The `providerId` values Firebase reports on `user.providerData`. These are
+ * Firebase's own identifiers and are distinct from `AUTH_SSO_PROVIDERS`, which
+ * holds the ROAR-internal slugs that firekit's link/unlink calls expect.
+ */
+export const FIREBASE_AUTH_PROVIDER_IDS = Object.freeze({
+  PASSWORD: 'password',
+  GOOGLE: 'google.com',
+  CLEVER: 'oidc.clever',
+  CLASSLINK: 'oidc.classlink',
+});
+
+/**
  * Firebase Functions Error Codes
  */
 export const FIREBASE_FUNCTIONS_ERROR_CODES = Object.freeze({
@@ -41,15 +57,17 @@ export const FIREBASE_FUNCTIONS_ERROR_REASONS = Object.freeze({
 /**
  * Whether the dashboard is pointed at the local Firebase Auth emulator.
  *
- * Derived from `VITE_FIREBASE_EMULATOR_AUTH_HOST` (set by dev-local-stack.sh) or
- * the legacy `VITE_FIREBASE_EMULATOR_ENABLED` flag for backward compatibility.
- * It is `false` (inert) in deployed builds. Centralized here so every consumer
- * evaluates the flag identically.
+ * Derived from `VITE_FIREBASE_EMULATOR_AUTH_HOST` or the legacy
+ * `VITE_FIREBASE_EMULATOR_ENABLED` flag for backward compatibility. Centralized here
+ * so every consumer evaluates the flag identically.
  *
- * Consumers: `resolveUserClaims.js`, `isDashboardReady.js`, `usePermissions.js`.
- * These will be migrated in follow-up PRs.
+ * `resolveIsFirebaseEmulatorEnabled` throws rather than returning `true` in a
+ * staging or production build — the build itself is supposed to have failed
+ * first (see `assertEmulatorDisabledForDeployedBuild` in `vite.config.js`), so
+ * this is the backstop for a bundle that got past it.
+ *
+ * Consumers: `usePermissions.js`, `composables/mutations/useSignOutMutation.js`.
+ * Both branches exist to work around firekit's token claims and Auth-emulator
+ * re-init; they go away with firekit (see the TODO in `usePermissions.js`).
  */
-export const IS_FIREBASE_EMULATOR_ENABLED =
-  Boolean(import.meta.env.VITE_FIREBASE_EMULATOR_AUTH_HOST) ||
-  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === true ||
-  import.meta.env.VITE_FIREBASE_EMULATOR_ENABLED === 'true';
+export const IS_FIREBASE_EMULATOR_ENABLED = resolveIsFirebaseEmulatorEnabled(import.meta.env);

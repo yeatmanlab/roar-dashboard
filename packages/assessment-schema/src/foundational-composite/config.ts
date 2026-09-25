@@ -1,3 +1,5 @@
+import { GCS_ORIGIN } from '../constants/asset-origins.js';
+
 /**
  * Foundational-composite norming config.
  *
@@ -23,4 +25,5 @@ export const FOUNDATIONAL_COMPOSITE_SCORING_VERSION = 1 as const;
  */
 export const FOUNDATIONAL_COMPOSITE_SCORE_TABLE_URL = (
   version: number = FOUNDATIONAL_COMPOSITE_SCORING_VERSION,
-): string => `https://storage.googleapis.com/roar-foundational/foundational/scores/composite_lookup_v${version}.csv`;
+  origin: string = GCS_ORIGIN,
+): string => `${origin}/roar-foundational/foundational/scores/composite_lookup_v${version}.csv`;

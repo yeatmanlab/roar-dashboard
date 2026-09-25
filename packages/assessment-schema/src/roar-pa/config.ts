@@ -1,3 +1,5 @@
+import { GCS_ORIGIN } from '../constants/asset-origins.js';
+
 export const PA_TASK_ID = 'pa' as const;
 
 export const PA_SCORING_VERSION = {
@@ -22,5 +24,5 @@ export const PA_SUBTASK_KEYS = ['FSM', 'LSM', 'DEL'] as const;
 export type PaSubtaskKey = (typeof PA_SUBTASK_KEYS)[number];
 
 // Currently only used by the roar-pa assessment app (src/experiment/scores.js)
-export const PA_SCORE_TABLE_URL = (version: PaScoringVersion): string =>
-  `https://storage.googleapis.com/roar-pa/scores/pa_lookup_v${version}.csv`;
+export const PA_SCORE_TABLE_URL = (version: PaScoringVersion, origin: string = GCS_ORIGIN): string =>
+  `${origin}/roar-pa/scores/pa_lookup_v${version}.csv`;

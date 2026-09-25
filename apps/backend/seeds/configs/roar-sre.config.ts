@@ -45,16 +45,6 @@ export const sreConfig: TaskSeedConfig = {
       nameTechnical: 'Rapid Online Assessment of Reading — Sentence Reading Efficiency (German)',
     },
   },
-  allowedParamKeys: new Set([
-    'consent',
-    'lng',
-    'recruitment',
-    'scoringVersion',
-    'skipInstructions',
-    'storyOption',
-    'timerLength',
-    'userMode',
-  ]),
   validateVariant(loc, params) {
     const lng = params.lng as string | undefined;
     if (!lng) throw new Error(`${loc}: "lng" is required`);

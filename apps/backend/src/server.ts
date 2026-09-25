@@ -8,6 +8,7 @@ import { initializeDatabasePools, closeDatabasePools } from './db/clients';
 import { setShuttingDown } from './health/shutdown-state';
 import { logger } from './logger';
 import { AuthService } from './services/auth/auth.service';
+import { assertEmulatorNotEnabledOnDeployedService } from './utils/emulator-guard.util';
 
 /** Maximum time to wait for graceful shutdown before force-exiting. */
 const SHUTDOWN_GRACE_MS = 10_000;
@@ -56,6 +57,12 @@ function onListening(): void {
 }
 
 async function startServer(): Promise<void> {
+  // Refuse to boot a deployed service that is pointed at the Firebase Auth emulator.
+  // Checked before anything else so the process never opens a pool, a socket, or a
+  // Firebase app while it would accept forged tokens. Throws; the catch below turns
+  // that into a fatal log and a non-zero exit.
+  assertEmulatorNotEnabledOnDeployedService();
+
   // FGA store/model IDs arrive via the dotenv file loaded by `import 'dotenv/config'`
   // at the top of this module. In local dev, the seed script writes them to .env;
   // in CI, the seed script writes them to .env.test (loaded via DOTENV_CONFIG_PATH).

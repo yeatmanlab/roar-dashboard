@@ -59,6 +59,14 @@ const DEFAULT_DEMOGRAPHICS = {
  * If a future task adds a new percentile / raw-score field name, add a
  * constant here and update the relevant tests.
  */
+/**
+ * Every fixture score row belongs to one run per (user, variant), so a single
+ * shared runId keeps `selectLatestRunRows` a no-op. Tests that exercise the
+ * multi-run tiebreak set these explicitly.
+ */
+const FIXTURE_RUN_ID = 'run-fixture';
+const FIXTURE_RUN_COMPLETED_AT = new Date('2025-09-01T00:00:00Z');
+
 const ScoreField = {
   /**
    * Percentile field for percentile-then-rawscore tasks. Which version writes
@@ -1355,9 +1363,23 @@ describe('ReportService', () => {
       };
     }
 
-    /** Helper to build a RunScoreRow. */
-    function buildScoreRow(userId: string, taskVariantId: string, scoreName: string, scoreValue: string): RunScoreRow {
-      return { userId, taskVariantId, scoreName, scoreValue };
+    /** Helper to build a RunScoreRow. `runGrade` defaults to unsnapshotted. */
+    function buildScoreRow(
+      userId: string,
+      taskVariantId: string,
+      scoreName: string,
+      scoreValue: string,
+      runGrade: string | null = null,
+    ): RunScoreRow {
+      return {
+        userId,
+        taskVariantId,
+        scoreName,
+        scoreValue,
+        runGrade,
+        runId: FIXTURE_RUN_ID,
+        completedAt: FIXTURE_RUN_COMPLETED_AT,
+      };
     }
 
     /** Set up default mocks for a successful getScoreOverview call. */
@@ -2034,6 +2056,103 @@ describe('ReportService', () => {
       expect(swrTask.supportLevels.achievedSkill.count).toBe(0);
     });
 
+    // --- Multi-run tiebreak ---
+    //
+    // `useForReporting` is the assessment side's selection of which run counts,
+    // but nothing enforces that only one run carries it per (user, variant) —
+    // `runs_user_reporting_run_idx` is a non-unique partial index on userId
+    // alone. When two flagged runs collide, the score fold takes the most
+    // recently completed one, matching the recency dedup the run-metadata
+    // queries already apply.
+
+    it('folds scores from the most recently completed run when a variant has two', async () => {
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const older = new Date('2025-09-01T00:00:00Z');
+      const newer = new Date('2025-09-02T00:00:00Z');
+      const scoreRows: RunScoreRow[] = [
+        // Listed newest-first so a last-row-wins fold would pick the older run.
+        {
+          userId: 'student-1',
+          taskVariantId: VARIANT_ID_1,
+          scoreName: ScoreField.SWR_LEGACY_PERCENTILE,
+          scoreValue: '90',
+          runGrade: null,
+          runId: 'run-newer',
+          completedAt: newer,
+        },
+        {
+          userId: 'student-1',
+          taskVariantId: VARIANT_ID_1,
+          scoreName: ScoreField.SWR_LEGACY_PERCENTILE,
+          scoreValue: '10',
+          runGrade: null,
+          runId: 'run-older',
+          completedAt: older,
+        },
+      ];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      // v0 cutoffs: 90 >= 50 -> achieved. The older run's 10 would be needsExtraSupport.
+      expect(swrTask.supportLevels.achievedSkill.count).toBe(1);
+      expect(swrTask.supportLevels.needsExtraSupport.count).toBe(0);
+    });
+
+    it('reads the grade from the same run the scores came from', async () => {
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '6' })];
+      const scoreRows: RunScoreRow[] = [
+        {
+          userId: 'student-1',
+          taskVariantId: VARIANT_ID_2,
+          scoreName: ScoreField.SRE_LEGACY_PERCENTILE_BELOW_GRADE_6,
+          scoreValue: '60',
+          runGrade: '5',
+          runId: 'run-newer',
+          completedAt: new Date('2025-09-02T00:00:00Z'),
+        },
+        {
+          userId: 'student-1',
+          taskVariantId: VARIANT_ID_2,
+          scoreName: ScoreField.SRE_RAW_SCORE,
+          scoreValue: '46',
+          runGrade: '6',
+          runId: 'run-older',
+          completedAt: new Date('2025-09-01T00:00:00Z'),
+        },
+      ];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const sreTask = result.tasks.find((t) => t.taskId === TASK_ID_2)!;
+      // Only the newer run's rows survive: grade 5 -> tosrecPercentile 60 -> achieved.
+      expect(sreTask.supportLevels.achievedSkill.count).toBe(1);
+      expect(sreTask.supportLevels.needsExtraSupport.count).toBe(0);
+    });
+
+    it('resolves score fields against the grade recorded on the run, not the current grade', async () => {
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '6' })];
+      const scoreRows = [
+        buildScoreRow('student-1', VARIANT_ID_2, ScoreField.SRE_LEGACY_PERCENTILE_BELOW_GRADE_6, '60', '5'),
+        buildScoreRow('student-1', VARIANT_ID_2, ScoreField.SRE_RAW_SCORE, '46', '5'),
+      ];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const sreTask = result.tasks.find((t) => t.taskId === TASK_ID_2)!;
+      expect(sreTask.supportLevels.achievedSkill.count).toBe(1);
+      expect(sreTask.supportLevels.needsExtraSupport.count).toBe(0);
+    });
+
     it('resolves as v0 when neither the run nor the variant declares a version', async () => {
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
       const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.SWR_LEGACY_PERCENTILE, '45')];
@@ -2169,8 +2288,22 @@ describe('ReportService', () => {
       };
     }
 
-    function buildScoreRow(userId: string, taskVariantId: string, scoreName: string, scoreValue: string): RunScoreRow {
-      return { userId, taskVariantId, scoreName, scoreValue };
+    function buildScoreRow(
+      userId: string,
+      taskVariantId: string,
+      scoreName: string,
+      scoreValue: string,
+      runGrade: string | null = null,
+    ): RunScoreRow {
+      return {
+        userId,
+        taskVariantId,
+        scoreName,
+        scoreValue,
+        runGrade,
+        runId: FIXTURE_RUN_ID,
+        completedAt: FIXTURE_RUN_COMPLETED_AT,
+      };
     }
 
     function setupDefaultFacetsMocks(
@@ -2389,6 +2522,42 @@ describe('ReportService', () => {
       expect(grade3.achievedSkill.count + grade3.developingSkill.count + grade3.needsExtraSupport.count).toBe(3);
       expect(grade4.totalAssessed).toBe(1);
       expect(grade4.achievedSkill.count).toBe(1);
+    });
+
+    it('resolves score fields against the run grade cached for both aggregation passes', async () => {
+      // Same sre v0 grade-conditional setup as the overview suite, but here the
+      // grade travels through the ScoredEntry cache that the bin-edge and tally
+      // passes share, rather than being read inline.
+      const students = [buildFacetStudent({ userId: 'student-1', grade: '6' })];
+      const scoreRows = [
+        buildScoreRow('student-1', VARIANT_ID_2, ScoreField.SRE_LEGACY_PERCENTILE_BELOW_GRADE_6, '60', '5'),
+        buildScoreRow('student-1', VARIANT_ID_2, ScoreField.SRE_RAW_SCORE, '46', '5'),
+      ];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const sreTask = result.tasks.find((t) => t.taskId === TASK_ID_2)!;
+      const bucket = sreTask.supportLevelByGrade.find((e) => e.grade === '5')!;
+      expect(bucket.achievedSkill.count).toBe(1);
+      expect(bucket.needsExtraSupport.count).toBe(0);
+    });
+
+    it('buckets by the run grade, not the current grade', async () => {
+      // A past administration reports the cohort that sat it: this student is
+      // in grade 6 now but tested in grade 5, so they belong to the 5 bucket.
+      const students = [buildFacetStudent({ userId: 'student-1', grade: '6' })];
+      const scoreRows = [
+        buildScoreRow('student-1', VARIANT_ID_2, ScoreField.SRE_LEGACY_PERCENTILE_BELOW_GRADE_6, '60', '5'),
+      ];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const sreTask = result.tasks.find((t) => t.taskId === TASK_ID_2)!;
+      expect(sreTask.supportLevelByGrade.map((e) => e.grade)).toEqual(['5']);
     });
 
     it('sorts per-grade entries by grade ordinal, not lexicographically', async () => {
@@ -3258,7 +3427,10 @@ describe('ReportService', () => {
         userId: 'student-1',
         grade: '3',
         runs: new Map([
-          [VARIANT_ID_1, { runId: 'run-1', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01') }],
+          [
+            VARIANT_ID_1,
+            { runId: 'run-1', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01'), grade: null },
+          ],
         ]),
         scores: new Map([
           [
@@ -3284,6 +3456,41 @@ describe('ReportService', () => {
       expect(swrEntry.engagementFlags).toEqual([]);
     });
 
+    it('resolves a row score field from the grade recorded on the run, not the current grade', async () => {
+      // Same sre v0 grade-conditional setup as the overview suite: reading at
+      // the current grade 6 would look for sprPercentile, find nothing, and
+      // fall through to the raw score (46 < 47 -> needsExtraSupport).
+      const row = buildQueryRow({
+        userId: 'student-1',
+        grade: '6',
+        runs: new Map([
+          [
+            VARIANT_ID_2,
+            { runId: 'run-1', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01'), grade: '5' },
+          ],
+        ]),
+        scores: new Map([
+          [
+            VARIANT_ID_2,
+            new Map([
+              [ScoreField.SRE_LEGACY_PERCENTILE_BELOW_GRADE_6, '60'],
+              [ScoreField.SRE_RAW_SCORE, '46'],
+            ]),
+          ],
+        ]),
+      });
+      setupDefaultStudentScoresMocks([row], 1);
+
+      const service = createService();
+      const result = await service.listStudentScores(superAdminAuth, testAdministrationId, baseQuery);
+
+      const sreEntry = result.items[0]!.scores[TASK_ID_2]!;
+      expect(sreEntry.supportLevel).toBe('achievedSkill');
+      expect(sreEntry.percentile).toBe(60);
+      // The reported user grade stays the current one — only scoring moves.
+      expect(result.items[0]!.user.grade).toBe('6');
+    });
+
     it('resolves a row score field from the version its run was scored under', async () => {
       // The variant declares v7 but this run is legacy, so the row has to read
       // the legacy field and classify on legacy cutoffs (45 < 50).
@@ -3291,7 +3498,10 @@ describe('ReportService', () => {
         userId: 'student-1',
         grade: '3',
         runs: new Map([
-          [VARIANT_ID_1, { runId: 'run-1', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01') }],
+          [
+            VARIANT_ID_1,
+            { runId: 'run-1', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01'), grade: null },
+          ],
         ]),
         scores: new Map([
           [
@@ -3359,7 +3569,10 @@ describe('ReportService', () => {
         userId: 'student-1',
         grade: '3',
         runs: new Map([
-          [VARIANT_ID_1, { runId: 'run-1', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01') }],
+          [
+            VARIANT_ID_1,
+            { runId: 'run-1', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01'), grade: null },
+          ],
         ]),
         scores: new Map([
           [
@@ -3433,10 +3646,19 @@ describe('ReportService', () => {
         userId: 'student-1',
         grade: '3',
         runs: new Map([
-          ['var-a', { runId: 'run-a', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-02') }],
+          [
+            'var-a',
+            { runId: 'run-a', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-02'), grade: null },
+          ],
           [
             'var-b',
-            { runId: 'run-b', reliable: false, engagementFlags: ['flagB'], completedAt: new Date('2025-09-01') },
+            {
+              runId: 'run-b',
+              reliable: false,
+              engagementFlags: ['flagB'],
+              completedAt: new Date('2025-09-01'),
+              grade: null,
+            },
           ],
         ]),
         scores: new Map([
@@ -3487,7 +3709,10 @@ describe('ReportService', () => {
         userId: 'student-1',
         grade: '3',
         runs: new Map([
-          [ROAM_VARIANT, { runId: 'r', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01') }],
+          [
+            ROAM_VARIANT,
+            { runId: 'r', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01'), grade: null },
+          ],
         ]),
         scores: new Map([[ROAM_VARIANT, new Map([['supportLevel', 'developingSkill']])]]),
       });
@@ -3703,6 +3928,9 @@ describe('ReportService', () => {
         taskVariantId: VARIANT_ID_1,
         scoreName: ScoreField.PERCENTILE,
         scoreValue: '90',
+        runGrade: null,
+        runId: FIXTURE_RUN_ID,
+        completedAt: FIXTURE_RUN_COMPLETED_AT,
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
         completedScoreRow,
@@ -3758,12 +3986,18 @@ describe('ReportService', () => {
           taskVariantId: VARIANT_ID_2,
           scoreName: ScoreField.SRE_LEGACY_PERCENTILE_BELOW_GRADE_6,
           scoreValue: '60',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         {
           userId: targetUserId,
           taskVariantId: VARIANT_ID_2,
           scoreName: ScoreField.SRE_RAW_SCORE,
           scoreValue: '46',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
@@ -3798,12 +4032,18 @@ describe('ReportService', () => {
           taskVariantId: VARIANT_ID_1,
           scoreName: ScoreField.PERCENTILE,
           scoreValue: '90',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         {
           userId: targetUserId,
           taskVariantId: VARIANT_ID_1,
           scoreName: ScoreField.SCORING_VERSION,
           scoreValue: '7',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
@@ -3902,7 +4142,14 @@ describe('ReportService', () => {
           },
         ]);
         mockReportRepository.getCompletedRunScores.mockResolvedValue(
-          scoreRows.map((row) => ({ userId: targetUserId, taskVariantId: SWR_ES_VARIANT_ID, ...row })),
+          scoreRows.map((row) => ({
+            userId: targetUserId,
+            taskVariantId: SWR_ES_VARIANT_ID,
+            runGrade: null,
+            ...row,
+            runId: FIXTURE_RUN_ID,
+            completedAt: FIXTURE_RUN_COMPLETED_AT,
+          })),
         );
         mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
           {
@@ -3967,6 +4214,9 @@ describe('ReportService', () => {
           scoreDomain: 'FSM',
           scoreName: 'numCorrect',
           scoreValue: '10',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         {
           userId: targetUserId,
@@ -3974,6 +4224,9 @@ describe('ReportService', () => {
           scoreDomain: 'FSM',
           scoreName: 'numAttempted',
           scoreValue: '20',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         {
           userId: targetUserId,
@@ -3981,6 +4234,9 @@ describe('ReportService', () => {
           scoreDomain: 'FSM',
           scoreName: 'percentCorrect',
           scoreValue: '50',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         // LSM at 90% (above threshold)
         {
@@ -3989,6 +4245,9 @@ describe('ReportService', () => {
           scoreDomain: 'LSM',
           scoreName: 'numCorrect',
           scoreValue: '18',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         {
           userId: targetUserId,
@@ -3996,6 +4255,9 @@ describe('ReportService', () => {
           scoreDomain: 'LSM',
           scoreName: 'numAttempted',
           scoreValue: '20',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         {
           userId: targetUserId,
@@ -4003,6 +4265,9 @@ describe('ReportService', () => {
           scoreDomain: 'LSM',
           scoreName: 'percentCorrect',
           scoreValue: '90',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         // DEL at 60% (below threshold)
         {
@@ -4011,6 +4276,9 @@ describe('ReportService', () => {
           scoreDomain: 'DEL',
           scoreName: 'numCorrect',
           scoreValue: '12',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         {
           userId: targetUserId,
@@ -4018,6 +4286,9 @@ describe('ReportService', () => {
           scoreDomain: 'DEL',
           scoreName: 'numAttempted',
           scoreValue: '20',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         {
           userId: targetUserId,
@@ -4025,6 +4296,9 @@ describe('ReportService', () => {
           scoreDomain: 'DEL',
           scoreName: 'percentCorrect',
           scoreValue: '60',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
       ];
       mockReportRepository.getCompletedRunScores.mockResolvedValue(scoreRows);
@@ -4062,6 +4336,9 @@ describe('ReportService', () => {
         taskVariantId: VARIANT_ID_1,
         scoreName: ScoreField.PERCENTILE,
         scoreValue: '50',
+        runGrade: null,
+        runId: FIXTURE_RUN_ID,
+        completedAt: FIXTURE_RUN_COMPLETED_AT,
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
@@ -4097,6 +4374,9 @@ describe('ReportService', () => {
         taskVariantId: VARIANT_ID_1,
         scoreName: ScoreField.PERCENTILE,
         scoreValue: '65',
+        runGrade: null,
+        runId: FIXTURE_RUN_ID,
+        completedAt: FIXTURE_RUN_COMPLETED_AT,
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
         completedScoreRow,
@@ -4138,6 +4418,9 @@ describe('ReportService', () => {
         taskVariantId: VARIANT_ID_1,
         scoreName: ScoreField.PERCENTILE,
         scoreValue: '60',
+        runGrade: null,
+        runId: FIXTURE_RUN_ID,
+        completedAt: FIXTURE_RUN_COMPLETED_AT,
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
@@ -4395,6 +4678,9 @@ describe('ReportService', () => {
         taskVariantId: VARIANT_ID_1,
         scoreName: ScoreField.PERCENTILE,
         scoreValue: '60',
+        runGrade: null,
+        runId: FIXTURE_RUN_ID,
+        completedAt: FIXTURE_RUN_COMPLETED_AT,
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
@@ -4473,6 +4759,9 @@ describe('ReportService', () => {
         taskVariantId: VARIANT_ID_1,
         scoreName: ScoreField.PERCENTILE,
         scoreValue: '50',
+        runGrade: null,
+        runId: FIXTURE_RUN_ID,
+        completedAt: FIXTURE_RUN_COMPLETED_AT,
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([scoreRow]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
@@ -4547,11 +4836,43 @@ describe('ReportService', () => {
       setupDefaults();
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
         // cvc: 8/10
-        { userId: targetUserId, taskVariantId: PHONICS_VARIANT_ID, scoreName: 'cvcCorrect', scoreValue: '8' },
-        { userId: targetUserId, taskVariantId: PHONICS_VARIANT_ID, scoreName: 'cvcAttempted', scoreValue: '10' },
+        {
+          userId: targetUserId,
+          taskVariantId: PHONICS_VARIANT_ID,
+          scoreName: 'cvcCorrect',
+          scoreValue: '8',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: PHONICS_VARIANT_ID,
+          scoreName: 'cvcAttempted',
+          scoreValue: '10',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
         // digraph: 5/10
-        { userId: targetUserId, taskVariantId: PHONICS_VARIANT_ID, scoreName: 'digraphCorrect', scoreValue: '5' },
-        { userId: targetUserId, taskVariantId: PHONICS_VARIANT_ID, scoreName: 'digraphAttempted', scoreValue: '10' },
+        {
+          userId: targetUserId,
+          taskVariantId: PHONICS_VARIANT_ID,
+          scoreName: 'digraphCorrect',
+          scoreValue: '5',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
+        {
+          userId: targetUserId,
+          taskVariantId: PHONICS_VARIANT_ID,
+          scoreName: 'digraphAttempted',
+          scoreValue: '10',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -4611,6 +4932,9 @@ describe('ReportService', () => {
           scoreDomain: 'FSM',
           scoreName: 'numCorrect',
           scoreValue: '10',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         {
           userId: targetUserId,
@@ -4618,6 +4942,9 @@ describe('ReportService', () => {
           scoreDomain: 'LSM',
           scoreName: 'numCorrect',
           scoreValue: '18',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         {
           userId: targetUserId,
@@ -4625,6 +4952,9 @@ describe('ReportService', () => {
           scoreDomain: 'DEL',
           scoreName: 'numCorrect',
           scoreValue: '12',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
@@ -4678,6 +5008,9 @@ describe('ReportService', () => {
           scoreDomain: 'FSM',
           scoreName: 'percentCorrect',
           scoreValue: '90',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         {
           userId: targetUserId,
@@ -4685,6 +5018,9 @@ describe('ReportService', () => {
           scoreDomain: 'LSM',
           scoreName: 'percentCorrect',
           scoreValue: '90',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
         {
           userId: targetUserId,
@@ -4692,6 +5028,9 @@ describe('ReportService', () => {
           scoreDomain: 'DEL',
           scoreName: 'percentCorrect',
           scoreValue: '90',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
@@ -4741,19 +5080,41 @@ describe('ReportService', () => {
       setupDefaults();
       // Student has scores on BOTH variants — variant A wins (lower orderIndex).
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
-        { userId: targetUserId, taskVariantId: 'var-a', scoreName: ScoreField.PERCENTILE, scoreValue: '90' },
+        {
+          userId: targetUserId,
+          taskVariantId: 'var-a',
+          scoreName: ScoreField.PERCENTILE,
+          scoreValue: '90',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
         {
           userId: targetUserId,
           taskVariantId: 'var-a',
           scoreName: ScoreField.SCORING_VERSION,
           scoreValue: String(DEFAULT_SCORING_VERSION),
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
-        { userId: targetUserId, taskVariantId: 'var-b', scoreName: ScoreField.PERCENTILE, scoreValue: '10' },
+        {
+          userId: targetUserId,
+          taskVariantId: 'var-b',
+          scoreName: ScoreField.PERCENTILE,
+          scoreValue: '10',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
         {
           userId: targetUserId,
           taskVariantId: 'var-b',
           scoreName: ScoreField.SCORING_VERSION,
           scoreValue: String(DEFAULT_SCORING_VERSION),
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
@@ -4795,7 +5156,15 @@ describe('ReportService', () => {
     it('emits Reliability=Unreliable with warn severity for an unreliable run', async () => {
       setupDefaults();
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
-        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '50' },
+        {
+          userId: targetUserId,
+          taskVariantId: VARIANT_ID_1,
+          scoreName: ScoreField.PERCENTILE,
+          scoreValue: '50',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -4826,7 +5195,15 @@ describe('ReportService', () => {
     it('surfaces engagementFlags from the run row', async () => {
       setupDefaults();
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
-        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '50' },
+        {
+          userId: targetUserId,
+          taskVariantId: VARIANT_ID_1,
+          scoreName: ScoreField.PERCENTILE,
+          scoreValue: '50',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -5062,7 +5439,15 @@ describe('ReportService', () => {
     it('omits historicalScores from per-administration task entries', async () => {
       setupGuardianDefaults({ adminMetas: [ADMIN_OLDER] });
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
-        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '60' },
+        {
+          userId: targetUserId,
+          taskVariantId: VARIANT_ID_1,
+          scoreName: ScoreField.PERCENTILE,
+          scoreValue: '60',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -5098,8 +5483,19 @@ describe('ReportService', () => {
           taskVariantId: VARIANT_ID_2,
           scoreName: ScoreField.SRE_LEGACY_PERCENTILE_BELOW_GRADE_6,
           scoreValue: '60',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
-        { userId: targetUserId, taskVariantId: VARIANT_ID_2, scoreName: ScoreField.SRE_RAW_SCORE, scoreValue: '46' },
+        {
+          userId: targetUserId,
+          taskVariantId: VARIANT_ID_2,
+          scoreName: ScoreField.SRE_RAW_SCORE,
+          scoreValue: '46',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -5123,24 +5519,25 @@ describe('ReportService', () => {
       setupGuardianDefaults({ adminMetas: [ADMIN_OLDER, ADMIN_NEWER] });
       // Score the swr task in both administrations: 40 in older, 60 in newer.
       mockReportRepository.getCompletedRunScores.mockImplementation(async (adminId: string) => {
-        if (adminId === ADMIN_OLDER.id) {
-          return [
-            { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '40' },
-            {
-              userId: targetUserId,
-              taskVariantId: VARIANT_ID_1,
-              scoreName: ScoreField.SCORING_VERSION,
-              scoreValue: String(DEFAULT_SCORING_VERSION),
-            },
-          ];
-        }
+        const percentile = adminId === ADMIN_OLDER.id ? '40' : '60';
         return [
-          { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '60' },
+          {
+            userId: targetUserId,
+            taskVariantId: VARIANT_ID_1,
+            scoreName: ScoreField.PERCENTILE,
+            scoreValue: percentile,
+            runGrade: null,
+            runId: FIXTURE_RUN_ID,
+            completedAt: FIXTURE_RUN_COMPLETED_AT,
+          },
           {
             userId: targetUserId,
             taskVariantId: VARIANT_ID_1,
             scoreName: ScoreField.SCORING_VERSION,
             scoreValue: String(DEFAULT_SCORING_VERSION),
+            runGrade: null,
+            runId: FIXTURE_RUN_ID,
+            completedAt: FIXTURE_RUN_COMPLETED_AT,
           },
         ];
       });
@@ -5203,12 +5600,23 @@ describe('ReportService', () => {
         // Primary variant (lowest orderIndex) has no completed score in this admin;
         // include only the alt variant's score, which means the primary is skipped
         // and the alt becomes the scored variant.
-        { userId: targetUserId, taskVariantId: altVariantId, scoreName: ScoreField.PERCENTILE, scoreValue: '55' },
+        {
+          userId: targetUserId,
+          taskVariantId: altVariantId,
+          scoreName: ScoreField.PERCENTILE,
+          scoreValue: '55',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
         {
           userId: targetUserId,
           taskVariantId: altVariantId,
           scoreName: ScoreField.SCORING_VERSION,
           scoreValue: String(DEFAULT_SCORING_VERSION),
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
         },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
@@ -5237,7 +5645,15 @@ describe('ReportService', () => {
     it('emits Required + Reliability tags for completed runs', async () => {
       setupGuardianDefaults({ adminMetas: [ADMIN_OLDER] });
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
-        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '70' },
+        {
+          userId: targetUserId,
+          taskVariantId: VARIANT_ID_1,
+          scoreName: ScoreField.PERCENTILE,
+          scoreValue: '70',
+          runGrade: null,
+          runId: FIXTURE_RUN_ID,
+          completedAt: FIXTURE_RUN_COMPLETED_AT,
+        },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {

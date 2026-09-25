@@ -44,7 +44,6 @@ export const USER_PROFILE_QUERY_KEY = 'user-profile';
 export const USER_ADMINISTRATION_ASSIGNMENTS_QUERY_KEY = 'user-administration-assignments';
 export const USER_ASSIGNMENTS_QUERY_KEY = 'user-assignments';
 export const MULTIPLE_USER_ASSIGNMENTS_QUERY_KEY = 'multiple-user-assignments';
-export const USER_CLAIMS_QUERY_KEY = 'user-claims';
 export const USER_STUDENT_DATA_QUERY_KEY = 'user-student';
 export const USER_MEMBERSHIPS_QUERY_KEY = 'user-memberships';
 export const USER_RUN_PAGE_QUERY_KEY = 'user-run-page';

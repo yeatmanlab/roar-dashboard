@@ -726,8 +726,8 @@ export function ReportService({
       const studentIds = students.map((s) => s.userId);
       const scoreRows = await reportRepository.getCompletedRunScores(administrationId, studentIds, taskVariantIds);
 
-      // Build a lookup: userId → taskVariantId → Map<scoreName, scoreValue>
-      const scoresByStudentTask = buildScoreLookup(scoreRows);
+      // Build a lookup: userId → taskVariantId → { runGrade, scores }
+      const scoresByStudentTask = buildScoreLookup(selectLatestRunRows(scoreRows));
 
       // 8. Aggregate per task (deduplicated across variants)
       const tasks: ServiceTaskScoreOverview[] = taskGroups.map(({ representative, variants }) =>
@@ -864,7 +864,7 @@ export function ReportService({
       // 6. Bulk-fetch completed run scores for the full unfiltered population.
       const studentIds = students.map((s) => s.userId);
       const scoreRows = await reportRepository.getCompletedRunScores(administrationId, studentIds, taskVariantIds);
-      const scoresByStudentTask = buildScoreLookup(scoreRows);
+      const scoresByStudentTask = buildScoreLookup(selectLatestRunRows(scoreRows));
 
       // 7. Apply user-level filters in JS. This endpoint needs the unfiltered
       //    population for `totalStudents`, so the filter cannot be pushed into
@@ -984,31 +984,22 @@ export function ReportService({
       // silently swallowed into a 500 by a downstream failure.
       validateDynamicFieldTaskIds(sortBy, filter, primaryVariantByTaskId, taskMetas);
 
-      // 5. Resolve scoring versions per variant
-      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
-      const allParams =
-        taskVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds) : [];
-      const scoringVersionByVariant = extractScoringVersions(allParams);
-
-      // 6. Resolve scoring rules per variant for SQL CASE generation in the repo
+      // 5. Resolve scoring rules per variant for SQL CASE generation in the repo
       const scoringRulesByVariant = new Map<string, ResolvedScoringRules>();
       for (const variant of taskMetas) {
-        scoringRulesByVariant.set(
-          variant.taskVariantId,
-          resolveScoringRulesForVariant(variant.taskSlug, scoringVersionByVariant.get(variant.taskVariantId) ?? null),
-        );
+        scoringRulesByVariant.set(variant.taskVariantId, resolveScoringRulesForVariant(variant.taskSlug));
       }
 
-      // 7. Resolve dynamic sort field (against primary variants)
-      const sortField = resolveDynamicSortField(sortBy, primaryVariantByTaskId, scoringVersionByVariant);
+      // 6. Resolve dynamic sort field (against primary variants)
+      const sortField = resolveDynamicSortField(sortBy, primaryVariantByTaskId);
 
-      // 8. Resolve dynamic score-field filters (against primary variants)
+      // 7. Resolve dynamic score-field filters (against primary variants)
       const userLevelFilters: ParsedFilter[] = [];
       const scoreFieldFilters: StudentScoresFieldFilter[] = [];
       for (const f of filter) {
         if (f.field === 'taskId') continue;
         if (SCORE_TASK_FIELD_PATTERN.test(f.field)) {
-          const filterRef = resolveDynamicFilter(f, primaryVariantByTaskId, scoringVersionByVariant);
+          const filterRef = resolveDynamicFilter(f, primaryVariantByTaskId);
           if (filterRef) scoreFieldFilters.push(filterRef);
           continue;
         }
@@ -1044,7 +1035,7 @@ export function ReportService({
         return { tasks: [], items: [], totalItems: 0, exclusions: { rosteringEnded: exclusionsRosteringEnded } };
       }
 
-      // 9. Determine the static sort column when sorting by a user field.
+      // 8. Determine the static sort column when sorting by a user field.
       // user.schoolName is handled inside the repository as a correlated subquery,
       // so we pass undefined and rely on the dynamic-sort path falling through to
       // the repo's school-name expression. Other static fields use their column.
@@ -1060,7 +1051,7 @@ export function ReportService({
         }
       }
 
-      // 10. Repository call
+      // 9. Repository call
       const result = await reportRepository.getStudentScores(
         administrationId,
         { scopeType, scopeId },
@@ -1075,7 +1066,7 @@ export function ReportService({
         includeFoundationalCompositeScores,
       );
 
-      // 11. Build response — dedupe per taskId, classify, set optional/completed
+      // 10. Build response — dedupe per taskId, classify, set optional/completed
       const tasksOrdered: ServiceTaskMetadata[] = uniqueTaskMetadataInOrder(taskMetas);
 
       // Resolve schoolNames for district-scope rows (not auto-populated by
@@ -1241,8 +1232,9 @@ export function ReportService({
 
       // Index current-admin scores: variantId → name → value (summary lookups)
       // and variantId → domain → name → value (domain-aware subscore lookups).
-      const currentScoresByVariant = buildVariantScoreLookup(currentScoreRows);
-      const currentDomainScoresByVariant = buildVariantDomainScoreLookup(currentScoreRows);
+      const latestCurrentScoreRows = selectLatestRunRows(currentScoreRows);
+      const currentScoresByVariant = buildVariantScoreLookup(latestCurrentScoreRows);
+      const currentDomainScoresByVariant = buildVariantDomainScoreLookup(latestCurrentScoreRows);
 
       // Index current-admin run metadata: variantId → most-recent-completed run.
       // When multiple runs match the (user, variant) — defensive against the rare
@@ -1507,8 +1499,9 @@ export function ReportService({
             reportRepository.getCompletedRunScores(admin.id, [targetUserId], variantIds),
             reportRepository.getCompletedRunsForUser(admin.id, targetUserId, variantIds),
           ]);
-          const scoresByVariant = buildVariantScoreLookup(scoreRows);
-          const domainScoresByVariant = buildVariantDomainScoreLookup(scoreRows);
+          const latestScoreRows = selectLatestRunRows(scoreRows);
+          const scoresByVariant = buildVariantScoreLookup(latestScoreRows);
+          const domainScoresByVariant = buildVariantDomainScoreLookup(latestScoreRows);
           // Pick the most-recent completed run per variant — defensive against
           // the rare multi-run case (matches the pattern in
           // getIndividualStudentReport).
@@ -2159,8 +2152,18 @@ export function buildProgressMap(
  */
 const ASSESSMENT_SUPPORT_LEVEL_FIELDS: ReadonlyArray<string> = ['supportLevel', 'support_level'];
 
-/** Nested lookup: userId → taskVariantId → scoreName → scoreValue (raw string from FDW). */
-type ScoreLookup = Map<string, Map<string, Map<string, string>>>;
+/**
+ * One (user, variant) run's scores plus the grade the student was in when they
+ * took it. `runGrade` is null when the run has no `run_demographics` snapshot;
+ * callers fall back to the student's current grade.
+ */
+interface ScoreLookupEntry {
+  runGrade: string | null;
+  scores: Map<string, string>;
+}
+
+/** Nested lookup: userId → taskVariantId → scores + run grade. */
+type ScoreLookup = Map<string, Map<string, ScoreLookupEntry>>;
 
 /** A group of task variants sharing the same taskId. */
 interface TaskGroup {
@@ -2236,20 +2239,47 @@ export function groupVariantsByTaskId(taskMetas: ReportTaskMeta[]): TaskGroup[] 
 }
 
 /**
- * Build a nested lookup: userId → taskVariantId → Map<scoreName, scoreValue>.
+ * Keep only the rows of the most recently completed run per (user, variant).
+ *
+ * A single best run is expected but not enforced — `runs_user_reporting_run_idx`
+ * is non-unique and keyed on userId alone.
+ */
+function selectLatestRunRows(rows: RunScoreRow[]): RunScoreRow[] {
+  const winnerByKey = new Map<string, { runId: string; completedAt: number }>();
+  for (const row of rows) {
+    const key = `${row.userId} ${row.taskVariantId}`;
+    const completedAt = row.completedAt?.getTime() ?? 0;
+    const current = winnerByKey.get(key);
+    if (!current || completedAt > current.completedAt) {
+      winnerByKey.set(key, { runId: row.runId, completedAt });
+    }
+  }
+  return rows.filter((row) => winnerByKey.get(`${row.userId} ${row.taskVariantId}`)?.runId === row.runId);
+}
+
+/**
+ * Build a nested lookup: userId → taskVariantId → { runGrade, scores }.
  * For duplicate score names within the same user-task-variant, the last value wins.
+ *
+ * Callers pass rows already narrowed by {@link selectLatestRunRows}, so every row
+ * for a given (user, variant) belongs to one run.
  */
 function buildScoreLookup(scoreRows: RunScoreRow[]): ScoreLookup {
   const lookup: ScoreLookup = new Map();
   for (const row of scoreRows) {
-    if (!lookup.has(row.userId)) {
-      lookup.set(row.userId, new Map());
+    let userScores = lookup.get(row.userId);
+    if (!userScores) {
+      userScores = new Map();
+      lookup.set(row.userId, userScores);
     }
-    const userScores = lookup.get(row.userId)!;
-    if (!userScores.has(row.taskVariantId)) {
-      userScores.set(row.taskVariantId, new Map());
+    let entry = userScores.get(row.taskVariantId);
+    if (!entry) {
+      entry = { runGrade: row.runGrade, scores: new Map() };
+      userScores.set(row.taskVariantId, entry);
+    } else {
+      entry.runGrade = row.runGrade;
     }
-    userScores.get(row.taskVariantId)!.set(row.scoreName, row.scoreValue);
+    entry.scores.set(row.scoreName, row.scoreValue);
   }
   return lookup;
 }
@@ -2282,14 +2312,14 @@ function findScoredVariant(
   userId: string,
   variants: ReportTaskMeta[],
   scoresByStudentTask: ScoreLookup,
-): { variant: ReportTaskMeta; scores: Map<string, string> } | null {
+): { variant: ReportTaskMeta; scores: Map<string, string>; runGrade: string | null } | null {
   const userScores = scoresByStudentTask.get(userId);
   if (!userScores) return null;
 
   for (const variant of variants) {
-    const scores = userScores.get(variant.taskVariantId);
-    if (scores && scores.size > 0) {
-      return { variant, scores };
+    const entry = userScores.get(variant.taskVariantId);
+    if (entry && entry.scores.size > 0) {
+      return { variant, scores: entry.scores, runGrade: entry.runGrade };
     }
   }
   return null;
@@ -2369,15 +2399,16 @@ function aggregateTaskGroup(
       totalAssessed++;
 
       const scoringVersion = resolveRunScoringVersion(scored.scores);
-      const gradeLevel = getGradeAsNumber(student.grade);
-      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel, scoringVersion);
+      // Read the score at the grade the student was in when they took it
+      const scoringGrade = scored.runGrade ?? student.grade;
+      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, scoringGrade, scoringVersion);
 
       const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
       const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
       const assessmentSupportLevel = resolveStringScore(scored.scores, ASSESSMENT_SUPPORT_LEVEL_FIELDS);
 
       const supportLevel = getSupportLevel({
-        grade: student.grade,
+        grade: scoringGrade,
         percentile,
         rawScore,
         taskSlug: scored.variant.taskSlug,
@@ -2592,9 +2623,9 @@ function compareGrade(a: string, b: string): number {
  *
  * Students without a scored variant are excluded from this task's
  * breakdown — the facets endpoint reports the assessed cohort only.
- * Students with a null grade are excluded from `*ByGrade` tallies;
- * district-scope students with no resolvable school are excluded from
- * `*BySchool` tallies.
+ *
+ * `*ByGrade` is keyed on the grade the run was taken at (the
+ * `run_demographics` snapshot, falling back to the current grade).
  *
  * `rawScore` and `percentile` bins are independently empty when no
  * scored student in the unfiltered population had that score type — a
@@ -2624,15 +2655,20 @@ function aggregateTaskFacet({
   //         passes below reuse the cached result — `findScoredVariant`
   //         walks every variant for a task on each call, so caching cuts
   //         the per-student cost in half at district scale (review
-  //         finding #11 on #1782). The cache also stores the student's
-  //         numeric grade level so field-name resolution stays
-  //         grade-aware in both passes.
-  type ScoredEntry = { variant: ReportTaskMeta; scores: Map<string, string>; gradeLevel: number | null };
+  //         finding #11 on #1782). The cache also stores the grade the run
+  //         was taken at (falling back to the current grade when the run has
+  //         no `run_demographics` snapshot) so field-name resolution and
+  //         support-level banding stay grade-aware in both passes.
+  type ScoredEntry = { variant: ReportTaskMeta; scores: Map<string, string>; scoringGrade: string | null };
   const scoredByUserId = new Map<string, ScoredEntry>();
   for (const student of unfilteredStudents) {
     const scored = findScoredVariant(student.userId, variants, scoresByStudentTask);
     if (scored) {
-      scoredByUserId.set(student.userId, { ...scored, gradeLevel: getGradeAsNumber(student.grade) });
+      scoredByUserId.set(student.userId, {
+        variant: scored.variant,
+        scores: scored.scores,
+        scoringGrade: scored.runGrade ?? student.grade,
+      });
     }
   }
 
@@ -2652,7 +2688,7 @@ function aggregateTaskFacet({
     // outside them is dropped from the chart while still counting in
     // `totalAssessed`. That is intended.
     const scoringVersion = resolveRunScoringVersion(scored.scores);
-    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, scored.gradeLevel, scoringVersion);
+    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, scored.scoringGrade, scoringVersion);
     const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
     const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
     if (rawScore !== null) {
@@ -2675,14 +2711,13 @@ function aggregateTaskFacet({
     if (!scored) continue;
 
     const scoringVersion = resolveRunScoringVersion(scored.scores);
-    const gradeLevel = getGradeAsNumber(student.grade);
-    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel, scoringVersion);
+    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, scored.scoringGrade, scoringVersion);
     const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
     const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
     const assessmentSupportLevel = resolveStringScore(scored.scores, ASSESSMENT_SUPPORT_LEVEL_FIELDS);
 
     const supportLevel = getSupportLevel({
-      grade: student.grade,
+      grade: scored.scoringGrade,
       percentile,
       rawScore,
       taskSlug: scored.variant.taskSlug,
@@ -2692,11 +2727,15 @@ function aggregateTaskFacet({
 
     const tallyBuckets: FacetTally[] = [];
 
-    if (student.grade !== null) {
-      let tally = byGrade.get(student.grade);
+    // Bucket by the grade the run was taken at, the same grade it was scored
+    // at above. On a past administration a student's current grade describes
+    // who they are now, not the cohort that sat the assessment.
+    if (scored.scoringGrade !== null) {
+      const bucketGrade = scored.scoringGrade;
+      let tally = byGrade.get(bucketGrade);
       if (!tally) {
         tally = emptyTally(rawScoreBins.length, percentileBins.length);
-        byGrade.set(student.grade, tally);
+        byGrade.set(bucketGrade, tally);
       }
       tallyBuckets.push(tally);
     }
@@ -2849,23 +2888,21 @@ function uniqueTaskMetadataInOrder(taskMetas: ReportTaskMeta[]): ServiceTaskMeta
 }
 
 /**
- * Resolve the scoring config for a variant + scoring version into the shape the
- * repository needs for SQL CASE generation. Decouples the repository from the
- * scoring service.
+ * Resolve the scoring config for a variant into the shape the repository needs
+ * for SQL CASE generation. Decouples the repository from the scoring service.
  *
  * Returns an empty rules object for unknown task slugs and for `'none'`
  * classification — those tasks have no support level the SQL CASE can compute.
  *
- * The version is the variant's, not the run's — one CASE is generated per
- * variant, before any run is read. Field names are therefore resolved across
- * *all* versions, so the CASE matches unstamped (v0-named) and stamped runs
- * alike; only the cutoffs, which can't be coalesced, take the variant's version.
+ * Nothing here is version-specific: one CASE is generated per variant, before
+ * any run is read, so both field names and cutoffs are handed over for *all*
+ * versions and the CASE resolves each run against its own stamp.
  */
-function resolveScoringRulesForVariant(taskSlug: string, scoringVersion: number | null): ResolvedScoringRules {
+function resolveScoringRulesForVariant(taskSlug: string): ResolvedScoringRules {
   const empty: ResolvedScoringRules = {
     assessmentSupportLevelField: null,
-    percentileCutoffs: null,
-    rawScoreThresholds: null,
+    percentileCutoffsByVersion: [],
+    rawScoreThresholdsByVersion: [],
     percentileBelowGrade: null,
     percentileFieldNames: [],
     rawScoreFieldNames: [],
@@ -2894,13 +2931,10 @@ function resolveScoringRulesForVariant(taskSlug: string, scoringVersion: number 
   }
 
   // percentile-then-rawscore
-  const version = scoringVersion ?? 0;
-  const pctEntry = config.classification.percentileCutoffs.find((e) => version >= e.minVersion);
-  const rawEntry = config.classification.rawScoreThresholds.find((e) => version >= e.minVersion);
   return {
     ...baseRules,
-    percentileCutoffs: pctEntry?.cutoffs ?? null,
-    rawScoreThresholds: rawEntry?.thresholds ?? null,
+    percentileCutoffsByVersion: config.classification.percentileCutoffs,
+    rawScoreThresholdsByVersion: config.classification.rawScoreThresholds,
     // percentileBelowGrade defaults to 6 (exclusive); null in the config means
     // "use percentile for all grades", which we represent as null in the rules.
     percentileBelowGrade: config.classification.percentileBelowGrade ?? 6,
@@ -2966,7 +3000,6 @@ function validateDynamicFieldTaskIds(
 function resolveDynamicSortField(
   sortBy: string,
   primaryVariantByTaskId: Map<string, ReportTaskMeta>,
-  scoringVersionByVariant: Map<string, number>,
 ): StudentScoresFieldRef | null {
   const parsed = parseScoreFieldString(sortBy);
   if (!parsed) return null;
@@ -2978,7 +3011,6 @@ function resolveDynamicSortField(
     taskVariantId: variant!.taskVariantId,
     taskSlug: variant!.taskSlug,
     fieldType: parsed.fieldType,
-    scoringVersion: scoringVersionByVariant.get(variant!.taskVariantId) ?? null,
   };
 }
 
@@ -3007,7 +3039,6 @@ const SUPPORT_LEVEL_NAME_TO_PRIORITY: Record<string, number> = {
 function resolveDynamicFilter(
   filter: ParsedFilter,
   primaryVariantByTaskId: Map<string, ReportTaskMeta>,
-  scoringVersionByVariant: Map<string, number>,
 ): StudentScoresFieldFilter | null {
   const parsed = parseScoreFieldString(filter.field);
   if (!parsed) return null;
@@ -3034,7 +3065,6 @@ function resolveDynamicFilter(
     taskVariantId: variant!.taskVariantId,
     taskSlug: variant!.taskSlug,
     fieldType: parsed.fieldType,
-    scoringVersion: scoringVersionByVariant.get(variant!.taskVariantId) ?? null,
     operator: filter.operator as StudentScoresFilterOperator,
     values,
   };
@@ -3086,7 +3116,7 @@ function assembleStudentScoreRow(
     let scored: {
       variant: ReportTaskMeta;
       scoreMap: Map<string, string>;
-      runMeta: { reliable: boolean | null; engagementFlags: string[] };
+      runMeta: { reliable: boolean | null; engagementFlags: string[]; grade: string | null };
     } | null = null;
     for (const v of variants) {
       const variantScores = row.scores.get(v.taskVariantId);
@@ -3095,7 +3125,7 @@ function assembleStudentScoreRow(
         scored = {
           variant: v,
           scoreMap: variantScores,
-          runMeta: { reliable: runMeta.reliable, engagementFlags: runMeta.engagementFlags },
+          runMeta: { reliable: runMeta.reliable, engagementFlags: runMeta.engagementFlags, grade: runMeta.grade },
         };
         break;
       }
@@ -3103,7 +3133,11 @@ function assembleStudentScoreRow(
 
     if (scored) {
       const scoringVersion = resolveRunScoringVersion(scored.scoreMap);
-      const gradeLevel = getGradeAsNumber(row.grade);
+      // Read the score at the grade the student was in when they took the run,
+      // falling back to their current grade when the run has no
+      // `run_demographics` snapshot.
+      const scoringGrade = scored.runMeta.grade ?? row.grade;
+      const gradeLevel = getGradeAsNumber(scored.runMeta.grade ?? row.grade);
       // Same version drives field resolution and getSupportLevel below, so the
       // reported score and its classification come from one norming table.
       const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel, scoringVersion);
@@ -3114,7 +3148,7 @@ function assembleStudentScoreRow(
       const assessmentSupportLevel = resolveStringScore(scored.scoreMap, ASSESSMENT_SUPPORT_LEVEL_FIELDS);
 
       const supportLevel = getSupportLevel({
-        grade: row.grade,
+        grade: scoringGrade,
         percentile,
         rawScore,
         taskSlug: scored.variant.taskSlug,

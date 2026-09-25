@@ -32,9 +32,28 @@ describe('useCurrentUser', () => {
     const [result] = withSetup(() => useCurrentUser());
 
     expect(result.currentUserId.value).toBeUndefined();
+    expect(result.usesAdminProfile.value).toBe(false);
     expect(result.hasUnsignedTos.value).toBe(false);
     expect(result.unsignedAgreements.value).toEqual([]);
   });
+
+  it.each([
+    ['admin', false, true],
+    ['educator', false, true],
+    ['student', false, false],
+    ['caregiver', false, false],
+    ['student', true, true],
+  ])(
+    'classifies %s users with isSuperAdmin=%s as using the admin profile: %s',
+    async (userType, isSuperAdmin, expected) => {
+      const [result] = withSetup(() => useCurrentUser());
+
+      mockMeData.value = { id: 'user-1', userType, isSuperAdmin };
+      await nextTick();
+
+      expect(result.usesAdminProfile.value).toBe(expected);
+    },
+  );
 
   it('exposes the `/me` payload after it resolves', async () => {
     const [result] = withSetup(() => useCurrentUser());
