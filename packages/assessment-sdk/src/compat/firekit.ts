@@ -47,7 +47,7 @@ type CompatTaskInfo = {
 };
 
 /**
- * Firebase Storage emulator port. Must match `apps/assessments/shared/firebase.json`
+ * Firebase Storage emulator port. Must match `docker/firebase-emulator/firebase.json`
  * (`emulators.storage.port`). The Emulator UI that surfaces uploaded recordings runs
  * separately on :9000 (:4000 is the ROAR backend).
  */

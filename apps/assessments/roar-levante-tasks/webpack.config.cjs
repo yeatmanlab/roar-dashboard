@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const { merge } = require('webpack-merge');
+const { devEmulatorConfig } = require('../shared/devEmulatorWebpackConfig.cjs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
 const dotenv = require('dotenv');
@@ -165,17 +166,9 @@ module.exports = async (env, args) => {
     ],
   };
 
-  const devFirebaseConfig = {
-    plugins: [
-      new webpack.EnvironmentPlugin({
-        FIREBASE_AUTH_EMULATOR_HOST: '',
-      }),
-    ],
-  };
-
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig, devFirebaseConfig);
+      return merge(developmentConfig, envDependentConfig, devEmulatorConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:

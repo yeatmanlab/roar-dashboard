@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const { merge } = require('webpack-merge');
+const { devEmulatorConfig } = require('../shared/devEmulatorWebpackConfig.cjs');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
@@ -144,7 +145,7 @@ const developmentConfig = merge(webConfig, {
     proxy: [
       {
         context: ['/v1'],
-        target: process.env.BACKEND_URL ?? 'http://localhost:4000',
+        target: process.env.BACKEND_URL ?? 'https://localhost:4000',
         secure: false,
         changeOrigin: true,
       },
@@ -155,32 +156,21 @@ const developmentConfig = merge(webConfig, {
 module.exports = async (env, args) => {
   const roarDB = env.dbmode ?? 'development';
 
-  const devFirebaseConfig =
-    roarDB === 'development'
-      ? {
-          FIREBASE_AUTH_EMULATOR_HOST: JSON.stringify(process.env.FIREBASE_AUTH_EMULATOR_HOST ?? ''),
-        }
-      : {};
-
   const envDependentConfig = {
     plugins: [
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
         ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL ?? ''),
-        ...devFirebaseConfig,
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
-      }),
-      new webpack.EnvironmentPlugin({
-        FIREBASE_AUTH_EMULATOR_HOST: '',
       }),
     ],
   };
 
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig);
+      return merge(developmentConfig, envDependentConfig, devEmulatorConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:

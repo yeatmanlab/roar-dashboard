@@ -40,7 +40,7 @@ external: [
 
 The **standalone** build injects two globals via webpack's `DefinePlugin`, which `serve.js` and the shared helpers read:
 
-- `ROAR_API_BASE_URL` — an origin with no path; the version prefix comes from the contract. Defaults to `''`, so dev builds emit relative URLs that the dev server proxies to `BACKEND_URL` (`http://localhost:4000`) on `/v1`. In staging/production it is the real API origin.
+- `ROAR_API_BASE_URL` — an origin with no path; the version prefix comes from the contract. Defaults to `''`, so dev builds emit relative URLs that the dev server proxies to `BACKEND_URL` on `/v1` (default `https://localhost:4000`, the host-run TLS backend, with `secure: false`; `npm start` overrides it to the containerized HTTP backend). In staging/production it is the real API origin.
 - `ROAR_DB` — `development` | `staging` | `production`. Guards dev-only affordances such as the variant picker, and the guard is eliminated at build time in production.
 
 Both globals must be declared readonly in `eslint.config.mjs`, or lint fails on undefined globals.
@@ -54,7 +54,7 @@ import { getFirebaseConfig } from "../../shared/firebaseConfig";
 import { mountVariantPicker } from "../../shared/variantPicker.js";
 ```
 
-It provides `getFirebaseConfig()` (emulator config when `FIREBASE_AUTH_EMULATOR_HOST` is set, otherwise Firebase Hosting's `/__/firebase/init.json`), `mountVariantPicker()`, `initSentry()`, and the `firebase.json` / `storage.rules` the emulator container mounts. Anything genuinely common to every standalone harness belongs here rather than copied into each assessment.
+It provides `getFirebaseConfig()` (emulator config when `FIREBASE_AUTH_EMULATOR_HOST` is set, otherwise Firebase Hosting's `/__/firebase/init.json`), `mountVariantPicker()`, and `initSentry()`. Anything genuinely common to every standalone harness belongs here rather than copied into each assessment. (The emulator's `firebase.json` / `storage.rules` live in `docker/firebase-emulator/` — the shared emulator image both dev stacks build from.)
 
 ### The serve.js contract
 
