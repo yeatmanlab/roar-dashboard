@@ -2,7 +2,7 @@
  * Typed ts-rest API client for the ROAR backend.
  *
  * Reads authStore.accessToken synchronously on each request.
- * Retries once on 401 auth/token-expired by forcing a token refresh.
+ * Retries once on 401 auth/token-expired or auth/token-invalid by forcing a token refresh.
  */
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
 import { ApiContractV1 } from '@roar-platform/api-contract';
@@ -17,7 +17,9 @@ let clientInstance = null;
 /**
  * Custom API function that injects the auth token and handles 401 retry.
  * Reads accessToken synchronously from the auth store.
- * On 401 with auth/token-expired, forces a token refresh and retries once.
+ * On 401 with auth/token-expired or auth/token-invalid, forces a token refresh
+ * and retries once.
+ * Concurrent refreshes are deduplicated inside authStore.forceIdTokenRefresh.
  *
  * @param {Object} args - ts-rest API args
  * @returns {Promise<Response>} The response from the API
@@ -40,19 +42,35 @@ async function apiWithAuthRetry(args) {
   // repairs. A dead session fails the retry too, and that second 401 is what
   // the app layer treats as terminal (see isTerminalAuthError).
   if (response.status === 401) {
+    let errorCode;
     try {
       const body = await response.clone().json();
-      const errorCode = body?.error?.code;
-      if (errorCode === API_ERROR_CODES.AUTH_TOKEN_EXPIRED || errorCode === API_ERROR_CODES.AUTH_TOKEN_INVALID) {
-        const freshToken = await authStore.forceIdTokenRefresh();
-        const retryHeaders = {
-          ...args.headers,
-          ...(freshToken ? { Authorization: `Bearer ${freshToken}` } : {}),
-        };
-        return tsRestFetchApi({ ...args, headers: retryHeaders });
-      }
+      errorCode = body?.error?.code;
     } catch {
-      // If we can't parse the response body, return original response
+      // Unparseable body — nothing to interpret, surface the original 401.
+      return response;
+    }
+
+    if (errorCode === API_ERROR_CODES.AUTH_TOKEN_EXPIRED || errorCode === API_ERROR_CODES.AUTH_TOKEN_INVALID) {
+      let freshToken;
+      try {
+        freshToken = await authStore.forceIdTokenRefresh();
+      } catch {
+        // The refresh itself failed (e.g. revoked session). Surface the
+        // original 401 so callers see a terminal auth error, not a thrown
+        // refresh internal.
+        freshToken = null;
+      }
+      // No fresh token (signed out mid-request): a retry without an
+      // Authorization header is a guaranteed 401 — skip the round-trip.
+      if (!freshToken) return response;
+
+      // Retry once with the fresh token. A failure here propagates as a
+      // network error instead of masquerading as a terminal auth 401.
+      return tsRestFetchApi({
+        ...args,
+        headers: { ...args.headers, Authorization: `Bearer ${freshToken}` },
+      });
     }
   }
 
