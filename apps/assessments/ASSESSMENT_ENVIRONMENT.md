@@ -25,6 +25,7 @@ After that, `npm start` is all you need for day-to-day work. Everything else is 
 
 `npm run setup` checks these for you and prints fix-it instructions, but for reference:
 
+- **Node.js 22 or newer** — check with `node --version`; install from https://nodejs.org (or `brew install node@22` / `nvm install 22`).
 - **Node dependencies** — installed with `npm install` from the monorepo root (setup does this).
 - **Docker** with Compose v2 (`docker compose version` should work). If you don't have it:
   - macOS: `brew install --cask docker`, then launch Docker Desktop (Compose v2 is bundled). Or download from https://www.docker.com/products/docker-desktop/.
@@ -46,12 +47,13 @@ cd apps/assessments/roar-swr
 npm run setup
 ```
 
-It walks through four steps and finishes by pointing you at the next command:
+It walks through five steps and finishes by pointing you at the next command:
 
-1. **Checks Docker** (Compose v2). If missing, prints install options and flags it as a blocker — but keeps going, since the remaining steps don't need Docker.
-2. **Checks every host port the stack binds is free** — the database port (`ASSESSMENT_PG_PORT`, default 5433), the Firebase emulators (9099/9199/9000), and the backend (4000). Each taken port gets a diagnosis naming the holder and is flagged as a blocker.
-3. **Installs dependencies and builds the platform libraries** from the repo root (`api-contract`, `assessment-schema`, `scoring-tables`, `assessment-sdk`). The assessment dev server bundles these from their built output, so they must exist before the first start. This step can take a few minutes.
-4. **Creates `taskVariantParameters.json`** from the committed example (never overwrites an existing one — see [Configuring task variants](#configuring-task-variants)).
+1. **Checks the Node.js version** (22+). npm alone only warns and continues on old Node, and the eventual failure looks unrelated.
+2. **Checks Docker** (Compose v2, and that the daemon is actually running). If missing or stopped, prints install/launch options and flags it as a blocker — but keeps going, since the remaining steps don't need Docker.
+3. **Checks every host port the stack binds is free** — the database port (`ASSESSMENT_PG_PORT`, default 5433), the Firebase emulators (9099/9199/9000), and the backend (4000). Each taken port gets a diagnosis naming the holder and is flagged as a blocker.
+4. **Installs dependencies and builds the platform libraries** from the repo root (`api-contract`, `assessment-schema`, `scoring-tables`, `assessment-sdk`). The assessment dev server bundles these from their built output, so they must exist before the first start. This step can take a few minutes.
+5. **Creates `taskVariantParameters.json`** from the committed example (never overwrites an existing one — see [Configuring task variants](#configuring-task-variants)).
 
 Any Docker/port blocker is re-printed in a summary at the end so you resolve it before starting. Once setup is happy, run `npm start`.
 
@@ -99,15 +101,15 @@ A few things follow from the stack being shared and persistent:
 
 Run all of these from the assessment's directory. This is the whole surface — the other scripts in `package.json` (`build`, `build:staging`, `dev`, etc.) are for CI and platform developers; ignore them.
 
-| Script               | What it does                                                                             | When to use                                                                                                                   |
-| -------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `npm run setup`      | Check prerequisites, install deps, build platform libraries, create the config file      | Once, on first setup (or on a fresh clone)                                                                                    |
-| `npm start`          | Start the shared stack (if not already up) and the assessment dev server                 | Every time you sit down to work                                                                                               |
-| `npm run seed:tasks` | Seed **new** variants from `taskVariantParameters.json` into the running DB, no teardown | After editing `taskVariantParameters.json`, to pick up new variants **without losing your data**                              |
-| `npm stop`           | Stop all Docker services and delete the database volume                                  | When you want a completely clean slate                                                                                        |
-| `npm restart`        | Confirmed full teardown (**deletes data**) and fresh start                               | When the stack is wedged and `seed:tasks` isn't the issue. **Destroys your data**                                             |
-| `npm run update`     | Rebuild the host platform libraries (SDK / schema / scoring-tables)                      | After `git pull` brings changes to those packages (see [Updating after a pull](#updating-after-a-pull))                       |
-| `npm run rebuild`    | Force a no-cache rebuild of the Docker images                                            | After changes to the backend, migrations, Dockerfile, or shared deps (see [Rebuilding images](#rebuilding-the-docker-images)) |
+| Script               | What it does                                                                                                                                      | When to use                                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `npm run setup`      | Check prerequisites, install deps, build platform libraries, create the config file                                                               | Once, on first setup (or on a fresh clone)                                                                                    |
+| `npm start`          | Start the shared stack (if not already up) and the assessment dev server                                                                          | Every time you sit down to work                                                                                               |
+| `npm run seed:tasks` | Seed **new** variants from `taskVariantParameters.json` into the running DB, no teardown (add `-- --refresh-params` to also update existing ones) | After editing `taskVariantParameters.json`, to pick up new or changed variants **without losing your data**                   |
+| `npm stop`           | Stop all Docker services and delete the database volume                                                                                           | When you want a completely clean slate                                                                                        |
+| `npm restart`        | Confirmed full teardown (**deletes data**) and fresh start                                                                                        | When the stack is wedged and `seed:tasks` isn't the issue. **Destroys your data**                                             |
+| `npm run update`     | Rebuild the host platform libraries (api-contract / SDK / schema / scoring-tables)                                                                | After `git pull` brings changes to those packages (see [Updating after a pull](#updating-after-a-pull))                       |
+| `npm run rebuild`    | Rebuild the Docker images (cached) and apply them to a running stack                                                                              | After changes to the backend, migrations, Dockerfile, or shared deps (see [Rebuilding images](#rebuilding-the-docker-images)) |
 
 ---
 
@@ -230,15 +232,23 @@ npm run seed:tasks
 
 It requires the environment to be running (`npm start` first) — it seeds into the live container database. This is the recommended way to iterate on variants.
 
+**Changing a parameter on an _existing_ variant** needs one extra flag: a plain `npm run seed:tasks` matches variants by name and skips ones that already exist, so an edited value would silently not apply. Re-apply the file's parameters to existing variants with:
+
+```bash
+npm run seed:tasks -- --refresh-params
+```
+
+Your generated runs/trials/scores still stay put — only the variant parameters are updated.
+
 ---
 
 ## Updating after a pull
 
 After `git pull` brings in new code, which command you need depends on what changed:
 
-- **Platform libraries the dev server bundles** (`assessment-sdk`, `assessment-schema`, `scoring-tables`): run **`npm run update`** to rebuild them on the host, then restart the dev server (Ctrl+C, `npm start`). Which libraries `update` rebuilds varies by assessment — check its `package.json`.
-- **Backend, migrations, `api-contract`, the Dockerfile, or root dependencies**: these run inside the Docker images, so run **`npm run rebuild`** (see below).
-- **The `assessment-schema` package** is used by _both_ the host dev server and the backend, so a change there can need **both** `update` and `rebuild`.
+- **Platform libraries the dev server bundles** (`api-contract`, `assessment-sdk`, `assessment-schema`, `scoring-tables`): run **`npm run update`** to rebuild them on the host, then restart the dev server (Ctrl+C, `npm start`).
+- **Backend, migrations, the Dockerfile, or root dependencies**: these run inside the Docker images, so run **`npm run rebuild`** (see below).
+- **`api-contract` and `assessment-schema`** are used by _both_ the host dev server and the backend, so a change there needs **both** `update` and `rebuild`.
 
 When in doubt after a large pull, `npm run rebuild` then `npm run update` is the safe combination.
 
@@ -246,11 +256,13 @@ When in doubt after a large pull, `npm run rebuild` then `npm run update` is the
 
 ## Rebuilding the Docker images
 
-Docker caches build layers, so changes to files copied into an image aren't always picked up by a normal start. Force a clean rebuild with:
+`npm start` never rebuilds images once they exist, so changes to files copied into an image need an explicit rebuild:
 
 ```bash
 npm run rebuild
 ```
+
+The build is cached — routine post-pull rebuilds take seconds. For the rare case where a cached layer itself is stale, force a clean build with `npm run rebuild -- --no-cache`.
 
 Run this after changing any of the following:
 
@@ -260,7 +272,7 @@ Run this after changing any of the following:
 - `packages/assessment-schema/` — shared assessment data schemas
 - Root `package.json` / `package-lock.json` — dependency changes
 
-The environment doesn't need to be stopped first — the rebuild only updates the images. Run `npm start` afterward to bring the environment up with the new images.
+The environment doesn't need to be stopped first: when the stack is running, `rebuild` finishes by applying the new images itself (only services whose image changed are recreated; the database survives, while the emulator's in-memory auth users and recordings reset). With the stack down, the next `npm start` uses the new images.
 
 ---
 
@@ -274,7 +286,9 @@ The environment doesn't need to be stopped first — the rebuild only updates th
 
 **"taskVariantParameters.json not found."** You skipped the config step. Run `npm run setup`, or copy the example manually (see [Configuring task variants](#configuring-task-variants)).
 
-**The migration container failed / "Unknown task."** The assessment isn't registered in the seed config registry, or its `taskVariantParameters.json` has an invalid parameter value. The error names the available tasks and the offending entry. Fix the config or the params file, then `npm run rebuild` and `npm start`.
+**The migration container failed with an invalid parameter value.** `npm start` prints the seed container's own error, which names the offending `taskVariantParameters.json` entry. Fix the file, then run `npm start` again — the file is read from your directory at seed time, so no rebuild is needed.
+
+**The migration container failed with "Unknown task."** The assessment isn't registered in the backend's seed config registry — the error names the tasks it knows about. Registering it is a platform-developer change (a seed config in `apps/backend/seeds/configs/`), followed by `npm run rebuild` and `npm start`.
 
 **"My new variant didn't show up."** Editing `taskVariantParameters.json` doesn't re-seed on its own. Run `npm run seed:tasks` (preserves your data) rather than `npm restart` (wipes it). See [Adding or changing variants without losing data](#adding-or-changing-variants-without-losing-data).
 
