@@ -29,6 +29,8 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
 import { AgreementType } from '../../enums/agreement-type.enum';
+import { UserType } from '../../enums/user-type.enum';
+import { UserFamilyRole } from '../../enums/user-family-role.enum';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { logger } from '../../logger';
 
@@ -1250,6 +1252,14 @@ describe('UserService', () => {
   });
 
   describe('getUnsignedTosAgreements', () => {
+    // The TOS requirement applies to admin-profile users; an educator is the
+    // simplest such default for the mapping/error tests below.
+    beforeEach(() => {
+      mockUserRepository.getById.mockResolvedValue(
+        UserFactory.build({ id: 'user-123', userType: UserType.EDUCATOR, isSuperAdmin: false }),
+      );
+    });
+
     it('returns empty array when user has signed all TOS agreements', async () => {
       const mockAgreementRepository = createMockAgreementRepository();
       mockAgreementRepository.getUnsignedTosAgreements.mockResolvedValue([]);
@@ -1263,6 +1273,102 @@ describe('UserService', () => {
 
       expect(mockAgreementRepository.getUnsignedTosAgreements).toHaveBeenCalledWith('user-123');
       expect(result).toEqual([]);
+    });
+
+    it('returns empty array for a student without querying agreements (#2244)', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      mockUserRepository.getById.mockResolvedValue(
+        UserFactory.build({ id: 'user-123', userType: UserType.STUDENT, isSuperAdmin: false }),
+      );
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements('user-123');
+
+      expect(result).toEqual([]);
+      expect(mockAgreementRepository.getUnsignedTosAgreements).not.toHaveBeenCalled();
+    });
+
+    it('returns empty array for a caregiver without a parent family role', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      const mockFamilyRepository = createMockFamilyRepository();
+      mockUserRepository.getById.mockResolvedValue(
+        UserFactory.build({ id: 'user-123', userType: UserType.CAREGIVER, isSuperAdmin: false }),
+      );
+      mockFamilyRepository.getFamilyMembershipsForUser.mockResolvedValue([
+        { familyId: 'family-1', role: UserFamilyRole.CHILD },
+      ]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements('user-123');
+
+      expect(result).toEqual([]);
+      expect(mockAgreementRepository.getUnsignedTosAgreements).not.toHaveBeenCalled();
+    });
+
+    it('returns unsigned TOS agreements for a caregiver with a parent family role', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      const mockFamilyRepository = createMockFamilyRepository();
+      const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS, name: 'ROAR Terms of Service' });
+      const version = AgreementVersionFactory.build({ agreementId: agreement.id, locale: 'en-US', isCurrent: true });
+      mockUserRepository.getById.mockResolvedValue(
+        UserFactory.build({ id: 'user-123', userType: UserType.CAREGIVER, isSuperAdmin: false }),
+      );
+      mockFamilyRepository.getFamilyMembershipsForUser.mockResolvedValue([
+        { familyId: 'family-1', role: UserFamilyRole.PARENT },
+      ]);
+      mockAgreementRepository.getUnsignedTosAgreements.mockResolvedValue([{ agreement, currentVersions: [version] }]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+        familyRepository: mockFamilyRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements('user-123');
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.agreementId).toBe(agreement.id);
+    });
+
+    it('requires the TOS from a super admin regardless of user type', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      mockUserRepository.getById.mockResolvedValue(
+        UserFactory.build({ id: 'user-123', userType: UserType.STUDENT, isSuperAdmin: true }),
+      );
+      mockAgreementRepository.getUnsignedTosAgreements.mockResolvedValue([]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      await userService.getUnsignedTosAgreements('user-123');
+
+      expect(mockAgreementRepository.getUnsignedTosAgreements).toHaveBeenCalledWith('user-123');
+    });
+
+    it('returns empty array when the user does not exist', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      mockUserRepository.getById.mockResolvedValue(null);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements('user-123');
+
+      expect(result).toEqual([]);
+      expect(mockAgreementRepository.getUnsignedTosAgreements).not.toHaveBeenCalled();
     });
 
     it('returns unsigned TOS agreements with all locale variants', async () => {

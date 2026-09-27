@@ -1587,11 +1587,40 @@ export function UserService({
   }
 
   /**
+   * Whether the user is required to sign the TOS.
+   *
+   * The TOS is an institutional agreement for users who operate the platform
+   * for others: super admins, admins, educators, and caregivers who hold a
+   * parent role in at least one family (the legacy launch-admin profile).
+   * Students and non-parent caregivers are never asked to sign it — the
+   * agreement-recording endpoint refuses TOS signatures from minors, so
+   * requiring the TOS from them would lock them out of the dashboard (#2244).
+   *
+   * @param user - The user to evaluate the TOS requirement for
+   * @returns true if the user must sign the TOS
+   */
+  async function isTosSignatureRequired(user: User): Promise<boolean> {
+    if (user.isSuperAdmin || user.userType === UserType.ADMIN || user.userType === UserType.EDUCATOR) {
+      return true;
+    }
+
+    if (user.userType === UserType.CAREGIVER) {
+      const memberships = await familyRepository.getFamilyMembershipsForUser(user.id);
+      return memberships.some(({ role }) => role === UserFamilyRole.PARENT);
+    }
+
+    return false;
+  }
+
+  /**
    * Get unsigned TOS agreements for a user.
    *
    * Returns TOS agreements where the user has not signed any current version
    * (cross-locale satisfaction: signing any locale satisfies the requirement).
    * Each agreement includes all current locale variants.
+   *
+   * Users the TOS does not apply to (see {@link isTosSignatureRequired})
+   * resolve to an empty array, so `/me` consumers never gate them on it.
    *
    * @param userId - The user to check unsigned agreements for
    * @returns Array of unsigned agreements with their current version metadata
@@ -1599,6 +1628,14 @@ export function UserService({
    */
   async function getUnsignedTosAgreements(userId: string): Promise<UnsignedTosAgreement[]> {
     try {
+      // A missing user resolves to "no TOS requirement" rather than 404 — the
+      // caller (`/me`) resolves the profile in parallel and owns that error.
+      const user = await userRepository.getById({ id: userId });
+
+      if (!user || !(await isTosSignatureRequired(user))) {
+        return [];
+      }
+
       const unsignedAgreements = await agreementRepository.getUnsignedTosAgreements(userId);
 
       return unsignedAgreements.map(({ agreement, currentVersions }) => ({

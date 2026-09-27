@@ -17,6 +17,10 @@ import { createTestApp, createRouteHelper, createTierUsers } from '../test-suppo
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { AgreementType } from '../enums/agreement-type.enum';
+import { UserType } from '../enums/user-type.enum';
+import { AgreementFactory } from '../test-support/factories/agreement.factory';
+import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import { FamilyFactory } from '../test-support/factories/family.factory';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
@@ -139,6 +143,59 @@ describe('GET /v1/me', () => {
 
       expect(res.body.data.id).toBe(child.id);
       expect(res.body.data.families).toEqual([{ id: family.id, role: 'child' }]);
+    });
+  });
+
+  describe('TOS requirement scope (#2244)', () => {
+    // One unsigned TOS agreement, shared by the tests below. Whether it shows
+    // up in unsignedAgreements depends purely on who is asking.
+    let tosAgreementId: string;
+
+    beforeAll(async () => {
+      const agreement = await AgreementFactory.create({ agreementType: AgreementType.TOS });
+      tosAgreementId = agreement.id;
+      await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: agreement.id } },
+      );
+    });
+
+    it('lists the unsigned TOS for an educator', async () => {
+      const educator = await UserFactory.create({ userType: UserType.EDUCATOR });
+
+      const res = await expectRoute('GET', '/v1/me').as({ id: educator.id, authId: educator.authId! }).toReturn(200);
+
+      expect(res.body.data.unsignedAgreements).toEqual(
+        expect.arrayContaining([expect.objectContaining({ agreementId: tosAgreementId })]),
+      );
+    });
+
+    it('lists the unsigned TOS for a caregiver with a parent family role', async () => {
+      const family = await FamilyFactory.create();
+      const parent = await UserFactory.create({ userType: UserType.CAREGIVER });
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+
+      const res = await expectRoute('GET', '/v1/me').as({ id: parent.id, authId: parent.authId! }).toReturn(200);
+
+      expect(res.body.data.unsignedAgreements).toEqual(
+        expect.arrayContaining([expect.objectContaining({ agreementId: tosAgreementId })]),
+      );
+    });
+
+    it('returns no unsigned TOS for a student — students never sign the TOS', async () => {
+      const student = await UserFactory.create({ userType: UserType.STUDENT, dob: '2015-01-01', grade: '3' });
+
+      const res = await expectRoute('GET', '/v1/me').as({ id: student.id, authId: student.authId! }).toReturn(200);
+
+      expect(res.body.data.unsignedAgreements).toEqual([]);
+    });
+
+    it('returns no unsigned TOS for a caregiver without a parent family role', async () => {
+      const caregiver = await UserFactory.create({ userType: UserType.CAREGIVER });
+
+      const res = await expectRoute('GET', '/v1/me').as({ id: caregiver.id, authId: caregiver.authId! }).toReturn(200);
+
+      expect(res.body.data.unsignedAgreements).toEqual([]);
     });
   });
 
