@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import type { AgreementsListOptions } from './agreement.service';
 import { AgreementService } from './agreement.service';
 import { createMockAgreementRepository } from '../../test-support/repositories/agreement.repository';
+import { createMockAgreementVersionRepository } from '../../test-support/repositories/agreement-version.repository';
 import { AuthContextFactory } from '../../test-support/factories/user.factory';
 import { AgreementFactory } from '../../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
@@ -13,6 +14,7 @@ import type { AgreementEmbedOptionType } from '../../enums/agreement-embed-optio
 
 describe('AgreementService', () => {
   let mockRepository: ReturnType<typeof createMockAgreementRepository>;
+  let mockVersionRepository: ReturnType<typeof createMockAgreementVersionRepository>;
   let mockFetchContent: ReturnType<typeof vi.fn>;
   let service: ReturnType<typeof AgreementService>;
 
@@ -28,8 +30,59 @@ describe('AgreementService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRepository = createMockAgreementRepository();
+    mockVersionRepository = createMockAgreementVersionRepository();
     mockFetchContent = vi.fn();
-    service = AgreementService({ agreementRepository: mockRepository, fetchContent: mockFetchContent });
+    service = AgreementService({
+      agreementRepository: mockRepository,
+      agreementVersionRepository: mockVersionRepository,
+      fetchContent: mockFetchContent,
+    });
+  });
+
+  describe('getRegistrationAgreements', () => {
+    it('returns current adult-signable agreements with inline content', async () => {
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([
+        {
+          agreementId: '00000000-0000-4000-8000-000000000001',
+          agreementVersionId: '00000000-0000-4000-8000-000000000002',
+          agreementType: AgreementType.CONSENT,
+          name: 'Research consent',
+          locale: 'en-US',
+          isCurrent: true,
+          githubFilename: 'consent.md',
+          githubOrgRepo: 'yeatmanlab/roar-legal',
+          githubCommitSha: 'abc123',
+        },
+      ]);
+      mockFetchContent.mockResolvedValue('# Research consent');
+
+      const result = await service.getRegistrationAgreements('en-US');
+
+      expect(mockVersionRepository.listCurrentForRegistration).toHaveBeenCalledWith('en-US', [
+        AgreementType.CONSENT,
+        AgreementType.TOS,
+      ]);
+      expect(mockFetchContent).toHaveBeenCalledWith('yeatmanlab/roar-legal', 'abc123', 'consent.md');
+      expect(result).toEqual([
+        {
+          agreementId: '00000000-0000-4000-8000-000000000001',
+          agreementVersionId: '00000000-0000-4000-8000-000000000002',
+          agreementType: AgreementType.CONSENT,
+          name: 'Research consent',
+          locale: 'en-US',
+          content: '# Research consent',
+        },
+      ]);
+    });
+
+    it('wraps unexpected content-resolution errors', async () => {
+      mockVersionRepository.listCurrentForRegistration.mockRejectedValue(new Error('database unavailable'));
+
+      await expect(service.getRegistrationAgreements('en-US')).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
+    });
   });
 
   describe('list', () => {

@@ -21,6 +21,7 @@ import { FirebaseAuthClient } from '../../clients/firebase-auth.clients';
 import { createMockFamilyRepository } from '../../test-support/repositories/family.repository';
 import { createMockUserRepository } from '../../test-support/repositories/user.repository';
 import { createMockRosterProviderIdRepository } from '../../test-support/repositories/roster-provider-id.repository';
+import { createMockUserAgreementRepository } from '../../test-support/repositories/user-agreement.repository';
 import { createMockAuthorizationService } from '../../test-support/services/authorization.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -62,6 +63,7 @@ describe('FamilyService.create', () => {
   let mockFamilyRepo: ReturnType<typeof createMockFamilyRepository>;
   let mockUserRepo: ReturnType<typeof createMockUserRepository>;
   let mockRosterRepo: ReturnType<typeof createMockRosterProviderIdRepository>;
+  let mockUserAgreementRepo: ReturnType<typeof createMockUserAgreementRepository>;
   let mockAuthorizationService: ReturnType<typeof createMockAuthorizationService>;
 
   beforeEach(() => {
@@ -69,6 +71,7 @@ describe('FamilyService.create', () => {
     mockFamilyRepo = createMockFamilyRepository();
     mockUserRepo = createMockUserRepository();
     mockRosterRepo = createMockRosterProviderIdRepository();
+    mockUserAgreementRepo = createMockUserAgreementRepository();
     mockAuthorizationService = createMockAuthorizationService();
 
     // Default: the email is fresh on both sides.
@@ -80,6 +83,7 @@ describe('FamilyService.create', () => {
     mockFamilyRepo.runTransaction.mockImplementation(async ({ fn }) => fn({} as CoreTransaction));
     mockFamilyRepo.createWithCaretaker.mockResolvedValue({ caretakerId: CARETAKER_ID, familyId: FAMILY_ID });
     mockRosterRepo.create.mockResolvedValue({ id: CARETAKER_ID });
+    mockUserAgreementRepo.createMany.mockResolvedValue([]);
   });
 
   function makeService() {
@@ -87,6 +91,7 @@ describe('FamilyService.create', () => {
       familyRepository: mockFamilyRepo,
       userRepository: mockUserRepo,
       rosterProviderIdRepository: mockRosterRepo,
+      userAgreementRepository: mockUserAgreementRepo,
       authorizationService: mockAuthorizationService,
     });
   }
@@ -135,6 +140,24 @@ describe('FamilyService.create', () => {
         locationStateProvince: 'CA',
         locationCountry: 'US',
       });
+    });
+
+    it('records validated agreements in the family transaction with a server timestamp', async () => {
+      const agreementVersionIds = ['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002'];
+      mockUserAgreementRepo.createMany.mockResolvedValue([{ id: 'agreement-1' }, { id: 'agreement-2' }]);
+
+      await makeService().create({ ...validInput, agreementVersionIds });
+
+      expect(mockUserAgreementRepo.createMany).toHaveBeenCalledWith({
+        data: agreementVersionIds.map((agreementVersionId) => ({
+          userId: CARETAKER_ID,
+          agreementVersionId,
+          agreementTimestamp: expect.any(Date),
+        })),
+        transaction: expect.anything(),
+      });
+      const agreementRows = mockUserAgreementRepo.createMany.mock.calls[0]![0].data;
+      expect(agreementRows[0]!.agreementTimestamp).toBe(agreementRows[1]!.agreementTimestamp);
     });
   });
 

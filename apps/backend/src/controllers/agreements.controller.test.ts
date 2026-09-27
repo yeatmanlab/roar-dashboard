@@ -49,10 +49,15 @@ const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 describe('AgreementsController', () => {
   const mockList = vi.fn();
   const mockGetVersionContent = vi.fn();
+  const mockGetRegistrationAgreements = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(AgreementService).mockReturnValue({ list: mockList, getVersionContent: mockGetVersionContent });
+    vi.mocked(AgreementService).mockReturnValue({
+      getRegistrationAgreements: mockGetRegistrationAgreements,
+      list: mockList,
+      getVersionContent: mockGetVersionContent,
+    });
   });
 
   describe('list', () => {

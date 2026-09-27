@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import type { AuthContext } from '../../types/auth-context';
-import type { AgreementType } from '../../enums/agreement-type.enum';
+import type { AgreementType as AgreementTypeValue } from '../../enums/agreement-type.enum';
 import type { AgreementVersion } from '../../db/schema';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AgreementEmbedOptionType } from '../../enums/agreement-embed-option.enum';
@@ -9,7 +9,11 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { AgreementEmbedOption } from '../../enums/agreement-embed-option.enum';
+import { AgreementType } from '../../enums/agreement-type.enum';
 import { AgreementRepository, type AgreementWithCurrentVersion } from '../../repositories/agreement.repository';
+import { AgreementVersionRepository } from '../../repositories/agreement-version.repository';
+
+export const REGISTRATION_AGREEMENT_TYPES = [AgreementType.CONSENT, AgreementType.TOS] as const;
 
 /**
  * Agreement with optional embedded versions array.
@@ -28,7 +32,7 @@ export interface AgreementsListOptions {
   sortOrder: 'asc' | 'desc';
   locale: string;
   embed: AgreementEmbedOptionType[];
-  agreementType?: AgreementType | undefined;
+  agreementType?: AgreementTypeValue | undefined;
 }
 
 /**
@@ -41,6 +45,15 @@ export interface VersionContentResult {
   content: string;
   githubCommitSha: string;
   createdAt: Date;
+}
+
+export interface RegistrationAgreementResult {
+  agreementId: string;
+  agreementVersionId: string;
+  agreementType: AgreementTypeValue;
+  name: string;
+  locale: string;
+  content: string;
 }
 
 /** Base URL for fetching raw content from GitHub */
@@ -96,11 +109,44 @@ async function fetchGithubContent(orgRepo: string, commitSha: string, filename: 
  */
 export function AgreementService({
   agreementRepository = new AgreementRepository(),
+  agreementVersionRepository = new AgreementVersionRepository(),
   fetchContent = fetchGithubContent,
 }: {
   agreementRepository?: AgreementRepository;
+  agreementVersionRepository?: AgreementVersionRepository;
   fetchContent?: typeof fetchGithubContent;
 } = {}) {
+  /** Resolves the current adult-signable agreement documents for public registration. */
+  async function getRegistrationAgreements(locale: string): Promise<RegistrationAgreementResult[]> {
+    try {
+      const versions = await agreementVersionRepository.listCurrentForRegistration(
+        locale,
+        REGISTRATION_AGREEMENT_TYPES,
+      );
+
+      return await Promise.all(
+        versions.map(async (version) => ({
+          agreementId: version.agreementId,
+          agreementVersionId: version.agreementVersionId,
+          agreementType: version.agreementType,
+          name: version.name,
+          locale: version.locale,
+          content: await fetchContent(version.githubOrgRepo, version.githubCommitSha, version.githubFilename),
+        })),
+      );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { locale } }, 'Failed to list registration agreements');
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        context: { locale },
+        cause: error,
+      });
+    }
+  }
+
   /**
    * List agreements accessible to all authenticated users.
    *
@@ -232,5 +278,5 @@ export function AgreementService({
     }
   }
 
-  return { list, getVersionContent };
+  return { getRegistrationAgreements, list, getVersionContent };
 }

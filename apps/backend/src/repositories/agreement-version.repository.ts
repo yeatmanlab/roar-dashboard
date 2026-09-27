@@ -1,8 +1,22 @@
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { AgreementType } from '../enums/agreement-type.enum';
 import type * as CoreDbSchema from '../db/schema/core';
 import { CoreDbClient } from '../db/clients';
-import { agreementVersions, type AgreementVersion } from '../db/schema';
+import { agreements, agreementVersions, type AgreementVersion } from '../db/schema';
 import { BaseRepository } from './base.repository';
+
+export interface RegistrationAgreementVersion {
+  agreementId: string;
+  agreementVersionId: string;
+  agreementType: AgreementType;
+  name: string;
+  locale: string;
+  isCurrent: boolean;
+  githubFilename: string;
+  githubOrgRepo: string;
+  githubCommitSha: string;
+}
 
 /**
  * AgreementVersion Repository
@@ -16,5 +30,70 @@ import { BaseRepository } from './base.repository';
 export class AgreementVersionRepository extends BaseRepository<AgreementVersion, typeof agreementVersions> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, agreementVersions);
+  }
+
+  /** Returns the current registration agreements available in a locale. */
+  async listCurrentForRegistration(
+    locale: string,
+    agreementTypes: readonly AgreementType[],
+  ): Promise<RegistrationAgreementVersion[]> {
+    if (agreementTypes.length === 0) return [];
+
+    return this.db
+      .select({
+        agreementId: agreements.id,
+        agreementVersionId: agreementVersions.id,
+        agreementType: agreements.agreementType,
+        name: agreements.name,
+        locale: agreementVersions.locale,
+        isCurrent: agreementVersions.isCurrent,
+        githubFilename: agreementVersions.githubFilename,
+        githubOrgRepo: agreementVersions.githubOrgRepo,
+        githubCommitSha: agreementVersions.githubCommitSha,
+      })
+      .from(agreementVersions)
+      .innerJoin(agreements, eq(agreementVersions.agreementId, agreements.id))
+      .where(
+        and(
+          eq(agreementVersions.isCurrent, true),
+          eq(agreementVersions.locale, locale),
+          inArray(agreements.agreementType, agreementTypes),
+        ),
+      )
+      .orderBy(asc(agreements.name), asc(agreements.id));
+  }
+
+  /** Returns agreement metadata for submitted versions, including stale versions. */
+  async getRegistrationCandidatesByIds(versionIds: string[]): Promise<RegistrationAgreementVersion[]> {
+    if (versionIds.length === 0) return [];
+
+    return this.db
+      .select({
+        agreementId: agreements.id,
+        agreementVersionId: agreementVersions.id,
+        agreementType: agreements.agreementType,
+        name: agreements.name,
+        locale: agreementVersions.locale,
+        isCurrent: agreementVersions.isCurrent,
+        githubFilename: agreementVersions.githubFilename,
+        githubOrgRepo: agreementVersions.githubOrgRepo,
+        githubCommitSha: agreementVersions.githubCommitSha,
+      })
+      .from(agreementVersions)
+      .innerJoin(agreements, eq(agreementVersions.agreementId, agreements.id))
+      .where(inArray(agreementVersions.id, versionIds));
+  }
+
+  /** Returns every agreement that has a current adult-signable version. */
+  async listRequiredRegistrationAgreementIds(agreementTypes: readonly AgreementType[]): Promise<string[]> {
+    if (agreementTypes.length === 0) return [];
+
+    const rows = await this.db
+      .selectDistinct({ agreementId: agreements.id })
+      .from(agreementVersions)
+      .innerJoin(agreements, eq(agreementVersions.agreementId, agreements.id))
+      .where(and(eq(agreementVersions.isCurrent, true), inArray(agreements.agreementType, agreementTypes)));
+
+    return rows.map(({ agreementId }) => agreementId);
   }
 }

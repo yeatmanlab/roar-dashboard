@@ -5,6 +5,7 @@ import { UserRepository } from '../../repositories/user.repository';
 import { GroupRepository } from '../../repositories/group.repository';
 import { InvitationCodeRepository } from '../../repositories/invitation-code.repository';
 import { RosterProviderIdRepository } from '../../repositories/roster-provider-id.repository';
+import { UserAgreementRepository } from '../../repositories/user-agreement.repository';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -73,6 +74,8 @@ export interface CreateFamilyServiceInput {
   password: string;
   name: CreateFamilyCaretakerName;
   location?: CreateFamilyLocation | undefined;
+  /** Agreement versions already validated by RegistrationService. */
+  agreementVersionIds?: string[] | undefined;
 }
 
 /**
@@ -123,6 +126,7 @@ export function FamilyService({
   groupRepository = new GroupRepository(),
   invitationCodeRepository = new InvitationCodeRepository(),
   rosterProviderIdRepository = new RosterProviderIdRepository(),
+  userAgreementRepository = new UserAgreementRepository(),
   authorizationService = AuthorizationService(),
 }: {
   familyRepository?: FamilyRepository;
@@ -130,6 +134,7 @@ export function FamilyService({
   groupRepository?: GroupRepository;
   invitationCodeRepository?: InvitationCodeRepository;
   rosterProviderIdRepository?: RosterProviderIdRepository;
+  userAgreementRepository?: UserAgreementRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
@@ -306,7 +311,7 @@ export function FamilyService({
    * @throws {ApiError} 500 on unexpected failures or unrecoverable compensation
    */
   async function create(input: CreateFamilyServiceInput): Promise<{ id: string }> {
-    const { email, password, name, location } = input;
+    const { email, password, name, location, agreementVersionIds = [] } = input;
 
     // ── Step 1: Pre-flight email uniqueness ───────────────────────────────────
     //
@@ -430,6 +435,22 @@ export function FamilyService({
             },
             transaction: tx,
           });
+
+          if (agreementVersionIds.length > 0) {
+            const agreementTimestamp = new Date();
+            const createdAgreements = await userAgreementRepository.createMany({
+              data: agreementVersionIds.map((agreementVersionId) => ({
+                userId: created.caretakerId,
+                agreementVersionId,
+                agreementTimestamp,
+              })),
+              transaction: tx,
+            });
+
+            if (createdAgreements.length !== agreementVersionIds.length) {
+              throw new Error('User agreement bulk insert returned an unexpected row count');
+            }
+          }
 
           return created;
         },
