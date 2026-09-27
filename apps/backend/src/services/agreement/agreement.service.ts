@@ -119,10 +119,25 @@ export function AgreementService({
   /** Resolves the current adult-signable agreement documents for public registration. */
   async function getRegistrationAgreements(locale: string): Promise<RegistrationAgreementResult[]> {
     try {
-      const versions = await agreementVersionRepository.listCurrentForRegistration(
-        locale,
-        REGISTRATION_AGREEMENT_TYPES,
-      );
+      const [versions, requiredAgreementIds] = await Promise.all([
+        agreementVersionRepository.listCurrentForRegistration(locale, REGISTRATION_AGREEMENT_TYPES),
+        agreementVersionRepository.listRequiredRegistrationAgreementIds(REGISTRATION_AGREEMENT_TYPES),
+      ]);
+
+      const localizedAgreementIds = new Set(versions.map(({ agreementId }) => agreementId));
+      const missingAgreementIds = requiredAgreementIds.filter((agreementId) => !localizedAgreementIds.has(agreementId));
+
+      if (missingAgreementIds.length > 0) {
+        logger.error(
+          { context: { locale, missingAgreementIds } },
+          'Registration locale is missing current required agreement versions',
+        );
+        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.INTERNAL,
+          context: { locale, missingAgreementIds },
+        });
+      }
 
       return await Promise.all(
         versions.map(async (version) => ({

@@ -41,9 +41,10 @@ describe('AgreementService', () => {
 
   describe('getRegistrationAgreements', () => {
     it('returns current adult-signable agreements with inline content', async () => {
+      const agreementId = '00000000-0000-4000-8000-000000000001';
       mockVersionRepository.listCurrentForRegistration.mockResolvedValue([
         {
-          agreementId: '00000000-0000-4000-8000-000000000001',
+          agreementId,
           agreementVersionId: '00000000-0000-4000-8000-000000000002',
           agreementType: AgreementType.CONSENT,
           name: 'Research consent',
@@ -54,11 +55,16 @@ describe('AgreementService', () => {
           githubCommitSha: 'abc123',
         },
       ]);
+      mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([agreementId]);
       mockFetchContent.mockResolvedValue('# Research consent');
 
       const result = await service.getRegistrationAgreements('en-US');
 
       expect(mockVersionRepository.listCurrentForRegistration).toHaveBeenCalledWith('en-US', [
+        AgreementType.CONSENT,
+        AgreementType.TOS,
+      ]);
+      expect(mockVersionRepository.listRequiredRegistrationAgreementIds).toHaveBeenCalledWith([
         AgreementType.CONSENT,
         AgreementType.TOS,
       ]);
@@ -75,6 +81,34 @@ describe('AgreementService', () => {
       ]);
     });
 
+    it('rejects a locale that does not contain every required registration agreement', async () => {
+      const localizedAgreementId = '00000000-0000-4000-8000-000000000001';
+      const missingAgreementId = '00000000-0000-4000-8000-000000000003';
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([
+        {
+          agreementId: localizedAgreementId,
+          agreementVersionId: '00000000-0000-4000-8000-000000000002',
+          agreementType: AgreementType.CONSENT,
+          name: 'Research consent',
+          locale: 'es-MX',
+          isCurrent: true,
+          githubFilename: 'consent.md',
+          githubOrgRepo: 'yeatmanlab/roar-legal',
+          githubCommitSha: 'abc123',
+        },
+      ]);
+      mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([
+        localizedAgreementId,
+        missingAgreementId,
+      ]);
+
+      await expect(service.getRegistrationAgreements('es-MX')).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.INTERNAL,
+      });
+      expect(mockFetchContent).not.toHaveBeenCalled();
+    });
+
     it('wraps unexpected content-resolution errors', async () => {
       mockVersionRepository.listCurrentForRegistration.mockRejectedValue(new Error('database unavailable'));
 
@@ -85,9 +119,10 @@ describe('AgreementService', () => {
     });
 
     it("maps missing external content to the endpoint's generic 500 response", async () => {
+      const agreementId = '00000000-0000-4000-8000-000000000001';
       mockVersionRepository.listCurrentForRegistration.mockResolvedValue([
         {
-          agreementId: '00000000-0000-4000-8000-000000000001',
+          agreementId,
           agreementVersionId: '00000000-0000-4000-8000-000000000002',
           agreementType: AgreementType.CONSENT,
           name: 'Research consent',
@@ -98,6 +133,7 @@ describe('AgreementService', () => {
           githubCommitSha: 'abc123',
         },
       ]);
+      mockVersionRepository.listRequiredRegistrationAgreementIds.mockResolvedValue([agreementId]);
       mockFetchContent.mockRejectedValue(
         new ApiError('Missing content', { statusCode: StatusCodes.NOT_FOUND, code: ApiErrorCode.RESOURCE_NOT_FOUND }),
       );

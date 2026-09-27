@@ -96,23 +96,23 @@ async function validRegistrationBody() {
 describe('GET /v1/auth/registration/agreements', () => {
   it('is public and returns current adult-signable content inline', async () => {
     const consent = await AgreementFactory.create({
-      name: 'Spanish registration consent',
+      name: 'English registration consent',
       agreementType: AgreementType.CONSENT,
     });
     const consentVersion = await AgreementVersionFactory.create(
-      { isCurrent: true, locale: 'es-MX' },
+      { isCurrent: true, locale: 'en-US' },
       { transient: { agreementId: consent.id } },
     );
     const assent = await AgreementFactory.create({
-      name: 'Spanish child assent',
+      name: 'English child assent',
       agreementType: AgreementType.ASSENT,
     });
     await AgreementVersionFactory.create(
-      { isCurrent: true, locale: 'es-MX' },
+      { isCurrent: true, locale: 'en-US' },
       { transient: { agreementId: assent.id } },
     );
 
-    const response = await expectRoute('GET', '/v1/auth/registration/agreements?locale=es-MX')
+    const response = await expectRoute('GET', '/v1/auth/registration/agreements?locale=en-US')
       .unauthenticated()
       .toReturn(200);
 
@@ -124,10 +124,24 @@ describe('GET /v1/auth/registration/agreements', () => {
       agreementVersionId: consentVersion.id,
       agreementType: AgreementType.CONSENT,
       name: consent.name,
-      locale: 'es-MX',
+      locale: 'en-US',
       content: '# Registration agreement',
     });
     expect(response.body.data.items).not.toContainEqual(expect.objectContaining({ agreementId: assent.id }));
+  });
+
+  it('returns 500 instead of a partial set when the requested locale is incomplete', async () => {
+    const consent = await AgreementFactory.create({
+      name: 'Spanish registration consent',
+      agreementType: AgreementType.CONSENT,
+    });
+    await AgreementVersionFactory.create(
+      { isCurrent: true, locale: 'es-MX' },
+      { transient: { agreementId: consent.id } },
+    );
+
+    await expectRoute('GET', '/v1/auth/registration/agreements?locale=es-MX').unauthenticated().toReturn(500);
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('returns 400 for an invalid locale', async () => {
