@@ -11,7 +11,7 @@
  *   1. Authorization — verify all tiers can access their own profile
  *   2. Error cases — 401 unauthenticated
  */
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type express from 'express';
 import { createTestApp, createRouteHelper, createTierUsers } from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
@@ -24,6 +24,10 @@ import { AgreementVersionFactory } from '../test-support/factories/agreement-ver
 import { FamilyFactory } from '../test-support/factories/family.factory';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
+import { UserFamilyRole } from '../enums/user-family-role.enum';
+import { CoreDbClient } from '../db/clients';
+import { agreements, agreementVersions } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -160,6 +164,14 @@ describe('GET /v1/me', () => {
       );
     });
 
+    // The unsigned TOS is global state: without cleanup it leaks into every
+    // later test that asserts exact unsignedAgreements content for a
+    // TOS-required user.
+    afterAll(async () => {
+      await CoreDbClient.delete(agreementVersions).where(eq(agreementVersions.agreementId, tosAgreementId));
+      await CoreDbClient.delete(agreements).where(eq(agreements.id, tosAgreementId));
+    });
+
     it('lists the unsigned TOS for an educator', async () => {
       const educator = await UserFactory.create({ userType: UserType.EDUCATOR });
 
@@ -173,7 +185,7 @@ describe('GET /v1/me', () => {
     it('lists the unsigned TOS for a caregiver with a parent family role', async () => {
       const family = await FamilyFactory.create();
       const parent = await UserFactory.create({ userType: UserType.CAREGIVER });
-      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: UserFamilyRole.PARENT });
 
       const res = await expectRoute('GET', '/v1/me').as({ id: parent.id, authId: parent.authId! }).toReturn(200);
 

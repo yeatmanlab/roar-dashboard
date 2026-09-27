@@ -27,6 +27,7 @@ import { GroupRepository } from '../../repositories/group.repository';
 import { FamilyRepository } from '../../repositories/family.repository';
 import { RosterProviderIdRepository } from '../../repositories/roster-provider-id.repository';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
+import { assertUnreachable } from '../../utils/assert-unreachable.util';
 import { generateAssessmentPid } from '../../utils/assessment-pid.util';
 import { FirebaseAuthClient } from '../../clients/firebase-auth.clients';
 import { AuthorizationService } from '../authorization/authorization.service';
@@ -1482,15 +1483,41 @@ export function UserService({
 
         // Validate agreement type is appropriate for user's age category
         if (!allowedAgreementTypes.includes(agreement.agreementType)) {
-          logger.warn(
-            { requestingUserId, agreementId: agreement.id, agreementType: agreement.agreementType, ageCategory },
-            'User attempted to consent to an agreement type not allowed for their age category',
+          // The TOS requirement is role-based, not age-based: a user the /me
+          // gate asks to sign the TOS (educator, admin, caregiver-parent) must
+          // be able to record it even when their dob/grade classifies them as
+          // a minor — otherwise the gate deadlocks them (#2244). Memberships
+          // are re-resolved here, so a parent role revoked between the /me
+          // gate and this call still rejects.
+          const isTosSignableByRole =
+            agreement.agreementType === AgreementType.TOS && (await resolveTosSignatureRequirement(requestingUser));
+
+          if (!isTosSignableByRole) {
+            logger.warn(
+              {
+                requestingUserId,
+                agreementId: agreement.id,
+                agreementType: agreement.agreementType,
+                ageCategory,
+                userType: requestingUser.userType,
+              },
+              'User attempted to consent to an agreement type not allowed for their age category or role',
+            );
+            throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+              statusCode: StatusCodes.FORBIDDEN,
+              code: ApiErrorCode.AUTH_FORBIDDEN,
+              context: { requestingUserId, agreementId: agreement.id, agreementType: agreement.agreementType },
+            });
+          }
+
+          // Audit trail for the override path (the age gate rejected, the role
+          // requirement allowed) — also a data-quality signal, since a
+          // TOS-required user carrying a minor-classifying dob/grade is
+          // usually mis-rostered.
+          logger.info(
+            { requestingUserId, agreementId: agreement.id, ageCategory, userType: requestingUser.userType },
+            'Recording role-required TOS signature despite minor age classification',
           );
-          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { requestingUserId, agreementId: agreement.id, agreementType: agreement.agreementType },
-          });
         }
       }
       // Parent consent: user is consenting for their child (via family relationship)
@@ -1592,24 +1619,53 @@ export function UserService({
    * The TOS is an institutional agreement for users who operate the platform
    * for others: super admins, admins, educators, and caregivers who hold a
    * parent role in at least one family (the legacy launch-admin profile).
-   * Students and non-parent caregivers are never asked to sign it — the
-   * agreement-recording endpoint refuses TOS signatures from minors, so
-   * requiring the TOS from them would lock them out of the dashboard (#2244).
+   * Students and non-parent caregivers are never asked to sign it.
+   *
+   * This predicate is shared by both sides of the TOS flow — the `/me`
+   * requirement ({@link getUnsignedTosAgreements}) and the signing permission
+   * ({@link recordUserAgreement}) — so a user the gate asks to sign is also
+   * allowed to record the signature, regardless of age classification (#2244).
+   * It governs who is asked and who may sign despite a minor classification;
+   * it is not the only path to a TOS signature — recordUserAgreement's age
+   * gate independently lets adults and unknown-age users (see #1732) record
+   * one.
+   *
+   * @param user - The user to evaluate the TOS requirement for
+   * @param familyMemberships - The user's active family memberships; only the
+   *   role is read, so both `/me`'s and the repository's shapes fit
+   * @returns true if the user must sign the TOS
+   */
+  function isTosSignatureRequired(user: User, familyMemberships: Array<{ role: UserFamilyRole }>): boolean {
+    if (user.isSuperAdmin) return true;
+
+    switch (user.userType) {
+      case UserType.ADMIN:
+      case UserType.EDUCATOR:
+        return true;
+      case UserType.CAREGIVER:
+        return familyMemberships.some(({ role }) => role === UserFamilyRole.PARENT);
+      case UserType.STUDENT:
+        return false;
+      default:
+        return assertUnreachable(user.userType, 'Unhandled user type in TOS requirement check');
+    }
+  }
+
+  /**
+   * Resolve the TOS requirement for a user, fetching the family memberships
+   * the predicate needs. Only a caregiver's memberships influence the outcome,
+   * and that knowledge lives here rather than at each call site. Callers that
+   * already hold the memberships (`/me`) use {@link isTosSignatureRequired}
+   * directly.
    *
    * @param user - The user to evaluate the TOS requirement for
    * @returns true if the user must sign the TOS
    */
-  async function isTosSignatureRequired(user: User): Promise<boolean> {
-    if (user.isSuperAdmin || user.userType === UserType.ADMIN || user.userType === UserType.EDUCATOR) {
-      return true;
-    }
+  async function resolveTosSignatureRequirement(user: User): Promise<boolean> {
+    const familyMemberships =
+      user.userType === UserType.CAREGIVER ? await familyRepository.getFamilyMembershipsForUser(user.id) : [];
 
-    if (user.userType === UserType.CAREGIVER) {
-      const memberships = await familyRepository.getFamilyMembershipsForUser(user.id);
-      return memberships.some(({ role }) => role === UserFamilyRole.PARENT);
-    }
-
-    return false;
+    return isTosSignatureRequired(user, familyMemberships);
   }
 
   /**
@@ -1622,21 +1678,25 @@ export function UserService({
    * Users the TOS does not apply to (see {@link isTosSignatureRequired})
    * resolve to an empty array, so `/me` consumers never gate them on it.
    *
-   * @param userId - The user to check unsigned agreements for
+   * The caller supplies the user record and family memberships it already
+   * holds (`/me` fetches both anyway), so this method adds no extra queries
+   * for users the TOS does not apply to.
+   *
+   * @param user - The user to check unsigned agreements for
+   * @param familyMemberships - The user's active family memberships
    * @returns Array of unsigned agreements with their current version metadata
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
    */
-  async function getUnsignedTosAgreements(userId: string): Promise<UnsignedTosAgreement[]> {
+  async function getUnsignedTosAgreements(
+    user: User,
+    familyMemberships: Array<{ role: UserFamilyRole }>,
+  ): Promise<UnsignedTosAgreement[]> {
     try {
-      // A missing user resolves to "no TOS requirement" rather than 404 — the
-      // caller (`/me`) resolves the profile in parallel and owns that error.
-      const user = await userRepository.getById({ id: userId });
-
-      if (!user || !(await isTosSignatureRequired(user))) {
+      if (!isTosSignatureRequired(user, familyMemberships)) {
         return [];
       }
 
-      const unsignedAgreements = await agreementRepository.getUnsignedTosAgreements(userId);
+      const unsignedAgreements = await agreementRepository.getUnsignedTosAgreements(user.id);
 
       return unsignedAgreements.map(({ agreement, currentVersions }) => ({
         agreementId: agreement.id,
@@ -1649,12 +1709,12 @@ export function UserService({
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error({ err: error, context: { userId } }, 'Failed to get unsigned TOS agreements');
+      logger.error({ err: error, context: { userId: user.id } }, 'Failed to get unsigned TOS agreements');
 
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId },
+        context: { userId: user.id },
         cause: error,
       });
     }
