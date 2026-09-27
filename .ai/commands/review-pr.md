@@ -23,4 +23,3 @@ Output style — a terse engineering report, not an essay:
 - Inline comments: 1–3 sentences each — the defect, why it matters, the fix if it isn't obvious. No headers, no praise.
 - At most one top-level comment, under 150 words: a one-line verdict, then one bullet per finding not already covered inline. No process narration, todo checklists, restating what the PR does, or lists of what was checked and came back clean.
 - Impersonal — no first person.
-- Drop any finding you would not ask a human to act on. A review with two real findings is better than one with two real findings buried in ten observations.
