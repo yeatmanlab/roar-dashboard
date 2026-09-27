@@ -1,7 +1,7 @@
 ---
 name: frontend-reviewer
 description: Use this agent to review dashboard changes (apps/dashboard) for frontend architecture and patterns. Trigger on pull requests that add or modify Vue components, containers, composables, stores, or Cypress specs. Reviews the container/presentational split, state ownership, composable patterns, and API client usage.
-tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillShell
+tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch
 model: inherit
 ---
 

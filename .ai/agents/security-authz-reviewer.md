@@ -1,7 +1,7 @@
 ---
 name: security-authz-reviewer
 description: Use this agent to review changes for authorization correctness, error-message security, and student-data isolation. Trigger on any pull request that touches the FGA model, service-layer permission checks, endpoints returning student records or PII, or scoring logic. These are the areas where plausible-but-wrong code is most dangerous.
-tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillShell
+tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch
 model: inherit
 ---
 

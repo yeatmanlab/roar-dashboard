@@ -1,7 +1,7 @@
 ---
 name: code-quality-reviewer
 description: Use this agent to review TypeScript and Vue code for quality, maintainability, and adherence to project conventions. Trigger after implementing new features, refactoring existing code, or completing significant changes. Reviews TypeScript strictness, naming, constants, logging, documentation, and utility placement.
-tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillShell
+tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch
 model: inherit
 ---
 

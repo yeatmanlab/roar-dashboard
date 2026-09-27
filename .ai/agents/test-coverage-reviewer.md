@@ -1,7 +1,7 @@
 ---
 name: test-coverage-reviewer
 description: Use this agent to review whether a change carries tests at the right layer and depth. Trigger on pull requests that change behavior — logic, queries, endpoints, contracts, or user workflows. Reviews risk-tiered coverage, unit vs integration placement, factory usage, and assertion quality.
-tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillShell
+tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch
 model: inherit
 ---
 

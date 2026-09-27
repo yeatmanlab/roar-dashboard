@@ -1,7 +1,7 @@
 ---
 name: backend-reviewer
 description: Use this agent to review backend changes (apps/backend, packages/api-contract) for architectural correctness. Trigger on pull requests that add or modify endpoints, services, repositories, or contracts. Reviews the 5-layer architecture, layer boundaries, error handling, and contract conventions.
-tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillShell
+tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch
 model: inherit
 ---
 
