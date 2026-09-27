@@ -83,6 +83,30 @@ describe('AgreementService', () => {
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
       });
     });
+
+    it("maps missing external content to the endpoint's generic 500 response", async () => {
+      mockVersionRepository.listCurrentForRegistration.mockResolvedValue([
+        {
+          agreementId: '00000000-0000-4000-8000-000000000001',
+          agreementVersionId: '00000000-0000-4000-8000-000000000002',
+          agreementType: AgreementType.CONSENT,
+          name: 'Research consent',
+          locale: 'en-US',
+          isCurrent: true,
+          githubFilename: 'missing.md',
+          githubOrgRepo: 'yeatmanlab/roar-legal',
+          githubCommitSha: 'abc123',
+        },
+      ]);
+      mockFetchContent.mockRejectedValue(
+        new ApiError('Missing content', { statusCode: StatusCodes.NOT_FOUND, code: ApiErrorCode.RESOURCE_NOT_FOUND }),
+      );
+
+      await expect(service.getRegistrationAgreements('en-US')).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
+    });
   });
 
   describe('list', () => {

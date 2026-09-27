@@ -135,7 +135,7 @@ export function AgreementService({
         })),
       );
     } catch (error) {
-      if (error instanceof ApiError) throw error;
+      if (error instanceof ApiError && error.statusCode === StatusCodes.INTERNAL_SERVER_ERROR) throw error;
 
       logger.error({ err: error, context: { locale } }, 'Failed to list registration agreements');
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
