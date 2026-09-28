@@ -27,6 +27,12 @@ function paint(format, text) {
 }
 
 const BAR = () => paint('gray', '│');
+/** Length of a string as rendered — ANSI color codes excluded. */
+// eslint-disable-next-line no-control-regex -- matching the ESC byte is the point
+const ANSI_PATTERN = /\x1b\[[0-9;]*m/g;
+// eslint-disable-next-line no-control-regex -- matching the ESC byte is the point
+const HAS_ANSI = /\x1b/;
+const visibleLength = (s) => s.replace(ANSI_PATTERN, '').length;
 const GLYPH = {
   active: () => paint('cyan', '◆'),
   done: () => paint('green', '◇'),
@@ -81,12 +87,14 @@ function wrapLine(line, max) {
 }
 
 function noteBox(body, title, kind) {
-  const lines = body.split('\n').flatMap((l) => wrapLine(l, BOX_MAX_WIDTH - 2));
+  // Styled lines (they carry ANSI codes) are measured by visible length and
+  // never word-wrapped — splitting inside an escape sequence would corrupt it.
+  const lines = body.split('\n').flatMap((l) => (HAS_ANSI.test(l) ? [l] : wrapLine(l, BOX_MAX_WIDTH - 2)));
   const heading = title ?? '';
   // Body lines wrap at the cap, but the title is one line by construction —
   // the box grows to fit it rather than letting it overflow the frame.
   const width = Math.max(
-    Math.min(Math.max(...lines.map((l) => l.length)) + 2, BOX_MAX_WIDTH),
+    Math.min(Math.max(...lines.map(visibleLength)) + 2, BOX_MAX_WIDTH),
     Math.min(heading.length + 3, 100),
   );
   console.log(BAR());
@@ -95,7 +103,7 @@ function noteBox(body, title, kind) {
   );
   console.log(`${BAR()} ${' '.repeat(width + 2)}${paint('gray', '│')}`);
   for (const line of lines) {
-    console.log(`${BAR()}  ${line}${' '.repeat(Math.max(width - line.length + 1, 1))}${paint('gray', '│')}`);
+    console.log(`${BAR()}  ${line}${' '.repeat(Math.max(width - visibleLength(line) + 1, 1))}${paint('gray', '│')}`);
   }
   console.log(`${BAR()} ${' '.repeat(width + 2)}${paint('gray', '│')}`);
   console.log(`${paint('gray', '├')}${paint('gray', '─'.repeat(width + 3))}${paint('gray', '╯')}`);
@@ -206,6 +214,8 @@ export async function loadUi() {
      */
     note: (body, title, kind = 'info') => noteBox(body, title, kind),
     task: (title) => makeTask(emphasizeStepPrefix(title)),
+    /** Bold emphasis for a fragment inside note bodies or messages. */
+    strong: (text) => paint('bold', text),
     /**
      * A raw line inside the gutter — for long-running child output (the dev
      * server) that should stay visible, unlike a task's collapsing tail. The

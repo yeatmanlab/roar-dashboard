@@ -8,14 +8,7 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import {
-  ASSESSMENT_AUTH_EMULATOR_HOST,
-  ASSESSMENT_BACKEND_URL,
-  ASSESSMENT_NAME,
-  PARAMS_FILE,
-  resolvePgPort,
-  stackPorts,
-} from '../context.mjs';
+import { ASSESSMENT_BACKEND_URL, ASSESSMENT_NAME, PARAMS_FILE, resolvePgPort, stackPorts } from '../context.mjs';
 import {
   compose,
   composeAvailable,
@@ -40,21 +33,20 @@ const STALE_CONTAINERS = [
 /** The supabase-style service summary shown once the environment is up. */
 function printRunningSummary(ui, pgPort) {
   const rows = [
-    ['Assessment', 'http://localhost:8000'],
+    ['Firebase Emulator', 'http://localhost:9002'],
     ['Backend API', ASSESSMENT_BACKEND_URL],
-    ['Auth emulator', `http://${ASSESSMENT_AUTH_EMULATOR_HOST}`],
-    ['Storage emulator', 'http://127.0.0.1:9197'],
-    ['Emulator UI', 'http://localhost:9002'],
     ['Database URLs', `postgres://postgres:postgres@localhost:${pgPort}/roar_core`],
     ['', `postgres://postgres:postgres@localhost:${pgPort}/roar_assessment`],
     ['DB browser', 'npx pgweb --url "<database URL>?sslmode=disable"'],
   ];
-  const labelWidth = Math.max(...rows.map(([label]) => label.length)) + 2;
-  ui.note(
-    rows.map(([label, value]) => `${label.padEnd(labelWidth)}${value}`).join('\n'),
-    `${ASSESSMENT_NAME} is running`,
-    'done',
-  );
+  const labelWidth = Math.max(...rows.map(([label]) => label.length), 'Assessment'.length) + 2;
+  // The assessment URL is the one researchers actually need — bold, set apart.
+  const lines = [
+    ui.strong(`${'Assessment'.padEnd(labelWidth)}http://localhost:8000`),
+    '',
+    ...rows.map(([label, value]) => `${label.padEnd(labelWidth)}${value}`),
+  ];
+  ui.note(lines.join('\n'), `${ASSESSMENT_NAME} is running`, 'done');
 }
 
 export async function start(ui) {
