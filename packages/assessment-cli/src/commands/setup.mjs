@@ -7,8 +7,10 @@
  * `npm start`.
  *
  * This command must work from a fresh clone with an empty node_modules (it
- * performs the install itself), so it starts on the plain UI and upgrades to
- * the rich one after the install step.
+ * performs the install itself), so its first-ever run renders on the styled
+ * zero-dependency fallback UI — Node caches the failed @clack/prompts
+ * resolution for the life of the process, so there is no mid-run upgrade;
+ * every later command gets the rich UI.
  */
 import { copyFileSync, existsSync } from 'node:fs';
 import {
@@ -23,13 +25,11 @@ import { composeAvailable, daemonRunning, diagnosePortConflict } from '../docker
 import { DOCKER_DAEMON_LINES, DOCKER_INSTALL_LINES } from '../help.mjs';
 import { portInUse } from '../net.mjs';
 import { npmCli, run } from '../proc.mjs';
-import { loadUi } from '../ui.mjs';
 
 /** Must match the "engines" floor in the root package.json. */
 const NODE_MAJOR_FLOOR = 22;
 
-export async function setup(initialUi) {
-  let ui = initialUi;
+export async function setup(ui) {
   const warnings = [];
   const pgPort = resolvePgPort();
 
@@ -99,9 +99,6 @@ export async function setup(initialUi) {
     process.exitCode = installStatus;
     return;
   }
-  // A fresh clone starts this command on the plain UI; the install above just
-  // made the rich one available — upgrade for the rest of the run.
-  if (!ui.rich) ui = await loadUi();
   const buildStatus = run(
     [
       ...npmCli(),
