@@ -38,7 +38,7 @@ export async function setup(ui) {
   // ── 1. Node.js version ─────────────────────────────────────────────────────
   // npm alone only warns (EBADENGINE) and continues on old Node, and the
   // eventual failure looks unrelated.
-  ui.step(`[1/5] Checking Node.js (version ${NODE_MAJOR_FLOOR} or newer required)...`);
+  ui.step('[1/5] Checking Node.js...');
   const nodeMajor = Number(process.versions.node.split('.')[0]);
   if (nodeMajor >= NODE_MAJOR_FLOOR) {
     ui.success(`Found Node ${process.version}.`);
