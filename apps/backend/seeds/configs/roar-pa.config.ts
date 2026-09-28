@@ -28,23 +28,6 @@ export const paConfig: TaskSeedConfig = {
       image: 'https://raw.githubusercontent.com/yeatmanlab/roar-assets/main/roar-apps/phoneme-no-lion.png',
     },
   },
-  allowedParamKeys: new Set([
-    'abilityMethod',
-    'consent',
-    'earlyStopping',
-    'isAdaptive',
-    'itemSelect',
-    'language',
-    'logicalOperation',
-    'numTestItems',
-    'randomSeed',
-    'recruitment',
-    'scoreKind',
-    'scoringVersion',
-    'skipInstructions',
-    'storyOption',
-    'userMode',
-  ]),
   validateVariant(loc, params) {
     if (!('language' in params)) {
       throw new Error(`${loc}: "language" is required`);
