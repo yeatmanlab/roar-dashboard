@@ -42,7 +42,13 @@ export default defineConfig(({ mode }) => ({
           // Default to '' so dev builds emit relative URLs, which Vite proxies. The
           // version prefix comes from the contract, so ROAR_API_BASE_URL is an origin with no path.
           ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || ''),
-          'process.env.FIREBASE_AUTH_EMULATOR_HOST': JSON.stringify(process.env.FIREBASE_AUTH_EMULATOR_HOST || ''),
+          // Development only. src/main.js calls connectAuthEmulator() on any non-empty
+          // value, so injecting this into a deployed build would point it at an emulator
+          // that issues unverified tokens. Staging and production resolve Firebase config
+          // from /__/firebase/init.json instead.
+          'process.env.FIREBASE_AUTH_EMULATOR_HOST': JSON.stringify(
+            mode === 'development' ? process.env.FIREBASE_AUTH_EMULATOR_HOST || '' : '',
+          ),
         }
       : {},
   server: getServerConfig(mode),

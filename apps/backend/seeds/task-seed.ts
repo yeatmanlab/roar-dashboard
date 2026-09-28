@@ -11,7 +11,6 @@
  *
  * The --task argument selects a config from the registry which provides:
  * - Task ID(s) and metadata (name, nameSimple, nameTechnical)
- * - Allowed parameter keys for validation
  * - Optional custom validation function
  *
  * Idempotent — tasks and variants that already exist are skipped.
@@ -120,15 +119,6 @@ function validateVariants(raw: unknown): VariantDef[] {
     }
 
     const p = params as Record<string, unknown>;
-
-    // Validate allowed parameter keys if the config defines them
-    if (config.allowedParamKeys) {
-      for (const key of Object.keys(p)) {
-        if (!config.allowedParamKeys.has(key)) {
-          throw new Error(`${loc}: unknown param "${key}"`);
-        }
-      }
-    }
 
     // Run custom validation if provided. Return false to skip the variant.
     if (config.validateVariant) {
