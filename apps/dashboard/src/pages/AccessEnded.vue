@@ -1,5 +1,6 @@
 <script setup>
 import PvButton from 'primevue/button';
+import { AppMessageState, MESSAGE_STATE_TYPES } from '@/components/AppMessageState';
 import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { useGlobalError } from '@/composables/useGlobalError';
 
@@ -13,12 +14,15 @@ function handleSignOut() {
 </script>
 
 <template>
-  <div class="flex flex-column align-items-center justify-content-center min-h-screen p-4">
-    <i class="pi pi-lock text-6xl text-red-500 mb-4" aria-label="Access denied" />
-    <h1 class="text-2xl font-bold mb-2">Access Has Ended</h1>
-    <p class="text-center text-gray-600 mb-4 max-w-30rem">
-      Your access to this platform has ended. If you believe this is an error, please contact your administrator.
-    </p>
-    <PvButton label="Sign Out" outlined @click="handleSignOut" />
+  <div class="flex flex-column align-items-center justify-content-center min-h-screen-minus-nav p-4">
+    <AppMessageState
+      :type="MESSAGE_STATE_TYPES.ERROR"
+      title="Access Has Ended"
+      message="Your access to this platform has ended. If you believe this is an error, please contact your administrator."
+    >
+      <template #actions>
+        <PvButton label="Sign Out" outlined @click="handleSignOut" />
+      </template>
+    </AppMessageState>
   </div>
 </template>

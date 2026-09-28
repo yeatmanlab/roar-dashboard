@@ -313,10 +313,10 @@ async function create(authContext, body) {
 
 ```bash
 # Run all model tests
-fga model test --tests tests/*.fga.yaml
+fga model test --tests '*.fga.yaml'
 
 # Run a specific test file
-fga model test --tests tests/administration-permissions.fga.yaml
+fga model test --tests administration-permissions.fga.yaml
 
 # Validate model syntax
 fga model validate --file authorization-model.fga
