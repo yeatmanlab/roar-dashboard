@@ -26,7 +26,7 @@ describe('useAccountOwnerForm', () => {
     form.setField('unknown', 'not allowed');
 
     expect(form.validate()).toBe(false);
-    expect(form.errors.value.email).toBe('Enter a complete email address.');
+    expect(form.errors.value.email).toBe('Enter your email address.');
     expect(form.touched).toEqual({ firstName: true, lastName: true, email: true, password: true });
     expect(form.values).not.toHaveProperty('unknown');
   });
@@ -34,7 +34,7 @@ describe('useAccountOwnerForm', () => {
   it.each([
     ['firstName', ' ', 'Enter your first name.'],
     ['lastName', ' ', 'Enter your last name.'],
-    ['email', 'not-an-email', 'Enter a complete email address.'],
+    ['email', 'not-an-email', 'Enter a valid email address, such as you@example.com.'],
     ['password', '1234567', 'Use at least 8 characters for your password.'],
   ])('uses Vuelidate rules for an invalid %s', (field, value, message) => {
     const form = useAccountOwnerForm();
@@ -54,7 +54,7 @@ describe('useAccountOwnerForm', () => {
     const form = useAccountOwnerForm();
     form.touch('email');
 
-    expect(form.errors.value.email).toBe('Enter a complete email address.');
+    expect(form.errors.value.email).toBe('Enter your email address.');
 
     form.setField('email', 'parent@example.com');
 

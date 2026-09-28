@@ -20,31 +20,7 @@
         </section>
       </SignInCard>
 
-      <!-- Footer (Language, Privacy, Terms) -->
-      <footer class="signin-footer">
-        <a href="#trouble" class="hidden">{{ $t('pageSignIn.havingTrouble') }}</a>
-        <div class="w-full flex">
-          <div class="flex-1">
-            <LanguageSelector />
-          </div>
-          <div class="flex gap-2">
-            <a
-              :href="TERMS_OF_SERVICE_DOCUMENT_PATH"
-              class="text-400 text-sm hover:text-primary pt-2 hidden"
-              target="_blank"
-            >
-              {{ $t('pageSignIn.Privacy') }}
-            </a>
-            <a
-              :href="TERMS_OF_SERVICE_DOCUMENT_PATH"
-              class="text-400 inline-block text-sm hover:text-primary pt-2"
-              target="_blank"
-            >
-              {{ $t('pageSignIn.Terms') }}
-            </a>
-          </div>
-        </div>
-      </footer>
+      <AuthPageFooter />
     </div>
   </div>
 </template>
@@ -52,10 +28,8 @@
 <script setup>
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
-import { TERMS_OF_SERVICE_DOCUMENT_PATH } from '@/constants/auth';
-
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
-import LanguageSelector from '@/components/LanguageSelector.vue';
+import AuthPageFooter from '@/components/AuthPageFooter.vue';
 import AppSpinner from '@/components/AppSpinner.vue';
 import SignInCard from '@/containers/SignIn/components/SignInCard/SignInCard.vue';
 import SignInContainer from '@/containers/SignIn/SignIn.vue';

@@ -49,7 +49,7 @@ const { data: currentUser } = useCurrentUser();
 // @TODO: Move the navbar blacklist to route meta definitions.
 const navbarBlacklist = [
   'SignIn',
-  'Register',
+  'RegisterHome',
   'SSO',
   'Maintenance',
   'PlayApp',
