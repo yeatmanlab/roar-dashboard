@@ -11,6 +11,10 @@ export const GLOBAL_ERROR_TYPES = Object.freeze({
   ROSTERING_ENDED: 'rostering-ended',
   /** Terminal auth failure (`auth/required`, `auth/token-expired`). */
   AUTH_EXPIRED: 'auth-expired',
-  /** Any other `/me` failure (5xx, network, unexpected non-200). */
+  /**
+   * Any other bootstrap failure without a more specific page: a `/me`
+   * failure (5xx, network, unexpected non-200), a missing API base URL
+   * (`config/base-url-missing`), or a failed Firekit init.
+   */
   SERVER_ERROR: 'server-error',
 });
