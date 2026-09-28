@@ -7,7 +7,7 @@
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
 import { ApiContractV1 } from '@roar-platform/api-contract';
 import { useAuthStore } from '@/store/auth';
-import { API_ERROR_CODES } from '@/utils/api-errors';
+import { API_ERROR_CODES, getApiErrorCode } from '@/utils/api-errors';
 
 const ROAR_API_BASE_URL = import.meta.env.VITE_ROAR_API_BASE_URL;
 
@@ -22,7 +22,8 @@ let clientInstance = null;
  * Concurrent refreshes are deduplicated inside authStore.forceIdTokenRefresh.
  *
  * @param {Object} args - ts-rest API args
- * @returns {Promise<Response>} The response from the API
+ * @returns {Promise<{status: number, body: unknown, headers: Headers}>} The parsed
+ *   ts-rest result — NOT a fetch Response (no clone()/json() methods).
  */
 async function apiWithAuthRetry(args) {
   const authStore = useAuthStore();
@@ -47,7 +48,7 @@ async function apiWithAuthRetry(args) {
   // is read straight off `response.body`; a non-JSON body (string/blob)
   // yields undefined and falls through to the original 401.
   if (response.status === 401) {
-    const errorCode = response.body?.error?.code;
+    const errorCode = getApiErrorCode(response);
 
     if (errorCode === API_ERROR_CODES.AUTH_TOKEN_EXPIRED || errorCode === API_ERROR_CODES.AUTH_TOKEN_INVALID) {
       let freshToken;

@@ -17,14 +17,16 @@ export interface Logger {
  * @property baseUrl - API base URL for all requests
  * @property auth - Authentication callbacks for token management
  * @property auth.getToken - Retrieves current auth token (called before each request)
- * @property auth.refreshToken - Optional. Called at most once per 401 carrying the
- *   `auth/token-expired` or `auth/token-invalid` error code; the request is then retried
- *   once with the fresh token. Other 401s are surfaced unchanged. Omitted, no retry happens —
- *   `getToken` must then always return a fresh token.
+ * @property auth.refreshToken - Optional. Called on a 401 carrying the `auth/token-expired`
+ *   or `auth/token-invalid` error code (once per client for concurrent 401s); the request is
+ *   then retried once with the fresh token. Other 401s are surfaced unchanged. Omitted, no
+ *   retry happens — `getToken` must then always return a fresh token. A refresh MUST update
+ *   the source `getToken` reads from: if `getToken` keeps returning the stale token after a
+ *   refresh, every request silently doubles into a 401-refresh-retry cycle.
  * @property participant - Required participant identity context containing participantId
  * @property requestId - Optional function to generate request IDs for tracing
- * @property fetchImpl - Accepted for backwards compatibility but NOT honored: the underlying
- *   ts-rest fetcher always uses the global fetch. Stub the global in tests instead.
+ * @property fetchImpl - Deprecated and never honored: the underlying ts-rest fetcher always
+ *   uses the global fetch. Stub the global in tests instead. Slated for removal in the next major.
  * @property logger - Optional logger for debugging and monitoring (token-refresh path included)
  */
 export interface CommandContext {
@@ -35,6 +37,7 @@ export interface CommandContext {
   };
   participant: ParticipantContext;
   requestId?: () => string;
+  /** @deprecated Never honored — the ts-rest fetcher always uses the global fetch. */
   fetchImpl?: typeof fetch;
   logger?: Logger;
 }

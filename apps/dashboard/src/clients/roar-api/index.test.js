@@ -11,6 +11,10 @@ vi.mock('@ts-rest/core', () => ({
 
 vi.mock('@roar-platform/api-contract', () => ({
   ApiContractV1: {},
+  RefreshableAuthErrorCode: {
+    TOKEN_EXPIRED: 'auth/token-expired',
+    TOKEN_INVALID: 'auth/token-invalid',
+  },
 }));
 
 const mockAuthStore = {

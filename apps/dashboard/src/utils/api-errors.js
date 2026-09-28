@@ -51,10 +51,15 @@ export function getApiErrorMessage(response) {
  * is reserved for build-configuration failures raised in the browser before a
  * request is sent, so it can never collide with a server-sent code.
  */
+import { RefreshableAuthErrorCode } from '@roar-platform/api-contract';
+
 export const API_ERROR_CODES = Object.freeze({
   AUTH_REQUIRED: 'auth/required',
-  AUTH_TOKEN_EXPIRED: 'auth/token-expired',
-  AUTH_TOKEN_INVALID: 'auth/token-invalid',
+  // The refreshable token codes come from the api-contract so the dashboard,
+  // the assessment SDK, and the backend enum (parity-tested there) agree on
+  // the wire values the 401 refresh-and-retry keys on.
+  AUTH_TOKEN_EXPIRED: RefreshableAuthErrorCode.TOKEN_EXPIRED,
+  AUTH_TOKEN_INVALID: RefreshableAuthErrorCode.TOKEN_INVALID,
   AUTH_ROSTERING_ENDED: 'auth/rostering-ended',
   AUTH_USER_NOT_FOUND: 'auth/user-not-found',
   /**

@@ -120,6 +120,21 @@ describe('createApiClient', () => {
       expect(fetchHeaders(fetchMock, 1)['x-request-id']).toBe('req-1');
     });
 
+    it('retries with the newer token instead of refreshing when getToken already rotated', async () => {
+      // A staggered 401 that lands after another request's refresh completed
+      // must reuse the rotated token, not force a redundant refresh.
+      fetchMock.mockResolvedValueOnce(jsonResponse(401, expiredBody)).mockResolvedValueOnce(jsonResponse(200, okBody));
+      const getToken = vi.fn().mockResolvedValueOnce('stale-token').mockResolvedValue('rotated-token');
+      const refreshToken = vi.fn();
+      const client = buildClient({ getToken, refreshToken });
+
+      const result = await client.me.get();
+
+      expect(result.status).toBe(200);
+      expect(refreshToken).not.toHaveBeenCalled();
+      expect(fetchHeaders(fetchMock, 1).authorization).toBe('Bearer rotated-token');
+    });
+
     it('does not retry a 401 with a non-token error code', async () => {
       fetchMock.mockResolvedValue(jsonResponse(401, { error: { code: 'auth/required' } }));
       const refreshToken = vi.fn();

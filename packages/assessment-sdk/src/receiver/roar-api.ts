@@ -1,5 +1,5 @@
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
-import { ApiContractV1 } from '@roar-platform/api-contract';
+import { ApiContractV1, RefreshableAuthErrorCode } from '@roar-platform/api-contract';
 import type { CommandContext, Logger } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums/sdk-error-code.enum';
@@ -19,8 +19,8 @@ export interface ApiClientConfig {
     refreshToken?(): Promise<string | undefined>;
   };
   requestId?: () => string;
-  /** Accepted for backwards compatibility but NOT honored — the underlying ts-rest fetcher
-   *  always uses the global fetch. Stub the global in tests instead. */
+  /** @deprecated Never honored — the underlying ts-rest fetcher always uses the global
+   *  fetch. Stub the global in tests instead. Slated for removal in the next major. */
   fetchImpl?: typeof fetch;
   /** Used for token-refresh observability: a refresh attempt logs at debug, a failed refresh at warn. */
   logger?: Logger;
@@ -28,11 +28,10 @@ export interface ApiClientConfig {
 
 /**
  * Backend auth error codes that a single forced token refresh can repair.
- * The backend's ApiErrorCode enum is not published, so the literals are
- * pinned here — the same way the dashboard client pins them in
- * `utils/api-errors.js`.
+ * Shared via the api-contract so the SDK, the dashboard client, and the
+ * backend enum cannot drift apart (the backend pins them with a parity test).
  */
-const REFRESHABLE_AUTH_ERROR_CODES = new Set(['auth/token-expired', 'auth/token-invalid']);
+const REFRESHABLE_AUTH_ERROR_CODES = new Set<string>(Object.values(RefreshableAuthErrorCode));
 
 /**
  * Extracts the error code from a parsed ts-rest 401 body.
@@ -64,10 +63,13 @@ function getAuthErrorCode(body: unknown): string | undefined {
  * When `auth.refreshToken` is provided, a 401 response carrying the
  * `auth/token-expired` or `auth/token-invalid` error code triggers one token
  * refresh and one retry with the fresh token — mirroring the dashboard
- * client's semantics. Concurrent 401s share a single in-flight refresh, so a
- * burst of trial writes cannot stampede the auth provider. Any other 401,
- * a failed refresh, or a refresh resolving no token surfaces the original
- * 401 unchanged for the caller to treat as terminal.
+ * client's semantics. Before refreshing, `getToken` is consulted again — a
+ * 401 raced by a refresh that already happened retries directly with the
+ * newer token. Concurrent 401s within this client share a single in-flight
+ * refresh; hosts that create several clients over the same callbacks must
+ * dedupe inside `refreshToken` itself (the dashboard's `forceIdTokenRefresh`
+ * does). Any other 401, a failed refresh, or a refresh resolving no token
+ * surfaces the original 401 unchanged for the caller to treat as terminal.
  *
  * Unlike the {@link RoarApi} constructor, this does not require a participantId, so it can
  * be used for unauthenticated/pre-provisioning calls such as anonymous-session bootstrap.
@@ -124,7 +126,12 @@ export function createApiClient(config: ApiClientConfig) {
 
       config.logger?.debug('[assessment-sdk] 401 with refreshable auth error code, refreshing token', { errorCode });
 
-      const freshToken = await refreshOnce(refreshToken);
+      // A staggered burst of stale-token 401s must not trigger one refresh
+      // each: when getToken already returns a different token than the failed
+      // request used (a refresh completed in the meantime), retry with it
+      // directly instead of forcing another refresh round-trip.
+      const currentToken = await config.auth.getToken();
+      const freshToken = currentToken && currentToken !== token ? currentToken : await refreshOnce(refreshToken);
       // No fresh token (signed out mid-request, refresh failed): a retry
       // without a valid Authorization header is a guaranteed 401 — skip the
       // round-trip and surface the original response as the terminal error.
