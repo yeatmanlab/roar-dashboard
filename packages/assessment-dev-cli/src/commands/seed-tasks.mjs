@@ -20,6 +20,42 @@ import { containerRunning } from '../docker.mjs';
 import { paramsFileMissingLines } from '../help.mjs';
 import { npmCli, run } from '../proc.mjs';
 
+/**
+ * The seeder invocation `seed:tasks` and `start`'s fast path share: the same
+ * idempotent, additive-by-name seeder the migrate container runs, executed
+ * from the host against the live container database. Env vars set here take
+ * precedence over apps/backend/.env (dotenv does not override already-set
+ * variables), so this targets the container DB regardless of local backend
+ * config.
+ *
+ * @param {string} pgPort - Resolved Postgres host port.
+ * @param {string[]} [extraArgs] - Forwarded to the seeder (e.g. --refresh-params).
+ * @returns {{ command: string[], options: object }} Arguments for run()/runStreamed().
+ */
+export function seederInvocation(pgPort, extraArgs = []) {
+  return {
+    command: [
+      ...npmCli(),
+      'run',
+      '--silent',
+      'dev:seed:tasks',
+      '-w',
+      'apps/backend',
+      '--',
+      '--task',
+      ASSESSMENT_NAME,
+      ...extraArgs,
+    ],
+    options: {
+      cwd: REPO_ROOT,
+      env: {
+        CORE_DATABASE_URL: `postgres://postgres:postgres@localhost:${pgPort}/roar_core`,
+        TASK_VARIANT_PARAMETERS_FILE: PARAMS_FILE,
+      },
+    },
+  };
+}
+
 export async function seedTasks(ui, args = []) {
   if (!existsSync(PARAMS_FILE)) {
     const [headline, ...rest] = paramsFileMissingLines();
@@ -49,20 +85,8 @@ export async function seedTasks(ui, args = []) {
     ui.info('To apply changed parameters to an existing variant, run: npm run seed:tasks -- --refresh-params');
   }
 
-  // Run the same seeder the migrate container uses, but from the host against
-  // the live database. Env vars set here take precedence over apps/backend/.env
-  // (dotenv does not override already-set variables), so this targets the
-  // container DB regardless of local backend config.
-  const status = run(
-    [...npmCli(), 'run', 'dev:seed:tasks', '-w', 'apps/backend', '--', '--task', ASSESSMENT_NAME, ...args],
-    {
-      cwd: REPO_ROOT,
-      env: {
-        CORE_DATABASE_URL: `postgres://postgres:postgres@localhost:${pgPort}/roar_core`,
-        TASK_VARIANT_PARAMETERS_FILE: PARAMS_FILE,
-      },
-    },
-  );
+  const { command, options } = seederInvocation(pgPort, args);
+  const status = run(command, options);
   if (status !== 0) {
     process.exitCode = status;
     return;

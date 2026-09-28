@@ -83,19 +83,18 @@ For scripting: `npm run stop -- --keep-data` keeps without asking, `npm run stop
 
 ## Switching between assessments
 
-The Docker stack — database, backend, and Firebase emulators — is **shared across all assessments** and keeps running in the background; only the dev server on port 8000 is per-assessment. So moving from one assessment to another (say `roar-swr` → `roar-pa`) tears nothing down:
+The Docker stack — database, backend, and Firebase emulators — is **shared across all assessments** and keeps running in the background; only the dev server on port 8000 is per-assessment. Moving from one assessment to another (say `roar-swr` → `roar-pa`) is:
 
 1. **Stop the current dev server** with Ctrl+C — frees port 8000; the stack and your data stay up.
-2. **`cd` to the other assessment** (e.g. `cd ../roar-pa`).
-3. **Seed it into the running database:** `npm run seed:tasks`. The stack only auto-seeds the _first_ assessment that brought it up, so each additional assessment you switch to needs its task(s)/variants seeded once — until then it starts but can't resolve a variant. (First time on that assessment, create its config first: `cp taskVariantParameters.example.json taskVariantParameters.json`.)
-4. **`npm start`** — it detects the running stack and launches this assessment's dev server against the same database.
+2. **`cd` to the other assessment** (e.g. `cd ../roar-pa`) and **`npm start`** — it detects the running stack, makes sure this assessment's tasks and variants are seeded (idempotent, a few seconds), and launches its dev server against the same database.
+
+The only first-time prerequisite is the assessment's `taskVariantParameters.json` (`npm run setup`, or `cp taskVariantParameters.example.json taskVariantParameters.json`) — `npm start` names that fix if the file is missing.
 
 A few things follow from the stack being shared and persistent:
 
-- **Switching back needs no re-seed.** Seeding is additive and the database persists — it survives Ctrl+C and a data-keeping `npm stop`; only `npm restart` (or choosing delete at `npm stop`) wipes it. Once an assessment is seeded, returning to it is just Ctrl+C → `cd` → `npm start`.
+- **Every switch path is the same two commands.** Whether the stack kept running (Ctrl+C), was stopped keeping data, or was wiped: `cd` + `npm start` does the right thing — the bring-up path seeds via the migration container, the fast path re-runs the same idempotent seeder from the host. The database survives Ctrl+C and a data-keeping `npm stop`; only `npm restart` (or choosing delete at `npm stop`) wipes it.
 - **Runs from both assessments coexist** in the same database — handy for cross-assessment work.
 - **No full `npm run setup` needed.** The platform libraries are built once at the repo root and shared, so only the per-assessment `taskVariantParameters.json` (and its seed) is assessment-specific. Running `setup` mid-switch would also spuriously flag the stack's ports as "in use" — that's your own running stack.
-- **If you fully stopped the stack** (`npm stop`) between assessments, skip step 3: the next `npm start` brings the stack up fresh and auto-seeds whichever assessment you start it from.
 
 ---
 
@@ -106,7 +105,7 @@ Run all of these from the assessment's directory. This is the whole surface — 
 | Script               | What it does                                                                                                                                      | When to use                                                                                                                   |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `npm run setup`      | Check prerequisites, install deps, build platform libraries, create the config file                                                               | Once, on first setup (or on a fresh clone)                                                                                    |
-| `npm start`          | Start the shared stack (if not already up) and the assessment dev server                                                                          | Every time you sit down to work                                                                                               |
+| `npm start`          | Start the shared stack (if not already up), ensure this assessment is seeded, and run its dev server                                              | Every time you sit down to work                                                                                               |
 | `npm run seed:tasks` | Seed **new** variants from `taskVariantParameters.json` into the running DB, no teardown (add `-- --refresh-params` to also update existing ones) | After editing `taskVariantParameters.json`, to pick up new or changed variants **without losing your data**                   |
 | `npm stop`           | Stop all Docker services; asks whether to keep or delete the database (default: keep)                                                             | Pausing work (keep), or a completely clean slate (delete)                                                                     |
 | `npm restart`        | Confirmed full teardown (**deletes data**) and fresh start                                                                                        | When the stack is wedged and `seed:tasks` isn't the issue. **Destroys your data**                                             |

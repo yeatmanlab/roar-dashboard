@@ -102,11 +102,18 @@ export async function stop(ui, args = []) {
   if (!keepData) {
     // If the retried compose down above also failed, this is the only removal
     // of the data volume — without it the "deletes the local database"
-    // contract breaks. The legacy pre-Postgres-18 name is included as cheap
-    // insurance for checkouts that ran the old stack: compose down -v only
+    // contract breaks. The legacy names are included as cheap insurance for
+    // checkouts that ran earlier revisions of the stack: compose down -v only
     // removes volumes the current file declares, so nothing else ever deletes
-    // it.
-    capture(['docker', 'volume', 'rm', 'roar-assessment_postgres-18-data', 'roar-assessment_pgdata']);
+    // them.
+    capture([
+      'docker',
+      'volume',
+      'rm',
+      'roar-assessment-postgres-data',
+      'roar-assessment_postgres-18-data',
+      'roar-assessment_pgdata',
+    ]);
   }
 
   ui.success(stoppedMessage);

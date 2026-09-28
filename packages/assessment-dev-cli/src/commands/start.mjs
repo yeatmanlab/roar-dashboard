@@ -19,7 +19,8 @@ import {
 } from '../docker.mjs';
 import { DOCKER_DAEMON_LINES, DOCKER_INSTALL_LINES, paramsFileMissingLines } from '../help.mjs';
 import { portInUse } from '../net.mjs';
-import { capture, npmCli } from '../proc.mjs';
+import { capture, npmCli, runStreamed } from '../proc.mjs';
+import { seederInvocation } from './seed-tasks.mjs';
 
 /** Containers force-removed before a fresh bring-up (stale-run leftovers). */
 const STALE_CONTAINERS = [
@@ -75,6 +76,29 @@ export async function start(ui) {
   if (containerRunning('assessment-backend') && containerRunning('firebase-emulator')) {
     ui.intro(`${ASSESSMENT_NAME} start`);
     ui.success('Assessment environment already running.');
+
+    // The bring-up path seeds via the migrate container, but a running stack
+    // was seeded for whichever assessment started it — switching assessments
+    // with Ctrl+C + cd + npm start would otherwise land in a database without
+    // this assessment's tasks/variants. The seeder is idempotent and additive,
+    // so re-running it here makes every switch path just `npm start`.
+    if (!existsSync(PARAMS_FILE)) {
+      const [headline, ...rest] = paramsFileMissingLines();
+      ui.note(rest.join('\n'), headline, 'error');
+      process.exitCode = 1;
+      return;
+    }
+    const seed = ui.task(`Making sure "${ASSESSMENT_NAME}" tasks and variants are seeded...`);
+    const { command, options } = seederInvocation(pgPort);
+    const seedStatus = await runStreamed(command, options, seed.line);
+    if (seedStatus !== 0) {
+      seed.fail(
+        'Seeding failed — fix the reported problem (usually a taskVariantParameters.json entry), then npm start.',
+      );
+      process.exitCode = seedStatus;
+      return;
+    }
+    seed.done('Tasks and variants are seeded.');
   } else {
     ui.intro(`${ASSESSMENT_NAME} start`);
 

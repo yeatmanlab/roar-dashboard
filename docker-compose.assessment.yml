@@ -55,12 +55,14 @@ services:
       # Host side defaults to 5433 to coexist with a persistent Postgres on 5432.
       - "${ASSESSMENT_PG_PORT:-5433}:5432"
     volumes:
-      # postgres-18-data (not the previous "pgdata") so the Postgres 17 → 18 bump
-      # and the switch to the shared init script both take effect on a fresh
-      # volume — init scripts only run when the data directory is empty. The
-      # postgres:18 image expects the mount at /var/lib/postgresql (not .../data);
-      # it lays out major-version subdirectories underneath.
-      - postgres-18-data:/var/lib/postgresql
+      # Explicitly named (mirroring the platform stack's roar-postgres-data)
+      # rather than compose's auto <project>_<key> prefix. The name changed from
+      # the auto-generated roar-assessment_postgres-18-data — the "18" marker
+      # forced a fresh volume for the Postgres 17→18 bump and has done its job;
+      # the CLI's delete path still removes the legacy names. The postgres:18
+      # image expects the mount at /var/lib/postgresql (not .../data); init
+      # scripts only run when the data directory is empty.
+      - postgres-data:/var/lib/postgresql
       - ./docker/postgres:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
 
@@ -195,4 +197,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres-18-data:
+  postgres-data:
+    name: roar-assessment-postgres-data
