@@ -42,7 +42,7 @@ vi.mock('@/composables/queries/useMeQuery', () => ({
   fetchMe: vi.fn(),
 }));
 
-import { isUnauthenticatedRouteAllowed, routes } from './index';
+import router, { isUnauthenticatedRouteAllowed, routes } from './index';
 
 describe('router launch routes', () => {
   it('defines a proxy-launch route for every game route', () => {
@@ -75,5 +75,20 @@ describe('router unauthenticated routes', () => {
 
   it('does not allow a protected route without authentication', () => {
     expect(isUnauthenticatedRouteAllowed({ name: 'Protected', meta: {} })).toBe(false);
+  });
+
+  it.each([
+    APP_ROUTES.REGISTER,
+    `${APP_ROUTES.REGISTER}?code=`,
+    `${APP_ROUTES.REGISTER}?code=not-a-real-code`,
+    `${APP_ROUTES.REGISTER}?invitationCode=%25%25%25`,
+  ])('keeps open signup available at %s without passing invitation context', (location) => {
+    const resolvedRoute = router.resolve(location);
+    const registrationRoute = routes.find((route) => route.path === APP_ROUTES.REGISTER);
+
+    expect(resolvedRoute.name).toBe('RegisterHome');
+    expect(isUnauthenticatedRouteAllowed(resolvedRoute)).toBe(true);
+    expect(registrationRoute.props).toBeUndefined();
+    expect(registrationRoute.children).toBeUndefined();
   });
 });
