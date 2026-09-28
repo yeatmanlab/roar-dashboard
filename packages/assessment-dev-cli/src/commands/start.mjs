@@ -34,14 +34,12 @@ export async function start(ui) {
   const pgPort = resolvePgPort();
 
   if (!composeAvailable()) {
-    ui.error('Docker with Compose v2 is required.');
-    ui.note(DOCKER_INSTALL_LINES.join('\n'), 'Install Docker');
+    ui.note(DOCKER_INSTALL_LINES.join('\n'), 'Docker with Compose v2 is required', 'error');
     process.exitCode = 1;
     return;
   }
   if (!daemonRunning()) {
-    ui.error('Docker is installed but not running.');
-    ui.note(DOCKER_DAEMON_LINES.join('\n'), 'Start Docker');
+    ui.note(DOCKER_DAEMON_LINES.join('\n'), 'Docker is installed but not running', 'error');
     process.exitCode = 1;
     return;
   }
@@ -58,13 +56,12 @@ export async function start(ui) {
   if (containerRunning('assessment-backend') && containerRunning('firebase-emulator')) {
     ui.step('Assessment environment already running. Starting the dev server...');
   } else {
-    ui.intro(`Assessment environment — ${ASSESSMENT_NAME}`);
+    ui.intro(`${ASSESSMENT_NAME} start`);
 
     // Require the config file before Docker tries to seed from it.
     if (!existsSync(PARAMS_FILE)) {
       const [headline, ...rest] = paramsFileMissingLines();
-      ui.error(headline);
-      ui.note(rest.join('\n'), 'Create the config');
+      ui.note(rest.join('\n'), headline, 'error');
       process.exitCode = 1;
       return;
     }
@@ -81,8 +78,7 @@ export async function start(ui) {
     // culprit.
     for (const port of stackPorts(pgPort)) {
       if (portInUse(port)) {
-        ui.error(`Port ${port} is already in use.`);
-        ui.note(diagnosePortConflict(port, pgPort).join('\n'), `Free port ${port}`);
+        ui.note(diagnosePortConflict(port, pgPort).join('\n'), `Port ${port} is already in use`, 'error');
         process.exitCode = 1;
         return;
       }

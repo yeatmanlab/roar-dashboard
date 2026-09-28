@@ -69,8 +69,11 @@ export async function stop(ui, args = []) {
   }
 
   if (failedPids.length > 0) {
-    ui.error('Some containers could not be stopped (Linux AppArmor restriction).');
-    ui.note(`sudo kill -9 ${failedPids.join(' ')}`, 'Run this, then retry');
+    ui.note(
+      `Run this, then retry:\n  sudo kill -9 ${failedPids.join(' ')}`,
+      'Some containers could not be stopped (Linux AppArmor restriction)',
+      'error',
+    );
     process.exitCode = 1;
     return;
   }

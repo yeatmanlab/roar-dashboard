@@ -21,9 +21,9 @@ import path from 'node:path';
 import { REPO_ROOT } from '../context.mjs';
 import { portInUse, probe } from '../net.mjs';
 
-function fail(ui, headline, lines, noteTitle) {
-  ui.error(headline);
-  if (lines.length > 0) ui.note(lines.join('\n'), noteTitle);
+function fail(ui, headline, lines) {
+  if (lines.length > 0) ui.note(lines.join('\n'), headline, 'error');
+  else ui.error(headline);
   process.exitCode = 1;
 }
 
@@ -41,15 +41,10 @@ export async function predev(ui) {
   // actually use.
   const emulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
   if (!(await probe(`http://${emulatorHost}/`))) {
-    fail(
-      ui,
-      `No Firebase Auth emulator on ${emulatorHost}.`,
-      [
-        'Assessment environment: npm start',
-        'Platform context:       docker compose up -d --wait   (from the repo root)',
-      ],
-      'Start one first',
-    );
+    fail(ui, `No Firebase Auth emulator on ${emulatorHost}`, [
+      'Assessment environment: npm start',
+      'Platform context:       docker compose up -d --wait   (from the repo root)',
+    ]);
     return;
   }
 
@@ -82,12 +77,10 @@ export async function predev(ui) {
   } else if (await probe('https://localhost:4000/health/live')) {
     backendScheme = 'https';
   } else {
-    fail(
-      ui,
-      'No backend on localhost:4000.',
-      ['Assessment environment: npm start', 'Platform context:       NODE_ENV=development npm run dev -w apps/backend'],
-      'Start one first',
-    );
+    fail(ui, 'No backend on localhost:4000', [
+      'Assessment environment: npm start',
+      'Platform context:       NODE_ENV=development npm run dev -w apps/backend',
+    ]);
     return;
   }
 
@@ -106,12 +99,11 @@ export async function predev(ui) {
     const configured =
       existsSync(backendEnv) && /^FIREBASE_AUTH_EMULATOR_HOST=.+/m.test(readFileSync(backendEnv, 'utf8'));
     if (!configured) {
-      fail(
-        ui,
-        'The host-run backend is not configured for the Auth emulator.',
-        [`FIREBASE_AUTH_EMULATOR_HOST=${emulatorHost}`],
-        'Add this line to apps/backend/.env, then restart the backend',
-      );
+      fail(ui, 'The host-run backend is not configured for the Auth emulator', [
+        'Add this line to apps/backend/.env, then restart the backend:',
+        '',
+        `  FIREBASE_AUTH_EMULATOR_HOST=${emulatorHost}`,
+      ]);
     }
   }
 }

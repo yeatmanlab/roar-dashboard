@@ -13,14 +13,12 @@ import { DOCKER_DAEMON_LINES, DOCKER_INSTALL_LINES } from '../help.mjs';
 
 export async function rebuild(ui, args = []) {
   if (!composeAvailable()) {
-    ui.error('Docker with Compose v2 is required.');
-    ui.note(DOCKER_INSTALL_LINES.join('\n'), 'Install Docker');
+    ui.note(DOCKER_INSTALL_LINES.join('\n'), 'Docker with Compose v2 is required', 'error');
     process.exitCode = 1;
     return;
   }
   if (!daemonRunning()) {
-    ui.error('Docker is installed but not running.');
-    ui.note(DOCKER_DAEMON_LINES.join('\n'), 'Start Docker');
+    ui.note(DOCKER_DAEMON_LINES.join('\n'), 'Docker is installed but not running', 'error');
     process.exitCode = 1;
     return;
   }

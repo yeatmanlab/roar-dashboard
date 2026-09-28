@@ -23,8 +23,7 @@ import { npmCli, run } from '../proc.mjs';
 export async function seedTasks(ui, args = []) {
   if (!existsSync(PARAMS_FILE)) {
     const [headline, ...rest] = paramsFileMissingLines();
-    ui.error(headline);
-    ui.note(rest.join('\n'), 'Create the config');
+    ui.note(rest.join('\n'), headline, 'error');
     process.exitCode = 1;
     return;
   }
@@ -32,8 +31,11 @@ export async function seedTasks(ui, args = []) {
   // The seeder connects to the container's published Postgres port — if the
   // stack isn't up there is nothing to seed into.
   if (!containerRunning('assessment-db')) {
-    ui.error('The assessment environment is not running.');
-    ui.note('npm start', 'Start it first, then re-run this command');
+    ui.note(
+      'Start it first, then re-run this command:\n  npm start',
+      'The assessment environment is not running',
+      'error',
+    );
     process.exitCode = 1;
     return;
   }

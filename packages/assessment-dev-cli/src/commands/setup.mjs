@@ -33,7 +33,7 @@ export async function setup(ui) {
   const warnings = [];
   const pgPort = resolvePgPort();
 
-  ui.intro(`Setting up the assessment environment for "${ASSESSMENT_NAME}"`);
+  ui.intro(`${ASSESSMENT_NAME} setup`);
 
   // ── 1. Node.js version ─────────────────────────────────────────────────────
   // npm alone only warns (EBADENGINE) and continues on old Node, and the
@@ -43,10 +43,10 @@ export async function setup(ui) {
   if (nodeMajor >= NODE_MAJOR_FLOOR) {
     ui.success(`Found Node ${process.version}.`);
   } else {
-    ui.warn(`Node ${NODE_MAJOR_FLOOR}+ is required (found: ${process.version}).`);
     ui.note(
       `Install it from https://nodejs.org, or:\n  brew install node@${NODE_MAJOR_FLOOR} (macOS) / nvm install ${NODE_MAJOR_FLOOR}`,
-      'Upgrade Node',
+      `Node ${NODE_MAJOR_FLOOR}+ is required (found ${process.version})`,
+      'warn',
     );
     warnings.push(`Install Node ${NODE_MAJOR_FLOOR}+ and re-run 'npm run setup'.`);
   }
@@ -54,12 +54,10 @@ export async function setup(ui) {
   // ── 2. Docker ──────────────────────────────────────────────────────────────
   ui.step('[2/5] Checking Docker...');
   if (!composeAvailable()) {
-    ui.warn('Docker was not found on this machine.');
-    ui.note(DOCKER_INSTALL_LINES.join('\n'), 'Install Docker');
+    ui.note(DOCKER_INSTALL_LINES.join('\n'), 'Docker was not found on this machine', 'warn');
     warnings.push("Install Docker (Compose v2) before running 'npm start'.");
   } else if (!daemonRunning()) {
-    ui.warn('Docker is installed but not running.');
-    ui.note(DOCKER_DAEMON_LINES.join('\n'), 'Start Docker');
+    ui.note(DOCKER_DAEMON_LINES.join('\n'), 'Docker is installed but not running', 'warn');
     warnings.push("Start Docker before running 'npm start'.");
   } else {
     ui.success('Docker is installed and running.');
@@ -73,8 +71,7 @@ export async function setup(ui) {
   const busyPorts = [];
   for (const port of stackPorts(pgPort)) {
     if (portInUse(port)) {
-      ui.warn(`Port ${port} is already in use.`);
-      ui.note(diagnosePortConflict(port, pgPort).join('\n'), `Free port ${port}`);
+      ui.note(diagnosePortConflict(port, pgPort).join('\n'), `Port ${port} is already in use`, 'warn');
       busyPorts.push(port);
     }
   }
@@ -90,30 +87,30 @@ export async function setup(ui) {
   // dashboard and every assessment) keeps first-run fast and resilient to
   // unrelated breakage; `dependsOn: ["^build"]` still pulls in their upstream
   // dependencies.
-  ui.step('[4/5] Installing dependencies and building platform libraries...');
-  if (process.env.ROAR_CLI_BOOTSTRAPPED) {
-    // The first-run bootstrap in index.mjs ran the install seconds ago —
-    // re-verifying the whole tree would only add noise and time.
-    ui.info('Dependencies were already installed a moment ago — skipping.');
-  } else {
-    const install = ui.task('Installing dependencies (this can take a few minutes)...');
-    const installStatus = await runStreamed(
-      [...npmCli(), 'install', '--no-audit', '--no-fund', '--loglevel=error'],
-      { cwd: REPO_ROOT },
-      install.line,
-    );
-    if (installStatus !== 0) {
-      install.fail('npm install failed — fix the error above and re-run npm run setup.');
-      process.exitCode = installStatus;
-      return;
-    }
-    install.done('Dependencies installed.');
-  }
+  // The first-run bootstrap in index.mjs ran the install seconds ago —
+  // re-verifying the whole tree would only add noise and time, so the
+  // bootstrapped run builds only.
   // --output-logs=errors-only keeps successful (often cache-replayed) build
   // logs out of the collapsing tail; a failing task still prints its full
   // output. npm's --silent drops the script banners, and the env var silences
   // turbo's update banner.
-  const build = ui.task('Building platform libraries...');
+  const build = ui.task(
+    process.env.ROAR_CLI_BOOTSTRAPPED
+      ? '[4/5] Building platform libraries (dependencies were installed a moment ago)...'
+      : '[4/5] Installing dependencies and building platform libraries (this can take a few minutes)...',
+  );
+  if (!process.env.ROAR_CLI_BOOTSTRAPPED) {
+    const installStatus = await runStreamed(
+      [...npmCli(), 'install', '--no-audit', '--no-fund', '--loglevel=error'],
+      { cwd: REPO_ROOT },
+      build.line,
+    );
+    if (installStatus !== 0) {
+      build.fail('npm install failed — fix the error above and re-run npm run setup.');
+      process.exitCode = installStatus;
+      return;
+    }
+  }
   const buildStatus = await runStreamed(
     [
       ...npmCli(),
@@ -135,7 +132,11 @@ export async function setup(ui) {
     process.exitCode = buildStatus;
     return;
   }
-  build.done('Platform libraries built.');
+  build.done(
+    process.env.ROAR_CLI_BOOTSTRAPPED
+      ? 'Platform libraries built.'
+      : 'Dependencies installed and platform libraries built.',
+  );
 
   // ── 5. taskVariantParameters.json ──────────────────────────────────────────
   ui.step('[5/5] Setting up taskVariantParameters.json...');
@@ -153,7 +154,7 @@ export async function setup(ui) {
 
   // ── Summary ────────────────────────────────────────────────────────────────
   if (warnings.length > 0) {
-    ui.note(warnings.map((w) => `- ${w}`).join('\n'), "Resolve these before running 'npm start'");
+    ui.note(warnings.map((w) => `- ${w}`).join('\n'), "Resolve these before running 'npm start'", 'warn');
   }
   ui.note(
     [
