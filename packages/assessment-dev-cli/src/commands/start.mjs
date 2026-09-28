@@ -114,10 +114,17 @@ export async function start(ui) {
   ui.info(
     'The assessment opens at http://localhost:8000 — Ctrl+C stops the dev server; the environment keeps running until npm stop.',
   );
-  const [cmd, ...args] = [...npmCli(), 'run', 'dev'];
+  // npm's --silent drops the lifecycle banners; --no-deprecation silences
+  // third-party DeprecationWarnings from the dev server's dependencies, which
+  // researchers can neither act on nor need to see.
+  const [cmd, ...args] = [...npmCli(), 'run', '--silent', 'dev'];
   const child = spawn(cmd, args, {
     stdio: 'inherit',
-    env: { ...process.env, BACKEND_URL: ASSESSMENT_BACKEND_URL },
+    env: {
+      ...process.env,
+      BACKEND_URL: ASSESSMENT_BACKEND_URL,
+      NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --no-deprecation`.trim(),
+    },
   });
   // Ctrl+C goes to the whole foreground process group; let the dev server
   // handle it and mirror its exit code instead of dying first.

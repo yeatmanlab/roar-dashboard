@@ -2,7 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 
 const { merge } = require('webpack-merge');
-const { devEmulatorConfig } = require('../shared/devEmulatorWebpackConfig.cjs');
+const { devConfig } = require('../shared/devWebpackConfig.cjs');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
@@ -114,6 +114,15 @@ const webConfig = merge(commonConfig, {
     new HtmlWebpackPlugin({
       title: 'Rapid Online Assessment of Reading - Letter',
     }),
+  ],
+});
+
+const productionConfig = merge(webConfig, {
+  mode: 'production',
+  devtool: false,
+  // Sentry releases/source maps upload only from real (staging/production)
+  // builds — in dev the plugin has no auth token and only prints warnings.
+  plugins: [
     sentryWebpackPlugin({
       org: 'roar-89588e380',
       project: 'letter',
@@ -125,11 +134,6 @@ const webConfig = merge(commonConfig, {
       },
     }),
   ],
-});
-
-const productionConfig = merge(webConfig, {
-  mode: 'production',
-  devtool: false,
 });
 
 const developmentConfig = merge(webConfig, {
@@ -169,7 +173,7 @@ module.exports = async (env, args) => {
 
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig, devEmulatorConfig);
+      return merge(developmentConfig, envDependentConfig, devConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:
