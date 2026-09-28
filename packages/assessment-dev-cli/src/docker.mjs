@@ -112,7 +112,7 @@ export function diagnosePortConflict(port, pgPort) {
     ? lsof.stdout.split('\n')[1]?.trim().split(/\s+/).slice(0, 2).join(' (pid ').concat(')')
     : undefined;
   if (holder && !holder.startsWith('(')) {
-    lines.push(`Held by: ${holder}. Stop that process and retry.`);
+    lines.push(`The port is held by another program: ${holder}. Stop that program, then retry.`);
   } else {
     lines.push(`Find the process with: lsof -i :${port}  (or: ss -tlnp | grep ${port})`);
     if (port === pgPort) {

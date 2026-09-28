@@ -1,6 +1,4 @@
 /** Canonical multi-line help texts, shared across commands so wording never drifts. */
-import { ASSESSMENT_DIR } from './context.mjs';
-
 export const DOCKER_INSTALL_LINES = [
   'macOS:         brew install --cask docker   (then launch Docker Desktop)',
   'Ubuntu/Debian: curl -fsSL https://get.docker.com | sh',
@@ -14,7 +12,7 @@ export const DOCKER_DAEMON_LINES = [
 
 export function paramsFileMissingLines() {
   return [
-    `taskVariantParameters.json not found in ${ASSESSMENT_DIR}.`,
+    'taskVariantParameters.json was not found in this directory.',
     "Create it with 'npm run setup', or copy the example yourself from this directory:",
     '  cp taskVariantParameters.example.json taskVariantParameters.json',
   ];

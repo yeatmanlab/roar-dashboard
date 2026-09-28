@@ -94,10 +94,10 @@ export async function start(ui) {
     // exiting: compose reports only a terse exit line, while the actual error —
     // most commonly the seeder naming an invalid taskVariantParameters.json
     // entry — is in the container's own output.
-    const up = ui.task('Starting the environment (DB, migrations, Firebase emulators, backend)...');
+    const up = ui.task('Starting the environment (database, Firebase emulators, backend)...');
     if (!(await composeStreamed(['up', '-d', '--wait', '--remove-orphans'], pgPort, up.line))) {
       up.fail('The environment failed to start.');
-      ui.step('Recent output from the migration/seed and backend containers:');
+      ui.step("Details from the environment's logs:");
       compose(['logs', '--no-color', '--tail=40', 'assessment-db-migrate', 'backend'], pgPort);
       ui.note(
         'Fix the reported problem (an invalid taskVariantParameters.json entry\nis the usual cause), then run: npm start',
@@ -107,7 +107,7 @@ export async function start(ui) {
       return;
     }
 
-    up.done('All services healthy. Starting the dev server...');
+    up.done('Environment ready — starting the assessment dev server...');
   }
 
   // Each package's `dev` script is the single source of truth for its bundler
@@ -115,6 +115,9 @@ export async function start(ui) {
   // value — dev-mode bundler configs default it to the local emulator.
   // BACKEND_URL points the /v1 proxy at the containerized backend (plain HTTP)
   // instead of the host-run TLS default.
+  ui.info(
+    'The assessment opens at http://localhost:8000 — Ctrl+C stops the dev server; the environment keeps running until npm stop.',
+  );
   const [cmd, ...args] = [...npmCli(), 'run', 'dev'];
   const child = spawn(cmd, args, {
     stdio: 'inherit',

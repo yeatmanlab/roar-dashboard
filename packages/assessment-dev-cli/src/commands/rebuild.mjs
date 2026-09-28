@@ -45,14 +45,14 @@ export async function rebuild(ui, args = []) {
   // state).
   if (containerRunning('assessment-backend')) {
     const apply = ui.task(
-      'Applying the new images to the running stack (database data survives; emulator auth users/recordings are in-memory and reset)...',
+      'Restarting the environment with the new images (your database is kept; sign-ins and uploaded recordings are reset)...',
     );
     if (!(await composeStreamed(['up', '-d', '--wait'], pgPort, apply.line))) {
       apply.fail('Applying the new images failed.');
       process.exitCode = 1;
       return;
     }
-    apply.done('New images applied.');
+    apply.done('Environment updated.');
   }
 
   ui.success('Rebuild complete.');

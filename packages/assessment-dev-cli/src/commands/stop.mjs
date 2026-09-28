@@ -42,7 +42,7 @@ export async function stop(ui, args = []) {
 
   // --timeout 0 sends SIGKILL immediately instead of waiting for graceful shutdown.
   if (compose(['down', '-v', '--remove-orphans', '--timeout', '0'], pgPort, { quiet: true }).ok) {
-    ui.success('Assessment environment stopped.');
+    ui.success('Assessment environment stopped and local data deleted.');
     return;
   }
 

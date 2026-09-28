@@ -38,7 +38,7 @@ export async function setup(ui) {
   // ── 1. Node.js version ─────────────────────────────────────────────────────
   // npm alone only warns (EBADENGINE) and continues on old Node, and the
   // eventual failure looks unrelated.
-  ui.step(`[1/5] Checking the Node.js version (need ${NODE_MAJOR_FLOOR}+)...`);
+  ui.step(`[1/5] Checking Node.js (version ${NODE_MAJOR_FLOOR} or newer required)...`);
   const nodeMajor = Number(process.versions.node.split('.')[0]);
   if (nodeMajor >= NODE_MAJOR_FLOOR) {
     ui.success(`Found Node ${process.version}.`);
@@ -52,9 +52,9 @@ export async function setup(ui) {
   }
 
   // ── 2. Docker ──────────────────────────────────────────────────────────────
-  ui.step('[2/5] Checking Docker (Compose v2)...');
+  ui.step('[2/5] Checking Docker...');
   if (!composeAvailable()) {
-    ui.warn('Docker with Compose v2 was not found.');
+    ui.warn('Docker was not found on this machine.');
     ui.note(DOCKER_INSTALL_LINES.join('\n'), 'Install Docker');
     warnings.push("Install Docker (Compose v2) before running 'npm start'.");
   } else if (!daemonRunning()) {
@@ -62,16 +62,14 @@ export async function setup(ui) {
     ui.note(DOCKER_DAEMON_LINES.join('\n'), 'Start Docker');
     warnings.push("Start Docker before running 'npm start'.");
   } else {
-    ui.success('Found Docker with Compose v2 (daemon running).');
+    ui.success('Docker is installed and running.');
   }
 
   // ── 3. Stack host ports ────────────────────────────────────────────────────
   // Advisory only: `npm start` force-removes stale assessment containers
   // before its own (hard) port check, so a clash from a leftover assessment
   // run resolves itself — but a running platform stack or local process won't.
-  ui.step(
-    `[3/5] Checking that the stack's host ports are free (Postgres ${pgPort}, emulators 9099/9199/9000, backend 4000)...`,
-  );
+  ui.step("[3/5] Checking that the environment's network ports are free...");
   const busyPorts = [];
   for (const port of stackPorts(pgPort)) {
     if (portInUse(port)) {
@@ -96,7 +94,7 @@ export async function setup(ui) {
   if (process.env.ROAR_CLI_BOOTSTRAPPED) {
     // The first-run bootstrap in index.mjs ran the install seconds ago —
     // re-verifying the whole tree would only add noise and time.
-    ui.info('Dependencies were just installed by the first-run bootstrap.');
+    ui.info('Dependencies were already installed a moment ago — skipping.');
   } else {
     const install = ui.task('Installing dependencies (this can take a few minutes)...');
     const installStatus = await runStreamed(
@@ -145,7 +143,9 @@ export async function setup(ui) {
     ui.success('taskVariantParameters.json already exists — leaving it untouched.');
   } else if (existsSync(PARAMS_EXAMPLE_FILE)) {
     copyFileSync(PARAMS_EXAMPLE_FILE, PARAMS_FILE);
-    ui.success('Created taskVariantParameters.json from the example.');
+    ui.success(
+      'Created taskVariantParameters.json from the example — this file defines the variants your assessment can run.',
+    );
   } else {
     ui.warn('No taskVariantParameters.example.json found in this directory.');
     warnings.push("Create taskVariantParameters.json manually before running 'npm start'.");

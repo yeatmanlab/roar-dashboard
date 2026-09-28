@@ -32,7 +32,7 @@ export async function seedTasks(ui, args = []) {
   // The seeder connects to the container's published Postgres port — if the
   // stack isn't up there is nothing to seed into.
   if (!containerRunning('assessment-db')) {
-    ui.error('The assessment environment is not running (assessment-db container not found).');
+    ui.error('The assessment environment is not running.');
     ui.note('npm start', 'Start it first, then re-run this command');
     process.exitCode = 1;
     return;
@@ -41,10 +41,10 @@ export async function seedTasks(ui, args = []) {
   const pgPort = resolvePgPort();
   ui.step(`Seeding task variants for "${ASSESSMENT_NAME}" from taskVariantParameters.json...`);
   if (args.includes('--refresh-params')) {
-    ui.info('Refreshing parameters on existing variants too (--refresh-params). Generated run data is left untouched.');
+    ui.info('Updating existing variants with the parameters in the file. Your generated data is left untouched.');
   } else {
-    ui.info('Existing tasks, variants, and generated run data are left untouched (seeding is additive by name).');
-    ui.info('Changed a parameter on an EXISTING variant? Re-run with: npm run seed:tasks -- --refresh-params');
+    ui.info('Only new variants are added; existing variants and your generated data are left untouched.');
+    ui.info('To apply changed parameters to an existing variant, run: npm run seed:tasks -- --refresh-params');
   }
 
   // Run the same seeder the migrate container uses, but from the host against
