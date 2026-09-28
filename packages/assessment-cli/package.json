@@ -1,0 +1,29 @@
+{
+  "name": "@roar-platform/assessment-cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CLI behind the assessment packages' npm scripts (setup, start, stop, restart, seed:tasks, rebuild, predev).",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.8.1",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@roar-platform/eslint-config": "*",
+    "@roar-platform/prettier-config": "*",
+    "eslint": "^9.32.0",
+    "globals": "^16.3.0",
+    "vitest": "^3.2.4"
+  }
+}

@@ -16,7 +16,7 @@ tags: assessments, monorepo, build, integration, workspaces
 >
 > Written deliberately ahead of three changes expected to land alongside it, none of which were in that commit: declarative seed configs ([#1890](https://github.com/yeatmanlab/roar-dashboard/pull/1890)), the npm publishing manifest fields ([#2023](https://github.com/yeatmanlab/roar-dashboard/pull/2023)), and the last four `.json` scoring configs converting to `.ts`. If you're reading this after they merged, the note has served its purpose — delete this paragraph.
 
-Assessments live at `apps/assessments/<name>/` and are npm workspaces (`apps/assessments/*` is in the root `workspaces` array), built and orchestrated by Turbo. The package name is always `@roar-platform/<directory-name>` — the directory name is load-bearing: the seed registry, CI matrices, hosting targets, and the `ASSESSMENT_NAME` derived by `scripts/assessment-env-up.sh` all key off it.
+Assessments live at `apps/assessments/<name>/` and are npm workspaces (`apps/assessments/*` is in the root `workspaces` array), built and orchestrated by Turbo. The package name is always `@roar-platform/<directory-name>` — the directory name is load-bearing: the seed registry, CI matrices, hosting targets, and the `ASSESSMENT_NAME` derived by the assessment CLI (`packages/assessment-cli`) all key off it.
 
 ### Every assessment is two artifacts from one directory
 
@@ -223,7 +223,7 @@ Hosting resolution avoids that shape deliberately. `apps/assessments/hosting-tar
 
 ### Local development
 
-`npm start` in the assessment directory runs `scripts/assessment-env-up.sh`, which brings up the shared Docker stack (Postgres, migrations + seed, Firebase Auth/Storage emulators, backend) and then the assessment's dev server on `:8000`. The stack is shared across all assessments; only the dev server differs. `ASSESSMENT_NAME` is derived from the calling directory and drives `dev:seed:tasks -- --task ${ASSESSMENT_NAME}`, so **an unregistered assessment fails the migration container, not the dev server** — the error surfaces as a compose failure before anything starts, naming the available tasks.
+`npm start` in the assessment directory runs the assessment CLI (`packages/assessment-cli`), which brings up the shared Docker stack (Postgres, migrations + seed, Firebase Auth/Storage emulators, backend) and then the assessment's dev server on `:8000`. The stack is shared across all assessments; only the dev server differs. `ASSESSMENT_NAME` is derived from the calling directory and drives `dev:seed:tasks -- --task ${ASSESSMENT_NAME}`, so **an unregistered assessment fails the migration container, not the dev server** — the error surfaces as a compose failure before anything starts, naming the available tasks.
 
 Each assessment reads `taskVariantParameters.json` to seed its variants. That file is **gitignored**; `taskVariantParameters.example.json` is committed and documents every parameter with its valid values. See [ASSESSMENT_ENVIRONMENT.md](../../apps/assessments/ASSESSMENT_ENVIRONMENT.md) for the full environment guide.
 

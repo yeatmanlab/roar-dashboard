@@ -5,15 +5,13 @@ name: roar-assessment
 #
 # Start (run from an assessment directory, e.g. apps/assessments/roar-pa):
 #   npm start
-#   (or: bash ../../../scripts/assessment-env-up.sh)
+#   (runs the assessment CLI: packages/assessment-cli)
 #
 # Stop and delete data (run from an assessment directory):
 #   npm stop
-#   (or: bash ../../../scripts/assessment-env-down.sh)
 #
 # Rebuild images after pulling new code (run from an assessment directory):
 #   npm run rebuild
-#   (or: bash ../../../scripts/assessment-env-build.sh)
 #
 # Service dependency order:
 #   assessment-db (healthy) → assessment-db-migrate (completed)
@@ -35,7 +33,7 @@ services:
   # Published on host port ${ASSESSMENT_PG_PORT:-5433} — deliberately NOT the
   # standard 5432 — so this ephemeral stack can run alongside a persistent
   # platform-dev Postgres on 5432 (see docker-compose.yml, ROAR_PG_PORT).
-  # The assessment scripts export the same variable (scripts/assessment-common.sh),
+  # The assessment CLI exports the same variable (packages/assessment-cli),
   # so the port the scripts connect to and the port Compose publishes always match.
   # ────────────────────────────────────────────────────────────────────────────
   assessment-db:
@@ -70,7 +68,7 @@ services:
   # One-shot migration runner.
   # Applies all Drizzle migrations and seeds the assessment task data (FDW
   # prerequisites are provisioned by the Postgres init script). ASSESSMENT_NAME
-  # is set by assessment-env-up.sh and drives the dev:seed:tasks --task
+  # is set by the assessment CLI's start command and drives the dev:seed:tasks --task
   # ${ASSESSMENT_NAME} script. Exits 0 on success.
   # ────────────────────────────────────────────────────────────────────────────
   assessment-db-migrate:
