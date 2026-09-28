@@ -1,6 +1,5 @@
 import { ref } from 'vue';
 import { StatusCodes } from 'http-status-codes';
-import { useAuthStore } from '@/store/auth';
 import useCreateFamilyMutation from '@/composables/mutations/useCreateFamilyMutation';
 import { ACCOUNT_CREATION_ERROR_MESSAGE } from '@/constants/auth';
 import { mapParentFormToCreateFamily } from '@/helpers/registration/mapParentFormToCreateFamily';
@@ -18,54 +17,31 @@ import { mapParentFormToCreateFamily } from '@/helpers/registration/mapParentFor
  * post-auth by the per-administration consent gate. So registration is purely:
  *
  *   1. `POST /v1/families/` — create the caretaker + family (public, no token).
- *   2. Sign in the new caretaker (stays on firekit per the auth-unit migration
- *      boundary) and force a fresh ID token so the dashboard loads authenticated.
+ *   2. Return control to SelfRegistration so it can present an explicit success
+ *      state and let the owner continue to Sign In.
  *
  * Crucially this removes the pre-sign-in `GET /v1/agreements` lookup (which would
  * 401, since the agreements list route requires auth) and the consent recording.
  *
- * Sign-in (`logInWithEmailAndPassword`) and availability pre-checks intentionally
- * remain on firekit and are out of scope for this migration.
- *
- * Partial-failure / re-entry: once the family exists, re-`POST /families/` returns
- * 422 ("one family per caretaker"). When that happens we treat it as a resumed
- * attempt and simply sign in with the submitted credentials — there is no consent
- * to resume, so a successful sign-in fully recovers the common case (a prior
- * attempt that created the family but never signed the user in). If sign-in then
- * fails, we surface a clear, recoverable error rather than guessing.
+ * Sign-in remains an explicit owner action after the success screen. Re-entry
+ * failures therefore direct an existing owner to Sign In instead of silently
+ * authenticating from the registration form.
  *
  * @returns {{ submit: (form: Object) => Promise<void>, isSubmitting: import('vue').Ref<boolean>, error: import('vue').Ref<Error|null> }}
  */
 export function useFamilyRegistration() {
-  const authStore = useAuthStore();
   const createFamilyMutation = useCreateFamilyMutation();
 
   const isSubmitting = ref(false);
   const error = ref(null);
 
   /**
-   * Signs in the caretaker and forces a fresh ID token. Shared by the happy path
-   * and the 422 resume path.
-   *
-   * @param {string} email
-   * @param {string} password
-   */
-  async function signIn(email, password) {
-    await authStore.logInWithEmailAndPassword({ email, password });
-
-    // Guarantee a fresh ID token synchronously before the dashboard makes its
-    // first authenticated call; relying on the onIdTokenChanged listener to have
-    // populated accessToken would race.
-    await authStore.forceIdTokenRefresh();
-  }
-
-  /**
    * Runs the registration saga for the submitted parent form values.
    *
    * @param {Object} form - Parent form values: `{ email, password, firstName, lastName }`.
-   * @returns {Promise<void>} Resolves when the family is created and the caretaker
-   *   is signed in. On failure, `error.value` is set and the error is re-thrown so
-   *   the caller can keep the user on the form.
+   * @returns {Promise<void>} Resolves when the family and caretaker account are
+   *   created. On failure, `error.value` is set and the error is re-thrown so the
+   *   caller can keep the user on the form.
    */
   async function submit(form) {
     isSubmitting.value = true;
@@ -79,25 +55,13 @@ export function useFamilyRegistration() {
         await createFamilyMutation.mutateAsync({ body });
       } catch (createError) {
         if (createError?.status === StatusCodes.CONFLICT) {
-          // Keep public registration responses neutral so they cannot be used
-          // to determine whether an email address is already registered.
           throw new Error(ACCOUNT_CREATION_ERROR_MESSAGE);
         }
         if (createError?.status === StatusCodes.UNPROCESSABLE_ENTITY) {
-          // 422 — this caretaker already has a family. Treat as a resumed
-          // attempt: just sign in with the submitted credentials.
-          try {
-            await signIn(body.email, body.password);
-            return;
-          } catch {
-            throw new Error(ACCOUNT_CREATION_ERROR_MESSAGE);
-          }
+          throw new Error(ACCOUNT_CREATION_ERROR_MESSAGE);
         }
         throw createError;
       }
-
-      // 2. Sign in the new caretaker. Post-auth gates handle TOS and consent.
-      await signIn(body.email, body.password);
     } catch (caughtError) {
       error.value = caughtError instanceof Error ? caughtError : new Error(String(caughtError));
       throw error.value;

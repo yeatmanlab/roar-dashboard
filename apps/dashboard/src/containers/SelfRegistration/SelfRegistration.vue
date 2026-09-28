@@ -1,8 +1,14 @@
 <template>
   <div id="register-container" class="self-registration">
     <div class="self-registration-column">
-      <section id="register" class="self-registration-form-card" aria-labelledby="self-registration-heading">
-        <header class="self-registration-header">
+      <section
+        id="register"
+        class="self-registration-form-card"
+        :aria-labelledby="
+          registration.isSuccess.value ? 'self-registration-success-heading' : 'self-registration-heading'
+        "
+      >
+        <header v-if="!registration.isSuccess.value" class="self-registration-header">
           <div class="self-registration-logo" role="img" aria-label="ROAR">
             <ROARLogoShort aria-hidden="true" />
           </div>
@@ -23,7 +29,9 @@
           <p role="alert">{{ registration.errorMessage.value }}</p>
           <PvButton :label="t('pageRegister.close')" @click="registration.dismissError" />
         </PvDialog>
+        <RegistrationSuccess v-if="registration.isSuccess.value" :first-name="form.values.firstName" />
         <AccountOwnerForm
+          v-else
           :values="form.values"
           :errors="form.errors.value"
           :touched="form.touched"
@@ -35,7 +43,7 @@
           :submitting="registration.isSubmitting.value"
           @update:field="form.setField"
           @touch="form.touch"
-          @update:legal-accepted="consent.setLegalAccepted"
+          @update:legal-accepted="handleLegalAccepted"
           @update:future-contact-allowed="consent.setFutureContactAllowed"
           @verification="registration.setVerificationToken"
           @submit="handleSubmit"
@@ -43,6 +51,16 @@
       </section>
       <AuthPageFooter />
     </div>
+
+    <ConsentModal
+      :visible="consent.isModalOpen.value"
+      :document="consent.consentDocument.value"
+      :loading="consent.isLoading.value"
+      :load-failed="Boolean(consent.loadError.value)"
+      @cancel="consent.closeModal"
+      @retry="loadResearchConsent"
+      @confirm="confirmResearchConsent"
+    />
   </div>
 </template>
 
@@ -52,13 +70,16 @@ import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import AuthPageFooter from '@/components/AuthPageFooter.vue';
+import { useAuthStore } from '@/store/auth';
 import { i18n } from '@/translations/i18n';
-import { AccountOwnerForm } from './components';
+import { AccountOwnerForm, ConsentModal, RegistrationSuccess } from './components';
+import { loadDefaultResearchConsent } from './composables/loadDefaultResearchConsent';
 import { useAccountOwnerForm } from './composables/useAccountOwnerForm';
 import { useResearchConsent } from './composables/useResearchConsent';
 import { useSelfRegistration } from './composables/useSelfRegistration';
 
 const { t } = i18n.global;
+const authStore = useAuthStore();
 const form = useAccountOwnerForm({ t });
 const consent = useResearchConsent();
 const registration = useSelfRegistration({ t });
@@ -67,11 +88,41 @@ const registration = useSelfRegistration({ t });
 // acknowledgement errors. Disable it only while a request is in flight.
 const canAttemptSubmission = computed(() => !registration.isSubmitting.value);
 
+async function loadResearchConsent() {
+  try {
+    await consent.loadConsent(() =>
+      loadDefaultResearchConsent(authStore.getLegalDoc.bind(authStore), i18n.global.locale.value),
+    );
+  } catch {
+    // The composable exposes a recoverable error state; do not leak provider errors.
+  }
+}
+
+function openResearchConsent() {
+  consent.openModal();
+  if (!consent.consentDocument.value && !consent.isLoading.value) void loadResearchConsent();
+}
+
+function handleLegalAccepted(value) {
+  if (!value) {
+    consent.setLegalAccepted(false);
+    return;
+  }
+
+  openResearchConsent();
+}
+
+function confirmResearchConsent() {
+  if (consent.acceptResearchConsent()) consent.setLegalAccepted(true);
+}
+
 async function handleSubmit() {
   if (!form.validate()) return false;
-  // Form validation marks the form submitted, which makes the legal
-  // acknowledgement error visible before this guard prevents the request.
   if (!consent.legalAccepted.value) return false;
+  if (!consent.researchConsentAccepted.value) {
+    openResearchConsent();
+    return false;
+  }
   if (!canAttemptSubmission.value) return false;
   return registration.submit(form.payload.value);
 }
