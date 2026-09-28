@@ -24,7 +24,7 @@ import {
 import { composeAvailable, daemonRunning, diagnosePortConflict } from '../docker.mjs';
 import { DOCKER_DAEMON_LINES, DOCKER_INSTALL_LINES } from '../help.mjs';
 import { portInUse } from '../net.mjs';
-import { npmCli, run } from '../proc.mjs';
+import { npmCli, runStreamed } from '../proc.mjs';
 
 /** Must match the "engines" floor in the root package.json. */
 const NODE_MAJOR_FLOOR = 22;
@@ -92,26 +92,31 @@ export async function setup(ui) {
   // dashboard and every assessment) keeps first-run fast and resilient to
   // unrelated breakage; `dependsOn: ["^build"]` still pulls in their upstream
   // dependencies.
-  ui.step('[4/5] Installing dependencies and building platform libraries (this can take a few minutes)...');
+  ui.step('[4/5] Installing dependencies and building platform libraries...');
   if (process.env.ROAR_CLI_BOOTSTRAPPED) {
     // The first-run bootstrap in index.mjs ran the install seconds ago —
     // re-verifying the whole tree would only add noise and time.
     ui.info('Dependencies were just installed by the first-run bootstrap.');
   } else {
-    const installStatus = run([...npmCli(), 'install', '--no-audit', '--no-fund', '--loglevel=error'], {
-      cwd: REPO_ROOT,
-    });
+    const install = ui.task('Installing dependencies (this can take a few minutes)...');
+    const installStatus = await runStreamed(
+      [...npmCli(), 'install', '--no-audit', '--no-fund', '--loglevel=error'],
+      { cwd: REPO_ROOT },
+      install.line,
+    );
     if (installStatus !== 0) {
-      ui.error('npm install failed — fix the error above and re-run npm run setup.');
+      install.fail('npm install failed — fix the error above and re-run npm run setup.');
       process.exitCode = installStatus;
       return;
     }
+    install.done('Dependencies installed.');
   }
   // --output-logs=errors-only keeps successful (often cache-replayed) build
-  // logs out of the researcher's terminal; a failing task still prints its
-  // full output. npm's --silent drops the script banners, and the env var
-  // silences turbo's update banner.
-  const buildStatus = run(
+  // logs out of the collapsing tail; a failing task still prints its full
+  // output. npm's --silent drops the script banners, and the env var silences
+  // turbo's update banner.
+  const build = ui.task('Building platform libraries...');
+  const buildStatus = await runStreamed(
     [
       ...npmCli(),
       'run',
@@ -125,13 +130,14 @@ export async function setup(ui) {
       '--output-logs=errors-only',
     ],
     { cwd: REPO_ROOT, env: { TURBO_NO_UPDATE_NOTIFIER: '1' } },
+    build.line,
   );
   if (buildStatus !== 0) {
-    ui.error('The platform library build failed — fix the error above and re-run npm run setup.');
+    build.fail('The platform library build failed — fix the error above and re-run npm run setup.');
     process.exitCode = buildStatus;
     return;
   }
-  ui.success('Dependencies installed and platform libraries built.');
+  build.done('Platform libraries built.');
 
   // ── 5. taskVariantParameters.json ──────────────────────────────────────────
   ui.step('[5/5] Setting up taskVariantParameters.json...');

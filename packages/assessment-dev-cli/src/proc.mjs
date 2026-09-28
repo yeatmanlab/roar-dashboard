@@ -1,5 +1,5 @@
 /** Subprocess helpers shared by every command. */
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 
 /**
  * The npm to use for nested npm calls. When npm runs a lifecycle script it
@@ -54,6 +54,42 @@ export function capture(command, { env } = {}) {
     stdio: ['ignore', 'pipe', 'ignore'],
   });
   return { ok: result.status === 0, stdout: (result.stdout ?? '').trim() };
+}
+
+/**
+ * Runs a command with stdout+stderr merged and delivered line-by-line — the
+ * feed for ui.task(), which renders a collapsing live tail of the output.
+ *
+ * @param {string[]} command - Command and arguments as one array.
+ * @param {object} [options]
+ * @param {string} [options.cwd]
+ * @param {object} [options.env] - Extra environment variables (merged over process.env).
+ * @param {(line: string) => void} onLine - Receives each output line without its newline.
+ * @returns {Promise<number>} The exit code (1 when the process failed to spawn).
+ */
+export function runStreamed(command, { cwd, env } = {}, onLine) {
+  const [cmd, ...args] = command;
+  return new Promise((resolve) => {
+    const child = spawn(cmd, args, {
+      cwd,
+      env: { ...process.env, ...env },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let buffer = '';
+    const consume = (chunk) => {
+      buffer += chunk.toString();
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+      for (const line of lines) onLine(line);
+    };
+    child.stdout.on('data', consume);
+    child.stderr.on('data', consume);
+    child.on('error', () => resolve(1));
+    child.on('close', (code) => {
+      if (buffer) onLine(buffer);
+      resolve(code ?? 1);
+    });
+  });
 }
 
 /**

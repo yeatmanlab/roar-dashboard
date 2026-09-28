@@ -11,10 +11,14 @@
  * of settling for bare console.log lines.
  *
  * ROAR_CLI_PLAIN=1 forces the fallback — an escape hatch for terminals that
- * render the clack prompts poorly.
+ * render the clack prompts poorly. ROAR_CLI_VERBOSE=1 streams subtask output
+ * (installs, builds, compose) instead of collapsing it on success.
  */
 import readline from 'node:readline/promises';
 import { styleText } from 'node:util';
+
+/** ROAR_CLI_VERBOSE=1 streams subtask output instead of collapsing it. */
+const VERBOSE = Boolean(process.env.ROAR_CLI_VERBOSE);
 
 const COLOR_ENABLED = (process.stdout.isTTY || Boolean(process.env.FORCE_COLOR)) && !process.env.NO_COLOR;
 
@@ -66,6 +70,25 @@ function fallbackUi() {
     error: (message) => block(paint('red', '■'), message),
     note: (body, title) => noteBox(body, title),
     /**
+     * A collapsing subtask: output is hidden while things go well and dumped
+     * in full when they don't (ROAR_CLI_VERBOSE=1 streams it live instead).
+     */
+    task: (title) => {
+      block(paint('cyan', '◇'), title);
+      const lines = [];
+      return {
+        line: (text) => {
+          if (VERBOSE) console.log(`${BAR()}  ${paint('gray', text)}`);
+          else lines.push(text);
+        },
+        done: (message) => block(paint('green', '◆'), message),
+        fail: (message) => {
+          for (const text of lines) console.log(`${BAR()}  ${paint('gray', text)}`);
+          block(paint('red', '■'), message);
+        },
+      };
+    },
+    /**
      * Yes/no prompt. Non-interactive runs (CI, pipes) get `nonTtyValue` so
      * automation is never blocked — the same contract the bash scripts had.
      */
@@ -93,6 +116,19 @@ function clackUi(clack, colors) {
     warn: (message) => clack.log.warn(message),
     error: (message) => clack.log.error(message),
     note: (body, title) => clack.note(body, title),
+    /**
+     * A collapsing subtask backed by clack's taskLog: a live tail of the
+     * output while running, cleared on success, kept in full on failure.
+     * ROAR_CLI_VERBOSE=1 keeps it on success too.
+     */
+    task: (title) => {
+      const log = clack.taskLog({ title, limit: 10, retainLog: true });
+      return {
+        line: (text) => log.message(text),
+        done: (message) => log.success(message, { showLog: VERBOSE }),
+        fail: (message) => log.error(message, { showLog: true }),
+      };
+    },
     confirm: async (message, { nonTtyValue }) => {
       if (!process.stdin.isTTY) return nonTtyValue;
       const answer = await clack.confirm({ message, initialValue: false });

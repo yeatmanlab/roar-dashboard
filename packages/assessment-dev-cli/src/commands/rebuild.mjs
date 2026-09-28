@@ -8,7 +8,7 @@
  *   npm run rebuild -- --no-cache
  */
 import { resolvePgPort } from '../context.mjs';
-import { compose, composeAvailable, containerRunning, daemonRunning } from '../docker.mjs';
+import { composeAvailable, composeStreamed, containerRunning, daemonRunning } from '../docker.mjs';
 import { DOCKER_DAEMON_LINES, DOCKER_INSTALL_LINES } from '../help.mjs';
 
 export async function rebuild(ui, args = []) {
@@ -27,11 +27,15 @@ export async function rebuild(ui, args = []) {
 
   const pgPort = resolvePgPort();
   const noCache = args.includes('--no-cache');
-  ui.step(noCache ? 'Rebuilding assessment Docker images (no cache)...' : 'Rebuilding assessment Docker images...');
-  if (!compose(['build', ...(noCache ? ['--no-cache'] : [])], pgPort).ok) {
+  const build = ui.task(
+    noCache ? 'Rebuilding assessment Docker images (no cache)...' : 'Rebuilding assessment Docker images...',
+  );
+  if (!(await composeStreamed(['build', ...(noCache ? ['--no-cache'] : [])], pgPort, build.line))) {
+    build.fail('The image build failed.');
     process.exitCode = 1;
     return;
   }
+  build.done('Images rebuilt.');
 
   // Fresh images do nothing while old containers keep running — `npm start`
   // takes its already-running fast path and never recreates them. Apply the
@@ -40,13 +44,15 @@ export async function rebuild(ui, args = []) {
   // in-memory auth users and recordings (this stack does not persist emulator
   // state).
   if (containerRunning('assessment-backend')) {
-    ui.step(
+    const apply = ui.task(
       'Applying the new images to the running stack (database data survives; emulator auth users/recordings are in-memory and reset)...',
     );
-    if (!compose(['up', '-d', '--wait'], pgPort).ok) {
+    if (!(await composeStreamed(['up', '-d', '--wait'], pgPort, apply.line))) {
+      apply.fail('Applying the new images failed.');
       process.exitCode = 1;
       return;
     }
+    apply.done('New images applied.');
   }
 
   ui.success('Rebuild complete.');

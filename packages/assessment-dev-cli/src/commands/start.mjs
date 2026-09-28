@@ -9,7 +9,14 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { ASSESSMENT_NAME, PARAMS_FILE, resolvePgPort, stackPorts } from '../context.mjs';
-import { compose, composeAvailable, containerRunning, daemonRunning, diagnosePortConflict } from '../docker.mjs';
+import {
+  compose,
+  composeAvailable,
+  composeStreamed,
+  containerRunning,
+  daemonRunning,
+  diagnosePortConflict,
+} from '../docker.mjs';
 import { DOCKER_DAEMON_LINES, DOCKER_INSTALL_LINES, paramsFileMissingLines } from '../help.mjs';
 import { portInUse } from '../net.mjs';
 import { capture, npmCli } from '../proc.mjs';
@@ -81,16 +88,15 @@ export async function start(ui) {
       }
     }
 
-    ui.step('Starting the environment (DB, migrations, Firebase emulators, backend)...');
-
     // --remove-orphans drops any container in the roar-assessment project whose
     // service no longer exists, so future service renames self-heal without
     // needing to be listed above. On failure, surface the container logs before
     // exiting: compose reports only a terse exit line, while the actual error —
     // most commonly the seeder naming an invalid taskVariantParameters.json
     // entry — is in the container's own output.
-    if (!compose(['up', '-d', '--wait', '--remove-orphans'], pgPort).ok) {
-      ui.error('The environment failed to start.');
+    const up = ui.task('Starting the environment (DB, migrations, Firebase emulators, backend)...');
+    if (!(await composeStreamed(['up', '-d', '--wait', '--remove-orphans'], pgPort, up.line))) {
+      up.fail('The environment failed to start.');
       ui.step('Recent output from the migration/seed and backend containers:');
       compose(['logs', '--no-color', '--tail=40', 'assessment-db-migrate', 'backend'], pgPort);
       ui.note(
@@ -101,7 +107,7 @@ export async function start(ui) {
       return;
     }
 
-    ui.success('All services healthy. Starting the dev server...');
+    up.done('All services healthy. Starting the dev server...');
   }
 
   // Each package's `dev` script is the single source of truth for its bundler

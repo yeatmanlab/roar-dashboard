@@ -1,6 +1,6 @@
 /** Docker predicates, compose helpers, and the port-conflict diagnosis. */
 import { COMPOSE_FILE, composeEnv } from './context.mjs';
-import { capture, run } from './proc.mjs';
+import { capture, run, runStreamed } from './proc.mjs';
 
 /** True when Docker with Compose v2 is available (client-side check). */
 export function composeAvailable() {
@@ -43,6 +43,20 @@ export function compose(args, pgPort, { quiet = false } = {}) {
   const command = ['docker', 'compose', '-f', COMPOSE_FILE, ...args];
   if (quiet) return capture(command, { env: composeEnv(pgPort) });
   return { ok: run(command, { env: composeEnv(pgPort) }) === 0 };
+}
+
+/**
+ * Like compose(), but line-streamed into a ui.task() so the (chatty) compose
+ * output collapses on success and stays visible on failure.
+ *
+ * @param {string[]} args - Compose subcommand and flags.
+ * @param {string} pgPort - Resolved Postgres host port.
+ * @param {(line: string) => void} onLine
+ * @returns {Promise<boolean>} True on exit code 0.
+ */
+export async function composeStreamed(args, pgPort, onLine) {
+  const command = ['docker', 'compose', '--progress', 'plain', '-f', COMPOSE_FILE, ...args];
+  return (await runStreamed(command, { env: composeEnv(pgPort) }, onLine)) === 0;
 }
 
 /**
