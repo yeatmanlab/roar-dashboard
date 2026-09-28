@@ -36,7 +36,13 @@ vi.mock('@/clients/roar-api', () => ({
 
 import { useFamilyRegistration } from './useFamilyRegistration';
 
-const FORM = { email: 'parent@example.com', password: 'super-secret', firstName: 'Pat', lastName: 'Guardian' };
+const FORM = {
+  email: 'parent@example.com',
+  password: 'super-secret',
+  firstName: 'Pat',
+  lastName: 'Guardian',
+  canContactForFutureStudies: true,
+};
 
 function setupSaga() {
   const [result] = withSetup(() => useFamilyRegistration());
@@ -76,9 +82,14 @@ describe('useFamilyRegistration', () => {
     await saga.submit(FORM);
 
     expect(order).toEqual(['createFamily', 'signIn', 'refresh']);
-    // Create body excludes legacy fields / isTestData.
+    // The legacy checkbox name is mapped into the nested API opt-in shape.
     expect(mockCreateFamily).toHaveBeenCalledWith({
-      body: { email: 'parent@example.com', password: 'super-secret', name: { first: 'Pat', last: 'Guardian' } },
+      body: {
+        email: 'parent@example.com',
+        password: 'super-secret',
+        name: { first: 'Pat', last: 'Guardian' },
+        optIns: { researchContact: true },
+      },
     });
     expect(mockLogIn).toHaveBeenCalledWith({ email: 'parent@example.com', password: 'super-secret' });
     expectNoAgreementWork();
