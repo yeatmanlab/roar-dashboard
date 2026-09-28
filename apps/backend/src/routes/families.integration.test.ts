@@ -512,6 +512,21 @@ describe('POST /v1/families', () => {
 
       expect(userRow!.optinResearchContact).toBe(false);
     });
+
+    it('persists a missing research-contact opt-in as null for backward compatibility', async () => {
+      const completeBody = validBody('research-contact-not-provided');
+      const body = {
+        email: completeBody.email,
+        password: completeBody.password,
+        name: completeBody.name,
+      };
+
+      const res = await expectRoute('POST', '/v1/families').unauthenticated().withBody(body).toReturn(201);
+      const [familyRow] = await CoreDbClient.select().from(families).where(eq(families.id, res.body.data.id));
+      const [userRow] = await CoreDbClient.select().from(users).where(eq(users.id, familyRow!.createdBy!));
+
+      expect(userRow!.optinResearchContact).toBeNull();
+    });
   });
 
   describe('validation', () => {

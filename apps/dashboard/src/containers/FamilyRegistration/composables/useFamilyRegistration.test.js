@@ -96,6 +96,15 @@ describe('useFamilyRegistration', () => {
     expect(saga.error.value).toBeNull();
   });
 
+  it('includes a declined research-contact preference in the create body', async () => {
+    const saga = setupSaga();
+    await saga.submit({ ...FORM, canContactForFutureStudies: false });
+
+    expect(mockCreateFamily).toHaveBeenCalledWith({
+      body: expect.objectContaining({ optIns: { researchContact: false } }),
+    });
+  });
+
   it('surfaces a terminal "email in use" error on a 409 create and does not sign in', async () => {
     const err = new Error('conflict');
     err.status = 409;

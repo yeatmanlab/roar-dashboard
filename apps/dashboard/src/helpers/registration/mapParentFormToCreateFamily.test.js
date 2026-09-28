@@ -70,7 +70,7 @@ describe('mapParentFormToCreateFamily', () => {
     ).toThrow(/first and last name/i);
   });
 
-  it('throws when the research-contact preference is missing', () => {
+  it('throws when the research-contact preference is not a boolean', () => {
     expect(() =>
       mapParentFormToCreateFamily({
         email: 'parent@example.com',
@@ -78,6 +78,6 @@ describe('mapParentFormToCreateFamily', () => {
         firstName: 'Pat',
         lastName: 'Guardian',
       }),
-    ).toThrow(/research contact preference/i);
+    ).toThrow('Research contact preference must be a boolean.');
   });
 });

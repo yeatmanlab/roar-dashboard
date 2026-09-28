@@ -136,7 +136,7 @@ export const CreateFamilyRequestSchema = z
     password: z.string().min(8),
     name: CreateUserNameSchema,
     location: FamilyLocationSchema.optional(),
-    optIns: RegistrationOptInsSchema,
+    optIns: RegistrationOptInsSchema.optional(),
   })
   .strict();
 

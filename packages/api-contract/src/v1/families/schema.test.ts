@@ -27,10 +27,10 @@ describe('CreateFamilyRequestSchema.optIns', () => {
     ).toBe(false);
   });
 
-  it('requires the optIns object', () => {
+  it('accepts a missing optIns object for backward compatibility', () => {
     const bodyWithoutOptIns: Record<string, unknown> = { ...validBody };
     delete bodyWithoutOptIns.optIns;
 
-    expect(CreateFamilyRequestSchema.safeParse(bodyWithoutOptIns).success).toBe(false);
+    expect(CreateFamilyRequestSchema.safeParse(bodyWithoutOptIns).success).toBe(true);
   });
 });

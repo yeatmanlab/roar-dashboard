@@ -73,9 +73,11 @@ export interface CreateFamilyServiceInput {
   password: string;
   name: CreateFamilyCaretakerName;
   location?: CreateFamilyLocation | undefined;
-  optIns: {
-    researchContact: boolean;
-  };
+  optIns?:
+    | {
+        researchContact: boolean;
+      }
+    | undefined;
 }
 
 /**
@@ -411,7 +413,7 @@ export function FamilyService({
               userType: UserType.CAREGIVER,
               assessmentPid: generateAssessmentPid({ userId: email }),
               isSuperAdmin: false,
-              optinResearchContact: optIns.researchContact,
+              optinResearchContact: optIns?.researchContact ?? null,
             },
             {
               locationAddressLine1: location?.addressLine1 ?? null,

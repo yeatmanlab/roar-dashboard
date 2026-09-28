@@ -42,7 +42,7 @@ export function mapParentFormToCreateFamily(form) {
   }
 
   if (typeof form.canContactForFutureStudies !== 'boolean') {
-    throw new Error('Research contact preference is required.');
+    throw new Error('Research contact preference must be a boolean.');
   }
 
   return {
