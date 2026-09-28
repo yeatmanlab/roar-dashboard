@@ -50,7 +50,12 @@ function clackResolvable() {
 
 if (command === 'setup' && !process.env.ROAR_CLI_PLAIN && !process.env.ROAR_CLI_BOOTSTRAPPED && !clackResolvable()) {
   console.log('First run: installing dependencies (this can take a few minutes)...');
-  const installStatus = run([...npmCli(), 'install'], { cwd: REPO_ROOT });
+  // --no-audit/--no-fund/--loglevel=error: a researcher's first screen should
+  // not be vulnerability counts, funding asks, and deprecation warnings.
+  // Errors still print.
+  const installStatus = run([...npmCli(), 'install', '--no-audit', '--no-fund', '--loglevel=error'], {
+    cwd: REPO_ROOT,
+  });
   if (installStatus !== 0) {
     console.error('npm install failed — fix the error above and re-run npm run setup.');
     process.exit(installStatus);

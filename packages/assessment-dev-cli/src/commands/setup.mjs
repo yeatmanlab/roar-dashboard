@@ -93,24 +93,38 @@ export async function setup(ui) {
   // unrelated breakage; `dependsOn: ["^build"]` still pulls in their upstream
   // dependencies.
   ui.step('[4/5] Installing dependencies and building platform libraries (this can take a few minutes)...');
-  const installStatus = run([...npmCli(), 'install'], { cwd: REPO_ROOT });
-  if (installStatus !== 0) {
-    ui.error('npm install failed — fix the error above and re-run npm run setup.');
-    process.exitCode = installStatus;
-    return;
+  if (process.env.ROAR_CLI_BOOTSTRAPPED) {
+    // The first-run bootstrap in index.mjs ran the install seconds ago —
+    // re-verifying the whole tree would only add noise and time.
+    ui.info('Dependencies were just installed by the first-run bootstrap.');
+  } else {
+    const installStatus = run([...npmCli(), 'install', '--no-audit', '--no-fund', '--loglevel=error'], {
+      cwd: REPO_ROOT,
+    });
+    if (installStatus !== 0) {
+      ui.error('npm install failed — fix the error above and re-run npm run setup.');
+      process.exitCode = installStatus;
+      return;
+    }
   }
+  // --output-logs=errors-only keeps successful (often cache-replayed) build
+  // logs out of the researcher's terminal; a failing task still prints its
+  // full output. npm's --silent drops the script banners, and the env var
+  // silences turbo's update banner.
   const buildStatus = run(
     [
       ...npmCli(),
       'run',
+      '--silent',
       'build',
       '--',
       '--filter=@roar-platform/api-contract',
       '--filter=@roar-platform/assessment-schema',
       '--filter=@roar-platform/scoring-tables',
       '--filter=@roar-platform/assessment-sdk',
+      '--output-logs=errors-only',
     ],
-    { cwd: REPO_ROOT },
+    { cwd: REPO_ROOT, env: { TURBO_NO_UPDATE_NOTIFIER: '1' } },
   );
   if (buildStatus !== 0) {
     ui.error('The platform library build failed — fix the error above and re-run npm run setup.');
