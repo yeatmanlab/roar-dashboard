@@ -2219,6 +2219,7 @@ describe('POST /v1/users', () => {
       const created = await userRepository.getById({ id: res.body.data.id });
       expect(created).not.toBeNull();
       expect(created!.email).toBe(body.email);
+      expect(created!.optinResearchContact).toBeNull();
     });
 
     it('platform_admin can create a user at their district', async () => {
