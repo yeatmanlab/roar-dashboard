@@ -46,6 +46,10 @@ import {
 } from './utils/enrollment.utils';
 import { alias } from 'drizzle-orm/pg-core';
 
+const DYNAMIC_SORT_ALIAS = '_sort_expr';
+
+const PROGRESS_STATUS_SORT_ALIAS = 'status_sort_order';
+
 /**
  * Scope parameters for report queries.
  */
@@ -828,11 +832,6 @@ export class ReportRepository {
     }
 
     // Get paginated students with sorting.
-    // When sorting by progress status, we use a two-step approach:
-    // 1. Inner query: SELECT DISTINCT with the CASE in the select list (satisfies PG DISTINCT rule)
-    // 2. Use the CASE expression directly in ORDER BY (Drizzle handles the expression matching)
-    //
-    // Without progress status sort, this is a straightforward selectDistinct + orderBy.
     const baseSelectFields = {
       userId: users.id,
       assessmentPid: users.assessmentPid,
@@ -851,11 +850,14 @@ export class ReportRepository {
       homeLanguage: users.homeLanguage,
     };
 
-    // When sorting by progress status, include the CASE in the SELECT list and
-    // ORDER BY it directly. PostgreSQL requires ORDER BY expressions in SELECT DISTINCT
-    // to be in the select list, and using the same SQL object for both ensures they match.
-    const selectFields = statusSortExpr ? { ...baseSelectFields, status_sort_order: statusSortExpr } : baseSelectFields;
-    const primarySort = statusSortExpr ?? options.sortColumn ?? users.nameLast;
+    // SELECT DISTINCT requires what you sort by to also be selected, and Postgres checks
+    // that before filling in values. Compares only parameter placeholders.
+    const selectFields = statusSortExpr
+      ? { ...baseSelectFields, [PROGRESS_STATUS_SORT_ALIAS]: statusSortExpr.as(PROGRESS_STATUS_SORT_ALIAS) }
+      : baseSelectFields;
+    const primarySort = statusSortExpr
+      ? sql.identifier(PROGRESS_STATUS_SORT_ALIAS)
+      : (options.sortColumn ?? users.nameLast);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle query builder chain
     let dataQuery: any = this.db
@@ -2333,10 +2335,12 @@ export class ReportRepository {
       schoolName: schoolNameSql,
     };
 
-    // When sorting by a dynamic expression, include it in the SELECT list so
-    // PostgreSQL's DISTINCT-with-ORDER-BY rule is satisfied.
-    const selectFields = dynamicSortExpr ? { ...baseSelect, _sort_expr: dynamicSortExpr } : baseSelect;
-    const primarySort = dynamicSortExpr ?? options.sortColumn ?? users.nameLast;
+    // SELECT DISTINCT requires what you sort by to also be selected, and Postgres checks
+    // that before filling in values. Compares only parameter placeholders.
+    const selectFields = dynamicSortExpr
+      ? { ...baseSelect, [DYNAMIC_SORT_ALIAS]: dynamicSortExpr.as(DYNAMIC_SORT_ALIAS) }
+      : baseSelect;
+    const primarySort = dynamicSortExpr ? sql.identifier(DYNAMIC_SORT_ALIAS) : (options.sortColumn ?? users.nameLast);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle dynamic chain
     let dataQuery: any = this.db
