@@ -70,12 +70,14 @@ npm start      # Start the shared stack (if needed) and the assessment dev serve
 **Ctrl+C stops only the assessment dev server.** The Docker services (database, backend, Firebase emulators) keep running in the background and your data is preserved. Run `npm start` again to reattach the dev server to the same database — it detects the running stack and skips straight to the dev server.
 
 ```bash
-npm stop       # Stop ALL Docker services and permanently DELETE the database
+npm stop       # Stop all Docker services — and choose what happens to the database
 ```
 
-`npm stop` tears down the containers **and their volumes** — every run, trial, score, and uploaded recording is gone. Use it when you want a clean slate; don't use it to "restart."
+`npm stop` asks one question: **keep the local database (runs, trials, scores, recordings), or delete it?** Keeping is the default — a plain Enter picks it — and stops the containers while the data survives; the next `npm start` brings everything back exactly as you left it. Choosing delete tears down containers **and volumes** for a completely clean slate. Note that uploaded recordings live in the Storage emulator's memory, so they end with the emulator container either way.
 
-Because the teardown is irreversible, both `npm stop` and `npm restart` **prompt for confirmation** before wiping the database. Declining is clean — it exits without an error and changes nothing: `npm stop` doesn't tear down, and `npm restart` neither tears down nor starts. Bypass the prompt with `npm run stop -- --yes` (or `npm run restart -- --yes`); non-interactive shells (CI, pipes) proceed without prompting.
+`npm restart` is always the clean-slate path: it confirms the wipe once, tears everything down, and starts fresh. Declining is clean — it exits without an error and changes nothing.
+
+For scripting: `npm run stop -- --keep-data` keeps without asking, `npm run stop -- --yes` (or `restart -- --yes`) deletes without asking. Non-interactive shells (CI, pipes) keep the data.
 
 ---
 
@@ -90,7 +92,7 @@ The Docker stack — database, backend, and Firebase emulators — is **shared a
 
 A few things follow from the stack being shared and persistent:
 
-- **Switching back needs no re-seed.** Seeding is additive and the database persists — it survives Ctrl+C; only `npm stop` / `npm restart` wipe it. Once an assessment is seeded, returning to it is just Ctrl+C → `cd` → `npm start`.
+- **Switching back needs no re-seed.** Seeding is additive and the database persists — it survives Ctrl+C and a data-keeping `npm stop`; only `npm restart` (or choosing delete at `npm stop`) wipes it. Once an assessment is seeded, returning to it is just Ctrl+C → `cd` → `npm start`.
 - **Runs from both assessments coexist** in the same database — handy for cross-assessment work.
 - **No full `npm run setup` needed.** The platform libraries are built once at the repo root and shared, so only the per-assessment `taskVariantParameters.json` (and its seed) is assessment-specific. Running `setup` mid-switch would also spuriously flag the stack's ports as "in use" — that's your own running stack.
 - **If you fully stopped the stack** (`npm stop`) between assessments, skip step 3: the next `npm start` brings the stack up fresh and auto-seeds whichever assessment you start it from.
@@ -106,7 +108,7 @@ Run all of these from the assessment's directory. This is the whole surface — 
 | `npm run setup`      | Check prerequisites, install deps, build platform libraries, create the config file                                                               | Once, on first setup (or on a fresh clone)                                                                                    |
 | `npm start`          | Start the shared stack (if not already up) and the assessment dev server                                                                          | Every time you sit down to work                                                                                               |
 | `npm run seed:tasks` | Seed **new** variants from `taskVariantParameters.json` into the running DB, no teardown (add `-- --refresh-params` to also update existing ones) | After editing `taskVariantParameters.json`, to pick up new or changed variants **without losing your data**                   |
-| `npm stop`           | Stop all Docker services and delete the database volume                                                                                           | When you want a completely clean slate                                                                                        |
+| `npm stop`           | Stop all Docker services; asks whether to keep or delete the database (default: keep)                                                             | Pausing work (keep), or a completely clean slate (delete)                                                                     |
 | `npm restart`        | Confirmed full teardown (**deletes data**) and fresh start                                                                                        | When the stack is wedged and `seed:tasks` isn't the issue. **Destroys your data**                                             |
 | `npm run update`     | Rebuild the host platform libraries (api-contract / SDK / schema / scoring-tables)                                                                | After `git pull` brings changes to those packages (see [Updating after a pull](#updating-after-a-pull))                       |
 | `npm run rebuild`    | Rebuild the Docker images (cached) and apply them to a running stack                                                                              | After changes to the backend, migrations, Dockerfile, or shared deps (see [Rebuilding images](#rebuilding-the-docker-images)) |
@@ -219,7 +221,7 @@ Local leniency is deliberate: your own seed need not contain the canonical varia
 
 ### Adding or changing variants without losing data
 
-Here's the catch: the seed only runs automatically **once**, inside that migration container at bring-up. Editing `taskVariantParameters.json` afterward and running `npm start` again does **nothing** — when the stack is already up, `npm start` skips straight to the dev server and never re-runs the seed. And `npm restart` / `npm stop` re-seed only because they wipe the database volume first, taking every run/trial/score you've generated with them.
+Here's the catch: the seed only runs automatically **once**, inside that migration container at bring-up. Editing `taskVariantParameters.json` afterward and running `npm start` again does **nothing** — when the stack is already up, `npm start` skips straight to the dev server and never re-runs the seed. And `npm restart` (or a data-deleting `npm stop`) re-seeds only because it wipes the database volume first, taking every run/trial/score you've generated with it.
 
 Use **`npm run seed:tasks`** instead. It runs the same idempotent, additive-by-name seeder against the **live** database, so newly added variants appear immediately while your generated data stays put:
 

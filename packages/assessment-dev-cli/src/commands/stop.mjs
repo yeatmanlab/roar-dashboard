@@ -1,6 +1,11 @@
 /**
- * `npm stop` — stop the shared assessment infrastructure and remove all
- * associated volumes.
+ * `npm stop` — stop the shared assessment infrastructure.
+ *
+ * The researcher chooses what happens to the local database (runs, trials,
+ * scores, recordings): keep it — the default, and what a plain Enter picks —
+ * or delete it for a clean slate. Flags skip the question for scripting and
+ * for `restart`: `--keep-data` keeps, `-y`/`--yes`/`--force` deletes.
+ * Non-interactive runs (CI, pipes) keep the data — the safe direction.
  *
  * Falls back to direct process kills when the Docker API can't stop
  * containers: on some Linux systems AppArmor blocks `docker stop`/`docker
@@ -15,11 +20,11 @@ import { capture, sleep } from '../proc.mjs';
 const CONTAINERS = ['assessment-backend', 'assessment-db-migrate', 'firebase-emulator', 'assessment-db'];
 
 /**
- * Confirms the irreversible teardown (deletes the DB volume, losing every
- * run/trial/score/recording). Skipped with -y/--yes/--force or on a non-TTY
- * (CI, pipes), where it proceeds without asking.
+ * Confirms the irreversible full teardown — used by `restart`, whose purpose
+ * is a from-scratch environment. Skipped with -y/--yes/--force or on a
+ * non-TTY, where it proceeds.
  *
- * @returns {Promise<boolean>} True to proceed.
+ * @returns {Promise<boolean>} True to proceed with the wipe.
  */
 export async function confirmTeardown(ui, args) {
   if (hasYesFlag(args)) return true;
@@ -28,21 +33,33 @@ export async function confirmTeardown(ui, args) {
 }
 
 export async function stop(ui, args = []) {
-  // Declining is a valid choice, not an error — exit 0, or npm prints a
-  // misleading "lifecycle script failed" wrapper. `restart` runs its own
-  // confirm and calls this with --yes, so this prompt fires only for a bare
-  // `stop`.
-  if (!(await confirmTeardown(ui, args))) {
-    ui.outro('Aborted — the local database was left intact.');
-    return;
+  let keepData;
+  if (hasYesFlag(args)) {
+    keepData = false;
+  } else if (args.includes('--keep-data')) {
+    keepData = true;
+  } else {
+    keepData = await ui.confirm('Keep the local database (runs, trials, scores, recordings)?', {
+      nonTtyValue: true,
+      initialValue: true,
+    });
   }
 
   const pgPort = resolvePgPort();
-  ui.step('Stopping the assessment environment...');
+  ui.step(
+    keepData
+      ? 'Stopping the assessment environment (keeping the database)...'
+      : 'Stopping the assessment environment...',
+  );
+
+  const downArgs = ['down', ...(keepData ? [] : ['-v']), '--remove-orphans', '--timeout', '0'];
+  const stoppedMessage = keepData
+    ? 'Assessment environment stopped — the database was kept. npm start brings it back with your data.'
+    : 'Assessment environment stopped and local data deleted.';
 
   // --timeout 0 sends SIGKILL immediately instead of waiting for graceful shutdown.
-  if (compose(['down', '-v', '--remove-orphans', '--timeout', '0'], pgPort, { quiet: true }).ok) {
-    ui.success('Assessment environment stopped and local data deleted.');
+  if (compose(downArgs, pgPort, { quiet: true }).ok) {
+    ui.success(stoppedMessage);
     return;
   }
 
@@ -80,14 +97,17 @@ export async function stop(ui, args = []) {
 
   // Give Docker a moment to notice the processes are gone, then clean up.
   sleep(1000);
-  compose(['down', '-v', '--remove-orphans', '--timeout', '0'], pgPort, { quiet: true });
+  compose(downArgs, pgPort, { quiet: true });
   capture(['docker', 'rm', '-f', ...CONTAINERS]);
-  // If the retried compose down above also failed, this is the only removal of
-  // the data volume — without it the "deletes the local database" contract
-  // breaks. The legacy pre-Postgres-18 name is included as cheap insurance for
-  // checkouts that ran the old stack: compose down -v only removes volumes the
-  // current file declares, so nothing else ever deletes it.
-  capture(['docker', 'volume', 'rm', 'roar-assessment_postgres-18-data', 'roar-assessment_pgdata']);
+  if (!keepData) {
+    // If the retried compose down above also failed, this is the only removal
+    // of the data volume — without it the "deletes the local database"
+    // contract breaks. The legacy pre-Postgres-18 name is included as cheap
+    // insurance for checkouts that ran the old stack: compose down -v only
+    // removes volumes the current file declares, so nothing else ever deletes
+    // it.
+    capture(['docker', 'volume', 'rm', 'roar-assessment_postgres-18-data', 'roar-assessment_pgdata']);
+  }
 
-  ui.success('Assessment environment stopped.');
+  ui.success(stoppedMessage);
 }

@@ -166,19 +166,20 @@ async function loadConfirm() {
   if (!process.env.ROAR_CLI_PLAIN) {
     try {
       const clack = await import('@clack/prompts');
-      return async (message) => {
-        const answer = await clack.confirm({ message, initialValue: false });
-        // Ctrl+C during the prompt is a decline, not a crash.
-        return clack.isCancel(answer) ? false : answer;
+      return async (message, initialValue) => {
+        const answer = await clack.confirm({ message, initialValue });
+        // Ctrl+C during the prompt is treated as the safe default.
+        return clack.isCancel(answer) ? initialValue : answer;
       };
     } catch {
       // Fresh clone — fall through to the readline prompt.
     }
   }
-  return async (message) => {
+  return async (message, initialValue) => {
     const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
     try {
-      const reply = await rl.question(`${GLYPH.active()}  ${message} [y/N] `);
+      const reply = await rl.question(`${GLYPH.active()}  ${message} ${initialValue ? '[Y/n]' : '[y/N]'} `);
+      if (reply.trim() === '') return initialValue;
       return /^y(es)?$/i.test(reply.trim());
     } finally {
       rl.close();
@@ -226,9 +227,9 @@ export async function loadUi() {
      * Yes/no prompt. Non-interactive runs (CI, pipes) get `nonTtyValue` so
      * automation is never blocked — the same contract the bash scripts had.
      */
-    confirm: async (message, { nonTtyValue }) => {
+    confirm: async (message, { nonTtyValue, initialValue = false }) => {
       if (!process.stdin.isTTY) return nonTtyValue;
-      return confirmImpl(message);
+      return confirmImpl(message, initialValue);
     },
   };
 }
