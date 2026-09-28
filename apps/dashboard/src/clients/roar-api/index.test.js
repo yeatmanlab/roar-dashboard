@@ -213,6 +213,38 @@ describe('apiWithAuthRetry', () => {
     await expect(capturedApi({ headers: {} })).rejects.toThrow('network down');
   });
 
+  it('mock fidelity: the real tsRestFetchApi resolves a parsed-body object, not a fetch Response', async () => {
+    // Guards every hand-built response mock in this file against drift from
+    // ts-rest's actual return shape. The 401 retry was dead code for months
+    // because the mocks carried clone()/json() methods the real return value
+    // does not have — this test fails loudly if that assumption breaks again
+    // on a ts-rest upgrade.
+    const { tsRestFetchApi: realTsRestFetchApi } = await vi.importActual('@ts-rest/core');
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: { code: 'auth/token-expired' } }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const response = await realTsRestFetchApi({
+        route: { responses: {} },
+        path: 'https://api.test.example.com/v1/me',
+        method: 'GET',
+        headers: {},
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ error: { code: 'auth/token-expired' } });
+      expect(response.clone).toBeUndefined();
+      expect(response.json).toBeUndefined();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('returns the original 401 when the body is not a JSON envelope', async () => {
     // ts-rest parses non-JSON responses to a string (or blob) body — e.g. an
     // HTML error page from an intermediary. No error code to interpret.
