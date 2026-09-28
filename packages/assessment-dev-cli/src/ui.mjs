@@ -51,23 +51,32 @@ function block(glyph, message) {
  * A titled box in the gutter. The kind's glyph leads the title line, so a
  * warning and its remedy are one visual unit rather than two stacked blocks.
  */
-const BOX_MAX_WIDTH = 76;
+// Box content width: up to 96 columns on wide terminals (long connection
+// strings fit unwrapped), never past the terminal edge, never below 60.
+const BOX_MAX_WIDTH = Math.max(60, Math.min(96, (process.stdout.columns ?? 80) - 6));
 
-/** Word-wraps one logical line to the box's content width. */
+/** Word-wraps one logical line to the box's content width, keeping its indent. */
 function wrapLine(line, max) {
   if (line.length <= max) return [line];
-  const words = line.split(' ');
+  const indent = line.match(/^ */)[0];
+  const words = line.trimStart().split(' ');
   const out = [];
-  let current = '';
+  let current = indent;
   for (const word of words) {
-    if (current && current.length + 1 + word.length > max) {
+    if (current.length > indent.length && current.length + 1 + word.length > max) {
       out.push(current);
-      current = word;
+      current = indent + word;
     } else {
-      current = current ? `${current} ${word}` : word;
+      current = current.length > indent.length ? `${current} ${word}` : indent + word;
+    }
+    // An unbreakable token (a long URL) can exceed the width on its own —
+    // hard-split it rather than overflowing the frame.
+    while (current.length > max) {
+      out.push(current.slice(0, max));
+      current = indent + current.slice(max);
     }
   }
-  if (current) out.push(current);
+  if (current.length > indent.length) out.push(current);
   return out;
 }
 

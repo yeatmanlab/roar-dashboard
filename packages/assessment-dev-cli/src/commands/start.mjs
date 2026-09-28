@@ -8,7 +8,14 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { ASSESSMENT_BACKEND_URL, ASSESSMENT_NAME, PARAMS_FILE, resolvePgPort, stackPorts } from '../context.mjs';
+import {
+  ASSESSMENT_AUTH_EMULATOR_HOST,
+  ASSESSMENT_BACKEND_URL,
+  ASSESSMENT_NAME,
+  PARAMS_FILE,
+  resolvePgPort,
+  stackPorts,
+} from '../context.mjs';
 import {
   compose,
   composeAvailable,
@@ -29,6 +36,26 @@ const STALE_CONTAINERS = [
   'firebase-emulator',
   'assessment-backend',
 ];
+
+/** The supabase-style service summary shown once the environment is up. */
+function printRunningSummary(ui, pgPort) {
+  const rows = [
+    ['Assessment', 'http://localhost:8000'],
+    ['Backend API', ASSESSMENT_BACKEND_URL],
+    ['Auth emulator', `http://${ASSESSMENT_AUTH_EMULATOR_HOST}`],
+    ['Storage emulator', 'http://127.0.0.1:9197'],
+    ['Emulator UI', 'http://localhost:9002'],
+    ['Database URLs', `postgres://postgres:postgres@localhost:${pgPort}/roar_core`],
+    ['', `postgres://postgres:postgres@localhost:${pgPort}/roar_assessment`],
+    ['DB browser', 'npx pgweb --url "<database URL>?sslmode=disable"'],
+  ];
+  const labelWidth = Math.max(...rows.map(([label]) => label.length)) + 2;
+  ui.note(
+    rows.map(([label, value]) => `${label.padEnd(labelWidth)}${value}`).join('\n'),
+    `${ASSESSMENT_NAME} is running`,
+    'done',
+  );
+}
 
 export async function start(ui) {
   const pgPort = resolvePgPort();
@@ -54,7 +81,8 @@ export async function start(ui) {
   // `docker compose up` heals a partial stack instead (the DB volume survives
   // container removal).
   if (containerRunning('assessment-backend') && containerRunning('firebase-emulator')) {
-    ui.step('Assessment environment already running. Starting the dev server...');
+    ui.intro(`${ASSESSMENT_NAME} start`);
+    ui.success('Assessment environment already running.');
   } else {
     ui.intro(`${ASSESSMENT_NAME} start`);
 
@@ -103,17 +131,16 @@ export async function start(ui) {
       return;
     }
 
-    up.done('Environment ready — starting the assessment dev server...');
+    up.done('Environment ready.');
   }
 
+  printRunningSummary(ui, pgPort);
   // Each package's `dev` script is the single source of truth for its bundler
   // invocation (webpack or vite). The emulator hosts need no explicit values —
   // dev-mode bundler configs default them to this stack's emulators.
   // BACKEND_URL points the /v1 proxy at the containerized backend (plain HTTP
   // on 4002) instead of the host-run TLS default on 4000.
-  ui.info(
-    'The assessment opens at http://localhost:8000 — Ctrl+C stops the dev server; the environment keeps running until npm stop.',
-  );
+  ui.info('Starting the dev server — Ctrl+C stops it; the environment keeps running until npm stop.');
   // npm's --silent drops the lifecycle banners; --no-deprecation silences
   // third-party DeprecationWarnings from the dev server's dependencies, which
   // researchers can neither act on nor need to see.
