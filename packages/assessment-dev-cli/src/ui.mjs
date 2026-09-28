@@ -35,6 +35,11 @@ const GLYPH = {
   error: () => paint('red', '■'),
 };
 
+/** Bolds a leading step counter ("[4/5] …") so the sequence scans at a glance. */
+function emphasizeStepPrefix(message) {
+  return message.replace(/^(\[\d+\/\d+\])/, (m) => paint('bold', m));
+}
+
 function block(glyph, message) {
   const [first, ...rest] = message.split('\n');
   console.log(BAR());
@@ -72,7 +77,7 @@ function noteBox(body, title, kind) {
   const width = Math.min(Math.max(...lines.map((l) => l.length), heading.length + 2) + 2, BOX_MAX_WIDTH);
   console.log(BAR());
   console.log(
-    `${GLYPH[kind]()}  ${heading} ${paint('gray', '─'.repeat(Math.max(width - heading.length, 1)))}${paint('gray', '╮')}`,
+    `${GLYPH[kind]()}  ${paint('bold', heading)} ${paint('gray', '─'.repeat(Math.max(width - heading.length, 1)))}${paint('gray', '╮')}`,
   );
   console.log(`${BAR()} ${' '.repeat(width + 2)}${paint('gray', '│')}`);
   for (const line of lines) {
@@ -176,7 +181,7 @@ export async function loadUi() {
       console.log(`${paint('gray', '└')}  ${message}`);
       console.log('');
     },
-    step: (message) => block(GLYPH.active(), message),
+    step: (message) => block(GLYPH.active(), emphasizeStepPrefix(message)),
     info: (message) => block(GLYPH.info(), message),
     success: (message) => block(GLYPH.done(), message),
     warn: (message) => block(GLYPH.warn(), message),
@@ -186,7 +191,7 @@ export async function loadUi() {
      * 'error', or 'done'.
      */
     note: (body, title, kind = 'info') => noteBox(body, title, kind),
-    task: (title) => makeTask(title),
+    task: (title) => makeTask(emphasizeStepPrefix(title)),
     /**
      * Yes/no prompt. Non-interactive runs (CI, pipes) get `nonTtyValue` so
      * automation is never blocked — the same contract the bash scripts had.
