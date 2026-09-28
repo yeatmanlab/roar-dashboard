@@ -72,7 +72,7 @@ import { UserRole } from '../enums/user-role.enum';
 import { UserType } from '../enums/user-type.enum';
 import { UserFamilyRole } from '../enums/user-family-role.enum';
 import { FamilyFactory } from '../test-support/factories/family.factory';
-import { UserFamilyFactory as UserFamilyFactoryStatic } from '../test-support/factories/user-family.factory';
+import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
 import { UserRepository } from '../repositories/user.repository';
 import { FirebaseAuthClient } from '../clients/firebase-auth.clients';
 import { EntityType } from '../types/entity-type';
@@ -976,7 +976,7 @@ describe('POST /v1/users/:userId/agreements', () => {
     it('should allow a minor-classified caregiver with a parent family role to consent to TOS agreement (#2244)', async () => {
       const teenParent = await UserFactory.create({ dob: '2010-01-01', grade: null, userType: UserType.CAREGIVER });
       const family = await FamilyFactory.create();
-      await UserFamilyFactoryStatic.create({ userId: teenParent.id, familyId: family.id, role: UserFamilyRole.PARENT });
+      await UserFamilyFactory.create({ userId: teenParent.id, familyId: family.id, role: UserFamilyRole.PARENT });
 
       const res = await expectRoute('POST', `/v1/users/${teenParent.id}/agreements`)
         .as({ id: teenParent.id, authId: teenParent.authId! })
