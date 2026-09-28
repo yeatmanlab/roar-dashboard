@@ -1,22 +1,25 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ref } from 'vue';
 import { flushPromises } from '@vue/test-utils';
+import { ref } from 'vue';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { APP_ROUTES } from '@/constants/routes';
 
-const mockResolveUserClaims = vi.fn();
-const mockSetGlobalError = vi.fn();
-
-vi.mock('@/helpers/resolveUserClaims', () => ({
-  resolveUserClaims: () => mockResolveUserClaims(),
-}));
-
-vi.mock('@/composables/useGlobalError', () => ({
-  useGlobalError: () => ({ setGlobalError: mockSetGlobalError }),
-}));
-
-vi.mock('@sentry/vue', () => ({
+const mocks = vi.hoisted(() => ({
+  isMobileBrowser: vi.fn(),
+  resolveUserClaims: vi.fn(),
+  setGlobalError: vi.fn(),
   setUser: vi.fn(),
 }));
 
+vi.mock('pinia', () => ({
+  storeToRefs: (store) => store.$refs,
+}));
+
+vi.mock('@sentry/vue', () => ({ setUser: mocks.setUser }));
+vi.mock('@/helpers', () => ({ isMobileBrowser: mocks.isMobileBrowser }));
+vi.mock('@/helpers/resolveUserClaims', () => ({ resolveUserClaims: mocks.resolveUserClaims }));
+vi.mock('@/composables/useGlobalError', () => ({
+  useGlobalError: () => ({ setGlobalError: mocks.setGlobalError }),
+}));
 vi.mock('@/services/AuthService', () => ({
   getAuthService: () => ({
     fetchSignInMethodsForEmail: vi.fn().mockResolvedValue([]),
@@ -24,156 +27,196 @@ vi.mock('@/services/AuthService', () => ({
   }),
 }));
 
-const { useAuth } = await import('./useAuth');
+import { useAuth } from './useAuth';
 
 const MOCK_UID = 'firebase-uid-1';
 
-/**
- * Build the context object `useAuth` destructures, backed by a minimal fake
- * auth store. `$subscribe` is a no-op here — the post-login redirect wiring is
- * out of scope for these tests (and is tracked separately in #2214).
- */
-function createContext({ uid = MOCK_UID } = {}) {
+function createContext({ uid = MOCK_UID, route = { query: {} } } = {}) {
+  let authSubscription;
   const authStore = {
+    $refs: {
+      spinner: ref(false),
+      ssoProvider: ref(null),
+      roarfirekit: ref(null),
+    },
+    $subscribe: vi.fn((callback) => {
+      authSubscription = callback;
+    }),
     uid,
     roarUid: null,
     userClaims: null,
-    spinner: ref(false),
-    ssoProvider: ref(null),
-    roarfirekit: ref(null),
-    $subscribe: vi.fn(),
     logInWithEmailAndPassword: vi.fn().mockResolvedValue(undefined),
     signInWithPopup: vi.fn().mockResolvedValue(undefined),
-    signInWithRedirect: vi.fn(),
+    signInWithRedirect: vi.fn().mockResolvedValue(undefined),
     initiateLoginWithEmailLink: vi.fn().mockResolvedValue(undefined),
   };
-
-  return {
+  const router = { push: vi.fn() };
+  const context = {
     authStore,
-    router: { push: vi.fn() },
-    route: { query: {} },
-    email: ref('teacher@example.org'),
-    password: ref('correct-horse'),
+    router,
+    route,
+    email: ref('owner@example.com'),
+    password: ref('password1'),
     invalid: ref(false),
     ssoError: ref(false),
     emailLinkSent: ref(false),
     showPasswordField: ref(true),
     resetSignInUI: vi.fn(),
   };
+
+  return { authStore, authSubscription: () => authSubscription, context, router };
 }
 
-// `useAuth` reads spinner/ssoProvider/roarfirekit through `storeToRefs`, which
-// requires a real Pinia store. The fake store already exposes them as refs, so
-// a pass-through keeps the composable working without standing up Pinia.
-vi.mock('pinia', () => ({
-  storeToRefs: (store) => ({
-    spinner: store.spinner,
-    ssoProvider: store.ssoProvider,
-    roarfirekit: store.roarfirekit,
-  }),
-}));
-
-describe('useAuth — credential vs. bootstrap error separation', () => {
+describe('useAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mocks.isMobileBrowser.mockReturnValue(false);
+    mocks.resolveUserClaims.mockResolvedValue({ claims: { roarUid: 'roar-owner' } });
+    delete window.Cypress;
   });
 
-  describe('authWithEmailPassword', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('credential vs. bootstrap error separation', () => {
     it('flags the form as invalid when the credentials are rejected', async () => {
-      const context = createContext();
+      const { context } = createContext();
       context.authStore.logInWithEmailAndPassword.mockRejectedValue(new Error('auth/wrong-password'));
 
       const { authWithEmailPassword } = useAuth(context);
       await authWithEmailPassword();
 
       expect(context.invalid.value).toBe(true);
-      expect(mockSetGlobalError).not.toHaveBeenCalled();
-      // The bootstrap never ran — the credentials never passed.
-      expect(mockResolveUserClaims).not.toHaveBeenCalled();
+      expect(mocks.setGlobalError).not.toHaveBeenCalled();
+      expect(mocks.resolveUserClaims).not.toHaveBeenCalled();
     });
 
     it('does not flag the credentials when the post-login bootstrap fails', async () => {
-      // The acceptance criterion: sign-in succeeded, so the form must NOT
-      // silently reset and re-prompt for a password that is already right.
-      // Classification of the failure is not asserted here — it belongs to the
-      // QueryCache bridge (see the integration test at the bottom of this file).
-      const context = createContext();
-      mockResolveUserClaims.mockRejectedValue(new Error('/me request failed with status 500'));
+      const { context } = createContext();
+      mocks.resolveUserClaims.mockRejectedValue(new Error('/me request failed with status 500'));
 
       const { authWithEmailPassword } = useAuth(context);
       await authWithEmailPassword();
 
       expect(context.invalid.value).toBe(false);
-      expect(context.authStore.spinner.value).toBe(false);
+      expect(context.authStore.$refs.spinner.value).toBe(false);
     });
 
     it('leaves the form clean and sets no global error on a fully successful sign-in', async () => {
-      const context = createContext();
-      mockResolveUserClaims.mockResolvedValue({ claims: { roarUid: 'roar-1' } });
+      const { context } = createContext();
+      mocks.resolveUserClaims.mockResolvedValue({ claims: { roarUid: 'roar-1' } });
 
       const { authWithEmailPassword } = useAuth(context);
       await authWithEmailPassword();
 
       expect(context.invalid.value).toBe(false);
-      expect(mockSetGlobalError).not.toHaveBeenCalled();
+      expect(mocks.setGlobalError).not.toHaveBeenCalled();
       expect(context.authStore.userClaims).toEqual({ claims: { roarUid: 'roar-1' } });
     });
 
-    // The spinner is auth-store state rendered app-wide by App.vue, so leaving it
-    // set outlives the sign-in form and overlays whatever the redirect lands on.
-    // `getUserClaims` can resolve without signing anyone in — it no-ops when the
-    // uid is absent — so clearing only in the catch is not enough.
     it('clears the spinner when the bootstrap resolves without claims', async () => {
-      const context = createContext({ uid: null });
+      const { context } = createContext({ uid: null });
 
       const { authWithEmailPassword } = useAuth(context);
       await authWithEmailPassword();
 
-      expect(context.authStore.spinner.value).toBe(false);
-      expect(mockSetGlobalError).not.toHaveBeenCalled();
+      expect(context.authStore.$refs.spinner.value).toBe(false);
+      expect(mocks.setGlobalError).not.toHaveBeenCalled();
     });
 
     it('clears the spinner on a successful sign-in', async () => {
-      const context = createContext();
-      mockResolveUserClaims.mockResolvedValue({ claims: { roarUid: 'roar-1' } });
+      const { context } = createContext();
+      mocks.resolveUserClaims.mockResolvedValue({ claims: { roarUid: 'roar-1' } });
 
       const { authWithEmailPassword } = useAuth(context);
       await authWithEmailPassword();
 
-      expect(context.authStore.spinner.value).toBe(false);
+      expect(context.authStore.$refs.spinner.value).toBe(false);
     });
   });
 
   describe('SSO popup flow', () => {
     it('flags the SSO error, not the credentials, when the popup sign-in is rejected', async () => {
-      const context = createContext();
+      const { context } = createContext();
       context.authStore.signInWithPopup.mockRejectedValue(new Error('auth/popup-closed-by-user'));
 
       const { authWithGoogle } = useAuth(context);
-      await authWithGoogle();
-      // `ssoError`, not `invalid`: the user never typed a password, so the
-      // invalid-credentials copy would misdirect them into password resets.
+      authWithGoogle();
+
       await vi.waitFor(() => expect(context.ssoError.value).toBe(true));
       expect(context.invalid.value).toBe(false);
-
-      // Guard against a vacuous pass: Google on a desktop UA takes the popup
-      // branch, not the redirect branch.
       expect(context.authStore.signInWithPopup).toHaveBeenCalledWith('google');
-      expect(mockSetGlobalError).not.toHaveBeenCalled();
+      expect(mocks.setGlobalError).not.toHaveBeenCalled();
     });
 
     it('does not flag the credentials when the popup succeeds but the bootstrap fails', async () => {
-      const context = createContext();
-      mockResolveUserClaims.mockRejectedValue(new Error('/me request failed with status 500'));
+      const { context } = createContext();
+      mocks.resolveUserClaims.mockRejectedValue(new Error('/me request failed with status 500'));
 
       const { authWithGoogle } = useAuth(context);
-      await authWithGoogle();
+      authWithGoogle();
       await flushPromises();
 
       expect(context.authStore.signInWithPopup).toHaveBeenCalledWith('google');
       expect(context.invalid.value).toBe(false);
-      expect(context.authStore.spinner.value).toBe(false);
+      expect(context.authStore.$refs.spinner.value).toBe(false);
+    });
+  });
+
+  describe('signup QA regressions', () => {
+    it('preserves the email/password sign-in contract', async () => {
+      const { authStore, context } = createContext();
+      const auth = useAuth(context);
+
+      await auth.authWithEmailPassword();
+
+      expect(authStore.logInWithEmailAndPassword).toHaveBeenCalledWith({
+        email: 'owner@example.com',
+        password: 'password1',
+      });
+      expect(authStore.$refs.spinner.value).toBe(false);
+      expect(mocks.resolveUserClaims).toHaveBeenCalledOnce();
+    });
+
+    it('preserves provider redirect and popup behavior', async () => {
+      const redirectContext = createContext();
+      const redirectAuth = useAuth(redirectContext.context);
+
+      redirectAuth.authWithClever();
+      expect(redirectContext.authStore.$refs.spinner.value).toBe(true);
+      expect(redirectContext.authStore.signInWithRedirect).toHaveBeenCalledWith('clever');
+
+      const popupContext = createContext();
+      const popupAuth = useAuth(popupContext.context);
+
+      popupAuth.authWithGoogle();
+      await flushPromises();
+
+      expect(popupContext.authStore.signInWithPopup).toHaveBeenCalledWith('google');
+      expect(mocks.resolveUserClaims).toHaveBeenCalledOnce();
+    });
+
+    it('preserves the approved post-authentication navigation path', () => {
+      const homeContext = createContext();
+      useAuth(homeContext.context);
+
+      homeContext.authSubscription()();
+      expect(homeContext.router.push).toHaveBeenCalledWith({ path: APP_ROUTES.HOME });
+
+      const redirectContext = createContext({ route: { query: { redirect_to: '/progress' } } });
+      useAuth(redirectContext.context);
+
+      redirectContext.authSubscription()();
+      expect(redirectContext.router.push).toHaveBeenCalledWith({ path: '/progress' });
+
+      const ssoContext = createContext();
+      useAuth(ssoContext.context);
+      ssoContext.authStore.$refs.ssoProvider.value = 'clever';
+
+      ssoContext.authSubscription()();
+      expect(ssoContext.router.push).toHaveBeenCalledWith({ path: APP_ROUTES.SSO });
     });
   });
 });
