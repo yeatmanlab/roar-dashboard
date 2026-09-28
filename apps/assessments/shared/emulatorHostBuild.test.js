@@ -79,6 +79,30 @@ beforeEach(() => {
   vi.stubEnv('FIREBASE_STORAGE_EMULATOR_HOST', '');
 });
 
+describe('config discovery', () => {
+  // This suite is the sole enforcement of the leak invariant, and it can only
+  // enforce what it discovers. A new assessment using a config filename the
+  // discovery doesn't know (vite.config.ts, webpack.config.js, …) must fail
+  // HERE — loudly — rather than silently shipping unguarded.
+  it('covers every assessment package that has a dev script', () => {
+    const covered = new Set([...webpackAssessments, ...viteAssessments]);
+    const uncovered = readdirSync(ASSESSMENTS_DIR, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && existsSync(path.join(ASSESSMENTS_DIR, entry.name, 'package.json')))
+      .map((entry) => entry.name)
+      .filter((name) => {
+        const pkg = JSON.parse(readFileSync(path.join(ASSESSMENTS_DIR, name, 'package.json'), 'utf8'));
+        return typeof pkg.scripts?.dev === 'string' && !covered.has(name);
+      });
+    // Failure names the packages and the required action right in the diff.
+    const failure =
+      uncovered.length === 0
+        ? ''
+        : `Unguarded assessments (dev script, but no bundler config this suite recognizes): ` +
+          `${uncovered.join(', ')} — extend the discovery so the emulator-host invariant covers them`;
+    expect(failure).toBe('');
+  });
+});
+
 describe.each(webpackAssessments)('%s webpack config — Auth emulator host', (name) => {
   it('does not inline the emulator hosts into a production build', async () => {
     const config = await loadWebpackConfig(name, 'production', 'production');

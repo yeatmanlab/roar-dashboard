@@ -86,7 +86,10 @@ function resolveStorageBucket(): FirebaseStorage {
   if (authEmulatorHost) {
     const storage = getStorage(getApp());
     if (!storageEmulatorConnected) {
-      const storageEmulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+      // Tolerate the scheme-prefixed form firebase-tools uses for its own
+      // analogous variable ('http://127.0.0.1:9199') — without the strip it
+      // would parse to host 'http' and port NaN.
+      const storageEmulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST?.replace(/^https?:\/\//, '');
       const [host = '127.0.0.1', port] = storageEmulatorHost
         ? storageEmulatorHost.split(':')
         : [authEmulatorHost.split(':')[0]];

@@ -1681,6 +1681,24 @@ describe('firekit compat', () => {
       fresh._resetFirekitCompat();
     });
 
+    it('tolerates a scheme-prefixed FIREBASE_STORAGE_EMULATOR_HOST', async () => {
+      vi.resetModules();
+      const fresh = await import('./firekit');
+      vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
+      vi.stubEnv('FIREBASE_STORAGE_EMULATOR_HOST', 'http://127.0.0.1:9199');
+      vi.stubGlobal('fetch', setupFetchMock('run-storage-scheme-test'));
+      fresh.initFirekitCompat(createMockContext(), {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      fresh.getFirekitCompat()._getStorageBucket();
+
+      expect(connectStorageEmulator).toHaveBeenCalledWith(expect.anything(), '127.0.0.1', 9199);
+      fresh._resetFirekitCompat();
+    });
+
     it('does not reconnect the emulator after a facade reset', () => {
       // storageEmulatorConnected is module-level, so it persists across facade resets.
       // The emulator test above already triggered the connection; after reset it should not reconnect.

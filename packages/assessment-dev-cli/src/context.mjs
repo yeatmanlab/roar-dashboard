@@ -23,9 +23,10 @@ export const DEFAULT_PG_PORT = '5433';
  * The auth-emulator host dev bundles default to — read from the same file the
  * bundler configs use, so the CLI's probes can never drift from the bundles.
  */
-export const { FIREBASE_EMULATOR_AUTH_HOST: ASSESSMENT_AUTH_EMULATOR_HOST } = createRequire(import.meta.url)(
-  path.join(REPO_ROOT, 'apps', 'assessments', 'shared', 'devEmulatorHost.cjs'),
-);
+export const {
+  FIREBASE_EMULATOR_AUTH_HOST: ASSESSMENT_AUTH_EMULATOR_HOST,
+  FIREBASE_EMULATOR_STORAGE_HOST: ASSESSMENT_STORAGE_EMULATOR_HOST,
+} = createRequire(import.meta.url)(path.join(REPO_ROOT, 'apps', 'assessments', 'shared', 'devEmulatorHost.cjs'));
 
 /**
  * Host port the ephemeral assessment Postgres publishes. Defaults to 5433 so
@@ -61,7 +62,16 @@ export function resolvePgPort(captureFn = capture) {
  * @returns {string[]}
  */
 export function stackPorts(pgPort) {
-  return [pgPort, '9097', '9197', '9002', '4002'];
+  // Emulator ports come from the shared host constants so the preflight can
+  // never drift from what the bundles target; the Emulator UI (9002) and
+  // backend (4002) ports must match docker-compose.assessment.yml.
+  return [
+    pgPort,
+    ASSESSMENT_AUTH_EMULATOR_HOST.split(':')[1],
+    ASSESSMENT_STORAGE_EMULATOR_HOST.split(':')[1],
+    '9002',
+    '4002',
+  ];
 }
 
 /**

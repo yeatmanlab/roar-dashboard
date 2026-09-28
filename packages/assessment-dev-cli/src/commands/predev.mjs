@@ -65,10 +65,13 @@ export async function predev(ui) {
 
   // 3. The backend API. An exported BACKEND_URL (set by `npm start`, or by
   // hand) is authoritative for where the /v1 proxy points — probe exactly
-  // that. Without it, the bundler default targets the platform's host-run TLS
-  // backend on 4000.
+  // that. Without it, the auth-host override decides the context: no override
+  // means the bundle targets the ASSESSMENT stack, so a platform backend on
+  // 4000 must not silently satisfy the check — auth would go to 9097 while
+  // /v1 proxied to a backend verifying against 9099, 401ing every request.
   let backendScheme;
   const backendUrl = process.env.BACKEND_URL;
+  const platformContext = Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST);
   if (backendUrl) {
     if (!(await probe(`${backendUrl.replace(/\/$/, '')}/health/live`))) {
       fail(ui, `No backend responds at BACKEND_URL (${backendUrl})`, [
@@ -77,20 +80,27 @@ export async function predev(ui) {
       return;
     }
     backendScheme = backendUrl.split(':')[0];
+  } else if (!platformContext) {
+    // Assessment context (bundle defaults): the proxy needs BACKEND_URL —
+    // whether or not something answers on the platform's 4000.
+    const running = await probe(`${ASSESSMENT_BACKEND_URL}/health/live`);
+    fail(
+      ui,
+      running
+        ? 'The assessment environment is running, but BACKEND_URL is not set'
+        : 'No assessment environment is running',
+      [
+        'Use:  npm start   (brings the environment up and sets BACKEND_URL)',
+        ...(running ? [`or:   BACKEND_URL=${ASSESSMENT_BACKEND_URL} npm run dev`] : []),
+        `Platform context instead: FIREBASE_AUTH_EMULATOR_HOST=${PLATFORM_AUTH_EMULATOR_HOST} npm run dev`,
+      ],
+    );
+    return;
   } else if (await probe(`${PLATFORM_BACKEND_URL}/health/live`)) {
     backendScheme = 'https';
-  } else if (await probe(`${ASSESSMENT_BACKEND_URL}/health/live`)) {
-    // The assessment stack is up, but without BACKEND_URL the proxy would
-    // target the (absent) platform backend and fail every /v1 request.
-    fail(ui, 'The assessment environment is running, but BACKEND_URL is not set', [
-      'Use:  npm start   (sets BACKEND_URL for you)',
-      `or:   BACKEND_URL=${ASSESSMENT_BACKEND_URL} npm run dev`,
-    ]);
-    return;
   } else {
-    fail(ui, 'No backend is running', [
-      'Assessment environment: npm start',
-      'Platform context:       NODE_ENV=development npm run dev -w apps/backend',
+    fail(ui, `No platform backend on ${PLATFORM_BACKEND_URL}`, [
+      'Start it: NODE_ENV=development npm run dev -w apps/backend',
     ]);
     return;
   }

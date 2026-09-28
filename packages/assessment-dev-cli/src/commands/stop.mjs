@@ -59,6 +59,7 @@ export async function stop(ui, args = []) {
 
   // --timeout 0 sends SIGKILL immediately instead of waiting for graceful shutdown.
   if (compose(downArgs, pgPort, { quiet: true }).ok) {
+    if (!keepData) removeLegacyVolumes();
     ui.success(stoppedMessage);
     return;
   }
@@ -101,20 +102,21 @@ export async function stop(ui, args = []) {
   capture(['docker', 'rm', '-f', ...CONTAINERS]);
   if (!keepData) {
     // If the retried compose down above also failed, this is the only removal
-    // of the data volume — without it the "deletes the local database"
-    // contract breaks. The legacy names are included as cheap insurance for
-    // checkouts that ran earlier revisions of the stack: compose down -v only
-    // removes volumes the current file declares, so nothing else ever deletes
-    // them.
-    capture([
-      'docker',
-      'volume',
-      'rm',
-      'roar-assessment-postgres-data',
-      'roar-assessment_postgres-18-data',
-      'roar-assessment_pgdata',
-    ]);
+    // of the current data volume — without it the "deletes the local
+    // database" contract breaks.
+    capture(['docker', 'volume', 'rm', 'roar-assessment-postgres-data']);
+    removeLegacyVolumes();
   }
 
   ui.success(stoppedMessage);
+}
+
+/**
+ * Removes data volumes from earlier revisions of the stack (the pre-rename
+ * auto-prefixed name and the pre-Postgres-18 name). Runs on every delete —
+ * `compose down -v` only removes volumes the current file declares, so
+ * nothing else ever deletes these.
+ */
+function removeLegacyVolumes() {
+  capture(['docker', 'volume', 'rm', 'roar-assessment_postgres-18-data', 'roar-assessment_pgdata']);
 }

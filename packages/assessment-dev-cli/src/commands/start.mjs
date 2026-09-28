@@ -8,7 +8,15 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { ASSESSMENT_BACKEND_URL, ASSESSMENT_NAME, PARAMS_FILE, resolvePgPort, stackPorts } from '../context.mjs';
+import {
+  ASSESSMENT_AUTH_EMULATOR_HOST,
+  ASSESSMENT_BACKEND_URL,
+  ASSESSMENT_NAME,
+  ASSESSMENT_STORAGE_EMULATOR_HOST,
+  PARAMS_FILE,
+  resolvePgPort,
+  stackPorts,
+} from '../context.mjs';
 import {
   compose,
   composeAvailable,
@@ -73,7 +81,21 @@ export async function start(ui) {
   // fix — `npm start` — takes this same skip path; falling through to
   // `docker compose up` heals a partial stack instead (the DB volume survives
   // container removal).
-  if (containerRunning('assessment-backend') && containerRunning('firebase-emulator')) {
+  // The fast path must not trust containers by name alone: after the
+  // port-shift upgrade, old-revision containers publishing 4000/9099 could
+  // still be running — trusting them prints a summary claiming the new ports
+  // and predev's remedies loop back here. A port mismatch falls through to the
+  // slow path, whose stale-container cleanup self-heals.
+  const backendCurrent = capture(['docker', 'port', 'assessment-backend', '4000/tcp']).stdout.endsWith(':4002');
+  const emulatorCurrent = capture(['docker', 'port', 'firebase-emulator', '9099/tcp'])
+    .stdout.split('\n')[0]
+    .endsWith(`:${ASSESSMENT_AUTH_EMULATOR_HOST.split(':')[1]}`);
+  if (
+    containerRunning('assessment-backend') &&
+    containerRunning('firebase-emulator') &&
+    backendCurrent &&
+    emulatorCurrent
+  ) {
     ui.intro(`${ASSESSMENT_NAME} start`);
     ui.success('Assessment environment already running.');
 
@@ -140,7 +162,14 @@ export async function start(ui) {
       ui.step("Details from the environment's logs:");
       compose(['logs', '--no-color', '--tail=40', 'assessment-db-migrate', 'backend'], pgPort);
       ui.note(
-        'Fix the reported problem (an invalid taskVariantParameters.json entry\nis the usual cause), then run: npm start',
+        [
+          'Fix the reported problem (an invalid taskVariantParameters.json entry',
+          'is the usual cause), then run: npm start',
+          '',
+          'If the errors say a database or relation does not exist, a first start',
+          "was likely interrupted mid-setup — run npm stop, choose 'delete', then",
+          'npm start for a fresh database.',
+        ].join('\n'),
         'Next step',
       );
       process.exitCode = 1;
@@ -167,7 +196,12 @@ export async function start(ui) {
     stdio: ['inherit', 'pipe', 'pipe'],
     env: {
       ...process.env,
+      // Pinned, not defaulted: a shell-exported platform value (e.g. left over
+      // from platform-context work) would otherwise rewire this session's
+      // bundle to the wrong stack while the summary above claims otherwise.
       BACKEND_URL: ASSESSMENT_BACKEND_URL,
+      FIREBASE_AUTH_EMULATOR_HOST: ASSESSMENT_AUTH_EMULATOR_HOST,
+      FIREBASE_STORAGE_EMULATOR_HOST: ASSESSMENT_STORAGE_EMULATOR_HOST,
       FORCE_COLOR: process.env.FORCE_COLOR ?? '1',
       NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --no-deprecation`.trim(),
     },
@@ -186,6 +220,14 @@ export async function start(ui) {
   process.on('SIGINT', () => {});
   process.on('SIGTERM', () => {});
   await new Promise((resolve) => {
+    // Without this listener a spawn failure (ENOENT, Windows .cmd rules)
+    // throws an unhandled 'error' event and the 'exit' event — and with it
+    // this promise — may never arrive.
+    child.on('error', (error) => {
+      ui.error(`Failed to start the dev server: ${error.message}`);
+      process.exitCode = 1;
+      resolve();
+    });
     child.on('exit', (code, signal) => {
       if (buffer) ui.stream(buffer);
       if (signal || code === 0) {

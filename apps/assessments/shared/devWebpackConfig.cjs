@@ -23,6 +23,14 @@
 const webpack = require('webpack');
 const { FIREBASE_EMULATOR_AUTH_HOST, FIREBASE_EMULATOR_STORAGE_HOST } = require('./devEmulatorHost.cjs');
 
+// An assessment .env with a bare `FIREBASE_AUTH_EMULATOR_HOST=` line makes
+// dotenv define the variable as '' — which EnvironmentPlugin treats as a real
+// value, silently baking a broken empty host past the default below. Treat
+// empty as unset.
+for (const key of ['FIREBASE_AUTH_EMULATOR_HOST', 'FIREBASE_STORAGE_EMULATOR_HOST']) {
+  if (process.env[key] === '') delete process.env[key];
+}
+
 const devConfig = {
   stats: 'errors-warnings',
   infrastructureLogging: { level: 'warn' },
@@ -37,7 +45,12 @@ const devConfig = {
       // FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 to target the platform
       // stack's canonical ports).
       FIREBASE_AUTH_EMULATOR_HOST: FIREBASE_EMULATOR_AUTH_HOST,
-      FIREBASE_STORAGE_EMULATOR_HOST: FIREBASE_EMULATOR_STORAGE_HOST,
+      // The storage default applies only when the auth host is un-overridden
+      // too: an auth-only override (platform-context dev) must NOT carry the
+      // assessment stack's storage port — an empty value here makes the SDK
+      // derive the storage emulator from the auth host and the canonical
+      // port instead.
+      FIREBASE_STORAGE_EMULATOR_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST ? '' : FIREBASE_EMULATOR_STORAGE_HOST,
     }),
   ],
 };

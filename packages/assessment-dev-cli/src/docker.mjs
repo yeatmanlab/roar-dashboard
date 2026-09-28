@@ -55,7 +55,9 @@ export function compose(args, pgPort, { quiet = false } = {}) {
  * @returns {Promise<boolean>} True on exit code 0.
  */
 export async function composeStreamed(args, pgPort, onLine) {
-  const command = ['docker', 'compose', '--progress', 'plain', '-f', COMPOSE_FILE, ...args];
+  // No --progress flag: it requires Compose 2.19+, and compose auto-selects
+  // plain output when stdout is a pipe (which runStreamed's is).
+  const command = ['docker', 'compose', '-f', COMPOSE_FILE, ...args];
   return (await runStreamed(command, { env: composeEnv(pgPort) }, onLine)) === 0;
 }
 
