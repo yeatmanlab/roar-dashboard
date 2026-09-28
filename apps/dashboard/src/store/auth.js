@@ -1,14 +1,24 @@
 import { markRaw } from 'vue';
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import { getIdToken } from 'firebase/auth';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { initializeFirekit } from '@/firekit';
 import { APP_ROUTES } from '@/constants/routes';
 import { getAuthService } from '@/services/AuthService';
 import { queryClient } from '@/queryClient';
+import { useGlobalError } from '@/composables/useGlobalError';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 import { FIREBASE_AUTH_PROVIDER_IDS } from '@/constants/firebase';
+
+/**
+ * Shared in-flight token refresh. N concurrent forceIdTokenRefresh callers
+ * (parallel queries that 401 together, the assessment SDK) share a single
+ * Firebase refresh instead of issuing one each.
+ *
+ * @type {Promise<string | null> | null}
+ */
+let inFlightTokenRefresh = null;
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -118,8 +128,16 @@ export const useAuthStore = () => {
           // See: https://github.com/vuejs/core/issues/2282
           this.roarfirekit = markRaw(await initializeFirekit());
         } catch (error) {
-          // @TODO: Improve error handling, incl. redirect to error page.
+          // Firekit backs Firestore reads and assessment launching, so a
+          // failed init leaves the app unable to do its job. Route it to the
+          // existing global-error mechanism — the `useGlobalErrorRedirect`
+          // watcher in App.vue redirects to GenericError immediately, and the
+          // router's `beforeEach` guard enforces it on later navigations —
+          // instead of logging and letting the caller continue into an
+          // unusable session.
           console.error('Failed to initialize Firekit:', error);
+          const { setGlobalError } = useGlobalError();
+          setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
         }
       },
 
@@ -157,7 +175,17 @@ export const useAuthStore = () => {
             // system from traversing internal auth provider state that references
             // cross-origin frames.
             this.firebaseUser = markRaw(user);
-            this.accessToken = user.accessToken;
+            // Derive the token via the public getIdToken() (cached, no network
+            // round-trip) rather than reading the private `user.accessToken`
+            // field, which is not part of Firebase's public API surface.
+            const token = await authService.getIdToken();
+            // A sign-out or user switch can land while getIdToken is pending;
+            // firebaseUser is written synchronously per event, so it identifies
+            // the latest event. Assigning without this check would resurrect a
+            // token the session no longer owns.
+            if (this.firebaseUser?.uid === user.uid) {
+              this.accessToken = token;
+            }
           } else {
             this.firebaseUser = null;
             this.accessToken = null;
@@ -177,9 +205,6 @@ export const useAuthStore = () => {
       },
       async getLegalDoc(docName) {
         return await this.roarfirekit.getLegalDoc(docName);
-      },
-      async registerWithEmailAndPassword({ email, password, userData }) {
-        return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },
 
       /**
@@ -280,14 +305,28 @@ export const useAuthStore = () => {
        * @returns {Promise<string | null>} The fresh token, or null if not signed in.
        */
       async forceIdTokenRefresh() {
-        const user = this.firebaseUser;
-        if (!user) return null;
-        // Use getIdToken directly so we can capture the fresh token synchronously.
-        // Relying on the onIdTokenChanged callback introduces a race condition
-        // because the callback fires asynchronously after getIdToken resolves.
-        const freshToken = await getIdToken(user, /* forceRefresh */ true);
-        this.accessToken = freshToken;
-        return freshToken;
+        // Deduplicate concurrent callers: the first one starts the refresh,
+        // the rest await the same promise.
+        if (!inFlightTokenRefresh) {
+          inFlightTokenRefresh = (async () => {
+            // Capture the fresh token from getIdToken's resolution and assign
+            // it here directly. Relying on the onIdTokenChanged callback
+            // introduces a race condition because the callback fires
+            // asynchronously after getIdToken resolves.
+            const authService = getAuthService();
+            const uidAtStart = authService.getCurrentUser()?.uid;
+            const freshToken = await authService.getIdToken(/* forceRefresh */ true);
+            if (freshToken === null) return null;
+            // A sign-out or user switch can land while the refresh is pending;
+            // assigning then would resurrect a token the session no longer owns.
+            if (authService.getCurrentUser()?.uid !== uidAtStart) return null;
+            this.accessToken = freshToken;
+            return freshToken;
+          })().finally(() => {
+            inFlightTokenRefresh = null;
+          });
+        }
+        return inFlightTokenRefresh;
       },
 
       async sendMyPasswordResetEmail() {
