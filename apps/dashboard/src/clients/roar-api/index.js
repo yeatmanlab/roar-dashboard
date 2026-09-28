@@ -41,15 +41,13 @@ async function apiWithAuthRetry(args) {
   // token while the Firebase session is healthy, which one forced refresh
   // repairs. A dead session fails the retry too, and that second 401 is what
   // the app layer treats as terminal (see isTerminalAuthError).
+  //
+  // `tsRestFetchApi` resolves to a plain `{ status, body, headers }` object
+  // with the JSON body already parsed — NOT a fetch Response. The error code
+  // is read straight off `response.body`; a non-JSON body (string/blob)
+  // yields undefined and falls through to the original 401.
   if (response.status === 401) {
-    let errorCode;
-    try {
-      const body = await response.clone().json();
-      errorCode = body?.error?.code;
-    } catch {
-      // Unparseable body — nothing to interpret, surface the original 401.
-      return response;
-    }
+    const errorCode = response.body?.error?.code;
 
     if (errorCode === API_ERROR_CODES.AUTH_TOKEN_EXPIRED || errorCode === API_ERROR_CODES.AUTH_TOKEN_INVALID) {
       let freshToken;
