@@ -4,17 +4,13 @@ import { tsRestFetchApi } from '@ts-rest/core';
 // Set the env var before any module imports reference it
 vi.stubEnv('VITE_ROAR_API_BASE_URL', 'https://api.test.example.com');
 
-vi.mock('@ts-rest/core', () => ({
+// Partial mock: only the client factory and the fetcher are replaced. The
+// rest of @ts-rest/core stays real so the (unmocked) api-contract module can
+// build its routers with the real initContract.
+vi.mock('@ts-rest/core', async (importOriginal) => ({
+  ...(await importOriginal()),
   initClient: vi.fn(() => ({})),
   tsRestFetchApi: vi.fn(),
-}));
-
-vi.mock('@roar-platform/api-contract', () => ({
-  ApiContractV1: {},
-  RefreshableAuthErrorCode: {
-    TOKEN_EXPIRED: 'auth/token-expired',
-    TOKEN_INVALID: 'auth/token-invalid',
-  },
 }));
 
 const mockAuthStore = {

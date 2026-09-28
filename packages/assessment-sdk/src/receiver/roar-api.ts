@@ -1,5 +1,5 @@
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
-import { ApiContractV1, RefreshableAuthErrorCode } from '@roar-platform/api-contract';
+import { ApiContractV1, RefreshableAuthErrorCode, getErrorEnvelopeCode } from '@roar-platform/api-contract';
 import type { CommandContext, Logger } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums/sdk-error-code.enum';
@@ -34,26 +34,6 @@ export interface ApiClientConfig {
 const REFRESHABLE_AUTH_ERROR_CODES = new Set<string>(Object.values(RefreshableAuthErrorCode));
 
 /**
- * Extracts the error code from a parsed ts-rest 401 body.
- *
- * `tsRestFetchApi` resolves to `{ status, body, headers }` with the body
- * already parsed — JSON bodies become objects, non-JSON bodies become a
- * string or blob. Any non-envelope shape yields undefined rather than
- * throwing, so an HTML error page from an intermediary falls through to the
- * original 401.
- *
- * @param body - The parsed response body
- * @returns The error code string, or undefined when the body carries none
- */
-function getAuthErrorCode(body: unknown): string | undefined {
-  if (typeof body !== 'object' || body === null) return undefined;
-  const error = (body as { error?: unknown }).error;
-  if (typeof error !== 'object' || error === null) return undefined;
-  const code = (error as { code?: unknown }).code;
-  return typeof code === 'string' ? code : undefined;
-}
-
-/**
  * Creates a ts-rest client configured with the ROAR API contract and authentication.
  *
  * The client automatically injects:
@@ -63,13 +43,12 @@ function getAuthErrorCode(body: unknown): string | undefined {
  * When `auth.refreshToken` is provided, a 401 response carrying the
  * `auth/token-expired` or `auth/token-invalid` error code triggers one token
  * refresh and one retry with the fresh token — mirroring the dashboard
- * client's semantics. Before refreshing, `getToken` is consulted again — a
- * 401 raced by a refresh that already happened retries directly with the
- * newer token. Concurrent 401s within this client share a single in-flight
- * refresh; hosts that create several clients over the same callbacks must
- * dedupe inside `refreshToken` itself (the dashboard's `forceIdTokenRefresh`
- * does). Any other 401, a failed refresh, or a refresh resolving no token
- * surfaces the original 401 unchanged for the caller to treat as terminal.
+ * client's semantics. Concurrent 401s within this client share a single
+ * in-flight refresh; hosts that create several clients over the same
+ * callbacks must dedupe inside `refreshToken` itself (the dashboard's
+ * `forceIdTokenRefresh` does). Any other 401, a failed refresh, or a refresh
+ * resolving no token surfaces the original 401 unchanged for the caller to
+ * treat as terminal.
  *
  * Unlike the {@link RoarApi} constructor, this does not require a participantId, so it can
  * be used for unauthenticated/pre-provisioning calls such as anonymous-session bootstrap.
@@ -119,19 +98,20 @@ export function createApiClient(config: ApiClientConfig) {
         return response;
       }
 
-      const errorCode = getAuthErrorCode(response.body);
+      const errorCode = getErrorEnvelopeCode(response.body);
       if (errorCode === undefined || !REFRESHABLE_AUTH_ERROR_CODES.has(errorCode)) {
         return response;
       }
 
       config.logger?.debug('[assessment-sdk] 401 with refreshable auth error code, refreshing token', { errorCode });
 
-      // A staggered burst of stale-token 401s must not trigger one refresh
-      // each: when getToken already returns a different token than the failed
-      // request used (a refresh completed in the meantime), retry with it
-      // directly instead of forcing another refresh round-trip.
-      const currentToken = await config.auth.getToken();
-      const freshToken = currentToken && currentToken !== token ? currentToken : await refreshOnce(refreshToken);
+      // Deliberately no getToken() recheck before refreshing: Firebase rotates
+      // tokens on its own, so a different-looking token is not evidence the
+      // refresh side effects can be skipped — a rotated-but-still-rejected
+      // token would silently bypass refreshToken forever. One redundant
+      // refresh is absorbed by the in-flight dedup above and by host-level
+      // dedup inside refreshToken itself.
+      const freshToken = await refreshOnce(refreshToken);
       // No fresh token (signed out mid-request, refresh failed): a retry
       // without a valid Authorization header is a guaranteed 401 — skip the
       // round-trip and surface the original response as the terminal error.

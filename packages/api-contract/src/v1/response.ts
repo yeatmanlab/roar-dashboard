@@ -36,3 +36,25 @@ export const RefreshableAuthErrorCode = {
 } as const;
 
 export type RefreshableAuthErrorCode = (typeof RefreshableAuthErrorCode)[keyof typeof RefreshableAuthErrorCode];
+
+/**
+ * Extracts the error code from a parsed error-envelope body.
+ *
+ * Clients key their 401 refresh-and-retry on this: `tsRestFetchApi` resolves
+ * `{ status, body, headers }` with the body already parsed — JSON bodies
+ * become objects, non-JSON bodies a string or blob. Any non-envelope shape
+ * yields undefined rather than throwing, so an HTML error page from an
+ * intermediary falls through to the original response. Lives here, next to
+ * {@link RefreshableAuthErrorCode} and {@link ErrorObjectSchema}, so every
+ * client parses the envelope the same way.
+ *
+ * @param body - The parsed response body
+ * @returns The error code string, or undefined when the body carries none
+ */
+export function getErrorEnvelopeCode(body: unknown): string | undefined {
+  if (typeof body !== 'object' || body === null) return undefined;
+  const error = (body as { error?: unknown }).error;
+  if (typeof error !== 'object' || error === null) return undefined;
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'string' ? code : undefined;
+}
