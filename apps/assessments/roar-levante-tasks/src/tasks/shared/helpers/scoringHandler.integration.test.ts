@@ -1,13 +1,16 @@
 import { vi, describe, test, expect, beforeEach, afterEach, type MockInstance } from 'vitest';
 import { ScoringHandler } from './scoringHandler.js';
 import { toLevanteScoreEntries, LEVANTE_SCORE_NAMES } from '@roar-platform/assessment-schema/roar-levante-tasks';
+//@ts-ignore
+import { getAgeData } from '@bdelab/roar-utils';
 import fs from 'fs';
 import path from 'node:path';
 import papaparse from 'papaparse';
 
-// Issue with importing getGrade from roar-utils, so we mock it
+// Issue with importing getGrade/getAgeData from roar-utils, so we mock them
 vi.mock('@bdelab/roar-utils', () => ({
   getGrade: () => 1,
+  getAgeData: vi.fn(),
 }));
 
 const getCsvContent = (input: string) => {
@@ -34,6 +37,7 @@ describe('ScoringHandler Integration Tests', () => {
   const originalParse = papaparse.parse;
 
   beforeEach(() => {
+    vi.mocked(getAgeData).mockReset();
     papaParseSpy = vi.spyOn(papaparse, 'parse');
     papaParseSpy.mockImplementation((input: any, config: any) => {
       if (config.download) {
@@ -63,7 +67,8 @@ describe('ScoringHandler Integration Tests', () => {
   // ── age min clamping ──────────────────────────────────────────────────────
 
   test('should clamp age to minimum (72 months) for trog when age is below ageMin', async () => {
-    const handler = new ScoringHandler('trog', 1, { age: 60 }); // 60 months < ageMin of 72
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 60 });
+    const handler = new ScoringHandler('trog', 1, { birthMonth: 6, birthYear: 2020 }); // 60 months < ageMin of 72
     await handler.initTable();
 
     expect(handler.ageForScore).toBe(72);
@@ -73,7 +78,8 @@ describe('ScoringHandler Integration Tests', () => {
   });
 
   test('should clamp age to minimum (84 months) for roar-inference when age is below ageMin', async () => {
-    const handler = new ScoringHandler('roar-inference', 1, { age: 60 }); // 60 months < ageMin of 84
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 60 });
+    const handler = new ScoringHandler('roar-inference', 1, { birthMonth: 6, birthYear: 2020 }); // 60 months < ageMin of 84
     await handler.initTable();
 
     expect(handler.ageForScore).toBe(84);
@@ -85,7 +91,8 @@ describe('ScoringHandler Integration Tests', () => {
   // ── age max clamping ──────────────────────────────────────────────────────
 
   test('should clamp age to maximum (168 months) for trog when age is above ageMax', async () => {
-    const handler = new ScoringHandler('trog', 1, { age: 220 }); // 220 months > ageMax of 168
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 220 });
+    const handler = new ScoringHandler('trog', 1, { birthMonth: 6, birthYear: 2006 }); // 220 months > ageMax of 168
     await handler.initTable();
 
     expect(handler.ageForScore).toBe(168);
@@ -95,7 +102,8 @@ describe('ScoringHandler Integration Tests', () => {
   });
 
   test('should clamp age to maximum (180 months) for roar-inference when age is above ageMax', async () => {
-    const handler = new ScoringHandler('roar-inference', 1, { age: 220 }); // 220 months > ageMax of 180
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 220 });
+    const handler = new ScoringHandler('roar-inference', 1, { birthMonth: 6, birthYear: 2006 }); // 220 months > ageMax of 180
     await handler.initTable();
 
     expect(handler.ageForScore).toBe(180);
@@ -107,7 +115,8 @@ describe('ScoringHandler Integration Tests', () => {
   // ── clamped ages produce correct normed scores ────────────────────────────
 
   test('should return trog normed scores using clamped min age (72) when age is below ageMin', async () => {
-    const handler = new ScoringHandler('trog', 1, { age: 60 });
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 60 });
+    const handler = new ScoringHandler('trog', 1, { birthMonth: 6, birthYear: 2020 });
     const result = await handler.computedScoreCallback({
       composite: { test: { thetaEstimate: 1.0 } },
     });
@@ -120,7 +129,8 @@ describe('ScoringHandler Integration Tests', () => {
   });
 
   test('should return trog normed scores using clamped max age (168) when age is above ageMax', async () => {
-    const handler = new ScoringHandler('trog', 1, { age: 220 });
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 220 });
+    const handler = new ScoringHandler('trog', 1, { birthMonth: 6, birthYear: 2006 });
     const result = await handler.computedScoreCallback({
       composite: { test: { thetaEstimate: -1.0 } },
     });
@@ -133,7 +143,8 @@ describe('ScoringHandler Integration Tests', () => {
   });
 
   test('should return roar-inference normed scores using clamped min age (84) when age is below ageMin', async () => {
-    const handler = new ScoringHandler('roar-inference', 1, { age: 60 });
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 60 });
+    const handler = new ScoringHandler('roar-inference', 1, { birthMonth: 6, birthYear: 2020 });
     const result = await handler.computedScoreCallback({
       composite: { test: { thetaEstimate: 2.0 } },
     });
@@ -146,7 +157,8 @@ describe('ScoringHandler Integration Tests', () => {
   });
 
   test('should return roar-inference normed scores using clamped max age (180) when age is above ageMax', async () => {
-    const handler = new ScoringHandler('roar-inference', 1, { age: 220 });
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 220 });
+    const handler = new ScoringHandler('roar-inference', 1, { birthMonth: 6, birthYear: 2006 });
     const result = await handler.computedScoreCallback({
       composite: { test: { thetaEstimate: -2.0 } },
     });
@@ -163,7 +175,8 @@ describe('ScoringHandler Integration Tests', () => {
   test('should still report thetaEstimate when ageMonths has no matching row in lookup table', async () => {
     // age=100 months is within the valid trog range (72–168) so it is not clamped,
     // but the fixture only contains ages 72–75 and 168, so no rows will match.
-    const handler = new ScoringHandler('trog', 1, { age: 100 });
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 100 });
+    const handler = new ScoringHandler('trog', 1, { birthMonth: 6, birthYear: 2017 });
     const result = await handler.computedScoreCallback({
       composite: { test: { thetaEstimate: 1.0 } },
     });
@@ -238,7 +251,8 @@ describe('ScoringHandler Integration Tests', () => {
   test('should return thetaEstimate and log an error when scoring version has no corresponding lookup table', async () => {
     // scoringVersion=2 is > 0 so the normed path is taken, but trog_lookup_v2.csv
     // does not exist in the fixtures, causing the table load to fail.
-    const handler = new ScoringHandler('trog', 2, { age: 108 });
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 108 });
+    const handler = new ScoringHandler('trog', 2, { birthMonth: 6, birthYear: 2017 });
     const result = await handler.computedScoreCallback({
       composite: { test: { thetaEstimate: -0.5 } },
     });
@@ -257,7 +271,8 @@ describe('ScoringHandler Integration Tests', () => {
   // ── race conditions ───────────────────────────────────────────────────────
 
   test('should load the lookup table only once when multiple calls are made concurrently', async () => {
-    const handler = new ScoringHandler('trog', 1, { age: 72 });
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 72 });
+    const handler = new ScoringHandler('trog', 1, { birthMonth: 6, birthYear: 2020 });
     const rawScores = { composite: { test: { thetaEstimate: 0.0 } } };
 
     const [result1, result2, result3] = await Promise.all([
@@ -280,7 +295,8 @@ describe('ScoringHandler Integration Tests', () => {
   });
 
   test('should not reload the lookup table on subsequent sequential calls after initial load', async () => {
-    const handler = new ScoringHandler('trog', 1, { age: 72 });
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 72 });
+    const handler = new ScoringHandler('trog', 1, { birthMonth: 6, birthYear: 2020 });
 
     // First trial
     const result1 = await handler.computedScoreCallback({
@@ -300,7 +316,8 @@ describe('ScoringHandler Integration Tests', () => {
   test('should not re-log the same error on repeated failed load attempts', async () => {
     // scoringVersion=2 causes a load failure; subsequent calls with the same
     // error should be silently swallowed to avoid flooding logs.
-    const handler = new ScoringHandler('trog', 2, { age: 72 });
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 72 });
+    const handler = new ScoringHandler('trog', 2, { birthMonth: 6, birthYear: 2020 });
     const rawScores = { composite: { test: { thetaEstimate: 0.0 } } };
 
     await handler.computedScoreCallback(rawScores);
@@ -336,7 +353,8 @@ describe('ScoringHandler Integration Tests', () => {
       }
     });
 
-    const handler = new ScoringHandler('trog', 1, { age: 72 });
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 72 });
+    const handler = new ScoringHandler('trog', 1, { birthMonth: 6, birthYear: 2020 });
 
     // First call: table load fails
     const result1 = await handler.computedScoreCallback({
@@ -369,7 +387,8 @@ describe('ScoringHandler Integration Tests', () => {
     // Verifies that computedScoreCallback merges both getNormedScores and
     // getUnnormedScores into a single composite object, so run_scores receives
     // both IRT/normed fields and count fields for trog/roar-inference.
-    const handler = new ScoringHandler('trog', 1, { age: 72 });
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 72 });
+    const handler = new ScoringHandler('trog', 1, { birthMonth: 6, birthYear: 2020 });
     handler.totalCorrect = 12;
 
     const result = await handler.computedScoreCallback({
@@ -392,7 +411,8 @@ describe('ScoringHandler Integration Tests', () => {
   // ── toLevanteScoreEntries integration ─────────────────────────────────────
 
   test('toLevanteScoreEntries emits both IRT and count entries for a normed task', async () => {
-    const handler = new ScoringHandler('trog', 1, { age: 72 });
+    vi.mocked(getAgeData).mockReturnValue({ ageMonths: 72 });
+    const handler = new ScoringHandler('trog', 1, { birthMonth: 6, birthYear: 2020 });
     handler.totalCorrect = 12;
 
     const computed = await handler.computedScoreCallback({

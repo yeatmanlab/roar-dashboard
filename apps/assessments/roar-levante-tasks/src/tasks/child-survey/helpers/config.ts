@@ -22,14 +22,14 @@ export const getLayoutConfig = (
   const defaultConfig: LayoutConfigType = JSON.parse(JSON.stringify(DEFAULT_LAYOUT_CONFIG));
   const stimItem = convertItemToString(stimulus.item);
   defaultConfig.isPracticeTrial = stimulus.assessmentStage === 'practice_response';
-  defaultConfig.isInstructionTrial = stimulus.trialType === 'instructions';
+  defaultConfig.isInstructionTrial = stimulus.assessmentStage === 'instructions';
   defaultConfig.showStimImage = false;
   defaultConfig.stimText = {
     value: stimItem,
     displayValue: undefined,
   };
   defaultConfig.classOverrides.buttonClassList = ['secondary--wide'];
-  defaultConfig.isStaggered = true;
+  defaultConfig.isStaggered = defaultConfig.isInstructionTrial || defaultConfig.isPracticeTrial;
   const mappedDistractors = mapDistractorsToString(distractors);
   defaultConfig.prompt.enabled = true;
   defaultConfig.isImageButtonResponse = false;

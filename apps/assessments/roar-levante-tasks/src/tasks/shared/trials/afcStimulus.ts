@@ -164,6 +164,10 @@ function getButtonChoices(layoutConfigMap: Record<string, LayoutConfigType>, tri
   const { response } = itemLayoutConfig;
   const target = response.target;
   if (itemLayoutConfig) {
+    if (stimulus.assessmentStage === 'instructions') {
+      return [taskStore().translations.continueButtonText];
+    }
+
     const {
       isImageButtonResponse,
       response: { displayValues: buttonChoices },
@@ -178,6 +182,7 @@ function getButtonChoices(layoutConfigMap: Record<string, LayoutConfigType>, tri
 function getButtonHtml(layoutConfigMap: Record<string, LayoutConfigType>, trial?: StimulusType) {
   const stimulus = trial || taskStore().nextStimulus;
   const isPracticeTrial = stimulus.assessmentStage === 'practice_response';
+  const isInstructionTrial = stimulus.assessmentStage === 'instructions';
   const itemLayoutConfig = layoutConfigMap?.[stimulus.itemId];
   if (itemLayoutConfig) {
     const classList = [...itemLayoutConfig.classOverrides.buttonClassList];
@@ -187,7 +192,9 @@ function getButtonHtml(layoutConfigMap: Record<string, LayoutConfigType>, trial?
       classList.push('practice-btn');
     }
     return `
-      <button class='${classList.join(' ')}' ${disableOkButton ? 'disabled' : ''}>%choice%</button>
+      <button
+        class='${classList.join(' ')}' ${disableOkButton && isInstructionTrial ? 'disabled' : ''}>%choice%
+      </button>
     `;
   }
 }
@@ -240,7 +247,7 @@ function doOnLoad(
       audioKeys.push(audioKey);
     }
 
-    handleStaggeredButtons(pageStateHandler, buttonContainer, audioKeys);
+    handleStaggeredButtons(pageStateHandler, imgButtons, audioKeys);
   }
 
   const currentTrialIndex = jsPsych.getProgress().current_trial_global;
